@@ -646,7 +646,7 @@ object Weeder {
       }
 
     case ParsedAst.Expression.Lit(sp1, lit, sp2) =>
-      weedLiteral(lit) match {
+      visitLiteral(lit) match {
         case Result.Ok(c) => WeededAst.Expr.Cst(c, mkSL(sp1, sp2)).toSuccess
         case Result.Err(e) => Validation.toSoftFailure(WeededAst.Expr.Error(e), e)
       }
@@ -2030,7 +2030,7 @@ object Weeder {
   /**
     * Performs weeding on the given literal.
     */
-  private def weedLiteral(lit0: ParsedAst.Literal): Result[Ast.Constant, WeederError with Recoverable] = lit0 match {
+  private def visitLiteral(lit0: ParsedAst.Literal): Result[Ast.Constant, WeederError with Recoverable] = lit0 match {
     case ParsedAst.Literal.Unit(_, _) =>
       Result.Ok(Ast.Constant.Unit)
 
@@ -2130,7 +2130,7 @@ object Weeder {
         }
 
       case ParsedAst.Pattern.Lit(sp1, lit, sp2) =>
-        weedLiteral(lit) match {
+        visitLiteral(lit) match {
           case Result.Ok(c) => c match {
             case Constant.Null => Validation.toHardFailure(IllegalNullPattern(mkSL(sp1, sp2)))
             case Constant.Regex(lit) =>
