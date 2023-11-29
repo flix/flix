@@ -664,20 +664,20 @@ object Desugar {
         case _ =>
           // General Case: Fold the interpolator parts together.
           val init = DesugaredAst.Expr.Cst(Ast.Constant.Str(""), loc.asSynthetic)
-          parts.foldRight(init: DesugaredAst.Expr) {
+          parts.foldLeft(init: DesugaredAst.Expr) {
             // Case 1: String part
-            case (WeededAst.InterpolationPart.StrPart(str, loc1), acc) =>
+            case (acc, WeededAst.InterpolationPart.StrPart(str, loc1)) =>
               val e = DesugaredAst.Expr.Cst(str, loc1)
               mkConcat(acc, e, loc1)
 
             // Case 2: Interpolated expression
-            case (WeededAst.InterpolationPart.ExpPart(exp, loc1), acc) =>
+            case (acc, WeededAst.InterpolationPart.ExpPart(exp, loc1)) =>
               val e1 = visitExp(exp)
               val e2 = mkApplyToString(e1, loc1)
               mkConcat(acc, e2, loc1)
 
             // Case 3: Interpolated debug
-            case (WeededAst.InterpolationPart.DebugPart(exp, loc1), acc) =>
+            case (acc, WeededAst.InterpolationPart.DebugPart(exp, loc1)) =>
               val e1 = visitExp(exp)
               val e2 = mkApplyDebugString(e1, loc1)
               mkConcat(acc, e2, loc1)
