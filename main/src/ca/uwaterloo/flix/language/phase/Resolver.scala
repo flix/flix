@@ -25,11 +25,11 @@ import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.{ListMap, MapOps}
-import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, ParOps, Similarity, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.annotation.tailrec
-import scala.collection.immutable.SortedSet
+import scala.collection.immutable.{SortedSet, StringOps}
 import scala.collection.mutable
 
 /**
@@ -68,10 +68,20 @@ object Resolver {
     "Some" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Option", SourceLocation.Unknown), "Some", SourceLocation.Unknown),
 
     "Err" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Result", SourceLocation.Unknown), "Err", SourceLocation.Unknown),
-    "Ok" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Result", SourceLocation.Unknown), "Ok", SourceLocation.Unknown),
+    "Ok" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Result", SourceLocation.Unknown), "Ok", SourceLocation.Unknown)
+  )
 
-    "Present" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Choice", SourceLocation.Unknown), "Present", SourceLocation.Unknown),
-    "Absent" -> new Symbol.CaseSym(new Symbol.EnumSym(None, Nil, "Choice", SourceLocation.Unknown), "Absent", SourceLocation.Unknown),
+  /**
+    * Built-in Kinds.
+    */
+  private val Kinds = Map(
+    "Bool" -> Kind.Bool,
+    "Eff" -> Kind.Eff,
+    "Type" -> Kind.Star,
+    "Region" -> Kind.Eff,
+    "RecordRow" -> Kind.RecordRow,
+    "SchemaRow" -> Kind.SchemaRow,
+    "Predicate" -> Kind.Predicate
   )
 
   /**
@@ -714,24 +724,22 @@ object Resolver {
   private def resolveKind(kind0: NamedAst.Kind, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[Kind, ResolutionError] = kind0 match {
     case NamedAst.Kind.Ambiguous(qname, loc) =>
       if (qname.isUnqualified) {
-        qname.ident.name match {
-          case "Type" => Kind.Star.toSuccess
-          case "Eff" => Kind.Eff.toSuccess
-          case "RecordRow" => Kind.RecordRow.toSuccess
-          case "SchemaRow" => Kind.SchemaRow.toSuccess
-          case "Predicate" => Kind.Predicate.toSuccess
-          case "Region" => Kind.Eff.toSuccess
-          case "Bool" => Kind.Bool.toSuccess
-          case _ =>
+        val name = qname.ident.name
+        Kinds.get(name) match {
+          case None =>
             lookupRestrictableEnum(qname, env, ns0, root) match {
               case Validation.Success(enum) => Kind.CaseSet(enum.sym).toSuccess
-              case _failure => Validation.toHardFailure(ResolutionError.UndefinedKind(qname, ns0, loc))
+              case _failure =>
+                val closestMatch = Similarity.closestMatch(name, Kinds)
+                Validation.toSoftFailure(closestMatch, ResolutionError.UndefinedKind(qname, ns0, loc))
             }
+          case Some(kind) => kind.toSuccess
         }
       } else {
         lookupRestrictableEnum(qname, env, ns0, root) match {
           case Validation.Success(enum) => Kind.CaseSet(enum.sym).toSuccess
-          case _failure => Validation.toHardFailure(ResolutionError.UndefinedKind(qname, ns0, loc))
+          case _failure =>
+            Validation.toSoftFailure(Kind.Star, ResolutionError.UndefinedKind(qname, ns0, loc))
         }
       }
     case NamedAst.Kind.Arrow(k10, k20, loc) =>
