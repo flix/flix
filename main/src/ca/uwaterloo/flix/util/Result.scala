@@ -25,7 +25,7 @@ import scala.collection.mutable.ArrayBuffer
   * @tparam T the type of the value.
   * @tparam E the type of the error.
   */
-sealed trait Result[+T, E] {
+sealed trait Result[+T, +E] {
 
   /**
     * Retrieves the value from `this` result.
