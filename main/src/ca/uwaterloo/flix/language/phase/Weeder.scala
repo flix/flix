@@ -18,12 +18,11 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, Fixity}
-import ca.uwaterloo.flix.language.ast.ParsedAst.{CharCode, InterpolationPart, TypeParams}
+import ca.uwaterloo.flix.language.ast.ParsedAst.TypeParams
 import ca.uwaterloo.flix.language.ast.WeededAst.Pattern
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
-import ca.uwaterloo.flix.language.errors._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
@@ -1403,32 +1402,8 @@ object Weeder {
       }
 
     case ParsedAst.Expression.Interpolation(sp1, parts, sp2) =>
-      def visitCharCode(c: ParsedAst.CharCode): WeededAst.CharCode = c match {
-        case ParsedAst.CharCode.Literal(sp1, lit, sp2) => WeededAst.CharCode.Literal(lit, mkSL(sp1, sp2))
-        case ParsedAst.CharCode.Escape(sp1, seq, sp2) => WeededAst.CharCode.Escape(seq, mkSL(sp1, sp2))
-      }
-
-      def visitInterpolationPart(p: ParsedAst.InterpolationPart): Validation[WeededAst.InterpolationPart, WeederError] = p match {
-        case ParsedAst.InterpolationPart.ExpPart(sp1, exp, sp2) =>
-          val loc = mkSL(sp1, sp2)
-          val eVal = traverseOpt(exp)(visitExp(_, senv))
-          mapN(eVal) {
-            case e => WeededAst.InterpolationPart.ExpPart(e, loc)
-          }
-        case ParsedAst.InterpolationPart.StrPart(sp1, chars, sp2) =>
-          val loc = mkSL(sp1, sp2)
-          val cs = chars.map(visitCharCode).toList
-          WeededAst.InterpolationPart.StrPart(cs, loc).toSuccess
-        case ParsedAst.InterpolationPart.DebugPart(sp1, exp, sp2) =>
-          val loc = mkSL(sp1, sp2)
-          val eVal = traverseOpt(exp)(visitExp(_, senv))
-          mapN(eVal) {
-            case e => WeededAst.InterpolationPart.DebugPart(e, loc)
-          }
-      }
-
       val loc = mkSL(sp1, sp2)
-      val partsVal = traverse(parts)(visitInterpolationPart)
+      val partsVal = traverse(parts)(visitInterpolationPart(_, senv))
       mapN(partsVal) {
         case ps => WeededAst.Expr.Interpolation(ps, loc)
       }
@@ -2934,6 +2909,41 @@ object Weeder {
       val e = visitExp(exp, senv)
       mapN(e) {
         case e1 => WeededAst.ForFragment.Guard(e1, loc)
+      }
+  }
+
+  /**
+    * Performs weeding on the given [[ParsedAst.CharCode]] `char`.
+    */
+  private def visitCharCode(char: ParsedAst.CharCode): WeededAst.CharCode = char match {
+    case ParsedAst.CharCode.Literal(sp1, lit, sp2) =>
+      WeededAst.CharCode.Literal(lit, mkSL(sp1, sp2))
+
+    case ParsedAst.CharCode.Escape(sp1, seq, sp2) =>
+      WeededAst.CharCode.Escape(seq, mkSL(sp1, sp2))
+  }
+
+  /**
+    * Performs weeding on the given [[ParsedAst.InterpolationPart]] `part`.
+    */
+  private def visitInterpolationPart(part: ParsedAst.InterpolationPart, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.InterpolationPart, WeederError] = part match {
+    case ParsedAst.InterpolationPart.ExpPart(sp1, exp, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val eVal = traverseOpt(exp)(visitExp(_, senv))
+      mapN(eVal) {
+        case e => WeededAst.InterpolationPart.ExpPart(e, loc)
+      }
+
+    case ParsedAst.InterpolationPart.StrPart(sp1, chars, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val cs = chars.map(visitCharCode).toList
+      WeededAst.InterpolationPart.StrPart(cs, loc).toSuccess
+
+    case ParsedAst.InterpolationPart.DebugPart(sp1, exp, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val eVal = traverseOpt(exp)(visitExp(_, senv))
+      mapN(eVal) {
+        case e => WeededAst.InterpolationPart.DebugPart(e, loc)
       }
   }
 
