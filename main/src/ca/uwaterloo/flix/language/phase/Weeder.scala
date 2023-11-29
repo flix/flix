@@ -1435,7 +1435,7 @@ object Weeder {
       parts match {
         case Seq(ParsedAst.InterpolationPart.StrPart(innerSp1, chars, innerSp2)) =>
           // Special case: We have a constant string. Check the contents and return it.
-          weedCharSequence(chars) match {
+          visitCharSeq(chars) match {
             case Result.Ok(s) => WeededAst.Expr.Cst(Ast.Constant.Str(s), mkSL(innerSp1, innerSp2)).toSuccess
             case Result.Err(e) => Validation.toSoftFailure(WeededAst.Expr.Error(e), e)
           }
@@ -1446,7 +1446,7 @@ object Weeder {
           Validation.fold(parts, init: WeededAst.Expr) {
             // Case 1: string part
             case (acc, ParsedAst.InterpolationPart.StrPart(innerSp1, chars, innerSp2)) =>
-              weedCharSequence(chars) match {
+              visitCharSeq(chars) match {
                 case Result.Ok(s) =>
                   val e2 = WeededAst.Expr.Cst(Ast.Constant.Str(s), mkSL(innerSp1, innerSp2))
                   mkConcat(acc, e2, loc).toSuccess
@@ -1966,7 +1966,7 @@ object Weeder {
   /**
     * Performs weeding on the given sequence of CharCodes.
     */
-  private def weedCharSequence(chars0: Seq[ParsedAst.CharCode]): Result[String, WeederError with Recoverable] = {
+  private def visitCharSeq(chars0: Seq[ParsedAst.CharCode]): Result[String, WeederError with Recoverable] = {
 
     @tailrec
     def visit(chars: List[ParsedAst.CharCode], acc: List[Char]): Result[String, WeederError with Recoverable] = {
@@ -2044,7 +2044,7 @@ object Weeder {
       Result.Ok(Ast.Constant.Bool(false))
 
     case ParsedAst.Literal.Char(sp1, chars, sp2) =>
-      weedCharSequence(chars) flatMap {
+      visitCharSeq(chars) flatMap {
         case s if s.length == 1 => Result.Ok(Ast.Constant.Char(s.head))
         case s => Result.Err(MalformedChar(s, mkSL(sp1, sp2)))
       }
@@ -2090,12 +2090,12 @@ object Weeder {
       }
 
     case ParsedAst.Literal.Str(_, chars, _) =>
-      weedCharSequence(chars).map {
+      visitCharSeq(chars).map {
         string => Ast.Constant.Str(string)
       }
 
     case ParsedAst.Literal.Regex(sp1, chars, sp2) =>
-      weedCharSequence(chars).flatMap {
+      visitCharSeq(chars).flatMap {
         case s => toRegexPattern(s, mkSL(sp1, sp2)).map {
           case pat => Ast.Constant.Regex(pat)
         }
