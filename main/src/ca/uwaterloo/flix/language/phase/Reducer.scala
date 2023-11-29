@@ -33,14 +33,16 @@ object Reducer {
   def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("Reducer") {
     implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue)
 
+    // Convert definitions and collect ReducedAst information (types, anonClasses, lparams, etc)
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
     val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newEffs = ParOps.parMapValues(root.effects)(visitEff)
-
     val root1 = ReducedAst.Root(newDefs, newEnums, newEffs, Set.empty, ctx.anonClasses.asScala.toList, root.entryPoint, root.sources)
     val types = typesOf(root1)
     val root2 = root1.copy(types = types)
-    root2.copy(defs = root2.defs.map { case (sym, defn) => (sym, defn.copy(stmt = letBindEffectsStmt(defn.stmt))) })
+
+    // Make sure effects happen on an empty op-stack and maintain lparams for defs
+    root2.copy(defs = ParOps.parMapValues(root2.defs)(letBindEffectsDef))
   }
 
   private def visitDef(d: LiftedAst.Def)(implicit ctx: SharedContext): ReducedAst.Def = d match {
@@ -60,7 +62,7 @@ object Reducer {
         case (sym, caze) => sym -> visitCase(caze)
       }
       val t = tpe
-      ReducedAst.Enum(ann, mod, sym, cases, tpe, loc)
+      ReducedAst.Enum(ann, mod, sym, cases, t, loc)
   }
 
   private def visitEff(effect: LiftedAst.Effect): ReducedAst.Effect = effect match {
@@ -277,7 +279,7 @@ object Reducer {
     }
 
     def visitStmt(s: ReducedAst.Stmt): Set[MonoType] = s match {
-      case ReducedAst.Stmt.Ret(e, tpe, loc) => visitExp(e)
+      case ReducedAst.Stmt.Ret(e, _, _) => visitExp(e)
     }
 
     // Visit every definition.
@@ -419,7 +421,7 @@ object Reducer {
   private type Bound[A] = (A, Chain[Binder], Boolean)
 
   private object Bound {
-    def traverseReverse[A](bl: Bound[List[A]], f: A => Bound[ReducedAst.Expr])(implicit flix: Flix): Bound[List[ReducedAst.Expr]] = {
+    def traverseReverse[A](bl: Bound[List[A]], f: A => Bound[ReducedAst.Expr])(implicit lctx: LocalContext, flix: Flix): Bound[List[ReducedAst.Expr]] = {
       val (l, binders, mustBind) = bl
       var bs = binders
       var mb = mustBind
@@ -438,11 +440,18 @@ object Reducer {
     }
   }
 
-  private def letBindEffectsStmt(stmt: ReducedAst.Stmt)(implicit flix: Flix): ReducedAst.Stmt = stmt match {
+  private def letBindEffectsDef(defn: ReducedAst.Def)(implicit flix: Flix): ReducedAst.Def = {
+    implicit val lctx: LocalContext = LocalContext.mk()
+    val stmt = letBindEffectsStmt(defn.stmt)
+    val lparams = defn.lparams ++ lctx.lparams.toList
+    defn.copy(stmt = stmt, lparams = lparams)
+  }
+
+  private def letBindEffectsStmt(stmt: ReducedAst.Stmt)(implicit lctx: LocalContext, flix: Flix): ReducedAst.Stmt = stmt match {
     case Stmt.Ret(expr, tpe, loc) => Stmt.Ret(letBindEffectsTopLevel(expr)._1, tpe, loc)
   }
 
-  private def letBindEffectsTopLevel(exp: ReducedAst.Expr)(implicit flix: Flix): (ReducedAst.Expr, Boolean) = exp match {
+  private def letBindEffectsTopLevel(exp: ReducedAst.Expr)(implicit lctx: LocalContext, flix: Flix): (ReducedAst.Expr, Boolean) = exp match {
     // fancy
     case Expr.Branch(exp, branches, tpe, purity, loc) =>
       val (e, mustBind) = letBindEffectsTopLevel(exp)
@@ -529,7 +538,7 @@ object Reducer {
     *
     * first binder is the outermost one
     */
-  private def letBindEffects(mustBindThis: Boolean => Boolean, exp: ReducedAst.Expr)(implicit flix: Flix): Bound[ReducedAst.Expr] = {
+  private def letBindEffects(mustBindThis: Boolean => Boolean, exp: ReducedAst.Expr)(implicit lctx: LocalContext, flix: Flix): Bound[ReducedAst.Expr] = {
     val (e, binders, mustBind) = exp match {
       case ReducedAst.Expr.Cst(_, _, _) => (exp, Chain.empty, false)
       case ReducedAst.Expr.Var(_, _, _) => (exp, Chain.empty, false)
@@ -629,11 +638,11 @@ object Reducer {
     (e1, binders ++ binders1, mustBind)
   }
 
-  private def letBindEffectsAndTryBind(exp: ReducedAst.Expr)(implicit flix: Flix): Bound[ReducedAst.Expr] = {
+  private def letBindEffectsAndTryBind(exp: ReducedAst.Expr)(implicit lctx: LocalContext, flix: Flix): Bound[ReducedAst.Expr] = {
     letBindEffects(identity, exp)
   }
 
-  private def bindIfTrue(e: Expr, mustBind: Boolean)(implicit flix: Flix): (Expr, Chain[Binder]) = {
+  private def bindIfTrue(e: Expr, mustBind: Boolean)(implicit lctx: LocalContext, flix: Flix): (Expr, Chain[Binder]) = {
     if (mustBind) {
       val (binders1, e1) = letBindThing(e)
       (e1, binders1)
@@ -642,7 +651,7 @@ object Reducer {
     }
   }
 
-  private def letBindThing(exp: Expr)(implicit flix: Flix): (Chain[Binder], ReducedAst.Expr) = exp match {
+  private def letBindThing(exp: Expr)(implicit lctx: LocalContext, flix: Flix): (Chain[Binder], ReducedAst.Expr) = exp match {
     case _: Expr.Cst | _: Expr.Var | _: Expr.ApplyAtomic => (Chain.empty, exp)
     case _: Expr.ApplyClo | _: Expr.ApplyDef |
          _: Expr.ApplySelfTail | _: Expr.ApplySelfTail |
@@ -651,6 +660,7 @@ object Reducer {
          _: Expr.Do | _: Expr.NewObject | _: Expr.LetRec |
          _: Expr.Let => {
       val fresh = Symbol.freshVarSym("anf", BoundBy.Let, exp.loc)(Level.Default, flix)
+      lctx.lparams.addOne(ReducedAst.LocalParam(fresh, exp.tpe))
       (Chain(Binder(Expr.Let(fresh, exp, null, null, null, SourceLocation.Unknown))), ReducedAst.Expr.Var(fresh, exp.tpe, exp.loc))
     }
     case _: Expr.Resume => throw InternalCompilerException("unexpected ast node", SourceLocation.Unknown)
