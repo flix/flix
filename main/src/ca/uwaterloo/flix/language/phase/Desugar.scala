@@ -655,6 +655,80 @@ object Desugar {
         case (acc, e) => mkApplyFqn("Set.insert", List(e, acc), loc)
       }
 
+    case WeededAst.Expr.Interpolation(parts, loc) => ???
+    /*
+    /**
+      * Returns an expression that concatenates the result of the expression `e1` with the expression `e2`.
+      */
+    def mkConcat(e1: WeededAst.Expr, e2: WeededAst.Expr, loc: SourceLocation): WeededAst.Expr = {
+      val sop = SemanticOp.StringOp.Concat
+      val l = loc.asSynthetic
+      WeededAst.Expr.Binary(sop, e1, e2, l)
+    }
+
+    /**
+      * Returns an expression that applies `toString` to the result of the given expression `e`.
+      */
+    def mkApplyToString(e: WeededAst.Expr, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expr = {
+      val fqn = "ToString.toString"
+      val loc = mkSL(sp1, sp2).asSynthetic
+      mkApplyFqn(fqn, List(e), loc)
+    }
+
+    /**
+      * Returns an expression that applies `debugString` to the result of the given expression `e`.
+      */
+    def mkApplyDebugString(e: WeededAst.Expr, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expr = {
+      val fqn = "Debug.stringify"
+      val loc = mkSL(sp1, sp2).asSynthetic
+      mkApplyFqn(fqn, List(e), loc)
+    }
+
+    val loc = mkSL(sp1, sp2)
+
+    parts match {
+      case Seq(ParsedAst.InterpolationPart.StrPart(innerSp1, chars, innerSp2)) =>
+        // Special case: We have a constant string. Check the contents and return it.
+        weedCharSequence(chars).map {
+          string => WeededAst.Expr.Cst(Ast.Constant.Str(string), mkSL(innerSp1, innerSp2))
+        }
+
+      case _ =>
+        // General Case: Fold the interpolator parts together.
+        val init = WeededAst.Expr.Cst(Ast.Constant.Str(""), loc)
+        Validation.fold(parts, init: WeededAst.Expr) {
+          // Case 1: string part
+          case (acc, ParsedAst.InterpolationPart.StrPart(innerSp1, chars, innerSp2)) =>
+            weedCharSequence(chars).map {
+              string =>
+                val e2 = WeededAst.Expr.Cst(Ast.Constant.Str(string), mkSL(innerSp1, innerSp2))
+                mkConcat(acc, e2, loc)
+            }
+          // Case 2: interpolated expression
+          case (acc, ParsedAst.InterpolationPart.ExpPart(innerSp1, Some(exp), innerSp2)) =>
+            mapN(visitExp(exp, senv)) {
+              e =>
+                val e2 = mkApplyToString(e, innerSp1, innerSp2)
+                mkConcat(acc, e2, mkSL(innerSp1, innerSp2))
+            }
+          // Case 3: interpolated debug
+          case (acc, ParsedAst.InterpolationPart.DebugPart(innerSp1, Some(exp), innerSp2)) =>
+            mapN(visitExp(exp, senv)) {
+              e =>
+                val e2 = mkApplyDebugString(e, innerSp1, innerSp2)
+                mkConcat(acc, e2, mkSL(innerSp1, innerSp2))
+            }
+          // Case 4: empty interpolated expression
+          case (_, ParsedAst.InterpolationPart.ExpPart(innerSp1, None, innerSp2)) =>
+            val err = EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2))
+            Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+          // Case 5: empty interpolated debug
+          case (_, ParsedAst.InterpolationPart.DebugPart(innerSp1, None, innerSp2)) =>
+            val err = EmptyInterpolatedExpression(mkSL(innerSp1, innerSp2))
+            Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+        }
+    }
+     */
     case WeededAst.Expr.Ref(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)

@@ -169,6 +169,8 @@ object WeededAst {
 
     case class SetLit(exps: List[Expr], loc: SourceLocation) extends Expr
 
+    case class Interpolation(parts: List[InterpolationPart], loc: SourceLocation) extends Expr
+
     case class Ref(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Deref(exp: Expr, loc: SourceLocation) extends Expr
@@ -462,6 +464,28 @@ object WeededAst {
     case class Generator(pat: Pattern, exp: Expr, loc: SourceLocation) extends ForFragment
 
     case class Guard(exp: Expr, loc: SourceLocation) extends ForFragment
+
+  }
+
+  sealed trait InterpolationPart
+
+  object InterpolationPart {
+
+    case class ExpPart(exp: Option[Expr], loc: SourceLocation) extends InterpolationPart
+
+    case class StrPart(chars: List[CharCode], loc: SourceLocation) extends InterpolationPart
+
+    case class DebugPart(exp: Option[Expr], loc: SourceLocation) extends InterpolationPart
+
+  }
+
+  sealed trait CharCode
+
+  object CharCode {
+
+    case class Literal(lit: String, loc: SourceLocation) extends CharCode
+
+    case class Escape(seq: String, loc: SourceLocation) extends CharCode
 
   }
 
