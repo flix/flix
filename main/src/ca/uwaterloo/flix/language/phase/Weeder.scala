@@ -1435,8 +1435,9 @@ object Weeder {
       parts match {
         case Seq(ParsedAst.InterpolationPart.StrPart(innerSp1, chars, innerSp2)) =>
           // Special case: We have a constant string. Check the contents and return it.
-          weedCharSequence(chars).map {
-            string => WeededAst.Expr.Cst(Ast.Constant.Str(string), mkSL(innerSp1, innerSp2))
+          weedCharSequence(chars) match {
+            case Result.Ok(s) => WeededAst.Expr.Cst(Ast.Constant.Str(s), mkSL(innerSp1, innerSp2)).toSuccess
+            case Result.Err(e) => Validation.toSoftFailure(WeededAst.Expr.Error(e), e)
           }
 
         case _ =>
@@ -1445,10 +1446,12 @@ object Weeder {
           Validation.fold(parts, init: WeededAst.Expr) {
             // Case 1: string part
             case (acc, ParsedAst.InterpolationPart.StrPart(innerSp1, chars, innerSp2)) =>
-              weedCharSequence(chars).map {
-                string =>
-                  val e2 = WeededAst.Expr.Cst(Ast.Constant.Str(string), mkSL(innerSp1, innerSp2))
-                  mkConcat(acc, e2, loc)
+              weedCharSequence(chars) match {
+                case Result.Ok(s) =>
+                  val e2 = WeededAst.Expr.Cst(Ast.Constant.Str(s), mkSL(innerSp1, innerSp2))
+                  mkConcat(acc, e2, loc).toSuccess
+                case Result.Err(e) =>
+                  Validation.toSoftFailure(WeededAst.Expr.Error(e), e)
               }
             // Case 2: interpolated expression
             case (acc, ParsedAst.InterpolationPart.ExpPart(innerSp1, Some(exp), innerSp2)) =>
@@ -2004,8 +2007,9 @@ object Weeder {
               rest2 =>
               val code = List(d0, d1, d2, d3).mkString
               // Doing a manual flatMap to keep the function tail-recursive
-              translateHexCode(code, mkSL(sp1, sp2)) flatMap {
-                case char => visit(rest2, char :: acc)
+              translateHexCode(code, mkSL(sp1, sp2)) match {
+                case Result.Ok(char) => visit(rest2, char :: acc)
+                case Result.Err(e) => Result.Err(e)
               }
             // Case 3.3.2: `\\u` followed by less than 4 literals
             case rest2 =>

@@ -48,7 +48,7 @@ sealed trait Result[+T, +E] {
   /**
     * Applies the given function `f` to the value of `this`.
     */
-  final def flatMap[B](f: T => Result[B, E]): Result[B, E] = this match {
+  final def flatMap[R >: E, B](f: T => Result[B, R]): Result[B, R] = this match {
     case Result.Ok(t) => f(t)
     case Result.Err(e) => Result.Err(e)
   }
