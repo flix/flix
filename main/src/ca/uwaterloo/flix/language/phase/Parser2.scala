@@ -18,16 +18,141 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.{Ast, SourceKind, SourceLocation, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SourceKind, SourceLocation, Symbol, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.errors.Parse2Error
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
+import org.parboiled2.ParserInput
+import scala.annotation.tailrec
 
 // TODO: Add change set support
 
 // TODO: Add a way to transform Tree into a weededAst
 
-// TODO: Add source code in Parser2Errors
+
+object TreeTransformer {
+
+  import WeededAst._
+
+  private class State(val parserInput: ParserInput, val src: Ast.Source) {}
+
+  def transform(tree: Tree, parserInput: ParserInput, src: Ast.Source): Option[CompilationUnit] = {
+    implicit val s: State = new State(parserInput, src)
+    for {
+      loc <- location(tree)
+      usesAndImports <- visitUsesAndImports(tree)
+      declarations <- visitDeclarations(tree)
+    } yield {
+      CompilationUnit(usesAndImports, declarations, loc)
+    }
+  }
+
+  private def visitUsesAndImports(tree: Tree)(implicit s: State): Option[List[UseOrImport]] = {
+    assert(tree.kind == TreeKind.Source)
+    Some(List.empty)
+  }
+
+  private def visitDeclarations(tree: Tree)(implicit s: State): Option[List[Declaration]] = {
+    assert(tree.kind == TreeKind.Source)
+    Some(List.empty)
+  }
+
+  private def visitDefinition(tree: Tree)(implicit s: State): Option[Declaration] = {
+    assert(tree.kind == TreeKind.Def)
+
+    for {
+      loc <- location(tree)
+      doc <- visitDocumentation(tree)
+      annotations <- visitAnnotations(tree)
+      modifiers <- visitModifiers(tree)
+      ident <- visitNameIdent(tree.children(1))
+      tparams <- visitTypeParameters(tree)
+      fparams <- visitParameters(tree)
+      exp <- visitExpression(tree)
+      ttype <- visitType(tree)
+      tconstrs <- visitTypeConstraints(tree)
+      constrs <- visitConstraints(tree)
+    } yield {
+      val eff = visitEffect(tree)
+      Declaration.Def(doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, loc)
+    }
+  }
+
+  private def visitNameIdent(c: Child)(implicit s: State): Option[Name.Ident] = {
+    None
+  }
+
+  private def visitDocumentation(tree: Tree)(implicit s: State): Option[Ast.Doc] = {
+    Some(Ast.Doc(List.empty, SourceLocation.Unknown))
+  }
+
+  private def visitAnnotations(tree: Tree)(implicit s: State): Option[Ast.Annotations] = {
+    Some(Ast.Annotations(List.empty))
+  }
+
+  private def visitModifiers(tree: Tree)(implicit s: State): Option[Ast.Modifiers] = {
+    Some(Ast.Modifiers(List.empty))
+  }
+
+  private def visitTypeParameters(tree: Tree)(implicit s: State): Option[KindedTypeParams] = {
+    Some(TypeParams.Elided)
+  }
+
+  private def visitParameters(tree: Tree)(implicit s: State): Option[List[FormalParam]] = {
+    Some(List.empty)
+  }
+
+  private def visitTypeConstraints(tree: Tree)(implicit s: State): Option[List[TypeConstraint]] = {
+    Some(List.empty)
+  }
+
+  private def visitConstraints(tree: Tree)(implicit s: State): Option[List[EqualityConstraint]] = {
+    Some(List.empty)
+  }
+
+  private def visitExpression(tree: Tree)(implicit s: State): Option[Expr] = {
+    for {loc <- location(tree)} yield {
+      Expr.Error(Parse2Error.DevErr(loc, "expected expression"))
+    }
+  }
+
+  private def visitType(tree: Tree)(implicit s: State): Option[Type] = {
+    for {loc <- location(tree)} yield {
+      Type.Unit(loc)
+    }
+  }
+
+  private def visitEffect(tree: Tree)(implicit s: State): Option[Type] = {
+    None
+  }
+
+  private def location(tree: Tree)(implicit s: State): Option[SourceLocation] = {
+    for {
+      case (b_line, b_col) <- treeBegin(tree)
+      case (e_line, e_col) <- treeEnd(tree)
+    } yield {
+      SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, b_line, b_col, e_line, e_col)
+    }
+  }
+
+  @tailrec
+  private def treeBegin(tree: Tree): Option[(Int, Int)] = {
+    tree.children.headOption match {
+      case Some(Child.Token(token)) => Some((token.line, token.col))
+      case Some(Child.Tree(tree)) => treeBegin(tree)
+      case _ => None
+    }
+  }
+
+  @tailrec
+  private def treeEnd(tree: Tree): Option[(Int, Int)] = {
+    tree.children.lastOption match {
+      case Some(Child.Token(token)) => Some((token.line, token.col))
+      case Some(Child.Tree(tree)) => treeEnd(tree)
+      case _ => None
+    }
+  }
+}
 
 /**
  * Errors reside both within the produced `Tree` but are also kept in an array in `state.errors`
@@ -51,6 +176,10 @@ object Parser2 {
     var fuel: Int = 256
     var events: Array[Event] = Array.empty
     var errors: Array[Parse2Error] = Array.empty
+    // Compute a `ParserInput` when initializing a state for lexing a source.
+    // This is necessary to display source code in error messages.
+    // See `sourceLocationAtStart` for usage and `SourceLocation` for more information.
+    val parserInput: ParserInput = ParserInput.apply(src.data)
   }
 
   private sealed trait Mark
@@ -61,34 +190,52 @@ object Parser2 {
     case class Closed(index: Int) extends Mark
   }
 
-  def run(root: Map[Ast.Source, Array[Token]])(implicit flix: Flix): Validation[Map[Ast.Source, Tree], CompilationMessage] = {
+  def run(readRoot: ReadAst.Root, root: Map[Ast.Source, Array[Token]], entryPoint: Option[Symbol.DefnSym])(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
     if (flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
-      return Map.empty[Ast.Source, Tree].toSuccess
+      return Validation.Failure(LazyList.empty)
     }
 
     flix.phase("Parser2") {
-      // Parse each source file in parallel.
+      // Parse each source file in parallel and join them into a WeededAst.Root
       val results = ParOps.parMap(root) {
-        case (src, tokens) => mapN(parse(src, tokens))(trees => src -> trees)
+        case (src, tokens) => mapN(parseWithFallback(src, tokens))(trees => src -> trees)
       }
 
-      // Construct a map from each source to its tokens.
-      mapN(sequence(results))(_.toMap)
+      mapN(sequence(results))(_.toMap).map(m => WeededAst.Root(m, entryPoint, readRoot.names))
     }
   }
 
-  private def parse(src: Ast.Source, ts: Array[Token]): Validation[Tree, CompilationMessage] = {
+  private def parseWithFallback(src: Ast.Source, ts: Array[Token])(implicit flix: Flix): Validation[WeededAst.CompilationUnit, CompilationMessage] = {
+    parse(src, ts) match {
+      case s: Success[_, _] => s
+      case _ =>
+        println(s"${src.name}\tFalling back on Parser")
+        Parser.parseRoot(src) match {
+          case Success((_, unit)) =>
+            Weeder.visitCompilationUnit(src, unit).map(_._2)
+          case _ => Validation.Failure(LazyList.empty)
+        }
+    }
+  }
+
+  private def parse(src: Ast.Source, ts: Array[Token]): Validation[WeededAst.CompilationUnit, CompilationMessage] = {
     implicit val s: State = new State(ts, src)
     source()
     val tree = buildTree()
 
-    println(tree.toDebugString())
+    println(s"${tree.toDebugString()}")
 
     if (s.errors.length > 0) {
-      Validation.SoftFailure(tree, LazyList.from(s.errors))
+      Validation.Failure(LazyList.from(s.errors))
     } else {
-      tree.toSuccess
+      // Transform tree into a WeededAst.CompilationUnit
+      TreeTransformer.transform(tree, s.parserInput, s.src) match {
+        case Some(unit) =>
+          println(s"${src.name} compilation unit:\n$unit")
+          unit.toSuccess
+        case _ => Validation.Failure(LazyList.empty)
+      }
     }
   }
 
@@ -136,8 +283,11 @@ object Parser2 {
    * A helper function for turning the current position of the parser as a `SourceLocation`
    */
   private def currentSourceLocation()(implicit s: State): SourceLocation = {
+    // state is zero-indexed while SourceLocation works as one-indexed.
     val token = s.tokens(s.position)
-    SourceLocation(None, s.src, SourceKind.Real, token.line, token.col, token.line, token.col + token.text.length)
+    val line = token.line + 1
+    val column = token.col + 1
+    SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, line, column, line, column + token.text.length)
   }
 
   private def open()(implicit s: State): Mark.Opened = {
@@ -334,11 +484,11 @@ object Parser2 {
     expect(TokenKind.ParenL)
     var continue = true
     while (continue && !at(TokenKind.ParenR) && !eof()) {
-        if (atAny(List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore))) {
-          parameter()
-        } else {
-          continue = false
-        }
+      if (atAny(List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore))) {
+        parameter()
+      } else {
+        continue = false
+      }
     }
 
     if (at(TokenKind.Comma)) {
@@ -518,7 +668,7 @@ object Parser2 {
     last
   }
 
-  private def exprUnary()(implicit s:State): Mark.Closed = {
+  private def exprUnary()(implicit s: State): Mark.Closed = {
     val mark = open()
     val op = nth(0)
     expectAny(List(TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde))
@@ -550,11 +700,9 @@ object Parser2 {
       close(mark, TreeKind.Type.Function)
     }
 
-    println(s"${nth(0)}")
-
     // Handle effect
     if (at(TokenKind.Backslash)) {
-        effectSet()
+      effectSet()
     }
 
     close(mark, TreeKind.Type.Type)
@@ -568,7 +716,7 @@ object Parser2 {
     val mark = open()
     expect(TokenKind.Backslash)
     if (eat(TokenKind.CurlyL)) {
-      while(!at(TokenKind.CurlyR) && !eof()) {
+      while (!at(TokenKind.CurlyR) && !eof()) {
         effect()
         if (!at(TokenKind.CurlyR)) {
           expect(TokenKind.Comma)
@@ -618,7 +766,7 @@ object Parser2 {
 
   /**
    * typeDelimited -> typeRecord | typeTuple | typeName | typeVariable
-   *  Detects clearly delimited types such as names, records and tuples
+   * Detects clearly delimited types such as names, records and tuples
    */
   private def typeDelimited()(implicit s: State): Mark.Closed = {
     nth(0) match {

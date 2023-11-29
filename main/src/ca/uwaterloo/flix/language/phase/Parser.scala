@@ -74,7 +74,7 @@ object Parser {
   /**
     * Attempts to parse the given `source` as a root.
     */
-  private def parseRoot(source: Source)(implicit flix: Flix): Validation[(Ast.Source, ParsedAst.CompilationUnit), CompilationMessage] = {
+  def parseRoot(source: Source)(implicit flix: Flix): Validation[(Ast.Source, ParsedAst.CompilationUnit), CompilationMessage] = {
     flix.subtask(source.name)
 
     val parser = new Parser(source)

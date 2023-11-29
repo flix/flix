@@ -27,6 +27,7 @@ sealed trait TokenKind
  * So 'LiteralInt32' is preferred over 'Int32Literal'
  */
 object TokenKind {
+  // Simple tokens like &, <=>, [ and ]
   case object Ampersand extends TokenKind
 
   case object AngledEqual extends TokenKind

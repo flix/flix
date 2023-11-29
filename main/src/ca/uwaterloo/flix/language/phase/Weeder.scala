@@ -78,7 +78,7 @@ object Weeder {
   /**
     * Weeds the given abstract syntax tree.
     */
-  private def visitCompilationUnit(src: Ast.Source, unit: ParsedAst.CompilationUnit)(implicit flix: Flix): Validation[(Ast.Source, WeededAst.CompilationUnit), WeederError] = {
+  def visitCompilationUnit(src: Ast.Source, unit: ParsedAst.CompilationUnit)(implicit flix: Flix): Validation[(Ast.Source, WeededAst.CompilationUnit), WeederError] = {
     val usesAndImportsVal = traverse(unit.usesOrImports)(visitUseOrImport)
     val declarationsVal = traverse(unit.decls)(visitDecl)
     val loc = mkSL(unit.sp1, unit.sp2)

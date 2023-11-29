@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.fmt.FormatOptions
 import ca.uwaterloo.flix.language.phase._
 import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
@@ -73,7 +74,7 @@ class Flix {
   /**
     * A cache of ASTs for incremental compilation.
     */
-  private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty  
+  private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
   private var cachedParserAst: ParsedAst.Root = ParsedAst.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
@@ -528,10 +529,8 @@ class Flix {
     val result = for {
       afterReader <- Reader.run(getInputs)
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
-      afterParser2 <- Parser2.run(afterLexer)
-      afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
-      afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
-      afterNamer <- Namer.run(afterWeeder)
+      afterParser <- Parser2.run(afterReader, afterLexer, entryPoint)
+      afterNamer <- Namer.run(afterParser)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
       afterDeriver <- Deriver.run(afterKinder)
@@ -548,8 +547,6 @@ class Flix {
       // Update caches for incremental compilation.
       if (options.incremental) {
         this.cachedLexerTokens = afterLexer
-        this.cachedParserAst = afterParser
-        this.cachedWeederAst = afterWeeder
         this.cachedKinderAst = afterKinder
         this.cachedResolverAst = afterResolver
         this.cachedTyperAst = afterTyper
