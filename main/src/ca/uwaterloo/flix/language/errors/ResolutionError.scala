@@ -879,7 +879,7 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedKind(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UndefinedKind(qn: Name.QName, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = s"Undefined kind: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
