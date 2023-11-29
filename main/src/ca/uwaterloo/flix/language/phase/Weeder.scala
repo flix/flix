@@ -2130,8 +2130,12 @@ object Weeder {
       case ParsedAst.Pattern.Lit(sp1, lit, sp2) =>
         flatMapN(weedLiteral(lit): Validation[Ast.Constant, WeederError]) {
           case Ast.Constant.Null => Validation.toHardFailure(IllegalNullPattern(mkSL(sp1, sp2)))
-          case Ast.Constant.Regex(_) => Validation.toHardFailure(IllegalRegexPattern(mkSL(sp1, sp2)))
-          case l => WeededAst.Pattern.Cst(l, mkSL(sp1, sp2)).toSuccess
+
+          case Ast.Constant.Regex(_) =>
+            val loc = mkSL(sp1, sp2)
+            Validation.toSoftFailure(WeededAst.Pattern.Error(loc), IllegalRegexPattern(loc))
+
+          case c => WeededAst.Pattern.Cst(c, mkSL(sp1, sp2)).toSuccess
         }
 
       case ParsedAst.Pattern.Tag(sp1, qname, o, sp2) =>
@@ -2319,7 +2323,7 @@ object Weeder {
   /**
     * Performs weeding on the given annotation.
     */
-  private def visitAnnotation(ann: ParsedAst.Annotation)(implicit flix: Flix): Validation[Ast.Annotation, WeederError] = ann match {
+  private def visitAnnotation(ann: ParsedAst.Annotation): Validation[Ast.Annotation, WeederError] = ann match {
     case ParsedAst.Annotation(_, ident, _) => ident.name match {
       case "benchmark" => Ast.Annotation.Benchmark(ident.loc).toSuccess
       case "test" => Ast.Annotation.Test(ident.loc).toSuccess
@@ -2334,7 +2338,7 @@ object Weeder {
       case "MustUse" => Ast.Annotation.MustUse(ident.loc).toSuccess
       case "Skip" => Ast.Annotation.Skip(ident.loc).toSuccess
       case "Tailrec" => Ast.Annotation.TailRecursive(ident.loc).toSuccess
-      case name => Validation.toHardFailure(UndefinedAnnotation(name, ident.loc))
+      case name => Validation.toSoftFailure(Ast.Annotation.Error(name, ident.loc), UndefinedAnnotation(name, ident.loc))
     }
   }
 
