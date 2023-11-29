@@ -176,6 +176,7 @@ object LexerError {
     override def explain(formatter: Formatter): Option[String] = None
   }
 
+
   /**
    * An error raised when an unterminated string is encountered.
    *

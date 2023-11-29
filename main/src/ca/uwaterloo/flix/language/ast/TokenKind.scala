@@ -25,6 +25,7 @@ sealed trait TokenKind
  * So 'LiteralInt32' is preferred over 'Int32Literal'
  */
 object TokenKind {
+  // Simple tokens like &, <=>, [ and ]
   case object Ampersand extends TokenKind
 
 // NOTE: Builtin type keywords like 'Float32' are lexed into 'Float32Keyword' whereas Float32 *literals* are lexed to 'Float32'
