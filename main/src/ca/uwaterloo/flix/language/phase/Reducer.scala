@@ -30,13 +30,13 @@ object Reducer {
   def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("Reducer") {
     implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue)
 
-    // Convert definitions and collect ReducedAst information (types, anonClasses, lparams, etc)
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
     val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newEffs = ParOps.parMapValues(root.effects)(visitEff)
-    val root1 = ReducedAst.Root(newDefs, newEnums, newEffs, Set.empty, ctx.anonClasses.asScala.toList, root.entryPoint, root.sources)
-    val types = typesOf(root1)
-    root1.copy(types = types)
+
+    val newRoot = ReducedAst.Root(newDefs, newEnums, newEffs, Set.empty, ctx.anonClasses.asScala.toList, root.entryPoint, root.sources)
+    val types = typesOf(newRoot)
+    newRoot.copy(types = types)
   }
 
   private def visitDef(d: LiftedAst.Def)(implicit ctx: SharedContext): ReducedAst.Def = d match {
@@ -56,7 +56,7 @@ object Reducer {
         case (sym, caze) => sym -> visitCase(caze)
       }
       val t = tpe
-      ReducedAst.Enum(ann, mod, sym, cases, t, loc)
+      ReducedAst.Enum(ann, mod, sym, cases, tpe, loc)
   }
 
   private def visitEff(effect: LiftedAst.Effect): ReducedAst.Effect = effect match {
@@ -167,6 +167,7 @@ object Reducer {
       ctx.anonClasses.add(ReducedAst.AnonClass(name, clazz, tpe, specs, loc))
 
       ReducedAst.Expr.NewObject(name, clazz, tpe, purity, specs, es, loc)
+
   }
 
   private def visitCase(caze: LiftedAst.Case): ReducedAst.Case = caze match {
@@ -183,14 +184,14 @@ object Reducer {
     * Companion object for [[LocalContext]].
     */
   private object LocalContext {
-    def mk(): LocalContext = LocalContext(mutable.ArrayDeque.empty)
+    def mk(): LocalContext = LocalContext(mutable.ArrayBuffer.empty)
   }
 
   /**
     * A local non-shared context. Does not need to be thread-safe.
     * @param lparams the bound variales in the def.
     */
-  private case class LocalContext(lparams: mutable.ArrayDeque[ReducedAst.LocalParam])
+  private case class LocalContext(lparams: mutable.ArrayBuffer[ReducedAst.LocalParam])
 
   /**
     * A context shared across threads.
@@ -273,7 +274,7 @@ object Reducer {
     }
 
     def visitStmt(s: ReducedAst.Stmt): Set[MonoType] = s match {
-      case ReducedAst.Stmt.Ret(e, _, _) => visitExp(e)
+      case ReducedAst.Stmt.Ret(e, tpe, loc) => visitExp(e)
     }
 
     // Visit every definition.
@@ -303,7 +304,7 @@ object Reducer {
     * (and the types in `acc`).
     */
   @tailrec
-  private def nestedTypesOf(acc: Set[MonoType], types: Queue[MonoType]): Set[MonoType] = {
+  def nestedTypesOf(acc: Set[MonoType], types: Queue[MonoType]): Set[MonoType] = {
     import MonoType._
     types.dequeueOption match {
       case Some((tpe, taskList)) =>
@@ -323,4 +324,5 @@ object Reducer {
       case None => acc
     }
   }
+
 }
