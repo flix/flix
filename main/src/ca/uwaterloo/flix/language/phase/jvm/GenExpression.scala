@@ -1515,7 +1515,7 @@ object GenExpression {
     case Stmt.Ret(e, _, _) => compileExpr(e)
   }
 
-  private def visitComparisonPrologue(exp1: Expr, exp2: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix, newFrame: InstructionSet): (Label, Label) = {
+  private def visitComparisonPrologue(exp1: Expr, exp2: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): (Label, Label) = {
     compileExpr(exp1)
     compileExpr(exp2)
     val condElse = new Label()
@@ -1531,13 +1531,13 @@ object GenExpression {
     visitor.visitLabel(condEnd)
   }
 
-  private def visitComparison1(exp1: Expr, exp2: Expr, opcode: Int)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix, newFrame: InstructionSet): Unit = {
+  private def visitComparison1(exp1: Expr, exp2: Expr, opcode: Int)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
     mv.visitJumpInsn(opcode, condElse)
     visitComparisonEpilogue(mv, condElse, condEnd)
   }
 
-  private def visitComparison2(exp1: Expr, exp2: Expr, opcode: Int, cmpOpcode: Int)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix, newFrame: InstructionSet): Unit = {
+  private def visitComparison2(exp1: Expr, exp2: Expr, opcode: Int, cmpOpcode: Int)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
     mv.visitInsn(opcode)
     mv.visitJumpInsn(cmpOpcode, condElse)
@@ -1625,7 +1625,7 @@ object GenExpression {
   /**
     * Pushes arguments onto the stack ready to invoke a method
     */
-  private def pushArgs(args: List[Expr], signature: Array[Class[_ <: Object]])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix, newFrame: InstructionSet): Unit = {
+  private def pushArgs(args: List[Expr], signature: Array[Class[_ <: Object]])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     // Evaluate arguments left-to-right and push them onto the stack.
     for ((arg, argType) <- args.zip(signature)) {
       compileExpr(arg)
