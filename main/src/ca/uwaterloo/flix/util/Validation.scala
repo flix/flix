@@ -45,6 +45,22 @@ sealed trait Validation[+T, +E] {
   }
 
   /**
+    * Returns `this` validation with additional recoverable errors (if any).
+    *
+    * Returns `this` if `es` is empty.
+    */
+  final def withSoftFailures[R >: E](es: Iterable[R]): Validation[T, R] = {
+    // If there are no soft errors, we do nothing.
+    if (es.isEmpty) return this
+
+    this match {
+      case Validation.Success(t) => Validation.SoftFailure(t, es.to(LazyList))
+      case Validation.SoftFailure(t, errors) => Validation.SoftFailure(t, es.to(LazyList) #::: errors)
+      case Validation.Failure(errors) => Validation.Failure(es.to(LazyList) #::: errors)
+    }
+  }
+
+  /**
     * Returns the errors in this [[Validation.Success]] or [[Validation.Failure]] object.
     */
   def errors: LazyList[E]

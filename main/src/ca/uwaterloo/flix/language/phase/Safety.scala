@@ -684,6 +684,7 @@ object Safety {
     case Pattern.Tuple(elms, _, _) => visitPats(elms, loc)
     case Pattern.Record(pats, pat, _, _) => visitRecordPattern(pats, pat, loc)
     case Pattern.RecordEmpty(_, _) => Nil
+    case Pattern.Error(_, _) => Nil
   }
 
   /**

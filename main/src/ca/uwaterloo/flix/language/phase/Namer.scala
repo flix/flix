@@ -1115,6 +1115,8 @@ object Namer {
       NamedAst.Pattern.Record(psVal, pVal, loc)
 
     case DesugaredAst.Pattern.RecordEmpty(loc) => NamedAst.Pattern.RecordEmpty(loc)
+
+    case DesugaredAst.Pattern.Error(loc) => NamedAst.Pattern.Error(loc)
   }
 
   /**
@@ -1365,6 +1367,7 @@ object Namer {
     case DesugaredAst.Pattern.Tuple(elms, loc) => elms.flatMap(freeVars)
     case DesugaredAst.Pattern.Record(pats, pat, _) => recordPatternFreeVars(pats) ++ freeVars(pat)
     case DesugaredAst.Pattern.RecordEmpty(_) => Nil
+    case DesugaredAst.Pattern.Error(_) => Nil
   }
 
   /**

@@ -41,7 +41,7 @@ object WeederError {
     * @param loc1 the location of the first annotation.
     * @param loc2 the location of the second annotation.
     */
-  case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+  case class DuplicateAnnotation(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Multiple occurrences of the annotation '$name'."
 
     def message(formatter: Formatter): String = {
@@ -646,17 +646,17 @@ object WeederError {
   /**
     * An error raised to indicate an illegal regex pattern.
     *
-    * @param loc the location where the illegal pattern occurs.
+    * @param loc the location where the illegal regex pattern occurs.
     */
-  case class IllegalRegexPattern(loc: SourceLocation) extends WeederError with Unrecoverable {
-    def summary: String = "Illegal Regex pattern"
+  case class IllegalRegexPattern(loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = "Illegal regex pattern"
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Illegal Regex pattern.
+         |>> Illegal regex pattern.
          |
-         |${code(loc, "illegal Regex pattern.")}
+         |${code(loc, "regex not allowed here.")}
          |""".stripMargin
     }
 
@@ -665,7 +665,7 @@ object WeederError {
       */
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
-      s"${underline("Tip:")} A Regex cannot be used as a pattern. It can be used `if` guard with a predicate from the Regex module, e.g `isMatch` or `isSubmatch`."
+      s"${underline("Tip:")} A regex cannot be used as a pattern. It can be used in an `if` guard, e.g using `isMatch` or `isSubmatch`."
     })
 
   }
@@ -1079,7 +1079,7 @@ object WeederError {
     * @param name the name of the undefined annotation.
     * @param loc  the location of the annotation.
     */
-  case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Undefined annotation $name"
 
     def message(formatter: Formatter): String = {
