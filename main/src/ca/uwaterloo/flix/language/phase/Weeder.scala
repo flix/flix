@@ -1403,10 +1403,8 @@ object Weeder {
 
     case ParsedAst.Expression.Interpolation(sp1, parts, sp2) =>
       val loc = mkSL(sp1, sp2)
-      val partsVal = traverse(parts)(visitInterpolationPart(_, senv))
-      mapN(partsVal) {
-        case ps => WeededAst.Expr.Interpolation(ps, loc)
-      }
+      val psVal = visitInterpolationParts(parts, senv)
+      mapN(psVal)(WeededAst.Expr.Interpolation(_, loc))
 
     case ParsedAst.Expression.Ref(sp1, exp1, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -2913,37 +2911,51 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given [[ParsedAst.CharCode]] `char`.
+    * Performs weeding on the sequence of [[ParsedAst.InterpolationPart]] `parts`.
     */
-  private def visitCharCode(char: ParsedAst.CharCode): WeededAst.CharCode = char match {
-    case ParsedAst.CharCode.Literal(sp1, lit, sp2) =>
-      WeededAst.CharCode.Literal(lit, mkSL(sp1, sp2))
-
-    case ParsedAst.CharCode.Escape(sp1, seq, sp2) =>
-      WeededAst.CharCode.Escape(seq, mkSL(sp1, sp2))
-  }
-
-  /**
-    * Performs weeding on the given [[ParsedAst.InterpolationPart]] `part`.
-    */
-  private def visitInterpolationPart(part: ParsedAst.InterpolationPart, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.InterpolationPart, WeederError] = part match {
-    case ParsedAst.InterpolationPart.ExpPart(sp1, exp, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      val eVal = traverseOpt(exp)(visitExp(_, senv))
-      mapN(eVal) {
-        case e => WeededAst.InterpolationPart.ExpPart(e, loc)
+  private def visitInterpolationParts(parts: Seq[ParsedAst.InterpolationPart], senv: SyntacticEnv)(implicit flix: Flix): Validation[List[WeededAst.InterpolationPart], WeederError] = parts match {
+    case Seq(ParsedAst.InterpolationPart.StrPart(sp1, chars, sp2)) =>
+      // Special case: We have a constant string. Check the contents and return it.
+      weedCharSequence(chars).map {
+        string =>
+          val loc = mkSL(sp1, sp2)
+          val s = Ast.Constant.Str(string)
+          List(WeededAst.InterpolationPart.StrPart(s, loc))
       }
 
-    case ParsedAst.InterpolationPart.StrPart(sp1, chars, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      val cs = chars.map(visitCharCode).toList
-      WeededAst.InterpolationPart.StrPart(cs, loc).toSuccess
+    case _ =>
+      // General Case: Fold the interpolator parts together.
+      traverse(parts) {
+        // Case 1: string part
+        case ParsedAst.InterpolationPart.StrPart(sp1, chars, sp2) =>
+          weedCharSequence(chars).map {
+            string =>
+              val loc = mkSL(sp1, sp2)
+              val s = Ast.Constant.Str(string)
+              WeededAst.InterpolationPart.StrPart(s, loc)
+          }
 
-    case ParsedAst.InterpolationPart.DebugPart(sp1, exp, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      val eVal = traverseOpt(exp)(visitExp(_, senv))
-      mapN(eVal) {
-        case e => WeededAst.InterpolationPart.DebugPart(e, loc)
+        // Case 2: interpolated expression
+        case ParsedAst.InterpolationPart.ExpPart(sp1, Some(exp), sp2) =>
+          val loc = mkSL(sp1, sp2)
+          mapN(visitExp(exp, senv))(WeededAst.InterpolationPart.ExpPart(_, loc))
+
+        // Case 3: interpolated debug
+        case ParsedAst.InterpolationPart.DebugPart(sp1, Some(exp), sp2) =>
+          val loc = mkSL(sp1, sp2)
+          mapN(visitExp(exp, senv))(WeededAst.InterpolationPart.DebugPart(_, loc))
+
+        // Case 4: empty interpolated expression
+        case ParsedAst.InterpolationPart.ExpPart(sp1, None, sp2) =>
+          val loc = mkSL(sp1, sp2)
+          val err = EmptyInterpolatedExpression(loc)
+          Validation.toSoftFailure(WeededAst.InterpolationPart.ErrorPart(err, loc), err)
+
+        // Case 5: empty interpolated debug
+        case ParsedAst.InterpolationPart.DebugPart(sp1, None, sp2) =>
+          val loc = mkSL(sp1, sp2)
+          val err = EmptyInterpolatedExpression(loc)
+          Validation.toSoftFailure(WeededAst.InterpolationPart.ErrorPart(err, loc), err)
       }
   }
 

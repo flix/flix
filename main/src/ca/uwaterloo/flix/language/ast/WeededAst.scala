@@ -471,22 +471,13 @@ object WeededAst {
 
   object InterpolationPart {
 
-    case class ExpPart(exp: Option[Expr], loc: SourceLocation) extends InterpolationPart
+    case class ExpPart(exp: Expr, loc: SourceLocation) extends InterpolationPart
 
-    case class StrPart(chars: List[CharCode], loc: SourceLocation) extends InterpolationPart
+    case class StrPart(str: Ast.Constant.Str, loc: SourceLocation) extends InterpolationPart
 
-    case class DebugPart(exp: Option[Expr], loc: SourceLocation) extends InterpolationPart
+    case class DebugPart(exp: Expr, loc: SourceLocation) extends InterpolationPart
 
-  }
-
-  sealed trait CharCode
-
-  object CharCode {
-
-    case class Literal(lit: String, loc: SourceLocation) extends CharCode
-
-    case class Escape(seq: String, loc: SourceLocation) extends CharCode
+    case class ErrorPart(err: CompilationMessage, loc: SourceLocation) extends InterpolationPart
 
   }
-
 }
