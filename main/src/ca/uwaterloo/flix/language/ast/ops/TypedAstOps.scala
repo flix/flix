@@ -29,6 +29,7 @@ object TypedAstOps {
       val patVal = binds(pat)
       patsVal ++ patVal
     case Pattern.RecordEmpty(_, _) => Map.empty
+    case Pattern.Error(_, _) => Map.empty
   }
 
   /**
@@ -405,6 +406,7 @@ object TypedAstOps {
       patsVal ++ patVal
 
     case Pattern.RecordEmpty(_, _) => Map.empty
+    case Pattern.Error(_, _) => Map.empty
   }
 
   /**

@@ -1578,6 +1578,8 @@ object TypeInference {
 
       case KindedAst.Pattern.RecordEmpty(loc) => liftM(Type.mkRecord(Type.RecordRowEmpty, loc))
 
+      case KindedAst.Pattern.Error(tvar, _) => liftM(tvar)
+
     }
 
     visit(pat0)

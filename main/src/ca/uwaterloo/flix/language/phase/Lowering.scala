@@ -849,6 +849,8 @@ object Lowering {
 
     case TypedAst.Pattern.RecordEmpty(tpe, loc) =>
       LoweredAst.Pattern.RecordEmpty(visitType(tpe), loc)
+
+    case TypedAst.Pattern.Error(_, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
   }
 
   /**
@@ -1107,6 +1109,8 @@ object Lowering {
     case TypedAst.Pattern.Record(_, _, _, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
     case TypedAst.Pattern.RecordEmpty(_, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+
+    case TypedAst.Pattern.Error(_, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
   }
 
