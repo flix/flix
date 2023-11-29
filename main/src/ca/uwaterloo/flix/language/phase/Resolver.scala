@@ -1731,6 +1731,8 @@ object Resolver {
           }
 
         case NamedAst.Pattern.RecordEmpty(loc) => ResolvedAst.Pattern.RecordEmpty(loc).toSuccess
+
+        case NamedAst.Pattern.Error(loc) => ResolvedAst.Pattern.Error(loc).toSuccess
       }
 
       visit(pat0)
@@ -1775,6 +1777,8 @@ object Resolver {
           }
 
         case NamedAst.Pattern.RecordEmpty(loc) => ResolvedAst.Pattern.RecordEmpty(loc).toSuccess
+
+        case NamedAst.Pattern.Error(loc) => ResolvedAst.Pattern.Error(loc).toSuccess
       }
 
       visit(pat0)
@@ -3521,6 +3525,7 @@ object Resolver {
     case ResolvedAst.Pattern.Tuple(elms, loc) => mkPatternsEnv(elms)
     case ResolvedAst.Pattern.Record(pats, pat, _) => mkRecordPatternEnv(pats, pat)
     case ResolvedAst.Pattern.RecordEmpty(_) => ListMap.empty
+    case ResolvedAst.Pattern.Error(_) => ListMap.empty
   }
 
   /**

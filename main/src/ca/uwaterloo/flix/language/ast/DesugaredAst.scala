@@ -245,6 +245,8 @@ object DesugaredAst {
 
     case class RecordEmpty(loc: SourceLocation) extends Pattern
 
+    case class Error(loc: SourceLocation) extends Pattern
+
     object Record {
       case class RecordLabelPattern(label: Name.Label, pat: Option[Pattern], loc: SourceLocation)
     }
