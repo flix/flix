@@ -2130,8 +2130,12 @@ object Weeder {
       case ParsedAst.Pattern.Lit(sp1, lit, sp2) =>
         flatMapN(weedLiteral(lit): Validation[Ast.Constant, WeederError]) {
           case Ast.Constant.Null => Validation.toHardFailure(IllegalNullPattern(mkSL(sp1, sp2)))
-          case Ast.Constant.Regex(_) => Validation.toHardFailure(IllegalRegexPattern(mkSL(sp1, sp2)))
-          case l => WeededAst.Pattern.Cst(l, mkSL(sp1, sp2)).toSuccess
+
+          case Ast.Constant.Regex(_) =>
+            val loc = mkSL(sp1, sp2)
+            Validation.toSoftFailure(WeededAst.Pattern.Error(loc), IllegalRegexPattern(loc))
+
+          case c => WeededAst.Pattern.Cst(c, mkSL(sp1, sp2)).toSuccess
         }
 
       case ParsedAst.Pattern.Tag(sp1, qname, o, sp2) =>
