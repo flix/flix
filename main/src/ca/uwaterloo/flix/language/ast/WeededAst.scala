@@ -477,7 +477,5 @@ object WeededAst {
 
     case class DebugPart(exp: Expr, loc: SourceLocation) extends InterpolationPart
 
-    case class ErrorPart(err: CompilationMessage, loc: SourceLocation) extends InterpolationPart
-
   }
 }

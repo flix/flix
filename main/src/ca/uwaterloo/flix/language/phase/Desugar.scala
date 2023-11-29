@@ -681,9 +681,6 @@ object Desugar {
               val e1 = visitExp(exp)
               val e2 = mkApplyDebugString(e1, loc1)
               mkConcat(acc, e2, loc1)
-
-            case (WeededAst.InterpolationPart.ErrorPart(err, loc1), acc) =>
-              mkConcat(acc, DesugaredAst.Expr.Error(err), loc1)
           }
       }
 

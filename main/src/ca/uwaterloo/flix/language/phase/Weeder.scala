@@ -2948,14 +2948,12 @@ object Weeder {
         // Case 4: empty interpolated expression
         case ParsedAst.InterpolationPart.ExpPart(sp1, None, sp2) =>
           val loc = mkSL(sp1, sp2)
-          val err = EmptyInterpolatedExpression(loc)
-          Validation.toSoftFailure(WeededAst.InterpolationPart.ErrorPart(err, loc), err)
+          Failure(LazyList(EmptyInterpolatedExpression(loc)))
 
         // Case 5: empty interpolated debug
         case ParsedAst.InterpolationPart.DebugPart(sp1, None, sp2) =>
           val loc = mkSL(sp1, sp2)
-          val err = EmptyInterpolatedExpression(loc)
-          Validation.toSoftFailure(WeededAst.InterpolationPart.ErrorPart(err, loc), err)
+          Failure(LazyList(EmptyInterpolatedExpression(loc)))
       }
   }
 
