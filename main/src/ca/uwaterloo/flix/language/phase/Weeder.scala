@@ -1383,23 +1383,12 @@ object Weeder {
       }
 
     case ParsedAst.Expression.MapLit(sp1, sp2, exps) =>
-      /*
-       * Rewrites a `FMap` expression into `Map/empty` and a `Map/insert` calls.
-       */
-      val loc = mkSL(sp1, sp2).asSynthetic
-
-      val elmsVal = traverse(exps) {
-        case (key, value) => mapN(visitExp(key, senv), visitExp(value, senv)) {
-          case (k, v) => (k, v)
-        }
+      val loc = mkSL(sp1, sp2)
+      val esVal = traverse(exps) {
+        case (k, v) => mapN(visitExp(k, senv), visitExp(v, senv))(_ -> _)
       }
-
-      elmsVal.map {
-        case es =>
-          val empty = mkApplyFqn("Map.empty", List(WeededAst.Expr.Cst(Ast.Constant.Unit, loc)), loc)
-          es.foldLeft(empty) {
-            case (acc, (k, v)) => mkApplyFqn("Map.insert", List(k, v, acc), loc)
-          }
+      mapN(esVal) {
+        case es => WeededAst.Expr.MapLit(es, loc)
       }
 
     case ParsedAst.Expression.Interpolation(sp1, parts, sp2) =>
