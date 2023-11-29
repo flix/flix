@@ -17,7 +17,9 @@ package ca.uwaterloo.flix.util
 
 object Similarity {
 
-  // TODO: DOC
+  /**
+    * Returns the value of the key in `haystacks` which is closets to the given `needle`.
+    */
   def closestMatch[V](needle: String, haystacks: Map[String, V]): V = {
     val (smallestKey, smallestValue) = haystacks.minBy {
       case (k, v) => levenshtein(needle, k)
