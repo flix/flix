@@ -656,33 +656,7 @@ object Desugar {
       }
 
     case WeededAst.Expr.Interpolation(parts, loc) =>
-      parts match {
-        case WeededAst.InterpolationPart.StrPart(str, loc1) :: Nil =>
-          // Special case: We have a constant string. Check the contents and return it.
-          DesugaredAst.Expr.Cst(str, loc1)
-
-        case _ =>
-          // General Case: Fold the interpolator parts together.
-          val init = DesugaredAst.Expr.Cst(Ast.Constant.Str(""), loc.asSynthetic)
-          parts.foldLeft(init: DesugaredAst.Expr) {
-            // Case 1: String part
-            case (acc, WeededAst.InterpolationPart.StrPart(str, loc1)) =>
-              val e = DesugaredAst.Expr.Cst(str, loc1)
-              mkConcat(acc, e, loc1)
-
-            // Case 2: Interpolated expression
-            case (acc, WeededAst.InterpolationPart.ExpPart(exp, loc1)) =>
-              val e1 = visitExp(exp)
-              val e2 = mkApplyToString(e1, loc1)
-              mkConcat(acc, e2, loc1)
-
-            // Case 3: Interpolated debug
-            case (acc, WeededAst.InterpolationPart.DebugPart(exp, loc1)) =>
-              val e1 = visitExp(exp)
-              val e2 = mkApplyDebugString(e1, loc1)
-              mkConcat(acc, e2, loc1)
-          }
-      }
+      desugarInterpolation(parts, loc)
 
     case WeededAst.Expr.Ref(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
@@ -1273,6 +1247,39 @@ object Desugar {
         // Full pattern match
         val rule = DesugaredAst.MatchRule(p, None, e2)
         DesugaredAst.Expr.Match(withAscription(e1, t), List(rule), loc)
+    }
+  }
+
+  /**
+    * Rewrites a string interpolation into a series of string concatenations.
+    */
+  private def desugarInterpolation(parts: List[WeededAst.InterpolationPart], loc: SourceLocation)(implicit flix: Flix): Expr = {
+    parts match {
+      case WeededAst.InterpolationPart.StrPart(str, loc1) :: Nil =>
+        // Special case: We have a constant string. Check the contents and return it.
+        DesugaredAst.Expr.Cst(str, loc1)
+
+      case _ =>
+        // General Case: Fold the interpolator parts together.
+        val init = DesugaredAst.Expr.Cst(Ast.Constant.Str(""), loc.asSynthetic)
+        parts.foldLeft(init: Expr) {
+          // Case 1: String part
+          case (acc, WeededAst.InterpolationPart.StrPart(str, loc1)) =>
+            val e = DesugaredAst.Expr.Cst(str, loc1)
+            mkConcat(acc, e, loc1)
+
+          // Case 2: Interpolated expression
+          case (acc, WeededAst.InterpolationPart.ExpPart(exp, loc1)) =>
+            val e1 = visitExp(exp)
+            val e2 = mkApplyToString(e1, loc1)
+            mkConcat(acc, e2, loc1)
+
+          // Case 3: Interpolated debug
+          case (acc, WeededAst.InterpolationPart.DebugPart(exp, loc1)) =>
+            val e1 = visitExp(exp)
+            val e2 = mkApplyDebugString(e1, loc1)
+            mkConcat(acc, e2, loc1)
+        }
     }
   }
 
