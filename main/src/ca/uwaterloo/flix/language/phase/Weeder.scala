@@ -2323,7 +2323,7 @@ object Weeder {
   /**
     * Performs weeding on the given annotation.
     */
-  private def visitAnnotation(ann: ParsedAst.Annotation)(implicit flix: Flix): Validation[Ast.Annotation, WeederError] = ann match {
+  private def visitAnnotation(ann: ParsedAst.Annotation): Validation[Ast.Annotation, WeederError] = ann match {
     case ParsedAst.Annotation(_, ident, _) => ident.name match {
       case "benchmark" => Ast.Annotation.Benchmark(ident.loc).toSuccess
       case "test" => Ast.Annotation.Test(ident.loc).toSuccess
@@ -2338,7 +2338,7 @@ object Weeder {
       case "MustUse" => Ast.Annotation.MustUse(ident.loc).toSuccess
       case "Skip" => Ast.Annotation.Skip(ident.loc).toSuccess
       case "Tailrec" => Ast.Annotation.TailRecursive(ident.loc).toSuccess
-      case name => Validation.toHardFailure(UndefinedAnnotation(name, ident.loc))
+      case name => Validation.toSoftFailure(Ast.Annotation.Error(name, ident.loc), UndefinedAnnotation(name, ident.loc))
     }
   }
 

@@ -240,7 +240,7 @@ object Ast {
     /**
       * An AST node that represents a `@Test` annotation.
       *
-      * A function marked with `test` is evaluated as part of the test framework.
+      * A function marked with `Test` is evaluated as part of the test framework.
       *
       * @param loc the source location of the annotation.
       */
@@ -248,9 +248,27 @@ object Ast {
       override def toString: String = "@Test"
     }
 
+    /**
+     * An AST node that represents a `@TailRec` annotation.
+     *
+     * A function marked with `@TailRec` is guaranteed to be tail recursive by the compiler.
+     *
+     * @param loc the source location of the annotation.
+     */
     case class TailRecursive(loc: SourceLocation) extends Annotation {
       override def toString: String = "@Tailrec"
     }
+
+    /**
+     * An AST node that represents an undefined (i.e. erroneous) annotation.
+     *
+     * @param name the name of the annotation.
+     * @param loc the source location of the annotation.
+     */
+    case class Error(name: String, loc: SourceLocation) extends Annotation {
+      override def toString: String = "@" + name
+    }
+
   }
 
   /**
