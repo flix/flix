@@ -1079,7 +1079,7 @@ object WeederError {
     * @param name the name of the undefined annotation.
     * @param loc  the location of the annotation.
     */
-  case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class UndefinedAnnotation(name: String, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Undefined annotation $name"
 
     def message(formatter: Formatter): String = {
