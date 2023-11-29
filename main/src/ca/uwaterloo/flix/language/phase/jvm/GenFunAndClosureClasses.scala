@@ -34,7 +34,6 @@ object GenFunAndClosureClasses {
     * Returns a map of function- and closure-classes for the given set `defs`.
     */
   def gen(defs: Map[Symbol.DefnSym, Def])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
-    println(defs.values.size)
     ParOps.parAgg(defs.values, Map.empty[JvmName, JvmClass])({
 
       case (macc, closure) if isClosure(closure) =>
@@ -210,9 +209,9 @@ object GenFunAndClosureClasses {
     loadParamsOf(fparams)
 
     // Generating the expression
+    val ctx = GenExpression.MethodContext(classType, enterLabel, Map())
     val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, copyName, nothingToTDescriptor(classType).toDescriptor, false))
-    val ctx = GenExpression.MethodContext(classType, enterLabel, Map(), newFrame)
-    GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix, 0)
+    GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix, newFrame)
 
     // returning a Value
     val returnValue = {
