@@ -554,7 +554,7 @@ object WeederError {
     *
     * @param loc the location where the illegal pattern occurs.
     */
-  case class IllegalNullPattern(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalNullPattern(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Illegal null pattern"
 
     def message(formatter: Formatter): String = {

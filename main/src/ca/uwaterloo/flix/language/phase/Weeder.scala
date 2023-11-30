@@ -2120,15 +2120,18 @@ object Weeder {
         }
 
       case ParsedAst.Pattern.Lit(sp1, lit, sp2) =>
+        val loc = mkSL(sp1, sp2)
+
         visitLiteral(lit) match {
           case Result.Ok(c) => c match {
-            case Constant.Null => Validation.toHardFailure(IllegalNullPattern(mkSL(sp1, sp2)))
+            case Constant.Null =>
+              Validation.toSoftFailure(WeededAst.Pattern.Error(loc), IllegalNullPattern(loc))
             case Constant.Regex(lit) =>
-              val loc = mkSL(sp1, sp2)
               Validation.toSoftFailure(WeededAst.Pattern.Error(loc), IllegalRegexPattern(loc))
-            case c => WeededAst.Pattern.Cst(c, mkSL(sp1, sp2)).toSuccess
+            case c =>
+              WeededAst.Pattern.Cst(c, loc).toSuccess
           }
-          case Result.Err(e) => Validation.toSoftFailure(WeededAst.Pattern.Error(mkSL(sp1, sp2)), e)
+          case Result.Err(e) => Validation.toSoftFailure(WeededAst.Pattern.Error(loc), e)
         }
 
       case ParsedAst.Pattern.Tag(sp1, qname, o, sp2) =>
