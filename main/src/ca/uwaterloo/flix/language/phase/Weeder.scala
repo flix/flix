@@ -2378,7 +2378,7 @@ object Weeder {
         case "override" => Ast.Modifier.Override.toSuccess
         case "pub" => Ast.Modifier.Public.toSuccess
         case "sealed" => Ast.Modifier.Sealed.toSuccess
-        case s => Validation.toSoftFailure(Ast.Modifier.Error(s, mkSL(sp1, sp2)), IllegalModifier(mkSL(m.sp1, m.sp2)))
+        case s => Validation.toSoftFailure(Ast.Modifier.Error(s, loc), IllegalModifier(loc))
       }
   }
 
