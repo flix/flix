@@ -1269,22 +1269,25 @@ object Desugar {
     }
   }
 
+  /**
+    * Rewrites a [[WeededAst.Expr.FixpointQueryWithSelect]] into a series of solves and merges.
+    *
+    * E.g.,
+    * {{{
+    * query e1, e2, e3 select (x, y, z) from A(x, y), B(z) where x > 0
+    * }}}
+    * becomes
+    * {{{
+    *   project out %Result from (solve (merge (merge e1, e2, e3) #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } )
+    *   merge (project P1 tmp%, project P2 tmp%, project P3 tmp%)
+    * }}}
+    * OBS: The last merge and solve is done in the typer because of trouble when `(merge e1, e2, e3)` is a closed row.
+    */
   private def desugarFixpointQueryWithSelect(exps0: List[WeededAst.Expr], selects0: List[WeededAst.Expr], from0: List[Predicate.Body], where0: List[WeededAst.Expr], loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val exps = visitExps(exps0)
     val selects = visitExps(selects0)
     val from = visitPredicateBodies(from0)
     val where = visitExps(where0)
-    //
-    // Performs the following rewrite:
-    //
-    // query e1, e2, e3 select (x, y, z) from A(x, y), B(z) where x > 0
-    //
-    // =>
-    //
-    // project out %Result from (solve (merge (merge e1, e2, e3) #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } )
-    //
-    // OBS: The last merge and solve is done in the typer because of trouble when
-    // `(merge e1, e2, e3)` is a closed row.
 
     // The fresh predicate name where to store the result of the query.
     val pred = Name.Pred(Flix.Delimiter + "Result", loc)
