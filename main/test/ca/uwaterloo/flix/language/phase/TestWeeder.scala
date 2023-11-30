@@ -627,16 +627,16 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MismatchedTypeParameters](result)
   }
 
-  test("UnkindedTypeParameters.01") {
+  test("MissingTypeParamKind.01") {
     val input =
       """
         |def f[a](x: a): a = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UnkindedTypeParameters](result)
+    expectError[WeederError.MissingTypeParamKind](result)
   }
 
-  test("UnkindedTypeParameters.02") {
+  test("MissingTypeParamKind.02") {
     val input =
       """
         |class C[a] {
@@ -644,7 +644,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UnkindedTypeParameters](result)
+    expectError[WeederError.MissingTypeParamKind](result)
   }
 
   test("IllegalTypeConstraintParameter.01") {

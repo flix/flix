@@ -228,10 +228,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate that an inner function is annotated with an illegal annotation.
-   *
-   * @param loc the location of the illegal annotation.
-   */
+    * An error raised to indicate that an inner function is annotated with an illegal annotation.
+    *
+    * @param loc the location of the illegal annotation.
+    */
   case class IllegalAnnotation(loc: SourceLocation) extends WeederError with Recoverable {
     override def summary: String = "Unexpected annotation on inner function."
 
@@ -798,7 +798,7 @@ object WeederError {
     *
     * @param loc the location where the illegal float occurs.
     */
-  case class MalformedFloat(loc: SourceLocation) extends WeederError with Recoverable  {
+  case class MalformedFloat(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Malformed float."
 
     def message(formatter: Formatter): String = {
@@ -941,6 +941,27 @@ object WeederError {
 
     def explain(formatter: Formatter): Option[String] = None
 
+  }
+
+  /**
+    * An error raised to indicate that a type parameter is missing a kind.
+    *
+    * @param loc the location of the type parameter.
+    */
+  case class MissingTypeParamKind(loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = "Type parameter must be annotated with its kind."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Missing kind annotation. The type parameter must be annotated with its kind.
+         |
+         |${code(loc, "missing kind.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -1113,31 +1134,6 @@ object WeederError {
       * Returns a formatted string with helpful suggestions.
       */
     def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate type params that are not kinded.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class UnkindedTypeParameters(loc: SourceLocation) extends WeederError with Unrecoverable {
-    def summary: String = "Type parameters here must be annotated with a kind."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unkinded type parameters.
-         |
-         |${code(loc, "unkinded type parameters")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Type parameters here must be annotated with a kind."
-    })
-
   }
 
   /**
