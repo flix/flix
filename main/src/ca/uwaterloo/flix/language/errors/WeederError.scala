@@ -274,7 +274,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalEffectTypeParams(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalEffectTypeParams(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Unexpected effect type parameters."
 
     def message(formatter: Formatter): String = {
@@ -291,6 +291,27 @@ object WeederError {
       import formatter._
       s"${underline("Tip:")} Type parameters are not allowed on effects."
     })
+  }
+
+  /**
+    * An error raised to indicate an operation which itself has an effect.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEffectfulOperation(loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = "Unexpected effect. Effect operations may not themselves have effects."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected effect. Effect operations may not themselves have effects.
+         |
+         |${code(loc, "unexpected effect")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -433,7 +454,7 @@ object WeederError {
     *
     * @param loc the location where the illegal fixed atom occurs.
     */
-  case class IllegalFixedAtom(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalFixedAtom(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Illegal fixed atom"
 
     def message(formatter: Formatter): String = {
@@ -506,7 +527,7 @@ object WeederError {
     *
     * @param loc the location where the illegal modifier occurs.
     */
-  case class IllegalModifier(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalModifier(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Illegal modifier."
 
     def message(formatter: Formatter): String = {
@@ -573,33 +594,12 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal effect on an effect operation.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalOperationEffect(loc: SourceLocation) extends WeederError with Unrecoverable {
-    def summary: String = "Unexpected effect. Effect operations may not themselves have effects."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unexpected effect. Effect operations may not themselves have effects.
-         |
-         |${code(loc, "unexpected effect")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate an illegal private declaration.
     *
     * @param ident the name of the declaration.
     * @param loc   the location where the error occurred.
     */
-  case class IllegalPrivateDeclaration(ident: Name.Ident, loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalPrivateDeclaration(ident: Name.Ident, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Declaration must be public: '${ident.name}'."
 
     def message(formatter: Formatter): String = {
