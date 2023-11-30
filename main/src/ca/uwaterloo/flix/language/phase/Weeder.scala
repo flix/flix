@@ -180,7 +180,7 @@ object Weeder {
       val annVal = visitAnnotations(ann)
       val modVal = visitModifiers(mods, legalModifiers = Set(Ast.Modifier.Public))
       val pubVal = requirePublic(mods, ident)
-      val identVal = visitName(ident)
+      val identVal = visitIdent(ident)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, Presence.Required)
       val tpeVal = visitType(tpe0)
@@ -189,8 +189,8 @@ object Weeder {
       val expVal = traverseOpt(exp0)(visitExp(_, SyntacticEnv.Top))
 
       mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, tpeVal, effVal, tconstrsVal, expVal) {
-        case (as, mod, _, _, tparams, fparams, tpe, eff, tconstrs, exp) =>
-          List(WeededAst.Declaration.Sig(doc, as, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, mkSL(sp1, sp2)))
+        case (as, mod, _, id, tparams, fparams, tpe, eff, tconstrs, exp) =>
+          List(WeededAst.Declaration.Sig(doc, as, mod, id, tparams, fparams, exp, tpe, eff, tconstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -242,7 +242,7 @@ object Weeder {
       val annVal = visitAnnotations(ann)
       val modVal = visitModifiers(mods, legalModifiers)
       val pubVal = if (requiresPublic) requirePublic(mods, ident) else ().toSuccess // conditionally require a public modifier
-      val identVal = visitName(ident)
+      val identVal = visitIdent(ident)
       val expVal = visitExp(exp0, SyntacticEnv.Top)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, Presence.Required)
@@ -252,8 +252,8 @@ object Weeder {
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint)
 
       mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, tpeVal, effVal, expVal, tconstrsVal, econstrsVal) {
-        case (as, mod, _, _, tparams, fparams, tpe, eff, exp, tconstrs, econstrs) =>
-          List(WeededAst.Declaration.Def(doc, as, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, econstrs, mkSL(sp1, sp2)))
+        case (as, mod, _, id, tparams, fparams, tpe, eff, exp, tconstrs, econstrs) =>
+          List(WeededAst.Declaration.Def(doc, as, mod, id, tparams, fparams, exp, tpe, eff, tconstrs, econstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -265,18 +265,18 @@ object Weeder {
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann0)
       val modVal = visitModifiers(mod0, legalModifiers = Set.empty)
-      val identVal = visitName(ident)
+      val identVal = visitIdent(ident)
       val expVal = visitExp(exp0, SyntacticEnv.Top)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, Presence.Required)
       val tconstrsVal = Validation.traverse(tconstrs0)(visitTypeConstraint)
 
       mapN(annVal, modVal, identVal, tparamsVal, formalsVal, expVal, tconstrsVal) {
-        case (ann, mod, _, tparams, fs, exp, tconstrs) =>
+        case (ann, mod, id, tparams, fs, exp, tconstrs) =>
           val eff = None
           val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
           val econstrs = Nil // TODO ASSOC-TYPES allow econstrs here
-          List(WeededAst.Declaration.Def(doc, ann, mod, ident, tparams, fs, exp, tpe, eff, tconstrs, econstrs, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Def(doc, ann, mod, id, tparams, fs, exp, tpe, eff, tconstrs, econstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -288,12 +288,12 @@ object Weeder {
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
-      val identVal = visitName(ident)
+      val identVal = visitIdent(ident)
       val tparamsVal = requireNoTypeParams(tparams0)
       val opsVal = traverse(ops0)(visitOp)
       mapN(annVal, modVal, identVal, tparamsVal, opsVal) {
-        case (ann, mod, _, _, ops) =>
-          List(WeededAst.Declaration.Effect(doc, ann, mod, ident, ops, mkSL(sp1, sp2)))
+        case (ann, mod, id, _, ops) =>
+          List(WeededAst.Declaration.Effect(doc, ann, mod, id, ops, mkSL(sp1, sp2)))
       }
   }
 
@@ -306,7 +306,7 @@ object Weeder {
       val annVal = visitAnnotations(ann0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val pubVal = requirePublic(mod0, ident)
-      val identVal = visitName(ident)
+      val identVal = visitIdent(ident)
       val tparamsVal = requireNoTypeParams(tparams0)
       val fparamsVal = visitFormalParams(fparamsOpt0, Presence.Required)
       val tpeVal = visitType(tpe0)
@@ -314,8 +314,8 @@ object Weeder {
       val effVal = requireNoEffect(eff0, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
       mapN(annVal, modVal, pubVal, identVal, tparamsVal, fparamsVal, tpeVal, unitVal, effVal, tconstrsVal) {
-        case (ann, mod, _, _, _, fparams, tpe, _, _, tconstrs) =>
-          WeededAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, tconstrs, mkSL(sp1, sp2));
+        case (ann, mod, _, id, _, fparams, tpe, _, _, tconstrs) =>
+          WeededAst.Declaration.Op(doc, ann, mod, id, fparams, tpe, tconstrs, mkSL(sp1, sp2));
       }
   }
 
@@ -1297,8 +1297,8 @@ object Weeder {
         case ParsedAst.RecordLabel(_, ident, exp, _) =>
           val expVal = visitExp(exp, senv)
 
-          mapN(expVal, visitName(ident)) {
-            case (e, _) => ident -> e
+          mapN(expVal, visitIdent(ident)) {
+            case (e, id) => id -> e
           }
       }
 
@@ -1313,30 +1313,30 @@ object Weeder {
 
     case ParsedAst.Expression.RecordSelect(exp, ident, sp2) =>
       val sp1 = leftMostSourcePosition(exp)
-      mapN(visitExp(exp, senv), visitName(ident)) {
-        case (e, _) => WeededAst.Expr.RecordSelect(e, Name.mkLabel(ident), mkSL(sp1, sp2))
+      mapN(visitExp(exp, senv), visitIdent(ident)) {
+        case (e, id) => WeededAst.Expr.RecordSelect(e, Name.mkLabel(id), mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.RecordOperation(_, ops, rest, _) =>
       // We translate the sequence of record operations into a nested tree using a fold right.
       foldRight(ops)(visitExp(rest, senv)) {
         case (ParsedAst.RecordOp.Extend(sp1, ident, exp, sp2), acc) =>
-          mapN(visitExp(exp, senv), visitName(ident)) {
-            case (e, _) =>
-              WeededAst.Expr.RecordExtend(Name.mkLabel(ident), e, acc, mkSL(sp1, sp2))
+          mapN(visitExp(exp, senv), visitIdent(ident)) {
+            case (e, id) =>
+              WeededAst.Expr.RecordExtend(Name.mkLabel(id), e, acc, mkSL(sp1, sp2))
           }
 
         case (ParsedAst.RecordOp.Restrict(sp1, ident, sp2), acc) =>
-          mapN(visitName(ident)) {
-            case _ => WeededAst.Expr.RecordRestrict(Name.mkLabel(ident), acc, mkSL(sp1, sp2))
+          mapN(visitIdent(ident)) {
+            case id => WeededAst.Expr.RecordRestrict(Name.mkLabel(id), acc, mkSL(sp1, sp2))
           }
 
         case (ParsedAst.RecordOp.Update(sp1, ident, exp, sp2), acc) =>
-          mapN(visitExp(exp, senv), visitName(ident)) {
-            case (e, _) =>
+          mapN(visitExp(exp, senv), visitIdent(ident)) {
+            case (e, id) =>
               // An update is a restrict followed by an extension.
-              val inner = WeededAst.Expr.RecordRestrict(Name.mkLabel(ident), acc, mkSL(sp1, sp2))
-              WeededAst.Expr.RecordExtend(Name.mkLabel(ident), e, inner, mkSL(sp1, sp2))
+              val inner = WeededAst.Expr.RecordRestrict(Name.mkLabel(id), acc, mkSL(sp1, sp2))
+              WeededAst.Expr.RecordExtend(Name.mkLabel(id), e, inner, mkSL(sp1, sp2))
           }
       }
 
@@ -2169,20 +2169,20 @@ object Weeder {
         val loc = mkSL(sp1, sp2)
         val fsVal = traverse(pats) {
           case ParsedAst.Pattern.RecordLabelPattern(sp11, label, pat, sp22) =>
-            flatMapN(visitName(label), traverseOpt(pat)(visit)) {
-              case (_, p) if p.isEmpty =>
+            flatMapN(visitIdent(label), traverseOpt(pat)(visit)) {
+              case (id, p) if p.isEmpty =>
                 // Check that we have not seen the label symbol in a pattern before.
-                seen.get(label.name) match {
-                  case Some(dup) => Validation.toHardFailure(NonLinearPattern(label.name, dup.loc, label.loc))
+                seen.get(id.name) match {
+                  case Some(dup) => Validation.toHardFailure(NonLinearPattern(id.name, dup.loc, id.loc))
                   case None =>
                     // It was unseen until now, so we add it to the seen variables.
-                    seen += label.name -> label
-                    val l = Name.mkLabel(label)
+                    seen += id.name -> id
+                    val l = Name.mkLabel(id)
                     val patLoc = mkSL(sp11, sp22)
                     WeededAst.Pattern.Record.RecordLabelPattern(l, p, patLoc).toSuccess
                 }
-              case (_, p) =>
-                val l = Name.mkLabel(label)
+              case (id, p) =>
+                val l = Name.mkLabel(id)
                 val patLoc = mkSL(sp11, sp22)
                 WeededAst.Pattern.Record.RecordLabelPattern(l, p, patLoc).toSuccess
             }
@@ -2914,11 +2914,11 @@ object Weeder {
   /**
     * Performs weeding on the given name `ident`.
     */
-  private def visitName(ident: Name.Ident): Validation[Unit, WeederError] = {
+  private def visitIdent(ident: Name.Ident): Validation[Name.Ident, WeederError] = {
     if (ReservedWords.contains(ident.name)) {
-      Validation.toHardFailure(ReservedName(ident, ident.loc))
+      Validation.toSoftFailure(ident, ReservedName(ident, ident.loc))
     } else {
-      ().toSuccess
+      ident.toSuccess
     }
   }
 
