@@ -1382,23 +1382,12 @@ object Weeder {
       }
 
     case ParsedAst.Expression.MapLit(sp1, sp2, exps) =>
-      /*
-       * Rewrites a `FMap` expression into `Map/empty` and a `Map/insert` calls.
-       */
-      val loc = mkSL(sp1, sp2).asSynthetic
-
-      val elmsVal = traverse(exps) {
-        case (key, value) => mapN(visitExp(key, senv), visitExp(value, senv)) {
-          case (k, v) => (k, v)
-        }
+      val loc = mkSL(sp1, sp2)
+      val esVal = traverse(exps) {
+        case (k, v) => mapN(visitExp(k, senv), visitExp(v, senv))(_ -> _)
       }
-
-      elmsVal.map {
-        case es =>
-          val empty = mkApplyFqn("Map.empty", List(WeededAst.Expr.Cst(Ast.Constant.Unit, loc)), loc)
-          es.foldLeft(empty) {
-            case (acc, (k, v)) => mkApplyFqn("Map.insert", List(k, v, acc), loc)
-          }
+      mapN(esVal) {
+        case es => WeededAst.Expr.MapLit(es, loc)
       }
 
     case ParsedAst.Expression.Interpolation(sp1, parts, sp2) =>
@@ -2297,14 +2286,14 @@ object Weeder {
   /**
     * Weeds the given sequence of parsed annotation `xs`.
     */
-  private def visitAnnotations(anns: Seq[ParsedAst.Annotation])(implicit flix: Flix): Validation[Ast.Annotations, WeederError] = {
+  private def visitAnnotations(l: Seq[ParsedAst.Annotation])(implicit flix: Flix): Validation[Ast.Annotations, WeederError] = {
     //
     // Check for [[DuplicateAnnotation]].
     //
     val errors = mutable.ListBuffer.empty[WeederError.DuplicateAnnotation]
     val seen = mutable.Map.empty[String, ParsedAst.Annotation]
 
-    for (a <- anns) {
+    for (a <- l) {
       seen.get(a.ident.name) match {
         case None =>
           seen += (a.ident.name -> a)
@@ -2318,7 +2307,7 @@ object Weeder {
       }
     }
 
-    traverse(anns)(visitAnnotation).withSoftFailures(errors).map {
+    traverse(l)(visitAnnotation).withSoftFailures(errors).map {
       case as => Ast.Annotations(as)
     }
   }
@@ -2348,27 +2337,30 @@ object Weeder {
   /**
     * Weeds the given sequence of parsed modifiers `xs`.
     */
-  private def visitModifiers(xs: Seq[ParsedAst.Modifier], legalModifiers: Set[Ast.Modifier]): Validation[Ast.Modifiers, WeederError] = {
+  private def visitModifiers(l: Seq[ParsedAst.Modifier], legalModifiers: Set[Ast.Modifier]): Validation[Ast.Modifiers, WeederError] = {
+    //
+    // Check for [[DuplicateModifier]].
+    //
+    val errors = mutable.ListBuffer.empty[WeederError.DuplicateModifier]
     val seen = mutable.Map.empty[String, ParsedAst.Modifier]
-    val modifiersVal = traverse(xs) {
-      modifier =>
-        seen.get(modifier.name) match {
-          case None =>
-            seen += (modifier.name -> modifier)
-            visitModifier(modifier, legalModifiers)
-          case Some(other) =>
-            val name = modifier.name
-            val loc1 = mkSL(other.sp1, other.sp2)
-            val loc2 = mkSL(modifier.sp1, modifier.sp2)
-            Failure(LazyList(
-              // NB: We report an error at both source locations.
-              DuplicateModifier(name, loc1, loc2),
-              DuplicateModifier(name, loc2, loc1)
-            ))
-        }
+
+    for (m <- l) {
+      seen.get(m.name) match {
+        case None =>
+          seen += (m.name -> m)
+        case Some(otherMod) =>
+          val name = m.name
+          val loc1 = mkSL(otherMod.sp1, otherMod.sp2)
+          val loc2 = mkSL(m.sp1, m.sp2)
+          // NB: We report an error at both source locations.
+          errors += DuplicateModifier(name, loc1, loc2)
+          errors += DuplicateModifier(name, loc2, loc1)
+      }
     }
 
-    modifiersVal.map(ms => Ast.Modifiers(ms))
+    traverse(l)(visitModifier(_, legalModifiers)).withSoftFailures(errors).map {
+      case ms => Ast.Modifiers(ms)
+    }
   }
 
   /**

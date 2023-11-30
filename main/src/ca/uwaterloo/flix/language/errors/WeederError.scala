@@ -98,7 +98,7 @@ object WeederError {
     * @param loc1 the location of the first modifier.
     * @param loc2 the location of the second modifier.
     */
-  case class DuplicateModifier(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+  case class DuplicateModifier(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Duplicate modifier '$name'."
 
     def message(formatter: Formatter): String = {
