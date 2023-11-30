@@ -830,7 +830,7 @@ object Desugar {
     case WeededAst.Expr.FixpointQueryWithSelect(exps0, selects0, from0, where0, loc) =>
       val exps = visitExps(exps0)
       val selects = visitExps(selects0)
-      val from = from0.map(visitPredicateBody)
+      val from = visitPredicateBodies(from0)
       val where = visitExps(where0)
       //
       // Performs the following rewrite:
@@ -1043,6 +1043,9 @@ object Desugar {
     }
   }
 
+  /**
+    * Desugars the given [[WeededAst.Predicate.Body]] `body0`.
+    */
   private def visitPredicateBody(body0: WeededAst.Predicate.Body)(implicit flix: Flix): DesugaredAst.Predicate.Body = body0 match {
     case WeededAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
       val ts = terms.map(visitPattern)
@@ -1056,6 +1059,12 @@ object Desugar {
       val e = visitExp(exp)
       DesugaredAst.Predicate.Body.Guard(e, loc)
   }
+
+  /**
+    * Desugars the given list of [[WeededAst.Predicate.Body]] `bodies0`.
+    */
+  private def visitPredicateBodies(bodies0: List[WeededAst.Predicate.Body])(implicit flix: Flix): List[DesugaredAst.Predicate.Body] =
+    bodies0.map(visitPredicateBody)
 
   /**
     * Desugars the given [[WeededAst.PredicateParam]] `param0`.
