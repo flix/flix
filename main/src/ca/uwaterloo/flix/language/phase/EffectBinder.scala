@@ -17,14 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.collection.Chain
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
-
-import scala.annotation.tailrec
-import scala.collection.mutable
+import ca.uwaterloo.flix.util.ParOps
 
 
 object EffectBinder {
