@@ -826,6 +826,52 @@ object Desugar {
       val e = visitExp(exp)
       Expr.FixpointInject(e, pred, loc)
 
+    case WeededAst.Expr.FixpointSolveWithProject(exps, optIdents, loc) =>
+      val es = visitExps(exps)
+      //
+      // Performs the following rewrite:
+      //
+      // solve e1, e2, e3 project P1, P2, P3
+      //
+      // =>
+      //
+      // let tmp% = solve (merge e1, 2, e3);
+      // merge (project P1 tmp%, project P2 tmp%, project P3 tmp%)
+
+      // Introduce a tmp% variable that holds the minimal model of the merge of the exps.
+      val freshVar = flix.genSym.freshId()
+      val localVar = Name.Ident(SourceLocation.Unknown.sp1, s"tmp" + Flix.Delimiter + freshVar, SourceLocation.Unknown.sp2)
+
+      // Merge all the exps into one Datalog program value.
+      val mergeExp = es.reduceRight[DesugaredAst.Expr] {
+        case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc)
+      }
+      val modelExp = DesugaredAst.Expr.FixpointSolve(mergeExp, loc)
+
+      // Any projections?
+      val bodyExp = optIdents match {
+        case None =>
+          // Case 1: No projections: Simply return the minimal model.
+          DesugaredAst.Expr.Ambiguous(Name.mkQName(localVar), loc)
+        case Some(idents) =>
+          // Case 2: A non-empty sequence of predicate symbols to project.
+
+          // Construct a list of each projection.
+          val projectExps = idents.map {
+            case ident =>
+              val varExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(localVar), loc)
+              DesugaredAst.Expr.FixpointFilter(Name.Pred(ident.name, loc), varExp, loc)
+          }
+
+          // Merge all of the projections into one result.
+          projectExps.reduceRight[DesugaredAst.Expr] {
+            case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc)
+          }
+      }
+
+      // Bind the tmp% variable to the minimal model and combine it with the body expression.
+      DesugaredAst.Expr.Let(localVar, Ast.Modifiers.Empty, modelExp, bodyExp, loc.asReal)
+
     case WeededAst.Expr.FixpointProject(pred, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
