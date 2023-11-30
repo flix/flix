@@ -27,14 +27,27 @@ object EffectBinder {
     * Identity Function.
     */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("EffectBinder") {
+    implicit val lctx: LocalContext = LocalContext.mk()
     val newDefs = ParOps.parMapValues(root.defs)(letBindEffectsDef)
     root.copy(defs = newDefs)
   }
 
   /**
+    * A local non-shared context. Does not need to be thread-safe.
+    */
+  private case class LocalContext()
+
+  /**
+    * Companion object for [[LocalContext]].
+    */
+  private object LocalContext {
+    def mk(): LocalContext = LocalContext()
+  }
+
+  /**
     * Identity Function.
     */
-  private def letBindEffectsDef(defn: Def)(implicit flix: Flix): Def = {
+  private def letBindEffectsDef(defn: Def)(implicit lctx: LocalContext, flix: Flix): Def = {
     val stmt = letBindEffectsStmt(defn.stmt)
     defn.copy(stmt = stmt)
   }
@@ -42,14 +55,14 @@ object EffectBinder {
   /**
     * Identity Function.
     */
-  private def letBindEffectsStmt(stmt: Stmt)(implicit flix: Flix): Stmt = stmt match {
+  private def letBindEffectsStmt(stmt: Stmt)(implicit lctx: LocalContext, flix: Flix): Stmt = stmt match {
     case Stmt.Ret(expr, tpe, loc) => Stmt.Ret(letBindEffectsTopLevel(expr), tpe, loc)
   }
 
   /**
     * Identity Function.
     */
-  private def letBindEffectsTopLevel(exp: Expr)(implicit flix: Flix): Expr = exp match {
+  private def letBindEffectsTopLevel(exp: Expr)(implicit lctx: LocalContext, flix: Flix): Expr = exp match {
     case Expr.Cst(cst, tpe, loc) =>
       letBindEffects(Expr.Cst(cst, tpe, loc))
 
@@ -122,7 +135,7 @@ object EffectBinder {
   /**
     * Identity Function.
     */
-  private def letBindEffects(exp: Expr)(implicit flix: Flix): Expr = exp match {
+  private def letBindEffects(exp: Expr)(implicit lctx: LocalContext, flix: Flix): Expr = exp match {
     case Expr.Cst(cst, tpe, loc) =>
       Expr.Cst(cst, tpe, loc)
 
