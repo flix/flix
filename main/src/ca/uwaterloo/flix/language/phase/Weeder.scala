@@ -2209,7 +2209,7 @@ object Weeder {
           case (Nil, Some(r)) => Validation.toHardFailure(EmptyRecordExtensionPattern(r.loc))
 
           // Bad Pattern e.g., { x, ... | (1, 2, 3) }
-          case (_, Some(r)) => Validation.toHardFailure(IllegalRecordExtensionPattern(r.loc))
+          case (_, Some(r)) => Validation.toSoftFailure(WeededAst.Pattern.Error(r.loc), IllegalRecordExtensionPattern(r.loc))
         }
     }
 
