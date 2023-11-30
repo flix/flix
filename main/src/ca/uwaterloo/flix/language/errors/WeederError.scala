@@ -412,7 +412,7 @@ object WeederError {
     *
     * @param loc the location where the illegal fixed atom occurs.
     */
-  case class IllegalFixedAtom(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalFixedAtom(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Illegal fixed atom"
 
     def message(formatter: Formatter): String = {
