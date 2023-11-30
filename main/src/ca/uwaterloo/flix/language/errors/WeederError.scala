@@ -67,7 +67,7 @@ object WeederError {
     * @param loc1 the location of the first parameter.
     * @param loc2 the location of the second parameter.
     */
-  case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+  case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Multiple declarations of the formal parameter '$name'."
 
     def message(formatter: Formatter): String = {
@@ -1048,7 +1048,7 @@ object WeederError {
     * @param ident the reserved name that conflicts.
     * @param loc   the location where the error occurred.
     */
-  case class ReservedName(ident: Name.Ident, loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class ReservedName(ident: Name.Ident, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Re-definition of a reserved name."
 
     def message(formatter: Formatter): String = {
