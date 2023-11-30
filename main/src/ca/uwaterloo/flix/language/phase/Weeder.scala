@@ -1759,7 +1759,12 @@ object Weeder {
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, exps0, selects0, from0, whereExp0, sp2) =>
       val loc = mkSL(sp1, sp2).asSynthetic
 
-      mapN(traverse(exps0)(visitExp(_, senv)), traverse(selects0)(visitExp(_, senv)), traverse(from0)(visitPredicateBody(_, senv)), traverse(whereExp0)(visitExp(_, senv))) {
+      val esVal = traverse(exps0)(visitExp(_, senv))
+      val selectsVal = traverse(selects0)(visitExp(_, senv))
+      val fromVal = traverse(from0)(visitPredicateBody(_, senv))
+      val whereVal = traverse(whereExp0)(visitExp(_, senv))
+
+      mapN(esVal, selectsVal, fromVal, whereVal) {
         case (exps, selects, from, where) =>
           //
           // Performs the following rewrite:
