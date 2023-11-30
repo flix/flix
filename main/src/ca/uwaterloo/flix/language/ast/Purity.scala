@@ -16,12 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
-sealed trait Purity {
-  def combineWith(p: Purity): Purity = (this, p) match {
-    case (Purity.Pure, Purity.Pure) => Purity.Pure
-    case _ => Purity.Impure
-  }
-}
+sealed trait Purity
 
 /**
  * Represents the purity (or impurity) of an expression.
