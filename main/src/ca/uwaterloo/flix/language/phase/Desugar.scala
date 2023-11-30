@@ -1290,6 +1290,7 @@ object Desugar {
       case None =>
         // Case 1: No projections: Simply return the minimal model.
         DesugaredAst.Expr.Ambiguous(Name.mkQName(localVar), loc)
+
       case Some(idents) =>
         // Case 2: A non-empty sequence of predicate symbols to project.
 
