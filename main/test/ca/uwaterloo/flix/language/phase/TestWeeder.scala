@@ -467,8 +467,12 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   }
 
   test("IllegalModifier.01") {
-    val input = "pub instance I[a]"
-    val result = compile(input, Options.TestWithLibNix)
+    val input =
+      """pub instance Sub[String] {
+        |    pub def sub(x: String, y: String): String = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalModifier](result)
   }
 
