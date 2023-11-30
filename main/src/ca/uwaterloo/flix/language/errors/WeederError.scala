@@ -274,7 +274,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalEffectTypeParams(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalEffectTypeParams(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Unexpected effect type parameters."
 
     def message(formatter: Formatter): String = {
@@ -944,6 +944,27 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that a type parameter is missing a kind.
+    *
+    * @param loc the location of the type parameter.
+    */
+  case class MissingTypeParamKind(loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = "Type parameter must be annotated with its kind."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Missing kind annotation. The type parameter must be annotated with its kind.
+         |
+         |${code(loc, "missing kind.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate a mismatched arity.
     *
     * @param expected the expected arity.
@@ -1113,31 +1134,6 @@ object WeederError {
       * Returns a formatted string with helpful suggestions.
       */
     def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate type params that are not kinded.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class UnkindedTypeParameters(loc: SourceLocation) extends WeederError with Unrecoverable {
-    def summary: String = "Type parameters here must be annotated with a kind."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unkinded type parameters.
-         |
-         |${code(loc, "unkinded type parameters")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Type parameters here must be annotated with a kind."
-    })
-
   }
 
   /**
