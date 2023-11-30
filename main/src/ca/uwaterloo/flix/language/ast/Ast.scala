@@ -138,7 +138,9 @@ object Ast {
   /**
     * A common super type for AST nodes that represent annotations.
     */
-  trait Annotation
+  trait Annotation {
+    def loc: SourceLocation
+  }
 
   object Annotation {
 
@@ -179,7 +181,6 @@ object Ast {
     case class Internal(loc: SourceLocation) extends Annotation {
       override def toString: String = "@Internal"
     }
-
 
     /**
       * An annotation that marks a function definition as using parallel evaluation.

@@ -1265,7 +1265,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalInnerFunctionAnnotation](result)
+    expectError[WeederError.IllegalAnnotation](result)
   }
 
   test("IllegalInnerFunctionAnnotation.02") {
@@ -1278,7 +1278,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalInnerFunctionAnnotation](result)
+    expectError[WeederError.IllegalAnnotation](result)
   }
 
   test("DuplicateInnerFunctionAnnotation.01") {
