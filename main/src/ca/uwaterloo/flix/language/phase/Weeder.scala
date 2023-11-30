@@ -2253,19 +2253,20 @@ object Weeder {
     */
   private def visitPredicateBody(b: ParsedAst.Predicate.Body, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = b match {
     case ParsedAst.Predicate.Body.Atom(sp1, polarity, fixity, ident, terms, None, sp2) =>
+      // Case 1: the atom has a relational denotation (because of the absence of the optional lattice term).
+      val loc = mkSL(sp1, sp2)
+
       //
       // Check for `[[IllegalFixedAtom]]`.
       //
-      if (polarity == Ast.Polarity.Negative && fixity == Ast.Fixity.Fixed) {
-        return Validation.toHardFailure(IllegalFixedAtom(mkSL(sp1, sp2)))
+      val errors = (polarity, fixity) match {
+        case (Ast.Polarity.Negative, Ast.Fixity.Fixed) => Some(IllegalFixedAtom(loc))
+        case _ => None
       }
 
-      // Case 1: the atom has a relational denotation (because of the absence of the optional lattice term).
-      val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitPattern)) {
-        case ts =>
-          WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, ts, loc)
-      }
+        case ts => WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, ts, loc)
+      }.withSoftFailures(errors)
 
     case ParsedAst.Predicate.Body.Atom(sp1, polarity, fixity, ident, terms, Some(term), sp2) =>
       // Case 2: the atom has a latticenal denotation (because of the presence of the optional lattice term).
@@ -2376,16 +2377,16 @@ object Weeder {
       case "override" => Ast.Modifier.Override
       case "pub" => Ast.Modifier.Public
       case "sealed" => Ast.Modifier.Sealed
-      case s => throw InternalCompilerException(s"Unknown modifier '$s'.", mkSL(m.sp1, m.sp2))
+      case s =>
+        // The Parser ensures that a modifier is one of the above.
+        throw InternalCompilerException(s"Unknown modifier '$s'.", mkSL(m.sp1, m.sp2))
     }
 
-    //
-    // Check for `IllegalModifier`.
-    //
-    if (legalModifiers contains modifier)
+    // Check for [[IllegalModifier]].
+    if (legalModifiers.contains(modifier))
       modifier.toSuccess
     else
-      Validation.toHardFailure(IllegalModifier(mkSL(m.sp1, m.sp2)))
+      Validation.toSoftFailure(modifier, IllegalModifier(mkSL(m.sp1, m.sp2)))
   }
 
   /**

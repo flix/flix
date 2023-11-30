@@ -435,7 +435,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    };
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalFixedAtom](result)
   }
 
@@ -467,7 +467,41 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   }
 
   test("IllegalModifier.01") {
-    val input = "pub instance I[a]"
+    val input =
+      """
+        |lawful enum A
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModifier](result)
+  }
+
+  test("IllegalModifier.02") {
+    val input =
+      """
+        |override enum A
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModifier](result)
+  }
+
+  test("IllegalModifier.03") {
+    val input =
+      """
+        |sealed enum A
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModifier](result)
+  }
+
+  test("IllegalModifier.04") {
+    val input =
+      """pub instance Sub[String] {
+        |    pub def sub(x: String, y: String): String = ???
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalModifier](result)
   }
