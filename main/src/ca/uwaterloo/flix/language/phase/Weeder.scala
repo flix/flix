@@ -951,15 +951,16 @@ object Weeder {
       val mod = Ast.Modifiers.Empty
       val loc = mkSL(sp1, sp2)
       val annVal = flatMapN(visitAnnotations(ann)) {
-        case Ast.Annotations(annotations) if annotations.nonEmpty =>
-          val onlyTailrec = annotations.forall(_.isInstanceOf[Ast.Annotation.TailRecursive])
-          if (onlyTailrec) {
-            Ast.Annotations(annotations).toSuccess
+        case Ast.Annotations(as) =>
+          // Check for [[IllegalAnnotation]]
+          val errors = mutable.ArrayBuffer.empty[IllegalAnnotation]
+          for (a <- as) {
+            a match {
+              case Ast.Annotation.TailRecursive(_) => // OK
+              case otherAnn => errors += IllegalAnnotation(otherAnn.loc)
+            }
           }
-          else {
-            Validation.toHardFailure(IllegalInnerFunctionAnnotation(loc))
-          }
-        case anns => anns.toSuccess
+          Validation.toSuccessOrSoftFailure(Ast.Annotations(as), errors)
       }
 
       val tpeOpt = tpeAndEff.map(_._1)
