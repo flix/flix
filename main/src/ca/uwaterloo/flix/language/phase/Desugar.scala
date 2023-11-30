@@ -1280,7 +1280,7 @@ object Desugar {
     val localVar = Name.Ident(SourceLocation.Unknown.sp1, s"tmp" + Flix.Delimiter + freshVar, SourceLocation.Unknown.sp2)
 
     // Merge all the exps into one Datalog program value.
-    val mergeExp = es.reduceRight[Expr] {
+    val mergeExp = es.reduceRight[DesugaredAst.Expr] {
       case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc)
     }
     val modelExp = DesugaredAst.Expr.FixpointSolve(mergeExp, loc)
@@ -1301,7 +1301,7 @@ object Desugar {
         }
 
         // Merge all of the projections into one result.
-        projectExps.reduceRight[Expr] {
+        projectExps.reduceRight[DesugaredAst.Expr] {
           case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc)
         }
     }
