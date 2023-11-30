@@ -30,11 +30,6 @@ sealed trait WeederError extends CompilationMessage {
 object WeederError {
 
   /**
-    * A common super-type for illegal literals.
-    */
-  sealed trait IllegalLiteral extends WeederError
-
-  /**
     * An error raised to indicate that the annotation `name` was used multiple times.
     *
     * @param name the name of the attribute.
@@ -103,7 +98,7 @@ object WeederError {
     * @param loc1 the location of the first modifier.
     * @param loc2 the location of the second modifier.
     */
-  case class DuplicateModifier(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+  case class DuplicateModifier(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Duplicate modifier '$name'."
 
     def message(formatter: Formatter): String = {
@@ -320,7 +315,7 @@ object WeederError {
     * @param char the invalid escape character.
     * @param loc  the location where the error occurred.
     */
-  case class IllegalEscapeSequence(char: Char, loc: SourceLocation) extends IllegalLiteral with Unrecoverable {
+  case class IllegalEscapeSequence(char: Char, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Invalid escape sequence '\\$char'."
 
     def message(formatter: Formatter): String = {
@@ -778,7 +773,7 @@ object WeederError {
     * @param chars the characters in the character literal.
     * @param loc   the location where the error occurred.
     */
-  case class MalformedChar(chars: String, loc: SourceLocation) extends IllegalLiteral with Unrecoverable {
+  case class MalformedChar(chars: String, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Malformed, non-single-character literal."
 
     def message(formatter: Formatter): String = {
@@ -803,7 +798,7 @@ object WeederError {
     *
     * @param loc the location where the illegal float occurs.
     */
-  case class MalformedFloat(loc: SourceLocation) extends IllegalLiteral with Unrecoverable  {
+  case class MalformedFloat(loc: SourceLocation) extends WeederError with Recoverable  {
     def summary: String = "Malformed float."
 
     def message(formatter: Formatter): String = {
@@ -828,7 +823,7 @@ object WeederError {
     *
     * @param loc the location where the illegal int occurs.
     */
-  case class MalformedInt(loc: SourceLocation) extends IllegalLiteral with Unrecoverable {
+  case class MalformedInt(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Malformed int."
 
     def message(formatter: Formatter): String = {
@@ -854,7 +849,7 @@ object WeederError {
     * @param pat the invalid regular expression
     * @param loc the location where the error occurred
     */
-  case class MalformedRegex(pat: String, err: String, loc: SourceLocation) extends IllegalLiteral with Unrecoverable {
+  case class MalformedRegex(pat: String, err: String, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Malformed regular expression."
 
     def message(formatter: Formatter): String = {
@@ -880,7 +875,7 @@ object WeederError {
     * @param code the escape sequence
     * @param loc  the location where the error occurred.
     */
-  case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends IllegalLiteral with Unrecoverable {
+  case class MalformedUnicodeEscapeSequence(code: String, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Malformed unicode escape sequence."
 
     def message(formatter: Formatter): String = {
