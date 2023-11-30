@@ -522,7 +522,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[WeederError.IllegalOperationEffect](result)
+    expectError[WeederError.IllegalEffectfulOperation](result)
   }
 
   test("IllegalOperationEffect.02") {
@@ -533,7 +533,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalOperationEffect](result)
+    expectError[WeederError.IllegalEffectfulOperation](result)
   }
 
   test("NonUnitOperationType.01") {
