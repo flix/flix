@@ -2869,14 +2869,33 @@ object Weeder {
       val kindedTypeParams = newTparams.collect { case t: WeededAst.TypeParam.Kinded => t }
       val unkindedTypeParams = newTparams.collect { case t: WeededAst.TypeParam.Unkinded => t }
       (kindedTypeParams, unkindedTypeParams) match {
-        // Case 1: some unkinded type params
         case (_, _ :: _) =>
-          val loc = mkSL(tparams.head.sp1, tparams.last.sp2)
-          Validation.toHardFailure(UnkindedTypeParameters(loc))
-        // Case 2: only kinded type parameters
-        case (_ :: _, Nil) => WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
-        // Case 3: no type parameters: should be prevented by parser
-        case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
+          // Case 1: We have Kinded and Unkinded type parameters.
+
+          // We generate an error message for each unkinded type parameter.
+          val errors = unkindedTypeParams.map {
+            case WeededAst.TypeParam.Unkinded(ident) => MissingTypeParamKind(ident.loc)
+          }
+
+          // We then *assume* that the unkinded type parameters should have kind Star.
+          val kinded = newTparams.map {
+            case WeededAst.TypeParam.Kinded(ident, kind) =>
+              WeededAst.TypeParam.Kinded(ident, kind)
+            case WeededAst.TypeParam.Unkinded(ident) =>
+              val default = WeededAst.Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic)
+              WeededAst.TypeParam.Kinded(ident, default)
+          }
+
+          // We can then soft fail with the missing kinds assumed to be Star.
+          Validation.toSuccessOrSoftFailure(WeededAst.TypeParams.Kinded(kinded), errors)
+
+        case (_ :: _, Nil) =>
+          // Case 2: Only kinded type parameters.
+          WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
+
+        case (Nil, Nil) =>
+          // Case 3: No type parameters: should be prevented by the Parser.
+          throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
       }
   }
 
