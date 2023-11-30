@@ -1259,17 +1259,21 @@ object Desugar {
     }
   }
 
+  /**
+    * Rewrites a [[WeededAst.Expr.FixpointSolveWithProject]] into a series of solve and merges.
+    *
+    * E.g.,
+    * {{{
+    * solve e1, e2, e3 project P1, P2, P3
+    * }}}
+    * becomes
+    * {{{
+    *   let tmp%  solve (merge e1, 2, e3);
+    *   merge (project P1 tmp%, project P2 tmp%, project P3 tmp%)
+    * }}}
+    */
   private def desugarFixpointSolveWithProject(exps: List[WeededAst.Expr], optIdents: Option[List[Name.Ident]], loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps)
-    //
-    // Performs the following rewrite:
-    //
-    // solve e1, e2, e3 project P1, P2, P3
-    //
-    // =>
-    //
-    // let tmp% = solve (merge e1, 2, e3);
-    // merge (project P1 tmp%, project P2 tmp%, project P3 tmp%)
 
     // Introduce a tmp% variable that holds the minimal model of the merge of the exps.
     val freshVar = flix.genSym.freshId()
