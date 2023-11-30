@@ -599,7 +599,7 @@ object WeederError {
     * @param ident the name of the declaration.
     * @param loc   the location where the error occurred.
     */
-  case class IllegalPrivateDeclaration(ident: Name.Ident, loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalPrivateDeclaration(ident: Name.Ident, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Declaration must be public: '${ident.name}'."
 
     def message(formatter: Formatter): String = {
