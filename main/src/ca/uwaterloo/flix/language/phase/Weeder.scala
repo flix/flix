@@ -2881,7 +2881,7 @@ object Weeder {
             case WeededAst.TypeParam.Kinded(ident, kind) =>
               WeededAst.TypeParam.Kinded(ident, kind)
             case WeededAst.TypeParam.Unkinded(ident) =>
-              val default = WeededAst.Kind.Ambiguous(Name.mkQName("Type"), ident.loc)
+              val default = WeededAst.Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic)
               WeededAst.TypeParam.Kinded(ident, default)
           }
 
