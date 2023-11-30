@@ -242,6 +242,8 @@ object KindedAst {
 
     case class RecordEmpty(loc: SourceLocation) extends Pattern
 
+    case class Error(tvar: ast.Type.Var, loc: SourceLocation) extends Pattern
+
     object Record {
       case class RecordLabelPattern(label: Name.Label, tvar: ast.Type.Var, pat: Pattern, loc: SourceLocation)
     }

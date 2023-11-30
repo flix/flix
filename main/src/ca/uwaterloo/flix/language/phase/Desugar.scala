@@ -655,6 +655,15 @@ object Desugar {
         case (acc, e) => mkApplyFqn("Set.insert", List(e, acc), loc)
       }
 
+    case WeededAst.Expr.MapLit(exps, loc) =>
+      // Rewrites a `FMap` expression into `Map/empty` and a `Map/insert` calls.
+      val empty = mkApplyFqn("Map.empty", List(DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc)), loc)
+      exps.map {
+        case (k, v) => visitExp(k) -> visitExp(v)
+      }.foldLeft(empty) {
+        case (acc, (k, v)) => mkApplyFqn("Map.insert", List(k, v, acc), loc)
+      }
+
     case WeededAst.Expr.Ref(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -871,6 +880,9 @@ object Desugar {
 
     case WeededAst.Pattern.RecordEmpty(loc) =>
       DesugaredAst.Pattern.RecordEmpty(loc)
+
+    case WeededAst.Pattern.Error(loc) =>
+      DesugaredAst.Pattern.Error(loc)
   }
 
   /**

@@ -300,6 +300,8 @@ object TypedAst {
     object Record {
       case class RecordLabelPattern(label: Name.Label, tpe: Type, pat: Pattern, loc: SourceLocation)
     }
+
+    case class Error(tpe: Type, loc: SourceLocation) extends Pattern
   }
 
   sealed trait RestrictableChoosePattern

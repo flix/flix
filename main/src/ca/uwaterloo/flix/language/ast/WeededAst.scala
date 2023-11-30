@@ -169,6 +169,8 @@ object WeededAst {
 
     case class SetLit(exps: List[Expr], loc: SourceLocation) extends Expr
 
+    case class MapLit(exps: List[(Expr, Expr)], loc: SourceLocation) extends Expr
+
     case class Ref(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Deref(exp: Expr, loc: SourceLocation) extends Expr
@@ -266,6 +268,8 @@ object WeededAst {
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
     case class RecordEmpty(loc: SourceLocation) extends Pattern
+
+    case class Error(loc: SourceLocation) extends Pattern
 
     object Record {
       case class RecordLabelPattern(label: Name.Label, pat: Option[Pattern], loc: SourceLocation)
