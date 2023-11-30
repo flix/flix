@@ -56,12 +56,20 @@ object EffectBinder {
     * Identity Function.
     */
   private def letBindEffectsTopLevel(exp: Expr)(implicit flix: Flix): Expr = exp match {
-    // simple
-    case _: Expr.Cst | _: Expr.Var | _: Expr.ApplyAtomic | _: Expr.ApplyClo | _: Expr.ApplyDef |
-         _: Expr.ApplySelfTail | _: Expr.IfThenElse | _: Expr.Do | _: Expr.Resume |
-         _: Expr.NewObject =>
-      letBindEffects(exp)
-    // fancy
+    case Expr.Cst(cst, tpe, loc) =>
+      letBindEffects(Expr.Cst(cst, tpe, loc))
+    case Expr.Var(sym, tpe, loc) =>
+      letBindEffects(Expr.Var(sym, tpe, loc))
+    case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
+      letBindEffects(Expr.ApplyAtomic(op, exps, tpe, purity, loc))
+    case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
+      letBindEffects(Expr.ApplyClo(exp, exps, ct, tpe, purity, loc))
+    case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+      letBindEffects(Expr.ApplyDef(sym, exps, ct, tpe, purity, loc))
+    case Expr.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
+      letBindEffects(Expr.ApplySelfTail(sym, formals, actuals, tpe, purity, loc))
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
+      letBindEffects(Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc))
     case Expr.Branch(exp, branches, tpe, purity, loc) =>
       val e = letBindEffectsTopLevel(exp)
       val branches1 = branches.map {
@@ -93,6 +101,12 @@ object EffectBinder {
         case hr => hr.copy(exp = letBindEffectsTopLevel(hr.exp))
       }
       Expr.TryWith(e, effUse, rules1, tpe, purity, loc)
+    case Expr.Do(op, exps, tpe, purity, loc) =>
+      letBindEffects(Expr.Do(op, exps, tpe, purity, loc))
+    case Expr.Resume(exp, tpe, loc) =>
+      letBindEffects(Expr.Resume(exp, tpe, loc))
+    case Expr.NewObject(name, clazz, tpe, purity, methods, exps, loc) =>
+      letBindEffects(Expr.NewObject(name, clazz, tpe, purity, methods, exps, loc))
   }
 
   /**
