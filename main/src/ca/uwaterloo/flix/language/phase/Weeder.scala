@@ -2377,16 +2377,16 @@ object Weeder {
       case "override" => Ast.Modifier.Override
       case "pub" => Ast.Modifier.Public
       case "sealed" => Ast.Modifier.Sealed
-      case s => throw InternalCompilerException(s"Unknown modifier '$s'.", mkSL(m.sp1, m.sp2))
+      case s =>
+        // The Parser ensures that a modifier is one of the above.
+        throw InternalCompilerException(s"Unknown modifier '$s'.", mkSL(m.sp1, m.sp2))
     }
 
-    //
-    // Check for `IllegalModifier`.
-    //
-    if (legalModifiers contains modifier)
+    // Check for [[IllegalModifier]].
+    if (legalModifiers.contains(modifier))
       modifier.toSuccess
     else
-      Validation.toHardFailure(IllegalModifier(mkSL(m.sp1, m.sp2)))
+      Validation.toSoftFailure(modifier, IllegalModifier(mkSL(m.sp1, m.sp2)))
   }
 
   /**
