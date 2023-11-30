@@ -2409,7 +2409,7 @@ object Weeder {
       // safe to take head and tail since parsing ensures nonempty type parameters if explicit
       val sp1 = tparams.head.sp1
       val sp2 = tparams.last.sp2
-      Validation.toHardFailure(IllegalEffectTypeParams(mkSL(sp1, sp2)))
+      Validation.toSoftFailure((), IllegalEffectTypeParams(mkSL(sp1, sp2)))
   }
 
   /**

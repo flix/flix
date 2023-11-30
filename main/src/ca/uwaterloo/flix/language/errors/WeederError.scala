@@ -274,7 +274,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalEffectTypeParams(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalEffectTypeParams(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Unexpected effect type parameters."
 
     def message(formatter: Formatter): String = {
