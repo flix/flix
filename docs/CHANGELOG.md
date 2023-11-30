@@ -1,5 +1,19 @@
 # Changelog
 
+Version 0.42.0:
+- Compiler: Use parallel evaluation in `ClosureConv` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `Deriver` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `Inliner` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `LambdaLift` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `MonoDefs` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `MonoTypes` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `Namer` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `PatMatch` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `Reducer` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `Resolver` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `Safety` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `TailRec` (thanks Magnus!)
+
 Version 0.41.0:
 - Library: Added `Adaptor` module (thanks Stephen!)
 - Library: Added `Reader` module (thanks Stephen!)
