@@ -52,53 +52,69 @@ object EffectBinder {
   private def letBindEffectsTopLevel(exp: Expr)(implicit flix: Flix): Expr = exp match {
     case Expr.Cst(cst, tpe, loc) =>
       letBindEffects(Expr.Cst(cst, tpe, loc))
+
     case Expr.Var(sym, tpe, loc) =>
       letBindEffects(Expr.Var(sym, tpe, loc))
+
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       letBindEffects(Expr.ApplyAtomic(op, exps, tpe, purity, loc))
+
     case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       letBindEffects(Expr.ApplyClo(exp, exps, ct, tpe, purity, loc))
+
     case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
       letBindEffects(Expr.ApplyDef(sym, exps, ct, tpe, purity, loc))
+
     case Expr.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
       letBindEffects(Expr.ApplySelfTail(sym, formals, actuals, tpe, purity, loc))
+
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       letBindEffects(Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc))
+
     case Expr.Branch(exp, branches, tpe, purity, loc) =>
       val e = letBindEffectsTopLevel(exp)
       val branches1 = branches.map {
         case (sym, branchExp) => (sym, letBindEffectsTopLevel(branchExp))
       }
       Expr.Branch(e, branches1, tpe, purity, loc)
+
     case Expr.JumpTo(sym, tpe, purity, loc) =>
       Expr.JumpTo(sym, tpe, purity, loc)
+
     case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
       val e1 = letBindEffects(exp1)
       val e2 = letBindEffectsTopLevel(exp2)
       Expr.Let(sym, e1, e2, tpe, purity, loc)
+
     case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
       val e1 = letBindEffects(exp1)
       val e2 = letBindEffectsTopLevel(exp2)
       Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
+
     case Expr.Scope(sym, exp, tpe, purity, loc) =>
       val e = letBindEffectsTopLevel(exp)
       Expr.Scope(sym, e, tpe, purity, loc)
+
     case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
       val e = letBindEffectsTopLevel(exp)
       val rules1 = rules.map {
         case cr => CatchRule(cr.sym, cr.clazz, letBindEffectsTopLevel(cr.exp))
       }
       Expr.TryCatch(e, rules1, tpe, purity, loc)
+
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
       val e = letBindEffectsTopLevel(exp)
       val rules1 = rules.map {
         case hr => hr.copy(exp = letBindEffectsTopLevel(hr.exp))
       }
       Expr.TryWith(e, effUse, rules1, tpe, purity, loc)
+
     case Expr.Do(op, exps, tpe, purity, loc) =>
       letBindEffects(Expr.Do(op, exps, tpe, purity, loc))
+
     case Expr.Resume(exp, tpe, loc) =>
       letBindEffects(Expr.Resume(exp, tpe, loc))
+
     case Expr.NewObject(name, clazz, tpe, purity, methods, exps, loc) =>
       letBindEffects(Expr.NewObject(name, clazz, tpe, purity, methods, exps, loc))
   }
@@ -109,36 +125,52 @@ object EffectBinder {
   private def letBindEffects(exp: Expr)(implicit flix: Flix): Expr = exp match {
     case Expr.Cst(cst, tpe, loc) =>
       Expr.Cst(cst, tpe, loc)
+
     case Expr.Var(sym, tpe, loc) =>
       Expr.Var(sym, tpe, loc)
+
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       Expr.ApplyAtomic(op, exps, tpe, purity, loc)
+
     case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       Expr.ApplyClo(exp, exps, ct, tpe, purity, loc)
+
     case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
       Expr.ApplyDef(sym, exps, ct, tpe, purity, loc)
+
     case Expr.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
       Expr.ApplySelfTail(sym, formals, actuals, tpe, purity, loc)
+
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc)
+
     case Expr.Branch(exp, branches, tpe, purity, loc) =>
       Expr.Branch(exp, branches, tpe, purity, loc)
+
     case Expr.JumpTo(sym, tpe, purity, loc) =>
       Expr.JumpTo(sym, tpe, purity, loc)
+
     case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
       Expr.Let(sym, exp1, exp2, tpe, purity, loc)
+
     case Expr.LetRec(varSym, index, defSym, exp1, exp2, purity, tpe, loc) =>
       Expr.LetRec(varSym, index, defSym, exp1, exp2, purity, tpe, loc)
+
     case Expr.Scope(sym, exp, tpe, purity, loc) =>
       Expr.Scope(sym, exp, tpe, purity, loc)
+
     case Expr.TryCatch(exp, rules, tpe, purity, loc) =>
       Expr.TryCatch(exp, rules, tpe, purity, loc)
+
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
       Expr.TryWith(exp, effUse, rules, tpe, purity, loc)
+
     case Expr.Do(op, exps, tpe, purity, loc) =>
       Expr.Do(op, exps, tpe, purity, loc)
+
     case Expr.NewObject(name, clazz, tpe, purity, methods, exps, loc) =>
       Expr.NewObject(name, clazz, tpe, purity, methods, exps, loc)
+
     case Expr.Resume(exp, tpe, loc) =>
       Expr.Resume(exp, tpe, loc)
   }
