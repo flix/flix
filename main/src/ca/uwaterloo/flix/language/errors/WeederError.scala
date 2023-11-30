@@ -72,7 +72,7 @@ object WeederError {
     * @param loc1 the location of the first parameter.
     * @param loc2 the location of the second parameter.
     */
-  case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+  case class DuplicateFormalParam(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Multiple declarations of the formal parameter '$name'."
 
     def message(formatter: Formatter): String = {

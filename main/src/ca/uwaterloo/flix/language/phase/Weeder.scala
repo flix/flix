@@ -2726,7 +2726,7 @@ object Weeder {
   /**
     * Weeds the given list of formal parameter `fparams`.
     *
-    * Checks for [[MissingFormalParamAscription]] and [[DuplicateFormalParam]].
+    * Checks for [[DuplicateFormalParam]], [[MissingFormalParamAscription]], and [[DuplicateFormalParam]].
     */
   private def visitFormalParams(fparams: Seq[ParsedAst.FormalParam], typePresence: Presence): Validation[List[WeededAst.FormalParam], WeederError] = {
     //
@@ -2741,39 +2741,52 @@ object Weeder {
       return List(WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe, loc)).toSuccess
     }
 
+    //
+    // Check for [[DuplicateFormalParam]]
+    //
     val seen = mutable.Map.empty[String, ParsedAst.FormalParam]
-
-    traverse(fparams) {
-      case param@ParsedAst.FormalParam(sp1, mods, ident, tpeOpt0, sp2) => seen.get(ident.name) match {
+    val errors = mutable.ArrayBuffer.empty[WeederError.DuplicateFormalParam]
+    for (fparam <- fparams) {
+      seen.get(fparam.ident.name) match {
         case None =>
-          if (!ident.name.startsWith("_")) {
+          if (!fparam.ident.name.startsWith("_")) {
             // Wildcards cannot be duplicate.
-            seen += (ident.name -> param)
-          }
-          val tpeOptVal = traverseOpt(tpeOpt0)(visitType)
-
-          flatMapN(visitModifiers(mods, legalModifiers = Set.empty), tpeOptVal) {
-            case (mod, tpeOpt) =>
-              (tpeOpt, typePresence) match {
-                // Case 1: Required but missing. Error.
-                case (None, Presence.Required) => Validation.toHardFailure(MissingFormalParamAscription(ident.name, mkSL(sp1, sp2)))
-                // Case 2: Forbidden but present. Error.
-                case (Some(_), Presence.Forbidden) => Validation.toHardFailure(IllegalFormalParamAscription(mkSL(sp1, sp2)))
-                // Case 3: No violation. Good to go.
-                case _ => WeededAst.FormalParam(ident, mod, tpeOpt, mkSL(sp1, sp2)).toSuccess
-              }
+            seen += (fparam.ident.name -> fparam)
           }
         case Some(otherParam) =>
-          val name = ident.name
+          val name = fparam.ident.name
           val loc1 = mkSL(otherParam.sp1, otherParam.sp2)
-          val loc2 = mkSL(param.sp1, param.sp2)
-          Failure(LazyList(
+          val loc2 = mkSL(fparam.sp1, fparam.sp2)
             // NB: We report an error at both source locations.
-            DuplicateFormalParam(name, loc1, loc2),
-            DuplicateFormalParam(name, loc2, loc1)
-          ))
+            errors += DuplicateFormalParam(name, loc1, loc2)
+            errors += DuplicateFormalParam(name, loc2, loc1)
       }
     }
+
+    traverse(fparams)(visitFormalParam(_, typePresence)).withSoftFailures(errors)
+  }
+
+  /**
+   * Weeds the given formal parameter `fparam`.
+   */
+  private def visitFormalParam(fparam: ParsedAst.FormalParam, typePresence: Presence): Validation[WeededAst.FormalParam, WeederError] = fparam match {
+    case ParsedAst.FormalParam(sp1, mods, ident, tpeOpt0, sp2) =>
+      val tpeOptVal = traverseOpt(tpeOpt0)(visitType)
+
+      //
+      // Check for [[MissingFormalParamAscription]] and [[IllegalFormalParamAscription]]
+      //
+      flatMapN(visitModifiers(mods, legalModifiers = Set.empty), tpeOptVal) {
+        case (mod, tpeOpt) =>
+          (tpeOpt, typePresence) match {
+            // Case 1: Required but missing. Error.
+            case (None, Presence.Required) => Validation.toHardFailure(MissingFormalParamAscription(ident.name, mkSL(sp1, sp2)))
+            // Case 2: Forbidden but present. Error.
+            case (Some(_), Presence.Forbidden) => Validation.toHardFailure(IllegalFormalParamAscription(mkSL(sp1, sp2)))
+            // Case 3: No violation. Good to go.
+            case _ => WeededAst.FormalParam(ident, mod, tpeOpt, mkSL(sp1, sp2)).toSuccess
+          }
+      }
   }
 
   /**
