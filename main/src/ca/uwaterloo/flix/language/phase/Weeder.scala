@@ -2370,22 +2370,16 @@ object Weeder {
   /**
     * Weeds the given parsed modifier `m`.
     */
-  private def visitModifier(m: ParsedAst.Modifier, legalModifiers: Set[Ast.Modifier]): Validation[Ast.Modifier, WeederError] = {
-    val modifier = m.name match {
-      case "lawful" => Ast.Modifier.Lawful
-      case "override" => Ast.Modifier.Override
-      case "pub" => Ast.Modifier.Public
-      case "sealed" => Ast.Modifier.Sealed
-      case s => throw InternalCompilerException(s"Unknown modifier '$s'.", mkSL(m.sp1, m.sp2))
-    }
-
-    //
-    // Check for `IllegalModifier`.
-    //
-    if (legalModifiers contains modifier)
-      modifier.toSuccess
-    else
-      Validation.toHardFailure(IllegalModifier(mkSL(m.sp1, m.sp2)))
+  private def visitModifier(m: ParsedAst.Modifier, legalModifiers: Set[Ast.Modifier]): Validation[Ast.Modifier, WeederError] = m match {
+    case ParsedAst.Modifier(sp1, name, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      name match {
+        case "lawful" => Ast.Modifier.Lawful.toSuccess
+        case "override" => Ast.Modifier.Override.toSuccess
+        case "pub" => Ast.Modifier.Public.toSuccess
+        case "sealed" => Ast.Modifier.Sealed.toSuccess
+        case s => Validation.toSoftFailure(Ast.Modifier.Error(s, mkSL(sp1, sp2)), IllegalModifier(mkSL(m.sp1, m.sp2)))
+      }
   }
 
   /**

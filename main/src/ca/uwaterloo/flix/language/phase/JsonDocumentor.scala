@@ -355,6 +355,7 @@ object JsonDocumentor {
     case Modifier.Public => "public"
     case Modifier.Sealed => "sealed"
     case Modifier.Synthetic => "synthetic"
+    case Modifier.Error(name, _) => name
   })
 
   /**
