@@ -1162,7 +1162,7 @@ object Desugar {
   /**
     *
     * Rewrites a `ForEachYield` loop into a series of iterators
-    * wrapped in a `Collectable.collect`` call:
+    * wrapped in a `Collectable.collect` call:
     * {{{
     * foreach (x <- xs) yield x
     * }}}
