@@ -2396,7 +2396,7 @@ object Weeder {
     if (mods.exists(_.name == "pub")) {
       ().toSuccess
     } else {
-      Validation.toHardFailure(IllegalPrivateDeclaration(ident, ident.loc))
+      Validation.toSoftFailure((), IllegalPrivateDeclaration(ident, ident.loc))
     }
   }
 
