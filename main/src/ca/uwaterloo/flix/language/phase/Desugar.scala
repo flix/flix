@@ -828,52 +828,7 @@ object Desugar {
       Expr.FixpointInject(e, pred, loc)
 
     case WeededAst.Expr.FixpointQueryWithSelect(exps0, selects0, from0, where0, loc) =>
-      val exps = visitExps(exps0)
-      val selects = visitExps(selects0)
-      val from = visitPredicateBodies(from0)
-      val where = visitExps(where0)
-      //
-      // Performs the following rewrite:
-      //
-      // query e1, e2, e3 select (x, y, z) from A(x, y), B(z) where x > 0
-      //
-      // =>
-      //
-      // project out %Result from (solve (merge (merge e1, e2, e3) #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } )
-      //
-      // OBS: The last merge and solve is done in the typer because of trouble when
-      // `(merge e1, e2, e3)` is a closed row.
-
-      // The fresh predicate name where to store the result of the query.
-      val pred = Name.Pred(Flix.Delimiter + "Result", loc)
-
-      // The head of the pseudo-rule.
-      val den = Ast.Denotation.Relational
-      val head = DesugaredAst.Predicate.Head.Atom(pred, den, selects, loc)
-
-      // The body of the pseudo-rule.
-      val guard = where.map(DesugaredAst.Predicate.Body.Guard(_, loc))
-
-      // Automatically fix all lattices atoms.
-      val body = guard ::: from.map {
-        case DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, _, terms, loc) =>
-          DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, Ast.Fixity.Fixed, terms, loc)
-        case pred => pred
-      }
-
-      // Construct the pseudo-query.
-      val pseudoConstraint = DesugaredAst.Constraint(head, body, loc)
-
-      // Construct a constraint set that contains the single pseudo constraint.
-      val queryExp = DesugaredAst.Expr.FixpointConstraintSet(List(pseudoConstraint), loc)
-
-      // Construct the merge of all the expressions.
-      val dbExp = exps.reduceRight[DesugaredAst.Expr] {
-        case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc)
-      }
-
-      // Extract the tuples of the result predicate.
-      DesugaredAst.Expr.FixpointProject(pred, queryExp, dbExp, loc)
+      desugarFixpointQueryWithSelect(exps0, selects0, from0, where0, loc)
 
     case WeededAst.Expr.FixpointProject(pred, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
@@ -1312,6 +1267,55 @@ object Desugar {
         val rule = DesugaredAst.MatchRule(p, None, e2)
         DesugaredAst.Expr.Match(withAscription(e1, t), List(rule), loc)
     }
+  }
+
+  private def desugarFixpointQueryWithSelect(exps0: List[WeededAst.Expr], selects0: List[WeededAst.Expr], from0: List[Predicate.Body], where0: List[WeededAst.Expr], loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val exps = visitExps(exps0)
+    val selects = visitExps(selects0)
+    val from = visitPredicateBodies(from0)
+    val where = visitExps(where0)
+    //
+    // Performs the following rewrite:
+    //
+    // query e1, e2, e3 select (x, y, z) from A(x, y), B(z) where x > 0
+    //
+    // =>
+    //
+    // project out %Result from (solve (merge (merge e1, e2, e3) #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } )
+    //
+    // OBS: The last merge and solve is done in the typer because of trouble when
+    // `(merge e1, e2, e3)` is a closed row.
+
+    // The fresh predicate name where to store the result of the query.
+    val pred = Name.Pred(Flix.Delimiter + "Result", loc)
+
+    // The head of the pseudo-rule.
+    val den = Ast.Denotation.Relational
+    val head = DesugaredAst.Predicate.Head.Atom(pred, den, selects, loc)
+
+    // The body of the pseudo-rule.
+    val guard = where.map(DesugaredAst.Predicate.Body.Guard(_, loc))
+
+    // Automatically fix all lattices atoms.
+    val body = guard ::: from.map {
+      case DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, _, terms, loc) =>
+        DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, Ast.Fixity.Fixed, terms, loc)
+      case pred => pred
+    }
+
+    // Construct the pseudo-query.
+    val pseudoConstraint = DesugaredAst.Constraint(head, body, loc)
+
+    // Construct a constraint set that contains the single pseudo constraint.
+    val queryExp = DesugaredAst.Expr.FixpointConstraintSet(List(pseudoConstraint), loc)
+
+    // Construct the merge of all the expressions.
+    val dbExp = exps.reduceRight[Expr] {
+      case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc)
+    }
+
+    // Extract the tuples of the result predicate.
+    DesugaredAst.Expr.FixpointProject(pred, queryExp, dbExp, loc)
   }
 
   /**
