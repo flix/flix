@@ -2396,7 +2396,7 @@ object Weeder {
     if (mods.exists(_.name == "pub")) {
       ().toSuccess
     } else {
-      Validation.toHardFailure(IllegalPrivateDeclaration(ident, ident.loc))
+      Validation.toSoftFailure((), IllegalPrivateDeclaration(ident, ident.loc))
     }
   }
 
@@ -2424,8 +2424,8 @@ object Weeder {
     * Returns an error if a type is present.
     */
   private def requireNoEffect(tpe: Option[ParsedAst.Type], loc: SourceLocation): Validation[Unit, WeederError] = tpe match {
-    case Some(_) => Validation.toHardFailure(IllegalOperationEffect(loc))
     case None => ().toSuccess
+    case Some(_) => Validation.toSoftFailure((), IllegalEffectfulOperation(loc))
   }
 
   /**
