@@ -67,6 +67,7 @@ object AstPrinter {
       if (asts.contains("Optimizer")) writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
       if (asts.contains("TreeShaker2")) writeToDisk("TreeShaker2", formatLiftedAst(flix.getTreeShaker2Ast))
       if (asts.contains("Reducer")) writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
+      if (asts.contains("EffectBinder")) writeToDisk("EffectBinder", formatReducedAst(flix.getEffectBinderAst))
       if (asts.contains("VarOffsets")) writeToDisk("VarOffsets", formatReducedAst(flix.getVarOffsetsAst))
       if (asts.contains("JvmBackend")) () // wip
     }
@@ -110,6 +111,7 @@ object AstPrinter {
     writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
     writeToDisk("TreeShaker2", formatLiftedAst(flix.getTreeShaker2Ast))
     writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
+    writeToDisk("EffectBinder", formatReducedAst(flix.getEffectBinderAst))
     writeToDisk("VarOffsets", formatReducedAst(flix.getVarOffsetsAst))
   }
 

@@ -108,6 +108,7 @@ class Flix {
   private var cachedOptimizerAst: LiftedAst.Root = LiftedAst.empty
   private var cachedTreeShaker2Ast: LiftedAst.Root = LiftedAst.empty
   private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
+  private var cachedEffectBinderAst: ReducedAst.Root = ReducedAst.empty
   private var cachedVarOffsetsAst: ReducedAst.Root = ReducedAst.empty
 
   def getLoweringAst: LoweredAst.Root = cachedLoweringAst
@@ -131,6 +132,8 @@ class Flix {
   def getTreeShaker2Ast: LiftedAst.Root = cachedTreeShaker2Ast
 
   def getReducerAst: ReducedAst.Root = cachedReducerAst
+
+  def getEffectBinderAst: ReducedAst.Root = cachedEffectBinderAst
 
   def getVarOffsetsAst: ReducedAst.Root = cachedVarOffsetsAst
 
@@ -617,7 +620,8 @@ class Flix {
     cachedOptimizerAst = Optimizer.run(cachedTailrecAst)
     cachedTreeShaker2Ast = TreeShaker2.run(cachedOptimizerAst)
     cachedReducerAst = Reducer.run(cachedTreeShaker2Ast)
-    cachedVarOffsetsAst = VarOffsets.run(cachedReducerAst)
+    cachedEffectBinderAst = EffectBinder.run(cachedReducerAst)
+    cachedVarOffsetsAst = VarOffsets.run(cachedEffectBinderAst)
     val result = JvmBackend.run(cachedVarOffsetsAst)
 
     // Write formatted asts to disk based on options.
