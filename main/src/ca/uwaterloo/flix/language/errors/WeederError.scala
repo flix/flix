@@ -228,10 +228,10 @@ object WeederError {
   }
 
   /**
-   * An error raised to indicate that an inner function is annotated with an illegal annotation.
-   *
-   * @param loc the location of the illegal annotation.
-   */
+    * An error raised to indicate that an inner function is annotated with an illegal annotation.
+    *
+    * @param loc the location of the illegal annotation.
+    */
   case class IllegalAnnotation(loc: SourceLocation) extends WeederError with Recoverable {
     override def summary: String = "Unexpected annotation on inner function."
 
@@ -291,6 +291,27 @@ object WeederError {
       import formatter._
       s"${underline("Tip:")} Type parameters are not allowed on effects."
     })
+  }
+
+  /**
+    * An error raised to indicate an operation which itself has an effect.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEffectfulOperation(loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = "Unexpected effect. Effect operations may not themselves have effects."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unexpected effect. Effect operations may not themselves have effects.
+         |
+         |${code(loc, "unexpected effect")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -573,27 +594,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal effect on an effect operation.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalOperationEffect(loc: SourceLocation) extends WeederError with Unrecoverable {
-    def summary: String = "Unexpected effect. Effect operations may not themselves have effects."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unexpected effect. Effect operations may not themselves have effects.
-         |
-         |${code(loc, "unexpected effect")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate an illegal private declaration.
     *
     * @param ident the name of the declaration.
@@ -798,7 +798,7 @@ object WeederError {
     *
     * @param loc the location where the illegal float occurs.
     */
-  case class MalformedFloat(loc: SourceLocation) extends WeederError with Recoverable  {
+  case class MalformedFloat(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Malformed float."
 
     def message(formatter: Formatter): String = {
