@@ -2153,10 +2153,10 @@ object Weeder {
           case (x :: xs, Some(Pattern.Wild(l))) => WeededAst.Pattern.Record(x :: xs, Pattern.Wild(l), loc).toSuccess
 
           // Bad Pattern { | r }
-          case (Nil, Some(r)) => Validation.toHardFailure(EmptyRecordExtensionPattern(r.loc))
+          case (Nil, Some(r)) => Validation.toSoftFailure(r, EmptyRecordExtensionPattern(r.loc))
 
           // Bad Pattern e.g., { x, ... | (1, 2, 3) }
-          case (_, Some(r)) => Validation.toHardFailure(IllegalRecordExtensionPattern(r.loc))
+          case (_, Some(r)) => Validation.toSoftFailure(WeededAst.Pattern.Error(r.loc), IllegalRecordExtensionPattern(r.loc))
         }
     }
 
@@ -2364,7 +2364,7 @@ object Weeder {
     */
   private def requireUnit(tpe: ParsedAst.Type, loc: SourceLocation): Validation[Unit, WeederError] = tpe match {
     case ParsedAst.Type.Ambiguous(_, name, _) if name.isUnqualified && name.ident.name == "Unit" => ().toSuccess
-    case _ => Validation.toHardFailure(NonUnitOperationType(loc))
+    case _ => Validation.toSoftFailure((), NonUnitOperationType(loc))
   }
 
   /**
