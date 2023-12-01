@@ -500,29 +500,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate an illegal jvm field or method name.
-    *
-    * @param loc the location of the name.
-    */
-  case class IllegalJavaFieldOrMethodName(loc: SourceLocation) extends WeederError with Unrecoverable {
-    def summary: String = "Illegal jvm field or method name."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal jvm field or method name.
-         |
-         |${code(loc, "illegal name.")}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate an illegal modifier.
     *
     * @param loc the location where the illegal modifier occurs.

@@ -820,17 +820,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedInt](result)
   }
 
-  test("IllegalJvmFieldOrMethodName.01") {
-    val input =
-      raw"""
-           |def f(): Unit =
-           |    import foo(): Unit \ IO as bar;
-           |    ()
-           |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[WeederError.IllegalJavaFieldOrMethodName](result)
-  }
-
   test("IllegalForFragment.01") {
     val input =
       """

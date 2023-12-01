@@ -1967,7 +1967,7 @@ object ParsedAst {
       * @param eff   the effect of the imported method.
       * @param ident the optional name given to the imported method.
       */
-    case class Method(fqn: Name.JavaName, sig: Seq[ParsedAst.Type], tpe: Type, eff: Option[ParsedAst.Type], ident: Option[Name.Ident]) extends JvmOp
+    case class Method(fqn: ParsedAst.JavaClassMember, sig: Seq[ParsedAst.Type], tpe: Type, eff: Option[ParsedAst.Type], ident: Option[Name.Ident]) extends JvmOp
 
     /**
       * Static Method Invocation.
@@ -1978,7 +1978,7 @@ object ParsedAst {
       * @param eff   the effect of the imported method.
       * @param ident the optional name given to the imported method.
       */
-    case class StaticMethod(fqn: Name.JavaName, sig: Seq[ParsedAst.Type], tpe: Type, eff: Option[ParsedAst.Type], ident: Option[Name.Ident]) extends JvmOp
+    case class StaticMethod(fqn: ParsedAst.JavaClassMember, sig: Seq[ParsedAst.Type], tpe: Type, eff: Option[ParsedAst.Type], ident: Option[Name.Ident]) extends JvmOp
 
     /**
       * Get Object Field.
@@ -1988,7 +1988,7 @@ object ParsedAst {
       * @param eff   the effect of the generated function.
       * @param ident the name given to the imported field.
       */
-    case class GetField(fqn: Name.JavaName, tpe: Type, eff: Option[ParsedAst.Type], ident: Name.Ident) extends JvmOp
+    case class GetField(fqn: ParsedAst.JavaClassMember, tpe: Type, eff: Option[ParsedAst.Type], ident: Name.Ident) extends JvmOp
 
     /**
       * Put ObjectField.
@@ -1998,7 +1998,7 @@ object ParsedAst {
       * @param eff   the effect of the generated function.
       * @param ident the name given to the imported field.
       */
-    case class PutField(fqn: Name.JavaName, tpe: Type, eff: Option[ParsedAst.Type], ident: Name.Ident) extends JvmOp
+    case class PutField(fqn: ParsedAst.JavaClassMember, tpe: Type, eff: Option[ParsedAst.Type], ident: Name.Ident) extends JvmOp
 
     /**
       * Get Static Field.
@@ -2008,7 +2008,7 @@ object ParsedAst {
       * @param eff   the effect of the generated function.
       * @param ident the name given to the imported field.
       */
-    case class GetStaticField(fqn: Name.JavaName, tpe: Type, eff: Option[ParsedAst.Type], ident: Name.Ident) extends JvmOp
+    case class GetStaticField(fqn: ParsedAst.JavaClassMember, tpe: Type, eff: Option[ParsedAst.Type], ident: Name.Ident) extends JvmOp
 
     /**
       * Put Static Field.
@@ -2018,9 +2018,21 @@ object ParsedAst {
       * @param eff   the effect of the generated function.
       * @param ident the name given to the imported field.
       */
-    case class PutStaticField(fqn: Name.JavaName, tpe: Type, eff: Option[ParsedAst.Type], ident: Name.Ident) extends JvmOp
+    case class PutStaticField(fqn: ParsedAst.JavaClassMember, tpe: Type, eff: Option[ParsedAst.Type], ident: Name.Ident) extends JvmOp
 
   }
+
+  /**
+    * Represents a fully-qualified name of a Java class and a member (i.e. field or method).
+    *
+    * This class exists because we want the parser to enforce that a name "a.b.c" has at least two components.
+    *
+    * @param sp1    the position of the first character in the name.
+    * @param prefix the string before the first dot.
+    * @param suffix the strings after the first dot. Guaranteed to be non-empty.
+    * @param sp2    the position of the last character in the name.
+    */
+  case class JavaClassMember(sp1: SourcePosition, prefix: String, suffix: Seq[String], sp2: SourcePosition)
 
   /**
     * JvmMethod (used within NewObject)
