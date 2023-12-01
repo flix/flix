@@ -3318,6 +3318,7 @@ object Resolver {
         case TypeConstructor.CaseSet(_, _) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseIntersection(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseUnion(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Error(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
 
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
