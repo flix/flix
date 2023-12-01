@@ -1108,7 +1108,7 @@ object Desugar {
     }
   }
 
-  private def desugarJvmOpConstructor(fqn: Name.JavaName, sig0: List[WeededAst.Type], tpe0: WeededAst.Type, eff0: Option[WeededAst.Type], ident: Name.Ident, exp2: DesugaredAst.Expr, loc: SourceLocation): DesugaredAst.Expr = {
+  private def desugarJvmOpConstructor(fqn: Name.JavaName, sig0: List[WeededAst.Type], tpe0: WeededAst.Type, eff0: Option[WeededAst.Type], ident: Name.Ident, exp: DesugaredAst.Expr, loc: SourceLocation): DesugaredAst.Expr = {
     val ts = visitTypes(sig0)
     val tpe = visitType(tpe0)
     val eff = eff0.map(visitType)
@@ -1125,7 +1125,7 @@ object Desugar {
         val call = DesugaredAst.Expr.InvokeConstructor(className, Nil, Nil, loc)
         val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
         val e1 = DesugaredAst.Expr.Lambda(fparam, lambdaBody, loc)
-        DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, exp2, loc)
+        DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, exp, loc)
 
       case _ =>
         // Introduce a formal parameter (of appropriate type) for each declared argument.
@@ -1146,7 +1146,7 @@ object Desugar {
         val call = DesugaredAst.Expr.InvokeConstructor(className, as, ts, loc)
         val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
         val e1 = mkCurried(fs, lambdaBody, loc)
-        DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, exp2, loc)
+        DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, exp, loc)
     }
   }
 
