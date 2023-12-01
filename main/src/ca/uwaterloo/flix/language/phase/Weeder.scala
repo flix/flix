@@ -2065,16 +2065,19 @@ object Weeder {
      */
     def visit(pattern: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = pattern match {
       case ParsedAst.Pattern.Var(sp1, ident, sp2) =>
+        val loc = mkSL(sp1, sp2)
+
         // Check if the identifier is a wildcard.
         if (ident.name == "_") {
-          WeededAst.Pattern.Wild(mkSL(sp1, sp2)).toSuccess
+          WeededAst.Pattern.Wild(loc).toSuccess
         } else {
+          // Check for [[NonLinearPattern]].
           seen.get(ident.name) match {
             case None =>
               seen += (ident.name -> ident)
-              WeededAst.Pattern.Var(ident, mkSL(sp1, sp2)).toSuccess
+              WeededAst.Pattern.Var(ident, loc).toSuccess
             case Some(otherIdent) =>
-              Validation.toHardFailure(NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)))
+              Validation.toSoftFailure(WeededAst.Pattern.Var(ident, loc), NonLinearPattern(ident.name, otherIdent.loc, loc))
           }
         }
 
@@ -2135,17 +2138,22 @@ object Weeder {
         val loc = mkSL(sp1, sp2)
         val fsVal = traverse(pats) {
           case ParsedAst.Pattern.RecordLabelPattern(sp11, label, pat, sp22) =>
+            val patLoc = mkSL(sp11, sp22)
             flatMapN(visitIdent(label), traverseOpt(pat)(visit)) {
               case (id, p) if p.isEmpty =>
-                // Check that we have not seen the label symbol in a pattern before.
+                // Check for [[NonLinearPattern]].
                 seen.get(id.name) match {
-                  case Some(dup) => Validation.toHardFailure(NonLinearPattern(id.name, dup.loc, id.loc))
                   case None =>
                     // It was unseen until now, so we add it to the seen variables.
                     seen += id.name -> id
                     val l = Name.mkLabel(id)
-                    val patLoc = mkSL(sp11, sp22)
-                    WeededAst.Pattern.Record.RecordLabelPattern(l, p, patLoc).toSuccess
+                    val pat = WeededAst.Pattern.Record.RecordLabelPattern(l, p, patLoc)
+                    pat.toSuccess
+                  case Some(otherIdent) =>
+                    // We recover from a NonLinear pattern by renaming the label.
+                    val l = Name.mkLabel(id)
+                    val pat = WeededAst.Pattern.Record.RecordLabelPattern(l, p, patLoc)
+                    Validation.toSoftFailure(pat, NonLinearPattern(id.name, otherIdent.loc, id.loc))
                 }
               case (id, p) =>
                 val l = Name.mkLabel(id)

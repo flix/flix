@@ -996,7 +996,7 @@ object WeederError {
     * @param loc1 the location of the first use of the variable.
     * @param loc2 the location of the second use of the variable.
     */
-  case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Unrecoverable {
+  case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Multiple occurrences of '$name' in pattern."
 
     def message(formatter: Formatter): String = {
@@ -1008,12 +1008,20 @@ object WeederError {
          |
          |${code(loc2, "the second occurrence was here.")}
          |
+         |A variable may only occur once in a pattern.
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
-      s"${underline("Tip:")} A variable may only occur once in a pattern."
+      s"""${underline("Tip:")} You can replace
+         |
+         |  case (x, x) => ...
+         |
+         |with a guard:
+         |
+         |  case (x, y) if x == y => ...
+         |""".stripMargin
     })
 
     def loc: SourceLocation = loc1 min loc2
