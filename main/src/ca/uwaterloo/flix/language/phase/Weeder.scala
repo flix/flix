@@ -624,36 +624,33 @@ object Weeder {
       }
 
     case ParsedAst.JvmOp.GetField(fqn, tpe, eff, ident) =>
-      val fqn1 = visitJavaClassMember(fqn)
-      val tpeVal = visitType(tpe)
-      val effVal = traverseOpt(eff)(visitType)
-      mapN(tpeVal, effVal) {
-        case (t, e) => WeededAst.JvmOp.GetField(fqn1, t, e, ident)
+      mapN(visitField(fqn, tpe, eff)) {
+        case (f, t, e) => WeededAst.JvmOp.GetField(f, t, e, ident)
       }
 
     case ParsedAst.JvmOp.PutField(fqn, tpe, eff, ident) =>
-      val fqn1 = visitJavaClassMember(fqn)
-      val tpeVal = visitType(tpe)
-      val effVal = traverseOpt(eff)(visitType)
-      mapN(tpeVal, effVal) {
-        case (t, e) => WeededAst.JvmOp.PutField(fqn1, t, e, ident)
+      mapN(visitField(fqn, tpe, eff)) {
+        case (f, t, e) => WeededAst.JvmOp.PutField(f, t, e, ident)
       }
 
     case ParsedAst.JvmOp.GetStaticField(fqn, tpe, eff, ident) =>
-      val fqn1 = visitJavaClassMember(fqn)
-      val tpeVal = visitType(tpe)
-      val effVal = traverseOpt(eff)(visitType)
-      mapN(tpeVal, effVal) {
-        case (t, e) => WeededAst.JvmOp.GetStaticField(fqn1, t, e, ident)
+      mapN(visitField(fqn, tpe, eff)) {
+        case (f, t, e) => WeededAst.JvmOp.GetStaticField(f, t, e, ident)
       }
 
     case ParsedAst.JvmOp.PutStaticField(fqn, tpe, eff, ident) =>
-      val fqn1 = visitJavaClassMember(fqn)
-      val tpeVal = visitType(tpe)
-      val effVal = traverseOpt(eff)(visitType)
-      mapN(tpeVal, effVal) {
-        case (t, e) => WeededAst.JvmOp.PutStaticField(fqn1, t, e, ident)
+      mapN(visitField(fqn, tpe, eff)) {
+        case (f, t, e) => WeededAst.JvmOp.PutStaticField(f, t, e, ident)
       }
+  }
+
+  private def visitField(fqn: ParsedAst.JavaClassMember, tpe: ParsedAst.Type, eff: Option[ParsedAst.Type])(implicit flix: Flix): Validation[(WeededAst.JavaClassMember, WeededAst.Type, Option[WeededAst.Type]), WeederError] = {
+    val fqn1 = visitJavaClassMember(fqn)
+    val tpeVal = visitType(tpe)
+    val effVal = traverseOpt(eff)(visitType)
+    mapN(tpeVal, effVal) {
+      case (t, e) => (fqn1, t, e)
+    }
   }
 
   private def visitJavaClassMember(fqn: ParsedAst.JavaClassMember): WeededAst.JavaClassMember = fqn match {
