@@ -18,12 +18,11 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SourceKind, SourceLocation, Symbol, Token, TokenKind, WeededAst}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceKind, SourceLocation, Token, TokenKind}
 import ca.uwaterloo.flix.language.errors.Parse2Error
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import org.parboiled2.ParserInput
-import scala.annotation.tailrec
 
 // TODO: Add change set support
 
@@ -94,8 +93,9 @@ object Parser2 {
   }
 
   private def buildTree()(implicit s: State): Tree = {
-    val tokens = s.tokens.iterator
+    val tokens = s.tokens.iterator.buffered
     var stack: List[Tree] = List.empty
+    var locationStack: List[Token] = List.empty
 
     // Pop the last event, which must be a Close,
     // to ensure that the stack is not empty when handling event below.
@@ -109,10 +109,14 @@ object Parser2 {
     for (event <- s.events) {
       event match {
         case Event.Open(kind) =>
-          stack = stack :+ Tree(kind, Array.empty)
+          locationStack = locationStack :+ tokens.head
+          stack = stack :+ Tree(kind, SourceLocation.Unknown, Array.empty)
 
         case Event.Close =>
           val child = Child.Tree(stack.last)
+          val openToken = locationStack.last
+          stack.last.loc = SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, openToken.line, openToken.col, tokens.head.line, tokens.head.col)
+          locationStack = locationStack.dropRight(1)
           stack = stack.dropRight(1)
           stack.last.children = stack.last.children :+ child
 
@@ -121,6 +125,10 @@ object Parser2 {
           stack.last.children = stack.last.children :+ Child.Token(token)
       }
     }
+
+    // Set source location of the root
+    val openToken = locationStack.last
+    stack.last.loc = SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, openToken.line, openToken.col, tokens.head.line, tokens.head.col)
 
     // The stack should now contain a single Source tree,
     // and there should only be an <eof> token left.

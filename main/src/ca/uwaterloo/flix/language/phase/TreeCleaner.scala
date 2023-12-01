@@ -27,17 +27,16 @@ import scala.annotation.tailrec
 
 // TODO: Add change set support
 
-// TODO: Add a way to transform Tree into a weededAst
-
 object TreeCleaner {
 
   import WeededAst._
 
-  private class State(val src: Ast.Source) {
-    // Compute a `ParserInput` when initializing a state for lexing a source.
-    // This is necessary to display source code in error messages.
-    // See `sourceLocationAtStart` for usage and `SourceLocation` for more information.
-    val parserInput: ParserInput = ParserInput.apply(src.data)
+  // A helper that picks out trees of a specific kind from a list of children
+  private def pick(kind: TreeKind)(children: Array[Child]): List[Tree] = {
+    children.foldLeft[List[Tree]](List.empty)((acc, child) => child match {
+      case Child.Tree(tree) if tree.kind == kind => acc.appended(tree)
+      case _ => acc
+    })
   }
 
   def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], trees: Map[Ast.Source, Tree])(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
@@ -49,34 +48,32 @@ object TreeCleaner {
     flix.phase("TreeCleaner") {
       // Parse each source file in parallel and join them into a WeededAst.Root
       val results = ParOps.parMap(trees) {
-        case (src, tree) => mapN(transform(src, tree))(tree => src -> tree)
+        case (src, tree) => mapN(transform(tree))(tree => src -> tree)
       }
 
       mapN(sequence(results))(_.toMap).map(m => WeededAst.Root(m, entryPoint, readRoot.names))
     }
   }
 
-  private def transform(src: Ast.Source, tree: Tree ): Validation[CompilationUnit, CompilationMessage] = {
-    implicit val s: State = new State(src)
-    mapN(location(tree), visitUsesAndImports(tree), visitDeclarations(tree)) {
-      case (loc, usesAndImports, declarations) => CompilationUnit(usesAndImports, declarations, loc)
+  private def transform(tree: Tree): Validation[CompilationUnit, CompilationMessage] = {
+    mapN(visitUsesAndImports(tree), visitDeclarations(tree)) {
+      case (usesAndImports, declarations) => CompilationUnit(usesAndImports, declarations, tree.loc)
     }
   }
 
-  private def visitUsesAndImports(tree: Tree)(implicit s: State): Validation[List[UseOrImport], CompilationMessage] = {
+  private def visitUsesAndImports(tree: Tree): Validation[List[UseOrImport], CompilationMessage] = {
     assert(tree.kind == TreeKind.Source)
     List.empty.toSuccess
   }
 
-  private def visitDeclarations(tree: Tree)(implicit s: State): Validation[List[Declaration], CompilationMessage] = {
+  private def visitDeclarations(tree: Tree): Validation[List[Declaration], CompilationMessage] = {
     assert(tree.kind == TreeKind.Source)
-    List.empty.toSuccess
+    sequence(pick(TreeKind.Def)(tree.children).map(visitDefinition))
   }
 
-  private def visitDefinition(tree: Tree)(implicit s: State): Validation[Declaration, CompilationMessage] = {
+  private def visitDefinition(tree: Tree): Validation[Declaration, CompilationMessage] = {
     assert(tree.kind == TreeKind.Def)
     mapN(
-      location(tree),
       visitDocumentation(tree),
       visitAnnotations(tree),
       visitModifiers(tree),
@@ -89,77 +86,63 @@ object TreeCleaner {
       visitConstraints(tree),
       visitEffect(tree)
     ) {
-      case (loc, doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
-        Declaration.Def(doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, loc)
+      case (doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
+        Declaration.Def(doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
     }
   }
 
-  private def visitNameIdent(c: Child)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
+  private def visitNameIdent(c: Child): Validation[Name.Ident, CompilationMessage] = {
+    // TODO
     Validation.Failure(LazyList.empty)
   }
 
-  private def visitDocumentation(tree: Tree)(implicit s: State): Validation[Ast.Doc, CompilationMessage] = {
+  private def visitDocumentation(tree: Tree): Validation[Ast.Doc, CompilationMessage] = {
+    // TODO
     Ast.Doc(List.empty, SourceLocation.Unknown).toSuccess
   }
 
-  private def visitAnnotations(tree: Tree)(implicit s: State): Validation[Ast.Annotations, CompilationMessage] = {
+  private def visitAnnotations(tree: Tree): Validation[Ast.Annotations, CompilationMessage] = {
+    // TODO
     Ast.Annotations(List.empty).toSuccess
   }
 
-  private def visitModifiers(tree: Tree)(implicit s: State): Validation[Ast.Modifiers, CompilationMessage] = {
+  private def visitModifiers(tree: Tree): Validation[Ast.Modifiers, CompilationMessage] = {
+    // TODO
     Ast.Modifiers(List.empty).toSuccess
   }
 
-  private def visitTypeParameters(tree: Tree)(implicit s: State): Validation[KindedTypeParams, CompilationMessage] = {
+  private def visitTypeParameters(tree: Tree): Validation[KindedTypeParams, CompilationMessage] = {
+    // TODO
     TypeParams.Elided.toSuccess
   }
 
-  private def visitParameters(tree: Tree)(implicit s: State): Validation[List[FormalParam], CompilationMessage] = {
+  private def visitParameters(tree: Tree): Validation[List[FormalParam], CompilationMessage] = {
+    // TODO
     List.empty.toSuccess
   }
 
-  private def visitTypeConstraints(tree: Tree)(implicit s: State): Validation[List[TypeConstraint], CompilationMessage] = {
+  private def visitTypeConstraints(tree: Tree): Validation[List[TypeConstraint], CompilationMessage] = {
+    // TODO
     List.empty.toSuccess
   }
 
-  private def visitConstraints(tree: Tree)(implicit s: State): Validation[List[EqualityConstraint], CompilationMessage] = {
+  private def visitConstraints(tree: Tree): Validation[List[EqualityConstraint], CompilationMessage] = {
+    // TODO
     List.empty.toSuccess
   }
 
-  private def visitExpression(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-    mapN(location(tree))(loc => Expr.Error(Parse2Error.DevErr(loc, "expected expression")))
+  private def visitExpression(tree: Tree): Validation[Expr, CompilationMessage] = {
+    // TODO
+    Expr.Error(Parse2Error.DevErr(tree.loc, "expected expression")).toSuccess
   }
 
-  private def visitType(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-    mapN(location(tree))(Type.Unit)
+  private def visitType(tree: Tree): Validation[Type, CompilationMessage] = {
+    // TODO
+    Type.Unit(tree.loc).toSuccess
   }
 
-  private def visitEffect(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {
+  private def visitEffect(tree: Tree): Validation[Option[Type], CompilationMessage] = {
+    // TODO
     None.toSuccess
-  }
-
-  private def location(tree: Tree)(implicit s: State): Validation[SourceLocation, CompilationMessage] = {
-    mapN(treeBegin(tree), treeEnd(tree)) {
-      case ((b_line, b_col), (e_line, e_col)) =>
-        SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, b_line, b_col, e_line, e_col)
-    }
-  }
-
-  @tailrec
-  private def treeBegin(tree: Tree): Validation[(Int, Int), CompilationMessage] = {
-    tree.children.headOption match {
-      case Some(Child.Token(token)) => (token.line, token.col).toSuccess
-      case Some(Child.Tree(tree)) => treeBegin(tree)
-      case _ => Validation.Failure(LazyList.empty)
-    }
-  }
-
-  @tailrec
-  private def treeEnd(tree: Tree): Validation[(Int, Int), CompilationMessage] = {
-    tree.children.lastOption match {
-      case Some(Child.Token(token)) => (token.line, token.col).toSuccess
-      case Some(Child.Tree(tree)) => treeEnd(tree)
-      case _ => Validation.Failure(LazyList.empty)
-    }
   }
 }
