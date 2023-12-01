@@ -3046,17 +3046,6 @@ object Weeder {
   }
 
   /**
-    * Returns the class and member name constructed from the given `fqn`
-    */
-  private def splitClassAndMember(fqn: ParsedAst.JavaClassMember): (String, String) = fqn match {
-    case ParsedAst.JavaClassMember(_, prefix, suffix, _) =>
-      // The Parser ensures that suffix is non-empty.
-      val className = prefix + "." + suffix.init.mkString(".")
-      val memberName = suffix.last
-      (className, memberName)
-  }
-
-  /**
     * The syntactic environment of an expression.
     *
     * Used to indicate which expressions are allowed at the given point in the syntax tree.
