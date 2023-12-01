@@ -1074,33 +1074,37 @@ object Desugar {
     Expr.Apply(e2, List(e1, e3), loc)
   }
 
+  /**
+    * Rewrites the let-import into a let-bound lambda.
+    * The specific implementation of the lambda depends on `op`.
+    */
   private def desugarLetImport(op: WeededAst.JvmOp, exp: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val e2 = visitExp(exp)
+    val e = visitExp(exp)
 
     //
-    // Visit the inner expression exp2.
+    // Desugar based on `op`.
     //
     op match {
       case WeededAst.JvmOp.Constructor(fqn, sig0, tpe0, eff0, ident) =>
-        desugarJvmOpConstructor(fqn, sig0, tpe0, eff0, ident, e2, loc)
+        desugarJvmOpConstructor(fqn, sig0, tpe0, eff0, ident, e, loc)
 
       case WeededAst.JvmOp.Method(fqn, sig0, tpe0, eff0, identOpt) =>
-        desugarJvmOpMethod(fqn, sig0, tpe0, eff0, identOpt, e2, loc)
+        desugarJvmOpMethod(fqn, sig0, tpe0, eff0, identOpt, e, loc)
 
       case WeededAst.JvmOp.StaticMethod(fqn, sig0, tpe0, eff0, identOpt) =>
-        desugarJvmOpStaticMethod(fqn, sig0, tpe0, eff0, identOpt, e2, loc)
+        desugarJvmOpStaticMethod(fqn, sig0, tpe0, eff0, identOpt, e, loc)
 
       case WeededAst.JvmOp.GetField(fqn, tpe0, eff0, ident) =>
-        desugarJvmOpGetField(fqn, tpe0, eff0, ident, e2, loc)
+        desugarJvmOpGetField(fqn, tpe0, eff0, ident, e, loc)
 
       case WeededAst.JvmOp.PutField(fqn, tpe0, eff0, ident) =>
-        desugarJvmOpPutField(fqn, tpe0, eff0, ident, e2, loc)
+        desugarJvmOpPutField(fqn, tpe0, eff0, ident, e, loc)
 
       case WeededAst.JvmOp.GetStaticField(fqn, tpe0, eff0, ident) =>
-        desugarJvmOpGetStaticField(fqn, tpe0, eff0, ident, e2, loc)
+        desugarJvmOpGetStaticField(fqn, tpe0, eff0, ident, e, loc)
 
       case WeededAst.JvmOp.PutStaticField(fqn, tpe0, eff0, ident) =>
-        desugarJvmOpPutStaticField(fqn, tpe0, eff0, ident, e2, loc)
+        desugarJvmOpPutStaticField(fqn, tpe0, eff0, ident, e, loc)
     }
   }
 
