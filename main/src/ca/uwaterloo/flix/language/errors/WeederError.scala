@@ -692,11 +692,11 @@ object WeederError {
   /**
     * An error raised to indicate that the case of an alias does not match the case of the original value.
     *
-    * @param fromName the original name
-    * @param toName   the alias
-    * @param loc      the location where the error occurred
+    * @param fromName the original name.
+    * @param toName   the alias.
+    * @param loc      the location where the error occurred.
     */
-  case class IllegalUseAlias(fromName: String, toName: String, loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalUse(fromName: String, toName: String, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"The case of '$fromName' does not match the case of '$toName'."
 
     def message(formatter: Formatter): String = {

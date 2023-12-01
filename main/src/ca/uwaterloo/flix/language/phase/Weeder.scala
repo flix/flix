@@ -550,14 +550,21 @@ object Weeder {
       List(WeededAst.UseOrImport.Use(qname, qname.ident, mkSL(sp1, sp2))).toSuccess
 
     case ParsedAst.Use.UseMany(_, nname, names, _) =>
-      traverse(names) {
-        case ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2) =>
-          mapN(checkAliasCase(ident.name, aliasOpt)) {
-            case () =>
-              val alias = aliasOpt.getOrElse(ident)
-              WeededAst.UseOrImport.Use(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)): WeededAst.UseOrImport
-          }
+      // Check for [[IllegalUseAlias]].
+      val errors = mutable.ArrayBuffer.empty[IllegalUse]
+      for (ParsedAst.Use.NameAndAlias(_, ident, aliasOpt, _) <- names) {
+        if (!isValidAlias(ident, aliasOpt)) {
+          // The use of aliasOpt.get is safe because an alias can only be invalid if it exists.
+          errors += IllegalUse(ident.name, aliasOpt.get.name, aliasOpt.get.loc)
+        }
       }
+
+      // Collect non-erroneous uses.
+      names.collect {
+        case ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2) if isValidAlias(ident, aliasOpt) =>
+          val alias = aliasOpt.getOrElse(ident)
+          WeededAst.UseOrImport.Use(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)): WeededAst.UseOrImport
+      }.toList.toSuccess.withSoftFailures(errors)
 
     case ParsedAst.Imports.ImportOne(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -580,14 +587,11 @@ object Weeder {
   }
 
   /**
-    * Checks that the name's casing matches the alias's casing. (I.e., both uppercase or both lowercase.)
+    * Returns `true` if `ident` and `alias` are both lower/upper case.
     */
-  private def checkAliasCase(name: String, aliasOpt: Option[Name.Ident]): Validation[Unit, WeederError] = {
-    aliasOpt match {
-      case Some(alias) if (alias.name.charAt(0).isUpper != name(0).isUpper) =>
-        Validation.toHardFailure(IllegalUseAlias(name, alias.name, alias.loc))
-      case _ => ().toSuccess
-    }
+  private def isValidAlias(ident: Name.Ident, aliasOpt: Option[Name.Ident]): Boolean = aliasOpt match {
+    case None => true
+    case Some(alias) => ident.name(0).isUpper == alias.name.charAt(0).isUpper
   }
 
   private def visitDebugKind(kind: ParsedAst.DebugKind): WeededAst.DebugKind = kind match {
