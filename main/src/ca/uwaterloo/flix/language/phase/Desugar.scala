@@ -849,15 +849,13 @@ object Desugar {
     DesugaredAst.Expr.UncheckedMaskingCast(call, loc0)
   }
 
-  private def mkDebugPrefix(exp0: DesugaredAst.Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation): String = {
-    kind0 match {
-      case WeededAst.DebugKind.Debug => ""
-      case WeededAst.DebugKind.DebugWithLoc => s"[${loc0.formatWithLine}] "
-      case WeededAst.DebugKind.DebugWithLocAndSrc =>
-        val locPart = s"[${loc0.formatWithLine}]"
-        val srcPart = exp0.loc.text.map(s => s" $s = ").getOrElse("")
-        locPart + srcPart
-    }
+  private def mkDebugPrefix(exp0: DesugaredAst.Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation): String = kind0 match {
+    case WeededAst.DebugKind.Debug => ""
+    case WeededAst.DebugKind.DebugWithLoc => s"[${loc0.formatWithLine}] "
+    case WeededAst.DebugKind.DebugWithLocAndSrc =>
+      val locPart = s"[${loc0.formatWithLine}]"
+      val srcPart = exp0.loc.text.map(s => s" $s = ").getOrElse("")
+      locPart + srcPart
   }
 
   /**
