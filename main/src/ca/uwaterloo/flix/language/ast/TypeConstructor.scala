@@ -394,4 +394,9 @@ object TypeConstructor {
     def kind: Kind = Kind.Eff ->: Kind.Star
   }
 
+  /**
+    * A type constructor which represents an erroneous type of the given `kind`.
+    */
+  case class Error(kind: Kind) extends TypeConstructor
+
 }
