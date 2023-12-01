@@ -841,23 +841,6 @@ object Desugar {
       DesugaredAst.Expr.Error(m)
   }
 
-  private def desugarDebug(exp0: WeededAst.Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val e = visitExp(exp0)
-    val prefix = mkDebugPrefix(e, kind0, loc0)
-    val e1 = DesugaredAst.Expr.Cst(Ast.Constant.Str(prefix), loc0)
-    val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc0)
-    DesugaredAst.Expr.UncheckedMaskingCast(call, loc0)
-  }
-
-  private def mkDebugPrefix(exp0: DesugaredAst.Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation): String = kind0 match {
-    case WeededAst.DebugKind.Debug => ""
-    case WeededAst.DebugKind.DebugWithLoc => s"[${loc0.formatWithLine}] "
-    case WeededAst.DebugKind.DebugWithLocAndSrc =>
-      val locPart = s"[${loc0.formatWithLine}]"
-      val srcPart = exp0.loc.text.map(s => s" $s = ").getOrElse("")
-      locPart + srcPart
-  }
-
   /**
     * Desugars the given list of [[WeededAst.Expr]] `exps`.
     */
@@ -1329,6 +1312,29 @@ object Desugar {
 
     // Bind the tmp% variable to the minimal model and combine it with the body expression.
     DesugaredAst.Expr.Let(localVar, Ast.Modifiers.Empty, modelExp, bodyExp, loc.asReal)
+  }
+
+  /**
+    * Rewrites a [[WeededAst.Expr.Debug]] into a call to `Debug.debugWithPrefix`.
+    */
+  private def desugarDebug(exp0: WeededAst.Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val e = visitExp(exp0)
+    val prefix = mkDebugPrefix(e, kind0, loc0)
+    val e1 = DesugaredAst.Expr.Cst(Ast.Constant.Str(prefix), loc0)
+    val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc0)
+    DesugaredAst.Expr.UncheckedMaskingCast(call, loc0)
+  }
+
+  /**
+    * Returns a prefix used by `Debug.debugWithPrefix` based on `kind0` and `exp0`.
+    */
+  private def mkDebugPrefix(exp0: DesugaredAst.Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation): String = kind0 match {
+    case WeededAst.DebugKind.Debug => ""
+    case WeededAst.DebugKind.DebugWithLoc => s"[${loc0.formatWithLine}] "
+    case WeededAst.DebugKind.DebugWithLocAndSrc =>
+      val locPart = s"[${loc0.formatWithLine}]"
+      val srcPart = exp0.loc.text.map(s => s" $s = ").getOrElse("")
+      locPart + srcPart
   }
 
   /**
