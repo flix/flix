@@ -36,120 +36,110 @@ object TreeTransformer {
 
   private class State(val parserInput: ParserInput, val src: Ast.Source) {}
 
-  def transform(tree: Tree, parserInput: ParserInput, src: Ast.Source): Option[CompilationUnit] = {
+  def transform(tree: Tree, parserInput: ParserInput, src: Ast.Source): Validation[CompilationUnit, CompilationMessage] = {
     implicit val s: State = new State(parserInput, src)
-    for {
-      loc <- location(tree)
-      usesAndImports <- visitUsesAndImports(tree)
-      declarations <- visitDeclarations(tree)
-    } yield {
-      CompilationUnit(usesAndImports, declarations, loc)
+    mapN(location(tree), visitUsesAndImports(tree), visitDeclarations(tree)) {
+      case (loc, usesAndImports, declarations) => CompilationUnit(usesAndImports, declarations, loc)
     }
   }
 
-  private def visitUsesAndImports(tree: Tree)(implicit s: State): Option[List[UseOrImport]] = {
+  private def visitUsesAndImports(tree: Tree)(implicit s: State): Validation[List[UseOrImport], CompilationMessage] = {
     assert(tree.kind == TreeKind.Source)
-    Some(List.empty)
+    List.empty.toSuccess
   }
 
-  private def visitDeclarations(tree: Tree)(implicit s: State): Option[List[Declaration]] = {
+  private def visitDeclarations(tree: Tree)(implicit s: State): Validation[List[Declaration], CompilationMessage] = {
     assert(tree.kind == TreeKind.Source)
-    Some(List.empty)
+    List.empty.toSuccess
   }
 
-  private def visitDefinition(tree: Tree)(implicit s: State): Option[Declaration] = {
+  private def visitDefinition(tree: Tree)(implicit s: State): Validation[Declaration, CompilationMessage] = {
     assert(tree.kind == TreeKind.Def)
-
-    for {
-      loc <- location(tree)
-      doc <- visitDocumentation(tree)
-      annotations <- visitAnnotations(tree)
-      modifiers <- visitModifiers(tree)
-      ident <- visitNameIdent(tree.children(1))
-      tparams <- visitTypeParameters(tree)
-      fparams <- visitParameters(tree)
-      exp <- visitExpression(tree)
-      ttype <- visitType(tree)
-      tconstrs <- visitTypeConstraints(tree)
-      constrs <- visitConstraints(tree)
-    } yield {
-      val eff = visitEffect(tree)
-      Declaration.Def(doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, loc)
+    mapN(
+      location(tree),
+      visitDocumentation(tree),
+      visitAnnotations(tree),
+      visitModifiers(tree),
+      visitNameIdent(tree.children(1)),
+      visitTypeParameters(tree),
+      visitParameters(tree),
+      visitExpression(tree),
+      visitType(tree),
+      visitTypeConstraints(tree),
+      visitConstraints(tree),
+      visitEffect(tree)
+    ) {
+      case (loc, doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
+        Declaration.Def(doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, loc)
     }
   }
 
-  private def visitNameIdent(c: Child)(implicit s: State): Option[Name.Ident] = {
-    None
+  private def visitNameIdent(c: Child)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
+    Validation.Failure(LazyList.empty)
   }
 
-  private def visitDocumentation(tree: Tree)(implicit s: State): Option[Ast.Doc] = {
-    Some(Ast.Doc(List.empty, SourceLocation.Unknown))
+  private def visitDocumentation(tree: Tree)(implicit s: State): Validation[Ast.Doc, CompilationMessage] = {
+    Ast.Doc(List.empty, SourceLocation.Unknown).toSuccess
   }
 
-  private def visitAnnotations(tree: Tree)(implicit s: State): Option[Ast.Annotations] = {
-    Some(Ast.Annotations(List.empty))
+  private def visitAnnotations(tree: Tree)(implicit s: State): Validation[Ast.Annotations, CompilationMessage] = {
+    Ast.Annotations(List.empty).toSuccess
   }
 
-  private def visitModifiers(tree: Tree)(implicit s: State): Option[Ast.Modifiers] = {
-    Some(Ast.Modifiers(List.empty))
+  private def visitModifiers(tree: Tree)(implicit s: State): Validation[Ast.Modifiers, CompilationMessage] = {
+    Ast.Modifiers(List.empty).toSuccess
   }
 
-  private def visitTypeParameters(tree: Tree)(implicit s: State): Option[KindedTypeParams] = {
-    Some(TypeParams.Elided)
+  private def visitTypeParameters(tree: Tree)(implicit s: State): Validation[KindedTypeParams, CompilationMessage] = {
+    TypeParams.Elided.toSuccess
   }
 
-  private def visitParameters(tree: Tree)(implicit s: State): Option[List[FormalParam]] = {
-    Some(List.empty)
+  private def visitParameters(tree: Tree)(implicit s: State): Validation[List[FormalParam], CompilationMessage] = {
+    List.empty.toSuccess
   }
 
-  private def visitTypeConstraints(tree: Tree)(implicit s: State): Option[List[TypeConstraint]] = {
-    Some(List.empty)
+  private def visitTypeConstraints(tree: Tree)(implicit s: State): Validation[List[TypeConstraint], CompilationMessage] = {
+    List.empty.toSuccess
   }
 
-  private def visitConstraints(tree: Tree)(implicit s: State): Option[List[EqualityConstraint]] = {
-    Some(List.empty)
+  private def visitConstraints(tree: Tree)(implicit s: State): Validation[List[EqualityConstraint], CompilationMessage] = {
+    List.empty.toSuccess
   }
 
-  private def visitExpression(tree: Tree)(implicit s: State): Option[Expr] = {
-    for {loc <- location(tree)} yield {
-      Expr.Error(Parse2Error.DevErr(loc, "expected expression"))
-    }
+  private def visitExpression(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+    mapN(location(tree))(loc => Expr.Error(Parse2Error.DevErr(loc, "expected expression")))
   }
 
-  private def visitType(tree: Tree)(implicit s: State): Option[Type] = {
-    for {loc <- location(tree)} yield {
-      Type.Unit(loc)
-    }
+  private def visitType(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+    mapN(location(tree))(Type.Unit)
   }
 
-  private def visitEffect(tree: Tree)(implicit s: State): Option[Type] = {
-    None
+  private def visitEffect(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {
+    None.toSuccess
   }
 
-  private def location(tree: Tree)(implicit s: State): Option[SourceLocation] = {
-    for {
-      case (b_line, b_col) <- treeBegin(tree)
-      case (e_line, e_col) <- treeEnd(tree)
-    } yield {
-      SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, b_line, b_col, e_line, e_col)
+  private def location(tree: Tree)(implicit s: State): Validation[SourceLocation, CompilationMessage] = {
+    mapN(treeBegin(tree), treeEnd(tree)) {
+      case ((b_line, b_col), (e_line, e_col)) =>
+        SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, b_line, b_col, e_line, e_col)
     }
   }
 
   @tailrec
-  private def treeBegin(tree: Tree): Option[(Int, Int)] = {
+  private def treeBegin(tree: Tree): Validation[(Int, Int), CompilationMessage] = {
     tree.children.headOption match {
-      case Some(Child.Token(token)) => Some((token.line, token.col))
+      case Some(Child.Token(token)) => (token.line, token.col).toSuccess
       case Some(Child.Tree(tree)) => treeBegin(tree)
-      case _ => None
+      case _ => Validation.Failure(LazyList.empty)
     }
   }
 
   @tailrec
-  private def treeEnd(tree: Tree): Option[(Int, Int)] = {
+  private def treeEnd(tree: Tree): Validation[(Int, Int), CompilationMessage] = {
     tree.children.lastOption match {
-      case Some(Child.Token(token)) => Some((token.line, token.col))
+      case Some(Child.Token(token)) => (token.line, token.col).toSuccess
       case Some(Child.Tree(tree)) => treeEnd(tree)
-      case _ => None
+      case _ => Validation.Failure(LazyList.empty)
     }
   }
 }
@@ -229,13 +219,7 @@ object Parser2 {
     if (s.errors.length > 0) {
       Validation.Failure(LazyList.from(s.errors))
     } else {
-      // Transform tree into a WeededAst.CompilationUnit
-      TreeTransformer.transform(tree, s.parserInput, s.src) match {
-        case Some(unit) =>
-          println(s"${src.name} compilation unit:\n$unit")
-          unit.toSuccess
-        case _ => Validation.Failure(LazyList.empty)
-      }
+      TreeTransformer.transform(tree, s.parserInput, s.src)
     }
   }
 
