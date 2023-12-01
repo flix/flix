@@ -211,7 +211,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class EmptyRecordExtensionPattern(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class EmptyRecordExtensionPattern(loc: SourceLocation) extends WeederError with Recoverable {
     override def summary: String = "A record pattern must specify at least one field."
 
     override def message(formatter: Formatter): String = {

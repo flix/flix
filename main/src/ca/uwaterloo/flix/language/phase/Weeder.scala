@@ -2165,7 +2165,7 @@ object Weeder {
           case (x :: xs, Some(Pattern.Wild(l))) => WeededAst.Pattern.Record(x :: xs, Pattern.Wild(l), loc).toSuccess
 
           // Bad Pattern { | r }
-          case (Nil, Some(r)) => Validation.toHardFailure(EmptyRecordExtensionPattern(r.loc))
+          case (Nil, Some(r)) => Validation.toSoftFailure(r, EmptyRecordExtensionPattern(r.loc))
 
           // Bad Pattern e.g., { x, ... | (1, 2, 3) }
           case (_, Some(r)) => Validation.toHardFailure(IllegalRecordExtensionPattern(r.loc))
