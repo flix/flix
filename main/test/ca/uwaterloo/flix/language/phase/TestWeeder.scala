@@ -435,7 +435,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    };
         |    ()
         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
+    val result = compile(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalFixedAtom](result)
   }
 
@@ -467,7 +467,41 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   }
 
   test("IllegalModifier.01") {
-    val input = "pub instance I[a]"
+    val input =
+      """
+        |lawful enum A
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModifier](result)
+  }
+
+  test("IllegalModifier.02") {
+    val input =
+      """
+        |override enum A
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModifier](result)
+  }
+
+  test("IllegalModifier.03") {
+    val input =
+      """
+        |sealed enum A
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModifier](result)
+  }
+
+  test("IllegalModifier.04") {
+    val input =
+      """pub instance Sub[String] {
+        |    pub def sub(x: String, y: String): String = ???
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalModifier](result)
   }
@@ -522,7 +556,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[WeederError.IllegalOperationEffect](result)
+    expectError[WeederError.IllegalEffectfulOperation](result)
   }
 
   test("IllegalOperationEffect.02") {
@@ -533,7 +567,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalOperationEffect](result)
+    expectError[WeederError.IllegalEffectfulOperation](result)
   }
 
   test("NonUnitOperationType.01") {
@@ -627,16 +661,16 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MismatchedTypeParameters](result)
   }
 
-  test("UnkindedTypeParameters.01") {
+  test("MissingTypeParamKind.01") {
     val input =
       """
         |def f[a](x: a): a = ???
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UnkindedTypeParameters](result)
+    expectError[WeederError.MissingTypeParamKind](result)
   }
 
-  test("UnkindedTypeParameters.02") {
+  test("MissingTypeParamKind.02") {
     val input =
       """
         |class C[a] {
@@ -644,7 +678,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UnkindedTypeParameters](result)
+    expectError[WeederError.MissingTypeParamKind](result)
   }
 
   test("IllegalTypeConstraintParameter.01") {
