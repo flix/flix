@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
+import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, DesugaredAst, Name, SourceLocation, WeededAst}
 import ca.uwaterloo.flix.util.ParOps
 
@@ -829,6 +830,9 @@ object Desugar {
     case WeededAst.Expr.FixpointSolveWithProject(exps, optIdents, loc) =>
       desugarFixpointSolveWithProject(exps, optIdents, loc)
 
+    case WeededAst.Expr.FixpointQueryWithSelect(exps0, selects0, from0, where0, loc) =>
+      desugarFixpointQueryWithSelect(exps0, selects0, from0, where0, loc)
+
     case WeededAst.Expr.FixpointProject(pred, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -992,27 +996,36 @@ object Desugar {
         DesugaredAst.Predicate.Head.Atom(pred, den, e, loc)
     }
 
-    def visitBody(body0: WeededAst.Predicate.Body)(implicit flix: Flix): DesugaredAst.Predicate.Body = body0 match {
-      case WeededAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
-        val ts = terms.map(visitPattern)
-        DesugaredAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
-
-      case WeededAst.Predicate.Body.Functional(idents, exp, loc) =>
-        val e = visitExp(exp)
-        DesugaredAst.Predicate.Body.Functional(idents, e, loc)
-
-      case WeededAst.Predicate.Body.Guard(exp, loc) =>
-        val e = visitExp(exp)
-        DesugaredAst.Predicate.Body.Guard(e, loc)
-    }
-
     constraint0 match {
       case WeededAst.Constraint(head, body, loc) =>
         val h = visitHead(head)
-        val b = body.map(visitBody)
+        val b = body.map(visitPredicateBody)
         DesugaredAst.Constraint(h, b, loc)
     }
   }
+
+  /**
+    * Desugars the given [[WeededAst.Predicate.Body]] `body0`.
+    */
+  private def visitPredicateBody(body0: WeededAst.Predicate.Body)(implicit flix: Flix): DesugaredAst.Predicate.Body = body0 match {
+    case WeededAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
+      val ts = terms.map(visitPattern)
+      DesugaredAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
+
+    case WeededAst.Predicate.Body.Functional(idents, exp, loc) =>
+      val e = visitExp(exp)
+      DesugaredAst.Predicate.Body.Functional(idents, e, loc)
+
+    case WeededAst.Predicate.Body.Guard(exp, loc) =>
+      val e = visitExp(exp)
+      DesugaredAst.Predicate.Body.Guard(e, loc)
+  }
+
+  /**
+    * Desugars the given list of [[WeededAst.Predicate.Body]] `bodies0`.
+    */
+  private def visitPredicateBodies(bodies0: List[WeededAst.Predicate.Body])(implicit flix: Flix): List[DesugaredAst.Predicate.Body] =
+    bodies0.map(visitPredicateBody)
 
   /**
     * Desugars the given [[WeededAst.PredicateParam]] `param0`.
@@ -1315,7 +1328,59 @@ object Desugar {
   }
 
   /**
-    * Rewrites a [[WeededAst.Expr.Debug]] into a call to `Debug.debugWithPrefix`.
+    * Rewrites a [[WeededAst.Expr.FixpointQueryWithSelect]] into a series of solves and merges.
+    *
+    * E.g.,
+    * {{{
+    * query e1, e2, e3 select (x, y, z) from A(x, y), B(z) where x > 0
+    * }}}
+    * becomes
+    * {{{
+    *   project out %Result from (solve (merge (merge e1, e2, e3) #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } )
+    *   merge (project P1 tmp%, project P2 tmp%, project P3 tmp%)
+    * }}}
+    * OBS: The last merge and solve is done in the typer because of trouble when `(merge e1, e2, e3)` is a closed row.
+    */
+  private def desugarFixpointQueryWithSelect(exps0: List[WeededAst.Expr], selects0: List[WeededAst.Expr], from0: List[Predicate.Body], where0: List[WeededAst.Expr], loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val exps = visitExps(exps0)
+    val selects = visitExps(selects0)
+    val from = visitPredicateBodies(from0)
+    val where = visitExps(where0)
+
+    // The fresh predicate name where to store the result of the query.
+    val pred = Name.Pred(Flix.Delimiter + "Result", loc)
+
+    // The head of the pseudo-rule.
+    val den = Ast.Denotation.Relational
+    val head = DesugaredAst.Predicate.Head.Atom(pred, den, selects, loc)
+
+    // The body of the pseudo-rule.
+    val guard = where.map(DesugaredAst.Predicate.Body.Guard(_, loc))
+
+    // Automatically fix all lattices atoms.
+    val body = guard ::: from.map {
+      case DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, _, terms, loc) =>
+        DesugaredAst.Predicate.Body.Atom(pred, Ast.Denotation.Latticenal, polarity, Ast.Fixity.Fixed, terms, loc)
+      case pred => pred
+    }
+
+    // Construct the pseudo-query.
+    val pseudoConstraint = DesugaredAst.Constraint(head, body, loc)
+
+    // Construct a constraint set that contains the single pseudo constraint.
+    val queryExp = DesugaredAst.Expr.FixpointConstraintSet(List(pseudoConstraint), loc)
+
+    // Construct the merge of all the expressions.
+    val dbExp = exps.reduceRight[Expr] {
+      case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc)
+    }
+
+    // Extract the tuples of the result predicate.
+    DesugaredAst.Expr.FixpointProject(pred, queryExp, dbExp, loc)
+  }
+
+  /**
+    * Rewrites a [[WeededAst.Expr.Debug] into a call to `Debug.debugWithPrefix`.
     */
   private def desugarDebug(exp0: WeededAst.Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val e = visitExp(exp0)

@@ -1711,51 +1711,13 @@ object Weeder {
 
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, exps0, selects0, from0, whereExp0, sp2) =>
       val loc = mkSL(sp1, sp2).asSynthetic
-
-      mapN(traverse(exps0)(visitExp(_, senv)), traverse(selects0)(visitExp(_, senv)), traverse(from0)(visitPredicateBody(_, senv)), traverse(whereExp0)(visitExp(_, senv))) {
+      val esVal = traverse(exps0)(visitExp(_, senv))
+      val selectsVal = traverse(selects0)(visitExp(_, senv))
+      val fromVal = traverse(from0)(visitPredicateBody(_, senv))
+      val whereVal = traverse(whereExp0)(visitExp(_, senv))
+      mapN(esVal, selectsVal, fromVal, whereVal) {
         case (exps, selects, from, where) =>
-          //
-          // Performs the following rewrite:
-          //
-          // query e1, e2, e3 select (x, y, z) from A(x, y), B(z) where x > 0
-          //
-          // =>
-          //
-          // project out %Result from (solve (merge (merge e1, e2, e3) #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } )
-          //
-          // OBS: The last merge and solve is done in the typer because of trouble when
-          // `(merge e1, e2, e3)` is a closed row.
-
-          // The fresh predicate name where to store the result of the query.
-          val pred = Name.Pred(Flix.Delimiter + "Result", loc)
-
-          // The head of the pseudo-rule.
-          val den = Denotation.Relational
-          val head = WeededAst.Predicate.Head.Atom(pred, den, selects, loc)
-
-          // The body of the pseudo-rule.
-          val guard = where.map(g => WeededAst.Predicate.Body.Guard(g, loc))
-
-          // Automatically fix all lattices atoms.
-          val body = guard ::: from.map {
-            case WeededAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, _, terms, loc) =>
-              WeededAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, Fixity.Fixed, terms, loc)
-            case pred => pred
-          }
-
-          // Construct the pseudo-query.
-          val pseudoConstraint = WeededAst.Constraint(head, body, loc)
-
-          // Construct a constraint set that contains the single pseudo constraint.
-          val queryExp = WeededAst.Expr.FixpointConstraintSet(List(pseudoConstraint), loc)
-
-          // Construct the merge of all the expressions.
-          val dbExp = exps.reduceRight[WeededAst.Expr] {
-            case (e, acc) => WeededAst.Expr.FixpointMerge(e, acc, loc)
-          }
-
-          // Extract the tuples of the result predicate.
-          WeededAst.Expr.FixpointProject(pred, queryExp, dbExp, loc)
+          WeededAst.Expr.FixpointQueryWithSelect(exps, selects, from, where, loc)
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
       }
