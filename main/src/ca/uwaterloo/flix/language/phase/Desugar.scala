@@ -1088,46 +1088,7 @@ object Desugar {
         desugarJvmOpMethod(fqn, sig0, tpe0, eff0, identOpt, e2, loc)
 
       case WeededAst.JvmOp.StaticMethod(fqn, sig0, tpe0, eff0, identOpt) =>
-        val (className, methodName) = splitClassAndMember(fqn)
-        val ts = visitTypes(sig0)
-        val tpe = visitType(tpe0)
-        val eff = eff0.map(visitType)
-
-        //
-        // Introduce a let-bound lambda: (args...) -> InvokeStaticMethod(args) as tpe \ eff
-        //
-        // Compute the name of the let-bound variable.
-        val ident = identOpt.getOrElse(Name.Ident(fqn.loc.sp1, methodName, fqn.loc.sp2))
-
-        ts match {
-          case Nil => // Case 1: No arguments.
-            val fparam = DesugaredAst.FormalParam(Name.Ident(loc.sp1, "_", loc.sp2), Ast.Modifiers.Empty, Some(DesugaredAst.Type.Unit(loc)), loc)
-            val call = DesugaredAst.Expr.InvokeStaticMethod(className, methodName, Nil, Nil, tpe, loc)
-            val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
-            val e1 = DesugaredAst.Expr.Lambda(fparam, lambdaBody, loc)
-            DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
-
-          case _ =>
-            // Introduce a formal parameter (of appropriate type) for each declared argument.
-            val fs = ts.zipWithIndex.map {
-              case (tpe, index) =>
-                val id = Name.Ident(loc.sp1, "a" + index + Flix.Delimiter, loc.sp2)
-                DesugaredAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), loc)
-            }
-
-            // Compute the argument to the method call.
-            val as = ts.zipWithIndex.map {
-              case (_, index) =>
-                val ident = Name.Ident(loc.sp1, "a" + index + Flix.Delimiter, loc.sp2)
-                DesugaredAst.Expr.Ambiguous(Name.mkQName(ident), loc)
-            }
-
-            // Assemble the lambda expression.
-            val call = DesugaredAst.Expr.InvokeStaticMethod(className, methodName, as, ts, tpe, loc)
-            val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
-            val e1 = mkCurried(fs, lambdaBody, loc)
-            DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
-        }
+        desugarJvmOpStaticMethod(fqn, sig0, tpe0, eff0, identOpt, e2, loc)
 
       case WeededAst.JvmOp.GetField(fqn, tpe0, eff0, ident) =>
         val (className, fieldName) = splitClassAndMember(fqn)
@@ -1277,6 +1238,49 @@ object Desugar {
     val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
     val e1 = mkCurried(fs, lambdaBody, loc)
     DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, exp2, loc)
+  }
+
+  private def desugarJvmOpStaticMethod(fqn: WeededAst.JavaClassMember, sig0: List[WeededAst.Type], tpe0: WeededAst.Type, eff0: Option[WeededAst.Type], identOpt: Option[Name.Ident], exp2: DesugaredAst.Expr, loc: SourceLocation): DesugaredAst.Expr = {
+    val (className, methodName) = splitClassAndMember(fqn)
+    val ts = visitTypes(sig0)
+    val tpe = visitType(tpe0)
+    val eff = eff0.map(visitType)
+
+    //
+    // Introduce a let-bound lambda: (args...) -> InvokeStaticMethod(args) as tpe \ eff
+    //
+    // Compute the name of the let-bound variable.
+    val ident = identOpt.getOrElse(Name.Ident(fqn.loc.sp1, methodName, fqn.loc.sp2))
+
+    ts match {
+      case Nil => // Case 1: No arguments.
+        val fparam = DesugaredAst.FormalParam(Name.Ident(loc.sp1, "_", loc.sp2), Ast.Modifiers.Empty, Some(DesugaredAst.Type.Unit(loc)), loc)
+        val call = DesugaredAst.Expr.InvokeStaticMethod(className, methodName, Nil, Nil, tpe, loc)
+        val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
+        val e1 = DesugaredAst.Expr.Lambda(fparam, lambdaBody, loc)
+        DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, exp2, loc)
+
+      case _ =>
+        // Introduce a formal parameter (of appropriate type) for each declared argument.
+        val fs = ts.zipWithIndex.map {
+          case (tpe, index) =>
+            val id = Name.Ident(loc.sp1, "a" + index + Flix.Delimiter, loc.sp2)
+            DesugaredAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), loc)
+        }
+
+        // Compute the argument to the method call.
+        val as = ts.zipWithIndex.map {
+          case (_, index) =>
+            val ident = Name.Ident(loc.sp1, "a" + index + Flix.Delimiter, loc.sp2)
+            DesugaredAst.Expr.Ambiguous(Name.mkQName(ident), loc)
+        }
+
+        // Assemble the lambda expression.
+        val call = DesugaredAst.Expr.InvokeStaticMethod(className, methodName, as, ts, tpe, loc)
+        val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
+        val e1 = mkCurried(fs, lambdaBody, loc)
+        DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, exp2, loc)
+    }
   }
 
   /**
