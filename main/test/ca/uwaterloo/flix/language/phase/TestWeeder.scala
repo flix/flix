@@ -943,7 +943,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalUseAlias](result)
+    expectError[WeederError.IllegalUse](result)
   }
 
   test("IllegalUseAlias.02") {
@@ -959,7 +959,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalUseAlias](result)
+    expectError[WeederError.IllegalUse](result)
   }
 
   test("IllegalModuleName.01") {
