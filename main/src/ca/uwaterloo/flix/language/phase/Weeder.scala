@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Fixity}
-import ca.uwaterloo.flix.language.ast.ParsedAst.{DebugKind, TypeParams}
+import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation}
+import ca.uwaterloo.flix.language.ast.ParsedAst.TypeParams
 import ca.uwaterloo.flix.language.ast.WeededAst.Pattern
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
@@ -596,6 +596,23 @@ object Weeder {
     case ParsedAst.DebugKind.DebugWithLocAndSrc => WeededAst.DebugKind.DebugWithLocAndSrc
   }
 
+  def visitJvmOp(impl0: ParsedAst.JvmOp)(implicit flix: Flix): Validation[WeededAst.JvmOp, WeederError] = impl0 match {
+    case ParsedAst.JvmOp.Constructor(fqn, sig, tpe, eff, ident) =>
+      val sigVal = traverse(sig)(visitType)
+      val tpeVal = visitType(tpe)
+      val effVal = traverseOpt(eff)(visitType)
+      mapN(sigVal, tpeVal, effVal) {
+        case (s, t, e) => WeededAst.JvmOp.Constructor(fqn, s, t, e, ident)
+      }
+
+    case ParsedAst.JvmOp.Method(fqn, sig, tpe, eff, ident) => ???
+    case ParsedAst.JvmOp.StaticMethod(fqn, sig, tpe, eff, ident) => ???
+    case ParsedAst.JvmOp.GetField(fqn, tpe, eff, ident) => ???
+    case ParsedAst.JvmOp.PutField(fqn, tpe, eff, ident) => ???
+    case ParsedAst.JvmOp.GetStaticField(fqn, tpe, eff, ident) => ???
+    case ParsedAst.JvmOp.PutStaticField(fqn, tpe, eff, ident) => ???
+  }
+
   /**
     * Weeds the given expression.
     */
@@ -994,229 +1011,10 @@ object Weeder {
 
     case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
       val loc = mkSL(sp1, sp2)
-
-      //
-      // Visit the inner expression exp2.
-      //
-      impl match {
-        case ParsedAst.JvmOp.Constructor(fqn, sig0, tpe0, eff0, ident) =>
-          val tsVal = traverse(sig0)(visitType)
-          val e2Val = visitExp(exp2, senv)
-          val tpeVal = visitType(tpe0)
-          val effVal = traverseOpt(eff0)(visitType)
-
-          //
-          // Introduce a let-bound lambda: (args...) -> InvokeConstructor(args) as tpe \ eff
-          //
-          mapN(tsVal, e2Val, tpeVal, effVal) {
-            case (ts, e2, tpe, eff) =>
-              // Compute the class name.
-              val className = fqn.toString
-
-              //
-              // Case 1: No arguments.
-              //
-              if (ts.isEmpty) {
-                val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
-                val call = WeededAst.Expr.InvokeConstructor(className, Nil, Nil, loc)
-                val lambdaBody = WeededAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
-                val e1 = WeededAst.Expr.Lambda(fparam, lambdaBody, loc)
-                WeededAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
-              } else {
-
-                // Introduce a formal parameter (of appropriate type) for each declared argument.
-                val fs = ts.zipWithIndex.map {
-                  case (tpe, index) =>
-                    val id = Name.Ident(sp1, "a" + index, sp2)
-                    WeededAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), loc)
-                }
-
-                // Compute the argument to the method call.
-                val as = ts.zipWithIndex.map {
-                  case (_, index) =>
-                    val ident = Name.Ident(sp1, "a" + index, sp2)
-                    WeededAst.Expr.Ambiguous(Name.mkQName(ident), loc)
-                }
-
-                // Assemble the lambda expression.
-                val call = WeededAst.Expr.InvokeConstructor(className, as, ts, loc)
-                val lambdaBody = WeededAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
-                val e1 = mkCurried(fs, lambdaBody, loc)
-                WeededAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
-              }
-          }
-
-        case ParsedAst.JvmOp.Method(fqn, sig0, tpe0, eff0, identOpt) =>
-          val (className, methodName) = splitClassAndMember(fqn)
-          val tsVal = traverse(sig0)(visitType)
-          val tpeVal = visitType(tpe0)
-          val effVal = traverseOpt(eff0)(visitType)
-          val e2Val = visitExp(exp2, senv)
-
-          //
-          // Introduce a let-bound lambda: (obj, args...) -> InvokeMethod(obj, args) as tpe \ eff
-          //
-          mapN(tsVal, tpeVal, effVal, e2Val) {
-            case (ts, tpe, eff, e2) =>
-              // Compute the name of the let-bound variable.
-              val ident = identOpt.getOrElse(Name.Ident(fqn.sp1, methodName, fqn.sp2))
-
-              val receiverType = WeededAst.Type.Native(className, loc)
-
-              // Introduce a formal parameter for the object argument.
-              val objId = Name.Ident(sp1, "obj" + Flix.Delimiter, sp2)
-              val objParam = WeededAst.FormalParam(objId, Ast.Modifiers.Empty, Some(receiverType), loc)
-              val objExp = WeededAst.Expr.Ambiguous(Name.mkQName(objId), loc)
-
-              // Introduce a formal parameter (of appropriate type) for each declared argument.
-              val fs = objParam :: ts.zipWithIndex.map {
-                case (tpe, index) =>
-                  val ident = Name.Ident(sp1, "a" + index + Flix.Delimiter, sp2)
-                  WeededAst.FormalParam(ident, Ast.Modifiers.Empty, Some(tpe), loc)
-              }
-
-              // Compute the argument to the method call.
-              val as = objExp :: ts.zipWithIndex.map {
-                case (_, index) =>
-                  val ident = Name.Ident(sp1, "a" + index + Flix.Delimiter, sp2)
-                  WeededAst.Expr.Ambiguous(Name.mkQName(ident), loc)
-              }
-
-              // Assemble the lambda expression.
-              val call = WeededAst.Expr.InvokeMethod(className, methodName, as.head, as.tail, ts, tpe, loc)
-              val lambdaBody = WeededAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
-              val e1 = mkCurried(fs, lambdaBody, loc)
-              WeededAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
-          }
-
-        case ParsedAst.JvmOp.StaticMethod(fqn, sig0, tpe0, eff0, identOpt) =>
-          val (className, methodName) = splitClassAndMember(fqn)
-          val tsVal = traverse(sig0)(visitType)
-          val tpeVal = visitType(tpe0)
-          val effVal = traverseOpt(eff0)(visitType)
-          val e2Val = visitExp(exp2, senv)
-
-          //
-          // Introduce a let-bound lambda: (args...) -> InvokeStaticMethod(args) as tpe \ eff
-          //
-          mapN(tsVal, tpeVal, effVal, e2Val) {
-            case (ts, tpe, eff, e2) =>
-              // Compute the name of the let-bound variable.
-              val ident = identOpt.getOrElse(Name.Ident(fqn.sp1, methodName, fqn.sp2))
-
-              //
-              // Case 1: No arguments.
-              //
-              if (ts.isEmpty) {
-                val fparam = WeededAst.FormalParam(Name.Ident(sp1, "_", sp2), Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
-                val call = WeededAst.Expr.InvokeStaticMethod(className, methodName, Nil, Nil, tpe, loc)
-                val lambdaBody = WeededAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
-                val e1 = WeededAst.Expr.Lambda(fparam, lambdaBody, loc)
-                return WeededAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc).toSuccess
-              }
-
-              // Introduce a formal parameter (of appropriate type) for each declared argument.
-              val fs = ts.zipWithIndex.map {
-                case (tpe, index) =>
-                  val id = Name.Ident(sp1, "a" + index + Flix.Delimiter, sp2)
-                  WeededAst.FormalParam(id, Ast.Modifiers.Empty, Some(tpe), loc)
-              }
-
-              // Compute the argument to the method call.
-              val as = ts.zipWithIndex.map {
-                case (_, index) =>
-                  val ident = Name.Ident(sp1, "a" + index + Flix.Delimiter, sp2)
-                  WeededAst.Expr.Ambiguous(Name.mkQName(ident), loc)
-              }
-
-              // Assemble the lambda expression.
-              val call = WeededAst.Expr.InvokeStaticMethod(className, methodName, as, ts, tpe, loc)
-              val lambdaBody = WeededAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
-              val e1 = mkCurried(fs, lambdaBody, loc)
-              WeededAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
-          }
-
-        case ParsedAst.JvmOp.GetField(fqn, tpe0, eff0, ident) =>
-          val (className, fieldName) = splitClassAndMember(fqn)
-          val tpeVal = visitType(tpe0)
-          val effVal = traverseOpt(eff0)(visitType)
-          val e2Val = visitExp(exp2, senv)
-
-          //
-          // Introduce a let-bound lambda: o -> GetField(o) as tpe \ eff
-          //
-          mapN(tpeVal, effVal, e2Val) {
-            case (tpe, eff, e2) =>
-              val objectId = Name.Ident(sp1, "o" + Flix.Delimiter, sp2)
-              val objectExp = WeededAst.Expr.Ambiguous(Name.mkQName(objectId), loc)
-              val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
-              val call = WeededAst.Expr.GetField(className, fieldName, objectExp, loc)
-              val lambdaBody = WeededAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
-              val e1 = WeededAst.Expr.Lambda(objectParam, lambdaBody, loc)
-              WeededAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
-          }
-
-        case ParsedAst.JvmOp.PutField(fqn, tpe0, eff0, ident) =>
-          val (className, fieldName) = splitClassAndMember(fqn)
-          val tpeVal = visitType(tpe0)
-          val effVal = traverseOpt(eff0)(visitType)
-          val e2Val = visitExp(exp2, senv)
-
-          //
-          // Introduce a let-bound lambda: (o, v) -> PutField(o, v) as tpe \ eff
-          //
-          mapN(tpeVal, effVal, e2Val) {
-            case (tpe, eff, e2) =>
-              val objectId = Name.Ident(sp1, "o" + Flix.Delimiter, sp2)
-              val valueId = Name.Ident(sp1, "v" + Flix.Delimiter, sp2)
-              val objectExp = WeededAst.Expr.Ambiguous(Name.mkQName(objectId), loc)
-              val valueExp = WeededAst.Expr.Ambiguous(Name.mkQName(valueId), loc)
-              val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
-              val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
-              val call = WeededAst.Expr.PutField(className, fieldName, objectExp, valueExp, loc)
-              val lambdaBody = WeededAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
-              val e1 = mkCurried(objectParam :: valueParam :: Nil, lambdaBody, loc)
-              WeededAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
-          }
-
-        case ParsedAst.JvmOp.GetStaticField(fqn, tpe0, eff0, ident) =>
-          val (className, fieldName) = splitClassAndMember(fqn)
-          val tpeVal = visitType(tpe0)
-          val effVal = traverseOpt(eff0)(visitType)
-          val e2Val = visitExp(exp2, senv)
-
-          //
-          // Introduce a let-bound lambda: _: Unit -> GetStaticField.
-          //
-          mapN(tpeVal, effVal, e2Val) {
-            case (tpe, eff, e2) =>
-              val unitId = Name.Ident(sp1, "_", sp2)
-              val unitParam = WeededAst.FormalParam(unitId, Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
-              val call = WeededAst.Expr.GetStaticField(className, fieldName, loc)
-              val lambdaBody = WeededAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
-              val e1 = WeededAst.Expr.Lambda(unitParam, lambdaBody, loc)
-              WeededAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
-          }
-
-        case ParsedAst.JvmOp.PutStaticField(fqn, tpe0, eff0, ident) =>
-          val (className, fieldName) = splitClassAndMember(fqn)
-          val tpeVal = visitType(tpe0)
-          val effVal = traverseOpt(eff0)(visitType)
-          val e2Val = visitExp(exp2, senv)
-
-          //
-          // Introduce a let-bound lambda: x -> PutStaticField(x).
-          //
-          mapN(tpeVal, effVal, e2Val) {
-            case (tpe, eff, e2) =>
-              val valueId = Name.Ident(sp1, "v" + Flix.Delimiter, sp2)
-              val valueExp = WeededAst.Expr.Ambiguous(Name.mkQName(valueId), loc)
-              val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
-              val call = WeededAst.Expr.PutStaticField(className, fieldName, valueExp, loc)
-              val lambdaBody = WeededAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
-              val e1 = WeededAst.Expr.Lambda(valueParam, lambdaBody, loc)
-              WeededAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
-          }
+      val implVal = visitJvmOp(impl)
+      val e2Val = visitExp(exp2, senv)
+      mapN(implVal, e2Val) {
+        case (i, e) => WeededAst.Expr.LetImport(i, e, loc)
       }
 
     case ParsedAst.Expression.NewObject(sp1, tpe, methods, sp2) =>

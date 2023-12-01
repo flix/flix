@@ -521,6 +521,8 @@ object Desugar {
       val e2 = visitExp(exp2)
       Expr.LetRec(ident, ann, mod, e1, e2, loc)
 
+    case WeededAst.Expr.LetImport(op, exp, loc) => ???
+
     case WeededAst.Expr.Region(tpe, loc) =>
       Expr.Region(tpe, loc)
 
