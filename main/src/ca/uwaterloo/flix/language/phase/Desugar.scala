@@ -1191,6 +1191,12 @@ object Desugar {
     DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e, loc)
   }
 
+  /**
+    * Rewrites a [[WeededAst.Expr.LetImport]] to a let-bound lambda:
+    * {{{
+    * (args...) -> InvokeStaticMethod(args) as tpe \ eff
+    * }}}
+    */
   private def desugarJvmOpStaticMethod(fqn: WeededAst.JavaClassMember, sig0: List[WeededAst.Type], tpe0: WeededAst.Type, eff0: Option[WeededAst.Type], identOpt: Option[Name.Ident], exp0: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val (className, methodName) = splitClassAndMember(fqn)
     val e = visitExp(exp0)
@@ -1198,9 +1204,6 @@ object Desugar {
     val tpe = visitType(tpe0)
     val eff = eff0.map(visitType)
 
-    //
-    // Introduce a let-bound lambda: (args...) -> InvokeStaticMethod(args) as tpe \ eff
-    //
     // Compute the name of the let-bound variable.
     val ident = identOpt.getOrElse(Name.Ident(fqn.loc.sp1, methodName, fqn.loc.sp2))
 
@@ -1235,15 +1238,18 @@ object Desugar {
     }
   }
 
+  /**
+    * Rewrites a [[WeededAst.Expr.LetImport]] to a let-bound lambda:
+    * {{{
+    * o -> GetField(o) as tpe \ eff
+    * }}}
+    */
   private def desugarJvmOpGetField(fqn: WeededAst.JavaClassMember, tpe0: WeededAst.Type, eff0: Option[WeededAst.Type], ident: Name.Ident, exp0: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val (className, fieldName) = splitClassAndMember(fqn)
     val e = visitExp(exp0)
     val tpe = visitType(tpe0)
     val eff = eff0.map(visitType)
 
-    //
-    // Introduce a let-bound lambda: o -> GetField(o) as tpe \ eff
-    //
     val objectId = Name.Ident(loc.sp1, "o" + Flix.Delimiter, loc.sp2)
     val objectExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(objectId), loc)
     val objectParam = DesugaredAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
@@ -1253,15 +1259,18 @@ object Desugar {
     DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e, loc)
   }
 
+  /**
+    * Rewrites a [[WeededAst.Expr.LetImport]] to a let-bound lambda:
+    * {{{
+    * (o, v) -> PutField(o, v) as tpe \ eff
+    * }}}
+    */
   private def desugarJvmOpPutField(fqn: WeededAst.JavaClassMember, tpe0: WeededAst.Type, eff0: Option[WeededAst.Type], ident: Name.Ident, exp0: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val (className, fieldName) = splitClassAndMember(fqn)
     val e = visitExp(exp0)
     val tpe = visitType(tpe0)
     val eff = eff0.map(visitType)
 
-    //
-    // Introduce a let-bound lambda: (o, v) -> PutField(o, v) as tpe \ eff
-    //
     val objectId = Name.Ident(loc.sp1, "o" + Flix.Delimiter, loc.sp2)
     val valueId = Name.Ident(loc.sp1, "v" + Flix.Delimiter, loc.sp2)
     val objectExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(objectId), loc)
@@ -1274,15 +1283,18 @@ object Desugar {
     DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e, loc)
   }
 
+  /**
+    * Rewrites a [[WeededAst.Expr.LetImport]] to a let-bound lambda:
+    * {{{
+    * _: Unit -> GetStaticField
+    * }}}
+    */
   private def desugarJvmOpGetStaticField(fqn: WeededAst.JavaClassMember, tpe0: WeededAst.Type, eff0: Option[WeededAst.Type], ident: Name.Ident, exp0: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val (className, fieldName) = splitClassAndMember(fqn)
     val e = visitExp(exp0)
     val tpe = visitType(tpe0)
     val eff = eff0.map(visitType)
 
-    //
-    // Introduce a let-bound lambda: _: Unit -> GetStaticField.
-    //
     val unitId = Name.Ident(loc.sp1, "_", loc.sp2)
     val unitParam = DesugaredAst.FormalParam(unitId, Ast.Modifiers.Empty, Some(DesugaredAst.Type.Unit(loc)), loc)
     val call = DesugaredAst.Expr.GetStaticField(className, fieldName, loc)
@@ -1291,15 +1303,18 @@ object Desugar {
     DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e, loc)
   }
 
+  /**
+    * Rewrites a [[WeededAst.Expr.LetImport]] to a let-bound lambda:
+    * {{{
+    * x -> PutStaticField(x)
+    * }}}
+    */
   private def desugarJvmOpPutStaticField(fqn: WeededAst.JavaClassMember, tpe0: WeededAst.Type, eff0: Option[WeededAst.Type], ident: Name.Ident, exp0: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val (className, fieldName) = splitClassAndMember(fqn)
     val e = visitExp(exp0)
     val tpe = visitType(tpe0)
     val eff = eff0.map(visitType)
 
-    //
-    // Introduce a let-bound lambda: x -> PutStaticField(x).
-    //
     val valueId = Name.Ident(loc.sp1, "v" + Flix.Delimiter, loc.sp2)
     val valueExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(valueId), loc)
     val valueParam = DesugaredAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
