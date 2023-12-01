@@ -1101,9 +1101,8 @@ object Desugar {
       desugarJvmOpPutStaticField(fqn, tpe, eff, ident, exp0, loc)
   }
 
-
   /**
-    * Rewrites the [[WeededAst.Expr.LetImport]] to a let-bound lambda:
+    * Rewrites a [[WeededAst.Expr.LetImport]] to a let-bound lambda:
     * {{{
     * (args...) -> InvokeConstructor(args) as tpe \ eff
     * }}}
@@ -1148,6 +1147,12 @@ object Desugar {
     }
   }
 
+  /**
+    * Rewrites a [[WeededAst.Expr.LetImport]] to a let-bound lambda:
+    * {{{
+    * (obj, args...) -> InvokeMethod(obj, args) as tpe \ eff
+    * }}}
+    */
   private def desugarJvmOpMethod(fqn: WeededAst.JavaClassMember, sig0: List[WeededAst.Type], tpe0: WeededAst.Type, eff0: Option[WeededAst.Type], identOpt: Option[Name.Ident], exp0: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val (className, methodName) = splitClassAndMember(fqn)
     val e = visitExp(exp0)
@@ -1155,9 +1160,6 @@ object Desugar {
     val tpe = visitType(tpe0)
     val eff = eff0.map(visitType)
 
-    //
-    // Introduce a let-bound lambda: (obj, args...) -> InvokeMethod(obj, args) as tpe \ eff
-    //
     // Compute the name of the let-bound variable.
     val ident = identOpt.getOrElse(Name.Ident(fqn.loc.sp1, methodName, fqn.loc.sp2))
 
