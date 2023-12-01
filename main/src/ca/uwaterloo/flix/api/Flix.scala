@@ -538,17 +538,21 @@ class Flix {
         if (options.incremental) {
           this.cachedLexerTokens = afterLexer
         }
+        println(afterTreeCleaner)
         afterTreeCleaner
       }
 
       parser2Result match {
         case Validation.Success(_) =>  parser2Result
-        case _ =>
+        case failure =>
+          println(mkMessages(failure.errors).mkString("\n"))
           println("Falling back on ol' trusty!")
+
           for {
             afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
             afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
           } yield {
+            println(afterWeeder)
             afterWeeder
           }
       }

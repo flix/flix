@@ -123,14 +123,14 @@ object UnstructuredTree {
 
   }
 
-  case class Tree(kind: TreeKind, var children: Array[Child]) {
+  case class Tree(kind: TreeKind, var loc: SourceLocation, var children: Array[Child]) {
     def toDebugString(nesting: Int = 1): String = {
       val kindName = kind.debug_name match {
         case Some(name) => s"$name.$kind"
         case None => s"$kind"
       }
 
-      s"$kindName ${
+      s"$kindName (${loc.beginLine}, ${loc.beginCol}) -> (${loc.endLine}, ${loc.endCol}) ${
         children.map {
           case Child.Token(token) => s"\n${"  " * nesting}'${token.text}'"
           case Child.Tree(tree) => s"\n${"  " * nesting}${tree.toDebugString(nesting + 1)}"
