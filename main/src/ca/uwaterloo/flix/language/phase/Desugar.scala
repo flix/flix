@@ -1100,20 +1100,7 @@ object Desugar {
         desugarJvmOpGetStaticField(fqn, tpe0, eff0, ident, e2, loc)
 
       case WeededAst.JvmOp.PutStaticField(fqn, tpe0, eff0, ident) =>
-        val (className, fieldName) = splitClassAndMember(fqn)
-        val tpe = visitType(tpe0)
-        val eff = eff0.map(visitType)
-
-        //
-        // Introduce a let-bound lambda: x -> PutStaticField(x).
-        //
-        val valueId = Name.Ident(loc.sp1, "v" + Flix.Delimiter, loc.sp2)
-        val valueExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(valueId), loc)
-        val valueParam = DesugaredAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
-        val call = DesugaredAst.Expr.PutStaticField(className, fieldName, valueExp, loc)
-        val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
-        val e1 = DesugaredAst.Expr.Lambda(valueParam, lambdaBody, loc)
-        DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
+        desugarJvmOpPutStaticField(fqn, tpe0, eff0, ident, e2, loc)
     }
   }
 
@@ -1292,6 +1279,23 @@ object Desugar {
     val call = DesugaredAst.Expr.GetStaticField(className, fieldName, loc)
     val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
     val e1 = DesugaredAst.Expr.Lambda(unitParam, lambdaBody, loc)
+    DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, exp2, loc)
+  }
+
+  private def desugarJvmOpPutStaticField(fqn: WeededAst.JavaClassMember, tpe0: WeededAst.Type, eff0: Option[WeededAst.Type], ident: Name.Ident, exp2: DesugaredAst.Expr, loc: SourceLocation): DesugaredAst.Expr = {
+    val (className, fieldName) = splitClassAndMember(fqn)
+    val tpe = visitType(tpe0)
+    val eff = eff0.map(visitType)
+
+    //
+    // Introduce a let-bound lambda: x -> PutStaticField(x).
+    //
+    val valueId = Name.Ident(loc.sp1, "v" + Flix.Delimiter, loc.sp2)
+    val valueExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(valueId), loc)
+    val valueParam = DesugaredAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
+    val call = DesugaredAst.Expr.PutStaticField(className, fieldName, valueExp, loc)
+    val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
+    val e1 = DesugaredAst.Expr.Lambda(valueParam, lambdaBody, loc)
     DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, exp2, loc)
   }
 
