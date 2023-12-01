@@ -2715,6 +2715,9 @@ object Weeder {
     }
   }
 
+  /**
+    * Maps `fqn` to a [[WeededAst.JavaClassMember]].
+    */
   private def visitJavaClassMember(fqn: ParsedAst.JavaClassMember): WeededAst.JavaClassMember = fqn match {
     case ParsedAst.JavaClassMember(sp1, prefix, suffix, sp2) =>
       val loc = mkSL(sp1, sp2)
