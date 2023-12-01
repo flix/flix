@@ -66,13 +66,13 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
-  test("IllegalJavaClass.01") {
+  test("MalformedIdentifier.01") {
     val input =
       """
         |import java.util.Locale$Builder
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalJavaClass](result)
+    expectError[WeederError.MalformedIdentifier](result)
   }
 
   test("IllegalIntrinsic.01") {

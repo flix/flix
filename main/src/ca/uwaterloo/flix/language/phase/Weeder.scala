@@ -565,7 +565,8 @@ object Weeder {
       if (raw"[A-Z][A-Za-z0-9_!]*".r matches alias) {
         List(WeededAst.UseOrImport.Import(name, Name.Ident(sp1, alias, sp2), loc)).toSuccess
       } else {
-        Validation.toHardFailure(IllegalJavaClass(alias, loc))
+        // We recover by simply ignoring the broken import.
+        Validation.toSoftFailure(Nil, MalformedIdentifier(alias, loc))
       }
 
     case ParsedAst.Imports.ImportMany(sp1, pkg, ids, sp2) =>
@@ -648,7 +649,7 @@ object Weeder {
       mapN(visitUseOrImport(use), visitExp(exp, senv)) {
         case (us, e) => WeededAst.Expr.Use(us, e, mkSL(sp1, sp2))
       }.recoverOne {
-        case err: IllegalJavaClass => WeededAst.Expr.Error(err)
+        case err: MalformedIdentifier => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Lit(sp1, lit, sp2) =>
