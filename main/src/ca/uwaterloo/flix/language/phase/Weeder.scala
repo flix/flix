@@ -2150,7 +2150,6 @@ object Weeder {
                     val pat = WeededAst.Pattern.Record.RecordLabelPattern(l, p, patLoc)
                     pat.toSuccess
                   case Some(otherIdent) =>
-                    // We recover from a NonLinear pattern by renaming the label.
                     val l = Name.mkLabel(id)
                     val pat = WeededAst.Pattern.Record.RecordLabelPattern(l, p, patLoc)
                     Validation.toSoftFailure(pat, NonLinearPattern(id.name, otherIdent.loc, id.loc))
