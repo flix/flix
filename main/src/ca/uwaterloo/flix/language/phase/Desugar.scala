@@ -835,17 +835,21 @@ object Desugar {
       Expr.FixpointProject(pred, e1, e2, loc)
 
     case WeededAst.Expr.Debug(exp, kind, loc) =>
-      val e = visitExp(exp)
-      val prefix = mkDebugPrefix(e, kind, loc)
-      val e1 = DesugaredAst.Expr.Cst(Ast.Constant.Str(prefix), loc)
-      val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc)
-      DesugaredAst.Expr.UncheckedMaskingCast(call, loc)
+      desugarDebug(exp, kind, loc)
 
     case WeededAst.Expr.Error(m) =>
       DesugaredAst.Expr.Error(m)
   }
 
-  private def mkDebugPrefix(exp0: Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation) = {
+  private def desugarDebug(exp0: WeededAst.Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val e = visitExp(exp0)
+    val prefix = mkDebugPrefix(e, kind0, loc0)
+    val e1 = DesugaredAst.Expr.Cst(Ast.Constant.Str(prefix), loc0)
+    val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc0)
+    DesugaredAst.Expr.UncheckedMaskingCast(call, loc0)
+  }
+
+  private def mkDebugPrefix(exp0: DesugaredAst.Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation): String = {
     kind0 match {
       case WeededAst.DebugKind.Debug => ""
       case WeededAst.DebugKind.DebugWithLoc => s"[${loc0.formatWithLine}] "
