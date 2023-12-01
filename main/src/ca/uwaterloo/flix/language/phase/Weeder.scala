@@ -1041,7 +1041,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.Method(fqn, sig0, tpe0, eff0, identOpt) =>
-          val (className, methodName) = parseClassAndMember(fqn)
+          val (className, methodName) = splitClassAndMember(fqn)
           val tsVal = traverse(sig0)(visitType)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
@@ -1084,7 +1084,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.StaticMethod(fqn, sig0, tpe0, eff0, identOpt) =>
-          val (className, methodName) = parseClassAndMember(fqn)
+          val (className, methodName) = splitClassAndMember(fqn)
           val tsVal = traverse(sig0)(visitType)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
@@ -1131,7 +1131,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.GetField(fqn, tpe0, eff0, ident) =>
-          val (className, fieldName) = parseClassAndMember(fqn)
+          val (className, fieldName) = splitClassAndMember(fqn)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
           val e2Val = visitExp(exp2, senv)
@@ -1151,7 +1151,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.PutField(fqn, tpe0, eff0, ident) =>
-          val (className, fieldName) = parseClassAndMember(fqn)
+          val (className, fieldName) = splitClassAndMember(fqn)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
           val e2Val = visitExp(exp2, senv)
@@ -1174,7 +1174,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.GetStaticField(fqn, tpe0, eff0, ident) =>
-          val (className, fieldName) = parseClassAndMember(fqn)
+          val (className, fieldName) = splitClassAndMember(fqn)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
           val e2Val = visitExp(exp2, senv)
@@ -1193,7 +1193,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.PutStaticField(fqn, tpe0, eff0, ident) =>
-          val (className, fieldName) = parseClassAndMember(fqn)
+          val (className, fieldName) = splitClassAndMember(fqn)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
           val e2Val = visitExp(exp2, senv)
@@ -3235,7 +3235,7 @@ object Weeder {
   /**
     * Returns the class and member name constructed from the given `fqn`
     */
-  private def parseClassAndMember(fqn: ParsedAst.JavaClassMember): (String, String) = fqn match {
+  private def splitClassAndMember(fqn: ParsedAst.JavaClassMember): (String, String) = fqn match {
     case ParsedAst.JavaClassMember(_, prefix, suffix, _) =>
       // The Parser ensures that suffix is non-empty.
       val className = prefix + "." + suffix.init.mkString(".")
