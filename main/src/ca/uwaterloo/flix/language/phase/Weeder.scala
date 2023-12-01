@@ -587,7 +587,7 @@ object Weeder {
   }
 
   /**
-    * Returns `true` if `ident` and `alias` are both lower/upper case.
+    * Returns `true` if `ident` and `alias` share the same case (i.e. both are upper- or lowercase).
     */
   private def isValidAlias(ident: Name.Ident, aliasOpt: Option[Name.Ident]): Boolean = aliasOpt match {
     case None => true
