@@ -1108,14 +1108,17 @@ object Desugar {
     }
   }
 
+  /**
+    * Rewrites the [[WeededAst.Expr.LetImport]] to a let-bound lambda:
+    * {{{
+    * (args...) -> InvokeConstructor(args) as tpe \ eff
+    * }}}
+    */
   private def desugarJvmOpConstructor(fqn: Name.JavaName, sig0: List[WeededAst.Type], tpe0: WeededAst.Type, eff0: Option[WeededAst.Type], ident: Name.Ident, exp: DesugaredAst.Expr, loc: SourceLocation): DesugaredAst.Expr = {
     val ts = visitTypes(sig0)
     val tpe = visitType(tpe0)
     val eff = eff0.map(visitType)
 
-    //
-    // Introduce a let-bound lambda: (args...) -> InvokeConstructor(args) as tpe \ eff
-    //
     // Compute the class name.
     val className = fqn.toString
 
