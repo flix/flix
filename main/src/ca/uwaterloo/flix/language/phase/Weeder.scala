@@ -605,12 +605,26 @@ object Weeder {
         case (s, t, e) => WeededAst.JvmOp.Constructor(fqn, s, t, e, ident)
       }
 
-    case ParsedAst.JvmOp.Method(fqn, sig, tpe, eff, ident) => ???
+    case ParsedAst.JvmOp.Method(fqn, sig, tpe, eff, ident) =>
+      val fqn1 = visitJavaClassMember(fqn)
+      val sigVal = traverse(sig)(visitType)
+      val tpeVal = visitType(tpe)
+      val effVal = traverseOpt(eff)(visitType)
+      mapN(sigVal, tpeVal, effVal) {
+        case (s, t, e) => WeededAst.JvmOp.Method(fqn1, s, t, e, ident)
+      }
+
     case ParsedAst.JvmOp.StaticMethod(fqn, sig, tpe, eff, ident) => ???
     case ParsedAst.JvmOp.GetField(fqn, tpe, eff, ident) => ???
     case ParsedAst.JvmOp.PutField(fqn, tpe, eff, ident) => ???
     case ParsedAst.JvmOp.GetStaticField(fqn, tpe, eff, ident) => ???
     case ParsedAst.JvmOp.PutStaticField(fqn, tpe, eff, ident) => ???
+  }
+
+  private def visitJavaClassMember(fqn: ParsedAst.JavaClassMember): WeededAst.JavaClassMember = fqn match {
+    case ParsedAst.JavaClassMember(sp1, prefix, suffix, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      WeededAst.JavaClassMember(prefix, suffix.toList, loc)
   }
 
   /**
