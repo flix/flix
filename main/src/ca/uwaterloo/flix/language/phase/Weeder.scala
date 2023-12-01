@@ -2645,7 +2645,7 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given JvmMethod
+    * Performs weeding on the given JvmMethod.
     */
   private def visitJvmMethod(method: ParsedAst.JvmMethod, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.JvmMethod, WeederError] = method match {
     case ParsedAst.JvmMethod(sp1, ident, fparams0, tpe, eff0, exp0, sp2) =>
@@ -2658,6 +2658,9 @@ object Weeder {
       }
   }
 
+  /**
+    * Performs weeding on the given [[ParsedAst.JvmOp]] `impl0`.
+    */
   private def visitJvmOp(impl0: ParsedAst.JvmOp)(implicit flix: Flix): Validation[WeededAst.JvmOp, WeederError] = impl0 match {
     case ParsedAst.JvmOp.Constructor(fqn, sig, tpe, eff, ident) =>
       val sigVal = traverse(sig)(visitType)
