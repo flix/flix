@@ -834,8 +834,26 @@ object Desugar {
       val e2 = visitExp(exp2)
       Expr.FixpointProject(pred, e1, e2, loc)
 
+    case WeededAst.Expr.Debug(exp, kind, loc) =>
+      val e = visitExp(exp)
+      val prefix = mkDebugPrefix(e, kind, loc)
+      val e1 = DesugaredAst.Expr.Cst(Ast.Constant.Str(prefix), loc)
+      val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc)
+      DesugaredAst.Expr.UncheckedMaskingCast(call, loc)
+
     case WeededAst.Expr.Error(m) =>
       DesugaredAst.Expr.Error(m)
+  }
+
+  private def mkDebugPrefix(exp0: Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation) = {
+    kind0 match {
+      case WeededAst.DebugKind.Debug => ""
+      case WeededAst.DebugKind.DebugWithLoc => s"[${loc0.formatWithLine}] "
+      case WeededAst.DebugKind.DebugWithLocAndSrc =>
+        val locPart = s"[${loc0.formatWithLine}]"
+        val srcPart = exp0.loc.text.map(s => s" $s = ").getOrElse("")
+        locPart + srcPart
+    }
   }
 
   /**
