@@ -614,7 +614,15 @@ object Weeder {
         case (s, t, e) => WeededAst.JvmOp.Method(fqn1, s, t, e, ident)
       }
 
-    case ParsedAst.JvmOp.StaticMethod(fqn, sig, tpe, eff, ident) => ???
+    case ParsedAst.JvmOp.StaticMethod(fqn, sig, tpe, eff, ident) =>
+      val fqn1 = visitJavaClassMember(fqn)
+      val sigVal = traverse(sig)(visitType)
+      val tpeVal = visitType(tpe)
+      val effVal = traverseOpt(eff)(visitType)
+      mapN(sigVal, tpeVal, effVal) {
+        case (s, t, e) => WeededAst.JvmOp.StaticMethod(fqn1, s, t, e, ident)
+      }
+
     case ParsedAst.JvmOp.GetField(fqn, tpe, eff, ident) => ???
     case ParsedAst.JvmOp.PutField(fqn, tpe, eff, ident) => ???
     case ParsedAst.JvmOp.GetStaticField(fqn, tpe, eff, ident) => ???
