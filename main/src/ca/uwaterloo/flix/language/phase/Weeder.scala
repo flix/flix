@@ -1709,51 +1709,10 @@ object Weeder {
 
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, exps, optIdents, sp2) =>
       val loc = mkSL(sp1, sp2).asSynthetic
-      mapN(traverse(exps)(visitExp(_, senv))) {
-        case es =>
-          //
-          // Performs the following rewrite:
-          //
-          // solve e1, e2, e3 project P1, P2, P3
-          //
-          // =>
-          //
-          // let tmp% = solve (merge e1, 2, e3);
-          // merge (project P1 tmp%, project P2 tmp%, project P3 tmp%)
-
-          // Introduce a tmp% variable that holds the minimal model of the merge of the exps.
-          val freshVar = flix.genSym.freshId()
-          val localVar = Name.Ident(SourcePosition.Unknown, s"tmp" + Flix.Delimiter + freshVar, SourcePosition.Unknown)
-
-          // Merge all the exps into one Datalog program value.
-          val mergeExp = es.reduceRight[WeededAst.Expr] {
-            case (e, acc) => WeededAst.Expr.FixpointMerge(e, acc, loc)
-          }
-          val modelExp = WeededAst.Expr.FixpointSolve(mergeExp, loc)
-
-          // Any projections?
-          val bodyExp = optIdents match {
-            case None =>
-              // Case 1: No projections: Simply return the minimal model.
-              WeededAst.Expr.Ambiguous(Name.mkQName(localVar), loc)
-            case Some(idents) =>
-              // Case 2: A non-empty sequence of predicate symbols to project.
-
-              // Construct a list of each projection.
-              val projectExps = idents.map {
-                case ident =>
-                  val varExp = WeededAst.Expr.Ambiguous(Name.mkQName(localVar), loc)
-                  WeededAst.Expr.FixpointFilter(Name.Pred(ident.name, loc), varExp, loc)
-              }
-
-              // Merge all of the projections into one result.
-              projectExps.reduceRight[WeededAst.Expr] {
-                case (e, acc) => WeededAst.Expr.FixpointMerge(e, acc, loc)
-              }
-          }
-
-          // Bind the tmp% variable to the minimal model and combine it with the body expression.
-          WeededAst.Expr.Let(localVar, Ast.Modifiers.Empty, modelExp, bodyExp, loc.asReal)
+      val esVal = traverse(exps)(visitExp(_, senv))
+      val opts = optIdents.map(_.toList)
+      mapN(esVal) {
+        case es => WeededAst.Expr.FixpointSolveWithProject(es, opts, loc)
       }
 
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, exps0, selects0, from0, whereExp0, sp2) =>
@@ -2206,7 +2165,7 @@ object Weeder {
           case (x :: xs, Some(Pattern.Wild(l))) => WeededAst.Pattern.Record(x :: xs, Pattern.Wild(l), loc).toSuccess
 
           // Bad Pattern { | r }
-          case (Nil, Some(r)) => Validation.toHardFailure(EmptyRecordExtensionPattern(r.loc))
+          case (Nil, Some(r)) => Validation.toSoftFailure(r, EmptyRecordExtensionPattern(r.loc))
 
           // Bad Pattern e.g., { x, ... | (1, 2, 3) }
           case (_, Some(r)) => Validation.toSoftFailure(WeededAst.Pattern.Error(r.loc), IllegalRecordExtensionPattern(r.loc))
@@ -2253,19 +2212,20 @@ object Weeder {
     */
   private def visitPredicateBody(b: ParsedAst.Predicate.Body, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = b match {
     case ParsedAst.Predicate.Body.Atom(sp1, polarity, fixity, ident, terms, None, sp2) =>
+      // Case 1: the atom has a relational denotation (because of the absence of the optional lattice term).
+      val loc = mkSL(sp1, sp2)
+
       //
       // Check for `[[IllegalFixedAtom]]`.
       //
-      if (polarity == Ast.Polarity.Negative && fixity == Ast.Fixity.Fixed) {
-        return Validation.toHardFailure(IllegalFixedAtom(mkSL(sp1, sp2)))
+      val errors = (polarity, fixity) match {
+        case (Ast.Polarity.Negative, Ast.Fixity.Fixed) => Some(IllegalFixedAtom(loc))
+        case _ => None
       }
 
-      // Case 1: the atom has a relational denotation (because of the absence of the optional lattice term).
-      val loc = mkSL(sp1, sp2)
       mapN(traverse(terms)(visitPattern)) {
-        case ts =>
-          WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, ts, loc)
-      }
+        case ts => WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, ts, loc)
+      }.withSoftFailures(errors)
 
     case ParsedAst.Predicate.Body.Atom(sp1, polarity, fixity, ident, terms, Some(term), sp2) =>
       // Case 2: the atom has a latticenal denotation (because of the presence of the optional lattice term).
@@ -2376,16 +2336,16 @@ object Weeder {
       case "override" => Ast.Modifier.Override
       case "pub" => Ast.Modifier.Public
       case "sealed" => Ast.Modifier.Sealed
-      case s => throw InternalCompilerException(s"Unknown modifier '$s'.", mkSL(m.sp1, m.sp2))
+      case s =>
+        // The Parser ensures that a modifier is one of the above.
+        throw InternalCompilerException(s"Unknown modifier '$s'.", mkSL(m.sp1, m.sp2))
     }
 
-    //
-    // Check for `IllegalModifier`.
-    //
-    if (legalModifiers contains modifier)
+    // Check for [[IllegalModifier]].
+    if (legalModifiers.contains(modifier))
       modifier.toSuccess
     else
-      Validation.toHardFailure(IllegalModifier(mkSL(m.sp1, m.sp2)))
+      Validation.toSoftFailure(modifier, IllegalModifier(mkSL(m.sp1, m.sp2)))
   }
 
   /**
@@ -2395,7 +2355,7 @@ object Weeder {
     if (mods.exists(_.name == "pub")) {
       ().toSuccess
     } else {
-      Validation.toHardFailure(IllegalPrivateDeclaration(ident, ident.loc))
+      Validation.toSoftFailure((), IllegalPrivateDeclaration(ident, ident.loc))
     }
   }
 
@@ -2408,7 +2368,7 @@ object Weeder {
       // safe to take head and tail since parsing ensures nonempty type parameters if explicit
       val sp1 = tparams.head.sp1
       val sp2 = tparams.last.sp2
-      Validation.toHardFailure(IllegalEffectTypeParams(mkSL(sp1, sp2)))
+      Validation.toSoftFailure((), IllegalEffectTypeParams(mkSL(sp1, sp2)))
   }
 
   /**
@@ -2423,8 +2383,8 @@ object Weeder {
     * Returns an error if a type is present.
     */
   private def requireNoEffect(tpe: Option[ParsedAst.Type], loc: SourceLocation): Validation[Unit, WeederError] = tpe match {
-    case Some(_) => Validation.toHardFailure(IllegalOperationEffect(loc))
     case None => ().toSuccess
+    case Some(_) => Validation.toSoftFailure((), IllegalEffectfulOperation(loc))
   }
 
   /**
@@ -2868,14 +2828,33 @@ object Weeder {
       val kindedTypeParams = newTparams.collect { case t: WeededAst.TypeParam.Kinded => t }
       val unkindedTypeParams = newTparams.collect { case t: WeededAst.TypeParam.Unkinded => t }
       (kindedTypeParams, unkindedTypeParams) match {
-        // Case 1: some unkinded type params
         case (_, _ :: _) =>
-          val loc = mkSL(tparams.head.sp1, tparams.last.sp2)
-          Validation.toHardFailure(UnkindedTypeParameters(loc))
-        // Case 2: only kinded type parameters
-        case (_ :: _, Nil) => WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
-        // Case 3: no type parameters: should be prevented by parser
-        case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
+          // Case 1: We have Kinded and Unkinded type parameters.
+
+          // We generate an error message for each unkinded type parameter.
+          val errors = unkindedTypeParams.map {
+            case WeededAst.TypeParam.Unkinded(ident) => MissingTypeParamKind(ident.loc)
+          }
+
+          // We then *assume* that the unkinded type parameters should have kind Star.
+          val kinded = newTparams.map {
+            case WeededAst.TypeParam.Kinded(ident, kind) =>
+              WeededAst.TypeParam.Kinded(ident, kind)
+            case WeededAst.TypeParam.Unkinded(ident) =>
+              val default = WeededAst.Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic)
+              WeededAst.TypeParam.Kinded(ident, default)
+          }
+
+          // We can then soft fail with the missing kinds assumed to be Star.
+          Validation.toSuccessOrSoftFailure(WeededAst.TypeParams.Kinded(kinded), errors)
+
+        case (_ :: _, Nil) =>
+          // Case 2: Only kinded type parameters.
+          WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
+
+        case (Nil, Nil) =>
+          // Case 3: No type parameters: should be prevented by the Parser.
+          throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
       }
   }
 
