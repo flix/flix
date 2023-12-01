@@ -590,75 +590,6 @@ object Weeder {
     }
   }
 
-  private def visitDebugKind(kind: ParsedAst.DebugKind): WeededAst.DebugKind = kind match {
-    case ParsedAst.DebugKind.Debug => WeededAst.DebugKind.Debug
-    case ParsedAst.DebugKind.DebugWithLoc => WeededAst.DebugKind.DebugWithLoc
-    case ParsedAst.DebugKind.DebugWithLocAndSrc => WeededAst.DebugKind.DebugWithLocAndSrc
-  }
-
-  def visitJvmOp(impl0: ParsedAst.JvmOp)(implicit flix: Flix): Validation[WeededAst.JvmOp, WeederError] = impl0 match {
-    case ParsedAst.JvmOp.Constructor(fqn, sig, tpe, eff, ident) =>
-      val sigVal = traverse(sig)(visitType)
-      val tpeVal = visitType(tpe)
-      val effVal = traverseOpt(eff)(visitType)
-      mapN(sigVal, tpeVal, effVal) {
-        case (s, t, e) => WeededAst.JvmOp.Constructor(fqn, s, t, e, ident)
-      }
-
-    case ParsedAst.JvmOp.Method(fqn, sig, tpe, eff, ident) =>
-      val fqn1 = visitJavaClassMember(fqn)
-      val sigVal = traverse(sig)(visitType)
-      val tpeVal = visitType(tpe)
-      val effVal = traverseOpt(eff)(visitType)
-      mapN(sigVal, tpeVal, effVal) {
-        case (s, t, e) => WeededAst.JvmOp.Method(fqn1, s, t, e, ident)
-      }
-
-    case ParsedAst.JvmOp.StaticMethod(fqn, sig, tpe, eff, ident) =>
-      val fqn1 = visitJavaClassMember(fqn)
-      val sigVal = traverse(sig)(visitType)
-      val tpeVal = visitType(tpe)
-      val effVal = traverseOpt(eff)(visitType)
-      mapN(sigVal, tpeVal, effVal) {
-        case (s, t, e) => WeededAst.JvmOp.StaticMethod(fqn1, s, t, e, ident)
-      }
-
-    case ParsedAst.JvmOp.GetField(fqn, tpe, eff, ident) =>
-      mapN(visitField(fqn, tpe, eff)) {
-        case (f, t, e) => WeededAst.JvmOp.GetField(f, t, e, ident)
-      }
-
-    case ParsedAst.JvmOp.PutField(fqn, tpe, eff, ident) =>
-      mapN(visitField(fqn, tpe, eff)) {
-        case (f, t, e) => WeededAst.JvmOp.PutField(f, t, e, ident)
-      }
-
-    case ParsedAst.JvmOp.GetStaticField(fqn, tpe, eff, ident) =>
-      mapN(visitField(fqn, tpe, eff)) {
-        case (f, t, e) => WeededAst.JvmOp.GetStaticField(f, t, e, ident)
-      }
-
-    case ParsedAst.JvmOp.PutStaticField(fqn, tpe, eff, ident) =>
-      mapN(visitField(fqn, tpe, eff)) {
-        case (f, t, e) => WeededAst.JvmOp.PutStaticField(f, t, e, ident)
-      }
-  }
-
-  private def visitField(fqn: ParsedAst.JavaClassMember, tpe: ParsedAst.Type, eff: Option[ParsedAst.Type])(implicit flix: Flix): Validation[(WeededAst.JavaClassMember, WeededAst.Type, Option[WeededAst.Type]), WeederError] = {
-    val fqn1 = visitJavaClassMember(fqn)
-    val tpeVal = visitType(tpe)
-    val effVal = traverseOpt(eff)(visitType)
-    mapN(tpeVal, effVal) {
-      case (t, e) => (fqn1, t, e)
-    }
-  }
-
-  private def visitJavaClassMember(fqn: ParsedAst.JavaClassMember): WeededAst.JavaClassMember = fqn match {
-    case ParsedAst.JavaClassMember(sp1, prefix, suffix, sp2) =>
-      val loc = mkSL(sp1, sp2)
-      WeededAst.JavaClassMember(prefix, suffix.toList, loc)
-  }
-
   /**
     * Weeds the given expression.
     */
@@ -2727,6 +2658,69 @@ object Weeder {
       }
   }
 
+  private def visitJvmOp(impl0: ParsedAst.JvmOp)(implicit flix: Flix): Validation[WeededAst.JvmOp, WeederError] = impl0 match {
+    case ParsedAst.JvmOp.Constructor(fqn, sig, tpe, eff, ident) =>
+      val sigVal = traverse(sig)(visitType)
+      val tpeVal = visitType(tpe)
+      val effVal = traverseOpt(eff)(visitType)
+      mapN(sigVal, tpeVal, effVal) {
+        case (s, t, e) => WeededAst.JvmOp.Constructor(fqn, s, t, e, ident)
+      }
+
+    case ParsedAst.JvmOp.Method(fqn, sig, tpe, eff, ident) =>
+      val fqn1 = visitJavaClassMember(fqn)
+      val sigVal = traverse(sig)(visitType)
+      val tpeVal = visitType(tpe)
+      val effVal = traverseOpt(eff)(visitType)
+      mapN(sigVal, tpeVal, effVal) {
+        case (s, t, e) => WeededAst.JvmOp.Method(fqn1, s, t, e, ident)
+      }
+
+    case ParsedAst.JvmOp.StaticMethod(fqn, sig, tpe, eff, ident) =>
+      val fqn1 = visitJavaClassMember(fqn)
+      val sigVal = traverse(sig)(visitType)
+      val tpeVal = visitType(tpe)
+      val effVal = traverseOpt(eff)(visitType)
+      mapN(sigVal, tpeVal, effVal) {
+        case (s, t, e) => WeededAst.JvmOp.StaticMethod(fqn1, s, t, e, ident)
+      }
+
+    case ParsedAst.JvmOp.GetField(fqn, tpe, eff, ident) =>
+      mapN(visitField(fqn, tpe, eff)) {
+        case (f, t, e) => WeededAst.JvmOp.GetField(f, t, e, ident)
+      }
+
+    case ParsedAst.JvmOp.PutField(fqn, tpe, eff, ident) =>
+      mapN(visitField(fqn, tpe, eff)) {
+        case (f, t, e) => WeededAst.JvmOp.PutField(f, t, e, ident)
+      }
+
+    case ParsedAst.JvmOp.GetStaticField(fqn, tpe, eff, ident) =>
+      mapN(visitField(fqn, tpe, eff)) {
+        case (f, t, e) => WeededAst.JvmOp.GetStaticField(f, t, e, ident)
+      }
+
+    case ParsedAst.JvmOp.PutStaticField(fqn, tpe, eff, ident) =>
+      mapN(visitField(fqn, tpe, eff)) {
+        case (f, t, e) => WeededAst.JvmOp.PutStaticField(f, t, e, ident)
+      }
+  }
+
+  private def visitField(fqn: ParsedAst.JavaClassMember, tpe: ParsedAst.Type, eff: Option[ParsedAst.Type])(implicit flix: Flix): Validation[(WeededAst.JavaClassMember, WeededAst.Type, Option[WeededAst.Type]), WeederError] = {
+    val fqn1 = visitJavaClassMember(fqn)
+    val tpeVal = visitType(tpe)
+    val effVal = traverseOpt(eff)(visitType)
+    mapN(tpeVal, effVal) {
+      case (t, e) => (fqn1, t, e)
+    }
+  }
+
+  private def visitJavaClassMember(fqn: ParsedAst.JavaClassMember): WeededAst.JavaClassMember = fqn match {
+    case ParsedAst.JavaClassMember(sp1, prefix, suffix, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      WeededAst.JavaClassMember(prefix, suffix.toList, loc)
+  }
+
   /**
     * Performs weeding on the given [[ParsedAst.ForFragment]] `frag0`.
     */
@@ -2758,6 +2752,12 @@ object Weeder {
       mapN(e) {
         case e1 => WeededAst.ForFragment.Guard(e1, loc)
       }
+  }
+
+  private def visitDebugKind(kind: ParsedAst.DebugKind): WeededAst.DebugKind = kind match {
+    case ParsedAst.DebugKind.Debug => WeededAst.DebugKind.Debug
+    case ParsedAst.DebugKind.DebugWithLoc => WeededAst.DebugKind.DebugWithLoc
+    case ParsedAst.DebugKind.DebugWithLocAndSrc => WeededAst.DebugKind.DebugWithLocAndSrc
   }
 
   /**
