@@ -501,16 +501,17 @@ object Weeder {
       flatMapN(modVal, tparamsVal) {
         case (mod, tparams) =>
           val tparamVal = tparams match {
-            // Case 1: Singleton parameter.
+            // Case 1: Elided. Use the class tparam.
+            case WeededAst.TypeParams.Elided => clazzTparam.toSuccess
+
+            // Case 2: Singleton parameter.
             case WeededAst.TypeParams.Kinded(hd :: Nil) => hd.toSuccess
             case WeededAst.TypeParams.Unkinded(hd :: Nil) => hd.toSuccess
 
-            // Case 2: Elided. Use the class tparam.
-            case WeededAst.TypeParams.Elided => clazzTparam.toSuccess
-
-            // Case 3: Multiple params. Error.
-            case WeededAst.TypeParams.Kinded(ts) => Validation.toHardFailure(NonUnaryAssocType(ts.length, ident.loc))
-            case WeededAst.TypeParams.Unkinded(ts) => Validation.toHardFailure(NonUnaryAssocType(ts.length, ident.loc))
+            // Case 3: Multiple params.
+            // We recover by (arbitrarily) using the first parameter. The Parser guarantees that ts cannot be empty.
+            case WeededAst.TypeParams.Kinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
+            case WeededAst.TypeParams.Unkinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
           }
           mapN(tparamVal) {
             case tparam => List(WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, loc))
@@ -530,8 +531,10 @@ object Weeder {
         case None => instTpe.toSuccess
         // Case 2: One argument. Visit it.
         case Some(hd :: Nil) => visitType(hd)
-        // Case 3: Multiple arguments. Error.
-        case Some(ts) => Validation.toHardFailure(NonUnaryAssocType(ts.length, ident.loc))
+        // Case 3: Multiple arguments.
+        // We recover by (arbitrarily) using the first parameter. The Parser guarantees that ts cannot be empty.
+        case Some(ts) =>
+          visitType(ts.head).withSoftFailure(NonUnaryAssocType(ts.length, ident.loc))
       }
       val tpeVal = visitType(tpe0)
       val loc = mkSL(sp1, sp2)
@@ -565,7 +568,8 @@ object Weeder {
       if (raw"[A-Z][A-Za-z0-9_!]*".r matches alias) {
         List(WeededAst.UseOrImport.Import(name, Name.Ident(sp1, alias, sp2), loc)).toSuccess
       } else {
-        Validation.toHardFailure(IllegalJavaClass(alias, loc))
+        // We recover by simply ignoring the broken import.
+        Validation.toSoftFailure(Nil, MalformedIdentifier(alias, loc))
       }
 
     case ParsedAst.Imports.ImportMany(sp1, pkg, ids, sp2) =>
@@ -648,7 +652,7 @@ object Weeder {
       mapN(visitUseOrImport(use), visitExp(exp, senv)) {
         case (us, e) => WeededAst.Expr.Use(us, e, mkSL(sp1, sp2))
       }.recoverOne {
-        case err: IllegalJavaClass => WeededAst.Expr.Error(err)
+        case err: MalformedIdentifier => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Lit(sp1, lit, sp2) =>
