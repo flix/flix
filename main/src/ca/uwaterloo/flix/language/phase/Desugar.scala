@@ -1094,23 +1094,7 @@ object Desugar {
         desugarJvmOpGetField(fqn, tpe0, eff0, ident, e2, loc)
 
       case WeededAst.JvmOp.PutField(fqn, tpe0, eff0, ident) =>
-        val (className, fieldName) = splitClassAndMember(fqn)
-        val tpe = visitType(tpe0)
-        val eff = eff0.map(visitType)
-
-        //
-        // Introduce a let-bound lambda: (o, v) -> PutField(o, v) as tpe \ eff
-        //
-        val objectId = Name.Ident(loc.sp1, "o" + Flix.Delimiter, loc.sp2)
-        val valueId = Name.Ident(loc.sp1, "v" + Flix.Delimiter, loc.sp2)
-        val objectExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(objectId), loc)
-        val valueExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(valueId), loc)
-        val objectParam = DesugaredAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
-        val valueParam = DesugaredAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
-        val call = DesugaredAst.Expr.PutField(className, fieldName, objectExp, valueExp, loc)
-        val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
-        val e1 = mkCurried(objectParam :: valueParam :: Nil, lambdaBody, loc)
-        DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
+        desugarJvmOpPutField(fqn, tpe0, eff0, ident, e2, loc)
 
       case WeededAst.JvmOp.GetStaticField(fqn, tpe0, eff0, ident) =>
         val (className, fieldName) = splitClassAndMember(fqn)
@@ -1285,6 +1269,26 @@ object Desugar {
     val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
     val e1 = DesugaredAst.Expr.Lambda(objectParam, lambdaBody, loc)
     DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e2, loc)
+  }
+
+  private def desugarJvmOpPutField(fqn: WeededAst.JavaClassMember, tpe0: WeededAst.Type, eff0: Option[WeededAst.Type], ident: Name.Ident, exp2: DesugaredAst.Expr, loc: SourceLocation): DesugaredAst.Expr = {
+    val (className, fieldName) = splitClassAndMember(fqn)
+    val tpe = visitType(tpe0)
+    val eff = eff0.map(visitType)
+
+    //
+    // Introduce a let-bound lambda: (o, v) -> PutField(o, v) as tpe \ eff
+    //
+    val objectId = Name.Ident(loc.sp1, "o" + Flix.Delimiter, loc.sp2)
+    val valueId = Name.Ident(loc.sp1, "v" + Flix.Delimiter, loc.sp2)
+    val objectExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(objectId), loc)
+    val valueExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(valueId), loc)
+    val objectParam = DesugaredAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
+    val valueParam = DesugaredAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
+    val call = DesugaredAst.Expr.PutField(className, fieldName, objectExp, valueExp, loc)
+    val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc)
+    val e1 = mkCurried(objectParam :: valueParam :: Nil, lambdaBody, loc)
+    DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, exp2, loc)
   }
 
   /**
