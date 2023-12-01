@@ -2754,6 +2754,9 @@ object Weeder {
       }
   }
 
+  /**
+    * Maps `kind` to a [[WeededAst.DebugKind]].
+    */
   private def visitDebugKind(kind: ParsedAst.DebugKind): WeededAst.DebugKind = kind match {
     case ParsedAst.DebugKind.Debug => WeededAst.DebugKind.Debug
     case ParsedAst.DebugKind.DebugWithLoc => WeededAst.DebugKind.DebugWithLoc
