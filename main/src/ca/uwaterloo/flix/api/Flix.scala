@@ -31,7 +31,7 @@ import ca.uwaterloo.flix.util._
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
-import java.util.concurrent.ForkJoinPool
+import scala.collection.immutable.{AbstractMap, SeqMap, SortedMap}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -529,12 +529,39 @@ class Flix {
     // The default entry point
     val entryPoint = flix.options.entryPoint
 
-    /** Remember to update [[AstPrinter]] about the list of phases. */
+    // A temporary helper function that tries to use new lexer and parser.
+    // In the case of any failure, it falls back on the previous parser.
+    def useParser2IfPossible(afterReader: ReadAst.Root): Validation[WeededAst.Root, CompilationMessage] = {
+      val parser2Result = for {
+        afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
+        afterParser2 <- Parser2.run(afterLexer)
+        afterTreeCleaner <- TreeCleaner.run(afterReader, entryPoint, afterParser2)
+      } yield {
+        // Update caches for incremental compilation.
+        if (options.incremental) {
+          this.cachedLexerTokens = afterLexer
+        }
+        afterTreeCleaner
+      }
+
+      parser2Result match {
+        case Validation.Success(_) =>  parser2Result
+        case _ =>
+          println("Falling back on ol' trusty!")
+          for {
+            afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
+            afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
+          } yield {
+            afterWeeder
+          }
+      }
+    }
+
+    // The compiler pipeline.
     val result = for {
       afterReader <- Reader.run(getInputs)
-      afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
-      afterParser <- Parser2.run(afterReader, afterLexer, entryPoint)
-      afterNamer <- Namer.run(afterParser)
+      afterWeeder <- useParser2IfPossible(afterReader)
+      afterNamer <- Namer.run(afterWeeder)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
       afterDeriver <- Deriver.run(afterKinder)
@@ -549,7 +576,6 @@ class Flix {
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {
-        this.cachedLexerTokens = afterLexer
         this.cachedKinderAst = afterKinder
         this.cachedResolverAst = afterResolver
         this.cachedTyperAst = afterTyper
