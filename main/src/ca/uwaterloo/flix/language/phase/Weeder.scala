@@ -994,7 +994,6 @@ object Weeder {
       //
       impl match {
         case ParsedAst.JvmOp.Constructor(fqn, sig0, tpe0, eff0, ident) =>
-
           val tsVal = traverse(sig0)(visitType)
           val e2Val = visitExp(exp2, senv)
           val tpeVal = visitType(tpe0)
@@ -1042,8 +1041,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.Method(fqn, sig0, tpe0, eff0, identOpt) =>
-
-          val classMethodVal = parseClassAndMember(fqn)
+          val (className, methodName) = splitClassAndMember(fqn)
           val tsVal = traverse(sig0)(visitType)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
@@ -1052,8 +1050,8 @@ object Weeder {
           //
           // Introduce a let-bound lambda: (obj, args...) -> InvokeMethod(obj, args) as tpe \ eff
           //
-          mapN(classMethodVal, tsVal, tpeVal, effVal, e2Val) {
-            case ((className, methodName), ts, tpe, eff, e2) =>
+          mapN(tsVal, tpeVal, effVal, e2Val) {
+            case (ts, tpe, eff, e2) =>
               // Compute the name of the let-bound variable.
               val ident = identOpt.getOrElse(Name.Ident(fqn.sp1, methodName, fqn.sp2))
 
@@ -1086,8 +1084,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.StaticMethod(fqn, sig0, tpe0, eff0, identOpt) =>
-
-          val classMethodVal = parseClassAndMember(fqn)
+          val (className, methodName) = splitClassAndMember(fqn)
           val tsVal = traverse(sig0)(visitType)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
@@ -1096,9 +1093,8 @@ object Weeder {
           //
           // Introduce a let-bound lambda: (args...) -> InvokeStaticMethod(args) as tpe \ eff
           //
-          mapN(classMethodVal, tsVal, tpeVal, effVal, e2Val) {
-            case ((className, methodName), ts, tpe, eff, e2) =>
-
+          mapN(tsVal, tpeVal, effVal, e2Val) {
+            case (ts, tpe, eff, e2) =>
               // Compute the name of the let-bound variable.
               val ident = identOpt.getOrElse(Name.Ident(fqn.sp1, methodName, fqn.sp2))
 
@@ -1135,8 +1131,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.GetField(fqn, tpe0, eff0, ident) =>
-
-          val classMethodVal = parseClassAndMember(fqn)
+          val (className, fieldName) = splitClassAndMember(fqn)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
           val e2Val = visitExp(exp2, senv)
@@ -1144,9 +1139,8 @@ object Weeder {
           //
           // Introduce a let-bound lambda: o -> GetField(o) as tpe \ eff
           //
-          mapN(classMethodVal, tpeVal, effVal, e2Val) {
-            case ((className, fieldName), tpe, eff, e2) =>
-
+          mapN(tpeVal, effVal, e2Val) {
+            case (tpe, eff, e2) =>
               val objectId = Name.Ident(sp1, "o" + Flix.Delimiter, sp2)
               val objectExp = WeededAst.Expr.Ambiguous(Name.mkQName(objectId), loc)
               val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
@@ -1157,8 +1151,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.PutField(fqn, tpe0, eff0, ident) =>
-
-          val classMethodVal = parseClassAndMember(fqn)
+          val (className, fieldName) = splitClassAndMember(fqn)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
           val e2Val = visitExp(exp2, senv)
@@ -1166,9 +1159,8 @@ object Weeder {
           //
           // Introduce a let-bound lambda: (o, v) -> PutField(o, v) as tpe \ eff
           //
-          mapN(classMethodVal, tpeVal, effVal, e2Val) {
-            case ((className, fieldName), tpe, eff, e2) =>
-
+          mapN(tpeVal, effVal, e2Val) {
+            case (tpe, eff, e2) =>
               val objectId = Name.Ident(sp1, "o" + Flix.Delimiter, sp2)
               val valueId = Name.Ident(sp1, "v" + Flix.Delimiter, sp2)
               val objectExp = WeededAst.Expr.Ambiguous(Name.mkQName(objectId), loc)
@@ -1182,8 +1174,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.GetStaticField(fqn, tpe0, eff0, ident) =>
-
-          val classMethodVal = parseClassAndMember(fqn)
+          val (className, fieldName) = splitClassAndMember(fqn)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
           val e2Val = visitExp(exp2, senv)
@@ -1191,9 +1182,8 @@ object Weeder {
           //
           // Introduce a let-bound lambda: _: Unit -> GetStaticField.
           //
-          mapN(classMethodVal, tpeVal, effVal, e2Val) {
-            case ((className, fieldName), tpe, eff, e2) =>
-
+          mapN(tpeVal, effVal, e2Val) {
+            case (tpe, eff, e2) =>
               val unitId = Name.Ident(sp1, "_", sp2)
               val unitParam = WeededAst.FormalParam(unitId, Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
               val call = WeededAst.Expr.GetStaticField(className, fieldName, loc)
@@ -1203,8 +1193,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.PutStaticField(fqn, tpe0, eff0, ident) =>
-
-          val classMethodVal = parseClassAndMember(fqn)
+          val (className, fieldName) = splitClassAndMember(fqn)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
           val e2Val = visitExp(exp2, senv)
@@ -1212,9 +1201,8 @@ object Weeder {
           //
           // Introduce a let-bound lambda: x -> PutStaticField(x).
           //
-          mapN(classMethodVal, tpeVal, effVal, e2Val) {
-            case ((className, fieldName), tpe, eff, e2) =>
-
+          mapN(tpeVal, effVal, e2Val) {
+            case (tpe, eff, e2) =>
               val valueId = Name.Ident(sp1, "v" + Flix.Delimiter, sp2)
               val valueExp = WeededAst.Expr.Ambiguous(Name.mkQName(valueId), loc)
               val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
@@ -3207,20 +3195,14 @@ object Weeder {
   }
 
   /**
-    * Returns the class and member name constructed from the given fully-qualified name `fqn`.
+    * Returns the class and member name constructed from the given `fqn`
     */
-  private def parseClassAndMember(fqn: Name.JavaName): Validation[(String, String), WeederError] = fqn match {
-    case Name.JavaName(sp1, components, sp2) =>
-      // Ensure that the fqn has at least two components.
-      if (components.length == 1) {
-        return Validation.toHardFailure(IllegalJavaFieldOrMethodName(mkSL(sp1, sp2)))
-      }
-
-      // Compute the class and member name.
-      val className = components.dropRight(1).mkString(".")
-      val memberName = components.last
-
-      (className, memberName).toSuccess
+  private def splitClassAndMember(fqn: ParsedAst.JavaClassMember): (String, String) = fqn match {
+    case ParsedAst.JavaClassMember(_, prefix, suffix, _) =>
+      // The Parser ensures that suffix is non-empty.
+      val className = prefix + "." + suffix.init.mkString(".")
+      val memberName = suffix.last
+      (className, memberName)
   }
 
   /**

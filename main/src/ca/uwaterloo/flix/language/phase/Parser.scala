@@ -908,27 +908,27 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def Method: Rule1[ParsedAst.JvmOp] = rule {
-        Names.JavaName ~ optWS ~ Signature ~ optWS ~ Ascription ~ optional(optWS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.Method
+        Names.JavaClassMember ~ optWS ~ Signature ~ optWS ~ Ascription ~ optional(optWS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.Method
       }
 
       def StaticMethod: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("static") ~ WS ~ Names.JavaName ~ optWS ~ Signature ~ optWS ~ Ascription ~ optional(optWS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.StaticMethod
+        keyword("static") ~ WS ~ Names.JavaClassMember ~ optWS ~ Signature ~ optWS ~ Ascription ~ optional(optWS ~ keyword("as") ~ WS ~ Names.Variable) ~> ParsedAst.JvmOp.StaticMethod
       }
 
       def GetField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("get") ~ WS ~ Names.JavaName ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetField
+        keyword("get") ~ WS ~ Names.JavaClassMember ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetField
       }
 
       def PutField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("set") ~ WS ~ Names.JavaName ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutField
+        keyword("set") ~ WS ~ Names.JavaClassMember ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutField
       }
 
       def GetStaticField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("static") ~ WS ~ keyword("get") ~ WS ~ Names.JavaName ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetStaticField
+        keyword("static") ~ WS ~ keyword("get") ~ WS ~ Names.JavaClassMember ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetStaticField
       }
 
       def PutStaticField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("static") ~ WS ~ keyword("set") ~ WS ~ Names.JavaName ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutStaticField
+        keyword("static") ~ WS ~ keyword("set") ~ WS ~ Names.JavaClassMember ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutStaticField
       }
 
       def Signature: Rule1[Seq[ParsedAst.Type]] = rule {
@@ -1830,6 +1830,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def JavaName: Rule1[Name.JavaName] = rule {
       SP ~ oneOrMore(JavaIdentifier).separatedBy(".") ~ SP ~> Name.JavaName
+    }
+
+    def JavaClassMember: Rule1[ParsedAst.JavaClassMember] = rule {
+      SP ~ JavaIdentifier ~ "." ~ oneOrMore(JavaIdentifier).separatedBy(".") ~ SP ~> ParsedAst.JavaClassMember
     }
 
     def JavaMethod: Rule1[Name.Ident] = rule {
