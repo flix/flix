@@ -2706,6 +2706,9 @@ object Weeder {
       }
   }
 
+  /**
+    * Performs weeding on `tpe` and `eff`. Used as a helper function for java fields in [[visitJvmOp]].
+    */
   private def visitField(fqn: ParsedAst.JavaClassMember, tpe: ParsedAst.Type, eff: Option[ParsedAst.Type])(implicit flix: Flix): Validation[(WeededAst.JavaClassMember, WeededAst.Type, Option[WeededAst.Type]), WeederError] = {
     val fqn1 = visitJavaClassMember(fqn)
     val tpeVal = visitType(tpe)
