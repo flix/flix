@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Fixity}
-import ca.uwaterloo.flix.language.ast.ParsedAst.TypeParams
+import ca.uwaterloo.flix.language.ast.ParsedAst.{DebugKind, TypeParams}
 import ca.uwaterloo.flix.language.ast.WeededAst.Pattern
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
@@ -588,6 +588,12 @@ object Weeder {
         Validation.toHardFailure(IllegalUseAlias(name, alias.name, alias.loc))
       case _ => ().toSuccess
     }
+  }
+
+  private def visitDebugKind(kind: ParsedAst.DebugKind): WeededAst.DebugKind = kind match {
+    case ParsedAst.DebugKind.Debug => WeededAst.DebugKind.Debug
+    case ParsedAst.DebugKind.DebugWithLoc => WeededAst.DebugKind.DebugWithLoc
+    case ParsedAst.DebugKind.DebugWithLocAndSrc => WeededAst.DebugKind.DebugWithLocAndSrc
   }
 
   /**
@@ -1717,21 +1723,10 @@ object Weeder {
       }
 
     case ParsedAst.Expression.Debug(sp1, kind, exp, sp2) =>
-      mapN(visitExp(exp, senv)) {
-        case e =>
-          val loc = mkSL(sp1, sp2)
-          val prefix = kind match {
-            case ParsedAst.DebugKind.Debug => ""
-            case ParsedAst.DebugKind.DebugWithLoc => s"[${loc.formatWithLine}] "
-            case ParsedAst.DebugKind.DebugWithLocAndSrc =>
-              val locPart = s"[${loc.formatWithLine}]"
-              val srcPart = e.loc.text.map(s => s" $s = ").getOrElse("")
-              locPart + srcPart
-          }
-          val e1 = WeededAst.Expr.Cst(Ast.Constant.Str(prefix), loc)
-          val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc)
-          WeededAst.Expr.UncheckedMaskingCast(call, loc)
-      }
+      val loc = mkSL(sp1, sp2)
+      val eVal = visitExp(exp, senv)
+      val kind1 = visitDebugKind(kind)
+      mapN(eVal)(WeededAst.Expr.Debug(_, kind1, loc))
 
   }
 
@@ -2677,9 +2672,9 @@ object Weeder {
           val name = fparam.ident.name
           val loc1 = mkSL(otherParam.sp1, otherParam.sp2)
           val loc2 = mkSL(fparam.sp1, fparam.sp2)
-            // NB: We report an error at both source locations.
-            errors += DuplicateFormalParam(name, loc1, loc2)
-            errors += DuplicateFormalParam(name, loc2, loc1)
+          // NB: We report an error at both source locations.
+          errors += DuplicateFormalParam(name, loc1, loc2)
+          errors += DuplicateFormalParam(name, loc2, loc1)
       }
     }
 
@@ -2687,8 +2682,8 @@ object Weeder {
   }
 
   /**
-   * Weeds the given formal parameter `fparam`.
-   */
+    * Weeds the given formal parameter `fparam`.
+    */
   private def visitFormalParam(fparam: ParsedAst.FormalParam, typePresence: Presence): Validation[WeededAst.FormalParam, WeederError] = fparam match {
     case ParsedAst.FormalParam(sp1, mods, ident, tpeOpt0, sp2) =>
       val tpeOptVal = traverseOpt(tpeOpt0)(visitType)
