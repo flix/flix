@@ -1014,18 +1014,18 @@ object WeederError {
   /**
     * An error raised to indicate a non-unary associated type.
     *
-    * @param numParams the number of parameters of the associated type.
-    * @param loc       the location where the error occurred.
+    * @param n   the number of parameters of the associated type.
+    * @param loc the location where the error occurred.
     */
-  case class NonUnaryAssocType(numParams: Int, loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class NonUnaryAssocType(n: Int, loc: SourceLocation) extends WeederError with Recoverable {
     override def summary: String = "Non-unary associated type signature."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Non-unary associated type signature.
+         |>> Associated types must have exactly one parameter, but $n are given here.
          |
-         |${code(loc, s"Associated types must have exactly one parameter, but $numParams are given here.")}
+         |${code(loc, s"too many parameters")}
          |
          |""".stripMargin
     }
