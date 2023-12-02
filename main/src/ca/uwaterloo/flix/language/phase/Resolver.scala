@@ -2104,7 +2104,7 @@ object Resolver {
         if (isDefAccessible(defn, ns0)) {
           ResolvedTerm.Def(defn).toSuccess
         } else {
-          Validation.toHardFailure(ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc))
+          Validation.toSoftFailure(ResolvedTerm.Def(defn), ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc))
         }
       case Resolution.Declaration(sig: NamedAst.Declaration.Sig) :: _ =>
         if (isSigAccessible(sig, ns0)) {
