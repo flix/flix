@@ -45,6 +45,11 @@ sealed trait Validation[+T, +E] {
   }
 
   /**
+    * Returns `this` validation with an additional recoverable error.
+    */
+  final def withSoftFailure[R >: E](e: R): Validation[T, R] = withSoftFailures(List(e))
+
+  /**
     * Returns `this` validation with additional recoverable errors (if any).
     *
     * Returns `this` if `es` is empty.

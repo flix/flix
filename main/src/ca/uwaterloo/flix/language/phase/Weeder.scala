@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Fixity}
-import ca.uwaterloo.flix.language.ast.ParsedAst.TypeParams
+import ca.uwaterloo.flix.language.ast.ParsedAst.{DebugKind, TypeParams}
 import ca.uwaterloo.flix.language.ast.WeededAst.Pattern
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.WeederError
@@ -501,16 +501,17 @@ object Weeder {
       flatMapN(modVal, tparamsVal) {
         case (mod, tparams) =>
           val tparamVal = tparams match {
-            // Case 1: Singleton parameter.
+            // Case 1: Elided. Use the class tparam.
+            case WeededAst.TypeParams.Elided => clazzTparam.toSuccess
+
+            // Case 2: Singleton parameter.
             case WeededAst.TypeParams.Kinded(hd :: Nil) => hd.toSuccess
             case WeededAst.TypeParams.Unkinded(hd :: Nil) => hd.toSuccess
 
-            // Case 2: Elided. Use the class tparam.
-            case WeededAst.TypeParams.Elided => clazzTparam.toSuccess
-
-            // Case 3: Multiple params. Error.
-            case WeededAst.TypeParams.Kinded(ts) => Validation.toHardFailure(NonUnaryAssocType(ts.length, ident.loc))
-            case WeededAst.TypeParams.Unkinded(ts) => Validation.toHardFailure(NonUnaryAssocType(ts.length, ident.loc))
+            // Case 3: Multiple params.
+            // We recover by (arbitrarily) using the first parameter. The Parser guarantees that ts cannot be empty.
+            case WeededAst.TypeParams.Kinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
+            case WeededAst.TypeParams.Unkinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
           }
           mapN(tparamVal) {
             case tparam => List(WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, loc))
@@ -530,8 +531,10 @@ object Weeder {
         case None => instTpe.toSuccess
         // Case 2: One argument. Visit it.
         case Some(hd :: Nil) => visitType(hd)
-        // Case 3: Multiple arguments. Error.
-        case Some(ts) => Validation.toHardFailure(NonUnaryAssocType(ts.length, ident.loc))
+        // Case 3: Multiple arguments.
+        // We recover by (arbitrarily) using the first parameter. The Parser guarantees that ts cannot be empty.
+        case Some(ts) =>
+          visitType(ts.head).withSoftFailure(NonUnaryAssocType(ts.length, ident.loc))
       }
       val tpeVal = visitType(tpe0)
       val loc = mkSL(sp1, sp2)
@@ -550,14 +553,21 @@ object Weeder {
       List(WeededAst.UseOrImport.Use(qname, qname.ident, mkSL(sp1, sp2))).toSuccess
 
     case ParsedAst.Use.UseMany(_, nname, names, _) =>
-      traverse(names) {
-        case ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2) =>
-          mapN(checkAliasCase(ident.name, aliasOpt)) {
-            case () =>
-              val alias = aliasOpt.getOrElse(ident)
-              WeededAst.UseOrImport.Use(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)): WeededAst.UseOrImport
-          }
+      // Check for [[IllegalUseAlias]].
+      val errors = mutable.ArrayBuffer.empty[IllegalUse]
+      for (ParsedAst.Use.NameAndAlias(_, ident, aliasOpt, _) <- names) {
+        if (!isValidAlias(ident, aliasOpt)) {
+          // The use of aliasOpt.get is safe because an alias can only be invalid if it exists.
+          errors += IllegalUse(ident.name, aliasOpt.get.name, aliasOpt.get.loc)
+        }
       }
+
+      // Collect non-erroneous uses.
+      names.collect {
+        case ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2) if isValidAlias(ident, aliasOpt) =>
+          val alias = aliasOpt.getOrElse(ident)
+          WeededAst.UseOrImport.Use(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)): WeededAst.UseOrImport
+      }.toList.toSuccess.withSoftFailures(errors)
 
     case ParsedAst.Imports.ImportOne(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -565,7 +575,8 @@ object Weeder {
       if (raw"[A-Z][A-Za-z0-9_!]*".r matches alias) {
         List(WeededAst.UseOrImport.Import(name, Name.Ident(sp1, alias, sp2), loc)).toSuccess
       } else {
-        Validation.toHardFailure(IllegalJavaClass(alias, loc))
+        // We recover by simply ignoring the broken import.
+        Validation.toSoftFailure(Nil, MalformedIdentifier(alias, loc))
       }
 
     case ParsedAst.Imports.ImportMany(sp1, pkg, ids, sp2) =>
@@ -580,14 +591,17 @@ object Weeder {
   }
 
   /**
-    * Checks that the name's casing matches the alias's casing. (I.e., both uppercase or both lowercase.)
+    * Returns `true` if `ident` and `alias` share the same case (i.e. both are upper- or lowercase).
     */
-  private def checkAliasCase(name: String, aliasOpt: Option[Name.Ident]): Validation[Unit, WeederError] = {
-    aliasOpt match {
-      case Some(alias) if (alias.name.charAt(0).isUpper != name(0).isUpper) =>
-        Validation.toHardFailure(IllegalUseAlias(name, alias.name, alias.loc))
-      case _ => ().toSuccess
-    }
+  private def isValidAlias(ident: Name.Ident, aliasOpt: Option[Name.Ident]): Boolean = aliasOpt match {
+    case None => true
+    case Some(alias) => ident.name(0).isUpper == alias.name.charAt(0).isUpper
+  }
+
+  private def visitDebugKind(kind: ParsedAst.DebugKind): WeededAst.DebugKind = kind match {
+    case ParsedAst.DebugKind.Debug => WeededAst.DebugKind.Debug
+    case ParsedAst.DebugKind.DebugWithLoc => WeededAst.DebugKind.DebugWithLoc
+    case ParsedAst.DebugKind.DebugWithLocAndSrc => WeededAst.DebugKind.DebugWithLocAndSrc
   }
 
   /**
@@ -642,7 +656,7 @@ object Weeder {
       mapN(visitUseOrImport(use), visitExp(exp, senv)) {
         case (us, e) => WeededAst.Expr.Use(us, e, mkSL(sp1, sp2))
       }.recoverOne {
-        case err: IllegalJavaClass => WeededAst.Expr.Error(err)
+        case err: MalformedIdentifier => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Lit(sp1, lit, sp2) =>
@@ -994,7 +1008,6 @@ object Weeder {
       //
       impl match {
         case ParsedAst.JvmOp.Constructor(fqn, sig0, tpe0, eff0, ident) =>
-
           val tsVal = traverse(sig0)(visitType)
           val e2Val = visitExp(exp2, senv)
           val tpeVal = visitType(tpe0)
@@ -1042,8 +1055,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.Method(fqn, sig0, tpe0, eff0, identOpt) =>
-
-          val classMethodVal = parseClassAndMember(fqn)
+          val (className, methodName) = splitClassAndMember(fqn)
           val tsVal = traverse(sig0)(visitType)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
@@ -1052,8 +1064,8 @@ object Weeder {
           //
           // Introduce a let-bound lambda: (obj, args...) -> InvokeMethod(obj, args) as tpe \ eff
           //
-          mapN(classMethodVal, tsVal, tpeVal, effVal, e2Val) {
-            case ((className, methodName), ts, tpe, eff, e2) =>
+          mapN(tsVal, tpeVal, effVal, e2Val) {
+            case (ts, tpe, eff, e2) =>
               // Compute the name of the let-bound variable.
               val ident = identOpt.getOrElse(Name.Ident(fqn.sp1, methodName, fqn.sp2))
 
@@ -1086,8 +1098,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.StaticMethod(fqn, sig0, tpe0, eff0, identOpt) =>
-
-          val classMethodVal = parseClassAndMember(fqn)
+          val (className, methodName) = splitClassAndMember(fqn)
           val tsVal = traverse(sig0)(visitType)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
@@ -1096,9 +1107,8 @@ object Weeder {
           //
           // Introduce a let-bound lambda: (args...) -> InvokeStaticMethod(args) as tpe \ eff
           //
-          mapN(classMethodVal, tsVal, tpeVal, effVal, e2Val) {
-            case ((className, methodName), ts, tpe, eff, e2) =>
-
+          mapN(tsVal, tpeVal, effVal, e2Val) {
+            case (ts, tpe, eff, e2) =>
               // Compute the name of the let-bound variable.
               val ident = identOpt.getOrElse(Name.Ident(fqn.sp1, methodName, fqn.sp2))
 
@@ -1135,8 +1145,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.GetField(fqn, tpe0, eff0, ident) =>
-
-          val classMethodVal = parseClassAndMember(fqn)
+          val (className, fieldName) = splitClassAndMember(fqn)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
           val e2Val = visitExp(exp2, senv)
@@ -1144,9 +1153,8 @@ object Weeder {
           //
           // Introduce a let-bound lambda: o -> GetField(o) as tpe \ eff
           //
-          mapN(classMethodVal, tpeVal, effVal, e2Val) {
-            case ((className, fieldName), tpe, eff, e2) =>
-
+          mapN(tpeVal, effVal, e2Val) {
+            case (tpe, eff, e2) =>
               val objectId = Name.Ident(sp1, "o" + Flix.Delimiter, sp2)
               val objectExp = WeededAst.Expr.Ambiguous(Name.mkQName(objectId), loc)
               val objectParam = WeededAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc)
@@ -1157,8 +1165,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.PutField(fqn, tpe0, eff0, ident) =>
-
-          val classMethodVal = parseClassAndMember(fqn)
+          val (className, fieldName) = splitClassAndMember(fqn)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
           val e2Val = visitExp(exp2, senv)
@@ -1166,9 +1173,8 @@ object Weeder {
           //
           // Introduce a let-bound lambda: (o, v) -> PutField(o, v) as tpe \ eff
           //
-          mapN(classMethodVal, tpeVal, effVal, e2Val) {
-            case ((className, fieldName), tpe, eff, e2) =>
-
+          mapN(tpeVal, effVal, e2Val) {
+            case (tpe, eff, e2) =>
               val objectId = Name.Ident(sp1, "o" + Flix.Delimiter, sp2)
               val valueId = Name.Ident(sp1, "v" + Flix.Delimiter, sp2)
               val objectExp = WeededAst.Expr.Ambiguous(Name.mkQName(objectId), loc)
@@ -1182,8 +1188,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.GetStaticField(fqn, tpe0, eff0, ident) =>
-
-          val classMethodVal = parseClassAndMember(fqn)
+          val (className, fieldName) = splitClassAndMember(fqn)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
           val e2Val = visitExp(exp2, senv)
@@ -1191,9 +1196,8 @@ object Weeder {
           //
           // Introduce a let-bound lambda: _: Unit -> GetStaticField.
           //
-          mapN(classMethodVal, tpeVal, effVal, e2Val) {
-            case ((className, fieldName), tpe, eff, e2) =>
-
+          mapN(tpeVal, effVal, e2Val) {
+            case (tpe, eff, e2) =>
               val unitId = Name.Ident(sp1, "_", sp2)
               val unitParam = WeededAst.FormalParam(unitId, Ast.Modifiers.Empty, Some(WeededAst.Type.Unit(loc)), loc)
               val call = WeededAst.Expr.GetStaticField(className, fieldName, loc)
@@ -1203,8 +1207,7 @@ object Weeder {
           }
 
         case ParsedAst.JvmOp.PutStaticField(fqn, tpe0, eff0, ident) =>
-
-          val classMethodVal = parseClassAndMember(fqn)
+          val (className, fieldName) = splitClassAndMember(fqn)
           val tpeVal = visitType(tpe0)
           val effVal = traverseOpt(eff0)(visitType)
           val e2Val = visitExp(exp2, senv)
@@ -1212,9 +1215,8 @@ object Weeder {
           //
           // Introduce a let-bound lambda: x -> PutStaticField(x).
           //
-          mapN(classMethodVal, tpeVal, effVal, e2Val) {
-            case ((className, fieldName), tpe, eff, e2) =>
-
+          mapN(tpeVal, effVal, e2Val) {
+            case (tpe, eff, e2) =>
               val valueId = Name.Ident(sp1, "v" + Flix.Delimiter, sp2)
               val valueExp = WeededAst.Expr.Ambiguous(Name.mkQName(valueId), loc)
               val valueParam = WeededAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc)
@@ -1717,71 +1719,22 @@ object Weeder {
 
     case ParsedAst.Expression.FixpointQueryWithSelect(sp1, exps0, selects0, from0, whereExp0, sp2) =>
       val loc = mkSL(sp1, sp2).asSynthetic
-
-      mapN(traverse(exps0)(visitExp(_, senv)), traverse(selects0)(visitExp(_, senv)), traverse(from0)(visitPredicateBody(_, senv)), traverse(whereExp0)(visitExp(_, senv))) {
+      val esVal = traverse(exps0)(visitExp(_, senv))
+      val selectsVal = traverse(selects0)(visitExp(_, senv))
+      val fromVal = traverse(from0)(visitPredicateBody(_, senv))
+      val whereVal = traverse(whereExp0)(visitExp(_, senv))
+      mapN(esVal, selectsVal, fromVal, whereVal) {
         case (exps, selects, from, where) =>
-          //
-          // Performs the following rewrite:
-          //
-          // query e1, e2, e3 select (x, y, z) from A(x, y), B(z) where x > 0
-          //
-          // =>
-          //
-          // project out %Result from (solve (merge (merge e1, e2, e3) #{ #Result(x, y, z) :- A(x, y), B(y) if x > 0 } )
-          //
-          // OBS: The last merge and solve is done in the typer because of trouble when
-          // `(merge e1, e2, e3)` is a closed row.
-
-          // The fresh predicate name where to store the result of the query.
-          val pred = Name.Pred(Flix.Delimiter + "Result", loc)
-
-          // The head of the pseudo-rule.
-          val den = Denotation.Relational
-          val head = WeededAst.Predicate.Head.Atom(pred, den, selects, loc)
-
-          // The body of the pseudo-rule.
-          val guard = where.map(g => WeededAst.Predicate.Body.Guard(g, loc))
-
-          // Automatically fix all lattices atoms.
-          val body = guard ::: from.map {
-            case WeededAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, _, terms, loc) =>
-              WeededAst.Predicate.Body.Atom(pred, Denotation.Latticenal, polarity, Fixity.Fixed, terms, loc)
-            case pred => pred
-          }
-
-          // Construct the pseudo-query.
-          val pseudoConstraint = WeededAst.Constraint(head, body, loc)
-
-          // Construct a constraint set that contains the single pseudo constraint.
-          val queryExp = WeededAst.Expr.FixpointConstraintSet(List(pseudoConstraint), loc)
-
-          // Construct the merge of all the expressions.
-          val dbExp = exps.reduceRight[WeededAst.Expr] {
-            case (e, acc) => WeededAst.Expr.FixpointMerge(e, acc, loc)
-          }
-
-          // Extract the tuples of the result predicate.
-          WeededAst.Expr.FixpointProject(pred, queryExp, dbExp, loc)
+          WeededAst.Expr.FixpointQueryWithSelect(exps, selects, from, where, loc)
       }.recoverOne {
         case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Debug(sp1, kind, exp, sp2) =>
-      mapN(visitExp(exp, senv)) {
-        case e =>
-          val loc = mkSL(sp1, sp2)
-          val prefix = kind match {
-            case ParsedAst.DebugKind.Debug => ""
-            case ParsedAst.DebugKind.DebugWithLoc => s"[${loc.formatWithLine}] "
-            case ParsedAst.DebugKind.DebugWithLocAndSrc =>
-              val locPart = s"[${loc.formatWithLine}]"
-              val srcPart = e.loc.text.map(s => s" $s = ").getOrElse("")
-              locPart + srcPart
-          }
-          val e1 = WeededAst.Expr.Cst(Ast.Constant.Str(prefix), loc)
-          val call = mkApplyFqn("Debug.debugWithPrefix", List(e1, e), loc)
-          WeededAst.Expr.UncheckedMaskingCast(call, loc)
-      }
+      val loc = mkSL(sp1, sp2)
+      val eVal = visitExp(exp, senv)
+      val kind1 = visitDebugKind(kind)
+      mapN(eVal)(WeededAst.Expr.Debug(_, kind1, loc))
 
   }
 
@@ -2727,9 +2680,9 @@ object Weeder {
           val name = fparam.ident.name
           val loc1 = mkSL(otherParam.sp1, otherParam.sp2)
           val loc2 = mkSL(fparam.sp1, fparam.sp2)
-            // NB: We report an error at both source locations.
-            errors += DuplicateFormalParam(name, loc1, loc2)
-            errors += DuplicateFormalParam(name, loc2, loc1)
+          // NB: We report an error at both source locations.
+          errors += DuplicateFormalParam(name, loc1, loc2)
+          errors += DuplicateFormalParam(name, loc2, loc1)
       }
     }
 
@@ -2737,8 +2690,8 @@ object Weeder {
   }
 
   /**
-   * Weeds the given formal parameter `fparam`.
-   */
+    * Weeds the given formal parameter `fparam`.
+    */
   private def visitFormalParam(fparam: ParsedAst.FormalParam, typePresence: Presence): Validation[WeededAst.FormalParam, WeederError] = fparam match {
     case ParsedAst.FormalParam(sp1, mods, ident, tpeOpt0, sp2) =>
       val tpeOptVal = traverseOpt(tpeOpt0)(visitType)
@@ -3261,20 +3214,14 @@ object Weeder {
   }
 
   /**
-    * Returns the class and member name constructed from the given fully-qualified name `fqn`.
+    * Returns the class and member name constructed from the given `fqn`
     */
-  private def parseClassAndMember(fqn: Name.JavaName): Validation[(String, String), WeederError] = fqn match {
-    case Name.JavaName(sp1, components, sp2) =>
-      // Ensure that the fqn has at least two components.
-      if (components.length == 1) {
-        return Validation.toHardFailure(IllegalJavaFieldOrMethodName(mkSL(sp1, sp2)))
-      }
-
-      // Compute the class and member name.
-      val className = components.dropRight(1).mkString(".")
-      val memberName = components.last
-
-      (className, memberName).toSuccess
+  private def splitClassAndMember(fqn: ParsedAst.JavaClassMember): (String, String) = fqn match {
+    case ParsedAst.JavaClassMember(_, prefix, suffix, _) =>
+      // The Parser ensures that suffix is non-empty.
+      val className = prefix + "." + suffix.init.mkString(".")
+      val memberName = suffix.last
+      (className, memberName)
   }
 
   /**
