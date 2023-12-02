@@ -2758,16 +2758,32 @@ object Weeder {
       val kindedTypeParams = newTparams.collect { case t: WeededAst.TypeParam.Kinded => t }
       val unkindedTypeParams = newTparams.collect { case t: WeededAst.TypeParam.Unkinded => t }
       (kindedTypeParams, unkindedTypeParams) match {
-        // Case 1: only unkinded type parameters
-        case (Nil, _ :: _) => WeededAst.TypeParams.Unkinded(unkindedTypeParams).toSuccess
-        // Case 2: only kinded type parameters
-        case (_ :: _, Nil) => WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
-        // Case 3: some unkinded and some kinded
+        case (Nil, _ :: _) =>
+          // Case 1: only unkinded type parameters
+          WeededAst.TypeParams.Unkinded(unkindedTypeParams).toSuccess
+
+        case (_ :: _, Nil) =>
+          // Case 2: only kinded type parameters
+        WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
+
         case (_ :: _, _ :: _) =>
-          val loc = mkSL(tparams.head.sp1, tparams.last.sp2)
-          Validation.toHardFailure(MismatchedTypeParameters(loc))
-        // Case 4: no type parameters: should be prevented by parser
-        case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
+          // Case 3: some unkinded and some kinded
+
+          // We recover by kinding every unkinded type parameter with Star.
+          val kinded = newTparams.map {
+            case WeededAst.TypeParam.Kinded(ident, kind) =>
+              WeededAst.TypeParam.Kinded(ident, kind)
+            case WeededAst.TypeParam.Unkinded(ident) =>
+              val default = WeededAst.Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic)
+              WeededAst.TypeParam.Kinded(ident, default)
+          }
+
+          val r = WeededAst.TypeParams.Kinded(kindedTypeParams)
+          Validation.toSoftFailure(r, MismatchedTypeParameters(mkSL(tparams.head.sp1, tparams.last.sp2)))
+
+        case (Nil, Nil) =>
+          // Case 4: no type parameters: should be prevented by parser
+        throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
       }
   }
 

@@ -870,7 +870,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class MismatchedTypeParameters(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class MismatchedTypeParameters(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Either all or none of the type parameters must be annotated with a kind."
 
     def message(formatter: Formatter): String = {
