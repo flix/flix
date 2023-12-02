@@ -346,7 +346,7 @@ object ResolutionError {
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */
-  case class InaccessibleDef(sym: Symbol.DefnSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class InaccessibleDef(sym: Symbol.DefnSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = "Inaccessible."
 
     def message(formatter: Formatter): String = {
