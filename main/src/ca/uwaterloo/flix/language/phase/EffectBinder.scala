@@ -275,8 +275,6 @@ object EffectBinder {
     * outermost one. Only [[Expr.Let]] and [[Expr.LetRec]] are added.
     */
   private def visitExprWithBinders(binders: mutable.ArrayBuffer[Expr])(exp: Expr)(implicit lctx: LocalContext, flix: Flix): Expr = {
-    val expTransformed = visitExprInnerWithBinders(binders)(exp)
-
     /**
       * Let-binds the given expression, unless its a variable or constant.
       * If the given argument is a binder, then the structure is flattened.
@@ -307,8 +305,7 @@ object EffectBinder {
       case Expr.Resume(_, _, _) => letBindExpr(binders)(e)
       case Expr.NewObject(_, _, _, _, _, _, _) => letBindExpr(binders)(e)
     }
-
-    bind(expTransformed)
+    bind(visitExprInnerWithBinders(binders)(exp))
   }
 
   /**
