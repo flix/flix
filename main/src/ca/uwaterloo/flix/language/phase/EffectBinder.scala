@@ -19,9 +19,10 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{Level, Purity, Symbol}
+import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
+import ca.uwaterloo.flix.language.ast.{Level, Purity, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.ParOps
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -62,6 +63,12 @@ object EffectBinder {
     def mk(): LocalContext = LocalContext(mutable.ArrayBuffer.empty)
   }
 
+  private sealed trait Binder
+
+  private case class LetBinder(sym: VarSym, exp: Expr, loc: SourceLocation) extends Binder
+
+  private case class LetRecBinder(varSym: VarSym, index: Int, defSym: DefnSym, exp: Expr, loc: SourceLocation) extends Binder
+
   /**
     * Transforms the [[Def]] such that effect operations will be run without an
     * operand stack.
@@ -86,37 +93,37 @@ object EffectBinder {
     */
   private def visitExpr(exp: Expr)(implicit lctx: LocalContext, flix: Flix): Expr = exp match {
     case Expr.Cst(_, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Expr]
+      val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
     case Expr.Var(_, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Expr]
+      val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
     case Expr.ApplyAtomic(_, _, _, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Expr]
+      val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
     case Expr.ApplyClo(_, _, _, _, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Expr]
+      val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
     case Expr.ApplyDef(_, _, _, _, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Expr]
+      val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
     case Expr.ApplySelfTail(_, _, _, _, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Expr]
+      val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
     case Expr.IfThenElse(_, _, _, _, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Expr]
+      val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
@@ -128,19 +135,19 @@ object EffectBinder {
       Expr.Branch(e, branches1, tpe, purity, loc)
 
     case Expr.JumpTo(_, _, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Expr]
+      val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
     case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
-      val binders = mutable.ArrayBuffer.empty[Expr]
+      val binders = mutable.ArrayBuffer.empty[Binder]
       val e1 = visitExprInnerWithBinders(binders)(exp1)
       val e2 = visitExpr(exp2)
       val e = Expr.Let(sym, e1, e2, tpe, purity, loc)
       bindBinders(binders, e)
 
     case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
-      val binders = mutable.ArrayBuffer.empty[Expr]
+      val binders = mutable.ArrayBuffer.empty[Binder]
       val e1 = visitExprInnerWithBinders(binders)(exp1)
       val e2 = visitExpr(exp2)
       val e = Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
@@ -165,17 +172,17 @@ object EffectBinder {
       Expr.TryWith(e, effUse, rules1, tpe, purity, loc)
 
     case Expr.Do(_, _, _, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Expr]
+      val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
     case Expr.Resume(_, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Expr]
+      val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
     case Expr.NewObject(_, _, _, _, _, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Expr]
+      val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
   }
@@ -186,9 +193,9 @@ object EffectBinder {
     * sub-expressions will be. `do E(x, y, z)` might be returned.
     *
     * Necessary bindings are added to binders, where the first binder is the
-    * outermost one. Only [[Expr.Let]] and [[Expr.LetRec]] are added.
+    * outermost one.
     */
-  private def visitExprInnerWithBinders(binders: mutable.ArrayBuffer[Expr])(exp: Expr)(implicit lctx: LocalContext, flix: Flix): Expr = exp match {
+  private def visitExprInnerWithBinders(binders: mutable.ArrayBuffer[Binder])(exp: Expr)(implicit lctx: LocalContext, flix: Flix): Expr = exp match {
     case Expr.Cst(cst, tpe, loc) =>
       Expr.Cst(cst, tpe, loc)
 
@@ -230,12 +237,12 @@ object EffectBinder {
 
     case Expr.Let(sym, exp1, exp2, _, _, loc) =>
       val e1 = visitExprInnerWithBinders(binders)(exp1)
-      binders.addOne(Expr.Let(sym, e1, null, null, null, loc))
+      binders.addOne(LetBinder(sym, e1, loc))
       visitExprInnerWithBinders(binders)(exp2)
 
     case Expr.LetRec(varSym, index, defSym, exp1, exp2, _, _, loc) =>
       val e1 = visitExprInnerWithBinders(binders)(exp1)
-      binders.addOne(Expr.LetRec(varSym, index, defSym, e1, null, null, null, loc))
+      binders.addOne(LetRecBinder(varSym, index, defSym, e1, loc))
       visitExprInnerWithBinders(binders)(exp2)
 
     case Expr.Scope(sym, exp, tpe, purity, loc) =>
@@ -272,9 +279,9 @@ object EffectBinder {
     * sub-expressions. A variable or a constant is always returned.
     *
     * Necessary bindings are added to binders, where the first binder is the
-    * outermost one. Only [[Expr.Let]] and [[Expr.LetRec]] are added.
+    * outermost one.
     */
-  private def visitExprWithBinders(binders: mutable.ArrayBuffer[Expr])(exp: Expr)(implicit lctx: LocalContext, flix: Flix): Expr = {
+  private def visitExprWithBinders(binders: mutable.ArrayBuffer[Binder])(exp: Expr)(implicit lctx: LocalContext, flix: Flix): Expr = {
     /**
       * Let-binds the given expression, unless its a variable or constant.
       * If the given argument is a binder, then the structure is flattened.
@@ -293,10 +300,10 @@ object EffectBinder {
       case Expr.IfThenElse(_, _, _, _, _, _) => letBindExpr(binders)(e)
       case Expr.Branch(_, _, _, _, _) => letBindExpr(binders)(e)
       case Expr.Let(sym, exp1, exp2, _, _, loc) =>
-        binders.addOne(Expr.Let(sym, exp1, null, null, null, loc))
+        binders.addOne(LetBinder(sym, exp1, loc))
         bind(exp2)
       case Expr.LetRec(varSym, index, defSym, exp1, exp2, _, _, loc) =>
-        binders.addOne(Expr.LetRec(varSym, index, defSym, exp1, null, null, null, loc))
+        binders.addOne(LetRecBinder(varSym, index, defSym, exp1, loc))
         bind(exp2)
       case Expr.Scope(_, _, _, _, _) => letBindExpr(binders)(e)
       case Expr.TryCatch(_, _, _, _, _) => letBindExpr(binders)(e)
@@ -305,6 +312,7 @@ object EffectBinder {
       case Expr.Resume(_, _, _) => letBindExpr(binders)(e)
       case Expr.NewObject(_, _, _, _, _, _, _) => letBindExpr(binders)(e)
     }
+
     bind(visitExprInnerWithBinders(binders)(exp))
   }
 
@@ -312,28 +320,24 @@ object EffectBinder {
     * Simply let-binds the given expression, adding a [[Expr.Let]] to binders.
     * The local params of [[LocalContext]] is updated with this new binder.
     */
-  private def letBindExpr(binders: mutable.ArrayBuffer[Expr])(e: Expr)(implicit lctx: LocalContext, flix: Flix): Expr.Var = {
+  private def letBindExpr(binders: mutable.ArrayBuffer[Binder])(e: Expr)(implicit lctx: LocalContext, flix: Flix): Expr.Var = {
     val loc = e.loc.asSynthetic
     val sym = Symbol.freshVarSym("anf", BoundBy.Let, loc)(Level.Default, flix)
     lctx.lparams.addOne(LocalParam(sym, e.tpe))
-    binders.addOne(Expr.Let(sym, e, null, null, null, loc))
+    binders.addOne(LetBinder(sym, e, loc))
     Expr.Var(sym, e.tpe, loc)
   }
 
   /**
     * Returns an [[Expr]] where the given binders is a chained [[Expr.Let]]
     * expression. The first binder will be the outer-most one.
-    *
-    * The binders are expected to be either [[Expr.Let]] or [[Expr.LetRec]]
-    * where the body of the binder is ignored.
     */
-  private def bindBinders(binders: mutable.ArrayBuffer[Expr], exp: Expr): Expr = {
+  private def bindBinders(binders: mutable.ArrayBuffer[Binder], exp: Expr): Expr = {
     binders.foldRight(exp) {
-      case (Expr.Let(sym, exp1, _, _, _, loc), acc) =>
+      case (LetBinder(sym, exp1, loc), acc) =>
         Expr.Let(sym, exp1, acc, acc.tpe, combine(acc.purity, exp1.purity), loc)
-      case (Expr.LetRec(varSym, index, defSym, exp1, _, _, _, loc), acc) =>
+      case (LetRecBinder(varSym, index, defSym, exp1, loc), acc) =>
         Expr.LetRec(varSym, index, defSym, exp1, acc, acc.tpe, combine(acc.purity, exp1.purity), loc)
-      case (other, _) => throw InternalCompilerException(s"Unexpected binder $other", other.loc)
     }
   }
 
