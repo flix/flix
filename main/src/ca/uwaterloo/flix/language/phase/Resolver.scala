@@ -2110,7 +2110,7 @@ object Resolver {
         if (isSigAccessible(sig, ns0)) {
           ResolvedTerm.Sig(sig).toSuccess
         } else {
-          Validation.toHardFailure(ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc))
+          Validation.toSoftFailure(ResolvedTerm.Sig(sig), ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc))
         }
       //      case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
       //        // Multiple case matches. Error.
