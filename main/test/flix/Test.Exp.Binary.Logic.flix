@@ -91,6 +91,9 @@ mod Test.Exp.Binary.Logic {
     def testBinaryLogicalAnd05b(): Bool = (false and ???) == false
 
     @test
+    def testBinaryLogicalAnd05c(): Bool = (false and {let crash = ???; false}) == false
+
+    @test
     def testBinaryLogicalAnd06a(): Bool = (true and true and true) == true
 
     @test
@@ -129,6 +132,9 @@ mod Test.Exp.Binary.Logic {
 
     @test
     def binaryLogicalOrTest05b(): Bool = (true or ???) == true
+
+    @test
+    def binaryLogicalOrTest05c(): Bool = (true or {let crash = ???; true}) == true
 
     @test
     def binaryLogicalOrTest06a(): Bool = (true or true or true) == true

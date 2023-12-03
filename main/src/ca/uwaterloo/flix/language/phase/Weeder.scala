@@ -341,30 +341,31 @@ object Weeder {
           }
         // Case 3: multiton enum
         case (None, Some(cs0)) =>
-          /*
-           * Check for `DuplicateTag`.
-           */
-          // TODO clean up
-          Validation.fold[ParsedAst.Case, Map[Name.Ident, WeededAst.Case], WeederError](cs0, Map.empty) {
-            case (macc, caze: ParsedAst.Case) =>
-              val tagName = caze.ident
-              macc.get(tagName) match {
-                case None =>
-                  val cazeVal = visitCase(caze)
-                  mapN(cazeVal) {
-                    case caze => (macc + (tagName -> caze))
-                  }
-                case Some(otherTag) =>
-                  val enumName = ident.name
-                  val loc1 = otherTag.ident.loc
-                  val loc2 = mkSL(caze.ident.sp1, caze.ident.sp2)
-                  Failure(LazyList(
-                    // NB: We report an error at both source locations.
-                    DuplicateTag(enumName, tagName, loc1, loc2),
-                    DuplicateTag(enumName, tagName, loc2, loc1)
-                  ))
-              }
+          // Check for [[DuplicateTag]].
+          val errors = mutable.ArrayBuffer.empty[DuplicateTag]
+          val seen = mutable.Map.empty[Name.Ident, ParsedAst.Case]
+          for (caze <- cs0) {
+            val enumName = ident.name
+            val tagName = caze.ident
+            seen.get(tagName) match {
+              case None =>
+                seen += (tagName -> caze)
+              case Some(otherTag) =>
+                // NB: We report an error at both source locations.
+                val loc1 = otherTag.ident.loc
+                val loc2 = mkSL(tagName.sp1, tagName.sp2)
+                errors += DuplicateTag(enumName, tagName, loc1, loc2)
+                errors += DuplicateTag(enumName, tagName, loc2, loc1)
+            }
           }
+
+          // We construct a Map[Name.Ident, ParsedAst.Case]. The map is constructed in reverse order,
+          // such that the *first* duplicate tag is retained (if there are duplicate tags).
+          val cases = cs0.reverse.map(c => c.ident -> c).toMap
+
+          // We traverse the cases in the map and add the (potential) errors.
+          traverseValues(cases)(visitCase).withSoftFailures(errors)
+
         // Case 4: both singleton and multiton syntax used: Error.
         case (Some(_), Some(_)) =>
           Validation.toHardFailure(IllegalEnum(ident.loc))
@@ -501,16 +502,17 @@ object Weeder {
       flatMapN(modVal, tparamsVal) {
         case (mod, tparams) =>
           val tparamVal = tparams match {
-            // Case 1: Singleton parameter.
+            // Case 1: Elided. Use the class tparam.
+            case WeededAst.TypeParams.Elided => clazzTparam.toSuccess
+
+            // Case 2: Singleton parameter.
             case WeededAst.TypeParams.Kinded(hd :: Nil) => hd.toSuccess
             case WeededAst.TypeParams.Unkinded(hd :: Nil) => hd.toSuccess
 
-            // Case 2: Elided. Use the class tparam.
-            case WeededAst.TypeParams.Elided => clazzTparam.toSuccess
-
-            // Case 3: Multiple params. Error.
-            case WeededAst.TypeParams.Kinded(ts) => Validation.toHardFailure(NonUnaryAssocType(ts.length, ident.loc))
-            case WeededAst.TypeParams.Unkinded(ts) => Validation.toHardFailure(NonUnaryAssocType(ts.length, ident.loc))
+            // Case 3: Multiple params.
+            // We recover by (arbitrarily) using the first parameter. The Parser guarantees that ts cannot be empty.
+            case WeededAst.TypeParams.Kinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
+            case WeededAst.TypeParams.Unkinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
           }
           mapN(tparamVal) {
             case tparam => List(WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, loc))
@@ -530,8 +532,10 @@ object Weeder {
         case None => instTpe.toSuccess
         // Case 2: One argument. Visit it.
         case Some(hd :: Nil) => visitType(hd)
-        // Case 3: Multiple arguments. Error.
-        case Some(ts) => Validation.toHardFailure(NonUnaryAssocType(ts.length, ident.loc))
+        // Case 3: Multiple arguments.
+        // We recover by (arbitrarily) using the first parameter. The Parser guarantees that ts cannot be empty.
+        case Some(ts) =>
+          visitType(ts.head).withSoftFailure(NonUnaryAssocType(ts.length, ident.loc))
       }
       val tpeVal = visitType(tpe0)
       val loc = mkSL(sp1, sp2)
@@ -550,14 +554,21 @@ object Weeder {
       List(WeededAst.UseOrImport.Use(qname, qname.ident, mkSL(sp1, sp2))).toSuccess
 
     case ParsedAst.Use.UseMany(_, nname, names, _) =>
-      traverse(names) {
-        case ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2) =>
-          mapN(checkAliasCase(ident.name, aliasOpt)) {
-            case () =>
-              val alias = aliasOpt.getOrElse(ident)
-              WeededAst.UseOrImport.Use(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)): WeededAst.UseOrImport
-          }
+      // Check for [[IllegalUseAlias]].
+      val errors = mutable.ArrayBuffer.empty[IllegalUse]
+      for (ParsedAst.Use.NameAndAlias(_, ident, aliasOpt, _) <- names) {
+        if (!isValidAlias(ident, aliasOpt)) {
+          // The use of aliasOpt.get is safe because an alias can only be invalid if it exists.
+          errors += IllegalUse(ident.name, aliasOpt.get.name, aliasOpt.get.loc)
+        }
       }
+
+      // Collect non-erroneous uses.
+      names.collect {
+        case ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2) if isValidAlias(ident, aliasOpt) =>
+          val alias = aliasOpt.getOrElse(ident)
+          WeededAst.UseOrImport.Use(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)): WeededAst.UseOrImport
+      }.toList.toSuccess.withSoftFailures(errors)
 
     case ParsedAst.Imports.ImportOne(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -565,7 +576,8 @@ object Weeder {
       if (raw"[A-Z][A-Za-z0-9_!]*".r matches alias) {
         List(WeededAst.UseOrImport.Import(name, Name.Ident(sp1, alias, sp2), loc)).toSuccess
       } else {
-        Validation.toHardFailure(IllegalJavaClass(alias, loc))
+        // We recover by simply ignoring the broken import.
+        Validation.toSoftFailure(Nil, MalformedIdentifier(alias, loc))
       }
 
     case ParsedAst.Imports.ImportMany(sp1, pkg, ids, sp2) =>
@@ -580,14 +592,11 @@ object Weeder {
   }
 
   /**
-    * Checks that the name's casing matches the alias's casing. (I.e., both uppercase or both lowercase.)
+    * Returns `true` if `ident` and `alias` share the same case (i.e. both are upper- or lowercase).
     */
-  private def checkAliasCase(name: String, aliasOpt: Option[Name.Ident]): Validation[Unit, WeederError] = {
-    aliasOpt match {
-      case Some(alias) if (alias.name.charAt(0).isUpper != name(0).isUpper) =>
-        Validation.toHardFailure(IllegalUseAlias(name, alias.name, alias.loc))
-      case _ => ().toSuccess
-    }
+  private def isValidAlias(ident: Name.Ident, aliasOpt: Option[Name.Ident]): Boolean = aliasOpt match {
+    case None => true
+    case Some(alias) => ident.name(0).isUpper == alias.name.charAt(0).isUpper
   }
 
   /**
@@ -642,7 +651,7 @@ object Weeder {
       mapN(visitUseOrImport(use), visitExp(exp, senv)) {
         case (us, e) => WeededAst.Expr.Use(us, e, mkSL(sp1, sp2))
       }.recoverOne {
-        case err: IllegalJavaClass => WeededAst.Expr.Error(err)
+        case err: MalformedIdentifier => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Lit(sp1, lit, sp2) =>
@@ -1785,16 +1794,19 @@ object Weeder {
      */
     def visit(pattern: ParsedAst.Pattern): Validation[WeededAst.Pattern, WeederError] = pattern match {
       case ParsedAst.Pattern.Var(sp1, ident, sp2) =>
+        val loc = mkSL(sp1, sp2)
+
         // Check if the identifier is a wildcard.
         if (ident.name == "_") {
-          WeededAst.Pattern.Wild(mkSL(sp1, sp2)).toSuccess
+          WeededAst.Pattern.Wild(loc).toSuccess
         } else {
+          // Check for [[NonLinearPattern]].
           seen.get(ident.name) match {
             case None =>
               seen += (ident.name -> ident)
-              WeededAst.Pattern.Var(ident, mkSL(sp1, sp2)).toSuccess
+              WeededAst.Pattern.Var(ident, loc).toSuccess
             case Some(otherIdent) =>
-              Validation.toHardFailure(NonLinearPattern(ident.name, otherIdent.loc, mkSL(sp1, sp2)))
+              Validation.toSoftFailure(WeededAst.Pattern.Var(ident, loc), NonLinearPattern(ident.name, otherIdent.loc, loc))
           }
         }
 
@@ -1855,17 +1867,21 @@ object Weeder {
         val loc = mkSL(sp1, sp2)
         val fsVal = traverse(pats) {
           case ParsedAst.Pattern.RecordLabelPattern(sp11, label, pat, sp22) =>
+            val patLoc = mkSL(sp11, sp22)
             flatMapN(visitIdent(label), traverseOpt(pat)(visit)) {
               case (id, p) if p.isEmpty =>
-                // Check that we have not seen the label symbol in a pattern before.
+                // Check for [[NonLinearPattern]].
                 seen.get(id.name) match {
-                  case Some(dup) => Validation.toHardFailure(NonLinearPattern(id.name, dup.loc, id.loc))
                   case None =>
                     // It was unseen until now, so we add it to the seen variables.
                     seen += id.name -> id
                     val l = Name.mkLabel(id)
-                    val patLoc = mkSL(sp11, sp22)
-                    WeededAst.Pattern.Record.RecordLabelPattern(l, p, patLoc).toSuccess
+                    val pat = WeededAst.Pattern.Record.RecordLabelPattern(l, p, patLoc)
+                    pat.toSuccess
+                  case Some(otherIdent) =>
+                    val l = Name.mkLabel(id)
+                    val pat = WeededAst.Pattern.Record.RecordLabelPattern(l, p, patLoc)
+                    Validation.toSoftFailure(pat, NonLinearPattern(id.name, otherIdent.loc, id.loc))
                 }
               case (id, p) =>
                 val l = Name.mkLabel(id)
@@ -2332,7 +2348,7 @@ object Weeder {
     case _ =>
       val sp1 = leftMostSourcePosition(t)
       val sp2 = t.sp2
-      Validation.toHardFailure(IllegalEffectSetMember(mkSL(sp1, sp2)))
+      Validation.toSoftFailure((), IllegalEffectSetMember(mkSL(sp1, sp2)))
   }
 
   /**
@@ -2525,16 +2541,32 @@ object Weeder {
       val kindedTypeParams = newTparams.collect { case t: WeededAst.TypeParam.Kinded => t }
       val unkindedTypeParams = newTparams.collect { case t: WeededAst.TypeParam.Unkinded => t }
       (kindedTypeParams, unkindedTypeParams) match {
-        // Case 1: only unkinded type parameters
-        case (Nil, _ :: _) => WeededAst.TypeParams.Unkinded(unkindedTypeParams).toSuccess
-        // Case 2: only kinded type parameters
-        case (_ :: _, Nil) => WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
-        // Case 3: some unkinded and some kinded
+        case (Nil, _ :: _) =>
+          // Case 1: only unkinded type parameters
+          WeededAst.TypeParams.Unkinded(unkindedTypeParams).toSuccess
+
+        case (_ :: _, Nil) =>
+          // Case 2: only kinded type parameters
+        WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
+
         case (_ :: _, _ :: _) =>
-          val loc = mkSL(tparams.head.sp1, tparams.last.sp2)
-          Validation.toHardFailure(MismatchedTypeParameters(loc))
-        // Case 4: no type parameters: should be prevented by parser
-        case (Nil, Nil) => throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
+          // Case 3: some unkinded and some kinded
+
+          // We recover by kinding every unkinded type parameter with Star.
+          val kinded = newTparams.map {
+            case WeededAst.TypeParam.Kinded(ident, kind) =>
+              WeededAst.TypeParam.Kinded(ident, kind)
+            case WeededAst.TypeParam.Unkinded(ident) =>
+              val default = WeededAst.Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic)
+              WeededAst.TypeParam.Kinded(ident, default)
+          }
+
+          val r = WeededAst.TypeParams.Kinded(kindedTypeParams)
+          Validation.toSoftFailure(r, MismatchedTypeParameters(mkSL(tparams.head.sp1, tparams.last.sp2)))
+
+        case (Nil, Nil) =>
+          // Case 4: no type parameters: should be prevented by parser
+        throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
       }
   }
 

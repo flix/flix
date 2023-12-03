@@ -340,6 +340,9 @@ object Simplifier {
 
           case TypeConstructor.Schema =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.Error(_) =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
         }
     }
   }
