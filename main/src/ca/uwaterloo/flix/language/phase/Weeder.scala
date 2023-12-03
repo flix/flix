@@ -656,8 +656,6 @@ object Weeder {
     case ParsedAst.Expression.Use(sp1, use, exp, sp2) =>
       mapN(visitUseOrImport(use), visitExp(exp, senv)) {
         case (us, e) => WeededAst.Expr.Use(us, e, mkSL(sp1, sp2))
-      }.recoverOne {
-        case err: MalformedIdentifier => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Lit(sp1, lit, sp2) =>
@@ -807,8 +805,6 @@ object Weeder {
             val err = UndefinedIntrinsic(loc)
             Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
         }
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Apply(lambda, args, sp2) =>
@@ -818,8 +814,6 @@ object Weeder {
         case (e, as) =>
           val es = getArguments(as, loc)
           WeededAst.Expr.Apply(e, es, loc)
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Infix(exp1, name, exp2, sp2) =>
@@ -840,8 +834,6 @@ object Weeder {
       val expVal = visitExp(exp, senv)
       mapN(fparamsVal, expVal) {
         case (fparams, e) => mkCurried(fparams, e, loc)
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.LambdaMatch(sp1, pat, exp, sp2) =>
@@ -899,8 +891,6 @@ object Weeder {
           val err = EmptyForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
         case (fs1, e1) => WeededAst.Expr.ApplicativeFor(fs1, e1, loc).toSuccess
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.ForEach(sp1, frags, exp, sp2) =>
@@ -915,8 +905,6 @@ object Weeder {
           val err = IllegalForFragment(loc1)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
         case (fs1, e1) => WeededAst.Expr.ForEach(fs1, e1, loc).toSuccess
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.MonadicFor(sp1, frags, exp, sp2) =>
@@ -931,9 +919,7 @@ object Weeder {
           val err = IllegalForFragment(loc1)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
         case (fs1, e1) => WeededAst.Expr.MonadicFor(fs1, e1, loc).toSuccess
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
-      }
+      }.
 
     case ParsedAst.Expression.ForEachYield(sp1, frags, exp, sp2) =>
       val loc = mkSL(sp1, sp2).asSynthetic
@@ -947,8 +933,6 @@ object Weeder {
           val err = IllegalForFragment(loc1)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
         case (fs1, e1) => WeededAst.Expr.ForEachYield(fs1, e1, loc).toSuccess
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe0, exp1, exp2, sp2) =>
@@ -997,8 +981,6 @@ object Weeder {
           }
           val lambda = mkCurried(fp, ascription, e1.loc)
           WeededAst.Expr.LetRec(ident, a1, mod, lambda, e2, loc)
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.LetImport(sp1, impl, exp2, sp2) =>
@@ -1234,8 +1216,6 @@ object Weeder {
       mapN(tVal, msVal) {
         case (t, ms) =>
           WeededAst.Expr.NewObject(t, ms, mkSL(sp1, sp2))
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Static(sp1, sp2) =>
@@ -1258,8 +1238,6 @@ object Weeder {
       }
       mapN(visitExp(exp, senv), rulesVal) {
         case (e, rs) => WeededAst.Expr.Match(e, rs, loc)
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.TypeMatch(sp1, exp, rules, sp2) =>
@@ -1286,8 +1264,6 @@ object Weeder {
       }
       mapN(expVal, rulesVal) {
         case (e, rs) => WeededAst.Expr.RestrictableChoose(star, e, rs, mkSL(sp1, sp2))
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Tuple(sp1, elms, sp2) =>
@@ -1549,8 +1525,6 @@ object Weeder {
       val argsVal = traverse(args0)(visitArgument(_, senv)).map(getArguments(_, loc))
       mapN(argsVal) {
         args => WeededAst.Expr.Do(op, args, loc)
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Resume(sp1, arg0, sp2) =>
@@ -1568,8 +1542,6 @@ object Weeder {
               val err = IllegalResume(loc)
               Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
           }
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Try(sp1, exp, ParsedAst.CatchOrHandler.Catch(rules), sp2) =>
@@ -1605,8 +1577,6 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       mapN(expVal, rulesVal) {
         case (exp, rules) => WeededAst.Expr.TryWith(exp, eff, rules, loc)
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.SelectChannel(sp1, rules, exp, sp2) =>
@@ -1644,8 +1614,6 @@ object Weeder {
 
       mapN(fragVals, visitExp(exp, senv)) {
         case (fs, e) => WeededAst.Expr.ParYield(fs, e, mkSL(sp1, sp2))
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Lazy(sp1, exp, sp2) =>
@@ -1663,8 +1631,6 @@ object Weeder {
 
       mapN(visitConstraint(con, senv)) {
         case c => WeededAst.Expr.FixpointConstraintSet(c :: Nil, loc)
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.FixpointConstraintSet(sp1, cs0, sp2) =>
@@ -1672,8 +1638,6 @@ object Weeder {
 
       traverse(cs0)(visitConstraint(_, senv)).map {
         case cs => WeededAst.Expr.FixpointConstraintSet(cs, loc)
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.FixpointLambda(sp1, pparams, exp, sp2) =>
@@ -1706,8 +1670,6 @@ object Weeder {
               val innerExp = WeededAst.Expr.FixpointInject(exp, pred, loc)
               WeededAst.Expr.FixpointMerge(innerExp, acc, loc)
           }.toSuccess
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, exps, optIdents, sp2) =>
@@ -1727,8 +1689,6 @@ object Weeder {
       mapN(esVal, selectsVal, fromVal, whereVal) {
         case (exps, selects, from, where) =>
           WeededAst.Expr.FixpointQueryWithSelect(exps, selects, from, where, loc)
-      }.recoverOne {
-        case err: WeederError => WeededAst.Expr.Error(err)
       }
 
     case ParsedAst.Expression.Debug(sp1, kind, exp, sp2) =>
