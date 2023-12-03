@@ -2573,7 +2573,7 @@ object Weeder {
     case _ =>
       val sp1 = leftMostSourcePosition(t)
       val sp2 = t.sp2
-      Validation.toHardFailure(IllegalEffectSetMember(mkSL(sp1, sp2)))
+      Validation.toSoftFailure((), IllegalEffectSetMember(mkSL(sp1, sp2)))
   }
 
   /**
