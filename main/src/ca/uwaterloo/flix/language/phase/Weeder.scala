@@ -919,7 +919,7 @@ object Weeder {
           val err = IllegalForFragment(loc1)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
         case (fs1, e1) => WeededAst.Expr.MonadicFor(fs1, e1, loc).toSuccess
-      }.
+      }
 
     case ParsedAst.Expression.ForEachYield(sp1, frags, exp, sp2) =>
       val loc = mkSL(sp1, sp2).asSynthetic
