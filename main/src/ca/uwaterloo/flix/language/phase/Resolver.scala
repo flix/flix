@@ -2063,7 +2063,7 @@ object Resolver {
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible => clazz.toSuccess
           case ClassAccessibility.Sealed => Validation.toHardFailure(ResolutionError.SealedClass(clazz.sym, ns0, qname.loc))
-          case ClassAccessibility.Inaccessible => Validation.toHardFailure(ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc))
+          case ClassAccessibility.Inaccessible => Validation.toSoftFailure(clazz, ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc))
         }
       case None => Validation.toHardFailure(ResolutionError.UndefinedClass(qname, ns0, qname.loc))
     }
@@ -2080,7 +2080,7 @@ object Resolver {
       case Some(clazz) =>
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible | ClassAccessibility.Sealed => clazz.toSuccess
-          case ClassAccessibility.Inaccessible => Validation.toHardFailure(ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc))
+          case ClassAccessibility.Inaccessible => Validation.toSoftFailure(clazz, ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc))
         }
       case None => Validation.toHardFailure(ResolutionError.UndefinedClass(qname, ns0, qname.loc))
     }
