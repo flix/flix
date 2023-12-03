@@ -128,7 +128,7 @@ object WeederError {
     * @param loc1     the location of the first tag.
     * @param loc2     the location of the second tag.
     */
-  case class DuplicateTag(enumName: String, tag: Name.Ident, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+  case class DuplicateTag(enumName: String, tag: Name.Ident, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Duplicate tag: '$tag'."
 
     def message(formatter: Formatter): String = {
@@ -474,32 +474,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that an imported Java name is not a valid Flix identifier
-    */
-  case class IllegalJavaClass(name: String, loc: SourceLocation) extends WeederError with Unrecoverable {
-    def summary: String = "${name} is not a valid Flix identifier."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> ${red(name)} is not a valid Flix identifier.
-         |
-         |${code(loc, "identifier")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""Not every valid Java identifier is a valid Flix identifier.
-         |
-         |If you need to use such a class or interface, alias it during import, e.g.:
-         |
-         |    import java.util.{Locale$$Builder => Builder}
-         |""".stripMargin
-    })
-  }
-
-  /**
     * An error raised to indicate an illegal modifier.
     *
     * @param loc the location where the illegal modifier occurs.
@@ -692,11 +666,11 @@ object WeederError {
   /**
     * An error raised to indicate that the case of an alias does not match the case of the original value.
     *
-    * @param fromName the original name
-    * @param toName   the alias
-    * @param loc      the location where the error occurred
+    * @param fromName the original name.
+    * @param toName   the alias.
+    * @param loc      the location where the error occurred.
     */
-  case class IllegalUseAlias(fromName: String, toName: String, loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class IllegalUse(fromName: String, toName: String, loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"The case of '$fromName' does not match the case of '$toName'."
 
     def message(formatter: Formatter): String = {
@@ -796,6 +770,25 @@ object WeederError {
   }
 
   /**
+   * An error raised to indicate that a name is not a valid Flix identifier.
+   */
+  case class MalformedIdentifier(name: String, loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = s"Malformed identifier: '$name'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Malformed identifier '${red(name)}'.
+         |
+         |${code(loc, "illegal identifier")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate that an int is out of bounds.
     *
     * @param loc the location where the illegal int occurs.
@@ -877,7 +870,7 @@ object WeederError {
     *
     * @param loc the location where the error occurred.
     */
-  case class MismatchedTypeParameters(loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class MismatchedTypeParameters(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "Either all or none of the type parameters must be annotated with a kind."
 
     def message(formatter: Formatter): String = {
@@ -973,7 +966,7 @@ object WeederError {
     * @param loc1 the location of the first use of the variable.
     * @param loc2 the location of the second use of the variable.
     */
-  case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Unrecoverable {
+  case class NonLinearPattern(name: String, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Multiple occurrences of '$name' in pattern."
 
     def message(formatter: Formatter): String = {
@@ -985,12 +978,20 @@ object WeederError {
          |
          |${code(loc2, "the second occurrence was here.")}
          |
+         |A variable may only occur once in a pattern.
          |""".stripMargin
     }
 
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
-      s"${underline("Tip:")} A variable may only occur once in a pattern."
+      s"""${underline("Tip:")} You can replace
+         |
+         |  case (x, x) => ...
+         |
+         |with a guard:
+         |
+         |  case (x, y) if x == y => ...
+         |""".stripMargin
     })
 
     def loc: SourceLocation = loc1 min loc2
@@ -1021,18 +1022,18 @@ object WeederError {
   /**
     * An error raised to indicate a non-unary associated type.
     *
-    * @param numParams the number of parameters of the associated type.
-    * @param loc       the location where the error occurred.
+    * @param n   the number of parameters of the associated type.
+    * @param loc the location where the error occurred.
     */
-  case class NonUnaryAssocType(numParams: Int, loc: SourceLocation) extends WeederError with Unrecoverable {
+  case class NonUnaryAssocType(n: Int, loc: SourceLocation) extends WeederError with Recoverable {
     override def summary: String = "Non-unary associated type signature."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Non-unary associated type signature.
+         |>> Associated types must have exactly one parameter, but $n are given here.
          |
-         |${code(loc, s"Associated types must have exactly one parameter, but $numParams are given here.")}
+         |${code(loc, s"too many parameters")}
          |
          |""".stripMargin
     }

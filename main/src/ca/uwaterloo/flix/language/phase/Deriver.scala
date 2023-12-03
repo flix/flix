@@ -128,7 +128,7 @@ object Deriver {
   private def mkEqImpl(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
       // create a match rule for each case
-      val mainMatchRules = cases.values.map(mkEqMatchRule(_, loc, root))
+      val mainMatchRules = getCasesInStableOrder(cases).map(mkEqMatchRule(_, loc, root))
 
       // create a default rule
       // `case _ => false`
@@ -283,8 +283,8 @@ object Deriver {
 
       // Create the lambda mapping tags to indices
       val lambdaParamVarSym = Symbol.freshVarSym("e", BoundBy.FormalParam, loc)
-      val indexMatchRules = cases.values.zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
-      val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules.toList, loc)
+      val indexMatchRules = getCasesInStableOrder(cases).zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
+      val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules, loc)
       val lambda = KindedAst.Expr.Lambda(
         KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar, Ast.TypeSource.Ascribed, loc),
         indexMatchExp,
@@ -292,7 +292,7 @@ object Deriver {
       )
 
       // Create the main match expression
-      val matchRules = cases.values.map(mkComparePairMatchRule(_, loc, root))
+      val matchRules = getCasesInStableOrder(cases).map(mkComparePairMatchRule(_, loc, root))
 
       // Create the default rule:
       // `case _ => compare(indexOf(x), indexOf(y))`
@@ -492,7 +492,7 @@ object Deriver {
   private def mkToStringImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
       // create a match rule for each case
-      val matchRules = cases.values.map(mkToStringMatchRule(_, loc, root))
+      val matchRules = getCasesInStableOrder(cases).map(mkToStringMatchRule(_, loc, root))
 
       // group the match rules in an expression
       KindedAst.Expr.Match(
@@ -627,7 +627,7 @@ object Deriver {
   private def mkHashImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
       // create a match rule for each case
-      val matchRules = cases.values.zipWithIndex.map {
+      val matchRules = getCasesInStableOrder(cases).zipWithIndex.map {
         case (caze, index) => mkHashMatchRule(caze, index, loc, root)
       }
 
@@ -741,6 +741,13 @@ object Deriver {
         ns = Name.RootNS,
         loc = loc
       ).toSuccess
+  }
+
+  /**
+    * Returns the cases in `m` in a *stable order* that relies on the order of their source locations.
+    */
+  private def getCasesInStableOrder(m: Map[Symbol.CaseSym, KindedAst.Case]): List[KindedAst.Case] = {
+    m.values.toList.sortBy(_.loc)
   }
 
   /**
