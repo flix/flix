@@ -243,7 +243,11 @@ object WeededAst {
 
     case class FixpointSolveWithProject(exps: List[Expr], optIdents: Option[List[Name.Ident]], loc: SourceLocation) extends Expr
 
+    case class FixpointQueryWithSelect(exps: List[Expr], selects: List[Expr], from: List[Predicate.Body], where: List[Expr], loc: SourceLocation) extends Expr
+
     case class FixpointProject(pred: Name.Pred, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+
+    case class Debug(exp: Expr, kind: DebugKind, loc: SourceLocation) extends Expr
 
     case class Error(m: CompilationMessage) extends Expr {
       override def loc: SourceLocation = m.loc
@@ -466,6 +470,18 @@ object WeededAst {
     case class Generator(pat: Pattern, exp: Expr, loc: SourceLocation) extends ForFragment
 
     case class Guard(exp: Expr, loc: SourceLocation) extends ForFragment
+
+  }
+
+  sealed trait DebugKind
+
+  object DebugKind {
+
+    case object Debug extends DebugKind
+
+    case object DebugWithLoc extends DebugKind
+
+    case object DebugWithLocAndSrc extends DebugKind
 
   }
 

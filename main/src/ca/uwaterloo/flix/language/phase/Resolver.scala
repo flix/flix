@@ -2104,7 +2104,7 @@ object Resolver {
         if (isDefAccessible(defn, ns0)) {
           ResolvedTerm.Def(defn).toSuccess
         } else {
-          Validation.toHardFailure(ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc))
+          Validation.toSoftFailure(ResolvedTerm.Def(defn), ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc))
         }
       case Resolution.Declaration(sig: NamedAst.Declaration.Sig) :: _ =>
         if (isSigAccessible(sig, ns0)) {
@@ -3318,6 +3318,7 @@ object Resolver {
         case TypeConstructor.CaseSet(_, _) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseIntersection(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.CaseUnion(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Error(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
 
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
