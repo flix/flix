@@ -66,13 +66,13 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
-  test("IllegalJavaClass.01") {
+  test("MalformedIdentifier.01") {
     val input =
       """
         |import java.util.Locale$Builder
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalJavaClass](result)
+    expectError[WeederError.MalformedIdentifier](result)
   }
 
   test("IllegalIntrinsic.01") {
@@ -820,17 +820,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedInt](result)
   }
 
-  test("IllegalJvmFieldOrMethodName.01") {
-    val input =
-      raw"""
-           |def f(): Unit =
-           |    import foo(): Unit \ IO as bar;
-           |    ()
-           |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[WeederError.IllegalJavaFieldOrMethodName](result)
-  }
-
   test("IllegalForFragment.01") {
     val input =
       """
@@ -954,7 +943,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalUseAlias](result)
+    expectError[WeederError.IllegalUse](result)
   }
 
   test("IllegalUseAlias.02") {
@@ -970,7 +959,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalUseAlias](result)
+    expectError[WeederError.IllegalUse](result)
   }
 
   test("IllegalModuleName.01") {
