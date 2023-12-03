@@ -128,7 +128,7 @@ object WeederError {
     * @param loc1     the location of the first tag.
     * @param loc2     the location of the second tag.
     */
-  case class DuplicateTag(enumName: String, tag: Name.Ident, loc1: SourceLocation, loc2: SourceLocation) extends WeederError {
+  case class DuplicateTag(enumName: String, tag: Name.Ident, loc1: SourceLocation, loc2: SourceLocation) extends WeederError with Recoverable {
     def summary: String = s"Duplicate tag: '$tag'."
 
     def message(formatter: Formatter): String = {
