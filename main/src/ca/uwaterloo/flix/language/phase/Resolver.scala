@@ -2138,7 +2138,7 @@ object Resolver {
         if (isOpAccessible(op, ns0)) {
           op.toSuccess
         } else {
-          Validation.toHardFailure(ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc))
+          Validation.toSoftFailure(op, ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc))
         }
       case _ => Validation.toHardFailure(ResolutionError.UndefinedOp(qname, qname.loc))
     }
