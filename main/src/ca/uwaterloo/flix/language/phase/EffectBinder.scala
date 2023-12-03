@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
-import ca.uwaterloo.flix.language.ast.{Level, Purity, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, Level, Purity, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression
 import ca.uwaterloo.flix.util.ParOps
 
@@ -201,6 +201,13 @@ object EffectBinder {
 
     case Expr.Var(sym, tpe, loc) =>
       Expr.Var(sym, tpe, loc)
+
+    case Expr.ApplyAtomic(op@AtomicOp.Binary(SemanticOp.BoolOp.And | SemanticOp.BoolOp.Or), exps, tpe, purity, loc) =>
+      // And and Or does not leave the first argument on the stack in genExpression.
+      val List(exp1, exp2) = exps
+      val e1 = visitExprWithBinders(binders)(exp1)
+      val e2 = visitExpr(exp2)
+      Expr.ApplyAtomic(op, List(e1, e2), tpe, purity, loc)
 
     case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExprWithBinders(binders))
