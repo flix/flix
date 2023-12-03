@@ -70,3 +70,5 @@ jobs:
         run: |
           # Build the project.
           java -jar flix.jar build --github-key ${{ github.token }}
+          # Run tests
+          java -jar flix.jar test
