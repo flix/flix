@@ -45,6 +45,7 @@ sealed trait UnkindedType {
     case UnkindedType.Ascribe(tpe, kind, loc) => UnkindedType.Ascribe(tpe.map(f), kind, loc)
     case UnkindedType.Alias(cst, args, tpe, loc) => UnkindedType.Alias(cst, args.map(_.map(f)), tpe.map(f), loc)
     case UnkindedType.AssocType(cst, arg, loc) => UnkindedType.AssocType(cst, arg.map(f), loc)
+    case t: UnkindedType.Error => t
   }
 
   /**
@@ -94,6 +95,8 @@ sealed trait UnkindedType {
     case UnkindedType.Alias(_, _, tpe, _) => tpe.definiteTypeVars
     // For associated types we cannot yet reduce, so we are conservative and say none.
     case UnkindedType.AssocType(_, _, _) => SortedSet.empty
+
+    case UnkindedType.Error(_) => SortedSet.empty
   }
 }
 
@@ -281,6 +284,18 @@ object UnkindedType {
     }
 
     override def hashCode(): Int = Objects.hash(cst, arg)
+  }
+
+  /**
+    * A fully resolved error type.
+    */
+  case class Error(loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case Error(_) => true
+      case _ => false
+    }
+
+    override def hashCode(): Int = Objects.hash(loc)
   }
 
   /**
@@ -504,6 +519,7 @@ object UnkindedType {
     case Ascribe(tpe, kind, loc) => Ascribe(eraseAliases(tpe), kind, loc)
     case Alias(_, _, tpe, _) => eraseAliases(tpe)
     case AssocType(cst, arg, loc) => AssocType(cst, eraseAliases(arg), loc) // TODO ASSOC-TYPES check that this is valid
+    case tpe: UnkindedType.Error => tpe
     case UnappliedAlias(_, loc) => throw InternalCompilerException("unexpected unapplied alias", loc)
     case UnappliedAssocType(_, loc) => throw InternalCompilerException("unexpected unapplied associated type", loc)
   }

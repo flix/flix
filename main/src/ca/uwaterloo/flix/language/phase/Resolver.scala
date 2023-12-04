@@ -277,6 +277,7 @@ object Resolver {
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Enum => Nil
     case _: UnkindedType.RestrictableEnum => Nil
+    case _: UnkindedType.Error => Nil
     case alias: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias", alias.loc)
     case assoc: UnkindedType.AssocType => throw InternalCompilerException("unexpected applied associated type", assoc.loc)
   }
@@ -2519,6 +2520,11 @@ object Resolver {
           case (t, ts) => UnkindedType.mkApply(UnkindedType.Ascribe(t, kind, loc), ts, tpe0.loc)
         }
 
+      case _: UnkindedType.Error =>
+        traverse(targs)(finishResolveType(_, taenv)) map {
+          resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
+        }
+
       case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", baseType.loc)
       case _: UnkindedType.Alias => throw InternalCompilerException("unexpected resolved alias", baseType.loc)
       case _: UnkindedType.AssocType => throw InternalCompilerException("unexpected resolved associated type", baseType.loc)
@@ -3334,6 +3340,9 @@ object Resolver {
 
       // Case 4: Ascription. Ignore it and recurse.
       case UnkindedType.Ascribe(t, _, _) => getJVMType(UnkindedType.mkApply(t, erased.typeArguments, loc), loc)
+
+      // Case 5: It's a broken type. Lets hope it is an object.
+      case UnkindedType.Error(_) => Class.forName("java.lang.Object").toSuccess
 
       // Case 5: Illegal type. Error.
       case _: UnkindedType.Var => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
