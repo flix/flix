@@ -1150,8 +1150,6 @@ object Namer {
     * Names the given type `tpe`.
     */
   private def visitType(t0: DesugaredAst.Type)(implicit flix: Flix): Validation[NamedAst.Type, NameError] = {
-    // TODO NS-REFACTOR seems like this is no longer failable. Use non-validation?
-    // TODO NS-REFACTOR Can we merge DesugaredAst.Type and NamedAst.Type and avoid this whole function?
     def visit(tpe0: DesugaredAst.Type): Validation[NamedAst.Type, NameError] = tpe0 match {
       case DesugaredAst.Type.Unit(loc) => NamedAst.Type.Unit(loc).toSuccess
 
@@ -1161,7 +1159,7 @@ object Namer {
         //
         if (isSuspiciousTypeVarName(ident.name)) {
           // TODO NS-REFACTOR maybe check this at declaration site instead of use site
-          Validation.toHardFailure(NameError.SuspiciousTypeVarName(ident.name, loc))
+          Validation.toSoftFailure(NamedAst.Type.Var(ident, loc), NameError.SuspiciousTypeVarName(ident.name, loc))
         } else {
           NamedAst.Type.Var(ident, loc).toSuccess
         }
