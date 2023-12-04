@@ -23,13 +23,15 @@ import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType._
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.errors.ResolutionError._
+import ca.uwaterloo.flix.language.errors.Recoverable
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.{ListMap, MapOps}
-import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, ParOps, Similarity, Validation}
+import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, ParOps, Result, Similarity, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.annotation.tailrec
-import scala.collection.immutable.{SortedSet, StringOps}
+import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
 /**
@@ -474,7 +476,7 @@ object Resolver {
           val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
           flatMapN(clazzVal, tpeVal, tconstrsVal) {
             case (clazz, tpe, tconstrs) =>
-              val assocsVal = resolveAssocTypeDefs(assocs0, clazz, env, taenv, ns0, root, loc)
+              val assocsVal = resolveAssocTypeDefs(assocs0, clazz, tpe, env, taenv, ns0, root, loc)
               val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(clazz.sym, clazz0.loc), tpe, clazz0.loc)
               val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
               mapN(defsVal, assocsVal) {
@@ -647,39 +649,48 @@ object Resolver {
     * Performs name resolution on the given associated type definitions `d0` in the given namespace `ns0`.
     * `loc` is the location of the instance symbol for reporting errors.
     */
-  private def resolveAssocTypeDefs(d0: List[NamedAst.Declaration.AssocTypeDef], clazz: NamedAst.Declaration.Class, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit flix: Flix): Validation[List[ResolvedAst.Declaration.AssocTypeDef], ResolutionError] = {
-    val assocIdents = d0.map {
-      case NamedAst.Declaration.AssocTypeDef(_, _, ident, _, _, _) => ident
-    }
+  private def resolveAssocTypeDefs(d0: List[NamedAst.Declaration.AssocTypeDef], clazz: NamedAst.Declaration.Class, targ: UnkindedType, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit flix: Flix): Validation[List[ResolvedAst.Declaration.AssocTypeDef], ResolutionError] = {
+    flatMapN(Validation.traverse(d0)(resolveAssocTypeDef(_, clazz, env, taenv, ns0, root))) {
+      case xs =>
+        // Computes a map from associated type symbols to their definitions.
+        val m = mutable.Map.empty[Symbol.AssocTypeSym, ResolvedAst.Declaration.AssocTypeDef]
 
-    // check that there are no repeated idents
-    val seenIdents = mutable.Map.empty[String, SourceLocation]
-    val dupErrs = mutable.ListBuffer.empty[ResolutionError.DuplicateAssocTypeDef]
-    assocIdents.foreach {
-      ident =>
-        seenIdents.get(ident.name) match {
-          case None => seenIdents.put(ident.name, ident.loc)
-          case Some(seenLoc) => dupErrs.append(ResolutionError.DuplicateAssocTypeDef(ident.name, seenLoc, ident.loc))
+        // We collect [[DuplicateAssocTypeDef]] and [[DuplicateAssocTypeDef]] errors.
+        val errors = mutable.ListBuffer.empty[ResolutionError with Recoverable]
+
+        // Build the map `m` and check for [[DuplicateAssocTypeDef]].
+        for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, use, _, _, loc1) <- xs) {
+          val sym = use.sym
+          m.get(sym) match {
+            case None =>
+              m.put(sym, d)
+            case Some(otherDecl) =>
+              val loc2 = otherDecl.loc
+              errors += ResolutionError.DuplicateAssocTypeDef(sym, loc1, loc2)
+              errors += ResolutionError.DuplicateAssocTypeDef(sym, loc2, loc1)
+          }
         }
-    }
-    val dupVal = Validation.sequenceX(dupErrs.map(e => Validation.toHardFailure(e)))
 
-    // check that all associated types are covered
-    val missingVal = Validation.traverseX(clazz.assocs) {
-      case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _) =>
-        if (assocIdents.exists { ident => ident.name == sym.name }) {
-          ().toSuccess
-        } else {
-          Validation.toHardFailure(ResolutionError.MissingAssocTypeDef(sym.name, loc))
+        // Check for [[MissingAssocTypeDef]] and recover.
+        for (NamedAst.Declaration.AssocTypeSig(_, _, ascSym, _, _, _) <- clazz.assocs) {
+          if (!m.contains(ascSym)) {
+            // Missing associated type.
+            errors += ResolutionError.MissingAssocTypeDef(ascSym.name, loc)
+
+            // We recover by introducing a dummy associated type definition.
+            // We assume Kind.Star because we cannot resolve the actually kind here.
+            val doc = Ast.Doc(Nil, loc)
+            val mod = Ast.Modifiers.Empty
+            val use = Ast.AssocTypeSymUse(ascSym, loc)
+            val arg = targ
+            val tpe = UnkindedType.Cst(TypeConstructor.Error(Kind.Star), loc)
+            val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, use, arg, tpe, loc)
+            m.put(ascSym, ascDef)
+          }
         }
-    }
 
-
-    // check that the types are valid and that there are no extras
-    val assocsVal = Validation.traverse(d0)(resolveAssocTypeDef(_, clazz, env, taenv, ns0, root))
-
-    mapN(dupVal, missingVal, assocsVal) {
-      case (_, _, assocs) => assocs
+        // We use `m.values` here because we have eliminated duplicates and introduced missing associated type defs.
+        Validation.toSuccessOrSoftFailure(m.values.toList, errors)
     }
   }
 
@@ -1316,10 +1327,11 @@ object Resolver {
           }
 
         case NamedAst.Expr.InstanceOf(exp, className, loc) =>
-          val eVal = visitExp(exp, env0)
-          val clazzVal = lookupJvmClass(className, loc)
-          mapN(eVal, clazzVal) {
-            (e, clazz) => ResolvedAst.Expr.InstanceOf(e, clazz, loc)
+          lookupJvmClass(className, loc) match {
+            case Result.Ok(clazz) => mapN(visitExp(exp, env0)) {
+              e => ResolvedAst.Expr.InstanceOf(e, clazz, loc)
+            }
+            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.CheckedCast(c, exp, loc) =>
@@ -1346,7 +1358,7 @@ object Resolver {
           val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, className, body) =>
               val env = env0 ++ mkVarEnv(sym)
-              val clazzVal = lookupJvmClass(className, sym.loc)
+              val clazzVal = lookupJvmClass(className, sym.loc).toValidation
               val bVal = visitExp(body, env)
               mapN(clazzVal, bVal) {
                 case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b)
@@ -1409,13 +1421,17 @@ object Resolver {
           }
 
         case NamedAst.Expr.InvokeConstructor(className, args, sig, loc) =>
-          val argsVal = traverse(args)(visitExp(_, env0))
-          val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
-          flatMapN(sigVal, argsVal) {
-            case (ts, as) =>
-              mapN(lookupJvmConstructor(className, ts, loc)) {
-                case constructor => ResolvedAst.Expr.InvokeConstructor(constructor, as, loc)
+          lookupJvmClass(className, loc) match {
+            case Result.Ok(clazz) =>
+              val argsVal = traverse(args)(visitExp(_, env0))
+              val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
+              flatMapN(sigVal, argsVal) {
+                case (ts, as) =>
+                  mapN(lookupJvmConstructor(clazz, ts, loc)) {
+                    case constructor => ResolvedAst.Expr.InvokeConstructor(constructor, as, loc)
+                  }
               }
+            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.InvokeMethod(className, methodName, exp, args, sig, retTpe, loc) =>
@@ -1423,7 +1439,7 @@ object Resolver {
           val argsVal = traverse(args)(visitExp(_, env0))
           val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
           val retVal = resolveType(retTpe, Wildness.ForbidWild, env0, taenv, ns0, root)
-          val clazzVal = lookupJvmClass(className, loc)
+          val clazzVal = lookupJvmClass(className, loc).toValidation
           flatMapN(sigVal, expVal, argsVal, retVal, clazzVal) {
             case (ts, e, as, ret, clazz) =>
               mapN(lookupJvmMethod(clazz, methodName, ts, ret, static = false, loc)) {
@@ -1435,7 +1451,7 @@ object Resolver {
           val argsVal = traverse(args)(visitExp(_, env0))
           val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
           val retVal = resolveType(retTpe, Wildness.ForbidWild, env0, taenv, ns0, root)
-          val clazzVal = lookupJvmClass(className, loc)
+          val clazzVal = lookupJvmClass(className, loc).toValidation
           flatMapN(sigVal, argsVal, retVal, clazzVal) {
             case (ts, as, ret, clazz) =>
               mapN(lookupJvmMethod(clazz, methodName, ts, ret, static = true, loc)) {
@@ -1444,35 +1460,36 @@ object Resolver {
           }
 
         case NamedAst.Expr.GetField(className, fieldName, exp, loc) =>
-          flatMapN(lookupJvmClass(className, loc)) {
-            case clazz =>
-              mapN(lookupJvmField(clazz, fieldName, static = false, loc), visitExp(exp, env0)) {
-                case (field, e) => ResolvedAst.Expr.GetField(field, clazz, e, loc)
+          lookupJvmField(className, fieldName, static = false, loc) match {
+            case Result.Ok((clazz, field)) =>
+              mapN(visitExp(exp, env0)) {
+                case e => ResolvedAst.Expr.GetField(field, clazz, e, loc)
               }
+            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
-          flatMapN(lookupJvmClass(className, loc)) {
-            case clazz =>
-              mapN(lookupJvmField(clazz, fieldName, static = false, loc), visitExp(exp1, env0), visitExp(exp2, env0)) {
-                case (field, e1, e2) => ResolvedAst.Expr.PutField(field, clazz, e1, e2, loc)
+          lookupJvmField(className, fieldName, static = false, loc) match {
+            case Result.Ok((clazz, field)) =>
+              mapN(visitExp(exp1, env0), visitExp(exp2, env0)) {
+                case (e1, e2) => ResolvedAst.Expr.PutField(field, clazz, e1, e2, loc)
               }
+            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.GetStaticField(className, fieldName, loc) =>
-          flatMapN(lookupJvmClass(className, loc)) {
-            case clazz =>
-              mapN(lookupJvmField(clazz, fieldName, static = true, loc)) {
-                case field => ResolvedAst.Expr.GetStaticField(field, loc)
-              }
+          lookupJvmField(className, fieldName, static = true, loc) match {
+            case Result.Ok((_, field)) => ResolvedAst.Expr.GetStaticField(field, loc).toSuccess
+            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
-          flatMapN(lookupJvmClass(className, loc)) {
-            case clazz =>
-              mapN(lookupJvmField(clazz, fieldName, static = true, loc), visitExp(exp, env0)) {
-                case (field, e) => ResolvedAst.Expr.PutStaticField(field, e, loc)
+          lookupJvmField(className, fieldName, static = true, loc) match {
+            case Result.Ok((_, field)) =>
+              mapN(visitExp(exp, env0)) {
+                case e => ResolvedAst.Expr.PutStaticField(field, e, loc)
               }
+            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.NewObject(name, tpe, methods, loc) =>
@@ -1679,11 +1696,11 @@ object Resolver {
         case NamedAst.Pattern.Cst(cst, loc) => ResolvedAst.Pattern.Cst(cst, loc).toSuccess
 
         case NamedAst.Pattern.Tag(qname, pat, loc) =>
-          val cVal = lookupTag(qname, env, ns0, root)
-          val pVal = visit(pat)
-          mapN(cVal, pVal) {
-            case (c, p) =>
-              ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
+          lookupTag(qname, env, ns0, root) match {
+            case Result.Ok(c) => mapN(visit(pat)) {
+              case p => ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
+            }
+            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Pattern.Error(loc), e)
           }
 
         case NamedAst.Pattern.Tuple(elms, loc) =>
@@ -1725,11 +1742,11 @@ object Resolver {
         case NamedAst.Pattern.Cst(cst, loc) => ResolvedAst.Pattern.Cst(cst, loc).toSuccess
 
         case NamedAst.Pattern.Tag(qname, pat, loc) =>
-          val cVal = lookupTag(qname, env, ns0, root)
-          val pVal = visit(pat)
-          mapN(cVal, pVal) {
-            case (c, p) =>
-              ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
+          lookupTag(qname, env, ns0, root) match {
+            case Result.Ok(c) => mapN(visit(pat)) {
+              case p => ResolvedAst.Pattern.Tag(Ast.CaseSymUse(c.sym, qname.loc), p, loc)
+            }
+            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Pattern.Error(loc), e)
           }
 
         case NamedAst.Pattern.Tuple(elms, loc) =>
@@ -1970,24 +1987,25 @@ object Resolver {
   /**
     * Performs name resolution on the given derivations `derives0`.
     */
-  def resolveDerivations(derives0: NamedAst.Derivations, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[Ast.Derivations, ResolutionError] = {
+  private def resolveDerivations(derives0: NamedAst.Derivations, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[Ast.Derivations, ResolutionError] = {
     val qnames = derives0.classes
     val derivesVal = Validation.traverse(qnames)(resolveDerivation(_, env, ns0, root))
     flatMapN(derivesVal) {
       derives =>
-        val derivesWithIndex = derives.zipWithIndex
-        val failures = for {
-          (Ast.Derivation(sym1, loc1), i1) <- derivesWithIndex
-          (Ast.Derivation(sym2, loc2), i2) <- derivesWithIndex
-
-          // don't compare a sym against itself
-          if i1 != i2
-          if sym1 == sym2
-        } yield Validation.toHardFailure(ResolutionError.DuplicateDerivation(sym1, loc1, loc2))
-
-        Validation.sequenceX(failures) map {
-          _ => Ast.Derivations(derives, derives0.loc)
+        // Check for [[DuplicateDerivation]].
+        val seen = mutable.Map.empty[Symbol.ClassSym, SourceLocation]
+        val errors = mutable.ArrayBuffer.empty[DuplicateDerivation]
+        for (Ast.Derivation(classSym, loc1) <- derives) {
+          seen.get(classSym) match {
+            case None =>
+              seen.put(classSym, loc1)
+            case Some(loc2) =>
+              errors += DuplicateDerivation(classSym, loc1, loc2)
+              errors += DuplicateDerivation(classSym, loc2, loc1)
+          }
         }
+
+        Validation.toSuccessOrSoftFailure(Ast.Derivations(derives, derives0.loc), errors)
     }
   }
 
@@ -2111,7 +2129,7 @@ object Resolver {
   /**
     * Finds the enum case that matches the given qualified name `qname` and `tag` in the namespace `ns0`.
     */
-  private def lookupTag(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Case, ResolutionError] = {
+  private def lookupTag(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Case, ResolutionError.UndefinedTag] = {
     // look up the name
     val matches = tryLookupName(qname, env, ns0, root) collect {
       case Resolution.Declaration(c: NamedAst.Declaration.Case) => c
@@ -2119,11 +2137,11 @@ object Resolver {
 
     matches match {
       // Case 0: No matches. Error.
-      case Nil => Validation.toHardFailure(ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc))
+      case Nil => Result.Err(ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc))
       // Case 1: Exactly one match. Success.
-      case caze :: _ => caze.toSuccess
+      case caze :: _ => Result.Ok(caze)
       // Case 2: Multiple matches. Error
-      case cazes => throw InternalCompilerException(s"unexpected duplicate tag: ${qname}", qname.loc)
+      case cazes => throw InternalCompilerException(s"unexpected duplicate tag: '$qname'.", qname.loc)
     }
     // TODO NS-REFACTOR check accessibility
   }
@@ -2139,7 +2157,7 @@ object Resolver {
 
     matches match {
       // Case 0: No matches. Error.
-      case Nil => Validation.toHardFailure(ResolutionError.UndefinedTag(qname.ident.name, ns0, qname.loc))
+      case Nil => Validation.toHardFailure(ResolutionError.UndefinedRestrictableTag(qname.ident.name, ns0, qname.loc))
       // Case 1: Exactly one match. Success.
       case caze :: Nil => caze.toSuccess
       // Case 2: Multiple matches. Error
@@ -2287,7 +2305,7 @@ object Resolver {
         }
 
       case NamedAst.Type.Native(fqn, loc) =>
-        mapN(lookupJvmClass(fqn, loc)) {
+        mapN(lookupJvmClass(fqn, loc).toValidation) {
           case clazz => flixifyType(clazz, loc)
         }
 
@@ -2985,7 +3003,7 @@ object Resolver {
     //
     // The type alias is not accessible.
     //
-    Validation.toHardFailure(ResolutionError.InaccessibleTypeAlias(alia0.sym, ns0, loc))
+    Validation.toSoftFailure(alia0, ResolutionError.InaccessibleTypeAlias(alia0.sym, ns0, loc))
   }
 
   /**
@@ -3069,28 +3087,28 @@ object Resolver {
   /**
     * Returns the class reflection object for the given `className`.
     */
-  private def lookupJvmClass(className: String, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = try {
+  private def lookupJvmClass(className: String, loc: SourceLocation)(implicit flix: Flix): Result[Class[_], ResolutionError with Recoverable] = try {
     // Don't initialize the class; we don't want to execute static initializers.
     val initialize = false
-    Class.forName(className, initialize, flix.jarLoader).toSuccess
+    Result.Ok(Class.forName(className, initialize, flix.jarLoader))
   } catch {
-    case ex: ClassNotFoundException => Validation.toHardFailure(ResolutionError.UndefinedJvmClass(className, loc))
-    case ex: NoClassDefFoundError => Validation.toHardFailure(ResolutionError.MissingJvmDependency(className, ex.getMessage, loc))
+    case ex: ClassNotFoundException => Result.Err(ResolutionError.UndefinedJvmClass(className, ex.getMessage, loc))
+    case ex: NoClassDefFoundError => Result.Err(ResolutionError.UndefinedJvmClass(className, ex.getMessage, loc))
   }
 
   /**
     * Returns the constructor reflection object for the given `className` and `signature`.
     */
-  private def lookupJvmConstructor(className: String, signature: List[UnkindedType], loc: SourceLocation)(implicit flix: Flix): Validation[Constructor[_], ResolutionError] = {
+  private def lookupJvmConstructor(clazz: Class[_], signature: List[UnkindedType], loc: SourceLocation)(implicit flix: Flix): Validation[Constructor[_], ResolutionError] = {
     // Lookup the class and signature.
-    flatMapN(lookupJvmClass(className, loc), lookupSignature(signature, loc)) {
-      case (clazz, sig) => try {
+    flatMapN(lookupSignature(signature, loc)) {
+      case sig => try {
         // Lookup the constructor with the appropriate signature.
         clazz.getConstructor(sig: _*).toSuccess
       } catch {
-        case ex: ClassNotFoundException => Validation.toHardFailure(ResolutionError.UndefinedJvmClass(className, loc))
-        case ex: NoSuchMethodException => Validation.toHardFailure(ResolutionError.UndefinedJvmConstructor(className, sig, clazz.getConstructors.toList, loc))
-        case ex: NoClassDefFoundError => Validation.toHardFailure(ResolutionError.MissingJvmDependency(className, ex.getMessage, loc))
+        case ex: NoSuchMethodException => Validation.toHardFailure(ResolutionError.UndefinedJvmConstructor(clazz, sig, clazz.getConstructors.toList, loc))
+        // ClassNotFoundException:  Cannot happen because we already have the `Class` object.
+        // NoClassDefFoundError:    Cannot happen because we already have the `Class` object.
       }
     }
   }
@@ -3126,7 +3144,7 @@ object Resolver {
 
                 val expectedTpe = UnkindedType.getFlixType(method.getReturnType)
                 if (expectedTpe != erasedRetTpe)
-                  Validation.toHardFailure(ResolutionError.MismatchingReturnType(clazz.getName, methodName, retTpe, expectedTpe, loc))
+                  Validation.toSoftFailure(method, ResolutionError.MismatchedReturnType(clazz.getName, methodName, retTpe, expectedTpe, loc))
                 else
                   method.toSuccess
 
@@ -3137,31 +3155,34 @@ object Resolver {
           case ex: NoSuchMethodException =>
             val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
             Validation.toHardFailure(ResolutionError.UndefinedJvmMethod(clazz.getName, methodName, static, sig, candidateMethods, loc))
-          case ex: NoClassDefFoundError =>
-            Validation.toHardFailure(ResolutionError.MissingJvmDependency(clazz.getName, ex.getMessage, loc))
+          // ClassNotFoundException:  Cannot happen because we already have the `Class` object.
+          // NoClassDefFoundError:    Cannot happen because we already have the `Class` object.
         }
     }
   }
 
   /**
-    * Returns the field reflection object for the given `clazz` and `fieldName`.
+    * Returns the class and field reflection objects for the given `className` and `fieldName`.
     */
-  private def lookupJvmField(clazz: Class[_], fieldName: String, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Validation[Field, ResolutionError] = {
-    try {
-      // Lookup the field.
-      val field = clazz.getField(fieldName)
+  private def lookupJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Result[(Class[_], Field), ResolutionError with Recoverable] = {
+    lookupJvmClass(className, loc).flatMap {
+      case clazz =>
+        try {
+          // Lookup the field.
+          val field = clazz.getField(fieldName)
 
-      // Check if the field should be and is static.
-      if (static == Modifier.isStatic(field.getModifiers))
-        field.toSuccess
-      else
-        throw new NoSuchFieldException()
-    } catch {
-      case ex: NoSuchFieldException =>
-        val candidateFields = clazz.getFields.toList
-        Validation.toHardFailure(ResolutionError.UndefinedJvmField(clazz.getName, fieldName, static, candidateFields, loc))
-      case ex: NoClassDefFoundError =>
-        Validation.toHardFailure(ResolutionError.MissingJvmDependency(clazz.getName, ex.getMessage, loc))
+          // Check if the field should be and is static.
+          if (static == Modifier.isStatic(field.getModifiers))
+            Result.Ok((clazz, field))
+          else
+            throw new NoSuchFieldException()
+        } catch {
+          case ex: NoSuchFieldException =>
+            val candidateFields = clazz.getFields.toList
+            Result.Err(ResolutionError.UndefinedJvmField(clazz.getName, fieldName, static, candidateFields, loc))
+          // ClassNotFoundException:  Cannot happen because we already have the `Class` object.
+          // NoClassDefFoundError:    Cannot happen because we already have the `Class` object.
+        }
     }
   }
 
@@ -3414,7 +3435,7 @@ object Resolver {
     }
 
     case NamedAst.UseOrImport.Import(name, alias, loc) =>
-      val clazzVal = lookupJvmClass(name.toString, loc)
+      val clazzVal = lookupJvmClass(name.toString, loc).toValidation
       mapN(clazzVal) {
         case clazz => Ast.UseOrImport.Import(clazz, alias, loc)
       }

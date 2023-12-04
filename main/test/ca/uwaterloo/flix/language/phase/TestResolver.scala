@@ -661,7 +661,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchingReturnType](result)
+    expectError[ResolutionError.MismatchedReturnType](result)
   }
 
   test("MismatchingReturnType.02") {
@@ -672,7 +672,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchingReturnType](result)
+    expectError[ResolutionError.MismatchedReturnType](result)
   }
 
   test("MismatchingReturnType.03") {
@@ -684,7 +684,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchingReturnType](result)
+    expectError[ResolutionError.MismatchedReturnType](result)
   }
 
   test("UndefinedJvmField.01") {
