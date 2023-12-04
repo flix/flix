@@ -544,6 +544,13 @@ class Flix {
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
+
+      // New parsing pipeline
+      afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
+      afterParser2 <- Parser2.run(afterLexer)
+      afterTreeCleaner <- TreeCleaner.run(afterReader, entryPoint, afterParser2)
+      _ <- compareParser2ToOrigial(afterWeeder, afterTreeCleaner) // TODO: Remove this debugging phase
+
       afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
