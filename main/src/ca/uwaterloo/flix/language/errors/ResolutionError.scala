@@ -115,17 +115,17 @@ object ResolutionError {
   /**
     * An error raised to indicate a duplicate associated type definition.
     *
-    * @param name the name of the duplicated associated type definition.
+    * @param sym  the associated type symbol.
     * @param loc1 the location of the first associated type definition.
     * @param loc2 the location of the second associated type definition.
     */
-  case class DuplicateAssocTypeDef(name: String, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Unrecoverable {
-    override def summary: String = s"Duplicate associated type definition: $name."
+  case class DuplicateAssocTypeDef(sym: Symbol.AssocTypeSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Duplicate associated type definition: $sym."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Duplicate associated type definition.
+         |>> Duplicate associated type definition: ${red(sym.name)}.
          |
          |${code(loc2, "duplicate associated type definition.")}
          |""".stripMargin
@@ -133,7 +133,7 @@ object ResolutionError {
 
     override def explain(formatter: Formatter): Option[String] = None
 
-    val loc: SourceLocation = loc2
+    val loc: SourceLocation = loc1
   }
 
   /**
@@ -187,32 +187,6 @@ object ResolutionError {
     override def explain(formatter: Formatter): Option[String] = Some({
       "An associated type may only be applied to a variable."
     })
-  }
-
-  /**
-    * An error raised to indicate an illegal derivation.
-    *
-    * @param sym       the class symbol of the illegal derivation.
-    * @param legalSyms the list of class symbols of legal derivations.
-    * @param loc       the location where the error occurred.
-    */
-  case class IllegalDerivation(sym: Symbol.ClassSym, legalSyms: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError with Unrecoverable {
-    override def summary: String = s"Illegal derivation: ${sym.name}"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal derivation '${red(sym.name)}'.
-         |
-         |${code(loc, "Illegal derivation.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
-    })
-
   }
 
   /**
@@ -295,7 +269,7 @@ object ResolutionError {
     * @param ident the name of the wildcard type.
     * @param loc   the location where the error occurred.
     */
-  case class IllegalWildType(ident: Name.Ident, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class IllegalWildType(ident: Name.Ident, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = s"Illegal wildcard type: '$ident'."
 
     def message(formatter: Formatter): String = {
@@ -535,19 +509,19 @@ object ResolutionError {
     * @param expectedType the expected type.
     * @param loc          the location of the method name.
     */
-  case class MismatchingReturnType(className: String, methodName: String, declaredType: UnkindedType, expectedType: UnkindedType, loc: SourceLocation) extends ResolutionError with Unrecoverable {
-    def summary: String = {
-      s"Mismatching return type."
-    }
+  case class MismatchedReturnType(className: String, methodName: String, declaredType: UnkindedType, expectedType: UnkindedType, loc: SourceLocation) extends ResolutionError with Recoverable {
+    def summary: String = "Mismatched return type."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-        >> Mismatched return type for method '${red(methodName)}' in class '${cyan(className)}'.
+         |
+         | >> Mismatched return type for method '${red(methodName)}' in class '${cyan(className)}'.
          |
          |${code(loc, "mismatched return type.")}
-         |Declared type: ${declaredType.toString}
-         |Expected type: ${expectedType.toString}
+         |
+         |Declared type: $declaredType
+         |Expected type: $expectedType
          |""".stripMargin
     }
 
@@ -563,7 +537,7 @@ object ResolutionError {
     * @param name the name of the missing associated type definition.
     * @param loc  the location of the instance symbol where the error occurred.
     */
-  case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"Missing associated type definition: $name."
 
     override def message(formatter: Formatter): String = {
@@ -933,13 +907,40 @@ object ResolutionError {
     * @param ns  the current namespace.
     * @param loc the location where the error occurred.
     */
-  case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = s"Undefined tag: '$tag'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
          |>> Undefined tag '${red(tag)}'.
+         |
+         |${code(loc, "tag not found.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent tag?"
+    })
+
+  }
+
+  /**
+    * Undefined Restrictable Tag Error.
+    *
+    * @param tag the tag.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedRestrictableTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+    def summary: String = s"Undefined restrictable tag: '$tag'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined restrictable tag '${red(tag)}'.
          |
          |${code(loc, "tag not found.")}
          |
@@ -986,7 +987,7 @@ object ResolutionError {
     * @param name the name of the type variable.
     * @param loc  the location of the undefined type variable.
     */
-  case class UndefinedTypeVar(name: String, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UndefinedTypeVar(name: String, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = s"Undefined type variable '$name'."
 
     def message(formatter: Formatter): String = {
