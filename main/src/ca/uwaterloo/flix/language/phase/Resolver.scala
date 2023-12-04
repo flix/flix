@@ -476,7 +476,7 @@ object Resolver {
           val tconstrsVal = traverse(tconstrs0)(resolveTypeConstraint(_, env, taenv, ns0, root))
           flatMapN(clazzVal, tpeVal, tconstrsVal) {
             case (clazz, tpe, tconstrs) =>
-              val assocsVal = resolveAssocTypeDefs(assocs0, clazz, env, taenv, ns0, root, loc)
+              val assocsVal = resolveAssocTypeDefs(assocs0, clazz, tpe, env, taenv, ns0, root, loc)
               val tconstr = ResolvedAst.TypeConstraint(Ast.TypeConstraint.Head(clazz.sym, clazz0.loc), tpe, clazz0.loc)
               val defsVal = traverse(defs0)(resolveDef(_, Some(tconstr), env, taenv, ns0, root))
               mapN(defsVal, assocsVal) {
@@ -649,39 +649,48 @@ object Resolver {
     * Performs name resolution on the given associated type definitions `d0` in the given namespace `ns0`.
     * `loc` is the location of the instance symbol for reporting errors.
     */
-  private def resolveAssocTypeDefs(d0: List[NamedAst.Declaration.AssocTypeDef], clazz: NamedAst.Declaration.Class, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit flix: Flix): Validation[List[ResolvedAst.Declaration.AssocTypeDef], ResolutionError] = {
-    val assocIdents = d0.map {
-      case NamedAst.Declaration.AssocTypeDef(_, _, ident, _, _, _) => ident
-    }
+  private def resolveAssocTypeDefs(d0: List[NamedAst.Declaration.AssocTypeDef], clazz: NamedAst.Declaration.Class, targ: UnkindedType, env: ListMap[String, Resolution], taenv: Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation)(implicit flix: Flix): Validation[List[ResolvedAst.Declaration.AssocTypeDef], ResolutionError] = {
+    flatMapN(Validation.traverse(d0)(resolveAssocTypeDef(_, clazz, env, taenv, ns0, root))) {
+      case xs =>
+        // Computes a map from associated type symbols to their definitions.
+        val m = mutable.Map.empty[Symbol.AssocTypeSym, ResolvedAst.Declaration.AssocTypeDef]
 
-    // check that there are no repeated idents
-    val seenIdents = mutable.Map.empty[String, SourceLocation]
-    val dupErrs = mutable.ListBuffer.empty[ResolutionError.DuplicateAssocTypeDef]
-    assocIdents.foreach {
-      ident =>
-        seenIdents.get(ident.name) match {
-          case None => seenIdents.put(ident.name, ident.loc)
-          case Some(seenLoc) => dupErrs.append(ResolutionError.DuplicateAssocTypeDef(ident.name, seenLoc, ident.loc))
+        // We collect [[DuplicateAssocTypeDef]] and [[DuplicateAssocTypeDef]] errors.
+        val errors = mutable.ListBuffer.empty[ResolutionError with Recoverable]
+
+        // Build the map `m` and check for [[DuplicateAssocTypeDef]].
+        for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, use, _, _, loc1) <- xs) {
+          val sym = use.sym
+          m.get(sym) match {
+            case None =>
+              m.put(sym, d)
+            case Some(otherDecl) =>
+              val loc2 = otherDecl.loc
+              errors += ResolutionError.DuplicateAssocTypeDef(sym, loc1, loc2)
+              errors += ResolutionError.DuplicateAssocTypeDef(sym, loc2, loc1)
+          }
         }
-    }
-    val dupVal = Validation.sequenceX(dupErrs.map(e => Validation.toHardFailure(e)))
 
-    // check that all associated types are covered
-    val missingVal = Validation.traverseX(clazz.assocs) {
-      case NamedAst.Declaration.AssocTypeSig(_, _, sym, _, _, _) =>
-        if (assocIdents.exists { ident => ident.name == sym.name }) {
-          ().toSuccess
-        } else {
-          Validation.toHardFailure(ResolutionError.MissingAssocTypeDef(sym.name, loc))
+        // Check for [[MissingAssocTypeDef]] and recover.
+        for (NamedAst.Declaration.AssocTypeSig(_, _, ascSym, _, _, _) <- clazz.assocs) {
+          if (!m.contains(ascSym)) {
+            // Missing associated type.
+            errors += ResolutionError.MissingAssocTypeDef(ascSym.name, loc)
+
+            // We recover by introducing a dummy associated type definition.
+            // We assume Kind.Star because we cannot resolve the actually kind here.
+            val doc = Ast.Doc(Nil, loc)
+            val mod = Ast.Modifiers.Empty
+            val use = Ast.AssocTypeSymUse(ascSym, loc)
+            val arg = targ
+            val tpe = UnkindedType.Cst(TypeConstructor.Error(Kind.Star), loc)
+            val ascDef = ResolvedAst.Declaration.AssocTypeDef(doc, mod, use, arg, tpe, loc)
+            m.put(ascSym, ascDef)
+          }
         }
-    }
 
-
-    // check that the types are valid and that there are no extras
-    val assocsVal = Validation.traverse(d0)(resolveAssocTypeDef(_, clazz, env, taenv, ns0, root))
-
-    mapN(dupVal, missingVal, assocsVal) {
-      case (_, _, assocs) => assocs
+        // We use `m.values` here because we have eliminated duplicates and introduced missing associated type defs.
+        Validation.toSuccessOrSoftFailure(m.values.toList, errors)
     }
   }
 
