@@ -37,15 +37,12 @@ object LexerError {
       s"""${line(kind, source.name)}
          |>> Block-comment nested too deep.
          |
-         |${code(loc, "Block-comment starts here.")}
+         |${code(loc, "This is nested too deep.")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Ensure that block-comments are not nested more than $BlockCommentMaxNestingLevel levels deep."
-    })
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -62,7 +59,7 @@ object LexerError {
       s"""${line(kind, source.name)}
          |>> Number has two decimal dots.
          |
-         |${code(loc, "Number found here.")}
+         |${code(loc, "Second decimal dot is here.")}
          |
          |""".stripMargin
     }
@@ -103,7 +100,7 @@ object LexerError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unterminated block-comment.
+         |>> Missing '*/' in block-comment.
          |
          |${code(loc, "Block-comment starts here.")}
          |
@@ -124,7 +121,7 @@ object LexerError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unterminated built-in.
+         |>> Missing '$$' in built-in.
          |
          |${code(loc, "Built-in starts here.")}
          |
@@ -145,9 +142,30 @@ object LexerError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unterminated char.
+         |>> Missing `'` in char.
          |
          |${code(loc, "Char starts here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+   * An error raised when an unterminated regex is encountered.
+   *
+   * @param loc The location of the opening `"`.
+   */
+  case class UnterminatedRegex(loc: SourceLocation) extends LexerError {
+    override def summary: String = s"Unterminated regex."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Missing `"` in regex.
+         |
+         |${code(loc, "Regex starts here")}
          |
          |""".stripMargin
     }
@@ -166,7 +184,7 @@ object LexerError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unterminated infix function.
+         |>> Missing '`' in infix function.
          |
          |${code(loc, "Infix function starts here.")}
          |
@@ -188,7 +206,7 @@ object LexerError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unterminated string.
+         |>> missing '"' in string.
          |
          |${code(loc, "String starts here.")}
          |
@@ -209,7 +227,7 @@ object LexerError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unterminated string interpolation.
+         |>> Missing '}' in string interpolation.
          |
          |${code(loc, "Interpolation starts here.")}
          |
@@ -230,16 +248,13 @@ object LexerError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> String interpolation  nested too deep.
+         |>> String interpolation nested too deep.
          |
-         |${code(loc, "Interpolation starts here.")}
+         |${code(loc, "This is nested too deep.")}
          |
          |""".stripMargin
     }
 
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Ensure that string interpolations are not nested more than $InterpolatedStringMaxNestingLevel levels deep."
-    })
+    override def explain(formatter: Formatter): Option[String] = None
   }
 }

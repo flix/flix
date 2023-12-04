@@ -94,7 +94,9 @@ object Main {
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphase = cmdOpts.xprintphase,
       xsummary = cmdOpts.xsummary,
-      xparser = cmdOpts.xparser
+      xparser = cmdOpts.xparser,
+      XPerfFrontend = cmdOpts.XPerfFrontend,
+      XPerfN = cmdOpts.XPerfN
     )
 
     // Don't use progress bar if benchmarking.
@@ -295,6 +297,8 @@ object Main {
                      xprintphase: Set[String] = Set.empty,
                      xsummary: Boolean = false,
                      xparser: Boolean = false,
+                     XPerfN: Option[Int] = None,
+                     XPerfFrontend: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -487,8 +491,8 @@ object Main {
 
       // Xparser
       opt[Unit]("Xparser").action((_, c) => c.copy(xparser = true)).
-        text("[experimental] enables new experimental lexer and parser.")
-      
+        text("[experimental] disables new experimental lexer and parser.")
+
       note("")
 
       // Input files.

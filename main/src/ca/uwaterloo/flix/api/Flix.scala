@@ -31,7 +31,7 @@ import ca.uwaterloo.flix.util._
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
-import scala.collection.immutable.{AbstractMap, SeqMap, SortedMap}
+import java.util.concurrent.ForkJoinPool
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -84,9 +84,15 @@ class Flix {
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
 
   def getParserAst: ParsedAst.Root = cachedParserAst
+
   def getWeederAst: WeededAst.Root = cachedWeederAst
+
+  def getDesugarAst: DesugaredAst.Root = cachedDesugarAst
+
   def getKinderAst: KindedAst.Root = cachedKinderAst
+
   def getResolverAst: ResolvedAst.Root = cachedResolverAst
+
   def getTyperAst: TypedAst.Root = cachedTyperAst
 
   /**
@@ -107,17 +113,30 @@ class Flix {
   private var cachedVarOffsetsAst: ReducedAst.Root = ReducedAst.empty
 
   def getLoweringAst: LoweredAst.Root = cachedLoweringAst
-  def getEarlyTreeShakerAst: LoweredAst.Root = cachedEarlyTreeShakerAst
-  def getMonomorphAst: LoweredAst.Root = cachedMonomorphAst
-  def getMonomorphEnumsAst: LoweredAst.Root = cachedMonomorphEnumsAst
+
+  def getTreeShaker1Ast: LoweredAst.Root = cachedTreeShaker1Ast
+
+  def getMonoDefsAst: LoweredAst.Root = cachedMonoDefsAst
+
+  def getMonoTypesAst: LoweredAst.Root = cachedMonoTypesAst
+
   def getSimplifierAst: SimplifiedAst.Root = cachedSimplifierAst
+
   def getClosureConvAst: SimplifiedAst.Root = cachedClosureConvAst
+
   def getLambdaLiftAst: LiftedAst.Root = cachedLambdaLiftAst
+
   def getTailrecAst: LiftedAst.Root = cachedTailrecAst
+
   def getOptimizerAst: LiftedAst.Root = cachedOptimizerAst
-  def getLateTreeShakerAst: LiftedAst.Root = cachedLateTreeShakerAst
+
+  def getTreeShaker2Ast: LiftedAst.Root = cachedTreeShaker2Ast
+
   def getReducerAst: ReducedAst.Root = cachedReducerAst
-  def getVarNumberingAst: ReducedAst.Root = cachedVarNumberingAst
+
+  def getEffectBinderAst: ReducedAst.Root = cachedEffectBinderAst
+
+  def getVarOffsetsAst: ReducedAst.Root = cachedVarOffsetsAst
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -329,14 +348,9 @@ class Flix {
   var options: Options = Options.Default
 
   /**
-    * The fork join pool for `this` Flix instance.
+    * The thread pool executor service for `this` Flix instance.
     */
-  private var forkJoinPool: java.util.concurrent.ForkJoinPool = _
-
-  /**
-    * The fork join task support for `this` Flix instance.
-    */
-  var forkJoinTaskSupport: scala.collection.parallel.ForkJoinTaskSupport = _
+  var threadPool: java.util.concurrent.ForkJoinPool = _
 
   /**
     * The symbol generator associated with this Flix instance.
@@ -538,7 +552,7 @@ class Flix {
     //   sed -n '/\[\[\[ OLD PARSER \]\]\]/,/\[\[\[ NEW PARSER \]\]\]/p' run.txt > old.txt &&
     //   sed -n '/\[\[\[ NEW PARSER \]\]\]/,/\[\[\[\[ END \]\]\]/p' run.txt > new.txt &&
     //   git difftool -y --no-index ./old.txt ./new.txt
-    def compareParser2ToOrigial(afterReader: ReadAst.Root): Validation[WeededAst.Root, CompilationMessage] = {
+    def compareParser2ToOrigial(afterParser: WeededAst.Root, afterParser2: WeededAst.Root): Validation[Unit, CompilationMessage] = {
       // A helper function for formatting pretty printing ASTs.
       // It is generic to scala objects with some special handling for source positions and locations.
       def format(obj: Any, depth: Int = 0, paramName: Option[String] = None): String = {
@@ -566,47 +580,31 @@ class Flix {
         }
       }
 
-      val parser2Result = for {
-        afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
-        afterParser2 <- Parser2.run(afterLexer)
-        afterTreeCleaner <- TreeCleaner.run(afterReader, entryPoint, afterParser2)
-      } yield {
-        // Update caches for incremental compilation.
-        if (options.incremental) {
-          this.cachedLexerTokens = afterLexer
-        }
-        afterTreeCleaner
-      }
+      println("[[[ OLD PARSER ]]]")
+      println(format(afterParser))
+      println("[[[ NEW PARSER ]]]")
+      println(format(afterParser2))
+      println("[[[ END ]]]")
 
-      val parserResult = for {
-        afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
-        afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
-      } yield {
-        afterWeeder
-      }
-
-      println(parserResult)
-      println(parser2Result)
-
-      (parserResult, parser2Result) match {
-        case (Validation.Success(c1), Validation.Success(c2)) =>
-          println("[[[ OLD PARSER ]]]")
-          println(format(c1))
-          println("[[[ NEW PARSER ]]]")
-          println(format(c2))
-          println("[[[ END ]]]")
-        case _ =>
-      }
-
-      parser2Result
+      Validation.Success(())
     }
     ////////////// END PARSER2 DEBUGGING ////////////////
 
-    // The compiler pipeline.
+    /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
       afterReader <- Reader.run(getInputs)
-      afterWeeder <- compareParser2ToOrigial(afterReader)
-      afterNamer <- Namer.run(afterWeeder)
+
+      // New parsing pipeline
+      afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
+      afterParser2 <- Parser2.run(afterLexer)
+      afterTreeCleaner <- TreeCleaner.run(afterReader, entryPoint, afterParser2)
+      // Old parsing pipeline
+      afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
+      afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
+      _ <- compareParser2ToOrigial(afterWeeder, afterTreeCleaner) // TODO: Remove this debugging phase
+
+      afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
+      afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
       afterDeriver <- Deriver.run(afterKinder)
@@ -784,18 +782,17 @@ class Flix {
   }
 
   /**
-    * Initializes the fork join pools.
+    * Initializes the fork-join thread pool.
     */
-  private def initForkJoin(): Unit = {
-    forkJoinPool = new java.util.concurrent.ForkJoinPool(options.threads)
-    forkJoinTaskSupport = new scala.collection.parallel.ForkJoinTaskSupport(forkJoinPool)
+  private def initForkJoinPool(): Unit = {
+    threadPool = new ForkJoinPool(options.threads)
   }
 
   /**
-    * Shuts down the fork join pools.
+    * Shuts down the fork-join thread pools.
     */
-  private def shutdownForkJoin(): Unit = {
-    forkJoinPool.shutdown()
+  private def shutdownForkJoinPool(): Unit = {
+    threadPool.shutdown()
   }
 
 }
