@@ -331,7 +331,11 @@ object Lexer {
         TokenKind.Hash
       }
       case '/' => if (peek() == '/') {
-        acceptLineComment()
+        if (peekPeek().contains('/')) {
+          acceptDocComment()
+        } else {
+          acceptLineComment()
+        }
       } else if (peek() == '*') {
         acceptBlockComment()
       } else {
@@ -892,6 +896,20 @@ object Lexer {
       }
     }
     TokenKind.CommentLine
+  }
+
+  /**
+   * Moves current position past a doc-comment
+   */
+  private def acceptDocComment()(implicit s: State): TokenKind = {
+    while (!eof()) {
+      if (peek() == '\n') {
+        return TokenKind.CommentDoc
+      } else {
+        advance()
+      }
+    }
+    TokenKind.CommentDoc
   }
 
   /**
