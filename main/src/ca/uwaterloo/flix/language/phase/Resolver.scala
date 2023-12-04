@@ -277,6 +277,7 @@ object Resolver {
     case UnkindedType.CaseIntersection(tpe1, tpe2, loc) => getAliasUses(tpe1) ::: getAliasUses(tpe2)
     case _: UnkindedType.Enum => Nil
     case _: UnkindedType.RestrictableEnum => Nil
+    case _: UnkindedType.Error => Nil
     case alias: UnkindedType.Alias => throw InternalCompilerException("unexpected applied alias", alias.loc)
     case assoc: UnkindedType.AssocType => throw InternalCompilerException("unexpected applied associated type", assoc.loc)
   }
@@ -2200,9 +2201,11 @@ object Resolver {
   private def semiResolveType(tpe0: NamedAst.Type, wildness: Wildness, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit level: Level, flix: Flix): Validation[UnkindedType, ResolutionError] = {
     def visit(tpe0: NamedAst.Type): Validation[UnkindedType, ResolutionError] = tpe0 match {
       case NamedAst.Type.Var(ident, loc) =>
-        val symVal = lookupTypeVar(ident, wildness, env)
-        mapN(symVal) {
-          case sym => UnkindedType.Var(sym, loc)
+        lookupTypeVar(ident, wildness, env) match {
+          case Result.Ok(sym) => UnkindedType.Var(sym, loc).toSuccess
+          case Result.Err(e) =>
+            // Note: We assume the default type variable has kind Star.
+            Validation.toSoftFailure(UnkindedType.Cst(TypeConstructor.Error(Kind.Star), loc), e)
         }
 
       case NamedAst.Type.Unit(loc) => UnkindedType.Cst(TypeConstructor.Unit, loc).toSuccess
@@ -2518,6 +2521,11 @@ object Resolver {
           case (t, ts) => UnkindedType.mkApply(UnkindedType.Ascribe(t, kind, loc), ts, tpe0.loc)
         }
 
+      case _: UnkindedType.Error =>
+        traverse(targs)(finishResolveType(_, taenv)) map {
+          resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
+        }
+
       case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", baseType.loc)
       case _: UnkindedType.Alias => throw InternalCompilerException("unexpected resolved alias", baseType.loc)
       case _: UnkindedType.AssocType => throw InternalCompilerException("unexpected resolved associated type", baseType.loc)
@@ -2654,18 +2662,22 @@ object Resolver {
   /**
     * Looks up the type variable with the given name.
     */
-  private def lookupTypeVar(ident: Name.Ident, wildness: Wildness, env: ListMap[String, Resolution])(implicit level: Level, flix: Flix): Validation[Symbol.UnkindedTypeVarSym, ResolutionError] = {
+  private def lookupTypeVar(ident: Name.Ident, wildness: Wildness, env: ListMap[String, Resolution])(implicit level: Level, flix: Flix): Result[Symbol.UnkindedTypeVarSym, ResolutionError with Recoverable] = {
     if (ident.isWild) {
       wildness match {
         case Wildness.AllowWild =>
-          Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), isRegion = false, ident.loc).toSuccess
+          Result.Ok(Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), isRegion = false, ident.loc))
         case Wildness.ForbidWild =>
-          Validation.toHardFailure(ResolutionError.IllegalWildType(ident, ident.loc))
+          Result.Err(ResolutionError.IllegalWildType(ident, ident.loc))
       }
     } else {
-      env(ident.name).collectFirst {
-        case Resolution.TypeVar(sym) => sym.toSuccess
-      }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedTypeVar(ident.name, ident.loc)))
+      val typeVarOpt = env(ident.name).collectFirst {
+        case Resolution.TypeVar(sym) => sym
+      }
+      typeVarOpt match {
+        case Some(sym) => Result.Ok(sym)
+        case None => Result.Err(ResolutionError.UndefinedTypeVar(ident.name, ident.loc))
+      }
     }
   }
 
@@ -3322,6 +3334,9 @@ object Resolver {
 
       // Case 4: Ascription. Ignore it and recurse.
       case UnkindedType.Ascribe(t, _, _) => getJVMType(UnkindedType.mkApply(t, erased.typeArguments, loc), loc)
+
+      // Case 5: It's a broken type. Lets hope it is an object.
+      case UnkindedType.Error(_) => Class.forName("java.lang.Object").toSuccess
 
       // Case 5: Illegal type. Error.
       case _: UnkindedType.Var => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))

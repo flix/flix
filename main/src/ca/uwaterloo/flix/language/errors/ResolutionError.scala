@@ -269,7 +269,7 @@ object ResolutionError {
     * @param ident the name of the wildcard type.
     * @param loc   the location where the error occurred.
     */
-  case class IllegalWildType(ident: Name.Ident, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class IllegalWildType(ident: Name.Ident, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = s"Illegal wildcard type: '$ident'."
 
     def message(formatter: Formatter): String = {
@@ -987,7 +987,7 @@ object ResolutionError {
     * @param name the name of the type variable.
     * @param loc  the location of the undefined type variable.
     */
-  case class UndefinedTypeVar(name: String, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UndefinedTypeVar(name: String, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = s"Undefined type variable '$name'."
 
     def message(formatter: Formatter): String = {

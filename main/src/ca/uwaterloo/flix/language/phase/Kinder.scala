@@ -1369,6 +1369,8 @@ object Kinder {
       }
 
 
+    case UnkindedType.Error(loc) => Type.Cst(TypeConstructor.Error(expectedKind), loc).toSuccess
+
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe0.loc)
     case _: UnkindedType.UnappliedAssocType => throw InternalCompilerException("unexpected unapplied associated type", tpe0.loc)
 
@@ -1646,6 +1648,7 @@ object Kinder {
         case (kenv1, kenv2) => kenv1 ++ kenv2
       }
 
+    case UnkindedType.Error(_) => KindEnv.empty.toSuccess
 
     case _: UnkindedType.Apply => throw InternalCompilerException("unexpected type application", tpe.loc)
     case _: UnkindedType.UnappliedAlias => throw InternalCompilerException("unexpected unapplied alias", tpe.loc)
