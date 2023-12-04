@@ -221,7 +221,7 @@ object ResolutionError {
     * @param sym the symbol of the signature.
     * @param loc the location where the error occurred.
     */
-  case class IllegalSignature(sym: Symbol.SigSym, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class IllegalSignature(sym: Symbol.SigSym, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = s"Unexpected signature which does not mention the type variable of the class."
 
     def message(formatter: Formatter): String = {
