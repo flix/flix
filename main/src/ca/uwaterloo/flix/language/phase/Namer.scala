@@ -632,8 +632,6 @@ object Namer {
     case DesugaredAst.Expr.Lambda(fparam0, exp, loc) =>
       mapN(visitFormalParam(fparam0): Validation[NamedAst.FormalParam, NameError], visitExp(exp, ns0)) {
         case (p, e) => NamedAst.Expr.Lambda(p, e, loc)
-      }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.Unary(sop, exp, loc) =>
@@ -725,8 +723,6 @@ object Namer {
       }
       mapN(expVal, rulesVal) {
         case (e, rs) => NamedAst.Expr.TypeMatch(e, rs, loc)
-      }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
@@ -831,8 +827,6 @@ object Namer {
 
       mapN(expVal, expectedTypVal, expectedEffVal) {
         case (e, t, f) => NamedAst.Expr.Ascribe(e, t, f, loc)
-      }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.InstanceOf(exp, className, loc) =>
@@ -852,8 +846,6 @@ object Namer {
 
       mapN(expVal, declaredTypVal, declaredEffVal) {
         case (e, t, f) => NamedAst.Expr.UncheckedCast(e, t, f, loc)
-      }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.UncheckedMaskingCast(exp, loc) =>
@@ -894,8 +886,6 @@ object Namer {
       }
       mapN(eVal, rulesVal) {
         case (e, rules) => NamedAst.Expr.TryWith(e, eff, rules, loc)
-      }.recoverOne {
-        case err: NameError => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.Do(op, exps0, loc) =>
@@ -915,8 +905,6 @@ object Namer {
       val sigVal = traverse(sig)(visitType): Validation[List[NamedAst.Type], NameError]
       mapN(argsVal, sigVal) {
         case (as, sig) => NamedAst.Expr.InvokeConstructor(className, as, sig, loc)
-      }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.InvokeMethod(className, methodName, exp, exps, sig, retTpe, loc) =>
@@ -926,8 +914,6 @@ object Namer {
       val retVal = visitType(retTpe): Validation[NamedAst.Type, NameError]
       mapN(expVal, argsVal, sigVal, retVal) {
         case (e, as, sig, ret) => NamedAst.Expr.InvokeMethod(className, methodName, e, as, sig, ret, loc)
-      }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.InvokeStaticMethod(className, methodName, exps, sig, retTpe, loc) =>
@@ -936,10 +922,7 @@ object Namer {
       val retVal = visitType(retTpe): Validation[NamedAst.Type, NameError]
       mapN(argsVal, sigVal, retVal) {
         case (as, sig, ret) => NamedAst.Expr.InvokeStaticMethod(className, methodName, as, sig, ret, loc)
-      }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expr.Error(err)
       }
-
 
     case DesugaredAst.Expr.GetField(className, fieldName, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
@@ -964,8 +947,6 @@ object Namer {
         case (tpe, ms) =>
           val name = s"Anon$$${flix.genSym.freshId()}"
           NamedAst.Expr.NewObject(name, tpe, ms, loc)
-      }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.NewChannel(exp1, exp2, loc) =>
@@ -1045,8 +1026,6 @@ object Namer {
       val expVal = visitExp(exp, ns0)
       mapN(psVal, expVal) {
         case (ps, e) => NamedAst.Expr.FixpointLambda(ps, e, loc)
-      }.recoverOne {
-        case err: NameError.SuspiciousTypeVarName => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.FixpointMerge(exp1, exp2, loc) =>
