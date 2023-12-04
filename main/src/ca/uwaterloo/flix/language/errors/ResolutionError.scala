@@ -535,19 +535,19 @@ object ResolutionError {
     * @param expectedType the expected type.
     * @param loc          the location of the method name.
     */
-  case class MismatchingReturnType(className: String, methodName: String, declaredType: UnkindedType, expectedType: UnkindedType, loc: SourceLocation) extends ResolutionError with Unrecoverable {
-    def summary: String = {
-      s"Mismatching return type."
-    }
+  case class MismatchedReturnType(className: String, methodName: String, declaredType: UnkindedType, expectedType: UnkindedType, loc: SourceLocation) extends ResolutionError with Recoverable {
+    def summary: String = "Mismatched return type."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-        >> Mismatched return type for method '${red(methodName)}' in class '${cyan(className)}'.
+         |
+         | >> Mismatched return type for method '${red(methodName)}' in class '${cyan(className)}'.
          |
          |${code(loc, "mismatched return type.")}
-         |Declared type: ${declaredType.toString}
-         |Expected type: ${expectedType.toString}
+         |
+         |Declared type: $declaredType
+         |Expected type: $expectedType
          |""".stripMargin
     }
 
