@@ -3035,7 +3035,7 @@ object Resolver {
     //
     // The type alias is not accessible.
     //
-    Validation.toHardFailure(ResolutionError.InaccessibleTypeAlias(alia0.sym, ns0, loc))
+    Validation.toSoftFailure(alia0, ResolutionError.InaccessibleTypeAlias(alia0.sym, ns0, loc))
   }
 
   /**

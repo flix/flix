@@ -506,7 +506,7 @@ object ResolutionError {
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */
-  case class InaccessibleTypeAlias(sym: Symbol.TypeAliasSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class InaccessibleTypeAlias(sym: Symbol.TypeAliasSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = s"Inaccessible type alias ${sym.name}"
 
     def message(formatter: Formatter): String = {
@@ -521,7 +521,7 @@ object ResolutionError {
 
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
-      s"${underline("Tip:")} Mark the definition as public."
+      s"${underline("Tip:")} Mark the type alias as public."
     })
 
   }
