@@ -37,7 +37,7 @@ object DerivationError {
     * @param classSym the class symbol of what is being derived.
     * @param loc      The source location where the error occurred.
     */
-  case class IllegalDerivationForEmptyEnum(sym: Symbol.EnumSym, classSym: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends DerivationError with Unrecoverable {
+  case class IllegalDerivationForEmptyEnum(sym: Symbol.EnumSym, classSym: Symbol.ClassSym, loc: SourceLocation) extends DerivationError with Recoverable {
     def summary: String = s"Cannot derive '${classSym.name}' for the empty enum '${sym.name}'."
 
     def message(formatter: Formatter): String = {
@@ -52,6 +52,32 @@ object DerivationError {
     }
 
     def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+    * An error raised to indicate an illegal derivation.
+    *
+    * @param sym       the class symbol of the illegal derivation.
+    * @param legalSyms the list of class symbols of legal derivations.
+    * @param loc       the location where the error occurred.
+    */
+  case class IllegalDerivation(sym: Symbol.ClassSym, legalSyms: List[Symbol.ClassSym], loc: SourceLocation) extends DerivationError with Recoverable {
+    override def summary: String = s"Illegal derivation: ${sym.name}"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal derivation '${red(sym.name)}'.
+         |
+         |${code(loc, "Illegal derivation.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
+    })
+
   }
 
 }
