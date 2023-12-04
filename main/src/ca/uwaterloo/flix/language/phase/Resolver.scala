@@ -1449,37 +1449,34 @@ object Resolver {
           }
 
         case NamedAst.Expr.GetField(className, fieldName, exp, loc) =>
-          lookupJvmClass(className, loc) match {
-            case Result.Ok(clazz) =>
-              mapN(lookupJvmField(clazz, fieldName, static = false, loc), visitExp(exp, env0)) {
-                case (field, e) => ResolvedAst.Expr.GetField(field, clazz, e, loc)
-            }
-            case Result.Err(e) =>  Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+          lookupJvmField(className, fieldName, static = false, loc) match {
+            case Result.Ok((clazz, field)) =>
+              mapN(visitExp(exp, env0)) {
+                case e => ResolvedAst.Expr.GetField(field, clazz, e, loc)
+              }
+            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
-          lookupJvmClass(className, loc) match {
-            case Result.Ok(clazz) =>
-              mapN(lookupJvmField(clazz, fieldName, static = false, loc), visitExp(exp1, env0), visitExp(exp2, env0)) {
-                case (field, e1, e2) => ResolvedAst.Expr.PutField(field, clazz, e1, e2, loc)
+          lookupJvmField(className, fieldName, static = false, loc) match {
+            case Result.Ok((clazz, field)) =>
+              mapN(visitExp(exp1, env0), visitExp(exp2, env0)) {
+                case (e1, e2) => ResolvedAst.Expr.PutField(field, clazz, e1, e2, loc)
               }
             case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.GetStaticField(className, fieldName, loc) =>
-          lookupJvmClass(className, loc) match {
-            case Result.Ok(clazz) =>
-              mapN(lookupJvmField(clazz, fieldName, static = true, loc)) {
-                case field => ResolvedAst.Expr.GetStaticField(field, loc)
-              }
+          lookupJvmField(className, fieldName, static = true, loc) match {
+            case Result.Ok((_, field)) => ResolvedAst.Expr.GetStaticField(field, loc).toSuccess
             case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
-          lookupJvmClass(className, loc) match {
-            case Result.Ok(clazz) =>
-              mapN(lookupJvmField(clazz, fieldName, static = true, loc), visitExp(exp, env0)) {
-                case (field, e) => ResolvedAst.Expr.PutStaticField(field, e, loc)
+          lookupJvmField(className, fieldName, static = true, loc) match {
+            case Result.Ok((_, field)) =>
+              mapN(visitExp(exp, env0)) {
+                case e => ResolvedAst.Expr.PutStaticField(field, e, loc)
               }
             case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
@@ -3112,8 +3109,8 @@ object Resolver {
         clazz.getConstructor(sig: _*).toSuccess
       } catch {
         case ex: NoSuchMethodException => Validation.toHardFailure(ResolutionError.UndefinedJvmConstructor(clazz, sig, clazz.getConstructors.toList, loc))
-        // ClassNotFoundException:  Cannot happen because we have the `Class` object.
-        // NoClassDefFoundError:    Cannot happen because already have the `Class` object.
+        // ClassNotFoundException:  Cannot happen because we already have the `Class` object.
+        // NoClassDefFoundError:    Cannot happen because we already have the `Class` object.
       }
     }
   }
@@ -3160,31 +3157,34 @@ object Resolver {
           case ex: NoSuchMethodException =>
             val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
             Validation.toHardFailure(ResolutionError.UndefinedJvmMethod(clazz.getName, methodName, static, sig, candidateMethods, loc))
-          // ClassNotFoundException:  Cannot happen because we have the `Class` object.
-          // NoClassDefFoundError:    Cannot happen because already have the `Class` object.
+          // ClassNotFoundException:  Cannot happen because we already have the `Class` object.
+          // NoClassDefFoundError:    Cannot happen because we already have the `Class` object.
         }
     }
   }
 
   /**
-    * Returns the field reflection object for the given `clazz` and `fieldName`.
+    * Returns the class and field reflection objects for the given `className` and `fieldName`.
     */
-  private def lookupJvmField(clazz: Class[_], fieldName: String, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Validation[Field, ResolutionError] = {
-    try {
-      // Lookup the field.
-      val field = clazz.getField(fieldName)
+  private def lookupJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Result[(Class[_], Field), ResolutionError with Recoverable] = {
+    lookupJvmClass(className, loc).flatMap {
+      case clazz =>
+        try {
+          // Lookup the field.
+          val field = clazz.getField(fieldName)
 
-      // Check if the field should be and is static.
-      if (static == Modifier.isStatic(field.getModifiers))
-        field.toSuccess
-      else
-        throw new NoSuchFieldException()
-    } catch {
-      case ex: NoSuchFieldException =>
-        val candidateFields = clazz.getFields.toList
-        Validation.toHardFailure(ResolutionError.UndefinedJvmField(clazz.getName, fieldName, static, candidateFields, loc))
-      // ClassNotFoundException:  Cannot happen because we have the `Class` object.
-      // NoClassDefFoundError:    Cannot happen because already have the `Class` object.
+          // Check if the field should be and is static.
+          if (static == Modifier.isStatic(field.getModifiers))
+            Result.Ok((clazz, field))
+          else
+            throw new NoSuchFieldException()
+        } catch {
+          case ex: NoSuchFieldException =>
+            val candidateFields = clazz.getFields.toList
+            Result.Err(ResolutionError.UndefinedJvmField(clazz.getName, fieldName, static, candidateFields, loc))
+          // ClassNotFoundException:  Cannot happen because we already have the `Class` object.
+          // NoClassDefFoundError:    Cannot happen because we already have the `Class` object.
+        }
     }
   }
 
