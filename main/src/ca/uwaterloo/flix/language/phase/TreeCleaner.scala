@@ -18,26 +18,18 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SourceKind, SourceLocation, Symbol, WeededAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SourceLocation, SourcePosition, Symbol, Token, WeededAst}
 import ca.uwaterloo.flix.language.errors.Parse2Error
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
-import org.parboiled2.ParserInput
-import scala.annotation.tailrec
 
 // TODO: Add change set support
+
+// TODO: Remove this
 
 object TreeCleaner {
 
   import WeededAst._
-
-  // A helper that picks out trees of a specific kind from a list of children
-  private def pick(kind: TreeKind)(children: Array[Child]): List[Tree] = {
-    children.foldLeft[List[Tree]](List.empty)((acc, child) => child match {
-      case Child.Tree(tree) if tree.kind == kind => acc.appended(tree)
-      case _ => acc
-    })
-  }
 
   def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], trees: Map[Ast.Source, Tree])(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
     if (flix.options.xparser) {
@@ -55,9 +47,39 @@ object TreeCleaner {
     }
   }
 
+  // A helper function for pretty printing ASTs.
+  // It is generic to scala objects with some special handling for source positions and locations.
+  private def pprint(obj: Any, depth: Int = 0, paramName: Option[String] = None): Unit = {
+    val indent = "  " * depth
+    val prettyName = paramName.fold("")(x => s"$x: ")
+    val ptype = obj match {
+      case obj: SourcePosition => s"SourcePosition (${obj.line}, ${obj.col})"
+      case obj: SourceLocation => s"SourceLocation (${obj.beginLine}, ${obj.beginCol}) -> (${obj.endLine}, ${obj.endCol})"
+      case _: Iterable[Any] => ""
+      case obj: Product => obj.productPrefix
+      case _ => obj.toString
+    }
+
+    println(s"$indent$prettyName$ptype")
+
+    obj match {
+      case _ : SourceLocation =>
+      case _ : SourcePosition =>
+      case seq: Iterable[Any] =>
+        seq.foreach(pprint(_, depth + 1))
+      case obj: Product =>
+        (obj.productIterator zip obj.productElementNames)
+          .foreach { case (subObj, paramName) => pprint(subObj, depth + 1, Some(paramName)) }
+      case _ =>
+    }
+  }
+
   private def transform(tree: Tree): Validation[CompilationUnit, CompilationMessage] = {
     mapN(visitUsesAndImports(tree), visitDeclarations(tree)) {
-      case (usesAndImports, declarations) => CompilationUnit(usesAndImports, declarations, tree.loc)
+      case (usesAndImports, declarations) =>
+        val ret = CompilationUnit(usesAndImports, declarations, tree.loc)
+        pprint(ret)
+        ret
     }
   }
 
@@ -92,8 +114,14 @@ object TreeCleaner {
   }
 
   private def visitNameIdent(c: Child): Validation[Name.Ident, CompilationMessage] = {
-    // TODO
-    Validation.Failure(LazyList.empty)
+    mapN(expect(TreeKind.Name.Definition)(c)) {
+      case tree =>
+        tree.children(0) match {
+          case Child.Token(token) => Name.Ident(SourcePosition.Unknown, token.text, SourcePosition.Unknown)
+          case _ => Name.Ident(SourcePosition.Unknown, "", SourcePosition.Unknown) // TODO: This is wrong
+        }
+
+    }
   }
 
   private def visitDocumentation(tree: Tree): Validation[Ast.Doc, CompilationMessage] = {
@@ -144,5 +172,20 @@ object TreeCleaner {
   private def visitEffect(tree: Tree): Validation[Option[Type], CompilationMessage] = {
     // TODO
     None.toSuccess
+  }
+
+  // A helper that picks out trees of a specific kind from a list of children
+  private def pick(kind: TreeKind)(children: Array[Child]): List[Tree] = {
+    children.foldLeft[List[Tree]](List.empty)((acc, child) => child match {
+      case Child.Tree(tree) if tree.kind == kind => acc.appended(tree)
+      case _ => acc
+    })
+  }
+
+  private def expect(kind: TreeKind)(c: Child): Validation[Tree, CompilationMessage] = {
+    c match {
+      case Child.Tree(tree) if tree.kind == kind => tree.toSuccess
+      case _ => Validation.Failure(LazyList.empty) // TODO: Error here?
+    }
   }
 }
