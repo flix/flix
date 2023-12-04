@@ -22,10 +22,10 @@ import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChooseP
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType._
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
-import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.errors.{Recoverable, ResolutionError}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.{ListMap, MapOps}
-import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, ParOps, Similarity, Validation}
+import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, ParOps, Result, Similarity, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.annotation.tailrec
@@ -2192,9 +2192,11 @@ object Resolver {
   private def semiResolveType(tpe0: NamedAst.Type, wildness: Wildness, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root)(implicit level: Level, flix: Flix): Validation[UnkindedType, ResolutionError] = {
     def visit(tpe0: NamedAst.Type): Validation[UnkindedType, ResolutionError] = tpe0 match {
       case NamedAst.Type.Var(ident, loc) =>
-        val symVal = lookupTypeVar(ident, wildness, env)
-        mapN(symVal) {
-          case sym => UnkindedType.Var(sym, loc)
+        lookupTypeVar(ident, wildness, env) match {
+          case Result.Ok(sym) => UnkindedType.Var(sym, loc).toSuccess
+          case Result.Err(e) =>
+            // Note: We assume the default type variable has kind Star.
+            Validation.toSoftFailure(UnkindedType.Cst(TypeConstructor.Error(Kind.Star), loc), e)
         }
 
       case NamedAst.Type.Unit(loc) => UnkindedType.Cst(TypeConstructor.Unit, loc).toSuccess
@@ -2646,18 +2648,22 @@ object Resolver {
   /**
     * Looks up the type variable with the given name.
     */
-  private def lookupTypeVar(ident: Name.Ident, wildness: Wildness, env: ListMap[String, Resolution])(implicit level: Level, flix: Flix): Validation[Symbol.UnkindedTypeVarSym, ResolutionError] = {
+  private def lookupTypeVar(ident: Name.Ident, wildness: Wildness, env: ListMap[String, Resolution])(implicit level: Level, flix: Flix): Result[Symbol.UnkindedTypeVarSym, ResolutionError with Recoverable] = {
     if (ident.isWild) {
       wildness match {
         case Wildness.AllowWild =>
-          Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), isRegion = false, ident.loc).toSuccess
+          Result.Ok(Symbol.freshUnkindedTypeVarSym(VarText.SourceText(ident.name), isRegion = false, ident.loc))
         case Wildness.ForbidWild =>
-          Validation.toHardFailure(ResolutionError.IllegalWildType(ident, ident.loc))
+          Result.Err(ResolutionError.IllegalWildType(ident, ident.loc))
       }
     } else {
-      env(ident.name).collectFirst {
-        case Resolution.TypeVar(sym) => sym.toSuccess
-      }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedTypeVar(ident.name, ident.loc)))
+      val typeVarOpt = env(ident.name).collectFirst {
+        case Resolution.TypeVar(sym) => sym
+      }
+      typeVarOpt match {
+        case Some(sym) => Result.Ok(sym)
+        case None => Result.Err(ResolutionError.UndefinedTypeVar(ident.name, ident.loc))
+      }
     }
   }
 
