@@ -1450,31 +1450,31 @@ object Resolver {
 
         case NamedAst.Expr.GetField(className, fieldName, exp, loc) =>
           lookupJvmField(className, fieldName, static = false, loc) match {
-            case Result.Ok(field) =>
+            case Result.Ok((clazz, field)) =>
               mapN(visitExp(exp, env0)) {
-                case e => ResolvedAst.Expr.GetField(field, field.getDeclaringClass, e, loc)
+                case e => ResolvedAst.Expr.GetField(field, clazz, e, loc)
               }
             case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
           lookupJvmField(className, fieldName, static = false, loc) match {
-            case Result.Ok(field) =>
+            case Result.Ok((clazz, field)) =>
               mapN(visitExp(exp1, env0), visitExp(exp2, env0)) {
-                case (e1, e2) => ResolvedAst.Expr.PutField(field, field.getDeclaringClass, e1, e2, loc)
+                case (e1, e2) => ResolvedAst.Expr.PutField(field, clazz, e1, e2, loc)
               }
             case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.GetStaticField(className, fieldName, loc) =>
           lookupJvmField(className, fieldName, static = true, loc) match {
-            case Result.Ok(field) => ResolvedAst.Expr.GetStaticField(field, loc).toSuccess
+            case Result.Ok((_, field)) => ResolvedAst.Expr.GetStaticField(field, loc).toSuccess
             case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
           lookupJvmField(className, fieldName, static = true, loc) match {
-            case Result.Ok(field) =>
+            case Result.Ok((_, field)) =>
               mapN(visitExp(exp, env0)) {
                 case e => ResolvedAst.Expr.PutStaticField(field, e, loc)
               }
@@ -3164,9 +3164,9 @@ object Resolver {
   }
 
   /**
-    * Returns the field reflection object for the given `className` and `fieldName`.
+    * Returns the class and field reflection objects for the given `className` and `fieldName`.
     */
-  private def lookupJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Result[Field, ResolutionError with Recoverable] = {
+  private def lookupJvmField(className: String, fieldName: String, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Result[(Class[_], Field), ResolutionError with Recoverable] = {
     lookupJvmClass(className, loc).flatMap {
       case clazz =>
         try {
@@ -3175,7 +3175,7 @@ object Resolver {
 
           // Check if the field should be and is static.
           if (static == Modifier.isStatic(field.getModifiers))
-            Result.Ok(field)
+            Result.Ok((clazz, field))
           else
             throw new NoSuchFieldException()
         } catch {
