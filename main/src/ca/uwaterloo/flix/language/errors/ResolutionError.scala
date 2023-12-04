@@ -579,34 +579,6 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate that a JVM class's dependency is missing.
-    *
-    * @param className  the name of the class.
-    * @param dependency the full path of the dependency.
-    * @param loc        the location where the error occurred.
-    */
-  case class MissingJvmDependency(className: String, dependency: String, loc: SourceLocation) extends ResolutionError with Unrecoverable {
-    override def summary: String = s"Missing dependency '$dependency' for JVM class '$className'."
-
-    /**
-      * Returns the formatted error message.
-      */
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing dependency '$dependency' for JVM class '${cyan(className)}'.
-         |
-         |${code(loc, s"missing dependency.")}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * Sealed Class Error.
     *
     * @param sym the class symbol.
@@ -716,9 +688,10 @@ object ResolutionError {
     * An error raised to indicate that the class name was not found.
     *
     * @param name the class name.
+    * @param msg  the Java error message.
     * @param loc  the location of the class name.
     */
-  case class UndefinedJvmClass(name: String, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UndefinedJvmClass(name: String, msg: String, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = s"Undefined Java class: '$name'."
 
     def message(formatter: Formatter): String = {
@@ -727,6 +700,8 @@ object ResolutionError {
          |>> Undefined Java class '${red(name)}'.
          |
          |${code(loc, "undefined class.")}
+         |
+         |$msg
          |""".stripMargin
     }
 
@@ -744,28 +719,28 @@ object ResolutionError {
   /**
     * An error raised to indicate that a matching constructor was not found.
     *
-    * @param className    the class name.
+    * @param clazz        the class name.
     * @param signature    the signature of the constructor.
     * @param constructors the constructors in the class.
     * @param loc          the location of the constructor name.
     */
-  case class UndefinedJvmConstructor(className: String, signature: List[Class[_]], constructors: List[Constructor[_]], loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UndefinedJvmConstructor(clazz: Class[_], signature: List[Class[_]], constructors: List[Constructor[_]], loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = "Undefined constructor."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Undefined constructor in class '${cyan(className)}' with the given signature.
+         |>> Undefined constructor in class '${cyan(clazz.getName)}' with the given signature.
          |
          |${code(loc, "undefined constructor.")}
+         |
          |No constructor matches the signature:
-         |  $className (${signature.map(_.toString).mkString(",")})
+         |  $clazz (${signature.map(_.toString).mkString(",")})
          |
          |Available constructors:
          |$appendConstructors
          |""".stripMargin
     }
-
 
     private def appendConstructors: String = {
       var res = ""
