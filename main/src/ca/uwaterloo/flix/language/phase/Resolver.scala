@@ -1804,10 +1804,14 @@ object Resolver {
           }
 
         case NamedAst.Predicate.Body.Functional(idents, exp, loc) =>
-          val varsVal = traverse(idents)(lookupVar(_, env))
+          val outVars = idents.map {
+            case ident => env(ident.name).collectFirst {
+              case Resolution.Var(sym) => sym
+            }.getOrElse(throw InternalCompilerException(s"Unbound variable in functional predicate: '$ident'.", ident.loc))
+          }
           val eVal = Expressions.resolve(exp, env, taenv, ns0, root)
-          mapN(varsVal, eVal) {
-            case (outVars, e) => ResolvedAst.Predicate.Body.Functional(outVars, e, loc)
+          mapN(eVal) {
+            case e => ResolvedAst.Predicate.Body.Functional(outVars, e, loc)
           }
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
@@ -2664,17 +2668,6 @@ object Resolver {
       }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedTypeVar(ident.name, ident.loc)))
     }
   }
-
-  /**
-    * Looks up the variable with the given name.
-    */
-  private def lookupVar(ident: Name.Ident, env: ListMap[String, Resolution]): Validation[Symbol.VarSym, ResolutionError] = {
-    env(ident.name).collectFirst {
-      case Resolution.Var(sym) => sym.toSuccess
-      // TODO NS-REFACTOR add tests
-    }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedVar(ident.name, ident.loc)))
-  }
-
 
   /**
     * Returns the list of symbols this name points to, ordered from most closely declared to furthest.
