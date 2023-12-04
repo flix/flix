@@ -3158,7 +3158,7 @@ object Resolver {
 
                 val expectedTpe = UnkindedType.getFlixType(method.getReturnType)
                 if (expectedTpe != erasedRetTpe)
-                  Validation.toHardFailure(ResolutionError.MismatchingReturnType(clazz.getName, methodName, retTpe, expectedTpe, loc))
+                  Validation.toSoftFailure(method, ResolutionError.MismatchedReturnType(clazz.getName, methodName, retTpe, expectedTpe, loc))
                 else
                   method.toSuccess
 
