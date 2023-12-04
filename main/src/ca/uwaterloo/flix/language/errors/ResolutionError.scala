@@ -115,17 +115,17 @@ object ResolutionError {
   /**
     * An error raised to indicate a duplicate associated type definition.
     *
-    * @param name the name of the duplicated associated type definition.
+    * @param sym  the associated type symbol.
     * @param loc1 the location of the first associated type definition.
     * @param loc2 the location of the second associated type definition.
     */
-  case class DuplicateAssocTypeDef(name: String, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Unrecoverable {
-    override def summary: String = s"Duplicate associated type definition: $name."
+  case class DuplicateAssocTypeDef(sym: Symbol.AssocTypeSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Duplicate associated type definition: $sym."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Duplicate associated type definition.
+         |>> Duplicate associated type definition: ${red(sym.name)}.
          |
          |${code(loc2, "duplicate associated type definition.")}
          |""".stripMargin
@@ -133,7 +133,7 @@ object ResolutionError {
 
     override def explain(formatter: Formatter): Option[String] = None
 
-    val loc: SourceLocation = loc2
+    val loc: SourceLocation = loc1
   }
 
   /**
@@ -563,7 +563,7 @@ object ResolutionError {
     * @param name the name of the missing associated type definition.
     * @param loc  the location of the instance symbol where the error occurred.
     */
-  case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"Missing associated type definition: $name."
 
     override def message(formatter: Formatter): String = {
