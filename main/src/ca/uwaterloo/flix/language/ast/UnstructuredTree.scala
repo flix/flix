@@ -17,10 +17,11 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.errors.Parse2Error
 
+
 object UnstructuredTree {
 
   sealed trait TreeKind {
-    def debug_name:Option[String] = None
+    def debug_name: Option[String] = None
   }
 
   object TreeKind {
@@ -40,28 +41,18 @@ object UnstructuredTree {
     case object Argument extends TreeKind
 
     /////// NAMES ///////
-    sealed trait Name extends TreeKind {
-      override def debug_name: Option[String] = Some("Name")
-    }
+    // NB: This naming follows [[Names]]
+    case object Ident extends TreeKind
 
-    object Name {
+    case object QName extends TreeKind
 
-      case object Wildcard extends Name
+    case object NName extends TreeKind
 
-      case object Field extends Name
+    case object JavaName extends TreeKind
 
-      case object Definition extends Name
+    case object Pred extends TreeKind
 
-      case object Parameter extends Name
-
-      case object Variable extends Name
-
-      case object Type extends Name
-
-      case object Effect extends Name
-
-      case object Qualified extends Name
-    }
+    case object Label extends TreeKind
 
     /////// EXPRESSIONS //////
     sealed trait Expr extends TreeKind {
@@ -83,7 +74,6 @@ object UnstructuredTree {
       case object Unary extends Expr
 
       case object Call extends Expr
-
     }
 
     ////// TYPES //////

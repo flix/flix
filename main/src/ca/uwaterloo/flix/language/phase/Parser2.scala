@@ -82,9 +82,6 @@ object Parser2 {
     implicit val s: State = new State(ts, src)
     source()
     val tree = buildTree()
-
-    println(s"${tree.toDebugString()}")
-
     if (s.errors.length > 0) {
       Validation.Failure(LazyList.from(s.errors))
     } else {
@@ -115,7 +112,13 @@ object Parser2 {
         case Event.Close =>
           val child = Child.Tree(stack.last)
           val openToken = locationStack.last
-          stack.last.loc = SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, openToken.line, openToken.col, tokens.head.line, tokens.head.col)
+          stack.last.loc = SourceLocation(
+            Some(s.parserInput),
+            s.src, SourceKind.Real,
+            openToken.line + 1,
+            openToken.col + 1,
+            tokens.head.line + 1,
+            tokens.head.col + 1)
           locationStack = locationStack.dropRight(1)
           stack = stack.dropRight(1)
           stack.last.children = stack.last.children :+ child
@@ -128,7 +131,14 @@ object Parser2 {
 
     // Set source location of the root
     val openToken = locationStack.last
-    stack.last.loc = SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, openToken.line, openToken.col, tokens.head.line, tokens.head.col)
+    stack.last.loc = SourceLocation(
+      Some(s.parserInput),
+      s.src,
+      SourceKind.Real,
+      openToken.line + 1,
+      openToken.col + 1,
+      tokens.head.line + 1,
+      tokens.head.col + 1)
 
     // The stack should now contain a single Source tree,
     // and there should only be an <eof> token left.
@@ -480,7 +490,7 @@ object Parser2 {
 
     if (wasQualified) {
       val mark = openBefore(first)
-      close(mark, TreeKind.Name.Qualified)
+      close(mark, TreeKind.QName)
     } else {
       first
     }
@@ -659,7 +669,7 @@ object Parser2 {
 
     if (wasQualified) {
       val mark = openBefore(first)
-      close(mark, TreeKind.Name.Qualified)
+      close(mark, TreeKind.QName)
     } else {
       first
     }
@@ -728,47 +738,40 @@ object Parser2 {
     close(mark, TreeKind.Type.RecordField)
   }
 
-
   /////// NAMES ////////////
   private def nameDefinition()(implicit s: State): Mark.Closed = {
     val mark = open()
     expectAny(List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek))
-    close(mark, TreeKind.Name.Definition)
+    close(mark, TreeKind.Ident)
   }
 
   private def nameParameter()(implicit s: State): Mark.Closed = {
     val mark = open()
-    if (eat(TokenKind.Underscore)) {
-      close(mark, TreeKind.Name.Wildcard)
-    }
-    expectAny(List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek))
-    close(mark, TreeKind.Name.Parameter)
+    expectAny(List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore))
+    close(mark, TreeKind.Ident)
   }
 
   private def nameVariable()(implicit s: State): Mark.Closed = {
     val mark = open()
-    if (eat(TokenKind.Underscore)) {
-      close(mark, TreeKind.Name.Wildcard)
-    }
-    expectAny(List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek))
-    close(mark, TreeKind.Name.Variable)
+    expectAny(List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore))
+    close(mark, TreeKind.Ident)
   }
 
   private def nameField()(implicit s: State): Mark.Closed = {
     val mark = open()
     expect(TokenKind.NameLowerCase)
-    close(mark, TreeKind.Name.Field)
+    close(mark, TreeKind.Ident)
   }
 
   private def nameType()(implicit s: State): Mark.Closed = {
     val mark = open()
     expect(TokenKind.NameUpperCase)
-    close(mark, TreeKind.Name.Type)
+    close(mark, TreeKind.Ident)
   }
 
   private def nameEffect()(implicit s: State): Mark.Closed = {
     val mark = open()
     expect(TokenKind.NameUpperCase)
-    close(mark, TreeKind.Name.Effect)
+    close(mark, TreeKind.Ident)
   }
 }

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.language.ast.Ast.Input
-import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.ast.{SourcePosition, _}
 import ca.uwaterloo.flix.language.dbg.AstPrinter
 import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.fmt.FormatOptions
@@ -529,9 +529,43 @@ class Flix {
     // The default entry point
     val entryPoint = flix.options.entryPoint
 
-    // A temporary helper function that tries to use new lexer and parser.
-    // In the case of any failure, it falls back on the previous parser.
-    def useParser2IfPossible(afterReader: ReadAst.Root): Validation[WeededAst.Root, CompilationMessage] = {
+
+    ////////////// BEGIN PARSER2 DEBUGGING ////////////////
+    // A helper function that runs both the old and the new parser for comparison.
+    // Both [[WeededAst]]s are printed for diffing to find inconsistencies.
+    // Example of diffing with git:
+    // >./gradlew run --args="--Xlib=nix foo.flix" > run.txt;
+    //   sed -n '/\[\[\[ OLD PARSER \]\]\]/,/\[\[\[ NEW PARSER \]\]\]/p' run.txt > old.txt &&
+    //   sed -n '/\[\[\[ NEW PARSER \]\]\]/,/\[\[\[\[ END \]\]\]/p' run.txt > new.txt &&
+    //   git difftool -y --no-index ./old.txt ./new.txt
+    def compareParser2ToOrigial(afterReader: ReadAst.Root): Validation[WeededAst.Root, CompilationMessage] = {
+      // A helper function for formatting pretty printing ASTs.
+      // It is generic to scala objects with some special handling for source positions and locations.
+      def format(obj: Any, depth: Int = 0, paramName: Option[String] = None): String = {
+        val indent = "  " * depth
+        val prettyName = paramName.fold("")(x => s"$x: ")
+        val ptype = obj match {
+          case obj: SourcePosition => s"SourcePosition (${obj.line}, ${obj.col})"
+          case obj: SourceLocation => s"SourceLocation (${obj.beginLine}, ${obj.beginCol}) -> (${obj.endLine}, ${obj.endCol})"
+          case _: Iterable[Any] => ""
+          case obj: Product => obj.productPrefix
+          case _ => obj.toString
+        }
+
+        val acc = s"$indent$prettyName$ptype\n"
+
+        obj match {
+          case _: SourceLocation => acc
+          case _: SourcePosition => acc
+          case seq: Iterable[Any] =>
+            acc + seq.map(format(_, depth + 1, None)).mkString("")
+          case obj: Product =>
+            acc + (obj.productIterator zip obj.productElementNames)
+              .map { case (subObj, paramName) => format(subObj, depth + 1, Some(paramName)) }.mkString("")
+          case _ => acc
+        }
+      }
+
       val parser2Result = for {
         afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
         afterParser2 <- Parser2.run(afterLexer)
@@ -541,30 +575,34 @@ class Flix {
         if (options.incremental) {
           this.cachedLexerTokens = afterLexer
         }
-        println(afterTreeCleaner)
         afterTreeCleaner
       }
 
-      parser2Result match {
-        case Validation.Success(_) =>  parser2Result
-        case failure =>
-          println(mkMessages(failure.errors).mkString("\n"))
-          println("Falling back on ol' trusty!")
-
-          for {
-            afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
-            afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
-          } yield {
-            println(afterWeeder)
-            afterWeeder
-          }
+      val parserResult = for {
+        afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
+        afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
+      } yield {
+        afterWeeder
       }
+
+      (parserResult, parser2Result) match {
+        case (Validation.Success(c1), Validation.Success(c2)) =>
+          println("[[[ OLD PARSER ]]]")
+          println(format(c1))
+          println("[[[ NEW PARSER ]]]")
+          println(format(c2))
+          println("[[[ END ]]]")
+        case _ =>
+      }
+
+      parser2Result
     }
+    ////////////// END PARSER2 DEBUGGING ////////////////
 
     // The compiler pipeline.
     val result = for {
       afterReader <- Reader.run(getInputs)
-      afterWeeder <- useParser2IfPossible(afterReader)
+      afterWeeder <- compareParser2ToOrigial(afterReader)
       afterNamer <- Namer.run(afterWeeder)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
