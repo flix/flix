@@ -280,7 +280,7 @@ object Parser2 {
 
   // A precedence table for binary operators, lower is higher precedence
   private def BINARY_PRECEDENCE: List[List[TokenKind]] = List(
-    List(TokenKind.BackArrow), // TODO: This goes here?
+    List(TokenKind.BackArrowThin), // TODO: This goes here?
     List(TokenKind.KeywordOr),
     List(TokenKind.KeywordAnd),
     List(TokenKind.TripleBar), // |||
