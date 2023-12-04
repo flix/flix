@@ -143,7 +143,7 @@ object ResolutionError {
     * @param loc1 the location of the first occurrence.
     * @param loc2 the location of the second occurrence.
     */
-  case class DuplicateDerivation(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class DuplicateDerivation(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"Duplicate derivation: ${sym.name}"
 
     def message(formatter: Formatter): String = {
