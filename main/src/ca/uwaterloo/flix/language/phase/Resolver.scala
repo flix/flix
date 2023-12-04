@@ -1996,22 +1996,8 @@ object Resolver {
     */
   def resolveDerivation(derive0: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[Ast.Derivation, ResolutionError] = {
     val clazzVal = lookupClass(derive0, env, ns0, root)
-    flatMapN(clazzVal) {
-      clazz =>
-        mapN(checkDerivable(clazz.sym, derive0.loc)) {
-          _ => Ast.Derivation(clazz.sym, derive0.loc)
-        }
-    }
-  }
-
-  /**
-    * Checks that the given class `sym` is derivable.
-    */
-  def checkDerivable(sym: Symbol.ClassSym, loc: SourceLocation): Validation[Unit, ResolutionError] = {
-    if (DerivableSyms.contains(sym)) {
-      ().toSuccess
-    } else {
-      Validation.toHardFailure(ResolutionError.IllegalDerivation(sym, DerivableSyms, loc))
+    mapN(clazzVal) {
+      clazz => Ast.Derivation(clazz.sym, derive0.loc)
     }
   }
 

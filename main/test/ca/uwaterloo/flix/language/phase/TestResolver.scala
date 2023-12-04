@@ -972,17 +972,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedAssocType](result)
   }
 
-  test("IllegalDerivation.01") {
-    val input =
-      """
-        |class C[a]
-        |
-        |enum E with C
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalDerivation](result)
-  }
-
   test("IllegalType.01") {
     val input =
       """

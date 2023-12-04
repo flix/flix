@@ -190,32 +190,6 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate an illegal derivation.
-    *
-    * @param sym       the class symbol of the illegal derivation.
-    * @param legalSyms the list of class symbols of legal derivations.
-    * @param loc       the location where the error occurred.
-    */
-  case class IllegalDerivation(sym: Symbol.ClassSym, legalSyms: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError with Unrecoverable {
-    override def summary: String = s"Illegal derivation: ${sym.name}"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal derivation '${red(sym.name)}'.
-         |
-         |${code(loc, "Illegal derivation.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
-    })
-
-  }
-
-  /**
     * Illegal Non-Java Type Error.
     *
     * @param tpe the illegal type.
