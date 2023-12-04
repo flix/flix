@@ -2018,7 +2018,7 @@ object Resolver {
   /**
     * Finds the class with the qualified name `qname` in the namespace `ns0`, for the purposes of implementation.
     */
-  def lookupClassForImplementation(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Class, ResolutionError] = {
+  private def lookupClassForImplementation(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Class, ResolutionError] = {
     val classOpt = tryLookupName(qname, env, ns0, root)
     classOpt.collectFirst {
       case Resolution.Declaration(clazz: NamedAst.Declaration.Class) => clazz
@@ -2026,7 +2026,7 @@ object Resolver {
       case Some(clazz) =>
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible => clazz.toSuccess
-          case ClassAccessibility.Sealed => Validation.toHardFailure(ResolutionError.SealedClass(clazz.sym, ns0, qname.loc))
+          case ClassAccessibility.Sealed => Validation.toSoftFailure(clazz, ResolutionError.SealedClass(clazz.sym, ns0, qname.loc))
           case ClassAccessibility.Inaccessible => Validation.toSoftFailure(clazz, ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc))
         }
       case None => Validation.toHardFailure(ResolutionError.UndefinedClass(qname, ns0, qname.loc))
