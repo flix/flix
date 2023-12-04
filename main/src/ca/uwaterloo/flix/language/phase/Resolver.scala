@@ -995,8 +995,6 @@ object Resolver {
           val eVal = visitExp(exp, env0)
           mapN(enumVal, eVal) {
             case (enum, e) => ResolvedAst.Expr.OpenAs(Ast.RestrictableEnumSymUse(enum.sym, name.loc), e, loc)
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.Hole(nameOpt, loc) =>
@@ -1025,8 +1023,6 @@ object Resolver {
                   mapN(visitExp(exp, env)) {
                     // TODO NS-REFACTOR: multiple uses here
                     case e => ResolvedAst.Expr.Use(getSym(decls.head), alias, e, loc)
-                  }.recoverOne {
-                    case err: ResolutionError => ResolvedAst.Expr.Error(err)
                   }
               }
 
@@ -1065,8 +1061,6 @@ object Resolver {
               mapN(eVal) {
                 case e => ResolvedAst.Expr.Lambda(p, e, loc)
               }
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.Unary(sop, exp, loc) =>
@@ -1171,8 +1165,6 @@ object Resolver {
           val eVal = visitExp(exp, env0)
           mapN(eVal, rulesVal) {
             case (e, rs) => ResolvedAst.Expr.TypeMatch(e, rs, loc)
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
@@ -1206,8 +1198,6 @@ object Resolver {
           }
           mapN(expVal, rulesVal) {
             case (e, rs) => ResolvedAst.Expr.RestrictableChoose(star, e, rs, loc)
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.Tuple(elms, loc) =>
@@ -1323,8 +1313,6 @@ object Resolver {
           val eVal = visitExp(exp, env0)
           mapN(eVal, expectedTypVal, expectedEffVal) {
             case (e, t, f) => ResolvedAst.Expr.Ascribe(e, t, f, loc)
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.InstanceOf(exp, className, loc) =>
@@ -1346,8 +1334,6 @@ object Resolver {
           val eVal = visitExp(exp, env0)
           mapN(eVal, declaredTypVal, declaredEffVal) {
             case (e, t, f) => ResolvedAst.Expr.UncheckedCast(e, t, f, loc)
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.UncheckedMaskingCast(exp, loc) =>
@@ -1370,8 +1356,6 @@ object Resolver {
           val eVal = visitExp(exp, env0)
           mapN(eVal, rulesVal) {
             case (e, rs) => ResolvedAst.Expr.TryCatch(e, rs, loc)
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.Without(exp, eff, loc) =>
@@ -1381,8 +1365,6 @@ object Resolver {
             case (e, f) =>
               val effUse = Ast.EffectSymUse(f.sym, eff.loc)
               ResolvedAst.Expr.Without(e, effUse, loc)
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.TryWith(exp, eff, rules, loc) =>
@@ -1409,8 +1391,6 @@ object Resolver {
               mapN(rulesVal) {
                 rs => ResolvedAst.Expr.TryWith(e, effUse, rs, loc)
               }
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.Do(op, exps, loc) =>
@@ -1420,8 +1400,6 @@ object Resolver {
             case (o, es) =>
               val opUse = Ast.OpSymUse(o.sym, op.loc)
               ResolvedAst.Expr.Do(opUse, es, loc)
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.Resume(exp, loc) =>
@@ -1438,8 +1416,6 @@ object Resolver {
               mapN(lookupJvmConstructor(className, ts, loc)) {
                 case constructor => ResolvedAst.Expr.InvokeConstructor(constructor, as, loc)
               }
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.InvokeMethod(className, methodName, exp, args, sig, retTpe, loc) =>
@@ -1453,8 +1429,6 @@ object Resolver {
               mapN(lookupJvmMethod(clazz, methodName, ts, ret, static = false, loc)) {
                 case method => ResolvedAst.Expr.InvokeMethod(method, clazz, e, as, loc)
               }
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.InvokeStaticMethod(className, methodName, args, sig, retTpe, loc) =>
@@ -1467,8 +1441,6 @@ object Resolver {
               mapN(lookupJvmMethod(clazz, methodName, ts, ret, static = true, loc)) {
                 case method => ResolvedAst.Expr.InvokeStaticMethod(method, as, loc)
               }
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.GetField(className, fieldName, exp, loc) =>
@@ -1477,8 +1449,6 @@ object Resolver {
               mapN(lookupJvmField(clazz, fieldName, static = false, loc), visitExp(exp, env0)) {
                 case (field, e) => ResolvedAst.Expr.GetField(field, clazz, e, loc)
               }
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.PutField(className, fieldName, exp1, exp2, loc) =>
@@ -1487,8 +1457,6 @@ object Resolver {
               mapN(lookupJvmField(clazz, fieldName, static = false, loc), visitExp(exp1, env0), visitExp(exp2, env0)) {
                 case (field, e1, e2) => ResolvedAst.Expr.PutField(field, clazz, e1, e2, loc)
               }
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.GetStaticField(className, fieldName, loc) =>
@@ -1497,8 +1465,6 @@ object Resolver {
               mapN(lookupJvmField(clazz, fieldName, static = true, loc)) {
                 case field => ResolvedAst.Expr.GetStaticField(field, loc)
               }
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
@@ -1507,8 +1473,6 @@ object Resolver {
               mapN(lookupJvmField(clazz, fieldName, static = true, loc), visitExp(exp, env0)) {
                 case (field, e) => ResolvedAst.Expr.PutStaticField(field, e, loc)
               }
-          }.recoverOne {
-            case err: ResolutionError => ResolvedAst.Expr.Error(err)
           }
 
         case NamedAst.Expr.NewObject(name, tpe, methods, loc) =>
@@ -2054,7 +2018,7 @@ object Resolver {
   /**
     * Finds the class with the qualified name `qname` in the namespace `ns0`, for the purposes of implementation.
     */
-  def lookupClassForImplementation(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Class, ResolutionError] = {
+  private def lookupClassForImplementation(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Class, ResolutionError] = {
     val classOpt = tryLookupName(qname, env, ns0, root)
     classOpt.collectFirst {
       case Resolution.Declaration(clazz: NamedAst.Declaration.Class) => clazz
@@ -2062,7 +2026,7 @@ object Resolver {
       case Some(clazz) =>
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible => clazz.toSuccess
-          case ClassAccessibility.Sealed => Validation.toHardFailure(ResolutionError.SealedClass(clazz.sym, ns0, qname.loc))
+          case ClassAccessibility.Sealed => Validation.toSoftFailure(clazz, ResolutionError.SealedClass(clazz.sym, ns0, qname.loc))
           case ClassAccessibility.Inaccessible => Validation.toSoftFailure(clazz, ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc))
         }
       case None => Validation.toHardFailure(ResolutionError.UndefinedClass(qname, ns0, qname.loc))
@@ -2138,7 +2102,7 @@ object Resolver {
         if (isOpAccessible(op, ns0)) {
           op.toSuccess
         } else {
-          Validation.toHardFailure(ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc))
+          Validation.toSoftFailure(op, ResolutionError.InaccessibleOp(op.sym, ns0, qname.loc))
         }
       case _ => Validation.toHardFailure(ResolutionError.UndefinedOp(qname, qname.loc))
     }
@@ -3079,20 +3043,20 @@ object Resolver {
     *
     * Otherwise fails with a resolution error.
     *
-    * An enum is accessible from a namespace `ns0` if:
+    * An effect is accessible from a namespace `ns0` if:
     *
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
   private def getEffectIfAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.Effect, ResolutionError] = {
     //
-    // Check if the definition is marked public.
+    // Check if the effect is marked public.
     //
     if (eff0.mod.isPublic)
       return eff0.toSuccess
 
     //
-    // Check if the type alias is defined in `ns0` or in a parent of `ns0`.
+    // Check if the effect is defined in `ns0` or in a parent of `ns0`.
     //
     val prefixNs = eff0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
@@ -3100,9 +3064,9 @@ object Resolver {
       return eff0.toSuccess
 
     //
-    // The type alias is not accessible.
+    // The effect is not accessible.
     //
-    Validation.toHardFailure(ResolutionError.InaccessibleEffect(eff0.sym, ns0, loc))
+    Validation.toSoftFailure(eff0, ResolutionError.InaccessibleEffect(eff0.sym, ns0, loc))
   }
 
   /**
