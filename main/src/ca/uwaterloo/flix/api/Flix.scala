@@ -582,6 +582,9 @@ class Flix {
         afterWeeder
       }
 
+      println(parserResult)
+      println(parser2Result)
+
       (parserResult, parser2Result) match {
         case (Validation.Success(c1), Validation.Success(c2)) =>
           println("[[[ OLD PARSER ]]]")
