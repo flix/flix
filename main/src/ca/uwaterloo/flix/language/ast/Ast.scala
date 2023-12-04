@@ -371,6 +371,11 @@ object Ast {
       dropWhile(_.trim.isEmpty).
       map(_.trim).
       mkString("\n")
+
+    /**
+      * Returns a string representation that hides the internals.
+      */
+    override def toString: String = "Doc(...)"
   }
 
   /**
@@ -417,6 +422,11 @@ object Ast {
       * Returns `true` if these modifiers contain the synthetic modifier.
       */
     def isSynthetic: Boolean = mod contains Modifier.Synthetic
+
+    /**
+      * Returns a string representation that hides the internals.
+      */
+    override def toString: String = "Modifiers(...)"
 
   }
 
