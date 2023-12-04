@@ -427,7 +427,7 @@ object ResolutionError {
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */
-  case class InaccessibleOp(sym: Symbol.OpSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class InaccessibleOp(sym: Symbol.OpSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = "Inaccessible."
 
     def message(formatter: Formatter): String = {
@@ -613,13 +613,13 @@ object ResolutionError {
     * @param ns  the namespace from which the class is sealed.
     * @param loc the location where the error occurred.
     */
-  case class SealedClass(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class SealedClass(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = "Sealed."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Class '${red(sym.toString)}' is sealed from the namespace '${cyan(ns.toString)}'.
+         |>> Class '${red(sym.toString)}' is sealed from the module '${cyan(ns.toString)}'.
          |
          |${code(loc, "sealed class.")}
          |
@@ -628,7 +628,7 @@ object ResolutionError {
 
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
-      s"${underline("Tip:")} Move the instance or sub class to the class's namespace."
+      s"${underline("Tip:")} Move the instance or sub class to the class's module."
     })
 
   }
