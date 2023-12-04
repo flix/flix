@@ -1059,7 +1059,7 @@ object ResolutionError {
     * @param sym the type alias.
     * @param loc the location where the error occurred.
     */
-  case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"Under-applied type alias: ${sym.name}"
 
     def message(formatter: Formatter): String = {
