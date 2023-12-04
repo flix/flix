@@ -82,6 +82,9 @@ object Parser2 {
     implicit val s: State = new State(ts, src)
     source()
     val tree = buildTree()
+
+    println(tree.toDebugString())
+
     if (s.errors.length > 0) {
       Validation.Failure(LazyList.from(s.errors))
     } else {
@@ -217,9 +220,25 @@ object Parser2 {
     }
   }
 
+
   private def at(kind: TokenKind)(implicit s: State): Boolean = {
     nth(0) == kind
   }
+
+  // next skips comments
+  private def next(kind: TokenKind)(implicit s: State): Boolean = {
+    var lookAhead = 0
+    while (true) {
+      nth(lookAhead) match {
+        case TokenKind.Eof => return false
+        case TokenKind.CommentDoc | TokenKind.CommentLine | TokenKind.CommentBlock =>
+        case k => return kind == k
+      }
+      lookAhead += 1
+    }
+    false
+  }
+
 
   private def atAny(kinds: List[TokenKind])(implicit s: State): Boolean = {
     kinds.contains(nth(0))
@@ -315,7 +334,7 @@ object Parser2 {
   private def source()(implicit s: State): Unit = {
     val mark = open()
     while (!eof()) {
-      if (at(TokenKind.KeywordDef)) {
+      if (next(TokenKind.KeywordDef)) {
         definition()
       } else {
         advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected definition, found ${nth(0)}"))
@@ -326,11 +345,11 @@ object Parser2 {
   }
 
   /**
-   * definition -> 'def' name parameters ':' ttype '=' expression (';' expression)*
+   * definition -> docComment? 'def' name parameters ':' ttype '=' expression (';' expression)*
    */
   private def definition()(implicit s: State): Mark.Closed = {
-    assert(at(TokenKind.KeywordDef))
     val mark = open()
+    docComment()
     expect(TokenKind.KeywordDef)
     nameDefinition()
     if (at(TokenKind.ParenL)) {
@@ -345,6 +364,17 @@ object Parser2 {
       expression()
     }
     close(mark, TreeKind.Def)
+  }
+
+  private def docComment()(implicit s: State): Option[Mark.Closed] = {
+    if (at(TokenKind.CommentDoc)) {
+      val mark = open()
+      while(at(TokenKind.CommentDoc) && !eof()) {
+        advance()
+      }
+      Some(close(mark, TreeKind.Doc))
+    }
+    None
   }
 
   /**

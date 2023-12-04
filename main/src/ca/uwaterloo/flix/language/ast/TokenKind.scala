@@ -66,6 +66,8 @@ object TokenKind {
 
   case object CommentLine extends TokenKind
 
+  case object CommentDoc extends TokenKind
+
   case object CurlyL extends TokenKind
 
   case object CurlyR extends TokenKind

@@ -28,6 +28,8 @@ object UnstructuredTree {
 
     case object Source extends TreeKind
 
+    case object Doc extends TreeKind
+
     case object Def extends TreeKind
 
     case object Statement extends TreeKind

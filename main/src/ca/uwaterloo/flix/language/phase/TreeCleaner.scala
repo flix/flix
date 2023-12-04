@@ -71,7 +71,7 @@ object TreeCleaner {
 
   private def visitDeclarations(tree: Tree)(implicit s: State): Validation[List[Declaration], CompilationMessage] = {
     assert(tree.kind == TreeKind.Source)
-    sequence(pick(TreeKind.Def)(tree.children).map(visitDefinition))
+    sequence(pickAll(TreeKind.Def)(tree.children).map(visitDefinition))
   }
 
   private def visitDefinition(tree: Tree)(implicit s: State): Validation[Declaration, CompilationMessage] = {
@@ -80,7 +80,7 @@ object TreeCleaner {
       visitDocumentation(tree),
       visitAnnotations(tree),
       visitModifiers(tree),
-      visitNameIdent(tree.children(1)),
+      visitNameIdent(tree),
       visitTypeParameters(tree),
       visitParameters(tree),
       visitExpression(tree),
@@ -95,12 +95,17 @@ object TreeCleaner {
   }
 
   private def visitDocumentation(tree: Tree): Validation[Ast.Doc, CompilationMessage] = {
-    // TODO
-    Ast.Doc(List.empty, tree.loc).toSuccess
+    val docTree = tryPick(TreeKind.Doc, tree.children)
+    val loc = docTree.map(_.loc).getOrElse(SourceLocation.Unknown)
+    val comments = docTree.map(text).map(
+      _.map(_.stripPrefix("///").trim())
+        .filter(_ != "")
+    ).getOrElse(List.empty)
+    Ast.Doc(comments, loc).toSuccess
   }
 
   private def visitAnnotations(tree: Tree): Validation[Ast.Annotations, CompilationMessage] = {
-    // TODO:::
+    // TODO
     Ast.Annotations(List.empty).toSuccess
   }
 
@@ -144,23 +149,44 @@ object TreeCleaner {
     None.toSuccess
   }
 
-  private def visitNameIdent(c: Child)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
-    c match {
-      case Child.Tree(tree) if tree.kind == TreeKind.Ident =>
-        tree.children(0) match {
-          case Child.Token(token) => Name.Ident(
-            SourcePosition(s.src, token.line + 1, token.col + 1, Some(s.parserInput)),
-            token.text,
-            SourcePosition(s.src, token.line + 1, token.col + 1 + (token.end - token.start), Some(s.parserInput))
-          ).toSuccess
-          case _ => Validation.Failure(LazyList.empty) // TODO: Error here?
-        }
-      case _ => Validation.Failure(LazyList.empty) // TODO: Error here?
+  private def visitNameIdent(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
+    flatMapN(pick(TreeKind.Ident, tree.children))(t => t.children(0) match {
+      case Child.Token(token) => Name.Ident(
+        SourcePosition(s.src, token.line + 1, token.col + 1, Some(s.parserInput)),
+        token.text,
+        SourcePosition(s.src, token.line + 1, token.col + 1 + (token.end - token.start), Some(s.parserInput))
+      ).toSuccess
+      case _ => Validation.Failure(LazyList.empty)
+    })
+  }
+
+  // A helper that collects the text in token children
+  private def text(tree: Tree): List[String] = {
+    tree.children.foldLeft[List[String]](List.empty)((acc, c) => c match {
+      case Child.Token(token) => acc :+ token.text
+      case Child.Tree(_) => acc
+    })
+  }
+
+  // A helper that picks out the first tree of a specific kind from a list of children
+  private def pick(kind: TreeKind, children: Array[Child]): Validation[Tree, CompilationMessage] = {
+    tryPick(kind, children)
+      .map(_.toSuccess)
+      .getOrElse(Validation.Failure(LazyList.empty)) // TODO: Error here?
+  }
+
+  private def tryPick(kind: TreeKind, children: Array[Child]): Option[Tree] = {
+    children.find {
+      case Child.Tree(tree) if tree.kind == kind => true
+      case _ => false
+    } match {
+      case Some(Child.Tree(tree)) => Some(tree)
+      case _ => None
     }
   }
 
   // A helper that picks out trees of a specific kind from a list of children
-  private def pick(kind: TreeKind)(children: Array[Child]): List[Tree] = {
+  private def pickAll(kind: TreeKind)(children: Array[Child]): List[Tree] = {
     children.foldLeft[List[Tree]](List.empty)((acc, child) => child match {
       case Child.Tree(tree) if tree.kind == kind => acc.appended(tree)
       case _ => acc
