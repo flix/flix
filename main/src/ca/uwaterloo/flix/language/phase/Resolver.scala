@@ -2063,7 +2063,7 @@ object Resolver {
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible => clazz.toSuccess
           case ClassAccessibility.Sealed => Validation.toHardFailure(ResolutionError.SealedClass(clazz.sym, ns0, qname.loc))
-          case ClassAccessibility.Inaccessible => Validation.toHardFailure(ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc))
+          case ClassAccessibility.Inaccessible => Validation.toSoftFailure(clazz, ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc))
         }
       case None => Validation.toHardFailure(ResolutionError.UndefinedClass(qname, ns0, qname.loc))
     }
@@ -2080,7 +2080,7 @@ object Resolver {
       case Some(clazz) =>
         getClassAccessibility(clazz, ns0) match {
           case ClassAccessibility.Accessible | ClassAccessibility.Sealed => clazz.toSuccess
-          case ClassAccessibility.Inaccessible => Validation.toHardFailure(ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc))
+          case ClassAccessibility.Inaccessible => Validation.toSoftFailure(clazz, ResolutionError.InaccessibleClass(clazz.sym, ns0, qname.loc))
         }
       case None => Validation.toHardFailure(ResolutionError.UndefinedClass(qname, ns0, qname.loc))
     }
@@ -2933,7 +2933,7 @@ object Resolver {
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
-  def getEnumIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.Enum, ResolutionError] = {
+  private def getEnumIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.Enum, ResolutionError] = {
     //
     // Check if the definition is marked public.
     //
@@ -2951,7 +2951,7 @@ object Resolver {
     //
     // The enum is not accessible.
     //
-    Validation.toHardFailure(ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc))
+    Validation.toSoftFailure(enum0, ResolutionError.InaccessibleEnum(enum0.sym, ns0, loc))
   }
 
   /**

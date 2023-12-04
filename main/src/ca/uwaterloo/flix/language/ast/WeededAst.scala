@@ -113,6 +113,8 @@ object WeededAst {
 
     case class LetRec(ident: Name.Ident, ann: Ast.Annotations, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
+    case class LetImport(op: JvmOp, exp: Expr, loc: SourceLocation) extends Expr
+
     case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends Expr
 
     case class Scope(ident: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
@@ -428,6 +430,8 @@ object WeededAst {
 
   }
 
+  case class JavaClassMember(prefix: String, suffix: List[String], loc: SourceLocation)
+
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], loc: SourceLocation)
 
   case class CatchRule(ident: Name.Ident, className: String, exp: Expr)
@@ -482,6 +486,26 @@ object WeededAst {
     case object DebugWithLoc extends DebugKind
 
     case object DebugWithLocAndSrc extends DebugKind
+
+  }
+
+  sealed trait JvmOp
+
+  object JvmOp {
+
+    case class Constructor(fqn: Name.JavaName, sig: List[WeededAst.Type], tpe: Type, eff: Option[WeededAst.Type], ident: Name.Ident) extends JvmOp
+
+    case class Method(fqn: WeededAst.JavaClassMember, sig: List[WeededAst.Type], tpe: Type, eff: Option[WeededAst.Type], ident: Option[Name.Ident]) extends JvmOp
+
+    case class StaticMethod(fqn: WeededAst.JavaClassMember, sig: List[WeededAst.Type], tpe: Type, eff: Option[WeededAst.Type], ident: Option[Name.Ident]) extends JvmOp
+
+    case class GetField(fqn: WeededAst.JavaClassMember, tpe: Type, eff: Option[WeededAst.Type], ident: Name.Ident) extends JvmOp
+
+    case class PutField(fqn: WeededAst.JavaClassMember, tpe: Type, eff: Option[WeededAst.Type], ident: Name.Ident) extends JvmOp
+
+    case class GetStaticField(fqn: WeededAst.JavaClassMember, tpe: Type, eff: Option[WeededAst.Type], ident: Name.Ident) extends JvmOp
+
+    case class PutStaticField(fqn: WeededAst.JavaClassMember, tpe: Type, eff: Option[WeededAst.Type], ident: Name.Ident) extends JvmOp
 
   }
 
