@@ -369,12 +369,12 @@ object ResolutionError {
   /**
     * Inaccessible Effect Error.
     *
-    * @param sym the type alias symbol.
+    * @param sym the effect symbol.
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */
-  case class InaccessibleEffect(sym: Symbol.EffectSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Unrecoverable {
-    def summary: String = s"Inaccessible effect alias ${sym.name}"
+  case class InaccessibleEffect(sym: Symbol.EffectSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
+    def summary: String = s"Inaccessible alias ${sym.name}"
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -388,7 +388,7 @@ object ResolutionError {
 
     def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
-      s"${underline("Tip:")} Mark the definition as public."
+      s"${underline("Tip:")} Mark the effect as public."
     })
 
   }

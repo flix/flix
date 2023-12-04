@@ -3043,20 +3043,20 @@ object Resolver {
     *
     * Otherwise fails with a resolution error.
     *
-    * An enum is accessible from a namespace `ns0` if:
+    * An effect is accessible from a namespace `ns0` if:
     *
     * (a) the definition is marked public, or
     * (b) the definition is defined in the namespace `ns0` itself or in a parent of `ns0`.
     */
   private def getEffectIfAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, loc: SourceLocation): Validation[NamedAst.Declaration.Effect, ResolutionError] = {
     //
-    // Check if the definition is marked public.
+    // Check if the effect is marked public.
     //
     if (eff0.mod.isPublic)
       return eff0.toSuccess
 
     //
-    // Check if the type alias is defined in `ns0` or in a parent of `ns0`.
+    // Check if the effect is defined in `ns0` or in a parent of `ns0`.
     //
     val prefixNs = eff0.sym.namespace
     val targetNs = ns0.idents.map(_.name)
@@ -3064,9 +3064,9 @@ object Resolver {
       return eff0.toSuccess
 
     //
-    // The type alias is not accessible.
+    // The effect is not accessible.
     //
-    Validation.toHardFailure(ResolutionError.InaccessibleEffect(eff0.sym, ns0, loc))
+    Validation.toSoftFailure(eff0, ResolutionError.InaccessibleEffect(eff0.sym, ns0, loc))
   }
 
   /**
