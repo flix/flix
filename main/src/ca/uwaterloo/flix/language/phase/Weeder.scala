@@ -34,14 +34,14 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 /**
-  * The Weeder phase performs simple syntactic checks and rewritings.
-  */
+ * The Weeder phase performs simple syntactic checks and rewritings.
+ */
 object Weeder {
 
   /**
-    * Words that the Flix compiler reserves for special expressions.
-    * Users must not define fields or variables with these names.
-    */
+   * Words that the Flix compiler reserves for special expressions.
+   * Users must not define fields or variables with these names.
+   */
   private val ReservedWords = Set(
     "!=", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<=",
     "<=>", "==", "=>", ">", ">=", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
@@ -59,8 +59,8 @@ object Weeder {
 
 
   /**
-    * Weeds the whole program.
-    */
+   * Weeds the whole program.
+   */
   def run(root: ParsedAst.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, WeederError] =
     flix.phase("Weeder") {
       // Compute the stale and fresh sources.
@@ -74,9 +74,9 @@ object Weeder {
     }
 
   /**
-    * Weeds the given abstract syntax tree.
-    */
-  def visitCompilationUnit(src: Ast.Source, unit: ParsedAst.CompilationUnit)(implicit flix: Flix): Validation[(Ast.Source, WeededAst.CompilationUnit), WeederError] = {
+   * Weeds the given abstract syntax tree.
+   */
+  private def visitCompilationUnit(unit: ParsedAst.CompilationUnit)(implicit flix: Flix): Validation[WeededAst.CompilationUnit, WeederError] = {
     val usesAndImportsVal = traverse(unit.usesOrImports)(visitUseOrImport)
     val declarationsVal = traverse(unit.decls)(visitDecl)
     val loc = mkSL(unit.sp1, unit.sp2)
@@ -88,9 +88,9 @@ object Weeder {
   }
 
   /**
-    * Is successful if all parts in `names` begin with uppercase letters.
-    * Returns a SoftFailure otherwise.
-    */
+   * Is successful if all parts in `names` begin with uppercase letters.
+   * Returns a SoftFailure otherwise.
+   */
   private def visitModuleName(names: Name.NName): Validation[Unit, IllegalModuleName] = {
     names.idents.foldLeft(().toSuccess[Unit, IllegalModuleName]) {
       case (acc, i) => flatMapN(acc) {
@@ -106,8 +106,8 @@ object Weeder {
   }
 
   /**
-    * Compiles the given parsed declaration `past` to a list of weeded declarations.
-    */
+   * Compiles the given parsed declaration `past` to a list of weeded declarations.
+   */
   private def visitDecl(decl: ParsedAst.Declaration)(implicit flix: Flix): Validation[List[WeededAst.Declaration], WeederError] = decl match {
     case ParsedAst.Declaration.Namespace(sp1, names, usesOrImports, decls, sp2) =>
       flatMapN(visitModuleName(names): Validation[Unit, WeederError]) {
@@ -147,8 +147,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given class declaration `c0`.
-    */
+   * Performs weeding on the given class declaration `c0`.
+   */
   private def visitClass(c0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Class], WeederError] = c0 match {
     case ParsedAst.Declaration.Class(doc0, ann0, mods0, sp1, ident, tparam0, superClasses0, assocs0, lawsAndSigs, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -171,8 +171,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given sig declaration `s0`.
-    */
+   * Performs weeding on the given sig declaration `s0`.
+   */
   private def visitSig(s0: ParsedAst.Declaration.Sig)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Sig], WeederError] = s0 match {
     case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, eff0, tconstrs0, exp0, sp2) =>
       val doc = visitDoc(doc0)
@@ -195,8 +195,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given instance declaration `i0`.
-    */
+   * Performs weeding on the given instance declaration `i0`.
+   */
   private def visitInstance(i0: ParsedAst.Declaration.Instance)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Instance], WeederError] = i0 match {
     case ParsedAst.Declaration.Instance(doc0, ann0, mods0, sp1, clazz, tpe0, tconstrs0, assocs0, defs0, sp2) =>
       val doc = visitDoc(doc0)
@@ -218,22 +218,22 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given top-level def declaration `d0`.
-    */
+   * Performs weeding on the given top-level def declaration `d0`.
+   */
   private def visitTopDef(d0: ParsedAst.Declaration.Def)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = {
     visitDef(d0, Set(Ast.Modifier.Public), requiresPublic = false)
   }
 
   /**
-    * Performs weeding on the given instance def declaration `d0`.
-    */
+   * Performs weeding on the given instance def declaration `d0`.
+   */
   private def visitInstanceDef(d0: ParsedAst.Declaration.Def)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = {
     visitDef(d0, Set(Ast.Modifier.Public, Ast.Modifier.Override), requiresPublic = true)
   }
 
   /**
-    * Performs weeding on the given def declaration `d0`.
-    */
+   * Performs weeding on the given def declaration `d0`.
+   */
   private def visitDef(d0: ParsedAst.Declaration.Def, legalModifiers: Set[Ast.Modifier], requiresPublic: Boolean)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = d0 match {
     case ParsedAst.Declaration.Def(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0, exp0, sp2) =>
       flix.subtask(ident.name, sample = true)
@@ -258,8 +258,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given law declaration `d0`.
-    */
+   * Performs weeding on the given law declaration `d0`.
+   */
   private def visitLaw(d0: ParsedAst.Declaration.Law)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Def], WeederError] = d0 match {
     case ParsedAst.Declaration.Law(doc0, ann0, mod0, sp1, ident, tparams0, fparams0, tconstrs0, exp0, sp2) =>
       val doc = visitDoc(doc0)
@@ -281,8 +281,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given effect declaration.
-    */
+   * Performs weeding on the given effect declaration.
+   */
   private def visitEffect(d0: ParsedAst.Declaration.Effect)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Effect], WeederError] = d0 match {
     case ParsedAst.Declaration.Effect(doc0, ann0, mod0, sp1, ident, tparams0, ops0, sp2) =>
       val doc = visitDoc(doc0)
@@ -298,8 +298,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given effect operation.
-    */
+   * Performs weeding on the given effect operation.
+   */
   private def visitOp(d0: ParsedAst.Declaration.Op)(implicit flix: Flix): Validation[WeededAst.Declaration.Op, WeederError] = d0 match {
     case ParsedAst.Declaration.Op(doc0, ann0, mod0, sp1, ident, tparams0, fparamsOpt0, tpe0, eff0, tconstrs0, sp2) =>
       val doc = visitDoc(doc0)
@@ -320,8 +320,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given enum declaration `d0`.
-    */
+   * Performs weeding on the given enum declaration `d0`.
+   */
   private def visitEnum(d0: ParsedAst.Declaration.Enum)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Enum], WeederError] = d0 match {
     case ParsedAst.Declaration.Enum(doc0, ann0, mods, sp1, ident, tparams0, tpe0, derives0, cases0, sp2) =>
       val doc = visitDoc(doc0)
@@ -378,8 +378,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given enum declaration `d0`.
-    */
+   * Performs weeding on the given enum declaration `d0`.
+   */
   private def visitRestrictableEnum(d0: ParsedAst.Declaration.RestrictableEnum)(implicit flix: Flix): Validation[List[WeededAst.Declaration.RestrictableEnum], WeederError] = d0 match {
     case ParsedAst.Declaration.RestrictableEnum(doc0, ann0, mods, sp1, ident, index0, tparams0, tpe0, derives0, cases0, sp2) =>
       val doc = visitDoc(doc0)
@@ -435,16 +435,16 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given enum derivations `derives0`.
-    */
+   * Performs weeding on the given enum derivations `derives0`.
+   */
   private def visitDerivations(derives0: ParsedAst.Derivations): WeededAst.Derivations = derives0 match {
     case ParsedAst.Derivations(sp1, classes, sp2) =>
       WeededAst.Derivations(classes.toList, mkSL(sp1, sp2))
   }
 
   /**
-    * Performs weeding on the given enum case `c0`.
-    */
+   * Performs weeding on the given enum case `c0`.
+   */
   private def visitCase(c0: ParsedAst.Case)(implicit flix: Flix): Validation[WeededAst.Case, WeederError] = c0 match {
     case ParsedAst.Case(sp1, ident, tpe0, sp2) =>
       val tpeVal = traverseOpt(tpe0)(visitType)
@@ -456,8 +456,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given enum case `c0`.
-    */
+   * Performs weeding on the given enum case `c0`.
+   */
   private def visitRestrictableCase(c0: ParsedAst.RestrictableCase)(implicit flix: Flix): Validation[WeededAst.RestrictableCase, WeederError] = c0 match {
     case ParsedAst.RestrictableCase(sp1, ident, tpe0, sp2) =>
       val tpeVal = traverseOpt(tpe0)(visitType)
@@ -469,8 +469,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given type alias declaration `d0`.
-    */
+   * Performs weeding on the given type alias declaration `d0`.
+   */
   private def visitTypeAlias(d0: ParsedAst.Declaration.TypeAlias)(implicit flix: Flix): Validation[List[WeededAst.Declaration.TypeAlias], WeederError] = d0 match {
     case ParsedAst.Declaration.TypeAlias(doc0, mod0, sp1, ident, tparams0, tpe0, sp2) =>
       val doc = visitDoc(doc0)
@@ -485,8 +485,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given associated type signature `d0`.
-    */
+   * Performs weeding on the given associated type signature `d0`.
+   */
   private def visitAssocTypeSig(d0: ParsedAst.Declaration.AssocTypeSig, clazzTparam: WeededAst.TypeParam): Validation[List[WeededAst.Declaration.AssocTypeSig], WeederError] = d0 match {
     case ParsedAst.Declaration.AssocTypeSig(doc0, mod0, sp1, ident, tparams0, kind0, sp2) =>
 
@@ -521,8 +521,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given associated type definition `d0`.
-    */
+   * Performs weeding on the given associated type definition `d0`.
+   */
   private def visitAssocTypeDef(d0: ParsedAst.Declaration.AssocTypeDef, instTpe: WeededAst.Type): Validation[List[WeededAst.Declaration.AssocTypeDef], WeederError] = d0 match {
     case ParsedAst.Declaration.AssocTypeDef(doc0, mod0, sp1, ident, args0, tpe0, sp2) =>
       val doc = visitDoc(doc0)
@@ -547,8 +547,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given use or import `u0`.
-    */
+   * Performs weeding on the given use or import `u0`.
+   */
   private def visitUseOrImport(u0: ParsedAst.UseOrImport): Validation[List[WeededAst.UseOrImport], WeederError] = u0 match {
     case ParsedAst.Use.UseOne(sp1, qname, sp2) =>
       List(WeededAst.UseOrImport.Use(qname, qname.ident, mkSL(sp1, sp2))).toSuccess
@@ -592,16 +592,16 @@ object Weeder {
   }
 
   /**
-    * Returns `true` if `ident` and `alias` share the same case (i.e. both are upper- or lowercase).
-    */
+   * Returns `true` if `ident` and `alias` share the same case (i.e. both are upper- or lowercase).
+   */
   private def isValidAlias(ident: Name.Ident, aliasOpt: Option[Name.Ident]): Boolean = aliasOpt match {
     case None => true
     case Some(alias) => ident.name(0).isUpper == alias.name.charAt(0).isUpper
   }
 
   /**
-    * Weeds the given expression.
-    */
+   * Weeds the given expression.
+   */
   private def visitExp(exp0: ParsedAst.Expression, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.Expr, WeederError] = exp0 match {
     case ParsedAst.Expression.QName(sp1, qname, sp2) =>
       val parts = qname.namespace.idents :+ qname.ident
@@ -1148,8 +1148,8 @@ object Weeder {
     case ParsedAst.Expression.Interpolation(sp1, parts, sp2) =>
 
       /**
-        * Returns an expression that concatenates the result of the expression `e1` with the expression `e2`.
-        */
+       * Returns an expression that concatenates the result of the expression `e1` with the expression `e2`.
+       */
       def mkConcat(e1: WeededAst.Expr, e2: WeededAst.Expr, loc: SourceLocation): WeededAst.Expr = {
         val sop = SemanticOp.StringOp.Concat
         val l = loc.asSynthetic
@@ -1157,8 +1157,8 @@ object Weeder {
       }
 
       /**
-        * Returns an expression that applies `toString` to the result of the given expression `e`.
-        */
+       * Returns an expression that applies `toString` to the result of the given expression `e`.
+       */
       def mkApplyToString(e: WeededAst.Expr, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expr = {
         val fqn = "ToString.toString"
         val loc = mkSL(sp1, sp2).asSynthetic
@@ -1166,8 +1166,8 @@ object Weeder {
       }
 
       /**
-        * Returns an expression that applies `debugString` to the result of the given expression `e`.
-        */
+       * Returns an expression that applies `debugString` to the result of the given expression `e`.
+       */
       def mkApplyDebugString(e: WeededAst.Expr, sp1: SourcePosition, sp2: SourcePosition): WeededAst.Expr = {
         val fqn = "Debug.stringify"
         val loc = mkSL(sp1, sp2).asSynthetic
@@ -1475,13 +1475,13 @@ object Weeder {
   }
 
   /**
-    * Returns a restrictable choice rule from an already visited pattern, guard, and body.
-    * It is checked that
-    *
-    * - The guard is absent
-    *
-    * - The patterns are only tags with possible terms of variables and wildcards
-    */
+   * Returns a restrictable choice rule from an already visited pattern, guard, and body.
+   * It is checked that
+   *
+   * - The guard is absent
+   *
+   * - The patterns are only tags with possible terms of variables and wildcards
+   */
   private def createRestrictableChooseRule(star: Boolean, p0: WeededAst.Pattern, g0: Option[WeededAst.Expr], b0: WeededAst.Expr): Validation[WeededAst.RestrictableChooseRule, WeederError] = {
     // Check that guard is not present
     val gVal = g0 match {
@@ -1515,11 +1515,11 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given argument.
-    *
-    * Named arguments are transformed into records.
-    * `f(arg = x)` becomes `f({arg = x})`
-    */
+   * Performs weeding on the given argument.
+   *
+   * Named arguments are transformed into records.
+   * `f(arg = x)` becomes `f({arg = x})`
+   */
   private def visitArgument(arg: ParsedAst.Argument, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.Expr, WeederError] = arg match {
     // Case 1: Named parameter. Turn it into a record.
     case ParsedAst.Argument.Named(name, exp0, sp2) =>
@@ -1533,30 +1533,30 @@ object Weeder {
   }
 
   /**
-    * The result of weeding an operator.
-    */
+   * The result of weeding an operator.
+   */
   private sealed trait OperatorResult
 
   private object OperatorResult {
     /**
-      * The operator represents a signature or definition from the core library.
-      */
+     * The operator represents a signature or definition from the core library.
+     */
     case class BuiltIn(name: Name.QName) extends OperatorResult
 
     /**
-      * The operator represents a semantic operator.
-      */
+     * The operator represents a semantic operator.
+     */
     case class Operator(op: SemanticOp) extends OperatorResult
 
     /**
-      * The operator is unrecognized: it must have been defined elsewhere.
-      */
+     * The operator is unrecognized: it must have been defined elsewhere.
+     */
     case class Unrecognized(ident: Name.Ident) extends OperatorResult
   }
 
   /**
-    * Performs weeding on the given unary operator.
-    */
+   * Performs weeding on the given unary operator.
+   */
   private def visitUnaryOperator(o: ParsedAst.Operator)(implicit flix: Flix): OperatorResult = o match {
     case ParsedAst.Operator(sp1, op, sp2) =>
       op match {
@@ -1567,8 +1567,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given binary operator.
-    */
+   * Performs weeding on the given binary operator.
+   */
   private def visitBinaryOperator(o: ParsedAst.Operator)(implicit flix: Flix): OperatorResult = o match {
     case ParsedAst.Operator(sp1, op, sp2) =>
       op match {
@@ -1590,9 +1590,9 @@ object Weeder {
   }
 
   /**
-    * Translates the hex code into the corresponding character.
-    * Returns an error if the code is not hexadecimal.
-    */
+   * Translates the hex code into the corresponding character.
+   * Returns an error if the code is not hexadecimal.
+   */
   private def translateHexCode(code: String, loc: SourceLocation): Result[Char, MalformedUnicodeEscapeSequence] = {
     try {
       Result.Ok(Integer.parseInt(code, 16).toChar)
@@ -1602,8 +1602,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given sequence of CharCodes.
-    */
+   * Performs weeding on the given sequence of CharCodes.
+   */
   private def visitCharSeq(chars0: Seq[ParsedAst.CharCode]): Result[String, WeederError with Recoverable] = {
 
     @tailrec
@@ -1666,8 +1666,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given literal.
-    */
+   * Performs weeding on the given literal.
+   */
   private def visitLiteral(lit0: ParsedAst.Literal): Result[Ast.Constant, WeederError with Recoverable] = lit0 match {
     case ParsedAst.Literal.Unit(_, _) =>
       Result.Ok(Ast.Constant.Unit)
@@ -1741,8 +1741,8 @@ object Weeder {
   }
 
   /**
-    * Compiles a parsed pattern into a weeded pattern.
-    */
+   * Compiles a parsed pattern into a weeded pattern.
+   */
   private def visitPattern(pattern: ParsedAst.Pattern)(implicit flix: Flix): Validation[WeededAst.Pattern, WeederError] = {
     /*
      *  Check for non-linear pattern, i.e. if a variable occurs multiple times.
@@ -1872,8 +1872,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given constraint `c0`.
-    */
+   * Performs weeding on the given constraint `c0`.
+   */
   private def visitConstraint(c0: ParsedAst.Constraint, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.Constraint, WeederError] = c0 match {
     case ParsedAst.Constraint(sp1, head0, body0, sp2) =>
       val headVal = visitHeadPredicate(head0, senv)
@@ -1885,8 +1885,8 @@ object Weeder {
   }
 
   /**
-    * Weeds the given head predicate.
-    */
+   * Weeds the given head predicate.
+   */
   private def visitHeadPredicate(past: ParsedAst.Predicate.Head, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.Predicate.Head, WeederError] = past match {
     case ParsedAst.Predicate.Head.Atom(sp1, ident, terms, None, sp2) =>
       // Case 1: the atom has a relational denotation (because of the absence of the optional lattice term).
@@ -1904,8 +1904,8 @@ object Weeder {
   }
 
   /**
-    * Weeds the given body predicate.
-    */
+   * Weeds the given body predicate.
+   */
   private def visitPredicateBody(b: ParsedAst.Predicate.Body, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.Predicate.Body, WeederError] = b match {
     case ParsedAst.Predicate.Body.Atom(sp1, polarity, fixity, ident, terms, None, sp2) =>
       // Case 1: the atom has a relational denotation (because of the absence of the optional lattice term).
@@ -1944,8 +1944,8 @@ object Weeder {
   }
 
   /**
-    * Weeds the given sequence of parsed annotation `xs`.
-    */
+   * Weeds the given sequence of parsed annotation `xs`.
+   */
   private def visitAnnotations(l: Seq[ParsedAst.Annotation])(implicit flix: Flix): Validation[Ast.Annotations, WeederError] = {
     //
     // Check for [[DuplicateAnnotation]].
@@ -1973,8 +1973,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given annotation.
-    */
+   * Performs weeding on the given annotation.
+   */
   private def visitAnnotation(ann: ParsedAst.Annotation): Validation[Ast.Annotation, WeederError] = ann match {
     case ParsedAst.Annotation(_, ident, _) => ident.name match {
       case "benchmark" => Ast.Annotation.Benchmark(ident.loc).toSuccess
@@ -1995,8 +1995,8 @@ object Weeder {
   }
 
   /**
-    * Weeds the given sequence of parsed modifiers `xs`.
-    */
+   * Weeds the given sequence of parsed modifiers `xs`.
+   */
   private def visitModifiers(l: Seq[ParsedAst.Modifier], legalModifiers: Set[Ast.Modifier]): Validation[Ast.Modifiers, WeederError] = {
     //
     // Check for [[DuplicateModifier]].
@@ -2024,8 +2024,8 @@ object Weeder {
   }
 
   /**
-    * Weeds the given parsed modifier `m`.
-    */
+   * Weeds the given parsed modifier `m`.
+   */
   private def visitModifier(m: ParsedAst.Modifier, legalModifiers: Set[Ast.Modifier]): Validation[Ast.Modifier, WeederError] = {
     val modifier = m.name match {
       case "lawful" => Ast.Modifier.Lawful
@@ -2045,8 +2045,8 @@ object Weeder {
   }
 
   /**
-    * Returns an error if `public` is not among the modifiers in `mods`.
-    */
+   * Returns an error if `public` is not among the modifiers in `mods`.
+   */
   private def requirePublic(mods: Seq[ParsedAst.Modifier], ident: Name.Ident): Validation[Unit, WeederError] = {
     if (mods.exists(_.name == "pub")) {
       ().toSuccess
@@ -2056,8 +2056,8 @@ object Weeder {
   }
 
   /**
-    * Returns an error if type parameters are present.
-    */
+   * Returns an error if type parameters are present.
+   */
   private def requireNoTypeParams(tparams0: ParsedAst.TypeParams): Validation[Unit, WeederError] = tparams0 match {
     case TypeParams.Elided => ().toSuccess
     case TypeParams.Explicit(tparams) =>
@@ -2068,24 +2068,24 @@ object Weeder {
   }
 
   /**
-    * Returns an error if the type is not Unit.
-    */
+   * Returns an error if the type is not Unit.
+   */
   private def requireUnit(tpe: ParsedAst.Type, loc: SourceLocation): Validation[Unit, WeederError] = tpe match {
     case ParsedAst.Type.Ambiguous(_, name, _) if name.isUnqualified && name.ident.name == "Unit" => ().toSuccess
     case _ => Validation.toSoftFailure((), NonUnitOperationType(loc))
   }
 
   /**
-    * Returns an error if a type is present.
-    */
+   * Returns an error if a type is present.
+   */
   private def requireNoEffect(tpe: Option[ParsedAst.Type], loc: SourceLocation): Validation[Unit, WeederError] = tpe match {
     case None => ().toSuccess
     case Some(_) => Validation.toSoftFailure((), IllegalEffectfulOperation(loc))
   }
 
   /**
-    * Weeds the given parsed type `tpe`.
-    */
+   * Weeds the given parsed type `tpe`.
+   */
   private def visitType(tpe: ParsedAst.Type): Validation[WeededAst.Type, WeederError] = tpe match {
     case ParsedAst.Type.Var(sp1, ident, sp2) => WeededAst.Type.Var(ident, ident.loc).toSuccess
 
@@ -2288,16 +2288,16 @@ object Weeder {
   }
 
   /**
-    * Weeds the given type. Returns None if the type is a wildcard.
-    */
+   * Weeds the given type. Returns None if the type is a wildcard.
+   */
   private def visitTypeNoWild(tpe: ParsedAst.Type): Validation[Option[WeededAst.Type], WeederError] = tpe match {
     case ParsedAst.Type.Var(_, ident, _) if ident.isWild => None.toSuccess
     case _ => visitType(tpe).map(t => Some(t))
   }
 
   /**
-    * Checks that the effect set member is valid: a variable or constant.
-    */
+   * Checks that the effect set member is valid: a variable or constant.
+   */
   private def checkEffectSetMember(t: ParsedAst.Type): Validation[Unit, WeederError] = t match {
     case _: ParsedAst.Type.Var => ().toSuccess
     case _: ParsedAst.Type.Ambiguous => ().toSuccess
@@ -2312,8 +2312,8 @@ object Weeder {
   }
 
   /**
-    * Builds a record row from the given labels and optional rest variable.
-    */
+   * Builds a record row from the given labels and optional rest variable.
+   */
   private def buildRecordRow(labels0: Seq[ParsedAst.RecordLabelType], restOpt: Option[Name.Ident], loc: SourceLocation): Validation[WeededAst.Type, WeederError] = {
     // If rest is absent, then it is the empty record row
     val rest = restOpt match {
@@ -2339,8 +2339,8 @@ object Weeder {
   }
 
   /**
-    * Builds a schema row from the given predicates and optional rest identifier.
-    */
+   * Builds a schema row from the given predicates and optional rest identifier.
+   */
   private def buildSchemaRow(predicates: Seq[ParsedAst.PredicateType], restOpt: Option[Name.Ident], loc: SourceLocation): Validation[WeededAst.Type, WeederError] = {
     // If rest is absent, then it is the empty schema row
     val rest = restOpt match {
@@ -2371,18 +2371,18 @@ object Weeder {
   }
 
   /**
-    * Returns an arrow type from `tpe1` to `tpe2` with effect `eff`.
-    *
-    * In other words, the type is of the form `tpe1 ->{eff} tpe2`
-    */
+   * Returns an arrow type from `tpe1` to `tpe2` with effect `eff`.
+   *
+   * In other words, the type is of the form `tpe1 ->{eff} tpe2`
+   */
   private def mkArrow(tpe1: WeededAst.Type, eff: Option[WeededAst.Type], tpe2: WeededAst.Type, loc: SourceLocation): WeededAst.Type =
     WeededAst.Type.Arrow(List(tpe1), eff, tpe2, loc.asSynthetic)
 
   /**
-    * Returns a sequence of arrow types type from `tparams` to `tresult` where every arrow is pure except the last which has effect `eff`.
-    *
-    * In other words, the type is of the form `tpe1 ->> tpe2 ->> ... ->{eff} tresult`.
-    */
+   * Returns a sequence of arrow types type from `tparams` to `tresult` where every arrow is pure except the last which has effect `eff`.
+   *
+   * In other words, the type is of the form `tpe1 ->> tpe2 ->> ... ->{eff} tresult`.
+   */
   private def mkCurriedArrow(tparams: Seq[WeededAst.Type], eff: Option[WeededAst.Type], tresult: WeededAst.Type, loc: SourceLocation): WeededAst.Type = {
     val l = loc.asSynthetic
     val base = mkArrow(tparams.last, eff, tresult, l)
@@ -2390,10 +2390,10 @@ object Weeder {
   }
 
   /**
-    * Weeds the given list of formal parameter `fparams`.
-    *
-    * Checks for [[DuplicateFormalParam]], [[MissingFormalParamAscription]], and [[DuplicateFormalParam]].
-    */
+   * Weeds the given list of formal parameter `fparams`.
+   *
+   * Checks for [[DuplicateFormalParam]], [[MissingFormalParamAscription]], and [[DuplicateFormalParam]].
+   */
   private def visitFormalParams(fparams: Seq[ParsedAst.FormalParam], typePresence: Presence): Validation[List[WeededAst.FormalParam], WeederError] = {
     //
     // Special Case: Check if no formal parameters are present. If so, introduce a unit parameter.
@@ -2433,8 +2433,8 @@ object Weeder {
   }
 
   /**
-    * Weeds the given formal parameter `fparam`.
-    */
+   * Weeds the given formal parameter `fparam`.
+   */
   private def visitFormalParam(fparam: ParsedAst.FormalParam, typePresence: Presence): Validation[WeededAst.FormalParam, WeederError] = fparam match {
     case ParsedAst.FormalParam(sp1, mods, ident, tpeOpt0, sp2) =>
       val tpeOptVal = traverseOpt(tpeOpt0)(visitType)
@@ -2456,8 +2456,8 @@ object Weeder {
   }
 
   /**
-    * Weeds the given predicate param `pparam`.
-    */
+   * Weeds the given predicate param `pparam`.
+   */
   private def visitPredicateParam(pparam: ParsedAst.PredicateParam): Validation[WeededAst.PredicateParam, WeederError] = pparam match {
     case ParsedAst.PredicateParam.UntypedPredicateParam(sp1, ident, sp2) =>
       val pred = Name.mkPred(ident)
@@ -2482,8 +2482,8 @@ object Weeder {
   }
 
   /**
-    * Weeds the given documentation.
-    */
+   * Weeds the given documentation.
+   */
   private def visitDoc(doc0: ParsedAst.Doc): Ast.Doc = {
     val trimmedLines = doc0.lines.map(_.trim)
     val trimmedBeginning = trimmedLines.dropWhile(_ == "")
@@ -2492,8 +2492,8 @@ object Weeder {
   }
 
   /**
-    * Weeds the given type parameters `tparams0`.
-    */
+   * Weeds the given type parameters `tparams0`.
+   */
   private def visitTypeParams(tparams0: ParsedAst.TypeParams): Validation[WeededAst.TypeParams, WeederError] = tparams0 match {
     case ParsedAst.TypeParams.Elided => WeededAst.TypeParams.Elided.toSuccess
     case ParsedAst.TypeParams.Explicit(tparams) =>
@@ -2507,7 +2507,7 @@ object Weeder {
 
         case (_ :: _, Nil) =>
           // Case 2: only kinded type parameters
-        WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
+          WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
 
         case (_ :: _, _ :: _) =>
           // Case 3: some unkinded and some kinded
@@ -2526,13 +2526,13 @@ object Weeder {
 
         case (Nil, Nil) =>
           // Case 4: no type parameters: should be prevented by parser
-        throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
+          throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
       }
   }
 
   /**
-    * Weeds the type params, requiring that they be explicitly kinded.
-    */
+   * Weeds the type params, requiring that they be explicitly kinded.
+   */
   private def visitKindedTypeParams(tparams0: ParsedAst.TypeParams): Validation[WeededAst.KindedTypeParams, WeederError] = tparams0 match {
     case ParsedAst.TypeParams.Elided => WeededAst.TypeParams.Elided.toSuccess
     case ParsedAst.TypeParams.Explicit(tparams) =>
@@ -2571,8 +2571,8 @@ object Weeder {
   }
 
   /**
-    * Weeds the given type param `tparam`.
-    */
+   * Weeds the given type param `tparam`.
+   */
   private def visitTypeParam(tparam0: ParsedAst.TypeParam): WeededAst.TypeParam = tparam0 match {
     case ParsedAst.TypeParam(_, ident, kind0, _) =>
       kind0.map(visitKind) match {
@@ -2582,8 +2582,8 @@ object Weeder {
   }
 
   /**
-    * Weeds the given kind `kind`.
-    */
+   * Weeds the given kind `kind`.
+   */
   private def visitKind(kind: ParsedAst.Kind): WeededAst.Kind = kind match {
     case ParsedAst.Kind.QName(sp1, qname, sp2) => WeededAst.Kind.Ambiguous(qname, mkSL(sp1, sp2))
     case ParsedAst.Kind.Arrow(k1, k2, sp2) =>
@@ -2592,8 +2592,8 @@ object Weeder {
   }
 
   /**
-    * Weeds the given type constraint `tconstr`.
-    */
+   * Weeds the given type constraint `tconstr`.
+   */
   private def visitTypeConstraint(tconstr: ParsedAst.TypeConstraint): Validation[WeededAst.TypeConstraint, WeederError] = tconstr match {
     case ParsedAst.TypeConstraint(sp1, clazz, tparam0, sp2) =>
       val tpeVal = visitType(tparam0)
@@ -2608,8 +2608,8 @@ object Weeder {
   }
 
   /**
-    * Weeds the given equality constraint `econstr`.
-    */
+   * Weeds the given equality constraint `econstr`.
+   */
   private def visitEqualityConstraint(econstr: ParsedAst.EqualityConstraint): Validation[WeededAst.EqualityConstraint, WeederError] = econstr match {
     case ParsedAst.EqualityConstraint(sp1, tpe1, tpe2, sp2) =>
       val t1Val = visitType(tpe1)
@@ -2626,8 +2626,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given name `ident`.
-    */
+   * Performs weeding on the given name `ident`.
+   */
   private def visitIdent(ident: Name.Ident): Validation[Name.Ident, WeederError] = {
     if (ReservedWords.contains(ident.name)) {
       Validation.toSoftFailure(ident, ReservedName(ident, ident.loc))
@@ -2637,8 +2637,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given JvmMethod.
-    */
+   * Performs weeding on the given JvmMethod.
+   */
   private def visitJvmMethod(method: ParsedAst.JvmMethod, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.JvmMethod, WeederError] = method match {
     case ParsedAst.JvmMethod(sp1, ident, fparams0, tpe, eff0, exp0, sp2) =>
       val fparamsVal = visitFormalParams(fparams0, Presence.Required)
@@ -2651,8 +2651,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given [[ParsedAst.JvmOp]] `impl0`.
-    */
+   * Performs weeding on the given [[ParsedAst.JvmOp]] `impl0`.
+   */
   private def visitJvmOp(impl0: ParsedAst.JvmOp)(implicit flix: Flix): Validation[WeededAst.JvmOp, WeederError] = impl0 match {
     case ParsedAst.JvmOp.Constructor(fqn, sig, tpe, eff, ident) =>
       val sigVal = traverse(sig)(visitType)
@@ -2702,8 +2702,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on `tpe` and `eff`. Used as a helper function for java fields in [[visitJvmOp]].
-    */
+   * Performs weeding on `tpe` and `eff`. Used as a helper function for java fields in [[visitJvmOp]].
+   */
   private def visitField(fqn: ParsedAst.JavaClassMember, tpe: ParsedAst.Type, eff: Option[ParsedAst.Type])(implicit flix: Flix): Validation[(WeededAst.JavaClassMember, WeededAst.Type, Option[WeededAst.Type]), WeederError] = {
     val fqn1 = visitJavaClassMember(fqn)
     val tpeVal = visitType(tpe)
@@ -2714,8 +2714,8 @@ object Weeder {
   }
 
   /**
-    * Maps `fqn` to a [[WeededAst.JavaClassMember]].
-    */
+   * Maps `fqn` to a [[WeededAst.JavaClassMember]].
+   */
   private def visitJavaClassMember(fqn: ParsedAst.JavaClassMember): WeededAst.JavaClassMember = fqn match {
     case ParsedAst.JavaClassMember(sp1, prefix, suffix, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -2723,16 +2723,16 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given [[ParsedAst.ForFragment]] `frag0`.
-    */
+   * Performs weeding on the given [[ParsedAst.ForFragment]] `frag0`.
+   */
   private def visitForFragment(frag0: ParsedAst.ForFragment, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.ForFragment, WeederError] = frag0 match {
     case gen: ParsedAst.ForFragment.Generator => visitForFragmentGenerator(gen, senv)
     case guard: ParsedAst.ForFragment.Guard => visitForFragmentGuard(guard, senv)
   }
 
   /**
-    * Performs weeding on the given [[ParsedAst.ForFragment.Generator]] `frag0`.
-    */
+   * Performs weeding on the given [[ParsedAst.ForFragment.Generator]] `frag0`.
+   */
   private def visitForFragmentGenerator(frag0: ParsedAst.ForFragment.Generator, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.ForFragment.Generator, WeederError] = frag0 match {
     case ParsedAst.ForFragment.Generator(sp1, pat, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -2744,8 +2744,8 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given [[ParsedAst.ForFragment.Guard]] `frag0`.
-    */
+   * Performs weeding on the given [[ParsedAst.ForFragment.Guard]] `frag0`.
+   */
   private def visitForFragmentGuard(frag0: ParsedAst.ForFragment.Guard, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.ForFragment.Guard, WeederError] = frag0 match {
     case ParsedAst.ForFragment.Guard(sp1, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
@@ -2756,8 +2756,8 @@ object Weeder {
   }
 
   /**
-    * Maps `kind` to a [[WeededAst.DebugKind]].
-    */
+   * Maps `kind` to a [[WeededAst.DebugKind]].
+   */
   private def visitDebugKind(kind: ParsedAst.DebugKind): WeededAst.DebugKind = kind match {
     case ParsedAst.DebugKind.Debug => WeededAst.DebugKind.Debug
     case ParsedAst.DebugKind.DebugWithLoc => WeededAst.DebugKind.DebugWithLoc
@@ -2765,8 +2765,8 @@ object Weeder {
   }
 
   /**
-    * Returns true iff the type is composed only of type variables possibly applied to other type variables.
-    */
+   * Returns true iff the type is composed only of type variables possibly applied to other type variables.
+   */
   private def isAllVars(tpe: ParsedAst.Type): Boolean = tpe match {
     case _: ParsedAst.Type.Var => true
     case ParsedAst.Type.Apply(tpe1, tpes, _) => (tpe1 +: tpes).forall(isAllVars)
@@ -2774,8 +2774,8 @@ object Weeder {
   }
 
   /**
-    * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args`.
-    */
+   * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args`.
+   */
   private def mkApplyFqn(fqn: String, args: List[WeededAst.Expr], loc: SourceLocation): WeededAst.Expr = {
     val l = loc.asSynthetic
     val lambda = WeededAst.Expr.Ambiguous(Name.mkQName(fqn), l)
@@ -2783,8 +2783,8 @@ object Weeder {
   }
 
   /**
-    * Returns a curried version of the given expression `e` for each formal parameter in `fparams0`.
-    */
+   * Returns a curried version of the given expression `e` for each formal parameter in `fparams0`.
+   */
   private def mkCurried(fparams0: List[WeededAst.FormalParam], e: WeededAst.Expr, loc: SourceLocation): WeededAst.Expr = {
     val l = loc.asSynthetic
     fparams0.foldRight(e) {
@@ -2793,10 +2793,10 @@ object Weeder {
   }
 
   /**
-    * Returns the list of expressions `args0` unless the list is empty.
-    *
-    * If so, returns a list with a single unit expression.
-    */
+   * Returns the list of expressions `args0` unless the list is empty.
+   *
+   * If so, returns a list with a single unit expression.
+   */
   private def getArguments(args0: List[WeededAst.Expr], loc: SourceLocation): List[WeededAst.Expr] = {
     val l = loc.asSynthetic
     args0 match {
@@ -2806,15 +2806,15 @@ object Weeder {
   }
 
   /**
-    * Removes underscores from the given string of digits.
-    */
+   * Removes underscores from the given string of digits.
+   */
   private def stripUnderscores(digits: String): String = {
     digits.filterNot(_ == '_')
   }
 
   /**
-    * Attempts to parse the given float32 with `sign` digits `before` and `after` the comma.
-    */
+   * Attempts to parse the given float32 with `sign` digits `before` and `after` the comma.
+   */
   private def toFloat32(sign: String, before: String, after: String, loc: SourceLocation): Result[Float, MalformedFloat] = try {
     val s = s"$sign$before.$after"
     Result.Ok(stripUnderscores(s).toFloat)
@@ -2823,8 +2823,8 @@ object Weeder {
   }
 
   /**
-    * Attempts to parse the given float64 with `sign` digits `before` and `after` the comma.
-    */
+   * Attempts to parse the given float64 with `sign` digits `before` and `after` the comma.
+   */
   private def toFloat64(sign: String, before: String, after: String, loc: SourceLocation): Result[Double, MalformedFloat] = try {
     val s = s"$sign$before.$after"
     Result.Ok(stripUnderscores(s).toDouble)
@@ -2833,8 +2833,8 @@ object Weeder {
   }
 
   /**
-    * Attempts to parse the given big decimal with `sign` digits `before` and `after` the comma.
-    */
+   * Attempts to parse the given big decimal with `sign` digits `before` and `after` the comma.
+   */
   private def toBigDecimal(sign: String, before: String, after: Option[String], power: Option[String], loc: SourceLocation): Result[BigDecimal, MalformedFloat] = try {
     val frac = after match {
       case Some(digits) => "." + digits
@@ -2851,8 +2851,8 @@ object Weeder {
   }
 
   /**
-    * Attempts to parse the given int8 with `sign` and `digits`.
-    */
+   * Attempts to parse the given int8 with `sign` and `digits`.
+   */
   private def toInt8(sign: String, radix: Int, digits: String, loc: SourceLocation): Result[Byte, MalformedInt] = try {
     val s = sign + digits
     Result.Ok(JByte.parseByte(stripUnderscores(s), radix))
@@ -2861,8 +2861,8 @@ object Weeder {
   }
 
   /**
-    * Attempts to parse the given int16 with `sign` and `digits`.
-    */
+   * Attempts to parse the given int16 with `sign` and `digits`.
+   */
   private def toInt16(sign: String, radix: Int, digits: String, loc: SourceLocation): Result[Short, MalformedInt] = try {
     val s = sign + digits
     Result.Ok(JShort.parseShort(stripUnderscores(s), radix))
@@ -2871,8 +2871,8 @@ object Weeder {
   }
 
   /**
-    * Attempts to parse the given int32 with `sign` and `digits`.
-    */
+   * Attempts to parse the given int32 with `sign` and `digits`.
+   */
   private def toInt32(sign: String, radix: Int, digits: String, loc: SourceLocation): Result[Int, MalformedInt] = try {
     val s = sign + digits
     Result.Ok(JInt.parseInt(stripUnderscores(s), radix))
@@ -2881,8 +2881,8 @@ object Weeder {
   }
 
   /**
-    * Attempts to parse the given int64 with `sign` and `digits`.
-    */
+   * Attempts to parse the given int64 with `sign` and `digits`.
+   */
   private def toInt64(sign: String, radix: Int, digits: String, loc: SourceLocation): Result[Long, MalformedInt] = try {
     val s = sign + digits
     Result.Ok(JLong.parseLong(stripUnderscores(s), radix))
@@ -2891,8 +2891,8 @@ object Weeder {
   }
 
   /**
-    * Attempts to parse the given BigInt with `sign` and `digits`.
-    */
+   * Attempts to parse the given BigInt with `sign` and `digits`.
+   */
   private def toBigInt(sign: String, radix: Int, digits: String, loc: SourceLocation): Result[BigInteger, MalformedInt] = try {
     val s = sign + digits
     Result.Ok(new BigInteger(stripUnderscores(s), radix))
@@ -2901,8 +2901,8 @@ object Weeder {
   }
 
   /**
-    * Attempts to compile the given regular expression into a Pattern.
-    */
+   * Attempts to compile the given regular expression into a Pattern.
+   */
   private def toRegexPattern(regex: String, loc: SourceLocation): Result[JPattern, MalformedRegex] = try {
     val pat = JPattern.compile(regex)
     Result.Ok(pat)
@@ -2911,13 +2911,13 @@ object Weeder {
   }
 
   /**
-    * Alias for SourceLocation.mk
-    */
+   * Alias for SourceLocation.mk
+   */
   private def mkSL(sp1: SourcePosition, sp2: SourcePosition): SourceLocation = SourceLocation.mk(sp1, sp2)
 
   /**
-    * Returns the left most source position in the sub-tree of the expression `e`.
-    */
+   * Returns the left most source position in the sub-tree of the expression `e`.
+   */
   @tailrec
   private def leftMostSourcePosition(e: ParsedAst.Expression): SourcePosition = e match {
     case ParsedAst.Expression.QName(sp1, _, _) => sp1
@@ -2991,8 +2991,8 @@ object Weeder {
   }
 
   /**
-    * Returns the left most source position in the sub-tree of the type `tpe`.
-    */
+   * Returns the left most source position in the sub-tree of the type `tpe`.
+   */
   @tailrec
   private def leftMostSourcePosition(tpe: ParsedAst.Type): SourcePosition = tpe match {
     case ParsedAst.Type.Var(sp1, _, _) => sp1
@@ -3029,8 +3029,8 @@ object Weeder {
 
 
   /**
-    * Returns the left most source position in the sub-tree of the kind `kind`.
-    */
+   * Returns the left most source position in the sub-tree of the kind `kind`.
+   */
   @tailrec
   private def leftMostSourcePosition(kind: ParsedAst.Kind): SourcePosition = kind match {
     case ParsedAst.Kind.QName(sp1, _, _) => sp1
@@ -3038,43 +3038,43 @@ object Weeder {
   }
 
   /**
-    * The syntactic environment of an expression.
-    *
-    * Used to indicate which expressions are allowed at the given point in the syntax tree.
-    */
+   * The syntactic environment of an expression.
+   *
+   * Used to indicate which expressions are allowed at the given point in the syntax tree.
+   */
   private sealed trait SyntacticEnv
 
   private object SyntacticEnv {
     /**
-      * Indicates a top-level expression, not inside a handler.
-      */
+     * Indicates a top-level expression, not inside a handler.
+     */
     case object Top extends SyntacticEnv
 
     /**
-      * Indicates an expression inside a handler.
-      */
+     * Indicates an expression inside a handler.
+     */
     case object Handler extends SyntacticEnv
   }
 
   /**
-    * Ternary enumeration of constraints on the presence of something.
-    */
+   * Ternary enumeration of constraints on the presence of something.
+   */
   private sealed trait Presence
 
   private object Presence {
     /**
-      * Indicates that the thing is required.
-      */
+     * Indicates that the thing is required.
+     */
     case object Required extends Presence
 
     /**
-      * Indicates that the thing is optional.
-      */
+     * Indicates that the thing is optional.
+     */
     case object Optional extends Presence
 
     /**
-      * Indicates that the thing is forbidden.
-      */
+     * Indicates that the thing is forbidden.
+     */
     case object Forbidden extends Presence
   }
 }

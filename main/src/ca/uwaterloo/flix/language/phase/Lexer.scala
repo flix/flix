@@ -898,17 +898,6 @@ object Lexer {
     TokenKind.CommentLine
   }
 
-  private def acceptDocComment()(implicit s: State): TokenKind = {
-    while (!eof()) {
-      if (peek() == '\n') {
-        return TokenKind.CommentDoc
-      } else {
-        advance()
-      }
-    }
-    TokenKind.CommentDoc
-  }
-
   /**
    * Moves current position past a doc-comment
    */
