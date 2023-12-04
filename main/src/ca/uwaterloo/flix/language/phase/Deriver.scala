@@ -59,15 +59,15 @@ object Deriver {
       lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
       lazy val hashSym = PredefinedClasses.lookupClassSym("Hash", root)
       lazy val sendableSym = PredefinedClasses.lookupClassSym("Sendable", root)
-      sequence(derives.classes.map {
-        case Ast.Derivation(classSym, loc) if cases.isEmpty => Validation.toHardFailure(DerivationError.IllegalDerivationForEmptyEnum(enumSym, classSym, loc))
-        case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum0, loc, root)
-        case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum0, loc, root)
-        case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum0, loc, root)
-        case Ast.Derivation(sym, loc) if sym == hashSym => mkHashInstance(enum0, loc, root)
-        case Ast.Derivation(sym, loc) if sym == sendableSym => mkSendableInstance(enum0, loc, root)
-        case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym", SourceLocation.Unknown)
-      })
+      Validation.traverse(derives.classes) {
+        case Ast.Derivation(classSym, loc) if cases.isEmpty => Validation.toSoftFailure(None, DerivationError.IllegalDerivationForEmptyEnum(enumSym, classSym, loc))
+        case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum0, loc, root).map(Some.apply)
+        case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum0, loc, root).map(Some.apply)
+        case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum0, loc, root).map(Some.apply)
+        case Ast.Derivation(sym, loc) if sym == hashSym => mkHashInstance(enum0, loc, root).map(Some.apply)
+        case Ast.Derivation(sym, loc) if sym == sendableSym => mkSendableInstance(enum0, loc, root).map(Some.apply)
+        case Ast.Derivation(sym, loc) => Validation.toSoftFailure(None, DerivationError.IllegalDerivation(sym, Resolver.DerivableSyms, loc))
+      }.map(_.flatten)
   }
 
   /**
