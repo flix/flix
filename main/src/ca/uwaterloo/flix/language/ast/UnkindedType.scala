@@ -295,7 +295,7 @@ object UnkindedType {
       case _ => false
     }
 
-    override def hashCode(): Int = Objects.hash(loc)
+    override def hashCode(): Int = 17
   }
 
   /**
