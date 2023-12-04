@@ -227,24 +227,9 @@ object Name {
     def isUnqualified: Boolean = !isQualified
 
     /**
-      * Returns `true` if the name of `this` qualified name is lowercase.
-      */
-    def isLowerCase: Boolean = ident.name.head.isLower
-
-    /**
-      * Returns `true` if the name of `this` qualified name is uppercase.
-      */
-    def isUpperCase: Boolean = ident.name.head.isUpper
-
-    /**
       * The source location of the name.
       */
     def loc: SourceLocation = SourceLocation.mk(sp1, sp2)
-
-    /**
-      * Converts this name into a namespace.
-      */
-    def toNName: NName = extendNName(namespace, ident)
 
     /**
       * Human readable representation.
