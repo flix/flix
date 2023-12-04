@@ -23,13 +23,14 @@ import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType._
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
 import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.errors.ResolutionError._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.{ListMap, MapOps}
 import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, ParOps, Similarity, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.annotation.tailrec
-import scala.collection.immutable.{SortedSet, StringOps}
+import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
 /**
@@ -2006,24 +2007,25 @@ object Resolver {
   /**
     * Performs name resolution on the given derivations `derives0`.
     */
-  def resolveDerivations(derives0: NamedAst.Derivations, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[Ast.Derivations, ResolutionError] = {
+  private def resolveDerivations(derives0: NamedAst.Derivations, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[Ast.Derivations, ResolutionError] = {
     val qnames = derives0.classes
     val derivesVal = Validation.traverse(qnames)(resolveDerivation(_, env, ns0, root))
     flatMapN(derivesVal) {
       derives =>
-        val derivesWithIndex = derives.zipWithIndex
-        val failures = for {
-          (Ast.Derivation(sym1, loc1), i1) <- derivesWithIndex
-          (Ast.Derivation(sym2, loc2), i2) <- derivesWithIndex
-
-          // don't compare a sym against itself
-          if i1 != i2
-          if sym1 == sym2
-        } yield Validation.toHardFailure(ResolutionError.DuplicateDerivation(sym1, loc1, loc2))
-
-        Validation.sequenceX(failures) map {
-          _ => Ast.Derivations(derives, derives0.loc)
+        // Check for [[DuplicateDerivation]].
+        val seen = mutable.Map.empty[Symbol.ClassSym, SourceLocation]
+        val errors = mutable.ArrayBuffer.empty[DuplicateDerivation]
+        for (Ast.Derivation(classSym, loc1) <- derives) {
+          seen.get(classSym) match {
+            case None =>
+              seen.put(classSym, loc1)
+            case Some(loc2) =>
+              errors += DuplicateDerivation(classSym, loc1, loc2)
+              errors += DuplicateDerivation(classSym, loc2, loc1)
+          }
         }
+
+        Validation.toSuccessOrSoftFailure(Ast.Derivations(derives, derives0.loc), errors)
     }
   }
 
