@@ -26,8 +26,6 @@ import org.parboiled2.ParserInput
 
 // TODO: Add change set support
 
-// TODO: Remove this
-
 object TreeCleaner {
 
   import WeededAst._
