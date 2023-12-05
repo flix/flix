@@ -1372,38 +1372,44 @@ object Resolver {
           }
 
         case NamedAst.Expr.Without(exp, eff, loc) =>
-          val eVal = visitExp(exp, env0)
-          val fVal = lookupEffect(eff, env0, ns0, root)
-          mapN(eVal, fVal) {
-            case (e, f) =>
-              val effUse = Ast.EffectSymUse(f.sym, eff.loc)
-              ResolvedAst.Expr.Without(e, effUse, loc)
+          lookupEffect(eff, env0, ns0, root) match {
+            case Result.Ok(decl) =>
+              flatMapN(visitExp(exp, env0)) {
+                case e => mapN(getEffectIfAccessible(decl, ns0, eff.loc)) {
+                  case decl =>
+                    val effUse = Ast.EffectSymUse(decl.sym, eff.loc)
+                    ResolvedAst.Expr.Without(e, effUse, loc)
+                }
+              }
+            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.TryWith(exp, eff, rules, loc) =>
-          val eVal = visitExp(exp, env0)
-          val fVal = lookupEffect(eff, env0, ns0, root)
-          flatMapN(eVal, fVal) {
-            case (e, f) =>
-              val effUse = Ast.EffectSymUse(f.sym, eff.loc)
-              val rulesVal = traverse(rules) {
-                case NamedAst.HandlerRule(ident, fparams, body) =>
-                  val opVal = findOpInEffect(ident, f)
-                  val fparamsVal = resolveFormalParams(fparams, env0, taenv, ns0, root)
-                  flatMapN(opVal, fparamsVal) {
-                    case (o, fp) =>
-                      val env = env0 ++ mkFormalParamEnv(fp)
-                      val bodyVal = visitExp(body, env)
-                      mapN(bodyVal) {
-                        case b =>
-                          val opUse = Ast.OpSymUse(o.sym, ident.loc)
-                          ResolvedAst.HandlerRule(opUse, fp, b)
+          lookupEffect(eff, env0, ns0, root) match {
+            case Result.Ok(decl) =>
+              flatMapN(getEffectIfAccessible(decl, ns0, eff.loc), visitExp(exp, env0)) {
+                case (f, e) =>
+                  val effUse = Ast.EffectSymUse(f.sym, eff.loc)
+                  val rulesVal = traverse(rules) {
+                    case NamedAst.HandlerRule(ident, fparams, body) =>
+                      val opVal = findOpInEffect(ident, f)
+                      val fparamsVal = resolveFormalParams(fparams, env0, taenv, ns0, root)
+                      flatMapN(opVal, fparamsVal) {
+                        case (o, fp) =>
+                          val env = env0 ++ mkFormalParamEnv(fp)
+                          val bodyVal = visitExp(body, env)
+                          mapN(bodyVal) {
+                            case b =>
+                              val opUse = Ast.OpSymUse(o.sym, ident.loc)
+                              ResolvedAst.HandlerRule(opUse, fp, b)
+                          }
                       }
                   }
+                  mapN(rulesVal) {
+                    rs => ResolvedAst.Expr.TryWith(e, effUse, rs, loc)
+                  }
               }
-              mapN(rulesVal) {
-                rs => ResolvedAst.Expr.TryWith(e, effUse, rs, loc)
-              }
+            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.Do(op, exps, loc) =>
@@ -2651,12 +2657,15 @@ object Resolver {
   /**
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
-  private def lookupEffect(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Effect, ResolutionError] = {
-    val symOpt = tryLookupName(qname, env, ns0, root)
+  private def lookupEffect(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Effect, UndefinedEffect] = {
+    val effOpt = tryLookupName(qname, env, ns0, root).collectFirst {
+      case Resolution.Declaration(eff: NamedAst.Declaration.Effect) => eff
+    }
 
-    symOpt.collectFirst {
-      case Resolution.Declaration(eff: NamedAst.Declaration.Effect) => getEffectIfAccessible(eff, ns0, qname.loc)
-    }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedEffect(qname, ns0, qname.loc)))
+    effOpt match {
+      case None => Result.Err(ResolutionError.UndefinedEffect(qname, ns0, qname.loc))
+      case Some(decl) => Result.Ok(decl)
+    }
   }
 
   /**
