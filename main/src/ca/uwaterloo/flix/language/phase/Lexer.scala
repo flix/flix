@@ -139,7 +139,7 @@ object Lexer {
     addToken(TokenKind.Eof)
 
     val errors = s.tokens.collect {
-      case Token(TokenKind.Err(err), _, _, _, _, _) => err
+      case Token(TokenKind.Err(err), _, _, _, _, _, _, _) => err
     }
     if (errors.isEmpty) {
       s.tokens.toArray.toSuccess
@@ -287,7 +287,7 @@ object Lexer {
    * Afterwards `s.start` is reset to the next position after the previous token.
    */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
-    s.tokens += Token(kind, s.src.data, s.start.offset, s.current.offset, s.start.line, s.start.column)
+    s.tokens += Token(kind, s.src.data, s.start.offset, s.current.offset, s.start.line, s.start.column, s.current.line, s.current.column)
     s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }
 
