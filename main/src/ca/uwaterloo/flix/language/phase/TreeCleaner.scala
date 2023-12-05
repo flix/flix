@@ -118,8 +118,27 @@ object TreeCleaner {
   }
 
   private def visitParameters(tree: Tree): Validation[List[FormalParam], CompilationMessage] = {
-    // TODO
-    List.empty.toSuccess
+    val paramTree = tryPick(TreeKind.Parameters, tree.children)
+    val params = paramTree.map(
+      t => {
+        val parameters = if (t.children.length == 2) {
+          // only ParenL and ParenR are in parameters, so produce synthetic unit parameter
+          List(
+            FormalParam(
+              Name.Ident(SourcePosition.Unknown, "_unit", SourcePosition.Unknown),
+              Ast.Modifiers(List.empty),
+              Some(Type.Unit(SourceLocation.Unknown)),
+              SourceLocation.Unknown
+            )
+          )
+        } else {
+          List.empty // TODO: Map parameters
+        }
+        parameters.toSuccess
+      }
+    ).getOrElse(failWith("expected formal parameters"))
+
+    params
   }
 
   private def visitTypeConstraints(tree: Tree): Validation[List[TypeConstraint], CompilationMessage] = {
@@ -161,9 +180,15 @@ object TreeCleaner {
     literal.toSuccess
   }
 
-  private def visitType(tree: Tree): Validation[Type, CompilationMessage] = {
-    // TODO
-    Type.Unit(tree.loc).toSuccess
+  private def visitType(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+    val typeTree = tryPick(TreeKind.Type.Type, tree.children)
+    val loc = typeTree.map(_.loc).getOrElse(SourceLocation.Unknown)
+    val ident = typeTree.map(visitNameIdent(_)).getOrElse(failWith("TODO: types are more that idents"))
+    mapN(ident) {
+      ident => Type.Ambiguous(
+        Name.QName(ident.sp1, Name.NName(ident.sp1, List.empty, ident.sp2), ident, ident.sp2),
+        loc)
+    }
   }
 
   private def visitEffect(tree: Tree): Validation[Option[Type], CompilationMessage] = {
@@ -178,7 +203,7 @@ object TreeCleaner {
         token.text,
         token.mkSourcePositionEnd(s.src, Some(s.parserInput))
       ).toSuccess
-      case _ => Validation.Failure(LazyList.empty)
+      case _ => failWith("expected TreeKind.Ident to contain a Child.Token")
     })
   }
 
@@ -194,7 +219,7 @@ object TreeCleaner {
   private def pick(kind: TreeKind, children: Array[Child]): Validation[Tree, CompilationMessage] = {
     tryPick(kind, children)
       .map(_.toSuccess)
-      .getOrElse(Validation.Failure(LazyList.empty)) // TODO: Error here?
+      .getOrElse(failWith(s"expected to find at least one $kind"))
   }
 
   private def tryPick(kind: TreeKind, children: Array[Child]): Option[Tree] = {
@@ -213,5 +238,9 @@ object TreeCleaner {
       case Child.Tree(tree) if tree.kind == kind => acc.appended(tree)
       case _ => acc
     })
+  }
+
+  private def failWith[T](message: String): Validation[T, CompilationMessage] = {
+    Validation.Failure(LazyList(Parse2Error.DevErr(SourceLocation.Unknown, message)))
   }
 }

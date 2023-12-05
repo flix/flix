@@ -541,7 +541,6 @@ class Flix {
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
       afterReader <- Reader.run(getInputs)
-      afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
 
@@ -551,7 +550,7 @@ class Flix {
       afterTreeCleaner <- TreeCleaner.run(afterReader, entryPoint, afterParser2)
       _ <- compareParser2ToOrigial(afterWeeder, afterTreeCleaner) // TODO: Remove this debugging phase
 
-      afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
+      afterDesugar = Desugar.run(afterTreeCleaner, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
