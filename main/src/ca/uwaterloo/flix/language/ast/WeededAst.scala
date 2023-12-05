@@ -115,8 +115,6 @@ object WeededAst {
 
     case class LetImport(op: JvmOp, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends Expr
-
     case class Scope(ident: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
 
     case class ScopeExit(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr

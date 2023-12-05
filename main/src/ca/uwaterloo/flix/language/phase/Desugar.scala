@@ -530,9 +530,6 @@ object Desugar {
     case WeededAst.Expr.LetImport(op, exp, loc) =>
       desugarLetImport(op, exp, loc)
 
-    case WeededAst.Expr.Region(tpe, loc) =>
-      Expr.Region(tpe, loc)
-
     case WeededAst.Expr.Scope(ident, exp, loc) =>
       val e = visitExp(exp)
       Expr.Scope(ident, e, loc)
