@@ -2428,7 +2428,7 @@ object Resolver {
         val numParams = tparams.length
         if (targs.length < numParams) {
           // Case 1: The type alias is under-applied.
-          Validation.toHardFailure(ResolutionError.UnderAppliedTypeAlias(sym, loc))
+          Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UnderAppliedTypeAlias(sym, loc))
         } else {
           // Case 2: The type alias is fully applied.
           // Apply the types within the alias, then apply any leftover types.
