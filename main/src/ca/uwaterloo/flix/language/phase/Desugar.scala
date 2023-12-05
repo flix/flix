@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
 import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, DesugaredAst, Name, SourceLocation, WeededAst}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, DesugaredAst, Name, SourceLocation, Type, WeededAst}
 import ca.uwaterloo.flix.util.ParOps
 
 object Desugar {
@@ -772,6 +772,10 @@ object Desugar {
       val t = visitType(tpe)
       val ms = methods.map(visitJvmMethod)
       Expr.NewObject(t, ms, loc)
+
+    case WeededAst.Expr.Static(loc) =>
+      val tpe = Type.mkRegion(Type.EffUniv, loc)
+      DesugaredAst.Expr.Region(tpe, loc)
 
     case WeededAst.Expr.NewChannel(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
