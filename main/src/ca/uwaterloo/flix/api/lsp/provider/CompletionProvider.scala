@@ -290,7 +290,6 @@ object CompletionProvider {
       case WeederError.MalformedIdentifier(_, _) => SyntacticContext.Import
       case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type.OtherType
       case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) SyntacticContext.Use else SyntacticContext.Expr.OtherExpr
-      case ResolutionError.UndefinedVar(_, _) => SyntacticContext.Expr.OtherExpr
     }).getOrElse(SyntacticContext.Unknown)
 
 }
