@@ -837,6 +837,9 @@ object Desugar {
       val e = visitExp(exp)
       Expr.FixpointInject(e, pred, loc)
 
+    case WeededAst.Expr.FixpointInjectInto(exps, idents, loc) =>
+      desugarFixpointInjectInto(exps, idents, loc)
+
     case WeededAst.Expr.FixpointSolveWithProject(exps, optIdents, loc) =>
       desugarFixpointSolveWithProject(exps, optIdents, loc)
 
@@ -1532,6 +1535,20 @@ object Desugar {
         // Full pattern match
         val rule = DesugaredAst.MatchRule(p, None, e2)
         DesugaredAst.Expr.Match(withAscription(e1, t), List(rule), loc)
+    }
+  }
+
+  /**
+    * Rewrites a [[WeededAst.Expr.FixpointInjectInto]] into a series of injects and merges.
+    */
+  private def desugarFixpointInjectInto(exps: List[WeededAst.Expr], idents: List[Name.Ident], loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val es = visitExps(exps)
+    val init = DesugaredAst.Expr.FixpointConstraintSet(Nil, loc)
+    es.zip(idents).foldRight(init: Expr) {
+      case ((exp, ident), acc) =>
+        val pred = Name.mkPred(ident)
+        val innerExp = DesugaredAst.Expr.FixpointInject(exp, pred, loc)
+        DesugaredAst.Expr.FixpointMerge(innerExp, acc, loc)
     }
   }
 
