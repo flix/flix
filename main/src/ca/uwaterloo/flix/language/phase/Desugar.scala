@@ -836,6 +836,16 @@ object Desugar {
       val e = visitExp(exp)
       Expr.FixpointInject(e, pred, loc)
 
+    case WeededAst.Expr.FixpointInjectInto(exps, idents, loc) =>
+      val es = visitExps(exps)
+      val init = DesugaredAst.Expr.FixpointConstraintSet(Nil, loc)
+      es.zip(idents).foldRight(init: DesugaredAst.Expr) {
+        case ((exp, ident), acc) =>
+          val pred = Name.mkPred(ident)
+          val innerExp = DesugaredAst.Expr.FixpointInject(exp, pred, loc)
+          DesugaredAst.Expr.FixpointMerge(innerExp, acc, loc)
+      }
+
     case WeededAst.Expr.FixpointSolveWithProject(exps, optIdents, loc) =>
       desugarFixpointSolveWithProject(exps, optIdents, loc)
 
