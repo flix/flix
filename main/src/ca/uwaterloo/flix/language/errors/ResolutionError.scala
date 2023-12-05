@@ -1006,35 +1006,12 @@ object ResolutionError {
   }
 
   /**
-    * An error raised to indicate that the local variable was not found.
-    *
-    * @param name the name of the variable.
-    * @param loc  the location of the undefined variable.
-    */
-  case class UndefinedVar(name: String, loc: SourceLocation) extends ResolutionError with Unrecoverable {
-    def summary: String = s"Undefined variable '$name'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Undefined variable '${red(name)}'.
-         |
-         |${code(loc, "undefined variable.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      "Flix cannot find the variable. Maybe there is a typo?"
-    })
-  }
-
-  /**
     * An error raised to indicate an under-applied type alias.
     *
     * @param sym the associated type.
     * @param loc the location where the error occurred.
     */
-  case class UnderAppliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UnderAppliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"Under-applied associated type: ${sym.name}"
 
     def message(formatter: Formatter): String = {
@@ -1059,7 +1036,7 @@ object ResolutionError {
     * @param sym the type alias.
     * @param loc the location where the error occurred.
     */
-  case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"Under-applied type alias: ${sym.name}"
 
     def message(formatter: Formatter): String = {
