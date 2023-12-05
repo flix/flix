@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SourceLocation, SourcePosition, Symbol, Token, WeededAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.errors.Parse2Error
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -133,8 +133,32 @@ object TreeCleaner {
   }
 
   private def visitExpression(tree: Tree): Validation[Expr, CompilationMessage] = {
-    // TODO
-    Expr.Error(Parse2Error.DevErr(tree.loc, "expected expression")).toSuccess
+    val exprTree = tryPick(TreeKind.Expr.Expr, tree.children)
+    val loc = exprTree.map(_.loc).getOrElse(SourceLocation.Unknown)
+    val notFoundError = Expr.Error(Parse2Error.DevErr(loc, "expected expression")).toSuccess
+
+    exprTree.map(_.children(0) match {
+      case Child.Tree(tree) => tree.kind match {
+        case TreeKind.Expr.Literal => visitLiteral(tree)
+        case _ => notFoundError
+      }
+      case _ => notFoundError
+    }).getOrElse(notFoundError)
+  }
+
+  private def visitLiteral(tree: Tree): Validation[Expr, CompilationMessage] = {
+    val literal = tree.kind match {
+      case TreeKind.Expr.Literal => tree.children(0) match {
+        case Child.Token(token) => token.kind match {
+          case TokenKind.ParenL => Expr.Tuple(List.empty, tree.loc)
+          case _ => Expr.Error(Parse2Error.DevErr(tree.loc, "expected literal"))
+        }
+        case _ => Expr.Error(Parse2Error.DevErr(tree.loc, "expected literal"))
+      }
+      case _ => Expr.Error(Parse2Error.DevErr(tree.loc, "expected literal"))
+    }
+
+    literal.toSuccess
   }
 
   private def visitType(tree: Tree): Validation[Type, CompilationMessage] = {
@@ -150,9 +174,9 @@ object TreeCleaner {
   private def visitNameIdent(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
     flatMapN(pick(TreeKind.Ident, tree.children))(t => t.children(0) match {
       case Child.Token(token) => Name.Ident(
-        SourcePosition(s.src, token.line + 1, token.col + 1, Some(s.parserInput)),
+        token.mkSourcePosition(s.src, Some(s.parserInput)),
         token.text,
-        SourcePosition(s.src, token.line + 1, token.col + 1 + (token.end - token.start), Some(s.parserInput))
+        token.mkSourcePositionEnd(s.src, Some(s.parserInput))
       ).toSuccess
       case _ => Validation.Failure(LazyList.empty)
     })

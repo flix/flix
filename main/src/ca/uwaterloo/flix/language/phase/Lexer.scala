@@ -360,7 +360,7 @@ object Lexer {
         acceptAnnotation()
       } else {
         TokenKind.At
-      }
+      }å
       case _ if isKeyword("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
       case _ if isKeyword("**") => TokenKind.StarStar

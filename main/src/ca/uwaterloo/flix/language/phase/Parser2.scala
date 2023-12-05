@@ -106,6 +106,7 @@ object Parser2 {
       case _ => false
     })
 
+    var lastAdvance = tokens.head
     for (event <- s.events) {
       event match {
         case Event.Open(kind) =>
@@ -115,41 +116,33 @@ object Parser2 {
         case Event.Close =>
           val child = Child.Tree(stack.last)
           val openToken = locationStack.last
-          stack.last.loc = SourceLocation(
-            Some(s.parserInput),
-            s.src, SourceKind.Real,
-            openToken.line + 1,
-            openToken.col + 1,
-            tokens.head.line + 1,
-            tokens.head.col + 1)
+          val loc = SourceLocation.mk(
+            openToken.mkSourcePosition(s.src, Some(s.parserInput)),
+            lastAdvance.mkSourcePositionEnd(s.src, Some(s.parserInput))
+          )
+          stack.last.loc = loc
           locationStack = locationStack.dropRight(1)
           stack = stack.dropRight(1)
           stack.last.children = stack.last.children :+ child
 
         case Event.Advance =>
           val token = tokens.next()
+          lastAdvance = token
           stack.last.children = stack.last.children :+ Child.Token(token)
       }
     }
 
     // Set source location of the root
     val openToken = locationStack.last
-    stack.last.loc = SourceLocation(
-      Some(s.parserInput),
-      s.src,
-      SourceKind.Real,
-      openToken.line + 1,
-      openToken.col + 1,
-      tokens.head.line + 1,
-      tokens.head.col + 1)
+    stack.last.loc = SourceLocation.mk(
+      openToken.mkSourcePosition(s.src, Some(s.parserInput)),
+      tokens.head.mkSourcePositionEnd(s.src, Some(s.parserInput))
+    )
 
     // The stack should now contain a single Source tree,
     // and there should only be an <eof> token left.
     assert(stack.length == 1)
-    assert(tokens.next() match {
-      case Token(TokenKind.Eof, _, _, _, _, _) => true
-      case _ => false
-    })
+    assert(tokens.next().kind == TokenKind.Eof)
 
     stack.head
   }
@@ -215,7 +208,7 @@ object Parser2 {
 
     s.fuel -= 1
     s.tokens.lift(s.position + lookahead) match {
-      case Some(Token(kind, _, _, _, _, _)) => kind
+      case Some(Token(kind, _, _, _, _, _, _, _)) => kind
       case None => TokenKind.Eof
     }
   }
@@ -369,7 +362,7 @@ object Parser2 {
   private def docComment()(implicit s: State): Option[Mark.Closed] = {
     if (at(TokenKind.CommentDoc)) {
       val mark = open()
-      while(at(TokenKind.CommentDoc) && !eof()) {
+      while (at(TokenKind.CommentDoc) && !eof()) {
         advance()
       }
       Some(close(mark, TreeKind.Doc))
