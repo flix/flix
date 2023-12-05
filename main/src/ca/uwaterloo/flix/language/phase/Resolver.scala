@@ -2434,7 +2434,7 @@ object Resolver {
         val numParams = tparams.length
         if (targs.length < numParams) {
           // Case 1: The type alias is under-applied.
-          Validation.toHardFailure(ResolutionError.UnderAppliedTypeAlias(sym, loc))
+          Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UnderAppliedTypeAlias(sym, loc))
         } else {
           // Case 2: The type alias is fully applied.
           // Apply the types within the alias, then apply any leftover types.
@@ -2448,7 +2448,7 @@ object Resolver {
       case UnkindedType.UnappliedAssocType(sym, loc) =>
         targs match {
           // Case 1: The associated type is under-applied.
-          case Nil => Validation.toHardFailure(ResolutionError.UnderAppliedAssocType(sym, loc))
+          case Nil => Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UnderAppliedAssocType(sym, loc))
 
           // Case 2: The associated type is fully applied.
           // Apply the types first type inside the assoc type, then apply any leftover types.
@@ -2461,7 +2461,7 @@ object Resolver {
                 val assoc = UnkindedType.AssocType(cst, targHd, tpe0.loc)
                 UnkindedType.mkApply(assoc, targTl, tpe0.loc).toSuccess
               case _ =>
-                Validation.toHardFailure(ResolutionError.IllegalAssocTypeApplication(tpe0.loc))
+                Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.IllegalAssocTypeApplication(tpe0.loc))
             }
         }
 

@@ -995,8 +995,7 @@ object Weeder {
 
     case ParsedAst.Expression.Static(sp1, sp2) =>
       val loc = mkSL(sp1, sp2)
-      val tpe = Type.mkRegion(Type.EffUniv, loc)
-      WeededAst.Expr.Region(tpe, loc).toSuccess
+      WeededAst.Expr.Static(loc).toSuccess
 
     case ParsedAst.Expression.Scope(sp1, ident, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
@@ -1437,14 +1436,7 @@ object Weeder {
           // Check for mismatched arity
           val err = MismatchedArity(exps.length, idents.length, loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
-        case es =>
-          val init = WeededAst.Expr.FixpointConstraintSet(Nil, loc)
-          es.zip(idents.toList).foldRight(init: WeededAst.Expr) {
-            case ((exp, ident), acc) =>
-              val pred = Name.mkPred(ident)
-              val innerExp = WeededAst.Expr.FixpointInject(exp, pred, loc)
-              WeededAst.Expr.FixpointMerge(innerExp, acc, loc)
-          }.toSuccess
+        case es => WeededAst.Expr.FixpointInjectInto(es, idents.toList, loc).toSuccess
       }
 
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, exps, optIdents, sp2) =>
@@ -2507,7 +2499,7 @@ object Weeder {
 
         case (_ :: _, Nil) =>
           // Case 2: only kinded type parameters
-        WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
+          WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
 
         case (_ :: _, _ :: _) =>
           // Case 3: some unkinded and some kinded
@@ -2526,7 +2518,7 @@ object Weeder {
 
         case (Nil, Nil) =>
           // Case 4: no type parameters: should be prevented by parser
-        throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
+          throw InternalCompilerException("Unexpected empty type parameters.", SourceLocation.Unknown)
       }
   }
 

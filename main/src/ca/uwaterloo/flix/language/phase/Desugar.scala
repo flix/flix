@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.DesugaredAst.Expr
 import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, DesugaredAst, Name, SourceLocation, WeededAst}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, DesugaredAst, Name, SourceLocation, Type, WeededAst}
 import ca.uwaterloo.flix.util.ParOps
 
 object Desugar {
@@ -530,9 +530,6 @@ object Desugar {
     case WeededAst.Expr.LetImport(op, exp, loc) =>
       desugarLetImport(op, exp, loc)
 
-    case WeededAst.Expr.Region(tpe, loc) =>
-      Expr.Region(tpe, loc)
-
     case WeededAst.Expr.Scope(ident, exp, loc) =>
       val e = visitExp(exp)
       Expr.Scope(ident, e, loc)
@@ -773,6 +770,10 @@ object Desugar {
       val ms = methods.map(visitJvmMethod)
       Expr.NewObject(t, ms, loc)
 
+    case WeededAst.Expr.Static(loc) =>
+      val tpe = Type.mkRegion(Type.EffUniv, loc)
+      DesugaredAst.Expr.Region(tpe, loc)
+
     case WeededAst.Expr.NewChannel(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
@@ -835,6 +836,9 @@ object Desugar {
     case WeededAst.Expr.FixpointInject(exp, pred, loc) =>
       val e = visitExp(exp)
       Expr.FixpointInject(e, pred, loc)
+
+    case WeededAst.Expr.FixpointInjectInto(exps, idents, loc) =>
+      desugarFixpointInjectInto(exps, idents, loc)
 
     case WeededAst.Expr.FixpointSolveWithProject(exps, optIdents, loc) =>
       desugarFixpointSolveWithProject(exps, optIdents, loc)
@@ -1531,6 +1535,20 @@ object Desugar {
         // Full pattern match
         val rule = DesugaredAst.MatchRule(p, None, e2)
         DesugaredAst.Expr.Match(withAscription(e1, t), List(rule), loc)
+    }
+  }
+
+  /**
+    * Rewrites a [[WeededAst.Expr.FixpointInjectInto]] into a series of injects and merges.
+    */
+  private def desugarFixpointInjectInto(exps: List[WeededAst.Expr], idents: List[Name.Ident], loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val es = visitExps(exps)
+    val init = DesugaredAst.Expr.FixpointConstraintSet(Nil, loc)
+    es.zip(idents).foldRight(init: Expr) {
+      case ((exp, ident), acc) =>
+        val pred = Name.mkPred(ident)
+        val innerExp = DesugaredAst.Expr.FixpointInject(exp, pred, loc)
+        DesugaredAst.Expr.FixpointMerge(innerExp, acc, loc)
     }
   }
 

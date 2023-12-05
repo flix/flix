@@ -115,8 +115,6 @@ object WeededAst {
 
     case class LetImport(op: JvmOp, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends Expr
-
     case class Scope(ident: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
 
     case class ScopeExit(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
@@ -215,6 +213,8 @@ object WeededAst {
 
     case class NewObject(tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
+    case class Static(loc: SourceLocation) extends Expr
+
     case class NewChannel(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class GetChannel(exp: Expr, loc: SourceLocation) extends Expr
@@ -242,6 +242,8 @@ object WeededAst {
     case class FixpointFilter(pred: Name.Pred, exp: Expr, loc: SourceLocation) extends Expr
 
     case class FixpointInject(exp: Expr, pred: Name.Pred, loc: SourceLocation) extends Expr
+
+    case class FixpointInjectInto(exps: List[Expr], idents: List[Name.Ident], loc: SourceLocation) extends Expr
 
     case class FixpointSolveWithProject(exps: List[Expr], optIdents: Option[List[Name.Ident]], loc: SourceLocation) extends Expr
 
