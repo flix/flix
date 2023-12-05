@@ -43,7 +43,7 @@ case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, line: 
   /**
    * Returns a string representation of this token. Should only be used for debugging.
    */
-  override def toString: String = s"Token($kind, $text, $line, $col)"
+  override def toString: String = s"Token($kind, $text, $line, $col, $lineEnd, $colEnd)"
 
   /**
    * Makes a [[SourcePosition]] pointing at the start of this token.

@@ -71,6 +71,10 @@ object Lexer {
   private class State(val src: Ast.Source) {
     var start: Position = new Position(0, 0, 0)
     val current: Position = new Position(0, 0, 0)
+    var end: Position = new Position(0, 0, 0)
+    // The last column index of the line before the current one.
+    // This is specifically used on [[addToken]] so make endCol correct,
+    // when the lexer is sitting on a newline.
     val tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
     var interpolationNestingLevel: Int = 0
     // Compute a `ParserInput` when initializing a state for lexing a source.
@@ -160,11 +164,14 @@ object Lexer {
     }
 
     val c = s.src.data(s.current.offset)
-    s.current.offset += 1
     if (c == '\n') {
+      s.end = new Position(s.current.line, s.current.column, s.current.offset)
+      s.current.offset += 1
       s.current.line += 1
       s.current.column = 0
     } else {
+      s.end = new Position(s.current.line, s.current.column + 1, s.current.offset)
+      s.current.offset += 1
       s.current.column += 1
     }
     c
@@ -287,7 +294,9 @@ object Lexer {
    * Afterwards `s.start` is reset to the next position after the previous token.
    */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
-    s.tokens += Token(kind, s.src.data, s.start.offset, s.current.offset, s.start.line, s.start.column, s.current.line, s.current.column)
+    // At this point, current will be sitting on the char _after_ the last one.
+    println(kind, s.end.line, s.end.column)
+    s.tokens += Token(kind, s.src.data, s.start.offset, s.current.offset, s.start.line, s.start.column, s.end.line, s.end.column)
     s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }
 
