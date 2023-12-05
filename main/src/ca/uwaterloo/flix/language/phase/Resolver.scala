@@ -1805,10 +1805,14 @@ object Resolver {
           }
 
         case NamedAst.Predicate.Body.Functional(idents, exp, loc) =>
-          val varsVal = traverse(idents)(lookupVar(_, env))
+          val outVars = idents.map {
+            case ident => env(ident.name).collectFirst {
+              case Resolution.Var(sym) => sym
+            }.getOrElse(throw InternalCompilerException(s"Unbound variable in functional predicate: '$ident'.", ident.loc))
+          }
           val eVal = Expressions.resolve(exp, env, taenv, ns0, root)
-          mapN(varsVal, eVal) {
-            case (outVars, e) => ResolvedAst.Predicate.Body.Functional(outVars, e, loc)
+          mapN(eVal) {
+            case e => ResolvedAst.Predicate.Body.Functional(outVars, e, loc)
           }
 
         case NamedAst.Predicate.Body.Guard(exp, loc) =>
@@ -2424,7 +2428,7 @@ object Resolver {
         val numParams = tparams.length
         if (targs.length < numParams) {
           // Case 1: The type alias is under-applied.
-          Validation.toHardFailure(ResolutionError.UnderAppliedTypeAlias(sym, loc))
+          Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UnderAppliedTypeAlias(sym, loc))
         } else {
           // Case 2: The type alias is fully applied.
           // Apply the types within the alias, then apply any leftover types.
@@ -2438,7 +2442,7 @@ object Resolver {
       case UnkindedType.UnappliedAssocType(sym, loc) =>
         targs match {
           // Case 1: The associated type is under-applied.
-          case Nil => Validation.toHardFailure(ResolutionError.UnderAppliedAssocType(sym, loc))
+          case Nil => Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UnderAppliedAssocType(sym, loc))
 
           // Case 2: The associated type is fully applied.
           // Apply the types first type inside the assoc type, then apply any leftover types.
@@ -2451,7 +2455,7 @@ object Resolver {
                 val assoc = UnkindedType.AssocType(cst, targHd, tpe0.loc)
                 UnkindedType.mkApply(assoc, targTl, tpe0.loc).toSuccess
               case _ =>
-                Validation.toHardFailure(ResolutionError.IllegalAssocTypeApplication(tpe0.loc))
+                Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.IllegalAssocTypeApplication(tpe0.loc))
             }
         }
 
@@ -2676,17 +2680,6 @@ object Resolver {
       }
     }
   }
-
-  /**
-    * Looks up the variable with the given name.
-    */
-  private def lookupVar(ident: Name.Ident, env: ListMap[String, Resolution]): Validation[Symbol.VarSym, ResolutionError] = {
-    env(ident.name).collectFirst {
-      case Resolution.Var(sym) => sym.toSuccess
-      // TODO NS-REFACTOR add tests
-    }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedVar(ident.name, ident.loc)))
-  }
-
 
   /**
     * Returns the list of symbols this name points to, ordered from most closely declared to furthest.
