@@ -292,7 +292,6 @@ object Lexer {
    * Afterwards `s.start` is reset to the next position after the previous token.
    */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
-    // At this point, current will be sitting on the char _after_ the last one.
     s.tokens += Token(kind, s.src.data, s.start.offset, s.current.offset, s.start.line, s.start.column, s.end.line, s.end.column)
     s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }
