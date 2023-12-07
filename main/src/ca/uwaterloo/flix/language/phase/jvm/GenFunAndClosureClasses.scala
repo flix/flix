@@ -189,11 +189,12 @@ object GenFunAndClosureClasses {
     // Method header
     val applyMethod = BackendObjType.Frame.ApplyMethod
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
+    val localOffset = 2 // [this, value, ...]
 
     // + 1 since index 0 is `this`
-    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset + 1, lp.tpe) }
-    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.sym.getStackOffset + 1, cp.tpe) }
-    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.sym.getStackOffset + 1, fp.tpe) }
+    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset(localOffset), lp.tpe) }
+    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.sym.getStackOffset(localOffset), cp.tpe) }
+    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.sym.getStackOffset(localOffset), fp.tpe) }
 
     def loadParamsOf(params: List[(String, Int, MonoType)]): Unit = {
       params.foreach { case (name, offset, tpe) => loadFromField(m, classType, name, offset, tpe) }
@@ -210,7 +211,7 @@ object GenFunAndClosureClasses {
 
     // Generating the expression
     val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, copyName, nothingToTDescriptor(classType).toDescriptor, false))
-    val ctx = GenExpression.MethodContext(classType, enterLabel, Map(), newFrame)
+    val ctx = GenExpression.MethodContext(classType, enterLabel, Map(), newFrame, localOffset)
     GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix)
 
     // returning a Value

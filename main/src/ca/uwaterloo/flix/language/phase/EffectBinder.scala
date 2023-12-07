@@ -33,6 +33,10 @@ import scala.collection.mutable
   * let-bindings are introduced which means that [[Def.lparams]] must be updated
   * accordingly.
   *
+  * The number of "pc points" must be counted, which is the number of points
+  * where a continuation will be used. This includes do operations, all calls
+  * except tail recursive self-calls, and try-with expressions.
+  *
   * An effect operation is either a Do or an application with a control effect,
   * i.e. an effect that's not just a region or IO. For now all calls are
   * considered to have an effect.
@@ -54,13 +58,13 @@ object EffectBinder {
   /**
     * A local non-shared context. Does not need to be thread-safe.
     */
-  private case class LocalContext(lparams: mutable.ArrayBuffer[LocalParam])
+  private case class LocalContext(lparams: mutable.ArrayBuffer[LocalParam], var pcPoints: Int)
 
   /**
     * Companion object for [[LocalContext]].
     */
   private object LocalContext {
-    def mk(): LocalContext = LocalContext(mutable.ArrayBuffer.empty)
+    def mk(): LocalContext = LocalContext(mutable.ArrayBuffer.empty, 0)
   }
 
   private sealed trait Binder
@@ -76,7 +80,7 @@ object EffectBinder {
   private def visitDef(defn: Def)(implicit flix: Flix): Def = {
     implicit val lctx: LocalContext = LocalContext.mk()
     val stmt = visitStmt(defn.stmt)
-    defn.copy(stmt = stmt, lparams = defn.lparams ++ lctx.lparams.toList)
+    defn.copy(stmt = stmt, lparams = defn.lparams ++ lctx.lparams.toList, pcPoints = lctx.pcPoints)
   }
 
   /**
@@ -90,6 +94,8 @@ object EffectBinder {
   /**
     * Transforms the [[Expr]] such that effect operations will be run without an
     * operand stack - binding necessary expressions in the returned [[Expr]].
+    *
+    * Updates [[LocalContext.pcPoints]] only for expressions not given to [[visitExprInnerWithBinders]].
     */
   private def visitExpr(exp: Expr)(implicit lctx: LocalContext, flix: Flix): Expr = exp match {
     case Expr.Cst(_, _, _) =>
@@ -165,6 +171,7 @@ object EffectBinder {
       Expr.TryCatch(e, rules1, tpe, purity, loc)
 
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      lctx.pcPoints += 1 // added here since visitInner will not see this try-with
       val e = visitExpr(exp)
       val rules1 = rules.map {
         case hr => hr.copy(exp = visitExpr(hr.exp))
@@ -194,6 +201,8 @@ object EffectBinder {
     *
     * Necessary bindings are added to binders, where the first binder is the
     * outermost one.
+    *
+    * Updates [[LocalContext.pcPoints]] as required.
     */
   private def visitExprInnerWithBinders(binders: mutable.ArrayBuffer[Binder])(exp: Expr)(implicit lctx: LocalContext, flix: Flix): Expr = exp match {
     case Expr.Cst(cst, tpe, loc) =>
@@ -214,11 +223,13 @@ object EffectBinder {
       Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
+      lctx.pcPoints += 1
       val e = visitExprWithBinders(binders)(exp)
       val es = exps.map(visitExprWithBinders(binders))
       Expr.ApplyClo(e, es, ct, tpe, purity, loc)
 
     case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+      lctx.pcPoints += 1
       val es = exps.map(visitExprWithBinders(binders))
       Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
@@ -261,6 +272,7 @@ object EffectBinder {
       Expr.TryCatch(e, rules, tpe, purity, loc)
 
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      lctx.pcPoints += 1
       val e = visitExpr(exp)
       val rs = rules.map {
         case HandlerRule(op, fparams, handlerExp) => HandlerRule(op, fparams, visitExpr(handlerExp))
@@ -268,6 +280,7 @@ object EffectBinder {
       Expr.TryWith(e, effUse, rs, tpe, purity, loc)
 
     case Expr.Do(op, exps, tpe, purity, loc) =>
+      lctx.pcPoints += 1
       val es = exps.map(visitExprWithBinders(binders))
       Expr.Do(op, es, tpe, purity, loc)
 

@@ -47,7 +47,7 @@ object Reducer {
       val e = visitExpr(exp)
       val ls = lctx.lparams.toList
       val stmt = ReducedAst.Stmt.Ret(e, e.tpe, e.loc)
-      ReducedAst.Def(ann, mod, sym, cs, fs, ls, stmt, tpe, purity, loc)
+      ReducedAst.Def(ann, mod, sym, cs, fs, ls, 0, stmt, tpe, purity, loc)
   }
 
   private def visitEnum(d: LiftedAst.Enum): ReducedAst.Enum = d match {
