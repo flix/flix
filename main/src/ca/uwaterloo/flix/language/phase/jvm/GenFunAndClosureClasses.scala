@@ -203,16 +203,23 @@ object GenFunAndClosureClasses {
     m.visitCode()
     loadParamsOf(lparams)
 
+    // used for self-recursive tail calls
     val enterLabel = new Label()
     m.visitLabel(enterLabel)
 
     loadParamsOf(cparams)
     loadParamsOf(fparams)
 
+    val pcLabels: Vector[Label] = Vector.range(0, defn.pcPoints).map(_ => new Label())
+    // the default label is the starting point of the function if pc = 0
+    val defaultLabel = new Label()
+    m.visitTableSwitchInsn(0, pcLabels.length, defaultLabel, pcLabels: _*)
+    m.visitLabel(defaultLabel)
+
     // Generating the expression
     val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, copyName, nothingToTDescriptor(classType).toDescriptor, false))
     val ctx = GenExpression.MethodContext(classType, enterLabel, Map(), newFrame, localOffset)
-    GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix)
+    GenExpression.compileStmt(defn.stmt)(pcLabels, m, ctx, root, flix)
 
     // returning a Value
     val returnValue = {

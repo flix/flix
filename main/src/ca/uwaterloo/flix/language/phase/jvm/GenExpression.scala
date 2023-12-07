@@ -39,7 +39,7 @@ object GenExpression {
   /**
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
     */
-  def compileExpr(exp0: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
+  def compileExpr(exp0: Expr)(implicit pcLabels: Vector[Label], mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = exp0 match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
       case Ast.Constant.Unit =>
@@ -1310,7 +1310,7 @@ object GenExpression {
       val updatedJumpLabels = branches.foldLeft(ctx.lenv)((map, branch) => map + (branch._1 -> new Label()))
       val ctx1 = ctx.copy(lenv = updatedJumpLabels)
       // Compiling the exp
-      compileExpr(exp)(mv, ctx1, root, flix)
+      compileExpr(exp)(pcLabels, mv, ctx1, root, flix)
       // Label for the end of all branches
       val endLabel = new Label()
       // Skip branches if `exp` does not jump
@@ -1320,7 +1320,7 @@ object GenExpression {
         // Label for the start of the branch
         mv.visitLabel(updatedJumpLabels(sym))
         // evaluating the expression for the branch
-        compileExpr(branchExp)(mv, ctx1, root, flix)
+        compileExpr(branchExp)(pcLabels, mv, ctx1, root, flix)
         // Skip the rest of the branches
         mv.visitJumpInsn(GOTO, endLabel)
       }
@@ -1471,7 +1471,6 @@ object GenExpression {
 
 
     case Expr.Resume(_, _, loc) =>
-      // TODO
       throw InternalCompilerException(s"Explicit 'resume' not supported. Use the parameter bound resumption.", loc)
 
 
@@ -1511,11 +1510,11 @@ object GenExpression {
   /**
     * Emits code for the given statement `stmt0` to the given method `visitor` in the `currentClass`.
     */
-  def compileStmt(stmt0: Stmt)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = stmt0 match {
+  def compileStmt(stmt0: Stmt)(implicit pcLabels: Vector[Label], mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = stmt0 match {
     case Stmt.Ret(e, _, _) => compileExpr(e)
   }
 
-  private def visitComparisonPrologue(exp1: Expr, exp2: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): (Label, Label) = {
+  private def visitComparisonPrologue(exp1: Expr, exp2: Expr)(implicit pcLabels: Vector[Label], mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): (Label, Label) = {
     compileExpr(exp1)
     compileExpr(exp2)
     val condElse = new Label()
@@ -1531,13 +1530,13 @@ object GenExpression {
     visitor.visitLabel(condEnd)
   }
 
-  private def visitComparison1(exp1: Expr, exp2: Expr, opcode: Int)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def visitComparison1(exp1: Expr, exp2: Expr, opcode: Int)(implicit pcLabels: Vector[Label], mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
     mv.visitJumpInsn(opcode, condElse)
     visitComparisonEpilogue(mv, condElse, condEnd)
   }
 
-  private def visitComparison2(exp1: Expr, exp2: Expr, opcode: Int, cmpOpcode: Int)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def visitComparison2(exp1: Expr, exp2: Expr, opcode: Int, cmpOpcode: Int)(implicit pcLabels: Vector[Label], mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     val (condElse, condEnd) = visitComparisonPrologue(exp1, exp2)
     mv.visitInsn(opcode)
     mv.visitJumpInsn(cmpOpcode, condElse)
@@ -1625,7 +1624,7 @@ object GenExpression {
   /**
     * Pushes arguments onto the stack ready to invoke a method
     */
-  private def pushArgs(args: List[Expr], signature: Array[Class[_ <: Object]])(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
+  private def pushArgs(args: List[Expr], signature: Array[Class[_ <: Object]])(implicit pcLabels: Vector[Label], mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = {
     // Evaluate arguments left-to-right and push them onto the stack.
     for ((arg, argType) <- args.zip(signature)) {
       compileExpr(arg)
