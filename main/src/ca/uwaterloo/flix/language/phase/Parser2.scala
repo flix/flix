@@ -75,48 +75,74 @@ object Parser2 {
       return Validation.Failure(LazyList.empty)
     }
 
+
     flix.phase("Parser2") {
+      // The file that is the current focus of development
+      val DEBUG_FOCUS = "ToJava.flix"
+
+      println("p\tw\tfile")
+
       // For each file: If the parse was successful run Weeder2 on it.
       // If either the parse or the weed was bad pluck the WeededAst from the previous pipeline and use that.
       val afterParser = Parser.run(afterReader, entryPoint, ParsedAst.empty, changeSet)
       val afterWeeder = flatMapN(afterParser)(parsedAst => Weeder.run(parsedAst, WeededAst.empty, changeSet))
 
-      def reportOkAst(src: Ast.Source, tree: WeededAst.CompilationUnit): WeededAst.CompilationUnit = {
-        println(s"   \t${Console.GREEN}✔︎${Console.RESET}\t${src.name}")
+      def fallback(src: Ast.Source, errors: LazyList[CompilationMessage]): Validation[WeededAst.CompilationUnit, CompilationMessage] = {
+        if (DEBUG_FOCUS == src.name) {
+          // If the current file is the debug focus, actually report the errors from the parser/weeder
+          flatMapN(afterWeeder)(tree => SoftFailure(tree.units(src), errors))
+        } else {
+          // Otherwise silently fallback on the old CompilationUnit.
+          mapN(afterWeeder)(_.units(src))
+        }
+      }
+
+      def diffWeededAsts(src: Ast.Source, newAst: WeededAst.CompilationUnit) = {
         // Print asts for closer inspection
-        if (src.name == "foo.flix") {
+        if (src.name == DEBUG_FOCUS) {
           mapN(afterWeeder)(t => {
             val oldAst = t.units(src)
             println("[[[ OLD PARSER ]]]")
             println(formatWeededAst(oldAst))
             println("[[[ NEW PARSER ]]]")
-            println(formatWeededAst(tree))
+            println(formatWeededAst(newAst))
             println("[[[ END ]]]")
           })
-        }
-        tree
-      }
-
-      def weedWithFallback(src: Ast.Source, tree: Tree): Validation[WeededAst.CompilationUnit, CompilationMessage] = {
-        Weeder2.weed(src, tree) match {
-          case Success(tree) => reportOkAst(src, tree).toSuccess
-          case SoftFailure(tree, errors) => SoftFailure(reportOkAst(src, tree), errors)
-          case Failure(_) =>
-            println(s"[w]\t${Console.RED}✖︎${Console.RESET}\t${src.name}")
-            mapN(afterWeeder)(_.units(src))
         }
       }
 
       val results = ParOps.parMap(afterLexer) {
         case (src, tokens) =>
+          var outString = ""
           val weededAst = parse(src, tokens) match {
-            case Success(tree) => weedWithFallback(src, tree)
-            case SoftFailure(tree, _) => weedWithFallback(src, tree)
-            case Failure(_) =>
-              println(s"[p]\t${Console.RED}✖︎${Console.RESET}\t${src.name}")
-              mapN(afterWeeder)(_.units(src))
+            case Success(t) =>
+              outString += s"${Console.GREEN}✔︎${Console.RESET}"
+              Weeder2.weed(src, t) match {
+                case Success(t) =>
+                  outString += s"\t${Console.GREEN}✔︎${Console.RESET}"
+                  diffWeededAsts(src, t)
+                  t.toSuccess
+                case SoftFailure(t, errors) =>
+                  outString += s"\t${Console.YELLOW}✘${Console.RESET}"
+                  diffWeededAsts(src, t)
+                  fallback(src, errors)
+                case Failure(errors) =>
+                  outString += s"\t${Console.RED}✘${Console.RESET}"
+                  fallback(src, errors)
+              }
+            case SoftFailure(t, errors) =>
+              outString += s"${Console.YELLOW}✘${Console.RESET}\t-"
+              if (DEBUG_FOCUS == src.name) {
+                println(t.toDebugString())
+              }
+              fallback(src, errors)
+            case Failure(errors) =>
+              outString += s"${Console.RED}✘${Console.RESET}\t-"
+              fallback(src, errors)
           }
-          mapN(weededAst)(ast => src -> ast)
+          outString += s"\t${src.name}"
+          println(outString)
+          mapN(weededAst)(src -> _)
       }
 
       mapN(sequence(results))(_.toMap).map(m => WeededAst.Root(m, entryPoint, afterReader.names))
@@ -143,9 +169,8 @@ object Parser2 {
     implicit val s: State = new State(ts, src)
     source()
     val tree = buildTree()
-
     if (s.errors.length > 0) {
-      Validation.Failure(LazyList.from(s.errors))
+      Validation.SoftFailure(tree, LazyList.from(s.errors))
     } else {
       tree.toSuccess
     }
@@ -230,6 +255,11 @@ object Parser2 {
   private def open()(implicit s: State): Mark.Opened = {
     val mark = Mark.Opened(s.events.length)
     s.events = s.events :+ Event.Open(TreeKind.ErrorTree(Parse2Error.DevErr(currentSourceLocation(), "Unclosed parser mark")))
+    // advance past any comments when opening a new mark.
+    // This places the comments within the closest sub-tree.
+    while (atAny(List(TokenKind.CommentLine, TokenKind.CommentBlock)) && !eof()) {
+      advance()
+    }
     mark
   }
 
@@ -282,13 +312,13 @@ object Parser2 {
     }
   }
 
-
   private def at(kind: TokenKind)(implicit s: State): Boolean = {
     nth(0) == kind
   }
 
-  // next skips comments and annotations. That is useful when looking for a declaration start
-  private def next(kind: TokenKind)(implicit s: State): Boolean = {
+  // seek looks past comments and annotations.
+  // That is useful when looking for a declaration start
+  private def seek(kind: TokenKind)(implicit s: State): Boolean = {
     var lookAhead = 0
     while (true) {
       nth(lookAhead) match {
@@ -399,7 +429,7 @@ object Parser2 {
   private def source()(implicit s: State): Unit = {
     val mark = open()
     while (!eof()) {
-      if (next(TokenKind.KeywordDef)) {
+      if (seek(TokenKind.KeywordDef)) {
         definition()
       } else {
         advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected definition, found ${nth(0)}"))
