@@ -222,8 +222,8 @@ object Parser2 {
   private def currentSourceLocation()(implicit s: State): SourceLocation = {
     // state is zero-indexed while SourceLocation works as one-indexed.
     val token = s.tokens(s.position)
-    val line = token.line + 1
-    val column = token.col + 1
+    val line = token.beginLine + 1
+    val column = token.beginCol + 1
     SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, line, column, line, column + token.text.length)
   }
 
