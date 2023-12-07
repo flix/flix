@@ -172,7 +172,7 @@ object ResolutionError {
     *
     * @param loc the location where the error occurred.
     */
-  case class IllegalAssocTypeApplication(loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class IllegalAssocTypeApplication(loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = " Illegal associated type application."
 
     override def message(formatter: Formatter): String = {
@@ -221,7 +221,7 @@ object ResolutionError {
     * @param sym the symbol of the signature.
     * @param loc the location where the error occurred.
     */
-  case class IllegalSignature(sym: Symbol.SigSym, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class IllegalSignature(sym: Symbol.SigSym, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = s"Unexpected signature which does not mention the type variable of the class."
 
     def message(formatter: Formatter): String = {
@@ -1011,7 +1011,7 @@ object ResolutionError {
     * @param sym the associated type.
     * @param loc the location where the error occurred.
     */
-  case class UnderAppliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UnderAppliedAssocType(sym: Symbol.AssocTypeSym, loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"Under-applied associated type: ${sym.name}"
 
     def message(formatter: Formatter): String = {
@@ -1036,7 +1036,7 @@ object ResolutionError {
     * @param sym the type alias.
     * @param loc the location where the error occurred.
     */
-  case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UnderAppliedTypeAlias(sym: Symbol.TypeAliasSym, loc: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"Under-applied type alias: ${sym.name}"
 
     def message(formatter: Formatter): String = {

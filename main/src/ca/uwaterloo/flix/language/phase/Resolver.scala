@@ -723,13 +723,13 @@ object Resolver {
     * A signature spec is legal if it contains the class's type variable in its formal parameters or return type.
     */
   private def checkSigSpec(sym: Symbol.SigSym, spec0: ResolvedAst.Spec, tvar: Symbol.UnkindedTypeVarSym): Validation[Unit, ResolutionError] = spec0 match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc) =>
+    case ResolvedAst.Spec(_, _, _, _, fparams, tpe, _, _, _, _) =>
       val tpes = tpe :: fparams.flatMap(_.tpe)
       val tvars = tpes.flatMap(_.definiteTypeVars).to(SortedSet)
       if (tvars.contains(tvar)) {
         ().toSuccess
       } else {
-        Validation.toHardFailure(ResolutionError.IllegalSignature(sym, sym.loc))
+        Validation.toSoftFailure((), ResolutionError.IllegalSignature(sym, sym.loc))
       }
   }
 
@@ -2431,7 +2431,7 @@ object Resolver {
         val numParams = tparams.length
         if (targs.length < numParams) {
           // Case 1: The type alias is under-applied.
-          Validation.toHardFailure(ResolutionError.UnderAppliedTypeAlias(sym, loc))
+          Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UnderAppliedTypeAlias(sym, loc))
         } else {
           // Case 2: The type alias is fully applied.
           // Apply the types within the alias, then apply any leftover types.
@@ -2445,7 +2445,7 @@ object Resolver {
       case UnkindedType.UnappliedAssocType(sym, loc) =>
         targs match {
           // Case 1: The associated type is under-applied.
-          case Nil => Validation.toHardFailure(ResolutionError.UnderAppliedAssocType(sym, loc))
+          case Nil => Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UnderAppliedAssocType(sym, loc))
 
           // Case 2: The associated type is fully applied.
           // Apply the types first type inside the assoc type, then apply any leftover types.
@@ -2458,7 +2458,7 @@ object Resolver {
                 val assoc = UnkindedType.AssocType(cst, targHd, tpe0.loc)
                 UnkindedType.mkApply(assoc, targTl, tpe0.loc).toSuccess
               case _ =>
-                Validation.toHardFailure(ResolutionError.IllegalAssocTypeApplication(tpe0.loc))
+                Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.IllegalAssocTypeApplication(tpe0.loc))
             }
         }
 
