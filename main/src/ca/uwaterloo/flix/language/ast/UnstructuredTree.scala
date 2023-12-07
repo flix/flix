@@ -42,6 +42,20 @@ object UnstructuredTree {
 
     case object Annotations extends TreeKind
 
+    case object Modifiers extends TreeKind
+
+    case object Class extends TreeKind
+
+    case object TypeParameters extends TreeKind
+
+    case object TypeParameter extends TreeKind
+
+    case object Kind extends TreeKind
+
+    case object Signature extends TreeKind
+
+    case object AssociatedType extends TreeKind
+
     /////// NAMES ///////
     // NB: This naming follows [[Names]]
     case object Ident extends TreeKind

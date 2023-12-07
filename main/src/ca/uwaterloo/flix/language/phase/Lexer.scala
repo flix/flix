@@ -436,6 +436,7 @@ object Lexer {
       case _ if isKeyword("solve") => TokenKind.KeywordSolve
       case _ if isKeyword("spawn") => TokenKind.KeywordSpawn
       case _ if isKeyword("static") => TokenKind.KeywordStatic
+      case _ if isKeyword("trait") => TokenKind.KeywordTrait
       case _ if isKeyword("true") => TokenKind.KeywordTrue
       case _ if isKeyword("try") => TokenKind.KeywordTry
       case _ if isKeyword("type") => TokenKind.KeywordType

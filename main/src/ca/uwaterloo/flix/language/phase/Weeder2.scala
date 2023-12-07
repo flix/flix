@@ -43,7 +43,7 @@ object Weeder2 {
       return Validation.Failure(LazyList.empty)
     }
 
-    flix.phase("TreeCleaner") {
+    flix.phase("Weeder2") {
       // Parse each source file in parallel and join them into a WeededAst.Root
       val results = ParOps.parMap(trees) {
         case (src, tree) => mapN(weed(src, tree))(tree => src -> tree)
