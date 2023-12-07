@@ -217,16 +217,13 @@ object GenFunAndClosureClasses {
       m.visitVarInsn(ALOAD, 0)
       m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
       m.visitTableSwitchInsn(0, pcLabels.length-1, defaultLabel, pcLabels: _*)
-      for (l <- pcLabels) {
-        m.visitLabel(l)
-      }
       m.visitLabel(defaultLabel)
     }
 
     // Generating the expression
     val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, copyName, nothingToTDescriptor(classType).toDescriptor, false))
-    val ctx = GenExpression.MethodContext(classType, enterLabel, Map(), newFrame, localOffset)
-    GenExpression.compileStmt(defn.stmt)(pcLabels, m, ctx, root, flix)
+    val ctx = GenExpression.MethodContext(classType, enterLabel, Map(), newFrame, localOffset, pcLabels)
+    GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix)
 
     // returning a Value
     val returnValue = {
