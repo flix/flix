@@ -723,13 +723,13 @@ object Resolver {
     * A signature spec is legal if it contains the class's type variable in its formal parameters or return type.
     */
   private def checkSigSpec(sym: Symbol.SigSym, spec0: ResolvedAst.Spec, tvar: Symbol.UnkindedTypeVarSym): Validation[Unit, ResolutionError] = spec0 match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc) =>
+    case ResolvedAst.Spec(_, _, _, _, fparams, tpe, _, _, _, _) =>
       val tpes = tpe :: fparams.flatMap(_.tpe)
       val tvars = tpes.flatMap(_.definiteTypeVars).to(SortedSet)
       if (tvars.contains(tvar)) {
         ().toSuccess
       } else {
-        Validation.toHardFailure(ResolutionError.IllegalSignature(sym, sym.loc))
+        Validation.toSoftFailure((), ResolutionError.IllegalSignature(sym, sym.loc))
       }
   }
 
