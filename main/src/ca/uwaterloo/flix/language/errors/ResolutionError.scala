@@ -698,7 +698,7 @@ object ResolutionError {
     * @param constructors the constructors in the class.
     * @param loc          the location of the constructor name.
     */
-  case class UndefinedJvmConstructor(clazz: Class[_], signature: List[Class[_]], constructors: List[Constructor[_]], loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UndefinedJvmConstructor(clazz: Class[_], signature: List[Class[_]], constructors: List[Constructor[_]], loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = "Undefined constructor."
 
     def message(formatter: Formatter): String = {
