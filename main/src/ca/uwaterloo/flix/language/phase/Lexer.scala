@@ -356,7 +356,7 @@ object Lexer {
       } else {
         TokenKind.Colon
       }
-      case '@' => if (peek().isUpper) {
+      case '@' => if (peek().isLetter) {
         acceptAnnotation()
       } else {
         TokenKind.At

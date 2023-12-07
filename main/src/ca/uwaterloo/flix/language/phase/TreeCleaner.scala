@@ -95,6 +95,7 @@ object TreeCleaner {
   private def visitDocumentation(tree: Tree): Validation[Ast.Doc, CompilationMessage] = {
     val docTree = tryPick(TreeKind.Doc, tree.children)
     val loc = docTree.map(_.loc).getOrElse(SourceLocation.Unknown)
+    // strip prefixing `///` and remove empty lines after that
     val comments = docTree.map(text).map(
       _.map(_.stripPrefix("///").trim())
         .filter(_ != "")
@@ -102,9 +103,37 @@ object TreeCleaner {
     Ast.Doc(comments, loc).toSuccess
   }
 
-  private def visitAnnotations(tree: Tree): Validation[Ast.Annotations, CompilationMessage] = {
-    // TODO
-    Ast.Annotations(List.empty).toSuccess
+  private def visitAnnotations(tree: Tree)(implicit s: State): Validation[Ast.Annotations, CompilationMessage] = {
+    val annotationTree = tryPick(TreeKind.Annotations, tree.children)
+    val annotations = annotationTree.map(
+      t => sequence(t.children.map(visitAnnotation))
+    ).getOrElse(List.empty.toSuccess)
+    annotations.map(annotations => Ast.Annotations(annotations))
+  }
+
+  private def visitAnnotation(c: Child)(implicit s: State): Validation[Ast.Annotation, CompilationMessage] = {
+    c match {
+      case Child.Token(token) =>
+        val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
+        import Ast.Annotation._
+        // TODO: annotation.Error is a soft failure
+        token.text match {
+          case "@benchmark" | "@Benchmark" => Benchmark(loc).toSuccess
+          case "@Deprecated" => Deprecated(loc).toSuccess
+          case "@Experimental" => Experimental(loc).toSuccess
+          case "@Internal" => Internal(loc).toSuccess
+          case "@Parallel" => Parallel(loc).toSuccess
+          case "@ParallelWhenPure" => ParallelWhenPure(loc).toSuccess
+          case "@Lazy" => Lazy(loc).toSuccess
+          case "@LazyWhenPure" => LazyWhenPure(loc).toSuccess
+          case "@MustUse" => MustUse(loc).toSuccess
+          case "@Skip" => Skip(loc).toSuccess
+          case "@Test" | "@test" => Test(loc).toSuccess
+          case "@TailRec" => TailRecursive(loc).toSuccess
+          case other => softFailWith(Ast.Annotation.Error(other.stripPrefix("@"), loc))
+        }
+      case Child.Tree(tree) => failWith(s"expected annotation but found subtree of kind ${tree.kind}")
+    }
   }
 
   private def visitModifiers(tree: Tree): Validation[Ast.Modifiers, CompilationMessage] = {
@@ -154,7 +183,7 @@ object TreeCleaner {
   private def visitExpression(tree: Tree): Validation[Expr, CompilationMessage] = {
     val exprTree = tryPick(TreeKind.Expr.Expr, tree.children)
     val loc = exprTree.map(_.loc).getOrElse(SourceLocation.Unknown)
-    val notFoundError = Expr.Error(Parse2Error.DevErr(loc, "expected expression")).toSuccess
+    val notFoundError = softFailWith(Expr.Error(Parse2Error.DevErr(loc, "expected expression")))
 
     exprTree.map(_.children(0) match {
       case Child.Tree(tree) => tree.kind match {
@@ -185,9 +214,10 @@ object TreeCleaner {
     val loc = typeTree.map(_.loc).getOrElse(SourceLocation.Unknown)
     val ident = typeTree.map(visitNameIdent(_)).getOrElse(failWith("TODO: types are more that idents"))
     mapN(ident) {
-      ident => Type.Ambiguous(
-        Name.QName(ident.sp1, Name.NName(ident.sp1, List.empty, ident.sp2), ident, ident.sp2),
-        loc)
+      ident =>
+        Type.Ambiguous(
+          Name.QName(ident.sp1, Name.NName(ident.sp1, List.empty, ident.sp2), ident, ident.sp2),
+          loc)
     }
   }
 
@@ -242,5 +272,9 @@ object TreeCleaner {
 
   private def failWith[T](message: String): Validation[T, CompilationMessage] = {
     Validation.Failure(LazyList(Parse2Error.DevErr(SourceLocation.Unknown, message)))
+  }
+
+  private def softFailWith[T](result: T): Validation[T, CompilationMessage] = {
+    Validation.SoftFailure(result, LazyList())
   }
 }

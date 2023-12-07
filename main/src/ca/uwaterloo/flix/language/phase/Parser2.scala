@@ -106,7 +106,9 @@ object Parser2 {
       case _ => false
     })
 
-    var lastAdvance = tokens.head
+    // NB, make a synthetic token to begin with, to make the SourceLocations
+    // generated below be correct.
+    var lastAdvance = Token(TokenKind.Eof, s.src.data, 0, 0, 0, 0, 0, 0)
     for (event <- s.events) {
       event match {
         case Event.Open(kind) =>
@@ -116,11 +118,19 @@ object Parser2 {
         case Event.Close =>
           val child = Child.Tree(stack.last)
           val openToken = locationStack.last
-          val loc = SourceLocation.mk(
-            openToken.mkSourcePosition(s.src, Some(s.parserInput)),
-            lastAdvance.mkSourcePositionEnd(s.src, Some(s.parserInput))
-          )
-          stack.last.loc = loc
+          stack.last.loc = if (stack.last.children.length == 0)
+          // If the subtree has no children, give it a zero length position just after the last token
+            SourceLocation.mk(
+              lastAdvance.mkSourcePositionEnd(s.src, Some(s.parserInput)),
+              lastAdvance.mkSourcePositionEnd(s.src, Some(s.parserInput))
+            )
+          else {
+            // Otherwise the source location can span from the first to the last token in the sub tree
+            SourceLocation.mk(
+              openToken.mkSourcePosition(s.src, Some(s.parserInput)),
+              lastAdvance.mkSourcePositionEnd(s.src, Some(s.parserInput))
+            )
+          }
           locationStack = locationStack.dropRight(1)
           stack = stack.dropRight(1)
           stack.last.children = stack.last.children :+ child
@@ -218,13 +228,16 @@ object Parser2 {
     nth(0) == kind
   }
 
-  // next skips comments
+  // next skips comments and annotations. That is useful when looking for a declaration start
   private def next(kind: TokenKind)(implicit s: State): Boolean = {
     var lookAhead = 0
     while (true) {
       nth(lookAhead) match {
         case TokenKind.Eof => return false
-        case TokenKind.CommentDoc | TokenKind.CommentLine | TokenKind.CommentBlock =>
+        case TokenKind.CommentDoc
+             | TokenKind.CommentLine
+             | TokenKind.CommentBlock
+             | TokenKind.Annotation =>
         case k => return kind == k
       }
       lookAhead += 1
@@ -338,11 +351,12 @@ object Parser2 {
   }
 
   /**
-   * definition -> docComment? 'def' name parameters ':' ttype '=' expression (';' expression)*
+   * definition -> docComment? annotations? 'def' name parameters ':' ttype '=' expression (';' expression)*
    */
   private def definition()(implicit s: State): Mark.Closed = {
     val mark = open()
     docComment()
+    annotations()
     expect(TokenKind.KeywordDef)
     nameDefinition()
     if (at(TokenKind.ParenL)) {
@@ -359,15 +373,20 @@ object Parser2 {
     close(mark, TreeKind.Def)
   }
 
-  private def docComment()(implicit s: State): Option[Mark.Closed] = {
-    if (at(TokenKind.CommentDoc)) {
-      val mark = open()
-      while (at(TokenKind.CommentDoc) && !eof()) {
-        advance()
-      }
-      Some(close(mark, TreeKind.Doc))
+  private def annotations()(implicit s: State): Mark.Closed = {
+    val mark = open()
+    while (at(TokenKind.Annotation) && !eof()) {
+      advance()
     }
-    None
+    close(mark, TreeKind.Annotations)
+  }
+
+  private def docComment()(implicit s: State): Mark.Closed = {
+    val mark = open()
+    while (at(TokenKind.CommentDoc) && !eof()) {
+      advance()
+    }
+    close(mark, TreeKind.Doc)
   }
 
   /**

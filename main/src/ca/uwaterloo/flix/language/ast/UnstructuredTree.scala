@@ -40,6 +40,8 @@ object UnstructuredTree {
 
     case object Argument extends TreeKind
 
+    case object Annotations extends TreeKind
+
     /////// NAMES ///////
     // NB: This naming follows [[Names]]
     case object Ident extends TreeKind

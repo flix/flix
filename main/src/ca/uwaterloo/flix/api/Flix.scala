@@ -541,13 +541,16 @@ class Flix {
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
       afterReader <- Reader.run(getInputs)
+
+      // New parsing pipeline
       afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
 
-      // New parsing pipeline
+      // TODO: Reuse results in parser2 from weededAst
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser2 <- Parser2.run(afterLexer)
       afterTreeCleaner <- TreeCleaner.run(afterReader, entryPoint, afterParser2)
+
       _ <- compareParser2ToOrigial(afterWeeder, afterTreeCleaner) // TODO: Remove this debugging phase
 
       afterDesugar = Desugar.run(afterTreeCleaner, cachedDesugarAst, changeSet)
