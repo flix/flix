@@ -62,7 +62,8 @@ object Lexer {
 
   /**
    * The internal state of the lexer as it tokenizes a single source.
-   * At any point execution `start` represents the start of the token currently being considered,
+   * At any point execution `start` represents the start of the token currently being considered.
+   * Likewise `end` represents the end of the token currently being considered,
    * while `current` is the current read head of the lexer.
    * Note that both start and current are `Position`s since they are not necessarily on the same line.
    * `current` will always be on the same character as or past `start`.
@@ -71,6 +72,7 @@ object Lexer {
   private class State(val src: Ast.Source) {
     var start: Position = new Position(0, 0, 0)
     val current: Position = new Position(0, 0, 0)
+    var end: Position = new Position(0, 0, 0)
     val tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
     var interpolationNestingLevel: Int = 0
     // Compute a `ParserInput` when initializing a state for lexing a source.
@@ -139,7 +141,7 @@ object Lexer {
     addToken(TokenKind.Eof)
 
     val errors = s.tokens.collect {
-      case Token(TokenKind.Err(err), _, _, _, _, _) => err
+      case Token(TokenKind.Err(err), _, _, _, _, _, _, _) => err
     }
     if (errors.isEmpty) {
       s.tokens.toArray.toSuccess
@@ -160,11 +162,14 @@ object Lexer {
     }
 
     val c = s.src.data(s.current.offset)
-    s.current.offset += 1
     if (c == '\n') {
+      s.end = new Position(s.current.line, s.current.column, s.current.offset)
+      s.current.offset += 1
       s.current.line += 1
       s.current.column = 0
     } else {
+      s.end = new Position(s.current.line, s.current.column + 1, s.current.offset)
+      s.current.offset += 1
       s.current.column += 1
     }
     c
@@ -287,7 +292,7 @@ object Lexer {
    * Afterwards `s.start` is reset to the next position after the previous token.
    */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
-    s.tokens += Token(kind, s.src.data, s.start.offset, s.current.offset, s.start.line, s.start.column)
+    s.tokens += Token(kind, s.src.data, s.start.offset, s.current.offset, s.start.line, s.start.column, s.end.line, s.end.column)
     s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }
 

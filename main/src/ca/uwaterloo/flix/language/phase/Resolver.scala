@@ -723,13 +723,13 @@ object Resolver {
     * A signature spec is legal if it contains the class's type variable in its formal parameters or return type.
     */
   private def checkSigSpec(sym: Symbol.SigSym, spec0: ResolvedAst.Spec, tvar: Symbol.UnkindedTypeVarSym): Validation[Unit, ResolutionError] = spec0 match {
-    case ResolvedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc) =>
+    case ResolvedAst.Spec(_, _, _, _, fparams, tpe, _, _, _, _) =>
       val tpes = tpe :: fparams.flatMap(_.tpe)
       val tvars = tpes.flatMap(_.definiteTypeVars).to(SortedSet)
       if (tvars.contains(tvar)) {
         ().toSuccess
       } else {
-        Validation.toHardFailure(ResolutionError.IllegalSignature(sym, sym.loc))
+        Validation.toSoftFailure((), ResolutionError.IllegalSignature(sym, sym.loc))
       }
   }
 
@@ -1433,9 +1433,12 @@ object Resolver {
               val argsVal = traverse(args)(visitExp(_, env0))
               val sigVal = traverse(sig)(resolveType(_, Wildness.ForbidWild, env0, taenv, ns0, root))
               flatMapN(sigVal, argsVal) {
-                case (ts, as) =>
-                  mapN(lookupJvmConstructor(clazz, ts, loc)) {
-                    case constructor => ResolvedAst.Expr.InvokeConstructor(constructor, as, loc)
+                case (sig, as) =>
+                  flatMapN(lookupSignature(sig, loc)) {
+                    case ts => lookupJvmConstructor(clazz, ts, loc) match {
+                      case Result.Ok(constructor) => ResolvedAst.Expr.InvokeConstructor(constructor, as, loc).toSuccess
+                      case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+                    }
                   }
               }
             case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
@@ -3111,19 +3114,16 @@ object Resolver {
   }
 
   /**
-    * Returns the constructor reflection object for the given `className` and `signature`.
+    * Returns the constructor reflection object for the given `clazz` and `signature`.
     */
-  private def lookupJvmConstructor(clazz: Class[_], signature: List[UnkindedType], loc: SourceLocation)(implicit flix: Flix): Validation[Constructor[_], ResolutionError] = {
-    // Lookup the class and signature.
-    flatMapN(lookupSignature(signature, loc)) {
-      case sig => try {
-        // Lookup the constructor with the appropriate signature.
-        clazz.getConstructor(sig: _*).toSuccess
-      } catch {
-        case ex: NoSuchMethodException => Validation.toHardFailure(ResolutionError.UndefinedJvmConstructor(clazz, sig, clazz.getConstructors.toList, loc))
-        // ClassNotFoundException:  Cannot happen because we already have the `Class` object.
-        // NoClassDefFoundError:    Cannot happen because we already have the `Class` object.
-      }
+  private def lookupJvmConstructor(clazz: Class[_], signature: List[Class[_]], loc: SourceLocation)(implicit flix: Flix): Result[Constructor[_], ResolutionError with Recoverable] = {
+    try {
+      // Lookup the constructor with the appropriate signature.
+      Result.Ok(clazz.getConstructor(signature: _*))
+    } catch {
+      case ex: NoSuchMethodException => Result.Err(ResolutionError.UndefinedJvmConstructor(clazz, signature, clazz.getConstructors.toList, loc))
+      // ClassNotFoundException:  Cannot happen because we already have the `Class` object.
+      // NoClassDefFoundError:    Cannot happen because we already have the `Class` object.
     }
   }
 
