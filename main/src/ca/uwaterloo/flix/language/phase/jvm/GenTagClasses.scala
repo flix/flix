@@ -138,9 +138,6 @@ object GenTagClasses {
     // Generate the `getBoxedTagValue` method.
     AsmOps.compileGetBoxedTagValueMethod(visitor, classType, valueType)
 
-    // Generate the `getTag` method.
-    compileGetTagMethod(visitor, tag.sym.name)
-
     compileToStringMethod(visitor, classType, tag)
 
     // Generate the `hashCode` method.
@@ -195,26 +192,6 @@ object GenTagClasses {
     constructor.visitInsn(RETURN)
     constructor.visitMaxs(65535, 65535)
     constructor.visitEnd()
-  }
-
-  /**
-    * Generates the `getTag()` method of the class which is the implementation of `getTag` method on `tagInterface`.
-    * This methods returns an string containing the tag name.
-    * For example, `Val$42` (corresponding to `Val[Char]`) has following `getTag()`method:
-    *
-    * public final String getTag() {
-    * return "Var";
-    * }
-    *
-    * @param visitor class visitor
-    * @param tag     tag String
-    */
-  def compileGetTagMethod(visitor: ClassWriter, tag: String)(implicit root: Root, flix: Flix): Unit = {
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getTag", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
-    method.visitLdcInsn(tag)
-    method.visitInsn(ARETURN)
-    method.visitMaxs(1, 1)
-    method.visitEnd()
   }
 
   def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference, tag: Case)(implicit root: Root, flix: Flix): Unit = {
