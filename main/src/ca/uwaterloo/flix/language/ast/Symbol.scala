@@ -269,11 +269,14 @@ object Symbol {
     /**
       * Returns the stack offset of `this` variable symbol.
       *
+      * The local offset should be the number of jvm arguments for static
+      * methods and one higher than that for instance methods.
+      *
       * Throws [[InternalCompilerException]] if the stack offset has not been set.
       */
-    def getStackOffset: Int = stackOffset match {
+    def getStackOffset(localOffset: Int): Int = stackOffset match {
       case None => throw InternalCompilerException(s"Unknown offset for variable symbol $toString.", loc)
-      case Some(offset) => offset
+      case Some(offset) => offset + localOffset
     }
 
     /**

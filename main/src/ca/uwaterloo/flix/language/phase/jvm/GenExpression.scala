@@ -34,7 +34,7 @@ import org.objectweb.asm._
   */
 object GenExpression {
 
-  case class MethodContext(clazz: JvmType.Reference, entryPoint: Label, lenv: Map[Symbol.LabelSym, Label], newFrame: InstructionSet)
+  case class MethodContext(clazz: JvmType.Reference, entryPoint: Label, lenv: Map[Symbol.LabelSym, Label], newFrame: InstructionSet, localOffset: Int)
 
   /**
     * Emits code for the given expression `exp0` to the given method `visitor` in the `currentClass`.
@@ -119,7 +119,7 @@ object GenExpression {
     case Expr.Var(sym, tpe, _) =>
       val jvmType = JvmOps.getErasedJvmType(tpe)
       val iLOAD = AsmOps.getLoadInstruction(jvmType)
-      mv.visitVarInsn(iLOAD, sym.getStackOffset + 1)
+      mv.visitVarInsn(iLOAD, sym.getStackOffset(ctx.localOffset))
       AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) => op match {
@@ -1337,7 +1337,7 @@ object GenExpression {
       val jvmType = JvmOps.getJvmType(exp1.tpe)
       // Store instruction for `jvmType`
       val iStore = AsmOps.getStoreInstruction(jvmType)
-      mv.visitVarInsn(iStore, sym.getStackOffset + 1)
+      mv.visitVarInsn(iStore, sym.getStackOffset(ctx.localOffset))
       compileExpr(exp2)
 
     case Expr.LetRec(varSym, index, defSym, exp1, exp2, _, _, loc) =>
@@ -1350,7 +1350,7 @@ object GenExpression {
 
       // Store temp recursive value
       mv.visitInsn(ACONST_NULL)
-      mv.visitVarInsn(iStore, varSym.getStackOffset + 1)
+      mv.visitVarInsn(iStore, varSym.getStackOffset(ctx.localOffset))
       // Compile the closure
       compileExpr(exp1)
       // fix the local and closure reference
@@ -1358,7 +1358,7 @@ object GenExpression {
       mv.visitInsn(DUP)
       mv.visitFieldInsn(PUTFIELD, cloType.name.toInternalName, s"clo$index", JvmOps.getErasedJvmType(exp1.tpe).toDescriptor)
       // Store the closure locally (maybe not needed?)
-      mv.visitVarInsn(iStore, varSym.getStackOffset + 1)
+      mv.visitVarInsn(iStore, varSym.getStackOffset(ctx.localOffset))
       compileExpr(exp2)
 
     case Expr.Scope(sym, exp, _, _, loc) =>
@@ -1387,7 +1387,7 @@ object GenExpression {
         AsmOps.getMethodDescriptor(List(), JvmType.Void), false)
 
       val iStore = AsmOps.getStoreInstruction(JvmType.Reference(BackendObjType.Region.jvmName))
-      mv.visitVarInsn(iStore, sym.getStackOffset + 1)
+      mv.visitVarInsn(iStore, sym.getStackOffset(ctx.localOffset))
 
       // Compile the scope body
       mv.visitLabel(beforeTryBlock)
@@ -1395,20 +1395,20 @@ object GenExpression {
 
       // When we exit the scope, call the region's `exit` method
       val iLoad = AsmOps.getLoadInstruction(JvmType.Reference(BackendObjType.Region.jvmName))
-      mv.visitVarInsn(iLoad, sym.getStackOffset + 1)
+      mv.visitVarInsn(iLoad, sym.getStackOffset(ctx.localOffset))
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ExitMethod.name,
         BackendObjType.Region.ExitMethod.d.toDescriptor, false)
       mv.visitLabel(afterTryBlock)
 
       // Compile the finally block which gets called if no exception is thrown
-      mv.visitVarInsn(iLoad, sym.getStackOffset + 1)
+      mv.visitVarInsn(iLoad, sym.getStackOffset(ctx.localOffset))
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
       mv.visitJumpInsn(GOTO, afterFinally)
 
       // Compile the finally block which gets called if an exception is thrown
       mv.visitLabel(finallyBlock)
-      mv.visitVarInsn(iLoad, sym.getStackOffset + 1)
+      mv.visitVarInsn(iLoad, sym.getStackOffset(ctx.localOffset))
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
       mv.visitInsn(ATHROW)
@@ -1450,7 +1450,7 @@ object GenExpression {
 
         // Store the exception in a local variable.
         val istore = AsmOps.getStoreInstruction(JvmType.Object)
-        mv.visitVarInsn(istore, sym.getStackOffset + 1)
+        mv.visitVarInsn(istore, sym.getStackOffset(ctx.localOffset))
 
         // Emit code for the handler body expression.
         compileExpr(body)

@@ -132,7 +132,7 @@ object DocAst {
 
     /** e.g. `x_2` */
     def VarWithOffset(sym: Symbol.VarSym): Expression =
-      AsIs(sym.toString + "_" + sym.getStackOffset.toString)
+      AsIs(sym.toString + "_" + sym.getStackOffset(0).toString)
 
     def Hole(sym: Symbol.HoleSym): Expression =
       AsIs("?" + sym.toString)
