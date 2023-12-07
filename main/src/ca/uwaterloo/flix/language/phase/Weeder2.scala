@@ -26,7 +26,7 @@ import org.parboiled2.ParserInput
 
 // TODO: Add change set support
 
-object TreeCleaner {
+object Weeder2 {
 
   import WeededAst._
 
@@ -46,14 +46,14 @@ object TreeCleaner {
     flix.phase("TreeCleaner") {
       // Parse each source file in parallel and join them into a WeededAst.Root
       val results = ParOps.parMap(trees) {
-        case (src, tree) => mapN(transform(src, tree))(tree => src -> tree)
+        case (src, tree) => mapN(weed(src, tree))(tree => src -> tree)
       }
 
       mapN(sequence(results))(_.toMap).map(m => WeededAst.Root(m, entryPoint, readRoot.names))
     }
   }
 
-  private def transform(src: Ast.Source, tree: Tree): Validation[CompilationUnit, CompilationMessage] = {
+  def weed(src: Ast.Source, tree: Tree): Validation[CompilationUnit, CompilationMessage] = {
     implicit val s: State = new State(src)
 
     mapN(visitUsesAndImports(tree), visitDeclarations(tree)) {

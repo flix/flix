@@ -541,19 +541,11 @@ class Flix {
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
       afterReader <- Reader.run(getInputs)
-
-      // New parsing pipeline
-      afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
-      afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
-
-      // TODO: Reuse results in parser2 from weededAst
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
-      afterParser2 <- Parser2.run(afterLexer)
-      afterTreeCleaner <- TreeCleaner.run(afterReader, entryPoint, afterParser2)
+      afterParser2 <- Parser2.runWithFallback(afterReader, afterLexer, entryPoint, changeSet)
+      // TODO: Move Weeder2 out here too
 
-      _ <- compareParser2ToOrigial(afterWeeder, afterTreeCleaner) // TODO: Remove this debugging phase
-
-      afterDesugar = Desugar.run(afterTreeCleaner, cachedDesugarAst, changeSet)
+      afterDesugar = Desugar.run(afterParser2, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
@@ -570,8 +562,6 @@ class Flix {
       // Update caches for incremental compilation.
       if (options.incremental) {
         this.cachedLexerTokens = afterLexer
-        this.cachedParserAst = afterParser
-        this.cachedWeederAst = afterWeeder
         this.cachedDesugarAst = afterDesugar
         this.cachedKinderAst = afterKinder
         this.cachedResolverAst = afterResolver

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.{Ast, SourceKind, SourceLocation, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ParsedAst, ReadAst, SourceKind, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.errors.Parse2Error
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
@@ -62,6 +62,67 @@ object Parser2 {
     case class Closed(index: Int) extends Mark
   }
 
+  // A helper for development that will run the new parsing pipeline on each source
+  // and fall back on the old parsing pipeline if there is a failure.
+  def runWithFallback(
+                       afterReader: ReadAst.Root,
+                       afterLexer: Map[Ast.Source, Array[Token]],
+                       entryPoint: Option[Symbol.DefnSym],
+                       changeSet: ChangeSet
+                     )(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
+    if (flix.options.xparser) {
+      // New lexer and parser disabled. Return immediately.
+      return Validation.Failure(LazyList.empty)
+    }
+
+    flix.phase("Parser2") {
+      // For each file: If the parse was successful run Weeder2 on it.
+      // If either the parse or the weed was bad pluck the WeededAst from the previous pipeline and use that.
+      val afterParser = Parser.run(afterReader, entryPoint, ParsedAst.empty, changeSet)
+      val afterWeeder = flatMapN(afterParser)(parsedAst => Weeder.run(parsedAst, WeededAst.empty, changeSet))
+
+      def reportOkAst(src: Ast.Source, tree: WeededAst.CompilationUnit): WeededAst.CompilationUnit = {
+        println(s"   \t${Console.GREEN}✔︎${Console.RESET}\t${src.name}")
+        // Print asts for closer inspection
+        if (src.name == "foo.flix") {
+          mapN(afterWeeder)(t => {
+            val oldAst = t.units(src)
+            println("[[[ OLD PARSER ]]]")
+            println(formatWeededAst(oldAst))
+            println("[[[ NEW PARSER ]]]")
+            println(formatWeededAst(tree))
+            println("[[[ END ]]]")
+          })
+        }
+        tree
+      }
+
+      def weedWithFallback(src: Ast.Source, tree: Tree): Validation[WeededAst.CompilationUnit, CompilationMessage] = {
+        Weeder2.weed(src, tree) match {
+          case Success(tree) => reportOkAst(src, tree).toSuccess
+          case SoftFailure(tree, errors) => SoftFailure(reportOkAst(src, tree), errors)
+          case Failure(_) =>
+            println(s"[w]\t${Console.RED}✖︎${Console.RESET}\t${src.name}")
+            mapN(afterWeeder)(_.units(src))
+        }
+      }
+
+      val results = ParOps.parMap(afterLexer) {
+        case (src, tokens) =>
+          val weededAst = parse(src, tokens) match {
+            case Success(tree) => weedWithFallback(src, tree)
+            case SoftFailure(tree, _) => weedWithFallback(src, tree)
+            case Failure(_) =>
+              println(s"[p]\t${Console.RED}✖︎${Console.RESET}\t${src.name}")
+              mapN(afterWeeder)(_.units(src))
+          }
+          mapN(weededAst)(ast => src -> ast)
+      }
+
+      mapN(sequence(results))(_.toMap).map(m => WeededAst.Root(m, entryPoint, afterReader.names))
+    }
+  }
+
   def run(root: Map[Ast.Source, Array[Token]])(implicit flix: Flix): Validation[Map[Ast.Source, Tree], CompilationMessage] = {
     if (flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
@@ -82,8 +143,6 @@ object Parser2 {
     implicit val s: State = new State(ts, src)
     source()
     val tree = buildTree()
-
-    println(tree.toDebugString())
 
     if (s.errors.length > 0) {
       Validation.Failure(LazyList.from(s.errors))
@@ -816,4 +875,40 @@ object Parser2 {
     expect(TokenKind.NameUpperCase)
     close(mark, TreeKind.Ident)
   }
+
+  // A helper function that runs both the old and the new parser for comparison.
+  // Both [[WeededAst]]s are printed for diffing to find inconsistencies.
+  // Example of diffing with git:
+  // >./gradlew run --args="--Xlib=nix foo.flix" > run.txt;
+  //   sed -n '/\[\[\[ OLD PARSER \]\]\]/,/\[\[\[ NEW PARSER \]\]\]/p' run.txt > old.txt &&
+  //   sed -n '/\[\[\[ NEW PARSER \]\]\]/,/\[\[\[\[ END \]\]\]/p' run.txt > new.txt &&
+  //   git difftool -y --no-index ./old.txt ./new.txt
+
+  // A helper function for formatting pretty printing ASTs.
+  // It is generic to scala objects with some special handling for source positions and locations.
+  def formatWeededAst(obj: Any, depth: Int = 0, paramName: Option[String] = None): String = {
+    val indent = "  " * depth
+    val prettyName = paramName.fold("")(x => s"$x: ")
+    val ptype = obj match {
+      case obj: SourcePosition => s"SourcePosition (${obj.line}, ${obj.col})"
+      case obj: SourceLocation => s"SourceLocation (${obj.beginLine}, ${obj.beginCol}) -> (${obj.endLine}, ${obj.endCol})"
+      case _: Iterable[Any] => ""
+      case obj: Product => obj.productPrefix
+      case _ => obj.toString
+    }
+
+    val acc = s"$indent$prettyName$ptype\n"
+
+    obj match {
+      case _: SourceLocation => acc
+      case _: SourcePosition => acc
+      case seq: Iterable[Any] =>
+        acc + seq.map(formatWeededAst(_, depth + 1, None)).mkString("")
+      case obj: Product =>
+        acc + (obj.productIterator zip obj.productElementNames)
+          .map { case (subObj, paramName) => formatWeededAst(subObj, depth + 1, Some(paramName)) }.mkString("")
+      case _ => acc
+    }
+  }
+
 }
