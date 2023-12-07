@@ -1291,6 +1291,9 @@ object GenExpression {
         mv.visitFieldInsn(PUTFIELD, functionInterface.name.toInternalName,
           s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
       }
+      mv.visitVarInsn(ALOAD, 0)
+      compileInt(0)
+      mv.visitFieldInsn(PUTFIELD, ctx.clazz.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
       // Jump to the entry point of the method.
       mv.visitJumpInsn(GOTO, ctx.entryPoint)
 
