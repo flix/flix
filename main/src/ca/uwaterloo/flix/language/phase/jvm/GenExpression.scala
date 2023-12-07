@@ -34,11 +34,16 @@ import org.objectweb.asm._
   */
 object GenExpression {
 
+  type Ref[T] = Array[T]
+
   case class MethodContext(clazz: JvmType.Reference,
                            entryPoint: Label,
                            lenv: Map[Symbol.LabelSym, Label],
                            newFrame: InstructionSet,
-                           localOffset: Int, pcLabels: Vector[Label]
+                           setPc: InstructionSet,
+                           localOffset: Int,
+                           pcLabels: Vector[Label],
+                           pcCounter: Ref[Int]
                           )
 
   /**
@@ -1241,7 +1246,20 @@ object GenExpression {
           }
           // Calling unwind and unboxing
           val erasedResult = BackendType.toErasedBackendType(closureResultType)
-          BackendObjType.Result.unwindThunkToType(0 /* TODO */, ctx.newFrame, erasedResult)(new BytecodeInstructions.F(mv))
+
+          val justAfterOpCount = ctx.pcCounter(0) + 1
+          val justAfterOp = ctx.pcLabels(justAfterOpCount)
+          val afterUnboxing = ctx.pcLabels(ctx.pcCounter(0) + 2)
+          ctx.pcCounter(0) += 1
+          BackendObjType.Result.unwindThunkToType(justAfterOpCount, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
+          ctx.pcCounter(0) += 1
+          mv.visitJumpInsn(GOTO, afterUnboxing)
+
+          mv.visitLabel(justAfterOp)
+          mv.visitVarInsn(ALOAD, 1)
+          BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
+
+          mv.visitLabel(afterUnboxing)
           AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
       }
 
@@ -1281,7 +1299,21 @@ object GenExpression {
             s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
         }
         // Calling unwind and unboxing
-        BackendObjType.Result.unwindThunkToType(0 /* TODO */, ctx.newFrame, BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(mv))
+        val erasedResult = BackendType.toErasedBackendType(tpe)
+
+        val justAfterOpCount = ctx.pcCounter(0) + 1
+        val justAfterOp = ctx.pcLabels(justAfterOpCount)
+        val afterUnboxing = ctx.pcLabels(ctx.pcCounter(0) + 2)
+        ctx.pcCounter(0) += 1
+        BackendObjType.Result.unwindThunkToType(justAfterOpCount, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
+        ctx.pcCounter(0) += 1
+        mv.visitJumpInsn(GOTO, afterUnboxing)
+
+        mv.visitLabel(justAfterOp)
+        mv.visitVarInsn(ALOAD, 1)
+        BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
+
+        mv.visitLabel(afterUnboxing)
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
     }
 
@@ -1298,7 +1330,7 @@ object GenExpression {
       }
       mv.visitVarInsn(ALOAD, 0)
       compileInt(0)
-      mv.visitFieldInsn(PUTFIELD, ctx.clazz.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
+      ctx.setPc(new BytecodeInstructions.F(mv))
       // Jump to the entry point of the method.
       mv.visitJumpInsn(GOTO, ctx.entryPoint)
 
@@ -1558,7 +1590,7 @@ object GenExpression {
     * load a 7, and SIPUSH 200 takes 3 bytes to load a 200. However, note that values on the stack normally take up 4
     * bytes.
     */
-  private def compileInt(i: Int)(implicit mv: MethodVisitor): Unit = i match {
+  def compileInt(i: Int)(implicit mv: MethodVisitor): Unit = i match {
     case -1 => mv.visitInsn(ICONST_M1)
     case 0 => mv.visitInsn(ICONST_0)
     case 1 => mv.visitInsn(ICONST_1)

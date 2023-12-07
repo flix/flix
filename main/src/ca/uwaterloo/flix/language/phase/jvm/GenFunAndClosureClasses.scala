@@ -189,9 +189,8 @@ object GenFunAndClosureClasses {
     // Method header
     val applyMethod = BackendObjType.Frame.ApplyMethod
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
-    val localOffset = 2 // [this, value, ...]
+    val localOffset = 2 // [this: Obj, value: Obj, ...]
 
-    // + 1 since index 0 is `this`
     val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset(localOffset), lp.tpe) }
     val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.sym.getStackOffset(localOffset), cp.tpe) }
     val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.sym.getStackOffset(localOffset), fp.tpe) }
@@ -216,14 +215,16 @@ object GenFunAndClosureClasses {
       val defaultLabel = new Label()
       m.visitVarInsn(ALOAD, 0)
       m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
-      m.visitTableSwitchInsn(0, pcLabels.length-1, defaultLabel, pcLabels: _*)
+      m.visitTableSwitchInsn(1, pcLabels.length, defaultLabel, pcLabels: _*)
       m.visitLabel(defaultLabel)
     }
 
     // Generating the expression
     val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, copyName, nothingToTDescriptor(classType).toDescriptor, false))
-    val ctx = GenExpression.MethodContext(classType, enterLabel, Map(), newFrame, localOffset, pcLabels)
+    val setPc = BytecodeInstructions.cheat(_.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor))
+    val ctx = GenExpression.MethodContext(classType, enterLabel, Map(), newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
     GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix)
+    println(classType.name, ctx.pcCounter(0), pcLabels.size)
 
     // returning a Value
     val returnValue = {
@@ -236,6 +237,7 @@ object GenFunAndClosureClasses {
     }
     returnValue(new BytecodeInstructions.F(m))
 
+    m.toString
     m.visitMaxs(999, 999)
     m.visitEnd()
   }

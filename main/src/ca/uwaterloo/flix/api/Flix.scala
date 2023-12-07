@@ -639,7 +639,7 @@ class Flix {
     case ex: InternalCompilerException =>
       CrashHandler.handleCrash(ex)(this)
       throw ex
-    case ex: java.lang.VerifyError =>
+    case ex: Throwable =>
       CrashHandler.handleCrash(ex)(this)
       throw ex
   }

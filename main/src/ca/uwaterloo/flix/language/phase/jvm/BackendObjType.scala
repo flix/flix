@@ -1344,7 +1344,7 @@ object BackendObjType {
       * [..., Result] --> [..., Thunk|Value]
       * side effect: might return
       */
-    def handleSuspension(pc: Int, newFrame: InstructionSet): InstructionSet = {
+    def handleSuspension(pc: Int, newFrame: InstructionSet, setPc: InstructionSet): InstructionSet = {
       DUP() ~ INSTANCEOF(Suspension.jvmName) ~
       ifCondition(Condition.NE) {
         DUP() ~ CHECKCAST(Suspension.jvmName) ~ // [..., s]
@@ -1358,7 +1358,7 @@ object BackendObjType {
         DUP2() ~ GETFIELD(Suspension.PrefixField) ~ // [..., s', s, s', s.prefix]
         // Make the new frame and push it
         newFrame ~
-        /* TODO with pc */
+        DUP() ~ cheat(mv => GenExpression.compileInt(pc)(mv)) ~ setPc ~
         INVOKEINTERFACE(Frames.PushMethod) ~ // [..., s', s, s', prefix']
         PUTFIELD(Suspension.PrefixField) ~ // [..., s', s]
         POP() ~ // [..., s']
@@ -1373,9 +1373,9 @@ object BackendObjType {
       * [..., Result] --> [..., Value.value: tpe]
       * side effect: Might return
       */
-    def unwindThunkToType(pc: Int, newFrame: InstructionSet, tpe: BackendType): InstructionSet = {
+    def unwindThunkToType(pc: Int, newFrame: InstructionSet, setPc: InstructionSet, tpe: BackendType): InstructionSet = {
       unwindThunk() ~
-      handleSuspension(pc, newFrame) ~
+      handleSuspension(pc, newFrame, setPc) ~
       CHECKCAST(Value.jvmName) ~ GETFIELD(Value.fieldFromType(tpe))
     }
 
