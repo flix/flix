@@ -211,13 +211,17 @@ object GenFunAndClosureClasses {
     loadParamsOf(fparams)
 
     val pcLabels: Vector[Label] = Vector.range(0, defn.pcPoints).map(_ => new Label())
-    // the default label is the starting point of the function if pc = 0
-    val defaultLabel = new Label()
-    m.visitVarInsn(ALOAD, 0)
-    m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
-    m.visitTableSwitchInsn(0, pcLabels.length, defaultLabel, pcLabels: _*)
-    m.visitLabel(defaultLabel)
-    for (l <- pcLabels) m.visitLabel(l)
+    if (defn.pcPoints > 0) {
+      // the default label is the starting point of the function if pc = 0
+      val defaultLabel = new Label()
+      m.visitVarInsn(ALOAD, 0)
+      m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
+      m.visitTableSwitchInsn(0, pcLabels.length-1, defaultLabel, pcLabels: _*)
+      for (l <- pcLabels) {
+        m.visitLabel(l)
+      }
+      m.visitLabel(defaultLabel)
+    }
 
     // Generating the expression
     val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, copyName, nothingToTDescriptor(classType).toDescriptor, false))
