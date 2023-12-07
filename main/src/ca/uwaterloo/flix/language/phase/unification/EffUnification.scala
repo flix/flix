@@ -116,6 +116,12 @@ object EffUnification {
         case (Type.Cst(TypeConstructor.EffUniv, _), Type.Cst(TypeConstructor.EffUniv, _)) =>
           return Ok((Substitution.empty, Nil)) //  100 hits
 
+        case (Type.Cst(TypeConstructor.Error(_), _), _) =>
+          return Ok((Substitution.empty, Nil))
+
+        case (_, Type.Cst(TypeConstructor.Error(_), _)) =>
+          return Ok((Substitution.empty, Nil))
+
         case _ => // nop
       }
 

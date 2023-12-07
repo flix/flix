@@ -51,6 +51,13 @@ object BoolUnification {
       return Ok((Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2))))
     }
 
+    // Check for Type.Error
+    (tpe1, tpe2) match {
+      case (Type.Cst(TypeConstructor.Error(_), _), _) => return Ok((Substitution.empty, Nil))
+      case (_, Type.Cst(TypeConstructor.Error(_), _)) => return Ok((Substitution.empty, Nil))
+      case _ => // fallthrough
+    }
+
     implicit val alg: BoolAlg[BoolFormula] = new SimpleBoolFormulaAlgClassic
 
     val result = lookupOrSolve(tpe1, tpe2, renv0)
