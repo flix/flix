@@ -995,8 +995,7 @@ object Weeder {
 
     case ParsedAst.Expression.Static(sp1, sp2) =>
       val loc = mkSL(sp1, sp2)
-      val tpe = Type.mkRegion(Type.EffUniv, loc)
-      WeededAst.Expr.Region(tpe, loc).toSuccess
+      WeededAst.Expr.Static(loc).toSuccess
 
     case ParsedAst.Expression.Scope(sp1, ident, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
