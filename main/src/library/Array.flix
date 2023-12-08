@@ -1570,8 +1570,10 @@ mod Array {
             } else
                 ix
             );
-        swap!(i, hi, a);
-        i
+        // i can become hi+1 if cmp always returns LessThan
+        let i1 = Int32.min(i, hi);
+        swap!(i1, hi, a);
+        i1
 
     ///
     /// A for loop with an accumulator (helper for sorting).
