@@ -783,7 +783,7 @@ object ResolutionError {
     * @param methods    the methods of the class.
     * @param loc        the location of the method name.
     */
-  case class UndefinedJvmMethod(className: String, methodName: String, static: Boolean, signature: List[Class[_]], methods: List[Method], loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UndefinedJvmMethod(className: String, methodName: String, static: Boolean, signature: List[Class[_]], methods: List[Method], loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = {
       if (!static) {
         s"Undefined object method."

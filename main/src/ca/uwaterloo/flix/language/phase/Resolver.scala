@@ -1445,9 +1445,12 @@ object Resolver {
           val retVal = resolveType(retTpe, Wildness.ForbidWild, env0, taenv, ns0, root)
           val clazzVal = lookupJvmClass(className, loc).toValidation
           flatMapN(sigVal, expVal, argsVal, retVal, clazzVal) {
-            case (ts, e, as, ret, clazz) =>
-              mapN(lookupJvmMethod(clazz, methodName, ts, ret, static = false, loc)) {
-                case method => ResolvedAst.Expr.InvokeMethod(method, clazz, e, as, loc)
+            case (signature, e, as, ret, clazz) =>
+              flatMapN(lookupSignature(signature, loc)) {
+                case sig => lookupJvmMethod(clazz, methodName, sig, ret, static = false, loc) match {
+                  case Result.Ok(method) => ResolvedAst.Expr.InvokeMethod(method, clazz, e, as, loc).toSuccess
+                  case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+                }
               }
           }
 
@@ -1457,9 +1460,12 @@ object Resolver {
           val retVal = resolveType(retTpe, Wildness.ForbidWild, env0, taenv, ns0, root)
           val clazzVal = lookupJvmClass(className, loc).toValidation
           flatMapN(sigVal, argsVal, retVal, clazzVal) {
-            case (ts, as, ret, clazz) =>
-              mapN(lookupJvmMethod(clazz, methodName, ts, ret, static = true, loc)) {
-                case method => ResolvedAst.Expr.InvokeStaticMethod(method, as, loc)
+            case (signature, as, ret, clazz) =>
+              flatMapN(lookupSignature(signature, loc)) {
+                case sig => lookupJvmMethod(clazz, methodName, sig, ret, static = true, loc) match {
+                  case Result.Ok(method) => ResolvedAst.Expr.InvokeStaticMethod(method, as, loc).toSuccess
+                  case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+                }
               }
           }
 
@@ -3121,48 +3127,44 @@ object Resolver {
   /**
     * Returns the method reflection object for the given `clazz`, `methodName`, and `signature`.
     */
-  private def lookupJvmMethod(clazz: Class[_], methodName: String, signature: List[UnkindedType], retTpe: UnkindedType, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Validation[Method, ResolutionError] = {
-    // Lookup the signature.
-    flatMapN(lookupSignature(signature, loc)) {
-      sig =>
-        try {
-          // Lookup the method with the appropriate signature.
-          val method = clazz.getMethod(methodName, sig: _*)
+  private def lookupJvmMethod(clazz: Class[_], methodName: String, signature: List[Class[_]], retTpe: UnkindedType, static: Boolean, loc: SourceLocation)(implicit flix: Flix): Result[Method, ResolutionError with Recoverable] = {
+    try {
+      // Lookup the method with the appropriate signature.
+      val method = clazz.getMethod(methodName, signature: _*)
 
-          // Check if the method should be and is static.
-          if (static != Modifier.isStatic(method.getModifiers)) {
-            throw new NoSuchMethodException()
-          } else {
-            // Check that the return type of the method matches the declared type.
-            // We currently don't know how to handle all possible return types,
-            // so only check the straightforward cases for now and succeed all others.
-            // TODO move to typer
-            val erasedRetTpe = UnkindedType.eraseAliases(retTpe)
-            erasedRetTpe.baseType match {
-              case UnkindedType.Cst(TypeConstructor.Unit, _) | UnkindedType.Cst(TypeConstructor.Bool, _) |
-                   UnkindedType.Cst(TypeConstructor.Char, _) | UnkindedType.Cst(TypeConstructor.Float32, _) |
-                   UnkindedType.Cst(TypeConstructor.Float64, _) | UnkindedType.Cst(TypeConstructor.BigDecimal, _) |
-                   UnkindedType.Cst(TypeConstructor.Int8, _) | UnkindedType.Cst(TypeConstructor.Int16, _) |
-                   UnkindedType.Cst(TypeConstructor.Int32, _) | UnkindedType.Cst(TypeConstructor.Int64, _) |
-                   UnkindedType.Cst(TypeConstructor.BigInt, _) | UnkindedType.Cst(TypeConstructor.Str, _) |
-                   UnkindedType.Cst(TypeConstructor.Regex, _) | UnkindedType.Cst(TypeConstructor.Native(_), _) =>
+      // Check if the method should be and is static.
+      if (static != Modifier.isStatic(method.getModifiers)) {
+        throw new NoSuchMethodException()
+      } else {
+        // Check that the return type of the method matches the declared type.
+        // We currently don't know how to handle all possible return types,
+        // so only check the straightforward cases for now and succeed all others.
+        // TODO move to typer
+        val erasedRetTpe = UnkindedType.eraseAliases(retTpe)
+        erasedRetTpe.baseType match {
+          case UnkindedType.Cst(TypeConstructor.Unit, _) | UnkindedType.Cst(TypeConstructor.Bool, _) |
+               UnkindedType.Cst(TypeConstructor.Char, _) | UnkindedType.Cst(TypeConstructor.Float32, _) |
+               UnkindedType.Cst(TypeConstructor.Float64, _) | UnkindedType.Cst(TypeConstructor.BigDecimal, _) |
+               UnkindedType.Cst(TypeConstructor.Int8, _) | UnkindedType.Cst(TypeConstructor.Int16, _) |
+               UnkindedType.Cst(TypeConstructor.Int32, _) | UnkindedType.Cst(TypeConstructor.Int64, _) |
+               UnkindedType.Cst(TypeConstructor.BigInt, _) | UnkindedType.Cst(TypeConstructor.Str, _) |
+               UnkindedType.Cst(TypeConstructor.Regex, _) | UnkindedType.Cst(TypeConstructor.Native(_), _) =>
 
-                val expectedTpe = UnkindedType.getFlixType(method.getReturnType)
-                if (expectedTpe != erasedRetTpe)
-                  Validation.toSoftFailure(method, ResolutionError.MismatchedReturnType(clazz.getName, methodName, retTpe, expectedTpe, loc))
-                else
-                  method.toSuccess
+            val expectedTpe = UnkindedType.getFlixType(method.getReturnType)
+            if (expectedTpe == erasedRetTpe)
+              Result.Ok(method)
+            else
+              Result.Err(ResolutionError.MismatchedReturnType(clazz.getName, methodName, retTpe, expectedTpe, loc))
 
-              case _ => method.toSuccess
-            }
-          }
-        } catch {
-          case ex: NoSuchMethodException =>
-            val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
-            Validation.toHardFailure(ResolutionError.UndefinedJvmMethod(clazz.getName, methodName, static, sig, candidateMethods, loc))
-          // ClassNotFoundException:  Cannot happen because we already have the `Class` object.
-          // NoClassDefFoundError:    Cannot happen because we already have the `Class` object.
+          case _ => Result.Ok(method)
         }
+      }
+    } catch {
+      case ex: NoSuchMethodException =>
+        val candidateMethods = clazz.getMethods.filter(m => m.getName == methodName).toList
+        Result.Err(ResolutionError.UndefinedJvmMethod(clazz.getName, methodName, static, signature, candidateMethods, loc))
+      // ClassNotFoundException:  Cannot happen because we already have the `Class` object.
+      // NoClassDefFoundError:    Cannot happen because we already have the `Class` object.
     }
   }
 
