@@ -5086,6 +5086,16 @@ mod TestArray {
         a `sameElements` Array#{4,3,2,2,1,0} @ rc
     }
 
+    def sortWith14(): Bool = region rc {
+        let a = Array.sortWith(rc, (_, _) -> Comparison.LessThan, Array#{1,2,3} @ rc);
+        Array.length(a) == 3
+    }
+
+    def sortWith15(): Bool = region rc {
+            let a = Array.sortWith(rc, (_, _) -> Comparison.GreaterThan, Array#{1,2,3} @ rc);
+            Array.length(a) == 3
+        }
+
     /////////////////////////////////////////////////////////////////////////////
     // sort                                                                    //
     /////////////////////////////////////////////////////////////////////////////
