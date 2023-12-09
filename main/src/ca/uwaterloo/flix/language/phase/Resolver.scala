@@ -1372,38 +1372,44 @@ object Resolver {
           }
 
         case NamedAst.Expr.Without(exp, eff, loc) =>
-          val eVal = visitExp(exp, env0)
-          val fVal = lookupEffect(eff, env0, ns0, root)
-          mapN(eVal, fVal) {
-            case (e, f) =>
-              val effUse = Ast.EffectSymUse(f.sym, eff.loc)
-              ResolvedAst.Expr.Without(e, effUse, loc)
+          lookupEffect(eff, env0, ns0, root) match {
+            case Result.Ok(decl) =>
+              flatMapN(visitExp(exp, env0)) {
+                case e => mapN(getEffectIfAccessible(decl, ns0, eff.loc)) {
+                  case decl =>
+                    val effUse = Ast.EffectSymUse(decl.sym, eff.loc)
+                    ResolvedAst.Expr.Without(e, effUse, loc)
+                }
+              }
+            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.TryWith(exp, eff, rules, loc) =>
-          val eVal = visitExp(exp, env0)
-          val fVal = lookupEffect(eff, env0, ns0, root)
-          flatMapN(eVal, fVal) {
-            case (e, f) =>
-              val effUse = Ast.EffectSymUse(f.sym, eff.loc)
-              val rulesVal = traverse(rules) {
-                case NamedAst.HandlerRule(ident, fparams, body) =>
-                  val opVal = findOpInEffect(ident, f)
-                  val fparamsVal = resolveFormalParams(fparams, env0, taenv, ns0, root)
-                  flatMapN(opVal, fparamsVal) {
-                    case (o, fp) =>
-                      val env = env0 ++ mkFormalParamEnv(fp)
-                      val bodyVal = visitExp(body, env)
-                      mapN(bodyVal) {
-                        case b =>
-                          val opUse = Ast.OpSymUse(o.sym, ident.loc)
-                          ResolvedAst.HandlerRule(opUse, fp, b)
+          lookupEffect(eff, env0, ns0, root) match {
+            case Result.Ok(decl) =>
+              flatMapN(getEffectIfAccessible(decl, ns0, eff.loc), visitExp(exp, env0)) {
+                case (f, e) =>
+                  val effUse = Ast.EffectSymUse(f.sym, eff.loc)
+                  val rulesVal = traverse(rules) {
+                    case NamedAst.HandlerRule(ident, fparams, body) =>
+                      val opVal = findOpInEffect(ident, f)
+                      val fparamsVal = resolveFormalParams(fparams, env0, taenv, ns0, root)
+                      flatMapN(opVal, fparamsVal) {
+                        case (o, fp) =>
+                          val env = env0 ++ mkFormalParamEnv(fp)
+                          val bodyVal = visitExp(body, env)
+                          mapN(bodyVal) {
+                            case b =>
+                              val opUse = Ast.OpSymUse(o.sym, ident.loc)
+                              ResolvedAst.HandlerRule(opUse, fp, b)
+                          }
                       }
                   }
+                  mapN(rulesVal) {
+                    rs => ResolvedAst.Expr.TryWith(e, effUse, rs, loc)
+                  }
               }
-              mapN(rulesVal) {
-                rs => ResolvedAst.Expr.TryWith(e, effUse, rs, loc)
-              }
+            case Result.Err(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case NamedAst.Expr.Do(op, exps, loc) =>
@@ -2189,7 +2195,7 @@ object Resolver {
     }
 
     matches match {
-      case Nil => Validation.toHardFailure(ResolutionError.UndefinedType(qname, ns0, qname.loc))
+      case Nil => Validation.toHardFailure(ResolutionError.UndefinedRestrictableType(qname, ns0, qname.loc))
       case enum :: _ => enum.toSuccess
     }
   }
@@ -2252,7 +2258,8 @@ object Resolver {
             case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
             case TypeLookupResult.JavaClass(clazz) => flixifyType(clazz, loc).toSuccess
             case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
-            case TypeLookupResult.NotFound => Validation.toHardFailure(ResolutionError.UndefinedType(qname, ns0, loc))
+            case TypeLookupResult.NotFound =>
+              Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UndefinedType(qname, ns0, loc))
           }
       }
 
@@ -2265,7 +2272,8 @@ object Resolver {
           case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
           case TypeLookupResult.JavaClass(clazz) => flixifyType(clazz, loc).toSuccess
           case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
-          case TypeLookupResult.NotFound => Validation.toHardFailure(ResolutionError.UndefinedType(qname, ns0, loc))
+          case TypeLookupResult.NotFound =>
+            Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UndefinedType(qname, ns0, loc))
         }
 
       case NamedAst.Type.Tuple(elms0, loc) =>
@@ -2660,12 +2668,15 @@ object Resolver {
   /**
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
-  private def lookupEffect(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[NamedAst.Declaration.Effect, ResolutionError] = {
-    val symOpt = tryLookupName(qname, env, ns0, root)
+  private def lookupEffect(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Result[NamedAst.Declaration.Effect, UndefinedEffect] = {
+    val effOpt = tryLookupName(qname, env, ns0, root).collectFirst {
+      case Resolution.Declaration(eff: NamedAst.Declaration.Effect) => eff
+    }
 
-    symOpt.collectFirst {
-      case Resolution.Declaration(eff: NamedAst.Declaration.Effect) => getEffectIfAccessible(eff, ns0, qname.loc)
-    }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedEffect(qname, ns0, qname.loc)))
+    effOpt match {
+      case None => Result.Err(ResolutionError.UndefinedEffect(qname, ns0, qname.loc))
+      case Some(decl) => Result.Ok(decl)
+    }
   }
 
   /**
@@ -3197,7 +3208,7 @@ object Resolver {
     * Performs name resolution on the given `signature`.
     */
   private def lookupSignature(signature: List[UnkindedType], loc: SourceLocation)(implicit flix: Flix): Validation[List[Class[_]], ResolutionError] = {
-    traverse(signature)(getJVMType(_, loc))
+    Result.traverse(signature)(getJVMType(_, loc)).toValidation
   }
 
   /**
@@ -3207,96 +3218,96 @@ object Resolver {
     *
     * An array type is mapped to the corresponding array type.
     */
-  private def getJVMType(tpe: UnkindedType, loc: SourceLocation)(implicit flix: Flix): Validation[Class[_], ResolutionError] = {
+  private def getJVMType(tpe: UnkindedType, loc: SourceLocation)(implicit flix: Flix): Result[Class[_], ResolutionError] = {
     val erased = UnkindedType.eraseAliases(tpe)
     val baseType = erased.baseType
     baseType match {
       // Case 1: Constant: Match on the type.
       case UnkindedType.Cst(tc, _) => tc match {
-        case TypeConstructor.Unit => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Unit => Result.Ok(Class.forName("java.lang.Object"))
 
-        case TypeConstructor.Bool => classOf[Boolean].toSuccess
+        case TypeConstructor.Bool => Result.Ok(classOf[Boolean])
 
-        case TypeConstructor.Char => classOf[Char].toSuccess
+        case TypeConstructor.Char => Result.Ok(classOf[Char])
 
-        case TypeConstructor.Float32 => classOf[Float].toSuccess
+        case TypeConstructor.Float32 => Result.Ok(classOf[Float])
 
-        case TypeConstructor.Float64 => classOf[Double].toSuccess
+        case TypeConstructor.Float64 => Result.Ok(classOf[Double])
 
-        case TypeConstructor.BigDecimal => Class.forName("java.math.BigDecimal").toSuccess
+        case TypeConstructor.BigDecimal => Result.Ok(Class.forName("java.math.BigDecimal"))
 
-        case TypeConstructor.Int8 => classOf[Byte].toSuccess
+        case TypeConstructor.Int8 => Result.Ok(classOf[Byte])
 
-        case TypeConstructor.Int16 => classOf[Short].toSuccess
+        case TypeConstructor.Int16 => Result.Ok(classOf[Short])
 
-        case TypeConstructor.Int32 => classOf[Int].toSuccess
+        case TypeConstructor.Int32 => Result.Ok(classOf[Int])
 
-        case TypeConstructor.Int64 => classOf[Long].toSuccess
+        case TypeConstructor.Int64 => Result.Ok(classOf[Long])
 
-        case TypeConstructor.BigInt => Class.forName("java.math.BigInteger").toSuccess
+        case TypeConstructor.BigInt => Result.Ok(Class.forName("java.math.BigInteger"))
 
-        case TypeConstructor.Str => Class.forName("java.lang.String").toSuccess
+        case TypeConstructor.Str => Result.Ok(Class.forName("java.lang.String"))
 
-        case TypeConstructor.Regex => Class.forName("java.util.regex.Pattern").toSuccess
+        case TypeConstructor.Regex => Result.Ok(Class.forName("java.util.regex.Pattern"))
 
-        case TypeConstructor.Sender => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Sender => Result.Ok(Class.forName("java.lang.Object"))
 
-        case TypeConstructor.Receiver => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Receiver => Result.Ok(Class.forName("java.lang.Object"))
 
-        case TypeConstructor.Ref => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Ref => Result.Ok(Class.forName("java.lang.Object"))
 
-        case TypeConstructor.Tuple(_) => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Tuple(_) => Result.Ok(Class.forName("java.lang.Object"))
 
         case TypeConstructor.Array =>
           erased.typeArguments match {
             case elmTyp :: region :: Nil =>
-              mapN(getJVMType(elmTyp, loc)) {
+              getJVMType(elmTyp, loc) map {
                 case elmClass => getJVMArrayType(elmClass)
               }
-            case _ => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+            case _ => Result.Err(ResolutionError.IllegalType(tpe, loc))
           }
 
         case TypeConstructor.Vector =>
           erased.typeArguments match {
             case elmTyp :: region :: Nil =>
-              mapN(getJVMType(elmTyp, loc)) {
+              getJVMType(elmTyp, loc) map {
                 case elmClass => getJVMArrayType(elmClass)
               }
-            case _ => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+            case _ => Result.Err(ResolutionError.IllegalType(tpe, loc))
           }
 
-        case TypeConstructor.Native(clazz) => clazz.toSuccess
+        case TypeConstructor.Native(clazz) => Result.Ok(clazz)
 
-        case TypeConstructor.Record => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Record => Result.Ok(Class.forName("java.lang.Object"))
 
-        case TypeConstructor.Schema => Class.forName("java.lang.Object").toSuccess
+        case TypeConstructor.Schema => Result.Ok(Class.forName("java.lang.Object"))
 
-        case TypeConstructor.True => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.False => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Not => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.And => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Or => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.True => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.False => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Not => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.And => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Or => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
-        case TypeConstructor.Union => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Effect(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.EffUniv => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Lattice => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Lazy => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Complement => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Null => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Intersection => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.RecordRowEmpty => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.RecordRowExtend(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.RegionToStar => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Relation => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.SchemaRowEmpty => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.SchemaRowExtend(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Pure => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.CaseComplement(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.CaseSet(_, _) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.CaseIntersection(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.CaseUnion(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-        case TypeConstructor.Error(_) => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Union => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Effect(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.EffUniv => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Lattice => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Lazy => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Complement => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Null => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Intersection => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.RecordRowEmpty => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.RecordRowExtend(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.RegionToStar => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Relation => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.SchemaRowEmpty => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.SchemaRowExtend(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Pure => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.CaseComplement(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.CaseSet(_, _) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.CaseIntersection(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.Error(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
@@ -3306,47 +3317,59 @@ object Resolver {
 
       // Case 2: Arrow. Convert to Java function interface
       case UnkindedType.Arrow(_, _, _) =>
-        val targsVal = traverse(erased.typeArguments)(targ => getJVMType(targ, targ.loc))
+        val targsVal = Result.traverse(erased.typeArguments)(targ => getJVMType(targ, targ.loc))
         val returnsUnit = erased.typeArguments.lastOption match {
           case Some(ty) => isBaseTypeUnit(ty)
           case None => false
         }
-        flatMapN(targsVal) {
+        targsVal flatMap {
           case Object :: Object :: Nil =>
-            if (returnsUnit) Class.forName("java.util.function.Consumer").toSuccess else Class.forName("java.util.function.Function").toSuccess
-          case Object :: Boolean :: Nil => Class.forName("java.util.function.Predicate").toSuccess
+            if (returnsUnit)
+              Result.Ok(Class.forName("java.util.function.Consumer"))
+            else
+              Result.Ok(Class.forName("java.util.function.Function"))
+          case Object :: Boolean :: Nil => Result.Ok(Class.forName("java.util.function.Predicate"))
           case Int :: Object :: Nil =>
-            if (returnsUnit) Class.forName("java.util.function.IntConsumer").toSuccess else Class.forName("java.util.function.IntFunction").toSuccess
-          case Int :: Boolean :: Nil => Class.forName("java.util.function.IntPredicate").toSuccess
-          case Int :: Int :: Nil => Class.forName("java.util.function.IntUnaryOperator").toSuccess
+            if (returnsUnit)
+              Result.Ok(Class.forName("java.util.function.IntConsumer"))
+            else
+              Result.Ok(Class.forName("java.util.function.IntFunction"))
+          case Int :: Boolean :: Nil => Result.Ok(Class.forName("java.util.function.IntPredicate"))
+          case Int :: Int :: Nil => Result.Ok(Class.forName("java.util.function.IntUnaryOperator"))
           case Long :: Object :: Nil =>
-            if (returnsUnit) Class.forName("java.util.function.LongConsumer").toSuccess else Class.forName("java.util.function.LongFunction").toSuccess
-          case Long :: Boolean :: Nil => Class.forName("java.util.function.LongPredicate").toSuccess
-          case Long :: Long :: Nil => Class.forName("java.util.function.LongUnaryOperator").toSuccess
+            if (returnsUnit)
+              Result.Ok(Class.forName("java.util.function.LongConsumer"))
+            else
+              Result.Ok(Class.forName("java.util.function.LongFunction"))
+          case Long :: Boolean :: Nil => Result.Ok(Class.forName("java.util.function.LongPredicate"))
+          case Long :: Long :: Nil => Result.Ok(Class.forName("java.util.function.LongUnaryOperator"))
           case Double :: Object :: Nil =>
-            if (returnsUnit) Class.forName("java.util.function.DoubleConsumer").toSuccess else Class.forName("java.util.function.DoubleFunction").toSuccess
-          case Double :: Boolean :: Nil => Class.forName("java.util.function.DoublePredicate").toSuccess
-          case Double :: Double :: Nil => Class.forName("java.util.function.DoubleUnaryOperator").toSuccess
-          case _ => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+            if (returnsUnit)
+              Result.Ok(Class.forName("java.util.function.DoubleConsumer"))
+            else
+              Result.Ok(Class.forName("java.util.function.DoubleFunction"))
+          case Double :: Boolean :: Nil => Result.Ok(Class.forName("java.util.function.DoublePredicate"))
+          case Double :: Double :: Nil => Result.Ok(Class.forName("java.util.function.DoubleUnaryOperator"))
+          case _ => Result.Err(ResolutionError.IllegalType(tpe, loc))
         }
 
       // Case 3: Enum. Return an object type.
-      case _: UnkindedType.Enum => Class.forName("java.lang.Object").toSuccess
-      case _: UnkindedType.RestrictableEnum => Class.forName("java.lang.Object").toSuccess
+      case _: UnkindedType.Enum => Result.Ok(Class.forName("java.lang.Object"))
+      case _: UnkindedType.RestrictableEnum => Result.Ok(Class.forName("java.lang.Object"))
 
       // Case 4: Ascription. Ignore it and recurse.
       case UnkindedType.Ascribe(t, _, _) => getJVMType(UnkindedType.mkApply(t, erased.typeArguments, loc), loc)
 
       // Case 5: It's a broken type. Lets hope it is an object.
-      case UnkindedType.Error(_) => Class.forName("java.lang.Object").toSuccess
+      case UnkindedType.Error(_) => Result.Ok(Class.forName("java.lang.Object"))
 
       // Case 5: Illegal type. Error.
-      case _: UnkindedType.Var => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-      case _: UnkindedType.CaseSet => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-      case _: UnkindedType.CaseComplement => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-      case _: UnkindedType.CaseUnion => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-      case _: UnkindedType.CaseIntersection => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
-      case _: UnkindedType.AssocType => Validation.toHardFailure(ResolutionError.IllegalType(tpe, loc))
+      case _: UnkindedType.Var => Result.Err(ResolutionError.IllegalType(tpe, loc))
+      case _: UnkindedType.CaseSet => Result.Err(ResolutionError.IllegalType(tpe, loc))
+      case _: UnkindedType.CaseComplement => Result.Err(ResolutionError.IllegalType(tpe, loc))
+      case _: UnkindedType.CaseUnion => Result.Err(ResolutionError.IllegalType(tpe, loc))
+      case _: UnkindedType.CaseIntersection => Result.Err(ResolutionError.IllegalType(tpe, loc))
+      case _: UnkindedType.AssocType => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
       // Case 6: Unexpected type. Crash.
       case t: UnkindedType.Apply => throw InternalCompilerException(s"unexpected type: $t", loc)
