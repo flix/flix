@@ -69,7 +69,29 @@ object Weeder2 {
 
   private def visitDeclarations(tree: Tree)(implicit s: State): Validation[List[Declaration], CompilationMessage] = {
     assert(tree.kind == TreeKind.Source)
-    sequence(pickAll(TreeKind.Def)(tree.children).map(visitDefinition))
+    mapN(
+      traverse(pickAll(TreeKind.Def)(tree.children))(visitDefinition),
+      traverse(pickAll(TreeKind.Class)(tree.children))(visitTypeClass)
+    ) {
+      case (definitions, classes) => definitions ++ classes
+    }
+  }
+
+  private def visitTypeClass(tree: Tree)(implicit s: State): Validation[Declaration, CompilationMessage] = {
+    assert(tree.kind == TreeKind.Class)
+    mapN(
+      visitDocumentation(tree),
+      visitAnnotations(tree),
+      visitModifiers(tree),
+      visitNameIdent(tree),
+      visitTypeParameter(tree),
+      visitAssociatedTypes(tree),
+      visitSignatures(tree),
+      //TODO: visitLaws(tree),
+    ) {
+      case (doc, annotations, modifiers, ident, tparam, assocs, sigs) =>
+        Declaration.Class(doc, annotations, modifiers, ident, tparam, List.empty, assocs, sigs, List.empty, tree.loc)
+    }
   }
 
   private def visitDefinition(tree: Tree)(implicit s: State): Validation[Declaration, CompilationMessage] = {
@@ -132,7 +154,7 @@ object Weeder2 {
           case "@TailRec" => TailRecursive(loc).toSuccess
           case other => softFailWith(Ast.Annotation.Error(other.stripPrefix("@"), loc))
         }
-      case Child.Tree(tree) => failWith(s"expected annotation but found subtree of kind ${tree.kind}")
+      case Child.Tree(tree) => failWith(s"expected annotation but found subtree of kind ${tree.kind}", tree.loc)
     }
   }
 
@@ -144,6 +166,21 @@ object Weeder2 {
   private def visitTypeParameters(tree: Tree): Validation[KindedTypeParams, CompilationMessage] = {
     // TODO
     TypeParams.Elided.toSuccess
+  }
+
+  private def visitTypeParameter(tree: Tree): Validation[TypeParam, CompilationMessage] = {
+    // TODO
+    failWith("TODO: Type param", tree.loc)
+  }
+
+  private def visitAssociatedTypes(tree: Tree): Validation[List[Declaration.AssocTypeSig], CompilationMessage] = {
+    // TODO
+    failWith("TODO: assocs", tree.loc)
+  }
+
+  private def visitSignatures(tree: Tree): Validation[List[Declaration.Sig], CompilationMessage] = {
+    // TODO
+    failWith("TODO: signatures", tree.loc)
   }
 
   private def visitParameters(tree: Tree): Validation[List[FormalParam], CompilationMessage] = {
@@ -165,7 +202,7 @@ object Weeder2 {
         }
         parameters.toSuccess
       }
-    ).getOrElse(failWith("expected formal parameters"))
+    ).getOrElse(failWith("expected formal parameters", tree.loc))
 
     params
   }
@@ -212,7 +249,7 @@ object Weeder2 {
   private def visitType(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
     val typeTree = tryPick(TreeKind.Type.Type, tree.children)
     val loc = typeTree.map(_.loc).getOrElse(SourceLocation.Unknown)
-    val ident = typeTree.map(visitNameIdent(_)).getOrElse(failWith("TODO: types are more that idents"))
+    val ident = typeTree.map(visitNameIdent).getOrElse(failWith("TODO: types are more that idents", loc))
     mapN(ident) {
       ident =>
         Type.Ambiguous(
@@ -233,7 +270,7 @@ object Weeder2 {
         token.text,
         token.mkSourcePositionEnd(s.src, Some(s.parserInput))
       ).toSuccess
-      case _ => failWith("expected TreeKind.Ident to contain a Child.Token")
+      case Child.Tree(t) => failWith("expected TreeKind.Ident to contain a Child.Token", t.loc)
     })
   }
 
@@ -270,8 +307,8 @@ object Weeder2 {
     })
   }
 
-  private def failWith[T](message: String): Validation[T, CompilationMessage] = {
-    Validation.Failure(LazyList(Parse2Error.DevErr(SourceLocation.Unknown, message)))
+  private def failWith[T](message: String, loc: SourceLocation = SourceLocation.Unknown): Validation[T, CompilationMessage] = {
+    Validation.Failure(LazyList(Parse2Error.DevErr(loc, message)))
   }
 
   private def softFailWith[T](result: T): Validation[T, CompilationMessage] = {
