@@ -123,7 +123,7 @@ object Parser2 {
           var outString = ""
           val weededAst = parse(src, tokens) match {
             case Success(t) =>
-              outString += s"${Console.GREEN}✔︎${Console.RESET}"
+              outString += s"${Console.GREEN}✔︎ ${Console.RESET}"
               if (DEBUG_FOCUS == src.name) {
                 println(t.toDebugString())
               }
@@ -131,27 +131,27 @@ object Parser2 {
                 case Success(t) =>
                   val hasSameStructure = diffWeededAsts(src, t)
                   if (hasSameStructure) {
-                    outString += s"\t${Console.GREEN}✔︎${Console.RESET}"
+                    outString += s"\t${Console.GREEN}✔︎ ${Console.RESET}"
                   } else {
-                    outString += s"\t${Console.YELLOW}✔︎${Console.RESET}"
+                    outString += s"\t${Console.YELLOW}!=${Console.RESET}"
                   }
                   t.toSuccess
                 case SoftFailure(t, errors) =>
-                  outString += s"\t${Console.YELLOW}✘${Console.RESET}"
+                  outString += s"\t${Console.YELLOW}✘ ${Console.RESET}"
                   diffWeededAsts(src, t)
                   fallback(src, errors)
                 case Failure(errors) =>
-                  outString += s"\t${Console.RED}✘${Console.RESET}"
+                  outString += s"\t${Console.RED}✘ ${Console.RESET}"
                   fallback(src, errors)
               }
             case SoftFailure(t, errors) =>
-              outString += s"${Console.YELLOW}✘${Console.RESET}\t-"
+              outString += s"${Console.YELLOW}✘ ${Console.RESET}\t-"
               if (DEBUG_FOCUS == src.name) {
                 println(t.toDebugString())
               }
               fallback(src, errors)
             case Failure(errors) =>
-              outString += s"${Console.RED}✘${Console.RESET}\t-"
+              outString += s"${Console.RED}✘ ${Console.RESET}\t-"
               fallback(src, errors)
           }
           outString += s"\t${src.name}"
@@ -657,7 +657,6 @@ object Parser2 {
    * typeParameters -> '[' (typeParameter (',' typeParameter)* )? ']'
    */
   private def typeParameters()(implicit s: State): Mark.Closed = {
-    println(nth(0))
     commaSeparated(
       TreeKind.TypeParameters,
       asArgument(

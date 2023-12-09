@@ -20,8 +20,9 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.errors.Parse2Error
+import ca.uwaterloo.flix.language.errors.WeederError.{MismatchedTypeParameters, MissingTypeParamKind}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
 
 // TODO: Add change set support
@@ -84,7 +85,7 @@ object Weeder2 {
       visitAnnotations(tree),
       visitModifiers(tree),
       visitNameIdent(tree),
-      visitTypeParameter(tree),
+      visitSingleTypeParameter(tree),
       visitAssociatedTypes(tree),
       visitSignatures(tree),
       //TODO: visitLaws(tree),
@@ -101,7 +102,7 @@ object Weeder2 {
       visitAnnotations(tree),
       visitModifiers(tree),
       visitNameIdent(tree),
-      visitTypeParameters(tree),
+      visitKindedTypeParameters(tree),
       visitParameters(tree),
       visitExpression(tree),
       visitType(tree),
@@ -159,28 +160,119 @@ object Weeder2 {
   }
 
   private def visitModifiers(tree: Tree): Validation[Ast.Modifiers, CompilationMessage] = {
-    // TODO
-    Ast.Modifiers(List.empty).toSuccess
+    tryPick(TreeKind.Modifiers, tree.children) match {
+      case Some(modTree) => mapN(
+        traverse(modTree.children)(visitModifier)
+      )(Ast.Modifiers(_))
+      case None => Ast.Modifiers(List.empty).toSuccess
+    }
   }
 
-  private def visitTypeParameters(tree: Tree): Validation[KindedTypeParams, CompilationMessage] = {
-    // TODO
-    TypeParams.Elided.toSuccess
+  private def visitModifier(c: Child): Validation[Ast.Modifier, CompilationMessage] = {
+    c match {
+      case Child.Token(token) => token.kind match {
+        // TODO: there is no Ast.Modifier for 'inline'
+        case TokenKind.KeywordSealed => Ast.Modifier.Sealed.toSuccess
+        case TokenKind.KeywordLawful => Ast.Modifier.Lawful.toSuccess
+        case TokenKind.KeywordPub => Ast.Modifier.Public.toSuccess
+        case TokenKind.KeywordOverride => Ast.Modifier.Override.toSuccess
+        // TODO: Can this be a softFailure?
+        case kind => failWith(s"unsupported modifier $kind")
+      }
+      case Child.Tree(tree) => throw InternalCompilerException("Parser passed tree as modifier", tree.loc)
+    }
   }
 
-  private def visitTypeParameter(tree: Tree): Validation[TypeParam, CompilationMessage] = {
-    // TODO
-    failWith("TODO: Type param", tree.loc)
+  private def visitTypeParameters(tree: Tree)(implicit s: State): Validation[TypeParams, CompilationMessage] = {
+    tryPick(TreeKind.TypeParameters, tree.children) match {
+      case Some(tparamsTree) =>
+        flatMapN(traverse(pickAll(TreeKind.Parameter)(tparamsTree.children))(visitTypeParameter)) {
+          tparams =>
+            val kinded = tparams.collect { case t: TypeParam.Kinded => t }
+            val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
+            (kinded, unkinded) match {
+              // Only unkinded type parameters
+              case (Nil, _ :: _) => TypeParams.Unkinded(unkinded).toSuccess
+              // Only kinded type parameters
+              case (_ :: _, Nil) => TypeParams.Kinded(kinded).toSuccess
+              // Some kinded and some unkinded type parameters. We recover by kinding the unkinded ones as Ambiguous.
+              case (_ :: _, _ :: _) =>
+                val syntheticallyKinded = tparams.map {
+                  case p: TypeParam.Kinded => p
+                  case TypeParam.Unkinded(ident) =>
+                    TypeParam.Kinded(ident, Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic))
+                }
+                toSoftFailure(TypeParams.Kinded(syntheticallyKinded), MismatchedTypeParameters(tparamsTree.loc))
+              case (Nil, Nil) =>
+                throw InternalCompilerException("Parser produced empty type parameter tree", tparamsTree.loc)
+            }
+        }
+      case None => TypeParams.Elided.toSuccess
+    }
+  }
+
+  private def visitKindedTypeParameters(tree: Tree)(implicit s: State): Validation[KindedTypeParams, CompilationMessage] = {
+    tryPick(TreeKind.TypeParameters, tree.children) match {
+      case Some(tparamsTree) =>
+        flatMapN(traverse(pickAll(TreeKind.Parameter)(tparamsTree.children))(visitTypeParameter)) {
+          tparams =>
+            val kinded = tparams.collect { case t: TypeParam.Kinded => t }
+            val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
+            (kinded, unkinded) match {
+              // Only kinded type parameters
+              case (_ :: _, Nil) => TypeParams.Kinded(kinded).toSuccess
+              // Some kinded and some unkinded type parameters. We recover by kinding the unkinded ones as Ambiguous.
+              case (_, _ :: _) =>
+                val errors = unkinded.map {
+                  case TypeParam.Unkinded(ident) => MissingTypeParamKind(ident.loc)
+                }
+                val syntheticallyKinded = tparams.map {
+                  case p: TypeParam.Kinded => p
+                  case TypeParam.Unkinded(ident) =>
+                    TypeParam.Kinded(ident, Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic))
+                }
+                toSuccessOrSoftFailure(TypeParams.Kinded(syntheticallyKinded), errors)
+              case (Nil, Nil) =>
+                throw InternalCompilerException("Parser produced empty type parameter tree", tparamsTree.loc)
+            }
+        }
+      case None => TypeParams.Elided.toSuccess
+    }
+  }
+
+  private def visitSingleTypeParameter(tree: Tree)(implicit s: State): Validation[TypeParam, CompilationMessage] = {
+    flatMapN(pick(TreeKind.TypeParameters, tree.children)) {
+      tparams => flatMapN(pick(TreeKind.Parameter, tparams.children))(visitTypeParameter)
+    }
+  }
+
+  private def visitTypeParameter(tree: Tree)(implicit s: State): Validation[TypeParam, CompilationMessage] = {
+    flatMapN(visitNameIdent(tree)) {
+      ident =>
+        mapN(visitKind(tree)) {
+          kind => TypeParam.Kinded(ident, kind)
+        }.recoverOne(_ => TypeParam.Unkinded(ident))
+    }
+  }
+
+  private def visitKind(tree: Tree)(implicit s: State): Validation[Kind, CompilationMessage] = {
+    flatMapN(pick(TreeKind.Kind, tree.children)) {
+      kindTree => mapN(visitNameIdent(kindTree)) {
+        ident => Kind.Ambiguous(Name.mkQName(ident), kindTree.loc)
+      }
+    }
   }
 
   private def visitAssociatedTypes(tree: Tree): Validation[List[Declaration.AssocTypeSig], CompilationMessage] = {
     // TODO
-    failWith("TODO: assocs", tree.loc)
+    List.empty.toSuccess
+    //    failWith("TODO: assocs", tree.loc)
   }
 
   private def visitSignatures(tree: Tree): Validation[List[Declaration.Sig], CompilationMessage] = {
     // TODO
-    failWith("TODO: signatures", tree.loc)
+    List.empty.toSuccess
+    //    failWith("TODO: signatures", tree.loc)
   }
 
   private def visitParameters(tree: Tree): Validation[List[FormalParam], CompilationMessage] = {
@@ -193,8 +285,8 @@ object Weeder2 {
             FormalParam(
               Name.Ident(SourcePosition.Unknown, "_unit", SourcePosition.Unknown),
               Ast.Modifiers(List.empty),
-              Some(Type.Unit(SourceLocation.Unknown)),
-              SourceLocation.Unknown
+              Some(Type.Unit(t.loc)),
+              t.loc
             )
           )
         } else {
