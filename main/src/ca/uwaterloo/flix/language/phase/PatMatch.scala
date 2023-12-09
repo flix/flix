@@ -622,6 +622,7 @@ object PatMatch {
     case Some(TypeConstructor.Tuple(l)) => l
     case Some(TypeConstructor.RecordRowExtend(_)) => 2
     case Some(TypeConstructor.SchemaRowExtend(_)) => 2
+    case Some(TypeConstructor.Error(_)) => 0
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
   }
 
