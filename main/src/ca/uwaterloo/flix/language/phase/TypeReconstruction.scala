@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Constant, LabelledPrecedenceGraph, Stratification}
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, KindedAst, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, DependencyGraph, KindedAst, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.Validation.ToSuccess
@@ -52,7 +52,7 @@ object TypeReconstruction {
     val eqEnv = mkEqualityEnv(root.classes, root.instances)
     val precedenceGraph = LabelledPrecedenceGraph.empty
 
-    TypedAst.Root(modules, classes, instances, sigs, defs, enums, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, eqEnv, root.names, precedenceGraph).toSuccess
+    TypedAst.Root(modules, classes, instances, sigs, defs, enums, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, eqEnv, root.names, precedenceGraph, DependencyGraph.empty).toSuccess
   }
 
   /**

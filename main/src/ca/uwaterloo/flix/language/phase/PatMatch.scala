@@ -107,10 +107,10 @@ object PatMatch {
   /**
     * Returns an error message if a pattern match is not exhaustive
     */
-  def run(root: TypedAst.Root)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
+  def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
     flix.phase("PatMatch") {
       implicit val r: TypedAst.Root = root
-      implicit val dg: DependencyGraph = new DependencyGraph(root)
+      implicit val dg: DependencyGraph = new DependencyGraph()
 
       val defErrs = ParOps.parMap(root.defs.values)(visitDef).flatten
       val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef).flatten
@@ -123,12 +123,12 @@ object PatMatch {
       Validation.toSuccessOrSoftFailure(root, errors)
     }
 
-  private def visitDef(decl: TypedAst.Def)(implicit dg: DependencyGraph, flix: Flix): List[NonExhaustiveMatchError] = {
+  private def visitDef(decl: TypedAst.Def)(implicit dg: DependencyGraph, root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = {
     implicit val s: Source = Source.Def(decl.sym)
     visitExp(decl.exp)
   }
 
-  private def visitSig(decl: TypedAst.Sig)(implicit dg: DependencyGraph, flix: Flix): List[NonExhaustiveMatchError] = {
+  private def visitSig(decl: TypedAst.Sig)(implicit dg: DependencyGraph, root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = {
     implicit val s: Source = Source.Sig(decl.sym)
     decl.exp match {
       case None => Nil
@@ -136,7 +136,7 @@ object PatMatch {
     }
   }
 
-  private def visitExp(tast: TypedAst.Expr)(implicit src: Source, dg: DependencyGraph, flix: Flix): List[NonExhaustiveMatchError] = {
+  private def visitExp(tast: TypedAst.Expr)(implicit src: Source, dg: DependencyGraph, root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = {
     tast match {
       case Expr.Var(_, _, _) => Nil
       case Expr.Def(_, _, _) => Nil
@@ -251,18 +251,18 @@ object PatMatch {
   /**
     * Performs exhaustive checking on the given constraint `c`.
     */
-  private def visitConstraint(c0: TypedAst.Constraint)(implicit src: Source, dg: DependencyGraph, flix: Flix): List[NonExhaustiveMatchError] = c0 match {
+  private def visitConstraint(c0: TypedAst.Constraint)(implicit src: Source, dg: DependencyGraph, root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = c0 match {
     case TypedAst.Constraint(_, head0, body0, _) =>
       val headErrs = visitHeadPred(head0)
       val bodyErrs = body0.flatMap(visitBodyPred)
       headErrs ::: bodyErrs
   }
 
-  private def visitHeadPred(h0: TypedAst.Predicate.Head)(implicit src: Source, dg: DependencyGraph, flix: Flix): List[NonExhaustiveMatchError] = h0 match {
+  private def visitHeadPred(h0: TypedAst.Predicate.Head)(implicit src: Source, dg: DependencyGraph, root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = h0 match {
     case TypedAst.Predicate.Head.Atom(_, _, terms, _, _) => terms.flatMap(visitExp)
   }
 
-  private def visitBodyPred(b0: TypedAst.Predicate.Body)(implicit src: Source, dg: DependencyGraph, flix: Flix): List[NonExhaustiveMatchError] = b0 match {
+  private def visitBodyPred(b0: TypedAst.Predicate.Body)(implicit src: Source, dg: DependencyGraph, root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = b0 match {
     case TypedAst.Predicate.Body.Atom(_, _, _, _, _, _, _) => Nil
     case TypedAst.Predicate.Body.Guard(exp, _) => visitExp(exp)
     case TypedAst.Predicate.Body.Functional(_, exp, _) => visitExp(exp)
@@ -275,7 +275,7 @@ object PatMatch {
     * @param loc   the source location of the ParYield expression.
     * @return
     */
-  private def checkFrags(frags: List[ParYieldFragment], loc: SourceLocation)(implicit src: Source, dg: DependencyGraph): List[NonExhaustiveMatchError] = {
+  private def checkFrags(frags: List[ParYieldFragment], loc: SourceLocation)(implicit src: Source, dg: DependencyGraph, root: TypedAst.Root): List[NonExhaustiveMatchError] = {
     // Call findNonMatchingPat for each pattern individually
     frags.flatMap(f => findNonMatchingPat(List(List(f.pat)), 1) match {
       case Exhaustive => Nil
@@ -290,7 +290,7 @@ object PatMatch {
     * @param rules The rules to check
     * @return
     */
-  private def checkRules(exp: TypedAst.Expr, rules: List[TypedAst.MatchRule])(implicit src: Source, dg: DependencyGraph): List[NonExhaustiveMatchError] = {
+  private def checkRules(exp: TypedAst.Expr, rules: List[TypedAst.MatchRule])(implicit src: Source, dg: DependencyGraph, root: TypedAst.Root): List[NonExhaustiveMatchError] = {
     // Filter down to the unguarded rules.
     // Guarded rules cannot contribute to exhaustiveness (the guard could be e.g. `false`)
     val unguardedRules = rules.filter(r => r.guard.isEmpty)
@@ -308,7 +308,7 @@ object PatMatch {
     * @param n     The size of resulting pattern vector
     * @return If no such pattern exists, returns Exhaustive, else returns NonExhaustive(a matching pattern)
     */
-  private def findNonMatchingPat(rules: List[List[Pattern]], n: Int)(implicit src: Source, dg: DependencyGraph): Exhaustiveness = {
+  private def findNonMatchingPat(rules: List[List[Pattern]], n: Int)(implicit src: Source, dg: DependencyGraph, root: TypedAst.Root): Exhaustiveness = {
     if (n == 0) {
       if (rules.isEmpty) {
         return NonExhaustive(List.empty[TyCon])
@@ -527,7 +527,7 @@ object PatMatch {
     * @param ctors The ctors that we match with
     * @return
     */
-  private def missingFromSig(ctors: List[TyCon])(implicit src: Source, dg: DependencyGraph): List[TyCon] = {
+  private def missingFromSig(ctors: List[TyCon])(implicit src: Source, dg: DependencyGraph, root: TypedAst.Root): List[TyCon] = {
     // Enumerate all the constructors that we need to cover
     def getAllCtors(x: TyCon, xs: List[TyCon]) = x match {
       // For built in constructors, we can add all the options since we know them a priori

@@ -81,6 +81,7 @@ class Flix {
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
   private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.empty
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
+  private var cachedStratifierAst: TypedAst.Root = TypedAst.empty
 
   def getParserAst: ParsedAst.Root = cachedParserAst
 
@@ -555,7 +556,7 @@ class Flix {
       _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
       afterPredDeps <- PredDeps.run(afterEntryPoint)
       afterStratifier <- Stratifier.run(afterPredDeps)
-      afterPatMatch <- PatMatch.run(afterStratifier)
+      afterPatMatch <- PatMatch.run(afterStratifier, cachedStratifierAst, changeSet)
       afterRedundancy <- Redundancy.run(afterPatMatch)
       afterSafety <- Safety.run(afterRedundancy)
     } yield {
@@ -568,6 +569,7 @@ class Flix {
         this.cachedKinderAst = afterKinder
         this.cachedResolverAst = afterResolver
         this.cachedTyperAst = afterTyper
+        this.cachedStratifierAst = afterStratifier
       }
       afterSafety
     }

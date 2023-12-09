@@ -19,11 +19,15 @@ import java.util.concurrent.ConcurrentHashMap
 
 import scala.jdk.CollectionConverters._
 
-class DependencyGraph(root: TypedAst.Root) {
+object DependencyGraph {
+  def empty: DependencyGraph = new DependencyGraph
+}
+
+class DependencyGraph {
 
   private val dependencies: ConcurrentHashMap[(Source, Target), Unit] = new ConcurrentHashMap()
 
-  def lookupEnumSym(sym: Symbol.EnumSym)(implicit src: Source): TypedAst.Enum = {
+  def lookupEnumSym(sym: Symbol.EnumSym)(implicit src: Source, root: TypedAst.Root): TypedAst.Enum = {
     val result = root.enums(sym)
     val target = Target.Enum(result.sym)
     dependencies.put((src, target), ())
