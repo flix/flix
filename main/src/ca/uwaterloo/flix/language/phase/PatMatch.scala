@@ -109,18 +109,22 @@ object PatMatch {
     */
   def run(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Root, NonExhaustiveMatchError] =
     flix.phase("PatMatch") {
+
+      // TODO: Introduce abstraction.
+      val staleDefs = oldRoot.dependencyGraph.staleDefs(changeSet)
+      val newDefs = root.defs.keySet -- oldRoot.defs.keys
+      val checkDefs = newDefs ++ staleDefs
+
       implicit val r: TypedAst.Root = root
       implicit val dg: DependencyGraph = new DependencyGraph()
 
-      val defErrs = ParOps.parMap(root.defs.values)(visitDef).flatten
+      val defErrs = ParOps.parMap(root.defs.filter(kv => checkDefs.contains(kv._1)).values)(visitDef).flatten
       val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef).flatten
       val sigsErrs = ParOps.parMap(root.sigs.values)(visitSig).flatten
 
       val errors = defErrs ++ instanceDefErrs ++ sigsErrs
 
-      println(dg)
-
-      Validation.toSuccessOrSoftFailure(root, errors)
+      Validation.toSuccessOrSoftFailure(root.copy(dependencyGraph = dg), errors)
     }
 
   private def visitDef(decl: TypedAst.Def)(implicit dg: DependencyGraph, root: TypedAst.Root, flix: Flix): List[NonExhaustiveMatchError] = {

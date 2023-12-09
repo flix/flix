@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import java.util.concurrent.ConcurrentHashMap
-
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 object DependencyGraph {
@@ -32,6 +32,18 @@ class DependencyGraph {
     val target = Target.Enum(result.sym)
     dependencies.put((src, target), ())
     result
+  }
+
+  def staleDefs(changeSet: ChangeSet): Set[Symbol.DefnSym] = {
+    val result = mutable.ArrayBuffer.empty[Symbol.DefnSym]
+    for (((src, target), _) <- dependencies.asScala) {
+      (src, target) match {
+        case (Source.Def(defnSym), Target.Enum(enumSym)) if changeSet.isChanged(enumSym.loc) =>
+          result += defnSym
+        case _ => // nop
+      }
+    }
+    result.toSet
   }
 
   override def toString: String = {
