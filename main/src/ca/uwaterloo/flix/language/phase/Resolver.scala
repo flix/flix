@@ -2189,7 +2189,7 @@ object Resolver {
     }
 
     matches match {
-      case Nil => Validation.toHardFailure(ResolutionError.UndefinedType(qname, ns0, qname.loc))
+      case Nil => Validation.toHardFailure(ResolutionError.UndefinedRestrictableType(qname, ns0, qname.loc))
       case enum :: _ => enum.toSuccess
     }
   }
@@ -2252,7 +2252,8 @@ object Resolver {
             case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
             case TypeLookupResult.JavaClass(clazz) => flixifyType(clazz, loc).toSuccess
             case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
-            case TypeLookupResult.NotFound => Validation.toHardFailure(ResolutionError.UndefinedType(qname, ns0, loc))
+            case TypeLookupResult.NotFound =>
+              Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UndefinedType(qname, ns0, loc))
           }
       }
 
@@ -2265,7 +2266,8 @@ object Resolver {
           case TypeLookupResult.Effect(eff) => getEffectTypeIfAccessible(eff, ns0, root, loc)
           case TypeLookupResult.JavaClass(clazz) => flixifyType(clazz, loc).toSuccess
           case TypeLookupResult.AssocType(assoc) => getAssocTypeTypeIfAccessible(assoc, ns0, root, loc)
-          case TypeLookupResult.NotFound => Validation.toHardFailure(ResolutionError.UndefinedType(qname, ns0, loc))
+          case TypeLookupResult.NotFound =>
+            Validation.toSoftFailure(UnkindedType.Error(loc), ResolutionError.UndefinedType(qname, ns0, loc))
         }
 
       case NamedAst.Type.Tuple(elms0, loc) =>
