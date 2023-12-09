@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.errors.Parse2Error
-import ca.uwaterloo.flix.language.errors.WeederError.{MismatchedTypeParameters, MissingTypeParamKind}
+import ca.uwaterloo.flix.language.errors.WeederError.{MismatchedTypeParameters, MissingTypeParamKind, NonUnaryAssocType}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
@@ -80,18 +80,20 @@ object Weeder2 {
 
   private def visitTypeClass(tree: Tree)(implicit s: State): Validation[Declaration, CompilationMessage] = {
     assert(tree.kind == TreeKind.Class)
-    mapN(
+    flatMapN(
       visitDocumentation(tree),
       visitAnnotations(tree),
       visitModifiers(tree),
       visitNameIdent(tree),
       visitSingleTypeParameter(tree),
-      visitAssociatedTypes(tree),
       visitSignatures(tree),
       //TODO: visitLaws(tree),
     ) {
-      case (doc, annotations, modifiers, ident, tparam, assocs, sigs) =>
-        Declaration.Class(doc, annotations, modifiers, ident, tparam, List.empty, assocs, sigs, List.empty, tree.loc)
+      case (doc, annotations, modifiers, ident, tparam, sigs) =>
+        mapN(visitAssociatedTypes(tree, tparam)) {
+          assocs => Declaration.Class(doc, annotations, modifiers, ident, tparam, List.empty, assocs, sigs, List.empty, tree.loc)
+        }
+
     }
   }
 
@@ -199,8 +201,7 @@ object Weeder2 {
               case (_ :: _, _ :: _) =>
                 val syntheticallyKinded = tparams.map {
                   case p: TypeParam.Kinded => p
-                  case TypeParam.Unkinded(ident) =>
-                    TypeParam.Kinded(ident, Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic))
+                  case TypeParam.Unkinded(ident) => TypeParam.Kinded(ident, defaultKind(ident))
                 }
                 toSoftFailure(TypeParams.Kinded(syntheticallyKinded), MismatchedTypeParameters(tparamsTree.loc))
               case (Nil, Nil) =>
@@ -247,29 +248,61 @@ object Weeder2 {
   }
 
   private def visitTypeParameter(tree: Tree)(implicit s: State): Validation[TypeParam, CompilationMessage] = {
-    flatMapN(visitNameIdent(tree)) {
-      ident =>
-        mapN(visitKind(tree)) {
-          kind => TypeParam.Kinded(ident, kind)
-        }.recoverOne(_ => TypeParam.Unkinded(ident))
+    mapN(visitNameIdent(tree)) {
+      ident => visitKind(tree).map(
+        kind => TypeParam.Kinded(ident, kind)).getOrElse(TypeParam.Unkinded(ident)
+      )
     }
   }
 
-  private def visitKind(tree: Tree)(implicit s: State): Validation[Kind, CompilationMessage] = {
-    flatMapN(pick(TreeKind.Kind, tree.children)) {
-      kindTree =>
-        flatMapN(visitNameIdent(kindTree)) {
-          ident =>
-            val k = Kind.Ambiguous(Name.QName(ident.sp1, Name.NName(ident.sp1, List.empty, ident.sp2), ident, ident.sp2), ident.loc)
-            mapN(visitKind(kindTree))(Kind.Arrow(k, _, kindTree.loc)).recoverOne(_ => k)
+  private def visitKind(tree: Tree)(implicit s: State): Option[Kind] = {
+    tryPick(TreeKind.Kind, tree.children).flatMap(kindTree => {
+      val ident = visitNameIdent(kindTree) match {
+        case Success(t) => Some(t)
+        case SoftFailure(t, _) => Some(t)
+        case Failure(_) => None
+      }
+
+      ident.map(ident => {
+        val k = Kind.Ambiguous(Name.QName(ident.sp1, Name.NName(ident.sp1, List.empty, ident.sp2), ident, ident.sp2), ident.loc)
+        visitKind(kindTree).map(Kind.Arrow(k, _, kindTree.loc)).getOrElse(k)
+      })
+    })
+  }
+
+  private def visitAssociatedTypes(tree: Tree, classTypeParam: TypeParam)(implicit s: State): Validation[List[Declaration.AssocTypeSig], CompilationMessage] = {
+    traverse(pickAll(TreeKind.AssociatedType)(tree.children))(t => visitAssociatedType(t, classTypeParam))
+  }
+
+  /**
+   * When kinds are elided they default to `Type`.
+   */
+  private def defaultKind(ident: Name.Ident): Kind = Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic)
+
+  private def visitAssociatedType(tree:Tree, classTypeParam: TypeParam)(implicit s: State): Validation[Declaration.AssocTypeSig, CompilationMessage] = {
+    assert(tree.kind == TreeKind.AssociatedType)
+    flatMapN(
+      visitDocumentation(tree),
+      visitModifiers(tree),
+      visitNameIdent(tree),
+      visitTypeParameters(tree),
+    ) {
+      case (doc, mods, ident, tparams) =>
+        val kind = visitKind(tree).getOrElse(defaultKind(ident))
+        val tparam = tparams match {
+          // Elided: Use class type parameter
+          case TypeParams.Elided => classTypeParam.toSuccess
+          // Single type parameter
+          case TypeParams.Unkinded(head :: Nil) => head.toSuccess
+          case TypeParams.Kinded(head :: Nil) => head.toSuccess
+          // Multiple type parameters. Soft fail by picking the first parameter
+          case TypeParams.Unkinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
+          case TypeParams.Kinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
+        }
+        mapN(tparam) {
+          tparam => Declaration.AssocTypeSig(doc, mods, ident, tparam, kind, tree.loc)
         }
     }
-  }
-
-  private def visitAssociatedTypes(tree: Tree): Validation[List[Declaration.AssocTypeSig], CompilationMessage] = {
-    // TODO
-    List.empty.toSuccess
-    //    failWith("TODO: assocs", tree.loc)
   }
 
   private def visitSignatures(tree: Tree): Validation[List[Declaration.Sig], CompilationMessage] = {
