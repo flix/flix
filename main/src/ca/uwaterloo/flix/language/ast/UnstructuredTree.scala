@@ -52,6 +52,8 @@ object UnstructuredTree {
 
     case object Kind extends TreeKind
 
+    case object KindArrow extends TreeKind
+
     case object Signature extends TreeKind
 
     case object AssociatedType extends TreeKind

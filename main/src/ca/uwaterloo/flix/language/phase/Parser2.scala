@@ -674,14 +674,15 @@ object Parser2 {
     )
   }
 
-  ////////// KINDS ////////
-
   /**
-   * kind -> TODO
+   * kind -> name ('->' kind)?
    */
   private def kind()(implicit s: State): Mark.Closed = {
     val mark = open()
     name(NAME_KIND)
+    if (eat(TokenKind.ArrowThin)) {
+      kind()
+    }
     close(mark, TreeKind.Kind)
   }
 

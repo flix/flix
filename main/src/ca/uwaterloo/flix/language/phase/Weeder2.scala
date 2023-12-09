@@ -257,9 +257,12 @@ object Weeder2 {
 
   private def visitKind(tree: Tree)(implicit s: State): Validation[Kind, CompilationMessage] = {
     flatMapN(pick(TreeKind.Kind, tree.children)) {
-      kindTree => mapN(visitNameIdent(kindTree)) {
-        ident => Kind.Ambiguous(Name.mkQName(ident), kindTree.loc)
-      }
+      kindTree =>
+        flatMapN(visitNameIdent(kindTree)) {
+          ident =>
+            val k = Kind.Ambiguous(Name.QName(ident.sp1, Name.NName(ident.sp1, List.empty, ident.sp2), ident, ident.sp2), ident.loc)
+            mapN(visitKind(kindTree))(Kind.Arrow(k, _, kindTree.loc)).recoverOne(_ => k)
+        }
     }
   }
 
