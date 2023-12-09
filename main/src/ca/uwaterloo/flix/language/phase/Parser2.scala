@@ -97,17 +97,24 @@ object Parser2 {
         }
       }
 
-      def diffWeededAsts(src: Ast.Source, newAst: WeededAst.CompilationUnit) = {
+      def diffWeededAsts(src: Ast.Source, newAst: WeededAst.CompilationUnit): Boolean = {
         // Print asts for closer inspection
-        if (src.name == DEBUG_FOCUS) {
-          mapN(afterWeeder)(t => {
-            val oldAst = t.units(src)
+        val matches = mapN(afterWeeder)(t => {
+          val oldAst = t.units(src)
+          if (src.name == DEBUG_FOCUS) {
             println("[[[ OLD PARSER ]]]")
             println(formatWeededAst(oldAst))
             println("[[[ NEW PARSER ]]]")
             println(formatWeededAst(newAst))
             println("[[[ END ]]]")
-          })
+          }
+          val hasSameStructure = formatWeededAst(oldAst, withLocs = false) == formatWeededAst(newAst, withLocs = false)
+          hasSameStructure
+        })
+
+        matches match {
+          case Success(isMatch) => isMatch
+          case _ => false
         }
       }
 
@@ -122,8 +129,12 @@ object Parser2 {
               }
               Weeder2.weed(src, t) match {
                 case Success(t) =>
-                  outString += s"\t${Console.GREEN}✔︎${Console.RESET}"
-                  diffWeededAsts(src, t)
+                  val hasSameStructure = diffWeededAsts(src, t)
+                  if (hasSameStructure) {
+                    outString += s"\t${Console.GREEN}✔︎${Console.RESET}"
+                  } else {
+                    outString += s"\t${Console.YELLOW}✔︎${Console.RESET}"
+                  }
                   t.toSuccess
                 case SoftFailure(t, errors) =>
                   outString += s"\t${Console.YELLOW}✘${Console.RESET}"
@@ -447,6 +458,36 @@ object Parser2 {
     }
   }
 
+  private val NAME_DEFINITION = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek)
+  private val NAME_PARAMETER = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
+  private val NAME_VARIABLE = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
+  private val NAME_FIELD = List(TokenKind.NameLowerCase)
+  private val NAME_TYPE = List(TokenKind.NameUpperCase)
+  private val NAME_KIND = List(TokenKind.NameUpperCase)
+  private val NAME_EFFECT = List(TokenKind.NameUpperCase)
+
+  private def name(kinds: List[TokenKind], allowQualified: Boolean = false)(implicit s: State): Mark.Closed = {
+    val mark = open()
+    expectAny(kinds)
+    val first = close(mark, TreeKind.Ident)
+    if (!allowQualified) {
+      return first
+    }
+    var wasQualified = false
+    while (eat(TokenKind.Dot) && !eof()) {
+      wasQualified = true
+      val mark = open()
+      expectAny(kinds)
+      close(mark, TreeKind.Ident)
+    }
+    if (wasQualified) {
+      val mark = openBefore(first)
+      close(mark, TreeKind.QName)
+    } else {
+      first
+    }
+  }
+
   ////////// GRAMMAR ///////////////
 
   /**
@@ -479,7 +520,7 @@ object Parser2 {
    */
   private def typeClass(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
     expectAny(List(TokenKind.KeywordTrait, TokenKind.KeywordClass))
-    nameDefinition()
+    name(NAME_DEFINITION)
     if (at(TokenKind.BracketL)) {
       typeParameters()
     }
@@ -504,7 +545,7 @@ object Parser2 {
 
   private def associatedType(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
     expect(TokenKind.KeywordType)
-    nameType()
+    name(NAME_TYPE)
     if (at(TokenKind.BracketL)) {
       typeParameters()
     }
@@ -520,7 +561,7 @@ object Parser2 {
    */
   private def signature(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
     expect(TokenKind.KeywordDef)
-    nameDefinition()
+    name(NAME_DEFINITION)
     if (at(TokenKind.BracketL)) {
       typeParameters()
     }
@@ -545,7 +586,7 @@ object Parser2 {
    */
   private def definition(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
     expect(TokenKind.KeywordDef)
-    nameDefinition()
+    name(NAME_DEFINITION)
     if (at(TokenKind.BracketL)) {
       typeParameters()
     }
@@ -594,7 +635,6 @@ object Parser2 {
     close(mark, TreeKind.Doc)
   }
 
-
   ////////////////// PARAMETERS ///////////////
 
   /**
@@ -604,12 +644,12 @@ object Parser2 {
     commaSeparated(
       TreeKind.Parameters,
       asArgument(TreeKind.Parameter, () => {
-        nameParameter()
+        name(NAME_PARAMETER)
         expect(TokenKind.Colon)
         ttype()
       }),
       (TokenKind.ParenL, TokenKind.ParenR),
-      () => atAny(List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)),
+      () => atAny(NAME_PARAMETER),
     )
   }
 
@@ -617,27 +657,32 @@ object Parser2 {
    * typeParameters -> '[' (typeParameter (',' typeParameter)* )? ']'
    */
   private def typeParameters()(implicit s: State): Mark.Closed = {
+    println(nth(0))
     commaSeparated(
       TreeKind.TypeParameters,
       asArgument(
         TreeKind.Parameter, () => {
-          nameParameter()
-          expect(TokenKind.Colon)
-          kind()
+          var closed = name(NAME_VARIABLE)
+          if (at(TokenKind.Colon)) {
+            expect(TokenKind.Colon)
+            closed = kind()
+          }
+          closed
         },
         TokenKind.BracketR),
       (TokenKind.BracketL, TokenKind.BracketR),
-      () => atAny(List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)),
+      () => atAny(NAME_VARIABLE),
     )
   }
 
   ////////// KINDS ////////
+
   /**
    * kind -> TODO
    */
   private def kind()(implicit s: State): Mark.Closed = {
     val mark = open()
-    nameKind()
+    name(NAME_KIND)
     close(mark, TreeKind.Kind)
   }
 
@@ -699,7 +744,7 @@ object Parser2 {
       case TokenKind.NameLowerCase
            | TokenKind.NameUpperCase
            | TokenKind.NameMath
-           | TokenKind.NameGreek => exprName()
+           | TokenKind.NameGreek => name(NAME_DEFINITION, allowQualified = true)
       case TokenKind.Minus
            | TokenKind.KeywordNot
            | TokenKind.Plus
@@ -715,25 +760,6 @@ object Parser2 {
     val mark = open()
     advance()
     close(mark, TreeKind.Expr.Literal)
-  }
-
-  /**
-   * exprName -> Name.Definition ('.' Name.Definition)*
-   */
-  private def exprName()(implicit s: State): Mark.Closed = {
-    val first = nameDefinition()
-    var wasQualified = false
-    while (eat(TokenKind.Dot) && !eof()) {
-      wasQualified = true
-      nameDefinition()
-    }
-
-    if (wasQualified) {
-      val mark = openBefore(first)
-      close(mark, TreeKind.QName)
-    } else {
-      first
-    }
   }
 
   /**
@@ -841,8 +867,8 @@ object Parser2 {
 
   private def effect()(implicit s: State): Mark.Closed = {
     nth(0) match {
-      case TokenKind.NameUpperCase => nameEffect()
-      case TokenKind.NameLowerCase => nameVariable()
+      case TokenKind.NameUpperCase => name(NAME_EFFECT)
+      case TokenKind.NameLowerCase => name(NAME_VARIABLE)
       case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected effect, found $t"))
     }
   }
@@ -853,7 +879,7 @@ object Parser2 {
   private def typeArguments()(implicit s: State): Mark.Closed = {
     commaSeparated(
       TreeKind.Type.Arguments,
-      asArgument(TreeKind.Type.Argument, ttype),
+      asArgument(TreeKind.Type.Argument, ttype, TokenKind.BracketR),
       (TokenKind.BracketL, TokenKind.BracketR),
     )
   }
@@ -867,33 +893,12 @@ object Parser2 {
       // TODO: Do we need Primary.True and Primary.False ?
       case TokenKind.CurlyL => typeRecord()
       case TokenKind.ParenL => typeTuple()
-      case TokenKind.NameUpperCase => typeName()
+      case TokenKind.NameUpperCase => name(NAME_TYPE, allowQualified = true)
       case TokenKind.NameLowerCase
            | TokenKind.NameMath
            | TokenKind.NameGreek
-           | TokenKind.Underscore => nameVariable()
+           | TokenKind.Underscore => name(NAME_VARIABLE)
       case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected type, found $t"))
-    }
-  }
-
-  /**
-   * typeName -> NameType | typeQualifiedName
-   * A type name, type variable or a qualified type.
-   * IE. `Map`, `MyModule.MyEnum`.
-   */
-  private def typeName()(implicit s: State): Mark.Closed = {
-    val first = nameType()
-    var wasQualified = false
-    while (eat(TokenKind.Dot) && !eof()) {
-      wasQualified = true
-      nameType()
-    }
-
-    if (wasQualified) {
-      val mark = openBefore(first)
-      close(mark, TreeKind.QName)
-    } else {
-      first
     }
   }
 
@@ -924,7 +929,7 @@ object Parser2 {
     if (at(TokenKind.Bar)) {
       val mark = open()
       expect(TokenKind.Bar)
-      nameVariable()
+      name(NAME_VARIABLE)
       close(mark, TreeKind.Type.RecordVariable)
     }
 
@@ -937,56 +942,13 @@ object Parser2 {
    */
   private def typeRecordField()(implicit s: State): Mark.Closed = {
     val mark = open()
-    nameField()
+    name(NAME_FIELD)
     expect(TokenKind.Equal)
     ttype()
     if (!atAny(List(TokenKind.CurlyR, TokenKind.Bar))) {
       expect(TokenKind.Comma)
     }
     close(mark, TreeKind.Type.RecordField)
-  }
-
-  /////// NAMES ////////////
-  private def nameDefinition()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    expectAny(List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek))
-    close(mark, TreeKind.Ident)
-  }
-
-  private def nameParameter()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    expectAny(List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore))
-    close(mark, TreeKind.Ident)
-  }
-
-  private def nameVariable()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    expectAny(List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore))
-    close(mark, TreeKind.Ident)
-  }
-
-  private def nameField()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    expect(TokenKind.NameLowerCase)
-    close(mark, TreeKind.Ident)
-  }
-
-  private def nameType()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    expect(TokenKind.NameUpperCase)
-    close(mark, TreeKind.Ident)
-  }
-
-  private def nameKind()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    expect(TokenKind.NameUpperCase)
-    close(mark, TreeKind.Ident)
-  }
-
-  private def nameEffect()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    expect(TokenKind.NameUpperCase)
-    close(mark, TreeKind.Ident)
   }
 
   // A helper function that runs both the old and the new parser for comparison.
@@ -999,12 +961,12 @@ object Parser2 {
 
   // A helper function for formatting pretty printing ASTs.
   // It is generic to scala objects with some special handling for source positions and locations.
-  def formatWeededAst(obj: Any, depth: Int = 0, paramName: Option[String] = None): String = {
+  def formatWeededAst(obj: Any, depth: Int = 0, withLocs: Boolean = true, paramName: Option[String] = None): String = {
     val indent = "  " * depth
     val prettyName = paramName.fold("")(x => s"$x: ")
     val ptype = obj match {
-      case obj: SourcePosition => s"SourcePosition (${obj.line}, ${obj.col})"
-      case obj: SourceLocation => s"SourceLocation (${obj.beginLine}, ${obj.beginCol}) -> (${obj.endLine}, ${obj.endCol})"
+      case obj: SourcePosition => if (withLocs) s"SourcePosition (${obj.line}, ${obj.col})" else ""
+      case obj: SourceLocation => if (withLocs) s"SourceLocation (${obj.beginLine}, ${obj.beginCol}) -> (${obj.endLine}, ${obj.endCol})" else ""
       case _: Iterable[Any] => ""
       case obj: Product => obj.productPrefix
       case _ => obj.toString
@@ -1016,10 +978,10 @@ object Parser2 {
       case _: SourceLocation => acc
       case _: SourcePosition => acc
       case seq: Iterable[Any] =>
-        acc + seq.map(formatWeededAst(_, depth + 1, None)).mkString("")
+        acc + seq.map(formatWeededAst(_, depth + 1, withLocs, None)).mkString("")
       case obj: Product =>
         acc + (obj.productIterator zip obj.productElementNames)
-          .map { case (subObj, paramName) => formatWeededAst(subObj, depth + 1, Some(paramName)) }.mkString("")
+          .map { case (subObj, paramName) => formatWeededAst(subObj, depth + 1, withLocs, Some(paramName)) }.mkString("")
       case _ => acc
     }
   }
