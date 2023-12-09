@@ -405,7 +405,7 @@ object Parser2 {
     rt > lt
   }
 
-  private def commaSeparated(kind: TreeKind, delimiters: (TokenKind, TokenKind), getItem: () => Mark.Closed, checkForItem: () => Boolean = () => true)(implicit s: State): Mark.Closed = {
+  private def commaSeparated(kind: TreeKind, getItem: () => Mark.Closed, delimiters: (TokenKind, TokenKind) = (TokenKind.ParenL, TokenKind.ParenR), checkForItem: () => Boolean = () => true)(implicit s: State): Mark.Closed = {
     assert(at(delimiters._1))
     val mark = open()
     expect(delimiters._1)
@@ -426,21 +426,21 @@ object Parser2 {
     close(mark, kind)
   }
 
-  private def asArgument(kind: TreeKind, rule: () => Mark.Closed)(implicit s: State): () => Mark.Closed = {
+  private def asArgument(kind: TreeKind, rule: () => Mark.Closed, delimiter: TokenKind = TokenKind.ParenR)(implicit s: State): () => Mark.Closed = {
     () => {
       val mark = open()
       rule()
-      if (!at(TokenKind.BracketR)) {
+      if (!at(delimiter)) {
         expect(TokenKind.Comma)
       }
       close(mark, kind)
     }
   }
 
-  private def asArgumentFlat(rule: () => Mark.Closed)(implicit s: State): () => Mark.Closed = {
+  private def asArgumentFlat(rule: () => Mark.Closed, delimiter: TokenKind = TokenKind.ParenR)(implicit s: State): () => Mark.Closed = {
     () => {
       val closed = rule()
-      if (!at(TokenKind.BracketR)) {
+      if (!at(delimiter)) {
         expect(TokenKind.Comma)
       }
       closed
@@ -603,12 +603,12 @@ object Parser2 {
   private def parameters()(implicit s: State): Mark.Closed = {
     commaSeparated(
       TreeKind.Parameters,
-      (TokenKind.ParenL, TokenKind.ParenR),
       asArgument(TreeKind.Parameter, () => {
         nameParameter()
         expect(TokenKind.Colon)
         ttype()
       }),
+      (TokenKind.ParenL, TokenKind.ParenR),
       () => atAny(List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)),
     )
   }
@@ -619,12 +619,14 @@ object Parser2 {
   private def typeParameters()(implicit s: State): Mark.Closed = {
     commaSeparated(
       TreeKind.TypeParameters,
+      asArgument(
+        TreeKind.Parameter, () => {
+          nameParameter()
+          expect(TokenKind.Colon)
+          kind()
+        },
+        TokenKind.BracketR),
       (TokenKind.BracketL, TokenKind.BracketR),
-      asArgument(TreeKind.Parameter, () => {
-        nameParameter()
-        expect(TokenKind.Colon)
-        kind()
-      }),
       () => atAny(List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)),
     )
   }
@@ -672,22 +674,9 @@ object Parser2 {
    */
   private def arguments()(implicit s: State): Mark.Closed = {
     commaSeparated(
-      TreeKind.Argument,
-      (TokenKind.ParenL, TokenKind.ParenR),
-      argument
+      TreeKind.Arguments,
+      asArgument(TreeKind.Argument, () => expression()),
     )
-  }
-
-  /**
-   * argument -> expression
-   */
-  private def argument()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    expression()
-    if (!at(TokenKind.ParenR)) {
-      expect(TokenKind.Comma)
-    }
-    close(mark, TreeKind.Argument)
   }
 
   private def exprDelimited()(implicit s: State): Mark.Closed = {
@@ -840,8 +829,8 @@ object Parser2 {
     if (at(TokenKind.CurlyL)) {
       commaSeparated(
         TreeKind.Type.Effect,
+        asArgumentFlat(effect),
         (TokenKind.CurlyL, TokenKind.CurlyR),
-        asArgumentFlat(effect)
       )
     } else {
       val mark = open()
@@ -864,8 +853,8 @@ object Parser2 {
   private def typeArguments()(implicit s: State): Mark.Closed = {
     commaSeparated(
       TreeKind.Type.Arguments,
+      asArgument(TreeKind.Type.Argument, ttype),
       (TokenKind.BracketL, TokenKind.BracketR),
-      asArgument(TreeKind.Type.Argument, ttype)
     )
   }
 
@@ -912,11 +901,7 @@ object Parser2 {
    * typeTuple -> '(' (type (',' type)* )? ')'
    */
   private def typeTuple()(implicit s: State): Mark.Closed = {
-    commaSeparated(
-      TreeKind.Type.Tuple,
-      (TokenKind.ParenL, TokenKind.ParenR),
-      asArgumentFlat(ttype)
-    )
+    commaSeparated(TreeKind.Type.Tuple, asArgumentFlat(ttype))
   }
 
   /**
