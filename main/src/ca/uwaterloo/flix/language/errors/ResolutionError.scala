@@ -955,7 +955,7 @@ object ResolutionError {
   }
 
   /**
-    * Undefined Restritable Type Error.
+    * Undefined Restrictable Type Error.
     *
     * @param qn  the name.
     * @param ns  the current namespace.
