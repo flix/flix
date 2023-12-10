@@ -2740,6 +2740,11 @@ object Resolver {
     * Looks up the qualified name in the given root.
     */
   private def tryLookupQualifiedName(qname0: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Option[List[NamedAst.Declaration]] = {
+    // Fail if the name is un-qualified.
+    if (qname0.isUnqualified) {
+      return None
+    }
+
     // First resolve the root of the qualified name
     val head = qname0.namespace.parts.head
     tryLookupModule(head, env, ns0, root) match {

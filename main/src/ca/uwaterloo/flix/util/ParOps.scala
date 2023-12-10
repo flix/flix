@@ -41,19 +41,32 @@ object ParOps {
     // Construct a new count down latch to track the number of threads.
     val latch = new CountDownLatch(size)
 
+    // Track if any of the tasks throw an exception.
+    // In case of multiple exceptions, a race will determine the value of `thrown`.
+    var thrown: Throwable = null
+
     // Iterate through the elements of `xs`. Use a local variable to track the index.
     var idx = 0
     for (elm <- xs) {
       val i = idx // Ensure proper scope of i.
       flix.threadPool.execute(() => {
-        out(i) = f(elm)
-        latch.countDown()
+        try {
+          out(i) = f(elm)
+        } catch {
+          case ex: Throwable => thrown = ex
+        } finally {
+          latch.countDown()
+        }
       })
       idx = idx + 1
     }
 
     // Await all threads to finish and return the result.
     latch.await()
+
+    // Rethrow the exception (in a new exception to preserve the full stack trace).
+    if (thrown != null) throw new RuntimeException(thrown)
+
     out
   }
 
