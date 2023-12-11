@@ -821,11 +821,16 @@ object Parser2 {
    */
   private def ttype()(implicit s: State): Mark.Closed = {
     val mark = open()
-    val lhs = typeDelimited()
+    typeDelimited()
+    var lhs = close(mark, TreeKind.Type.Type)
 
     // handle Type argument application
     if (at(TokenKind.BracketL)) {
+      val mark = openBefore(lhs)
       typeArguments()
+      lhs = close(mark, TreeKind.Type.Apply)
+      // Wrap Apply in Type.Type
+      lhs = close(openBefore(lhs), TreeKind.Type.Type)
     }
 
     // Handle function types
@@ -835,7 +840,9 @@ object Parser2 {
       if (at(TokenKind.Slash)) {
         effectSet()
       }
-      close(mark, TreeKind.Type.Function)
+      lhs = close(mark, TreeKind.Type.Function)
+      // Wrap Function in Type.Type
+      lhs = close(openBefore(lhs), TreeKind.Type.Type)
     }
 
     // Handle effect
@@ -843,7 +850,7 @@ object Parser2 {
       effectSet()
     }
 
-    close(mark, TreeKind.Type.Type)
+    lhs
   }
 
   /**

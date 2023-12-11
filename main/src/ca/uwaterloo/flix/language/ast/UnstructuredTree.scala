@@ -115,6 +115,8 @@ object UnstructuredTree {
 
       case object Argument extends Type
 
+      case object Apply extends Type
+
       case object Function extends Type
 
       case object Effect extends Type
