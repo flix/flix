@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.errors.Parse2Error
-import ca.uwaterloo.flix.language.errors.WeederError.{MismatchedTypeParameters, MissingTypeParamKind, NonUnaryAssocType}
+import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
@@ -147,7 +147,16 @@ object Weeder2 {
   private def pickAnnotations(tree: Tree)(implicit s: State): Validation[Ast.Annotations, CompilationMessage] = {
     val annotationTree = tryPick(TreeKind.Annotations, tree.children)
     val annotations = annotationTree.map(
-      t => traverse(pickAllTokens(t))(visitAnnotation)
+      t => {
+        val tokens = pickAllTokens(t)
+        val errors = getDuplicates(tokens, (t: Token) => t.text).map(pair => {
+          val name = pair._1.text
+          val loc1 = pair._1.mkSourceLocation(s.src, Some(s.parserInput))
+          val loc2 = pair._2.mkSourceLocation(s.src, Some(s.parserInput))
+          DuplicateAnnotation(name.stripPrefix("@"), loc1, loc2)
+        })
+        traverse(tokens)(visitAnnotation).withSoftFailures(errors)
+      }
     ).getOrElse(List.empty.toSuccess)
     annotations.map(annotations => Ast.Annotations(annotations))
   }
@@ -173,15 +182,43 @@ object Weeder2 {
     }
   }
 
-  private def pickModifiers(tree: Tree): Validation[Ast.Modifiers, CompilationMessage] = {
+  private val ALL_MODIFIERS: Set[TokenKind] = Set(
+    TokenKind.KeywordSealed,
+    TokenKind.KeywordLawful,
+    TokenKind.KeywordPub,
+    TokenKind.KeywordOverride,
+    TokenKind.KeywordInline)
+
+  private def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false)(implicit s: State): Validation[Ast.Modifiers, CompilationMessage] = {
     tryPick(TreeKind.Modifiers, tree.children) match {
-      case Some(modTree) => mapN(traverse(pickAllTokens(modTree))(visitModifier))(Ast.Modifiers(_))
+      case Some(modTree) =>
+        var errors: List[CompilationMessage] = List.empty
+        val tokens = pickAllTokens(modTree)
+        // Check if pub is missing
+        if (mustBePublic && !tokens.exists(_.kind == TokenKind.KeywordPub)) {
+          mapN(pickNameIdent(tree)) {
+            ident =>
+              errors :+= IllegalPrivateDeclaration(ident, ident.loc)
+          }
+        }
+
+        // Check for duplicate modifiers
+        errors = errors ++ getDuplicates(tokens, (t: Token) => t.kind).map(pair => {
+          val name = pair._1.text
+          val loc1 = pair._1.mkSourceLocation(s.src, Some(s.parserInput))
+          val loc2 = pair._2.mkSourceLocation(s.src, Some(s.parserInput))
+          DuplicateModifier(name, loc2, loc1)
+        })
+
+        traverse(tokens)(visitModifier(_, allowed)).withSoftFailures(errors).map {
+          Ast.Modifiers(_)
+        }
       case None => Ast.Modifiers(List.empty).toSuccess
     }
   }
 
-  private def visitModifier(token: Token): Validation[Ast.Modifier, CompilationMessage] = {
-    token.kind match {
+  private def visitModifier(token: Token, allowed: Set[TokenKind])(implicit s: State): Validation[Ast.Modifier, CompilationMessage] = {
+    val mod = token.kind match {
       // TODO: there is no Ast.Modifier for 'inline'
       case TokenKind.KeywordSealed => Ast.Modifier.Sealed.toSuccess
       case TokenKind.KeywordLawful => Ast.Modifier.Lawful.toSuccess
@@ -189,6 +226,11 @@ object Weeder2 {
       case TokenKind.KeywordOverride => Ast.Modifier.Override.toSuccess
       // TODO: Can this be a softFailure?
       case kind => failWith(s"unsupported modifier $kind")
+    }
+    if (!allowed.contains(token.kind)) {
+      mod.withSoftFailure(IllegalModifier(token.mkSourceLocation(s.src, Some(s.parserInput))))
+    } else {
+      mod
     }
   }
 
@@ -324,8 +366,7 @@ object Weeder2 {
     mapN(
       pickDocumentation(tree),
       pickAnnotations(tree),
-      pickModifiers(tree),
-      // TODO: require public modifier
+      pickModifiers(tree, allowed = Set(TokenKind.KeywordSealed, TokenKind.KeywordLawful, TokenKind.KeywordPub), mustBePublic = true),
       pickNameIdent(tree),
       pickKindedTypeParameters(tree),
       //      visitFormalParameters()
@@ -406,7 +447,6 @@ object Weeder2 {
         // Visit first child and match its kind to know what to to
         val inner = unfold(typeTree)
         inner.kind match {
-          // TODO: Type.Var
           case TreeKind.Type.Variable => visitTypeVariable(inner)
           case TreeKind.Type.Apply => visitTypeApply(inner)
           case TreeKind.Ident => mapN(tokenToIdent(inner)) { ident => Type.Ambiguous(Name.mkQName(ident), ident.loc) }
@@ -414,7 +454,6 @@ object Weeder2 {
           case kind => failWith(s"'$kind' used as type")
         }
     }
-    // TODO: Handle effects here too?
   }
 
   private def visitTypeVariable(tree: Tree)(implicit s: State): Validation[Type.Var, CompilationMessage] = {
@@ -526,6 +565,19 @@ object Weeder2 {
       case Child.Tree(tree) if tree.kind == kind => acc.appended(tree)
       case _ => acc
     })
+  }
+
+  // A helper that returns the unique pairs of duplicates from an array of items
+  private def getDuplicates[A, K](items: Array[A], groupBy: A => K): List[(A, A)] = {
+    val duplicates = items.groupBy(groupBy).collect { case (_, is) if is.length > 1 => is }
+    val pairs = duplicates.map(dups => {
+      for {
+        (x, idxX) <- dups.zipWithIndex
+        (y, idxY) <- dups.zipWithIndex
+        if (idxX + 1) == idxY
+      } yield (x, y)
+    })
+    List.from(pairs.flatten)
   }
 
   private def failWith[T](message: String, loc: SourceLocation = SourceLocation.Unknown): Validation[T, CompilationMessage] = {
