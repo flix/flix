@@ -18,6 +18,14 @@ package ca.uwaterloo.flix.language.ast
 sealed trait ChangeSet {
 
   /**
+    * Returns `true` if the given source location is changed.
+    */
+  def isChanged(loc: SourceLocation): Boolean = this match {
+    case ChangeSet.Everything => true
+    case ChangeSet.Changes(s) => s.contains(loc.source.input)
+  }
+
+  /**
     * Returns a new change set with `i` marked as changed.
     */
   def markChanged(i: Ast.Input): ChangeSet = this match {
