@@ -1317,4 +1317,26 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateAnnotation](result)
   }
 
+  test("UnqualifiedUse.01") {
+    val input =
+      """
+        |use g
+        |
+        |def f(): String = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnqualifiedUse](result)
+  }
+
+  test("UnqualifiedUse.02") {
+    val input =
+      """
+        |def f(): String = {
+        |  use g;
+        |  ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnqualifiedUse](result)
+  }
 }
