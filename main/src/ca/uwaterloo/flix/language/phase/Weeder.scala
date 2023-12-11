@@ -551,7 +551,12 @@ object Weeder {
     */
   private def visitUseOrImport(u0: ParsedAst.UseOrImport): Validation[List[WeededAst.UseOrImport], WeederError] = u0 match {
     case ParsedAst.Use.UseOne(sp1, qname, sp2) =>
-      List(WeededAst.UseOrImport.Use(qname, qname.ident, mkSL(sp1, sp2))).toSuccess
+      if (qname.isQualified) {
+        List(WeededAst.UseOrImport.Use(qname, qname.ident, mkSL(sp1, sp2))).toSuccess
+      } else {
+        // Recover by ignoring the broken use.
+        Validation.toSoftFailure(Nil, WeederError.UnqualifiedUse(qname.loc))
+      }
 
     case ParsedAst.Use.UseMany(_, nname, names, _) =>
       // Check for [[IllegalUseAlias]].
