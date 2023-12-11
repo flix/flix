@@ -149,7 +149,7 @@ object Weeder2 {
     val annotations = annotationTree.map(
       t => {
         val tokens = pickAllTokens(t)
-        val errors = getDuplicates(tokens, (t: Token) => t.text).map(pair => {
+        val errors = getDuplicates(tokens.toSeq, (t: Token) => t.text).map(pair => {
           val name = pair._1.text
           val loc1 = pair._1.mkSourceLocation(s.src, Some(s.parserInput))
           val loc2 = pair._2.mkSourceLocation(s.src, Some(s.parserInput))
@@ -202,7 +202,7 @@ object Weeder2 {
         }
 
         // Check for duplicate modifiers
-        errors = errors ++ getDuplicates(tokens, (t: Token) => t.kind).map(pair => {
+        errors = errors ++ getDuplicates(tokens.toSeq, (t: Token) => t.kind).map(pair => {
           val name = pair._1.text
           val loc1 = pair._1.mkSourceLocation(s.src, Some(s.parserInput))
           val loc2 = pair._2.mkSourceLocation(s.src, Some(s.parserInput))
@@ -368,14 +368,14 @@ object Weeder2 {
       pickModifiers(tree, allowed = Set(TokenKind.KeywordSealed, TokenKind.KeywordLawful, TokenKind.KeywordPub), mustBePublic = true),
       pickNameIdent(tree),
       pickKindedTypeParameters(tree),
-      //      visitFormalParameters()
+      pickFormalParameters(tree),
       pickType(tree),
       visitEffect(tree),
       pickTypeConstraints(tree),
       //      pickExpression(tree) // TODO: This is optional
     ) {
-      case (doc, annotations, modifiers, ident, tparams, tpe, eff, tconstrs) =>
-        Declaration.Sig(doc, annotations, modifiers, ident, tparams, List.empty, None, tpe, eff, tconstrs, tree.loc)
+      case (doc, annotations, modifiers, ident, tparams, fparams, tpe, eff, tconstrs) =>
+        Declaration.Sig(doc, annotations, modifiers, ident, tparams, fparams, None, tpe, eff, tconstrs, tree.loc)
     }
   }
 
@@ -388,13 +388,26 @@ object Weeder2 {
     )
   )
 
-  private def pickFormalParameters(tree: Tree): Validation[List[FormalParam], CompilationMessage] = {
+  private def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit s: State): Validation[List[FormalParam], CompilationMessage] = {
     val paramTree = tryPick(TreeKind.Parameters, tree.children)
     paramTree.map(
       t => {
         val params = pickAll(TreeKind.Parameter, t.children)
-        if (params.isEmpty) unitFormalParams(t.loc).toSuccess else
-          traverse(params)(visitParameter)
+        if (params.isEmpty)
+          unitFormalParams(t.loc).toSuccess
+        else {
+          flatMapN(traverse(params)(visitParameter(_, presence))) {
+            params =>
+              // Check for duplicates
+              val paramsWithoutWildcards = params.filter(_.ident.name.startsWith("_"))
+              val errors = getDuplicates(paramsWithoutWildcards, (p: FormalParam) => p.ident.name)
+                .map(pair => DuplicateFormalParam(pair._1.ident.name, pair._1.loc, pair._2.loc))
+
+              // Check missing or illegal type ascription
+
+              params.toSuccess.withSoftFailures(errors)
+          }
+        }
       }
     ).getOrElse(
       // Soft fail by pretending there were no arguments
@@ -402,10 +415,22 @@ object Weeder2 {
     )
   }
 
-  private def visitParameter(tree: Tree): Validation[FormalParam, CompilationMessage] = {
+  private def visitParameter(tree: Tree, presence: Presence)(implicit s: State): Validation[FormalParam, CompilationMessage] = {
     assert(tree.kind == TreeKind.Parameter)
-    // TODO
-    failWith("TODO: FormalParam")
+    flatMapN(
+      pickNameIdent(tree),
+      pickModifiers(tree)
+    ) {
+      case (ident, mods) =>
+        val maybeType = tryPick(TreeKind.Type.Type, tree.children)
+        // Check for missing or illegal type ascription
+        (maybeType, presence) match {
+          case (None, Presence.Required) => Validation.toHardFailure(MissingFormalParamAscription(ident.name, tree.loc))
+          case (Some(_), Presence.Forbidden) => Validation.toHardFailure(IllegalFormalParamAscription(tree.loc))
+          case (Some(typeTree), _) => mapN(visitType(typeTree)) { tpe => FormalParam(ident, mods, Some(tpe), tree.loc)}
+          case (None, _) => FormalParam(ident, mods, None, tree.loc).toSuccess
+        }
+    }
   }
 
   private def pickTypeConstraints(tree: Tree): Validation[List[TypeConstraint], CompilationMessage] = {
@@ -446,17 +471,19 @@ object Weeder2 {
   }
 
   private def pickType(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-    flatMapN(pick(TreeKind.Type.Type, tree.children)) {
-      typeTree =>
-        // Visit first child and match its kind to know what to to
-        val inner = unfold(typeTree)
-        inner.kind match {
-          case TreeKind.Type.Variable => visitTypeVariable(inner)
-          case TreeKind.Type.Apply => visitTypeApply(inner)
-          case TreeKind.Ident => mapN(tokenToIdent(inner)) { ident => Type.Ambiguous(Name.mkQName(ident), ident.loc) }
-          case TreeKind.QName => mapN(visitQName(inner))(Type.Ambiguous(_, inner.loc))
-          case kind => failWith(s"'$kind' used as type")
-        }
+    flatMapN(pick(TreeKind.Type.Type, tree.children))(visitType)
+  }
+
+  private def visitType(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+    assert(tree.kind == TreeKind.Type.Type)
+    // Visit first child and match its kind to know what to to
+    val inner = unfold(tree)
+    inner.kind match {
+      case TreeKind.Type.Variable => visitTypeVariable(inner)
+      case TreeKind.Type.Apply => visitTypeApply(inner)
+      case TreeKind.Ident => mapN(tokenToIdent(inner)) { ident => Type.Ambiguous(Name.mkQName(ident), ident.loc) }
+      case TreeKind.QName => mapN(visitQName(inner))(Type.Ambiguous(_, inner.loc))
+      case kind => failWith(s"'$kind' used as type")
     }
   }
 
@@ -572,7 +599,7 @@ object Weeder2 {
   }
 
   // A helper that returns the unique pairs of duplicates from an array of items
-  private def getDuplicates[A, K](items: Array[A], groupBy: A => K): List[(A, A)] = {
+  private def getDuplicates[A, K](items: Seq[A], groupBy: A => K): List[(A, A)] = {
     val duplicates = items.groupBy(groupBy).collect { case (_, is) if is.length > 1 => is }
     val pairs = duplicates.map(dups => {
       for {
@@ -590,5 +617,27 @@ object Weeder2 {
 
   private def softFailWith[T](result: T): Validation[T, CompilationMessage] = {
     Validation.SoftFailure(result, LazyList())
+  }
+
+  /**
+   * Ternary enumeration of constraints on the presence of something.
+   */
+  private sealed trait Presence
+
+  private object Presence {
+    /**
+     * Indicates that the thing is required.
+     */
+    case object Required extends Presence
+
+    /**
+     * Indicates that the thing is optional.
+     */
+    case object Optional extends Presence
+
+    /**
+     * Indicates that the thing is forbidden.
+     */
+    case object Forbidden extends Presence
   }
 }
