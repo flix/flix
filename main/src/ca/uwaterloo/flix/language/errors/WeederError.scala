@@ -1115,6 +1115,29 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an illegal intrinsic.
+    *
+    * @param loc the location where the illegal intrinsic occurs.
+    */
+  case class UnqualifiedUse(loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = "Unqualified use."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unqualified use.
+         |
+         |${code(loc, "unqualified use.")}
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} A use must be qualified: It should have the form `use Foo.bar`"
+    })
+  }
+
+  /**
     * An error raised to indicate an unsupported restrictable choice rule pattern.
     *
     * @param star whether the choose is of the star kind.
