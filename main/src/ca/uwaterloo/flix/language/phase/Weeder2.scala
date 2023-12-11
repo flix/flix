@@ -84,9 +84,11 @@ object Weeder2 {
 
   private def pickAllDeclarations(tree: Tree)(implicit s: State): Validation[List[Declaration], CompilationMessage] = {
     assert(tree.kind == TreeKind.Source)
+    val definitions = pickAll(TreeKind.Def, tree.children)
+    val classes = pickAll(TreeKind.Class, tree.children)
     mapN(
-      traverse(pickAll(TreeKind.Def)(tree.children))(visitDefinition),
-      traverse(pickAll(TreeKind.Class)(tree.children))(visitTypeClass)
+      traverse(definitions)(visitDefinition),
+      traverse(classes)(visitTypeClass)
     ) {
       case (definitions, classes) => definitions ++ classes
     }
@@ -193,7 +195,8 @@ object Weeder2 {
   private def pickTypeParameters(tree: Tree)(implicit s: State): Validation[TypeParams, CompilationMessage] = {
     tryPick(TreeKind.TypeParameters, tree.children) match {
       case Some(tparamsTree) =>
-        flatMapN(traverse(pickAll(TreeKind.Parameter)(tparamsTree.children))(visitTypeParameter)) {
+        val parameters = pickAll(TreeKind.Parameter, tparamsTree.children)
+        flatMapN(traverse(parameters)(visitTypeParameter)) {
           tparams =>
             val kinded = tparams.collect { case t: TypeParam.Kinded => t }
             val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
@@ -220,7 +223,8 @@ object Weeder2 {
   private def pickKindedTypeParameters(tree: Tree)(implicit s: State): Validation[KindedTypeParams, CompilationMessage] = {
     tryPick(TreeKind.TypeParameters, tree.children) match {
       case Some(tparamsTree) =>
-        flatMapN(traverse(pickAll(TreeKind.Parameter)(tparamsTree.children))(visitTypeParameter)) {
+        val parameters = pickAll(TreeKind.Parameter, tparamsTree.children)
+        flatMapN(traverse(parameters)(visitTypeParameter)) {
           tparams =>
             val kinded = tparams.collect { case t: TypeParam.Kinded => t }
             val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
@@ -280,7 +284,8 @@ object Weeder2 {
   }
 
   private def pickAllAssociatedTypesSig(tree: Tree, classTypeParam: TypeParam)(implicit s: State): Validation[List[Declaration.AssocTypeSig], CompilationMessage] = {
-    traverse(pickAll(TreeKind.AssociatedType)(tree.children))(visitAssociatedType(_, classTypeParam))
+    val assocs = pickAll(TreeKind.AssociatedType, tree.children)
+    traverse(assocs)(visitAssociatedType(_, classTypeParam))
   }
 
   private def visitAssociatedType(tree: Tree, classTypeParam: TypeParam)(implicit s: State): Validation[Declaration.AssocTypeSig, CompilationMessage] = {
@@ -310,7 +315,8 @@ object Weeder2 {
   }
 
   private def pickAllSignatures(tree: Tree)(implicit s: State): Validation[List[Declaration.Sig], CompilationMessage] = {
-    traverse(pickAll(TreeKind.Signature)(tree.children))(visitSignature)
+    val sigs = pickAll(TreeKind.Signature, tree.children)
+    traverse(sigs)(visitSignature)
   }
 
   private def visitSignature(tree: Tree)(implicit s: State): Validation[Declaration.Sig, CompilationMessage] = {
@@ -403,7 +409,7 @@ object Weeder2 {
           // TODO: Type.Var
           case TreeKind.Type.Variable => visitTypeVariable(inner)
           case TreeKind.Type.Apply => visitTypeApply(inner)
-          case TreeKind.Ident => mapN(firstIdent(inner)) { ident => Type.Ambiguous(Name.mkQName(ident), ident.loc) }
+          case TreeKind.Ident => mapN(tokenToIdent(inner)) { ident => Type.Ambiguous(Name.mkQName(ident), ident.loc) }
           case TreeKind.QName => mapN(visitQName(inner))(Type.Ambiguous(_, inner.loc))
           case kind => failWith(s"'$kind' used as type")
         }
@@ -413,15 +419,18 @@ object Weeder2 {
 
   private def visitTypeVariable(tree: Tree)(implicit s: State): Validation[Type.Var, CompilationMessage] = {
     assert(tree.kind == TreeKind.Type.Variable)
-    mapN(firstIdent(tree)) { ident => Type.Var(ident, tree.loc) }
+    mapN(tokenToIdent(tree)) { ident => Type.Var(ident, tree.loc) }
   }
 
   private def visitTypeApply(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
     assert(tree.kind == TreeKind.Type.Apply)
     flatMapN(pickType(tree), pick(TreeKind.Type.Arguments, tree.children)) {
       (tpe, argsTree) =>
-        val argsVal = traverse(pickAll(TreeKind.Type.Argument)(argsTree.children))(pickType)
-        mapN(argsVal) { args => args.foldLeft(tpe) { case (acc, t2) => Type.Apply(acc, t2, tree.loc) } }
+        // Curry type arguments
+        val arguments = pickAll(TreeKind.Type.Argument, argsTree.children)
+        mapN(traverse(arguments)(pickType)) {
+          args => args.foldLeft(tpe) { case (acc, t2) => Type.Apply(acc, t2, tree.loc) }
+        }
     }
   }
 
@@ -432,7 +441,8 @@ object Weeder2 {
 
   private def visitQName(tree: Tree)(implicit s: State): Validation[Name.QName, CompilationMessage] = {
     assert(tree.kind == TreeKind.QName)
-    mapN(traverse(pickAll(TreeKind.Ident)(tree.children))(firstIdent)) {
+    val idents = pickAll(TreeKind.Ident, tree.children)
+    mapN(traverse(idents)(tokenToIdent)) {
       idents =>
         val first = idents.head
         val ident = idents.last
@@ -443,11 +453,11 @@ object Weeder2 {
   }
 
   private def pickNameIdent(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
-    flatMapN(pick(TreeKind.Ident, tree.children))(firstIdent)
+    flatMapN(pick(TreeKind.Ident, tree.children))(tokenToIdent)
   }
 
   ////////// HELPERS //////////////////
-  private def firstIdent(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
+  private def tokenToIdent(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
     tree.children.headOption match {
       case Some(Child.Token(token)) => Name.Ident(
         token.mkSourcePosition(s.src, Some(s.parserInput)),
@@ -511,7 +521,7 @@ object Weeder2 {
   }
 
   // A helper that picks out trees of a specific kind from a list of children
-  private def pickAll(kind: TreeKind)(children: Array[Child]): List[Tree] = {
+  private def pickAll(kind: TreeKind, children: Array[Child]): List[Tree] = {
     children.foldLeft[List[Tree]](List.empty)((acc, child) => child match {
       case Child.Tree(tree) if tree.kind == kind => acc.appended(tree)
       case _ => acc
