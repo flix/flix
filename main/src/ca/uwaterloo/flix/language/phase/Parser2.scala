@@ -901,12 +901,18 @@ object Parser2 {
       case TokenKind.CurlyL => typeRecord()
       case TokenKind.ParenL => typeTuple()
       case TokenKind.NameUpperCase => name(NAME_TYPE, allowQualified = true)
-      case TokenKind.NameLowerCase
-           | TokenKind.NameMath
+      case TokenKind.NameLowerCase => typeVariable()
+      case TokenKind.NameMath
            | TokenKind.NameGreek
            | TokenKind.Underscore => name(NAME_VARIABLE)
       case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected type, found $t"))
     }
+  }
+
+  private def typeVariable()(implicit s: State): Mark.Closed = {
+    val mark = open()
+    expect(TokenKind.NameLowerCase)
+    close(mark, TreeKind.Type.Variable)
   }
 
   /**

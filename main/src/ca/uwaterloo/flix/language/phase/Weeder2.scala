@@ -171,10 +171,6 @@ object Weeder2 {
     }
   }
 
-  private def pickAllTokens(tree: Tree): Array[Token] = {
-    tree.children.collect { case Child.Token(token) => token }
-  }
-
   private def pickModifiers(tree: Tree): Validation[Ast.Modifiers, CompilationMessage] = {
     tryPick(TreeKind.Modifiers, tree.children) match {
       case Some(modTree) => mapN(traverse(pickAllTokens(modTree))(visitModifier))(Ast.Modifiers(_))
@@ -405,13 +401,19 @@ object Weeder2 {
         val inner = unfold(typeTree)
         inner.kind match {
           // TODO: Type.Var
+          case TreeKind.Type.Variable => visitTypeVariable(inner)
           case TreeKind.Type.Apply => visitTypeApply(inner)
-          case TreeKind.Ident => mapN(visitnameIdent(inner)) { ident => Type.Ambiguous(Name.mkQName(ident), ident.loc) }
+          case TreeKind.Ident => mapN(firstIdent(inner)) { ident => Type.Ambiguous(Name.mkQName(ident), ident.loc) }
           case TreeKind.QName => mapN(visitQName(inner))(Type.Ambiguous(_, inner.loc))
           case kind => failWith(s"'$kind' used as type")
         }
     }
     // TODO: Handle effects here too?
+  }
+
+  private def visitTypeVariable(tree: Tree)(implicit s: State): Validation[Type.Var, CompilationMessage] = {
+    assert(tree.kind == TreeKind.Type.Variable)
+    mapN(firstIdent(tree)) { ident => Type.Var(ident, tree.loc) }
   }
 
   private def visitTypeApply(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
@@ -430,7 +432,7 @@ object Weeder2 {
 
   private def visitQName(tree: Tree)(implicit s: State): Validation[Name.QName, CompilationMessage] = {
     assert(tree.kind == TreeKind.QName)
-    mapN(traverse(pickAll(TreeKind.Ident)(tree.children))(visitnameIdent)) {
+    mapN(traverse(pickAll(TreeKind.Ident)(tree.children))(firstIdent)) {
       idents =>
         val first = idents.head
         val ident = idents.last
@@ -441,22 +443,21 @@ object Weeder2 {
   }
 
   private def pickNameIdent(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
-    flatMapN(pick(TreeKind.Ident, tree.children))(visitnameIdent)
+    flatMapN(pick(TreeKind.Ident, tree.children))(firstIdent)
   }
 
-  private def visitnameIdent(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
-    assert(tree.kind == TreeKind.Ident)
+  ////////// HELPERS //////////////////
+  private def firstIdent(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
     tree.children.headOption match {
       case Some(Child.Token(token)) => Name.Ident(
         token.mkSourcePosition(s.src, Some(s.parserInput)),
         token.text,
         token.mkSourcePositionEnd(s.src, Some(s.parserInput))
       ).toSuccess
-      case _ => throw InternalCompilerException("expected TreeKind.Ident to contain a Child.Token", tree.loc)
+      case _ => failWith(s"expected first child of '${tree.kind}' to be Child.Token")
     }
   }
 
-  ////////// HELPERS //////////////////
   /**
    * When kinds are elided they default to the kind `Type`.
    */
@@ -486,6 +487,10 @@ object Weeder2 {
       case Child.Token(token) => acc :+ token.text
       case Child.Tree(_) => acc
     })
+  }
+
+  private def pickAllTokens(tree: Tree): Array[Token] = {
+    tree.children.collect { case Child.Token(token) => token }
   }
 
   // A helper that picks out the first tree of a specific kind from a list of children
