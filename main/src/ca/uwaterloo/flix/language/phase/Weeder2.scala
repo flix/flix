@@ -126,7 +126,7 @@ object Weeder2 {
       pickType(tree),
       pickTypeConstraints(tree),
       pickConstraints(tree),
-      visitEffect(tree)
+      tryPickEffect(tree)
     ) {
       case (doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
         Declaration.Def(doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
@@ -370,7 +370,7 @@ object Weeder2 {
       pickKindedTypeParameters(tree),
       pickFormalParameters(tree),
       pickType(tree),
-      visitEffect(tree),
+      tryPickEffect(tree),
       pickTypeConstraints(tree),
       //      pickExpression(tree) // TODO: This is optional
     ) {
@@ -427,7 +427,7 @@ object Weeder2 {
         (maybeType, presence) match {
           case (None, Presence.Required) => Validation.toHardFailure(MissingFormalParamAscription(ident.name, tree.loc))
           case (Some(_), Presence.Forbidden) => Validation.toHardFailure(IllegalFormalParamAscription(tree.loc))
-          case (Some(typeTree), _) => mapN(visitType(typeTree)) { tpe => FormalParam(ident, mods, Some(tpe), tree.loc)}
+          case (Some(typeTree), _) => mapN(visitType(typeTree)) { tpe => FormalParam(ident, mods, Some(tpe), tree.loc) }
           case (None, _) => FormalParam(ident, mods, None, tree.loc).toSuccess
         }
     }
@@ -504,9 +504,19 @@ object Weeder2 {
     }
   }
 
-  private def visitEffect(tree: Tree): Validation[Option[Type], CompilationMessage] = {
-    // TODO
-    None.toSuccess
+  private def tryPickEffect(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {
+    val maybeEffectSet = tryPick(TreeKind.Type.EffectSet, tree.children)
+    traverseOpt(maybeEffectSet)(setTree => {
+      val effects = traverse(pickAll(TreeKind.Type.Type, setTree.children))(visitType)
+      mapN(effects) {
+        // Default to Pure
+        case Nil => Type.Pure(setTree.loc)
+        // Otherwise reduce effects into a union type
+        case effects => effects.reduceLeft({
+          case (acc, tpe) => Type.Union(acc, tpe, setTree.loc)
+        } : (Type, Type) => Type)
+      }
+    })
   }
 
   private def visitQName(tree: Tree)(implicit s: State): Validation[Name.QName, CompilationMessage] = {

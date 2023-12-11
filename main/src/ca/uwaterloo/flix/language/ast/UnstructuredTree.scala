@@ -121,7 +121,8 @@ object UnstructuredTree {
 
       case object Function extends Type
 
-      case object Effect extends Type
+      case object EffectSet extends Type
+
     }
 
     /**

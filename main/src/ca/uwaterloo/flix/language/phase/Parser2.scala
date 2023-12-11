@@ -858,26 +858,28 @@ object Parser2 {
    */
   private def effectSet()(implicit s: State): Mark.Closed = {
     assert(at(TokenKind.Backslash))
+    val mark = open()
     expect(TokenKind.Backslash)
     if (at(TokenKind.CurlyL)) {
       commaSeparated(
-        TreeKind.Type.Effect,
+        TreeKind.Type.EffectSet,
         asArgumentFlat(effect),
         (TokenKind.CurlyL, TokenKind.CurlyR),
       )
     } else {
-      val mark = open()
       effect()
-      close(mark, TreeKind.Type.Effect)
     }
+    close(mark, TreeKind.Type.EffectSet)
   }
 
   private def effect()(implicit s: State): Mark.Closed = {
+    val mark = open()
     nth(0) match {
       case TokenKind.NameUpperCase => name(NAME_EFFECT)
       case TokenKind.NameLowerCase => name(NAME_VARIABLE)
       case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected effect, found $t"))
     }
+    close(mark, TreeKind.Type.Type)
   }
 
   /**
