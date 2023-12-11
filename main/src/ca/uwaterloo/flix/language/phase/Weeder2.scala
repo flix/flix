@@ -164,7 +164,6 @@ object Weeder2 {
   private def visitAnnotation(token: Token)(implicit s: State): Validation[Ast.Annotation, CompilationMessage] = {
     val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
     import Ast.Annotation._
-    // TODO: annotation.Error is a soft failure
     token.text match {
       case "@benchmark" | "@Benchmark" => Benchmark(loc).toSuccess
       case "@Deprecated" => Deprecated(loc).toSuccess
@@ -380,28 +379,33 @@ object Weeder2 {
     }
   }
 
+  private def unitFormalParams(loc: SourceLocation): List[FormalParam] = List(
+    FormalParam(
+      Name.Ident(SourcePosition.Unknown, "_unit", SourcePosition.Unknown),
+      Ast.Modifiers(List.empty),
+      Some(Type.Unit(loc)),
+      loc
+    )
+  )
+
   private def pickFormalParameters(tree: Tree): Validation[List[FormalParam], CompilationMessage] = {
     val paramTree = tryPick(TreeKind.Parameters, tree.children)
-    val params = paramTree.map(
+    paramTree.map(
       t => {
-        val parameters = if (t.children.length == 2) {
-          // only ParenL and ParenR are in parameters, so produce synthetic unit parameter
-          List(
-            FormalParam(
-              Name.Ident(SourcePosition.Unknown, "_unit", SourcePosition.Unknown),
-              Ast.Modifiers(List.empty),
-              Some(Type.Unit(t.loc)),
-              t.loc
-            )
-          )
-        } else {
-          List.empty // TODO: Map parameters
-        }
-        parameters.toSuccess
+        val params = pickAll(TreeKind.Parameter, t.children)
+        if (params.isEmpty) unitFormalParams(t.loc).toSuccess else
+          traverse(params)(visitParameter)
       }
-    ).getOrElse(failWith("expected formal parameters", tree.loc))
+    ).getOrElse(
+      // Soft fail by pretending there were no arguments
+      softFailWith(unitFormalParams(SourceLocation.Unknown))
+    )
+  }
 
-    params
+  private def visitParameter(tree: Tree): Validation[FormalParam, CompilationMessage] = {
+    assert(tree.kind == TreeKind.Parameter)
+    // TODO
+    failWith("TODO: FormalParam")
   }
 
   private def pickTypeConstraints(tree: Tree): Validation[List[TypeConstraint], CompilationMessage] = {
