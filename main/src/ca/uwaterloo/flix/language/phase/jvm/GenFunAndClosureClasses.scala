@@ -224,7 +224,7 @@ object GenFunAndClosureClasses {
     val setPc = BytecodeInstructions.cheat(_.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor))
     val ctx = GenExpression.MethodContext(classType, enterLabel, Map(), newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
     GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix)
-    println(classType.name, ctx.pcCounter(0), pcLabels.size)
+    if (ctx.pcCounter(0) != pcLabels.size) println(classType.name, ctx.pcCounter(0), pcLabels.size)
 
     // returning a Value
     val returnValue = {
