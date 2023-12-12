@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manif
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{ToSuccess, flatMapN}
-import ca.uwaterloo.flix.util.{Formatter, Options, Validation}
+import ca.uwaterloo.flix.util.{Options, Validation}
 
 import java.io.{PrintStream, PrintWriter}
 import java.nio.file._
@@ -39,7 +39,7 @@ object Bootstrap {
     *
     * The project must not already exist.
     */
-  def init(p: Path, o: Options)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+  def init(p: Path)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
     //
     // Check that the current working directory is usable.
     //
@@ -463,11 +463,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Type checks the source files for the project.
     */
-  def check(o: Options): Validation[Unit, BootstrapError] = {
-    // Configure a new Flix object.
-    implicit val flix: Flix = new Flix()
-    flix.setOptions(o)
-
+  def check(flix: Flix): Validation[Unit, BootstrapError] = {
     // Add sources and packages.
     reconfigureFlix(flix)
 
@@ -480,12 +476,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds (compiles) the source files for the project.
     */
-  def build(loadClasses: Boolean = true)(implicit flix: Flix): Validation[CompilationResult, BootstrapError] = {
+  def build(flix: Flix): Validation[CompilationResult, BootstrapError] = {
     // Configure a new Flix object.
-    val newOptions = flix.options.copy(
-      output = Some(Bootstrap.getBuildDirectory(projectPath)),
-      loadClassFiles = loadClasses
-    )
+    val newOptions = flix.options.copy(output = Some(Bootstrap.getBuildDirectory(projectPath)))
     flix.setOptions(newOptions)
 
     // Add sources and packages.
@@ -500,7 +493,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds a jar package for the project.
     */
-  def buildJar(o: Options): Validation[Unit, BootstrapError] = {
+  def buildJar(): Validation[Unit, BootstrapError] = {
     // The path to the jar file.
     val jarFile = Bootstrap.getJarFile(projectPath)
 
@@ -539,7 +532,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds a flix package for the project.
     */
-  def buildPkg(o: Options): Validation[Unit, BootstrapError] = {
+  def buildPkg(): Validation[Unit, BootstrapError] = {
     // Check that there is a `flix.toml` file.
     if (!Files.exists(getManifestFile(projectPath))) {
       return Validation.toHardFailure(BootstrapError.FileError("Cannot create a Flix package without a `flix.toml` file."))
@@ -582,22 +575,17 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Runs all benchmarks in the flix package for the project.
     */
-  def benchmark(o: Options): Validation[Unit, BootstrapError] = {
-    implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
-    build() map {
+  def benchmark(flix: Flix): Validation[Unit, BootstrapError] = {
+    build(flix).map {
       compilationResult =>
-        Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(o)
+        Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(flix.options)
     }
   }
 
   /**
     * Generates API documentation.
     */
-  def doc(o: Options): Validation[Unit, BootstrapError] = {
-    // Configure a new Flix object.
-    implicit val flix: Flix = new Flix()
-    flix.setOptions(o)
-
+  def doc(flix: Flix): Validation[Unit, BootstrapError] = {
     // Add sources and packages.
     reconfigureFlix(flix)
 
@@ -614,24 +602,20 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Runs the main function in flix package for the project.
     */
-  def run(o: Options, args: Array[String]): Validation[Unit, BootstrapError] = {
-    implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
-    flix.setOptions(o)
-    build().map(_.getMain).map {
-      case Some(main) => main(args)
+  def run(flix: Flix, args: Array[String]): Validation[Unit, BootstrapError] = {
+    build(flix).map(_.getMain).map {
       case None => ()
+      case Some(main) => main(args)
     }
   }
 
   /**
     * Runs all tests in the flix package for the project.
     */
-  def test(o: Options): Validation[Unit, BootstrapError] = {
-    implicit val flix: Flix = new Flix().setFormatter(Formatter.getDefault)
-    flix.setOptions(o)
-    flatMapN(build()) {
+  def test(flix: Flix): Validation[Unit, BootstrapError] = {
+    flatMapN(build(flix)) {
       compilationResult =>
-        Tester.run(Nil, compilationResult) match {
+        Tester.run(Nil, compilationResult)(flix) match {
           case Ok(_) => ().toSuccess
           case Err(_) => Validation.toHardFailure(BootstrapError.GeneralError(List("Tester Error")))
         }
