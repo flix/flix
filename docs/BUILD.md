@@ -48,4 +48,4 @@ When a new library is added or an existing one is updated, it has to be added (a
 
 ### Build problems in IntelliJ
 
-Sometimes it helps running `Build -> Rebuild Project`.
+Sometimes it helps running `Build -> Rebuild Project` which will fix any cache issues.
