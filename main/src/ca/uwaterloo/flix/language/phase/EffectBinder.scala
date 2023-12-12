@@ -171,7 +171,7 @@ object EffectBinder {
       Expr.TryCatch(e, rules1, tpe, purity, loc)
 
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-//      lctx.pcPoints += 1 // added here since visitInner will not see this try-with
+      lctx.pcPoints += 1 // added here since visitInner will not see this try-with
       val e = visitExpr(exp)
       val rules1 = rules.map {
         case hr => hr.copy(exp = visitExpr(hr.exp))
@@ -272,7 +272,7 @@ object EffectBinder {
       Expr.TryCatch(e, rules, tpe, purity, loc)
 
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-//      lctx.pcPoints += 1
+      lctx.pcPoints += 1
       val e = visitExpr(exp)
       val rs = rules.map {
         case HandlerRule(op, fparams, handlerExp) => HandlerRule(op, fparams, visitExpr(handlerExp))
@@ -280,7 +280,7 @@ object EffectBinder {
       Expr.TryWith(e, effUse, rs, tpe, purity, loc)
 
     case Expr.Do(op, exps, tpe, purity, loc) =>
-//      lctx.pcPoints += 1
+      lctx.pcPoints += 1
       val es = exps.map(visitExprWithBinders(binders))
       Expr.Do(op, es, tpe, purity, loc)
 

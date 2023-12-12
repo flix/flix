@@ -39,8 +39,8 @@ object GenExpression {
   case class MethodContext(clazz: JvmType.Reference,
                            entryPoint: Label,
                            lenv: Map[Symbol.LabelSym, Label],
-                           newFrame: InstructionSet,
-                           setPc: InstructionSet,
+                           newFrame: InstructionSet, // [...] -> [..., frame]
+                           setPc: InstructionSet, // [..., frame, pc] -> [...]
                            localOffset: Int,
                            pcLabels: Vector[Label],
                            pcCounter: Ref[Int]
@@ -1502,13 +1502,65 @@ object GenExpression {
       mv.visitLabel(afterTryAndCatch)
 
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-      // TODO (temp unhandled code)
+      val pcPoint = ctx.pcCounter(0) + 1
+      val pcPointLabel = ctx.pcLabels(pcPoint)
+      ctx.pcCounter(0) += 1
+
+      val effectJvmName = JvmOps.getEffectDefinitionClassType(effUse.sym).name
+      val ins = {
+        import BytecodeInstructions._
+        // eff name
+        pushString(effUse.sym.toString) ~
+        // handler
+        NEW(effectJvmName) ~ DUP() ~ cheat(_.visitMethodInsn(Opcodes.INVOKESPECIAL, effectJvmName.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)) ~
+        // bind handler closures
+        // TODO
+        // frames
+        NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
+        // continuation
+        ctx.newFrame ~ DUP() ~ cheat(m => compileInt(pcPoint)(m)) ~ ctx.setPc ~
+        // call installHandler
+        INVOKESTATIC(BackendObjType.Handler.InstallHandlerMethod, isInterface = true) ~
+        xReturn(BackendObjType.Result.toTpe)
+      }
+      ins(new BytecodeInstructions.F(mv))
+
+      mv.visitLabel(pcPointLabel)
       compileExpr(exp)
 
 
     case Expr.Do(op, exps, tpe, purity, loc) =>
-      // TODO (temp unit value)
-      mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+      val pcPoint = ctx.pcCounter(0) + 1
+      val pcPointLabel = ctx.pcLabels(pcPoint)
+      val afterUnboxing = new Label()
+      val erasedResult = BackendType.toErasedBackendType(tpe)
+
+      ctx.pcCounter(0) += 1
+      val ins: InstructionSet = {
+        import BytecodeInstructions._
+        import BackendObjType.Suspension
+        NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~
+          DUP() ~ pushString(op.sym.eff.toString) ~ PUTFIELD(Suspension.EffSymField) ~
+          DUP() ~ pushNull() /* TODO eff op */ ~ PUTFIELD(Suspension.EffOpField) ~
+          DUP() ~
+          // create continuation
+          NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
+          ctx.newFrame ~ DUP() ~ cheat(m => compileInt(pcPoint)(m)) ~ ctx.setPc ~
+          INVOKEVIRTUAL(BackendObjType.FramesNil.PushMethod) ~
+          // store continuation
+          PUTFIELD(Suspension.PrefixField) ~
+          DUP() ~ NEW(BackendObjType.ResumptionNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.ResumptionNil.Constructor) ~ PUTFIELD(Suspension.ResumptionField) ~
+          xReturn(Suspension.toTpe)
+      }
+      ins(new BytecodeInstructions.F(mv))
+
+      mv.visitLabel(pcPointLabel)
+      mv.visitVarInsn(ALOAD, 1)
+      BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
+
+      mv.visitLabel(afterUnboxing)
+      AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+
 
 
     case Expr.Resume(_, _, loc) =>

@@ -34,8 +34,8 @@ object BytecodeInstructions {
 
     def visitInstruction(opcode: Int): Unit = visitor.visitInsn(opcode)
 
-    def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: MethodDescriptor): Unit =
-      visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor.toDescriptor, opcode == Opcodes.INVOKEINTERFACE)
+    def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean): Unit =
+      visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor.toDescriptor, isInterface)
 
     // TODO: sanitize varags
     def visitInvokeDynamicInstruction(methodName: String, descriptor: MethodDescriptor, bootstrapMethodHandle: Handle, bootstrapMethodArguments: Any*): Unit =
@@ -291,47 +291,48 @@ object BytecodeInstructions {
   }
 
   def INVOKEINTERFACE(interfaceName: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKEINTERFACE, interfaceName, methodName, descriptor)
+    f.visitMethodInstruction(Opcodes.INVOKEINTERFACE, interfaceName, methodName, descriptor, isInterface = true)
     f
   }
 
   def INVOKEINTERFACE(m: InterfaceMethod): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKEINTERFACE, m.clazz, m.name, m.d)
+    f.visitMethodInstruction(Opcodes.INVOKEINTERFACE, m.clazz, m.name, m.d, isInterface = true)
     f
   }
 
   def INVOKESPECIAL(className: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, methodName, descriptor)
+    val isInterface = false // OBS this is not technically true if you use it to call private interface methods(?)
+    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, methodName, descriptor, isInterface = isInterface)
     f
   }
 
   def INVOKESPECIAL(c: ConstructorMethod): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, c.clazz, c.name, c.d)
+    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, c.clazz, c.name, c.d, isInterface = false)
     f
   }
 
-  def INVOKESTATIC(className: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKESTATIC, className, methodName, descriptor)
+  def INVOKESTATIC(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean): InstructionSet = f => {
+    f.visitMethodInstruction(Opcodes.INVOKESTATIC, className, methodName, descriptor, isInterface)
     f
   }
 
-  def INVOKESTATIC(m: StaticMethod): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d)
+  def INVOKESTATIC(m: StaticMethod, isInterface: Boolean = false): InstructionSet = f => {
+    f.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d, isInterface)
     f
   }
 
-  def INVOKEVIRTUAL(className: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, className, methodName, descriptor)
+  def INVOKEVIRTUAL(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false): InstructionSet = f => {
+    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, className, methodName, descriptor, isInterface)
     f
   }
 
   def INVOKEVIRTUAL(m: AbstractMethod): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d)
+    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d, isInterface = false)
     f
   }
 
   def INVOKEVIRTUAL(m: InstanceMethod): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d)
+    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d, isInterface = false)
     f
   }
 

@@ -707,7 +707,7 @@ object BackendObjType {
     ))
 
     private def boxInt(): InstructionSet = INVOKESTATIC(JvmName.Integer, "valueOf",
-      mkDescriptor(BackendType.Int32)(JvmName.Integer.toTpe))
+      mkDescriptor(BackendType.Int32)(JvmName.Integer.toTpe), isInterface = false)
   }
 
   case object Global extends BackendObjType with Generatable {
@@ -781,7 +781,7 @@ object BackendObjType {
     private def arrayCopy(): InstructionSet = (f: F) => {
       f.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
         MethodDescriptor(List(JavaObject.toTpe, BackendType.Int32, JavaObject.toTpe, BackendType.Int32,
-          BackendType.Int32), VoidableType.Void))
+          BackendType.Int32), VoidableType.Void), isInterface = false)
       f
     }
   }
@@ -1557,9 +1557,9 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def HeadField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "head", Frame.toTpe)
+    def HeadField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "head", Frame.toTpe)
 
-    def TailField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "tail", Frames.toTpe)
+    def TailField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "tail", Frames.toTpe)
 
     def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
