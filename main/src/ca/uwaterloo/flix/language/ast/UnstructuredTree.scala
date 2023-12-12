@@ -52,11 +52,15 @@ object UnstructuredTree {
 
     case object Kind extends TreeKind
 
-    case object KindArrow extends TreeKind
+    case object Instance extends TreeKind
 
     case object Signature extends TreeKind
 
-    case object AssociatedType extends TreeKind
+    case object AssociatedTypeSig extends TreeKind
+
+    case object AssociatedTypeDef extends TreeKind
+
+    case object Operator extends TreeKind
 
     /////// NAMES ///////
     // NB: This naming follows [[Names]]
@@ -71,6 +75,35 @@ object UnstructuredTree {
     case object Pred extends TreeKind
 
     case object Label extends TreeKind
+
+    /////// JVM /////
+    sealed trait JvmOp extends TreeKind {
+      override def debug_name: Option[String] = Some("JvmOp")
+    }
+
+    object JvmOp {
+
+      case object JvmOp extends JvmOp
+
+      case object Ascription extends JvmOp
+
+      case object Signature extends JvmOp
+
+      case object Method extends JvmOp
+
+      case object Constructor extends JvmOp
+
+      case object StaticMethod extends JvmOp
+
+      case object GetField extends JvmOp
+
+      case object PutField extends JvmOp
+
+      case object StaticGetField extends JvmOp
+
+      case object StaticPutField extends JvmOp
+
+    }
 
     /////// EXPRESSIONS //////
     sealed trait Expr extends TreeKind {
@@ -92,6 +125,10 @@ object UnstructuredTree {
       case object Unary extends Expr
 
       case object Call extends Expr
+
+      case object Intrinsic extends Expr
+
+      case object LetImport extends Expr
     }
 
     ////// TYPES //////

@@ -433,6 +433,7 @@ object Lexer {
       case _ if isKeyword("restrictable") => TokenKind.KeywordRestrictable
       case _ if isKeyword("sealed") => TokenKind.KeywordSealed
       case _ if isKeyword("select") => TokenKind.KeywordSelect
+      case _ if isKeyword("set") => TokenKind.KeywordSet
       case _ if isKeyword("solve") => TokenKind.KeywordSolve
       case _ if isKeyword("spawn") => TokenKind.KeywordSpawn
       case _ if isKeyword("static") => TokenKind.KeywordStatic
@@ -594,7 +595,7 @@ object Lexer {
     advance()
     while (!eof()) {
       val p = peek()
-      if (!p.isLetter && !p.isDigit && p != '_' && p != '!') {
+      if (!p.isLetter && !p.isDigit && p != '_' && p != '!' && p != '$') {
         return TokenKind.NameJava
       }
       advance()
