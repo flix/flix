@@ -538,9 +538,9 @@ object GenExpression {
         }
 
       case AtomicOp.Region =>
-        //!TODO: For now, just emit unit
-        val e = Expr.Cst(Ast.Constant.Unit, MonoType.Unit, loc)
-        compileExpr(e)
+        //!TODO: For now, just emit null
+        mv.visitInsn(ACONST_NULL)
+        mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
 
       case AtomicOp.ScopeExit =>
         val List(exp1, exp2) = exps
@@ -1247,15 +1247,14 @@ object GenExpression {
           // Calling unwind and unboxing
           val erasedResult = BackendType.toErasedBackendType(closureResultType)
 
-          val justAfterOpCount = ctx.pcCounter(0) + 1
-          val justAfterOp = ctx.pcLabels(justAfterOpCount)
-          val afterUnboxing = ctx.pcLabels(ctx.pcCounter(0) + 2)
+          val pcPoint = ctx.pcCounter(0) + 1
+          val pcPointLabel = ctx.pcLabels(pcPoint)
+          val afterUnboxing = new Label()
           ctx.pcCounter(0) += 1
-          BackendObjType.Result.unwindThunkToType(justAfterOpCount, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
-          ctx.pcCounter(0) += 1
+          BackendObjType.Result.unwindThunkToType(pcPoint, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
           mv.visitJumpInsn(GOTO, afterUnboxing)
 
-          mv.visitLabel(justAfterOp)
+          mv.visitLabel(pcPointLabel)
           mv.visitVarInsn(ALOAD, 1)
           BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
 
@@ -1301,15 +1300,14 @@ object GenExpression {
         // Calling unwind and unboxing
         val erasedResult = BackendType.toErasedBackendType(tpe)
 
-        val justAfterOpCount = ctx.pcCounter(0) + 1
-        val justAfterOp = ctx.pcLabels(justAfterOpCount)
-        val afterUnboxing = ctx.pcLabels(ctx.pcCounter(0) + 2)
+        val pcPoint = ctx.pcCounter(0) + 1
+        val pcPointLabel = ctx.pcLabels(pcPoint)
+        val afterUnboxing = new Label()
         ctx.pcCounter(0) += 1
-        BackendObjType.Result.unwindThunkToType(justAfterOpCount, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
-        ctx.pcCounter(0) += 1
+        BackendObjType.Result.unwindThunkToType(pcPoint, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
         mv.visitJumpInsn(GOTO, afterUnboxing)
 
-        mv.visitLabel(justAfterOp)
+        mv.visitLabel(pcPointLabel)
         mv.visitVarInsn(ALOAD, 1)
         BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
 
@@ -1436,12 +1434,14 @@ object GenExpression {
       // When we exit the scope, call the region's `exit` method
       val iLoad = AsmOps.getLoadInstruction(JvmType.Reference(BackendObjType.Region.jvmName))
       mv.visitVarInsn(iLoad, sym.getStackOffset(ctx.localOffset))
+      mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ExitMethod.name,
         BackendObjType.Region.ExitMethod.d.toDescriptor, false)
       mv.visitLabel(afterTryBlock)
 
       // Compile the finally block which gets called if no exception is thrown
       mv.visitVarInsn(iLoad, sym.getStackOffset(ctx.localOffset))
+      mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
       mv.visitJumpInsn(GOTO, afterFinally)
@@ -1449,6 +1449,7 @@ object GenExpression {
       // Compile the finally block which gets called if an exception is thrown
       mv.visitLabel(finallyBlock)
       mv.visitVarInsn(iLoad, sym.getStackOffset(ctx.localOffset))
+      mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
       mv.visitInsn(ATHROW)
