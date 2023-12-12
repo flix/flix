@@ -45,3 +45,7 @@ If you get a `java.lang.OutOfMemoryError: Java heap space` error, find the setti
 
 Check that all jar files in the `lib` folder are added as library (see above).
 When a new library is added or an existing one is updated, it has to be added (again) this way.
+
+### Build problems in IntelliJ
+
+Sometimes it helps running `Build -> Rebuild Project`.
