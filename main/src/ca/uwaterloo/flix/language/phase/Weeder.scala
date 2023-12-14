@@ -92,7 +92,7 @@ object Weeder {
     * Returns a SoftFailure otherwise.
     */
   private def visitModuleName(names: Name.NName): Validation[Unit, IllegalModuleName] = {
-    names.idents.foldLeft(Validation.success(()[Unit, IllegalModuleName])) {
+    names.idents.foldLeft(Validation.success(())) {
       case (acc, i) => flatMapN(acc) {
         _ =>
           val s = i.name
