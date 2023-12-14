@@ -23,8 +23,8 @@ import org.objectweb.asm.Opcodes._
 /// and is generated like so:
 /// ```
 /// public final class Eff$SomeEffect implements Handler {
-///     public Fn2$Obj$Obj$Obj flip
-///     public Fn3$Int32$Int32&Obj$Obj add
+///     public Fn2$Obj$Obj$Obj flip;
+///     public Fn3$Int32$Int32&Obj$Obj add;
 ///
 ///     public static EffectCall flip(Object var0, Handler h, Resumption r) {
 ///         Fn2$Obj$Obj$Obj f = ((Eff$SomeEffect) h).flip;
