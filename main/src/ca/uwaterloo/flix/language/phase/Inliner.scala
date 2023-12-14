@@ -53,7 +53,7 @@ object Inliner {
 
     // TODO RESTR-VARS add restrictable enums
 
-    LiftedAst.Root(defs, enums, effects, root.entryPoint, root.sources).toSuccess
+    Validation.success(LiftedAst.Root(defs, enums, effects, root.entryPoint, root.sources))
   }
 
   /**
