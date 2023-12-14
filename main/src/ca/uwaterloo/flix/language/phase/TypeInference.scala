@@ -310,14 +310,14 @@ object TypeInference {
                     }
                   } else {
                     // Case 3: instance error
-                    return Validation.Failure(instanceErrs)
+                    return Validation.HardFailure(instanceErrs)
                   }
               }
 
               // create a new substitution combining the econstr substitution and the base type substitution
               (eqSubst @@ subst0).toSuccess
 
-            case Err(e) => Validation.Failure(LazyList(e))
+            case Err(e) => Validation.HardFailure(LazyList(e))
           }
       }
   }
