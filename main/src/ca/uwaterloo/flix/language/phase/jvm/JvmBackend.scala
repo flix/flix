@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -45,8 +45,10 @@ object JvmBackend {
       // Compute the set of namespaces in the program.
       val namespaces = JvmOps.namespacesOf(root)
 
+      val objectToObject = MonoType.Arrow(List(MonoType.Object), MonoType.Object) // by resumptionWrapper
       // Retrieve all the types in the program.
-      val types = root.types
+      val requiredTypes = Set(objectToObject) // note that required types need to be present deeply (if you add `List[Int32]` also add `Int32`)
+      val types = root.types ++ requiredTypes
 
       // Filter the program types into different sets
       val erasedRefTypes = JvmOps.getErasedRefsOf(types)
@@ -112,6 +114,7 @@ object JvmBackend {
       val handlerInterface = Map(genClass(BackendObjType.Handler))
       val effectCallClass = Map(genClass(BackendObjType.EffectCall))
       val effectClasses = GenEffectClasses.gen(root.effects.values)
+      val resumptionWrapper = Map(genClass(BackendObjType.ResumptionWrapper))
 
       // Collect all the classes and interfaces together.
       List(
@@ -150,7 +153,8 @@ object JvmBackend {
         resumptionNilClass,
         handlerInterface,
         effectCallClass,
-        effectClasses
+        effectClasses,
+        resumptionWrapper
       ).reduce(_ ++ _)
     }
 
