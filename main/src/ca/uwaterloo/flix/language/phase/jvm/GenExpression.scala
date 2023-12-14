@@ -1541,7 +1541,11 @@ object GenExpression {
         import BackendObjType.Suspension
         NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~
           DUP() ~ pushString(op.sym.eff.toString) ~ PUTFIELD(Suspension.EffSymField) ~
-          DUP() ~ pushNull() /* TODO eff op */ ~ PUTFIELD(Suspension.EffOpField) ~
+          DUP() ~
+          // --- eff op ---
+          pushNull() ~
+          // --------------
+          PUTFIELD(Suspension.EffOpField) ~
           DUP() ~
           // create continuation
           NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
