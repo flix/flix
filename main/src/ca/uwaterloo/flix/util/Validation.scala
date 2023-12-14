@@ -131,6 +131,11 @@ object Validation {
   }
 
   /**
+    * Returns a [[Validation.Success]] containing `t`.
+    */
+  def success[T, E](t: T): Validation[T, E] = Success(t)
+
+  /**
     * Returns a [[Validation.SoftFailure]] containing `t` with the error `e`.
     */
   def toSoftFailure[T, E <: Recoverable](t: T, e: E): Validation[T, E] = Validation.SoftFailure(t, LazyList(e))
