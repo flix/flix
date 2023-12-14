@@ -21,8 +21,8 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{success, flatMapN}
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.Validation.flatMapN
+import ca.uwaterloo.flix.util.Validation
 
 import java.io.{PrintStream, PrintWriter}
 import java.nio.file._
@@ -485,7 +485,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     reconfigureFlix(flix)
 
     flix.compile() match {
-      case Validation.Success(r) => Validation.Success(r)
+      case Validation.Success(r) => Validation.success(r)
       case failure => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(failure.errors)))
     }
   }
