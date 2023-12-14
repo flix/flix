@@ -112,6 +112,7 @@ object JvmBackend {
       val handlerInterface = Map(genClass(BackendObjType.Handler))
       val effectCallClass = Map(genClass(BackendObjType.EffectCall))
       val effectClasses = GenEffectClasses.gen(root.effects.values)
+      val resumptionWrapper = Map(genClass(BackendObjType.ResumptionWrapper))
 
       // Collect all the classes and interfaces together.
       List(
@@ -150,7 +151,8 @@ object JvmBackend {
         resumptionNilClass,
         handlerInterface,
         effectCallClass,
-        effectClasses
+        effectClasses,
+        resumptionWrapper
       ).reduce(_ ++ _)
     }
 

@@ -291,7 +291,20 @@ object Reducer {
         sacc + eType ++ caseTypes
     }
 
-    val result = defTypes ++ enumTypes
+    val effectTypes = root.effects.foldLeft(Set.empty[MonoType]) {
+      case (sacc, (_, e)) =>
+        val opTypes = e.ops.map{
+          case op =>
+            val paramTypes = op.fparams.map(_.tpe)
+            val resType = op.tpe
+            val continuationType = MonoType.Object
+            val correctedFunctionType = MonoType.Arrow(paramTypes :+ continuationType, resType)
+            paramTypes.toSet + resType + continuationType + correctedFunctionType
+        }.foldLeft(Set.empty[MonoType]){case (acc, cur) => acc.union(cur)}
+        sacc ++ opTypes
+    }
+
+    val result = defTypes ++ enumTypes ++ effectTypes
 
     nestedTypesOf(Set.empty, Queue.from(result))
   }

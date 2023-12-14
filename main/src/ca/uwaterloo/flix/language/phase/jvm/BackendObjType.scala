@@ -83,6 +83,7 @@ sealed trait BackendObjType {
     case BackendObjType.ResumptionNil => JvmName(DevFlixRuntime, "ResumptionNil")
     case BackendObjType.Handler => JvmName(DevFlixRuntime, "Handler")
     case BackendObjType.EffectCall => JvmName(DevFlixRuntime, "EffectCall")
+    case BackendObjType.ResumptionWrapper => JvmName(DevFlixRuntime, "ResumptionWrapper")
   }
 
   /**
@@ -1758,6 +1759,38 @@ object BackendObjType {
     }
 
     def ApplyMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "apply", mkDescriptor(Handler.toTpe, Resumption.toTpe)(Result.toTpe))
+
+  }
+
+  case object ResumptionWrapper extends BackendObjType with Generatable {
+
+    // Value -> Result
+    private val superClass: JvmType.Reference = JvmOps.getFunctionInterfaceType(List(JvmType.Object), JvmType.Object)
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = mkClass(this.jvmName, IsFinal, superClass.name)
+      cm.mkConstructor(Constructor)
+      cm.mkMethod(InvokeMethod)
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(Resumption.toTpe), Some(_ =>
+      withName(1, Resumption.toTpe) { resumption =>
+        thisLoad() ~ INVOKESPECIAL(superClass.name, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid) ~
+          thisLoad() ~ resumption.load() ~ PUTFIELD(ResumptionField) ~
+          RETURN()
+      }
+    ))
+
+    def ResumptionField: InstanceField = InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "resumption", Resumption.toTpe)
+
+    def InvokeMethod: InstanceMethod = Thunk.InvokeMethod.implementation(this.jvmName, NotFinal, Some(_ =>
+      thisLoad() ~ GETFIELD(ResumptionField) ~
+        thisLoad() ~ cheat(_.visitFieldInsn(Opcodes.GETFIELD, this.jvmName.toInternalName, "arg0", JavaObject.toDescriptor)) ~
+        CHECKCAST(Value.jvmName) ~
+        INVOKEINTERFACE(Resumption.RewindMethod) ~
+        xReturn(Result.toTpe)
+    ))
 
   }
 }
