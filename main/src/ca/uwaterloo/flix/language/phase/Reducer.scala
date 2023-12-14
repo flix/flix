@@ -298,8 +298,8 @@ object Reducer {
             val paramTypes = op.fparams.map(_.tpe)
             val resType = op.tpe
             val continuationType = MonoType.Object
-            val correctedFunctionType = MonoType.Arrow(paramTypes :+ continuationType, resType)
-            paramTypes.toSet + resType + continuationType + correctedFunctionType
+            val correctedFunctionType: MonoType = MonoType.Arrow(paramTypes :+ continuationType, resType)
+            Set(correctedFunctionType)
         }.foldLeft(Set.empty[MonoType]){case (acc, cur) => acc.union(cur)}
         sacc ++ opTypes
     }
