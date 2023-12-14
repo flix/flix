@@ -38,9 +38,9 @@ mod BenchmarkConstraint {
         };
         let facts = List.range(1, 20) |> List.foldLeft(fold, #{});
         let rules = #{
-            DirectedPath(x, y) :- DirectedPath(x, y).
+            DirectedPath(x, y) :- DirectedEdge(x, y).
             DirectedPath(x, z) :- DirectedPath(x, y), DirectedEdge(y, z).
         };
-        query facts <+> rules select true from DirectedEdge(1, 20) |> Vector.isEmpty |> Bool.not
+        query facts <+> rules select true from DirectedPath(1, 20) |> Vector.isEmpty |> Bool.not
 
 }
