@@ -576,13 +576,6 @@ object Validation {
     }
   }
 
-  /**
-    * Adds an implicit `toSuccess` method.
-    */
-  implicit class ToSuccess[+T](val t: T) {
-    def toSuccess[U >: T, E]: Validation[U, E] = Success(t)
-  }
-
   // TODO: Everything below this line is deprecated.
 
   /**
