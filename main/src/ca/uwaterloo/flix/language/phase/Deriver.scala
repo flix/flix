@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
-import ca.uwaterloo.flix.util.Validation.{ToSuccess, mapN, sequence}
+import ca.uwaterloo.flix.util.Validation.{success, mapN, sequence}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
@@ -108,7 +108,7 @@ object Deriver {
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, eqClassSym, loc)
 
-      KindedAst.Instance(
+      Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
@@ -119,7 +119,7 @@ object Deriver {
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
-      ).toSuccess
+      ))
   }
 
   /**
@@ -137,7 +137,7 @@ object Deriver {
       // group the match rules in an expression
       KindedAst.Expr.Match(
         KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
-        (mainMatchRules ++ List(defaultRule)).toList,
+        (mainMatchRules ++ List(defaultRule)),
         loc
       )
   }
@@ -258,7 +258,7 @@ object Deriver {
       val defn = KindedAst.Def(compareDefSym, spec, exp)
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, orderClassSym, loc)
-      KindedAst.Instance(
+      Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
@@ -269,7 +269,7 @@ object Deriver {
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
-      ).toSuccess
+      ))
   }
 
   /**
@@ -472,7 +472,7 @@ object Deriver {
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, toStringClassSym, loc)
 
-      KindedAst.Instance(
+      Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
@@ -483,7 +483,7 @@ object Deriver {
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
-      ).toSuccess
+      ))
   }
 
   /**
@@ -607,7 +607,7 @@ object Deriver {
       val defn = KindedAst.Def(hashDefSym, spec, exp)
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, hashClassSym, loc)
-      KindedAst.Instance(
+      Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
@@ -618,7 +618,7 @@ object Deriver {
         assocs = Nil,
         ns = Name.RootNS,
         loc = loc
-      ).toSuccess
+      ))
   }
 
   /**
@@ -634,7 +634,7 @@ object Deriver {
       // group the match rules in an expression
       KindedAst.Expr.Match(
         mkVarExpr(param, loc),
-        matchRules.toList,
+        matchRules,
         loc
       )
   }
@@ -729,7 +729,7 @@ object Deriver {
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, sendableClassSym, loc)
 
-      KindedAst.Instance(
+      Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
@@ -740,7 +740,7 @@ object Deriver {
         assocs = Nil,
         ns = Name.RootNS,
         loc = loc
-      ).toSuccess
+      ))
   }
 
   /**
