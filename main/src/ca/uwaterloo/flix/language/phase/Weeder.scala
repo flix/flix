@@ -92,7 +92,7 @@ object Weeder {
     * Returns a SoftFailure otherwise.
     */
   private def visitModuleName(names: Name.NName): Validation[Unit, IllegalModuleName] = {
-    names.idents.foldLeft(().toSuccess[Unit, IllegalModuleName]) {
+    names.idents.foldLeft(Validation.success(()[Unit, IllegalModuleName])) {
       case (acc, i) => flatMapN(acc) {
         _ =>
           val s = i.name
@@ -100,7 +100,7 @@ object Weeder {
           if (first.toUpperCase != first)
             Validation.toSoftFailure((), IllegalModuleName(s, i.loc))
           else
-            ().toSuccess
+            Validation.success(())
       }
     }
   }
