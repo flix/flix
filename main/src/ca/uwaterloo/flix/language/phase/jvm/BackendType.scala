@@ -63,6 +63,19 @@ sealed trait BackendType extends VoidableType {
     case BackendType.Array(_) | BackendType.Reference(_) => BackendObjType.JavaObject.toTpe
   }
 
+  def toErasedJvmType: JvmType = this match {
+    case BackendType.Array(_) => JvmType.Object
+    case BackendType.Reference(_) => JvmType.Object
+    case BackendType.Bool => JvmType.PrimBool
+    case BackendType.Char => JvmType.PrimChar
+    case BackendType.Int8 => JvmType.PrimByte
+    case BackendType.Int16 => JvmType.PrimShort
+    case BackendType.Int32 => JvmType.PrimInt
+    case BackendType.Int64 => JvmType.PrimLong
+    case BackendType.Float32 => JvmType.PrimFloat
+    case BackendType.Float64 => JvmType.PrimDouble
+  }
+
   /**
     * A string representing the erased type. This is used for parametrized class names.
     */

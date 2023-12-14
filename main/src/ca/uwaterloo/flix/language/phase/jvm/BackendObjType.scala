@@ -61,7 +61,7 @@ sealed trait BackendObjType {
     case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
     case BackendObjType.StringBuilder => JvmName(JavaLang, "StringBuilder")
     case BackendObjType.Objects => JvmName(JavaLang, "Objects")
-    case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetaFactory")
+    case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetafactory")
     case BackendObjType.LinkedList => JvmName(JavaUtil, "LinkedList")
     case BackendObjType.Iterator => JvmName(JavaUtil, "Iterator")
     case BackendObjType.Runnable => JvmName(JavaLang, "Runnable")
@@ -1246,7 +1246,7 @@ object BackendObjType {
     private def callSite: BackendType = BackendObjType.Native(JvmName(List("java", "lang", "invoke"), "CallSite")).toTpe
 
     def MetaFactoryMethod: StaticMethod = StaticMethod(
-      this.jvmName, IsPublic, IsFinal, "metaFactory",
+      this.jvmName, IsPublic, IsFinal, "metafactory",
       mkDescriptor(methodHandlesLookup, String.toTpe, methodType, methodType, methodHandle, methodType)(callSite),
       None
     )
@@ -1652,8 +1652,8 @@ object BackendObjType {
           // () -> tail.rewind(v)
           thisLoad() ~ GETFIELD(TailField) ~
           v.load() ~
-          mkStaticLambda(Thunk.InvokeMethod, Resumption.StaticRewindMethod) ~
-          mkStaticLambda(Thunk.InvokeMethod, Handler.InstallHandlerMethod) ~
+          mkStaticLambda(Thunk.InvokeMethod, Resumption.StaticRewindMethod, drop = 0) ~
+          mkStaticLambda(Thunk.InvokeMethod, Handler.InstallHandlerMethod, drop = 0) ~
           xReturn(Thunk.toTpe)
       }))
   }
@@ -1740,7 +1740,7 @@ object BackendObjType {
               // thunk
               cons.load() ~ GETFIELD(FramesCons.HeadField) ~
               res.load() ~
-              mkStaticLambda(Thunk.InvokeMethod, Frame.StaticApplyMethod) ~
+              mkStaticLambda(Thunk.InvokeMethod, Frame.StaticApplyMethod, drop = 0) ~
               INVOKESTATIC(InstallHandlerMethod) ~
               xReturn(Result.toTpe)
             }
@@ -1765,11 +1765,12 @@ object BackendObjType {
   case object ResumptionWrapper extends BackendObjType with Generatable {
 
     // Value -> Result
-    private val superClass: JvmType.Reference = JvmOps.getFunctionInterfaceType(List(JvmType.Object), JvmType.Object)
+    private val superClass: JvmType.Reference = JvmOps.getClosureAbstractClassType(List(JvmType.Object), JvmType.Object)
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, superClass.name)
       cm.mkConstructor(Constructor)
+      cm.mkField(ResumptionField)
       cm.mkMethod(InvokeMethod)
       cm.closeClassMaker()
     }

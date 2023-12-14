@@ -113,7 +113,7 @@ object JvmOps {
     */
   def getFunctionInterfaceType(tpe: MonoType): JvmType.Reference = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-      getFunctionInterfaceType(targs.map(getErasedJvmType), getErasedJvmType(tresult))
+      getFunctionInterfaceType(targs.map(getErasedJvmType), JvmType.Object)
     case _ =>
       throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
@@ -127,14 +127,14 @@ object JvmOps {
     * (Int, String)(Int)   =>  Fn3$Int$Obj$Int
     */
   def getFunctionInterfaceType(args: List[JvmType], res: JvmType): JvmType.Reference = {
-    getFunctionInterfaceType(args.map(_.toErased).map(stringify), stringify(res.toErased))
+    getFunctionInterfaceType(args.map(_.toErased).map(stringify), stringify(JvmType.Object))
   }
   /**
     * The JVM name is of the form `FnArity$argTypes0$argTypes1$..$resType`
     */
   private def getFunctionInterfaceType(argTypes: List[String], resType: String): JvmType.Reference = {
     val arity = argTypes.length
-    val typeStrings = argTypes :+ resType
+    val typeStrings = argTypes :+ stringify(JvmType.Object)
     val name = "Fn" + arity + Flix.Delimiter + typeStrings.mkString(Flix.Delimiter)
     JvmType.Reference(JvmName(RootPackage, name))
   }
@@ -151,20 +151,33 @@ object JvmOps {
     */
   def getClosureAbstractClassType(tpe: MonoType): JvmType.Reference = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-      // Compute the arity of the function abstract class.
-      // We subtract one since the last argument is the return type.
-      val arity = targs.length
-
-      // Compute the stringified erased type of each type argument.
-      val args = (targs ::: tresult :: Nil).map(tpe => stringify(getErasedJvmType(tpe)))
-
-      // The JVM name is of the form FnArity$Arg0$Arg1$Arg2
-      val name = "Clo" + arity + Flix.Delimiter + args.mkString(Flix.Delimiter)
-
-      // The type resides in the root package.
-      JvmType.Reference(JvmName(RootPackage, name))
+      getClosureAbstractClassType(targs.map(getErasedJvmType), JvmType.Object)
 
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
+  }
+
+  /**
+    * Returns the closure abstract class type `CloX$Y$Z` for the given type `tpe`.
+    *
+    * For example:
+    *
+    * Int -> Int          =>  Clo2$Int$Int
+    * (Int, Int) -> Int   =>  Clo3$Int$Int$Int
+    *
+    * NB: The given type `tpe` must be an arrow type.
+    */
+  def getClosureAbstractClassType(args: List[JvmType], res: JvmType): JvmType.Reference = {
+    // Compute the arity of the function abstract class.
+    val arity = args.length
+
+      // Compute the stringified erased type of each type argument.
+    val argStrings = (args ::: JvmType.Object :: Nil).map(tpe => stringify(tpe.toErased))
+
+      // The JVM name is of the form FnArity$Arg0$Arg1$Arg2
+    val name = "Clo" + arity + Flix.Delimiter + argStrings.mkString(Flix.Delimiter)
+
+      // The type resides in the root package.
+    JvmType.Reference (JvmName (RootPackage, name) )
   }
 
   /**

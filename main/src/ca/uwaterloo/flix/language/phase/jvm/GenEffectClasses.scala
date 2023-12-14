@@ -2,10 +2,9 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Effect, Op, Root}
-import ca.uwaterloo.flix.language.ast.ReducedAst.{Effect, FormalParam, Op, Root}
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
-import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
@@ -137,6 +136,31 @@ object GenEffectClasses {
 
     mv.visitMaxs(999, 999)
     mv.visitEnd()
+  }
+
+  def opStaticFunctionDescriptor(sym: Symbol.OpSym)(implicit root: Root): MethodDescriptor = {
+    val effect = root.effects(sym.eff)
+    val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
+    val writtenOpArgs = op.fparams.map(_.tpe).map(BackendType.toErasedBackendType)
+    val handlerType = BackendObjType.Handler.toTpe
+    val resumption = BackendObjType.Resumption.toTpe
+
+    val methodArgs = writtenOpArgs ++ List(handlerType, resumption)
+    val methodResult = BackendObjType.Result.toTpe
+
+    MethodDescriptor(methodArgs, methodResult)
+  }
+
+  def opFieldType(sym: Symbol.OpSym)(implicit root: Root): JvmType = {
+    val effect = root.effects(sym.eff)
+    val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
+    val writtenOpArgs = op.fparams.map(_.tpe).map(JvmOps.getErasedJvmType)
+    val cont = JvmType.Object
+
+    val methodArgs = writtenOpArgs ++ List(cont)
+    val methodResult = JvmType.Object
+
+    JvmOps.getFunctionInterfaceType(methodArgs, methodResult)
   }
 
 }

@@ -1514,7 +1514,12 @@ object GenExpression {
         // handler
         NEW(effectJvmName) ~ DUP() ~ cheat(_.visitMethodInsn(Opcodes.INVOKESPECIAL, effectJvmName.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)) ~
         // bind handler closures
-        // TODO
+        cheat(mv => rules.foreach{
+          case HandlerRule(op, _, exp) =>
+            mv.visitInsn(Opcodes.DUP)
+            compileExpr(exp)(mv, ctx, root, flix)
+            mv.visitFieldInsn(Opcodes.PUTFIELD, effectJvmName.toInternalName, JvmOps.getEffectOpName(op.sym), GenEffectClasses.opFieldType(op.sym).toDescriptor)
+        }) ~
         // frames
         NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
         // continuation
@@ -1529,7 +1534,7 @@ object GenExpression {
       compileExpr(exp)
 
 
-    case Expr.Do(op, exps, tpe, purity, loc) =>
+    case Expr.Do(op, exps, tpe, _, _) =>
       val pcPoint = ctx.pcCounter(0) + 1
       val pcPointLabel = ctx.pcLabels(pcPoint)
       val afterUnboxing = new Label()
@@ -1539,22 +1544,32 @@ object GenExpression {
       val ins: InstructionSet = {
         import BytecodeInstructions._
         import BackendObjType.Suspension
+        val effectClass = JvmOps.getEffectDefinitionClassType(op.sym.eff)
+        val effectStaticMethod = ClassMaker.StaticMethod(
+          effectClass.name,
+          ClassMaker.Visibility.IsPublic,
+          ClassMaker.Final.NotFinal,
+          JvmOps.getEffectOpName(op.sym),
+          GenEffectClasses.opStaticFunctionDescriptor(op.sym),
+          None
+        )
         NEW(Suspension.jvmName) ~ DUP() ~ INVOKESPECIAL(Suspension.Constructor) ~
-          DUP() ~ pushString(op.sym.eff.toString) ~ PUTFIELD(Suspension.EffSymField) ~
-          DUP() ~
-          // --- eff op ---
-          pushNull() ~
-          // --------------
-          PUTFIELD(Suspension.EffOpField) ~
-          DUP() ~
-          // create continuation
-          NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
-          ctx.newFrame ~ DUP() ~ cheat(m => compileInt(pcPoint)(m)) ~ ctx.setPc ~
-          INVOKEVIRTUAL(BackendObjType.FramesNil.PushMethod) ~
-          // store continuation
-          PUTFIELD(Suspension.PrefixField) ~
-          DUP() ~ NEW(BackendObjType.ResumptionNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.ResumptionNil.Constructor) ~ PUTFIELD(Suspension.ResumptionField) ~
-          xReturn(Suspension.toTpe)
+        DUP() ~ pushString(op.sym.eff.toString) ~ PUTFIELD(Suspension.EffSymField) ~
+        DUP() ~
+        // --- eff op ---
+        cheat(mv => exps.foreach(e => compileExpr(e)(mv, ctx, root, flix))) ~
+        mkStaticLambda(BackendObjType.EffectCall.ApplyMethod, effectStaticMethod, 2) ~
+        // --------------
+        PUTFIELD(Suspension.EffOpField) ~
+        DUP() ~
+        // create continuation
+        NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
+        ctx.newFrame ~ DUP() ~ cheat(m => compileInt(pcPoint)(m)) ~ ctx.setPc ~
+        INVOKEVIRTUAL(BackendObjType.FramesNil.PushMethod) ~
+        // store continuation
+        PUTFIELD(Suspension.PrefixField) ~
+        DUP() ~ NEW(BackendObjType.ResumptionNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.ResumptionNil.Constructor) ~ PUTFIELD(Suspension.ResumptionField) ~
+        xReturn(Suspension.toTpe)
       }
       ins(new BytecodeInstructions.F(mv))
 

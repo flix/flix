@@ -278,10 +278,22 @@ object BytecodeInstructions {
     f
   }
 
-  def mkStaticLambda(lambdaMethod: AbstractMethod, call: StaticMethod): InstructionSet = f => {
+  def mkStaticLambda(lambdaMethod: AbstractMethod, call: StaticMethod, drop: Int): InstructionSet = f => {
     f.visitInvokeDynamicInstruction(
       lambdaMethod.name,
-      mkDescriptor(call.d.arguments: _*)(lambdaMethod.clazz.toTpe),
+      mkDescriptor(call.d.arguments.dropRight(drop): _*)(lambdaMethod.clazz.toTpe),
+      mkStaticHandle(BackendObjType.LambdaMetaFactory.MetaFactoryMethod),
+      lambdaMethod.d.toAsmType,
+      mkStaticHandle(call).handle,
+      lambdaMethod.d.toAsmType
+    )
+    f
+  }
+
+  def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticMethod, drop: Int): InstructionSet = f => {
+    f.visitInvokeDynamicInstruction(
+      lambdaMethod.name,
+      mkDescriptor(call.d.arguments.dropRight(drop): _*)(lambdaMethod.clazz.toTpe),
       mkStaticHandle(BackendObjType.LambdaMetaFactory.MetaFactoryMethod),
       lambdaMethod.d.toAsmType,
       mkStaticHandle(call).handle,
