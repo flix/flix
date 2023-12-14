@@ -137,6 +137,7 @@ object Main {
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
               bootstrap.check(flix)
           } match {
             case Validation.Success(_) => System.exit(0)
@@ -184,6 +185,7 @@ object Main {
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
               bootstrap.doc(flix)
           } match {
             case Validation.Success(_) =>
@@ -197,6 +199,7 @@ object Main {
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
               val args: Array[String] = cmdOpts.args match {
                 case None => Array.empty
                 case Some(a) => a.split(" ")
@@ -211,10 +214,10 @@ object Main {
           }
 
         case Command.Benchmark =>
-          val o = options.copy(progress = false)
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
               bootstrap.benchmark(flix)
           } match {
             case Validation.Success(_) =>
@@ -225,10 +228,10 @@ object Main {
           }
 
         case Command.Test =>
-          val o = options.copy(progress = false)
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
               bootstrap.test(flix)
           } match {
             case Validation.Success(_) =>

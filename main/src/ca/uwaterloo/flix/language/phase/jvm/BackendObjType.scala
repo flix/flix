@@ -1765,7 +1765,7 @@ object BackendObjType {
   case object ResumptionWrapper extends BackendObjType with Generatable {
 
     // Value -> Result
-    private val superClass: JvmType.Reference = JvmOps.getClosureAbstractClassType(List(JvmType.Object), JvmType.Object)
+    private val superClass: JvmType.Reference = JvmOps.getFunctionInterfaceType(List(JvmType.Object), JvmType.Object)
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, superClass.name)
