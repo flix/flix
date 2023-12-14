@@ -131,6 +131,11 @@ object Validation {
   }
 
   /**
+    * Returns a [[Validation.Success]] containing `t`.
+    */
+  def success[T, E](t: T): Validation[T, E] = Success(t)
+
+  /**
     * Returns a [[Validation.SoftFailure]] containing `t` with the error `e`.
     */
   def toSoftFailure[T, E <: Recoverable](t: T, e: E): Validation[T, E] = Validation.SoftFailure(t, LazyList(e))
@@ -569,13 +574,6 @@ object Validation {
         case v => f(a, v)
       }
     }
-  }
-
-  /**
-    * Adds an implicit `toSuccess` method.
-    */
-  implicit class ToSuccess[+T](val t: T) {
-    def toSuccess[U >: T, E]: Validation[U, E] = Success(t)
   }
 
   // TODO: Everything below this line is deprecated.
