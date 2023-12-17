@@ -134,7 +134,7 @@ object Namer {
       }
 
     case inst@NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, assocs, defs, ns, loc) =>
-      addInstanceToTable(table0, ns, clazz.ident.name, inst).toSuccess
+      Validation.success(addInstanceToTable(table0, ns, clazz.ident.name, inst))
 
     case NamedAst.Declaration.Sig(sym, spec, exp) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -191,7 +191,7 @@ object Namer {
     */
   private def tryAddToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration): Validation[SymbolTable, NameError] = {
     lookupName(name, ns, table) match {
-      case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl).toSuccess
+      case LookupResult.NotDefined => Validation.success(addDeclToTable(table, ns, name, decl))
       case LookupResult.AlreadyDefined(loc) => mkDuplicateNamePair(name, getSymLocation(decl), loc)
     }
   }
@@ -403,7 +403,7 @@ object Namer {
       val sym = Symbol.mkAssocTypeSym(clazz, ident)
       val tparam = getTypeParam(tparams0)
       val kind = visitKind(kind0)
-      NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, loc).toSuccess
+      Validation.success(NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, loc))
   }
 
   /**
@@ -595,7 +595,7 @@ object Namer {
   private def visitExp(exp0: DesugaredAst.Expr, ns0: Name.NName)(implicit level: Level, flix: Flix): Validation[NamedAst.Expr, NameError] = exp0 match {
 
     case DesugaredAst.Expr.Ambiguous(name, loc) =>
-      NamedAst.Expr.Ambiguous(name, loc).toSuccess
+      Validation.success(NamedAst.Expr.Ambiguous(name, loc))
 
     case DesugaredAst.Expr.OpenAs(name, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
@@ -603,10 +603,10 @@ object Namer {
       }
 
     case DesugaredAst.Expr.Open(name, loc) =>
-      NamedAst.Expr.Open(name, loc).toSuccess
+      Validation.success(NamedAst.Expr.Open(name, loc))
 
     case DesugaredAst.Expr.Hole(name, loc) =>
-      NamedAst.Expr.Hole(name, loc).toSuccess
+      Validation.success(NamedAst.Expr.Hole(name, loc))
 
     case DesugaredAst.Expr.HoleWithExp(exp, loc) =>
       mapN(visitExp(exp, ns0)) {
@@ -622,7 +622,8 @@ object Namer {
         }
       }
 
-    case DesugaredAst.Expr.Cst(cst, loc) => NamedAst.Expr.Cst(cst, loc).toSuccess
+    case DesugaredAst.Expr.Cst(cst, loc) =>
+      Validation.success(NamedAst.Expr.Cst(cst, loc))
 
     case DesugaredAst.Expr.Apply(exp, exps, loc) =>
       mapN(visitExp(exp, ns0), traverse(exps)(visitExp(_, ns0))) {
@@ -678,7 +679,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.Region(tpe, loc) =>
-      NamedAst.Expr.Region(tpe, loc).toSuccess
+      Validation.success(NamedAst.Expr.Region(tpe, loc))
 
     case DesugaredAst.Expr.Scope(ident, exp, loc) =>
       // Introduce a fresh variable symbol for the region.
@@ -745,7 +746,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.RecordEmpty(loc) =>
-      NamedAst.Expr.RecordEmpty(loc).toSuccess
+      Validation.success(NamedAst.Expr.RecordEmpty(loc))
 
     case DesugaredAst.Expr.RecordSelect(exp, label, loc) =>
       mapN(visitExp(exp, ns0)) {
@@ -935,7 +936,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.GetStaticField(className, fieldName, loc) =>
-      NamedAst.Expr.GetStaticField(className, fieldName, loc).toSuccess
+      Validation.success(NamedAst.Expr.GetStaticField(className, fieldName, loc))
 
     case DesugaredAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
@@ -978,7 +979,7 @@ object Namer {
         case Some(exp) => visitExp(exp, ns0) map {
           case e => Some(e)
         }
-        case None => None.toSuccess
+        case None => Validation.success(None)
       }
 
       mapN(rulesVal, defaultVal) {
@@ -1132,7 +1133,7 @@ object Namer {
   private def visitBodyPredicate(body: DesugaredAst.Predicate.Body, ns0: Name.NName)(implicit level: Level, flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case DesugaredAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
       val ts = terms.map(visitPattern)
-      NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc).toSuccess
+      Validation.success(NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc))
 
     case DesugaredAst.Predicate.Body.Functional(idents, exp, loc) =>
       for {
@@ -1151,7 +1152,8 @@ object Namer {
     */
   private def visitType(t0: DesugaredAst.Type)(implicit flix: Flix): Validation[NamedAst.Type, NameError] = {
     def visit(tpe0: DesugaredAst.Type): Validation[NamedAst.Type, NameError] = tpe0 match {
-      case DesugaredAst.Type.Unit(loc) => NamedAst.Type.Unit(loc).toSuccess
+      case DesugaredAst.Type.Unit(loc) =>
+        Validation.success(NamedAst.Type.Unit(loc))
 
       case DesugaredAst.Type.Var(ident, loc) =>
         //
@@ -1161,11 +1163,11 @@ object Namer {
           // TODO NS-REFACTOR maybe check this at declaration site instead of use site
           Validation.toSoftFailure(NamedAst.Type.Var(ident, loc), NameError.SuspiciousTypeVarName(ident.name, loc))
         } else {
-          NamedAst.Type.Var(ident, loc).toSuccess
+          Validation.success(NamedAst.Type.Var(ident, loc))
         }
 
       case DesugaredAst.Type.Ambiguous(qname, loc) =>
-        NamedAst.Type.Ambiguous(qname, loc).toSuccess
+        Validation.success(NamedAst.Type.Ambiguous(qname, loc))
 
       case DesugaredAst.Type.Tuple(elms, loc) =>
         mapN(traverse(elms)(visit)) {
@@ -1173,7 +1175,7 @@ object Namer {
         }
 
       case DesugaredAst.Type.RecordRowEmpty(loc) =>
-        NamedAst.Type.RecordRowEmpty(loc).toSuccess
+        Validation.success(NamedAst.Type.RecordRowEmpty(loc))
 
       case DesugaredAst.Type.RecordRowExtend(label, value, rest, loc) =>
         mapN(visit(value), visit(rest)) {
@@ -1186,7 +1188,7 @@ object Namer {
         }
 
       case DesugaredAst.Type.SchemaRowEmpty(loc) =>
-        NamedAst.Type.SchemaRowEmpty(loc).toSuccess
+        Validation.success(NamedAst.Type.SchemaRowEmpty(loc))
 
       case DesugaredAst.Type.SchemaRowExtendByAlias(qname, targs, rest, loc) =>
         mapN(traverse(targs)(visit), visit(rest)) {
@@ -1204,7 +1206,7 @@ object Namer {
         }
 
       case DesugaredAst.Type.Native(fqn, loc) =>
-        NamedAst.Type.Native(fqn, loc).toSuccess
+        Validation.success(NamedAst.Type.Native(fqn, loc))
 
       case DesugaredAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
         val tparamsVal = traverse(tparams0)(visit)
@@ -1220,10 +1222,10 @@ object Namer {
         }
 
       case DesugaredAst.Type.True(loc) =>
-        NamedAst.Type.True(loc).toSuccess
+        Validation.success(NamedAst.Type.True(loc))
 
       case DesugaredAst.Type.False(loc) =>
-        NamedAst.Type.False(loc).toSuccess
+        Validation.success(NamedAst.Type.False(loc))
 
       case DesugaredAst.Type.Not(tpe, loc) =>
         mapN(visit(tpe)) {
@@ -1255,9 +1257,11 @@ object Namer {
           case (t1, t2) => NamedAst.Type.Intersection(t1, t2, loc)
         }
 
-      case DesugaredAst.Type.Pure(loc) => NamedAst.Type.Pure(loc).toSuccess
+      case DesugaredAst.Type.Pure(loc) =>
+        Validation.success(NamedAst.Type.Pure(loc))
 
-      case DesugaredAst.Type.CaseSet(cases, loc) => NamedAst.Type.CaseSet(cases, loc).toSuccess
+      case DesugaredAst.Type.CaseSet(cases, loc) =>
+        Validation.success(NamedAst.Type.CaseSet(cases, loc))
 
       case DesugaredAst.Type.CaseComplement(tpe, loc) =>
         mapN(visitType(tpe)) {
@@ -1425,7 +1429,7 @@ object Namer {
     */
   private def visitPredicateParam(pparam: DesugaredAst.PredicateParam)(implicit flix: Flix): Validation[NamedAst.PredicateParam, NameError] = pparam match {
     case DesugaredAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
-      NamedAst.PredicateParam.PredicateParamUntyped(pred, loc).toSuccess
+      Validation.success(NamedAst.PredicateParam.PredicateParamUntyped(pred, loc))
 
     case DesugaredAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
       mapN(traverse(tpes)(visitType)) {

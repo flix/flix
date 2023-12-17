@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Input, Source}
 import ca.uwaterloo.flix.language.ast.{Ast, ReadAst}
 import ca.uwaterloo.flix.util.{StreamOps, Validation}
-import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.io.IOException
@@ -64,7 +63,7 @@ object Reader {
 
       val sources = result.toMap
       val names = findClasses()
-      ReadAst.Root(sources, names).toSuccess
+      Validation.success(ReadAst.Root(sources, names))
     }
 
   /**

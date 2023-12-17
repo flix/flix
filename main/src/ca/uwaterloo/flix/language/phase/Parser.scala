@@ -80,7 +80,7 @@ object Parser {
     val parser = new Parser(source)
     parser.Root.run() match {
       case scala.util.Success(ast) =>
-        (source, ast).toSuccess
+        Validation.success((source, ast))
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
         val possibleContexts = parseTraces(e.traces).filter(_._1 != SyntacticContext.Unknown)
         val mostLikelyContext = possibleContexts.keySet.reduceOption(SyntacticContext.join).getOrElse(SyntacticContext.Unknown)

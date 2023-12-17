@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToSuccess, mapN, traverse, traverseValues}
+import ca.uwaterloo.flix.util.Validation.{mapN, traverse, traverseValues}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.ListMap
 
@@ -186,7 +186,7 @@ object TypeInference {
     case KindedAst.Sig(sym, spec0, Some(exp0)) =>
       typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv, eqEnv, sym.loc)
     case KindedAst.Sig(sym, spec0, None) =>
-      Substitution.empty.toSuccess // TODO ASSOC-TYPES hack, should return Option or something
+      Validation.success(Substitution.empty) // TODO ASSOC-TYPES hack, should return Option or something
   }
 
   /**
@@ -315,7 +315,7 @@ object TypeInference {
               }
 
               // create a new substitution combining the econstr substitution and the base type substitution
-              (eqSubst @@ subst0).toSuccess
+              Validation.success((eqSubst @@ subst0))
 
             case Err(e) => Validation.HardFailure(LazyList(e))
           }

@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.ClassContext
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, Symbol, Type}
 import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation.{ToSuccess}
 import ca.uwaterloo.flix.util.collection.ListMap
 
 import scala.annotation.tailrec
@@ -39,7 +38,7 @@ object ClassEnvironment {
 
     // Case 1: tconstrs0 entail tconstr if tconstr is a super class of any member of tconstrs0
     if (superClasses.contains(tconstr)) {
-      ().toSuccess
+      Validation.success(())
     } else {
       // Case 2: there is an instance matching tconstr and all of the instance's constraints are entailed by tconstrs0
       Validation.flatMapN(byInst(tconstr, classEnv)) {
@@ -103,7 +102,7 @@ object ClassEnvironment {
     */
   private def toHeadNormalForm(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, ClassContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
     if (isHeadNormalForm(tconstr.arg)) {
-      List(tconstr).toSuccess
+      Validation.success(List(tconstr))
     } else {
       byInst(tconstr, classEnv)
     }
@@ -134,12 +133,12 @@ object ClassEnvironment {
       case Nil => Validation.toHardFailure(UnificationError.NoMatchingInstance(tconstr))
       case tconstrs :: Nil =>
         // apply the base tconstr location to the new tconstrs
-        tconstrs.map(_.copy(loc = tconstr.loc)).toSuccess
+        Validation.success(tconstrs.map(_.copy(loc = tconstr.loc)))
       case _ :: _ :: _ =>
         // Multiple matching instances: This will be caught in the Instances phase.
         // We return Nil here because there is no canonical set of constraints,
         // so we stop adding constraints and let the later phase take care of it.
-        Nil.toSuccess
+        Validation.success(Nil)
     }
   }
 
