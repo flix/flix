@@ -25,12 +25,12 @@ sealed trait Validation[+T, +E] {
   /**
     * Returns the value inside `this` [[Validation.Success]] object.
     *
-    * Throws an exception if `this` is a [[Validation.Failure]] object.
+    * Throws an exception if `this` is a [[Validation.HardFailure]] object.
     */
   final def get: T = this match {
     case Validation.Success(value) => value
     case Validation.SoftFailure(_, errors) => throw new RuntimeException(s"Attempt to retrieve value from SoftFailure. The errors are: ${errors.mkString(", ")}")
-    case Validation.Failure(errors) => throw new RuntimeException(s"Attempt to retrieve value from Failure. The errors are: ${errors.mkString(", ")}")
+    case Validation.HardFailure(errors) => throw new RuntimeException(s"Attempt to retrieve value from Failure. The errors are: ${errors.mkString(", ")}")
   }
 
   /**
@@ -41,7 +41,7 @@ sealed trait Validation[+T, +E] {
   final def map[U](f: T => U): Validation[U, E] = this match {
     case Validation.Success(value) => Validation.Success(f(value))
     case Validation.SoftFailure(value, errors) => Validation.SoftFailure(f(value), errors)
-    case Validation.Failure(errors) => Validation.Failure(errors)
+    case Validation.HardFailure(errors) => Validation.HardFailure(errors)
   }
 
   /**
@@ -61,12 +61,12 @@ sealed trait Validation[+T, +E] {
     this match {
       case Validation.Success(t) => Validation.SoftFailure(t, es.to(LazyList))
       case Validation.SoftFailure(t, errors) => Validation.SoftFailure(t, es.to(LazyList) #::: errors)
-      case Validation.Failure(errors) => Validation.Failure(es.to(LazyList) #::: errors)
+      case Validation.HardFailure(errors) => Validation.HardFailure(es.to(LazyList) #::: errors)
     }
   }
 
   /**
-    * Returns the errors in this [[Validation.Success]] or [[Validation.Failure]] object.
+    * Returns the errors in this [[Validation.Success]] or [[Validation.HardFailure]] object.
     */
   def errors: LazyList[E]
 
@@ -75,15 +75,15 @@ sealed trait Validation[+T, +E] {
     */
   def toHardFailure: Validation[T, E] = this match {
     case Validation.Success(t) => Validation.Success(t)
-    case Validation.SoftFailure(t, errors) => Validation.Failure(errors)
-    case Validation.Failure(errors) => Validation.Failure(errors)
+    case Validation.SoftFailure(t, errors) => Validation.HardFailure(errors)
+    case Validation.HardFailure(errors) => Validation.HardFailure(errors)
   }
 
   /**
     * Transform exactly one hard error into a soft error using the given function `f`.
     */
   def recoverOne[U >: T](f: PartialFunction[E, U]): Validation[U, E] = this match {
-    case Validation.Failure(errors) if errors.length == 1 =>
+    case Validation.HardFailure(errors) if errors.length == 1 =>
       val one = errors.head
       if (f.isDefinedAt(one))
         Validation.SoftFailure(f(one), LazyList(one))
@@ -116,16 +116,16 @@ object Validation {
         case Validation.Success(input) => f(input) match {
           case Validation.Success(value) => Validation.Success(value)
           case Validation.SoftFailure(value, thatErrors) => Validation.SoftFailure(value, v.errors #::: thatErrors)
-          case Validation.Failure(thatErrors) => Validation.Failure(v.errors #::: thatErrors)
+          case Validation.HardFailure(thatErrors) => Validation.HardFailure(v.errors #::: thatErrors)
         }
 
         case Validation.SoftFailure(input, errors) => f(input) match {
           case Validation.Success(value) => Validation.SoftFailure(value, errors)
           case Validation.SoftFailure(value, thatErrors) => Validation.SoftFailure(value, errors #::: thatErrors)
-          case Validation.Failure(thatErrors) => Validation.Failure(errors #::: thatErrors)
+          case Validation.HardFailure(thatErrors) => Validation.HardFailure(errors #::: thatErrors)
         }
 
-        case Validation.Failure(errors) => Validation.Failure(errors)
+        case Validation.HardFailure(errors) => Validation.HardFailure(errors)
       }
     }
   }
@@ -141,9 +141,9 @@ object Validation {
   def toSoftFailure[T, E <: Recoverable](t: T, e: E): Validation[T, E] = Validation.SoftFailure(t, LazyList(e))
 
   /**
-    * Returns a [[Validation.Failure]] with the error `e`.
+    * Returns a [[Validation.HardFailure]] with the error `e`.
     */
-  def toHardFailure[T, E <: Unrecoverable](e: E): Validation[T, E] = Validation.Failure(LazyList(e))
+  def toHardFailure[T, E <: Unrecoverable](e: E): Validation[T, E] = Validation.HardFailure(LazyList(e))
 
   /**
     * Returns a [[Validation.Success]] containing `t` if `es` is empty.
@@ -182,7 +182,7 @@ object Validation {
   /**
     * Represents a failure with no value and `errors`.
     */
-  case class Failure[T, E](errors: LazyList[E]) extends Validation[T, E]
+  case class HardFailure[T, E](errors: LazyList[E]) extends Validation[T, E]
 
   /**
     * Sequences the given list of validations `xs`.
@@ -194,22 +194,22 @@ object Validation {
         Success(curValue :: accValue)
       case (Success(curValue), SoftFailure(accValue, accErrors)) =>
         SoftFailure(curValue :: accValue, accErrors)
-      case (Success(_), Failure(accErrors)) =>
-        Failure(accErrors)
+      case (Success(_), HardFailure(accErrors)) =>
+        HardFailure(accErrors)
 
       case (SoftFailure(curValue, curErrors), Success(accValue)) =>
         SoftFailure(curValue :: accValue, curErrors)
       case (SoftFailure(curValue, curErrors), SoftFailure(accValue, accErrors)) =>
         SoftFailure(curValue :: accValue, curErrors #::: accErrors)
-      case (SoftFailure(_, curErrors), Failure(accErrors)) =>
-        Failure(curErrors #::: accErrors)
+      case (SoftFailure(_, curErrors), HardFailure(accErrors)) =>
+        HardFailure(curErrors #::: accErrors)
 
-      case (Failure(curErrors), Success(_)) =>
-        Failure(curErrors)
-      case (Failure(curErrors), SoftFailure(_, accErrors)) =>
-        Failure(curErrors #::: accErrors)
-      case (Failure(curErrors), Failure(accErrors)) =>
-        Failure(curErrors #::: accErrors)
+      case (HardFailure(curErrors), Success(_)) =>
+        HardFailure(curErrors)
+      case (HardFailure(curErrors), SoftFailure(_, accErrors)) =>
+        HardFailure(curErrors #::: accErrors)
+      case (HardFailure(curErrors), HardFailure(accErrors)) =>
+        HardFailure(curErrors #::: accErrors)
     }
   }
 
@@ -242,7 +242,7 @@ object Validation {
     case Some(x) => f(x) match {
       case Success(t) => Success(Some(t))
       case SoftFailure(t, errs) => SoftFailure(Some(t), errs)
-      case Failure(errs) => Failure(errs)
+      case HardFailure(errs) => HardFailure(errs)
     }
   }
 
@@ -275,7 +275,7 @@ object Validation {
         case SoftFailure(v, e) =>
           successValues += v
           failureStream += e
-        case Failure(e) =>
+        case HardFailure(e) =>
           failureStream += e
           isFatal = true
       }
@@ -283,7 +283,7 @@ object Validation {
 
     // Check whether we were successful or not.
     if (isFatal) {
-      Failure(failureStream.foldLeft(LazyList.empty[E])(_ #::: _))
+      HardFailure(failureStream.foldLeft(LazyList.empty[E])(_ #::: _))
     } else if (failureStream.nonEmpty) {
       SoftFailure(successValues.toList, failureStream.foldLeft(LazyList.empty[E])(_ #::: _))
     }
@@ -302,16 +302,16 @@ object Validation {
       Success(t)
     case Success(SoftFailure(t, e)) =>
       SoftFailure(t, e)
-    case Success(Failure(e)) =>
-      Failure(e)
+    case Success(HardFailure(e)) =>
+      HardFailure(e)
     case SoftFailure(Success(t), errors) =>
       SoftFailure(t, errors)
     case SoftFailure(SoftFailure(t, e), errors) =>
       SoftFailure(t, errors #::: e)
-    case SoftFailure(Failure(e), errors) =>
-      Failure(errors #::: e)
-    case Failure(errors) =>
-      Failure(errors)
+    case SoftFailure(HardFailure(e), errors) =>
+      HardFailure(errors #::: e)
+    case HardFailure(errors) =>
+      HardFailure(errors)
   }
 
   /**
@@ -325,22 +325,22 @@ object Validation {
         Success(g(v))
       case (Success(g), SoftFailure(v, e2)) =>
         SoftFailure(g(v), e2)
-      case (Success(_), Failure(e2)) =>
-        Failure(e2)
+      case (Success(_), HardFailure(e2)) =>
+        HardFailure(e2)
 
       case (SoftFailure(g, e1), Success(v)) =>
         SoftFailure(g(v), e1)
       case (SoftFailure(g, e1), SoftFailure(v, e2)) =>
         SoftFailure(g(v), e1 #::: e2)
-      case (SoftFailure(_, e1), Failure(e2)) =>
-        Failure(e1 #::: e2)
+      case (SoftFailure(_, e1), HardFailure(e2)) =>
+        HardFailure(e1 #::: e2)
 
-      case (Failure(e1), Success(_)) =>
-        Failure(e1)
-      case (Failure(e1), SoftFailure(_, e2)) =>
-        Failure(e1 #::: e2)
-      case (Failure(e1), Failure(e2)) =>
-        Failure(e1 #::: e2)
+      case (HardFailure(e1), Success(_)) =>
+        HardFailure(e1)
+      case (HardFailure(e1), SoftFailure(_, e2)) =>
+        HardFailure(e1 #::: e2)
+      case (HardFailure(e1), HardFailure(e2)) =>
+        HardFailure(e1 #::: e2)
     }
 
   /**
@@ -416,7 +416,7 @@ object Validation {
     t1 match {
       case Success(v1) => Success(f(v1))
       case SoftFailure(v1, err1) => SoftFailure(f(v1), err1)
-      case Failure(errors) => Failure(errors)
+      case HardFailure(errors) => HardFailure(errors)
     }
 
   /**
@@ -513,9 +513,9 @@ object Validation {
       case SoftFailure(v1, e1) => f(v1) match {
         case Success(x) => SoftFailure(x, e1)
         case SoftFailure(x, funcErrors) => SoftFailure(x, e1 #::: funcErrors)
-        case Failure(funcErrors) => Failure(e1 #::: funcErrors)
+        case HardFailure(funcErrors) => HardFailure(e1 #::: funcErrors)
       }
-      case _ => Failure(t1.errors)
+      case _ => HardFailure(t1.errors)
     }
 
   /**

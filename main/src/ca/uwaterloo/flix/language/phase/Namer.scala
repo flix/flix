@@ -235,17 +235,17 @@ object Namer {
   /**
     * Creates a pair of errors reporting a duplicate type declaration at each location.
     */
-  private def mkDuplicateNamePair[T](name: String, loc1: SourceLocation, loc2: SourceLocation): Validation.Failure[T, NameError] = {
+  private def mkDuplicateNamePair[T](name: String, loc1: SourceLocation, loc2: SourceLocation): Validation.HardFailure[T, NameError] = {
     // NB: We report an error at both source locations.
     if (name.charAt(0).isUpper) {
       // Case 1: uppercase name
-      Failure(LazyList(
+      HardFailure(LazyList(
         NameError.DuplicateUpperName(name, loc1, loc2),
         NameError.DuplicateUpperName(name, loc2, loc1)
       ))
     } else {
       // Case 2: lowercase name
-      Failure(LazyList(
+      HardFailure(LazyList(
         NameError.DuplicateLowerName(name, loc1, loc2),
         NameError.DuplicateLowerName(name, loc2, loc1)
       ))

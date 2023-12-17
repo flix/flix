@@ -98,7 +98,7 @@ object Stratifier {
   /**
     * Performs stratification of the given expression `exp0`.
     *
-    * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
+    * Returns [[Success]] if the expression is stratified. Otherwise returns [[HardFailure]] with a [[StratificationError]].
     */
   private def visitExp(exp0: Expr)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[Expr, StratificationError] = exp0 match {
     case Expr.Cst(_, _, _) => Validation.success(exp0)
