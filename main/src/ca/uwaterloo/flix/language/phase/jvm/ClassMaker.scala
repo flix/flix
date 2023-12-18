@@ -126,6 +126,14 @@ object ClassMaker {
     def mkInterfaceMethod(m: InterfaceMethod)(implicit flix: Flix): Unit = {
       makeAbstractMethod(m.name, m.d)
     }
+
+    def mkStaticInterfaceMethod(m: StaticInterfaceMethod)(implicit flix: Flix): Unit = {
+      makeMethod(Some(extractIns(m.ins)), m.name, m.d, m.v, m.f, IsStatic, NotAbstract)
+    }
+
+    def mkDefaultMethod(m: DefaultMethod)(implicit flix: Flix): Unit = {
+      makeMethod(Some(extractIns(m.ins)), m.name, m.d, m.v, m.f, NotStatic, NotAbstract)
+    }
   }
 
   def mkClass(className: JvmName, f: Final, superClass: JvmName = BackendObjType.JavaObject.jvmName, interfaces: List[JvmName] = Nil)(implicit flix: Flix): InstanceClassMaker = {
@@ -258,6 +266,8 @@ object ClassMaker {
     def v: Visibility
 
     def f: Final
+
+    def i: Interface
   }
 
   sealed case class ConstructorMethod(clazz: JvmName, v: Visibility, args: List[BackendType], ins: Option[Unit => InstructionSet]) extends Method {
@@ -266,6 +276,8 @@ object ClassMaker {
     override def d: MethodDescriptor = MethodDescriptor(args, VoidableType.Void)
 
     override def f: Final = NotFinal
+
+    override def i: Interface = NotInterface
   }
 
   case class StaticConstructorMethod(clazz: JvmName, ins: Option[Unit => InstructionSet]) extends Method {
@@ -276,10 +288,20 @@ object ClassMaker {
     override def v: Visibility = IsDefault
 
     override def f: Final = NotFinal
+
+    override def i: Interface = NotInterface
   }
 
   sealed case class InstanceMethod(clazz: JvmName, v: Visibility, f: Final, name: String, d: MethodDescriptor, ins: Option[Unit => InstructionSet]) extends Method {
     def implementation(clazz: JvmName, ins: Option[Unit => InstructionSet]): InstanceMethod = InstanceMethod(clazz, v, f, name, d, ins)
+
+    override def i: Interface = NotInterface
+  }
+
+  sealed case class DefaultMethod(clazz: JvmName, v: Visibility, f: Final, name: String, d: MethodDescriptor, ins: Option[Unit => InstructionSet]) extends Method {
+    def implementation(clazz: JvmName, ins: Option[Unit => InstructionSet]): InstanceMethod = InstanceMethod(clazz, v, f, name, d, ins)
+
+    override def i: Interface = IsInterface
   }
 
   sealed case class InterfaceMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method {
@@ -288,14 +310,23 @@ object ClassMaker {
     override def v: Visibility = IsPublic
 
     def implementation(clazz: JvmName, f: Final, ins: Option[Unit => InstructionSet]): InstanceMethod = InstanceMethod(clazz, IsPublic, f, name, d, ins)
+
+    override def i: Interface = IsInterface
   }
 
   sealed case class AbstractMethod(clazz: JvmName, v: Visibility, name: String, d: MethodDescriptor) extends Method {
     override def f: Final = NotFinal
 
     def implementation(clazz: JvmName, f: Final, ins: Option[Unit => InstructionSet]): InstanceMethod = InstanceMethod(clazz, v, f, name, d, ins)
+
+    override def i: Interface = NotInterface
   }
 
   sealed case class StaticMethod(clazz: JvmName, v: Visibility, f: Final, name: String, d: MethodDescriptor, ins: Option[Unit => InstructionSet]) extends Method {
+    override def i: Interface = NotInterface
+  }
+
+  sealed case class StaticInterfaceMethod(clazz: JvmName, v: Visibility, f: Final, name: String, d: MethodDescriptor, ins: Option[Unit => InstructionSet]) extends Method {
+    override def i: Interface = IsInterface
   }
 }

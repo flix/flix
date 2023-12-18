@@ -1525,7 +1525,7 @@ object GenExpression {
         // continuation
         ctx.newFrame ~ DUP() ~ cheat(m => compileInt(pcPoint)(m)) ~ ctx.setPc ~
         // call installHandler
-        INVOKESTATIC(BackendObjType.Handler.InstallHandlerMethod, isInterface = true) ~
+        INVOKESTATIC(BackendObjType.Handler.InstallHandlerMethod) ~
         xReturn(BackendObjType.Result.toTpe)
       }
       ins(new BytecodeInstructions.F(mv))

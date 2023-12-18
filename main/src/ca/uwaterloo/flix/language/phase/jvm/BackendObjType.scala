@@ -83,7 +83,7 @@ sealed trait BackendObjType {
     case BackendObjType.ResumptionNil => JvmName(DevFlixRuntime, "ResumptionNil")
     case BackendObjType.Handler => JvmName(DevFlixRuntime, "Handler")
     case BackendObjType.EffectCall => JvmName(DevFlixRuntime, "EffectCall")
-    case BackendObjType.ResumptionWrapper => JvmName(DevFlixRuntime, "ResumptionWrapper")
+    case BackendObjType.ResumptionWrapper(t) => JvmName(DevFlixRuntime, mkName("ResumptionWrapper", t))
   }
 
   /**
@@ -397,9 +397,9 @@ object BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val specializedInterface = specialization()
-      val interfaces = specializedInterface.map(_.jvmName)
+      val interfaces = Thunk.jvmName :: specializedInterface.map(_.jvmName)
 
-      val cm = ClassMaker.mkAbstractClass(this.jvmName, superClass = Thunk.jvmName, interfaces)
+      val cm = ClassMaker.mkAbstractClass(this.jvmName, superClass = JavaObject.jvmName, interfaces)
 
       cm.mkConstructor(Constructor)
       args.indices.foreach(argIndex => cm.mkField(ArgField(argIndex)))
@@ -409,7 +409,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = nullarySuperConstructor(Thunk.Constructor)
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
     def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, s"arg$index", args(index))
 
@@ -1330,10 +1330,10 @@ object BackendObjType {
       * [..., Result] --> [..., Suspension|Value]
       */
     def unwindThunk(): InstructionSet = {
-      INVOKEVIRTUAL(Thunk.InvokeMethod) ~
+      INVOKEINTERFACE(Thunk.InvokeMethod) ~
         whileLoop(Condition.NE)(DUP() ~ INSTANCEOF(Thunk.jvmName)) {
           CHECKCAST(Thunk.jvmName) ~
-            INVOKEVIRTUAL(Thunk.InvokeMethod)
+            INVOKEINTERFACE(Thunk.InvokeMethod)
         }
     }
 
@@ -1456,14 +1456,14 @@ object BackendObjType {
       val cm = mkInterface(this.jvmName)
 
       cm.mkInterfaceMethod(ApplyMethod)
-      cm.mkStaticMethod(StaticApplyMethod)
+      cm.mkStaticInterfaceMethod(StaticApplyMethod)
 
       cm.closeClassMaker()
     }
 
     def ApplyMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "applyFrame", mkDescriptor(Value.toTpe)(Result.toTpe))
 
-    def StaticApplyMethod: StaticMethod = StaticMethod(
+    def StaticApplyMethod: StaticInterfaceMethod = StaticInterfaceMethod(
       this.jvmName,
       IsPublic,
       NotFinal,
@@ -1477,20 +1477,17 @@ object BackendObjType {
   case object Thunk extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkAbstractClass(this.jvmName, interfaces = List(Result.jvmName, Runnable.jvmName))
+      val cm = mkInterface(this.jvmName, interfaces = List(Result.jvmName, Runnable.jvmName))
 
-      cm.mkConstructor(Constructor)
-      cm.mkAbstractMethod(InvokeMethod)
-      cm.mkMethod(RunMethod)
+      cm.mkInterfaceMethod(InvokeMethod)
+      cm.mkDefaultMethod(RunMethod)
 
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
+    def InvokeMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "invoke", mkDescriptor()(Result.toTpe))
 
-    def InvokeMethod: AbstractMethod = AbstractMethod(this.jvmName, IsPublic, "invoke", mkDescriptor()(Result.toTpe))
-
-    def RunMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "run", mkDescriptor()(VoidableType.Void), Some(_ =>
+    def RunMethod: DefaultMethod = DefaultMethod(this.jvmName, IsPublic, NotFinal, "run", mkDescriptor()(VoidableType.Void), Some(_ =>
       thisLoad() ~ Result.unwindThunk() ~ CHECKCAST(Value.jvmName) ~ POP() ~ RETURN()
     ))
   }
@@ -1604,13 +1601,13 @@ object BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkInterface(this.jvmName)
       cm.mkInterfaceMethod(RewindMethod)
-      cm.mkStaticMethod(StaticRewindMethod)
+      cm.mkStaticInterfaceMethod(StaticRewindMethod)
       cm.closeClassMaker()
     }
 
     def RewindMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "rewind", mkDescriptor(Value.toTpe)(Result.toTpe))
 
-    def StaticRewindMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, NotFinal, "staticRewind", mkDescriptor(Resumption.toTpe, Value.toTpe)(Result.toTpe), Some(_ =>
+    def StaticRewindMethod: StaticInterfaceMethod = StaticInterfaceMethod(this.jvmName, IsPublic, NotFinal, "staticRewind", mkDescriptor(Resumption.toTpe, Value.toTpe)(Result.toTpe), Some(_ =>
       withName(0, Resumption.toTpe) { resumption =>
         withName(1, Value.toTpe) { v => {
           resumption.load() ~ v.load() ~ INVOKEINTERFACE(Resumption.RewindMethod) ~ ARETURN()
@@ -1682,11 +1679,11 @@ object BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkInterface(this.jvmName)
-      cm.mkStaticMethod(InstallHandlerMethod)
+      cm.mkStaticInterfaceMethod(InstallHandlerMethod)
       cm.closeClassMaker()
     }
 
-    def InstallHandlerMethod: StaticMethod = StaticMethod(
+    def InstallHandlerMethod: StaticInterfaceMethod = StaticInterfaceMethod(
       this.jvmName,
       IsPublic,
       NotFinal,
@@ -1762,16 +1759,17 @@ object BackendObjType {
 
   }
 
-  case object ResumptionWrapper extends BackendObjType with Generatable {
+  case class ResumptionWrapper(tpe: BackendType) extends BackendObjType with Generatable {
 
     // Value -> Result
-    private val superClass: JvmType.Reference = JvmOps.getFunctionInterfaceType(List(JvmType.Object), JvmType.Object)
+    private val superClass: JvmType.Reference = JvmOps.getClosureAbstractClassType(List(tpe.toErasedJvmType), JvmType.Object)
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, superClass.name)
       cm.mkConstructor(Constructor)
       cm.mkField(ResumptionField)
       cm.mkMethod(InvokeMethod)
+      cm.mkMethod(UniqueMethod)
       cm.closeClassMaker()
     }
 
@@ -1787,10 +1785,16 @@ object BackendObjType {
 
     def InvokeMethod: InstanceMethod = Thunk.InvokeMethod.implementation(this.jvmName, NotFinal, Some(_ =>
       thisLoad() ~ GETFIELD(ResumptionField) ~
-        thisLoad() ~ cheat(_.visitFieldInsn(Opcodes.GETFIELD, this.jvmName.toInternalName, "arg0", JavaObject.toDescriptor)) ~
-        CHECKCAST(Value.jvmName) ~
+        NEW(Value.jvmName) ~ DUP() ~ INVOKESPECIAL(Value.Constructor) ~
+        DUP() ~
+        thisLoad() ~ cheat(_.visitFieldInsn(Opcodes.GETFIELD, this.jvmName.toInternalName, "arg0", tpe.toErased.toDescriptor)) ~
+        PUTFIELD(Value.fieldFromType(tpe.toErased)) ~
         INVOKEINTERFACE(Resumption.RewindMethod) ~
         xReturn(Result.toTpe)
+    ))
+
+    def UniqueMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, mkDescriptor()(Native(this.superClass.name).toTpe), Some(_ =>
+      thisLoad() ~ ARETURN()
     ))
 
   }

@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
+import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Interface.IsInterface
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
@@ -76,6 +77,10 @@ object BytecodeInstructions {
 
   def mkStaticHandle(m: StaticMethod): Handle = {
     Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, m.clazz.toInternalName, m.name, m.d.toDescriptor, false))
+  }
+
+  def mkStaticHandle(m: StaticInterfaceMethod): Handle = {
+    Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, m.clazz.toInternalName, m.name, m.d.toDescriptor, true))
   }
 
   //
@@ -302,6 +307,30 @@ object BytecodeInstructions {
     f
   }
 
+  def mkStaticLambda(lambdaMethod: AbstractMethod, call: StaticInterfaceMethod, drop: Int): InstructionSet = f => {
+    f.visitInvokeDynamicInstruction(
+      lambdaMethod.name,
+      mkDescriptor(call.d.arguments.dropRight(drop): _*)(lambdaMethod.clazz.toTpe),
+      mkStaticHandle(BackendObjType.LambdaMetaFactory.MetaFactoryMethod),
+      lambdaMethod.d.toAsmType,
+      mkStaticHandle(call).handle,
+      lambdaMethod.d.toAsmType
+    )
+    f
+  }
+
+  def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticInterfaceMethod, drop: Int): InstructionSet = f => {
+    f.visitInvokeDynamicInstruction(
+      lambdaMethod.name,
+      mkDescriptor(call.d.arguments.dropRight(drop): _*)(lambdaMethod.clazz.toTpe),
+      mkStaticHandle(BackendObjType.LambdaMetaFactory.MetaFactoryMethod),
+      lambdaMethod.d.toAsmType,
+      mkStaticHandle(call).handle,
+      lambdaMethod.d.toAsmType
+    )
+    f
+  }
+
   def INVOKEINTERFACE(interfaceName: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
     f.visitMethodInstruction(Opcodes.INVOKEINTERFACE, interfaceName, methodName, descriptor, isInterface = true)
     f
@@ -328,8 +357,13 @@ object BytecodeInstructions {
     f
   }
 
-  def INVOKESTATIC(m: StaticMethod, isInterface: Boolean = false): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d, isInterface)
+  def INVOKESTATIC(m: StaticMethod): InstructionSet = f => {
+    f.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d, isInterface = false)
+    f
+  }
+
+  def INVOKESTATIC(m: StaticInterfaceMethod): InstructionSet = f => {
+    f.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d, isInterface = true)
     f
   }
 
