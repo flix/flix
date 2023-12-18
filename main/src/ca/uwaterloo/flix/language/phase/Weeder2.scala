@@ -607,25 +607,69 @@ object Weeder2 {
   }
 
   private object JvmOp {
-    private def visitJvmOpMethod(tree: Tree)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
-      val fqn = flatMapN(pick(TreeKind.QName, tree.children)) {
-        qname => {
-          val idents = mapN(traverse(pickAll(TreeKind.Ident, qname.children))(t => text(t).toSuccess))(_.flatten)
-          mapN(idents) {
-            case prefix :: suffix => JavaClassMember(prefix, suffix, tree.loc)
-            case Nil => throw InternalCompilerException("JvmOp.Method empty name", tree.loc)
-          }
-        }
+    private def pickQNameIdents(tree: Tree)(implicit s: State): Validation[List[String], CompilationMessage] = {
+      flatMapN(pick(TreeKind.QName, tree.children)) {
+        qname => mapN(traverse(pickAll(TreeKind.Ident, qname.children))(t => text(t).toSuccess))(_.flatten)
       }
-      val signature = flatMapN(pick(TreeKind.JvmOp.Signature, tree.children)) {
+    }
+
+    private def pickJavaClassMember(tree: Tree)(implicit s: State): Validation[JavaClassMember, CompilationMessage] = {
+      val idents = pickQNameIdents(tree)
+      mapN(idents) {
+        case prefix :: suffix => JavaClassMember(prefix, suffix, tree.loc)
+        case Nil => throw InternalCompilerException("JvmOp empty name", tree.loc)
+      }
+    }
+
+    private def pickJavaName(tree: Tree)(implicit s: State): Validation[Name.JavaName, CompilationMessage] = {
+      val idents = pickQNameIdents(tree)
+      mapN(idents) {
+        idents => Name.JavaName(tree.loc.sp1, idents, tree.loc.sp2)
+      }
+    }
+
+    private def pickSignature(tree: Tree)(implicit s: State): Validation[List[Type], CompilationMessage] = {
+      flatMapN(pick(TreeKind.JvmOp.Signature, tree.children)) {
         sig => traverse(pickAll(TreeKind.Type.Type, sig.children))(visitType)
       }
-      val ascription = pick(TreeKind.JvmOp.Ascription, tree.children)
+    }
 
-      flatMapN(fqn, signature, ascription) {
-        case (fqn, signature, ascTree) => mapN(pickType(ascTree), tryPickEffect(ascTree)) {
-          case (tpe, eff) => WeededAst.JvmOp.Method(fqn, signature, tpe, eff, None) // TODO: This is not always None
-        }
+    private def pickAscription(tree: Tree)(implicit s: State): Validation[(Type, Option[Type]), CompilationMessage] = {
+      val ascription = pick(TreeKind.JvmOp.Ascription, tree.children)
+      flatMapN(ascription)(
+        ascTree => mapN(pickType(ascTree), tryPickEffect(ascTree))((tpe, eff) => (tpe, eff))
+      )
+    }
+
+    private def visitMethod(tree: Tree, isStatic: Boolean = false)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
+      val fqn = pickJavaClassMember(tree)
+      val signature = pickSignature(tree)
+      val ascription = pickAscription(tree)
+      mapN(fqn, signature, ascription) {
+        case (fqn, signature, (tpe, eff)) => if (isStatic)
+          WeededAst.JvmOp.StaticMethod(fqn, signature, tpe, eff, None) // TODO: This is not always None
+        else
+          WeededAst.JvmOp.Method(fqn, signature, tpe, eff, None) // TODO: This is not always None
+      }
+    }
+
+    private def visitConstructor(tree: Tree)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
+      val fqn = pickJavaName(tree)
+      val signature = pickSignature(tree)
+      val ascription = pickAscription(tree)
+      val ident = pickNameIdent(tree)
+      mapN(fqn, signature, ascription, ident) {
+        case (fqn, signature, (tpe, eff), ident) => WeededAst.JvmOp.Constructor(fqn, signature, tpe, eff, ident)
+      }
+    }
+
+    private type AstField = (WeededAst.JavaClassMember, Type, Option[WeededAst.Type], Name.Ident) => JvmOp
+    private def visitField[T](tree: Tree, astKind: AstField)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
+      val fqn = pickJavaClassMember(tree)
+      val ascription = pickAscription(tree)
+      val ident = pickNameIdent(tree)
+      mapN(fqn, ascription, ident) {
+        case (fqn, (tpe, eff), ident) => astKind(fqn, tpe, eff, ident)
       }
     }
 
@@ -633,13 +677,13 @@ object Weeder2 {
       assert(tree.kind == TreeKind.JvmOp.JvmOp)
       val inner = unfold(tree)
       inner.kind match {
-        case TreeKind.JvmOp.Method => visitJvmOpMethod(inner)
-        case TreeKind.JvmOp.Constructor => failWith("TODO: JvmOp.Constructor", tree.loc)
-        case TreeKind.JvmOp.StaticMethod => failWith("TODO: JvmOp.StaticMethod", tree.loc)
-        case TreeKind.JvmOp.GetField => failWith("TODO: JvmOp.GetField", tree.loc)
-        case TreeKind.JvmOp.StaticGetField => failWith("TODO: JvmOp.StaticGetField", tree.loc)
-        case TreeKind.JvmOp.PutField => failWith("TODO: JvmOp.PutField", tree.loc)
-        case TreeKind.JvmOp.StaticPutField => failWith("TODO: JvmOp.StaticPutField", tree.loc)
+        case TreeKind.JvmOp.Method => visitMethod(inner)
+        case TreeKind.JvmOp.Constructor => visitConstructor(inner)
+        case TreeKind.JvmOp.StaticMethod => visitMethod(inner, isStatic = true)
+        case TreeKind.JvmOp.GetField => visitField(inner, WeededAst.JvmOp.GetField)
+        case TreeKind.JvmOp.StaticGetField => visitField(inner, WeededAst.JvmOp.GetStaticField)
+        case TreeKind.JvmOp.PutField => visitField(inner, WeededAst.JvmOp.PutField)
+        case TreeKind.JvmOp.StaticPutField => visitField(inner, WeededAst.JvmOp.PutStaticField)
         case kind => throw InternalCompilerException(s"child of kind '$kind' under JvmOp.JvmOp", tree.loc)
       }
     }
