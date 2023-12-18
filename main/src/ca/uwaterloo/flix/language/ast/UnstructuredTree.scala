@@ -26,6 +26,14 @@ object UnstructuredTree {
 
     case object Source extends TreeKind
 
+    case object Module extends TreeKind
+
+    case object Enum extends TreeKind
+
+    case object RestrictableEnum extends TreeKind
+
+    case object Case extends TreeKind
+
     case object Doc extends TreeKind
 
     case object Def extends TreeKind
@@ -61,8 +69,6 @@ object UnstructuredTree {
     case object AssociatedTypeDef extends TreeKind
 
     case object Operator extends TreeKind
-
-    case object WithClause extends TreeKind
 
     /////// NAMES ///////
     case object Ident extends TreeKind
@@ -140,6 +146,10 @@ object UnstructuredTree {
       case object Tuple extends Type
 
       case object Record extends Type
+
+      case object Derivations extends Type
+
+      case object Constraints extends Type
 
       case object Constraint extends Type
 

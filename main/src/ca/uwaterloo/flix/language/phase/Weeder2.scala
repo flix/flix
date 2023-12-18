@@ -83,22 +83,113 @@ object Weeder2 {
   }
 
   private def pickAllUsesAndImports(tree: Tree): Validation[List[UseOrImport], CompilationMessage] = {
-    assert(tree.kind == TreeKind.Source)
+    assert(tree.kind == TreeKind.Source || tree.kind == TreeKind.Module)
     List.empty.toSuccess
   }
 
   private def pickAllDeclarations(tree: Tree)(implicit s: State): Validation[List[Declaration], CompilationMessage] = {
-    assert(tree.kind == TreeKind.Source)
+    assert(tree.kind == TreeKind.Source || tree.kind == TreeKind.Module)
+    val modules = pickAll(TreeKind.Module, tree.children)
     val definitions = pickAll(TreeKind.Def, tree.children)
     val classes = pickAll(TreeKind.Class, tree.children)
     val instances = pickAll(TreeKind.Instance, tree.children)
+    val enums = pickAll(TreeKind.Enum, tree.children)
+    // TODO: Restrictable enums
     mapN(
+      traverse(modules)(visitModule),
       traverse(definitions)(visitDefinition),
       traverse(classes)(visitTypeClass),
-      traverse(instances)(visitInstance)
+      traverse(instances)(visitInstance),
+      traverse(enums)(visitEnum)
     ) {
-      case (definitions, classes, instances) => definitions ++ classes ++ instances
+      case (modules, definitions, classes, instances, enums) => modules ++ definitions ++ classes ++ instances ++ enums
     }
+  }
+
+  private def visitModule(tree: Tree)(implicit s: State): Validation[Declaration.Namespace, CompilationMessage] = {
+    assert(tree.kind == TreeKind.Module)
+    mapN(
+      pickQName(tree),
+      pickAllUsesAndImports(tree),
+      pickAllDeclarations(tree)
+    ) {
+      (qname, usesAndImports, declarations) =>
+        val base = Declaration.Namespace(qname.ident, usesAndImports, declarations, tree.loc)
+        qname.namespace.idents.foldRight(base: Declaration.Namespace) {
+          case (ident, acc) => Declaration.Namespace(ident, Nil, List(acc), tree.loc)
+        }
+    }
+  }
+
+  private def visitEnum(tree: Tree)(implicit s: State): Validation[Declaration.Enum, CompilationMessage] = {
+    assert(tree.kind == TreeKind.Enum)
+    val shorthandTuple = tryPick(TreeKind.Type.Type, tree.children)
+    val cases = pickAll(TreeKind.Case, tree.children)
+    flatMapN(
+      pickDocumentation(tree),
+      pickAnnotations(tree),
+      pickModifiers(tree, allowed = Set(TokenKind.KeywordPub)),
+      pickNameIdent(tree),
+      pickDerivations(tree),
+      pickTypeParameters(tree),
+      traverseOpt(shorthandTuple)(visitType),
+      traverse(cases)(visitEnumCase)
+    ) {
+      (doc, ann, mods, ident, derivations, tparams, tpe, cases) =>
+        val casesVal = (tpe, cases) match {
+          // Error: both singleton shorthand and cases provided
+          case (Some(_), _ :: _) => Validation.toHardFailure(IllegalEnum(ident.loc))
+          // Empty enum
+          case (None, Nil) => List.empty.toSuccess
+          // Singleton enum
+          case (Some(t), Nil) =>
+            List(WeededAst.Case(ident, flattenEnumCaseType(t, ident.loc), ident.loc)).toSuccess
+          // Multiton enum
+          case (None, cs) =>
+            val errors = getDuplicates(cs, (c: Case) => c.ident.name).map(pair =>
+              DuplicateTag(ident.name, pair._1.ident, pair._1.loc, pair._2.loc)
+            )
+            cases.toSuccess.withSoftFailures(errors)
+        }
+        mapN(casesVal) {
+          cases => Declaration.Enum(doc, ann, mods, ident, tparams, derivations, cases, tree.loc)
+        }
+    }
+  }
+
+  private def visitEnumCase(tree: Tree)(implicit s: State): Validation[Case, CompilationMessage] = {
+    assert(tree.kind == TreeKind.Case)
+    val maybeType = tryPick(TreeKind.Type.Type, tree.children)
+    mapN(
+      pickNameIdent(tree),
+      traverseOpt(maybeType)(visitType)
+    ) {
+      (ident, maybeType) =>
+        val tpe = maybeType
+          .map(flattenEnumCaseType(_, tree.loc))
+          .getOrElse(Type.Unit(ident.loc))
+        Case(ident, tpe, tree.loc)
+    }
+  }
+
+  private def flattenEnumCaseType(tpe: Type, loc: SourceLocation): Type = {
+    tpe match {
+      // Single type in case -> flatten to ambiguous.
+      case Type.Tuple(t :: Nil, _) => t
+        // Multiple types in case -> do nothing
+      case Type.Tuple(_ :: _, _) => tpe
+      case _ => throw InternalCompilerException("Parser passed Non-tuple type in enum-case", loc)
+    }
+  }
+
+  private def pickDerivations(tree: Tree)(implicit s: State): Validation[Derivations, CompilationMessage] = {
+    val maybeDerivations = tryPick(TreeKind.Type.Derivations, tree.children)
+    val loc = maybeDerivations.map(_.loc).getOrElse(SourceLocation.Unknown)
+    val derivations = maybeDerivations
+      .map(tree => traverse(pickAll(TreeKind.QName, tree.children))(visitQName))
+      .getOrElse(List.empty.toSuccess)
+
+    mapN(derivations)(Derivations(_, loc))
   }
 
   private def visitTypeClass(tree: Tree)(implicit s: State): Validation[Declaration.Class, CompilationMessage] = {
@@ -115,7 +206,6 @@ object Weeder2 {
         mapN(pickAllAssociatedTypesSig(tree, tparam)) {
           assocs => Declaration.Class(doc, annotations, modifiers, ident, tparam, List.empty, assocs, sigs, List.empty, tree.loc)
         }
-
     }
   }
 
@@ -494,7 +584,7 @@ object Weeder2 {
   }
 
   private def pickTypeConstraints(tree: Tree)(implicit s: State): Validation[List[TypeConstraint], CompilationMessage] = {
-    val maybeWithClause = tryPick(TreeKind.WithClause, tree.children)
+    val maybeWithClause = tryPick(TreeKind.Type.Constraints, tree.children)
     maybeWithClause
       .map(withClauseTree => {
         val constraints = pickAll(TreeKind.Type.Constraint, withClauseTree.children)
@@ -1049,10 +1139,18 @@ object Weeder2 {
     inner.kind match {
       case TreeKind.Type.Variable => visitTypeVariable(inner)
       case TreeKind.Type.Apply => visitTypeApply(inner)
+      case TreeKind.Type.Tuple => visitTypeTuple(inner)
       case TreeKind.QName => mapN(visitQName(inner))(Type.Ambiguous(_, inner.loc))
       case TreeKind.Ident => mapN(tokenToIdent(inner))(ident => Type.Ambiguous(Name.mkQName(ident), inner.loc))
       case kind => failWith(s"'$kind' used as type")
     }
+  }
+
+  private def visitTypeTuple(tree: Tree)(implicit s: State): Validation[Type.Tuple, CompilationMessage] = {
+    assert(tree.kind == TreeKind.Type.Tuple)
+    mapN(
+      traverse(pickAll(TreeKind.Type.Type, tree.children))(visitType)
+    )(types => Type.Tuple(types, tree.loc))
   }
 
   private def visitTypeVariable(tree: Tree)(implicit s: State): Validation[Type.Var, CompilationMessage] = {

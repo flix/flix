@@ -462,10 +462,13 @@ object Parser2 {
   private val NAME_PARAMETER = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
   private val NAME_VARIABLE = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
   private val NAME_JAVA = List(TokenKind.NameJava, TokenKind.NameLowerCase, TokenKind.NameUpperCase)
+  private val NAME_QNAME = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
   private val NAME_FIELD = List(TokenKind.NameLowerCase)
   private val NAME_TYPE = List(TokenKind.NameUpperCase)
   private val NAME_KIND = List(TokenKind.NameUpperCase)
   private val NAME_EFFECT = List(TokenKind.NameUpperCase)
+  private val NAME_MODULE = List(TokenKind.NameUpperCase)
+  private val NAME_TAG = List(TokenKind.NameUpperCase)
 
   private def name(kinds: List[TokenKind], allowQualified: Boolean = false)(implicit s: State): Mark.Closed = {
     val mark = open()
@@ -494,6 +497,7 @@ object Parser2 {
    */
   private def source()(implicit s: State): Unit = {
     val mark = open()
+    // TODO: Uses and imports
     while (!eof()) {
       declaration()
     }
@@ -503,6 +507,9 @@ object Parser2 {
 
   private def declaration()(implicit s: State): Mark.Closed = {
     val mark = open()
+    if (at(TokenKind.KeywordMod)) {
+      return module(mark)
+    }
     docComment()
     annotations()
     modifiers()
@@ -510,8 +517,68 @@ object Parser2 {
       case TokenKind.KeywordDef => definition(mark)
       case TokenKind.KeywordClass | TokenKind.KeywordTrait => typeClass(mark)
       case TokenKind.KeywordInstance => instance(mark)
+      case TokenKind.KeywordEnum => enumeration(mark)
       case _ => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected declaration"))
     }
+  }
+
+  private def module(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+    assert(at(TokenKind.KeywordMod))
+    expect(TokenKind.KeywordMod)
+    name(NAME_MODULE, allowQualified = true)
+    if (at(TokenKind.CurlyL)) {
+      expect(TokenKind.CurlyL)
+      while (!at(TokenKind.CurlyR) && !eof()) {
+        // TODO: Uses and imports
+        declaration()
+      }
+      expect(TokenKind.CurlyR)
+    }
+    close(mark, TreeKind.Module)
+  }
+
+  private def enumeration(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+    assert(at(TokenKind.KeywordEnum))
+    expect(TokenKind.KeywordEnum)
+    val isRestrictable = eat(TokenKind.KeywordRestrictable)
+    name(NAME_TYPE)
+    if (isRestrictable) {
+      expect(TokenKind.BracketL)
+      val markParam = open()
+      name(NAME_VARIABLE)
+      close(markParam, TreeKind.Parameter)
+      expect(TokenKind.BracketR)
+    }
+    if (at(TokenKind.BracketL)) {
+      typeParameters()
+    }
+    // Singleton short-hand
+    if (at(TokenKind.ParenL)) {
+      val markType = open()
+      typeTuple()
+      close(markType, TreeKind.Type.Type)
+    }
+    // derivations
+    if (at(TokenKind.KeywordWith)) {
+      derivations()
+    }
+    // enum body
+    if (eat(TokenKind.CurlyL)) {
+      while (atAny(List(TokenKind.KeywordCase, TokenKind.Comma)) && !eof()) {
+        val mark = open()
+        eatAny(List(TokenKind.KeywordCase, TokenKind.Comma))
+        eatAny(List(TokenKind.KeywordCase, TokenKind.Comma))
+        name(NAME_TAG)
+        if (at(TokenKind.ParenL)) {
+          val mark = open()
+          typeTuple()
+          close(mark, TreeKind.Type.Type)
+        }
+        close(mark, TreeKind.Case)
+      }
+      expect(TokenKind.CurlyR)
+    }
+    close(mark, if (isRestrictable) TreeKind.RestrictableEnum else TreeKind.Enum)
   }
 
   /**
@@ -609,7 +676,7 @@ object Parser2 {
     expect(TokenKind.Colon)
     ttype(allowTrailingEffect = true)
     if (at(TokenKind.KeywordWith)) {
-      withClause()
+      typeConstraints()
     }
     if (at(TokenKind.Equal)) {
       expect(TokenKind.Equal)
@@ -621,13 +688,33 @@ object Parser2 {
     close(mark, TreeKind.Signature)
   }
 
-  private def withClause()(implicit s: State): Mark.Closed = {
+  private def derivations()(implicit s: State): Mark.Closed = {
     assert(at(TokenKind.KeywordWith))
     val mark = open()
     expect(TokenKind.KeywordWith)
     var continue = true
+    name(NAME_QNAME, allowQualified = true)
     while (continue && !eof()) {
-      if (atAny(NAME_DEFINITION)) {
+      if (eat(TokenKind.Comma)) {
+        name(NAME_QNAME, allowQualified = true)
+      } else {
+        continue = false
+      }
+    }
+    if (at(TokenKind.Comma)) {
+      advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "Trailing comma."))
+    }
+    close(mark, TreeKind.Type.Derivations)
+  }
+
+  private def typeConstraints()(implicit s: State): Mark.Closed = {
+    assert(at(TokenKind.KeywordWith))
+    val mark = open()
+    expect(TokenKind.KeywordWith)
+    var continue = true
+    typeConstraint()
+    while (continue && !eof()) {
+      if (eat(TokenKind.Comma)) {
         typeConstraint()
       } else {
         continue = false
@@ -636,7 +723,7 @@ object Parser2 {
     if (at(TokenKind.Comma)) {
       advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "Trailing comma."))
     }
-    close(mark, TreeKind.WithClause)
+    close(mark, TreeKind.Type.Constraints)
   }
 
   private def typeConstraint()(implicit s: State): Mark.Closed = {
@@ -948,7 +1035,7 @@ object Parser2 {
     }
   }
 
-  private def exprLetImport()(implicit s:State): Mark.Closed = {
+  private def exprLetImport()(implicit s: State): Mark.Closed = {
     assert(at(TokenKind.KeywordImport))
     val mark = open()
     expect(TokenKind.KeywordImport)
