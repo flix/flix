@@ -959,8 +959,8 @@ object Parser2 {
     assert(at(TokenKind.ParenL))
     val mark = open()
     expect(TokenKind.ParenL)
-    if (eat(TokenKind.ParenR)) { // Handle unit literal `()`
-      return close(mark, TreeKind.Expr.Literal)
+    if (eat(TokenKind.ParenR)) { // Handle unit tuple `()`
+      return close(mark, TreeKind.Expr.Tuple)
     }
     expression()
     expect(TokenKind.ParenR)

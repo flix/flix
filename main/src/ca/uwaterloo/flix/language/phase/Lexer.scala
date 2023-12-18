@@ -830,13 +830,32 @@ object Lexer {
    * Moves current position past a number literal. IE. "123i32" or "456.78f32"
    * It is optional to have a trailing type indicator on number literals.
    * If it is missing Flix defaults to `f64` for decimals and `i32` for integers.
-   */
+   * NB. The char 'e' might appear as part of scientific notation.
+   * */
   private def acceptNumber()(implicit s: State): TokenKind = {
     var isDecimal = false
+    var isScientificNotation = false
+    val isHex = peekPeek().contains('x')
+    if (isHex) {
+      advance() // consume '0'
+      advance() // consume 'x'
+    }
+
     while (!eof()) {
       peek() match {
-        // Digits and _ are just consumed
+        // Digits, '_' are just consumed
         case c if c.isDigit || c == '_' => advance()
+
+        // If handling a hex number consume hex digits too
+        case 'a' | 'b' | 'c' | 'd' | 'e' | 'f' if isHex => advance()
+
+        // 'e' mark scientific notation if not handling a hex number
+        case 'e' =>
+          if (isScientificNotation) {
+            return TokenKind.Err(LexerError.DoubleEInNumber(sourceLocationAtCurrent()))
+          }
+          isScientificNotation = true
+          advance()
 
         // Dots mark a decimal but are otherwise ignored
         case '.' =>

@@ -116,6 +116,8 @@ object UnstructuredTree {
 
       case object Literal extends Expr
 
+      case object Tuple extends Expr
+
       case object Paren extends Expr
 
       case object Block extends Expr

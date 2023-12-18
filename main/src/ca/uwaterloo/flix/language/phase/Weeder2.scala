@@ -25,6 +25,8 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
 
+import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
+import java.util.regex.{PatternSyntaxException, Pattern => JPattern}
 import scala.collection.immutable.{::, Nil}
 
 // TODO: Add change set support
@@ -512,6 +514,7 @@ object Weeder2 {
     tree.children(0) match {
       case Child.Tree(tree) => tree.kind match {
         case TreeKind.Expr.Literal => visitLiteral(tree)
+        case TreeKind.Expr.Tuple => visitExprTuple(tree)
         case TreeKind.Expr.Call => visitExprCall(tree)
         case TreeKind.Expr.LetImport => visitLetImport(tree)
         case TreeKind.Expr.Binary => visitExprBinary(tree)
@@ -523,6 +526,12 @@ object Weeder2 {
       }
       case _ => throw InternalCompilerException(s"Expr.Expr had token child", tree.loc)
     }
+  }
+
+  private def visitExprTuple(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+    assert(tree.kind == TreeKind.Expr.Tuple)
+    val expressions = pickAll(TreeKind.Expr.Expr, tree.children)
+    mapN(traverse(expressions)(visitExpression))(Expr.Tuple(_, tree.loc))
   }
 
   private def visitExprIfThenElse(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -664,7 +673,8 @@ object Weeder2 {
     }
 
     private type AstField = (WeededAst.JavaClassMember, Type, Option[WeededAst.Type], Name.Ident) => JvmOp
-    private def visitField[T](tree: Tree, astKind: AstField)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
+
+    private def visitField(tree: Tree, astKind: AstField)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
       val fqn = pickJavaClassMember(tree)
       val ascription = pickAscription(tree)
       val ident = pickNameIdent(tree)
@@ -848,7 +858,11 @@ object Weeder2 {
     flatMapN(
       pick(TreeKind.Arguments, tree.children)
     ) {
-      argTree => traverse(pickAll(TreeKind.Argument, argTree.children))(pickExpression)
+      argTree => mapN(traverse(pickAll(TreeKind.Argument, argTree.children))(pickExpression)) {
+        // Add synthetic unit arguments if there are none
+        case Nil => List(Expr.Cst(Ast.Constant.Unit, tree.loc))
+        case args => args
+      }
     }
   }
 
@@ -856,7 +870,16 @@ object Weeder2 {
     assert(tree.kind == TreeKind.Expr.Literal)
     tree.children(0) match {
       case Child.Token(token) => token.kind match {
-        // TODO: Numbers, chars, strings, booleans, set, list, map
+        // TODO: chars, strings, booleans, set, list, map
+        case TokenKind.LiteralInt8 => Constants.toInt8(token)
+        case TokenKind.LiteralInt16 => Constants.toInt16(token)
+        case TokenKind.LiteralInt32 => Constants.toInt32(token)
+        case TokenKind.LiteralInt64 => Constants.toInt64(token)
+        case TokenKind.LiteralBigInt => Constants.toBigInt(token)
+        case TokenKind.LiteralFloat32 => Constants.toFloat32(token)
+        case TokenKind.LiteralFloat64 => Constants.toFloat64(token)
+        case TokenKind.LiteralBigDecimal => Constants.toBigDecimal(token)
+        case TokenKind.LiteralRegex => Constants.toRegex(token)
         case TokenKind.NameLowerCase
              | TokenKind.NameUpperCase
              | TokenKind.NameMath
@@ -864,6 +887,129 @@ object Weeder2 {
         case _ => softFailWith(Expr.Error(Parse2Error.DevErr(tree.loc, "expected literal")))
       }
       case _ => softFailWith(Expr.Error(Parse2Error.DevErr(tree.loc, "expected literal")))
+    }
+  }
+
+  private object Constants {
+    /**
+     * Removes underscores from the given string of digits.
+     */
+    private def stripUnderscores(digits: String): String = {
+      digits.filterNot(_ == '_')
+    }
+
+    private def tryParseFloat(token: Token, after: (String, SourceLocation) => Expr)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
+      try {
+        after(stripUnderscores(token.text), loc).toSuccess
+      } catch {
+        case _: NumberFormatException =>
+          val err = MalformedFloat(loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+      }
+    }
+
+    private def tryParseInt(token: Token, after: (String, SourceLocation) => Expr)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
+      try {
+        after(stripUnderscores(token.text), loc).toSuccess
+      } catch {
+        case _: NumberFormatException =>
+          val err = MalformedInt(loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+      }
+    }
+
+    /**
+     * Attempts to parse the given tree to a float32.
+     */
+    def toFloat32(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
+      tryParseFloat(token, (text, loc) => Expr.Cst(Ast.Constant.Float32(text.stripSuffix("f32").toFloat), loc))
+
+    /**
+     * Attempts to parse the given tree to a float32.
+     */
+    def toFloat64(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
+      tryParseFloat(token, (text, loc) => Expr.Cst(Ast.Constant.Float64(text.stripSuffix("f64").toDouble), loc))
+
+    /**
+     * Attempts to parse the given tree to a big decimal.
+     */
+    def toBigDecimal(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
+      tryParseFloat(token, (text, loc) => {
+        val bigDecimal = new java.math.BigDecimal(text.stripSuffix("ff"))
+        Expr.Cst(Ast.Constant.BigDecimal(bigDecimal), loc)
+      })
+
+    /**
+     * Attempts to parse the given tree to a int8.
+     */
+    def toInt8(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
+      tryParseInt(token, (text, loc) => {
+        val radix = if (text.contains("0x")) 16 else 10
+        val digits = text.replaceFirst("0x", "").stripSuffix("i8")
+        val int = JByte.parseByte(digits, radix)
+        Expr.Cst(Ast.Constant.Int8(int), loc)
+      })
+
+    /**
+     * Attempts to parse the given tree to a int16.
+     */
+    def toInt16(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
+      tryParseInt(token, (text, loc) => {
+        val radix = if (text.contains("0x")) 16 else 10
+        val digits = text.replaceFirst("0x", "").stripSuffix("i16")
+        val int = JShort.parseShort(digits, radix)
+        Expr.Cst(Ast.Constant.Int16(int), loc)
+      })
+
+    /**
+     * Attempts to parse the given tree to a int32.
+     */
+    def toInt32(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
+      tryParseInt(token, (text, loc) => {
+        val radix = if (text.contains("0x")) 16 else 10
+        val digits = text.replaceFirst("0x", "").stripSuffix("i32")
+        val int = JInt.parseInt(digits, radix)
+        Expr.Cst(Ast.Constant.Int32(int), loc)
+      })
+
+    /**
+     * Attempts to parse the given tree to a int64.
+     */
+    def toInt64(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
+      tryParseInt(token, (text, loc) => {
+        val radix = if (text.contains("0x")) 16 else 10
+        val digits = text.replaceFirst("0x", "").stripSuffix("i64")
+        val int = JLong.parseLong(digits, radix)
+        Expr.Cst(Ast.Constant.Int64(int), loc)
+      })
+
+    /**
+     * Attempts to parse the given tree to a int64.
+     */
+    def toBigInt(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
+      tryParseInt(token, (text, loc) => {
+        val radix = if (text.contains("0x")) 16 else 10
+        val digits = text.replaceFirst("0x", "").stripSuffix("ii")
+        val int = new java.math.BigInteger(digits, radix)
+        Expr.Cst(Ast.Constant.BigInt(int), loc)
+      })
+
+    /**
+     * Attempts to compile the given regular expression into a Pattern.
+     */
+    def toRegex(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
+      try {
+        val pattern = JPattern.compile(token.text.stripPrefix("regex\"").stripSuffix("\""))
+        Expr.Cst(Ast.Constant.Regex(pattern), loc).toSuccess
+      } catch {
+        case ex: PatternSyntaxException =>
+          val err = MalformedRegex(token.text, ex.getMessage, loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+      }
+
     }
   }
 
