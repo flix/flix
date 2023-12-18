@@ -129,6 +129,8 @@ object UnstructuredTree {
       case object Intrinsic extends Expr
 
       case object LetImport extends Expr
+
+      case object IfThenElse extends Expr
     }
 
     ////// TYPES //////

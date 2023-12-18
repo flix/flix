@@ -474,14 +474,12 @@ object Parser2 {
     if (!allowQualified) {
       return first
     }
-    var wasQualified = false
     while (eat(TokenKind.Dot) && !eof()) {
-      wasQualified = true
       val mark = open()
       expectAny(kinds)
       close(mark, TreeKind.Ident)
     }
-    if (wasQualified) {
+    if (allowQualified) {
       val mark = openBefore(first)
       close(mark, TreeKind.QName)
     } else {
@@ -776,6 +774,7 @@ object Parser2 {
     nth(0) match {
       case TokenKind.ParenL => exprParen()
       case TokenKind.CurlyL => exprBlock()
+      case TokenKind.KeywordIf => exprIfThenElse()
       case TokenKind.LiteralString
            | TokenKind.LiteralChar
            | TokenKind.LiteralFloat32
@@ -801,6 +800,22 @@ object Parser2 {
       case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected expression, found $t"))
     }
     close(mark, TreeKind.Expr.Expr)
+  }
+
+  private def exprIfThenElse()(implicit s: State): Mark.Closed = {
+    assert(at(TokenKind.KeywordIf))
+    val mark = open()
+    expect(TokenKind.KeywordIf)
+    if (eat(TokenKind.ParenL)) {
+      expression()
+      expect(TokenKind.ParenR)
+    }
+    expression()
+    if (at(TokenKind.KeywordElse)) {
+      expect(TokenKind.KeywordElse)
+      expression()
+    }
+    close(mark, TreeKind.Expr.IfThenElse)
   }
 
   private def exprIntrinsic()(implicit s: State): Mark.Closed = {

@@ -34,7 +34,8 @@ import scala.collection.immutable.{::, Nil}
  * [[UnstructuredTree.Tree]] provides few guarantees, which must be kept in mind when reading/modifying Weeder2:
  * 1. Each Tree node will have a [[TreeKind]], [[SourceLocation]] and a list of __zero or more__ children.
  * 2. Each child may be a token or another tree.
- * NB: There is __no__ guarantee on the amount or order of children.
+ * 3. There is __no__ guarantee on the presence of children, and therefore no guarantee on the amount either.
+ * 4. There __is__ a guarantee on the order of children, so if TreeKind.Documentation and TreeKind.Annotation are expected, they will always appear in the same order.
  *
  * Function names in Weeder2 follow this pattern:
  * 1. visit* : These assume that they are called on a Tree of a specified kind and will assert that this is the case.
@@ -515,10 +516,28 @@ object Weeder2 {
         case TreeKind.Expr.LetImport => visitLetImport(tree)
         case TreeKind.Expr.Binary => visitExprBinary(tree)
         case TreeKind.Expr.Paren => visitExprParen(tree)
+        case TreeKind.Expr.IfThenElse => visitExprIfThenElse(tree)
         case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
+        case TreeKind.QName => mapN(visitQName(tree))(qname => Expr.Ambiguous(qname, tree.loc))
         case kind => failWith(s"TODO: implement expression of kind '$kind'", tree.loc)
       }
       case _ => throw InternalCompilerException(s"Expr.Expr had token child", tree.loc)
+    }
+  }
+
+  private def visitExprIfThenElse(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+    assert(tree.kind == TreeKind.Expr.IfThenElse)
+    val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
+    exprs match {
+      case exprCondition :: exprThen :: exprElse :: Nil =>
+        mapN(
+          visitExpression(exprCondition),
+          visitExpression(exprThen),
+          visitExpression(exprElse)
+        ) {
+          case (condition, tthen, eelse) => Expr.IfThenElse(condition, tthen, eelse, tree.loc)
+        }
+      case _ => softFailWith(Expr.Error(Parse2Error.DevErr(tree.loc, "Malformed if-then-else expression")))
     }
   }
 
@@ -580,46 +599,48 @@ object Weeder2 {
 
   private def visitLetImport(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
     assert(tree.kind == TreeKind.Expr.LetImport)
-    val jvmOp = flatMapN(pick(TreeKind.JvmOp.JvmOp, tree.children))(visitJvmOp)
+    val jvmOp = flatMapN(pick(TreeKind.JvmOp.JvmOp, tree.children))(JvmOp.visitJvmOp)
     val expr = pickExpression(tree)
     mapN(jvmOp, expr) {
       (jvmOp, expr) => Expr.LetImport(jvmOp, expr, tree.loc)
     }
   }
 
-  private def visitJvmOp(tree: Tree)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
-    assert(tree.kind == TreeKind.JvmOp.JvmOp)
-    val inner = unfold(tree)
-    inner.kind match {
-      case TreeKind.JvmOp.Method => visitJvmOpMethod(inner)
-      case TreeKind.JvmOp.Constructor => failWith("TODO: JvmOp.Constructor", tree.loc)
-      case TreeKind.JvmOp.StaticMethod => failWith("TODO: JvmOp.StaticMethod", tree.loc)
-      case TreeKind.JvmOp.GetField => failWith("TODO: JvmOp.GetField", tree.loc)
-      case TreeKind.JvmOp.StaticGetField => failWith("TODO: JvmOp.StaticGetField", tree.loc)
-      case TreeKind.JvmOp.PutField => failWith("TODO: JvmOp.PutField", tree.loc)
-      case TreeKind.JvmOp.StaticPutField => failWith("TODO: JvmOp.StaticPutField", tree.loc)
-      case kind => throw InternalCompilerException(s"child of kind '$kind' under JvmOp.JvmOp", tree.loc)
-    }
-  }
+  private object JvmOp {
+    private def visitJvmOpMethod(tree: Tree)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
+      val fqn = flatMapN(pick(TreeKind.QName, tree.children)) {
+        qname => {
+          val idents = mapN(traverse(pickAll(TreeKind.Ident, qname.children))(t => text(t).toSuccess))(_.flatten)
+          mapN(idents) {
+            case prefix :: suffix => JavaClassMember(prefix, suffix, tree.loc)
+            case Nil => throw InternalCompilerException("JvmOp.Method empty name", tree.loc)
+          }
+        }
+      }
+      val signature = flatMapN(pick(TreeKind.JvmOp.Signature, tree.children)) {
+        sig => traverse(pickAll(TreeKind.Type.Type, sig.children))(visitType)
+      }
+      val ascription = pick(TreeKind.JvmOp.Ascription, tree.children)
 
-  private def visitJvmOpMethod(tree: Tree)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
-    val fqn = flatMapN(pick(TreeKind.QName, tree.children)) {
-      qname => {
-        val idents = mapN(traverse(pickAll(TreeKind.Ident, qname.children))(t => text(t).toSuccess))(_.flatten)
-        mapN(idents) {
-          case prefix :: suffix => JavaClassMember(prefix, suffix, tree.loc)
-          case Nil => throw InternalCompilerException("JvmOp.Method empty name", tree.loc)
+      flatMapN(fqn, signature, ascription) {
+        case (fqn, signature, ascTree) => mapN(pickType(ascTree), tryPickEffect(ascTree)) {
+          case (tpe, eff) => WeededAst.JvmOp.Method(fqn, signature, tpe, eff, None) // TODO: This is not always None
         }
       }
     }
-    val signature = flatMapN(pick(TreeKind.JvmOp.Signature, tree.children)) {
-      sig => traverse(pickAll(TreeKind.Type.Type, sig.children))(visitType)
-    }
-    val ascription = pick(TreeKind.JvmOp.Ascription, tree.children)
 
-    flatMapN(fqn, signature, ascription) {
-      case (fqn, signature, ascTree) => mapN(pickType(ascTree), tryPickEffect(ascTree)) {
-        case (tpe, eff) => JvmOp.Method(fqn, signature, tpe, eff, None) // TODO: This is not always None
+    def visitJvmOp(tree: Tree)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
+      assert(tree.kind == TreeKind.JvmOp.JvmOp)
+      val inner = unfold(tree)
+      inner.kind match {
+        case TreeKind.JvmOp.Method => visitJvmOpMethod(inner)
+        case TreeKind.JvmOp.Constructor => failWith("TODO: JvmOp.Constructor", tree.loc)
+        case TreeKind.JvmOp.StaticMethod => failWith("TODO: JvmOp.StaticMethod", tree.loc)
+        case TreeKind.JvmOp.GetField => failWith("TODO: JvmOp.GetField", tree.loc)
+        case TreeKind.JvmOp.StaticGetField => failWith("TODO: JvmOp.StaticGetField", tree.loc)
+        case TreeKind.JvmOp.PutField => failWith("TODO: JvmOp.PutField", tree.loc)
+        case TreeKind.JvmOp.StaticPutField => failWith("TODO: JvmOp.StaticPutField", tree.loc)
+        case kind => throw InternalCompilerException(s"child of kind '$kind' under JvmOp.JvmOp", tree.loc)
       }
     }
   }
