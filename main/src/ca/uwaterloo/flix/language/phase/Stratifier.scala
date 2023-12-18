@@ -98,18 +98,18 @@ object Stratifier {
   /**
     * Performs stratification of the given expression `exp0`.
     *
-    * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
+    * Returns [[Success]] if the expression is stratified. Otherwise returns [[HardFailure]] with a [[StratificationError]].
     */
   private def visitExp(exp0: Expr)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[Expr, StratificationError] = exp0 match {
-    case Expr.Cst(_, _, _) => exp0.toSuccess
+    case Expr.Cst(_, _, _) => Validation.success(exp0)
 
-    case Expr.Var(_, _, _) => exp0.toSuccess
+    case Expr.Var(_, _, _) => Validation.success(exp0)
 
-    case Expr.Def(_, _, _) => exp0.toSuccess
+    case Expr.Def(_, _, _) => Validation.success(exp0)
 
-    case Expr.Sig(_, _, _) => exp0.toSuccess
+    case Expr.Sig(_, _, _) => Validation.success(exp0)
 
-    case Expr.Hole(_, _, _) => exp0.toSuccess
+    case Expr.Hole(_, _, _) => Validation.success(exp0)
 
     case Expr.HoleWithExp(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
@@ -157,7 +157,7 @@ object Stratifier {
       }
 
     case Expr.Region(_, _) =>
-      exp0.toSuccess
+      Validation.success(exp0)
 
     case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
@@ -231,7 +231,7 @@ object Stratifier {
       }
 
     case Expr.RecordEmpty(tpe, loc) =>
-      Expr.RecordEmpty(tpe, loc).toSuccess
+      Validation.success(Expr.RecordEmpty(tpe, loc))
 
     case Expr.RecordSelect(base, label, tpe, eff, loc) =>
       mapN(visitExp(base)) {
@@ -383,7 +383,7 @@ object Stratifier {
       }
 
     case Expr.GetStaticField(field, tpe, eff, loc) =>
-      Expr.GetStaticField(field, tpe, eff, loc).toSuccess
+      Validation.success(Expr.GetStaticField(field, tpe, eff, loc))
 
     case Expr.PutStaticField(field, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
@@ -418,7 +418,7 @@ object Stratifier {
       }
 
       val defaultVal = default match {
-        case None => None.toSuccess
+        case None => Validation.success(None)
         case Some(exp) => visitExp(exp) map {
           case e => Some(e)
         }
@@ -548,7 +548,7 @@ object Stratifier {
 
     // Compute the stratification.
     UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc) match {
-      case Result.Ok(_) => ().toSuccess
+      case Result.Ok(_) => Validation.success(())
       case Result.Err(e) => Validation.toSoftFailure((), e)
     }
   }

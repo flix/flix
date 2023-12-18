@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Type, TypeConstructor}
-import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
@@ -45,7 +44,7 @@ object PredDeps {
       case (acc, d) => acc + visitExp(d)
     }, _ + _)
 
-    root.copy(precedenceGraph = g).toSuccess
+    Validation.success(root.copy(precedenceGraph = g))
   }
 
   /**

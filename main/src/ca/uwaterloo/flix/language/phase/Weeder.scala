@@ -92,7 +92,7 @@ object Weeder {
     * Returns a SoftFailure otherwise.
     */
   private def visitModuleName(names: Name.NName): Validation[Unit, IllegalModuleName] = {
-    names.idents.foldLeft(().toSuccess[Unit, IllegalModuleName]) {
+    names.idents.foldLeft(Validation.success(()): Validation[Unit, IllegalModuleName]) {
       case (acc, i) => flatMapN(acc) {
         _ =>
           val s = i.name
@@ -100,7 +100,7 @@ object Weeder {
           if (first.toUpperCase != first)
             Validation.toSoftFailure((), IllegalModuleName(s, i.loc))
           else
-            ().toSuccess
+            Validation.success(())
       }
     }
   }
@@ -241,7 +241,7 @@ object Weeder {
       val doc = visitDoc(doc0)
       val annVal = visitAnnotations(ann)
       val modVal = visitModifiers(mods, legalModifiers)
-      val pubVal = if (requiresPublic) requirePublic(mods, ident) else ().toSuccess // conditionally require a public modifier
+      val pubVal = if (requiresPublic) requirePublic(mods, ident) else Validation.success(()) // conditionally require a public modifier
       val identVal = visitIdent(ident)
       val expVal = visitExp(exp0, SyntacticEnv.Top)
       val tparamsVal = visitKindedTypeParams(tparams0)
@@ -332,7 +332,7 @@ object Weeder {
 
       val casesVal = (tpe0, cases0) match {
         // Case 1: empty enum
-        case (None, None) => Map.empty.toSuccess
+        case (None, None) => Validation.success(Map.empty)
         // Case 2: singleton enum
         case (Some(t0), None) =>
           val tVal = visitType(t0)
@@ -391,7 +391,7 @@ object Weeder {
 
       val casesVal = (tpe0, cases0) match {
         // Case 1: empty enum
-        case (None, None) => Map.empty.toSuccess
+        case (None, None) => Validation.success(Map.empty)
         // Case 2: singleton enum
         case (Some(t0), None) =>
           val tVal = visitType(t0)
@@ -416,7 +416,7 @@ object Weeder {
                   val enumName = ident.name
                   val loc1 = otherTag.ident.loc
                   val loc2 = mkSL(caze.ident.sp1, caze.ident.sp2)
-                  Failure(LazyList(
+                  HardFailure(LazyList(
                     // NB: We report an error at both source locations.
                     DuplicateTag(enumName, tagName, loc1, loc2),
                     DuplicateTag(enumName, tagName, loc2, loc1)
@@ -503,11 +503,11 @@ object Weeder {
         case (mod, tparams) =>
           val tparamVal = tparams match {
             // Case 1: Elided. Use the class tparam.
-            case WeededAst.TypeParams.Elided => clazzTparam.toSuccess
+            case WeededAst.TypeParams.Elided => Validation.success(clazzTparam)
 
             // Case 2: Singleton parameter.
-            case WeededAst.TypeParams.Kinded(hd :: Nil) => hd.toSuccess
-            case WeededAst.TypeParams.Unkinded(hd :: Nil) => hd.toSuccess
+            case WeededAst.TypeParams.Kinded(hd :: Nil) => Validation.success(hd)
+            case WeededAst.TypeParams.Unkinded(hd :: Nil) => Validation.success(hd)
 
             // Case 3: Multiple params.
             // We recover by (arbitrarily) using the first parameter. The Parser guarantees that ts cannot be empty.
@@ -529,7 +529,7 @@ object Weeder {
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val argVal = args0.map(_.toList) match {
         // Case 1: Elided type. Use the type from the instance
-        case None => instTpe.toSuccess
+        case None => Validation.success(instTpe)
         // Case 2: One argument. Visit it.
         case Some(hd :: Nil) => visitType(hd)
         // Case 3: Multiple arguments.
@@ -552,7 +552,7 @@ object Weeder {
   private def visitUseOrImport(u0: ParsedAst.UseOrImport): Validation[List[WeededAst.UseOrImport], WeederError] = u0 match {
     case ParsedAst.Use.UseOne(sp1, qname, sp2) =>
       if (qname.isQualified) {
-        List(WeededAst.UseOrImport.Use(qname, qname.ident, mkSL(sp1, sp2))).toSuccess
+        Validation.success(List(WeededAst.UseOrImport.Use(qname, qname.ident, mkSL(sp1, sp2))))
       } else {
         // Recover by ignoring the broken use.
         Validation.toSoftFailure(Nil, WeederError.UnqualifiedUse(qname.loc))
@@ -569,17 +569,18 @@ object Weeder {
       }
 
       // Collect non-erroneous uses.
-      names.collect {
+      val ns = names.collect {
         case ParsedAst.Use.NameAndAlias(sp1, ident, aliasOpt, sp2) if isValidAlias(ident, aliasOpt) =>
           val alias = aliasOpt.getOrElse(ident)
           WeededAst.UseOrImport.Use(Name.QName(sp1, nname, ident, sp2), alias, mkSL(sp1, sp2)): WeededAst.UseOrImport
-      }.toList.toSuccess.withSoftFailures(errors)
+      }.toList
+      Validation.success(ns).withSoftFailures(errors)
 
     case ParsedAst.Imports.ImportOne(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
       val alias = name.fqn.last
       if (raw"[A-Z][A-Za-z0-9_!]*".r matches alias) {
-        List(WeededAst.UseOrImport.Import(name, Name.Ident(sp1, alias, sp2), loc)).toSuccess
+        Validation.success(List(WeededAst.UseOrImport.Import(name, Name.Ident(sp1, alias, sp2), loc)))
       } else {
         // We recover by simply ignoring the broken import.
         Validation.toSoftFailure(Nil, MalformedIdentifier(alias, loc))
@@ -593,7 +594,7 @@ object Weeder {
           val ident = alias.getOrElse(Name.Ident(sp1, name, sp2))
           WeededAst.UseOrImport.Import(fqn, ident, loc)
       }
-      is.toList.toSuccess
+      Validation.success(is.toList)
   }
 
   /**
@@ -616,25 +617,26 @@ object Weeder {
         // Case 1: upper qualified name
         case Nil =>
           // NB: We only use the source location of the identifier itself.
-          WeededAst.Expr.Ambiguous(qname, qname.ident.loc).toSuccess
+          Validation.success(WeededAst.Expr.Ambiguous(qname, qname.ident.loc))
 
         // Case 1: basic qualified name
         case ident :: Nil =>
           // NB: We only use the source location of the identifier itself.
-          WeededAst.Expr.Ambiguous(qname, ident.loc).toSuccess
+          Validation.success(WeededAst.Expr.Ambiguous(qname, ident.loc))
 
         // Case 2: actually a record access
         case ident :: labels =>
           // NB: We only use the source location of the identifier itself.
           val base = WeededAst.Expr.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.sp1, ident.sp2), ident.loc)
-          labels.foldLeft(base: WeededAst.Expr) {
+          val lbls = labels.foldLeft(base: WeededAst.Expr) {
             case (acc, label) => WeededAst.Expr.RecordSelect(acc, Name.mkLabel(label), label.loc) // TODO NS-REFACTOR should use better location
-          }.toSuccess
+          }
+          Validation.success(lbls)
       }
 
     case ParsedAst.Expression.Open(sp1, qname, sp2) =>
       // TODO RESTR-VARS make sure it's capital
-      WeededAst.Expr.Open(qname, mkSL(sp1, sp2)).toSuccess
+      Validation.success(WeededAst.Expr.Open(qname, mkSL(sp1, sp2)))
 
     case ParsedAst.Expression.OpenAs(sp1, qname, exp, sp2) =>
       // TODO RESTR-VARS make sure it's capital
@@ -645,12 +647,12 @@ object Weeder {
 
     case ParsedAst.Expression.Hole(sp1, name, sp2) =>
       val loc = mkSL(sp1, sp2)
-      WeededAst.Expr.Hole(name, loc).toSuccess
+      Validation.success(WeededAst.Expr.Hole(name, loc))
 
     case ParsedAst.Expression.HolyName(ident, sp2) =>
       val loc = mkSL(ident.sp1, sp2)
       val exp = WeededAst.Expr.Ambiguous(Name.mkQName(ident), ident.loc)
-      WeededAst.Expr.HoleWithExp(exp, loc).toSuccess
+      Validation.success(WeededAst.Expr.HoleWithExp(exp, loc))
 
     case ParsedAst.Expression.Use(sp1, use, exp, sp2) =>
       mapN(visitUseOrImport(use), visitExp(exp, senv)) {
@@ -659,7 +661,7 @@ object Weeder {
 
     case ParsedAst.Expression.Lit(sp1, lit, sp2) =>
       visitLiteral(lit) match {
-        case Result.Ok(c) => WeededAst.Expr.Cst(c, mkSL(sp1, sp2)).toSuccess
+        case Result.Ok(c) => Validation.success(WeededAst.Expr.Cst(c, mkSL(sp1, sp2)))
         case Result.Err(e) => Validation.toSoftFailure(WeededAst.Expr.Error(e), e)
       }
 
@@ -667,138 +669,138 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       flatMapN(traverse(exps)(visitArgument(_, senv))) {
         case es => (op.name, es) match {
-          case ("BOOL_NOT", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.BoolOp.Not, e1, loc).toSuccess
-          case ("BOOL_AND", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.BoolOp.And, e1, e2, loc).toSuccess
-          case ("BOOL_OR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, loc).toSuccess
-          case ("BOOL_EQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.BoolOp.Eq, e1, e2, loc).toSuccess
-          case ("BOOL_NEQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.BoolOp.Neq, e1, e2, loc).toSuccess
+          case ("BOOL_NOT", e1 :: Nil) => Validation.success(WeededAst.Expr.Unary(SemanticOp.BoolOp.Not, e1, loc))
+          case ("BOOL_AND", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.BoolOp.And, e1, e2, loc))
+          case ("BOOL_OR", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, loc))
+          case ("BOOL_EQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.BoolOp.Eq, e1, e2, loc))
+          case ("BOOL_NEQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.BoolOp.Neq, e1, e2, loc))
 
-          case ("CHAR_EQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.CharOp.Eq, e1, e2, loc).toSuccess
-          case ("CHAR_NEQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.CharOp.Neq, e1, e2, loc).toSuccess
-          case ("CHAR_LT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.CharOp.Lt, e1, e2, loc).toSuccess
-          case ("CHAR_LE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.CharOp.Le, e1, e2, loc).toSuccess
-          case ("CHAR_GT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.CharOp.Gt, e1, e2, loc).toSuccess
-          case ("CHAR_GE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.CharOp.Ge, e1, e2, loc).toSuccess
+          case ("CHAR_EQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.CharOp.Eq, e1, e2, loc))
+          case ("CHAR_NEQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.CharOp.Neq, e1, e2, loc))
+          case ("CHAR_LT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.CharOp.Lt, e1, e2, loc))
+          case ("CHAR_LE", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.CharOp.Le, e1, e2, loc))
+          case ("CHAR_GT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.CharOp.Gt, e1, e2, loc))
+          case ("CHAR_GE", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.CharOp.Ge, e1, e2, loc))
 
-          case ("FLOAT32_NEG", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Float32Op.Neg, e1, loc).toSuccess
-          case ("FLOAT32_ADD", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Add, e1, e2, loc).toSuccess
-          case ("FLOAT32_SUB", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Sub, e1, e2, loc).toSuccess
-          case ("FLOAT32_MUL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Mul, e1, e2, loc).toSuccess
-          case ("FLOAT32_DIV", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Div, e1, e2, loc).toSuccess
-          case ("FLOAT32_EXP", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Exp, e1, e2, loc).toSuccess
-          case ("FLOAT32_EQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Eq, e1, e2, loc).toSuccess
-          case ("FLOAT32_NEQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Neq, e1, e2, loc).toSuccess
-          case ("FLOAT32_LT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Lt, e1, e2, loc).toSuccess
-          case ("FLOAT32_LE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Le, e1, e2, loc).toSuccess
-          case ("FLOAT32_GT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Gt, e1, e2, loc).toSuccess
-          case ("FLOAT32_GE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Ge, e1, e2, loc).toSuccess
+          case ("FLOAT32_NEG", e1 :: Nil) => Validation.success(WeededAst.Expr.Unary(SemanticOp.Float32Op.Neg, e1, loc))
+          case ("FLOAT32_ADD", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float32Op.Add, e1, e2, loc))
+          case ("FLOAT32_SUB", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float32Op.Sub, e1, e2, loc))
+          case ("FLOAT32_MUL", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float32Op.Mul, e1, e2, loc))
+          case ("FLOAT32_DIV", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float32Op.Div, e1, e2, loc))
+          case ("FLOAT32_EXP", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float32Op.Exp, e1, e2, loc))
+          case ("FLOAT32_EQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float32Op.Eq, e1, e2, loc))
+          case ("FLOAT32_NEQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float32Op.Neq, e1, e2, loc))
+          case ("FLOAT32_LT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float32Op.Lt, e1, e2, loc))
+          case ("FLOAT32_LE", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float32Op.Le, e1, e2, loc))
+          case ("FLOAT32_GT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float32Op.Gt, e1, e2, loc))
+          case ("FLOAT32_GE", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float32Op.Ge, e1, e2, loc))
 
-          case ("FLOAT64_NEG", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Float64Op.Neg, e1, loc).toSuccess
-          case ("FLOAT64_ADD", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Add, e1, e2, loc).toSuccess
-          case ("FLOAT64_SUB", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Sub, e1, e2, loc).toSuccess
-          case ("FLOAT64_MUL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Mul, e1, e2, loc).toSuccess
-          case ("FLOAT64_DIV", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Div, e1, e2, loc).toSuccess
-          case ("FLOAT64_EXP", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Exp, e1, e2, loc).toSuccess
-          case ("FLOAT64_EQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Eq, e1, e2, loc).toSuccess
-          case ("FLOAT64_NEQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Neq, e1, e2, loc).toSuccess
-          case ("FLOAT64_LT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Lt, e1, e2, loc).toSuccess
-          case ("FLOAT64_LE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Le, e1, e2, loc).toSuccess
-          case ("FLOAT64_GT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Gt, e1, e2, loc).toSuccess
-          case ("FLOAT64_GE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Ge, e1, e2, loc).toSuccess
+          case ("FLOAT64_NEG", e1 :: Nil) => Validation.success(WeededAst.Expr.Unary(SemanticOp.Float64Op.Neg, e1, loc))
+          case ("FLOAT64_ADD", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float64Op.Add, e1, e2, loc))
+          case ("FLOAT64_SUB", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float64Op.Sub, e1, e2, loc))
+          case ("FLOAT64_MUL", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float64Op.Mul, e1, e2, loc))
+          case ("FLOAT64_DIV", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float64Op.Div, e1, e2, loc))
+          case ("FLOAT64_EXP", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float64Op.Exp, e1, e2, loc))
+          case ("FLOAT64_EQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float64Op.Eq, e1, e2, loc))
+          case ("FLOAT64_NEQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float64Op.Neq, e1, e2, loc))
+          case ("FLOAT64_LT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float64Op.Lt, e1, e2, loc))
+          case ("FLOAT64_LE", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float64Op.Le, e1, e2, loc))
+          case ("FLOAT64_GT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float64Op.Gt, e1, e2, loc))
+          case ("FLOAT64_GE", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Float64Op.Ge, e1, e2, loc))
 
-          case ("INT8_NEG", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Int8Op.Neg, e1, loc).toSuccess
-          case ("INT8_NOT", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Int8Op.Not, e1, loc).toSuccess
-          case ("INT8_ADD", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Add, e1, e2, loc).toSuccess
-          case ("INT8_SUB", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Sub, e1, e2, loc).toSuccess
-          case ("INT8_MUL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Mul, e1, e2, loc).toSuccess
-          case ("INT8_DIV", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Div, e1, e2, loc).toSuccess
-          case ("INT8_REM", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Rem, e1, e2, loc).toSuccess
-          case ("INT8_EXP", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Exp, e1, e2, loc).toSuccess
-          case ("INT8_AND", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.And, e1, e2, loc).toSuccess
-          case ("INT8_OR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Or, e1, e2, loc).toSuccess
-          case ("INT8_XOR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Xor, e1, e2, loc).toSuccess
-          case ("INT8_SHL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Shl, e1, e2, loc).toSuccess
-          case ("INT8_SHR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Shr, e1, e2, loc).toSuccess
-          case ("INT8_EQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Eq, e1, e2, loc).toSuccess
-          case ("INT8_NEQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Neq, e1, e2, loc).toSuccess
-          case ("INT8_LT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Lt, e1, e2, loc).toSuccess
-          case ("INT8_LE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Le, e1, e2, loc).toSuccess
-          case ("INT8_GT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Gt, e1, e2, loc).toSuccess
-          case ("INT8_GE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Ge, e1, e2, loc).toSuccess
+          case ("INT8_NEG", e1 :: Nil) => Validation.success(WeededAst.Expr.Unary(SemanticOp.Int8Op.Neg, e1, loc))
+          case ("INT8_NOT", e1 :: Nil) => Validation.success(WeededAst.Expr.Unary(SemanticOp.Int8Op.Not, e1, loc))
+          case ("INT8_ADD", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.Add, e1, e2, loc))
+          case ("INT8_SUB", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.Sub, e1, e2, loc))
+          case ("INT8_MUL", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.Mul, e1, e2, loc))
+          case ("INT8_DIV", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.Div, e1, e2, loc))
+          case ("INT8_REM", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.Rem, e1, e2, loc))
+          case ("INT8_EXP", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.Exp, e1, e2, loc))
+          case ("INT8_AND", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.And, e1, e2, loc))
+          case ("INT8_OR", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.Or, e1, e2, loc))
+          case ("INT8_XOR", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.Xor, e1, e2, loc))
+          case ("INT8_SHL", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.Shl, e1, e2, loc))
+          case ("INT8_SHR", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.Shr, e1, e2, loc))
+          case ("INT8_EQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.Eq, e1, e2, loc))
+          case ("INT8_NEQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.Neq, e1, e2, loc))
+          case ("INT8_LT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.Lt, e1, e2, loc))
+          case ("INT8_LE", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.Le, e1, e2, loc))
+          case ("INT8_GT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.Gt, e1, e2, loc))
+          case ("INT8_GE", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int8Op.Ge, e1, e2, loc))
 
-          case ("INT16_NEG", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Int16Op.Neg, e1, loc).toSuccess
-          case ("INT16_NOT", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Int16Op.Not, e1, loc).toSuccess
-          case ("INT16_ADD", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Add, e1, e2, loc).toSuccess
-          case ("INT16_SUB", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Sub, e1, e2, loc).toSuccess
-          case ("INT16_MUL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Mul, e1, e2, loc).toSuccess
-          case ("INT16_DIV", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Div, e1, e2, loc).toSuccess
-          case ("INT16_REM", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Rem, e1, e2, loc).toSuccess
-          case ("INT16_EXP", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Exp, e1, e2, loc).toSuccess
-          case ("INT16_AND", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.And, e1, e2, loc).toSuccess
-          case ("INT16_OR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Or, e1, e2, loc).toSuccess
-          case ("INT16_XOR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Xor, e1, e2, loc).toSuccess
-          case ("INT16_SHL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Shl, e1, e2, loc).toSuccess
-          case ("INT16_SHR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Shr, e1, e2, loc).toSuccess
-          case ("INT16_EQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Eq, e1, e2, loc).toSuccess
-          case ("INT16_NEQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Neq, e1, e2, loc).toSuccess
-          case ("INT16_LT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Lt, e1, e2, loc).toSuccess
-          case ("INT16_LE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Le, e1, e2, loc).toSuccess
-          case ("INT16_GT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Gt, e1, e2, loc).toSuccess
-          case ("INT16_GE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Ge, e1, e2, loc).toSuccess
+          case ("INT16_NEG", e1 :: Nil) => Validation.success(WeededAst.Expr.Unary(SemanticOp.Int16Op.Neg, e1, loc))
+          case ("INT16_NOT", e1 :: Nil) => Validation.success(WeededAst.Expr.Unary(SemanticOp.Int16Op.Not, e1, loc))
+          case ("INT16_ADD", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.Add, e1, e2, loc))
+          case ("INT16_SUB", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.Sub, e1, e2, loc))
+          case ("INT16_MUL", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.Mul, e1, e2, loc))
+          case ("INT16_DIV", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.Div, e1, e2, loc))
+          case ("INT16_REM", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.Rem, e1, e2, loc))
+          case ("INT16_EXP", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.Exp, e1, e2, loc))
+          case ("INT16_AND", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.And, e1, e2, loc))
+          case ("INT16_OR", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.Or, e1, e2, loc))
+          case ("INT16_XOR", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.Xor, e1, e2, loc))
+          case ("INT16_SHL", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.Shl, e1, e2, loc))
+          case ("INT16_SHR", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.Shr, e1, e2, loc))
+          case ("INT16_EQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.Eq, e1, e2, loc))
+          case ("INT16_NEQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.Neq, e1, e2, loc))
+          case ("INT16_LT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.Lt, e1, e2, loc))
+          case ("INT16_LE", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.Le, e1, e2, loc))
+          case ("INT16_GT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.Gt, e1, e2, loc))
+          case ("INT16_GE", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int16Op.Ge, e1, e2, loc))
 
-          case ("INT32_NEG", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Int32Op.Neg, e1, loc).toSuccess
-          case ("INT32_NOT", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Int32Op.Not, e1, loc).toSuccess
-          case ("INT32_ADD", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Add, e1, e2, loc).toSuccess
-          case ("INT32_SUB", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Sub, e1, e2, loc).toSuccess
-          case ("INT32_MUL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Mul, e1, e2, loc).toSuccess
-          case ("INT32_DIV", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Div, e1, e2, loc).toSuccess
-          case ("INT32_REM", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Rem, e1, e2, loc).toSuccess
-          case ("INT32_EXP", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Exp, e1, e2, loc).toSuccess
-          case ("INT32_AND", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.And, e1, e2, loc).toSuccess
-          case ("INT32_OR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Or, e1, e2, loc).toSuccess
-          case ("INT32_XOR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Xor, e1, e2, loc).toSuccess
-          case ("INT32_SHL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Shl, e1, e2, loc).toSuccess
-          case ("INT32_SHR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Shr, e1, e2, loc).toSuccess
-          case ("INT32_EQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Eq, e1, e2, loc).toSuccess
-          case ("INT32_NEQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Neq, e1, e2, loc).toSuccess
-          case ("INT32_LT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Lt, e1, e2, loc).toSuccess
-          case ("INT32_LE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Le, e1, e2, loc).toSuccess
-          case ("INT32_GT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Gt, e1, e2, loc).toSuccess
-          case ("INT32_GE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Ge, e1, e2, loc).toSuccess
+          case ("INT32_NEG", e1 :: Nil) => Validation.success(WeededAst.Expr.Unary(SemanticOp.Int32Op.Neg, e1, loc))
+          case ("INT32_NOT", e1 :: Nil) => Validation.success(WeededAst.Expr.Unary(SemanticOp.Int32Op.Not, e1, loc))
+          case ("INT32_ADD", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.Add, e1, e2, loc))
+          case ("INT32_SUB", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.Sub, e1, e2, loc))
+          case ("INT32_MUL", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.Mul, e1, e2, loc))
+          case ("INT32_DIV", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.Div, e1, e2, loc))
+          case ("INT32_REM", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.Rem, e1, e2, loc))
+          case ("INT32_EXP", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.Exp, e1, e2, loc))
+          case ("INT32_AND", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.And, e1, e2, loc))
+          case ("INT32_OR", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.Or, e1, e2, loc))
+          case ("INT32_XOR", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.Xor, e1, e2, loc))
+          case ("INT32_SHL", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.Shl, e1, e2, loc))
+          case ("INT32_SHR", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.Shr, e1, e2, loc))
+          case ("INT32_EQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.Eq, e1, e2, loc))
+          case ("INT32_NEQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.Neq, e1, e2, loc))
+          case ("INT32_LT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.Lt, e1, e2, loc))
+          case ("INT32_LE", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.Le, e1, e2, loc))
+          case ("INT32_GT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.Gt, e1, e2, loc))
+          case ("INT32_GE", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int32Op.Ge, e1, e2, loc))
 
-          case ("INT64_NEG", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Int64Op.Neg, e1, loc).toSuccess
-          case ("INT64_NOT", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Int64Op.Not, e1, loc).toSuccess
-          case ("INT64_ADD", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Add, e1, e2, loc).toSuccess
-          case ("INT64_SUB", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Sub, e1, e2, loc).toSuccess
-          case ("INT64_MUL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Mul, e1, e2, loc).toSuccess
-          case ("INT64_DIV", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Div, e1, e2, loc).toSuccess
-          case ("INT64_REM", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Rem, e1, e2, loc).toSuccess
-          case ("INT64_EXP", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Exp, e1, e2, loc).toSuccess
-          case ("INT64_AND", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.And, e1, e2, loc).toSuccess
-          case ("INT64_OR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Or, e1, e2, loc).toSuccess
-          case ("INT64_XOR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Xor, e1, e2, loc).toSuccess
-          case ("INT64_SHL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Shl, e1, e2, loc).toSuccess
-          case ("INT64_SHR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Shr, e1, e2, loc).toSuccess
-          case ("INT64_EQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Eq, e1, e2, loc).toSuccess
-          case ("INT64_NEQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Neq, e1, e2, loc).toSuccess
-          case ("INT64_LT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Lt, e1, e2, loc).toSuccess
-          case ("INT64_LE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Le, e1, e2, loc).toSuccess
-          case ("INT64_GT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Gt, e1, e2, loc).toSuccess
-          case ("INT64_GE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Ge, e1, e2, loc).toSuccess
+          case ("INT64_NEG", e1 :: Nil) => Validation.success(WeededAst.Expr.Unary(SemanticOp.Int64Op.Neg, e1, loc))
+          case ("INT64_NOT", e1 :: Nil) => Validation.success(WeededAst.Expr.Unary(SemanticOp.Int64Op.Not, e1, loc))
+          case ("INT64_ADD", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Add, e1, e2, loc))
+          case ("INT64_SUB", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Sub, e1, e2, loc))
+          case ("INT64_MUL", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Mul, e1, e2, loc))
+          case ("INT64_DIV", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Div, e1, e2, loc))
+          case ("INT64_REM", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Rem, e1, e2, loc))
+          case ("INT64_EXP", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Exp, e1, e2, loc))
+          case ("INT64_AND", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.And, e1, e2, loc))
+          case ("INT64_OR", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Or, e1, e2, loc))
+          case ("INT64_XOR", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Xor, e1, e2, loc))
+          case ("INT64_SHL", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Shl, e1, e2, loc))
+          case ("INT64_SHR", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Shr, e1, e2, loc))
+          case ("INT64_EQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Eq, e1, e2, loc))
+          case ("INT64_NEQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Neq, e1, e2, loc))
+          case ("INT64_LT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Lt, e1, e2, loc))
+          case ("INT64_LE", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Le, e1, e2, loc))
+          case ("INT64_GT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Gt, e1, e2, loc))
+          case ("INT64_GE", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Ge, e1, e2, loc))
 
-          case ("CHANNEL_GET", e1 :: Nil) => WeededAst.Expr.GetChannel(e1, loc).toSuccess
-          case ("CHANNEL_PUT", e1 :: e2 :: Nil) => WeededAst.Expr.PutChannel(e1, e2, loc).toSuccess
-          case ("CHANNEL_NEW", e1 :: e2 :: Nil) => WeededAst.Expr.NewChannel(e1, e2, loc).toSuccess
+          case ("CHANNEL_GET", e1 :: Nil) => Validation.success(WeededAst.Expr.GetChannel(e1, loc))
+          case ("CHANNEL_PUT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.PutChannel(e1, e2, loc))
+          case ("CHANNEL_NEW", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.NewChannel(e1, e2, loc))
 
-          case ("ARRAY_NEW", e1 :: e2 :: e3 :: Nil) => WeededAst.Expr.ArrayNew(e1, e2, e3, loc).toSuccess
-          case ("ARRAY_LENGTH", e1 :: Nil) => WeededAst.Expr.ArrayLength(e1, loc).toSuccess
-          case ("ARRAY_LOAD", e1 :: e2 :: Nil) => WeededAst.Expr.ArrayLoad(e1, e2, loc).toSuccess
-          case ("ARRAY_STORE", e1 :: e2 :: e3 :: Nil) => WeededAst.Expr.ArrayStore(e1, e2, e3, loc).toSuccess
+          case ("ARRAY_NEW", e1 :: e2 :: e3 :: Nil) => Validation.success(WeededAst.Expr.ArrayNew(e1, e2, e3, loc))
+          case ("ARRAY_LENGTH", e1 :: Nil) => Validation.success(WeededAst.Expr.ArrayLength(e1, loc))
+          case ("ARRAY_LOAD", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.ArrayLoad(e1, e2, loc))
+          case ("ARRAY_STORE", e1 :: e2 :: e3 :: Nil) => Validation.success(WeededAst.Expr.ArrayStore(e1, e2, e3, loc))
 
-          case ("VECTOR_GET", e1 :: e2 :: Nil) => WeededAst.Expr.VectorLoad(e1, e2, loc).toSuccess
-          case ("VECTOR_LENGTH", e1 :: Nil) => WeededAst.Expr.VectorLength(e1, loc).toSuccess
+          case ("VECTOR_GET", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.VectorLoad(e1, e2, loc))
+          case ("VECTOR_LENGTH", e1 :: Nil) => Validation.success(WeededAst.Expr.VectorLength(e1, loc))
 
-          case ("SCOPE_EXIT", e1 :: e2 :: Nil) => WeededAst.Expr.ScopeExit(e1, e2, loc).toSuccess
+          case ("SCOPE_EXIT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.ScopeExit(e1, e2, loc))
 
           case _ =>
             val err = UndefinedIntrinsic(loc)
@@ -889,7 +891,7 @@ object Weeder {
         case _ if frags.isEmpty =>
           val err = EmptyForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
-        case (fs1, e1) => WeededAst.Expr.ApplicativeFor(fs1, e1, loc).toSuccess
+        case (fs1, e1) => Validation.success(WeededAst.Expr.ApplicativeFor(fs1, e1, loc))
       }
 
     case ParsedAst.Expression.ForEach(sp1, frags, exp, sp2) =>
@@ -903,7 +905,7 @@ object Weeder {
         case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
           val err = IllegalForFragment(loc1)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
-        case (fs1, e1) => WeededAst.Expr.ForEach(fs1, e1, loc).toSuccess
+        case (fs1, e1) => Validation.success(WeededAst.Expr.ForEach(fs1, e1, loc))
       }
 
     case ParsedAst.Expression.MonadicFor(sp1, frags, exp, sp2) =>
@@ -917,7 +919,7 @@ object Weeder {
         case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
           val err = IllegalForFragment(loc1)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
-        case (fs1, e1) => WeededAst.Expr.MonadicFor(fs1, e1, loc).toSuccess
+        case (fs1, e1) => Validation.success(WeededAst.Expr.MonadicFor(fs1, e1, loc))
       }
 
     case ParsedAst.Expression.ForEachYield(sp1, frags, exp, sp2) =>
@@ -931,7 +933,7 @@ object Weeder {
         case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
           val err = IllegalForFragment(loc1)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
-        case (fs1, e1) => WeededAst.Expr.ForEachYield(fs1, e1, loc).toSuccess
+        case (fs1, e1) => Validation.success(WeededAst.Expr.ForEachYield(fs1, e1, loc))
       }
 
     case ParsedAst.Expression.LetMatch(sp1, mod0, pat, tpe0, exp1, exp2, sp2) =>
@@ -1000,7 +1002,7 @@ object Weeder {
 
     case ParsedAst.Expression.Static(sp1, sp2) =>
       val loc = mkSL(sp1, sp2)
-      WeededAst.Expr.Static(loc).toSuccess
+      Validation.success(WeededAst.Expr.Static(loc))
 
     case ParsedAst.Expression.Scope(sp1, ident, exp, sp2) =>
       mapN(visitExp(exp, senv)) {
@@ -1184,7 +1186,7 @@ object Weeder {
         case Seq(ParsedAst.InterpolationPart.StrPart(innerSp1, chars, innerSp2)) =>
           // Special case: We have a constant string. Check the contents and return it.
           visitCharSeq(chars) match {
-            case Result.Ok(s) => WeededAst.Expr.Cst(Ast.Constant.Str(s), mkSL(innerSp1, innerSp2)).toSuccess
+            case Result.Ok(s) => Validation.success(WeededAst.Expr.Cst(Ast.Constant.Str(s), mkSL(innerSp1, innerSp2)))
             case Result.Err(e) => Validation.toSoftFailure(WeededAst.Expr.Error(e), e)
           }
 
@@ -1197,7 +1199,7 @@ object Weeder {
               visitCharSeq(chars) match {
                 case Result.Ok(s) =>
                   val e2 = WeededAst.Expr.Cst(Ast.Constant.Str(s), mkSL(innerSp1, innerSp2))
-                  mkConcat(acc, e2, loc).toSuccess
+                  Validation.success(mkConcat(acc, e2, loc))
                 case Result.Err(e) =>
                   Validation.toSoftFailure(WeededAst.Expr.Error(e), e)
               }
@@ -1315,7 +1317,7 @@ object Weeder {
           senv match {
             // Case 1: In a handler. All is well.
             case SyntacticEnv.Handler =>
-              WeededAst.Expr.Resume(arg, loc).toSuccess
+              Validation.success(WeededAst.Expr.Resume(arg, loc))
             // Case 2: Not in a handler. Error.
             case SyntacticEnv.Top =>
               val err = IllegalResume(loc)
@@ -1346,7 +1348,7 @@ object Weeder {
           // [] --> [_unit]
           // [x] --> [_unit, x]
           // [x, ...] --> [x, ...]
-          val fparamsValPrefix = if (fparams0.sizeIs == 1) visitFormalParams(Seq.empty, Presence.Forbidden) else Nil.toSuccess
+          val fparamsValPrefix = if (fparams0.sizeIs == 1) visitFormalParams(Seq.empty, Presence.Forbidden) else Validation.success(Nil)
           val fparamsValSuffix = visitFormalParams(fparams0, Presence.Forbidden)
           val bodyVal = visitExp(body0, SyntacticEnv.Handler)
           mapN(fparamsValPrefix, fparamsValSuffix, bodyVal) {
@@ -1369,7 +1371,7 @@ object Weeder {
         case Some(exp) => visitExp(exp, senv).map {
           case e => Some(e)
         }
-        case None => None.toSuccess
+        case None => Validation.success(None)
       }
 
       mapN(rulesVal, defaultVal) {
@@ -1441,7 +1443,7 @@ object Weeder {
           // Check for mismatched arity
           val err = MismatchedArity(exps.length, idents.length, loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
-        case es => WeededAst.Expr.FixpointInjectInto(es, idents.toList, loc).toSuccess
+        case es => Validation.success(WeededAst.Expr.FixpointInjectInto(es, idents.toList, loc))
       }
 
     case ParsedAst.Expression.FixpointSolveWithProject(sp1, exps, optIdents, sp2) =>
@@ -1483,7 +1485,7 @@ object Weeder {
     // Check that guard is not present
     val gVal = g0 match {
       case Some(g) => Validation.toHardFailure(IllegalRestrictableChooseGuard(star, g.loc))
-      case None => ().toSuccess
+      case None => Validation.success(())
     }
     // Check that patterns are only tags of variables (or wildcards as variables, or unit)
     val pVal = p0 match {
@@ -1491,14 +1493,14 @@ object Weeder {
         val innerVal = pat match {
           case Pattern.Tuple(elms, _) =>
             traverse(elms) {
-              case Pattern.Wild(loc) => WeededAst.RestrictableChoosePattern.Wild(loc).toSuccess
-              case Pattern.Var(ident, loc) => WeededAst.RestrictableChoosePattern.Var(ident, loc).toSuccess
-              case Pattern.Cst(Ast.Constant.Unit, loc) => WeededAst.RestrictableChoosePattern.Wild(loc).toSuccess
+              case Pattern.Wild(loc) => Validation.success(WeededAst.RestrictableChoosePattern.Wild(loc))
+              case Pattern.Var(ident, loc) => Validation.success(WeededAst.RestrictableChoosePattern.Var(ident, loc))
+              case Pattern.Cst(Ast.Constant.Unit, loc) => Validation.success(WeededAst.RestrictableChoosePattern.Wild(loc))
               case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(star, other.loc))
             }
-          case Pattern.Wild(loc) => List(WeededAst.RestrictableChoosePattern.Wild(loc)).toSuccess
-          case Pattern.Var(ident, loc) => List(WeededAst.RestrictableChoosePattern.Var(ident, loc)).toSuccess
-          case Pattern.Cst(Ast.Constant.Unit, loc) => List(WeededAst.RestrictableChoosePattern.Wild(loc)).toSuccess
+          case Pattern.Wild(loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
+          case Pattern.Var(ident, loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Var(ident, loc)))
+          case Pattern.Cst(Ast.Constant.Unit, loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
           case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(star, other.loc))
         }
         mapN(innerVal) {
@@ -1755,13 +1757,13 @@ object Weeder {
 
         // Check if the identifier is a wildcard.
         if (ident.name == "_") {
-          WeededAst.Pattern.Wild(loc).toSuccess
+          Validation.success(WeededAst.Pattern.Wild(loc))
         } else {
           // Check for [[NonLinearPattern]].
           seen.get(ident.name) match {
             case None =>
               seen += (ident.name -> ident)
-              WeededAst.Pattern.Var(ident, loc).toSuccess
+              Validation.success(WeededAst.Pattern.Var(ident, loc))
             case Some(otherIdent) =>
               Validation.toSoftFailure(WeededAst.Pattern.Var(ident, loc), NonLinearPattern(ident.name, otherIdent.loc, loc))
           }
@@ -1777,7 +1779,7 @@ object Weeder {
             case Constant.Regex(lit) =>
               Validation.toSoftFailure(WeededAst.Pattern.Error(loc), IllegalRegexPattern(loc))
             case c =>
-              WeededAst.Pattern.Cst(c, loc).toSuccess
+              Validation.success(WeededAst.Pattern.Cst(c, loc))
           }
           case Result.Err(e) => Validation.toSoftFailure(WeededAst.Pattern.Error(loc), e)
         }
@@ -1790,7 +1792,7 @@ object Weeder {
           case None =>
             val loc = mkSL(sp1, sp2)
             val lit = WeededAst.Pattern.Cst(Ast.Constant.Unit, loc.asSynthetic)
-            WeededAst.Pattern.Tag(qname, lit, loc).toSuccess
+            Validation.success(WeededAst.Pattern.Tag(qname, lit, loc))
           case Some(pat) => visit(pat).map {
             case p => WeededAst.Pattern.Tag(qname, p, mkSL(sp1, sp2))
           }
@@ -1834,7 +1836,7 @@ object Weeder {
                     seen += id.name -> id
                     val l = Name.mkLabel(id)
                     val pat = WeededAst.Pattern.Record.RecordLabelPattern(l, p, patLoc)
-                    pat.toSuccess
+                    Validation.success(pat)
                   case Some(otherIdent) =>
                     val l = Name.mkLabel(id)
                     val pat = WeededAst.Pattern.Record.RecordLabelPattern(l, p, patLoc)
@@ -1843,19 +1845,22 @@ object Weeder {
               case (id, p) =>
                 val l = Name.mkLabel(id)
                 val patLoc = mkSL(sp11, sp22)
-                WeededAst.Pattern.Record.RecordLabelPattern(l, p, patLoc).toSuccess
+                Validation.success(WeededAst.Pattern.Record.RecordLabelPattern(l, p, patLoc))
             }
         }
         val rsVal = traverseOpt(rest)(visit)
         flatMapN(fsVal, rsVal) {
           // Pattern { ... }
-          case (fs, None) => WeededAst.Pattern.Record(fs, WeededAst.Pattern.RecordEmpty(loc.asSynthetic), loc).toSuccess
+          case (fs, None) =>
+            Validation.success(WeededAst.Pattern.Record(fs, WeededAst.Pattern.RecordEmpty(loc.asSynthetic), loc))
 
           // Pattern { x, ... | r }
-          case (x :: xs, Some(Pattern.Var(v, l))) => WeededAst.Pattern.Record(x :: xs, Pattern.Var(v, l), loc).toSuccess
+          case (x :: xs, Some(Pattern.Var(v, l))) =>
+            Validation.success(WeededAst.Pattern.Record(x :: xs, Pattern.Var(v, l), loc))
 
           // Pattern { x, ... | _ }
-          case (x :: xs, Some(Pattern.Wild(l))) => WeededAst.Pattern.Record(x :: xs, Pattern.Wild(l), loc).toSuccess
+          case (x :: xs, Some(Pattern.Wild(l))) =>
+            Validation.success(WeededAst.Pattern.Record(x :: xs, Pattern.Wild(l), loc))
 
           // Bad Pattern { | r }
           case (Nil, Some(r)) => Validation.toSoftFailure(r, EmptyRecordExtensionPattern(r.loc))
@@ -1974,19 +1979,19 @@ object Weeder {
     */
   private def visitAnnotation(ann: ParsedAst.Annotation): Validation[Ast.Annotation, WeederError] = ann match {
     case ParsedAst.Annotation(_, ident, _) => ident.name match {
-      case "benchmark" => Ast.Annotation.Benchmark(ident.loc).toSuccess
-      case "test" => Ast.Annotation.Test(ident.loc).toSuccess
-      case "Test" => Ast.Annotation.Test(ident.loc).toSuccess
-      case "Deprecated" => Ast.Annotation.Deprecated(ident.loc).toSuccess
-      case "Experimental" => Ast.Annotation.Experimental(ident.loc).toSuccess
-      case "Internal" => Ast.Annotation.Internal(ident.loc).toSuccess
-      case "Parallel" => Ast.Annotation.Parallel(ident.loc).toSuccess
-      case "ParallelWhenPure" => Ast.Annotation.ParallelWhenPure(ident.loc).toSuccess
-      case "Lazy" => Ast.Annotation.Lazy(ident.loc).toSuccess
-      case "LazyWhenPure" => Ast.Annotation.LazyWhenPure(ident.loc).toSuccess
-      case "MustUse" => Ast.Annotation.MustUse(ident.loc).toSuccess
-      case "Skip" => Ast.Annotation.Skip(ident.loc).toSuccess
-      case "Tailrec" => Ast.Annotation.TailRecursive(ident.loc).toSuccess
+      case "benchmark" => Validation.success(Ast.Annotation.Benchmark(ident.loc))
+      case "test" => Validation.success(Ast.Annotation.Test(ident.loc))
+      case "Test" => Validation.success(Ast.Annotation.Test(ident.loc))
+      case "Deprecated" => Validation.success(Ast.Annotation.Deprecated(ident.loc))
+      case "Experimental" => Validation.success(Ast.Annotation.Experimental(ident.loc))
+      case "Internal" => Validation.success(Ast.Annotation.Internal(ident.loc))
+      case "Parallel" => Validation.success(Ast.Annotation.Parallel(ident.loc))
+      case "ParallelWhenPure" => Validation.success(Ast.Annotation.ParallelWhenPure(ident.loc))
+      case "Lazy" => Validation.success(Ast.Annotation.Lazy(ident.loc))
+      case "LazyWhenPure" => Validation.success(Ast.Annotation.LazyWhenPure(ident.loc))
+      case "MustUse" => Validation.success(Ast.Annotation.MustUse(ident.loc))
+      case "Skip" => Validation.success(Ast.Annotation.Skip(ident.loc))
+      case "Tailrec" => Validation.success(Ast.Annotation.TailRecursive(ident.loc))
       case name => Validation.toSoftFailure(Ast.Annotation.Error(name, ident.loc), UndefinedAnnotation(name, ident.loc))
     }
   }
@@ -2036,7 +2041,7 @@ object Weeder {
 
     // Check for [[IllegalModifier]].
     if (legalModifiers.contains(modifier))
-      modifier.toSuccess
+      Validation.success(modifier)
     else
       Validation.toSoftFailure(modifier, IllegalModifier(mkSL(m.sp1, m.sp2)))
   }
@@ -2046,7 +2051,7 @@ object Weeder {
     */
   private def requirePublic(mods: Seq[ParsedAst.Modifier], ident: Name.Ident): Validation[Unit, WeederError] = {
     if (mods.exists(_.name == "pub")) {
-      ().toSuccess
+      Validation.success(())
     } else {
       Validation.toSoftFailure((), IllegalPrivateDeclaration(ident, ident.loc))
     }
@@ -2056,7 +2061,7 @@ object Weeder {
     * Returns an error if type parameters are present.
     */
   private def requireNoTypeParams(tparams0: ParsedAst.TypeParams): Validation[Unit, WeederError] = tparams0 match {
-    case TypeParams.Elided => ().toSuccess
+    case TypeParams.Elided => Validation.success(())
     case TypeParams.Explicit(tparams) =>
       // safe to take head and tail since parsing ensures nonempty type parameters if explicit
       val sp1 = tparams.head.sp1
@@ -2068,7 +2073,8 @@ object Weeder {
     * Returns an error if the type is not Unit.
     */
   private def requireUnit(tpe: ParsedAst.Type, loc: SourceLocation): Validation[Unit, WeederError] = tpe match {
-    case ParsedAst.Type.Ambiguous(_, name, _) if name.isUnqualified && name.ident.name == "Unit" => ().toSuccess
+    case ParsedAst.Type.Ambiguous(_, name, _) if name.isUnqualified && name.ident.name == "Unit" =>
+      Validation.success(())
     case _ => Validation.toSoftFailure((), NonUnitOperationType(loc))
   }
 
@@ -2076,7 +2082,7 @@ object Weeder {
     * Returns an error if a type is present.
     */
   private def requireNoEffect(tpe: Option[ParsedAst.Type], loc: SourceLocation): Validation[Unit, WeederError] = tpe match {
-    case None => ().toSuccess
+    case None => Validation.success(())
     case Some(_) => Validation.toSoftFailure((), IllegalEffectfulOperation(loc))
   }
 
@@ -2084,9 +2090,11 @@ object Weeder {
     * Weeds the given parsed type `tpe`.
     */
   private def visitType(tpe: ParsedAst.Type): Validation[WeededAst.Type, WeederError] = tpe match {
-    case ParsedAst.Type.Var(sp1, ident, sp2) => WeededAst.Type.Var(ident, ident.loc).toSuccess
+    case ParsedAst.Type.Var(sp1, ident, sp2) =>
+      Validation.success(WeededAst.Type.Var(ident, ident.loc))
 
-    case ParsedAst.Type.Ambiguous(sp1, qname, sp2) => WeededAst.Type.Ambiguous(qname, mkSL(sp1, sp2)).toSuccess
+    case ParsedAst.Type.Ambiguous(sp1, qname, sp2) =>
+      Validation.success(WeededAst.Type.Ambiguous(qname, mkSL(sp1, sp2)))
 
     case ParsedAst.Type.Tuple(sp1, elms0, sp2) =>
       val elmsVal = traverse(elms0)(visitType)
@@ -2131,7 +2139,7 @@ object Weeder {
       }
 
     case ParsedAst.Type.Native(sp1, fqn, sp2) =>
-      WeededAst.Type.Native(fqn.toString, mkSL(sp1, sp2)).toSuccess
+      Validation.success(WeededAst.Type.Native(fqn.toString, mkSL(sp1, sp2)))
 
     case ParsedAst.Type.Apply(tpe1, args0, sp2) =>
       // Curry the type arguments.
@@ -2146,10 +2154,10 @@ object Weeder {
       }
 
     case ParsedAst.Type.True(sp1, sp2) =>
-      WeededAst.Type.True(mkSL(sp1, sp2)).toSuccess
+      Validation.success(WeededAst.Type.True(mkSL(sp1, sp2)))
 
     case ParsedAst.Type.False(sp1, sp2) =>
-      WeededAst.Type.False(mkSL(sp1, sp2)).toSuccess
+      Validation.success(WeededAst.Type.False(mkSL(sp1, sp2)))
 
     case ParsedAst.Type.Not(sp1, tpe, sp2) =>
       val tVal = visitType(tpe)
@@ -2218,12 +2226,12 @@ object Weeder {
 
     case ParsedAst.Type.Pure(sp1, sp2) =>
       val loc = mkSL(sp1, sp2)
-      WeededAst.Type.Pure(loc).toSuccess
+      Validation.success(WeededAst.Type.Pure(loc))
 
     case ParsedAst.Type.Impure(sp1, sp2) =>
       val loc = mkSL(sp1, sp2)
       // TODO EFF-MIGRATION create dedicated Impure type
-      WeededAst.Type.Complement(WeededAst.Type.Pure(loc), loc).toSuccess
+      Validation.success(WeededAst.Type.Complement(WeededAst.Type.Pure(loc), loc))
 
     case ParsedAst.Type.EffectSet(sp1, tpes0, sp2) =>
       val checkVal = traverseX(tpes0)(checkEffectSetMember)
@@ -2239,7 +2247,7 @@ object Weeder {
 
     case ParsedAst.Type.CaseSet(sp1, cases, sp2) =>
       val loc = mkSL(sp1, sp2)
-      WeededAst.Type.CaseSet(cases.toList, loc).toSuccess
+      Validation.success(WeededAst.Type.CaseSet(cases.toList, loc))
 
     case ParsedAst.Type.CaseUnion(tpe1, tpe2, sp2) =>
       val sp1 = leftMostSourcePosition(tpe1)
@@ -2288,7 +2296,8 @@ object Weeder {
     * Weeds the given type. Returns None if the type is a wildcard.
     */
   private def visitTypeNoWild(tpe: ParsedAst.Type): Validation[Option[WeededAst.Type], WeederError] = tpe match {
-    case ParsedAst.Type.Var(_, ident, _) if ident.isWild => None.toSuccess
+    case ParsedAst.Type.Var(_, ident, _) if ident.isWild =>
+      Validation.success(None)
     case _ => visitType(tpe).map(t => Some(t))
   }
 
@@ -2296,12 +2305,12 @@ object Weeder {
     * Checks that the effect set member is valid: a variable or constant.
     */
   private def checkEffectSetMember(t: ParsedAst.Type): Validation[Unit, WeederError] = t match {
-    case _: ParsedAst.Type.Var => ().toSuccess
-    case _: ParsedAst.Type.Ambiguous => ().toSuccess
-    case _: ParsedAst.Type.True => ().toSuccess
-    case _: ParsedAst.Type.False => ().toSuccess
-    case _: ParsedAst.Type.Pure => ().toSuccess
-    case _: ParsedAst.Type.Impure => ().toSuccess
+    case _: ParsedAst.Type.Var => Validation.success(())
+    case _: ParsedAst.Type.Ambiguous => Validation.success(())
+    case _: ParsedAst.Type.True => Validation.success(())
+    case _: ParsedAst.Type.False => Validation.success(())
+    case _: ParsedAst.Type.Pure => Validation.success(())
+    case _: ParsedAst.Type.Impure => Validation.success(())
     case _ =>
       val sp1 = leftMostSourcePosition(t)
       val sp2 = t.sp2
@@ -2346,7 +2355,7 @@ object Weeder {
     }
 
     // TODO should be non-short-circuiting
-    Validation.foldRight(predicates)(rest.toSuccess) {
+    Validation.foldRight(predicates)(Validation.success(rest)) {
       case (ParsedAst.PredicateType.PredicateWithAlias(ssp1, qname, targs, ssp2), acc) =>
         val tsVal = traverse(targs.getOrElse(Nil))(visitType)
         mapN(tsVal) {
@@ -2401,7 +2410,7 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       val ident = Name.Ident(sp1, "_unit", sp2)
       val tpe = Some(WeededAst.Type.Unit(loc))
-      return List(WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe, loc)).toSuccess
+      return Validation.success(List(WeededAst.FormalParam(ident, Ast.Modifiers.Empty, tpe, loc)))
     }
 
     //
@@ -2447,7 +2456,7 @@ object Weeder {
             // Case 2: Forbidden but present. Error.
             case (Some(_), Presence.Forbidden) => Validation.toHardFailure(IllegalFormalParamAscription(mkSL(sp1, sp2)))
             // Case 3: No violation. Good to go.
-            case _ => WeededAst.FormalParam(ident, mod, tpeOpt, mkSL(sp1, sp2)).toSuccess
+            case _ => Validation.success(WeededAst.FormalParam(ident, mod, tpeOpt, mkSL(sp1, sp2)))
           }
       }
   }
@@ -2458,7 +2467,7 @@ object Weeder {
   private def visitPredicateParam(pparam: ParsedAst.PredicateParam): Validation[WeededAst.PredicateParam, WeederError] = pparam match {
     case ParsedAst.PredicateParam.UntypedPredicateParam(sp1, ident, sp2) =>
       val pred = Name.mkPred(ident)
-      WeededAst.PredicateParam.PredicateParamUntyped(pred, mkSL(sp1, sp2)).toSuccess
+      Validation.success(WeededAst.PredicateParam.PredicateParamUntyped(pred, mkSL(sp1, sp2)))
 
     case ParsedAst.PredicateParam.RelPredicateParam(sp1, ident, tpes, sp2) =>
       val pred = Name.mkPred(ident)
@@ -2492,7 +2501,7 @@ object Weeder {
     * Weeds the given type parameters `tparams0`.
     */
   private def visitTypeParams(tparams0: ParsedAst.TypeParams): Validation[WeededAst.TypeParams, WeederError] = tparams0 match {
-    case ParsedAst.TypeParams.Elided => WeededAst.TypeParams.Elided.toSuccess
+    case ParsedAst.TypeParams.Elided => Validation.success(WeededAst.TypeParams.Elided)
     case ParsedAst.TypeParams.Explicit(tparams) =>
       val newTparams = tparams.map(visitTypeParam)
       val kindedTypeParams = newTparams.collect { case t: WeededAst.TypeParam.Kinded => t }
@@ -2500,11 +2509,11 @@ object Weeder {
       (kindedTypeParams, unkindedTypeParams) match {
         case (Nil, _ :: _) =>
           // Case 1: only unkinded type parameters
-          WeededAst.TypeParams.Unkinded(unkindedTypeParams).toSuccess
+          Validation.success(WeededAst.TypeParams.Unkinded(unkindedTypeParams))
 
         case (_ :: _, Nil) =>
           // Case 2: only kinded type parameters
-          WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
+          Validation.success(WeededAst.TypeParams.Kinded(kindedTypeParams))
 
         case (_ :: _, _ :: _) =>
           // Case 3: some unkinded and some kinded
@@ -2531,7 +2540,7 @@ object Weeder {
     * Weeds the type params, requiring that they be explicitly kinded.
     */
   private def visitKindedTypeParams(tparams0: ParsedAst.TypeParams): Validation[WeededAst.KindedTypeParams, WeederError] = tparams0 match {
-    case ParsedAst.TypeParams.Elided => WeededAst.TypeParams.Elided.toSuccess
+    case ParsedAst.TypeParams.Elided => Validation.success(WeededAst.TypeParams.Elided)
     case ParsedAst.TypeParams.Explicit(tparams) =>
       val newTparams = tparams.map(visitTypeParam)
       val kindedTypeParams = newTparams.collect { case t: WeededAst.TypeParam.Kinded => t }
@@ -2559,7 +2568,7 @@ object Weeder {
 
         case (_ :: _, Nil) =>
           // Case 2: Only kinded type parameters.
-          WeededAst.TypeParams.Kinded(kindedTypeParams).toSuccess
+          Validation.success(WeededAst.TypeParams.Kinded(kindedTypeParams))
 
         case (Nil, Nil) =>
           // Case 3: No type parameters: should be prevented by the Parser.
@@ -2595,7 +2604,7 @@ object Weeder {
     case ParsedAst.TypeConstraint(sp1, clazz, tparam0, sp2) =>
       val tpeVal = visitType(tparam0)
       val checkVal = if (isAllVars(tparam0)) {
-        ().toSuccess
+        Validation.success(())
       } else {
         Validation.toHardFailure(IllegalTypeConstraintParameter(mkSL(sp1, sp2)))
       }
@@ -2616,7 +2625,8 @@ object Weeder {
       flatMapN(t1Val, t2Val) {
         case (t1, t2) =>
           t1 match {
-            case WeededAst.Type.Apply(WeededAst.Type.Ambiguous(qname, _), t11, _) => WeededAst.EqualityConstraint(qname, t11, t2, loc).toSuccess
+            case WeededAst.Type.Apply(WeededAst.Type.Ambiguous(qname, _), t11, _) =>
+              Validation.success(WeededAst.EqualityConstraint(qname, t11, t2, loc))
             case _ => Validation.toHardFailure(IllegalEqualityConstraint(loc))
           }
       }
@@ -2629,7 +2639,7 @@ object Weeder {
     if (ReservedWords.contains(ident.name)) {
       Validation.toSoftFailure(ident, ReservedName(ident, ident.loc))
     } else {
-      ident.toSuccess
+      Validation.success(ident)
     }
   }
 

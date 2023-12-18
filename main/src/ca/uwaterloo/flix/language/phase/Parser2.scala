@@ -32,7 +32,7 @@ object Parser2 {
 
   private def parse(ts: Array[Token]): Validation[UnstructuredTree.Tree, CompilationMessage] = {
     // TODO: PARSER2
-    UnstructuredTree.Tree(TreeKind.ErrorTree, Array.empty).toSuccess
+    Validation.success(UnstructuredTree.Tree(TreeKind.ErrorTree, Array.empty))
   }
 
 }
