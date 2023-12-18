@@ -508,6 +508,7 @@ object Weeder2 {
         case TreeKind.Expr.Call => visitExprCall(tree)
         case TreeKind.Expr.LetImport => visitLetImport(tree)
         case TreeKind.Expr.Binary => visitExprBinary(tree)
+        case TreeKind.Expr.Paren => visitExprParen(tree)
         case TreeKind.Ident => mapN(tokenToIdent(tree)){ ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
         case kind => failWith(s"TODO: implement expression of kind '$kind'", tree.loc)
       }
@@ -562,6 +563,14 @@ object Weeder2 {
       case "and" => OperatorResult.Operator(SemanticOp.BoolOp.And)
       case "or" => OperatorResult.Operator(SemanticOp.BoolOp.Or)
       case _ => OperatorResult.Unrecognized(Name.Ident(sp1, op, sp2))
+    }
+  }
+
+  private def visitExprParen(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+    assert(tree.kind == TreeKind.Expr.Paren)
+    val expr = pickExpression(tree)
+    mapN(expr) {
+      expr => Expr.Tuple(List(expr), tree.loc)
     }
   }
 
