@@ -71,10 +71,11 @@ object Weeder2 {
 
   def weed(src: Ast.Source, tree: Tree): Validation[CompilationUnit, CompilationMessage] = {
     implicit val s: State = new State(src)
-
-    mapN(pickAllUsesAndImports(tree), pickAllDeclarations(tree)) {
-      case (usesAndImports, declarations) =>
-        CompilationUnit(usesAndImports, declarations, tree.loc)
+    mapN(
+      pickAllUsesAndImports(tree),
+      pickAllDeclarations(tree)
+    ) {
+      case (usesAndImports, declarations) => CompilationUnit(usesAndImports, declarations, tree.loc)
     }
   }
 
@@ -121,14 +122,14 @@ object Weeder2 {
       pickDocumentation(tree),
       pickAnnotations(tree),
       pickModifiers(tree),
-      pickNameIdent(tree), // TODO: This can be qname
+      pickQName(tree),
       pickType(tree),
       pickTypeConstraints(tree),
       traverse(pickAll(TreeKind.Def, tree.children))(visitDefinition),
     ) {
       case (doc, annotations, modifiers, clazz, tpe, tconstrs, defs) =>
         mapN(pickAllAssociatedTypesDef(tree, tpe)) {
-          assocs => Declaration.Instance(doc, annotations, modifiers, Name.mkQName(clazz), tpe, tconstrs, assocs, defs, tree.loc)
+          assocs => Declaration.Instance(doc, annotations, modifiers, clazz, tpe, tconstrs, assocs, defs, tree.loc)
         }
     }
   }
@@ -157,28 +158,29 @@ object Weeder2 {
     val docTree = tryPick(TreeKind.Doc, tree.children)
     val loc = docTree.map(_.loc).getOrElse(SourceLocation.Unknown)
     // strip prefixing `///` and remove empty lines after that
-    val comments = docTree.map(text).map(
-      _.map(_.stripPrefix("///").trim())
-        .filter(_ != "")
-    ).getOrElse(List.empty)
+    val comments = docTree.map(text)
+      .map(_.map(_.stripPrefix("///").trim()).filter(_ != ""))
+      .getOrElse(List.empty)
     Ast.Doc(comments, loc).toSuccess
   }
 
   private def pickAnnotations(tree: Tree)(implicit s: State): Validation[Ast.Annotations, CompilationMessage] = {
-    val annotationTree = tryPick(TreeKind.Annotations, tree.children)
-    val annotations = annotationTree.map(
-      t => {
-        val tokens = pickAllTokens(t)
-        val errors = getDuplicates(tokens.toSeq, (t: Token) => t.text).map(pair => {
-          val name = pair._1.text
-          val loc1 = pair._1.mkSourceLocation(s.src, Some(s.parserInput))
-          val loc2 = pair._2.mkSourceLocation(s.src, Some(s.parserInput))
-          DuplicateAnnotation(name.stripPrefix("@"), loc1, loc2)
+    val maybeAnnotations = tryPick(TreeKind.Annotations, tree.children)
+    val annotations = maybeAnnotations.map(
+        tree => {
+          val tokens = pickAllTokens(tree)
+          // Check for duplicate annotations
+          val errors = getDuplicates(tokens.toSeq, (t: Token) => t.text).map(pair => {
+            val name = pair._1.text
+            val loc1 = pair._1.mkSourceLocation(s.src, Some(s.parserInput))
+            val loc2 = pair._2.mkSourceLocation(s.src, Some(s.parserInput))
+            DuplicateAnnotation(name.stripPrefix("@"), loc1, loc2)
+          })
+          traverse(tokens)(visitAnnotation).withSoftFailures(errors)
         })
-        traverse(tokens)(visitAnnotation).withSoftFailures(errors)
-      }
-    ).getOrElse(List.empty.toSuccess)
-    annotations.map(annotations => Ast.Annotations(annotations))
+      .getOrElse(List.empty.toSuccess)
+
+    mapN(annotations)(Ast.Annotations(_))
   }
 
   private def visitAnnotation(token: Token)(implicit s: State): Validation[Ast.Annotation, CompilationMessage] = {
@@ -210,14 +212,14 @@ object Weeder2 {
 
   private def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false)(implicit s: State): Validation[Ast.Modifiers, CompilationMessage] = {
     tryPick(TreeKind.Modifiers, tree.children) match {
+      case None => Ast.Modifiers(List.empty).toSuccess
       case Some(modTree) =>
         var errors: List[CompilationMessage] = List.empty
         val tokens = pickAllTokens(modTree)
         // Check if pub is missing
         if (mustBePublic && !tokens.exists(_.kind == TokenKind.KeywordPub)) {
           mapN(pickNameIdent(tree)) {
-            ident =>
-              errors :+= IllegalPrivateDeclaration(ident, ident.loc)
+            ident => errors :+= IllegalPrivateDeclaration(ident, ident.loc)
           }
         }
 
@@ -229,10 +231,9 @@ object Weeder2 {
           DuplicateModifier(name, loc2, loc1)
         })
 
-        traverse(tokens)(visitModifier(_, allowed)).withSoftFailures(errors).map {
-          Ast.Modifiers(_)
-        }
-      case None => Ast.Modifiers(List.empty).toSuccess
+        traverse(tokens)(visitModifier(_, allowed))
+          .withSoftFailures(errors)
+          .map(Ast.Modifiers(_))
     }
   }
 
@@ -243,7 +244,7 @@ object Weeder2 {
       case TokenKind.KeywordLawful => Ast.Modifier.Lawful.toSuccess
       case TokenKind.KeywordPub => Ast.Modifier.Public.toSuccess
       case TokenKind.KeywordOverride => Ast.Modifier.Override.toSuccess
-      // TODO: Can this be a softFailure?
+      // TODO: This could be a SoftFailure if we had Ast.Modifier.Error
       case kind => failWith(s"unsupported modifier $kind")
     }
     if (!allowed.contains(token.kind)) {
@@ -255,6 +256,7 @@ object Weeder2 {
 
   private def pickTypeParameters(tree: Tree)(implicit s: State): Validation[TypeParams, CompilationMessage] = {
     tryPick(TreeKind.TypeParameters, tree.children) match {
+      case None => TypeParams.Elided.toSuccess
       case Some(tparamsTree) =>
         val parameters = pickAll(TreeKind.Parameter, tparamsTree.children)
         flatMapN(traverse(parameters)(visitTypeParameter)) {
@@ -277,12 +279,12 @@ object Weeder2 {
                 throw InternalCompilerException("Parser produced empty type parameter tree", tparamsTree.loc)
             }
         }
-      case None => TypeParams.Elided.toSuccess
     }
   }
 
   private def pickKindedTypeParameters(tree: Tree)(implicit s: State): Validation[KindedTypeParams, CompilationMessage] = {
     tryPick(TreeKind.TypeParameters, tree.children) match {
+      case None => TypeParams.Elided.toSuccess
       case Some(tparamsTree) =>
         val parameters = pickAll(TreeKind.Parameter, tparamsTree.children)
         flatMapN(traverse(parameters)(visitTypeParameter)) {
@@ -307,12 +309,12 @@ object Weeder2 {
                 throw InternalCompilerException("Parser produced empty type parameter tree", tparamsTree.loc)
             }
         }
-      case None => TypeParams.Elided.toSuccess
     }
   }
 
   private def pickSingleTypeParameter(tree: Tree)(implicit s: State): Validation[TypeParam, CompilationMessage] = {
-    flatMapN(pick(TreeKind.TypeParameters, tree.children)) {
+    val tparams = pick(TreeKind.TypeParameters, tree.children)
+    flatMapN(tparams) {
       tparams => flatMapN(pick(TreeKind.Parameter, tparams.children))(visitTypeParameter)
     }
   }
@@ -328,20 +330,21 @@ object Weeder2 {
   }
 
   private def tryPickKind(tree: Tree)(implicit s: State): Option[Kind] = {
-    tryPick(TreeKind.Kind, tree.children).flatMap(kindTree => {
-      val ident = pickNameIdent(kindTree) match {
-        case Success(t) => Some(t)
-        case SoftFailure(t, _) => Some(t)
-        case Failure(_) => None
-      }
+    tryPick(TreeKind.Kind, tree.children).flatMap(
+      kindTree => {
+        val ident = pickNameIdent(kindTree) match {
+          case Success(t) => Some(t)
+          case SoftFailure(t, _) => Some(t) // TODO: This should maybe result in None instead
+          case Failure(_) => None
+        }
 
-      ident.map(ident => {
-        val k = Kind.Ambiguous(Name.mkQName(ident), ident.loc)
-        tryPickKind(kindTree)
-          .map(Kind.Arrow(k, _, kindTree.loc))
-          .getOrElse(k)
+        ident.map(ident => {
+          val k = Kind.Ambiguous(Name.mkQName(ident), ident.loc)
+          tryPickKind(kindTree)
+            .map(Kind.Arrow(k, _, kindTree.loc))
+            .getOrElse(k)
+        })
       })
-    })
   }
 
   private def pickAllAssociatedTypesDef(tree: Tree, instType: Type)(implicit s: State): Validation[List[Declaration.AssocTypeDef], CompilationMessage] = {
@@ -494,7 +497,10 @@ object Weeder2 {
   }
 
   private def pickExpression(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-    flatMapN(traverseOpt(tryPick(TreeKind.Expr.Expr, tree.children))(visitExpression)) {
+    val maybeExpression = tryPick(TreeKind.Expr.Expr, tree.children)
+    flatMapN(
+      traverseOpt(maybeExpression)(visitExpression)
+    ) {
       case Some(expr) => expr.toSuccess
       case None => softFailWith(Expr.Error(Parse2Error.DevErr(tree.loc, "expected expression")))
     }
@@ -509,7 +515,7 @@ object Weeder2 {
         case TreeKind.Expr.LetImport => visitLetImport(tree)
         case TreeKind.Expr.Binary => visitExprBinary(tree)
         case TreeKind.Expr.Paren => visitExprParen(tree)
-        case TreeKind.Ident => mapN(tokenToIdent(tree)){ ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
+        case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
         case kind => failWith(s"TODO: implement expression of kind '$kind'", tree.loc)
       }
       case _ => throw InternalCompilerException(s"Expr.Expr had token child", tree.loc)
@@ -523,7 +529,7 @@ object Weeder2 {
     mapN(op, exprs) {
       case (op, e1 :: e2 :: Nil) =>
         val isInfix = op.children.head match {
-          case Child.Token(token)  => token.kind == TokenKind.InfixFunction
+          case Child.Token(token) => token.kind == TokenKind.InfixFunction
           case _ => false
         }
 
@@ -534,12 +540,12 @@ object Weeder2 {
         }
 
         visitBinaryOperator(op) match {
-            case OperatorResult.BuiltIn(name) => Expr.Apply(Expr.Ambiguous(name, name.loc), List(e1, e2), tree.loc)
-            case OperatorResult.Operator(o) => Expr.Binary(o, e1, e2, tree.loc)
-            case OperatorResult.Unrecognized(ident) => Expr.Apply(Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e1, e2), tree.loc)
+          case OperatorResult.BuiltIn(name) => Expr.Apply(Expr.Ambiguous(name, name.loc), List(e1, e2), tree.loc)
+          case OperatorResult.Operator(o) => Expr.Binary(o, e1, e2, tree.loc)
+          case OperatorResult.Unrecognized(ident) => Expr.Apply(Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e1, e2), tree.loc)
         }
 
-      case _ => throw InternalCompilerException("Binary tree with less or more than two operands", tree.loc)
+      case (op, operands) => throw InternalCompilerException(s"Expr.Binary tree with ${operands.length} operands", tree.loc)
     }
   }
 
@@ -569,16 +575,13 @@ object Weeder2 {
   private def visitExprParen(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
     assert(tree.kind == TreeKind.Expr.Paren)
     val expr = pickExpression(tree)
-    mapN(expr) {
-      expr => Expr.Tuple(List(expr), tree.loc)
-    }
+    mapN(expr)(expr => Expr.Tuple(List(expr), tree.loc))
   }
 
   private def visitLetImport(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
     assert(tree.kind == TreeKind.Expr.LetImport)
     val jvmOp = flatMapN(pick(TreeKind.JvmOp.JvmOp, tree.children))(visitJvmOp)
     val expr = pickExpression(tree)
-
     mapN(jvmOp, expr) {
       (jvmOp, expr) => Expr.LetImport(jvmOp, expr, tree.loc)
     }
@@ -777,7 +780,9 @@ object Weeder2 {
   }
 
   private def pickArguments(tree: Tree)(implicit s: State): Validation[List[Expr], CompilationMessage] = {
-    flatMapN(pick(TreeKind.Arguments, tree.children)) {
+    flatMapN(
+      pick(TreeKind.Arguments, tree.children)
+    ) {
       argTree => traverse(pickAll(TreeKind.Argument, argTree.children))(pickExpression)
     }
   }
@@ -786,14 +791,11 @@ object Weeder2 {
     assert(tree.kind == TreeKind.Expr.Literal)
     tree.children(0) match {
       case Child.Token(token) => token.kind match {
-        case TokenKind.ParenL =>
-          mapN(traverse(pickAll(TreeKind.Expr.Expr, tree.children))(visitExpression)) {
-            exprs => Expr.Tuple(exprs, tree.loc)
-          }
-        case TokenKind.NameLowerCase | TokenKind.NameUpperCase | TokenKind.NameMath | TokenKind.NameGreek =>
-          mapN(pickNameIdent(tree)) {
-            ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc)
-          }
+        // TODO: Numbers, chars, strings, booleans, set, list, map
+        case TokenKind.NameLowerCase
+             | TokenKind.NameUpperCase
+             | TokenKind.NameMath
+             | TokenKind.NameGreek => mapN(pickNameIdent(tree))(ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc))
         case _ => softFailWith(Expr.Error(Parse2Error.DevErr(tree.loc, "expected literal")))
       }
       case _ => softFailWith(Expr.Error(Parse2Error.DevErr(tree.loc, "expected literal")))
