@@ -552,9 +552,9 @@ object Inliner {
             case (LiftedAst.Expr.JumpTo(sym1, _, _, _), LiftedAst.Expr.JumpTo(sym2, _, _, _)) if sym1 == sym2 =>
               val op = AtomicOp.Binary(SemanticOp.BoolOp.And)
               val es = List(outerCond, innerCond)
-              val tpe = outerCond.tpe
+              val tpe = innerThen.tpe // equal to outerElse.tpe
               val pur = combine(outerCond.purity, innerCond.purity)
-              val andExp = LiftedAst.Expr.ApplyAtomic(op, es, tpe, pur, loc)
+              val andExp = LiftedAst.Expr.ApplyAtomic(op, es, MonoType.Bool, pur, loc)
               LiftedAst.Expr.IfThenElse(andExp, innerThen, outerElse, tpe, purity, loc)
             case _ => LiftedAst.Expr.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)
           }
