@@ -160,9 +160,12 @@ object Weeder2 {
   private def pickDocumentation(tree: Tree): Validation[Ast.Doc, CompilationMessage] = {
     val docTree = tryPick(TreeKind.Doc, tree.children)
     val loc = docTree.map(_.loc).getOrElse(SourceLocation.Unknown)
-    // strip prefixing `///` and remove empty lines after that
-    val comments = docTree.map(text)
-      .map(_.map(_.stripPrefix("///").trim()).filter(_ != ""))
+    val comments = docTree
+      // strip prefixing `///` and trim
+      .map(tree => text(tree).map(_.stripPrefix("///").trim))
+      // Drop first/last line if it is empty
+      .map(lines => if (lines.headOption.exists(_.isEmpty)) lines.tail else lines)
+      .map(lines => if (lines.lastOption.exists(_.isEmpty)) lines.dropRight(1) else lines)
       .getOrElse(List.empty)
     Ast.Doc(comments, loc).toSuccess
   }
@@ -418,6 +421,7 @@ object Weeder2 {
 
   private def visitSignature(tree: Tree)(implicit s: State): Validation[Declaration.Sig, CompilationMessage] = {
     assert(tree.kind == TreeKind.Signature)
+    val maybeExpression = tryPick(TreeKind.Expr.Expr, tree.children)
     mapN(
       pickDocumentation(tree),
       pickAnnotations(tree),
@@ -428,10 +432,10 @@ object Weeder2 {
       pickType(tree),
       tryPickEffect(tree),
       pickTypeConstraints(tree),
-      //      pickExpression(tree) // TODO: This is optional
+      traverseOpt(maybeExpression)(visitExpression)
     ) {
-      case (doc, annotations, modifiers, ident, tparams, fparams, tpe, eff, tconstrs) =>
-        Declaration.Sig(doc, annotations, modifiers, ident, tparams, fparams, None, tpe, eff, tconstrs, tree.loc)
+      case (doc, annotations, modifiers, ident, tparams, fparams, tpe, eff, tconstrs, expr) =>
+        Declaration.Sig(doc, annotations, modifiers, ident, tparams, fparams, expr, tpe, eff, tconstrs, tree.loc)
     }
   }
 
@@ -489,9 +493,23 @@ object Weeder2 {
     }
   }
 
-  private def pickTypeConstraints(tree: Tree): Validation[List[TypeConstraint], CompilationMessage] = {
-    // TODO
-    List.empty.toSuccess
+  private def pickTypeConstraints(tree: Tree)(implicit s: State): Validation[List[TypeConstraint], CompilationMessage] = {
+    val maybeWithClause = tryPick(TreeKind.WithClause, tree.children)
+    maybeWithClause
+      .map(withClauseTree => {
+        val constraints = pickAll(TreeKind.Type.Constraint, withClauseTree.children)
+        traverse(constraints)(visitTypeConstraint)
+      }).getOrElse(List.empty.toSuccess)
+  }
+
+  private def visitTypeConstraint(tree: Tree)(implicit s: State): Validation[TypeConstraint, CompilationMessage] = {
+    assert(tree.kind == TreeKind.Type.Constraint)
+    mapN(
+      pickQName(tree),
+      pickType(tree)
+    ) {
+      (qname, tpe) => TypeConstraint(qname, tpe, tree.loc)
+    }
   }
 
   private def pickConstraints(tree: Tree): Validation[List[EqualityConstraint], CompilationMessage] = {
@@ -858,11 +876,12 @@ object Weeder2 {
     flatMapN(
       pick(TreeKind.Arguments, tree.children)
     ) {
-      argTree => mapN(traverse(pickAll(TreeKind.Argument, argTree.children))(pickExpression)) {
-        // Add synthetic unit arguments if there are none
-        case Nil => List(Expr.Cst(Ast.Constant.Unit, tree.loc))
-        case args => args
-      }
+      argTree =>
+        mapN(traverse(pickAll(TreeKind.Argument, argTree.children))(pickExpression)) {
+          // Add synthetic unit arguments if there are none
+          case Nil => List(Expr.Cst(Ast.Constant.Unit, tree.loc))
+          case args => args
+        }
     }
   }
 
@@ -1030,8 +1049,8 @@ object Weeder2 {
     inner.kind match {
       case TreeKind.Type.Variable => visitTypeVariable(inner)
       case TreeKind.Type.Apply => visitTypeApply(inner)
-      case TreeKind.Ident => mapN(tokenToIdent(inner)) { ident => Type.Ambiguous(Name.mkQName(ident), ident.loc) }
       case TreeKind.QName => mapN(visitQName(inner))(Type.Ambiguous(_, inner.loc))
+      case TreeKind.Ident => mapN(tokenToIdent(inner))(ident => Type.Ambiguous(Name.mkQName(ident), inner.loc))
       case kind => failWith(s"'$kind' used as type")
     }
   }

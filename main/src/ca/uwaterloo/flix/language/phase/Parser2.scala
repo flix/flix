@@ -78,7 +78,7 @@ object Parser2 {
 
     flix.phase("Parser2") {
       // The file that is the current focus of development
-      val DEBUG_FOCUS = "foo.flix"
+      val DEBUG_FOCUS = ""
 
       println("p\tw\tfile")
 
@@ -608,7 +608,9 @@ object Parser2 {
     }
     expect(TokenKind.Colon)
     ttype(allowTrailingEffect = true)
-    // TODO: WithClause
+    if (at(TokenKind.KeywordWith)) {
+      withClause()
+    }
     if (at(TokenKind.Equal)) {
       expect(TokenKind.Equal)
       while (at(TokenKind.Semi) && !eof()) {
@@ -617,6 +619,33 @@ object Parser2 {
       }
     }
     close(mark, TreeKind.Signature)
+  }
+
+  private def withClause()(implicit s: State): Mark.Closed = {
+    assert(at(TokenKind.KeywordWith))
+    val mark = open()
+    expect(TokenKind.KeywordWith)
+    var continue = true
+    while (continue && !eof()) {
+      if (atAny(NAME_DEFINITION)) {
+        typeConstraint()
+      } else {
+        continue = false
+      }
+    }
+    if (at(TokenKind.Comma)) {
+      advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "Trailing comma."))
+    }
+    close(mark, TreeKind.WithClause)
+  }
+
+  private def typeConstraint()(implicit s: State): Mark.Closed = {
+    val mark = open()
+    name(NAME_DEFINITION, allowQualified = true)
+    expect(TokenKind.BracketL)
+    ttype()
+    expect(TokenKind.BracketR)
+    close(mark, TreeKind.Type.Constraint)
   }
 
   /**
@@ -1039,7 +1068,7 @@ object Parser2 {
     if (at(TokenKind.Backslash)) {
       val effMark = effectSet()
       if (!allowTrailingEffect) {
-        val mark = openBefore(effMark);
+        val mark = openBefore(effMark)
         closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), "Effect is not allowed here"))
       }
     }
@@ -1052,25 +1081,25 @@ object Parser2 {
    */
   private def effectSet()(implicit s: State): Mark.Closed = {
     assert(at(TokenKind.Backslash))
-    val mark = open()
     expect(TokenKind.Backslash)
     if (at(TokenKind.CurlyL)) {
       commaSeparated(
         TreeKind.Type.EffectSet,
-        asArgumentFlat(effect),
+        asArgumentFlat(effect, TokenKind.CurlyR),
         (TokenKind.CurlyL, TokenKind.CurlyR),
       )
     } else {
+      val mark = open()
       effect()
+      close(mark, TreeKind.Type.EffectSet)
     }
-    close(mark, TreeKind.Type.EffectSet)
   }
 
   private def effect()(implicit s: State): Mark.Closed = {
     val mark = open()
     nth(0) match {
       case TokenKind.NameUpperCase => name(NAME_EFFECT)
-      case TokenKind.NameLowerCase => name(NAME_VARIABLE)
+      case TokenKind.NameLowerCase => typeVariable()
       case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected effect, found $t"))
     }
     close(mark, TreeKind.Type.Type)

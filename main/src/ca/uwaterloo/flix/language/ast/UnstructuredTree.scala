@@ -62,19 +62,12 @@ object UnstructuredTree {
 
     case object Operator extends TreeKind
 
+    case object WithClause extends TreeKind
+
     /////// NAMES ///////
-    // NB: This naming follows [[Names]]
     case object Ident extends TreeKind
 
     case object QName extends TreeKind
-
-    case object NName extends TreeKind
-
-    case object JavaName extends TreeKind
-
-    case object Pred extends TreeKind
-
-    case object Label extends TreeKind
 
     /////// JVM /////
     sealed trait JvmOp extends TreeKind {
@@ -147,6 +140,8 @@ object UnstructuredTree {
       case object Tuple extends Type
 
       case object Record extends Type
+
+      case object Constraint extends Type
 
       case object RecordVariable extends Type
 
