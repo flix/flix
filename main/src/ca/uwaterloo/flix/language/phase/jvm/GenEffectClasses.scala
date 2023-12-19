@@ -105,7 +105,7 @@ object GenEffectClasses {
     // convert the resumption to a function
     mv.visitInsn(DUP)
 
-    val wrapperType = BackendObjType.ResumptionWrapper
+    val wrapperType = BackendObjType.ResumptionWrapper(BackendType.toErasedBackendType(op.tpe))
     val wrapperName = wrapperType.jvmName.toInternalName
     mv.visitTypeInsn(NEW, wrapperName)
     mv.visitInsn(DUP)
