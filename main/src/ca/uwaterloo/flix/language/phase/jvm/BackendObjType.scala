@@ -44,16 +44,16 @@ sealed trait BackendObjType {
     case BackendObjType.RecordEmpty => JvmName(RootPackage, mkClassName(s"RecordEmpty"))
     case BackendObjType.RecordExtend(_, value, _) => JvmName(RootPackage, mkClassName("RecordExtend", value))
     case BackendObjType.Record => JvmName(RootPackage, mkClassName("Record"))
-    case BackendObjType.Native(className) => className
     case BackendObjType.ReifiedSourceLocation => JvmName(DevFlixRuntime, mkClassName("ReifiedSourceLocation"))
-    case BackendObjType.Global => JvmName(DevFlixRuntime, mkClassName("Global"))
-    case BackendObjType.Regex => JvmName(List("java", "util", "regex"), mkClassName("Pattern"))
+    case BackendObjType.Global => JvmName(DevFlixRuntime, "Global") // "Global" is fixed in source code, so should not be mangled and $ suffixed
     case BackendObjType.FlixError => JvmName(DevFlixRuntime, mkClassName("FlixError"))
     case BackendObjType.HoleError => JvmName(DevFlixRuntime, mkClassName("HoleError"))
     case BackendObjType.MatchError => JvmName(DevFlixRuntime, mkClassName("MatchError"))
     case BackendObjType.Region => JvmName(DevFlixRuntime, mkClassName("Region"))
     case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, mkClassName("UncaughtExceptionHandler"))
     // Java classes
+    case BackendObjType.Native(className) => className
+    case BackendObjType.Regex => JvmName(List("java", "util", "regex"), mkClassName("Pattern"))
     case BackendObjType.BigDecimal => JvmName(List("java", "math"), "BigDecimal")
     case BackendObjType.BigInt => JvmName(List("java", "math"), "BigInteger")
     case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
