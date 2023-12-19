@@ -53,7 +53,7 @@ sealed trait BackendObjType {
     case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, mkClassName("UncaughtExceptionHandler"))
     // Java classes
     case BackendObjType.Native(className) => className
-    case BackendObjType.Regex => JvmName(List("java", "util", "regex"), mkClassName("Pattern"))
+    case BackendObjType.Regex => JvmName(List("java", "util", "regex"), "Pattern")
     case BackendObjType.BigDecimal => JvmName(List("java", "math"), "BigDecimal")
     case BackendObjType.BigInt => JvmName(List("java", "math"), "BigInteger")
     case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
