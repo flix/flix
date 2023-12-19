@@ -1550,9 +1550,9 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def HeadField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "head", Frame.toTpe)
+    def HeadField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "head", Frame.toTpe)
 
-    def TailField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "tail", Frames.toTpe)
+    def TailField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "tail", Frames.toTpe)
 
     def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
