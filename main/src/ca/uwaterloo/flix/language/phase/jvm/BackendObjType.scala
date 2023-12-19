@@ -83,7 +83,7 @@ sealed trait BackendObjType {
     case BackendObjType.ResumptionNil => JvmName(DevFlixRuntime, mkClassName("ResumptionNil"))
     case BackendObjType.Handler => JvmName(DevFlixRuntime, mkClassName("Handler"))
     case BackendObjType.EffectCall => JvmName(DevFlixRuntime, mkClassName("EffectCall"))
-    case BackendObjType.ResumptionWrapper => JvmName(DevFlixRuntime, mkClassName("ResumptionWrapper"))
+    case BackendObjType.ResumptionWrapper(t) => JvmName(DevFlixRuntime, mkClassName("ResumptionWrapper", t))
   }
 
   /**
@@ -1233,13 +1233,13 @@ object BackendObjType {
   }
 
   case object LambdaMetaFactory extends BackendObjType {
-    private def methodHandlesLookup: BackendType = BackendObjType.Native(JvmName(List("java", "lang", "invoke"), "MethodHandles$Lookup")).toTpe
+    private def methodHandlesLookup: BackendType = JvmName(List("java", "lang", "invoke"), "MethodHandles$Lookup").toTpe
 
-    private def methodType: BackendType = BackendObjType.Native(JvmName(List("java", "lang", "invoke"), "MethodType")).toTpe
+    private def methodType: BackendType = JvmName(List("java", "lang", "invoke"), "MethodType").toTpe
 
-    private def methodHandle: BackendType = BackendObjType.Native(JvmName(List("java", "lang", "invoke"), "MethodHandle")).toTpe
+    private def methodHandle: BackendType = JvmName(List("java", "lang", "invoke"), "MethodHandle").toTpe
 
-    private def callSite: BackendType = BackendObjType.Native(JvmName(List("java", "lang", "invoke"), "CallSite")).toTpe
+    private def callSite: BackendType = JvmName(List("java", "lang", "invoke"), "CallSite").toTpe
 
     def MetaFactoryMethod: StaticMethod = StaticMethod(
       this.jvmName, IsPublic, IsFinal, "metafactory",
@@ -1758,15 +1758,17 @@ object BackendObjType {
 
   }
 
-  case object ResumptionWrapper extends BackendObjType with Generatable {
+  case class ResumptionWrapper(tpe: BackendType) extends BackendObjType with Generatable {
 
-    // Value -> Result
-    private val superClass: JvmType.Reference = JvmOps.getFunctionInterfaceType(List(JvmType.Object), JvmType.Object)
+    // tpe -> Result
+    private val superClass: JvmType.Reference = JvmOps.getClosureAbstractClassType(List(tpe.toErasedJvmType), JvmType.Object)
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkClass(this.jvmName, IsFinal, superClass.name)
       cm.mkConstructor(Constructor)
+      cm.mkField(ResumptionField)
       cm.mkMethod(InvokeMethod)
+      cm.mkMethod(UniqueMethod)
       cm.closeClassMaker()
     }
 
@@ -1782,10 +1784,16 @@ object BackendObjType {
 
     def InvokeMethod: InstanceMethod = Thunk.InvokeMethod.implementation(this.jvmName, NotFinal, Some(_ =>
       thisLoad() ~ GETFIELD(ResumptionField) ~
-        thisLoad() ~ cheat(_.visitFieldInsn(Opcodes.GETFIELD, this.jvmName.toInternalName, "arg0", JavaObject.toDescriptor)) ~
-        CHECKCAST(Value.jvmName) ~
+        NEW(Value.jvmName) ~ DUP() ~ INVOKESPECIAL(Value.Constructor) ~
+        DUP() ~
+        thisLoad() ~ cheat(_.visitFieldInsn(Opcodes.GETFIELD, this.jvmName.toInternalName, "arg0", tpe.toErased.toDescriptor)) ~
+        PUTFIELD(Value.fieldFromType(tpe.toErased)) ~
         INVOKEINTERFACE(Resumption.RewindMethod) ~
         xReturn(Result.toTpe)
+    ))
+
+    def UniqueMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, mkDescriptor()(Native(this.superClass.name).toTpe), Some(_ =>
+      thisLoad() ~ ARETURN()
     ))
 
   }
