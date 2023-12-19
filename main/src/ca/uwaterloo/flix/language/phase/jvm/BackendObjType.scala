@@ -781,7 +781,7 @@ object BackendObjType {
     private def arrayCopy(): InstructionSet = (f: F) => {
       f.visitMethodInstruction(Opcodes.INVOKESTATIC, JvmName.System, "arraycopy",
         MethodDescriptor(List(JavaObject.toTpe, BackendType.Int32, JavaObject.toTpe, BackendType.Int32,
-          BackendType.Int32), VoidableType.Void))
+          BackendType.Int32), VoidableType.Void), isInterface = false)
       f
     }
   }
@@ -1456,14 +1456,14 @@ object BackendObjType {
       val cm = mkInterface(this.jvmName)
 
       cm.mkInterfaceMethod(ApplyMethod)
-      cm.mkStaticMethod(StaticApplyMethod)
+      cm.mkStaticInterfaceMethod(StaticApplyMethod)
 
       cm.closeClassMaker()
     }
 
     def ApplyMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "applyFrame", mkDescriptor(Value.toTpe)(Result.toTpe))
 
-    def StaticApplyMethod: StaticMethod = StaticMethod(
+    def StaticApplyMethod: StaticInterfaceMethod = StaticInterfaceMethod(
       this.jvmName,
       IsPublic,
       NotFinal,
@@ -1604,13 +1604,13 @@ object BackendObjType {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkInterface(this.jvmName)
       cm.mkInterfaceMethod(RewindMethod)
-      cm.mkStaticMethod(StaticRewindMethod)
+      cm.mkStaticInterfaceMethod(StaticRewindMethod)
       cm.closeClassMaker()
     }
 
     def RewindMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "rewind", mkDescriptor(Value.toTpe)(Result.toTpe))
 
-    def StaticRewindMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, NotFinal, "staticRewind", mkDescriptor(Resumption.toTpe, Value.toTpe)(Result.toTpe), Some(_ =>
+    def StaticRewindMethod: StaticInterfaceMethod = StaticInterfaceMethod(this.jvmName, IsPublic, NotFinal, "staticRewind", mkDescriptor(Resumption.toTpe, Value.toTpe)(Result.toTpe), Some(_ =>
       withName(0, Resumption.toTpe) { resumption =>
         withName(1, Value.toTpe) { v => {
           resumption.load() ~ v.load() ~ INVOKEINTERFACE(Resumption.RewindMethod) ~ ARETURN()
@@ -1682,11 +1682,11 @@ object BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = mkInterface(this.jvmName)
-      cm.mkStaticMethod(InstallHandlerMethod)
+      cm.mkStaticInterfaceMethod(InstallHandlerMethod)
       cm.closeClassMaker()
     }
 
-    def InstallHandlerMethod: StaticMethod = StaticMethod(
+    def InstallHandlerMethod: StaticInterfaceMethod = StaticInterfaceMethod(
       this.jvmName,
       IsPublic,
       NotFinal,
