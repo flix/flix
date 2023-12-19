@@ -1237,13 +1237,13 @@ object BackendObjType {
   }
 
   case object LambdaMetaFactory extends BackendObjType {
-    private def methodHandlesLookup: BackendType = BackendObjType.Native(JvmName(List("java", "lang", "invoke"), "MethodHandles$Lookup")).toTpe
+    private def methodHandlesLookup: BackendType = JvmName(List("java", "lang", "invoke"), "MethodHandles$Lookup").toTpe
 
-    private def methodType: BackendType = BackendObjType.Native(JvmName(List("java", "lang", "invoke"), "MethodType")).toTpe
+    private def methodType: BackendType = JvmName(List("java", "lang", "invoke"), "MethodType").toTpe
 
-    private def methodHandle: BackendType = BackendObjType.Native(JvmName(List("java", "lang", "invoke"), "MethodHandle")).toTpe
+    private def methodHandle: BackendType = JvmName(List("java", "lang", "invoke"), "MethodHandle").toTpe
 
-    private def callSite: BackendType = BackendObjType.Native(JvmName(List("java", "lang", "invoke"), "CallSite")).toTpe
+    private def callSite: BackendType = JvmName(List("java", "lang", "invoke"), "CallSite").toTpe
 
     def MetaFactoryMethod: StaticMethod = StaticMethod(
       this.jvmName, IsPublic, IsFinal, "metaFactory",
