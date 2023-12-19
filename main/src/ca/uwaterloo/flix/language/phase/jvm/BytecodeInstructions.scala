@@ -282,8 +282,7 @@ object BytecodeInstructions {
     f
   }
 
-  // TODO: disallow AbstractMethod, instead use InterfaceMethod
-  def mkStaticLambda(lambdaMethod: AbstractMethod, callD: MethodDescriptor, callHandle: Handle): InstructionSet = f => {
+  def mkStaticLambda(lambdaMethod: InterfaceMethod, callD: MethodDescriptor, callHandle: Handle): InstructionSet = f => {
     f.visitInvokeDynamicInstruction(
       lambdaMethod.name,
       mkDescriptor(callD.arguments: _*)(lambdaMethod.clazz.toTpe),
@@ -295,12 +294,10 @@ object BytecodeInstructions {
     f
   }
 
-  // TODO: disallow AbstractMethod, instead use InterfaceMethod
-  def mkStaticLambda(lambdaMethod: AbstractMethod, call: StaticMethod): InstructionSet =
+  def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticMethod): InstructionSet =
     mkStaticLambda(lambdaMethod, call.d, mkStaticHandle(call))
 
-  // TODO: disallow AbstractMethod, instead use InterfaceMethod
-  def mkStaticLambda(lambdaMethod: AbstractMethod, call: StaticInterfaceMethod): InstructionSet =
+  def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticInterfaceMethod): InstructionSet =
     mkStaticLambda(lambdaMethod, call.d, mkStaticHandle(call))
 
   def INVOKEINTERFACE(interfaceName: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {

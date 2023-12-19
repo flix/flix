@@ -397,9 +397,9 @@ object BackendObjType {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val specializedInterface = specialization()
-      val interfaces = specializedInterface.map(_.jvmName)
+      val interfaces = Thunk.jvmName :: specializedInterface.map(_.jvmName)
 
-      val cm = ClassMaker.mkAbstractClass(this.jvmName, superClass = Thunk.jvmName, interfaces)
+      val cm = ClassMaker.mkAbstractClass(this.jvmName, superClass = JavaObject.jvmName, interfaces)
 
       cm.mkConstructor(Constructor)
       args.indices.foreach(argIndex => cm.mkField(ArgField(argIndex)))
@@ -409,7 +409,7 @@ object BackendObjType {
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = nullarySuperConstructor(Thunk.Constructor)
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
     def ArgField(index: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, s"arg$index", args(index))
 
@@ -1330,10 +1330,10 @@ object BackendObjType {
       * [..., Result] --> [..., Suspension|Value]
       */
     def unwindThunk(): InstructionSet = {
-      INVOKEVIRTUAL(Thunk.InvokeMethod) ~
+      INVOKEINTERFACE(Thunk.InvokeMethod) ~
         whileLoop(Condition.NE)(DUP() ~ INSTANCEOF(Thunk.jvmName)) {
           CHECKCAST(Thunk.jvmName) ~
-            INVOKEVIRTUAL(Thunk.InvokeMethod)
+            INVOKEINTERFACE(Thunk.InvokeMethod)
         }
     }
 
@@ -1477,20 +1477,17 @@ object BackendObjType {
   case object Thunk extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
-      val cm = mkAbstractClass(this.jvmName, interfaces = List(Result.jvmName, Runnable.jvmName))
+      val cm = mkInterface(this.jvmName, interfaces = List(Result.jvmName, Runnable.jvmName))
 
-      cm.mkConstructor(Constructor)
-      cm.mkAbstractMethod(InvokeMethod)
-      cm.mkMethod(RunMethod)
+      cm.mkInterfaceMethod(InvokeMethod)
+      cm.mkDefaultMethod(RunMethod)
 
       cm.closeClassMaker()
     }
 
-    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
+    def InvokeMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "invoke", mkDescriptor()(Result.toTpe))
 
-    def InvokeMethod: AbstractMethod = AbstractMethod(this.jvmName, IsPublic, "invoke", mkDescriptor()(Result.toTpe))
-
-    def RunMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "run", mkDescriptor()(VoidableType.Void), Some(_ =>
+    def RunMethod: DefaultMethod = DefaultMethod(this.jvmName, IsPublic, NotFinal, "run", mkDescriptor()(VoidableType.Void), Some(_ =>
       thisLoad() ~ Result.unwindThunk() ~ CHECKCAST(Value.jvmName) ~ POP() ~ RETURN()
     ))
   }
