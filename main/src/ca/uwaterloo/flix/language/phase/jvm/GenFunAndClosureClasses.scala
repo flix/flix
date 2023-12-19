@@ -276,7 +276,7 @@ object GenFunAndClosureClasses {
   private val copyName: String = "copy"
 
   private def nothingToTDescriptor(t: JvmType.Reference): MethodDescriptor = {
-    MethodDescriptor.mkDescriptor()(BackendObjType.Native(t.name).toTpe)
+    MethodDescriptor.mkDescriptor()(t.name.toTpe)
   }
 
   private def compileCopyMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def): Unit = {

@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBranch, TrueBranch}
-import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Interface.IsInterface
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
@@ -283,53 +282,23 @@ object BytecodeInstructions {
     f
   }
 
-  def mkStaticLambda(lambdaMethod: AbstractMethod, call: StaticMethod, drop: Int): InstructionSet = f => {
+  def mkStaticLambda(lambdaMethod: InterfaceMethod, callD: MethodDescriptor, callHandle: Handle, drop: Int): InstructionSet = f => {
     f.visitInvokeDynamicInstruction(
       lambdaMethod.name,
-      mkDescriptor(call.d.arguments.dropRight(drop): _*)(lambdaMethod.clazz.toTpe),
+      mkDescriptor(callD.arguments.dropRight(drop): _*)(lambdaMethod.clazz.toTpe),
       mkStaticHandle(BackendObjType.LambdaMetaFactory.MetaFactoryMethod),
       lambdaMethod.d.toAsmType,
-      mkStaticHandle(call).handle,
+      callHandle.handle,
       lambdaMethod.d.toAsmType
     )
     f
   }
 
-  def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticMethod, drop: Int): InstructionSet = f => {
-    f.visitInvokeDynamicInstruction(
-      lambdaMethod.name,
-      mkDescriptor(call.d.arguments.dropRight(drop): _*)(lambdaMethod.clazz.toTpe),
-      mkStaticHandle(BackendObjType.LambdaMetaFactory.MetaFactoryMethod),
-      lambdaMethod.d.toAsmType,
-      mkStaticHandle(call).handle,
-      lambdaMethod.d.toAsmType
-    )
-    f
-  }
+  def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticMethod, drop: Int): InstructionSet =
+    mkStaticLambda(lambdaMethod, call.d, mkStaticHandle(call), drop)
 
-  def mkStaticLambda(lambdaMethod: AbstractMethod, call: StaticInterfaceMethod, drop: Int): InstructionSet = f => {
-    f.visitInvokeDynamicInstruction(
-      lambdaMethod.name,
-      mkDescriptor(call.d.arguments.dropRight(drop): _*)(lambdaMethod.clazz.toTpe),
-      mkStaticHandle(BackendObjType.LambdaMetaFactory.MetaFactoryMethod),
-      lambdaMethod.d.toAsmType,
-      mkStaticHandle(call).handle,
-      lambdaMethod.d.toAsmType
-    )
-    f
-  }
-
-  def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticInterfaceMethod, drop: Int): InstructionSet = f => {
-    f.visitInvokeDynamicInstruction(
-      lambdaMethod.name,
-      mkDescriptor(call.d.arguments.dropRight(drop): _*)(lambdaMethod.clazz.toTpe),
-      mkStaticHandle(BackendObjType.LambdaMetaFactory.MetaFactoryMethod),
-      lambdaMethod.d.toAsmType,
-      mkStaticHandle(call).handle,
-      lambdaMethod.d.toAsmType
-    )
-    f
-  }
+  def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticInterfaceMethod, drop: Int): InstructionSet =
+    mkStaticLambda(lambdaMethod, call.d, mkStaticHandle(call), drop)
 
   def INVOKEINTERFACE(interfaceName: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
     f.visitMethodInstruction(Opcodes.INVOKEINTERFACE, interfaceName, methodName, descriptor, isInterface = true)
@@ -352,7 +321,7 @@ object BytecodeInstructions {
     f
   }
 
-  def INVOKESTATIC(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean): InstructionSet = f => {
+  def INVOKESTATIC(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false): InstructionSet = f => {
     f.visitMethodInstruction(Opcodes.INVOKESTATIC, className, methodName, descriptor, isInterface)
     f
   }

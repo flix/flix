@@ -63,6 +63,9 @@ sealed trait BackendType extends VoidableType {
     case BackendType.Array(_) | BackendType.Reference(_) => BackendObjType.JavaObject.toTpe
   }
 
+  /**
+    * Returns the erased type represented as [[JvmType]]. Arrays are erased.
+    */
   def toErasedJvmType: JvmType = this match {
     case BackendType.Array(_) => JvmType.Object
     case BackendType.Reference(_) => JvmType.Object
@@ -199,7 +202,7 @@ object BackendType {
       // Maybe use clazz.getPackage and clazz.getSimpleName
       // TODO: Ugly hack.
       val fqn = clazz.getName.replace('.', '/')
-      BackendObjType.Native(JvmName.mk(fqn)).toTpe
+      JvmName.mk(fqn).toTpe
     case MonoType.Unit | MonoType.Lazy(_) | MonoType.Ref(_) |
          MonoType.Tuple(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty |
          MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) |

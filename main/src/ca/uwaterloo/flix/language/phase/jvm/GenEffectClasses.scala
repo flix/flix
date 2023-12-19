@@ -64,15 +64,15 @@ object GenEffectClasses {
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, effectType.name.toInternalName,
       null, superClass, interfaces)
 
-    genConstructor(superClass, visitor)
-
     for (op <- effect.ops) genFieldAndMethod(visitor, effectType, op)
+
+    genConstructor(visitor, superClass)
 
     visitor.visitEnd()
     visitor.toByteArray
   }
 
-  private def genConstructor(superClass: String, visitor: ClassWriter): Unit = {
+  private def genConstructor(visitor: ClassWriter, superClass: String): Unit = {
     val mv = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
     mv.visitCode()
 

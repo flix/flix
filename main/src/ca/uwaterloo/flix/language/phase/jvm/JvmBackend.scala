@@ -45,7 +45,7 @@ object JvmBackend {
       // Compute the set of namespaces in the program.
       val namespaces = JvmOps.namespacesOf(root)
 
-      // note that required types need to be present deeply (if you add `List[Int32]` also add `Int32`)
+      // Required generated types need to be present deeply (if you add `List[List[Int32]]` also add `List[Int32]`)
       val requiredTypes = Set(
         MonoType.Arrow(List(MonoType.Bool), MonoType.Object), // by resumptionWrappers
         MonoType.Arrow(List(MonoType.Char), MonoType.Object), // by resumptionWrappers
@@ -124,7 +124,7 @@ object JvmBackend {
       val handlerInterface = Map(genClass(BackendObjType.Handler))
       val effectCallClass = Map(genClass(BackendObjType.EffectCall))
       val effectClasses = GenEffectClasses.gen(root.effects.values)
-      val resumptionWrappers = BackendType.erasedTypes.map(t => BackendObjType.ResumptionWrapper(t)).map(genClass).toMap
+      val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper).map(genClass).toMap
 
       // Collect all the classes and interfaces together.
       List(
