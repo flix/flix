@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkName
+import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkClassName
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch._
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker.Final.{IsFinal, NotFinal}
@@ -36,26 +36,26 @@ sealed trait BackendObjType {
     * The `JvmName` that represents the type `Ref(Int)` refers to `"Ref$Int"`.
     */
   val jvmName: JvmName = this match {
-    case BackendObjType.Unit => JvmName(DevFlixRuntime, "Unit")
+    case BackendObjType.Unit => JvmName(DevFlixRuntime, mkClassName("Unit"))
+    case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkClassName("Lazy", tpe))
+    case BackendObjType.Ref(tpe) => JvmName(RootPackage, mkClassName("Ref", tpe))
+    case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkClassName("Tuple", elms))
+    case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
+    case BackendObjType.RecordEmpty => JvmName(RootPackage, mkClassName(s"RecordEmpty"))
+    case BackendObjType.RecordExtend(_, value, _) => JvmName(RootPackage, mkClassName("RecordExtend", value))
+    case BackendObjType.Record => JvmName(RootPackage, mkClassName("Record"))
+    case BackendObjType.ReifiedSourceLocation => JvmName(DevFlixRuntime, mkClassName("ReifiedSourceLocation"))
+    case BackendObjType.Global => JvmName(DevFlixRuntime, "Global") // "Global" is fixed in source code, so should not be mangled and $ suffixed
+    case BackendObjType.FlixError => JvmName(DevFlixRuntime, mkClassName("FlixError"))
+    case BackendObjType.HoleError => JvmName(DevFlixRuntime, mkClassName("HoleError"))
+    case BackendObjType.MatchError => JvmName(DevFlixRuntime, mkClassName("MatchError"))
+    case BackendObjType.Region => JvmName(DevFlixRuntime, mkClassName("Region"))
+    case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, mkClassName("UncaughtExceptionHandler"))
+    // Java classes
+    case BackendObjType.Native(className) => className
+    case BackendObjType.Regex => JvmName(List("java", "util", "regex"), "Pattern")
     case BackendObjType.BigDecimal => JvmName(List("java", "math"), "BigDecimal")
     case BackendObjType.BigInt => JvmName(List("java", "math"), "BigInteger")
-    case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkName("Lazy", tpe))
-    case BackendObjType.Ref(tpe) => JvmName(RootPackage, mkName("Ref", tpe))
-    case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkName("Tuple", elms))
-    case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkName(s"Fn${args.length}", args :+ result))
-    case BackendObjType.RecordEmpty => JvmName(RootPackage, mkName(s"RecordEmpty"))
-    case BackendObjType.RecordExtend(_, value, _) => JvmName(RootPackage, mkName("RecordExtend", value))
-    case BackendObjType.Record => JvmName(RootPackage, s"IRecord${Flix.Delimiter}")
-    case BackendObjType.Native(className) => className
-    case BackendObjType.ReifiedSourceLocation => JvmName(DevFlixRuntime, "ReifiedSourceLocation")
-    case BackendObjType.Global => JvmName(DevFlixRuntime, "Global")
-    case BackendObjType.Regex => JvmName(List("java", "util", "regex"), "Pattern")
-    case BackendObjType.FlixError => JvmName(DevFlixRuntime, "FlixError")
-    case BackendObjType.HoleError => JvmName(DevFlixRuntime, "HoleError")
-    case BackendObjType.MatchError => JvmName(DevFlixRuntime, "MatchError")
-    case BackendObjType.Region => JvmName(DevFlixRuntime, "Region")
-    case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, "UncaughtExceptionHandler")
-    // Java classes
     case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
     case BackendObjType.String => JvmName(JavaLang, "String")
     case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
@@ -69,21 +69,21 @@ sealed trait BackendObjType {
     case BackendObjType.Thread => JvmName(JavaLang, "Thread")
     case BackendObjType.ThreadBuilderOfVirtual => JvmName(JavaLang, "Thread$Builder$OfVirtual")
     case BackendObjType.ThreadUncaughtExceptionHandler => JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
-    case BackendObjType.Result => JvmName(DevFlixRuntime, "Result")
     // Effects Runtime
-    case BackendObjType.Value => JvmName(DevFlixRuntime, "Value")
-    case BackendObjType.Frame => JvmName(DevFlixRuntime, "Frame")
-    case BackendObjType.Thunk => JvmName(DevFlixRuntime, "Thunk")
-    case BackendObjType.Suspension => JvmName(DevFlixRuntime, "Suspension")
-    case BackendObjType.Frames => JvmName(DevFlixRuntime, "Frames")
-    case BackendObjType.FramesCons => JvmName(DevFlixRuntime, "FramesCons")
-    case BackendObjType.FramesNil => JvmName(DevFlixRuntime, "FramesNil")
-    case BackendObjType.Resumption => JvmName(DevFlixRuntime, "Resumption")
-    case BackendObjType.ResumptionCons => JvmName(DevFlixRuntime, "ResumptionCons")
-    case BackendObjType.ResumptionNil => JvmName(DevFlixRuntime, "ResumptionNil")
-    case BackendObjType.Handler => JvmName(DevFlixRuntime, "Handler")
-    case BackendObjType.EffectCall => JvmName(DevFlixRuntime, "EffectCall")
-    case BackendObjType.ResumptionWrapper(t) => JvmName(DevFlixRuntime, mkName("ResumptionWrapper", t))
+    case BackendObjType.Result => JvmName(DevFlixRuntime, mkClassName("Result"))
+    case BackendObjType.Value => JvmName(DevFlixRuntime, mkClassName("Value"))
+    case BackendObjType.Frame => JvmName(DevFlixRuntime, mkClassName("Frame"))
+    case BackendObjType.Thunk => JvmName(DevFlixRuntime, mkClassName("Thunk"))
+    case BackendObjType.Suspension => JvmName(DevFlixRuntime, mkClassName("Suspension"))
+    case BackendObjType.Frames => JvmName(DevFlixRuntime, mkClassName("Frames"))
+    case BackendObjType.FramesCons => JvmName(DevFlixRuntime, mkClassName("FramesCons"))
+    case BackendObjType.FramesNil => JvmName(DevFlixRuntime, mkClassName("FramesNil"))
+    case BackendObjType.Resumption => JvmName(DevFlixRuntime, mkClassName("Resumption"))
+    case BackendObjType.ResumptionCons => JvmName(DevFlixRuntime, mkClassName("ResumptionCons"))
+    case BackendObjType.ResumptionNil => JvmName(DevFlixRuntime, mkClassName("ResumptionNil"))
+    case BackendObjType.Handler => JvmName(DevFlixRuntime, mkClassName("Handler"))
+    case BackendObjType.EffectCall => JvmName(DevFlixRuntime, mkClassName("EffectCall"))
+    case BackendObjType.ResumptionWrapper(t) => JvmName(DevFlixRuntime, mkClassName("ResumptionWrapper", t))
   }
 
   /**
@@ -112,22 +112,18 @@ sealed trait BackendObjType {
 }
 
 object BackendObjType {
-  /**
-    * Constructs a concatenated string using `JvmName.Delimiter`. The call
-    * `mkName("Tuple2", List(Object, Int, String))` would
-    * result in the string `"Tuple2$Obj$Int32$Obj"`.
-    */
-  private def mkName(prefix: String, args: List[BackendType]): String = {
-    // TODO: Should delimiter always be included?
-    if (args.isEmpty) prefix
-    else s"$prefix${Flix.Delimiter}${args.map(e => e.toErased.toErasedString).mkString(Flix.Delimiter)}"
+
+  private def mkClassName(prefix: String, tpe: BackendType): String = {
+    JvmName.mkClassName(prefix, tpe.toErasedString)
   }
 
-  private def mkName(prefix: String, arg: BackendType): String =
-    mkName(prefix, List(arg))
+  private def mkClassName(prefix: String, tpes: List[BackendType]): String = {
+    JvmName.mkClassName(prefix, tpes.map(_.toErasedString))
+  }
 
-  private def mkName(prefix: String): String =
-    mkName(prefix, Nil)
+  private def mkClassName(prefix: String): String = {
+    JvmName.mkClassName(prefix)
+  }
 
   case object Unit extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {

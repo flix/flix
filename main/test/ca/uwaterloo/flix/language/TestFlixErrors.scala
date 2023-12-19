@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.language.phase.jvm.BackendObjType
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.{Options, Validation}
 import org.scalatest.funsuite.AnyFunSuite
@@ -44,13 +45,13 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
   test("HoleError.01") {
     val input = "def main(): Unit = ???"
     val result = compile(input, Options.TestWithLibMin)
-    expectRuntimeError(result, "HoleError")
+    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
   }
 
   test("HoleError.02") {
     val input = "def main(): Unit = ?namedHole"
     val result = compile(input, Options.TestWithLibMin)
-    expectRuntimeError(result, "HoleError")
+    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
   }
 
   test("SpawnedThreadError.01") {
@@ -62,7 +63,7 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
-    expectRuntimeError(result, "HoleError")
+    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
   }
 
   test("SpawnedThreadError.02") {
@@ -76,7 +77,7 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
          |}
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
-    expectRuntimeError(result, "HoleError")
+    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
   }
 
   test("SpawnedThreadError.03") {
