@@ -1396,12 +1396,14 @@ object GenExpression {
       // When we exit the scope, call the region's `exit` method
       val iLoad = AsmOps.getLoadInstruction(JvmType.Reference(BackendObjType.Region.jvmName))
       mv.visitVarInsn(iLoad, sym.getStackOffset(ctx.localOffset))
+      mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ExitMethod.name,
         BackendObjType.Region.ExitMethod.d.toDescriptor, false)
       mv.visitLabel(afterTryBlock)
 
       // Compile the finally block which gets called if no exception is thrown
       mv.visitVarInsn(iLoad, sym.getStackOffset(ctx.localOffset))
+      mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
       mv.visitJumpInsn(GOTO, afterFinally)
@@ -1409,6 +1411,7 @@ object GenExpression {
       // Compile the finally block which gets called if an exception is thrown
       mv.visitLabel(finallyBlock)
       mv.visitVarInsn(iLoad, sym.getStackOffset(ctx.localOffset))
+      mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
       mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.ReThrowChildExceptionMethod.name,
         BackendObjType.Region.ReThrowChildExceptionMethod.d.toDescriptor, false)
       mv.visitInsn(ATHROW)
