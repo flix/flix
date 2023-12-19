@@ -251,7 +251,6 @@ object Parser2 {
     // TODO: Add these back in
     //    assert(stack.length == 1)
     //    assert(tokens.next().kind == TokenKind.Eof)
-
     stack.head
   }
 
@@ -518,7 +517,9 @@ object Parser2 {
       case TokenKind.KeywordClass | TokenKind.KeywordTrait => typeClass(mark)
       case TokenKind.KeywordInstance => instance(mark)
       case TokenKind.KeywordEnum => enumeration(mark)
-      case _ => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected declaration"))
+      case _ =>
+        advance()
+        closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), s"Expected declaration"))
     }
   }
 
@@ -591,6 +592,9 @@ object Parser2 {
       ttype()
       expect(TokenKind.BracketR)
     }
+    if (at(TokenKind.KeywordWith)) {
+      typeConstraints()
+    }
     if (at(TokenKind.CurlyL)) {
       expect(TokenKind.CurlyL)
       while (!at(TokenKind.CurlyR) && !eof()) {
@@ -601,7 +605,9 @@ object Parser2 {
         nth(0) match {
           case TokenKind.KeywordDef => definition(mark)
           case TokenKind.KeywordType => associatedTypeDef(mark)
-          case _ => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected associated type or definition"))
+          case _ =>
+            advance()
+            closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), s"Expected associated type or definition"))
         }
       }
       expect(TokenKind.CurlyR)
@@ -618,6 +624,9 @@ object Parser2 {
     if (at(TokenKind.BracketL)) {
       typeParameters()
     }
+    if (at(TokenKind.KeywordWith)) {
+      typeConstraints()
+    }
     if (at(TokenKind.CurlyL)) {
       expect(TokenKind.CurlyL)
       while (!at(TokenKind.CurlyR) && !eof()) {
@@ -626,15 +635,37 @@ object Parser2 {
         annotations() // TODO: associated types cant have annotations
         modifiers()
         nth(0) match {
-          // TODO: Law
+          case TokenKind.KeywordLaw => law(mark)
           case TokenKind.KeywordDef => signature(mark)
           case TokenKind.KeywordType => associatedTypeSig(mark)
-          case _ => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected associated type, signature or law"))
+          case _ =>
+            advance()
+            closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), s"Expected associated type, signature or law"))
         }
       }
       expect(TokenKind.CurlyR)
     }
     close(mark, TreeKind.Class)
+  }
+
+  private def law(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+    assert(at(TokenKind.KeywordLaw))
+    expect(TokenKind.KeywordLaw)
+    name(NAME_DEFINITION)
+    expect(TokenKind.Colon)
+    expect(TokenKind.KeywordForall)
+    if (at(TokenKind.BracketL)) {
+      typeParameters()
+    }
+    if (at(TokenKind.ParenL)) {
+      parameters()
+    }
+    if (at(TokenKind.KeywordWith)) {
+      typeConstraints()
+    }
+    expect(TokenKind.Dot)
+    expression()
+    close(mark, TreeKind.Law)
   }
 
   private def associatedTypeDef(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
@@ -680,6 +711,7 @@ object Parser2 {
     }
     if (at(TokenKind.Equal)) {
       expect(TokenKind.Equal)
+      expression()
       while (at(TokenKind.Semi) && !eof()) {
         expect(TokenKind.Semi)
         expression()
@@ -749,6 +781,9 @@ object Parser2 {
     }
     expect(TokenKind.Colon)
     ttype(allowTrailingEffect = true)
+    if (at(TokenKind.KeywordWith)) {
+      typeConstraints()
+    }
     expect(TokenKind.Equal)
     expression()
     while (at(TokenKind.Semi) && !eof()) {
@@ -888,7 +923,7 @@ object Parser2 {
     val mark = open()
     // Handle clearly delimited expressions
     nth(0) match {
-      case TokenKind.ParenL => exprParen()
+      case TokenKind.ParenL => exprParenOrTuple()
       case TokenKind.CurlyL => exprBlock()
       case TokenKind.KeywordIf => exprIfThenElse()
       case TokenKind.LiteralString
@@ -1069,18 +1104,27 @@ object Parser2 {
   }
 
   /**
-   * exprParen -> '(' expression? ')'
+   * exprParen -> '(' expression? (',' expression)* ')'
    */
-  private def exprParen()(implicit s: State): Mark.Closed = {
+  private def exprParenOrTuple()(implicit s: State): Mark.Closed = {
     assert(at(TokenKind.ParenL))
     val mark = open()
+    var isTuple = false
     expect(TokenKind.ParenL)
     if (eat(TokenKind.ParenR)) { // Handle unit tuple `()`
       return close(mark, TreeKind.Expr.Tuple)
     }
+
     expression()
+    if (at(TokenKind.Comma)) {
+      isTuple = true
+      while (!at(TokenKind.ParenR) && !eof()) {
+        expect(TokenKind.Comma)
+        expression()
+      }
+    }
     expect(TokenKind.ParenR)
-    close(mark, TreeKind.Expr.Paren)
+    close(mark, if (isTuple) TreeKind.Expr.Tuple else TreeKind.Expr.Paren)
   }
 
   /**

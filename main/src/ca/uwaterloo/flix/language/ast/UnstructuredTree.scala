@@ -32,6 +32,8 @@ object UnstructuredTree {
 
     case object RestrictableEnum extends TreeKind
 
+    case object Law extends TreeKind
+
     case object Case extends TreeKind
 
     case object Doc extends TreeKind

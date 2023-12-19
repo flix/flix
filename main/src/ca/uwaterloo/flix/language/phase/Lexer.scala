@@ -397,11 +397,12 @@ object Lexer {
       case _ if isKeyword("enum") => TokenKind.KeywordEnum
       case _ if isKeyword("false") => TokenKind.KeywordFalse
       case _ if isKeyword("fix") => TokenKind.KeywordFix
-      case _ if isKeyword("forA") => TokenKind.KeywordForA
       case _ if isKeyword("forall") => TokenKind.KeywordForall
+      case _ if isKeyword("forA") => TokenKind.KeywordForA
       case _ if isKeyword("force") => TokenKind.KeywordForce
       case _ if isKeyword("foreach") => TokenKind.KeywordForeach
       case _ if isKeyword("forM") => TokenKind.KeywordForM
+      case _ if isKeyword("for") => TokenKind.KeywordFor
       case _ if isKeyword("from") => TokenKind.KeywordFrom
       case _ if isKeyword("get") => TokenKind.KeywordGet
       case _ if isKeyword("if") => TokenKind.KeywordIf
@@ -410,8 +411,8 @@ object Lexer {
       case _ if isKeyword("inline") => TokenKind.KeywordInline
       case _ if isKeyword("instance") => TokenKind.KeywordInstance
       case _ if isKeyword("into") => TokenKind.KeywordInto
-      case _ if isKeyword("law") => TokenKind.KeywordLaw
       case _ if isKeyword("lawful") => TokenKind.KeywordLawful
+      case _ if isKeyword("law") => TokenKind.KeywordLaw
       case _ if isKeyword("lazy") => TokenKind.KeywordLazy
       case _ if isKeyword("let") => TokenKind.KeywordLet
       case _ if isKeyword("masked_cast") => TokenKind.KeywordMaskedCast
@@ -482,6 +483,13 @@ object Lexer {
       return false
     }
 
+    // Check that the character just after the keyword is not a letter, digit or underscore
+    val next = s.src.data.lift(s.current.offset + keyword.length - 1)
+    val isPrefix = next.exists(c => c.isLetterOrDigit || c == '_')
+    if (isPrefix) {
+      return false
+    }
+
     // Check if the next n characters in source matches those of keyword one at a time.
     val start = s.current.offset - 1
     var matches = true
@@ -493,6 +501,7 @@ object Lexer {
         offset += 1
       }
     }
+
     matches
   }
 

@@ -102,7 +102,8 @@ object Weeder2 {
       traverse(instances)(visitInstance),
       traverse(enums)(visitEnum)
     ) {
-      case (modules, definitions, classes, instances, enums) => modules ++ definitions ++ classes ++ instances ++ enums
+      // TODO: Do we need to sort these by source position?
+      case (modules, definitions, classes, instances, enums) => definitions ++ classes ++ modules ++ instances ++ enums
     }
   }
 
@@ -194,17 +195,21 @@ object Weeder2 {
 
   private def visitTypeClass(tree: Tree)(implicit s: State): Validation[Declaration.Class, CompilationMessage] = {
     assert(tree.kind == TreeKind.Class)
+    val sigs = pickAll(TreeKind.Signature, tree.children)
+    val laws = pickAll(TreeKind.Law, tree.children)
     flatMapN(
       pickDocumentation(tree),
       pickAnnotations(tree),
       pickModifiers(tree),
       pickNameIdent(tree),
       pickSingleTypeParameter(tree),
-      pickAllSignatures(tree),
+      pickTypeConstraints(tree),
+      traverse(sigs)(visitSignature),
+      traverse(laws)(visitLaw)
     ) {
-      case (doc, annotations, modifiers, ident, tparam, sigs) =>
+      case (doc, annotations, modifiers, ident, tparam, tconstr, sigs, laws) =>
         mapN(pickAllAssociatedTypesSig(tree, tparam)) {
-          assocs => Declaration.Class(doc, annotations, modifiers, ident, tparam, List.empty, assocs, sigs, List.empty, tree.loc)
+          assocs => Declaration.Class(doc, annotations, modifiers, ident, tparam, tconstr, assocs, sigs, laws, tree.loc)
         }
     }
   }
@@ -245,6 +250,26 @@ object Weeder2 {
       case (doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
         Declaration.Def(doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
     }
+  }
+
+  private def visitLaw(tree: Tree)(implicit s: State): Validation[Declaration.Def, CompilationMessage] = {
+    mapN(
+      pickDocumentation(tree),
+      pickAnnotations(tree),
+      pickModifiers(tree, allowed = Set.empty),
+      pickNameIdent(tree),
+      pickTypeConstraints(tree),
+      pickKindedTypeParameters(tree),
+      pickFormalParameters(tree),
+      pickExpression(tree)
+    ) {
+      (doc, ann, mods, ident, tconstrs, tparams, fparams, expr) =>
+        val eff = None
+        val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
+        // TODO: There is a `Declaration.Law` but old Weeder produces a Def
+        Declaration.Def(doc, ann, mods, ident, tparams, fparams, expr, tpe, eff, tconstrs, Nil, tree.loc)
+    }
+
   }
 
   private def pickDocumentation(tree: Tree): Validation[Ast.Doc, CompilationMessage] = {
@@ -502,11 +527,6 @@ object Weeder2 {
           tparam => Declaration.AssocTypeSig(doc, mods, ident, tparam, kind, tree.loc)
         }
     }
-  }
-
-  private def pickAllSignatures(tree: Tree)(implicit s: State): Validation[List[Declaration.Sig], CompilationMessage] = {
-    val sigs = pickAll(TreeKind.Signature, tree.children)
-    traverse(sigs)(visitSignature)
   }
 
   private def visitSignature(tree: Tree)(implicit s: State): Validation[Declaration.Sig, CompilationMessage] = {
@@ -979,7 +999,11 @@ object Weeder2 {
     assert(tree.kind == TreeKind.Expr.Literal)
     tree.children(0) match {
       case Child.Token(token) => token.kind match {
-        // TODO: chars, strings, booleans, set, list, map
+        case TokenKind.KeywordNull => Expr.Cst(Ast.Constant.Null, token.mkSourceLocation(s.src, Some(s.parserInput))).toSuccess
+        case TokenKind.KeywordTrue => Expr.Cst(Ast.Constant.Bool(true), token.mkSourceLocation(s.src, Some(s.parserInput))).toSuccess
+        case TokenKind.KeywordFalse => Expr.Cst(Ast.Constant.Bool(false), token.mkSourceLocation(s.src, Some(s.parserInput))).toSuccess
+        case TokenKind.LiteralString => Constants.toStringCst(token)
+        case TokenKind.LiteralChar => Constants.toChar(token)
         case TokenKind.LiteralInt8 => Constants.toInt8(token)
         case TokenKind.LiteralInt16 => Constants.toInt16(token)
         case TokenKind.LiteralInt32 => Constants.toInt32(token)
@@ -1118,7 +1142,18 @@ object Weeder2 {
           val err = MalformedRegex(token.text, ex.getMessage, loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
       }
+    }
 
+    def toChar(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
+      val lit = token.text.stripPrefix("\'").head
+      Expr.Cst(Ast.Constant.Char(lit), loc).toSuccess
+    }
+
+    def toStringCst(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
+      val lit = token.text.stripPrefix("\"").stripSuffix("\"")
+      Expr.Cst(Ast.Constant.Str(lit), loc).toSuccess
     }
   }
 
