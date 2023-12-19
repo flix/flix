@@ -202,7 +202,7 @@ object BackendType {
       // Maybe use clazz.getPackage and clazz.getSimpleName
       // TODO: Ugly hack.
       val fqn = clazz.getName.replace('.', '/')
-      BackendObjType.Native(JvmName.mk(fqn)).toTpe
+      JvmName.mk(fqn).toTpe
     case MonoType.Unit | MonoType.Lazy(_) | MonoType.Ref(_) |
          MonoType.Tuple(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty |
          MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) |
