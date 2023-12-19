@@ -528,9 +528,9 @@ object GenExpression {
         }
 
       case AtomicOp.Region =>
-        //!TODO: For now, just emit unit
-        val e = Expr.Cst(Ast.Constant.Unit, MonoType.Unit, loc)
-        compileExpr(e)
+        //!TODO: For now, just emit null
+        mv.visitInsn(ACONST_NULL)
+        mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
 
       case AtomicOp.ScopeExit =>
         val List(exp1, exp2) = exps
