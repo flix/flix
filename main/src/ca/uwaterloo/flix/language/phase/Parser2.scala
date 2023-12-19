@@ -79,7 +79,7 @@ object Parser2 {
 
     flix.phase("Parser2") {
       // The file that is the current focus of development
-      val DEBUG_FOCUS = ""
+      val DEBUG_FOCUS = "foo.flix"
 
       println("p\tw\tfile")
 
