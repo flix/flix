@@ -310,11 +310,10 @@ object Weeder {
       val tparamsVal = requireNoTypeParams(tparams0)
       val fparamsVal = visitFormalParams(fparamsOpt0, Presence.Required)
       val tpeVal = visitType(tpe0)
-      val unitVal = requireUnit(tpe0, ident.loc)
       val effVal = requireNoEffect(eff0, ident.loc)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
-      mapN(annVal, modVal, pubVal, identVal, tparamsVal, fparamsVal, tpeVal, unitVal, effVal, tconstrsVal) {
-        case (ann, mod, _, id, _, fparams, tpe, _, _, tconstrs) =>
+      mapN(annVal, modVal, pubVal, identVal, tparamsVal, fparamsVal, tpeVal, effVal, tconstrsVal) {
+        case (ann, mod, _, id, _, fparams, tpe, _, tconstrs) =>
           WeededAst.Declaration.Op(doc, ann, mod, id, fparams, tpe, tconstrs, mkSL(sp1, sp2));
       }
   }
@@ -2067,15 +2066,6 @@ object Weeder {
       val sp1 = tparams.head.sp1
       val sp2 = tparams.last.sp2
       Validation.toSoftFailure((), IllegalEffectTypeParams(mkSL(sp1, sp2)))
-  }
-
-  /**
-    * Returns an error if the type is not Unit.
-    */
-  private def requireUnit(tpe: ParsedAst.Type, loc: SourceLocation): Validation[Unit, WeederError] = tpe match {
-    case ParsedAst.Type.Ambiguous(_, name, _) if name.isUnqualified && name.ident.name == "Unit" =>
-      Validation.success(())
-    case _ => Validation.toSoftFailure((), NonUnitOperationType(loc))
   }
 
   /**
