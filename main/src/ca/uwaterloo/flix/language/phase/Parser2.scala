@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ParsedAst, ReadAst, SourceKind, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.errors.Parse2Error
+import ca.uwaterloo.flix.language.phase.Parser2.{Mark, close, nth}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import org.parboiled2.ParserInput
@@ -498,495 +499,747 @@ object Parser2 {
     val mark = open()
     // TODO: Uses and imports
     while (!eof()) {
-      declaration()
+      Decl.declaration()
     }
 
     close(mark, TreeKind.Source)
   }
 
-  private def declaration()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    if (at(TokenKind.KeywordMod)) {
-      return module(mark)
-    }
-    docComment()
-    annotations()
-    modifiers()
-    nth(0) match {
-      case TokenKind.KeywordDef => definition(mark)
-      case TokenKind.KeywordClass | TokenKind.KeywordTrait => typeClass(mark)
-      case TokenKind.KeywordInstance => instance(mark)
-      case TokenKind.KeywordEnum => enumeration(mark)
-      case _ =>
-        advance()
-        closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), s"Expected declaration"))
-    }
-  }
-
-  private def module(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-    assert(at(TokenKind.KeywordMod))
-    expect(TokenKind.KeywordMod)
-    name(NAME_MODULE, allowQualified = true)
-    if (at(TokenKind.CurlyL)) {
-      expect(TokenKind.CurlyL)
-      while (!at(TokenKind.CurlyR) && !eof()) {
-        // TODO: Uses and imports
-        declaration()
+  private object Decl {
+    def declaration()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      if (at(TokenKind.KeywordMod)) {
+        return module(mark)
       }
-      expect(TokenKind.CurlyR)
-    }
-    close(mark, TreeKind.Module)
-  }
-
-  private def enumeration(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-    assert(at(TokenKind.KeywordEnum))
-    expect(TokenKind.KeywordEnum)
-    val isRestrictable = eat(TokenKind.KeywordRestrictable)
-    name(NAME_TYPE)
-    if (isRestrictable) {
-      expect(TokenKind.BracketL)
-      val markParam = open()
-      name(NAME_VARIABLE)
-      close(markParam, TreeKind.Parameter)
-      expect(TokenKind.BracketR)
-    }
-    if (at(TokenKind.BracketL)) {
-      typeParameters()
-    }
-    // Singleton short-hand
-    if (at(TokenKind.ParenL)) {
-      val markType = open()
-      typeTuple()
-      close(markType, TreeKind.Type.Type)
-    }
-    // derivations
-    if (at(TokenKind.KeywordWith)) {
-      derivations()
-    }
-    // enum body
-    if (eat(TokenKind.CurlyL)) {
-      while (atAny(List(TokenKind.KeywordCase, TokenKind.Comma)) && !eof()) {
-        val mark = open()
-        eatAny(List(TokenKind.KeywordCase, TokenKind.Comma))
-        eatAny(List(TokenKind.KeywordCase, TokenKind.Comma))
-        name(NAME_TAG)
-        if (at(TokenKind.ParenL)) {
-          val mark = open()
-          typeTuple()
-          close(mark, TreeKind.Type.Type)
-        }
-        close(mark, TreeKind.Case)
+      docComment()
+      annotations()
+      modifiers()
+      nth(0) match {
+        case TokenKind.KeywordDef => definition(mark)
+        case TokenKind.KeywordClass | TokenKind.KeywordTrait => typeClass(mark)
+        case TokenKind.KeywordInstance => instance(mark)
+        case TokenKind.KeywordEnum => enumeration(mark)
+        case _ =>
+          advance()
+          closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), s"Expected declaration"))
       }
-      expect(TokenKind.CurlyR)
     }
-    close(mark, if (isRestrictable) TreeKind.RestrictableEnum else TreeKind.Enum)
-  }
 
-  /**
-   * instance -> docComment? annotations? modifiers? 'instance' qname typeParams '{' associatedTypeDef* definition*'}'
-   */
-  private def instance(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-    expect(TokenKind.KeywordInstance)
-    name(NAME_DEFINITION, allowQualified = true)
-    if (eat(TokenKind.BracketL)) {
-      ttype()
-      expect(TokenKind.BracketR)
-    }
-    if (at(TokenKind.KeywordWith)) {
-      typeConstraints()
-    }
-    if (at(TokenKind.CurlyL)) {
-      expect(TokenKind.CurlyL)
-      while (!at(TokenKind.CurlyR) && !eof()) {
-        val mark = open()
-        docComment()
-        annotations() // TODO: associated types cant have annotations
-        modifiers()
-        nth(0) match {
-          case TokenKind.KeywordDef => definition(mark)
-          case TokenKind.KeywordType => associatedTypeDef(mark)
-          case _ =>
-            advance()
-            closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), s"Expected associated type or definition"))
-        }
+    /**
+     * definition -> docComment? annotations? 'def' name typeParameters parameters ':' ttype '=' expression (';' expression)*
+     */
+    private def definition(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      expect(TokenKind.KeywordDef)
+      name(NAME_DEFINITION)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
       }
-      expect(TokenKind.CurlyR)
-    }
-    close(mark, TreeKind.Instance)
-  }
-
-  /**
-   * typeClass -> docComment? annotations? name typeParameters '{' (signature | associatedType)* '}'
-   */
-  private def typeClass(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-    expectAny(List(TokenKind.KeywordTrait, TokenKind.KeywordClass))
-    name(NAME_DEFINITION)
-    if (at(TokenKind.BracketL)) {
-      typeParameters()
-    }
-    if (at(TokenKind.KeywordWith)) {
-      typeConstraints()
-    }
-    if (at(TokenKind.CurlyL)) {
-      expect(TokenKind.CurlyL)
-      while (!at(TokenKind.CurlyR) && !eof()) {
-        val mark = open()
-        docComment()
-        annotations() // TODO: associated types cant have annotations
-        modifiers()
-        nth(0) match {
-          case TokenKind.KeywordLaw => law(mark)
-          case TokenKind.KeywordDef => signature(mark)
-          case TokenKind.KeywordType => associatedTypeSig(mark)
-          case _ =>
-            advance()
-            closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), s"Expected associated type, signature or law"))
-        }
+      if (at(TokenKind.ParenL)) {
+        parameters()
       }
-      expect(TokenKind.CurlyR)
-    }
-    close(mark, TreeKind.Class)
-  }
-
-  private def law(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-    assert(at(TokenKind.KeywordLaw))
-    expect(TokenKind.KeywordLaw)
-    name(NAME_DEFINITION)
-    expect(TokenKind.Colon)
-    expect(TokenKind.KeywordForall)
-    if (at(TokenKind.BracketL)) {
-      typeParameters()
-    }
-    if (at(TokenKind.ParenL)) {
-      parameters()
-    }
-    if (at(TokenKind.KeywordWith)) {
-      typeConstraints()
-    }
-    expect(TokenKind.Dot)
-    expression()
-    close(mark, TreeKind.Law)
-  }
-
-  private def associatedTypeDef(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-    expect(TokenKind.KeywordType)
-    name(NAME_TYPE)
-    if (at(TokenKind.BracketL)) {
-      typeArguments()
-    }
-    expect(TokenKind.Equal)
-    ttype()
-    close(mark, TreeKind.AssociatedTypeDef)
-  }
-
-  private def associatedTypeSig(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-    expect(TokenKind.KeywordType)
-    name(NAME_TYPE)
-    if (at(TokenKind.BracketL)) {
-      typeParameters()
-    }
-    if (at(TokenKind.Colon)) {
       expect(TokenKind.Colon)
-      kind()
-    }
-    close(mark, TreeKind.AssociatedTypeSig)
-  }
-
-  /**
-   * signature -> 'def' name typeParameters parameters ':' ttype ('=' expression (';' expression)*)?
-   */
-  private def signature(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-    expect(TokenKind.KeywordDef)
-    name(NAME_DEFINITION)
-    if (at(TokenKind.BracketL)) {
-      typeParameters()
-    }
-    if (at(TokenKind.ParenL)) {
-      parameters()
-    }
-    expect(TokenKind.Colon)
-    ttype(allowTrailingEffect = true)
-    if (at(TokenKind.KeywordWith)) {
-      typeConstraints()
-    }
-    if (at(TokenKind.Equal)) {
+      Type.ttype(allowTrailingEffect = true)
+      if (at(TokenKind.KeywordWith)) {
+        Type.constraints()
+      }
       expect(TokenKind.Equal)
-      expression()
+      Expr.expression()
       while (at(TokenKind.Semi) && !eof()) {
         expect(TokenKind.Semi)
+        Expr.expression()
+      }
+      close(mark, TreeKind.Decl.Def)
+    }
+
+    private def module(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordMod))
+      expect(TokenKind.KeywordMod)
+      name(NAME_MODULE, allowQualified = true)
+      if (at(TokenKind.CurlyL)) {
+        expect(TokenKind.CurlyL)
+        while (!at(TokenKind.CurlyR) && !eof()) {
+          // TODO: Uses and imports
+          declaration()
+        }
+        expect(TokenKind.CurlyR)
+      }
+      close(mark, TreeKind.Decl.Module)
+    }
+
+    private def enumeration(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordEnum))
+      expect(TokenKind.KeywordEnum)
+      val isRestrictable = eat(TokenKind.KeywordRestrictable)
+      name(NAME_TYPE)
+      if (isRestrictable) {
+        expect(TokenKind.BracketL)
+        val markParam = open()
+        name(NAME_VARIABLE)
+        close(markParam, TreeKind.Parameter)
+        expect(TokenKind.BracketR)
+      }
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      // Singleton short-hand
+      if (at(TokenKind.ParenL)) {
+        val markType = open()
+        Type.tuple()
+        close(markType, TreeKind.Type.Type)
+      }
+      // derivations
+      if (at(TokenKind.KeywordWith)) {
+        Type.derivations()
+      }
+      // enum body
+      if (eat(TokenKind.CurlyL)) {
+        while (atAny(List(TokenKind.KeywordCase, TokenKind.Comma)) && !eof()) {
+          val mark = open()
+          eatAny(List(TokenKind.KeywordCase, TokenKind.Comma))
+          eatAny(List(TokenKind.KeywordCase, TokenKind.Comma))
+          name(NAME_TAG)
+          if (at(TokenKind.ParenL)) {
+            val mark = open()
+            Type.tuple()
+            close(mark, TreeKind.Type.Type)
+          }
+          close(mark, TreeKind.Case)
+        }
+        expect(TokenKind.CurlyR)
+      }
+      close(mark, if (isRestrictable) TreeKind.Decl.RestrictableEnum else TreeKind.Decl.Enum)
+    }
+
+    /**
+     * instance -> docComment? annotations? modifiers? 'instance' qname typeParams '{' associatedTypeDef* definition*'}'
+     */
+    private def instance(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      expect(TokenKind.KeywordInstance)
+      name(NAME_DEFINITION, allowQualified = true)
+      if (eat(TokenKind.BracketL)) {
+        Type.ttype()
+        expect(TokenKind.BracketR)
+      }
+      if (at(TokenKind.KeywordWith)) {
+        Type.constraints()
+      }
+      if (at(TokenKind.CurlyL)) {
+        expect(TokenKind.CurlyL)
+        while (!at(TokenKind.CurlyR) && !eof()) {
+          val mark = open()
+          docComment()
+          annotations() // TODO: associated types cant have annotations
+          modifiers()
+          nth(0) match {
+            case TokenKind.KeywordDef => definition(mark)
+            case TokenKind.KeywordType => associatedTypeDef(mark)
+            case _ =>
+              advance()
+              closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), s"Expected associated type or definition"))
+          }
+        }
+        expect(TokenKind.CurlyR)
+      }
+      close(mark, TreeKind.Decl.Instance)
+    }
+
+    /**
+     * typeClass -> docComment? annotations? name typeParameters '{' (signature | associatedType)* '}'
+     */
+    private def typeClass(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      expectAny(List(TokenKind.KeywordTrait, TokenKind.KeywordClass))
+      name(NAME_DEFINITION)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      if (at(TokenKind.KeywordWith)) {
+        Type.constraints()
+      }
+      if (at(TokenKind.CurlyL)) {
+        expect(TokenKind.CurlyL)
+        while (!at(TokenKind.CurlyR) && !eof()) {
+          val mark = open()
+          docComment()
+          annotations() // TODO: associated types cant have annotations
+          modifiers()
+          nth(0) match {
+            case TokenKind.KeywordLaw => law(mark)
+            case TokenKind.KeywordDef => signature(mark)
+            case TokenKind.KeywordType => associatedTypeSig(mark)
+            case _ =>
+              advance()
+              closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), s"Expected associated type, signature or law"))
+          }
+        }
+        expect(TokenKind.CurlyR)
+      }
+      close(mark, TreeKind.Decl.Class)
+    }
+
+    private def law(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordLaw))
+      expect(TokenKind.KeywordLaw)
+      name(NAME_DEFINITION)
+      expect(TokenKind.Colon)
+      expect(TokenKind.KeywordForall)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      if (at(TokenKind.ParenL)) {
+        parameters()
+      }
+      if (at(TokenKind.KeywordWith)) {
+        Type.constraints()
+      }
+      expect(TokenKind.Dot)
+      Expr.expression()
+      close(mark, TreeKind.Decl.Law)
+    }
+
+    private def associatedTypeDef(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      expect(TokenKind.KeywordType)
+      name(NAME_TYPE)
+      if (at(TokenKind.BracketL)) {
+        Type.arguments()
+      }
+      expect(TokenKind.Equal)
+      Type.ttype()
+      close(mark, TreeKind.Decl.AssociatedTypeDef)
+    }
+
+    private def associatedTypeSig(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      expect(TokenKind.KeywordType)
+      name(NAME_TYPE)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      if (at(TokenKind.Colon)) {
+        expect(TokenKind.Colon)
+        Type.kind()
+      }
+      close(mark, TreeKind.Decl.AssociatedTypeSig)
+    }
+
+    /**
+     * signature -> 'def' name typeParameters parameters ':' ttype ('=' expression (';' expression)*)?
+     */
+    private def signature(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      expect(TokenKind.KeywordDef)
+      name(NAME_DEFINITION)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      if (at(TokenKind.ParenL)) {
+        parameters()
+      }
+      expect(TokenKind.Colon)
+      Type.ttype(allowTrailingEffect = true)
+      if (at(TokenKind.KeywordWith)) {
+        Type.constraints()
+      }
+      if (at(TokenKind.Equal)) {
+        expect(TokenKind.Equal)
+        Expr.expression()
+        while (at(TokenKind.Semi) && !eof()) {
+          expect(TokenKind.Semi)
+          Expr.expression()
+        }
+      }
+      close(mark, TreeKind.Decl.Signature)
+    }
+
+    ///////////// SHARED DECL CONCEPTS ////////////
+    private val MODIFIERS = List(
+      TokenKind.KeywordSealed,
+      TokenKind.KeywordLawful,
+      TokenKind.KeywordPub,
+      TokenKind.KeywordInline,
+      TokenKind.KeywordOverride)
+
+    private def modifiers()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      while (atAny(MODIFIERS) && !eof()) {
+        advance()
+      }
+      close(mark, TreeKind.Modifiers)
+    }
+
+    private def annotations()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      while (at(TokenKind.Annotation) && !eof()) {
+        advance()
+      }
+      close(mark, TreeKind.Annotations)
+    }
+
+    private def docComment()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      while (at(TokenKind.CommentDoc) && !eof()) {
+        advance()
+      }
+      close(mark, TreeKind.Doc)
+    }
+
+    /**
+     * parameters -> '(' (parameter (',' parameter)* )? ')'
+     */
+    private def parameters()(implicit s: State): Mark.Closed = {
+      commaSeparated(
+        TreeKind.Parameters,
+        asArgument(TreeKind.Parameter, () => {
+          name(NAME_PARAMETER)
+          expect(TokenKind.Colon)
+          Type.ttype()
+        }),
+        (TokenKind.ParenL, TokenKind.ParenR),
+        () => atAny(NAME_PARAMETER),
+      )
+    }
+  }
+
+  private object Expr {
+    /**
+     * expression -> TODO
+     */
+    def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
+      var lhs = exprDelimited()
+
+      // Handle calls
+      while (at(TokenKind.ParenL)) {
+        val mark = openBefore(lhs)
+        arguments()
+        lhs = close(mark, TreeKind.Expr.Call)
+        close(openBefore(lhs), TreeKind.Expr.Expr)
+      }
+
+      // Handle binary operators
+      var continue = true
+      while (continue) {
+        val right = nth(0)
+        if (rightBindsTighter(left, right, leftIsUnary)) {
+          val mark = openBefore(lhs)
+          val markOp = open()
+          advance()
+          close(markOp, TreeKind.Operator)
+          expression(right)
+          lhs = close(mark, TreeKind.Expr.Binary)
+          close(openBefore(lhs), TreeKind.Expr.Expr)
+        } else {
+          continue = false
+        }
+      }
+
+      lhs
+    }
+
+    /**
+     * arguments -> '(' (argument (',' argument)* )? ')'
+     */
+    private def arguments()(implicit s: State): Mark.Closed = {
+      commaSeparated(
+        TreeKind.Arguments,
+        asArgument(TreeKind.Argument, () => expression()),
+      )
+    }
+
+    private def exprDelimited()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      // Handle clearly delimited expressions
+      nth(0) match {
+        case TokenKind.ParenL => parenOrTuple()
+        case TokenKind.CurlyL => block()
+        case TokenKind.KeywordIf => ifThenElse()
+        case TokenKind.KeywordImport => letImport()
+        case TokenKind.BuiltIn => intrinsic()
+        case TokenKind.LiteralString
+             | TokenKind.LiteralChar
+             | TokenKind.LiteralFloat32
+             | TokenKind.LiteralFloat64
+             | TokenKind.LiteralBigDecimal
+             | TokenKind.LiteralInt8
+             | TokenKind.LiteralInt16
+             | TokenKind.LiteralInt32
+             | TokenKind.LiteralInt64
+             | TokenKind.LiteralBigInt
+             | TokenKind.KeywordTrue
+             | TokenKind.KeywordFalse => literal()
+        case TokenKind.NameLowerCase
+             | TokenKind.NameUpperCase
+             | TokenKind.NameMath
+             | TokenKind.NameGreek => name(NAME_DEFINITION, allowQualified = true)
+        case TokenKind.Minus
+             | TokenKind.KeywordNot
+             | TokenKind.Plus
+             | TokenKind.TripleTilde => unary()
+        case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected expression, found $t"))
+      }
+      close(mark, TreeKind.Expr.Expr)
+    }
+
+    private def ifThenElse()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordIf))
+      val mark = open()
+      expect(TokenKind.KeywordIf)
+      if (eat(TokenKind.ParenL)) {
+        expression()
+        expect(TokenKind.ParenR)
+      }
+      expression()
+      if (at(TokenKind.KeywordElse)) {
+        expect(TokenKind.KeywordElse)
         expression()
       }
+      close(mark, TreeKind.Expr.IfThenElse)
     }
-    close(mark, TreeKind.Signature)
-  }
 
-  private def derivations()(implicit s: State): Mark.Closed = {
-    assert(at(TokenKind.KeywordWith))
-    val mark = open()
-    expect(TokenKind.KeywordWith)
-    var continue = true
-    name(NAME_QNAME, allowQualified = true)
-    while (continue && !eof()) {
-      if (eat(TokenKind.Comma)) {
-        name(NAME_QNAME, allowQualified = true)
-      } else {
-        continue = false
+    private def intrinsic()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      advance()
+      close(mark, TreeKind.Expr.Intrinsic)
+    }
+
+    /**
+     * literal -> integer | float | boolean | string
+     */
+    private def literal()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      advance()
+      close(mark, TreeKind.Expr.Literal)
+    }
+
+    /**
+     * exprParen -> '(' expression? (',' expression)* ')'
+     */
+    private def parenOrTuple()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.ParenL))
+      val mark = open()
+      var isTuple = false
+      expect(TokenKind.ParenL)
+      if (eat(TokenKind.ParenR)) { // Handle unit tuple `()`
+        return close(mark, TreeKind.Expr.Tuple)
       }
-    }
-    if (at(TokenKind.Comma)) {
-      advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "Trailing comma."))
-    }
-    close(mark, TreeKind.Type.Derivations)
-  }
 
-  private def typeConstraints()(implicit s: State): Mark.Closed = {
-    assert(at(TokenKind.KeywordWith))
-    val mark = open()
-    expect(TokenKind.KeywordWith)
-    var continue = true
-    typeConstraint()
-    while (continue && !eof()) {
-      if (eat(TokenKind.Comma)) {
-        typeConstraint()
-      } else {
-        continue = false
+      expression()
+      if (at(TokenKind.Comma)) {
+        isTuple = true
+        while (!at(TokenKind.ParenR) && !eof()) {
+          expect(TokenKind.Comma)
+          expression()
+        }
       }
+      expect(TokenKind.ParenR)
+      close(mark, if (isTuple) TreeKind.Expr.Tuple else TreeKind.Expr.Paren)
     }
-    if (at(TokenKind.Comma)) {
-      advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "Trailing comma."))
-    }
-    close(mark, TreeKind.Type.Constraints)
-  }
 
-  private def typeConstraint()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    name(NAME_DEFINITION, allowQualified = true)
-    expect(TokenKind.BracketL)
-    ttype()
-    expect(TokenKind.BracketR)
-    close(mark, TreeKind.Type.Constraint)
-  }
+    /**
+     * block -> '{' statement? '}'
+     */
+    private def block()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.CurlyL))
+      val mark = open()
+      expect(TokenKind.CurlyL)
+      if (eat(TokenKind.CurlyR)) { // Handle empty block
+        return close(mark, TreeKind.Expr.Block)
+      }
+      statement()
+      expect(TokenKind.CurlyR)
+      close(mark, TreeKind.Expr.Block)
+    }
 
-  /**
-   * definition -> docComment? annotations? 'def' name typeParameters parameters ':' ttype '=' expression (';' expression)*
-   */
-  private def definition(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-    expect(TokenKind.KeywordDef)
-    name(NAME_DEFINITION)
-    if (at(TokenKind.BracketL)) {
-      typeParameters()
+    /**
+     * statement -> expression (';' statement)?
+     */
+    private def statement()(implicit s: State): Mark.Closed = {
+      val lhs = expression()
+      var last = lhs
+      while (eat(TokenKind.Semi)) {
+        val mark = openBefore(lhs)
+        close(mark, TreeKind.Statement)
+        last = expression()
+      }
+      last
     }
-    if (at(TokenKind.ParenL)) {
-      parameters()
+
+    private def unary()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      val op = nth(0)
+      expectAny(List(TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde))
+      expression(left = op, leftIsUnary = true)
+      close(mark, TreeKind.Expr.Unary)
     }
-    expect(TokenKind.Colon)
-    ttype(allowTrailingEffect = true)
-    if (at(TokenKind.KeywordWith)) {
-      typeConstraints()
-    }
-    expect(TokenKind.Equal)
-    expression()
-    while (at(TokenKind.Semi) && !eof()) {
+
+    private def letImport()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordImport))
+      val mark = open()
+      expect(TokenKind.KeywordImport)
+      val markJvmOp = open()
+      nth(0) match {
+        case TokenKind.KeywordNew => JvmOp.constructor()
+        case TokenKind.KeywordGet => JvmOp.getField()
+        case TokenKind.KeywordSet => JvmOp.putField()
+        case TokenKind.KeywordStatic => nth(1) match {
+          case TokenKind.KeywordGet => JvmOp.staticGetField()
+          case TokenKind.KeywordSet => JvmOp.staticPutField()
+          case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.staticMethod()
+          case _ => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "expected static java import"))
+        }
+        case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.method()
+        case _ => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "expected java import"))
+      }
+      close(markJvmOp, TreeKind.JvmOp.JvmOp)
       expect(TokenKind.Semi)
       expression()
+      close(mark, TreeKind.Expr.LetImport)
     }
-    close(mark, TreeKind.Def)
   }
 
-  private val MODIFIERS = List(
-    TokenKind.KeywordSealed,
-    TokenKind.KeywordLawful,
-    TokenKind.KeywordPub,
-    TokenKind.KeywordInline,
-    TokenKind.KeywordOverride)
+  private object Type {
+    /**
+     * ttype -> (typeDelimited arguments? | typeFunction) ( '\' effectSet )?
+     */
+    def ttype(allowTrailingEffect: Boolean = false)(implicit s: State): Mark.Closed = {
+      val mark = open()
+      typeDelimited()
+      var lhs = close(mark, TreeKind.Type.Type)
 
-  private def modifiers()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    while (atAny(MODIFIERS) && !eof()) {
-      advance()
-    }
-    close(mark, TreeKind.Modifiers)
-  }
-
-  private def annotations()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    while (at(TokenKind.Annotation) && !eof()) {
-      advance()
-    }
-    close(mark, TreeKind.Annotations)
-  }
-
-  private def docComment()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    while (at(TokenKind.CommentDoc) && !eof()) {
-      advance()
-    }
-    close(mark, TreeKind.Doc)
-  }
-
-  ////////////////// PARAMETERS ///////////////
-
-  /**
-   * parameters -> '(' (parameter (',' parameter)* )? ')'
-   */
-  private def parameters()(implicit s: State): Mark.Closed = {
-    commaSeparated(
-      TreeKind.Parameters,
-      asArgument(TreeKind.Parameter, () => {
-        name(NAME_PARAMETER)
-        expect(TokenKind.Colon)
-        ttype()
-      }),
-      (TokenKind.ParenL, TokenKind.ParenR),
-      () => atAny(NAME_PARAMETER),
-    )
-  }
-
-  /**
-   * typeParameters -> '[' (typeParameter (',' typeParameter)* )? ']'
-   */
-  private def typeParameters()(implicit s: State): Mark.Closed = {
-    commaSeparated(
-      TreeKind.TypeParameters,
-      asArgument(
-        TreeKind.Parameter, () => {
-          var closed = name(NAME_VARIABLE ++ NAME_TYPE)
-          if (at(TokenKind.Colon)) {
-            expect(TokenKind.Colon)
-            closed = kind()
-          }
-          closed
-        },
-        TokenKind.BracketR),
-      (TokenKind.BracketL, TokenKind.BracketR),
-      () => atAny(NAME_VARIABLE ++ NAME_TYPE),
-    )
-  }
-
-  /**
-   * kind -> name ('->' kind)?
-   */
-  private def kind()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    name(NAME_KIND)
-    if (eat(TokenKind.ArrowThin)) {
-      kind()
-    }
-    close(mark, TreeKind.Kind)
-  }
-
-  /**
-   * expression -> TODO
-   */
-  private def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
-    var lhs = exprDelimited()
-
-    // Handle calls
-    while (at(TokenKind.ParenL)) {
-      val mark = openBefore(lhs)
-      arguments()
-      lhs = close(mark, TreeKind.Expr.Call)
-      close(openBefore(lhs), TreeKind.Expr.Expr)
-    }
-
-    // Handle binary operators
-    var continue = true
-    while (continue) {
-      val right = nth(0)
-      if (rightBindsTighter(left, right, leftIsUnary)) {
+      // handle Type argument application
+      if (at(TokenKind.BracketL)) {
         val mark = openBefore(lhs)
-        val markOp = open()
-        advance()
-        close(markOp, TreeKind.Operator)
-        expression(right)
-        lhs = close(mark, TreeKind.Expr.Binary)
-        close(openBefore(lhs), TreeKind.Expr.Expr)
-      } else {
-        continue = false
+        arguments()
+        lhs = close(mark, TreeKind.Type.Apply)
+        // Wrap Apply in Type.Type
+        lhs = close(openBefore(lhs), TreeKind.Type.Type)
+      }
+
+      // Handle function types
+      if (at(TokenKind.Arrow)) {
+        val mark = openBefore(lhs)
+        ttype()
+        if (at(TokenKind.Slash)) {
+          effectSet()
+        }
+        lhs = close(mark, TreeKind.Type.Function)
+        // Wrap Function in Type.Type
+        lhs = close(openBefore(lhs), TreeKind.Type.Type)
+      }
+
+      // Handle effect
+      if (at(TokenKind.Backslash)) {
+        val effMark = effectSet()
+        if (!allowTrailingEffect) {
+          val mark = openBefore(effMark)
+          closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), "Effect is not allowed here"))
+        }
+      }
+
+      lhs
+    }
+
+    /**
+     * arguments -> '[' ( argument ( ',' argument )* ) ']'?
+     */
+    def arguments()(implicit s: State): Mark.Closed = {
+      commaSeparated(
+        TreeKind.Type.Arguments,
+        asArgument(TreeKind.Type.Argument, () => ttype(), TokenKind.BracketR),
+        (TokenKind.BracketL, TokenKind.BracketR),
+      )
+    }
+
+    /**
+     * parameters -> '[' (typeParameter (',' typeParameter)* )? ']'
+     */
+    def parameters()(implicit s: State): Mark.Closed = {
+      commaSeparated(
+        TreeKind.TypeParameters,
+        asArgument(
+          TreeKind.Parameter, () => {
+            var closed = name(NAME_VARIABLE ++ NAME_TYPE)
+            if (at(TokenKind.Colon)) {
+              expect(TokenKind.Colon)
+              closed = Type.kind()
+            }
+            closed
+          },
+          TokenKind.BracketR),
+        (TokenKind.BracketL, TokenKind.BracketR),
+        () => atAny(NAME_VARIABLE ++ NAME_TYPE),
+      )
+    }
+
+    def constraints()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordWith))
+      val mark = open()
+      expect(TokenKind.KeywordWith)
+      var continue = true
+      constraint()
+      while (continue && !eof()) {
+        if (eat(TokenKind.Comma)) {
+          constraint()
+        } else {
+          continue = false
+        }
+      }
+      if (at(TokenKind.Comma)) {
+        advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "Trailing comma."))
+      }
+      close(mark, TreeKind.Type.Constraints)
+    }
+
+    private def constraint()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_DEFINITION, allowQualified = true)
+      expect(TokenKind.BracketL)
+      Type.ttype()
+      expect(TokenKind.BracketR)
+      close(mark, TreeKind.Type.Constraint)
+    }
+
+    def derivations()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordWith))
+      val mark = open()
+      expect(TokenKind.KeywordWith)
+      var continue = true
+      name(NAME_QNAME, allowQualified = true)
+      while (continue && !eof()) {
+        if (eat(TokenKind.Comma)) {
+          name(NAME_QNAME, allowQualified = true)
+        } else {
+          continue = false
+        }
+      }
+      if (at(TokenKind.Comma)) {
+        advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "Trailing comma."))
+      }
+      close(mark, TreeKind.Type.Derivations)
+    }
+
+    /**
+     * typeDelimited -> record | tuple | typeName | variable
+     * Detects clearly delimited types such as names, records and tuples
+     */
+    private def typeDelimited()(implicit s: State): Mark.Closed = {
+      nth(0) match {
+        // TODO: Do we need Primary.True and Primary.False ?
+        case TokenKind.CurlyL => record()
+        case TokenKind.ParenL => tuple()
+        case TokenKind.NameUpperCase => name(NAME_TYPE, allowQualified = true)
+        case TokenKind.NameLowerCase => variable()
+        case TokenKind.NameMath
+             | TokenKind.NameGreek
+             | TokenKind.Underscore => name(NAME_VARIABLE)
+        case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected type, found $t"))
       }
     }
 
-    lhs
-  }
-
-  /**
-   * arguments -> '(' (argument (',' argument)* )? ')'
-   */
-  private def arguments()(implicit s: State): Mark.Closed = {
-    commaSeparated(
-      TreeKind.Arguments,
-      asArgument(TreeKind.Argument, () => expression()),
-    )
-  }
-
-  private def exprDelimited()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    // Handle clearly delimited expressions
-    nth(0) match {
-      case TokenKind.ParenL => exprParenOrTuple()
-      case TokenKind.CurlyL => exprBlock()
-      case TokenKind.KeywordIf => exprIfThenElse()
-      case TokenKind.LiteralString
-           | TokenKind.LiteralChar
-           | TokenKind.LiteralFloat32
-           | TokenKind.LiteralFloat64
-           | TokenKind.LiteralBigDecimal
-           | TokenKind.LiteralInt8
-           | TokenKind.LiteralInt16
-           | TokenKind.LiteralInt32
-           | TokenKind.LiteralInt64
-           | TokenKind.LiteralBigInt
-           | TokenKind.KeywordTrue
-           | TokenKind.KeywordFalse => exprLiteral()
-      case TokenKind.NameLowerCase
-           | TokenKind.NameUpperCase
-           | TokenKind.NameMath
-           | TokenKind.NameGreek => name(NAME_DEFINITION, allowQualified = true)
-      case TokenKind.KeywordImport => exprLetImport()
-      case TokenKind.BuiltIn => exprIntrinsic()
-      case TokenKind.Minus
-           | TokenKind.KeywordNot
-           | TokenKind.Plus
-           | TokenKind.TripleTilde => exprUnary()
-      case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected expression, found $t"))
+    private def variable()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      expect(TokenKind.NameLowerCase)
+      close(mark, TreeKind.Type.Variable)
     }
-    close(mark, TreeKind.Expr.Expr)
-  }
 
-  private def exprIfThenElse()(implicit s: State): Mark.Closed = {
-    assert(at(TokenKind.KeywordIf))
-    val mark = open()
-    expect(TokenKind.KeywordIf)
-    if (eat(TokenKind.ParenL)) {
-      expression()
-      expect(TokenKind.ParenR)
+    /**
+     * tuple -> '(' (type (',' type)* )? ')'
+     */
+    def tuple()(implicit s: State): Mark.Closed = {
+      commaSeparated(TreeKind.Type.Tuple, asArgumentFlat(() => ttype()))
     }
-    expression()
-    if (at(TokenKind.KeywordElse)) {
-      expect(TokenKind.KeywordElse)
-      expression()
+
+    /**
+     * record -> '{' (typeRecordField (',' typeRecordField)* )? ('|' Name.Variable)| '}'
+     */
+    private def record()(implicit s: State): Mark.Closed = {
+      // TODO: What does RecordRow do?
+
+      assert(at(TokenKind.CurlyL))
+      val mark = open()
+      expect(TokenKind.CurlyL)
+      while (!atAny(List(TokenKind.CurlyR, TokenKind.Bar)) && !eof()) {
+        recordField()
+      }
+
+      if (at(TokenKind.Comma)) {
+        advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "Trailing comma."))
+      }
+
+      if (at(TokenKind.Bar)) {
+        val mark = open()
+        expect(TokenKind.Bar)
+        name(NAME_VARIABLE)
+        close(mark, TreeKind.Type.RecordVariable)
+      }
+
+      expect(TokenKind.CurlyR)
+      close(mark, TreeKind.Type.Record)
     }
-    close(mark, TreeKind.Expr.IfThenElse)
+
+    /**
+     * typeRecordField -> Names.Field '=' ttype
+     */
+    private def recordField()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_FIELD)
+      expect(TokenKind.Equal)
+      ttype()
+      if (!atAny(List(TokenKind.CurlyR, TokenKind.Bar))) {
+        expect(TokenKind.Comma)
+      }
+      close(mark, TreeKind.Type.RecordField)
+    }
+
+    /**
+     * effectSet -> '\' effect | '{' ( effect ( ',' effect )* )? '}'
+     */
+    private def effectSet()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.Backslash))
+      expect(TokenKind.Backslash)
+      if (at(TokenKind.CurlyL)) {
+        commaSeparated(
+          TreeKind.Type.EffectSet,
+          asArgumentFlat(effect, TokenKind.CurlyR),
+          (TokenKind.CurlyL, TokenKind.CurlyR),
+        )
+      } else {
+        val mark = open()
+        effect()
+        close(mark, TreeKind.Type.EffectSet)
+      }
+    }
+
+    private def effect()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      nth(0) match {
+        case TokenKind.NameUpperCase => name(NAME_EFFECT)
+        case TokenKind.NameLowerCase => variable()
+        case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected effect, found $t"))
+      }
+      close(mark, TreeKind.Type.Type)
+    }
+
+    /**
+     * kind -> name ('->' kind)?
+     */
+    def kind()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_KIND)
+      if (eat(TokenKind.ArrowThin)) {
+        kind()
+      }
+      close(mark, TreeKind.Kind)
+    }
   }
 
-  private def exprIntrinsic()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    advance()
-    close(mark, TreeKind.Expr.Intrinsic)
-  }
-
-  /////// JvmOp ///////////
   private object JvmOp {
     private def signature()(implicit s: State): Unit = {
       if (at(TokenKind.ParenL)) {
-        commaSeparated(TreeKind.JvmOp.Signature, asArgumentFlat(() => ttype()))
+        commaSeparated(TreeKind.JvmOp.Signature, asArgumentFlat(() => Type.ttype()))
       }
     }
 
     private def ascription()(implicit s: State): Mark.Closed = {
       val mark = open()
       expect(TokenKind.Colon)
-      ttype(allowTrailingEffect = true)
+      Type.ttype(allowTrailingEffect = true)
       close(mark, TreeKind.JvmOp.Ascription)
     }
 
@@ -1068,256 +1321,6 @@ object Parser2 {
       putBody()
       close(mark, TreeKind.JvmOp.StaticPutField)
     }
-  }
-
-  private def exprLetImport()(implicit s: State): Mark.Closed = {
-    assert(at(TokenKind.KeywordImport))
-    val mark = open()
-    expect(TokenKind.KeywordImport)
-    val markJvmOp = open()
-    nth(0) match {
-      case TokenKind.KeywordNew => JvmOp.constructor()
-      case TokenKind.KeywordGet => JvmOp.getField()
-      case TokenKind.KeywordSet => JvmOp.putField()
-      case TokenKind.KeywordStatic => nth(1) match {
-        case TokenKind.KeywordGet => JvmOp.staticGetField()
-        case TokenKind.KeywordSet => JvmOp.staticPutField()
-        case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.staticMethod()
-        case _ => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "expected static java import"))
-      }
-      case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.method()
-      case _ => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "expected java import"))
-    }
-    close(markJvmOp, TreeKind.JvmOp.JvmOp)
-    expect(TokenKind.Semi)
-    expression()
-    close(mark, TreeKind.Expr.LetImport)
-  }
-
-  /**
-   * exprLiteral -> integer | float | boolean | string
-   */
-  private def exprLiteral()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    advance()
-    close(mark, TreeKind.Expr.Literal)
-  }
-
-  /**
-   * exprParen -> '(' expression? (',' expression)* ')'
-   */
-  private def exprParenOrTuple()(implicit s: State): Mark.Closed = {
-    assert(at(TokenKind.ParenL))
-    val mark = open()
-    var isTuple = false
-    expect(TokenKind.ParenL)
-    if (eat(TokenKind.ParenR)) { // Handle unit tuple `()`
-      return close(mark, TreeKind.Expr.Tuple)
-    }
-
-    expression()
-    if (at(TokenKind.Comma)) {
-      isTuple = true
-      while (!at(TokenKind.ParenR) && !eof()) {
-        expect(TokenKind.Comma)
-        expression()
-      }
-    }
-    expect(TokenKind.ParenR)
-    close(mark, if (isTuple) TreeKind.Expr.Tuple else TreeKind.Expr.Paren)
-  }
-
-  /**
-   * exprBlock -> '{' statement? '}'
-   */
-  private def exprBlock()(implicit s: State): Mark.Closed = {
-    assert(at(TokenKind.CurlyL))
-    val mark = open()
-    expect(TokenKind.CurlyL)
-    if (eat(TokenKind.CurlyR)) { // Handle empty block
-      return close(mark, TreeKind.Expr.Block)
-    }
-    statement()
-    expect(TokenKind.CurlyR)
-    close(mark, TreeKind.Expr.Block)
-  }
-
-  /**
-   * statement -> expression (';' statement)?
-   */
-  private def statement()(implicit s: State): Mark.Closed = {
-    val lhs = expression()
-    var last = lhs
-    while (eat(TokenKind.Semi)) {
-      val mark = openBefore(lhs)
-      close(mark, TreeKind.Statement)
-      last = expression()
-    }
-    last
-  }
-
-  private def exprUnary()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    val op = nth(0)
-    expectAny(List(TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde))
-    expression(left = op, leftIsUnary = true)
-    close(mark, TreeKind.Expr.Unary)
-  }
-
-  /////////// TYPES //////////////
-
-  /**
-   * ttype -> (typeDelimited typeArguments? | typeFunction) ( '\' effectSet )?
-   */
-  private def ttype(allowTrailingEffect: Boolean = false)(implicit s: State): Mark.Closed = {
-    val mark = open()
-    typeDelimited()
-    var lhs = close(mark, TreeKind.Type.Type)
-
-    // handle Type argument application
-    if (at(TokenKind.BracketL)) {
-      val mark = openBefore(lhs)
-      typeArguments()
-      lhs = close(mark, TreeKind.Type.Apply)
-      // Wrap Apply in Type.Type
-      lhs = close(openBefore(lhs), TreeKind.Type.Type)
-    }
-
-    // Handle function types
-    if (at(TokenKind.Arrow)) {
-      val mark = openBefore(lhs)
-      ttype()
-      if (at(TokenKind.Slash)) {
-        effectSet()
-      }
-      lhs = close(mark, TreeKind.Type.Function)
-      // Wrap Function in Type.Type
-      lhs = close(openBefore(lhs), TreeKind.Type.Type)
-    }
-
-    // Handle effect
-    if (at(TokenKind.Backslash)) {
-      val effMark = effectSet()
-      if (!allowTrailingEffect) {
-        val mark = openBefore(effMark)
-        closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), "Effect is not allowed here"))
-      }
-    }
-
-    lhs
-  }
-
-  /**
-   * effectSet -> '\' effect | '{' ( effect ( ',' effect )* )? '}'
-   */
-  private def effectSet()(implicit s: State): Mark.Closed = {
-    assert(at(TokenKind.Backslash))
-    expect(TokenKind.Backslash)
-    if (at(TokenKind.CurlyL)) {
-      commaSeparated(
-        TreeKind.Type.EffectSet,
-        asArgumentFlat(effect, TokenKind.CurlyR),
-        (TokenKind.CurlyL, TokenKind.CurlyR),
-      )
-    } else {
-      val mark = open()
-      effect()
-      close(mark, TreeKind.Type.EffectSet)
-    }
-  }
-
-  private def effect()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    nth(0) match {
-      case TokenKind.NameUpperCase => name(NAME_EFFECT)
-      case TokenKind.NameLowerCase => typeVariable()
-      case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected effect, found $t"))
-    }
-    close(mark, TreeKind.Type.Type)
-  }
-
-  /**
-   * typeArguments -> '[' ( argument ( ',' argument )* ) ']'?
-   */
-  private def typeArguments()(implicit s: State): Mark.Closed = {
-    commaSeparated(
-      TreeKind.Type.Arguments,
-      asArgument(TreeKind.Type.Argument, () => ttype(), TokenKind.BracketR),
-      (TokenKind.BracketL, TokenKind.BracketR),
-    )
-  }
-
-  /**
-   * typeDelimited -> typeRecord | typeTuple | typeName | typeVariable
-   * Detects clearly delimited types such as names, records and tuples
-   */
-  private def typeDelimited()(implicit s: State): Mark.Closed = {
-    nth(0) match {
-      // TODO: Do we need Primary.True and Primary.False ?
-      case TokenKind.CurlyL => typeRecord()
-      case TokenKind.ParenL => typeTuple()
-      case TokenKind.NameUpperCase => name(NAME_TYPE, allowQualified = true)
-      case TokenKind.NameLowerCase => typeVariable()
-      case TokenKind.NameMath
-           | TokenKind.NameGreek
-           | TokenKind.Underscore => name(NAME_VARIABLE)
-      case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected type, found $t"))
-    }
-  }
-
-  private def typeVariable()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    expect(TokenKind.NameLowerCase)
-    close(mark, TreeKind.Type.Variable)
-  }
-
-  /**
-   * typeTuple -> '(' (type (',' type)* )? ')'
-   */
-  private def typeTuple()(implicit s: State): Mark.Closed = {
-    commaSeparated(TreeKind.Type.Tuple, asArgumentFlat(() => ttype()))
-  }
-
-  /**
-   * typeRecord -> '{' (typeRecordField (',' typeRecordField)* )? ('|' Name.Variable)| '}'
-   */
-  private def typeRecord()(implicit s: State): Mark.Closed = {
-    // TODO: What does RecordRow do?
-
-    assert(at(TokenKind.CurlyL))
-    val mark = open()
-    expect(TokenKind.CurlyL)
-    while (!atAny(List(TokenKind.CurlyR, TokenKind.Bar)) && !eof()) {
-      typeRecordField()
-    }
-
-    if (at(TokenKind.Comma)) {
-      advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "Trailing comma."))
-    }
-
-    if (at(TokenKind.Bar)) {
-      val mark = open()
-      expect(TokenKind.Bar)
-      name(NAME_VARIABLE)
-      close(mark, TreeKind.Type.RecordVariable)
-    }
-
-    expect(TokenKind.CurlyR)
-    close(mark, TreeKind.Type.Record)
-  }
-
-  /**
-   * typeRecordField -> Names.Field '=' ttype
-   */
-  private def typeRecordField()(implicit s: State): Mark.Closed = {
-    val mark = open()
-    name(NAME_FIELD)
-    expect(TokenKind.Equal)
-    ttype()
-    if (!atAny(List(TokenKind.CurlyR, TokenKind.Bar))) {
-      expect(TokenKind.Comma)
-    }
-    close(mark, TreeKind.Type.RecordField)
   }
 
   // A helper function that runs both the old and the new parser for comparison.

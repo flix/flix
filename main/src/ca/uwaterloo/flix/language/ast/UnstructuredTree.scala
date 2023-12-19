@@ -23,22 +23,13 @@ object UnstructuredTree {
   }
 
   object TreeKind {
-
     case object Source extends TreeKind
-
-    case object Module extends TreeKind
-
-    case object Enum extends TreeKind
-
-    case object RestrictableEnum extends TreeKind
-
-    case object Law extends TreeKind
-
-    case object Case extends TreeKind
 
     case object Doc extends TreeKind
 
-    case object Def extends TreeKind
+    case object Annotations extends TreeKind
+
+    case object Modifiers extends TreeKind
 
     case object Statement extends TreeKind
 
@@ -50,27 +41,43 @@ object UnstructuredTree {
 
     case object Argument extends TreeKind
 
-    case object Annotations extends TreeKind
-
-    case object Modifiers extends TreeKind
-
-    case object Class extends TreeKind
-
     case object TypeParameters extends TreeKind
 
     case object TypeParameter extends TreeKind
 
     case object Kind extends TreeKind
 
-    case object Instance extends TreeKind
-
-    case object Signature extends TreeKind
-
-    case object AssociatedTypeSig extends TreeKind
-
-    case object AssociatedTypeDef extends TreeKind
-
     case object Operator extends TreeKind
+
+    case object Case extends TreeKind
+
+    /////// Declarations /////
+    sealed trait Decl extends TreeKind {
+      override def debug_name: Option[String] = Some("Decl")
+    }
+
+    object Decl {
+      case object Module extends TreeKind
+
+      case object Enum extends TreeKind
+
+      case object RestrictableEnum extends TreeKind
+
+      case object Law extends TreeKind
+
+      case object Def extends TreeKind
+
+      case object Class extends TreeKind
+
+      case object Instance extends TreeKind
+
+      case object Signature extends TreeKind
+
+      case object AssociatedTypeSig extends TreeKind
+
+      case object AssociatedTypeDef extends TreeKind
+
+    }
 
     /////// NAMES ///////
     case object Ident extends TreeKind

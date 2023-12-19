@@ -83,17 +83,17 @@ object Weeder2 {
   }
 
   private def pickAllUsesAndImports(tree: Tree): Validation[List[UseOrImport], CompilationMessage] = {
-    assert(tree.kind == TreeKind.Source || tree.kind == TreeKind.Module)
+    assert(tree.kind == TreeKind.Source || tree.kind == TreeKind.Decl.Module)
     List.empty.toSuccess
   }
 
   private def pickAllDeclarations(tree: Tree)(implicit s: State): Validation[List[Declaration], CompilationMessage] = {
-    assert(tree.kind == TreeKind.Source || tree.kind == TreeKind.Module)
-    val modules = pickAll(TreeKind.Module, tree.children)
-    val definitions = pickAll(TreeKind.Def, tree.children)
-    val classes = pickAll(TreeKind.Class, tree.children)
-    val instances = pickAll(TreeKind.Instance, tree.children)
-    val enums = pickAll(TreeKind.Enum, tree.children)
+    assert(tree.kind == TreeKind.Source || tree.kind == TreeKind.Decl.Module)
+    val modules = pickAll(TreeKind.Decl.Module, tree.children)
+    val definitions = pickAll(TreeKind.Decl.Def, tree.children)
+    val classes = pickAll(TreeKind.Decl.Class, tree.children)
+    val instances = pickAll(TreeKind.Decl.Instance, tree.children)
+    val enums = pickAll(TreeKind.Decl.Enum, tree.children)
     // TODO: Restrictable enums
     mapN(
       traverse(modules)(visitModule),
@@ -108,7 +108,7 @@ object Weeder2 {
   }
 
   private def visitModule(tree: Tree)(implicit s: State): Validation[Declaration.Namespace, CompilationMessage] = {
-    assert(tree.kind == TreeKind.Module)
+    assert(tree.kind == TreeKind.Decl.Module)
     mapN(
       pickQName(tree),
       pickAllUsesAndImports(tree),
@@ -123,7 +123,7 @@ object Weeder2 {
   }
 
   private def visitEnum(tree: Tree)(implicit s: State): Validation[Declaration.Enum, CompilationMessage] = {
-    assert(tree.kind == TreeKind.Enum)
+    assert(tree.kind == TreeKind.Decl.Enum)
     val shorthandTuple = tryPick(TreeKind.Type.Type, tree.children)
     val cases = pickAll(TreeKind.Case, tree.children)
     flatMapN(
@@ -194,9 +194,9 @@ object Weeder2 {
   }
 
   private def visitTypeClass(tree: Tree)(implicit s: State): Validation[Declaration.Class, CompilationMessage] = {
-    assert(tree.kind == TreeKind.Class)
-    val sigs = pickAll(TreeKind.Signature, tree.children)
-    val laws = pickAll(TreeKind.Law, tree.children)
+    assert(tree.kind == TreeKind.Decl.Class)
+    val sigs = pickAll(TreeKind.Decl.Signature, tree.children)
+    val laws = pickAll(TreeKind.Decl.Law, tree.children)
     flatMapN(
       pickDocumentation(tree),
       pickAnnotations(tree),
@@ -215,7 +215,7 @@ object Weeder2 {
   }
 
   private def visitInstance(tree: Tree)(implicit s: State): Validation[Declaration.Instance, CompilationMessage] = {
-    assert(tree.kind == TreeKind.Instance)
+    assert(tree.kind == TreeKind.Decl.Instance)
     flatMapN(
       pickDocumentation(tree),
       pickAnnotations(tree),
@@ -223,7 +223,7 @@ object Weeder2 {
       pickQName(tree),
       pickType(tree),
       pickTypeConstraints(tree),
-      traverse(pickAll(TreeKind.Def, tree.children))(visitDefinition),
+      traverse(pickAll(TreeKind.Decl.Def, tree.children))(visitDefinition),
     ) {
       case (doc, annotations, modifiers, clazz, tpe, tconstrs, defs) =>
         mapN(pickAllAssociatedTypesDef(tree, tpe)) {
@@ -233,7 +233,7 @@ object Weeder2 {
   }
 
   private def visitDefinition(tree: Tree)(implicit s: State): Validation[Declaration.Def, CompilationMessage] = {
-    assert(tree.kind == TreeKind.Def)
+    assert(tree.kind == TreeKind.Decl.Def)
     mapN(
       pickDocumentation(tree),
       pickAnnotations(tree),
@@ -469,17 +469,17 @@ object Weeder2 {
   }
 
   private def pickAllAssociatedTypesDef(tree: Tree, instType: Type)(implicit s: State): Validation[List[Declaration.AssocTypeDef], CompilationMessage] = {
-    val assocs = pickAll(TreeKind.AssociatedTypeDef, tree.children)
+    val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree.children)
     traverse(assocs)(visitAssociatedTypeDef(_, instType))
   }
 
   private def pickAllAssociatedTypesSig(tree: Tree, classTypeParam: TypeParam)(implicit s: State): Validation[List[Declaration.AssocTypeSig], CompilationMessage] = {
-    val assocs = pickAll(TreeKind.AssociatedTypeSig, tree.children)
+    val assocs = pickAll(TreeKind.Decl.AssociatedTypeSig, tree.children)
     traverse(assocs)(visitAssociatedTypeSig(_, classTypeParam))
   }
 
   private def visitAssociatedTypeDef(tree: Tree, instType: Type)(implicit s: State): Validation[Declaration.AssocTypeDef, CompilationMessage] = {
-    assert(tree.kind == TreeKind.AssociatedTypeDef)
+    assert(tree.kind == TreeKind.Decl.AssociatedTypeDef)
     flatMapN(
       pickDocumentation(tree),
       pickModifiers(tree),
@@ -504,7 +504,7 @@ object Weeder2 {
   }
 
   private def visitAssociatedTypeSig(tree: Tree, classTypeParam: TypeParam)(implicit s: State): Validation[Declaration.AssocTypeSig, CompilationMessage] = {
-    assert(tree.kind == TreeKind.AssociatedTypeSig)
+    assert(tree.kind == TreeKind.Decl.AssociatedTypeSig)
     flatMapN(
       pickDocumentation(tree),
       pickModifiers(tree),
@@ -530,7 +530,7 @@ object Weeder2 {
   }
 
   private def visitSignature(tree: Tree)(implicit s: State): Validation[Declaration.Sig, CompilationMessage] = {
-    assert(tree.kind == TreeKind.Signature)
+    assert(tree.kind == TreeKind.Decl.Signature)
     val maybeExpression = tryPick(TreeKind.Expr.Expr, tree.children)
     mapN(
       pickDocumentation(tree),
