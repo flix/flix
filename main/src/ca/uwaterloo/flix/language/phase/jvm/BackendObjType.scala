@@ -61,7 +61,7 @@ sealed trait BackendObjType {
     case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
     case BackendObjType.StringBuilder => JvmName(JavaLang, "StringBuilder")
     case BackendObjType.Objects => JvmName(JavaLang, "Objects")
-    case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetaFactory")
+    case BackendObjType.LambdaMetaFactory => JvmName(JavaLangInvoke, "LambdaMetafactory")
     case BackendObjType.LinkedList => JvmName(JavaUtil, "LinkedList")
     case BackendObjType.Iterator => JvmName(JavaUtil, "Iterator")
     case BackendObjType.Runnable => JvmName(JavaLang, "Runnable")
@@ -1246,7 +1246,7 @@ object BackendObjType {
     private def callSite: BackendType = BackendObjType.Native(JvmName(List("java", "lang", "invoke"), "CallSite")).toTpe
 
     def MetaFactoryMethod: StaticMethod = StaticMethod(
-      this.jvmName, IsPublic, IsFinal, "metaFactory",
+      this.jvmName, IsPublic, IsFinal, "metafactory",
       mkDescriptor(methodHandlesLookup, String.toTpe, methodType, methodType, methodHandle, methodType)(callSite),
       None
     )
