@@ -39,7 +39,6 @@ object EntryPointError {
     * @param loc the location where the error occurred.
     */
   case class IllegalEntryPointArgs(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError with Recoverable {
-
     override def summary: String = s"Unexpected entry point argument(s)."
 
     override def message(formatter: Formatter): String = {
@@ -55,6 +54,30 @@ object EntryPointError {
   }
 
   /**
+    * Error indicating an illegal effect of the entry point function.
+    *
+    * @param sym the entry point function.
+    * @param eff the effect.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEntryPointEff(sym: Symbol.DefnSym, eff: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError with Recoverable {
+    override def summary: String = s"Unexpected entry point effect: ${FormatType.formatType(eff)}."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unhandled effect: '${red(FormatType.formatType(eff))}'.
+         |
+         |${code(loc, "unhandled effect")}
+         |
+         |The entry point cannot have any effect other than IO.
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * Error indicating an illegal result type to an entry point function.
     *
     * @param sym the entry point function.
@@ -62,7 +85,6 @@ object EntryPointError {
     * @param loc the location where the error occurred.
     */
   case class IllegalEntryPointResult(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError with Recoverable {
-
     override def summary: String = s"Unexpected entry point result type: ${FormatType.formatType(tpe)}."
 
     override def message(formatter: Formatter): String = {
