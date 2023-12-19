@@ -140,31 +140,35 @@ object JvmOps {
   }
 
   /**
-    * Returns the closure abstract class type `CloX$Y$Z` for the given type `tpe`.
+    * Returns the closure abstract class type `CloX$Y$Z` for the given [[MonoType]].
     *
     * For example:
     *
-    * Int -> Int          =>  Clo2$Int$Int
-    * (Int, Int) -> Int   =>  Clo3$Int$Int$Int
+    * Int -> Int          =>  Clo1$Int$Int
+    * (Int, Int) -> Int   =>  Clo2$Int$Int$Int
     *
     * NB: The given type `tpe` must be an arrow type.
     */
   def getClosureAbstractClassType(tpe: MonoType): JvmType.Reference = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-      // Compute the arity of the function abstract class.
-      // We subtract one since the last argument is the return type.
-      val arity = targs.length
-
-      // Compute the stringified erased type of each type argument.
-      val args = (targs ::: tresult :: Nil).map(tpe => stringify(getErasedJvmType(tpe)))
-
-      // The JVM name is of the form FnArity$Arg0$Arg1$Arg2
-      val name = "Clo" + arity + Flix.Delimiter + args.mkString(Flix.Delimiter)
-
-      // The type resides in the root package.
-      JvmType.Reference(JvmName(RootPackage, name))
-
+      getClosureAbstractClassType(targs.map(getErasedJvmType), getErasedJvmType(tresult))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
+  }
+
+
+  /**
+    * Returns the closure abstract class type `CloX$Y$Z` for the given signature.
+    *
+    * For example:
+    *
+    * Int -> Int          =>  Clo1$Int$Int
+    * (Int, Int) -> Int   =>  Clo2$Int$Int$Int
+    */
+  def getClosureAbstractClassType(argTypes: List[JvmType], resType: JvmType): JvmType.Reference = {
+    val arity = argTypes.length
+    val args = (argTypes ::: resType :: Nil).map(_.toErased).map(stringify)
+    val name = "Clo" + arity + Flix.Delimiter + args.mkString(Flix.Delimiter)
+    JvmType.Reference(JvmName(RootPackage, name))
   }
 
   /**
