@@ -37,10 +37,6 @@ sealed trait ClassMaker {
     makeMethod(Some(extractIns(c.ins)), c.name, c.d, c.v, c.f, IsStatic, NotAbstract)
   }
 
-  def mkStaticMethod(m: StaticMethod)(implicit flix: Flix): Unit = {
-    makeMethod(Some(extractIns(m.ins)), m.name, m.d, m.v, m.f, IsStatic, NotAbstract)
-  }
-
   /**
     * Closes the class maker.
     * This should be the last function called on the class maker.
@@ -95,6 +91,10 @@ object ClassMaker {
       makeMethod(Some(ins), JvmName.ConstructorMethod, d, v, NotFinal, NotStatic, NotAbstract)
     }
 
+    def mkStaticMethod(m: StaticMethod)(implicit flix: Flix): Unit = {
+      makeMethod(Some(extractIns(m.ins)), m.name, m.d, m.v, m.f, IsStatic, NotAbstract)
+    }
+
     def mkConstructor(c: ConstructorMethod)(implicit flix: Flix): Unit = {
       makeMethod(Some(extractIns(c.ins)), JvmName.ConstructorMethod, c.d, c.v, c.f, NotStatic, NotAbstract)
     }
@@ -111,6 +111,10 @@ object ClassMaker {
       makeMethod(Some(extractIns(c.ins)), c.name, c.d, c.v, c.f, NotStatic, NotAbstract)
     }
 
+    def mkStaticMethod(m: StaticMethod)(implicit flix: Flix): Unit = {
+      makeMethod(Some(extractIns(m.ins)), m.name, m.d, m.v, m.f, IsStatic, NotAbstract)
+    }
+
     def mkMethod(m: InstanceMethod)(implicit flix: Flix): Unit = {
       makeMethod(Some(extractIns(m.ins)), m.name, m.d, m.v, m.f, NotStatic, NotAbstract)
     }
@@ -125,6 +129,14 @@ object ClassMaker {
 
     def mkInterfaceMethod(m: InterfaceMethod)(implicit flix: Flix): Unit = {
       makeAbstractMethod(m.name, m.d)
+    }
+
+    def mkStaticInterfaceMethod(m: StaticInterfaceMethod)(implicit flix: Flix): Unit = {
+      makeMethod(Some(extractIns(m.ins)), m.name, m.d, m.v, m.f, IsStatic, NotAbstract)
+    }
+
+    def mkDefaultMethod(m: DefaultMethod)(implicit flix: Flix): Unit = {
+      makeMethod(Some(extractIns(m.ins)), m.name, m.d, m.v, m.f, NotStatic, NotAbstract)
     }
   }
 
@@ -282,6 +294,8 @@ object ClassMaker {
     def implementation(clazz: JvmName, ins: Option[Unit => InstructionSet]): InstanceMethod = InstanceMethod(clazz, v, f, name, d, ins)
   }
 
+  sealed case class DefaultMethod(clazz: JvmName, v: Visibility, f: Final, name: String, d: MethodDescriptor, ins: Option[Unit => InstructionSet]) extends Method
+
   sealed case class InterfaceMethod(clazz: JvmName, name: String, d: MethodDescriptor) extends Method {
     override def f: Final = NotFinal
 
@@ -296,6 +310,7 @@ object ClassMaker {
     def implementation(clazz: JvmName, f: Final, ins: Option[Unit => InstructionSet]): InstanceMethod = InstanceMethod(clazz, v, f, name, d, ins)
   }
 
-  sealed case class StaticMethod(clazz: JvmName, v: Visibility, f: Final, name: String, d: MethodDescriptor, ins: Option[Unit => InstructionSet]) extends Method {
-  }
+  sealed case class StaticMethod(clazz: JvmName, v: Visibility, f: Final, name: String, d: MethodDescriptor, ins: Option[Unit => InstructionSet]) extends Method
+
+  sealed case class StaticInterfaceMethod(clazz: JvmName, v: Visibility, f: Final, name: String, d: MethodDescriptor, ins: Option[Unit => InstructionSet]) extends Method
 }

@@ -2,6 +2,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Effect, Op, Root}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
@@ -64,8 +65,22 @@ object GenEffectClasses {
 
     for (op <- effect.ops) genFieldAndMethod(visitor, effectType, op)
 
+    genConstructor(visitor, superClass)
+
     visitor.visitEnd()
     visitor.toByteArray
+  }
+
+  private def genConstructor(visitor: ClassWriter, superClass: String): Unit = {
+    val mv = visitor.visitMethod(ACC_PUBLIC, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, null, null)
+    mv.visitCode()
+
+    mv.visitVarInsn(ALOAD, 0)
+    mv.visitMethodInsn(INVOKESPECIAL, superClass, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+    mv.visitInsn(RETURN)
+
+    mv.visitMaxs(999, 999)
+    mv.visitEnd()
   }
 
   private def genFieldAndMethod(visitor: ClassWriter, effectType: JvmType.Reference, op: Op): Unit = {
@@ -105,7 +120,7 @@ object GenEffectClasses {
     // convert the resumption to a function
     mv.visitInsn(DUP)
 
-    val wrapperType = BackendObjType.ResumptionWrapper
+    val wrapperType = BackendObjType.ResumptionWrapper(BackendType.toErasedBackendType(op.tpe))
     val wrapperName = wrapperType.jvmName.toInternalName
     mv.visitTypeInsn(NEW, wrapperName)
     mv.visitInsn(DUP)
