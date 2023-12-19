@@ -45,9 +45,19 @@ object JvmBackend {
       // Compute the set of namespaces in the program.
       val namespaces = JvmOps.namespacesOf(root)
 
-      val objectToObject = MonoType.Arrow(List(MonoType.Object), MonoType.Object) // by resumptionWrapper
+      // Required generated types need to be present deeply (if you add `List[List[Int32]]` also add `List[Int32]`)
+      val requiredTypes = Set(
+        MonoType.Arrow(List(MonoType.Bool), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Char), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int8), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int16), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int32), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int64), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Float32), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Float64), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Object), MonoType.Object), // by resumptionWrappers
+      )
       // Retrieve all the types in the program.
-      val requiredTypes = Set(objectToObject) // note that required types need to be present deeply (if you add `List[Int32]` also add `Int32`)
       val types = root.types ++ requiredTypes
 
       // Filter the program types into different sets
@@ -114,7 +124,7 @@ object JvmBackend {
       val handlerInterface = Map(genClass(BackendObjType.Handler))
       val effectCallClass = Map(genClass(BackendObjType.EffectCall))
       val effectClasses = GenEffectClasses.gen(root.effects.values)
-      val resumptionWrapper = Map(genClass(BackendObjType.ResumptionWrapper))
+      val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper).map(genClass).toMap
 
       // Collect all the classes and interfaces together.
       List(
@@ -154,7 +164,7 @@ object JvmBackend {
         handlerInterface,
         effectCallClass,
         effectClasses,
-        resumptionWrapper
+        resumptionWrappers
       ).reduce(_ ++ _)
     }
 
