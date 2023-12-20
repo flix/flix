@@ -113,4 +113,18 @@ mod Test.Handler.ZeroShot {
     def mutual2(x: Int32): Unit \ Throw =
         if (x == 0) f() else { mutual1(x - 1); unreachable!() }
 
+    eff ThrowInt32 {
+        pub def throw(): Int32
+    }
+
+    @Test
+    def testThrowInt32Linear(): Bool =
+        def f1() = do ThrowInt32.throw();
+        let result = try {
+            f1()
+        } with ThrowInt32 {
+            def throw(_k) = 123
+        };
+        Assert.eq(123, result)
+
 }
