@@ -11,8 +11,7 @@ mod Test.Handler.ZeroShot {
             f1()
         } with Throw {
             def throw(_k) = ()
-        };
-        unreachable!()
+        }
 
     @Test
     def testLinear02(): Unit =
@@ -22,8 +21,7 @@ mod Test.Handler.ZeroShot {
             f2()
         } with Throw {
             def throw(_k) = ()
-        };
-        unreachable!()
+        }
 
     @Test
     def testLinear03(): Unit =
@@ -34,8 +32,7 @@ mod Test.Handler.ZeroShot {
             f3()
         } with Throw {
             def throw(_k) = ()
-        };
-        unreachable!()
+        }
 
     @Test
     def testRecursiveLetRec01(): Unit =
@@ -45,8 +42,7 @@ mod Test.Handler.ZeroShot {
             r(0)
         } with Throw {
             def throw(_k) = ()
-        };
-        unreachable!()
+        }
 
     @Test
     def testRecursiveLetRec02(): Unit =
@@ -56,8 +52,7 @@ mod Test.Handler.ZeroShot {
             r(1)
         } with Throw {
             def throw(_k) = ()
-        };
-        unreachable!()
+        }
 
     @Test
     def testRecursiveLetRec03(): Unit =
@@ -67,17 +62,14 @@ mod Test.Handler.ZeroShot {
             r(10)
         } with Throw {
             def throw(_k) = ()
-        };
-        unreachable!()
-
+        }
     @Test
     def testMutualRecursive01(): Unit =
         try {
             mutual1(0)
         } with Throw {
             def throw(_k) = ()
-        };
-        unreachable!()
+        }
 
     @Test
     def testMutualRecursive02(): Unit =
@@ -85,8 +77,7 @@ mod Test.Handler.ZeroShot {
             mutual1(1)
         } with Throw {
             def throw(_k) = ()
-        };
-        unreachable!()
+        }
 
     @Test
     def testMutualRecursive03(): Unit =
@@ -94,8 +85,7 @@ mod Test.Handler.ZeroShot {
             mutual1(2)
         } with Throw {
             def throw(_k) = ()
-        };
-        unreachable!()
+        }
 
     @Test
     def testMutualRecursive04(): Unit =
@@ -103,8 +93,7 @@ mod Test.Handler.ZeroShot {
             mutual1(3)
         } with Throw {
             def throw(_k) = ()
-        };
-        unreachable!()
+        }
 
     @Test
     def testMutualRecursive05(): Unit =
@@ -112,8 +101,7 @@ mod Test.Handler.ZeroShot {
             mutual1(10)
         } with Throw {
             def throw(_k) = ()
-        };
-        unreachable!()
+        }
 
     def f(): Unit \ Throw =
          do Throw.throw();
