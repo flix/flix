@@ -121,13 +121,23 @@ object Instances {
       * Checks for overlap of instance types, assuming the instances are of the same class.
       */
     def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): List[InstanceError] = {
-      Unification.unifyTypes(inst1.tpe, inst2.tpe, RigidityEnv.empty) match {
-        case Ok(_) =>
-          List(
-            InstanceError.OverlappingInstances(inst1.clazz.sym, inst1.clazz.loc, inst2.clazz.loc),
-            InstanceError.OverlappingInstances(inst1.clazz.sym, inst2.clazz.loc, inst1.clazz.loc)
-          )
-        case Err(_) => Nil
+      // Note: We have that Type.Error unifies with any other type, hence we filter such instances here.
+      (inst1.tpe, inst2.tpe) match {
+        case (Type.Cst(TypeConstructor.Error(_), _), _) =>
+          // Suppress error for Type.Error.
+          return Nil
+        case (_, Type.Cst(TypeConstructor.Error(_), _)) =>
+          // Suppress error for Type.Error.
+          return Nil
+        case (tpe1, tpe2) =>
+          Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
+            case Ok(_) =>
+              List(
+                InstanceError.OverlappingInstances(inst1.clazz.sym, inst1.clazz.loc, inst2.clazz.loc),
+                InstanceError.OverlappingInstances(inst1.clazz.sym, inst2.clazz.loc, inst1.clazz.loc)
+              )
+            case Err(_) => Nil
+          }
       }
     }
 

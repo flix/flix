@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -45,8 +45,20 @@ object JvmBackend {
       // Compute the set of namespaces in the program.
       val namespaces = JvmOps.namespacesOf(root)
 
+      // Required generated types need to be present deeply (if you add `List[List[Int32]]` also add `List[Int32]`)
+      val requiredTypes = Set(
+        MonoType.Arrow(List(MonoType.Bool), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Char), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int8), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int16), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int32), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int64), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Float32), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Float64), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Object), MonoType.Object), // by resumptionWrappers
+      )
       // Retrieve all the types in the program.
-      val types = root.types
+      val types = root.types ++ requiredTypes
 
       // Filter the program types into different sets
       val erasedRefTypes = JvmOps.getErasedRefsOf(types)
@@ -112,6 +124,7 @@ object JvmBackend {
       val handlerInterface = Map(genClass(BackendObjType.Handler))
       val effectCallClass = Map(genClass(BackendObjType.EffectCall))
       val effectClasses = GenEffectClasses.gen(root.effects.values)
+      val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper).map(genClass).toMap
 
       // Collect all the classes and interfaces together.
       List(
@@ -150,7 +163,8 @@ object JvmBackend {
         resumptionNilClass,
         handlerInterface,
         effectCallClass,
-        effectClasses
+        effectClasses,
+        resumptionWrappers
       ).reduce(_ ++ _)
     }
 

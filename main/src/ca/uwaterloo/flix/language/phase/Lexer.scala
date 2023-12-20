@@ -93,7 +93,7 @@ object Lexer {
     flix.phase("Lexer") {
       if (flix.options.xparser) {
         // New lexer and parser disabled. Return immediately.
-        return Map.empty[Ast.Source, Array[Token]].toSuccess
+        return Validation.success(Map.empty[Ast.Source, Array[Token]])
       }
 
       // Compute the stale and fresh sources.
@@ -103,7 +103,7 @@ object Lexer {
       val results = ParOps.parMap(stale.keys)(src => mapN(tryLex(src))(tokens => src -> tokens))
 
       // Construct a map from each source to its tokens.
-      val reused = fresh.map(_.toSuccess[(Ast.Source, Array[Token]), CompilationMessage])
+      val reused = fresh.map(m => Validation.success(m))
       mapN(sequence(results ++ reused))(_.toMap)
     }
   }
@@ -119,7 +119,7 @@ object Lexer {
     } catch {
       case except: Throwable =>
         except.printStackTrace()
-        Array.empty[Token].toSuccess
+        Validation.success(Array.empty[Token])
     }
   }
 
@@ -144,7 +144,7 @@ object Lexer {
       case Token(TokenKind.Err(err), _, _, _, _, _, _, _) => err
     }
     if (errors.isEmpty) {
-      s.tokens.toArray.toSuccess
+      Validation.success(s.tokens.toArray)
     } else {
       Validation.SoftFailure(s.tokens.toArray, LazyList.from(errors))
     }

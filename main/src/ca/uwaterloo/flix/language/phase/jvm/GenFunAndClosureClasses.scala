@@ -148,7 +148,7 @@ object GenFunAndClosureClasses {
     compileInvokeMethod(visitor, classType)
     compileFrameMethod(visitor, classType, defn)
     compileCopyMethod(visitor, classType, defn)
-    if (kind == Closure) compileGetUniqueThreadClosureMethod(visitor, classType, defn, closureArgTypes)
+    if (kind == Closure) compileGetUniqueThreadClosureMethod(visitor, classType, defn)
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -242,10 +242,11 @@ object GenFunAndClosureClasses {
     */
   private def mkCopy(classType: JvmType.Reference, defn: Def): InstructionSet = {
     import BytecodeInstructions._
+    val pc = List(("pc", MonoType.Int32))
     val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
     val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", p._1.tpe))
     val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe))
-    val params = fparams ++ cparams ++ lparams
+    val params = pc ++ fparams ++ cparams ++ lparams
 
     def getThenPutField(name: String, tpe: MonoType): InstructionSet = cheat(mv => {
       val className = classType.name.toInternalName
@@ -263,7 +264,7 @@ object GenFunAndClosureClasses {
   private val copyName: String = "copy"
 
   private def nothingToTDescriptor(t: JvmType.Reference): MethodDescriptor = {
-    MethodDescriptor.mkDescriptor()(BackendObjType.Native(t.name).toTpe)
+    MethodDescriptor.mkDescriptor()(t.name.toTpe)
   }
 
   private def compileCopyMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def): Unit = {
@@ -277,27 +278,13 @@ object GenFunAndClosureClasses {
     m.visitEnd()
   }
 
-  private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def,
-                                                  closureArgTypes: List[MonoType]): Unit = {
+  private def compileGetUniqueThreadClosureMethod(visitor: ClassWriter, classType: JvmType.Reference, defn: Def): Unit = {
     val closureAbstractClass = JvmOps.getClosureAbstractClassType(defn.arrowType)
-
     val m = visitor.visitMethod(ACC_PUBLIC, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), null, null)
+    m.visitCode()
 
-    // Create the new clo object
-    m.visitTypeInsn(NEW, classType.name.toInternalName)
-    m.visitInsn(DUP)
-    m.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
-
-    // transfer the closure arguments
-    for ((argType, i) <- closureArgTypes.zipWithIndex) {
-      m.visitInsn(DUP)
-      val fieldDescriptor = JvmOps.getErasedJvmType(argType).toDescriptor
-      m.visitIntInsn(ALOAD, 0)
-      m.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"clo$i", fieldDescriptor)
-      m.visitFieldInsn(PUTFIELD, classType.name.toInternalName, s"clo$i", fieldDescriptor)
-    }
-
-    m.visitInsn(ARETURN)
+    mkCopy(classType, defn)(new BytecodeInstructions.F(m))
+    m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)
     m.visitEnd()

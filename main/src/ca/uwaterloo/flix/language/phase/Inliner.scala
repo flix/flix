@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, OccurrenceAst, Purity, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
-import ca.uwaterloo.flix.util.Validation._
 
 /**
   * The inliner replaces closures and functions by their code to improve performance.
@@ -53,7 +52,7 @@ object Inliner {
 
     // TODO RESTR-VARS add restrictable enums
 
-    LiftedAst.Root(defs, enums, effects, root.entryPoint, root.sources).toSuccess
+    Validation.success(LiftedAst.Root(defs, enums, effects, root.entryPoint, root.sources))
   }
 
   /**
@@ -553,9 +552,9 @@ object Inliner {
             case (LiftedAst.Expr.JumpTo(sym1, _, _, _), LiftedAst.Expr.JumpTo(sym2, _, _, _)) if sym1 == sym2 =>
               val op = AtomicOp.Binary(SemanticOp.BoolOp.And)
               val es = List(outerCond, innerCond)
-              val tpe = outerCond.tpe
+              val tpe = innerThen.tpe // equal to outerElse.tpe
               val pur = combine(outerCond.purity, innerCond.purity)
-              val andExp = LiftedAst.Expr.ApplyAtomic(op, es, tpe, pur, loc)
+              val andExp = LiftedAst.Expr.ApplyAtomic(op, es, MonoType.Bool, pur, loc)
               LiftedAst.Expr.IfThenElse(andExp, innerThen, outerElse, tpe, purity, loc)
             case _ => LiftedAst.Expr.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)
           }

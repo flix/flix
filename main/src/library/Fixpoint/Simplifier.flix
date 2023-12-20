@@ -42,24 +42,29 @@ mod Fixpoint {
                 newOp <- simplifyOp(stratum, op)
             ) yield {
                 match newOp {
-                    // Rewrite join loops that copy one relation into another into a `merge` statement.
-                    // search b ∈ B do
-                    //   project (b[0], b[1]) into A
-                    // end
-                    // ==>
-                    // merge B into A
-                    // If A and B have the same arity.
-                    case RelOp.Search(varB, relB, RelOp.Project(tuple, relA)) =>
-                        use Fixpoint.Ram.arityOf;
-                        let isCopy =
-                            Vector.map(t -> match t {
-                                case RamTerm.RowLoad(var, i) => if (varB == var) i else -1
-                                case _ => -1
-                            }, tuple) == Vector.range(0, arityOf(relB));
-                        if (isCopy)
-                            RamStmt.Merge(relB, relA)
-                        else
-                            RamStmt.Insert(newOp)
+                    //
+                    // DANGER! WILL ROBINSON! The following code is incorrect when a relation is being merged into a lattice.
+                    //
+                    // See #4719.
+                    //
+                    // // Rewrite join loops that copy one relation into another into a `merge` statement.
+                    // // search b ∈ B do
+                    // //   project (b[0], b[1]) into A
+                    // // end
+                    // // ==>
+                    // // merge B into A
+                    // // If A and B have the same arity.
+                    // case RelOp.Search(varB, relB, RelOp.Project(tuple, relA)) =>
+                    //     use Fixpoint.Ram.arityOf;
+                    //     let isCopy =
+                    //         Vector.map(t -> match t {
+                    //             case RamTerm.RowLoad(var, i) => if (varB == var) i else -1
+                    //             case _ => -1
+                    //         }, tuple) == Vector.range(0, arityOf(relB));
+                    //     if (isCopy)
+                    //         RamStmt.Merge(relB, relA)
+                    //     else
+                    //         RamStmt.Insert(newOp)
                     case _ => RamStmt.Insert(newOp)
                 }
             }
