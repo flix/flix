@@ -1199,7 +1199,7 @@ object GenExpression {
         AsmOps.compileThrowFlixError(mv, BackendObjType.MatchError.jvmName, loc)
     }
 
-    case Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
+    case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       ct match {
         case CallType.TailCall =>
           // Type of the function abstract class
@@ -1251,6 +1251,8 @@ object GenExpression {
           val pcPointLabel = ctx.pcLabels(pcPoint)
           val afterUnboxing = new Label()
           ctx.pcCounter(0) += 1
+          if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunkToType(erasedResult)(new BytecodeInstructions.F(mv))
+          else BackendObjType.Result.unwindThunkToType(pcPoint, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
           BackendObjType.Result.unwindThunkToType(pcPoint, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
           mv.visitJumpInsn(GOTO, afterUnboxing)
 
@@ -1262,7 +1264,7 @@ object GenExpression {
           AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
       }
 
-    case Expr.ApplyDef(sym, exps, ct, tpe, _, loc) => ct match {
+    case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) => ct match {
       case CallType.TailCall =>
         // Type of the function abstract class
         val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
@@ -1304,7 +1306,8 @@ object GenExpression {
         val pcPointLabel = ctx.pcLabels(pcPoint)
         val afterUnboxing = new Label()
         ctx.pcCounter(0) += 1
-        BackendObjType.Result.unwindThunkToType(pcPoint, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
+        if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunkToType(erasedResult)(new BytecodeInstructions.F(mv))
+        else BackendObjType.Result.unwindThunkToType(pcPoint, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
         mv.visitJumpInsn(GOTO, afterUnboxing)
 
         mv.visitLabel(pcPointLabel)
