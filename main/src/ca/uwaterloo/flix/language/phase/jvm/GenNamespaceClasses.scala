@@ -58,7 +58,7 @@ object GenNamespaceClasses {
       BackendObjType.JavaObject.jvmName.toInternalName, null)
 
     // Adding an IFO field and a shim method for each function in `ns` with no captured args
-    for ((_, defn) <- ns.defs if defn.cparams.isEmpty) {
+    for ((_, defn) <- ns.defs if defn.cparams.isEmpty && (defn.ann.isTest || flix.options.entryPoint.contains(defn.sym))) {
       // Compile the shim method.
       compileShimMethod(visitor, defn)
     }
