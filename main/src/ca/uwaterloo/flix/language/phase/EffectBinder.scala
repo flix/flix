@@ -223,13 +223,13 @@ object EffectBinder {
       Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
-      if (ct == CallType.NonTailCall) lctx.pcPoints += 1
+      if (ct == CallType.NonTailCall && purity != Purity.Pure) lctx.pcPoints += 1
       val e = visitExprWithBinders(binders)(exp)
       val es = exps.map(visitExprWithBinders(binders))
       Expr.ApplyClo(e, es, ct, tpe, purity, loc)
 
     case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-      if (ct == CallType.NonTailCall) lctx.pcPoints += 1
+      if (ct == CallType.NonTailCall && purity != Purity.Pure) lctx.pcPoints += 1
       val es = exps.map(visitExprWithBinders(binders))
       Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 

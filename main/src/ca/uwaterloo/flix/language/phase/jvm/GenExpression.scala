@@ -1247,20 +1247,21 @@ object GenExpression {
           // Calling unwind and unboxing
           val erasedResult = BackendType.toErasedBackendType(closureResultType)
 
-          val pcPoint = ctx.pcCounter(0) + 1
-          val pcPointLabel = ctx.pcLabels(pcPoint)
-          val afterUnboxing = new Label()
-          ctx.pcCounter(0) += 1
           if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunkToType(erasedResult)(new BytecodeInstructions.F(mv))
-          else BackendObjType.Result.unwindThunkToType(pcPoint, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
-          BackendObjType.Result.unwindThunkToType(pcPoint, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
-          mv.visitJumpInsn(GOTO, afterUnboxing)
+          else {
+            val pcPoint = ctx.pcCounter(0) + 1
+            val pcPointLabel = ctx.pcLabels(pcPoint)
+            val afterUnboxing = new Label()
+            ctx.pcCounter(0) += 1
+            BackendObjType.Result.unwindThunkToType(pcPoint, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
+            mv.visitJumpInsn(GOTO, afterUnboxing)
 
-          mv.visitLabel(pcPointLabel)
-          mv.visitVarInsn(ALOAD, 1)
-          BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
+            mv.visitLabel(pcPointLabel)
+            mv.visitVarInsn(ALOAD, 1)
+            BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
 
-          mv.visitLabel(afterUnboxing)
+            mv.visitLabel(afterUnboxing)
+          }
           AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
       }
 
@@ -1302,19 +1303,21 @@ object GenExpression {
         // Calling unwind and unboxing
         val erasedResult = BackendType.toErasedBackendType(tpe)
 
-        val pcPoint = ctx.pcCounter(0) + 1
-        val pcPointLabel = ctx.pcLabels(pcPoint)
-        val afterUnboxing = new Label()
-        ctx.pcCounter(0) += 1
         if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunkToType(erasedResult)(new BytecodeInstructions.F(mv))
-        else BackendObjType.Result.unwindThunkToType(pcPoint, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
-        mv.visitJumpInsn(GOTO, afterUnboxing)
+        else {
+          val pcPoint = ctx.pcCounter(0) + 1
+          val pcPointLabel = ctx.pcLabels(pcPoint)
+          val afterUnboxing = new Label()
+          ctx.pcCounter(0) += 1
+          BackendObjType.Result.unwindThunkToType(pcPoint, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
+          mv.visitJumpInsn(GOTO, afterUnboxing)
 
-        mv.visitLabel(pcPointLabel)
-        mv.visitVarInsn(ALOAD, 1)
-        BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
+          mv.visitLabel(pcPointLabel)
+          mv.visitVarInsn(ALOAD, 1)
+          BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
 
-        mv.visitLabel(afterUnboxing)
+          mv.visitLabel(afterUnboxing)
+        }
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
     }
 
