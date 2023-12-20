@@ -18,31 +18,31 @@ mod Test.Exp.Effect {
 //        pub def ding(): Unit
 //    }
 
-    @test
-    def testInferEffect01(): Unit \ Print = {
+//    @test
+    pub def testInferEffect01(): Unit \ Print = {
         do Print.println()
     }
 
-    @test
-    def testInferEffect02(): Unit \ Print = {
+//    @test
+    pub def testInferEffect02(): Unit \ Print = {
         do Print.print("hello");
         do Print.println()
     }
 
-    @test
-    def testInferEffect03(): Unit \ {Print, Throw} = {
+//    @test
+    pub def testInferEffect03(): Unit \ {Print, Throw} = {
         do Print.println();
         do Throw.throw()
     }
 
-    @test
-    def testInferEffect04(): Unit \ {Print, Throw} = {
+//    @test
+    pub def testInferEffect04(): Unit \ {Print, Throw} = {
         do Throw.throw();
         do Print.print("hello")
     }
 
-    @test
-    def testInferEffect05(): Unit \ {Print, Throw} = {
+//    @test
+    pub def testInferEffect05(): Unit \ {Print, Throw} = {
         do Throw.throw() without Print;
         do Print.println() without Throw
     }

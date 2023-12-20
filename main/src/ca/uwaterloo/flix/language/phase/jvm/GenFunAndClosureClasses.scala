@@ -221,7 +221,16 @@ object GenFunAndClosureClasses {
 
     // Generating the expression
     val newFrame = BytecodeInstructions.thisLoad() ~ BytecodeInstructions.cheat(_.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, copyName, nothingToTDescriptor(classType).toDescriptor, false))
-    val setPc = BytecodeInstructions.cheat(_.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor))
+    val setPc = {
+      import BytecodeInstructions._
+      SWAP() ~ DUP_X1() ~ SWAP() ~ // clo, pc ---> clo, clo, pc
+      BytecodeInstructions.cheat(_.visitFieldInsn(Opcodes.PUTFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)) ~
+        lparams.foldLeft(nop()){case (acc, (name, index, tpe)) =>
+          val erasedTpe = BackendType.toErasedBackendType(tpe)
+          acc ~ DUP() ~ xLoad(erasedTpe, index) ~ cheat(_.visitFieldInsn(Opcodes.PUTFIELD, classType.name.toInternalName, name, erasedTpe.toDescriptor))
+        } ~
+        POP()
+    }
     val ctx = GenExpression.MethodContext(classType, enterLabel, Map(), newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
     GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix)
     if (ctx.pcCounter(0) != pcLabels.size) println(classType.name, ctx.pcCounter(0), pcLabels.size)
@@ -251,14 +260,15 @@ object GenFunAndClosureClasses {
   }
 
   /**
-    * make a new `classType` with all the fields set to the same as `this`.
+    * Make a new `classType` with all the fields set to the same as `this`.
+    * A partial copy is without local parameters and without pc
     */
-  private def mkCopy(classType: JvmType.Reference, defn: Def): InstructionSet = {
+  private def mkCopy(classType: JvmType.Reference, defn: Def, partial: Boolean): InstructionSet = {
     import BytecodeInstructions._
-    val pc = List(("pc", MonoType.Int32))
+    val pc = if (partial) List() else List(("pc", MonoType.Int32))
     val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
     val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", p._1.tpe))
-    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe))
+    val lparams = if (partial) List() else defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe))
     val params = pc ++ fparams ++ cparams ++ lparams
 
     def getThenPutField(name: String, tpe: MonoType): InstructionSet = cheat(mv => {
@@ -284,7 +294,7 @@ object GenFunAndClosureClasses {
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, copyName, nothingToTDescriptor(classType).toDescriptor, null, null)
     m.visitCode()
 
-    mkCopy(classType, defn)(new BytecodeInstructions.F(m))
+    mkCopy(classType, defn, partial = true)(new BytecodeInstructions.F(m))
     m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)
@@ -296,7 +306,7 @@ object GenFunAndClosureClasses {
     val m = visitor.visitMethod(ACC_PUBLIC, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), null, null)
     m.visitCode()
 
-    mkCopy(classType, defn)(new BytecodeInstructions.F(m))
+    mkCopy(classType, defn, partial = false)(new BytecodeInstructions.F(m))
     m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)
