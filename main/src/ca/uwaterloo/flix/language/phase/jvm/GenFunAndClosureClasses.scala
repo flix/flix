@@ -191,12 +191,12 @@ object GenFunAndClosureClasses {
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, applyMethod.name, applyMethod.d.toDescriptor, null, null)
     val localOffset = 2 // [this: Obj, value: Obj, ...]
 
-    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset(localOffset), lp.tpe) }
-    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.sym.getStackOffset(localOffset), cp.tpe) }
-    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.sym.getStackOffset(localOffset), fp.tpe) }
+    val lparams = defn.lparams.zipWithIndex.map { case (lp, i) => (s"l$i", lp.sym.getStackOffset(localOffset), lp.sym.isWild, lp.tpe) }
+    val cparams = defn.cparams.zipWithIndex.map { case (cp, i) => (s"clo$i", cp.sym.getStackOffset(localOffset), false, cp.tpe) }
+    val fparams = defn.fparams.zipWithIndex.map { case (fp, i) => (s"arg$i", fp.sym.getStackOffset(localOffset), false, fp.tpe) }
 
-    def loadParamsOf(params: List[(String, Int, MonoType)]): Unit = {
-      params.foreach { case (name, offset, tpe) => loadFromField(m, classType, name, offset, tpe) }
+    def loadParamsOf(params: List[(String, Int, Boolean, MonoType)]): Unit = {
+      params.foreach { case (name, offset, _, tpe) => loadFromField(m, classType, name, offset, tpe) }
     }
 
     m.visitCode()
@@ -225,15 +225,15 @@ object GenFunAndClosureClasses {
       import BytecodeInstructions._
       SWAP() ~ DUP_X1() ~ SWAP() ~ // clo, pc ---> clo, clo, pc
       BytecodeInstructions.cheat(_.visitFieldInsn(Opcodes.PUTFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)) ~
-        lparams.foldLeft(nop()){case (acc, (name, index, tpe)) =>
+        lparams.foldLeft(nop()){case (acc, (name, index, isWild, tpe)) =>
           val erasedTpe = BackendType.toErasedBackendType(tpe)
-          acc ~ DUP() ~ xLoad(erasedTpe, index) ~ cheat(_.visitFieldInsn(Opcodes.PUTFIELD, classType.name.toInternalName, name, erasedTpe.toDescriptor))
+          if (isWild) acc else acc ~ DUP() ~ xLoad(erasedTpe, index) ~ cheat(_.visitFieldInsn(Opcodes.PUTFIELD, classType.name.toInternalName, name, erasedTpe.toDescriptor))
         } ~
         POP()
     }
     val ctx = GenExpression.MethodContext(classType, enterLabel, Map(), newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
     GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix)
-    if (ctx.pcCounter(0) != pcLabels.size) println(classType.name, ctx.pcCounter(0), pcLabels.size)
+    assert(ctx.pcCounter(0) == pcLabels.size, s"${(classType.name, ctx.pcCounter(0), pcLabels.size)}")
 
     // returning a Value
     val returnValue = {
