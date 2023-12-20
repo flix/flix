@@ -999,27 +999,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate a non-Unit return type of an effect operation.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class NonUnitOperationType(loc: SourceLocation) extends WeederError with Recoverable {
-    def summary: String = "Non-Unit return type. All effect operations must return Unit."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Non-Unit return type. All effect operations must return Unit.
-         |
-         |${code(loc, "non-Unit return type")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised to indicate a non-unary associated type.
     *
     * @param n   the number of parameters of the associated type.
