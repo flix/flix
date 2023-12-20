@@ -570,17 +570,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectfulOperation](result)
   }
 
-  test("NonUnitOperationType.01") {
-    val input =
-      """
-        |eff E {
-        |    def op(): Bool
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.NonUnitOperationType](result)
-  }
-
   test("MissingFormalParamAscription.01") {
     val input =
       """
