@@ -158,11 +158,15 @@ object EntryPoint {
     * Returns a flag indicating whether the result should be printed, cast, or unchanged.
     */
   private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
-    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _, _), _) =>
+    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, declaredEff, _, _, _), _) =>
       val resultTpe = declaredScheme.base.arrowResultType
       val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
       val resultSc = Scheme.generalize(Nil, Nil, resultTpe, RigidityEnv.empty)
 
+      // Check for [[IllegalEntryPointEffect]]
+      if (declaredEff != Type.Pure && declaredEff != Type.Impure) {
+        return Validation.toSoftFailure((),EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc))
+      }
 
       if (Scheme.equal(unitSc, resultSc, classEnv, ListMap.empty)) { // TODO ASSOC-TYPES better eqEnv
         // Case 1: XYZ -> Unit.
