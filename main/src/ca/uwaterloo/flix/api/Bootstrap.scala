@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manif
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{Result, Validation}
 
 import java.io.{PrintStream, PrintWriter}
 import java.nio.file._
@@ -467,9 +467,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    flix.check() match {
-      case Validation.Success(_) => Validation.success(())
-      case failure => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(failure.errors)))
+    flix.check().toResult match {
+      case Result.Ok((_, Nil)) => Validation.success(())
+      case Result.Ok((_, errors)) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 
