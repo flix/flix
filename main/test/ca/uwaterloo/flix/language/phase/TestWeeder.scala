@@ -949,7 +949,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalForFragment](result)
+    expectError[WeederError.IllegalForAFragment](result)
   }
 
   test("IllegalForFragment.14") {
@@ -960,7 +960,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalForFragment](result)
+    expectError[WeederError.IllegalForAFragment](result)
   }
 
   test("IllegalEmptyForFragment.01") {

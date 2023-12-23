@@ -884,13 +884,23 @@ object Weeder {
 
     case ParsedAst.Expression.ApplicativeFor(sp1, frags, exp, sp2) =>
       val loc = mkSL(sp1, sp2).asSynthetic
-      val fs = traverse(frags)(visitForFragmentGenerator(_, senv))
+      val (gens, bad) = frags.partition {
+        case _: ParsedAst.ForFragment.Generator => true
+        case _ => false
+      }
+      val gs = traverse(gens)(g => visitForFragmentGenerator(g.asInstanceOf[ParsedAst.ForFragment.Generator], senv))
+      val errs = traverse(bad)(visitForFragment(_, senv))
       val e = visitExp(exp, senv)
-      flatMapN(fs, e) {
+      flatMapN(errs, gs, e) {
         case _ if frags.isEmpty =>
           val err = EmptyForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
-        case (fs1, e1) => Validation.success(WeededAst.Expr.ApplicativeFor(fs1, e1, loc))
+
+        case (es, _, _) if es.nonEmpty =>
+          val err = WeederError.IllegalForAFragment(loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+
+        case (_, fs, e1) => Validation.success(WeededAst.Expr.ApplicativeFor(fs, e1, loc))
       }
 
     case ParsedAst.Expression.ForEach(sp1, frags, exp, sp2) =>

@@ -404,7 +404,7 @@ object WeederError {
     * @param loc the location of the for-loop in which the for-fragment appears.
     */
   case class IllegalForFragment(loc: SourceLocation) extends WeederError with Recoverable {
-    def summary: String = "A foreach expression must start with a collection comprehension."
+    def summary: String = s"A foreach expression must start with a collection comprehension."
 
     def message(formatter: Formatter): String = {
       import formatter._
@@ -426,6 +426,27 @@ object WeederError {
          |
          |""".stripMargin
     })
+  }
+
+  /**
+    * An error raised to indicate that a ForA-loop contains other ForFragments than Generators.
+    *
+    * @param loc the location of the for-loop in which the for-fragment appears.
+    */
+  case class IllegalForAFragment(loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = s"A forA loop may only contain comprehensions of the form `x <- xs`."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Loop contains bad for-comprehension.
+         |
+         |${code(loc, "Loop contains bad for-comprehension.")}
+         |
+         |""".stripMargin
+    }
+
+    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
