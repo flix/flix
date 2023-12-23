@@ -570,13 +570,7 @@ object Desugar {
       desugarLetMatch(pat, mod, tpe, exp1, exp2, loc)
 
     case WeededAst.Expr.Tuple(exps, loc) =>
-      // Rewrites empty tuples to Unit and eliminate single-element tuples.
-      val es = visitExps(exps)
-      es match {
-        case Nil => DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc)
-        case x :: Nil => x
-        case xs => DesugaredAst.Expr.Tuple(xs, loc)
-      }
+      desugarTuple(exps, loc)
 
     case WeededAst.Expr.RecordEmpty(loc) =>
       Expr.RecordEmpty(loc)
@@ -1535,6 +1529,18 @@ object Desugar {
         // Full pattern match
         val rule = DesugaredAst.MatchRule(p, None, e2)
         DesugaredAst.Expr.Match(withAscription(e1, t), List(rule), loc0)
+    }
+  }
+
+  /**
+    * Rewrites empty tuples to [[Ast.Constant.Unit]] and eliminate single-element tuples.
+    */
+  private def desugarTuple(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val es = visitExps(exps0)
+    es match {
+      case Nil => DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc0)
+      case x :: Nil => x
+      case xs => DesugaredAst.Expr.Tuple(xs, loc0)
     }
   }
 
