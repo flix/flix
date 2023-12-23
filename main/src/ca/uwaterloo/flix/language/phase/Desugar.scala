@@ -1343,24 +1343,24 @@ object Desugar {
     * }}}
     *
     */
-  private def desugarApplicativeFor(frags: List[WeededAst.ForFragment.Generator], exp: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarApplicativeFor(frags0: List[WeededAst.ForFragment.Generator], exp0: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val fqnAp = "Applicative.ap"
     val fqnMap = "Functor.map"
-    val yieldExp = visitExp(exp)
+    val yieldExp = visitExp(exp0)
 
     // Make lambda for Functor.map(lambda, ...). This lambda uses all patterns from the for-fragments.
-    val lambda = frags.foldRight(yieldExp) {
+    val lambda = frags0.foldRight(yieldExp) {
       case (WeededAst.ForFragment.Generator(pat, _, loc1), acc) =>
         val p = visitPattern(pat)
         mkLambdaMatch(p, acc, loc1)
     }
 
     // Apply first fragment to Functor.map
-    val xs = visitExp(frags.head.exp)
-    val baseExp = mkApplyFqn(fqnMap, List(lambda, xs), loc)
+    val xs = visitExp(frags0.head.exp)
+    val baseExp = mkApplyFqn(fqnMap, List(lambda, xs), loc0)
 
     // Apply rest of fragments to Applicative.ap
-    frags.tail.foldLeft(baseExp) {
+    frags0.tail.foldLeft(baseExp) {
       case (acc, WeededAst.ForFragment.Generator(_, fexp, loc1)) =>
         val e = visitExp(fexp)
         mkApplyFqn(fqnAp, List(acc, e), loc1)
