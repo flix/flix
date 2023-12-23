@@ -1458,7 +1458,7 @@ object Desugar {
     *     }
     * }}}
     */
-  private def desugarForEachYield(frags: List[WeededAst.ForFragment], exp: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): Expr = {
+  private def desugarForEachYield(frags0: List[WeededAst.ForFragment], exp0: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): Expr = {
     // Declare functions
     val fqnEmpty = "Iterator.empty"
     val fqnSingleton = "Iterator.singleton"
@@ -1468,18 +1468,18 @@ object Desugar {
 
     // Make region variable
     val regionSym = "forEachYieldIteratorRegion" + Flix.Delimiter + flix.genSym.freshId()
-    val regionIdent = Name.Ident(loc.sp1, regionSym, loc.sp2).asSynthetic
-    val regionVar = DesugaredAst.Expr.Ambiguous(Name.mkQName(regionIdent), loc)
+    val regionIdent = Name.Ident(loc0.sp1, regionSym, loc0.sp2).asSynthetic
+    val regionVar = DesugaredAst.Expr.Ambiguous(Name.mkQName(regionIdent), loc0)
 
     // Desugar yield-exp
     //    ... yield x
     // Becomes
     //     Iterator.singleton(rc, x)
-    val e = visitExp(exp)
-    val yieldExp = mkApplyFqn(fqnSingleton, List(regionVar, e), loc)
+    val e = visitExp(exp0)
+    val yieldExp = mkApplyFqn(fqnSingleton, List(regionVar, e), loc0)
 
     // Desugar loop
-    val loop = frags.foldRight(yieldExp) {
+    val loop = frags0.foldRight(yieldExp) {
       case (WeededAst.ForFragment.Generator(pat1, exp1, loc1), acc) =>
         // Case 1: a generator fragment i.e. `pat <- exp`
         // This should be desugared into
@@ -1513,10 +1513,10 @@ object Desugar {
     // Wrap in Collectable.collect function.
     // The nested calls to Iterator.flatMap are wrapped in
     // this function.
-    val resultExp = mkApplyFqn(fqnCollect, List(loop), loc)
+    val resultExp = mkApplyFqn(fqnCollect, List(loop), loc0)
 
     // Wrap in region
-    DesugaredAst.Expr.Scope(regionIdent, resultExp, loc)
+    DesugaredAst.Expr.Scope(regionIdent, resultExp, loc0)
   }
 
   /**
