@@ -1522,19 +1522,19 @@ object Desugar {
   /**
     * Rewrites a let-match to a regular let-binding or a full pattern match.
     */
-  private def desugarLetMatch(pat: WeededAst.Pattern, mod: Ast.Modifiers, tpe: Option[WeededAst.Type], exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): Expr = {
-    val p = visitPattern(pat)
-    val t = tpe.map(visitType)
+  private def desugarLetMatch(pat0: WeededAst.Pattern, mod0: Ast.Modifiers, tpe0: Option[WeededAst.Type], exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): Expr = {
+    val p = visitPattern(pat0)
+    val t = tpe0.map(visitType)
     val e1 = visitExp(exp1)
     val e2 = visitExp(exp2)
     p match {
       case DesugaredAst.Pattern.Var(ident, _) =>
         // No pattern match
-        DesugaredAst.Expr.Let(ident, mod, withAscription(e1, t), e2, loc)
+        DesugaredAst.Expr.Let(ident, mod0, withAscription(e1, t), e2, loc0)
       case _ =>
         // Full pattern match
         val rule = DesugaredAst.MatchRule(p, None, e2)
-        DesugaredAst.Expr.Match(withAscription(e1, t), List(rule), loc)
+        DesugaredAst.Expr.Match(withAscription(e1, t), List(rule), loc0)
     }
   }
 
