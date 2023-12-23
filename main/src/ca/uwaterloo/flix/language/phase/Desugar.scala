@@ -637,12 +637,7 @@ object Desugar {
       desugarListLit(exps, loc)
 
     case WeededAst.Expr.SetLit(exps, loc) =>
-      // Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
-      val es = visitExps(exps)
-      val empty = mkApplyFqn("Set.empty", List(DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc)), loc)
-      es.foldLeft(empty) {
-        case (acc, e) => mkApplyFqn("Set.insert", List(e, acc), loc)
-      }
+      desugarSetLit(exps, loc)
 
     case WeededAst.Expr.MapLit(exps, loc) =>
       // Rewrites a `FMap` expression into `Map/empty` and a `Map/insert` calls.
@@ -1544,7 +1539,7 @@ object Desugar {
   /**
     * Rewrites  [[WeededAst.Expr.FAppend]] (`xs ++ ys`) into a call to `List.append`.
     */
-  private def desugarFAppend(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr  = {
+  private def desugarFAppend(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     // NB: We painstakingly construct the qualified name
     // to ensure that source locations are available.
     val e1 = visitExp(exp1)
@@ -1553,7 +1548,7 @@ object Desugar {
   }
 
   /**
-    * Rewrites a [[WeededAst.Expr.ListLit]] (`1 :: 2 :: Nil`) expression into `List.Nil` with `List.Cons`.
+    * Rewrites [[WeededAst.Expr.ListLit]] (`1 :: 2 :: Nil`) expression into `List.Nil` with `List.Cons`.
     */
   private def desugarListLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps0)
@@ -1563,6 +1558,17 @@ object Desugar {
     }
   }
 
+  /**
+    * Rewrites [[WeededAst.Expr.SetLit]] (`Set#{1 => 2, 2 => 3}`) into `Set.empty` and `Set.insert` calls.
+    */
+  private def desugarSetLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val es = visitExps(exps0)
+    val empty = mkApplyFqn("Set.empty", List(DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc0)), loc0)
+    es.foldLeft(empty) {
+      case (acc, e) => mkApplyFqn("Set.insert", List(e, acc), loc0)
+    }
+  }
+  
   /**
     * Rewrites a [[WeededAst.Expr.FixpointInjectInto]] into a series of injects and merges.
     */
