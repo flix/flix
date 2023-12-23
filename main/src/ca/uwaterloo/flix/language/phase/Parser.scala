@@ -644,15 +644,15 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Expression ~ optional(optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.Stm)
     }
 
-    def GuardFragment: Rule1[ParsedAst.ForFragment.Guard] = rule {
-      SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Guard
-    }
-
-    def GeneratorFragment: Rule1[ParsedAst.ForFragment.Generator] = rule {
-      SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Generator
-    }
-
     def ForFragment: Rule1[ParsedAst.ForFragment] = {
+      def GuardFragment: Rule1[ParsedAst.ForFragment.Guard] = rule {
+        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Guard
+      }
+
+      def GeneratorFragment: Rule1[ParsedAst.ForFragment.Generator] = rule {
+        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Generator
+      }
+
       def LetFragment: Rule1[ParsedAst.ForFragment.Let] = rule {
         SP ~ Pattern ~ optWS ~ atomic("=") ~ optWS ~ Expression ~ SP ~> ParsedAst.ForFragment.Let
       }
@@ -667,7 +667,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ApplicativeFor: Rule1[ParsedAst.Expression.ApplicativeFor] = rule {
-      SP ~ keyword("forA") ~ optWS ~ "(" ~ optWS ~ zeroOrMore(GeneratorFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ApplicativeFor
+      SP ~ keyword("forA") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ApplicativeFor
     }
 
     def ForEach: Rule1[ParsedAst.Expression.ForEach] = rule {
