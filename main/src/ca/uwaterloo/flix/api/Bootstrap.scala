@@ -485,9 +485,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    flix.compile() match {
-      case Validation.Success(r) => Validation.success(r)
-      case failure => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(failure.errors)))
+    flix.compile().toResult match {
+      case Result.Ok((r, Nil)) => Validation.success(r)
+      case Result.Ok((_, errors)) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 
@@ -590,13 +591,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    flix.check() map {
-      root =>
+    Validation.mapN(flix.check()) {
+      case root =>
         JsonDocumentor.run(root)(flix)
         HtmlDocumentor.run(root)(flix)
-    } match {
-      case Validation.Success(_) => Validation.success(())
-      case failure => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(failure.errors)))
+    }.toResult match {
+      case Result.Ok((_, Nil)) => Validation.success(())
+      case Result.Ok((_, errors)) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 
