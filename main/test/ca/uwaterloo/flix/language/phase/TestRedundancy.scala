@@ -2023,7 +2023,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("ForEachYieldUnusedVar.01") {
     val input =
       """
-        |def f(): List[Int32]
+        |def f(): List[Int32] =
         |    foreach (
         |        x <- 1 :: 2 :: 3 :: Nil
         |    ) yield 10
@@ -2035,7 +2035,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("ForEachYieldUnusedVar.02") {
     val input =
       """
-        |def f(): List[Int32]
+        |def f(): List[Int32] =
         |    foreach (
         |        x <- 1 :: 2 :: 3 :: Nil;
         |        y = 10
