@@ -420,6 +420,12 @@ class TestValidation extends AnyFunSuite {
     assertResult(Validation.HardFailure(LazyList(ex, ex)))(result)
   }
 
+  test("toResult01") {
+    val t = Validation.Success[String, Exception]("abc")
+    val result = t.toResult
+    assertResult(Result.Ok(("abc", List.empty)))(result)
+  }
+
   trait DummyError
 
   case class DummyRecoverable() extends DummyError with Recoverable
