@@ -128,9 +128,11 @@ object Main {
           Bootstrap.init(cwd)(System.err).toResult match {
             case Result.Ok((_, Nil)) =>
               System.exit(0)
+
             case Result.Ok((_, errors)) =>
               errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
+
             case Result.Err(errors) =>
               errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
@@ -143,10 +145,13 @@ object Main {
               flix.setOptions(options)
               bootstrap.check(flix)
           }.toResult match {
-            case Result.Ok((_, Nil)) => System.exit(0)
-            case Result.Ok((_, errors)) => System.exit(0)
+            case Result.Ok((_, Nil)) =>
+              System.exit(0)
+
+            case Result.Ok((_, errors)) =>
               errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
+
             case Result.Err(errors) =>
               errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
@@ -158,32 +163,48 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(loadClassFiles = false))
               bootstrap.build(flix)
-          } match {
-            case Validation.Success(_) => System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+          }.toResult match {
+            case Result.Ok((_, Nil)) =>
+              System.exit(0)
+
+            case Result.Ok((_, errors)) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.BuildJar =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap => bootstrap.buildJar()
-          } match {
-            case Validation.Success(_) =>
+          }.toResult match {
+            case Result.Ok((_, Nil)) =>
               System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+
+            case Result.Ok((_, errors)) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.BuildPkg =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap => bootstrap.buildPkg()
-          } match {
-            case Validation.Success(_) =>
+          }.toResult match {
+            case Result.Ok((_, Nil)) =>
               System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+
+            case Result.Ok((_, errors)) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
@@ -193,11 +214,16 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
               bootstrap.doc(flix)
-          } match {
-            case Validation.Success(_) =>
+          }.toResult match {
+            case Result.Ok((_, Nil)) =>
               System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+
+            case Result.Ok((_, errors)) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
@@ -211,11 +237,16 @@ object Main {
                 case Some(a) => a.split(" ")
               }
               bootstrap.run(flix, args)
-          } match {
-            case Validation.Success(_) =>
+          }.toResult match {
+            case Result.Ok((_, Nil)) =>
               System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+
+            case Result.Ok((_, errors)) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
@@ -225,11 +256,16 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.benchmark(flix)
-          } match {
-            case Validation.Success(_) =>
+          }.toResult match {
+            case Result.Ok((_, Nil)) =>
               System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+
+            case Result.Ok((_, errors)) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
@@ -239,11 +275,16 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.test(flix)
-          } match {
-            case Validation.Success(_) =>
+          }.toResult match {
+            case Result.Ok((_, Nil)) =>
               System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+
+            case Result.Ok((_, errors)) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
@@ -252,13 +293,18 @@ object Main {
             println("The 'repl' command cannot be used with a list of files.")
             System.exit(1)
           }
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.err) match {
-            case Validation.Success(bootstrap) =>
+          Bootstrap.bootstrap(cwd, options.githubKey)(System.err).toResult match {
+            case Result.Ok((bootstrap, Nil)) =>
               val shell = new Shell(bootstrap, options)
               shell.loop()
               System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+
+            case Result.Ok((_, errors)) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
