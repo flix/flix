@@ -50,8 +50,6 @@ object RedundancyError {
          |${code(loc, "pure expression.")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -73,7 +71,7 @@ object RedundancyError {
 
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -101,8 +99,6 @@ object RedundancyError {
          |
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -122,8 +118,6 @@ object RedundancyError {
          |
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -142,8 +136,6 @@ object RedundancyError {
          |${code(loc, "discarded unit value.")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -163,29 +155,6 @@ object RedundancyError {
          |
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate that a checked type cast is redundant.
-    *
-    * @param loc the source location of the redundant cast.
-    */
-  case class RedundantUncheckedTypeCast(loc: SourceLocation) extends RedundancyError with Recoverable {
-    def summary: String = "Redundant type cast. The expression already has the required type."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Redundant type cast. The expression already has the required type.
-         |
-         |${code(loc, "redundant cast.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -207,7 +176,7 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -240,8 +209,6 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = None
-
     def loc: SourceLocation = shadowed
   }
 
@@ -268,8 +235,6 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = None
-
     def loc: SourceLocation = shadowing
   }
 
@@ -294,7 +259,7 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -356,7 +321,7 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""Possible fixes:
          |
          |  (1)  Use the definition.
@@ -387,7 +352,7 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""Possible fixes:
          |
          |  (1)  Use the effect.
@@ -420,7 +385,7 @@ object RedundancyError {
 
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -451,7 +416,7 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -483,7 +448,7 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -517,7 +482,7 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -545,7 +510,7 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -576,7 +541,7 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
@@ -610,7 +575,7 @@ object RedundancyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          |Possible fixes:
          |
