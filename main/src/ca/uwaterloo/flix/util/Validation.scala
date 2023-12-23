@@ -179,7 +179,7 @@ object Validation {
   /**
     * Represents a success `value`.
     */
-  case class Success[T, E](t: T) extends Validation[T, E] {
+  private case class Success[T, E](t: T) extends Validation[T, E] {
     def errors: LazyList[E] = LazyList.empty
   }
 
