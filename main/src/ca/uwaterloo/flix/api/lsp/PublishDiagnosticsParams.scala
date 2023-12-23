@@ -25,11 +25,11 @@ import org.json4s._
   * Companion object of [[PublishDiagnosticsParams]].
   */
 object PublishDiagnosticsParams {
-  def fromMessages(errors: LazyList[CompilationMessage], explain: Boolean): List[PublishDiagnosticsParams] = {
+  def fromMessages(errors: List[CompilationMessage], explain: Boolean): List[PublishDiagnosticsParams] = {
     val formatter: Formatter = Formatter.NoFormatter
 
     // Group the error messages by source.
-    val errorsBySource = errors.toList.groupBy(_.loc.source)
+    val errorsBySource = errors.groupBy(_.loc.source)
 
     // Translate each compilation message to a diagnostic.
     errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {

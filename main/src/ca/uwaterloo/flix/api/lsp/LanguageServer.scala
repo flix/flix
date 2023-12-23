@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{HardFailure, SoftFailure, Success}
 import ca.uwaterloo.flix.util._
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
@@ -259,7 +258,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       flix.addJar(path)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
-    case Request.RemJar(id, uri) =>
+    case Request.RemJar(id, _) =>
       // No-op (there is no easy way to remove a Jar from the JVM)
       ("id" -> id) ~ ("status" -> ResponseStatus.Success)
 
@@ -336,21 +335,21 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val t = System.nanoTime()
     try {
       // Run the compiler up to the type checking phase.
-      flix.check() match {
-        case Success(root) =>
+      flix.check().toResult match {
+        case Result.Ok((root, Nil)) =>
           // Case 1: Compilation was successful. Build the reverse index.
-          processSuccessfulCheck(requestId, root, LazyList.empty, flix.options.explain, t)
+          processSuccessfulCheck(requestId, root, List.empty, flix.options.explain, t)
 
-        case SoftFailure(root, errors) =>
+        case Result.Ok((root, errors)) =>
           // Case 2: Compilation had non-critical errors. Build the reverse index.
           processSuccessfulCheck(requestId, root, errors, flix.options.explain, t)
 
-        case HardFailure(errors) =>
+        case Result.Err(errors) =>
           // Case 3: Compilation failed. Send back the error messages.
 
           // Mark the AST as outdated and update the current errors.
           this.current = false
-          this.currentErrors = errors.toList
+          this.currentErrors = errors
 
           // Publish diagnostics.
           val results = PublishDiagnosticsParams.fromMessages(errors, flix.options.explain)
@@ -370,13 +369,13 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Helper function for [[processCheck]] which handles successful and soft failure compilations.
     */
-  private def processSuccessfulCheck(requestId: String, root: Root, errors: LazyList[CompilationMessage], explain: Boolean, t0: Long): JValue = {
+  private def processSuccessfulCheck(requestId: String, root: Root, errors: List[CompilationMessage], explain: Boolean, t0: Long): JValue = {
     val oldRoot = this.root
     this.root = Some(root)
     this.index = Indexer.visitRoot(root)
     this.delta = DeltaContext.mergeDeltas(this.delta, Differ.difference(oldRoot, root))
     this.current = true
-    this.currentErrors = errors.toList
+    this.currentErrors = errors
 
     // Compute elapsed time.
     val e = System.nanoTime() - t0
@@ -410,11 +409,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val version = ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> version)
   }
-
-  /**
-    * Returns `true` if the given source location `loc` matches the given `uri`.
-    */
-  private def matchesUri(uri: String, loc: SourceLocation): Boolean = uri == loc.source.name
 
   /**
     * Logs the given message `msg` along with information about the connection `ws`.

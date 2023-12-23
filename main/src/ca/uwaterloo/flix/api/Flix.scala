@@ -634,7 +634,7 @@ class Flix {
     progressBar.complete()
 
     // Return the result.
-    Validation.Success(result)
+    Validation.success(result)
   } catch {
     case ex: InternalCompilerException =>
       CrashHandler.handleCrash(ex)(this)
