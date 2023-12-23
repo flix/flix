@@ -1071,38 +1071,38 @@ object Desugar {
     *   f(a, b)
     * }}}
     */
-  private def desugarInfix(exp1: WeededAst.Expr, exp2: WeededAst.Expr, exp3: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Apply = {
+  private def desugarInfix(exp1: WeededAst.Expr, exp2: WeededAst.Expr, exp3: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Apply = {
     val e1 = visitExp(exp1)
     val e2 = visitExp(exp2)
     val e3 = visitExp(exp3)
-    Expr.Apply(e2, List(e1, e3), loc)
+    Expr.Apply(e2, List(e1, e3), loc0)
   }
 
   /**
     * Rewrites the let-import into a let-bound lambda.
     * The specific implementation of the lambda depends on `op`.
     */
-  private def desugarLetImport(op0: WeededAst.JvmOp, exp0: WeededAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = op0 match {
+  private def desugarLetImport(op0: WeededAst.JvmOp, exp0: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = op0 match {
     case WeededAst.JvmOp.Constructor(fqn, sig, tpe, eff, ident) =>
-      desugarJvmOpConstructor(fqn, sig, tpe, eff, ident, exp0, loc)
+      desugarJvmOpConstructor(fqn, sig, tpe, eff, ident, exp0, loc0)
 
     case WeededAst.JvmOp.Method(fqn, sig, tpe, eff, identOpt) =>
-      desugarJvmOpMethod(fqn, sig, tpe, eff, identOpt, exp0, loc)
+      desugarJvmOpMethod(fqn, sig, tpe, eff, identOpt, exp0, loc0)
 
     case WeededAst.JvmOp.StaticMethod(fqn, sig, tpe, eff, identOpt) =>
-      desugarJvmOpStaticMethod(fqn, sig, tpe, eff, identOpt, exp0, loc)
+      desugarJvmOpStaticMethod(fqn, sig, tpe, eff, identOpt, exp0, loc0)
 
     case WeededAst.JvmOp.GetField(fqn, tpe, eff, ident) =>
-      desugarJvmOpGetField(fqn, tpe, eff, ident, exp0, loc)
+      desugarJvmOpGetField(fqn, tpe, eff, ident, exp0, loc0)
 
     case WeededAst.JvmOp.PutField(fqn, tpe, eff, ident) =>
-      desugarJvmOpPutField(fqn, tpe, eff, ident, exp0, loc)
+      desugarJvmOpPutField(fqn, tpe, eff, ident, exp0, loc0)
 
     case WeededAst.JvmOp.GetStaticField(fqn, tpe, eff, ident) =>
-      desugarJvmOpGetStaticField(fqn, tpe, eff, ident, exp0, loc)
+      desugarJvmOpGetStaticField(fqn, tpe, eff, ident, exp0, loc0)
 
     case WeededAst.JvmOp.PutStaticField(fqn, tpe, eff, ident) =>
-      desugarJvmOpPutStaticField(fqn, tpe, eff, ident, exp0, loc)
+      desugarJvmOpPutStaticField(fqn, tpe, eff, ident, exp0, loc0)
   }
 
   /**
@@ -1657,7 +1657,7 @@ object Desugar {
   }
 
   /**
-    * Rewrites a [[WeededAst.Expr.Debug] into a call to `Debug.debugWithPrefix`.
+    * Rewrites a [[WeededAst.Expr.Debug]] into a call to `Debug.debugWithPrefix`.
     */
   private def desugarDebug(exp0: WeededAst.Expr, kind0: WeededAst.DebugKind, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val e = visitExp(exp0)
@@ -1703,19 +1703,19 @@ object Desugar {
   }
 
   /**
-    * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args`.
+    * Returns an apply expression for the given fully-qualified name `fqn` and the given arguments `args0`.
     */
-  private def mkApplyFqn(fqn: String, args: List[DesugaredAst.Expr], loc: SourceLocation): DesugaredAst.Expr = {
-    val l = loc.asSynthetic
-    val lambda = DesugaredAst.Expr.Ambiguous(Name.mkQName(fqn), l)
-    DesugaredAst.Expr.Apply(lambda, args, l)
+  private def mkApplyFqn(fqn0: String, args0: List[DesugaredAst.Expr], loc0: SourceLocation): DesugaredAst.Expr = {
+    val l = loc0.asSynthetic
+    val lambda = DesugaredAst.Expr.Ambiguous(Name.mkQName(fqn0), l)
+    DesugaredAst.Expr.Apply(lambda, args0, l)
   }
 
   /**
     * Returns a curried version of the given expression `exp0` for each formal parameter in `fparams0`.
     */
-  private def mkCurried(fparams0: List[DesugaredAst.FormalParam], exp0: DesugaredAst.Expr, loc: SourceLocation): DesugaredAst.Expr = {
-    val l = loc.asSynthetic
+  private def mkCurried(fparams0: List[DesugaredAst.FormalParam], exp0: DesugaredAst.Expr, loc0: SourceLocation): DesugaredAst.Expr = {
+    val l = loc0.asSynthetic
     fparams0.foldRight(exp0) {
       case (fparam, acc) => DesugaredAst.Expr.Lambda(fparam, acc, l)
     }
@@ -1733,9 +1733,9 @@ object Desugar {
   }
 
   /**
-    * Returns the class and member name constructed from the given `fqn`
+    * Returns the class and member name constructed from the given `fqn0`
     */
-  private def splitClassAndMember(fqn: WeededAst.JavaClassMember): (String, String) = fqn match {
+  private def splitClassAndMember(fqn0: WeededAst.JavaClassMember): (String, String) = fqn0 match {
     case WeededAst.JavaClassMember(prefix, suffix, _) =>
       // The Parser ensures that suffix is non-empty.
       val className = prefix + "." + suffix.init.mkString(".")
