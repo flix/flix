@@ -631,12 +631,7 @@ object Desugar {
       desugarFCons(exp1, exp2, loc)
 
     case WeededAst.Expr.FAppend(exp1, exp2, loc) =>
-      // Rewrites a `FAppend` expr into a call to `List.append`.
-      // NB: We painstakingly construct the qualified name
-      // to ensure that source locations are available.
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      mkApplyFqn("List.append", List(e1, e2), loc)
+      desugarFAppend(exp1, exp2, loc)
 
     case WeededAst.Expr.ListLit(exps, loc) =>
       // Rewrites a `FList` expression into `List.Nil` with `List.Cons`.
@@ -1543,12 +1538,23 @@ object Desugar {
   }
 
   /**
-    * Rewrites `x :: xs` into a call to `List.Cons(x, xs)`.
+    * Rewrites [[WeededAst.Expr.FCons]] (`x :: xs`) into a call to `List.Cons(x, xs)`.
     */
   private def desugarFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val e1 = visitExp(exp1)
     val e2 = visitExp(exp2)
     mkApplyFqn("List.Cons", List(e1, e2), loc0)
+  }
+
+  /**
+    * Rewrites  [[WeededAst.Expr.FAppend]] (`xs ++ ys`) into a call to `List.append`.
+    */
+  private def desugarFAppend(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr  = {
+    // NB: We painstakingly construct the qualified name
+    // to ensure that source locations are available.
+    val e1 = visitExp(exp1)
+    val e2 = visitExp(exp2)
+    mkApplyFqn("List.append", List(e1, e2), loc0)
   }
 
   /**
