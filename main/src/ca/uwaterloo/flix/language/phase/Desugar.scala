@@ -634,12 +634,7 @@ object Desugar {
       desugarFAppend(exp1, exp2, loc)
 
     case WeededAst.Expr.ListLit(exps, loc) =>
-      // Rewrites a `FList` expression into `List.Nil` with `List.Cons`.
-      val es = visitExps(exps)
-      val nil: DesugaredAst.Expr = DesugaredAst.Expr.Ambiguous(Name.mkQName("List.Nil"), loc)
-      es.foldRight(nil) {
-        case (e, acc) => mkApplyFqn("List.Cons", List(e, acc), loc)
-      }
+      desugarListLit(exps, loc)
 
     case WeededAst.Expr.SetLit(exps, loc) =>
       // Rewrites a `FSet` expression into `Set/empty` and a `Set/insert` calls.
@@ -1555,6 +1550,17 @@ object Desugar {
     val e1 = visitExp(exp1)
     val e2 = visitExp(exp2)
     mkApplyFqn("List.append", List(e1, e2), loc0)
+  }
+
+  /**
+    * Rewrites a [[WeededAst.Expr.ListLit]] (`1 :: 2 :: Nil`) expression into `List.Nil` with `List.Cons`.
+    */
+  private def desugarListLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val es = visitExps(exps0)
+    val nil: Expr = DesugaredAst.Expr.Ambiguous(Name.mkQName("List.Nil"), loc0)
+    es.foldRight(nil) {
+      case (e, acc) => mkApplyFqn("List.Cons", List(e, acc), loc0)
+    }
   }
 
   /**
