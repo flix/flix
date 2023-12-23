@@ -34,17 +34,6 @@ sealed trait Validation[+T, +E] {
   }
 
   /**
-    * Returns a [[Validation.Success]] containing the result of applying `f` to the value in this validation (if it exists).
-    *
-    * Preserves the errors.
-    */
-  final def map[U](f: T => U): Validation[U, E] = this match {
-    case Validation.Success(value) => Validation.Success(f(value))
-    case Validation.SoftFailure(value, errors) => Validation.SoftFailure(f(value), errors)
-    case Validation.HardFailure(errors) => Validation.HardFailure(errors)
-  }
-
-  /**
     * Returns `this` validation with an additional recoverable error.
     */
   final def withSoftFailure[R >: E](e: R): Validation[T, R] = withSoftFailures(List(e))
@@ -217,7 +206,7 @@ object Validation {
     * Sequences the given list of validations `xs`, ignoring non-error results.
     */
   def sequenceX[T, E](xs: Iterable[Validation[T, E]]): Validation[Unit, E] = {
-    sequence(xs).map(_ => ())
+    mapN(sequence(xs))(_ => ())
   }
 
   /**
@@ -229,9 +218,9 @@ object Validation {
     * Traverses the given map, applying the function `f` to each value.
     */
   def traverseValues[K, V1, V2, E](xs: Map[K, V1])(f: V1 => Validation[V2, E]): Validation[Map[K, V2], E] = {
-    traverse(xs) {
+    mapN(traverse(xs) {
       case (k, v0) => mapN(f(v0))(v => k -> v)
-    }.map(_.toMap)
+    })(_.toMap)
   }
 
   /**
@@ -250,7 +239,7 @@ object Validation {
     * Traverses `xs` applying the function `f` to each element, ignoring non-error results.
     */
   def traverseX[T, E](xs: Iterable[T])(f: T => Validation[_, E]): Validation[Unit, E] = {
-    traverse(xs)(f).map(_ => ())
+    mapN(traverse(xs)(f))(_ => ())
   }
 
   /**
