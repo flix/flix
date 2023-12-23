@@ -916,6 +916,10 @@ object Weeder {
           val err = IllegalForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
 
+        case (WeededAst.ForFragment.Let(_, _, _) :: _, _) =>
+          val err = IllegalForFragment(loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+
         case (fs1, e1) => Validation.success(WeededAst.Expr.ForEach(fs1, e1, loc))
       }
 
@@ -932,6 +936,10 @@ object Weeder {
           val err = IllegalForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
 
+        case (WeededAst.ForFragment.Let(_, _, _) :: _, _) =>
+          val err = IllegalForFragment(loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+
         case (fs1, e1) => Validation.success(WeededAst.Expr.MonadicFor(fs1, e1, loc))
       }
 
@@ -945,6 +953,10 @@ object Weeder {
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
 
         case (WeededAst.ForFragment.Guard(_, _) :: _, _) =>
+          val err = IllegalForFragment(loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+
+        case (WeededAst.ForFragment.Let(_, _, _) :: _, _) =>
           val err = IllegalForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
 
