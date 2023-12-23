@@ -125,11 +125,14 @@ object Main {
           }
 
         case Command.Init =>
-          Bootstrap.init(cwd)(System.err) match {
-            case Validation.Success(_) =>
+          Bootstrap.init(cwd)(System.err).toResult match {
+            case Result.Ok((_, Nil)) =>
               System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+            case Result.Ok((_, failures)) =>
+              failures.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+            case Result.Err(failures) =>
+              failures.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
@@ -139,7 +142,7 @@ object Main {
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
               bootstrap.check(flix)
-          } match {
+          }.toResult match {
             case Validation.Success(_) => System.exit(0)
             case failure =>
               failure.errors.map(_.message(formatter)).foreach(println)
