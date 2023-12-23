@@ -56,9 +56,4 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
   private def fmtConstraints(formatter: Formatter): String = {
     cycle.map(t => "  " + formatter.cyan(t._1.name) + " at " + t._2.format + " (which depends on)" + System.lineSeparator()).mkString
   }
-
-  /**
-    * Returns a formatted string with helpful suggestions.
-    */
-  def explain(formatter: Formatter): Option[String] = None
 }
