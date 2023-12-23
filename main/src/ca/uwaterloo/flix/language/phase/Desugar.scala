@@ -628,9 +628,7 @@ object Desugar {
       Expr.VectorLength(e, loc)
 
     case WeededAst.Expr.FCons(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      mkApplyFqn("List.Cons", List(e1, e2), loc)
+      desugarFCons(exp1, exp2, loc)
 
     case WeededAst.Expr.FAppend(exp1, exp2, loc) =>
       // Rewrites a `FAppend` expr into a call to `List.append`.
@@ -1542,6 +1540,15 @@ object Desugar {
       case x :: Nil => x
       case xs => DesugaredAst.Expr.Tuple(xs, loc0)
     }
+  }
+
+  /**
+    * Rewrites `x :: xs` into a call to `List.Cons(x, xs)`.
+    */
+  private def desugarFCons(exp1: WeededAst.Expr, exp2: WeededAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val e1 = visitExp(exp1)
+    val e2 = visitExp(exp2)
+    mkApplyFqn("List.Cons", List(e1, e2), loc0)
   }
 
   /**
