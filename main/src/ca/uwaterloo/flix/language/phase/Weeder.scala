@@ -925,9 +925,11 @@ object Weeder {
         case _ if frags.isEmpty =>
           val err = EmptyForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
-        case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
-          val err = IllegalForFragment(loc1)
+
+        case (WeededAst.ForFragment.Guard(_, _) :: _, _) =>
+          val err = IllegalForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+
         case (fs1, e1) => Validation.success(WeededAst.Expr.MonadicFor(fs1, e1, loc))
       }
 
@@ -939,9 +941,11 @@ object Weeder {
         case _ if frags.isEmpty =>
           val err = EmptyForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
-        case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
-          val err = IllegalForFragment(loc1)
+
+        case (WeededAst.ForFragment.Guard(_, _) :: _, _) =>
+          val err = IllegalForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+
         case (fs1, e1) => Validation.success(WeededAst.Expr.ForEachYield(fs1, e1, loc))
       }
 
