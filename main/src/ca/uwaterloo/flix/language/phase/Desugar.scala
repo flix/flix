@@ -859,10 +859,10 @@ object Desugar {
   }
 
   /**
-    * Desugars the given list of [[WeededAst.Expr]] `exps`.
+    * Desugars the given list of [[WeededAst.Expr]] `exps0`.
     */
-  private def visitExps(exps: List[WeededAst.Expr])(implicit flix: Flix): List[DesugaredAst.Expr] =
-    exps.map(visitExp)
+  private def visitExps(exps0: List[WeededAst.Expr])(implicit flix: Flix): List[DesugaredAst.Expr] =
+    exps0.map(visitExp)
 
   /**
     * Desugars the given [[WeededAst.MatchRule]] `rule0`.
