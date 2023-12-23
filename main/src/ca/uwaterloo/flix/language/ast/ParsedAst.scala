@@ -2173,7 +2173,7 @@ object ParsedAst {
   object ForFragment {
 
     /**
-      * A generator fragment, i.e. `pattern <- xs`.
+      * A generator fragment, e.g., `x <- xs`.
       *
       * @param sp1 the position of the first character in the fragment.
       * @param pat the pattern on the left hand side.
@@ -2183,7 +2183,7 @@ object ParsedAst {
     case class Generator(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForFragment
 
     /**
-      * A guard fragment, i.e. `if x > 1`.
+      * A guard fragment, e.g., `if x > 1`.
       *
       * @param sp1 the position of the first character in the fragment.
       * @param exp the guard expression.
@@ -2191,6 +2191,15 @@ object ParsedAst {
       */
     case class Guard(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForFragment
 
+    /**
+      * A let fragment, e.g., `(x, y) = (10, 20)`.
+      *
+      * @param sp1 the position of the first character in the fragment.
+      * @param pat the pattern
+      * @param exp the value of the pattern
+      * @param sp2 the position of the last character in the fragment.
+      */
+    case class Let(sp1: SourcePosition, pat: ParsedAst.Pattern, exp: ParsedAst.Expression, sp2: SourcePosition) extends ForFragment
   }
 
   /**

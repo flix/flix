@@ -477,6 +477,7 @@ object WeededAst {
 
     case class Guard(exp: Expr, loc: SourceLocation) extends ForFragment
 
+    case class Let(pat: Pattern, exp: Expr, loc: SourceLocation) extends ForFragment
   }
 
   sealed trait DebugKind

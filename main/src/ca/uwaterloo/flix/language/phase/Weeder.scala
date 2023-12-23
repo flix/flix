@@ -2725,6 +2725,7 @@ object Weeder {
   private def visitForFragment(frag0: ParsedAst.ForFragment, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.ForFragment, WeederError] = frag0 match {
     case gen: ParsedAst.ForFragment.Generator => visitForFragmentGenerator(gen, senv)
     case guard: ParsedAst.ForFragment.Guard => visitForFragmentGuard(guard, senv)
+    case let: ParsedAst.ForFragment.Let => visitForFragmentLet(let, senv)
   }
 
   /**
@@ -2749,6 +2750,19 @@ object Weeder {
       val e = visitExp(exp, senv)
       mapN(e) {
         case e1 => WeededAst.ForFragment.Guard(e1, loc)
+      }
+  }
+
+  /**
+    * Performs weeding on the given [[ParsedAst.ForFragment.Let]] `frag0`.
+    */
+  private def visitForFragmentLet(frag0: ParsedAst.ForFragment.Let, senv: SyntacticEnv)(implicit flix: Flix): Validation[WeededAst.ForFragment.Let, WeederError] = frag0 match {
+    case ParsedAst.ForFragment.Let(sp1, pat, exp, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val pVal = visitPattern(pat)
+      val eVal = visitExp(exp, senv)
+      mapN(pVal, eVal) {
+        case (p, e) => WeededAst.ForFragment.Let(p, e, loc)
       }
   }
 

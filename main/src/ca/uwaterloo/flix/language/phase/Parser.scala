@@ -653,8 +653,12 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ForFragment: Rule1[ParsedAst.ForFragment] = {
+      def LetFragment: Rule1[ParsedAst.ForFragment.Let] = rule {
+        SP ~ Pattern ~ optWS ~ atomic("=") ~ optWS ~ Expression ~ SP ~> ParsedAst.ForFragment.Let
+      }
+
       rule {
-        GeneratorFragment | GuardFragment
+        GeneratorFragment | GuardFragment | LetFragment
       }
     }
 
