@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, RigidityEnv, Scheme, Symb
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 object Instances {
 
@@ -212,9 +212,13 @@ object Instances {
                 // Case 1: An instance matches. Check that its constraints are entailed by this instance.
                 superInst.tconstrs flatMap {
                   tconstr =>
-                    ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv) match {
-                      case Validation.Success(_) => Nil
-                      case failure => failure.errors.map {
+                    ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv).toResult match {
+                      case Result.Ok((_, Nil)) => Nil
+                      case Result.Ok((_, errors)) => errors.map {
+                        case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTypeClassConstraint(missingTconstr, superClass, clazz.loc)
+                        case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
+                      }
+                      case Result.Err(errors) => errors.map {
                         case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTypeClassConstraint(missingTconstr, superClass, clazz.loc)
                         case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
                       }
