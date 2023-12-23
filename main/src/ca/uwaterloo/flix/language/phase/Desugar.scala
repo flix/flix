@@ -1541,14 +1541,14 @@ object Desugar {
   /**
     * Rewrites a [[WeededAst.Expr.FixpointInjectInto]] into a series of injects and merges.
     */
-  private def desugarFixpointInjectInto(exps: List[WeededAst.Expr], idents: List[Name.Ident], loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val es = visitExps(exps)
-    val init = DesugaredAst.Expr.FixpointConstraintSet(Nil, loc)
-    es.zip(idents).foldRight(init: Expr) {
+  private def desugarFixpointInjectInto(exps0: List[WeededAst.Expr], idents0: List[Name.Ident], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val es = visitExps(exps0)
+    val init = DesugaredAst.Expr.FixpointConstraintSet(Nil, loc0)
+    es.zip(idents0).foldRight(init: Expr) {
       case ((exp, ident), acc) =>
         val pred = Name.mkPred(ident)
-        val innerExp = DesugaredAst.Expr.FixpointInject(exp, pred, loc)
-        DesugaredAst.Expr.FixpointMerge(innerExp, acc, loc)
+        val innerExp = DesugaredAst.Expr.FixpointInject(exp, pred, loc0)
+        DesugaredAst.Expr.FixpointMerge(innerExp, acc, loc0)
     }
   }
 
@@ -1565,8 +1565,8 @@ object Desugar {
     *   merge (project P1 tmp%, project P2 tmp%, project P3 tmp%)
     * }}}
     */
-  private def desugarFixpointSolveWithProject(exps: List[WeededAst.Expr], optIdents: Option[List[Name.Ident]], loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
-    val es = visitExps(exps)
+  private def desugarFixpointSolveWithProject(exps0: List[WeededAst.Expr], idents0: Option[List[Name.Ident]], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val es = visitExps(exps0)
 
     // Introduce a tmp% variable that holds the minimal model of the merge of the exps.
     val freshVar = flix.genSym.freshId()
@@ -1574,15 +1574,15 @@ object Desugar {
 
     // Merge all the exps into one Datalog program value.
     val mergeExp = es.reduceRight[DesugaredAst.Expr] {
-      case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc)
+      case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc0)
     }
-    val modelExp = DesugaredAst.Expr.FixpointSolve(mergeExp, loc)
+    val modelExp = DesugaredAst.Expr.FixpointSolve(mergeExp, loc0)
 
     // Any projections?
-    val bodyExp = optIdents match {
+    val bodyExp = idents0 match {
       case None =>
         // Case 1: No projections: Simply return the minimal model.
-        DesugaredAst.Expr.Ambiguous(Name.mkQName(localVar), loc)
+        DesugaredAst.Expr.Ambiguous(Name.mkQName(localVar), loc0)
 
       case Some(idents) =>
         // Case 2: A non-empty sequence of predicate symbols to project.
@@ -1590,18 +1590,18 @@ object Desugar {
         // Construct a list of each projection.
         val projectExps = idents.map {
           case ident =>
-            val varExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(localVar), loc)
-            DesugaredAst.Expr.FixpointFilter(Name.Pred(ident.name, loc), varExp, loc)
+            val varExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(localVar), loc0)
+            DesugaredAst.Expr.FixpointFilter(Name.Pred(ident.name, loc0), varExp, loc0)
         }
 
         // Merge all of the projections into one result.
         projectExps.reduceRight[DesugaredAst.Expr] {
-          case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc)
+          case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc0)
         }
     }
 
     // Bind the tmp% variable to the minimal model and combine it with the body expression.
-    DesugaredAst.Expr.Let(localVar, Ast.Modifiers.Empty, modelExp, bodyExp, loc.asReal)
+    DesugaredAst.Expr.Let(localVar, Ast.Modifiers.Empty, modelExp, bodyExp, loc0.asReal)
   }
 
   /**
@@ -1618,21 +1618,21 @@ object Desugar {
     * }}}
     * OBS: The last merge and solve is done in the typer because of trouble when `(merge e1, e2, e3)` is a closed row.
     */
-  private def desugarFixpointQueryWithSelect(exps0: List[WeededAst.Expr], selects0: List[WeededAst.Expr], from0: List[Predicate.Body], where0: List[WeededAst.Expr], loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+  private def desugarFixpointQueryWithSelect(exps0: List[WeededAst.Expr], selects0: List[WeededAst.Expr], from0: List[Predicate.Body], where0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val exps = visitExps(exps0)
     val selects = visitExps(selects0)
     val from = visitPredicateBodies(from0)
     val where = visitExps(where0)
 
     // The fresh predicate name where to store the result of the query.
-    val pred = Name.Pred(Flix.Delimiter + "Result", loc)
+    val pred = Name.Pred(Flix.Delimiter + "Result", loc0)
 
     // The head of the pseudo-rule.
     val den = Ast.Denotation.Relational
-    val head = DesugaredAst.Predicate.Head.Atom(pred, den, selects, loc)
+    val head = DesugaredAst.Predicate.Head.Atom(pred, den, selects, loc0)
 
     // The body of the pseudo-rule.
-    val guard = where.map(DesugaredAst.Predicate.Body.Guard(_, loc))
+    val guard = where.map(DesugaredAst.Predicate.Body.Guard(_, loc0))
 
     // Automatically fix all lattices atoms.
     val body = guard ::: from.map {
@@ -1642,18 +1642,18 @@ object Desugar {
     }
 
     // Construct the pseudo-query.
-    val pseudoConstraint = DesugaredAst.Constraint(head, body, loc)
+    val pseudoConstraint = DesugaredAst.Constraint(head, body, loc0)
 
     // Construct a constraint set that contains the single pseudo constraint.
-    val queryExp = DesugaredAst.Expr.FixpointConstraintSet(List(pseudoConstraint), loc)
+    val queryExp = DesugaredAst.Expr.FixpointConstraintSet(List(pseudoConstraint), loc0)
 
     // Construct the merge of all the expressions.
     val dbExp = exps.reduceRight[Expr] {
-      case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc)
+      case (e, acc) => DesugaredAst.Expr.FixpointMerge(e, acc, loc0)
     }
 
     // Extract the tuples of the result predicate.
-    DesugaredAst.Expr.FixpointProject(pred, queryExp, dbExp, loc)
+    DesugaredAst.Expr.FixpointProject(pred, queryExp, dbExp, loc0)
   }
 
   /**
@@ -1684,21 +1684,22 @@ object Desugar {
     *
     * This is also known as `ParsedAst.Expression.LambdaMatch`
     *
-    * @param p the pattern of the parameter
-    * @param e the body of the lambda
+    * @param pat0 the pattern of the parameter
+    * @param exp0 the body of the lambda
+    * @param loc0 the [[SourceLocation]] of the lambda
     * @return A lambda that matches on its parameter i.e. a [[DesugaredAst.Expr.Lambda]] that has a pattern match in its body.
     */
-  private def mkLambdaMatch(p: DesugaredAst.Pattern, e: DesugaredAst.Expr, loc: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
+  private def mkLambdaMatch(pat0: DesugaredAst.Pattern, exp0: DesugaredAst.Expr, loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr.Lambda = {
     // The name of the lambda parameter.
-    val ident = Name.Ident(loc.sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), loc.sp2).asSynthetic
+    val ident = Name.Ident(loc0.sp1, "pat" + Flix.Delimiter + flix.genSym.freshId(), loc0.sp2).asSynthetic
 
     // Construct the body of the lambda expression.
-    val varOrRef = DesugaredAst.Expr.Ambiguous(Name.mkQName(ident), loc)
-    val rule = DesugaredAst.MatchRule(p, None, e)
+    val varOrRef = DesugaredAst.Expr.Ambiguous(Name.mkQName(ident), loc0)
+    val rule = DesugaredAst.MatchRule(pat0, None, exp0)
 
-    val fparam = DesugaredAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc)
-    val body = DesugaredAst.Expr.Match(varOrRef, List(rule), loc)
-    DesugaredAst.Expr.Lambda(fparam, body, loc)
+    val fparam = DesugaredAst.FormalParam(ident, Ast.Modifiers.Empty, None, loc0)
+    val body = DesugaredAst.Expr.Match(varOrRef, List(rule), loc0)
+    DesugaredAst.Expr.Lambda(fparam, body, loc0)
   }
 
   /**
