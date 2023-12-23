@@ -640,13 +640,7 @@ object Desugar {
       desugarSetLit(exps, loc)
 
     case WeededAst.Expr.MapLit(exps, loc) =>
-      // Rewrites a `FMap` expression into `Map/empty` and a `Map/insert` calls.
-      val empty = mkApplyFqn("Map.empty", List(DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc)), loc)
-      exps.map {
-        case (k, v) => visitExp(k) -> visitExp(v)
-      }.foldLeft(empty) {
-        case (acc, (k, v)) => mkApplyFqn("Map.insert", List(k, v, acc), loc)
-      }
+      desugarMapLit(exps, loc)
 
     case WeededAst.Expr.Ref(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
@@ -1559,7 +1553,7 @@ object Desugar {
   }
 
   /**
-    * Rewrites [[WeededAst.Expr.SetLit]] (`Set#{1 => 2, 2 => 3}`) into `Set.empty` and `Set.insert` calls.
+    * Rewrites [[WeededAst.Expr.SetLit]] (`Set#{1, 2}`) into `Set.empty` and `Set.insert` calls.
     */
   private def desugarSetLit(exps0: List[WeededAst.Expr], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
     val es = visitExps(exps0)
@@ -1568,7 +1562,19 @@ object Desugar {
       case (acc, e) => mkApplyFqn("Set.insert", List(e, acc), loc0)
     }
   }
-  
+
+  /**
+    * Rewrites [[WeededAst.Expr.MapLit]] (`Map#{1 => 2, 2 => 3}`) into `Map.empty` and a `Map.insert` calls.
+    */
+  private def desugarMapLit(exps0: List[(WeededAst.Expr, WeededAst.Expr)], loc0: SourceLocation)(implicit flix: Flix): DesugaredAst.Expr = {
+    val empty = mkApplyFqn("Map.empty", List(DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc0)), loc0)
+    exps0.map {
+      case (k, v) => visitExp(k) -> visitExp(v)
+    }.foldLeft(empty) {
+      case (acc, (k, v)) => mkApplyFqn("Map.insert", List(k, v, acc), loc0)
+    }
+  }
+
   /**
     * Rewrites a [[WeededAst.Expr.FixpointInjectInto]] into a series of injects and merges.
     */
