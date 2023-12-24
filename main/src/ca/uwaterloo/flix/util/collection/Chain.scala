@@ -57,6 +57,15 @@ sealed trait Chain[+A] extends Iterable[A] {
     case Chain.Many(cs) => cs.map(_.length).sum
     case Chain.Proxy(xs) => xs.length
   }
+
+  override def equals(obj: Any): Boolean = obj match {
+    case that: Chain[_] => (Chain.ViewLeft(this), Chain.ViewLeft(that)) match {
+      case (Chain.ViewLeft.NoneLeft(), Chain.ViewLeft.NoneLeft()) => true
+      case (Chain.ViewLeft.SomeLeft(x, xs), Chain.ViewLeft.SomeLeft(y, ys)) if x == y => xs == ys
+      case _ => false
+    }
+    case _ => false
+  }
 }
 
 object Chain {
@@ -84,12 +93,12 @@ object Chain {
   /**
     * Returns a chain containing the given elements.
     */
-  def apply[A](xs: A*): Chain[A] = Chain.Proxy(xs)
+  def apply[A](xs: A*): Chain[A] = if (xs.isEmpty) Chain.empty else Chain.Proxy(xs)
 
   /**
     * Returns a chain containing the given elements.
     */
-  def from[A](xs: Seq[A]): Chain[A] = Chain.Proxy(xs)
+  def from[A](xs: Seq[A]): Chain[A] = if (xs.isEmpty) Chain.empty else Chain.Proxy(xs)
 
   /**
     * Returns a chain containing the given elements.
@@ -105,4 +114,31 @@ object Chain {
     * Concatenates the given sequence of chains, in order.
     */
   def concat[A](cs: Seq[Chain[A]]): Chain[A] = Chain.Many(cs)
+
+  private sealed trait ViewLeft[+A] {
+    private def ++[B >: A](that: ViewLeft[B]): ViewLeft[B] = this match {
+      case ViewLeft.NoneLeft() => that
+      case ViewLeft.SomeLeft(tr, cr) => that match {
+        case ViewLeft.NoneLeft() => this
+        case ViewLeft.SomeLeft(tl, cl) =>
+          ViewLeft.SomeLeft(tl, cl ++ Chain.Link(Chain(tr), cr))
+      }
+    }
+  }
+
+  private object ViewLeft {
+
+    case class NoneLeft[A]() extends ViewLeft[A]
+
+    case class SomeLeft[A](t: A, c: Chain[A]) extends ViewLeft[A]
+
+    def apply[A](c: Chain[A]): ViewLeft[A] = c match {
+      case Empty => NoneLeft()
+      case Link(l, r) => ViewLeft(l) ++ ViewLeft(r)
+      case Many(cs) => cs.map(apply).reduce(_ ++ _)
+      case Proxy(xs) if xs.isEmpty => NoneLeft()
+      case Proxy(Seq(x)) => SomeLeft(x, Chain.Empty)
+      case Proxy(xs) => SomeLeft(xs.head, Chain.from(xs.tail))
+    }
+  }
 }

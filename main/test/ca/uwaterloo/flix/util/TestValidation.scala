@@ -304,8 +304,8 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("flatMap05") {
-    val ex1: Exception = new RuntimeException()
-    val ex2: Exception = new RuntimeException()
+    val ex1: Exception = new RuntimeException("1")
+    val ex2: Exception = new RuntimeException("2")
     val result = flatMapN(SoftFailure("abc", Chain(ex1))) {
       case x => flatMapN(Validation.success(x.toUpperCase)) {
         case y => flatMapN(SoftFailure[String, Exception](y.reverse, Chain(ex2))) {
