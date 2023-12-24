@@ -47,6 +47,16 @@ sealed trait Chain[+A] extends Iterable[A] {
     * The empty chain.
     */
   override val empty: Chain[A] = Chain.Empty
+
+  /**
+    * Returns the amount of elements in the chain.
+    */
+  def length: Int = this match {
+    case Chain.Empty => 0
+    case Chain.Link(l, r) => l.length + r.length
+    case Chain.Many(cs) => cs.map(_.length).sum
+    case Chain.Proxy(xs) => xs.length
+  }
 }
 
 object Chain {
