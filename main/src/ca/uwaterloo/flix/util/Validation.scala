@@ -27,7 +27,7 @@ sealed trait Validation[+T, +E] {
     *
     * Throws an exception if `this` is a [[Validation.HardFailure]] object.
     */
-  final def get: T = this match {
+  final def unsafeGet: T = this match {
     case Validation.Success(value) => value
     case Validation.SoftFailure(_, errors) => throw new RuntimeException(s"Attempt to retrieve value from SoftFailure. The errors are: ${errors.mkString(", ")}")
     case Validation.HardFailure(errors) => throw new RuntimeException(s"Attempt to retrieve value from Failure. The errors are: ${errors.mkString(", ")}")
@@ -64,7 +64,7 @@ sealed trait Validation[+T, +E] {
     */
   def toHardFailure: Validation[T, E] = this match {
     case Validation.Success(t) => Validation.Success(t)
-    case Validation.SoftFailure(t, errors) => Validation.HardFailure(errors)
+    case Validation.SoftFailure(_, errors) => Validation.HardFailure(errors)
     case Validation.HardFailure(errors) => Validation.HardFailure(errors)
   }
 
@@ -81,6 +81,15 @@ sealed trait Validation[+T, +E] {
     case _ => this
   }
 
+  /**
+    * Returns `this` as a [[Result]].
+    * Both [[Validation.Success]] and [[Validation.SoftFailure]] are treated as [[Result.Ok]].
+    */
+  def toResult: Result[(T, List[E]), List[E]] = this match {
+    case Validation.Success(t) => Result.Ok((t, List.empty))
+    case Validation.SoftFailure(t, errors) => Result.Ok((t, errors.toList))
+    case Validation.HardFailure(errors) => Result.Err(errors.toList)
+  }
 }
 
 object Validation {
