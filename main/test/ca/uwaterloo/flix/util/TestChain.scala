@@ -25,6 +25,15 @@ class TestChain extends AnyFunSuite {
     assert(chain.isEmpty)
   }
 
+  test("TestChainReflexive.01") {
+    assertResult(Chain.empty)(Chain.empty)
+  }
+
+  test("TestChainReflexive.02") {
+    val result = Chain.empty == Chain.empty
+    assert(result)
+  }
+
   test("TestChain.02") {
     val chain = Chain(1, 2, 3, 4)
     assert(chain.toList == List(1, 2, 3, 4))

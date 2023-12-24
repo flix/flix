@@ -137,7 +137,6 @@ object Chain {
       case Link(l, r) => ViewLeft(l) ++ ViewLeft(r)
       case Many(cs) => cs.map(apply).reduce(_ ++ _)
       case Proxy(xs) if xs.isEmpty => NoneLeft
-      case Proxy(Seq(x)) => SomeLeft(x, Chain.Empty)
       case Proxy(xs) => SomeLeft(xs.head, Chain.from(xs.tail))
     }
   }
