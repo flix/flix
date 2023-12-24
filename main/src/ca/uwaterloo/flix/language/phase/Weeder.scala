@@ -418,8 +418,8 @@ object Weeder {
                   val loc2 = mkSL(caze.ident.sp1, caze.ident.sp2)
                   HardFailure(Chain(
                     // NB: We report an error at both source locations.
-                    Seq(DuplicateTag(enumName, tagName, loc1, loc2),
-                      DuplicateTag(enumName, tagName, loc2, loc1))
+                    DuplicateTag(enumName, tagName, loc1, loc2),
+                    DuplicateTag(enumName, tagName, loc2, loc1)
                   ))
               }
           }

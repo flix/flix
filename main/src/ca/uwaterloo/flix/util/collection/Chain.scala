@@ -84,7 +84,17 @@ object Chain {
   /**
     * Returns a chain containing the given elements.
     */
-  def apply[A](xs: Seq[A]): Chain[A] = Chain.Proxy(xs)
+  def apply[A](xs: A*): Chain[A] = Chain.Proxy(xs)
+
+  /**
+    * Returns a chain containing the given elements.
+    */
+  def from[A](xs: Seq[A]): Chain[A] = Chain.Proxy(xs)
+
+  /**
+    * Returns a chain containing the given elements.
+    */
+  def from[A](xs: Iterable[A]): Chain[A] = Chain.Proxy(xs.toSeq)
 
   /**
     * The empty chain.

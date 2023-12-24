@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.util.collection.Chain
+
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
@@ -58,7 +60,7 @@ sealed trait Result[+T, +E] {
     */
   final def toValidation: Validation[T, E] = this match {
     case Result.Ok(t) => Validation.Success(t)
-    case Result.Err(e) => Validation.HardFailure(LazyList(e))
+    case Result.Err(e) => Validation.HardFailure(Chain(e))
   }
 
   /**

@@ -60,9 +60,9 @@ sealed trait Validation[+T, +E] {
     if (es.isEmpty) return this
 
     this match {
-      case Validation.Success(t) => Validation.SoftFailure(t, Chain(es.toSeq))
-      case Validation.SoftFailure(t, errors) => Validation.SoftFailure(t, Chain(es.toSeq) ++ errors)
-      case Validation.HardFailure(errors) => Validation.HardFailure(Chain(es.toSeq) ++ errors)
+      case Validation.Success(t) => Validation.SoftFailure(t, Chain.from(es))
+      case Validation.SoftFailure(t, errors) => Validation.SoftFailure(t, Chain.from(es) ++ errors)
+      case Validation.HardFailure(errors) => Validation.HardFailure(Chain.from(es) ++ errors)
     }
   }
 
@@ -87,7 +87,7 @@ sealed trait Validation[+T, +E] {
     case Validation.HardFailure(errors) if errors.length == 1 =>
       val one = errors.head
       if (f.isDefinedAt(one))
-        Validation.SoftFailure(f(one), Chain(Seq(one)))
+        Validation.SoftFailure(f(one), Chain(one))
       else
         this
     case _ => this
@@ -148,12 +148,12 @@ object Validation {
   /**
     * Returns a [[Validation.SoftFailure]] containing `t` with the error `e`.
     */
-  def toSoftFailure[T, E <: Recoverable](t: T, e: E): Validation[T, E] = Validation.SoftFailure(t, Chain(Seq(e)))
+  def toSoftFailure[T, E <: Recoverable](t: T, e: E): Validation[T, E] = Validation.SoftFailure(t, Chain(e))
 
   /**
     * Returns a [[Validation.HardFailure]] with the error `e`.
     */
-  def toHardFailure[T, E <: Unrecoverable](e: E): Validation[T, E] = Validation.HardFailure(Chain(Seq(e)))
+  def toHardFailure[T, E <: Unrecoverable](e: E): Validation[T, E] = Validation.HardFailure(Chain(e))
 
   /**
     * Returns a [[Validation.Success]] containing `t` if `es` is empty.
@@ -164,7 +164,7 @@ object Validation {
     if (es.isEmpty)
       Validation.Success(t)
     else
-      Validation.SoftFailure(t, Chain(es.toSeq))
+      Validation.SoftFailure(t, Chain.from(es))
   }
 
   /**

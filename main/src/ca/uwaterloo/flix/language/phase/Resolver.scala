@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError._
 import ca.uwaterloo.flix.language.errors.Recoverable
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.{ListMap, MapOps}
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
 import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, ParOps, Result, Similarity, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
@@ -289,7 +289,7 @@ object Resolver {
     val errors = cycle.map {
       sym => ResolutionError.CyclicTypeAliases(cycle, sym.loc)
     }
-    Validation.HardFailure(LazyList.from(errors))
+    Validation.HardFailure(Chain.from(errors))
   }
 
   /**
@@ -403,7 +403,7 @@ object Resolver {
       val errors = cycle.map {
         sym => ResolutionError.CyclicClassHierarchy(cycle, sym.loc)
       }
-      Validation.HardFailure(LazyList.from(errors))
+      Validation.HardFailure(Chain.from(errors))
     }
 
     val classSyms = classes.values.map(_.sym)
@@ -1665,7 +1665,7 @@ object Resolver {
         case NamedAst.Expr.Error(m) =>
           // Note: We must NOT use [[Validation.toSoftFailure]] because
           // that would duplicate the error inside the Validation.
-          Validation.SoftFailure(ResolvedAst.Expr.Error(m), LazyList.empty)
+          Validation.SoftFailure(ResolvedAst.Expr.Error(m), Chain.empty)
       }
 
       /**

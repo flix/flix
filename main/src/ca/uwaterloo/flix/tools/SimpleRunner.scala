@@ -111,7 +111,7 @@ object SimpleRunner {
         Result.Ok(())
 
       case failure =>
-        flix.mkMessages(failure.errors.sortBy(_.source.name))
+        flix.mkMessages(failure.errors.toSeq.sortBy(_.source.name))
           .foreach(println)
         println()
         println(s"Compilation failed with ${failure.errors.length} error(s).")

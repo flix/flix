@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{HardFailure, SoftFailure, Success}
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.collection.Chain
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -339,7 +340,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       flix.check() match {
         case Success(root) =>
           // Case 1: Compilation was successful. Build the reverse index.
-          processSuccessfulCheck(requestId, root, LazyList.empty, flix.options.explain, t)
+          processSuccessfulCheck(requestId, root, Chain.empty, flix.options.explain, t)
 
         case SoftFailure(root, errors) =>
           // Case 2: Compilation had non-critical errors. Build the reverse index.
@@ -370,7 +371,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Helper function for [[processCheck]] which handles successful and soft failure compilations.
     */
-  private def processSuccessfulCheck(requestId: String, root: Root, errors: LazyList[CompilationMessage], explain: Boolean, t0: Long): JValue = {
+  private def processSuccessfulCheck(requestId: String, root: Root, errors: Chain[CompilationMessage], explain: Boolean, t0: Long): JValue = {
     val oldRoot = this.root
     this.root = Some(root)
     this.index = Indexer.visitRoot(root)
@@ -410,11 +411,6 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val version = ("major" -> major) ~ ("minor" -> minor) ~ ("revision" -> revision)
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> version)
   }
-
-  /**
-    * Returns `true` if the given source location `loc` matches the given `uri`.
-    */
-  private def matchesUri(uri: String, loc: SourceLocation): Boolean = uri == loc.source.name
 
   /**
     * Logs the given message `msg` along with information about the connection `ws`.

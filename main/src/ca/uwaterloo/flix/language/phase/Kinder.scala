@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnvironment
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
 import ca.uwaterloo.flix.util.Validation.{flatMapN, fold, mapN, traverse, traverseOpt}
+import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import scala.collection.immutable.SortedSet
@@ -968,7 +969,7 @@ object Kinder {
       val pvar = Type.freshVar(Kind.Eff, m.loc)
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
-      Validation.SoftFailure(KindedAst.Expr.Error(m, tvar, pvar), LazyList.empty)
+      Validation.SoftFailure(KindedAst.Expr.Error(m, tvar, pvar), Chain.empty)
   }
 
   /**

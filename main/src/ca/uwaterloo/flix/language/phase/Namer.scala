@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.DesugaredAst.RestrictableChoosePattern
 import ca.uwaterloo.flix.language.ast.{NamedAst, _}
 import ca.uwaterloo.flix.language.errors.NameError
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
@@ -239,13 +239,13 @@ object Namer {
     // NB: We report an error at both source locations.
     if (name.charAt(0).isUpper) {
       // Case 1: uppercase name
-      HardFailure(LazyList(
+      HardFailure(Chain(
         NameError.DuplicateUpperName(name, loc1, loc2),
         NameError.DuplicateUpperName(name, loc2, loc1)
       ))
     } else {
       // Case 2: lowercase name
-      HardFailure(LazyList(
+      HardFailure(Chain(
         NameError.DuplicateLowerName(name, loc1, loc2),
         NameError.DuplicateLowerName(name, loc2, loc1)
       ))
@@ -1057,7 +1057,7 @@ object Namer {
     case DesugaredAst.Expr.Error(m) =>
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
-      Validation.SoftFailure(NamedAst.Expr.Error(m), LazyList.empty)
+      Validation.SoftFailure(NamedAst.Expr.Error(m), Chain.empty)
 
   }
 
