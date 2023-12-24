@@ -163,7 +163,7 @@ object SafetyError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""A lattice variable cannot be used as relational variable unless the atom
          |from which it originates is marked with `fix`.
          |""".stripMargin
@@ -186,11 +186,6 @@ object SafetyError {
          |${code(loc, "the wildcard occurs in this negated atom.")}
          |""".stripMargin
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -209,11 +204,6 @@ object SafetyError {
          |${code(loc, "the variable occurs in this negated atom.")}
          |""".stripMargin
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -233,7 +223,7 @@ object SafetyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       if (!sym.isWild)
         s"""${underline("Tip:")} Ensure that the variable occurs in at least one positive atom.""".stripMargin
@@ -258,8 +248,6 @@ object SafetyError {
          |${code(loc, "pattern occurs in this body atom.")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -283,7 +271,7 @@ object SafetyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some(
+    override def explain(formatter: Formatter): Option[String] = Some(
       s"""
          |An example of a type parameter of kind 'Region':
          |
@@ -311,7 +299,7 @@ object SafetyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some(
+    override def explain(formatter: Formatter): Option[String] = Some(
       s"""
          |A test function must not have parameters.
          |
@@ -413,7 +401,7 @@ object SafetyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          | The first argument to any method must be 'this', and must have the same type as the superclass.
          |""".stripMargin
@@ -437,8 +425,6 @@ object SafetyError {
          |${code(loc, "missing constructor.")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -460,7 +446,7 @@ object SafetyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       val parameterTypes = (clazz +: method.getParameterTypes).map(formatJavaType)
       val returnType = formatJavaType(method.getReturnType)
       s"""
@@ -492,7 +478,7 @@ object SafetyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          | The first argument to any method must be 'this', and must have the same type as the superclass.
          |""".stripMargin
@@ -516,8 +502,6 @@ object SafetyError {
          |${code(loc, "non-public class.")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -538,8 +522,6 @@ object SafetyError {
          |${code(loc, "the method occurs here.")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**

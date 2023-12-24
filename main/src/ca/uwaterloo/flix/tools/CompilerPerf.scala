@@ -438,11 +438,11 @@ object CompilerPerf {
 
     val totalLines =
       if (frontendOnly) {
-        flix.check().toHardFailure.get.sources.foldLeft(0) {
+        flix.check().toHardFailure.unsafeGet.sources.foldLeft(0) {
           case (acc, (_, sl)) => acc + sl.endLine
         }
       } else {
-        flix.compile().toHardFailure.get.getTotalLines
+        flix.compile().toHardFailure.unsafeGet.getTotalLines
       }
 
     val phases = flix.phaseTimers.map {

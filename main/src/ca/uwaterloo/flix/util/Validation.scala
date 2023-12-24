@@ -27,7 +27,7 @@ sealed trait Validation[+T, +E] {
     *
     * Throws an exception if `this` is a [[Validation.HardFailure]] object.
     */
-  final def get: T = this match {
+  final def unsafeGet: T = this match {
     case Validation.Success(value) => value
     case Validation.SoftFailure(_, errors) => throw new RuntimeException(s"Attempt to retrieve value from SoftFailure. The errors are: ${errors.mkString(", ")}")
     case Validation.HardFailure(errors) => throw new RuntimeException(s"Attempt to retrieve value from Failure. The errors are: ${errors.mkString(", ")}")
