@@ -1351,7 +1351,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
          |    ?foo
          |
        """.stripMargin
-    compile(input, Options.TestWithLibNix).get
+    compile(input, Options.TestWithLibNix).unsafeGet
   }
 
   test("UnusedVarSym.Hole.02") {
@@ -1362,7 +1362,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
          |    ?foo
          |
        """.stripMargin
-    compile(input, Options.TestWithLibNix).get
+    compile(input, Options.TestWithLibNix).unsafeGet
   }
 
   test("UnusedVarSym.PreviousError.01") {
