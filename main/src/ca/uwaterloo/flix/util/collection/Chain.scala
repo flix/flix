@@ -60,7 +60,7 @@ sealed trait Chain[+A] extends Iterable[A] {
 
   override def equals(obj: Any): Boolean = obj match {
     case that: Chain[_] => (Chain.ViewLeft(this), Chain.ViewLeft(that)) match {
-      case (Chain.ViewLeft.NoneLeft(), Chain.ViewLeft.NoneLeft()) => true
+      case (Chain.ViewLeft.NoneLeft, Chain.ViewLeft.NoneLeft) => true
       case (Chain.ViewLeft.SomeLeft(x, xs), Chain.ViewLeft.SomeLeft(y, ys)) if x == y => xs == ys
       case _ => false
     }
@@ -117,9 +117,9 @@ object Chain {
 
   private sealed trait ViewLeft[+A] {
     private def ++[B >: A](that: ViewLeft[B]): ViewLeft[B] = this match {
-      case ViewLeft.NoneLeft() => that
+      case ViewLeft.NoneLeft => that
       case ViewLeft.SomeLeft(tr, cr) => that match {
-        case ViewLeft.NoneLeft() => this
+        case ViewLeft.NoneLeft => this
         case ViewLeft.SomeLeft(tl, cl) =>
           ViewLeft.SomeLeft(tl, cl ++ Chain.Link(Chain(tr), cr))
       }
@@ -128,15 +128,15 @@ object Chain {
 
   private object ViewLeft {
 
-    case class NoneLeft[A]() extends ViewLeft[A]
+    case object NoneLeft extends ViewLeft[Nothing]
 
     case class SomeLeft[A](t: A, c: Chain[A]) extends ViewLeft[A]
 
     def apply[A](c: Chain[A]): ViewLeft[A] = c match {
-      case Empty => NoneLeft()
+      case Empty => NoneLeft
       case Link(l, r) => ViewLeft(l) ++ ViewLeft(r)
       case Many(cs) => cs.map(apply).reduce(_ ++ _)
-      case Proxy(xs) if xs.isEmpty => NoneLeft()
+      case Proxy(xs) if xs.isEmpty => NoneLeft
       case Proxy(Seq(x)) => SomeLeft(x, Chain.Empty)
       case Proxy(xs) => SomeLeft(xs.head, Chain.from(xs.tail))
     }
