@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.language.errors._
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
@@ -415,7 +416,7 @@ object Weeder {
                   val enumName = ident.name
                   val loc1 = otherTag.ident.loc
                   val loc2 = mkSL(caze.ident.sp1, caze.ident.sp2)
-                  HardFailure(LazyList(
+                  HardFailure(Chain(
                     // NB: We report an error at both source locations.
                     DuplicateTag(enumName, tagName, loc1, loc2),
                     DuplicateTag(enumName, tagName, loc2, loc1)
