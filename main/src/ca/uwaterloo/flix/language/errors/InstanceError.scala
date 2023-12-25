@@ -293,6 +293,29 @@ object InstanceError {
   }
 
   /**
+    * Error indicating an orphan instance.
+    *
+    * @param sym the class symbol.
+    * @param tpe the instance type.
+    * @param loc the location where the error occurred.
+    */
+  case class OrphanInstance(sym: Symbol.ClassSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
+    override def summary: String = "Orphan instance."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |
+         |>> Orphan instance for type '${red(FormatType.formatType(tpe))}' in '${magenta(sym.name)}'.
+         |
+         |${code(loc, s"orphan instance")}
+         |
+         |An instance must be declared in the class's namespace or in the type's namespace.
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Error indicating that the types of two instances overlap.
     *
     * @param sym  the class symbol.
@@ -320,29 +343,6 @@ object InstanceError {
     })
 
     def loc: SourceLocation = loc1
-  }
-
-  /**
-    * Error indicating an orphan instance.
-    *
-    * @param sym the class symbol.
-    * @param tpe the instance type.
-    * @param loc the location where the error occurred.
-    */
-  case class OrphanInstance(sym: Symbol.ClassSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
-    override def summary: String = "Orphan instance."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |
-         |>> Orphan instance for type '${red(FormatType.formatType(tpe))}' in '${magenta(sym.name)}'.
-         |
-         |${code(loc, s"orphan instance")}
-         |
-         |An instance must be declared in the class's namespace or in the type's namespace.
-         |""".stripMargin
-    }
   }
 
   /**
@@ -390,5 +390,4 @@ object InstanceError {
          |""".stripMargin
     }
   }
-
 }
