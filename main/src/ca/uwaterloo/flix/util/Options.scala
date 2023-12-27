@@ -35,7 +35,7 @@ object Options {
     output = None,
     progress = false,
     test = false,
-    target = JvmTarget.Version18,
+    target = JvmTarget.Version21,
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
     xbddthreshold = None,
@@ -136,24 +136,9 @@ sealed trait JvmTarget
 object JvmTarget {
 
   /**
-    * Emit bytecode for Java 1.6.
+    * Emit bytecode for Java 21.
     */
-  object Version16 extends JvmTarget
-
-  /**
-    * Emit bytecode for Java 1.7.
-    */
-  object Version17 extends JvmTarget
-
-  /**
-    * Emit bytecode for Java 1.8.
-    */
-  object Version18 extends JvmTarget
-
-  /**
-    * Emit bytecode for Java 1.9.
-    */
-  object Version19 extends JvmTarget
+  object Version21 extends JvmTarget
 
 }
 
