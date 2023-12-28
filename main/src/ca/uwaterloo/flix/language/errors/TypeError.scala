@@ -35,6 +35,27 @@ sealed trait TypeError extends CompilationMessage {
 object TypeError {
 
   /**
+    * Effect Generalization Error.
+    *
+    * @param declared the declared effect.
+    * @param inferred the inferred effect.
+    * @param loc      the location where the error occurred.
+    */
+  case class EffectGeneralizationError(declared: Type, inferred: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Unrecoverable {
+    def summary: String = s"The inferred effect '${FormatEff.formatEff(inferred)}' cannot be generalized to '${FormatEff.formatEff(declared)}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> The inferred effect: '${red(FormatEff.formatEff(inferred))}' cannot be generalized to '${red(FormatEff.formatEff(declared))}'.
+         |
+         |${code(loc, "unable to generalize the effect.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Effectful function declared as pure.
     *
     * @param inferred the inferred effect.
@@ -55,7 +76,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       """A function must declare all the effects used in its body.
         |
         |For example:
@@ -64,29 +85,6 @@ object TypeError {
         |                                             ^^^^
         |""".stripMargin
     })
-  }
-
-  /**
-    * Effect Generalization Error.
-    *
-    * @param declared the declared effect.
-    * @param inferred the inferred effect.
-    * @param loc      the location where the error occurred.
-    */
-  case class EffectGeneralizationError(declared: Type, inferred: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Unrecoverable {
-    def summary: String = s"The inferred effect '${FormatEff.formatEff(inferred)}' cannot be generalized to '${FormatEff.formatEff(declared)}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> The inferred effect: '${red(FormatEff.formatEff(inferred))}' cannot be generalized to '${red(FormatEff.formatEff(declared))}'.
-         |
-         |${code(loc, "unable to generalize the effect.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -113,7 +111,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       val newLineAndIndent: String = System.lineSeparator() + "  "
 
       def fmtTypeVar(tvar: Symbol.KindedTypeVarSym, declared: Boolean): String = {
@@ -156,7 +154,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       """A function whose body is impure must be declared as so.
         |
         |For example:
@@ -188,7 +186,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       "Tip: Add an equality constraint to the function."
     })
   }
@@ -213,8 +211,6 @@ object TypeError {
          |
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -241,8 +237,6 @@ object TypeError {
          |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -269,8 +263,6 @@ object TypeError {
          |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -297,8 +289,6 @@ object TypeError {
          |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -325,8 +315,6 @@ object TypeError {
          |Type Two: ${magenta(formatType(fullType2, Some(renv)))}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -384,8 +372,6 @@ object TypeError {
          |Type Two: ${formatType(fullType2, Some(renv))}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -408,8 +394,6 @@ object TypeError {
          |
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -434,8 +418,6 @@ object TypeError {
          |
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -458,7 +440,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""To define equality on '${formatType(tpe, Some(renv))}', either:
          |
          |  (a) define an instance of Eq for '${formatType(tpe, Some(renv))}', or
@@ -492,7 +474,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""To define an order on '${formatType(tpe, Some(renv))}', either:
          |
          |  (a) define an instance of Order for '${formatType(tpe, Some(renv))}', or
@@ -527,7 +509,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""To mark '${formatType(tpe, Some(renv))}' as sendable, either:
          |
          |  (a) define an instance of Sendable for '${formatType(tpe, Some(renv))}', or
@@ -561,7 +543,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""To define a string representation of '${formatType(tpe, Some(renv))}', either:
          |
          |  (a) define an instance of ToString for '${formatType(tpe, Some(renv))}', or
@@ -593,8 +575,6 @@ object TypeError {
          |${code(loc, "unexpected non-record type.")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -616,29 +596,6 @@ object TypeError {
          |
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * Over-applied Function.
-    *
-    * @param excessArgument the type of the excess argument.
-    * @param loc            the location where the error occurred.
-    */
-  case class OverApplied(excessArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Over-applied function. Excess argument of type: '${formatType(excessArgument)}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Over-applied function. Excess argument of type: '${red(formatType(excessArgument))}'.
-         |
-         |${code(loc, "over-applied function.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -667,8 +624,25 @@ object TypeError {
          |Type Two: ${formatType(fullType2, Some(renv))}
          |""".stripMargin
     }
+  }
 
-    def explain(formatter: Formatter): Option[String] = None
+  /**
+    * Over-applied Function.
+    *
+    * @param excessArgument the type of the excess argument.
+    * @param loc            the location where the error occurred.
+    */
+  case class OverApplied(excessArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Over-applied function. Excess argument of type: '${formatType(excessArgument)}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Over-applied function. Excess argument of type: '${red(formatType(excessArgument))}'.
+         |
+         |${code(loc, "over-applied function.")}
+         |""".stripMargin
+    }
   }
 
   /**
@@ -694,7 +668,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some(
+    override def explain(formatter: Formatter): Option[String] = Some(
       s"""Flix does not support sub-typing nor sub-effecting.
          |
          |Nevertheless, 'checked_ecast' is way to use sub-effecting in a safe manner, for example:
@@ -728,7 +702,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some(
+    override def explain(formatter: Formatter): Option[String] = Some(
       s"""Flix does not support sub-typing nor sub-effecting.
          |
          |Nevertheless, 'checked_cast' is way to use sub-typing in a safe manner, for example:
@@ -767,8 +741,6 @@ object TypeError {
          |${code(rvar.loc, "region variable declared here.")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -797,8 +769,6 @@ object TypeError {
          |does not contain the label '${red(label.name)}' of type ${cyan(formatType(labelType, Some(renv)))}.
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -827,8 +797,6 @@ object TypeError {
          |does not contain the predicate '${red(pred.name)}' of type ${cyan(formatType(predType, Some(renv)))}.
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -848,8 +816,6 @@ object TypeError {
          |${code(loc, "under-applied function.")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -877,8 +843,6 @@ object TypeError {
          |  Actual: ${formatType(actual, Some(renv))}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -900,8 +864,6 @@ object TypeError {
          |${code(loc, "expression has unexpected type.")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -923,8 +885,6 @@ object TypeError {
          |${code(loc, "expression has unexpected type.")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -945,7 +905,7 @@ object TypeError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       "Tip: Add an equality constraint to the function."
     })
   }

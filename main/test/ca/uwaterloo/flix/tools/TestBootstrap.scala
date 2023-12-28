@@ -23,21 +23,21 @@ class TestBootstrap extends AnyFunSuite {
   test("check") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
-    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).unsafeGet
     b.check(new Flix())
   }
 
   test("build") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
-    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).unsafeGet
     b.build(new Flix())
   }
 
   test("build-jar") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
-    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).unsafeGet
     b.build(new Flix())
     b.buildJar()
 
@@ -50,7 +50,7 @@ class TestBootstrap extends AnyFunSuite {
   test("build-jar generates ZIP entries with fixed time") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
-    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).unsafeGet
     b.build(new Flix())
     b.buildJar()
 
@@ -72,7 +72,7 @@ class TestBootstrap extends AnyFunSuite {
 
     val flix = new Flix()
 
-    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).unsafeGet
     b.build(flix)
     b.buildJar()
 
@@ -92,7 +92,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
 
-    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).unsafeGet
     b.buildPkg()
 
     val packageName = p.getFileName.toString
@@ -105,7 +105,7 @@ class TestBootstrap extends AnyFunSuite {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
 
-    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).unsafeGet
     b.buildPkg()
 
     val packageName = p.getFileName.toString
@@ -124,7 +124,7 @@ class TestBootstrap extends AnyFunSuite {
     val packageName = p.getFileName.toString
     val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
 
-    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).unsafeGet
     b.buildPkg()
 
     def hash1 = calcHash(packagePath)
@@ -141,21 +141,21 @@ class TestBootstrap extends AnyFunSuite {
   test("benchmark") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
-    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).unsafeGet
     b.benchmark(new Flix())
   }
 
   test("run") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
-    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).unsafeGet
     b.run(new Flix(), Array("arg0", "arg1"))
   }
 
   test("test") {
     val p = Files.createTempDirectory(ProjectPrefix)
     Bootstrap.init(p)(System.out)
-    val b = Bootstrap.bootstrap(p, None)(System.out).get
+    val b = Bootstrap.bootstrap(p, None)(System.out).unsafeGet
     b.test(new Flix())
   }
 

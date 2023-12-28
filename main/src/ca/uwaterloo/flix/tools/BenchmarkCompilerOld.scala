@@ -22,7 +22,7 @@ object BenchmarkCompilerOld {
     */
   def benchmarkCodeSize(o: Options): Unit = {
     val flix = newFlix(o)
-    val result = flix.compile().get
+    val result = flix.compile().unsafeGet
     val codeSize = result.codeSize
 
     // Find the number of lines of source code.
@@ -51,7 +51,7 @@ object BenchmarkCompilerOld {
     //
     val r = (0 until N).map { _ =>
       val flix = newFlix(o)
-      val compilationResult = flix.compile().get
+      val compilationResult = flix.compile().unsafeGet
       (compilationResult, flix.phaseTimers.toList)
     }
 
@@ -71,7 +71,7 @@ object BenchmarkCompilerOld {
       // Re-add all the inputs to mark them all as changed.
       addInputs(flix)
 
-      val compilationResult = flix.compile().get
+      val compilationResult = flix.compile().unsafeGet
       (compilationResult, flix.phaseTimers.toList)
     }
 
@@ -151,13 +151,13 @@ object BenchmarkCompilerOld {
 
       // Benchmark frontend or entire compiler?
       if (frontend) {
-        val root = flix.check().toHardFailure.get
+        val root = flix.check().toHardFailure.unsafeGet
         val totalLines = root.sources.foldLeft(0) {
           case (acc, (_, sl)) => acc + sl.endLine
         }
         Run(totalLines, flix.getTotalTime)
       } else {
-        val compilationResult = flix.compile().toHardFailure.get
+        val compilationResult = flix.compile().toHardFailure.unsafeGet
         Run(compilationResult.getTotalLines, compilationResult.totalTime)
       }
     }
