@@ -38,9 +38,25 @@ object Inliner {
   }
 
   /**
-    * Candidates for inlining are functions with fewer than `InlineThreshold` expressions
+    * A function below the soft threshold is typically inlined.
     */
-  private val InlineThreshold = 8
+  private val SoftInlineThreshold: Int = 4
+
+  /**
+    * A function above the hard threshold is never inlined.
+    */
+  private val HardInlineThreshold: Int = 8
+
+  /**
+    * Returns `true` if `def0` should be inlined.
+    */
+  private def canInlineDef(def0: OccurrenceAst.Def): Boolean = {
+    val mayInline = def0.context.occur != DontInline && !def0.context.isSelfRecursive
+    val belowSoft = def0.context.size < SoftInlineThreshold
+    val belowHard = def0.context.size < HardInlineThreshold
+    val shouldInline = belowSoft || (def0.context.isDirectCall && belowHard) || (def0.context.occur == Once && belowHard)
+    mayInline && shouldInline
+  }
 
   /**
     * Performs inlining on the given AST `root`.
@@ -272,21 +288,6 @@ object Inliner {
       }
       LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)
 
-  }
-
-  /**
-    * A def can be inlined if
-    * Its body consist of a single non self call or
-    * Its body has a codesize below the inline threshold and its not being inlined into itself or
-    * It only occurs once in the entire program and
-    * It does not contain a reference to itself
-    */
-  private def canInlineDef(def0: OccurrenceAst.Def): Boolean = {
-    val mayInline = def0.context.occur != DontInline && !def0.context.isSelfRecursive
-    val isBelowInlineThreshold = def0.context.size < InlineThreshold
-    val occursOnce = def0.context.occur == Once
-    val canInline = def0.context.isDirectCall || isBelowInlineThreshold || occursOnce
-    mayInline && canInline
   }
 
   /**
@@ -566,7 +567,7 @@ object Inliner {
     * Helper function for dealing with [[AtomicOp]].
     * Returns `true` if `sym` is an enum with one case and `exps` is pure.
     */
-  private def isSingleCaseEnum(sym: Symbol.CaseSym, exps: List[LiftedAst.Expr])(implicit root: OccurrenceAst.Root, flix: Flix): Boolean =
+  private def isSingleCaseEnum(sym: Symbol.CaseSym, exps: List[LiftedAst.Expr])(implicit root: OccurrenceAst.Root): Boolean =
     exps match {
       case e :: Nil =>
         val enum0 = root.enums(sym.enumSym)
