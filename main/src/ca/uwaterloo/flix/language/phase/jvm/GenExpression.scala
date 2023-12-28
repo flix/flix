@@ -1009,17 +1009,8 @@ object GenExpression {
             mv.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
 
             // make a thread and run it
-            // TODO: VirtualThreads: Enable by default once JDK 21+ becomes a requirement.
-            if (false) {
-              mv.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "startVirtualThread", s"(${JvmName.Runnable.toDescriptor})${JvmName.Thread.toDescriptor}", false)
-              mv.visitInsn(POP)
-            } else {
-              mv.visitTypeInsn(NEW, "java/lang/Thread")
-              mv.visitInsn(DUP_X1)
-              mv.visitInsn(SWAP)
-              mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Thread", "<init>", s"(${JvmName.Runnable.toDescriptor})${JvmType.Void.toDescriptor}", false)
-              mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "start", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-            }
+            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "startVirtualThread", s"(${JvmName.Runnable.toDescriptor})${JvmName.Thread.toDescriptor}", false)
+            mv.visitInsn(POP)
 
           case _ =>
             // Compile the expression representing the region
