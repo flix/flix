@@ -16,13 +16,14 @@
 
 mod Fixpoint {
 
-    use Fixpoint.Ast.{Datalog, Constraint, HeadPredicate, BodyPredicate, Polarity, Fixity, PrecedenceGraph}
-    use Fixpoint.Ast.Datalog.{Datalog, Model, Join}
+    use Fixpoint.Ast.Datalog.{Datalog, Constraint, HeadPredicate, BodyPredicate, Polarity, Fixity}
+    use Fixpoint.Ast.Datalog.Datalog.{Datalog, Model, Join}
+    use Fixpoint.Ast.Datalog.Constraint.Constraint
+    use Fixpoint.Ast.Datalog.HeadPredicate.HeadAtom
+    use Fixpoint.Ast.Datalog.BodyPredicate.BodyAtom
+    use Fixpoint.Ast.PrecedenceGraph
     use Fixpoint.Ast.PrecedenceGraph.PrecedenceGraph
     use Fixpoint.Ast.PrecedenceEdge.{WeakEdge, StrongEdge}
-    use Fixpoint.Ast.Constraint.Constraint
-    use Fixpoint.Ast.HeadPredicate.HeadAtom
-    use Fixpoint.Ast.BodyPredicate.BodyAtom
     use Fixpoint.Shared.PredSym
 
     ///
