@@ -27,11 +27,11 @@ object UnstructuredTree {
 
     case object Doc extends TreeKind
 
+    case object Comments extends TreeKind
+
     case object Annotations extends TreeKind
 
     case object Modifiers extends TreeKind
-
-    case object Statement extends TreeKind
 
     case object Parameters extends TreeKind
 
@@ -50,6 +50,24 @@ object UnstructuredTree {
     case object Operator extends TreeKind
 
     case object Case extends TreeKind
+
+    sealed trait UsesOrImports extends TreeKind {
+      override def debug_name: Option[String] = Some("UsesOrImports")
+    }
+
+    object UsesOrImports {
+      case object UsesOrImports extends UsesOrImports
+
+      case object Use extends UsesOrImports
+
+      case object UseMany extends UsesOrImports
+
+      case object Import extends UsesOrImports
+
+      case object ImportMany extends UsesOrImports
+
+      case object Alias extends UsesOrImports
+    }
 
     /////// Declarations /////
     sealed trait Decl extends TreeKind {
@@ -141,6 +159,18 @@ object UnstructuredTree {
       case object LetImport extends Expr
 
       case object IfThenElse extends Expr
+
+      case object UncheckedMaskingCast extends Expr
+
+      case object Hole extends Expr
+
+      case object HoleVariable extends Expr
+
+      case object Statement extends Expr
+
+      case object Use extends Expr
+
+      case object StringInterpolation extends Expr
     }
 
     ////// TYPES //////

@@ -319,8 +319,13 @@ object Lexer {
       case ']' => TokenKind.BracketR
       case ';' => TokenKind.Semi
       case ',' => TokenKind.Comma
+      case '.' => if (peek() == '{') {
+        advance()
+        TokenKind.DotCurlyL
+      } else {
+        TokenKind.Dot
+      }
       case '_' => TokenKind.Underscore
-      case '.' => TokenKind.Dot
       case '~' => TokenKind.Tilde
       case '\\' => TokenKind.Backslash
       case '$' => if (peek().isUpper) {

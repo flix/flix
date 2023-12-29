@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
+
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
 import java.util.regex.{PatternSyntaxException, Pattern => JPattern}
 import scala.collection.immutable.{::, List, Nil}
@@ -81,9 +82,100 @@ object Weeder2 {
     }
   }
 
-  private def pickAllUsesAndImports(tree: Tree): Validation[List[UseOrImport], CompilationMessage] = {
+  private def pickAllUsesAndImports(tree: Tree)(implicit s: State): Validation[List[UseOrImport], CompilationMessage] = {
     assert(tree.kind == TreeKind.Source || tree.kind == TreeKind.Decl.Module)
-    List.empty.toSuccess
+    val maybeTree = tryPick(TreeKind.UsesOrImports.UsesOrImports, tree.children)
+    maybeTree
+      .map(tree => {
+        val uses = pickAll(TreeKind.UsesOrImports.Use, tree.children)
+        val imports = pickAll(TreeKind.UsesOrImports.Import, tree.children)
+        mapN(
+          traverse(uses)(visitUse),
+          traverse(imports)(visitImport)
+        )((uses, imports) => uses.flatten ++ imports.flatten)
+      })
+      .getOrElse(List.empty.toSuccess)
+  }
+
+  private def visitUse(tree: Tree)(implicit s: State): Validation[List[UseOrImport], CompilationMessage] = {
+    assert(tree.kind == TreeKind.UsesOrImports.Use)
+    val maybeUseMany = tryPick(TreeKind.UsesOrImports.UseMany, tree.children)
+    flatMapN(
+      pickQName(tree))(qname => {
+      val nname = Name.NName(qname.sp1, qname.namespace.idents :+ qname.ident, qname.sp2)
+      mapN(traverseOpt(maybeUseMany)(tree => visitUseMany(tree, nname))) {
+        // case: use one, use the qname
+        case None | Some(Nil) => List(UseOrImport.Use(qname, qname.ident, qname.loc))
+        // case: use many
+        case Some(uses) => uses
+      }
+    })
+  }
+
+  private def visitUseMany(tree: Tree, namespace: Name.NName)(implicit s: State): Validation[List[UseOrImport], CompilationMessage] = {
+    assert(tree.kind == TreeKind.UsesOrImports.UseMany)
+    val identUses = traverse(pickAll(TreeKind.Ident, tree.children))(visitUseIdent(_, namespace))
+    val aliasedUses = traverse(pickAll(TreeKind.UsesOrImports.Alias, tree.children))(tree => visitUseAlias(tree, namespace))
+    mapN(identUses, aliasedUses)((identUses, aliasedUses) => identUses ++ aliasedUses)
+  }
+
+  private def visitUseIdent(tree: Tree, namespace: Name.NName)(implicit s: State): Validation[UseOrImport.Use, CompilationMessage] = {
+    mapN(tokenToIdent(tree)) {
+      ident =>
+        val qname = Name.QName(tree.loc.sp1, namespace, ident, tree.loc.sp2)
+        UseOrImport.Use(qname, ident, ident.loc)
+    }
+  }
+
+  private def visitUseAlias(tree: Tree, namespace: Name.NName)(implicit s: State): Validation[UseOrImport.Use, CompilationMessage] = {
+    val idents = traverse(pickAll(TreeKind.Ident, tree.children))(tokenToIdent)
+    flatMapN(idents) {
+      case ident :: alias :: _ =>
+        val qname = Name.QName(tree.loc.sp1, namespace, ident, tree.loc.sp2)
+        UseOrImport.Use(qname, alias, tree.loc).toSuccess
+      // recover from missing alias by using ident
+      case ident :: _ => softFailWith(UseOrImport.Use(Name.mkQName(ident), ident, ident.loc))
+      case _ => failWith("Malformed alias", tree.loc)
+    }
+  }
+
+  private def visitImport(tree: Tree)(implicit s: State): Validation[List[UseOrImport], CompilationMessage] = {
+    assert(tree.kind == TreeKind.UsesOrImports.Import)
+    val maybeImportMany = tryPick(TreeKind.UsesOrImports.ImportMany, tree.children)
+    flatMapN(
+      JvmOp.pickJavaName(tree))(jname => {
+      mapN(traverseOpt(maybeImportMany)(tree => visitImportMany(tree, jname.fqn))) {
+        // case: import one, use the java name
+        case None | Some(Nil) => List(UseOrImport.Import(jname, Name.Ident(jname.sp1, jname.fqn.last, jname.sp2), tree.loc))
+        // case: import many
+        case Some(imports) => imports
+      }
+    })
+  }
+
+  private def visitImportMany(tree: Tree, namespace: Seq[String])(implicit s: State): Validation[List[UseOrImport.Import], CompilationMessage] = {
+    assert(tree.kind == TreeKind.UsesOrImports.UseMany)
+    val identImports = traverse(pickAll(TreeKind.Ident, tree.children))(visitImportIdent)
+    val aliasedImports = traverse(pickAll(TreeKind.UsesOrImports.Alias, tree.children))(tree => visitImportAlias(tree, namespace))
+    mapN(identImports, aliasedImports)((identImports, aliasedImports) => identImports ++ aliasedImports)
+  }
+
+  private def visitImportIdent(tree: Tree)(implicit s: State): Validation[UseOrImport.Import, CompilationMessage] = {
+    mapN(tokenToJavaName(tree)) {
+      ident => UseOrImport.Import(Name.JavaName(tree.loc.sp1, Seq(ident.name), tree.loc.sp2), ident, ident.loc)
+    }
+  }
+
+  private def visitImportAlias(tree: Tree, namespace: Seq[String])(implicit s: State): Validation[UseOrImport.Import, CompilationMessage] = {
+    val idents = traverse(pickAll(TreeKind.Ident, tree.children))(tokenToIdent)
+    flatMapN(idents) {
+      case ident :: alias :: _ =>
+        val jname = Name.JavaName(tree.loc.sp1, Seq(ident.name), tree.loc.sp2)
+        UseOrImport.Import(jname, alias, tree.loc).toSuccess
+      // recover from missing alias by using ident
+      case ident :: _ => softFailWith(UseOrImport.Import(Name.JavaName(tree.loc.sp1, Seq(ident.name), tree.loc.sp2), ident, ident.loc))
+      case _ => failWith("Malformed alias", tree.loc)
+    }
   }
 
   private object Decls {
@@ -515,6 +607,12 @@ object Weeder2 {
           case TreeKind.Expr.Binary => visitBinary(tree)
           case TreeKind.Expr.Paren => visitParen(tree)
           case TreeKind.Expr.IfThenElse => visitIfThenElse(tree)
+          case TreeKind.Expr.UncheckedMaskingCast => visitUncheckedMaskingCast(tree)
+          case TreeKind.Expr.Block => visitBlock(tree)
+          case TreeKind.Expr.Statement => visitStatement(tree)
+          case TreeKind.Expr.Use => visitExprUse(tree)
+          case TreeKind.Expr.StringInterpolation => visitStringInterpolation(tree)
+          case TreeKind.Expr.Hole => visitHole(tree)
           case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
           case TreeKind.QName => mapN(visitQName(tree))(qname => Expr.Ambiguous(qname, tree.loc))
           case kind => failWith(s"TODO: implement expression of kind '$kind'", tree.loc)
@@ -599,6 +697,68 @@ object Weeder2 {
       assert(tree.kind == TreeKind.Expr.Paren)
       val expr = pickExpression(tree)
       mapN(expr)(expr => Expr.Tuple(List(expr), tree.loc))
+    }
+
+    private def visitStringInterpolation(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.StringInterpolation)
+      val init = WeededAst.Expr.Cst(Ast.Constant.Str(""), tree.loc)
+      // TODO: There is also Debug strings!
+      Validation.fold(tree.children, init: WeededAst.Expr) {
+        // A string part: Concat it onto the result
+        case (acc, Child.Token(token)) =>
+          val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
+          val lit = token.text.stripPrefix("\"").stripSuffix("\"").stripPrefix("}").stripSuffix("${")
+          if (lit == "") {
+            acc.toSuccess
+          } else {
+            val cst = Expr.Cst(Ast.Constant.Str(lit), loc)
+            Expr.Binary(SemanticOp.StringOp.Concat, acc, cst, tree.loc.asSynthetic).toSuccess
+          }
+        // An expression part: Apply 'toString' to it and concat the result
+        case (acc, Child.Tree(tree)) if tree.kind == TreeKind.Expr.Expr =>
+          mapN(visitExpression(tree))(expr => {
+            val loc = tree.loc.asSynthetic
+            val str = Expr.Apply(Expr.Ambiguous(Name.mkQName("ToString.toString"), loc), List(expr), loc)
+            Expr.Binary(SemanticOp.StringOp.Concat, acc, str, loc)
+          })
+        case (_, Child.Tree(t)) => throw InternalCompilerException(s"Parser placed child of kind '${t.kind}' in string interpolation", tree.loc)
+      }
+    }
+
+    private def visitUncheckedMaskingCast(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.UncheckedMaskingCast)
+      val expr = pickExpression(tree)
+      mapN(expr)(expr => Expr.UncheckedMaskingCast(expr, tree.loc))
+    }
+
+    private def visitHole(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Hole)
+      mapN(tryPickNameIdent(tree)) {
+        ident =>
+          val strippedIdent = ident.map(id => Name.Ident(id.sp1, id.name.stripPrefix("?"), id.sp2))
+          Expr.Hole(strippedIdent, tree.loc)
+      }
+    }
+
+    private def visitExprUse(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Use)
+      val use = flatMapN(pick(TreeKind.UsesOrImports.Use, tree.children))(visitUse)
+      val expr = pickExpression(tree)
+      mapN(use, expr)((use, expr) => Expr.Use(use, expr, tree.loc))
+    }
+
+    private def visitBlock(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Block)
+      pickExpression(tree)
+    }
+
+    private def visitStatement(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Statement)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
+      mapN(traverse(exprs)(visitExpression)) {
+        case ex1 :: ex2 :: Nil => Expr.Stm(ex1, ex2, tree.loc)
+        case exprs => throw InternalCompilerException(s"Parser error. Expected 2 expressions in statement but found '${exprs.length}'.", tree.loc)
+      }
     }
 
     private def visitLetImport(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -1143,7 +1303,7 @@ object Weeder2 {
       }
     }
 
-    private def pickJavaName(tree: Tree)(implicit s: State): Validation[Name.JavaName, CompilationMessage] = {
+    def pickJavaName(tree: Tree)(implicit s: State): Validation[Name.JavaName, CompilationMessage] = {
       val idents = pickQNameIdents(tree)
       mapN(idents) {
         idents => Name.JavaName(tree.loc.sp1, idents, tree.loc.sp2)
@@ -1238,8 +1398,23 @@ object Weeder2 {
     flatMapN(pick(TreeKind.Ident, tree.children))(tokenToIdent)
   }
 
+  private def tryPickNameIdent(tree: Tree)(implicit s: State): Validation[Option[Name.Ident], CompilationMessage] = {
+    traverseOpt(tryPick(TreeKind.Ident, tree.children))(tokenToIdent)
+  }
+
   ////////// HELPERS //////////////////
   private def tokenToIdent(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
+    tree.children.headOption match {
+      case Some(Child.Token(token)) => Name.Ident(
+        token.mkSourcePosition(s.src, Some(s.parserInput)),
+        token.text,
+        token.mkSourcePositionEnd(s.src, Some(s.parserInput))
+      ).toSuccess
+      case _ => failWith(s"expected first child of '${tree.kind}' to be Child.Token")
+    }
+  }
+
+  private def tokenToJavaName(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
     tree.children.headOption match {
       case Some(Child.Token(token)) => Name.Ident(
         token.mkSourcePosition(s.src, Some(s.parserInput)),
@@ -1257,7 +1432,7 @@ object Weeder2 {
 
   /**
    * plucks the first inner tree in children.
-   * NB: This is intended to used to unfold the inner tree on special marker [[TreeKinds]],
+   * NB: This is intended to used to unfold the inner tree on special marker [[TreeKind]],
    * such as [[TreeKind.Type.Type]] and [[TreeKind.Expr.Expr]].
    * The parser should guarantee that these tree kinds have at least a single child.
    */

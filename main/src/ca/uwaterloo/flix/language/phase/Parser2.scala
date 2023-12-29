@@ -20,9 +20,9 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ParsedAst, ReadAst, SourceKind, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.errors.Parse2Error
-import ca.uwaterloo.flix.language.phase.Parser2.{Mark, close, nth}
+import ca.uwaterloo.flix.language.phase.Parser2.{Mark, close, eat, nth}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
 
 // TODO: Add change set support
@@ -79,7 +79,7 @@ object Parser2 {
 
     flix.phase("Parser2") {
       // The file that is the current focus of development
-      val DEBUG_FOCUS = "foo.flix"
+      val DEBUG_FOCUS = ""
 
       println("p\tw\tfile")
 
@@ -266,14 +266,22 @@ object Parser2 {
     SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, line, column, line, column + token.text.length)
   }
 
+  private def comments()(implicit s: State): Unit = {
+    if (atAny(List(TokenKind.CommentLine, TokenKind.CommentBlock))) {
+      val mark = Mark.Opened(s.events.length)
+      s.events = s.events :+ Event.Open(TreeKind.ErrorTree(Parse2Error.DevErr(currentSourceLocation(), "Unclosed parser mark")))
+      while (atAny(List(TokenKind.CommentLine, TokenKind.CommentBlock)) && !eof()) {
+        advance()
+      }
+      close(mark, TreeKind.Comments)
+    }
+  }
+
   private def open()(implicit s: State): Mark.Opened = {
     val mark = Mark.Opened(s.events.length)
     s.events = s.events :+ Event.Open(TreeKind.ErrorTree(Parse2Error.DevErr(currentSourceLocation(), "Unclosed parser mark")))
-    // advance past any comments when opening a new mark.
-    // This places the comments within the closest sub-tree.
-    while (atAny(List(TokenKind.CommentLine, TokenKind.CommentBlock)) && !eof()) {
-      advance()
-    }
+    // advance past any comments just after opening a new mark.
+    comments()
     mark
   }
 
@@ -315,8 +323,7 @@ object Parser2 {
 
   private def nth(lookahead: Int)(implicit s: State): TokenKind = {
     if (s.fuel == 0) {
-      // TODO: How to properly throw a compiler level error?
-      throw new Error("parser is stuck")
+      throw InternalCompilerException("Parser is stuck", currentSourceLocation())
     }
 
     s.fuel -= 1
@@ -419,6 +426,12 @@ object Parser2 {
   private def commaSeparated(kind: TreeKind, getItem: () => Mark.Closed, delimiters: (TokenKind, TokenKind) = (TokenKind.ParenL, TokenKind.ParenR), checkForItem: () => Boolean = () => true)(implicit s: State): Mark.Closed = {
     assert(at(delimiters._1))
     val mark = open()
+    commaSeparatedFlat(getItem, delimiters, checkForItem)
+    close(mark, kind)
+  }
+
+  private def commaSeparatedFlat(getItem: () => Mark.Closed, delimiters: (TokenKind, TokenKind) = (TokenKind.ParenL, TokenKind.ParenR), checkForItem: () => Boolean = () => true)(implicit s: State): Unit = {
+    assert(at(delimiters._1))
     expect(delimiters._1)
     var continue = true
     while (continue && !at(delimiters._2) && !eof()) {
@@ -434,7 +447,6 @@ object Parser2 {
     }
 
     expect(delimiters._2)
-    close(mark, kind)
   }
 
   private def asArgument(kind: TreeKind, rule: () => Mark.Closed, delimiter: TokenKind = TokenKind.ParenR)(implicit s: State): () => Mark.Closed = {
@@ -463,6 +475,7 @@ object Parser2 {
   private val NAME_VARIABLE = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
   private val NAME_JAVA = List(TokenKind.NameJava, TokenKind.NameLowerCase, TokenKind.NameUpperCase)
   private val NAME_QNAME = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
+  private val NAME_USE = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
   private val NAME_FIELD = List(TokenKind.NameLowerCase)
   private val NAME_TYPE = List(TokenKind.NameUpperCase)
   private val NAME_KIND = List(TokenKind.NameUpperCase)
@@ -497,12 +510,74 @@ object Parser2 {
    */
   private def source()(implicit s: State): Unit = {
     val mark = open()
-    // TODO: Uses and imports
+    usesOrImports()
     while (!eof()) {
       Decl.declaration()
     }
-
     close(mark, TreeKind.Source)
+  }
+
+  private def usesOrImports()(implicit s: State): Mark.Closed = {
+    val mark = open()
+    var continue = true
+    while (continue && !eof()) {
+      nth(0) match {
+        case TokenKind.KeywordUse =>
+          use()
+          eat(TokenKind.Semi)
+        case TokenKind.KeywordImport =>
+          iimport()
+          eat(TokenKind.Semi)
+        case _ => continue = false
+      }
+    }
+    close(mark, TreeKind.UsesOrImports.UsesOrImports)
+  }
+
+  private def use()(implicit s: State): Mark.Closed = {
+    assert(at(TokenKind.KeywordUse))
+    val mark = open()
+    expect(TokenKind.KeywordUse)
+    name(NAME_USE, allowQualified = true)
+
+    // handle use many case
+    if (at(TokenKind.DotCurlyL)) {
+      commaSeparated(
+        TreeKind.UsesOrImports.UseMany,
+        asArgumentFlat(() => aliasedName(NAME_USE), TokenKind.CurlyR),
+        (TokenKind.DotCurlyL, TokenKind.CurlyR),
+        () => atAny(NAME_USE)
+      )
+    }
+
+    close(mark, TreeKind.UsesOrImports.Use)
+  }
+
+  private def iimport()(implicit s: State): Mark.Closed = {
+    assert(at(TokenKind.KeywordImport))
+    val mark = open()
+    expect(TokenKind.KeywordImport)
+    name(NAME_JAVA, allowQualified = true)
+
+    // handle import many case
+    if (at(TokenKind.DotCurlyL)) {
+      commaSeparated(
+        TreeKind.UsesOrImports.ImportMany,
+        asArgumentFlat(() => aliasedName(NAME_JAVA), TokenKind.CurlyR),
+        (TokenKind.DotCurlyL, TokenKind.CurlyR)
+      )
+    }
+
+    close(mark, TreeKind.UsesOrImports.Import)
+  }
+
+  private def aliasedName(names: List[TokenKind])(implicit s: State): Mark.Closed = {
+    var lhs = name(names)
+    if (eat(TokenKind.Arrow)) {
+      name(names)
+      lhs = close(openBefore(lhs), TreeKind.UsesOrImports.Alias)
+    }
+    lhs
   }
 
   private object Decl {
@@ -557,9 +632,11 @@ object Parser2 {
       name(NAME_MODULE, allowQualified = true)
       if (at(TokenKind.CurlyL)) {
         expect(TokenKind.CurlyL)
+        usesOrImports()
         while (!at(TokenKind.CurlyR) && !eof()) {
           // TODO: Uses and imports
           declaration()
+          comments() // TODO: This should not be called manually, we need better design
         }
         expect(TokenKind.CurlyR)
       }
@@ -809,7 +886,7 @@ object Parser2 {
         val mark = openBefore(lhs)
         arguments()
         lhs = close(mark, TreeKind.Expr.Call)
-        close(openBefore(lhs), TreeKind.Expr.Expr)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
 
       // Handle binary operators
@@ -823,10 +900,17 @@ object Parser2 {
           close(markOp, TreeKind.Operator)
           expression(right)
           lhs = close(mark, TreeKind.Expr.Binary)
-          close(openBefore(lhs), TreeKind.Expr.Expr)
+          lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
         } else {
           continue = false
         }
+      }
+
+      // Handle statements
+      if (eat(TokenKind.Semi)) {
+        expression()
+        lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
 
       lhs
@@ -851,6 +935,8 @@ object Parser2 {
         case TokenKind.KeywordIf => ifThenElse()
         case TokenKind.KeywordImport => letImport()
         case TokenKind.BuiltIn => intrinsic()
+        case TokenKind.KeywordUse => exprUse()
+        case TokenKind.LiteralStringInterpolationL => interpolatedString()
         case TokenKind.LiteralString
              | TokenKind.LiteralChar
              | TokenKind.LiteralFloat32
@@ -871,6 +957,9 @@ object Parser2 {
              | TokenKind.KeywordNot
              | TokenKind.Plus
              | TokenKind.TripleTilde => unary()
+        case TokenKind.KeywordMaskedCast => maskingCast()
+        case TokenKind.HoleNamed
+             | TokenKind.HoleAnonymous => hole()
         case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected expression, found $t"))
       }
       close(mark, TreeKind.Expr.Expr)
@@ -896,6 +985,26 @@ object Parser2 {
       val mark = open()
       advance()
       close(mark, TreeKind.Expr.Intrinsic)
+    }
+
+    private def interpolatedString()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.LiteralStringInterpolationL))
+      val mark = open()
+      var continue = eat(TokenKind.LiteralStringInterpolationL)
+      while (continue && !eof()) {
+        expression()
+        continue = eat(TokenKind.LiteralStringInterpolationL)
+      }
+      expect(TokenKind.LiteralStringInterpolationR)
+      close(mark, TreeKind.Expr.StringInterpolation)
+    }
+
+    private def exprUse()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      use()
+      expect(TokenKind.Semi)
+      expression()
+      close(mark, TreeKind.Expr.Use)
     }
 
     /**
@@ -932,7 +1041,7 @@ object Parser2 {
     }
 
     /**
-     * block -> '{' statement? '}'
+     * block -> '{' expression? '}'
      */
     private def block()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.CurlyL))
@@ -941,23 +1050,9 @@ object Parser2 {
       if (eat(TokenKind.CurlyR)) { // Handle empty block
         return close(mark, TreeKind.Expr.Block)
       }
-      statement()
+      expression()
       expect(TokenKind.CurlyR)
       close(mark, TreeKind.Expr.Block)
-    }
-
-    /**
-     * statement -> expression (';' statement)?
-     */
-    private def statement()(implicit s: State): Mark.Closed = {
-      val lhs = expression()
-      var last = lhs
-      while (eat(TokenKind.Semi)) {
-        val mark = openBefore(lhs)
-        close(mark, TreeKind.Statement)
-        last = expression()
-      }
-      last
     }
 
     private def unary()(implicit s: State): Mark.Closed = {
@@ -990,6 +1085,27 @@ object Parser2 {
       expect(TokenKind.Semi)
       expression()
       close(mark, TreeKind.Expr.LetImport)
+    }
+
+    private def maskingCast()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordMaskedCast))
+      val mark = open()
+      expect(TokenKind.KeywordMaskedCast)
+      if (eat(TokenKind.ParenL)) {
+        expression()
+        expect(TokenKind.ParenR)
+      }
+      close(mark, TreeKind.Expr.UncheckedMaskingCast)
+    }
+
+    private def hole()(implicit s: State): Mark.Closed = {
+      assert(atAny(List(TokenKind.HoleNamed, TokenKind.HoleAnonymous)))
+      val mark = open()
+      nth(0) match {
+        case TokenKind.HoleAnonymous => advance(); close(mark, TreeKind.Expr.Hole)
+        case TokenKind.HoleNamed => name(List(TokenKind.HoleNamed)); close(mark, TreeKind.Expr.Hole)
+        case _ => throw InternalCompilerException("Parser assert missed case", currentSourceLocation())
+      }
     }
   }
 
