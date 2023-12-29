@@ -22,7 +22,7 @@ mod Fixpoint.Ast.Datalog {
     use Fixpoint.SubstitutePredSym
     use Fixpoint.SubstitutePredSym.substitute
     use Fixpoint.Shared.PredSym
-    use Fixpoint.Ram.RamSym
+    use Fixpoint.Ast.Ram.RamSym
     use Fixpoint.Ast.Denotation
 
     /////////////////////////////////////////////////////////////////////////////
@@ -73,7 +73,7 @@ mod Fixpoint.Ast.Datalog {
                 StringBuilder.toString(sb)
             }
             case Datalog.Model(db) => region rc {
-                use Fixpoint.Ram.toDenotation;
+                use Fixpoint.Ast.Ram.toDenotation;
                 let sb = StringBuilder.new(rc);
                 Map.forEach(ramSym -> rel -> match toDenotation(ramSym) {
                     case Denotation.Relational => Map.forEach((tuple, _) -> {

@@ -23,7 +23,7 @@ mod Fixpoint {
     use Fixpoint.Ast.Datalog.HeadPredicate.HeadAtom
     use Fixpoint.Ast.Denotation
     use Fixpoint.Ast.Denotation.{Relational, Latticenal}
-    use Fixpoint.Ram.RamSym
+    use Fixpoint.Ast.Ram.RamSym
     use Fixpoint.Shared.PredSym
     use Fixpoint.Shared.PredSym.PredSym
 
@@ -74,7 +74,7 @@ mod Fixpoint {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
             Datalog(Vector.append(edb1, edb2), Vector.append(idb1, idb2))
         case (Model(db1), Model(db2)) =>
-            use Fixpoint.Ram.toDenotation;
+            use Fixpoint.Ast.Ram.toDenotation;
             let union = ramSym -> match toDenotation(ramSym) {
                 case Relational => Map.union
                 case Latticenal(_, _, lub, _) => Map.unionWith(lub)
@@ -716,7 +716,7 @@ mod Fixpoint {
             pFacts |> MutList.toVector
         }
         case Model(db) => region rc {
-            use Fixpoint.Ram.toDenotation;
+            use Fixpoint.Ast.Ram.toDenotation;
             let pFacts = MutList.new(rc);
             let query = ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {

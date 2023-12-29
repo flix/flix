@@ -19,7 +19,7 @@
 /// in where clauses, range queries and project operations.
 mod Fixpoint {
 
-    use Fixpoint.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
+    use Fixpoint.Ast.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
 
     @Internal
     pub def lowerStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {

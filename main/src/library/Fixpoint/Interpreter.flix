@@ -16,7 +16,7 @@
 
 mod Fixpoint {
 
-    use Fixpoint.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar, toDenotation}
+    use Fixpoint.Ast.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar, toDenotation}
     use Fixpoint.Ast.Denotation
 
     type alias Database[v: Type, r: Region] = MutMap[RamSym[v], MutMap[Vector[v], v, r], r]
