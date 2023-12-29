@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint {
+mod Fixpoint.Solver {
 
     use Boxable.{box, unbox}
     use Fixpoint.Ast.Datalog.{Datalog, Constraint, HeadTerm}
@@ -26,6 +26,7 @@ mod Fixpoint {
     use Fixpoint.Ast.Ram.RamSym
     use Fixpoint.Shared.PredSym
     use Fixpoint.Shared.PredSym.PredSym
+    use Fixpoint.Interpreter.Database
 
     ///
     /// Returns the minimal model of the given Datalog program `d`.
@@ -34,7 +35,7 @@ mod Fixpoint {
     ///
     @Internal
     pub def solve(d: Datalog[v]): Datalog[v] with Order[v] =
-        stratify(d) |> solveWithStratification(d)
+        Fixpoint.Phase.Stratifier.stratify(d) |> solveWithStratification(d)
 
     ///
     /// Returns the minimal model of the given Datalog program `d`.
@@ -43,24 +44,24 @@ mod Fixpoint {
     ///
     @Internal
     def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
-        masked_cast(notifyPreSolve(d, stf));
+        masked_cast(Fixpoint.Debugging.notifyPreSolve(d, stf));
         let compiler = cs ->
-            compile(cs, stf) |>
-            simplifyStmt |>
-            queryStmt |>
-            lowerStmt;
+            Fixpoint.Phase.Compiler.compile(cs, stf) |>
+            Fixpoint.Phase.Simplifier.simplifyStmt |>
+            Fixpoint.Phase.IndexSelection.queryStmt |>
+            Fixpoint.Phase.VarsToIndices.lowerStmt;
         let model = match d {
             case Datalog(_) => region rc {
-                compiler(d) |> interpret(rc) |> toModel
+                compiler(d) |> Fixpoint.Interpreter.interpret(rc) |> toModel
             }
             case Model(_) => d
             case Join(Model(m), cs) => region rc {
                 let db = Map.map(Map.toMutMap(rc), m) |> Map.toMutMap(rc);
-                compiler(cs) |> interpretWithDatabase(rc, db) |> toModel
+                compiler(cs) |> Fixpoint.Interpreter.interpretWithDatabase(rc, db) |> toModel
             }
             case _ => bug!("Datalog normalization bug")
         };
-        masked_cast(notifyPostSolve(model));
+        masked_cast(Fixpoint.Debugging.notifyPostSolve(model));
         model
     }
 

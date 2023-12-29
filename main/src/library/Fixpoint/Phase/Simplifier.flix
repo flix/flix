@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint {
+mod Fixpoint.Phase.Simplifier {
 
     use Fixpoint.Ast.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
     use Fixpoint.Ast.Ram.RamTerm.{RowLoad, LoadLatVar, Lit, Meet}
@@ -33,7 +33,8 @@ mod Fixpoint {
     ///         end
     ///     end
     ///
-    def simplifyStmt(stmt: RamStmt[v]): RamStmt[v] =
+    @Internal
+    pub def simplifyStmt(stmt: RamStmt[v]): RamStmt[v] =
         Option.getWithDefault(RamStmt.Seq(Vector#{}), simplifyHelper(Set#{}, stmt))
 
     def simplifyHelper(stratum: Set[RamSym[v]], stmt: RamStmt[v]): Option[RamStmt[v]] = match stmt {

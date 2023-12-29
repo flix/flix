@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod Fixpoint {
+mod Fixpoint.Phase.Stratifier {
 
     use Fixpoint.Ast.Datalog.{Datalog, Constraint, HeadPredicate, BodyPredicate, Polarity, Fixity}
     use Fixpoint.Ast.Datalog.Datalog.{Datalog, Model, Join}
@@ -32,7 +32,8 @@ mod Fixpoint {
     /// Initially, all IDB predicates are assigned to stratum 0.
     /// I.e. facts are ignored in the stratification.
     ///
-    def stratify(d: Datalog[v]): Map[PredSym, Int32] = match d {
+    @Internal
+    pub def stratify(d: Datalog[v]): Map[PredSym, Int32] = match d {
         case Datalog(_, rules) =>
             Vector.foldRight(match Constraint(HeadAtom(p, _, _), _) -> Map.insert(p, 0), Map#{}, rules) |>
             stratifyHelper(mkDepGraph(d))
