@@ -16,7 +16,7 @@
 
 mod Fixpoint {
 
-    use Fixpoint.Ast.Datalog
+    use Fixpoint.Ast.Datalog.Datalog
     use Fixpoint.Ram.RamStmt
     use Fixpoint.Shared.PredSym
 

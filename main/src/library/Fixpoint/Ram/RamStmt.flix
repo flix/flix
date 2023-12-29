@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-use Fixpoint.Ast.Constraint
-
 mod Fixpoint.Ram {
 
     @Internal

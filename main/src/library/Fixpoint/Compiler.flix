@@ -17,13 +17,14 @@
 mod Fixpoint {
 
     use Fixpoint.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
-    use Fixpoint.Ast.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Denotation, Polarity, VarSym}
-    use Fixpoint.Ast.Datalog.Datalog
-    use Fixpoint.Ast.Constraint.Constraint
-    use Fixpoint.Ast.HeadPredicate.HeadAtom
-    use Fixpoint.Ast.BodyPredicate.{BodyAtom}
-    use Fixpoint.Ast.BodyPredicate.{Functional}
-    use Fixpoint.Ast.BodyPredicate.{Guard0, Guard1, Guard2, Guard3, Guard4, Guard5}
+    use Fixpoint.Ast.Datalog.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Polarity, VarSym}
+    use Fixpoint.Ast.Datalog.Datalog.{Datalog}
+    use Fixpoint.Ast.Datalog.Constraint.Constraint
+    use Fixpoint.Ast.Datalog.HeadPredicate.HeadAtom
+    use Fixpoint.Ast.Datalog.BodyPredicate.{BodyAtom}
+    use Fixpoint.Ast.Datalog.BodyPredicate.{Functional}
+    use Fixpoint.Ast.Datalog.BodyPredicate.{Guard0, Guard1, Guard2, Guard3, Guard4, Guard5}
+    use Fixpoint.Ast.Denotation
     use Fixpoint.Ast.isRelational
     use Fixpoint.Shared.PredSym
     use Fixpoint.Shared.PredSym.PredSym

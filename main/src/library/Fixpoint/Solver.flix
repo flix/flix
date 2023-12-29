@@ -17,10 +17,11 @@
 mod Fixpoint {
 
     use Boxable.{box, unbox}
-    use Fixpoint.Ast.{Datalog, Constraint, HeadTerm, Denotation}
-    use Fixpoint.Ast.Datalog.{Datalog, Model, Join}
-    use Fixpoint.Ast.Constraint.Constraint
-    use Fixpoint.Ast.HeadPredicate.HeadAtom
+    use Fixpoint.Ast.Datalog.{Datalog, Constraint, HeadTerm}
+    use Fixpoint.Ast.Datalog.Datalog.{Datalog, Model, Join}
+    use Fixpoint.Ast.Datalog.Constraint.Constraint
+    use Fixpoint.Ast.Datalog.HeadPredicate.HeadAtom
+    use Fixpoint.Ast.Denotation
     use Fixpoint.Ast.Denotation.{Relational, Latticenal}
     use Fixpoint.Ram.RamSym
     use Fixpoint.Shared.PredSym

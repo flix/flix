@@ -74,21 +74,21 @@ object Lowering {
   }
 
   private object Enums {
-    lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Datalog")
-    lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Constraint")
+    lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.Datalog")
+    lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.Constraint")
 
-    lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadPredicate")
-    lazy val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyPredicate")
+    lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.HeadPredicate")
+    lazy val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.BodyPredicate")
 
-    lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadTerm")
-    lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyTerm")
+    lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.HeadTerm")
+    lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.BodyTerm")
 
     lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Shared.PredSym")
-    lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.VarSym")
+    lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.VarSym")
 
     lazy val Denotation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Denotation")
-    lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Polarity")
-    lazy val Fixity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Fixity")
+    lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.Polarity")
+    lazy val Fixity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.Fixity")
     lazy val SourceLocation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.SourceLocation")
 
     lazy val Comparison: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
@@ -987,7 +987,7 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.Datalog` value from the given list of Datalog constraints `cs`.
+    * Constructs a `Fixpoint/Ast/Datalog.Datalog` value from the given list of Datalog constraints `cs`.
     */
   private def mkDatalog(cs: List[TypedAst.Constraint], loc: SourceLocation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
     val factExps = cs.filter(c => c.body.isEmpty).map(visitConstraint)
@@ -1130,7 +1130,7 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.HeadTerm.Var` from the given variable symbol `sym`.
+    * Constructs a `Fixpoint/Ast/Datalog.HeadTerm.Var` from the given variable symbol `sym`.
     */
   private def mkHeadTermVar(sym: Symbol.VarSym)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
     val innerExp = mkVarSym(sym)
@@ -1138,14 +1138,14 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.HeadTerm.Lit` value which wraps the given expression `exp`.
+    * Constructs a `Fixpoint/Ast/Datalog.HeadTerm.Lit` value which wraps the given expression `exp`.
     */
   private def mkHeadTermLit(exp: LoweredAst.Expr)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
     mkTag(Enums.HeadTerm, "Lit", exp, Types.HeadTerm, exp.loc)
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.BodyTerm.Wild` from the given source location `loc`.
+    * Constructs a `Fixpoint/Ast/Datalog.BodyTerm.Wild` from the given source location `loc`.
     */
   private def mkBodyTermWild(loc: SourceLocation): LoweredAst.Expr = {
     val innerExp = LoweredAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)
@@ -1153,7 +1153,7 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.BodyTerm.Var` from the given variable symbol `sym`.
+    * Constructs a `Fixpoint/Ast/Datalog.BodyTerm.Var` from the given variable symbol `sym`.
     */
   private def mkBodyTermVar(sym: Symbol.VarSym): LoweredAst.Expr = {
     val innerExp = mkVarSym(sym)
@@ -1161,7 +1161,7 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.BodyTerm.Lit` from the given expression `exp0`.
+    * Constructs a `Fixpoint/Ast/Datalog.BodyTerm.Lit` from the given expression `exp0`.
     */
   private def mkBodyTermLit(exp: LoweredAst.Expr)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
     mkTag(Enums.BodyTerm, "Lit", exp, Types.BodyTerm, exp.loc)
@@ -1198,7 +1198,7 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.Polarity` from the given polarity `p`.
+    * Constructs a `Fixpoint/Ast/Datalog.Polarity` from the given polarity `p`.
     */
   private def mkPolarity(p: Polarity, loc: SourceLocation): LoweredAst.Expr = p match {
     case Polarity.Positive =>
@@ -1211,7 +1211,7 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.Fixity` from the given fixity `f`.
+    * Constructs a `Fixpoint/Ast/Datalog.Fixity` from the given fixity `f`.
     */
   private def mkFixity(f: Ast.Fixity, loc: SourceLocation): LoweredAst.Expr = f match {
     case Fixity.Loose =>
@@ -1224,7 +1224,7 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.PredSym` from the given predicate `pred`.
+    * Constructs a `Fixpoint/Ast/Datalog.PredSym` from the given predicate `pred`.
     */
   private def mkPredSym(pred: Name.Pred): LoweredAst.Expr = pred match {
     case Name.Pred(sym, loc) =>
@@ -1235,7 +1235,7 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.VarSym` from the given variable symbol `sym`.
+    * Constructs a `Fixpoint/Ast/Datalog.VarSym` from the given variable symbol `sym`.
     */
   private def mkVarSym(sym: Symbol.VarSym): LoweredAst.Expr = {
     val nameExp = LoweredAst.Expr.Cst(Ast.Constant.Str(sym.text), Type.Str, sym.loc)
@@ -1253,7 +1253,7 @@ object Lowering {
   }
 
   /**
-    * Returns a `Fixpoint/Ast.BodyPredicate.GuardX`.
+    * Returns a `Fixpoint/Ast/Datalog.BodyPredicate.GuardX`.
     */
   private def mkGuard(fvs: List[(Symbol.VarSym, Type)], exp: LoweredAst.Expr, loc: SourceLocation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
     // Compute the number of free variables.
@@ -1349,7 +1349,7 @@ object Lowering {
   }
 
   /**
-    * Returns a `Fixpoint/Ast.Term.AppX`.
+    * Returns a `Fixpoint/Ast/Datalog.HeadTerm.AppX`.
     */
   private def mkAppTerm(fvs: List[(Symbol.VarSym, Type)], exp: LoweredAst.Expr, loc: SourceLocation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
     // Compute the number of free variables.
