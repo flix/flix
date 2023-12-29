@@ -36,6 +36,7 @@ mod Fixpoint.Ast {
     ///
     /// Returns `true` if the given denotation is relational.
     ///
+    @Internal
     pub def isRelational(den: Denotation[v]): Bool = match den {
         case Denotation.Relational => true
         case _          => false

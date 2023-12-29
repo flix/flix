@@ -20,11 +20,14 @@ mod Fixpoint.Interpreter {
     use Fixpoint.Ast.Denotation
 
     pub type alias Database[v: Type, r: Region] = MutMap[RamSym[v], MutMap[Vector[v], v, r], r]
+
     pub type alias SearchEnv[v: Type, r: Region] = (Array[Vector[v], r], Array[v, r])
 
+    @Internal
     pub def interpret(rc: Region[r], stmt: RamStmt[v]): Database[v, r] \ r with Order[v] =
         interpretWithDatabase(rc, MutMap.new(rc), stmt)
 
+    @Internal
     pub def interpretWithDatabase(rc: Region[r], db: Database[v, r], stmt: RamStmt[v]): Database[v, r] \ r with Order[v] =
         masked_cast(Fixpoint.Debugging.notifyPreInterpret(stmt));
         evalStmt(rc, db, stmt);
