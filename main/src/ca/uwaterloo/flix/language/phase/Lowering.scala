@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
   * This phase translates AST expressions related to the Datalog subset of the
-  * language into `Fixpoint/Ast` values (which are ordinary Flix values).
+  * language into `Fixpoint.Ast.Datalog` values (which are ordinary Flix values).
   * This allows the Datalog engine to be implemented as an ordinary Flix program.
   *
   * In addition to translating expressions, types must also be translated from
@@ -45,14 +45,14 @@ object Lowering {
   private object Defs {
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.box")
 
-    lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.solve")
-    lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.union")
-    lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.project")
-    lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.rename")
+    lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.solve")
+    lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.union")
+    lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.project")
+    lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.rename")
 
-    def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.injectInto$arity")
+    def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint/Solver.injectInto$arity")
 
-    def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.facts$arity")
+    def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint/Solver.facts$arity")
 
     lazy val DebugWithPrefix: Symbol.DefnSym = Symbol.mkDefnSym("Debug.debugWithPrefix")
 
@@ -1294,14 +1294,14 @@ object Lowering {
     // Lift the lambda expression to operate on boxed values.
     val liftedExp = liftXb(lambdaExp, fvs.map(_._2))
 
-    // Construct the `Fixpoint.Ast/BodyPredicate` value.
+    // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
     val innerExp = mkTuple(liftedExp :: varExps, loc)
     mkTag(Enums.BodyPredicate, s"Guard$arity", innerExp, Types.BodyPredicate, loc)
   }
 
   /**
-    * Returns a `Fixpoint.Ast.BodyPredicate.Functional`.
+    * Returns a `Fixpoint/Ast/Datalog.BodyPredicate.Functional`.
     */
   private def mkFunctional(outVars: List[Symbol.VarSym], inVars: List[(Symbol.VarSym, Type)], exp: LoweredAst.Expr, loc: SourceLocation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
     // Compute the number of in and out variables.
@@ -1341,7 +1341,7 @@ object Lowering {
     // Lift the lambda expression to operate on boxed values.
     val liftedExp = liftXY(outVars, lambdaExp, inVars.map(_._2), exp.tpe, exp.loc)
 
-    // Construct the `Fixpoint.Ast.BodyPredicate` value.
+    // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
     val boundVarVector = mkVector(outVars.map(mkVarSym), Types.VarSym, loc)
     val freeVarVector = mkVector(inVars.map(kv => mkVarSym(kv._1)), Types.VarSym, loc)
     val innerExp = mkTuple(boundVarVector :: liftedExp :: freeVarVector :: Nil, loc)
@@ -1390,7 +1390,7 @@ object Lowering {
     // Lift the lambda expression to operate on boxed values.
     val liftedExp = liftX(lambdaExp, fvs.map(_._2), exp.tpe)
 
-    // Construct the `Fixpoint.Ast/BodyPredicate` value.
+    // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
     val innerExp = mkTuple(liftedExp :: varExps, loc)
     mkTag(Enums.HeadTerm, s"App$arity", innerExp, Types.HeadTerm, loc)
