@@ -111,11 +111,15 @@ object PatMatch {
     flix.phase("PatMatch") {
       implicit val r: TypedAst.Root = root
 
+      val classDefExprs = root.classes.values.flatMap(_.sigs).flatMap(_.exp)
+      val classDefErrs = ParOps.parMap(classDefExprs)(visitExp).flatten
+
       val defErrs = ParOps.parMap(root.defs.values)(defn => visitExp(defn.exp)).flatten
       val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(defn => visitExp(defn.exp)).flatten
       // Only need to check sigs with implementations
       val sigsErrs = root.sigs.values.flatMap(_.exp).flatMap(visitExp)
-      val errors = defErrs ++ instanceDefErrs ++ sigsErrs
+
+      val errors = classDefErrs ++ defErrs ++ instanceDefErrs ++ sigsErrs
 
       Validation.toSuccessOrSoftFailure(root, errors)
     }
