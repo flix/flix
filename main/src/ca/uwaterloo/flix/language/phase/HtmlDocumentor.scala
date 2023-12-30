@@ -1183,7 +1183,6 @@ object HtmlDocumentor {
     // Panic mode will escape all < and > characters
     val config =
       txtmark.Configuration.builder()
-        .enableSafeMode()
         .enablePanicMode()
         .build()
     val parsed = txtmark.Processor.process(doc.text, config)
