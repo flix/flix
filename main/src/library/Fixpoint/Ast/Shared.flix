@@ -1,5 +1,6 @@
 /*
  * Copyright 2021 Magnus Madsen
+ * Copyright 2021 Benjamin Dahse
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-mod Fixpoint.Ast {
+mod Fixpoint.Ast.Shared {
+
+    /////////////////////////////////////////////////////////////////////////////
+    // Denotation                                                              //
+    /////////////////////////////////////////////////////////////////////////////
 
     ///
     /// Represents the denotation of a predicate symbol.
@@ -68,6 +73,21 @@ mod Fixpoint.Ast {
                 Boxable.lift2(lub),
                 Boxable.lift2(glb)
             )
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // PredSym                                                                 //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Internal
+    pub enum PredSym with Eq, Order {
+        case PredSym(String, Int64)
+    }
+
+    instance ToString[PredSym] {
+        pub def toString(predSym: PredSym): String = match predSym {
+            case PredSym.PredSym(name, id) => if (id == 0i64) name else "${name}%${id}"
+        }
     }
 
 }

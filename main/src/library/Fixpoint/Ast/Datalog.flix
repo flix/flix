@@ -21,9 +21,9 @@ mod Fixpoint.Ast.Datalog {
     use Fixpoint.PredSymsOf.predSymsOf
     use Fixpoint.SubstitutePredSym
     use Fixpoint.SubstitutePredSym.substitute
-    use Fixpoint.Shared.PredSym
     use Fixpoint.Ast.Ram.RamSym
-    use Fixpoint.Ast.Denotation
+    use Fixpoint.Ast.Shared.Denotation
+    use Fixpoint.Ast.Shared.PredSym
 
     /////////////////////////////////////////////////////////////////////////////
     // Datalog                                                                 //

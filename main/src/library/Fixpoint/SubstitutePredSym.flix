@@ -16,7 +16,7 @@
 
 mod Fixpoint {
 
-    use Fixpoint.Shared.PredSym
+    use Fixpoint.Ast.Shared.PredSym
 
     ///
     /// A trait for types with predicate symbols that can be substituted.

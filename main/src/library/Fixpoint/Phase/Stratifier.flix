@@ -24,7 +24,7 @@ mod Fixpoint.Phase.Stratifier {
     use Fixpoint.Ast.PrecedenceGraph
     use Fixpoint.Ast.PrecedenceGraph.PrecedenceGraph
     use Fixpoint.Ast.PrecedenceEdge.{WeakEdge, StrongEdge}
-    use Fixpoint.Shared.PredSym
+    use Fixpoint.Ast.Shared.PredSym
 
     ///
     /// Compute a stratification with Ullman's algorithm.

@@ -16,8 +16,8 @@
 
 mod Fixpoint.Ast.Ram {
 
-    use Fixpoint.Ast.Denotation
-    use Fixpoint.Shared.PredSym
+    use Fixpoint.Ast.Shared.Denotation
+    use Fixpoint.Ast.Shared.PredSym
     use Fixpoint.PredSymsOf
     use Fixpoint.SubstitutePredSym
 
