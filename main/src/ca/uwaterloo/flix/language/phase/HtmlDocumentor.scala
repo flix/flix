@@ -360,44 +360,44 @@ object HtmlDocumentor {
       * Recursively walks the module tree removing empty modules.
       */
     def visitMod(mod: Module): Option[Module] = mod match {
-        case Module(sym, parent, uses, submodules, classes, effects, enums, typeAliases, defs) =>
-          val filteredSubMods = submodules.flatMap(visitMod)
-          val filteredClasses = classes.map {
-            case Class(decl, signatures, defs, instances, parent, companionMod) =>
-              Class(decl, signatures, defs, instances, parent, companionMod.flatMap(visitMod))
-          }
-          val filteredEffects = effects.map {
-            case Effect(decl, parent, companionMod) =>
-              Effect(decl, parent, companionMod.flatMap(visitMod))
-          }
-          val filteredEnums = enums.map {
-            case Enum(decl, parent, companionMod) =>
-              Enum(decl, parent, companionMod.flatMap(visitMod))
-          }
+      case Module(sym, parent, uses, submodules, classes, effects, enums, typeAliases, defs) =>
+        val filteredSubMods = submodules.flatMap(visitMod)
+        val filteredClasses = classes.map {
+          case Class(decl, signatures, defs, instances, parent, companionMod) =>
+            Class(decl, signatures, defs, instances, parent, companionMod.flatMap(visitMod))
+        }
+        val filteredEffects = effects.map {
+          case Effect(decl, parent, companionMod) =>
+            Effect(decl, parent, companionMod.flatMap(visitMod))
+        }
+        val filteredEnums = enums.map {
+          case Enum(decl, parent, companionMod) =>
+            Enum(decl, parent, companionMod.flatMap(visitMod))
+        }
 
-          val isEmpty =
-            filteredSubMods.isEmpty &&
-              filteredClasses.isEmpty &&
-              filteredEffects.isEmpty &&
-              filteredEnums.isEmpty &&
-              typeAliases.isEmpty &&
-              defs.isEmpty
+        val isEmpty =
+          filteredSubMods.isEmpty &&
+            filteredClasses.isEmpty &&
+            filteredEffects.isEmpty &&
+            filteredEnums.isEmpty &&
+            typeAliases.isEmpty &&
+            defs.isEmpty
 
-          if (isEmpty) None
-          else Some(
-            Module(
-              sym,
-              parent,
-              uses,
-              filteredSubMods,
-              filteredClasses,
-              filteredEffects,
-              filteredEnums,
-              typeAliases,
-              defs
-            )
+        if (isEmpty) None
+        else Some(
+          Module(
+            sym,
+            parent,
+            uses,
+            filteredSubMods,
+            filteredClasses,
+            filteredEffects,
+            filteredEnums,
+            typeAliases,
+            defs
           )
-      }
+        )
+    }
 
     visitMod(mod).get
   }
@@ -425,7 +425,7 @@ object HtmlDocumentor {
       }
       docSubModules(mod)
       docSideBarSection(
-        "Classes",
+        "Traits",
         sortedClasses,
         (c: Class) => sb.append(s"<a href='${escUrl(c.fileName)}'>${esc(c.name)}</a>"),
       )
@@ -494,12 +494,12 @@ object HtmlDocumentor {
         (s: TypedAst.Sig) => sb.append(s"<a href='#sig-${escUrl(s.sym.name)}'>${esc(s.sym.name)}</a>"),
       )
       docSideBarSection(
-        "Class Definitions",
+        "Trait Definitions",
         sortedClassDefs,
         (d: TypedAst.Sig) => sb.append(s"<a href='#sig-${escUrl(d.sym.name)}'>${esc(d.sym.name)}</a>"),
       )
       docSideBarSection(
-        "Classes",
+        "Traits",
         sortedClasses,
         (c: Class) => sb.append(s"<a href='${escUrl(c.fileName)}'>${esc(c.name)}</a>"),
       )
@@ -532,7 +532,7 @@ object HtmlDocumentor {
     docAnnotations(clazz.decl.ann)
     sb.append("<div class='decl'>")
     sb.append("<code>")
-    sb.append("<span class='keyword'>class</span> ")
+    sb.append("<span class='keyword'>trait</span> ")
     sb.append(s"<span class='name'>${esc(clazz.name)}</span>")
     docTypeParams(List(clazz.decl.tparam))
     docTypeConstraints(clazz.decl.superClasses)
@@ -545,7 +545,7 @@ object HtmlDocumentor {
     sb.append("</div>")
 
     docSection("Signatures", sortedSigs, docSignature)
-    docSection("Class Definitions", sortedClassDefs, docSignature)
+    docSection("Trait Definitions", sortedClassDefs, docSignature)
 
     docSection("Type Aliases", sortedTypeAliases, docTypeAlias)
     docSection("Module Definitions", sortedModuleDefs, docDef)
@@ -585,7 +585,7 @@ object HtmlDocumentor {
         sortedOps, (o: TypedAst.Op) => sb.append(s"<a href='#op-${escUrl(esc(o.sym.name))}'>${esc(o.sym.name)}</a>")
       )
       docSideBarSection(
-        "Classes",
+        "Traits",
         sortedClasses,
         (c: Class) => sb.append(s"<a href='${escUrl(c.fileName)}'>${esc(c.name)}</a>"),
       )
@@ -660,7 +660,7 @@ object HtmlDocumentor {
       sb.append(s"<a class='back' href='${escUrl(moduleFileName(enm.parent))}'>${moduleName(enm.parent)}</a>")
       mod.foreach(docSubModules)
       docSideBarSection(
-        "Classes",
+        "Traits",
         sortedClasses,
         (c: Class) => sb.append(s"<a href='${escUrl(c.fileName)}'>${esc(c.name)}</a>"),
       )
@@ -719,20 +719,20 @@ object HtmlDocumentor {
     */
   private def mkHead(name: String): String = {
     s"""<!doctype html><html lang='en'>
-      |<head>
-      |<meta charset='utf-8'>
-      |<meta name='viewport' content='width=device-width,initial-scale=1'>
-      |<meta name='description' content='API documentation for ${esc(name)} | The Flix Programming Language'>
-      |<meta name='keywords' content='Flix, Programming, Language, API, Documentation, ${esc(name)}'>
-      |<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>
-      |<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>
-      |<link href='https://fonts.googleapis.com/css?family=Noto+Sans&display=swap' rel='stylesheet'>
-      |<link href='https://fonts.googleapis.com/css?family=Inter&display=swap' rel='stylesheet'>
-      |<link href='styles.css' rel='stylesheet'>
-      |<link href='favicon.png' rel='icon'>
-      |<script defer src='index.js'></script>
-      |<title>Flix | ${esc(name)}</title>
-      |</head>
+       |<head>
+       |<meta charset='utf-8'>
+       |<meta name='viewport' content='width=device-width,initial-scale=1'>
+       |<meta name='description' content='API documentation for ${esc(name)}| The Flix Programming Language'>
+       |<meta name='keywords' content='Flix, Programming, Language, API, Documentation, ${esc(name)}'>
+       |<link href='https://fonts.googleapis.com/css?family=Fira+Code&display=swap' rel='stylesheet'>
+       |<link href='https://fonts.googleapis.com/css?family=Oswald&display=swap' rel='stylesheet'>
+       |<link href='https://fonts.googleapis.com/css?family=Noto+Sans&display=swap' rel='stylesheet'>
+       |<link href='https://fonts.googleapis.com/css?family=Inter&display=swap' rel='stylesheet'>
+       |<link href='styles.css' rel='stylesheet'>
+       |<link href='favicon.png' rel='icon'>
+       |<script defer src='index.js'></script>
+       |<title>Flix | ${esc(name)}</title>
+       |</head>
     """.stripMargin
   }
 
@@ -818,13 +818,13 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents a section, (Classes, Enums, Effects, etc.), containing a `group` of items.
+    * Documents a section, (Traits, Enums, Effects, etc.), containing a `group` of items.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
     * If `group` is empty, nothing will be generated.
     *
-    * @param name   The name of the section, e.g. "Classes".
+    * @param name   The name of the section, e.g. "Traits".
     *               This name will also be the id of the section.
     * @param group  The list of items in the section, in the order that they should appear.
     * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
@@ -1000,7 +1000,7 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(tconsts.sortBy(_.loc)) { t =>
-      sb.append(s"<a class='tpe-constraint' href='${escUrl(classFileName(t.head.sym))}' title='class ${esc(className(t.head.sym))}'>")
+      sb.append(s"<a class='tpe-constraint' href='${escUrl(classFileName(t.head.sym))}' title='trait ${esc(className(t.head.sym))}'>")
       sb.append(esc(t.head.sym.name))
       sb.append("</a>")
       sb.append("[")
@@ -1048,7 +1048,7 @@ object HtmlDocumentor {
 
     sb.append("<span> <span class='keyword'>with</span> ")
     docList(derives.classes.sortBy(_.loc)) { c =>
-      sb.append(s"<a class='tpe-constraint' href='${escUrl(classFileName(c.clazz))}' title='class ${esc(className(c.clazz))}'>")
+      sb.append(s"<a class='tpe-constraint' href='${escUrl(classFileName(c.clazz))}' title='trait ${esc(className(c.clazz))}'>")
       sb.append(s"${esc(c.clazz.name)}")
       sb.append("</a>")
     }
@@ -1183,9 +1183,9 @@ object HtmlDocumentor {
     // Panic mode will escape all < and > characters
     val config =
       txtmark.Configuration.builder()
-      .enableSafeMode()
-      .enablePanicMode()
-      .build()
+        .enableSafeMode()
+        .enablePanicMode()
+        .build()
     val parsed = txtmark.Processor.process(doc.text, config)
 
     sb.append("<div class='doc'>")
@@ -1341,6 +1341,7 @@ object HtmlDocumentor {
     /** The file name of the item, e.g. 'System.StdOut.html' */
     def fileName: String
   }
+
   /**
     * A represention of a module that's easier to work with while generating documention.
     */
