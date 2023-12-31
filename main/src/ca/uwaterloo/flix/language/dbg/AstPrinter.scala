@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.Flix.{IrFileExtension, IrFileIndentation, IrFileWidth}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.printer._
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException}
 
 import java.nio.file.{Files, LinkOption, Path}
 
@@ -173,7 +173,7 @@ object AstPrinter {
         throw InternalCompilerException(s"Unable to write to read-only file: '$filePath'.", SourceLocation.Unknown)
       }
     }
-    Files.write(filePath, content.getBytes)
+    FileOps.writeString(filePath, content)
   }
 
 }
