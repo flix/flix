@@ -1180,15 +1180,18 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docDoc(doc: Ast.Doc)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    // Panic mode will escape all < and > characters
+    val escaped = esc(doc.text)
+
     val config =
       txtmark.Configuration.builder()
-        .enablePanicMode()
         .build()
-    val parsed = txtmark.Processor.process(doc.text, config)
+    val parsed = txtmark.Processor.process(escaped, config)
+
+    // Since both esc and process escapes the & character, it needs to be unescaped once
+    val unescaped = parsed.replace("&amp;", "&")
 
     sb.append("<div class='doc'>")
-    sb.append(parsed)
+    sb.append(unescaped)
     sb.append("</div>")
   }
 

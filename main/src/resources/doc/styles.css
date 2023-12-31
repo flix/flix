@@ -18,8 +18,8 @@
     --light-show-hide-hover-color: #0a58ca;
     --light-module-color: #a0a5ff;
     --light-signature-color: #dfa0ff;
-    --light-class-def-color: #bfb280;
-    --light-classes-color: #fc9d9a;
+    --light-trait-def-color: #bfb280;
+    --light-traits-color: #fc9d9a;
     --light-enum-color: #c8c8a9;
     --light-op-color: #ccaeff;
     --light-eff-color: #ffaefa;
@@ -47,8 +47,8 @@
     --dark-show-hide-hover-color: #3c86f6;
     --dark-module-color: #a0a5ff;
     --dark-signature-color: #dfa0ff;
-    --dark-class-def-color: #bfb280;
-    --dark-classes-color: #fc9d9a;
+    --dark-trait-def-color: #bfb280;
+    --dark-traits-color: #fc9d9a;
     --dark-enum-color: #c8c8a9;
     --dark-op-color: #ccaeff;
     --dark-eff-color: #ffaefa;
@@ -76,8 +76,8 @@
     --show-hide-hover-color: var(--light-show-hide-hover-color);
     --module-color: var(--light-module-color);
     --signature-color: var(--light-signature-color);
-    --class-def-color: var(--light-class-def-color);
-    --classes-color: var(--light-classes-color);
+    --trait-def-color: var(--light-trait-def-color);
+    --traits-color: var(--light-traits-color);
     --enum-color: var(--light-enum-color);
     --op-color: var(--light-op-color);
     --eff-color: var(--light-eff-color);
@@ -108,8 +108,8 @@
         --show-hide-hover-color: var(--dark-show-hide-hover-color);
         --module-color: var(--dark-module-color);
         --signature-color: var(--dark-signature-color);
-        --class-def-color: var(--dark-class-def-color);
-        --classes-color: var(--dark-classes-color);
+        --trait-def-color: var(--dark-trait-def-color);
+        --traits-color: var(--dark-traits-color);
         --enum-color: var(--dark-enum-color);
         --op-color: var(--dark-op-color);
         --eff-color: var(--dark-eff-color);
@@ -141,8 +141,8 @@ body.light {
     --show-hide-hover-color: var(--light-show-hide-hover-color);
     --module-color: var(--light-module-color);
     --signature-color: var(--light-signature-color);
-    --class-def-color: var(--light-class-def-color);
-    --classes-color: var(--light-classes-color);
+    --trait-def-color: var(--light-trait-def-color);
+    --traits-color: var(--light-traits-color);
     --enum-color: var(--light-enum-color);
     --op-color: var(--light-op-color);
     --eff-color: var(--light-eff-color);
@@ -172,8 +172,8 @@ body.dark {
     --show-hide-hover-color: var(--dark-show-hide-hover-color);
     --module-color: var(--dark-module-color);
     --signature-color: var(--dark-signature-color);
-    --class-def-color: var(--dark-class-def-color);
-    --classes-color: var(--dark-classes-color);
+    --trait-def-color: var(--dark-trait-def-color);
+    --traits-color: var(--dark-traits-color);
     --enum-color: var(--dark-enum-color);
     --op-color: var(--dark-op-color);
     --eff-color: var(--dark-eff-color);
@@ -391,11 +391,11 @@ nav .Modules li::before {
 nav .Signatures li::before {
     color: var(--signature-color);
 }
-nav .Class-Definitions li::before {
-    color: var(--class-def-color);
+nav .Trait-Definitions li::before {
+    color: var(--trait-def-color);
 }
-nav .Classes li::before {
-    color: var(--classes-color);
+nav .Traits li::before {
+    color: var(--traits-color);
 }
 nav .Enums li::before {
     color: var(--enum-color);
