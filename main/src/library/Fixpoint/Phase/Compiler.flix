@@ -24,10 +24,10 @@ mod Fixpoint.Phase.Compiler {
     use Fixpoint.Ast.Datalog.BodyPredicate.{BodyAtom}
     use Fixpoint.Ast.Datalog.BodyPredicate.{Functional}
     use Fixpoint.Ast.Datalog.BodyPredicate.{Guard0, Guard1, Guard2, Guard3, Guard4, Guard5}
-    use Fixpoint.Ast.Denotation
-    use Fixpoint.Ast.isRelational
-    use Fixpoint.Shared.PredSym
-    use Fixpoint.Shared.PredSym.PredSym
+    use Fixpoint.Ast.Shared.Denotation
+    use Fixpoint.Ast.Shared.isRelational
+    use Fixpoint.Ast.Shared.PredSym
+    use Fixpoint.Ast.Shared.PredSym.PredSym
 
     ///
     /// Compile the given Datalog program `d` to RAM.

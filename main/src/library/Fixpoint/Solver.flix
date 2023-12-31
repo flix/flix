@@ -21,11 +21,11 @@ mod Fixpoint.Solver {
     use Fixpoint.Ast.Datalog.Datalog.{Datalog, Model, Join}
     use Fixpoint.Ast.Datalog.Constraint.Constraint
     use Fixpoint.Ast.Datalog.HeadPredicate.HeadAtom
-    use Fixpoint.Ast.Denotation
-    use Fixpoint.Ast.Denotation.{Relational, Latticenal}
     use Fixpoint.Ast.Ram.RamSym
-    use Fixpoint.Shared.PredSym
-    use Fixpoint.Shared.PredSym.PredSym
+    use Fixpoint.Ast.Shared.Denotation
+    use Fixpoint.Ast.Shared.Denotation.{Relational, Latticenal}
+    use Fixpoint.Ast.Shared.PredSym
+    use Fixpoint.Ast.Shared.PredSym.PredSym
     use Fixpoint.Interpreter.Database
 
     ///

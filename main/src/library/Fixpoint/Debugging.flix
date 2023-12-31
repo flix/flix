@@ -18,7 +18,7 @@ mod Fixpoint.Debugging {
 
     use Fixpoint.Ast.Datalog.Datalog
     use Fixpoint.Ast.Ram.RamStmt
-    use Fixpoint.Shared.PredSym
+    use Fixpoint.Ast.Shared.PredSym
 
     ///
     /// Invoked before the fixpoint computation.
