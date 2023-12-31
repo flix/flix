@@ -21,10 +21,13 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, 
 import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
 import ca.uwaterloo.flix.util.LocalResource
 
+import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
+import org.intellij.markdown.parser.MarkdownParser
+import org.intellij.markdown.html.HtmlGenerator
+import org.intellij.markdown.html.HtmlGeneratorKt.getDUMMY_ATTRIBUTES_CUSTOMIZER
+
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
-import com.github.rjeschke.txtmark
-
 import java.net.URLEncoder
 
 /**
@@ -1180,15 +1183,15 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docDoc(doc: Ast.Doc)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    // Panic mode will escape all < and > characters
-    val config =
-      txtmark.Configuration.builder()
-        .enablePanicMode()
-        .build()
-    val parsed = txtmark.Processor.process(doc.text, config)
+    val escaped = esc(doc.text)
+
+    val flavour = new CommonMarkFlavourDescriptor()
+    val parsedTree = new MarkdownParser(flavour).buildMarkdownTreeFromString(escaped)
+    val tagRenderer = new HtmlGenerator.DefaultTagRenderer(getDUMMY_ATTRIBUTES_CUSTOMIZER, false)
+    val html = new HtmlGenerator(escaped, parsedTree, flavour, false).generateHtml(tagRenderer)
 
     sb.append("<div class='doc'>")
-    sb.append(parsed)
+    sb.append(html)
     sb.append("</div>")
   }
 
