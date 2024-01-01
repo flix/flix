@@ -140,6 +140,8 @@ object UnstructuredTree {
 
       case object Expr extends Expr
 
+      case object Ascribe extends Expr
+
       case object Literal extends Expr
 
       case object Tuple extends Expr
@@ -160,7 +162,13 @@ object UnstructuredTree {
 
       case object IfThenElse extends Expr
 
+      case object UncheckedCast extends Expr
+
       case object UncheckedMaskingCast extends Expr
+
+      case object CheckedTypeCast extends Expr
+
+      case object CheckedEffectCast extends Expr
 
       case object Hole extends Expr
 
@@ -171,6 +179,10 @@ object UnstructuredTree {
       case object Use extends Expr
 
       case object StringInterpolation extends Expr
+
+      case object TypeMatch extends Expr
+
+      case object TypeMatchRule extends Expr
     }
 
     ////// TYPES //////

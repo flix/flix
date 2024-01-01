@@ -79,7 +79,14 @@ object Parser2 {
 
     flix.phase("Parser2") {
       // The file that is the current focus of development
-      val DEBUG_FOCUS = ""
+      val DEBUG_FOCUS = "foo.flix"
+      // Files that the old parser produces faulty outputs on
+      val filesThatOldParserHasErrorsIn = List(
+        // Reason: Parser misses the first doc-comment after a use within a module
+        "Fixpoint/SubstitutePredSym.flix",
+        "Fixpoint/PredSymsOf.flix",
+        "Time/Duration.flix"
+      )
 
       println("p\tw\tfile")
 
@@ -133,6 +140,8 @@ object Parser2 {
                   val hasSameStructure = diffWeededAsts(src, t)
                   if (hasSameStructure) {
                     outString += s"\t${Console.GREEN}✔︎ ${Console.RESET}"
+                  } else if (filesThatOldParserHasErrorsIn.contains(src.name)) {
+                    outString += s"\t${Console.MAGENTA}✔︎ ${Console.RESET}"
                   } else {
                     outString += s"\t${Console.YELLOW}!=${Console.RESET}"
                   }
@@ -906,6 +915,13 @@ object Parser2 {
         }
       }
 
+      // Handle type ascriptions
+      if (eat(TokenKind.Colon)) {
+        Type.ttype()
+        lhs = close(openBefore(lhs), TreeKind.Expr.Ascribe)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      }
+
       // Handle statements
       if (eat(TokenKind.Semi)) {
         expression()
@@ -937,6 +953,11 @@ object Parser2 {
         case TokenKind.BuiltIn => intrinsic()
         case TokenKind.KeywordUse => exprUse()
         case TokenKind.LiteralStringInterpolationL => interpolatedString()
+        case TokenKind.KeywordTypeMatch => typematch()
+        case TokenKind.KeywordMaskedCast => uncheckedMaskingCast()
+        case TokenKind.KeywordUncheckedCast => uncheckedCast()
+        case TokenKind.KeywordCheckedECast => checkedEffectCast()
+        case TokenKind.KeywordCheckedCast => checkedTypeCast()
         case TokenKind.LiteralString
              | TokenKind.LiteralChar
              | TokenKind.LiteralFloat32
@@ -948,7 +969,8 @@ object Parser2 {
              | TokenKind.LiteralInt64
              | TokenKind.LiteralBigInt
              | TokenKind.KeywordTrue
-             | TokenKind.KeywordFalse => literal()
+             | TokenKind.KeywordFalse
+             | TokenKind.KeywordNull => literal()
         case TokenKind.NameLowerCase
              | TokenKind.NameUpperCase
              | TokenKind.NameMath
@@ -957,7 +979,6 @@ object Parser2 {
              | TokenKind.KeywordNot
              | TokenKind.Plus
              | TokenKind.TripleTilde => unary()
-        case TokenKind.KeywordMaskedCast => maskingCast()
         case TokenKind.HoleNamed
              | TokenKind.HoleAnonymous => hole()
         case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected expression, found $t"))
@@ -979,6 +1000,81 @@ object Parser2 {
         expression()
       }
       close(mark, TreeKind.Expr.IfThenElse)
+    }
+
+    private def typematch()(implicit s:State): Mark.Closed = {
+      assert(at(TokenKind.KeywordTypeMatch))
+      val mark = open()
+      expect(TokenKind.KeywordTypeMatch)
+      expression()
+      if (eat(TokenKind.CurlyL)) {
+        while(at(TokenKind.KeywordCase) && !eof()) {
+          typematchRule()
+        }
+        expect(TokenKind.CurlyR)
+      }
+      close(mark, TreeKind.Expr.TypeMatch)
+    }
+
+    private def typematchRule()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordCase))
+      val mark = open()
+      expect(TokenKind.KeywordCase)
+      name(NAME_VARIABLE)
+      if (eat(TokenKind.Colon)){
+        Type.ttype(allowTrailingArrow = false)
+      }
+      if (eat(TokenKind.Arrow)) {
+        expression()
+      }
+      close(mark, TreeKind.Expr.TypeMatchRule)
+    }
+
+    private def checkedTypeCast()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordCheckedCast))
+      val mark = open()
+      expect(TokenKind.KeywordCheckedCast)
+      if (eat(TokenKind.ParenL)) {
+        expression()
+        expect(TokenKind.ParenR)
+      }
+      close(mark, TreeKind.Expr.CheckedTypeCast)
+    }
+
+    private def checkedEffectCast()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordCheckedECast))
+      val mark = open()
+      expect(TokenKind.KeywordCheckedECast)
+      if (eat(TokenKind.ParenL)) {
+        expression()
+        expect(TokenKind.ParenR)
+      }
+      close(mark, TreeKind.Expr.CheckedEffectCast)
+    }
+
+    private def uncheckedCast()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordUncheckedCast))
+      val mark = open()
+      expect(TokenKind.KeywordUncheckedCast)
+      if (eat(TokenKind.ParenL)) {
+        expression()
+        if (eat(TokenKind.KeywordAs)) {
+          Type.ttype()
+        }
+        expect(TokenKind.ParenR)
+      }
+      close(mark, TreeKind.Expr.UncheckedCast)
+    }
+
+    private def uncheckedMaskingCast()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordMaskedCast))
+      val mark = open()
+      expect(TokenKind.KeywordMaskedCast)
+      if (eat(TokenKind.ParenL)) {
+        expression()
+        expect(TokenKind.ParenR)
+      }
+      close(mark, TreeKind.Expr.UncheckedMaskingCast)
     }
 
     private def intrinsic()(implicit s: State): Mark.Closed = {
@@ -1087,17 +1183,6 @@ object Parser2 {
       close(mark, TreeKind.Expr.LetImport)
     }
 
-    private def maskingCast()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordMaskedCast))
-      val mark = open()
-      expect(TokenKind.KeywordMaskedCast)
-      if (eat(TokenKind.ParenL)) {
-        expression()
-        expect(TokenKind.ParenR)
-      }
-      close(mark, TreeKind.Expr.UncheckedMaskingCast)
-    }
-
     private def hole()(implicit s: State): Mark.Closed = {
       assert(atAny(List(TokenKind.HoleNamed, TokenKind.HoleAnonymous)))
       val mark = open()
@@ -1113,7 +1198,7 @@ object Parser2 {
     /**
      * ttype -> (typeDelimited arguments? | typeFunction) ( '\' effectSet )?
      */
-    def ttype(allowTrailingEffect: Boolean = false)(implicit s: State): Mark.Closed = {
+    def ttype(allowTrailingEffect: Boolean = false, allowTrailingArrow: Boolean = true)(implicit s: State): Mark.Closed = {
       val mark = open()
       typeDelimited()
       var lhs = close(mark, TreeKind.Type.Type)
@@ -1128,7 +1213,7 @@ object Parser2 {
       }
 
       // Handle function types
-      if (at(TokenKind.Arrow)) {
+      if (allowTrailingArrow && at(TokenKind.Arrow)) {
         val mark = openBefore(lhs)
         ttype()
         if (at(TokenKind.Slash)) {

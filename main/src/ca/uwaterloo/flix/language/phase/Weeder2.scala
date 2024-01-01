@@ -607,10 +607,15 @@ object Weeder2 {
           case TreeKind.Expr.Binary => visitBinary(tree)
           case TreeKind.Expr.Paren => visitParen(tree)
           case TreeKind.Expr.IfThenElse => visitIfThenElse(tree)
-          case TreeKind.Expr.UncheckedMaskingCast => visitUncheckedMaskingCast(tree)
           case TreeKind.Expr.Block => visitBlock(tree)
           case TreeKind.Expr.Statement => visitStatement(tree)
           case TreeKind.Expr.Use => visitExprUse(tree)
+          case TreeKind.Expr.Ascribe => visitAscribe(tree)
+          case TreeKind.Expr.TypeMatch => visitTypeMatch(tree)
+          case TreeKind.Expr.CheckedTypeCast => visitCheckedTypeCast(tree)
+          case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCast(tree)
+          case TreeKind.Expr.UncheckedCast => visitUncheckedCast(tree)
+          case TreeKind.Expr.UncheckedMaskingCast => visitUncheckedMaskingCast(tree)
           case TreeKind.Expr.StringInterpolation => visitStringInterpolation(tree)
           case TreeKind.Expr.Hole => visitHole(tree)
           case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
@@ -640,6 +645,40 @@ object Weeder2 {
             case (condition, tthen, eelse) => Expr.IfThenElse(condition, tthen, eelse, tree.loc)
           }
         case _ => softFailWith(Expr.Error(Parse2Error.DevErr(tree.loc, "Malformed if-then-else expression")))
+      }
+    }
+
+
+    private def visitAscribe(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Ascribe)
+      mapN(
+        pickExpression(tree),
+        Types.tryPickTypeNoWild(tree),
+        Types.tryPickEffect(tree)
+      ) {
+        (expr, tpe, eff) => Expr.Ascribe(expr, tpe, eff, tree.loc)
+      }
+    }
+
+    private def visitTypeMatch(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.TypeMatch)
+      val rules = pickAll(TreeKind.Expr.TypeMatchRule, tree.children)
+      mapN(
+        pickExpression(tree),
+        traverse(rules)(visitTypeMatchRule)
+      ) {
+        (expr, rules) => Expr.TypeMatch(expr, rules, tree.loc)
+      }
+    }
+
+    private def visitTypeMatchRule(tree: Tree)(implicit s: State): Validation[TypeMatchRule, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.TypeMatchRule)
+      mapN(
+        pickNameIdent(tree),
+        pickExpression(tree),
+        Types.pickType(tree)
+      ) {
+        (ident, expr, ttype) => TypeMatchRule(ident, ttype, expr)
       }
     }
 
@@ -724,6 +763,33 @@ object Weeder2 {
         case (_, Child.Tree(t)) => throw InternalCompilerException(s"Parser placed child of kind '${t.kind}' in string interpolation", tree.loc)
       }
     }
+
+
+    private def visitCheckedTypeCast(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.CheckedTypeCast)
+      val expr = pickExpression(tree)
+      mapN(expr)(expr => Expr.CheckedCast(Ast.CheckedCastType.TypeCast, expr, tree.loc))
+    }
+
+
+    private def visitCheckedEffectCast(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.CheckedEffectCast)
+      val expr = pickExpression(tree)
+      mapN(expr)(expr => Expr.CheckedCast(Ast.CheckedCastType.EffectCast, expr, tree.loc))
+    }
+
+
+    private def visitUncheckedCast(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.UncheckedCast)
+      mapN(
+        pickExpression(tree),
+        Types.tryPickTypeNoWild(tree),
+        Types.tryPickEffect(tree)
+      ) {
+        (expr, tpe, eff) => Expr.UncheckedCast(expr, tpe, eff, tree.loc)
+      }
+    }
+
 
     private def visitUncheckedMaskingCast(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.UncheckedMaskingCast)
@@ -1106,6 +1172,13 @@ object Weeder2 {
       flatMapN(pick(TreeKind.Type.Type, tree.children))(visitType)
     }
 
+    def tryPickTypeNoWild(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {
+      mapN(pickType(tree)) {
+        case Type.Var(ident, _) if ident.isWild => None
+        case t => Some(t)
+      }
+    }
+
     def visitType(tree: Tree)(implicit s: State): Validation[WeededAst.Type, CompilationMessage] = {
       assert(tree.kind == TreeKind.Type.Type)
       // Visit first child and match its kind to know what to to
@@ -1115,7 +1188,10 @@ object Weeder2 {
         case TreeKind.Type.Apply => visitApply(inner)
         case TreeKind.Type.Tuple => visitTuple(inner)
         case TreeKind.QName => mapN(visitQName(inner))(Type.Ambiguous(_, inner.loc))
-        case TreeKind.Ident => mapN(tokenToIdent(inner))(ident => Type.Ambiguous(Name.mkQName(ident), inner.loc))
+        case TreeKind.Ident => mapN(tokenToIdent(inner)){
+          case ident if ident.isWild => Type.Var(ident, tree.loc)
+          case ident => Type.Ambiguous(Name.mkQName(ident), inner.loc)
+        }
         case kind => failWith(s"'$kind' used as type")
       }
     }
