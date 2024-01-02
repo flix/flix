@@ -103,6 +103,31 @@ object UnstructuredTree {
     case object QName extends TreeKind
 
     /////// JVM /////
+    sealed trait Pattern extends TreeKind {
+      override def debug_name: Option[String] = Some("Pattern")
+    }
+
+    object Pattern {
+
+      case object Pattern extends Pattern
+
+      case object Variable extends Pattern
+
+      case object Literal extends Pattern
+
+      case object Tuple extends Pattern
+
+      case object Tag extends Pattern
+
+      case object Record extends Pattern
+
+      case object RecordField extends Pattern
+
+      case object FCons extends Pattern
+
+    }
+
+    /////// JVM /////
     sealed trait JvmOp extends TreeKind {
       override def debug_name: Option[String] = Some("JvmOp")
     }
@@ -170,6 +195,14 @@ object UnstructuredTree {
 
       case object CheckedEffectCast extends Expr
 
+      case object Scope extends Expr
+
+      case object LetMatch extends Expr
+
+      case object Lambda extends Expr
+
+      case object LambdaMatch extends Expr
+
       case object Hole extends Expr
 
       case object HoleVariable extends Expr
@@ -195,6 +228,8 @@ object UnstructuredTree {
       case object Type extends Type
 
       case object Tuple extends Type
+
+      case object Native extends Type
 
       case object Record extends Type
 

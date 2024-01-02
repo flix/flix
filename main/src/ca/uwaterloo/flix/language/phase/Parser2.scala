@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ParsedAst, ReadAst, SourceKind, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.errors.Parse2Error
-import ca.uwaterloo.flix.language.phase.Parser2.{Mark, close, eat, nth}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
@@ -512,8 +511,6 @@ object Parser2 {
     }
   }
 
-  ////////// GRAMMAR ///////////////
-
   /**
    * source -> declaration*
    */
@@ -522,6 +519,7 @@ object Parser2 {
     usesOrImports()
     while (!eof()) {
       Decl.declaration()
+      comments()
     }
     close(mark, TreeKind.Source)
   }
@@ -875,7 +873,7 @@ object Parser2 {
         asArgument(TreeKind.Parameter, () => {
           name(NAME_PARAMETER)
           expect(TokenKind.Colon)
-          Type.ttype()
+          Type.ttype(allowTrailingEffect = true)
         }),
         (TokenKind.ParenL, TokenKind.ParenR),
         () => atAny(NAME_PARAMETER),
@@ -946,12 +944,14 @@ object Parser2 {
       val mark = open()
       // Handle clearly delimited expressions
       nth(0) match {
-        case TokenKind.ParenL => parenOrTuple()
+        case TokenKind.ParenL => parenOrTupleOrLambda()
         case TokenKind.CurlyL => block()
         case TokenKind.KeywordIf => ifThenElse()
         case TokenKind.KeywordImport => letImport()
         case TokenKind.BuiltIn => intrinsic()
         case TokenKind.KeywordUse => exprUse()
+        case TokenKind.KeywordRegion => region()
+        case TokenKind.KeywordLet => letMatch()
         case TokenKind.LiteralStringInterpolationL => interpolatedString()
         case TokenKind.KeywordTypeMatch => typematch()
         case TokenKind.KeywordMaskedCast => uncheckedMaskingCast()
@@ -974,7 +974,8 @@ object Parser2 {
         case TokenKind.NameLowerCase
              | TokenKind.NameUpperCase
              | TokenKind.NameMath
-             | TokenKind.NameGreek => name(NAME_DEFINITION, allowQualified = true)
+             | TokenKind.NameGreek
+             | TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThin) unaryLambda() else name(NAME_DEFINITION, allowQualified = true)
         case TokenKind.Minus
              | TokenKind.KeywordNot
              | TokenKind.Plus
@@ -1002,13 +1003,35 @@ object Parser2 {
       close(mark, TreeKind.Expr.IfThenElse)
     }
 
-    private def typematch()(implicit s:State): Mark.Closed = {
+    private def letMatch()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordLet))
+      val mark = open()
+      expect(TokenKind.KeywordLet)
+      Pattern.pattern()
+      if (eat(TokenKind.Colon)) {
+        Type.ttype()
+      }
+      expect(TokenKind.Equal)
+      expression()
+      close(mark, TreeKind.Expr.LetMatch)
+    }
+
+    private def region()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordRegion))
+      val mark = open()
+      expect(TokenKind.KeywordRegion)
+      name(NAME_VARIABLE)
+      block()
+      close(mark, TreeKind.Expr.Scope)
+    }
+
+    private def typematch()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordTypeMatch))
       val mark = open()
       expect(TokenKind.KeywordTypeMatch)
       expression()
       if (eat(TokenKind.CurlyL)) {
-        while(at(TokenKind.KeywordCase) && !eof()) {
+        while (at(TokenKind.KeywordCase) && !eof()) {
           typematchRule()
         }
         expect(TokenKind.CurlyR)
@@ -1021,7 +1044,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordCase)
       name(NAME_VARIABLE)
-      if (eat(TokenKind.Colon)){
+      if (eat(TokenKind.Colon)) {
         Type.ttype(allowTrailingArrow = false)
       }
       if (eat(TokenKind.Arrow)) {
@@ -1115,25 +1138,79 @@ object Parser2 {
     /**
      * exprParen -> '(' expression? (',' expression)* ')'
      */
-    private def parenOrTuple()(implicit s: State): Mark.Closed = {
+    private def parenOrTupleOrLambda()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.ParenL))
-      val mark = open()
-      var isTuple = false
-      expect(TokenKind.ParenL)
-      if (eat(TokenKind.ParenR)) { // Handle unit tuple `()`
-        return close(mark, TreeKind.Expr.Tuple)
-      }
+      (nth(0), nth(1)) match {
+        // Detect unit tuple
+        case (TokenKind.ParenL, TokenKind.ParenR) =>
+          val mark = open()
+          advance()
+          advance()
+          close(mark, TreeKind.Expr.Tuple)
 
-      expression()
-      if (at(TokenKind.Comma)) {
-        isTuple = true
-        while (!at(TokenKind.ParenR) && !eof()) {
-          expect(TokenKind.Comma)
-          expression()
-        }
+        case (TokenKind.ParenL, _) =>
+          // Detect lambda function declaration
+          val isLambda = {
+            var level = 1
+            var lookAhead = 0
+            while (level > 0 && !eof()) {
+              lookAhead += 1
+              nth(lookAhead) match {
+                case TokenKind.ParenL => level += 1
+                case TokenKind.ParenR => level -= 1
+                case _ =>
+              }
+            }
+            nth(lookAhead + 1) == TokenKind.ArrowThin
+          }
+
+          if (isLambda) {
+            lambda()
+          } else {
+            // Distinguish between expression in parenthesis and tuples
+            val mark = open()
+            var kind: TreeKind = TreeKind.Expr.Paren
+            if (at(TokenKind.Comma)) {
+              kind = TreeKind.Expr.Tuple
+              while (!at(TokenKind.ParenR) && !eof()) {
+                expect(TokenKind.Comma)
+                expression()
+              }
+            }
+            expect(TokenKind.ParenR)
+            close(mark, kind)
+          }
+
+        case (t1, _) => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected ParenL, found '$t1'"))
       }
-      expect(TokenKind.ParenR)
-      close(mark, if (isTuple) TreeKind.Expr.Tuple else TreeKind.Expr.Paren)
+    }
+
+    private def unaryLambda()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      val markParams = open()
+      val markParam = open()
+      name(NAME_PARAMETER)
+      close(markParam, TreeKind.Parameter)
+      close(markParams, TreeKind.Parameters)
+      expect(TokenKind.ArrowThin)
+      expression()
+      close(mark, TreeKind.Expr.Lambda)
+    }
+
+    private def lambda()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      commaSeparated(
+        TreeKind.Parameters,
+        asArgument(TreeKind.Parameter, () => {
+          val lhs = name(NAME_PARAMETER)
+          if (eat(TokenKind.Colon)) Type.ttype(allowTrailingEffect = true) else lhs
+        }),
+        (TokenKind.ParenL, TokenKind.ParenR),
+        () => atAny(NAME_PARAMETER),
+      )
+      expect(TokenKind.ArrowThin)
+      expression()
+      close(mark, TreeKind.Expr.Lambda)
     }
 
     /**
@@ -1194,6 +1271,99 @@ object Parser2 {
     }
   }
 
+  private object Pattern {
+    def pattern()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      val lhs = nth(0) match {
+        case TokenKind.ParenL => tuple()
+        case TokenKind.NameUpperCase => tag()
+        case TokenKind.CurlyL => record()
+        case TokenKind.NameLowerCase
+             | TokenKind.NameGreek
+             | TokenKind.NameMath
+             | TokenKind.Underscore => variable()
+        case TokenKind.LiteralString
+             | TokenKind.LiteralChar
+             | TokenKind.LiteralFloat32
+             | TokenKind.LiteralFloat64
+             | TokenKind.LiteralBigDecimal
+             | TokenKind.LiteralInt8
+             | TokenKind.LiteralInt16
+             | TokenKind.LiteralInt32
+             | TokenKind.LiteralInt64
+             | TokenKind.LiteralBigInt
+             | TokenKind.KeywordTrue
+             | TokenKind.KeywordFalse
+             | TokenKind.LiteralRegex
+             | TokenKind.KeywordNull => literal()
+        case _ => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "expected pattern"))
+      }
+
+      // Handle FCons
+      if (eat(TokenKind.ColonColon)) {
+        val mark = openBefore(lhs)
+        pattern()
+        close(mark, TreeKind.Pattern.FCons)
+      }
+
+      close(mark, TreeKind.Pattern.Pattern)
+    }
+
+    private def literal()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      advance()
+      close(mark, TreeKind.Pattern.Literal)
+    }
+
+    private def variable()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_VARIABLE)
+      close(mark, TreeKind.Pattern.Variable)
+    }
+
+    private def tag()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_TAG, allowQualified = true)
+      if (at(TokenKind.ParenL)) {
+        tuple()
+      }
+      close(mark, TreeKind.Pattern.Tag)
+    }
+
+    private def tuple()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.ParenL))
+      commaSeparated(TreeKind.Pattern.Tuple, asArgumentFlat(pattern))
+    }
+
+    private def record()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.CurlyL))
+      val mark = open()
+      expect(TokenKind.CurlyL)
+      var continue = true
+      while (continue && !at(TokenKind.CurlyR) && !eof()) {
+        asArgumentFlat(recordField)
+        if (eat(TokenKind.Bar)) {
+          pattern()
+          continue = false
+        }
+      }
+      if (at(TokenKind.Comma)) {
+        advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "Trailing comma."))
+      }
+      expect(TokenKind.CurlyR)
+      close(mark, TreeKind.Pattern.Record)
+    }
+
+    private def recordField()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_FIELD)
+      if (eat(TokenKind.Equal)) {
+        pattern()
+      }
+      close(mark, TreeKind.Pattern.RecordField)
+    }
+  }
+
   private object Type {
     /**
      * ttype -> (typeDelimited arguments? | typeFunction) ( '\' effectSet )?
@@ -1213,10 +1383,11 @@ object Parser2 {
       }
 
       // Handle function types
-      if (allowTrailingArrow && at(TokenKind.Arrow)) {
+      if (allowTrailingArrow && eat(TokenKind.ArrowThin)) {
         val mark = openBefore(lhs)
         ttype()
-        if (at(TokenKind.Slash)) {
+        // Handle effect
+        if (at(TokenKind.Backslash)) {
           effectSet()
         }
         lhs = close(mark, TreeKind.Type.Function)
@@ -1225,12 +1396,8 @@ object Parser2 {
       }
 
       // Handle effect
-      if (at(TokenKind.Backslash)) {
-        val effMark = effectSet()
-        if (!allowTrailingEffect) {
-          val mark = openBefore(effMark)
-          closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), "Effect is not allowed here"))
-        }
+      if (allowTrailingEffect && at(TokenKind.Backslash)) {
+        effectSet()
       }
 
       lhs
@@ -1321,10 +1488,10 @@ object Parser2 {
      */
     private def typeDelimited()(implicit s: State): Mark.Closed = {
       nth(0) match {
-        // TODO: Do we need Primary.True and Primary.False ?
         case TokenKind.CurlyL => record()
         case TokenKind.ParenL => tuple()
         case TokenKind.NameUpperCase => name(NAME_TYPE, allowQualified = true)
+        case TokenKind.NameJava => native()
         case TokenKind.NameLowerCase => variable()
         case TokenKind.NameMath
              | TokenKind.NameGreek
@@ -1339,11 +1506,23 @@ object Parser2 {
       close(mark, TreeKind.Type.Variable)
     }
 
+    private def native()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      var continue = true
+      while (continue && !eof()) {
+        nth(0) match {
+          case TokenKind.NameJava | TokenKind.NameUpperCase | TokenKind.NameLowerCase | TokenKind.Dot => advance()
+          case _ => continue = false
+        }
+      }
+      close(mark, TreeKind.Type.Native)
+    }
+
     /**
      * tuple -> '(' (type (',' type)* )? ')'
      */
     def tuple()(implicit s: State): Mark.Closed = {
-      commaSeparated(TreeKind.Type.Tuple, asArgumentFlat(() => ttype()))
+      commaSeparated(TreeKind.Type.Tuple, asArgumentFlat(() => ttype(allowTrailingEffect = true)))
     }
 
     /**

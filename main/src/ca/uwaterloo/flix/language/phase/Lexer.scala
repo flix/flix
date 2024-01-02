@@ -383,7 +383,6 @@ object Lexer {
       case _ if isKeyword("|||") => TokenKind.TripleBar
       case _ if isKeyword("~~~") => TokenKind.TripleTilde
       case _ if isKeyword("<+>") => TokenKind.AngledPlus
-      case _ if isKeyword("<=>") => TokenKind.AngledEqual
       case _ if isKeyword("alias") => TokenKind.KeywordAlias
       case _ if isKeyword("and") => TokenKind.KeywordAnd
       case _ if isKeyword("as") => TokenKind.KeywordAs
@@ -488,10 +487,14 @@ object Lexer {
       return false
     }
 
-    // Check that the character just after the keyword is not a letter, digit or underscore
-    val next = s.src.data.lift(s.current.offset + keyword.length - 1)
-    val isPrefix = next.exists(c => c.isLetterOrDigit || c == '_')
-    if (isPrefix) {
+    // Check that the potential keyword is surrounded by whitespace, taking care not to go out-of-bounds
+    val previousIsWhitespace = s.src.data
+      .lift(s.current.offset - 2)
+      .forall(_.isWhitespace)
+    val nextIsWhitespace = s.src.data
+      .lift(s.current.offset + keyword.length - 1)
+      .forall(_.isWhitespace)
+    if (!previousIsWhitespace || !nextIsWhitespace) {
       return false
     }
 

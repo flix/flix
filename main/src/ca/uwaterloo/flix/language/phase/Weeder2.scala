@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.errors.Parse2Error
@@ -194,8 +195,8 @@ object Weeder2 {
         traverse(instances)(visitInstance),
         traverse(enums)(visitEnum)
       ) {
-        // TODO: Do we need to sort these by source position?
-        case (modules, definitions, classes, instances, enums) => definitions ++ classes ++ modules ++ instances ++ enums
+        // TODO: We might need to sort these by source position for comparison with old parser. Can be removed for production
+        case (modules, definitions, classes, instances, enums) => definitions ++ classes ++ modules ++ enums ++ instances
       }
     }
 
@@ -479,14 +480,14 @@ object Weeder2 {
       }
     }
 
-    private val ALL_MODIFIERS: Set[TokenKind] = Set(
+    val ALL_MODIFIERS: Set[TokenKind] = Set(
       TokenKind.KeywordSealed,
       TokenKind.KeywordLawful,
       TokenKind.KeywordPub,
       TokenKind.KeywordOverride,
       TokenKind.KeywordInline)
 
-    private def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false)(implicit s: State): Validation[Ast.Modifiers, CompilationMessage] = {
+    def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false)(implicit s: State): Validation[Ast.Modifiers, CompilationMessage] = {
       tryPick(TreeKind.Modifiers, tree.children) match {
         case None => Ast.Modifiers(List.empty).toSuccess
         case Some(modTree) =>
@@ -530,39 +531,36 @@ object Weeder2 {
       }
     }
 
-    private def unitFormalParams(loc: SourceLocation): List[FormalParam] = List(
-      FormalParam(
-        Name.Ident(SourcePosition.Unknown, "_unit", SourcePosition.Unknown),
-        Ast.Modifiers(List.empty),
-        Some(Type.Unit(loc)),
-        loc
-      )
-    )
+    private def unitFormalParameters(loc: SourceLocation): List[FormalParam] = List(FormalParam(
+      Name.Ident(SourcePosition.Unknown, "_unit", SourcePosition.Unknown),
+      Ast.Modifiers(List.empty),
+      Some(Type.Unit(loc)),
+      loc
+    ))
 
-    private def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit s: State): Validation[List[FormalParam], CompilationMessage] = {
+    def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit s: State): Validation[List[FormalParam], CompilationMessage] = {
       val paramTree = tryPick(TreeKind.Parameters, tree.children)
       paramTree.map(
         t => {
           val params = pickAll(TreeKind.Parameter, t.children)
-          if (params.isEmpty)
-            unitFormalParams(t.loc).toSuccess
-          else {
+          if (params.isEmpty) {
+            unitFormalParameters(t.loc).toSuccess
+          } else {
             flatMapN(traverse(params)(visitParameter(_, presence))) {
               params =>
                 // Check for duplicates
-                val paramsWithoutWildcards = params.filter(_.ident.name.startsWith("_"))
+                val paramsWithoutWildcards = params.filter(_.ident.isWild)
                 val errors = getDuplicates(paramsWithoutWildcards, (p: FormalParam) => p.ident.name)
                   .map(pair => DuplicateFormalParam(pair._1.ident.name, pair._1.loc, pair._2.loc))
 
                 // Check missing or illegal type ascription
-
                 params.toSuccess.withSoftFailures(errors)
             }
           }
         }
       ).getOrElse(
         // Soft fail by pretending there were no arguments
-        softFailWith(unitFormalParams(SourceLocation.Unknown))
+        softFailWith(unitFormalParameters(SourceLocation.Unknown))
       )
     }
 
@@ -617,7 +615,10 @@ object Weeder2 {
           case TreeKind.Expr.UncheckedCast => visitUncheckedCast(tree)
           case TreeKind.Expr.UncheckedMaskingCast => visitUncheckedMaskingCast(tree)
           case TreeKind.Expr.StringInterpolation => visitStringInterpolation(tree)
+          case TreeKind.Expr.LetMatch => visitLetMatch(tree)
           case TreeKind.Expr.Hole => visitHole(tree)
+          case TreeKind.Expr.Scope => visitScope(tree)
+          case TreeKind.Expr.Lambda => visitLambda(tree)
           case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
           case TreeKind.QName => mapN(visitQName(tree))(qname => Expr.Ambiguous(qname, tree.loc))
           case kind => failWith(s"TODO: implement expression of kind '$kind'", tree.loc)
@@ -630,6 +631,34 @@ object Weeder2 {
       assert(tree.kind == TreeKind.Expr.Tuple)
       val expressions = pickAll(TreeKind.Expr.Expr, tree.children)
       mapN(traverse(expressions)(visitExpression))(Expr.Tuple(_, tree.loc))
+    }
+
+
+    private def visitScope(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Scope)
+      val block = flatMapN(pick(TreeKind.Expr.Block, tree.children))(visitBlock)
+      mapN(pickNameIdent(tree), block)((ident, block) => Expr.Scope(ident, block, tree.loc))
+    }
+
+    private def visitLetMatch(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LetMatch)
+      flatMapN(
+        Patterns.pickPattern(tree),
+        Types.tryPickType(tree),
+        pickExpression(tree)
+      ) {
+        (patrn, tpe, expr) =>
+          // get expr1 and expr2 from the nested statement within expr.
+          val exprs = expr match {
+            case Expr.Stm(exp1, exp2, _) => (exp1, exp2).toSuccess
+            case _ => softFailWith(
+              Expr.Error(Parse2Error.DevErr(tree.loc, "Malformed let-match expression")),
+              Expr.Error(Parse2Error.DevErr(tree.loc, "Malformed let-match expression"))
+            )
+          }
+
+          mapN(exprs)(exprs => Expr.LetMatch(patrn, Ast.Modifiers.Empty, tpe, exprs._1, exprs._2, tree.loc))
+      }
     }
 
     private def visitIfThenElse(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -648,6 +677,18 @@ object Weeder2 {
       }
     }
 
+    private def visitLambda(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Lambda)
+      mapN(
+        pickExpression(tree),
+        Decls.pickFormalParameters(tree, presence = Presence.Optional)
+      )((expr, fparams) => {
+        val l = tree.loc.asSynthetic
+        fparams.foldRight(expr) {
+          case (fparam, acc) => WeededAst.Expr.Lambda(fparam, acc, l)
+        }
+      })
+    }
 
     private def visitAscribe(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Ascribe)
@@ -789,7 +830,6 @@ object Weeder2 {
         (expr, tpe, eff) => Expr.UncheckedCast(expr, tpe, eff, tree.loc)
       }
     }
-
 
     private def visitUncheckedMaskingCast(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.UncheckedMaskingCast)
@@ -1004,7 +1044,7 @@ object Weeder2 {
       }
     }
 
-    private def visitLiteral(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+    def visitLiteral(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Literal)
       tree.children(0) match {
         case Child.Token(token) => token.kind match {
@@ -1031,6 +1071,145 @@ object Weeder2 {
         case _ => softFailWith(Expr.Error(Parse2Error.DevErr(tree.loc, "expected literal")))
       }
     }
+  }
+
+  private object Patterns {
+    def pickPattern(tree: Tree)(implicit s: State): Validation[Pattern, CompilationMessage] = {
+      flatMapN(pick(TreeKind.Pattern.Pattern, tree.children))(visitPattern(_))
+    }
+
+    def visitPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit s: State): Validation[Pattern, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Pattern.Pattern)
+      tree.children(0) match {
+        case Child.Tree(tree) => tree.kind match {
+          case TreeKind.Pattern.FCons => visitFCons(tree, seen)
+          case TreeKind.Pattern.Variable => visitVariable(tree, seen)
+          case TreeKind.Pattern.Tag => visitTag(tree, seen)
+          case TreeKind.Pattern.Literal => visitLiteral(tree)
+          case TreeKind.Pattern.Tuple => visitTuple(tree, seen)
+          case TreeKind.Pattern.Record => visitRecord(tree, seen)
+          case kind => throw InternalCompilerException(s"Invalid Pattern kind '$kind'", tree.loc)
+        }
+        case _ => throw InternalCompilerException(s"Pattern.Pattern had token child", tree.loc)
+      }
+    }
+
+    private def visitFCons(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit s: State): Validation[Pattern, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Pattern.FCons)
+      // FCons are rewritten into tag patterns
+      val patterns = pickAll(TreeKind.Pattern.Pattern, tree.children)
+      mapN(
+        traverse(patterns)(visitPattern(_, seen))
+      ) {
+        case pat1 :: pat2 :: Nil =>
+          val qname = Name.mkQName("List.Cons", tree.loc.sp1, tree.loc.sp2)
+          val pat = Pattern.Tuple(List(pat1, pat2), tree.loc)
+          Pattern.Tag(qname, pat, tree.loc)
+        case pats => throw InternalCompilerException(s"Pattern.FCons expected 2 but found '${pats.length}' sub-patterns", tree.loc)
+      }
+    }
+
+    private def visitVariable(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit s: State): Validation[Pattern, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Pattern.Variable)
+      flatMapN(pickNameIdent(tree))(
+        ident => {
+          if (ident.isWild)
+            Pattern.Wild(tree.loc).toSuccess
+          else {
+            seen.get(ident.name) match {
+              case Some(other) => Validation.toSoftFailure(
+                Pattern.Var(ident, tree.loc),
+                NonLinearPattern(ident.name, other.loc, tree.loc)
+              )
+              case None =>
+                seen += (ident.name -> ident)
+                Pattern.Var(ident, tree.loc).toSuccess
+            }
+          }
+        }
+      )
+    }
+
+    private def visitTag(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit s: State): Validation[Pattern, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Pattern.Tag)
+      val maybePat = tryPick(TreeKind.Pattern.Tuple, tree.children)
+      mapN(
+        pickQName(tree),
+        traverseOpt(maybePat)(visitTuple(_, seen))
+      ) {
+        (qname, maybePat) =>
+          maybePat match {
+            case None =>
+              // Synthetically add unit pattern to tag
+              val lit = Pattern.Cst(Ast.Constant.Unit, tree.loc.asSynthetic)
+              Pattern.Tag(qname, lit, tree.loc)
+            case Some(pat) => Pattern.Tag(qname, pat, tree.loc)
+          }
+      }
+    }
+
+    private def visitLiteral(tree: Tree)(implicit s: State): Validation[Pattern, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Pattern.Literal)
+      flatMapN(Exprs.visitLiteral(tree)) {
+        case Expr.Cst(cst, _) => cst match {
+          case Constant.Null =>
+            Validation.toSoftFailure(WeededAst.Pattern.Error(tree.loc), IllegalNullPattern(tree.loc))
+          case Constant.Regex(_) =>
+            Validation.toSoftFailure(WeededAst.Pattern.Error(tree.loc), IllegalRegexPattern(tree.loc))
+          case c => Pattern.Cst(c, tree.loc).toSuccess
+        }
+        case e => throw InternalCompilerException(s"Malformed Pattern.Literal. Expected literal but found $e", e.loc)
+      }
+    }
+
+    private def visitTuple(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit s: State): Validation[Pattern, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Pattern.Tuple)
+      val patterns = pickAll(TreeKind.Pattern.Pattern, tree.children)
+      mapN(traverse(patterns)(visitPattern(_, seen))) {
+        case Nil => Pattern.Cst(Ast.Constant.Unit, tree.loc)
+        case x :: Nil => x
+        case xs => Pattern.Tuple(xs, tree.loc)
+      }
+    }
+
+    private def visitRecord(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit s: State): Validation[Pattern, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Pattern.Record)
+      val fields = pickAll(TreeKind.Pattern.RecordField, tree.children)
+      val maybePattern = tryPick(TreeKind.Pattern.Pattern, tree.children)
+      flatMapN(
+        traverse(fields)(visitRecordField(_, seen)),
+        traverseOpt(maybePattern)(visitPattern(_, seen))
+      ) {
+        // Pattern { ... }
+        case (fs, None) => Pattern.Record(fs, Pattern.RecordEmpty(tree.loc.asSynthetic), tree.loc).toSuccess
+        // Pattern { x, ... | r }
+        case (x :: xs, Some(Pattern.Var(v, l))) => Pattern.Record(x::xs, Pattern.Var(v, l), tree.loc).toSuccess
+        // Pattern { x, ... | _ }
+        case (x :: xs, Some(Pattern.Wild(l))) => Pattern.Record(x :: xs, Pattern.Wild(l), tree.loc).toSuccess
+        // Illegal pattern: { | r}
+        case (Nil, Some(r)) => Validation.toSoftFailure(r, EmptyRecordExtensionPattern(r.loc))
+        // Illegal pattern: { x, ... | (1, 2, 3) }
+        case (_, Some(r)) => Validation.toSoftFailure(Pattern.Error(r.loc), IllegalRecordExtensionPattern(r.loc))
+      }
+    }
+
+    private def visitRecordField(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit s: State): Validation[Pattern.Record.RecordLabelPattern, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Pattern.RecordField)
+      val maybePattern = tryPick(TreeKind.Pattern.Pattern, tree.children)
+      flatMapN(pickNameIdent(tree), traverseOpt(maybePattern)(visitPattern(_, seen))) {
+        case (ident, None) =>
+          seen.get(ident.name) match {
+            case None =>
+              seen += (ident.name -> ident)
+              Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), None, tree.loc).toSuccess
+            case Some(other) =>
+              val pat = Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), None, tree.loc)
+              Validation.toSoftFailure(pat, NonLinearPattern(ident.name, other.loc, ident.loc))
+          }
+        case (ident, pat) => Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), pat, tree.loc).toSuccess
+      }
+    }
+
   }
 
   private object Constants {
@@ -1179,6 +1358,11 @@ object Weeder2 {
       }
     }
 
+    def tryPickType(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {
+      val maybeType = tryPick(TreeKind.Type.Type, tree.children)
+      traverseOpt(maybeType)(visitType)
+    }
+
     def visitType(tree: Tree)(implicit s: State): Validation[WeededAst.Type, CompilationMessage] = {
       assert(tree.kind == TreeKind.Type.Type)
       // Visit first child and match its kind to know what to to
@@ -1187,8 +1371,10 @@ object Weeder2 {
         case TreeKind.Type.Variable => visitVariable(inner)
         case TreeKind.Type.Apply => visitApply(inner)
         case TreeKind.Type.Tuple => visitTuple(inner)
+        case TreeKind.Type.Function => visitFunction(inner)
+        case TreeKind.Type.Native => visitNative(inner)
         case TreeKind.QName => mapN(visitQName(inner))(Type.Ambiguous(_, inner.loc))
-        case TreeKind.Ident => mapN(tokenToIdent(inner)){
+        case TreeKind.Ident => mapN(tokenToIdent(inner)) {
           case ident if ident.isWild => Type.Var(ident, tree.loc)
           case ident => Type.Ambiguous(Name.mkQName(ident), inner.loc)
         }
@@ -1201,6 +1387,39 @@ object Weeder2 {
       mapN(
         traverse(pickAll(TreeKind.Type.Type, tree.children))(visitType)
       )(types => Type.Tuple(types, tree.loc))
+    }
+
+    private def visitNative(tree: Tree)(implicit s: State): Validation[Type.Native, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Type.Native)
+      text(tree) match {
+        case head :: rest =>
+          val fqn = (List(head.stripPrefix("##")) ++ rest).mkString("")
+          Type.Native(fqn, tree.loc).toSuccess
+        case Nil => throw InternalCompilerException("Parser passed empty Type.Native", tree.loc)
+      }
+    }
+
+    private def visitFunction(tree: Tree)(implicit s: State): Validation[Type.Arrow, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Type.Function)
+      val types = pickAll(TreeKind.Type.Type, tree.children)
+      mapN(
+        traverse(types)(visitType),
+        tryPickEffect(tree)
+      ) {
+        case (params :: tresult :: Nil, eff) =>
+          val l = tree.loc.asSynthetic
+          val lastParam = params match {
+            case Type.Tuple(inners, _) => inners.last
+            case t => t
+          }
+          val initParams = params match {
+            case Type.Tuple(inners, _) => inners.init
+            case _ => List()
+          }
+          val base = WeededAst.Type.Arrow(List(lastParam), eff, tresult, l)
+          initParams.foldRight(base)((acc, tpe) => Type.Arrow(List(acc), None, tpe, l))
+        case (types, _) => throw InternalCompilerException(s"Malformed Type.Function: found '${types.length}' sub types, expected 2.", tree.loc)
+      }
     }
 
     private def visitVariable(tree: Tree)(implicit s: State): Validation[Type.Var, CompilationMessage] = {
