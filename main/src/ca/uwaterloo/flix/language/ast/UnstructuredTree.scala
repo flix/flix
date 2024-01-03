@@ -185,6 +185,8 @@ object UnstructuredTree {
 
       case object LetImport extends Expr
 
+      case object LetRecDef extends Expr
+
       case object IfThenElse extends Expr
 
       case object UncheckedCast extends Expr

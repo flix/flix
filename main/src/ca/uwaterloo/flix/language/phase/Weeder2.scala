@@ -441,7 +441,7 @@ object Weeder2 {
       Ast.Doc(comments, loc).toSuccess
     }
 
-    private def pickAnnotations(tree: Tree)(implicit s: State): Validation[Ast.Annotations, CompilationMessage] = {
+    def pickAnnotations(tree: Tree)(implicit s: State): Validation[Ast.Annotations, CompilationMessage] = {
       val maybeAnnotations = tryPick(TreeKind.Annotations, tree.children)
       val annotations = maybeAnnotations.map(
           tree => {
@@ -603,11 +603,13 @@ object Weeder2 {
           case TreeKind.Expr.Call => visitCall(tree)
           case TreeKind.Expr.LetImport => visitLetImport(tree)
           case TreeKind.Expr.Binary => visitBinary(tree)
+          case TreeKind.Expr.Unary => visitUnary(tree)
           case TreeKind.Expr.Paren => visitParen(tree)
           case TreeKind.Expr.IfThenElse => visitIfThenElse(tree)
           case TreeKind.Expr.Block => visitBlock(tree)
           case TreeKind.Expr.Statement => visitStatement(tree)
           case TreeKind.Expr.Use => visitExprUse(tree)
+          case TreeKind.Expr.LetRecDef => visitLetRecDef(tree)
           case TreeKind.Expr.Ascribe => visitAscribe(tree)
           case TreeKind.Expr.TypeMatch => visitTypeMatch(tree)
           case TreeKind.Expr.CheckedTypeCast => visitCheckedTypeCast(tree)
@@ -640,6 +642,71 @@ object Weeder2 {
       mapN(pickNameIdent(tree), block)((ident, block) => Expr.Scope(ident, block, tree.loc))
     }
 
+    private def visitUnary(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Unary)
+      mapN(
+        pick(TreeKind.Operator, tree.children),
+        pickExpression(tree)
+      )(
+        (op, expr) =>
+          visitUnaryOperator(op) match {
+            case OperatorResult.BuiltIn(name) => Expr.Apply(Expr.Ambiguous(name, name.loc), List(expr), tree.loc)
+            case OperatorResult.Operator(o) => Expr.Unary(o, expr, tree.loc)
+            case OperatorResult.Unrecognized(ident) => Expr.Apply(Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(expr), tree.loc)
+           }
+      )
+    }
+
+    private def visitUnaryOperator(tree: Tree)(implicit s: State): OperatorResult = {
+      assert(tree.kind == TreeKind.Operator)
+      val op = text(tree).head
+      val sp1 = tree.loc.sp1
+      val sp2 = tree.loc.sp2
+      op match {
+        case "not" => OperatorResult.Operator(SemanticOp.BoolOp.Not)
+        case "-" => OperatorResult.BuiltIn(Name.mkQName("Neg.neg", sp1, sp2))
+        case "+" => OperatorResult.BuiltIn(Name.mkQName("Add.add", sp1, sp2))
+        case _ => OperatorResult.Unrecognized(Name.Ident(sp1, op, sp2))
+      }
+    }
+
+    private def visitLetRecDef(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LetRecDef)
+      val annVal = flatMapN(Decls.pickAnnotations(tree)) {
+        case Ast.Annotations(as) =>
+          // Check for [[IllegalAnnotation]]
+          val errors = collection.mutable.ArrayBuffer.empty[IllegalAnnotation]
+          for (a <- as) {
+            a match {
+              case Ast.Annotation.TailRecursive(_) => // OK
+              case otherAnn => errors += IllegalAnnotation(otherAnn.loc)
+            }
+          }
+          Validation.toSuccessOrSoftFailure(Ast.Annotations(as), errors)
+      }
+
+      val exprs = flatMapN(pickExpression(tree)) {
+        case Expr.Stm(exp1, exp2, _) => (exp1, exp2).toSuccess
+        case e => softFailWith(e, Expr.Error(Parse2Error.DevErr(tree.loc, "A internal definition must be followed by an expression")))
+      }
+
+      mapN(
+        annVal,
+        exprs,
+        Decls.pickFormalParameters(tree, Presence.Optional),
+        pickNameIdent(tree),
+        Types.tryPickType(tree),
+        Types.tryPickEffect(tree),
+      ) {
+        case (ann, (exp1, exp2), fparams, ident, tpe, eff) =>
+          val e = if (tpe.isDefined || eff.isDefined) Expr.Ascribe(exp1, tpe, eff, exp1.loc) else exp1
+          val lambda = fparams.foldRight(e) {
+            case (fparam, acc) => WeededAst.Expr.Lambda(fparam, acc, exp1.loc.asSynthetic)
+          }
+          Expr.LetRec(ident, ann, Ast.Modifiers.Empty, lambda, exp2, tree.loc)
+      }
+    }
+
     private def visitLetMatch(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.LetMatch)
       flatMapN(
@@ -651,12 +718,11 @@ object Weeder2 {
           // get expr1 and expr2 from the nested statement within expr.
           val exprs = expr match {
             case Expr.Stm(exp1, exp2, _) => (exp1, exp2).toSuccess
-            case _ => softFailWith(
-              Expr.Error(Parse2Error.DevErr(tree.loc, "Malformed let-match expression")),
-              Expr.Error(Parse2Error.DevErr(tree.loc, "Malformed let-match expression"))
+            case e => softFailWith(
+              e,
+              Expr.Error(Parse2Error.DevErr(tree.loc, "A let-binding must be followed by an expression"))
             )
           }
-
           mapN(exprs)(exprs => Expr.LetMatch(patrn, Ast.Modifiers.Empty, tpe, exprs._1, exprs._2, tree.loc))
       }
     }
@@ -1183,7 +1249,7 @@ object Weeder2 {
         // Pattern { ... }
         case (fs, None) => Pattern.Record(fs, Pattern.RecordEmpty(tree.loc.asSynthetic), tree.loc).toSuccess
         // Pattern { x, ... | r }
-        case (x :: xs, Some(Pattern.Var(v, l))) => Pattern.Record(x::xs, Pattern.Var(v, l), tree.loc).toSuccess
+        case (x :: xs, Some(Pattern.Var(v, l))) => Pattern.Record(x :: xs, Pattern.Var(v, l), tree.loc).toSuccess
         // Pattern { x, ... | _ }
         case (x :: xs, Some(Pattern.Wild(l))) => Pattern.Record(x :: xs, Pattern.Wild(l), tree.loc).toSuccess
         // Illegal pattern: { | r}

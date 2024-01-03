@@ -370,7 +370,7 @@ object Parser2 {
   private def expect(kind: TokenKind)(implicit s: State): Unit = {
     if (!eat(kind)) {
       val mark = open()
-      val error = Parse2Error.UnexpectedToken(currentSourceLocation(), kind)
+      val error = Parse2Error.DevErr(currentSourceLocation(), s"Expected $kind, but found ${nth(0)}")
       closeWithError(mark, error)
     }
   }
@@ -378,24 +378,23 @@ object Parser2 {
   private def expectAny(kinds: List[TokenKind])(implicit s: State): Unit = {
     if (!eatAny(kinds)) {
       val mark = open()
-      val error = Parse2Error.DevErr(currentSourceLocation(), s"Expected one of ${kinds.mkString(", ")}")
+      val error = Parse2Error.DevErr(currentSourceLocation(), s"Expected one of ${kinds.mkString(", ")}, , but found ${nth(0)}")
       closeWithError(mark, error)
     }
   }
 
   // A precedence table for binary operators, lower is higher precedence
   private def BINARY_PRECEDENCE: List[List[TokenKind]] = List(
-    List(TokenKind.BackArrowThin), // TODO: This goes here?
     List(TokenKind.KeywordOr),
     List(TokenKind.KeywordAnd),
     List(TokenKind.TripleBar), // |||
     List(TokenKind.TripleCaret), // ^^^
     List(TokenKind.TripleAmpersand), // &&&
-    List(TokenKind.EqualEqual, TokenKind.AngledEqual), // ==, <=>  // TODO: !=
+    List(TokenKind.EqualEqual, TokenKind.AngledEqual, TokenKind.BangEqual), // ==, <=>, !=
     List(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual), // <, >, <=, >=
     List(TokenKind.TripleAngleL, TokenKind.TripleAngleR), // <<<, >>>
     List(TokenKind.Plus, TokenKind.Minus), // +, -
-    List(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash, TokenKind.KeywordMod), // *, **, /, mod // TODO: rem?
+    List(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash, TokenKind.KeywordMod), // *, **, /, mod
     List(TokenKind.AngledPlus), // <+>
     List(TokenKind.InfixFunction), // `my_function`
     List(TokenKind.UserDefinedOperator, TokenKind.NameMath) // +=+
@@ -403,7 +402,7 @@ object Parser2 {
 
   // A precedence table for unary operators, lower is higher precedence
   private def UNARY_PRECEDENCE: List[List[TokenKind]] = List(
-    List(TokenKind.Plus, TokenKind.Minus), // +, -, ~~~
+    List(TokenKind.Plus, TokenKind.Minus, TokenKind.TripleTilde), // +, -, ~~~
     List(TokenKind.KeywordNot)
   )
 
@@ -427,7 +426,6 @@ object Parser2 {
       assert(left == TokenKind.Eof)
       return true
     }
-
     rt > lt
   }
 
@@ -603,7 +601,7 @@ object Parser2 {
         case TokenKind.KeywordEnum => enumeration(mark)
         case _ =>
           advance()
-          closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), s"Expected declaration"))
+          closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), s"Expected declaration but found ${nth(0)}"))
       }
     }
 
@@ -848,7 +846,7 @@ object Parser2 {
       close(mark, TreeKind.Modifiers)
     }
 
-    private def annotations()(implicit s: State): Mark.Closed = {
+    def annotations()(implicit s: State): Mark.Closed = {
       val mark = open()
       while (at(TokenKind.Annotation) && !eof()) {
         advance()
@@ -958,6 +956,7 @@ object Parser2 {
         case TokenKind.KeywordUncheckedCast => uncheckedCast()
         case TokenKind.KeywordCheckedECast => checkedEffectCast()
         case TokenKind.KeywordCheckedCast => checkedTypeCast()
+        case TokenKind.Annotation | TokenKind.KeywordDef => letRecDef()
         case TokenKind.LiteralString
              | TokenKind.LiteralChar
              | TokenKind.LiteralFloat32
@@ -1016,6 +1015,31 @@ object Parser2 {
       close(mark, TreeKind.Expr.LetMatch)
     }
 
+    private def letRecDef()(implicit s: State): Mark.Closed = {
+      assert(atAny(List(TokenKind.Annotation, TokenKind.KeywordDef)))
+      val mark = open()
+      Decl.annotations()
+      expect(TokenKind.KeywordDef)
+      name(NAME_DEFINITION)
+
+      commaSeparated(
+        TreeKind.Parameters,
+        asArgument(TreeKind.Parameter, () => {
+          val lhs = name(NAME_PARAMETER)
+          if (eat(TokenKind.Colon)) Type.ttype(allowTrailingEffect = true) else lhs
+        }),
+        (TokenKind.ParenL, TokenKind.ParenR),
+        () => atAny(NAME_PARAMETER),
+      )
+
+      if (eat(TokenKind.Colon)) {
+        Type.ttype()
+      }
+      expect(TokenKind.Equal)
+      expression()
+      close(mark, TreeKind.Expr.LetRecDef)
+    }
+
     private def region()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordRegion))
       val mark = open()
@@ -1045,7 +1069,7 @@ object Parser2 {
       expect(TokenKind.KeywordCase)
       name(NAME_VARIABLE)
       if (eat(TokenKind.Colon)) {
-        Type.ttype(allowTrailingArrow = false)
+        Type.ttype()
       }
       if (eat(TokenKind.Arrow)) {
         expression()
@@ -1231,7 +1255,9 @@ object Parser2 {
     private def unary()(implicit s: State): Mark.Closed = {
       val mark = open()
       val op = nth(0)
+      val markOp = open()
       expectAny(List(TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde))
+      close(markOp, TreeKind.Operator)
       expression(left = op, leftIsUnary = true)
       close(mark, TreeKind.Expr.Unary)
     }

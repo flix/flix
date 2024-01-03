@@ -469,6 +469,8 @@ object Lexer {
           acceptUserDefinedOp()
         } else if (c == '-' && p.isDigit) {
           acceptNumber() // negative numbers.
+        } else if (c == '+' && p.isDigit) {
+          acceptNumber() // unary plus before number.
         } else {
           ValidUserOpTokens.apply(c)
         }
@@ -479,22 +481,22 @@ object Lexer {
   }
 
   /**
+   * Check that the potential keyword is sufficiently separated, taking care not to go out-of-bounds.
+   * A keyword is separated if it is surrounded by whitespace, parenthesis, brackets or curlies.
+   * Note that __comparison includes current__.
+   */
+  private def isSeparated(keyword: String)(implicit s: State): Boolean = {
+    val VALID_SEPARATORS = List('(', ')', '[', ']', '{', '}')
+    def isSep (c: Char) = c.isWhitespace || VALID_SEPARATORS.contains(c)
+    s.src.data.lift(s.current.offset - 2).forall(isSep) && s.src.data.lift(s.current.offset + keyword.length - 1).forall(isSep)
+  }
+
+  /**
    * Checks whether the following substring matches a keyword. Note that __comparison includes current__.
    */
   private def isMatch(keyword: String)(implicit s: State): Boolean = {
     // Check if the keyword can appear before eof.
     if (s.current.offset + keyword.length - 1 > s.src.data.length) {
-      return false
-    }
-
-    // Check that the potential keyword is surrounded by whitespace, taking care not to go out-of-bounds
-    val previousIsWhitespace = s.src.data
-      .lift(s.current.offset - 2)
-      .forall(_.isWhitespace)
-    val nextIsWhitespace = s.src.data
-      .lift(s.current.offset + keyword.length - 1)
-      .forall(_.isWhitespace)
-    if (!previousIsWhitespace || !nextIsWhitespace) {
       return false
     }
 
@@ -514,11 +516,14 @@ object Lexer {
   }
 
   /**
-   * Checks whether the following substring matches a keyword. Note that __comparison includes current__.
-   * Also note that this will advance the current position past the keyword if there is a match
+   * Checks whether the following substring matches a keyword.
+   * Can be used to check for a string match internal to another string by passing [[mustBeSeparated]] = true.
+   * IE. match ''i32'' within ''-123i32''.
+   * Note that __comparison includes current__.
+   * Also note that this will advance the current position past the keyword if there is a match.
    */
-  private def isKeyword(keyword: String)(implicit s: State): Boolean = {
-    val matches = isMatch(keyword)
+  private def isKeyword(keyword: String, mustBeSeparated: Boolean = true)(implicit s: State): Boolean = {
+    val matches = isMatch(keyword) && (!mustBeSeparated || isSeparated(keyword))
     if (matches) {
       for (_ <- 1 until keyword.length) {
         advance()
@@ -884,14 +889,14 @@ object Lexer {
 
         // If this is reached an explicit number type might occur next
         case _ => return advance() match {
-          case _ if isKeyword("f32") => TokenKind.LiteralFloat32
-          case _ if isKeyword("f64") => TokenKind.LiteralFloat64
-          case _ if isKeyword("i8") => TokenKind.LiteralInt8
-          case _ if isKeyword("i16") => TokenKind.LiteralInt16
-          case _ if isKeyword("i32") => TokenKind.LiteralInt32
-          case _ if isKeyword("i64") => TokenKind.LiteralInt64
-          case _ if isKeyword("ii") => TokenKind.LiteralBigInt
-          case _ if isKeyword("ff") => TokenKind.LiteralBigDecimal
+          case _ if isKeyword("f32", mustBeSeparated = false) => TokenKind.LiteralFloat32
+          case _ if isKeyword("f64", mustBeSeparated = false) => TokenKind.LiteralFloat64
+          case _ if isKeyword("i8", mustBeSeparated = false) => TokenKind.LiteralInt8
+          case _ if isKeyword("i16", mustBeSeparated = false) => TokenKind.LiteralInt16
+          case _ if isKeyword("i32", mustBeSeparated = false) => TokenKind.LiteralInt32
+          case _ if isKeyword("i64", mustBeSeparated = false) => TokenKind.LiteralInt64
+          case _ if isKeyword("ii", mustBeSeparated = false) => TokenKind.LiteralBigInt
+          case _ if isKeyword("ff", mustBeSeparated = false) => TokenKind.LiteralBigDecimal
           case _ =>
             retreat()
             if (isDecimal) {
