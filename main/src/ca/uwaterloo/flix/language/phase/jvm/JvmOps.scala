@@ -275,7 +275,7 @@ object JvmOps {
 
   def getLazyClassType(tpe: MonoType.Lazy)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
     case MonoType.Lazy(tpe) =>
-      val arg = stringify(getErasedJvmType(tpe))
+      val arg = stringify(asErasedJvmType(tpe))
       val name = JvmName.mkClassName("Lazy", arg)
       JvmType.Reference(JvmName(RootPackage, name))
   }
@@ -331,7 +331,7 @@ object JvmOps {
 
     case MonoType.RecordExtend(_, value, _) =>
       // Compute the stringified erased type of value.
-      val valueType = stringify(getErasedJvmType(value))
+      val valueType = stringify(asErasedJvmType(value))
 
       // The JVM name is of the form RecordExtend
       val name = JvmName.mkClassName("RecordExtend", valueType)
@@ -355,7 +355,7 @@ object JvmOps {
   def getRecordType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = {
 
     // Compute the stringified erased type of 'tpe'.
-    val valueType = JvmOps.stringify(JvmOps.getErasedJvmType(tpe))
+    val valueType = JvmOps.stringify(JvmOps.asErasedJvmType(tpe))
 
     // The JVM name is of the form RecordExtend
     val name = JvmName.mkClassName("RecordExtend", valueType)
@@ -387,7 +387,7 @@ object JvmOps {
   def getRefClassType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
     case MonoType.Ref(elmType) =>
       // Compute the stringified erased type of the argument.
-      val arg = stringify(getErasedJvmType(elmType))
+      val arg = stringify(asErasedJvmType(elmType))
 
       // The JVM name is of the form TArity$Arg0$Arg1$Arg2
       val name = JvmName.mkClassName("Ref", arg)
@@ -498,6 +498,7 @@ object JvmOps {
     * Returns true if the value of the given `tag` is the unit value.
     */
   def isUnitTag(tag: Case): Boolean = {
+    // TODO doesnt work anymore
     tag.tpe == MonoType.Unit
   }
 
@@ -517,7 +518,7 @@ object JvmOps {
     types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
       case (acc, MonoType.RecordExtend(field, value, _)) =>
         // TODO: should use mono -> backend transformation on `rest`
-        acc + BackendObjType.RecordExtend(field, BackendType.toErasedBackendType(value), BackendObjType.RecordEmpty.toTpe)
+        acc + BackendObjType.RecordExtend(field, BackendType.asErasedBackendType(value), BackendObjType.RecordEmpty.toTpe)
       case (acc, _) => acc
     }
 
