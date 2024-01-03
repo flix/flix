@@ -434,7 +434,6 @@ object Lexer {
       case _ if isKeyword("ref") => TokenKind.KeywordRef
       case _ if isKeyword("region") => TokenKind.KeywordRegion
       case _ if isKeyword("restrictable") => TokenKind.KeywordRestrictable
-      case _ if isKeyword("resume") => TokenKind.KeywordResume
       case _ if isKeyword("sealed") => TokenKind.KeywordSealed
       case _ if isKeyword("select") => TokenKind.KeywordSelect
       case _ if isKeyword("solve") => TokenKind.KeywordSolve

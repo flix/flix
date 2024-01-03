@@ -79,10 +79,6 @@ object OccurrenceAst {
 
     case class Do(op: Ast.OpSymUse, exps: List[OccurrenceAst.Expression], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class Resume(exp: OccurrenceAst.Expression, tpe: MonoType, loc: SourceLocation) extends OccurrenceAst.Expression {
-      def purity: Purity = Pure
-    }
-
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[OccurrenceAst.JvmMethod], loc: SourceLocation) extends OccurrenceAst.Expression
 
   }

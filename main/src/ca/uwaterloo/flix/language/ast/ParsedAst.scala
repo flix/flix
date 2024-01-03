@@ -1038,15 +1038,6 @@ object ParsedAst {
     case class Do(sp1: SourcePosition, op: Name.QName, args: Seq[ParsedAst.Argument], sp2: SourcePosition) extends Expression
 
     /**
-      * Resume Expression.
-      *
-      * @param sp1 the position of the first character in the expression.
-      * @param arg the argument to the continuation.
-      * @param sp2 the position of the last character in the expression.
-      */
-    case class Resume(sp1: SourcePosition, arg: ParsedAst.Argument, sp2: SourcePosition) extends Expression
-
-    /**
       * Try Expression.
       *
       * @param sp1            the position of the first character in the expression.
