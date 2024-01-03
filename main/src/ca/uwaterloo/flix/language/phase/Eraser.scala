@@ -13,8 +13,11 @@ import ca.uwaterloo.flix.util.ParOps
   * This means that expressions should cast their output but assume correct
   * input types.
   *
-  * - Enum tag values are erased (cast in untag)
-  * - Ref values are erased (cast in deref)
+  * - Enum tag unpacking
+  * - Ref unpacking
+  * - tuple unpacking
+  * - record unpacking
+  * - lazy unpacking
   */
 object Eraser {
 
