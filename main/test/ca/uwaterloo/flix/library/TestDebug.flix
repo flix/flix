@@ -131,7 +131,7 @@ mod TestDebug {
     }
 
     @test
-    def testEnumStringify01(): Bool = stringify(Card.Card(Suit.Hearts, Rank.N(5)))  == "Card(Hearts, N(5))"
+    def testEnumStringify01(): Bool = stringify(Card.Card(Suit.Hearts, Rank.N(5))) |> debug == "Card((Hearts(()), N(5)))"
 
 
     pub enum Poly[a, b] {

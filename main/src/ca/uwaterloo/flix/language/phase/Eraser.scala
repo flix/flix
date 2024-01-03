@@ -16,12 +16,24 @@ import ca.uwaterloo.flix.util.collection.MapOps
   * This means that expressions should cast their output but assume correct
   * input types.
   *
-  * - Enum tag unpacking
-  * - Ref unpacking
-  * - tuple unpacking
-  * - record unpacking
-  * - lazy unpacking
-  * - function returns
+  * - Enum
+  *   - definition erasure
+  *   - untag casting
+  * - Ref
+  *   - component type erasure
+  *   - deref casting
+  * - Tuple
+  *   - component type erasure
+  *   - index casting
+  * - Record
+  *   - component type erasure
+  *   - select casting
+  * - Schema
+  *   - ???
+  * - Lazy
+  *   - component type erasure
+  *   - force casting
+  * - function returns (todo)
   */
 object Eraser {
 
@@ -79,14 +91,13 @@ object Eraser {
         case AtomicOp.Is(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Tag(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Untag(_) =>
-          castExp(ApplyAtomic(op, es, t, purity, loc), t, purity, loc)
+          castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.Index(_) =>
-          val aa = ApplyAtomic(op, es, erase(tpe), purity, loc)
-          castExp(aa, t, purity, loc)
+          castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.Tuple => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.RecordEmpty => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.RecordSelect(_) =>
-          castExp(ApplyAtomic(op, es, t, purity, loc), t, purity, loc)
+          castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.RecordExtend(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.RecordRestrict(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.ArrayLit => ApplyAtomic(op, es, t, purity, loc)
@@ -96,8 +107,7 @@ object Eraser {
         case AtomicOp.ArrayLength => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Ref => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Deref =>
-          val aa = ApplyAtomic(op, es, erase(tpe), purity, loc)
-          castExp(aa, t, purity, loc)
+          castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.Assign => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InstanceOf(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Cast => ApplyAtomic(op, es, t, purity, loc)
@@ -111,7 +121,7 @@ object Eraser {
         case AtomicOp.Spawn => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Lazy => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Force =>
-          castExp(ApplyAtomic(op, es, t, purity, loc), t, purity, loc)
+          castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.BoxBool => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.BoxInt8 => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.BoxInt16 => ApplyAtomic(op, es, t, purity, loc)
@@ -175,7 +185,7 @@ object Eraser {
 
   private def visitCase(c: Case): Case = c match {
     case Case(sym, tpe, loc) =>
-      Case(sym, visitType(tpe), loc)
+      Case(sym, erase(tpe), loc)
   }
 
   private def visitEffect(eff: Effect): Effect = eff match {
@@ -204,13 +214,13 @@ object Eraser {
     case Regex => Regex
     case Region => Region
     case Array(tpe) => Array(visitType(tpe))
-    case Lazy(tpe) => Lazy(visitType(tpe))
+    case Lazy(tpe) => Lazy(erase(tpe))
     case Ref(tpe) => Ref(erase(tpe))
     case Tuple(elms) => Tuple(elms.map(erase))
     case MonoType.Enum(sym) => MonoType.Enum(sym)
     case Arrow(args, result) => Arrow(args.map(visitType), visitType(result))
     case RecordEmpty => RecordEmpty
-    case RecordExtend(label, value, rest) => RecordExtend(label, visitType(value), visitType(rest))
+    case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
     case SchemaEmpty => SchemaEmpty
     case SchemaExtend(name, tpe, rest) => SchemaExtend(name, visitType(tpe), visitType(rest))
     case Native(clazz) => Native(clazz)

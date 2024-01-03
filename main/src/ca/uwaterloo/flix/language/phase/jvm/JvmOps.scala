@@ -264,7 +264,7 @@ object JvmOps {
       val arity = elms.length
 
       // Compute the stringified erased type of each type argument.
-      val args = elms.map(tpe => stringify(getErasedJvmType(tpe)))
+      val args = elms.map(tpe => stringify(asErasedJvmType(tpe)))
 
       // The JVM name is of the form TupleArity$Arg0$Arg1$Arg2
       val name = JvmName.mkClassName(s"Tuple$arity", args)
