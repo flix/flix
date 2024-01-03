@@ -153,10 +153,6 @@ object Reducer {
       val es = exps.map(visitExpr)
       ReducedAst.Expr.Do(op, es, tpe, purity, loc)
 
-    case LiftedAst.Expr.Resume(exp, tpe, loc) =>
-      val e = visitExpr(exp)
-      ReducedAst.Expr.Resume(e, tpe, loc)
-
     case LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val es = methods.map(m => visitExpr(m.clo))
       val specs = methods.map {
@@ -257,8 +253,6 @@ object Reducer {
       case ReducedAst.Expr.TryWith(exp, _, rules, _, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
 
       case ReducedAst.Expr.Do(_, exps, tpe, _, _) => visitExps(exps) ++ Set(tpe)
-
-      case ReducedAst.Expr.Resume(exp, tpe, _) => visitExp(exp) ++ Set(tpe)
 
       case ReducedAst.Expr.NewObject(_, _, _, _, _, exps, _) =>
         visitExps(exps)

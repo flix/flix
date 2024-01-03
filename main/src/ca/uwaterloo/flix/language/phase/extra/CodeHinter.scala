@@ -238,9 +238,6 @@ object CodeHinter {
     case Expr.Do(_, exps, _, _, _) =>
       exps.flatMap(visitExp)
 
-    case Expr.Resume(exp, _, _) =>
-      visitExp(exp)
-
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args)
 
