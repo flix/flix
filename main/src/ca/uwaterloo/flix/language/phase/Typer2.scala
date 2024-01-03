@@ -96,4 +96,46 @@ object Typer2 {
       case subst => TypeReconstruction.visitSig(sig, root, subst)
     }
   }
+
+  /**
+    * Performs type inference and reassembly on all instances in the given AST root.
+    *
+    * Returns [[Err]] if a definition fails to type check.
+    */
+  private def visitInstances(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[ListMap[Symbol.ClassSym, TypedAst.Instance], TypeError] =
+    flix.subphase("Instances") {
+
+      val instances0 = for {
+        (_, insts) <- root.instances
+        inst <- insts
+      } yield inst
+
+      val instancesVal = ParOps.parTraverse(instances0)(visitInstance(_, root, classEnv, eqEnv))
+
+      mapN(instancesVal) {
+        case instances =>
+          val map = instances.map {
+            case instance => instance.clazz.sym -> instance
+          }
+          ListMap.from(map)
+      }
+    }
+
+  /**
+    * Reassembles a single instance.
+    */
+  private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
+    case KindedAst.Instance(doc, ann, mod, sym, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
+      val tpe = tpe0 // TODO ASSOC-TYPES redundant?
+      val tconstrs = tconstrs0 // no subst to be done
+      val assocs = assocs0.map {
+        case KindedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) =>
+          TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) // TODO ASSOC-TYPES trivial
+      }
+      val defsVal = Validation.traverse(defs0)(visitDef(_, tconstrs, root, classEnv, eqEnv))
+      mapN(defsVal) {
+        case defs => TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
+      }
+  }
+
 }
