@@ -2,8 +2,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expr._
-import ca.uwaterloo.flix.language.ast.LiftedAst.{CatchRule, Def, Expr, FormalParam, HandlerRule, JvmMethod, Root}
-import ca.uwaterloo.flix.language.ast.MonoType._
+import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
@@ -11,11 +10,11 @@ import ca.uwaterloo.flix.util.ParOps
   * Erase types and introduce corresponding casting
   *
   * Protocol is that casting should happen as soon as possible, not lazily.
+  * This means that expressions should cast their output but assume correct
+  * input types.
   *
-  * - Enum tag values are erased (todo enum def)
-  * - Ref values are erased
-  * - `A -> B` types become `A -> Obj` (TODO)
-  * - non-primitive function return values are `Obj`
+  * - Enum tag values are erased (cast in untag)
+  * - Ref values are erased (cast in deref)
   */
 object Eraser {
 
@@ -154,57 +153,6 @@ object Eraser {
     Expr.ApplyAtomic(AtomicOp.Cast, List(exp), t, purity, loc.asSynthetic)
   }
 
-  private def visitType(tpe: MonoType): MonoType = tpe match {
-    case Unit =>
-      Unit
-    case Bool =>
-      Bool
-    case Char =>
-      Char
-    case Float32 =>
-      Float32
-    case Float64 =>
-      Float64
-    case BigDecimal =>
-      BigDecimal
-    case Int8 =>
-      Int8
-    case Int16 =>
-      Int16
-    case Int32 =>
-      Int32
-    case Int64 =>
-      Int64
-    case BigInt =>
-      BigInt
-    case String =>
-      String
-    case Regex =>
-      Regex
-    case Region =>
-      Region
-    case Array(tpe) =>
-      Array(visitType(tpe))
-    case Lazy(tpe) =>
-      Lazy(visitType(tpe))
-    case Ref(tpe) =>
-      Ref(visitType(tpe))
-    case Tuple(elms) =>
-      Tuple(elms.map(visitType))
-    case Enum(sym) =>
-      Enum(sym)
-    case Arrow(args, result) =>
-      Arrow(args.map(visitType), visitType(result))
-    case RecordEmpty =>
-      RecordEmpty
-    case RecordExtend(label, value, rest) =>
-      RecordExtend(label, visitType(value), visitType(rest))
-    case SchemaEmpty =>
-      SchemaEmpty
-    case SchemaExtend(name, tpe, rest) =>
-      SchemaExtend(name, visitType(tpe), visitType(rest))
-    case Native(clazz) =>
-      Native(clazz)
-  }
+  private def visitType(tpe: MonoType): MonoType = tpe
 
 }
