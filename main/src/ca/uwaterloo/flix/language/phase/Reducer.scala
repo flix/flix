@@ -318,14 +318,13 @@ object Reducer {
         val taskList1 = tpe match {
           case Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
                Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) |
-               RecordEmpty | SchemaEmpty | Native(_) => taskList
+               RecordEmpty | Native(_) => taskList
           case Array(elm) => taskList.enqueue(elm)
           case Lazy(elm) => taskList.enqueue(elm)
           case Ref(elm) => taskList.enqueue(elm)
           case Tuple(elms) => taskList.enqueueAll(elms)
           case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
           case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
-          case SchemaExtend(_, t, rest) => taskList.enqueue(t).enqueue(rest)
         }
         nestedTypesOf(acc + tpe, taskList1)
       case None => acc

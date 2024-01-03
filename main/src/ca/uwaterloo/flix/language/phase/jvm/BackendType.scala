@@ -174,8 +174,7 @@ object BackendType {
     case MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.String | MonoType.Regex |
          MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
          MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
-         MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) | MonoType.Native(_) |
-         MonoType.Region => BackendObjType.JavaObject.toTpe
+         MonoType.Native(_) | MonoType.Region => BackendObjType.JavaObject.toTpe
   }
 
   /**
@@ -203,10 +202,10 @@ object BackendType {
       // TODO: Ugly hack.
       val fqn = clazz.getName.replace('.', '/')
       JvmName.mk(fqn).toTpe
-    case MonoType.Unit | MonoType.Lazy(_) | MonoType.Ref(_) |
-         MonoType.Tuple(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty |
-         MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) |
-         MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) => BackendObjType.JavaObject.toTpe
+    case MonoType.Unit | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
+         MonoType.Arrow(_, _) | MonoType.RecordEmpty |
+         MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) =>
+      BackendObjType.JavaObject.toTpe
   }
 
   sealed trait PrimitiveType extends BackendType {
