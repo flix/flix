@@ -622,6 +622,8 @@ object Weeder2 {
           case TreeKind.Expr.Hole => visitHole(tree)
           case TreeKind.Expr.Scope => visitScope(tree)
           case TreeKind.Expr.Lambda => visitLambda(tree)
+          case TreeKind.Expr.Ref => visitReference(tree)
+          case TreeKind.Expr.Deref => visitDereference(tree)
           case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
           case TreeKind.QName => mapN(visitQName(tree))(qname => Expr.Ambiguous(qname, tree.loc))
           case kind => failWith(s"TODO: implement expression of kind '$kind'", tree.loc)
@@ -636,6 +638,19 @@ object Weeder2 {
       mapN(traverse(expressions)(visitExpression))(Expr.Tuple(_, tree.loc))
     }
 
+    private def visitReference(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Ref)
+      val expressions = pickAll(TreeKind.Expr.Expr, tree.children)
+      mapN(traverse(expressions)(visitExpression)) {
+        case expr1 :: expr2 :: Nil => Expr.Ref(expr1, expr2, tree.loc)
+        case exprs => throw InternalCompilerException(s"Malformed Ref: Expected 2 expressions, found ${exprs.length}", tree.loc)
+      }
+    }
+
+    private def visitDereference(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Deref)
+      mapN(pickExpression(tree))(Expr.Deref(_, tree.loc))
+    }
 
     private def visitScope(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Scope)

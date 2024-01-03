@@ -222,6 +222,10 @@ object UnstructuredTree {
       case object TypeMatch extends Expr
 
       case object TypeMatchRule extends Expr
+
+      case object Ref extends Expr
+
+      case object Deref extends Expr
     }
 
     ////// TYPES //////

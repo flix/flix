@@ -331,6 +331,7 @@ object Parser2 {
 
   private def nth(lookahead: Int)(implicit s: State): TokenKind = {
     if (s.fuel == 0) {
+      println(s.tokens.slice(s.position - 10, s.position).mkString("\n"))
       throw InternalCompilerException("Parser is stuck", currentSourceLocation())
     }
 
@@ -952,11 +953,13 @@ object Parser2 {
         case TokenKind.KeywordLet => letMatch()
         case TokenKind.LiteralStringInterpolationL => interpolatedString()
         case TokenKind.KeywordTypeMatch => typematch()
-        case TokenKind.KeywordMatch => exprMatch()
+        case TokenKind.KeywordMatch => matchOrMatchLambda()
         case TokenKind.KeywordMaskedCast => uncheckedMaskingCast()
         case TokenKind.KeywordUncheckedCast => uncheckedCast()
         case TokenKind.KeywordCheckedECast => checkedEffectCast()
         case TokenKind.KeywordCheckedCast => checkedTypeCast()
+        case TokenKind.KeywordRef => reference()
+        case TokenKind.KeywordDeref => dereference()
         case TokenKind.Annotation | TokenKind.KeywordDef => letRecDef()
         case TokenKind.LiteralString
              | TokenKind.LiteralChar
@@ -1003,18 +1006,43 @@ object Parser2 {
       close(mark, TreeKind.Expr.IfThenElse)
     }
 
-    private def exprMatch()(implicit s: State): Mark.Closed = {
+    private def matchOrMatchLambda()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordMatch))
       val mark = open()
       expect(TokenKind.KeywordMatch)
-      expression()
-      if (eat(TokenKind.CurlyL)) {
-        while (at(TokenKind.KeywordCase) && !eof()) {
-          matchRule()
+
+      // Detect match lambda
+      val isLambda = {
+        var lookAhead = 0
+        var isLambda = false
+        var continue = true
+        while (continue && !eof()) {
+          nth(lookAhead) match {
+            // match expr { cases... }
+            case TokenKind.CurlyL => continue = false
+            // match pattern -> expr
+            case TokenKind.ArrowThin => isLambda = true; continue = false
+            case _ => lookAhead += 1
+          }
         }
-        expect(TokenKind.CurlyR)
+        isLambda
       }
-      close(mark, TreeKind.Expr.Match)
+
+      if (isLambda) {
+        Pattern.pattern()
+        expect(TokenKind.ArrowThin)
+        expression()
+        close(mark, TreeKind.Expr.Lambda)
+      } else {
+        expression()
+        if (eat(TokenKind.CurlyL)) {
+          while (at(TokenKind.KeywordCase) && !eof()) {
+            matchRule()
+          }
+          expect(TokenKind.CurlyR)
+        }
+        close(mark, TreeKind.Expr.Match)
+      }
     }
 
     private def matchRule()(implicit s: State): Mark.Closed = {
@@ -1042,6 +1070,24 @@ object Parser2 {
       expect(TokenKind.Equal)
       expression()
       close(mark, TreeKind.Expr.LetMatch)
+    }
+
+    private def reference()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordRef))
+      val mark = open()
+      expect(TokenKind.KeywordRef)
+      expression()
+      expect(TokenKind.At)
+      expression()
+      close(mark, TreeKind.Expr.Ref)
+    }
+
+    private def dereference()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordDeref))
+      val mark = open()
+      expect(TokenKind.KeywordDeref)
+      expression()
+      close(mark, TreeKind.Expr.Deref)
     }
 
     private def letRecDef()(implicit s: State): Mark.Closed = {
@@ -1221,8 +1267,10 @@ object Parser2 {
             lambda()
           } else {
             // Distinguish between expression in parenthesis and tuples
-            val mark = open()
             var kind: TreeKind = TreeKind.Expr.Paren
+            val mark = open()
+            expect(TokenKind.ParenL)
+            expression()
             if (at(TokenKind.Comma)) {
               kind = TreeKind.Expr.Tuple
               while (!at(TokenKind.ParenR) && !eof()) {
