@@ -103,6 +103,30 @@ object JvmOps {
   }
 
   /**
+    * Returns the erased JvmType of the given Flix type `tpe`.
+    *
+    * Every primitive type is mapped to itself and every other type is mapped to Object.
+    */
+  def asErasedJvmType(tpe: MonoType): JvmType = {
+    import MonoType._
+    tpe match {
+      case Bool => JvmType.PrimBool
+      case Char => JvmType.PrimChar
+      case Float32 => JvmType.PrimFloat
+      case Float64 => JvmType.PrimDouble
+      case Int8 => JvmType.PrimByte
+      case Int16 => JvmType.PrimShort
+      case Int32 => JvmType.PrimInt
+      case Int64 => JvmType.PrimLong
+      case Native(clazz) if clazz == classOf[Object] => JvmType.Object
+      case Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
+           Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) | RecordEmpty |
+           RecordExtend(_, _, _) | SchemaEmpty | SchemaExtend(_, _, _) |
+           Native(_) => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
+    }
+  }
+
+  /**
     * Returns the function abstract class type `FnX$Y$Z` for the given type `tpe`.
     *
     * For example:

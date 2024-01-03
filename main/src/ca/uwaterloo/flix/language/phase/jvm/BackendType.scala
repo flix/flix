@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
+import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Opcodes
 
 import scala.annotation.tailrec
@@ -176,6 +177,23 @@ object BackendType {
          MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
          MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) | MonoType.Native(_) |
          MonoType.Region => BackendObjType.JavaObject.toTpe
+  }
+
+  def asErasedType(tpe: MonoType): BackendType = tpe match {
+    case MonoType.Bool => Bool
+    case MonoType.Char => Char
+    case MonoType.Int8 => Int8
+    case MonoType.Int16 => Int16
+    case MonoType.Int32 => Int32
+    case MonoType.Int64 => Int64
+    case MonoType.Float32 => Float32
+    case MonoType.Float64 => Float64
+    case MonoType.Native(clazz) if clazz == classOf[Object] => BackendObjType.JavaObject.toTpe
+    case MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.String | MonoType.Regex |
+         MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
+         MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
+         MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) | MonoType.Native(_) |
+         MonoType.Region => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
   }
 
   /**

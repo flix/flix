@@ -817,7 +817,7 @@ object GenExpression {
 
         // the previous function is already partial
         val MonoType.Ref(refValueType) = tpe
-        val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
+        val backendRefType = BackendObjType.Ref(BackendType.asErasedType(refValueType))
 
         // Create a new reference object
         mv.visitTypeInsn(NEW, classType.name.toInternalName)
@@ -830,9 +830,9 @@ object GenExpression {
         // Evaluate the underlying expression
         compileExpr(exp)
         // Erased type of the value of the reference
-        val valueErasedType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Ref].tpe)
+        val valueType = JvmOps.asErasedJvmType(tpe.asInstanceOf[MonoType.Ref].tpe)
         // set the field with the ref value
-        mv.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, valueErasedType.toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, valueType.toDescriptor)
 
       case AtomicOp.Deref =>
         val List(exp) = exps

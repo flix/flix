@@ -3,6 +3,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expr._
 import ca.uwaterloo.flix.language.ast.LiftedAst._
+import ca.uwaterloo.flix.language.ast.MonoType._
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
@@ -83,7 +84,8 @@ object Eraser {
         case AtomicOp.ArrayLoad => aa
         case AtomicOp.ArrayStore => aa
         case AtomicOp.ArrayLength => aa
-        case AtomicOp.Ref => aa
+        case AtomicOp.Ref =>
+          ApplyAtomic(AtomicOp.Ref, es, t, purity, loc)
         case AtomicOp.Deref =>
           castExp(aa, t, purity, loc)
         case AtomicOp.Assign => aa
@@ -151,6 +153,47 @@ object Eraser {
     Expr.ApplyAtomic(AtomicOp.Cast, List(exp), t, purity, loc.asSynthetic)
   }
 
-  private def visitType(tpe: MonoType): MonoType = tpe
+  private def visitType(tpe: MonoType): MonoType = tpe match {
+    case Unit => Unit
+    case Bool => Bool
+    case Char => Char
+    case Float32 => Float32
+    case Float64 => Float64
+    case BigDecimal => BigDecimal
+    case Int8 => Int8
+    case Int16 => Int16
+    case Int32 => Int32
+    case Int64 => Int64
+    case BigInt => BigInt
+    case String => String
+    case Regex => Regex
+    case Region => Region
+    case Array(tpe) => Array(visitType(tpe))
+    case Lazy(tpe) => Lazy(visitType(tpe))
+    case Ref(tpe) => Ref(erase(tpe))
+    case Tuple(elms) => Tuple(elms.map(erase))
+    case MonoType.Enum(sym) => MonoType.Enum(sym)
+    case Arrow(args, result) => Arrow(args.map(visitType), visitType(result))
+    case RecordEmpty => RecordEmpty
+    case RecordExtend(label, value, rest) => RecordExtend(label, visitType(value), visitType(rest))
+    case SchemaEmpty => SchemaEmpty
+    case SchemaExtend(name, tpe, rest) => SchemaExtend(name, visitType(tpe), visitType(rest))
+    case Native(clazz) => Native(clazz)
+  }
+
+  private def erase(tpe: MonoType): MonoType = tpe match {
+    case Bool => Bool
+    case Char => Char
+    case Float32 => Float32
+    case Float64 => Float64
+    case Int8 => Int8
+    case Int16 => Int16
+    case Int32 => Int32
+    case Int64 => Int64
+    case Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
+         Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) | Arrow(_, _) |
+         RecordEmpty | RecordExtend(_, _, _) | SchemaEmpty |
+         SchemaExtend(_, _, _) | Native(_) => MonoType.Object
+  }
 
 }
