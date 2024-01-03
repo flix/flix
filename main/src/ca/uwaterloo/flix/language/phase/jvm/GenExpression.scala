@@ -852,8 +852,6 @@ object GenExpression {
         mv.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
         // Dereference the expression
         mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
-        // Cast underlying value to the correct type if the underlying type is Object
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.Assign =>
         val List(exp1, exp2) = exps

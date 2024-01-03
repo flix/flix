@@ -4,12 +4,16 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expr._
 import ca.uwaterloo.flix.language.ast.LiftedAst.{CatchRule, Def, Expr, FormalParam, HandlerRule, JvmMethod, Root}
 import ca.uwaterloo.flix.language.ast.MonoType._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
 /**
   * Erase types and introduce corresponding casting
+  *
+  * Protocol is that casting should happen as soon as possible, not lazily.
+  *
   * - Enum tag values are erased (todo enum def)
+  * - Ref values are erased
   * - `A -> B` types become `A -> Obj` (TODO)
   * - non-primitive function return values are `Obj`
   */
@@ -68,7 +72,7 @@ object Eraser {
         case AtomicOp.Is(sym) => aa
         case AtomicOp.Tag(_) => aa
         case AtomicOp.Untag(_) =>
-          Expr.ApplyAtomic(AtomicOp.Cast, List(aa), t, purity, loc.asSynthetic)
+          castExp(aa, t, purity, loc)
         case AtomicOp.Index(idx) => aa
         case AtomicOp.Tuple => aa
         case AtomicOp.RecordEmpty => aa
@@ -81,7 +85,8 @@ object Eraser {
         case AtomicOp.ArrayStore => aa
         case AtomicOp.ArrayLength => aa
         case AtomicOp.Ref => aa
-        case AtomicOp.Deref => aa
+        case AtomicOp.Deref =>
+          castExp(aa, t, purity, loc)
         case AtomicOp.Assign => aa
         case AtomicOp.InstanceOf(clazz) => aa
         case AtomicOp.Cast => aa
@@ -143,6 +148,10 @@ object Eraser {
       Resume(visitExp(exp), visitType(tpe), loc)
     case NewObject(name, clazz, tpe, purity, methods, loc) =>
       NewObject(name, clazz, visitType(tpe), purity, methods.map(visitJvmMethod), loc)
+  }
+
+  private def castExp(exp: Expr, t: MonoType, purity: Purity, loc: SourceLocation): Expr = {
+    Expr.ApplyAtomic(AtomicOp.Cast, List(exp), t, purity, loc.asSynthetic)
   }
 
   private def visitType(tpe: MonoType): MonoType = tpe match {
