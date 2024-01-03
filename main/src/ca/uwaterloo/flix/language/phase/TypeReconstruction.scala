@@ -221,7 +221,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given def.
     */
-  private def visitDef(defn: KindedAst.Def, root: KindedAst.Root, subst: Substitution): TypedAst.Def = defn match {
+  def visitDef(defn: KindedAst.Def, root: KindedAst.Root, subst: Substitution): TypedAst.Def = defn match {
     case KindedAst.Def(sym, spec0, exp0) =>
       val spec = visitSpec(spec0, root, subst)
       val exp = visitExp(exp0)(root, subst)
