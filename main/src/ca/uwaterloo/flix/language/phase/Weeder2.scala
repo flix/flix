@@ -611,6 +611,7 @@ object Weeder2 {
           case TreeKind.Expr.Use => visitExprUse(tree)
           case TreeKind.Expr.LetRecDef => visitLetRecDef(tree)
           case TreeKind.Expr.Ascribe => visitAscribe(tree)
+          case TreeKind.Expr.Match => visitMatch(tree)
           case TreeKind.Expr.TypeMatch => visitTypeMatch(tree)
           case TreeKind.Expr.CheckedTypeCast => visitCheckedTypeCast(tree)
           case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCast(tree)
@@ -653,7 +654,7 @@ object Weeder2 {
             case OperatorResult.BuiltIn(name) => Expr.Apply(Expr.Ambiguous(name, name.loc), List(expr), tree.loc)
             case OperatorResult.Operator(o) => Expr.Unary(o, expr, tree.loc)
             case OperatorResult.Unrecognized(ident) => Expr.Apply(Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(expr), tree.loc)
-           }
+          }
       )
     }
 
@@ -764,6 +765,33 @@ object Weeder2 {
         Types.tryPickEffect(tree)
       ) {
         (expr, tpe, eff) => Expr.Ascribe(expr, tpe, eff, tree.loc)
+      }
+    }
+
+    private def visitMatch(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Match)
+      val rules = pickAll(TreeKind.Expr.MatchRule, tree.children)
+      mapN(
+        pickExpression(tree),
+        traverse(rules)(visitMatchRule)
+      ) {
+        (expr, rules) => Expr.Match(expr, rules, tree.loc)
+      }
+    }
+
+    private def visitMatchRule(tree: Tree)(implicit s: State): Validation[MatchRule, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.MatchRule)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
+      mapN(
+        Patterns.pickPattern(tree),
+        traverse(exprs)(visitExpression)
+      ) {
+        // case pattern => expr
+        case (pat, expr :: Nil) => MatchRule(pat, None, expr)
+        // case pattern if expr => expr
+        case (pat, expr1 :: expr2 :: Nil) => MatchRule(pat, Some(expr1), expr2)
+        //BAD: case pattern if => expr
+        case (pat, exprs) => throw InternalCompilerException(s"Malformed MatchRule: expected 1 or 2 expressions but found ${exprs.length}", tree.loc)
       }
     }
 

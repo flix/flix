@@ -952,6 +952,7 @@ object Parser2 {
         case TokenKind.KeywordLet => letMatch()
         case TokenKind.LiteralStringInterpolationL => interpolatedString()
         case TokenKind.KeywordTypeMatch => typematch()
+        case TokenKind.KeywordMatch => exprMatch()
         case TokenKind.KeywordMaskedCast => uncheckedMaskingCast()
         case TokenKind.KeywordUncheckedCast => uncheckedCast()
         case TokenKind.KeywordCheckedECast => checkedEffectCast()
@@ -1000,6 +1001,34 @@ object Parser2 {
         expression()
       }
       close(mark, TreeKind.Expr.IfThenElse)
+    }
+
+    private def exprMatch()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordMatch))
+      val mark = open()
+      expect(TokenKind.KeywordMatch)
+      expression()
+      if (eat(TokenKind.CurlyL)) {
+        while (at(TokenKind.KeywordCase) && !eof()) {
+          matchRule()
+        }
+        expect(TokenKind.CurlyR)
+      }
+      close(mark, TreeKind.Expr.Match)
+    }
+
+    private def matchRule()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordCase))
+      val mark = open()
+      expect(TokenKind.KeywordCase)
+      Pattern.pattern()
+      if (eat(TokenKind.KeywordIf)) {
+        expression()
+      }
+      if (eat(TokenKind.Arrow)) {
+        expression()
+      }
+      close(mark, TreeKind.Expr.MatchRule)
     }
 
     private def letMatch()(implicit s: State): Mark.Closed = {
