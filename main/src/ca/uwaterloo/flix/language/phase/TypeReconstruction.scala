@@ -231,7 +231,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given sig.
     */
-  private def visitSig(sig: KindedAst.Sig, root: KindedAst.Root, subst: Substitution): TypedAst.Sig = sig match {
+  def visitSig(sig: KindedAst.Sig, root: KindedAst.Root, subst: Substitution): TypedAst.Sig = sig match {
     case KindedAst.Sig(sym, spec0, exp0) =>
       val spec = visitSpec(spec0, root, subst)
       val exp = exp0.map(visitExp(_)(root, subst))
@@ -256,7 +256,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given tparams.
     */
-  private def visitTypeParam(tparam: KindedAst.TypeParam, root: KindedAst.Root): TypedAst.TypeParam = tparam match {
+  def visitTypeParam(tparam: KindedAst.TypeParam, root: KindedAst.Root): TypedAst.TypeParam = tparam match {
     case KindedAst.TypeParam(name, sym, loc) => TypedAst.TypeParam(name, sym, loc)
   }
 
