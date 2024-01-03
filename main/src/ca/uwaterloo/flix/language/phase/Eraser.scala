@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expr._
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SourceLocation, Symbol}
@@ -18,6 +19,7 @@ import ca.uwaterloo.flix.util.ParOps
   * - tuple unpacking
   * - record unpacking
   * - lazy unpacking
+  * - function returns
   */
 object Eraser {
 
@@ -126,9 +128,13 @@ object Eraser {
       }
 
     case ApplyClo(exp, exps, ct, tpe, purity, loc) =>
-      ApplyClo(visitExp(exp), exps.map(visitExp), ct, visitType(tpe), purity, loc)
+      val ac = ApplyClo(visitExp(exp), exps.map(visitExp), ct, visitType(tpe), purity, loc)
+      if (ct == CallType.TailCall) ac
+      else castExp(ac, ac.tpe, purity, loc)
     case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-      ApplyDef(sym, exps.map(visitExp), ct, visitType(tpe), purity, loc)
+      val ad = ApplyDef(sym, exps.map(visitExp), ct, visitType(tpe), purity, loc)
+      if (ct == CallType.TailCall) ad
+      else castExp(ad, ad.tpe, purity, loc)
     case ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
       ApplySelfTail(sym, formals.map(visitParam), actuals.map(visitExp), visitType(tpe), purity, loc)
     case IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>

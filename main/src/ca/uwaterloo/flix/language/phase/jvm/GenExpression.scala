@@ -1217,7 +1217,6 @@ object GenExpression {
           // Calling unwind and unboxing
           val erasedResult = BackendType.toErasedBackendType(closureResultType)
           BackendObjType.Result.unwindThunkToType(0 /* TODO */, ctx.newFrame, erasedResult)(new BytecodeInstructions.F(mv))
-          AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
       }
 
     case Expr.ApplyDef(sym, exps, ct, tpe, _, loc) => ct match {
@@ -1257,7 +1256,6 @@ object GenExpression {
         }
         // Calling unwind and unboxing
         BackendObjType.Result.unwindThunkToType(0 /* TODO */, ctx.newFrame, BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(mv))
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
     }
 
     case Expr.ApplySelfTail(sym, formals, exps, tpe, _, loc) =>
