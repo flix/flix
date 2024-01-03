@@ -229,11 +229,15 @@ object GenFunAndClosureClasses {
     m.visitEnd()
   }
 
-  private def loadFromField(m: MethodVisitor, classType: JvmType.Reference, name: String, localIndex: Int, tpe: MonoType): Unit = {
-    val erasedType = JvmOps.getErasedJvmType(tpe)
+  private def loadFromField(m: MethodVisitor, classType: JvmType.Reference, name: String, localIndex: Int, tpe: MonoType)(implicit root: Root, flix: Flix): Unit = {
+    // retrieve the erased field
+    val erasedVarType = JvmOps.getErasedJvmType(tpe)
     m.visitVarInsn(ALOAD, 0)
-    m.visitFieldInsn(GETFIELD, classType.name.toInternalName, name, erasedType.toDescriptor)
-    val xStore = AsmOps.getStoreInstruction(erasedType)
+    m.visitFieldInsn(GETFIELD, classType.name.toInternalName, name, erasedVarType.toDescriptor)
+    // cast the value and store it
+    val varType = JvmOps.getJvmType(tpe)
+    AsmOps.castIfNotPrim(m, varType)
+    val xStore = AsmOps.getStoreInstruction(varType)
     m.visitVarInsn(xStore, localIndex)
   }
 
