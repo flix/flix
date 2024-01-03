@@ -117,7 +117,7 @@ object GenExpression {
     }
 
     case Expr.Var(sym, tpe, _) =>
-      val varType = JvmOps.getErasedJvmType(tpe)
+      val varType = JvmOps.getJvmType(tpe)
       val xLoad = AsmOps.getLoadInstruction(varType)
       mv.visitVarInsn(xLoad, sym.getStackOffset(ctx.localOffset))
 
