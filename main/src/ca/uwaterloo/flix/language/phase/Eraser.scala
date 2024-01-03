@@ -4,11 +4,12 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expr._
 import ca.uwaterloo.flix.language.ast.LiftedAst.{CatchRule, Def, Expr, FormalParam, HandlerRule, JvmMethod, Root}
 import ca.uwaterloo.flix.language.ast.MonoType._
-import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 
 /**
   * Erase types and introduce corresponding casting
+  * - Enum tag values are erased (todo enum def)
   * - `A -> B` types become `A -> Obj` (TODO)
   * - non-primitive function return values are `Obj`
   */
@@ -55,7 +56,65 @@ object Eraser {
     case Var(sym, tpe, loc) =>
       Var(sym, visitType(tpe), loc)
     case ApplyAtomic(op, exps, tpe, purity, loc) =>
-      ApplyAtomic(op, exps.map(visitExp), visitType(tpe), purity, loc)
+      val es = exps.map(visitExp)
+      val t = visitType(tpe)
+      val aa = ApplyAtomic(op, es, t, purity, loc)
+      op match {
+        case AtomicOp.Closure(sym) => aa
+        case AtomicOp.Unary(sop) => aa
+        case AtomicOp.Binary(sop) => aa
+        case AtomicOp.Region => aa
+        case AtomicOp.ScopeExit => aa
+        case AtomicOp.Is(sym) => aa
+        case AtomicOp.Tag(_) => aa
+        case AtomicOp.Untag(_) =>
+          Expr.ApplyAtomic(AtomicOp.Cast, List(aa), t, purity, loc.asSynthetic)
+        case AtomicOp.Index(idx) => aa
+        case AtomicOp.Tuple => aa
+        case AtomicOp.RecordEmpty => aa
+        case AtomicOp.RecordSelect(label) => aa
+        case AtomicOp.RecordExtend(label) => aa
+        case AtomicOp.RecordRestrict(label) => aa
+        case AtomicOp.ArrayLit => aa
+        case AtomicOp.ArrayNew => aa
+        case AtomicOp.ArrayLoad => aa
+        case AtomicOp.ArrayStore => aa
+        case AtomicOp.ArrayLength => aa
+        case AtomicOp.Ref => aa
+        case AtomicOp.Deref => aa
+        case AtomicOp.Assign => aa
+        case AtomicOp.InstanceOf(clazz) => aa
+        case AtomicOp.Cast => aa
+        case AtomicOp.InvokeConstructor(constructor) => aa
+        case AtomicOp.InvokeMethod(method) => aa
+        case AtomicOp.InvokeStaticMethod(method) => aa
+        case AtomicOp.GetField(field) => aa
+        case AtomicOp.PutField(field) => aa
+        case AtomicOp.GetStaticField(field) => aa
+        case AtomicOp.PutStaticField(field) => aa
+        case AtomicOp.Spawn => aa
+        case AtomicOp.Lazy => aa
+        case AtomicOp.Force => aa
+        case AtomicOp.BoxBool => aa
+        case AtomicOp.BoxInt8 => aa
+        case AtomicOp.BoxInt16 => aa
+        case AtomicOp.BoxInt32 => aa
+        case AtomicOp.BoxInt64 => aa
+        case AtomicOp.BoxChar => aa
+        case AtomicOp.BoxFloat32 => aa
+        case AtomicOp.BoxFloat64 => aa
+        case AtomicOp.UnboxBool => aa
+        case AtomicOp.UnboxInt8 => aa
+        case AtomicOp.UnboxInt16 => aa
+        case AtomicOp.UnboxInt32 => aa
+        case AtomicOp.UnboxInt64 => aa
+        case AtomicOp.UnboxChar => aa
+        case AtomicOp.UnboxFloat32 => aa
+        case AtomicOp.UnboxFloat64 => aa
+        case AtomicOp.HoleError(sym) => aa
+        case AtomicOp.MatchError => aa
+      }
+
     case ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       ApplyClo(visitExp(exp), exps.map(visitExp), ct, visitType(tpe), purity, loc)
     case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
