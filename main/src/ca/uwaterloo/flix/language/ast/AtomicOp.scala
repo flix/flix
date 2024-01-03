@@ -92,38 +92,6 @@ object AtomicOp {
 
   case object Force extends AtomicOp
 
-  case object BoxBool extends AtomicOp
-
-  case object BoxInt8 extends AtomicOp
-
-  case object BoxInt16 extends AtomicOp
-
-  case object BoxInt32 extends AtomicOp
-
-  case object BoxInt64 extends AtomicOp
-
-  case object BoxChar extends AtomicOp
-
-  case object BoxFloat32 extends AtomicOp
-
-  case object BoxFloat64 extends AtomicOp
-
-  case object UnboxBool extends AtomicOp
-
-  case object UnboxInt8 extends AtomicOp
-
-  case object UnboxInt16 extends AtomicOp
-
-  case object UnboxInt32 extends AtomicOp
-
-  case object UnboxInt64 extends AtomicOp
-
-  case object UnboxChar extends AtomicOp
-
-  case object UnboxFloat32 extends AtomicOp
-
-  case object UnboxFloat64 extends AtomicOp
-
   case class HoleError(sym: Symbol.HoleSym) extends AtomicOp
 
   case object MatchError extends AtomicOp
