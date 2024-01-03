@@ -1069,8 +1069,6 @@ object GenExpression {
         mv.visitFieldInsn(GETFIELD, internalClassType, "value", erasedType.toDescriptor)
 
         mv.visitLabel(end)
-        // The result of force is a generic object so a cast is needed.
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.BoxBool =>
         val List(exp) = exps

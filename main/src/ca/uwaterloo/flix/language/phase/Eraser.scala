@@ -100,7 +100,8 @@ object Eraser {
         case AtomicOp.PutStaticField(field) => aa
         case AtomicOp.Spawn => aa
         case AtomicOp.Lazy => aa
-        case AtomicOp.Force => aa
+        case AtomicOp.Force =>
+          castExp(aa, t, purity, loc)
         case AtomicOp.BoxBool => aa
         case AtomicOp.BoxInt8 => aa
         case AtomicOp.BoxInt16 => aa
