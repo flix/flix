@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expr._
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SourceLocation, Symbol}
@@ -13,8 +14,12 @@ import ca.uwaterloo.flix.util.ParOps
   * This means that expressions should cast their output but assume correct
   * input types.
   *
-  * - Enum tag values are erased (cast in untag)
-  * - Ref values are erased (cast in deref)
+  * - Enum tag unpacking
+  * - Ref unpacking
+  * - tuple unpacking
+  * - record unpacking
+  * - lazy unpacking
+  * - function returns
   */
 object Eraser {
 
@@ -72,10 +77,12 @@ object Eraser {
         case AtomicOp.Tag(_) => aa
         case AtomicOp.Untag(_) =>
           castExp(aa, t, purity, loc)
-        case AtomicOp.Index(idx) => aa
+        case AtomicOp.Index(_) =>
+          castExp(aa, t, purity, loc)
         case AtomicOp.Tuple => aa
         case AtomicOp.RecordEmpty => aa
-        case AtomicOp.RecordSelect(label) => aa
+        case AtomicOp.RecordSelect(_) =>
+          castExp(aa, t, purity, loc)
         case AtomicOp.RecordExtend(label) => aa
         case AtomicOp.RecordRestrict(label) => aa
         case AtomicOp.ArrayLit => aa
@@ -98,7 +105,8 @@ object Eraser {
         case AtomicOp.PutStaticField(field) => aa
         case AtomicOp.Spawn => aa
         case AtomicOp.Lazy => aa
-        case AtomicOp.Force => aa
+        case AtomicOp.Force =>
+          castExp(aa, t, purity, loc)
         case AtomicOp.BoxBool => aa
         case AtomicOp.BoxInt8 => aa
         case AtomicOp.BoxInt16 => aa
@@ -120,9 +128,13 @@ object Eraser {
       }
 
     case ApplyClo(exp, exps, ct, tpe, purity, loc) =>
-      ApplyClo(visitExp(exp), exps.map(visitExp), ct, visitType(tpe), purity, loc)
+      val ac = ApplyClo(visitExp(exp), exps.map(visitExp), ct, visitType(tpe), purity, loc)
+      if (ct == CallType.TailCall) ac
+      else castExp(ac, ac.tpe, purity, loc)
     case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-      ApplyDef(sym, exps.map(visitExp), ct, visitType(tpe), purity, loc)
+      val ad = ApplyDef(sym, exps.map(visitExp), ct, visitType(tpe), purity, loc)
+      if (ct == CallType.TailCall) ad
+      else castExp(ad, ad.tpe, purity, loc)
     case ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
       ApplySelfTail(sym, formals.map(visitParam), actuals.map(visitExp), visitType(tpe), purity, loc)
     case IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
@@ -143,8 +155,6 @@ object Eraser {
       TryWith(visitExp(exp), effUse, rules.map(visitHandlerRule), visitType(tpe), purity, loc)
     case Do(op, exps, tpe, purity, loc) =>
       Do(op, exps.map(visitExp), visitType(tpe), purity, loc)
-    case Resume(exp, tpe, loc) =>
-      Resume(visitExp(exp), visitType(tpe), loc)
     case NewObject(name, clazz, tpe, purity, methods, loc) =>
       NewObject(name, clazz, visitType(tpe), purity, methods.map(visitJvmMethod), loc)
   }

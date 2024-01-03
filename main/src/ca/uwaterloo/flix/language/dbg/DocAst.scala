@@ -244,9 +244,6 @@ object DocAst {
     def Do(sym: Symbol.OpSym, ds: List[Expression]): Expression =
       Keyword("do", App(AsIs(sym.toString), ds))
 
-    def Resume(d: Expression): Expression =
-      App(AsIs("resume"), List(d))
-
     def JavaInvokeMethod(m: Method, d: Expression, ds: List[Expression]): Expression =
       App(DoubleDot(d, AsIs(m.getName)), ds)
 

@@ -598,8 +598,6 @@ object GenExpression {
         compileExpr(exp)
         // Retrieving the field `field${offset}`
         mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"field$idx", JvmOps.getErasedJvmType(tpe).toDescriptor)
-        // Cast the object to it's type if it's not a primitive
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.Tuple =>
         // We get the JvmType of the class for the tuple
@@ -651,9 +649,6 @@ object GenExpression {
 
         // Retrieve the value field  (To get the proper value)
         mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRecordExtendType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
-
-        // Cast the field value to the expected type.
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.RecordExtend(field) =>
         val List(exp1, exp2) = exps
@@ -1073,8 +1068,6 @@ object GenExpression {
         mv.visitFieldInsn(GETFIELD, internalClassType, "value", erasedType.toDescriptor)
 
         mv.visitLabel(end)
-        // The result of force is a generic object so a cast is needed.
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.BoxBool =>
         val List(exp) = exps
@@ -1223,7 +1216,6 @@ object GenExpression {
           // Calling unwind and unboxing
           val erasedResult = BackendType.toErasedBackendType(closureResultType)
           BackendObjType.Result.unwindThunkToType(0 /* TODO */, ctx.newFrame, erasedResult)(new BytecodeInstructions.F(mv))
-          AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
       }
 
     case Expr.ApplyDef(sym, exps, ct, tpe, _, loc) => ct match {
@@ -1263,7 +1255,6 @@ object GenExpression {
         }
         // Calling unwind and unboxing
         BackendObjType.Result.unwindThunkToType(0 /* TODO */, ctx.newFrame, BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(mv))
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
     }
 
     case Expr.ApplySelfTail(sym, formals, exps, tpe, _, loc) =>
@@ -1458,11 +1449,6 @@ object GenExpression {
     case Expr.Do(op, exps, tpe, purity, loc) =>
       // TODO (temp unit value)
       mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
-
-
-    case Expr.Resume(_, _, loc) =>
-      // TODO
-      throw InternalCompilerException(s"Explicit 'resume' not supported. Use the parameter bound resumption.", loc)
 
 
     case Expr.NewObject(name, _, tpe, _, _, exps, loc) =>

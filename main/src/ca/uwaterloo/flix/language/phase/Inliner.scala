@@ -273,10 +273,6 @@ object Inliner {
       val es = exps.map(visitExp(_, subst0))
       LiftedAst.Expr.Do(op, es, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.Resume(exp, tpe, loc) =>
-      val e = visitExp(exp, subst0)
-      LiftedAst.Expr.Resume(e, tpe, loc)
-
     case OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map {
         case OccurrenceAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
@@ -475,10 +471,6 @@ object Inliner {
     case OccurrenceAst.Expression.Do(op, exps, tpe, purity, loc) =>
       val es = exps.map(substituteExp(_, env0))
       LiftedAst.Expr.Do(op, es, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.Resume(exp, tpe, loc) =>
-      val e = substituteExp(exp, env0)
-      LiftedAst.Expr.Resume(e, tpe, loc)
 
     case OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map {

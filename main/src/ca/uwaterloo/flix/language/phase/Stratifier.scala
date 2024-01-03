@@ -352,11 +352,6 @@ object Stratifier {
         case es => Expr.Do(sym, es, tpe, eff, loc)
       }
 
-    case Expr.Resume(exp, tpe, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expr.Resume(e, tpe, loc)
-      }
-
     case Expr.InvokeConstructor(constructor, args, tpe, eff, loc) =>
       mapN(traverse(args)(visitExp)) {
         case as => Expr.InvokeConstructor(constructor, as, tpe, eff, loc)

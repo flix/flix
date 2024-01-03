@@ -794,15 +794,6 @@ object Kinder {
         case args => KindedAst.Expr.Do(op, args, tvar, loc)
       }
 
-    case ResolvedAst.Expr.Resume(exp0, loc) =>
-      val expVal = visitExp(exp0, kenv0, taenv, henv0, root)
-      // Extract the type variable from the henv
-      // Missing henv should have been caught previously
-      val (argTvar, retTvar) = henv0.getOrElse(throw InternalCompilerException("Unexpected missing handler env.", loc))
-      mapN(expVal) {
-        case exp => KindedAst.Expr.Resume(exp, argTvar, retTvar, loc)
-      }
-
     case ResolvedAst.Expr.InvokeConstructor(constructor, args0, loc) =>
       val argsVal = traverse(args0)(visitExp(_, kenv0, taenv, henv0, root))
       mapN(argsVal) {

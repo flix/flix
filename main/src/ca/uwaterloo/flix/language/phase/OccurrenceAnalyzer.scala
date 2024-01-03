@@ -265,10 +265,6 @@ object OccurrenceAnalyzer {
       val (es, o1) = visitExps(sym0, exps)
       (OccurrenceAst.Expression.Do(op, es, tpe, purity, loc), o1.increaseSizeByOne())
 
-    case Expr.Resume(exp, tpe, loc) =>
-      val (e, o1) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.Resume(e, tpe, loc), o1.increaseSizeByOne())
-
     case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val (ms, o1) = methods.map {
         case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) => {
