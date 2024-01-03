@@ -364,7 +364,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given operation.
     */
-  private def visitOp(op: KindedAst.Op, root: KindedAst.Root)(implicit flix: Flix): TypedAst.Op = op match {
+  def visitOp(op: KindedAst.Op, root: KindedAst.Root)(implicit flix: Flix): TypedAst.Op = op match {
     case KindedAst.Op(sym, spec0) =>
       val spec = visitSpec(spec0, root, Substitution.empty)
       TypedAst.Op(sym, spec)
