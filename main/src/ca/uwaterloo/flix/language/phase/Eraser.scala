@@ -5,8 +5,9 @@ import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.LiftedAst.Expr._
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.MonoType._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, MonoType, Purity, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.MapOps
 
 /**
   * Erase types and introduce corresponding casting
@@ -26,7 +27,9 @@ object Eraser {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Eraser") {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
-    root.copy(defs = newDefs)
+    val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
+    val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
+    root.copy(defs = newDefs, enums = newEnums, effects = newEffects)
   }
 
   private def visitDef(defn: Def): Def = defn match {
@@ -67,67 +70,66 @@ object Eraser {
     case ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
       val t = visitType(tpe)
-      val aa = ApplyAtomic(op, es, t, purity, loc)
       op match {
-        case AtomicOp.Closure(sym) => aa
-        case AtomicOp.Unary(sop) => aa
-        case AtomicOp.Binary(sop) => aa
-        case AtomicOp.Region => aa
-        case AtomicOp.ScopeExit => aa
-        case AtomicOp.Is(sym) => aa
-        case AtomicOp.Tag(_) => aa
+        case AtomicOp.Closure(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Unary(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Binary(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Region => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ScopeExit => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Is(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Tag(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Untag(_) =>
-          castExp(aa, t, purity, loc)
+          castExp(ApplyAtomic(op, es, t, purity, loc), t, purity, loc)
         case AtomicOp.Index(_) =>
           val aa = ApplyAtomic(op, es, erase(tpe), purity, loc)
           castExp(aa, t, purity, loc)
-        case AtomicOp.Tuple => aa
-        case AtomicOp.RecordEmpty => aa
+        case AtomicOp.Tuple => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.RecordEmpty => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.RecordSelect(_) =>
-          castExp(aa, t, purity, loc)
-        case AtomicOp.RecordExtend(label) => aa
-        case AtomicOp.RecordRestrict(label) => aa
-        case AtomicOp.ArrayLit => aa
-        case AtomicOp.ArrayNew => aa
-        case AtomicOp.ArrayLoad => aa
-        case AtomicOp.ArrayStore => aa
-        case AtomicOp.ArrayLength => aa
-        case AtomicOp.Ref => aa
+          castExp(ApplyAtomic(op, es, t, purity, loc), t, purity, loc)
+        case AtomicOp.RecordExtend(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.RecordRestrict(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ArrayLit => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ArrayNew => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ArrayLoad => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ArrayStore => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.ArrayLength => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Ref => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Deref =>
           val aa = ApplyAtomic(op, es, erase(tpe), purity, loc)
           castExp(aa, t, purity, loc)
-        case AtomicOp.Assign => aa
-        case AtomicOp.InstanceOf(clazz) => aa
-        case AtomicOp.Cast => aa
-        case AtomicOp.InvokeConstructor(constructor) => aa
-        case AtomicOp.InvokeMethod(method) => aa
-        case AtomicOp.InvokeStaticMethod(method) => aa
-        case AtomicOp.GetField(field) => aa
-        case AtomicOp.PutField(field) => aa
-        case AtomicOp.GetStaticField(field) => aa
-        case AtomicOp.PutStaticField(field) => aa
-        case AtomicOp.Spawn => aa
-        case AtomicOp.Lazy => aa
+        case AtomicOp.Assign => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.InstanceOf(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Cast => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.InvokeConstructor(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.InvokeMethod(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.InvokeStaticMethod(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.GetField(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.PutField(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.GetStaticField(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.PutStaticField(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Spawn => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Lazy => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Force =>
-          castExp(aa, t, purity, loc)
-        case AtomicOp.BoxBool => aa
-        case AtomicOp.BoxInt8 => aa
-        case AtomicOp.BoxInt16 => aa
-        case AtomicOp.BoxInt32 => aa
-        case AtomicOp.BoxInt64 => aa
-        case AtomicOp.BoxChar => aa
-        case AtomicOp.BoxFloat32 => aa
-        case AtomicOp.BoxFloat64 => aa
-        case AtomicOp.UnboxBool => aa
-        case AtomicOp.UnboxInt8 => aa
-        case AtomicOp.UnboxInt16 => aa
-        case AtomicOp.UnboxInt32 => aa
-        case AtomicOp.UnboxInt64 => aa
-        case AtomicOp.UnboxChar => aa
-        case AtomicOp.UnboxFloat32 => aa
-        case AtomicOp.UnboxFloat64 => aa
-        case AtomicOp.HoleError(sym) => aa
-        case AtomicOp.MatchError => aa
+          castExp(ApplyAtomic(op, es, t, purity, loc), t, purity, loc)
+        case AtomicOp.BoxBool => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.BoxInt8 => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.BoxInt16 => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.BoxInt32 => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.BoxInt64 => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.BoxChar => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.BoxFloat32 => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.BoxFloat64 => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.UnboxBool => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.UnboxInt8 => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.UnboxInt16 => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.UnboxInt32 => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.UnboxInt64 => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.UnboxChar => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.UnboxFloat32 => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.UnboxFloat64 => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.HoleError(_) => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.MatchError => ApplyAtomic(op, es, t, purity, loc)
       }
 
     case ApplyClo(exp, exps, ct, tpe, purity, loc) =>
@@ -164,6 +166,26 @@ object Eraser {
 
   private def castExp(exp: Expr, t: MonoType, purity: Purity, loc: SourceLocation): Expr = {
     Expr.ApplyAtomic(AtomicOp.Cast, List(exp), t, purity, loc.asSynthetic)
+  }
+
+  private def visitEnum(e: LiftedAst.Enum): LiftedAst.Enum = e match {
+    case LiftedAst.Enum(ann, mod, sym, cases, tpe, loc) =>
+      LiftedAst.Enum(ann, mod, sym, MapOps.mapValues(cases)(visitCase), visitType(tpe), loc)
+  }
+
+  private def visitCase(c: Case): Case = c match {
+    case Case(sym, tpe, loc) =>
+      Case(sym, visitType(tpe), loc)
+  }
+
+  private def visitEffect(eff: Effect): Effect = eff match {
+    case Effect(ann, mod, sym, ops, loc) =>
+      Effect(ann, mod, sym, ops.map(visitOp), loc)
+  }
+
+  private def visitOp(op: Op): Op = op match {
+    case Op(sym, ann, mod, fparams, tpe, purity, loc) =>
+      Op(sym, ann, mod, fparams.map(visitParam), visitType(tpe), purity, loc)
   }
 
   private def visitType(tpe: MonoType): MonoType = tpe match {

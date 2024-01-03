@@ -179,7 +179,7 @@ object BackendType {
          MonoType.Region => BackendObjType.JavaObject.toTpe
   }
 
-  def asErasedType(tpe: MonoType): BackendType = tpe match {
+  def asErasedBackendType(tpe: MonoType): BackendType = tpe match {
     case MonoType.Bool => Bool
     case MonoType.Char => Char
     case MonoType.Int8 => Int8

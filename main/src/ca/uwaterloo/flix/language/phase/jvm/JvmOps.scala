@@ -506,7 +506,7 @@ object JvmOps {
     */
   def getErasedRefsOf(types: Iterable[MonoType]): Set[BackendObjType.Ref] =
     types.foldLeft(Set.empty[BackendObjType.Ref]) {
-      case (acc, MonoType.Ref(tpe)) => acc + BackendObjType.Ref(BackendType.toErasedBackendType(tpe))
+      case (acc, MonoType.Ref(tpe)) => acc + BackendObjType.Ref(BackendType.asErasedBackendType(tpe))
       case (acc, _) => acc
     }
 

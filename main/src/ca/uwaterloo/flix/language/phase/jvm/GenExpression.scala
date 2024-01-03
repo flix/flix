@@ -812,7 +812,7 @@ object GenExpression {
 
         // the previous function is already partial
         val MonoType.Ref(refValueType) = tpe
-        val backendRefType = BackendObjType.Ref(BackendType.asErasedType(refValueType))
+        val backendRefType = BackendObjType.Ref(BackendType.asErasedBackendType(refValueType))
 
         // Create a new reference object
         mv.visitTypeInsn(NEW, classType.name.toInternalName)
