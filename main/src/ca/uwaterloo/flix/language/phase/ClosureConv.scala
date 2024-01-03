@@ -140,10 +140,6 @@ object ClosureConv {
       val es = exps.map(visitExp)
       Expr.Do(op, es, tpe, purity, loc)
 
-    case Expr.Resume(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expr.Resume(e, tpe, loc)
-
     case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0 map {
         case JvmMethod(ident, fparams, exp, retTpe, purity, loc) =>
@@ -246,8 +242,6 @@ object ClosureConv {
     }
 
     case Expr.Do(_, exps, _, _, _) => freeVarsExps(exps)
-
-    case Expr.Resume(exp, _, _) => freeVars(exp)
 
     case Expr.NewObject(_, _, _, _, methods, _) =>
       methods.foldLeft(SortedSet.empty[FreeVar]) {
@@ -384,10 +378,6 @@ object ClosureConv {
       case Expr.Do(op, exps, tpe, purity, loc) =>
         val es = exps.map(visitExp)
         Expr.Do(op, es, tpe, purity, loc)
-
-      case Expr.Resume(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expr.Resume(e, tpe, loc)
 
       case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0.map(visitJvmMethod)

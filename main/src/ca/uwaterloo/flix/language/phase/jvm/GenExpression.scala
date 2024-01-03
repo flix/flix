@@ -1460,11 +1460,6 @@ object GenExpression {
       mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
 
-    case Expr.Resume(_, _, loc) =>
-      // TODO
-      throw InternalCompilerException(s"Explicit 'resume' not supported. Use the parameter bound resumption.", loc)
-
-
     case Expr.NewObject(name, _, tpe, _, _, exps, loc) =>
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
