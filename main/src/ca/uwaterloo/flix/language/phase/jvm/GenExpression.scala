@@ -599,8 +599,6 @@ object GenExpression {
         compileExpr(exp)
         // Retrieving the field `field${offset}`
         mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"field$idx", JvmOps.getErasedJvmType(tpe).toDescriptor)
-        // Cast the object to it's type if it's not a primitive
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.Tuple =>
         // We get the JvmType of the class for the tuple

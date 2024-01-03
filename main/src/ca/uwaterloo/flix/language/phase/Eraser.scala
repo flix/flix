@@ -72,7 +72,8 @@ object Eraser {
         case AtomicOp.Tag(_) => aa
         case AtomicOp.Untag(_) =>
           castExp(aa, t, purity, loc)
-        case AtomicOp.Index(idx) => aa
+        case AtomicOp.Index(_) =>
+          castExp(aa, t, purity, loc)
         case AtomicOp.Tuple => aa
         case AtomicOp.RecordEmpty => aa
         case AtomicOp.RecordSelect(label) => aa
