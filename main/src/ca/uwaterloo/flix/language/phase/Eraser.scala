@@ -79,6 +79,7 @@ object Eraser {
         case AtomicOp.Untag(_) =>
           castExp(aa, t, purity, loc)
         case AtomicOp.Index(_) =>
+          val aa = ApplyAtomic(op, es, erase(tpe), purity, loc)
           castExp(aa, t, purity, loc)
         case AtomicOp.Tuple => aa
         case AtomicOp.RecordEmpty => aa
@@ -91,9 +92,9 @@ object Eraser {
         case AtomicOp.ArrayLoad => aa
         case AtomicOp.ArrayStore => aa
         case AtomicOp.ArrayLength => aa
-        case AtomicOp.Ref =>
-          ApplyAtomic(AtomicOp.Ref, es, t, purity, loc)
+        case AtomicOp.Ref => aa
         case AtomicOp.Deref =>
+          val aa = ApplyAtomic(op, es, erase(tpe), purity, loc)
           castExp(aa, t, purity, loc)
         case AtomicOp.Assign => aa
         case AtomicOp.InstanceOf(clazz) => aa

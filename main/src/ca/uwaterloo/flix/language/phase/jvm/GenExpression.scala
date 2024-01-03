@@ -598,7 +598,7 @@ object GenExpression {
         // evaluating the `base`
         compileExpr(exp)
         // Retrieving the field `field${offset}`
-        mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"field$idx", JvmOps.getErasedJvmType(tpe).toDescriptor)
+        mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"field$idx", JvmOps.asErasedJvmType(tpe).toDescriptor)
 
       case AtomicOp.Tuple =>
         // We get the JvmType of the class for the tuple
@@ -610,7 +610,8 @@ object GenExpression {
         // Evaluating all the elements to be stored in the tuple class
         exps.foreach(compileExpr)
         // Erased type of `elms`
-        val erasedElmTypes = exps.map(_.tpe).map(JvmOps.getErasedJvmType)
+        val MonoType.Tuple(elmTypes) = tpe
+        val erasedElmTypes = elmTypes.map(JvmOps.asErasedJvmType)
         // Descriptor of constructor
         val constructorDescriptor = AsmOps.getMethodDescriptor(erasedElmTypes, JvmType.Void)
         // Invoking the constructor
