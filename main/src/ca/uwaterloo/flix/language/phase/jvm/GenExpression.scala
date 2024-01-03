@@ -590,8 +590,6 @@ object GenExpression {
         val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tag.tpe))
         // Invoke `getValue()` method to extract the field of the tag
         mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
-        // Cast the object to it's type if it's not a primitive
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.Index(idx) =>
         val List(exp) = exps
@@ -854,8 +852,6 @@ object GenExpression {
         mv.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
         // Dereference the expression
         mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
-        // Cast underlying value to the correct type if the underlying type is Object
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.Assign =>
         val List(exp1, exp2) = exps
