@@ -698,10 +698,6 @@ object Desugar {
       val es = visitExps(exps)
       Expr.Do(op, es, loc)
 
-    case WeededAst.Expr.Resume(exp, loc) =>
-      val e = visitExp(exp)
-      Expr.Resume(e, loc)
-
     case WeededAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
       val es = visitExps(exps)
       val ts = sig.map(visitType)

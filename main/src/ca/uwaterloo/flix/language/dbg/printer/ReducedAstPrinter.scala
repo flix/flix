@@ -74,7 +74,6 @@ object ReducedAstPrinter {
         (op.sym, fparams.map(printFormalParam), print(exp))
     })
     case Expr.Do(op, exps, _, _, _) => DocAst.Expression.Do(op.sym, exps.map(print))
-    case Expr.Resume(exp, _, _) => DocAst.Expression.Resume(print(exp))
     case Expr.NewObject(name, clazz, tpe, _, methods, exps, _) => DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.zip(exps).map(printJvmMethod))
   }
 

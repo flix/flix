@@ -135,9 +135,6 @@ object TreeShaker2 {
     case Expr.Do(_, exps, _, _, _) =>
       visitExps(exps)
 
-    case Expr.Resume(exp, _, _) =>
-      visitExp(exp)
-
     case Expr.NewObject(_, _, _, _, methods, _) =>
       visitExps(methods.map(_.clo))
 
