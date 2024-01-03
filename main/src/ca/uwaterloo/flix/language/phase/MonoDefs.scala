@@ -505,10 +505,6 @@ object MonoDefs {
       val es = exps.map(visitExp(_, env0, subst))
       Expr.Do(op, es, subst(tpe), subst(eff), loc)
 
-    case Expr.Resume(exp, tpe, loc) =>
-      val e = visitExp(exp, env0, subst)
-      Expr.Resume(e, subst(tpe), loc)
-
     case Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val methods = methods0.map(visitJvmMethod(_, env0, subst))
       Expr.NewObject(name, clazz, subst(tpe), subst(eff), methods, loc)

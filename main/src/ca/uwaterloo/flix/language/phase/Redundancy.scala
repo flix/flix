@@ -653,9 +653,6 @@ object Redundancy {
       sctx.effSyms.put(opUse.sym.eff, ())
       visitExps(exps, env0, rc)
 
-    case Expr.Resume(exp, _, _) =>
-      visitExp(exp, env0, rc)
-
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args, env0, rc)
 

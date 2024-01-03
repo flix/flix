@@ -283,9 +283,6 @@ object Safety {
       case Expr.Do(_, exps, _, _, _) =>
         exps.flatMap(visit)
 
-      case Expr.Resume(exp, _, _) =>
-        visit(exp)
-
       case Expr.InvokeConstructor(_, args, _, _, _) =>
         args.flatMap(visit)
 

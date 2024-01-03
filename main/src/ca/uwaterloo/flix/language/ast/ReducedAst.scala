@@ -88,10 +88,6 @@ object ReducedAst {
 
     case class Do(op: Ast.OpSymUse, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class Resume(exp: Expr, tpe: MonoType, loc: SourceLocation) extends Expr {
-      def purity: Purity = Pure
-    }
-
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[JvmMethod], exps: List[Expr], loc: SourceLocation) extends Expr
 
   }

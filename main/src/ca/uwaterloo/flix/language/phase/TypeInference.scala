@@ -999,15 +999,6 @@ object TypeInference {
           } yield (resultTconstrs, resultTpe, resultEff)
         }
 
-      case KindedAst.Expr.Resume(exp, argTvar, retTvar, loc) =>
-        for {
-          (tconstrs, tpe, eff) <- visitExp(exp)
-          resultTconstrs = tconstrs
-          _ <- expectTypeM(expected = argTvar, actual = tpe, exp.loc)
-          resultTpe = retTvar
-          resultEff = eff
-        } yield (resultTconstrs, resultTpe, resultEff)
-
       case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
         val classType = getFlixType(constructor.getDeclaringClass)
         for {
