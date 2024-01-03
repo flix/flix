@@ -117,10 +117,9 @@ object GenExpression {
     }
 
     case Expr.Var(sym, tpe, _) =>
-      val jvmType = JvmOps.getErasedJvmType(tpe)
-      val iLOAD = AsmOps.getLoadInstruction(jvmType)
-      mv.visitVarInsn(iLOAD, sym.getStackOffset(ctx.localOffset))
-      AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+      val varType = JvmOps.getJvmType(tpe)
+      val xLoad = AsmOps.getLoadInstruction(varType)
+      mv.visitVarInsn(xLoad, sym.getStackOffset(ctx.localOffset))
 
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) => op match {
 
@@ -1316,6 +1315,7 @@ object GenExpression {
       val jvmType = JvmOps.getJvmType(exp1.tpe)
       // Store instruction for `jvmType`
       val iStore = AsmOps.getStoreInstruction(jvmType)
+      AsmOps.castIfNotPrim(mv, jvmType)
       mv.visitVarInsn(iStore, sym.getStackOffset(ctx.localOffset))
       compileExpr(exp2)
 
