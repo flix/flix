@@ -65,7 +65,6 @@ object ShowAstProvider {
         case "Reducer" => astObject(phase, AstPrinter.formatReducedAst(flix.getReducerAst))
         case "EffectBinder" => astObject(phase, AstPrinter.formatReducedAst(flix.getEffectBinderAst))
         case "VarOffsets" => astObject(phase, AstPrinter.formatReducedAst(flix.getVarOffsetsAst))
-        case "Eraser" => astObject(phase, "Work In Progress")
         case _ =>
           astObject(phase, s"Unknown phase: '$phase'. Try one of these ${phases.map(s => s"'$s'").mkString(", ")}")
       }
