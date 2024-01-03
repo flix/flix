@@ -1257,6 +1257,8 @@ object GenExpression {
             mv.visitJumpInsn(GOTO, afterUnboxing)
 
             mv.visitLabel(pcPointLabel)
+            printPc(mv, pcPoint)
+
             mv.visitVarInsn(ALOAD, 1)
             BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
 
@@ -1313,6 +1315,7 @@ object GenExpression {
           mv.visitJumpInsn(GOTO, afterUnboxing)
 
           mv.visitLabel(pcPointLabel)
+          printPc(mv, pcPoint)
           mv.visitVarInsn(ALOAD, 1)
           BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
 
@@ -1537,6 +1540,7 @@ object GenExpression {
       ins(new BytecodeInstructions.F(mv))
 
       mv.visitLabel(pcPointLabel)
+      printPc(mv, pcPoint)
       compileExpr(exp)
 
 
@@ -1580,6 +1584,7 @@ object GenExpression {
       ins(new BytecodeInstructions.F(mv))
 
       mv.visitLabel(pcPointLabel)
+      printPc(mv, pcPoint)
       mv.visitVarInsn(ALOAD, 1)
       BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
 
@@ -1605,6 +1610,16 @@ object GenExpression {
         mv.visitFieldInsn(PUTFIELD, className, s"clo$i", JvmOps.getClosureAbstractClassType(e.tpe).toDescriptor)
       }
 
+  }
+
+  private def printPc(mv: MethodVisitor, pcPoint: Int): Unit = {
+    val printStream = JvmName(List("java", "io"), "PrintStream")
+    mv.visitFieldInsn(GETSTATIC, JvmName(List("java", "lang"), "System").toInternalName, "out", printStream.toDescriptor)
+    mv.visitLdcInsn("pc = ")
+    compileInt(pcPoint)(mv)
+    BytecodeInstructions.xToString(BackendType.Int32)(new BytecodeInstructions.F(mv))
+    mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.String.toTpe).toDescriptor, false)
+    mv.visitMethodInsn(INVOKEVIRTUAL, printStream.toInternalName, "println", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void).toDescriptor, false)
   }
 
   /**

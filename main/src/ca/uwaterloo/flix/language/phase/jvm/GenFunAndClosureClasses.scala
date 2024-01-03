@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
+import ca.uwaterloo.flix.language.phase.jvm.GenExpression.compileInt
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.Opcodes._
@@ -148,6 +149,7 @@ object GenFunAndClosureClasses {
     compileInvokeMethod(visitor, classType)
     compileFrameMethod(visitor, classType, defn)
     compileCopyMethod(visitor, classType, defn)
+    compileOnCall(visitor, classType, defn)
     if (kind == Closure) compileGetUniqueThreadClosureMethod(visitor, classType, defn)
 
     visitor.visitEnd()
@@ -205,6 +207,9 @@ object GenFunAndClosureClasses {
     // used for self-recursive tail calls
     val enterLabel = new Label()
     m.visitLabel(enterLabel)
+    m.visitVarInsn(ALOAD, 0)
+    m.visitVarInsn(ALOAD, 1)
+    m.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "onCall", MethodDescriptor.mkDescriptor(BackendObjType.Value.toTpe)(VoidableType.Void).toDescriptor, false)
 
     loadParamsOf(cparams)
     loadParamsOf(fparams)
@@ -308,6 +313,69 @@ object GenFunAndClosureClasses {
 
     mkCopy(classType, defn, partial = false)(new BytecodeInstructions.F(m))
     m.visitInsn(Opcodes.ARETURN)
+
+    m.visitMaxs(999, 999)
+    m.visitEnd()
+  }
+
+  private def compileOnCall(v: ClassWriter, classType: JvmType.Reference, defn: Def): Unit = {
+    val m = v.visitMethod(ACC_PUBLIC, "onCall", MethodDescriptor.mkDescriptor(BackendObjType.Value.toTpe)(VoidableType.Void).toDescriptor, null, null)
+    m.visitCode()
+    val mf = new BytecodeInstructions.F(m)
+
+    val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
+    val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", p._1.tpe))
+    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe))
+    val params = fparams ++ cparams ++ lparams
+
+    val printStream = JvmName(List("java", "io"), "PrintStream")
+    m.visitFieldInsn(GETSTATIC, JvmName(List("java", "lang"), "System").toInternalName, "out", printStream.toDescriptor)
+
+    // The string
+    val strings = 3 + params.length
+    compileInt(strings)(m)
+    m.visitTypeInsn(ANEWARRAY, BackendObjType.String.jvmName.toInternalName)
+
+    m.visitInsn(DUP)
+    compileInt(0)(m)
+    m.visitLdcInsn(defn.sym.toString)
+    m.visitInsn(AASTORE)
+
+    m.visitInsn(DUP)
+    compileInt(1)(m)
+    m.visitVarInsn(ALOAD, 0)
+    m.visitFieldInsn(GETFIELD, classType.name.toInternalName, "pc", BackendType.Int32.toDescriptor)
+    BytecodeInstructions.xToString(BackendType.Int32)(mf)
+    m.visitInsn(AASTORE)
+
+    params.zipWithIndex.foreach{
+      case ((fieldName, fieldType), i) =>
+        m.visitInsn(DUP)
+        compileInt(i+2)(m)
+        m.visitLdcInsn(fieldName)
+        m.visitLdcInsn(" = ")
+        m.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.String.toTpe).toDescriptor, false)
+        m.visitVarInsn(ALOAD, 0)
+        val bt = BackendType.toErasedBackendType(fieldType)
+        m.visitFieldInsn(GETFIELD, classType.name.toInternalName, fieldName, bt.toDescriptor)
+        BytecodeInstructions.xToString(bt)(mf)
+        m.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.String.jvmName.toInternalName, "concat", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(BackendObjType.String.toTpe).toDescriptor, false)
+        m.visitInsn(AASTORE)
+    }
+
+    m.visitInsn(DUP)
+    compileInt(strings - 1)(m)
+    m.visitVarInsn(ALOAD, 1)
+    BytecodeInstructions.xToString(BackendObjType.Value.toTpe)(mf)
+    m.visitInsn(AASTORE)
+
+    m.visitLdcInsn(", ")
+    m.visitInsn(SWAP)
+    m.visitMethodInsn(INVOKESTATIC, "java/lang/String", "join", "(Ljava/lang/CharSequence;[Ljava/lang/CharSequence;)Ljava/lang/String;", false)
+
+    // println
+    m.visitMethodInsn(INVOKEVIRTUAL, printStream.toInternalName, "println", MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(VoidableType.Void).toDescriptor, false)
+    m.visitInsn(RETURN)
 
     m.visitMaxs(999, 999)
     m.visitEnd()
