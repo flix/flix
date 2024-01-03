@@ -199,12 +199,6 @@ object DocAst {
     def Force(d: Expression): Expression =
       Keyword("force", d)
 
-    def Box(d: Expression): Expression =
-      Keyword("box", d)
-
-    def Unbox(d: Expression): Expression =
-      Keyword("unbox", d)
-
     def Index(idx: Int, d: Expression): Expression =
       Dot(d, AsIs(s"_$idx"))
 

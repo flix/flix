@@ -99,22 +99,6 @@ object Eraser {
         case AtomicOp.Spawn => aa
         case AtomicOp.Lazy => aa
         case AtomicOp.Force => aa
-        case AtomicOp.BoxBool => aa
-        case AtomicOp.BoxInt8 => aa
-        case AtomicOp.BoxInt16 => aa
-        case AtomicOp.BoxInt32 => aa
-        case AtomicOp.BoxInt64 => aa
-        case AtomicOp.BoxChar => aa
-        case AtomicOp.BoxFloat32 => aa
-        case AtomicOp.BoxFloat64 => aa
-        case AtomicOp.UnboxBool => aa
-        case AtomicOp.UnboxInt8 => aa
-        case AtomicOp.UnboxInt16 => aa
-        case AtomicOp.UnboxInt32 => aa
-        case AtomicOp.UnboxInt64 => aa
-        case AtomicOp.UnboxChar => aa
-        case AtomicOp.UnboxFloat32 => aa
-        case AtomicOp.UnboxFloat64 => aa
         case AtomicOp.HoleError(sym) => aa
         case AtomicOp.MatchError => aa
       }
