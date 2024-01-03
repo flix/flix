@@ -76,7 +76,8 @@ object Eraser {
           castExp(aa, t, purity, loc)
         case AtomicOp.Tuple => aa
         case AtomicOp.RecordEmpty => aa
-        case AtomicOp.RecordSelect(label) => aa
+        case AtomicOp.RecordSelect(_) =>
+          castExp(aa, t, purity, loc)
         case AtomicOp.RecordExtend(label) => aa
         case AtomicOp.RecordRestrict(label) => aa
         case AtomicOp.ArrayLit => aa

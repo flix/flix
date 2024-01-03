@@ -651,9 +651,6 @@ object GenExpression {
         // Retrieve the value field  (To get the proper value)
         mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRecordExtendType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
 
-        // Cast the field value to the expected type.
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
-
       case AtomicOp.RecordExtend(field) =>
         val List(exp1, exp2) = exps
 
