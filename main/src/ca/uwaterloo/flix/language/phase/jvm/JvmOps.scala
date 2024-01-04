@@ -17,11 +17,10 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.mangle
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 import java.nio.file.{Files, LinkOption, Path}
 
@@ -44,7 +43,7 @@ object JvmOps {
     * Int -> Bool           =>      Fn1$Int$Bool
     * (Int, Int) -> Bool    =>      Fn2$Int$Int$Bool
     */
-  def getJvmType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType = tpe match {
+  def getJvmType(tpe: MonoType): JvmType = tpe match {
     // Primitives
     case MonoType.Unit => JvmType.Unit
     case MonoType.Bool => JvmType.PrimBool
@@ -129,6 +128,7 @@ object JvmOps {
   def getFunctionInterfaceType(args: List[JvmType], res: JvmType): JvmType.Reference = {
     getFunctionInterfaceType(args.map(_.toErased).map(stringify), stringify(res.toErased))
   }
+
   /**
     * The JVM name is of the form `FnArity$argTypes0$argTypes1$..$resType`
     */
@@ -178,7 +178,7 @@ object JvmOps {
     * List.length       =>    List/Clo$length
     * List.map          =>    List/Clo$map
     */
-  def getClosureClassType(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): JvmType.Reference = {
+  def getClosureClassType(sym: Symbol.DefnSym): JvmType.Reference = {
     // The JVM name is of the form Clo$sym.name
     val name = JvmName.mkClassName(s"Clo", sym.name)
 
@@ -198,10 +198,10 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be an enum type.
     */
-  def getEnumInterfaceType(sym: Symbol.EnumSym)(implicit root: Root, flix: Flix): JvmType.Reference = {
-      // The enum resides in its namespace package.
-      val name = JvmName.mkClassName("I", sym.name)
-      JvmType.Reference(JvmName(sym.namespace, name))
+  def getEnumInterfaceType(sym: Symbol.EnumSym): JvmType.Reference = {
+    // The enum resides in its namespace package.
+    val name = JvmName.mkClassName("I", sym.name)
+    JvmType.Reference(JvmName(sym.namespace, name))
   }
 
   /**
@@ -213,7 +213,7 @@ object JvmOps {
     * Some: Option$52   =>  Option$52$Some
     * Ok: Result$123    =>  Result$123$Ok
     */
-  def getTagClassType(sym: Symbol.CaseSym)(implicit root: Root, flix: Flix): JvmType.Reference = {
+  def getTagClassType(sym: Symbol.CaseSym): JvmType.Reference = {
     // TODO: Magnus: Can we improve the representation w.r.t. unused type variables?
     val name = JvmName.mkClassName(sym.enumSym.name, sym.name)
     // The tag class resides in its namespace package.
@@ -233,7 +233,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be a tuple type.
     */
-  def getTupleClassType(tpe: MonoType.Tuple)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+  def getTupleClassType(tpe: MonoType.Tuple): JvmType.Reference = tpe match {
     case MonoType.Tuple(elms) =>
       // Compute the arity of the tuple.
       val arity = elms.length
@@ -248,7 +248,7 @@ object JvmOps {
       JvmType.Reference(JvmName(RootPackage, name))
   }
 
-  def getLazyClassType(tpe: MonoType.Lazy)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+  def getLazyClassType(tpe: MonoType.Lazy): JvmType.Reference = tpe match {
     case MonoType.Lazy(tpe) =>
       val arg = stringify(getErasedJvmType(tpe))
       val name = JvmName.mkClassName("Lazy", arg)
@@ -264,7 +264,7 @@ object JvmOps {
     * {x :: Int}            =>  Record
     * {x :: Str, y :: Int}  =>  Record
     */
-  def getRecordInterfaceType()(implicit root: Root, flix: Flix): JvmType.Reference = {
+  def getRecordInterfaceType(): JvmType.Reference = {
 
     // The JVM name is of the form Record
     val name = JvmName.mkClassName("Record")
@@ -281,7 +281,7 @@ object JvmOps {
     * {}         =>    RecordEmpty
     *
     */
-  def getRecordEmptyClassType()(implicit root: Root, flix: Flix): JvmType.Reference = {
+  def getRecordEmptyClassType(): JvmType.Reference = {
 
     // The JVM name is of the form RecordEmpty
     val name = JvmName.mkClassName("RecordEmpty")
@@ -302,7 +302,7 @@ object JvmOps {
     *
     * NB: The given type `tpe` must be a Record type
     */
-  def getRecordExtendClassType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+  def getRecordExtendClassType(tpe: MonoType): JvmType.Reference = tpe match {
 
     case MonoType.RecordExtend(_, value, _) =>
       // Compute the stringified erased type of value.
@@ -327,7 +327,7 @@ object JvmOps {
     * {x :: Char, y :: Int} =>  RecordExtend$Obj
     *
     */
-  def getRecordType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = {
+  def getRecordType(tpe: MonoType): JvmType.Reference = {
 
     // Compute the stringified erased type of 'tpe'.
     val valueType = JvmOps.stringify(JvmOps.getErasedJvmType(tpe))
@@ -342,7 +342,7 @@ object JvmOps {
   /**
     * Returns the Main  `Main`
     */
-  def getMainClassType()(implicit root: Root, flix: Flix): JvmType.Reference = {
+  def getMainClassType(): JvmType.Reference = {
 
     // The JVM name is of the form Main
     val name = "Main"
@@ -359,7 +359,7 @@ object JvmOps {
     *
     * NB: The type must be a reference type.
     */
-  def getRefClassType(tpe: MonoType)(implicit root: Root, flix: Flix): JvmType.Reference = tpe match {
+  def getRefClassType(tpe: MonoType): JvmType.Reference = tpe match {
     case MonoType.Ref(elmType) =>
       // Compute the stringified erased type of the argument.
       val arg = stringify(getErasedJvmType(elmType))
@@ -380,7 +380,7 @@ object JvmOps {
     * print         =>  Def$print
     * List.length   =>  List.Def$length
     */
-  def getFunctionDefinitionClassType(sym: Symbol.DefnSym)(implicit root: Root, flix: Flix): JvmType.Reference = {
+  def getFunctionDefinitionClassType(sym: Symbol.DefnSym): JvmType.Reference = {
     val pkg = sym.namespace
     val name = JvmName.mkClassName("Def", sym.name)
     JvmType.Reference(JvmName(pkg, name))
@@ -394,7 +394,7 @@ object JvmOps {
     * Print       =>  Eff$Print
     * List.Crash  =>  List.Eff$Crash
     */
-  def getEffectDefinitionClassType(sym: Symbol.EffectSym)(implicit root: Root, flix: Flix): JvmType.Reference = {
+  def getEffectDefinitionClassType(sym: Symbol.EffectSym): JvmType.Reference = {
     val pkg = sym.namespace
     val name = JvmName.mkClassName("Eff", sym.name)
     JvmType.Reference(JvmName(pkg, name))
@@ -417,7 +417,7 @@ object JvmOps {
     * Foo.Bar     =>  Foo.Bar.Ns
     * Foo.Bar.Baz =>  Foo.Bar.Baz.Ns
     */
-  def getNamespaceClassType(ns: NamespaceInfo)(implicit root: Root, flix: Flix): JvmType.Reference = {
+  def getNamespaceClassType(ns: NamespaceInfo): JvmType.Reference = {
     val pkg = ns.ns
     val name = JvmName.mkClassName("Ns")
     JvmType.Reference(JvmName(pkg, name))
