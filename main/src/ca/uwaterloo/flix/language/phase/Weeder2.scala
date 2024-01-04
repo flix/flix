@@ -29,6 +29,7 @@ import org.parboiled2.ParserInput
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
 import java.util.regex.{PatternSyntaxException, Pattern => JPattern}
 import scala.collection.immutable.{::, List, Nil}
+import scala.math.Ordered.orderingToOrdered
 
 // TODO: Add change set support
 
@@ -195,8 +196,18 @@ object Weeder2 {
         traverse(instances)(visitInstance),
         traverse(enums)(visitEnum)
       ) {
-        // TODO: We might need to sort these by source position for comparison with old parser. Can be removed for production
-        case (modules, definitions, classes, instances, enums) => definitions ++ classes ++ modules ++ enums ++ instances
+        case (modules, definitions, classes, instances, enums) =>
+          val all: List[Declaration] = definitions ++ classes ++ modules ++ enums ++ instances
+          // TODO: We need to sort these by source position for comparison with old parser. Can be removed for production
+          def getLoc(d: Declaration): SourceLocation = d match {
+            case Declaration.Namespace(_, _, _, loc) => loc
+            case Declaration.Def(_, _, _, _, _, _, _, _, _, _, _, loc) => loc
+            case Declaration.Class(_, _, _, _, _, _, _, _, _, loc) => loc
+            case Declaration.Instance(_, _, _, _, _, _,_, _, loc) => loc
+            case Declaration.Enum(_, _, _, _, _, _, _, loc) => loc
+            case d => throw InternalCompilerException(s"TODO: handle ${d}", tree.loc)
+          }
+          all.sortWith((a, b) => getLoc(a) < getLoc(b))
       }
     }
 
@@ -549,7 +560,7 @@ object Weeder2 {
             flatMapN(traverse(params)(visitParameter(_, presence))) {
               params =>
                 // Check for duplicates
-                val paramsWithoutWildcards = params.filter(_.ident.isWild)
+                val paramsWithoutWildcards = params.filter(!_.ident.isWild)
                 val errors = getDuplicates(paramsWithoutWildcards, (p: FormalParam) => p.ident.name)
                   .map(pair => DuplicateFormalParam(pair._1.ident.name, pair._1.loc, pair._2.loc))
 
@@ -622,13 +633,52 @@ object Weeder2 {
           case TreeKind.Expr.Hole => visitHole(tree)
           case TreeKind.Expr.Scope => visitScope(tree)
           case TreeKind.Expr.Lambda => visitLambda(tree)
+          case TreeKind.Expr.LambdaMatch => visitLambdaMatch(tree)
           case TreeKind.Expr.Ref => visitReference(tree)
           case TreeKind.Expr.Deref => visitDereference(tree)
+          case TreeKind.Expr.LiteralList => visitLiteralList(tree)
+          case TreeKind.Expr.LiteralSet => visitLiteralSet(tree)
+          case TreeKind.Expr.LiteralVector => visitLiteralVector(tree)
+          case TreeKind.Expr.LiteralArray => visitLiteralArray(tree)
+          case TreeKind.Expr.LiteralMap => visitLiteralMap(tree)
           case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
-          case TreeKind.QName => mapN(visitQName(tree))(qname => Expr.Ambiguous(qname, tree.loc))
+          case TreeKind.QName => visitExprQname(tree)
           case kind => failWith(s"TODO: implement expression of kind '$kind'", tree.loc)
         }
         case _ => throw InternalCompilerException(s"Expr.Expr had token child", tree.loc)
+      }
+    }
+
+    private def visitExprQname(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.QName)
+      val idents = pickAll(TreeKind.Ident, tree.children)
+      flatMapN(traverse(idents)(tokenToIdent)) {
+        idents =>
+          val first = idents.head
+          val ident = idents.last
+          val nnameIdents = idents.dropRight(1)
+          val nname = Name.NName(first.sp1, nnameIdents, ident.sp2)
+          val qname = Name.QName(first.sp1, nname, ident, ident.sp2)
+          val prefix = idents.takeWhile(_.isUpper)
+          val suffix = idents.dropWhile(_.isUpper)
+
+          suffix match {
+            // Case 1: upper qualified name
+            case Nil =>
+              // NB: We only use the source location of the identifier itself.
+              Expr.Ambiguous(qname, qname.ident.loc).toSuccess
+            // Case 1: basic qualified name
+            case ident :: Nil =>
+              // NB: We only use the source location of the identifier itself.
+              Expr.Ambiguous(qname, ident.loc).toSuccess
+            // Case 2: actually a record access
+            case ident :: labels =>
+              // NB: We only use the source location of the identifier itself.
+              val base = Expr.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.sp1, ident.sp2), ident.loc)
+              labels.foldLeft(base: Expr) {
+                case (acc, label) => Expr.RecordSelect(acc, Name.mkLabel(label), label.loc) // TODO NS-REFACTOR should use better location
+              }.toSuccess
+          }
       }
     }
 
@@ -640,10 +690,73 @@ object Weeder2 {
 
     private def visitReference(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Ref)
-      val expressions = pickAll(TreeKind.Expr.Expr, tree.children)
-      mapN(traverse(expressions)(visitExpression)) {
-        case expr1 :: expr2 :: Nil => Expr.Ref(expr1, expr2, tree.loc)
-        case exprs => throw InternalCompilerException(s"Malformed Ref: Expected 2 expressions, found ${exprs.length}", tree.loc)
+      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree.children)
+      flatMapN(
+        pickExpression(tree),
+        traverseOpt(scopeName)(visitScopeName)
+      ) {
+        case (expr1, Some(expr2)) => Expr.Ref(expr1, expr2, tree.loc).toSuccess
+        case (expr1, None) =>
+          val err = Parse2Error.DevErr(tree.loc, "Missing scope in ref")
+          Validation.SoftFailure(Expr.Ref(expr1, Expr.Error(err), tree.loc), LazyList(err))
+      }
+    }
+
+    private def visitScopeName(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.ScopeName)
+      pickExpression(tree)
+    }
+
+    private def visitLiteralList(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LiteralList)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
+      mapN(traverse(exprs)(visitExpression))(Expr.ListLit(_, tree.loc))
+    }
+
+    private def visitLiteralSet(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LiteralSet)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
+      mapN(traverse(exprs)(visitExpression))(Expr.SetLit(_, tree.loc))
+    }
+
+    private def visitLiteralVector(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LiteralVector)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
+      mapN(traverse(exprs)(visitExpression))(Expr.VectorLit(_, tree.loc))
+    }
+
+    private def visitLiteralArray(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LiteralArray)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
+      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree.children)
+      flatMapN(
+        traverse(exprs)(visitExpression),
+        traverseOpt(scopeName)(visitScopeName)
+      ) {
+        case (exprs, Some(scope)) => Expr.ArrayLit(exprs, scope, tree.loc).toSuccess
+        case (exprs, None) =>
+          val err = Parse2Error.DevErr(tree.loc, "Missing scope in array literal")
+          Validation.SoftFailure(Expr.ArrayLit(exprs, Expr.Error(err), tree.loc), LazyList(err))
+      }
+    }
+
+    private def visitLiteralMap(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LiteralMap)
+      val pairs = pickAll(TreeKind.Expr.KeyValue, tree.children)
+      mapN(traverse(pairs)(visitKeyValuePair))(Expr.MapLit(_, tree.loc))
+    }
+
+    private def visitKeyValuePair(tree: Tree)(implicit s: State): Validation[(Expr, Expr), CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.KeyValue)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
+      flatMapN(traverse(exprs)(visitExpression)) {
+        // case: k => v
+        case k :: v :: Nil => (k, v).toSuccess
+        // case: k =>
+        case k :: Nil =>
+          val err = Parse2Error.DevErr(tree.loc, "Missing value in key-value pair")
+          Validation.SoftFailure((k, Expr.Error(err)), LazyList(err))
+        case xs => throw InternalCompilerException(s"Malformed KeyValue pair, found ${xs.length} expressions", tree.loc)
       }
     }
 
@@ -772,6 +885,14 @@ object Weeder2 {
       })
     }
 
+    private def visitLambdaMatch(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LambdaMatch)
+      mapN(
+        Patterns.pickPattern(tree),
+        pickExpression(tree)
+      )((pat, expr) => Expr.LambdaMatch(pat, expr, tree.loc))
+    }
+
     private def visitAscribe(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Ascribe)
       mapN(
@@ -849,36 +970,36 @@ object Weeder2 {
             return Expr.Infix(e1, opExpr, e2, tree.loc).toSuccess
           }
 
-          visitBinaryOperator(op) match {
-            case OperatorResult.BuiltIn(name) => Expr.Apply(Expr.Ambiguous(name, name.loc), List(e1, e2), tree.loc)
-            case OperatorResult.Operator(o) => Expr.Binary(o, e1, e2, tree.loc)
-            case OperatorResult.Unrecognized(ident) => Expr.Apply(Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e1, e2), tree.loc)
+          def mkApply(name: String): Expr.Apply = Expr.Apply(
+            Expr.Ambiguous(Name.mkQName(name, tree.loc.sp1, tree.loc.sp2), tree.loc), List(e1, e2),
+            tree.loc
+          )
+
+          text(op).head match {
+            // BUILTINS
+            case "+" => mkApply("Add.add")
+            case "-" => mkApply("Sub.sub")
+            case "*" => mkApply("Mul.mul")
+            case "/" => mkApply("Div.div")
+            case "<" => mkApply("Order.less")
+            case "<=" => mkApply("Order.lessEqual")
+            case ">" => mkApply("Order.greater")
+            case ">=" => mkApply("Order.greaterEqual")
+            case "==" => mkApply("Eq.eq")
+            case "!=" => mkApply("Eq.neq")
+            case "<=>" => mkApply("Order.compare")
+            // SEMANTIC OPS
+            case "and" => Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc)
+            case "or" => Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc)
+            // FCONS
+            case "::" => Expr.FCons(e1, e2, tree.loc)
+            // UNRECOGNIZED
+            case id =>
+              val ident = Name.Ident(tree.loc.sp1, id, tree.loc.sp2)
+              Expr.Apply(Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e1, e2), tree.loc)
           }
 
         case (_, operands) => throw InternalCompilerException(s"Expr.Binary tree with ${operands.length} operands", tree.loc)
-      }
-    }
-
-    private def visitBinaryOperator(tree: Tree)(implicit s: State): OperatorResult = {
-      assert(tree.kind == TreeKind.Operator)
-      val op = text(tree).head
-      val sp1 = tree.loc.sp1
-      val sp2 = tree.loc.sp2
-      op match {
-        case "+" => OperatorResult.BuiltIn(Name.mkQName("Add.add", sp1, sp2))
-        case "-" => OperatorResult.BuiltIn(Name.mkQName("Sub.sub", sp1, sp2))
-        case "*" => OperatorResult.BuiltIn(Name.mkQName("Mul.mul", sp1, sp2))
-        case "/" => OperatorResult.BuiltIn(Name.mkQName("Div.div", sp1, sp2))
-        case "<" => OperatorResult.BuiltIn(Name.mkQName("Order.less", sp1, sp2))
-        case "<=" => OperatorResult.BuiltIn(Name.mkQName("Order.lessEqual", sp1, sp2))
-        case ">" => OperatorResult.BuiltIn(Name.mkQName("Order.greater", sp1, sp2))
-        case ">=" => OperatorResult.BuiltIn(Name.mkQName("Order.greaterEqual", sp1, sp2))
-        case "==" => OperatorResult.BuiltIn(Name.mkQName("Eq.eq", sp1, sp2))
-        case "!=" => OperatorResult.BuiltIn(Name.mkQName("Eq.neq", sp1, sp2))
-        case "<=>" => OperatorResult.BuiltIn(Name.mkQName("Order.compare", sp1, sp2))
-        case "and" => OperatorResult.Operator(SemanticOp.BoolOp.And)
-        case "or" => OperatorResult.Operator(SemanticOp.BoolOp.Or)
-        case _ => OperatorResult.Unrecognized(Name.Ident(sp1, op, sp2))
       }
     }
 
@@ -1154,7 +1275,10 @@ object Weeder2 {
     }
 
     def visitLiteral(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Literal)
+      // Note: This visitor is used by both expression literals and pattern literals.
+      // Hence this assert:
+      assert(tree.kind == TreeKind.Expr.Literal || tree.kind == TreeKind.Pattern.Literal)
+
       tree.children(0) match {
         case Child.Token(token) => token.kind match {
           case TokenKind.KeywordNull => Expr.Cst(Ast.Constant.Null, token.mkSourceLocation(s.src, Some(s.parserInput))).toSuccess
@@ -1214,7 +1338,7 @@ object Weeder2 {
           val qname = Name.mkQName("List.Cons", tree.loc.sp1, tree.loc.sp2)
           val pat = Pattern.Tuple(List(pat1, pat2), tree.loc)
           Pattern.Tag(qname, pat, tree.loc)
-        case pats => throw InternalCompilerException(s"Pattern.FCons expected 2 but found '${pats.length}' sub-patterns", tree.loc)
+        case pats => throw InternalCompilerException(s"${s.src.name} Pattern.FCons expected 2 but found '${pats.length}' sub-patterns", tree.loc)
       }
     }
 
@@ -1482,12 +1606,13 @@ object Weeder2 {
         case TreeKind.Type.Tuple => visitTuple(inner)
         case TreeKind.Type.Function => visitFunction(inner)
         case TreeKind.Type.Native => visitNative(inner)
+        case TreeKind.Type.Record => visitRecord(inner)
         case TreeKind.QName => mapN(visitQName(inner))(Type.Ambiguous(_, inner.loc))
         case TreeKind.Ident => mapN(tokenToIdent(inner)) {
           case ident if ident.isWild => Type.Var(ident, tree.loc)
           case ident => Type.Ambiguous(Name.mkQName(ident), inner.loc)
         }
-        case kind => failWith(s"'$kind' used as type")
+        case kind => failWith(s"TODO: implement type of kind '$kind'", tree.loc)
       }
     }
 
@@ -1496,6 +1621,23 @@ object Weeder2 {
       mapN(
         traverse(pickAll(TreeKind.Type.Type, tree.children))(visitType)
       )(types => Type.Tuple(types, tree.loc))
+    }
+
+    private def visitRecord(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Type.Record)
+      val maybeVar = tryPick(TreeKind.Type.RecordVariable, tree.children)
+      val fields = pickAll(TreeKind.Type.RecordField, tree.children)
+      mapN(traverseOpt(maybeVar)(visitVariable), traverse(fields)(visitRecordField)) {
+        (maybeVar, fields) =>
+          val variable = maybeVar.getOrElse(Type.RecordRowEmpty(tree.loc))
+          val row = fields.foldRight(variable) { case ((label, tpe), acc) => Type.RecordRowExtend(label, tpe, acc, tree.loc) }
+          Type.Record(row, tree.loc)
+      }
+    }
+
+    private def visitRecordField(tree: Tree)(implicit s: State): Validation[(Name.Label, Type), CompilationMessage] = {
+      assert(tree.kind == TreeKind.Type.RecordField)
+      mapN(pickNameIdent(tree), pickType(tree))((ident, tpe) => (Name.mkLabel(ident), tpe))
     }
 
     private def visitNative(tree: Tree)(implicit s: State): Validation[Type.Native, CompilationMessage] = {

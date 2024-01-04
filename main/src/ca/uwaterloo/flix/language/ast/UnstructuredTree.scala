@@ -225,7 +225,22 @@ object UnstructuredTree {
 
       case object Ref extends Expr
 
+      case object ScopeName extends Expr
+
       case object Deref extends Expr
+
+      case object LiteralList extends Expr
+
+      case object LiteralSet extends Expr
+
+      case object LiteralVector extends Expr
+
+      case object LiteralArray extends Expr
+
+      case object LiteralMap extends Expr
+
+      case object KeyValue extends Expr
+
     }
 
     ////// TYPES //////
