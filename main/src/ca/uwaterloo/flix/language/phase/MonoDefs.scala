@@ -67,15 +67,8 @@ object MonoDefs {
 
     private def default(tpe0: Type): Type = tpe0.kind match {
       case Kind.Eff =>
-        // TODO: In strict mode we demand that there are no free (uninstantiated) Boolean variables.
-        // TODO: In the future we need to decide what should actually happen if such variables occur.
-        // TODO: In particular, it seems there are two cases.
-        // TODO: A. Variables that occur inside the specialized types (those we can erase?)
-        // TODO: B. Variables that occur inside an expression but nowhere else really.
-        if (flix.options.xstrictmono)
-          throw UnexpectedNonConstBool(tpe0, tpe0.loc)
-        else
-          Type.Pure
+        // If an effect variable is free, we may assume its Pure due to the subst. lemma.
+        Type.Pure
       case Kind.RecordRow => Type.RecordRowEmpty
       case Kind.SchemaRow => Type.SchemaRowEmpty
       case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
@@ -697,12 +690,8 @@ object MonoDefs {
         case Kind.CaseSet(enumSym) =>
           Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, enumSym), loc)
         case Kind.Eff =>
-          if (flix.options.xstrictmono)
-            throw UnexpectedNonConstBool(tpe, loc)
-          else {
-            // TODO: We should return Type.ErasedBool or something.
-            Type.Pure
-          }
+          // If an effect variable is free, we may assume its Pure due to the subst. lemma.
+          Type.Pure
         case _ => tpe
       }
 
