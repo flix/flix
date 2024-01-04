@@ -98,8 +98,8 @@ object GenTagClasses {
     // The JvmType of the class for `tag`..
     val classType = JvmOps.getTagClassType(tag.sym)
 
-    // The erased JvmType of the value of `tag`.
-    val valueType = JvmOps.getErasedJvmType(tag.tpe)
+    // The JvmType of the value of `tag`.
+    val valueType = JvmOps.asErasedJvmType(tag.tpe)
 
     // Create a new class writer.
     val visitor = AsmOps.mkClassWriter()
