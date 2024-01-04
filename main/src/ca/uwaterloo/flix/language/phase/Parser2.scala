@@ -21,10 +21,11 @@ import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ParsedAst, ReadAst, SourceKind, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.errors.Parse2Error
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, LibLevel, ParOps, Validation}
 import org.parboiled2.ParserInput
 
 // TODO: Add change set support
+// TODO: "Fixpoint/Ram/RamTerm.flix", "Fixpoint/Ast/HeadTerm.flix" contain debug strings using `%{`
 
 /**
  * Errors reside both within the produced `Tree` but are also kept in an array in `state.errors`
@@ -78,13 +79,28 @@ object Parser2 {
 
     flix.phase("Parser2") {
       // The file that is the current focus of development
-      val DEBUG_FOCUS = ""
-      // Files that the old parser produces faulty outputs on
-      val filesThatOldParserHasErrorsIn = List(
-        // Reason: Parser misses the first doc-comment after a use within a module
+      val DEBUG_FOCUS = flix.options.lib match {
+        case LibLevel.Nix => "foo.flix"
+        case LibLevel.Min => ""
+        case LibLevel.All => ""
+      }
+
+      val filesWhereMatchIsIgnored = List(
+        // Reason: Old parser has error. It misses the first doc-comment after a use statement
         "Fixpoint/SubstitutePredSym.flix",
         "Fixpoint/PredSymsOf.flix",
-        "Time/Duration.flix"
+        "Time/Duration.flix",
+        "PartialOrder.flix",
+        "Concurrent/CyclicBarrier.flix",
+        "JoinLattice.flix",
+        "MeetLattice.flix",
+        "Thread.flix",
+        // Reason: old Parser orders cases in match expression unpredictably.
+        "Fixpoint/Ram/RamTerm.flix",
+        "Fixpoint/Ast/HeadTerm.flix",
+        "Fixpoint/Ram/BoolExp.flix",
+        "Fixpoint/Ram/RamStmt.flix",
+        "Boxed.flix"
       )
 
       println("p\tw\tfile")
@@ -139,8 +155,8 @@ object Parser2 {
                   val hasSameStructure = diffWeededAsts(src, t)
                   if (hasSameStructure) {
                     outString += s"\t${Console.GREEN}✔︎ ${Console.RESET}"
-                  } else if (filesThatOldParserHasErrorsIn.contains(src.name)) {
-                    outString += s"\t${Console.MAGENTA}✔︎ ${Console.RESET}"
+                  } else if (filesWhereMatchIsIgnored.contains(src.name)) {
+                    outString += s"\t${Console.MAGENTA}★ ${Console.RESET}"
                   } else {
                     outString += s"\t${Console.YELLOW}!=${Console.RESET}"
                   }
@@ -631,11 +647,7 @@ object Parser2 {
         Type.constraints()
       }
       expect(TokenKind.Equal)
-      Expr.expression()
-      while (at(TokenKind.Semi) && !eof()) {
-        expect(TokenKind.Semi)
-        Expr.expression()
-      }
+      Expr.statement()
       close(mark, TreeKind.Decl.Def)
     }
 
@@ -647,7 +659,6 @@ object Parser2 {
         expect(TokenKind.CurlyL)
         usesOrImports()
         while (!at(TokenKind.CurlyR) && !eof()) {
-          // TODO: Uses and imports
           declaration()
           comments() // TODO: This should not be called manually, we need better design
         }
@@ -829,11 +840,7 @@ object Parser2 {
       }
       if (at(TokenKind.Equal)) {
         expect(TokenKind.Equal)
-        Expr.expression()
-        while (at(TokenKind.Semi) && !eof()) {
-          expect(TokenKind.Semi)
-          Expr.expression()
-        }
+        Expr.statement()
       }
       close(mark, TreeKind.Decl.Signature)
     }
@@ -888,10 +895,21 @@ object Parser2 {
   }
 
   private object Expr {
+
+    def statement()(implicit s: State): Mark.Closed = {
+      var lhs = expression()
+      if (eat(TokenKind.Semi)) {
+        statement()
+        lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      }
+      lhs
+    }
+
     /**
      * expression -> TODO
      */
-    def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false, canBeStatement: Boolean = true)(implicit s: State): Mark.Closed = {
+    def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
       // TODO: Go through all invocations of Expr.expression and decide if [[canBeStatement]] should be set.
       // In the old parser there are different functions Stm and Expression for this, which can guide the decision.
 
@@ -926,13 +944,6 @@ object Parser2 {
       if (eat(TokenKind.Colon)) {
         Type.ttype()
         lhs = close(openBefore(lhs), TreeKind.Expr.Ascribe)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      }
-
-      // Handle statements
-      if (canBeStatement && eat(TokenKind.Semi)) {
-        expression()
-        lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
 
@@ -1112,7 +1123,7 @@ object Parser2 {
       if (isLambda) {
         Pattern.pattern()
         expect(TokenKind.ArrowThin)
-        expression(canBeStatement = false)
+        expression()
         close(mark, TreeKind.Expr.LambdaMatch)
       } else {
         expression()
@@ -1135,7 +1146,7 @@ object Parser2 {
         expression()
       }
       if (eat(TokenKind.Arrow)) {
-        expression()
+        statement()
       }
       close(mark, TreeKind.Expr.MatchRule)
     }
@@ -1149,7 +1160,7 @@ object Parser2 {
         Type.ttype()
       }
       expect(TokenKind.Equal)
-      expression()
+      statement()
       close(mark, TreeKind.Expr.LetMatch)
     }
 
@@ -1201,7 +1212,7 @@ object Parser2 {
         Type.ttype()
       }
       expect(TokenKind.Equal)
-      expression()
+      statement()
       close(mark, TreeKind.Expr.LetRecDef)
     }
 
@@ -1237,7 +1248,7 @@ object Parser2 {
         Type.ttype()
       }
       if (eat(TokenKind.Arrow)) {
-        expression()
+        statement()
       }
       close(mark, TreeKind.Expr.TypeMatchRule)
     }
@@ -1311,7 +1322,7 @@ object Parser2 {
       val mark = open()
       use()
       expect(TokenKind.Semi)
-      expression()
+      statement()
       close(mark, TreeKind.Expr.Use)
     }
 
@@ -1384,7 +1395,7 @@ object Parser2 {
       close(markParam, TreeKind.Parameter)
       close(markParams, TreeKind.Parameters)
       expect(TokenKind.ArrowThin)
-      expression(canBeStatement = false)
+      expression()
       close(mark, TreeKind.Expr.Lambda)
     }
 
@@ -1400,7 +1411,7 @@ object Parser2 {
         () => atAny(NAME_PARAMETER),
       )
       expect(TokenKind.ArrowThin)
-      expression(canBeStatement = false)
+      expression()
       close(mark, TreeKind.Expr.Lambda)
     }
 
@@ -1414,7 +1425,7 @@ object Parser2 {
       if (eat(TokenKind.CurlyR)) { // Handle empty block
         return close(mark, TreeKind.Expr.Block)
       }
-      expression()
+      statement()
       expect(TokenKind.CurlyR)
       close(mark, TreeKind.Expr.Block)
     }
@@ -1449,7 +1460,7 @@ object Parser2 {
       }
       close(markJvmOp, TreeKind.JvmOp.JvmOp)
       expect(TokenKind.Semi)
-      expression()
+      statement()
       close(mark, TreeKind.Expr.LetImport)
     }
 

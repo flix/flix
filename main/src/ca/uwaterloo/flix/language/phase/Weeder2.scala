@@ -1873,11 +1873,12 @@ object Weeder2 {
       val fqn = pickJavaClassMember(tree)
       val signature = pickSignature(tree)
       val ascription = pickAscription(tree)
-      mapN(fqn, signature, ascription) {
-        case (fqn, signature, (tpe, eff)) => if (isStatic)
-          WeededAst.JvmOp.StaticMethod(fqn, signature, tpe, eff, None) // TODO: This is not always None
+      val ident = tryPickNameIdent(tree)
+      mapN(fqn, signature, ascription, ident) {
+        case (fqn, signature, (tpe, eff), ident) => if (isStatic)
+          WeededAst.JvmOp.StaticMethod(fqn, signature, tpe, eff, ident)
         else
-          WeededAst.JvmOp.Method(fqn, signature, tpe, eff, None) // TODO: This is not always None
+          WeededAst.JvmOp.Method(fqn, signature, tpe, eff, ident)
       }
     }
 
