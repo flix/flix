@@ -83,7 +83,7 @@ object OccurrenceAst {
 
   }
 
-  case class Case(sym: Symbol.CaseSym, tpe: MonoType, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpe: MonoType, singleton: Boolean, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[OccurrenceAst.FormalParam], clo: OccurrenceAst.Expression, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 

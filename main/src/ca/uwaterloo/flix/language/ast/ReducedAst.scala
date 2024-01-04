@@ -106,7 +106,7 @@ object ReducedAst {
 
   case class AnonClass(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation)
 
-  case class Case(sym: Symbol.CaseSym, tpe: MonoType, loc: SourceLocation)
+  case class Case(sym: Symbol.CaseSym, tpe: MonoType, singleton: Boolean, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
 

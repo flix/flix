@@ -30,7 +30,7 @@ object ReducedAstPrinter {
     val enums = root.enums.values.map {
       case ReducedAst.Enum(ann, mod, sym, cases0, _, _) =>
         val cases = cases0.values.map {
-          case ReducedAst.Case(sym, tpe, _) =>
+          case ReducedAst.Case(sym, tpe, _, _) =>
             DocAst.Case(sym, MonoTypePrinter.print(tpe))
         }.toList
         DocAst.Enum(ann, mod, sym, Nil, cases)

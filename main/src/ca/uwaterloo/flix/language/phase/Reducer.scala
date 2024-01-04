@@ -167,8 +167,8 @@ object Reducer {
   }
 
   private def visitCase(caze: LiftedAst.Case): ReducedAst.Case = caze match {
-    case LiftedAst.Case(sym, tpe, loc) =>
-      ReducedAst.Case(sym, tpe, loc)
+    case LiftedAst.Case(sym, tpe, singleton, loc) =>
+      ReducedAst.Case(sym, tpe, singleton, loc)
   }
 
   private def visitFormalParam(fparam: LiftedAst.FormalParam): ReducedAst.FormalParam = fparam match {

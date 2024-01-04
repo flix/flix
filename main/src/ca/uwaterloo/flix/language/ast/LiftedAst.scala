@@ -85,7 +85,8 @@ object LiftedAst {
 
   }
 
-  case class Case(sym: Symbol.CaseSym, tpe: MonoType, loc: SourceLocation)
+  /** The singleton boolean will interpret the case as having a unit value, with optimized representation */
+  case class Case(sym: Symbol.CaseSym, tpe: MonoType, singleton: Boolean, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 
