@@ -120,8 +120,8 @@ object JvmOps {
       case Native(clazz) if clazz == classOf[Object] => JvmType.Object
       case Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
            Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) | RecordEmpty |
-           RecordExtend(_, _, _) | SchemaEmpty | SchemaExtend(_, _, _) |
-           Native(_) => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
+           RecordExtend(_, _, _) | Native(_) =>
+        throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     }
   }
 

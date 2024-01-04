@@ -28,8 +28,6 @@ import ca.uwaterloo.flix.util.collection.MapOps
   * - Record
   *   - component type erasure
   *   - select casting
-  * - Schema
-  *   - ???
   * - Lazy
   *   - component type erasure
   *   - force casting
@@ -205,8 +203,6 @@ object Eraser {
     case Arrow(args, result) => Arrow(args.map(visitType), visitType(result))
     case RecordEmpty => RecordEmpty
     case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
-    case SchemaEmpty => SchemaEmpty
-    case SchemaExtend(name, tpe, rest) => SchemaExtend(name, visitType(tpe), visitType(rest))
     case Native(clazz) => Native(clazz)
   }
 
@@ -221,8 +217,7 @@ object Eraser {
     case Int64 => Int64
     case Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
          Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) | Arrow(_, _) |
-         RecordEmpty | RecordExtend(_, _, _) | SchemaEmpty |
-         SchemaExtend(_, _, _) | Native(_) => MonoType.Object
+         RecordEmpty | RecordExtend(_, _, _) | Native(_) => MonoType.Object
   }
 
 }
