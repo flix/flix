@@ -8,8 +8,8 @@ Version 0.43.0:
 - Compiler: All `RedundancyError`s are now recoverable (thanks Magnus!)
 - Compiler: All `SafetyErrors`s are now recoverable (thanks Magnus!)
 - Compiler: All `TypeError`s are now recoverable (thanks Matt!)
-- Compiler: Most `WeederError`s are now recoverable (thanks Magnus!)
 - Compiler: Most `ResolutionError`s are now recoverable (thanks Magnus!)
+- Compiler: Most `WeederError`s are now recoverable (thanks Magnus!)
 
 Version 0.42.0:
 - Compiler: Use parallel evaluation in `ClosureConv` (thanks Magnus!)
