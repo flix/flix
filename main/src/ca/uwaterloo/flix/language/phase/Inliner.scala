@@ -91,8 +91,10 @@ object Inliner {
     */
   private def visitEnum(enum0: OccurrenceAst.Enum): LiftedAst.Enum = {
     val cases = enum0.cases.map {
-      case (sym, caze) =>
-        sym -> LiftedAst.Case(sym, caze.tpe, caze.loc)
+      case (sym, OccurrenceAst.CaseZero(_, loc)) =>
+        sym -> LiftedAst.CaseZero(sym, loc)
+      case (sym, OccurrenceAst.CaseOne(_, tpe, loc)) =>
+        sym -> LiftedAst.CaseOne(sym, tpe, loc)
     }
     LiftedAst.Enum(enum0.ann, enum0.mod, enum0.sym, cases, enum0.tpe, enum0.loc)
   }

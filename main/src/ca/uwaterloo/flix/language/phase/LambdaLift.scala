@@ -57,7 +57,10 @@ object LambdaLift {
   private def visitEnum(enum0: SimplifiedAst.Enum): LiftedAst.Enum = enum0 match {
     case SimplifiedAst.Enum(ann, mod, sym, cases, tpe, loc) =>
       val cs = cases.map {
-        case (tag, SimplifiedAst.Case(caseSym, caseTpe, loc)) => tag -> LiftedAst.Case(caseSym, caseTpe, loc)
+        case (tag, SimplifiedAst.Case(caseSym, MonoType.Unit, loc)) =>
+          tag -> LiftedAst.CaseZero(caseSym, loc)
+        case (tag, SimplifiedAst.Case(caseSym, caseTpe, loc)) =>
+          tag -> LiftedAst.CaseOne(caseSym, caseTpe, loc)
       }
       LiftedAst.Enum(ann, mod, sym, cs, tpe, loc)
   }

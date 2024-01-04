@@ -85,8 +85,9 @@ object OccurrenceAnalyzer {
   /**
     * Translates the given case `case0` to the OccurrenceAst.
     */
-  private def visitCase(case0: LiftedAst.Case): OccurrenceAst.Case = {
-    OccurrenceAst.Case(case0.sym, case0.tpe, case0.loc)
+  private def visitCase(case0: LiftedAst.Case): OccurrenceAst.Case = case0 match {
+    case LiftedAst.CaseZero(sym, loc) => OccurrenceAst.CaseZero(sym, loc)
+    case LiftedAst.CaseOne(sym, tpe, loc) => OccurrenceAst.CaseOne(sym, tpe, loc)
   }
 
   private def visitEffect(effect: LiftedAst.Effect): OccurrenceAst.Effect = effect match {

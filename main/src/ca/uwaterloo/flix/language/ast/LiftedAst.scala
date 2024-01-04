@@ -85,7 +85,18 @@ object LiftedAst {
 
   }
 
-  case class Case(sym: Symbol.CaseSym, tpe: MonoType, loc: SourceLocation)
+  sealed trait Case {
+    def sym: Symbol.CaseSym
+    def tpe: MonoType
+    def loc: SourceLocation
+  }
+
+  /** Semantically the same as case one with unit, just more performant */
+  case class CaseZero(sym: Symbol.CaseSym, loc: SourceLocation) extends Case {
+    override def tpe: MonoType = MonoType.Unit
+  }
+
+  case class CaseOne(sym: Symbol.CaseSym, tpe: MonoType, loc: SourceLocation) extends Case
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], clo: Expr, retTpe: MonoType, purity: Purity, loc: SourceLocation)
 

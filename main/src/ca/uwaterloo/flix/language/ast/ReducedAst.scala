@@ -106,7 +106,17 @@ object ReducedAst {
 
   case class AnonClass(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation)
 
-  case class Case(sym: Symbol.CaseSym, tpe: MonoType, loc: SourceLocation)
+  sealed trait Case {
+    def sym: Symbol.CaseSym
+    def tpe: MonoType
+    def loc: SourceLocation
+  }
+
+  case class CaseZero(sym: Symbol.CaseSym, loc: SourceLocation) extends Case {
+    override def tpe: MonoType = MonoType.Unit
+  }
+
+  case class CaseOne(sym: Symbol.CaseSym, tpe: MonoType, loc: SourceLocation) extends Case
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
 

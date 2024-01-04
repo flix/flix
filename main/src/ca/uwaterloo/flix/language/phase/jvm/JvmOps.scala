@@ -472,8 +472,9 @@ object JvmOps {
   /**
     * Returns true if the value of the given `tag` is the unit value.
     */
-  def isUnitTag(tag: Case): Boolean = {
-    tag.tpe == MonoType.Unit
+  def isUnitTag(tag: Case): Boolean = tag match {
+    case CaseZero(_, _) => true
+    case CaseOne(_, tpe, _) => tpe == MonoType.Unit
   }
 
   /**
