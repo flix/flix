@@ -75,7 +75,7 @@ object GitHub {
     * Parses a GitHub project from an `<owner>/<repo>` string.
     */
   def parseProject(string: String): Result[Project, PackageError] = string.split('/') match {
-    case Array(owner, repo) => Ok(Project(owner, repo))
+    case Array(owner, repo) if owner.nonEmpty && repo.nonEmpty => Ok(Project(owner, repo))
     case _ => Err(PackageError.InvalidProjectName(string))
   }
 

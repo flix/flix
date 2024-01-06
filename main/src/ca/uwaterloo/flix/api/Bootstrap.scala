@@ -675,6 +675,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
+    // Build fpkg
+    buildPkg(o)
+
     println("Releasing...")
 
     SuccessUnit

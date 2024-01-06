@@ -221,12 +221,10 @@ object ManifestParser {
     */
   private def toGithubProject(optS: Option[String], p: Path): Result[Option[GitHub.Project], ManifestError] = {
     optS match {
-      case Some(s) =>
-        s.split('/') match {
-          case Array(owner, repo) if owner.nonEmpty && repo.nonEmpty =>
-            Ok(Some(GitHub.Project(owner, repo)))
-          case _ => Err(ManifestError.GithubRepoFormatError(p, s))
-        }
+      case Some(s) => GitHub.parseProject(s) match {
+        case Ok(p) => Ok(Some(p))
+        case Err(_) => Err(ManifestError.GithubRepoFormatError(p, s))
+      }
       case None => Ok(None)
     }
   }
