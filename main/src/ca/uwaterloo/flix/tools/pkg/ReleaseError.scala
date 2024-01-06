@@ -11,21 +11,21 @@ sealed trait ReleaseError {
 }
 
 object ReleaseError {
-  case object MissingManifestError extends ReleaseError {
+  case object MissingManifest extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
          | Cannot create a release without a `flix.toml` file.
          |""".stripMargin
   }
 
-  case object NoLinkedProjectError extends ReleaseError {
+  case object NoLinkedProject extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
          | Cannot create a release without the `package.github` option in `flix.toml`.
          |""".stripMargin
   }
 
-  case object MissingApiKeyError extends ReleaseError {
+  case object MissingApiKey extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
          | Cannot create a release without the `--github-key` option.

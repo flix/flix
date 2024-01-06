@@ -647,7 +647,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Check that there is a `flix.toml` file
     val tomlPath = getManifestFile(projectPath)
     if (!Files.exists(tomlPath)) {
-      return BootstrapError.ReleaseError(ReleaseError.MissingManifestError).toFailure
+      return BootstrapError.ReleaseError(ReleaseError.MissingManifest).toFailure
     }
 
     // Parse the `flix.toml` file
@@ -660,14 +660,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val githubRepo = manifest.github match {
       case Some(r) => r
       case None =>
-        return BootstrapError.ReleaseError(ReleaseError.NoLinkedProjectError).toFailure
+        return BootstrapError.ReleaseError(ReleaseError.NoLinkedProject).toFailure
     }
 
     // Check if `--github-key` option is present
     val githubKey = o.githubKey match {
       case Some(k) => k
       case None =>
-        return BootstrapError.ReleaseError(ReleaseError.MissingApiKeyError).toFailure
+        return BootstrapError.ReleaseError(ReleaseError.MissingApiKey).toFailure
     }
 
     // Ask for confirmation
