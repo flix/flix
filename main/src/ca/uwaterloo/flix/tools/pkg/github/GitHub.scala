@@ -91,11 +91,24 @@ object GitHub {
       // Send request
       val outStream = conn.getOutputStream
       outStream.write(jsonCompact.getBytes("utf-8"))
-    } catch {
-      case _: IOException => return Err(ReleaseError.ProjectInaccessible(project))
-    }
 
-    Ok(())
+      // Process response
+      conn.getResponseCode match {
+        case x if 200 <= x && x <= 299 =>
+          println(
+            s"""|
+                | Successfully released github:$project v$version!
+                |""".stripMargin
+          )
+          Ok(())
+        case 401 => Err(ReleaseError.InvalidApiKeyError)
+        case 404 => Err(ReleaseError.InvalidProject(project))
+        case 422 => Err(ReleaseError.AlreadyExists(project, version))
+        case code => Err(ReleaseError.UnknownResponse(code, conn.getResponseMessage))
+      }
+    } catch {
+      case _: IOException => Err(ReleaseError.NetworkError)
+    }
   }
 
   /**

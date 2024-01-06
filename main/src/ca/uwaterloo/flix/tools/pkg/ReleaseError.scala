@@ -39,13 +39,40 @@ object ReleaseError {
          |""".stripMargin
   }
 
-  case class ProjectInaccessible(project: GitHub.Project) extends ReleaseError {
+  case object NetworkError extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
-         | Could not access GitHub repository: $project
-         | This can be caused by:
-         |   - Project name being misspelled
-         |   - API-key being invalid
+         | Cannot reach GitHub at the current moment.
+         |""".stripMargin
+  }
+
+  case object InvalidApiKeyError extends ReleaseError {
+    override def message(f: Formatter): String =
+      s"""
+         | The given API-key is not valid or does not have the appropriate permissions.
+         |""".stripMargin
+  }
+
+  case class InvalidProject(project: GitHub.Project) extends ReleaseError {
+    override def message(f: Formatter): String =
+      s"""
+         | The GitHub repository does not exist:
+         |  ${f.red(project.toString)}
+         |""".stripMargin
+  }
+
+  case class AlreadyExists(project: GitHub.Project, version: SemVer) extends ReleaseError {
+    override def message(f: Formatter): String =
+      s"""
+         | Version $version of github:$project already exists.
+         |""".stripMargin
+  }
+
+  case class UnknownResponse(code: Int, message: String) extends ReleaseError {
+    override def message(f: Formatter): String =
+      s"""
+         | GitHub failed with an unknown response:
+         |  $code: $message
          |""".stripMargin
   }
 }
