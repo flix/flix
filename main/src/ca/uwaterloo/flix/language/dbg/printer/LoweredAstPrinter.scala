@@ -107,7 +107,6 @@ object LoweredAstPrinter {
       }
       DocAst.Expression.TryWith(expD, effD, rulesD)
     case Expr.Do(op, exps, tpe, eff, loc) => DocAst.Expression.Do(op.sym, exps.map(print))
-    case Expr.Resume(exp, tpe, loc) => DocAst.Expression.Resume(print(exp))
     case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val methodsD = methods.map {
         case LoweredAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) => DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), TypePrinter.print(retTpe))

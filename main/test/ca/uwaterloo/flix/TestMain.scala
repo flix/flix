@@ -183,12 +183,6 @@ class TestMain extends AnyFunSuite {
     assert(opts.xnoboolunif)
   }
 
-  test("--Xstrictmono") {
-    val args = Array("--Xstrictmono")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xstrictmono)
-  }
-
   test("--Xno-qmc") {
     val args = Array("--Xno-qmc")
     val opts = Main.parseCmdOpts(args).get

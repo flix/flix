@@ -199,10 +199,6 @@ object LambdaLift {
       val es = exps.map(visitExp)
       LiftedAst.Expr.Do(op, es, tpe, purity, loc)
 
-    case SimplifiedAst.Expr.Resume(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      LiftedAst.Expr.Resume(e, tpe, loc)
-
     case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map(visitJvmMethod)
       LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc)

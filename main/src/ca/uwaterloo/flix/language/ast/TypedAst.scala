@@ -215,10 +215,6 @@ object TypedAst {
 
     case class Do(op: Ast.OpSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Resume(exp: Expr, tpe: Type, loc: SourceLocation) extends Expr {
-      def eff: Type = Type.Pure
-    }
-
     case class InvokeConstructor(constructor: Constructor[_], exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class InvokeMethod(method: Method, exp: Expr, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr

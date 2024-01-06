@@ -35,6 +35,27 @@ sealed trait TypeError extends CompilationMessage {
 object TypeError {
 
   /**
+    * Effect Generalization Error.
+    *
+    * @param declared the declared effect.
+    * @param inferred the inferred effect.
+    * @param loc      the location where the error occurred.
+    */
+  case class EffectGeneralizationError(declared: Type, inferred: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Unrecoverable {
+    def summary: String = s"The inferred effect '${FormatEff.formatEff(inferred)}' cannot be generalized to '${FormatEff.formatEff(declared)}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> The inferred effect: '${red(FormatEff.formatEff(inferred))}' cannot be generalized to '${red(FormatEff.formatEff(declared))}'.
+         |
+         |${code(loc, "unable to generalize the effect.")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Effectful function declared as pure.
     *
     * @param inferred the inferred effect.
@@ -64,27 +85,6 @@ object TypeError {
         |                                             ^^^^
         |""".stripMargin
     })
-  }
-
-  /**
-    * Effect Generalization Error.
-    *
-    * @param declared the declared effect.
-    * @param inferred the inferred effect.
-    * @param loc      the location where the error occurred.
-    */
-  case class EffectGeneralizationError(declared: Type, inferred: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Unrecoverable {
-    def summary: String = s"The inferred effect '${FormatEff.formatEff(inferred)}' cannot be generalized to '${FormatEff.formatEff(declared)}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> The inferred effect: '${red(FormatEff.formatEff(inferred))}' cannot be generalized to '${red(FormatEff.formatEff(declared))}'.
-         |
-         |${code(loc, "unable to generalize the effect.")}
-         |
-         |""".stripMargin
-    }
   }
 
   /**
@@ -599,25 +599,6 @@ object TypeError {
   }
 
   /**
-    * Over-applied Function.
-    *
-    * @param excessArgument the type of the excess argument.
-    * @param loc            the location where the error occurred.
-    */
-  case class OverApplied(excessArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Over-applied function. Excess argument of type: '${formatType(excessArgument)}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Over-applied function. Excess argument of type: '${red(formatType(excessArgument))}'.
-         |
-         |${code(loc, "over-applied function.")}
-         |""".stripMargin
-    }
-  }
-
-  /**
     * Occurs Check.
     *
     * @param baseVar   the base type variable.
@@ -641,6 +622,25 @@ object TypeError {
          |
          |Type One: ${formatType(fullType1, Some(renv))}
          |Type Two: ${formatType(fullType2, Some(renv))}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Over-applied Function.
+    *
+    * @param excessArgument the type of the excess argument.
+    * @param loc            the location where the error occurred.
+    */
+  case class OverApplied(excessArgument: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Over-applied function. Excess argument of type: '${formatType(excessArgument)}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Over-applied function. Excess argument of type: '${red(formatType(excessArgument))}'.
+         |
+         |${code(loc, "over-applied function.")}
          |""".stripMargin
     }
   }
