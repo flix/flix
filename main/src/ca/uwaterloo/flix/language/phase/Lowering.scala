@@ -591,11 +591,6 @@ object Lowering {
       val es = visitExps(exps)
       LoweredAst.Expr.Do(sym, es, tpe, eff, loc)
 
-    case TypedAst.Expr.Resume(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      LoweredAst.Expr.Resume(e, t, loc)
-
     case TypedAst.Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       val es = visitExps(exps)
       val t = visitType(tpe)
@@ -1909,10 +1904,6 @@ object Lowering {
     case LoweredAst.Expr.Do(sym, exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expr.Do(sym, es, tpe, eff, loc)
-
-    case LoweredAst.Expr.Resume(exp, tpe, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expr.Resume(e, tpe, loc)
 
     case LoweredAst.Expr.NewObject(_, _, _, _, _, _) => exp0
 

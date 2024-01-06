@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import org.objectweb.asm.ClassWriter
@@ -31,7 +30,7 @@ object GenClosureAbstractClasses {
   /**
     * Returns the set of function abstract classes for the given set of types `ts`.
     */
-  def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(ts: Set[MonoType])(implicit flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, tpe: MonoType.Arrow) =>
         // Case 1: The type constructor is an arrow type.
@@ -45,7 +44,7 @@ object GenClosureAbstractClasses {
     }
   }
 
-  private def genClosureAbstractClass(tpe: MonoType.Arrow)(implicit root: Root, flix: Flix): JvmClass = {
+  private def genClosureAbstractClass(tpe: MonoType.Arrow)(implicit flix: Flix): JvmClass = {
     // (Int, String) -> Bool example:
     // public abstract class Clo2$Int$Obj$Bool extends Fn2$Int$Obj$Bool {
     //   public Clo2$Int$Obj$Bool() { ... }

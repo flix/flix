@@ -609,25 +609,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate a use of resume outside an effect handler.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class IllegalResume(loc: SourceLocation) extends WeederError with Recoverable {
-    def summary: String = "Unexpected use of 'resume'. The 'resume' expression must occur in an effect handler."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unexpected use of 'resume'. The 'resume' expression must occur in an effect handler.
-         |
-         |${code(loc, "unexpected use of 'resume'")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate an illegal type constraint parameter.
     *
     * @param loc the location where the error occurred.

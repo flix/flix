@@ -43,7 +43,6 @@ object Options {
     xnoboolspecialcases = false,
     xnobooltable = false,
     xnoboolunif = false,
-    xstrictmono = false,
     xnooptimizer = false,
     xprintphase = Set.empty,
     xnoqmc = false,
@@ -95,7 +94,6 @@ object Options {
   * @param xnoboolspecialcases disable Boolean unification shortcuts.
   * @param xnobooltable        disable Boolean minimization via tabling.
   * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
-  * @param xstrictmono         enables strict monomorphization.
   * @param xprintphase         prints the chosen phase ASTs to the build folder.
   * @param xsummary            prints a summary of the compiled modules.
   * @param xparser             disables new lexer and parser.
@@ -119,7 +117,6 @@ case class Options(lib: LibLevel,
                    xnobooltable: Boolean,
                    xnoboolunif: Boolean,
                    xnoqmc: Boolean,
-                   xstrictmono: Boolean,
                    xnooptimizer: Boolean,
                    xprintphase: Set[String],
                    xsummary: Boolean,

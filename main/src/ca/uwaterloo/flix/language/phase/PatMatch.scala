@@ -203,7 +203,6 @@ object PatMatch {
         (exp :: ruleExps).flatMap(visitExp)
 
       case Expr.Do(_, exps, _, _, _) => exps.flatMap(visitExp)
-      case Expr.Resume(exp, _, _) => visitExp(exp)
       case Expr.InvokeConstructor(_, args, _, _, _) => args.flatMap(visitExp)
       case Expr.InvokeMethod(_, exp, args, _, _, _) => (exp :: args).flatMap(visitExp)
       case Expr.InvokeStaticMethod(_, args, _, _, _) => args.flatMap(visitExp)

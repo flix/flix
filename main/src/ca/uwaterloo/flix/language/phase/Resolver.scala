@@ -1423,12 +1423,6 @@ object Resolver {
               ResolvedAst.Expr.Do(opUse, es, loc)
           }
 
-        case NamedAst.Expr.Resume(exp, loc) =>
-          val expVal = visitExp(exp, env0)
-          mapN(expVal) {
-            e => ResolvedAst.Expr.Resume(e, loc)
-          }
-
         case NamedAst.Expr.InvokeConstructor(className, args, sig, loc) =>
           lookupJvmClass(className, loc) match {
             case Result.Ok(clazz) =>
