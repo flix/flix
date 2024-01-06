@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile}
 import ca.uwaterloo.flix.language.phase.{HtmlDocumentor, JsonDocumentor}
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
@@ -662,6 +663,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         return BootstrapError.ReleaseError("Cannot create a release without the `package.github` option in `flix.toml`.").toFailure
     }
 
+    // Check if `--github-key` option is present
+    val githubKey = o.githubKey match {
+      case Some(k) => k
+      case None =>
+        return BootstrapError.ReleaseError("Cannot create a release without the `--github-key` option.").toFailure
+    }
+
     // Ask for confirmation
     // TODO: add -y flag for use with scripts
     var continue = false
@@ -678,7 +686,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Build fpkg
     buildPkg(o)
 
+    // Publish to GitHub
     println("Releasing...")
+    val publishResult = GitHub.publishRelease(githubRepo, manifest.version, githubKey)
+    publishResult match {
+      case Ok(()) => // Continue
+      case Err(e) =>
+        return BootstrapError.FlixPackageError(e).toFailure
+    }
 
     SuccessUnit
   }

@@ -18,11 +18,14 @@ package ca.uwaterloo.flix.tools.pkg.github
 import ca.uwaterloo.flix.tools.pkg.{PackageError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Result, StreamOps}
+import org.json4s.JsonDSL._
+import org.json4s._
 import org.json4s.JsonAST.{JArray, JValue}
-import org.json4s.native.JsonMethods.parse
+import org.json4s.native.JsonMethods.{compact, parse, render}
 
 import java.io.{IOException, InputStream}
 import java.net.{URI, URL}
+import javax.net.ssl.HttpsURLConnection
 
 /**
   * An interface for the GitHub API.
@@ -69,6 +72,30 @@ object GitHub {
       case _: ClassCastException => return Err(PackageError.JsonError(json, project))
     }
     Ok(releaseJsons.arr.map(parseRelease))
+  }
+
+  /**
+    * Publish a new release the given project.
+    */
+  def publishRelease(project: Project, version: SemVer, apiKey: String): Result[Unit, PackageError] = {
+    val content: JValue = ("tag_name" -> s"v$version") ~ ("name" -> s"v$version")
+    val jsonCompact = compact(render(content))
+
+    val url = releasesUrl(project)
+    try {
+      val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
+      conn.setRequestMethod("POST")
+      conn.addRequestProperty("Authorization", "Bearer " + apiKey)
+      conn.setDoOutput(true)
+
+      // Send request
+      val outStream = conn.getOutputStream
+      outStream.write(jsonCompact.getBytes("utf-8"))
+    } catch {
+      case _: IOException => return Err(PackageError.ProjectNotFound(url, project))
+    }
+
+    Ok(())
   }
 
   /**
