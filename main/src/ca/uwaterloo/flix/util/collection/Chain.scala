@@ -99,7 +99,7 @@ object Chain {
   /**
     * Returns a chain containing the given elements.
     */
-  def from[A](xs: Iterable[A]): Chain[A] = Chain.Proxy(xs.toSeq)
+  def from[A](xs: Iterable[A]): Chain[A] = if (xs.isEmpty) Chain.empty else Chain.Proxy(xs.toSeq)
 
   /**
     * The empty chain.
