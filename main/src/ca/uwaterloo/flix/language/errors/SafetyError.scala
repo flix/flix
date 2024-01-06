@@ -143,34 +143,6 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate an illegal relational use of the lattice variable `sym`.
-    *
-    * @param sym the variable symbol.
-    * @param loc the source location of the atom where the illegal use occurs.
-    */
-  case class IllegalRelationalUseOfLatticeVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError with Recoverable {
-    def summary: String = s"Illegal relational use of the lattice variable '$sym'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal relational use of the lattice variable '${red(sym.text)}'. Use `fix`?
-         |
-         |${code(loc, "the illegal use occurs here.")}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""A lattice variable cannot be used as relational variable unless the atom
-         |from which it originates is marked with `fix`.
-         |""".stripMargin
-    })
-  }
-
-  /**
     * An error raised to indicate an illegal use of a wildcard in a negative atom.
     *
     * @param loc the position of the body atom containing the illegal wildcard.
@@ -248,6 +220,34 @@ object SafetyError {
          |${code(loc, "pattern occurs in this body atom.")}
          |""".stripMargin
     }
+  }
+
+  /**
+    * An error raised to indicate an illegal relational use of the lattice variable `sym`.
+    *
+    * @param sym the variable symbol.
+    * @param loc the source location of the atom where the illegal use occurs.
+    */
+  case class IllegalRelationalUseOfLatticeVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Illegal relational use of the lattice variable '$sym'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal relational use of the lattice variable '${red(sym.text)}'. Use `fix`?
+         |
+         |${code(loc, "the illegal use occurs here.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain(formatter: Formatter): Option[String] = Some({
+      s"""A lattice variable cannot be used as relational variable unless the atom
+         |from which it originates is marked with `fix`.
+         |""".stripMargin
+    })
   }
 
   /**
@@ -409,25 +409,6 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate that a class lacks a public zero argument constructor.
-    *
-    * @param clazz the class.
-    * @param loc   the source location of the new object expression.
-    */
-  case class NewObjectMissingPublicZeroArgConstructor(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError with Recoverable {
-    def summary: String = s"Class '${clazz.getName}' lacks a public zero argument constructor."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Class '${red(clazz.getName)}' lacks a public zero argument constructor.
-         |
-         |${code(loc, "missing constructor.")}
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate an unimplemented superclass method
     *
     * @param clazz  The type of the superclass.
@@ -455,6 +436,25 @@ object SafetyError {
          | def ${method.getName}(${parameterTypes.mkString(", ")}): $returnType
          |""".stripMargin
     })
+  }
+
+  /**
+    * An error raised to indicate that a class lacks a public zero argument constructor.
+    *
+    * @param clazz the class.
+    * @param loc   the source location of the new object expression.
+    */
+  case class NewObjectMissingPublicZeroArgConstructor(clazz: java.lang.Class[_], loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Class '${clazz.getName}' lacks a public zero argument constructor."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Class '${red(clazz.getName)}' lacks a public zero argument constructor.
+         |
+         |${code(loc, "missing constructor.")}
+         |""".stripMargin
+    }
   }
 
   /**
@@ -533,5 +533,4 @@ object SafetyError {
     else
       s"##${t.getName}"
   }
-
 }

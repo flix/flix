@@ -861,33 +861,6 @@ object ResolutionError {
   }
 
   /**
-    * Undefined Tag Error.
-    *
-    * @param tag the tag.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
-  case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
-    def summary: String = s"Undefined tag: '$tag'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Undefined tag '${red(tag)}'.
-         |
-         |${code(loc, "tag not found.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Possible typo or non-existent tag?"
-    })
-
-  }
-
-  /**
     * Undefined Restrictable Tag Error.
     *
     * @param tag the tag.
@@ -937,6 +910,33 @@ object ResolutionError {
     override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent type?"
+    })
+
+  }
+
+  /**
+    * Undefined Tag Error.
+    *
+    * @param tag the tag.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
+    def summary: String = s"Undefined tag: '$tag'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined tag '${red(tag)}'.
+         |
+         |${code(loc, "tag not found.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent tag?"
     })
 
   }

@@ -30,28 +30,6 @@ sealed trait DerivationError extends CompilationMessage {
 object DerivationError {
 
   /**
-    * Illegal type class derivation for an empty enum.
-    *
-    * @param sym      the enum symbol.
-    * @param classSym the class symbol of what is being derived.
-    * @param loc      The source location where the error occurred.
-    */
-  case class IllegalDerivationForEmptyEnum(sym: Symbol.EnumSym, classSym: Symbol.ClassSym, loc: SourceLocation) extends DerivationError with Recoverable {
-    def summary: String = s"Cannot derive '${classSym.name}' for the empty enum '${sym.name}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Cannot derive '${magenta(classSym.name)}' for the empty enum '${red(sym.name)}'.
-         |
-         |${code(loc, "illegal derivation")}
-         |
-         |Flix cannot derive any instances for an empty enumeration.
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate an illegal derivation.
     *
     * @param sym       the class symbol of the illegal derivation.
@@ -74,7 +52,27 @@ object DerivationError {
       import formatter._
       s"${underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
     })
-
   }
 
+  /**
+    * Illegal type class derivation for an empty enum.
+    *
+    * @param sym      the enum symbol.
+    * @param classSym the class symbol of what is being derived.
+    * @param loc      The source location where the error occurred.
+    */
+  case class IllegalDerivationForEmptyEnum(sym: Symbol.EnumSym, classSym: Symbol.ClassSym, loc: SourceLocation) extends DerivationError with Recoverable {
+    def summary: String = s"Cannot derive '${classSym.name}' for the empty enum '${sym.name}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Cannot derive '${magenta(classSym.name)}' for the empty enum '${red(sym.name)}'.
+         |
+         |${code(loc, "illegal derivation")}
+         |
+         |Flix cannot derive any instances for an empty enumeration.
+         |""".stripMargin
+    }
+  }
 }
