@@ -74,22 +74,58 @@ object Chain {
   /**
     * The empty chain.
     */
-  private case object Empty extends Chain[Nothing]
+  private case object Empty extends Chain[Nothing] {
+    override def toList: List[Nothing] = Nil
+
+    override def hashCode(): Int = this.toList.hashCode()
+
+    override def equals(obj: Any): Boolean = obj match {
+      case that: Chain[_] => this.toList == that.toList
+      case _ => false
+    }
+  }
 
   /**
     * A concatenation of two chains.
     */
-  private case class Link[A](l: Chain[A], r: Chain[A]) extends Chain[A]
+  private case class Link[A](l: Chain[A], r: Chain[A]) extends Chain[A] {
+    override def toList: List[A] = l.toList ++ r.toList
+
+    override def hashCode(): Int = this.toList.hashCode()
+
+    override def equals(obj: Any): Boolean = obj match {
+      case that: Chain[_] => this.toList == that.toList
+      case _ => false
+    }
+  }
 
   /**
     * A concatenation of many chains.
     */
-  private case class Many[A](cs: Seq[Chain[A]]) extends Chain[A]
+  private case class Many[A](cs: Seq[Chain[A]]) extends Chain[A] {
+    override def toList: List[A] = cs.flatMap(_.toList).toList
+
+    override def hashCode(): Int = this.toList.hashCode()
+
+    override def equals(obj: Any): Boolean = obj match {
+      case that: Chain[_] => this.toList == that.toList
+      case _ => false
+    }
+  }
 
   /**
     * A chain wrapping a sequence.
     */
-  private case class Proxy[A](xs: Seq[A]) extends Chain[A]
+  private case class Proxy[A](xs: Seq[A]) extends Chain[A] {
+    override def toList: List[A] = xs.toList
+
+    override def hashCode(): Int = this.toList.hashCode()
+
+    override def equals(obj: Any): Boolean = obj match {
+      case that: Chain[_] => this.toList == that.toList
+      case _ => false
+    }
+  }
 
   /**
     * Returns a chain containing the given elements.

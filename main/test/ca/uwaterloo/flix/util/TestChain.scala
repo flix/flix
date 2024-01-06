@@ -55,60 +55,48 @@ class TestChain extends AnyFunSuite {
     assert(chain.toList == List(1, 2, 3, 4))
   }
 
-  test("TestSameAs.01") {
-    assert(Chain.empty.sameAs(Chain.empty))
+  test("TestEq.01") {
+    assertResult(Chain.empty)(Chain.empty)
   }
 
-  test("TestSameAs.02") {
+  test("TestEq.02") {
     val c1 = Chain(1, 2, 3, 4, 5)
-    assert(c1.sameAs(c1))
+    assertResult(c1)(c1)
   }
 
-  test("TestSameAs.03") {
+  test("TestEq.03") {
     val c1 = Chain(1, 2, 3, 4, 5)
     val c2 = Chain(1, 2, 3, 4, 5)
-    assert(c1.sameAs(c2))
+    assertResult(c1)(c2)
   }
 
-  test("TestSameAs.04") {
+  test("TestEq.04") {
     val c1 = Chain(1) ++ Chain(2)
     val c2 = Chain(1, 2)
-    assert(c1.sameAs(c2))
+    assertResult(c1)(c2)
   }
 
-  test("TestSameAs.05") {
+  test("TestEq.05") {
     val c1 = Chain.concat(Seq(Chain(1), Chain(2), Chain(3), Chain(4), Chain(5)))
     val c2 = Chain(1, 2, 3, 4, 5)
-    assert(c1.sameAs(c2))
+    assertResult(c1)(c2)
   }
 
-  test("TestSameAs.06") {
+  test("TestEq.06") {
     val c1 = Chain(1, 2, 3, 4, 5)
     val c2 = Chain(1, 1, 3, 4, 5)
-    assert(!c1.sameAs(c2))
+    assert(c1 != c2)
   }
 
-  test("TestSameAs.07") {
+  test("TestEq.07") {
     val c1 = Chain(1) ++ Chain(3)
-    val c2 = Chain(1, 2)
-    assert(!c1.sameAs(c2))
-  }
-
-  test("TestSameAs.08") {
-    val c1 = Chain.concat(Seq(Chain(1), Chain(2), Chain(3), Chain(4), Chain(5)))
-    val c2 = Chain(1, 2, 3, 4, 6)
-    assert(!c1.sameAs(c2))
-  }
-
-  test("TestEq.01") {
-    val c1 = Chain(1) ++ Chain(2)
     val c2 = Chain(1, 2)
     assert(c1 != c2)
   }
 
-  test("TestEq.02") {
+  test("TestEq.08") {
     val c1 = Chain.concat(Seq(Chain(1), Chain(2), Chain(3), Chain(4), Chain(5)))
-    val c2 = Chain(1, 2, 3, 4, 5)
+    val c2 = Chain(1, 2, 3, 4, 6)
     assert(c1 != c2)
   }
 }
