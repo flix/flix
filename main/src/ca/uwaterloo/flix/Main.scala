@@ -256,7 +256,17 @@ object Main {
           System.exit(0)
 
         case Command.Release =>
-          println("release")
+          val o = options.copy(progress = false)
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+            bootstrap => bootstrap.release(o)
+          } match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
+
 
         case Command.CompilerPerf =>
           CompilerPerf.run(options)

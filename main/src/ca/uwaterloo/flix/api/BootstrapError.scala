@@ -42,6 +42,10 @@ object BootstrapError {
     override def message(f: Formatter): String = e.message(f)
   }
 
+  case class ReleaseError(e: String) extends BootstrapError {
+    override def message(f: Formatter): String = e
+  }
+
   case class FileError(e: String) extends BootstrapError {
     override def message(f: Formatter): String = e
   }

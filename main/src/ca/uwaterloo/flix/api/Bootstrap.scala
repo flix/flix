@@ -16,13 +16,12 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile}
-import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.phase.{HtmlDocumentor, JsonDocumentor}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, flatMapN}
+import ca.uwaterloo.flix.util.Validation.{SuccessUnit, ToFailure, ToSuccess, flatMapN}
 import ca.uwaterloo.flix.util.{Formatter, Options, Validation}
 
 import java.io.{PrintStream, PrintWriter}
@@ -31,6 +30,7 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipOutputStream}
 import java.util.{Calendar, GregorianCalendar}
 import scala.collection.mutable
+import scala.io.StdIn.readLine
 import scala.util.{Failure, Success, Using}
 
 object Bootstrap {
@@ -637,5 +637,46 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           case Err(_) => BootstrapError.GeneralError(List("Tester Error")).toFailure
         }
     }
+  }
+
+  /**
+    * Package the current project and release it on GitHub.
+    */
+  def release(o: Options): Validation[Unit, BootstrapError] = {
+    // Check that there is a `flix.toml` file
+    val tomlPath = getManifestFile(projectPath)
+    if (!Files.exists(tomlPath)) {
+      return BootstrapError.FileError("Cannot create a release without a `flix.toml` file.").toFailure
+    }
+
+    // Parse the `flix.toml` file
+    val manifest = ManifestParser.parse(tomlPath) match {
+      case Ok(m) => m
+      case Err(e) => return BootstrapError.ManifestParseError(e).toFailure
+    }
+
+    // Check if `github` option is present
+    val githubRepo = manifest.github match {
+      case Some(r) => r
+      case None =>
+        return BootstrapError.ReleaseError("Cannot create a release without the `package.github` option in `flix.toml`.").toFailure
+    }
+
+    // Ask for confirmation
+    // TODO: add -y flag for use with scripts
+    var continue = false
+    while (!continue) {
+      print(s"Release version ${manifest.version} of github:$githubRepo? [y/n]: ")
+      val response = readLine()
+      response.toLowerCase match {
+        case "y" => continue = true
+        case "n" => return BootstrapError.ReleaseError("Release cancelled.").toFailure
+        case _ => // Continue loop
+      }
+    }
+
+    println("Releasing...")
+
+    SuccessUnit
   }
 }
