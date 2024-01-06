@@ -59,11 +59,7 @@ sealed trait Chain[+A] extends Iterable[A] {
   }
 
   override def equals(obj: Any): Boolean = obj match {
-    case that: Chain[_] => (Chain.ViewLeft(this), Chain.ViewLeft(that)) match {
-      case (Chain.ViewLeft.NoneLeft, Chain.ViewLeft.NoneLeft) => true
-      case (Chain.ViewLeft.SomeLeft(x, xs), Chain.ViewLeft.SomeLeft(y, ys)) if x == y => xs == ys
-      case _ => false
-    }
+    case that: Chain[_] => this.toList == that.toList
     case _ => false
   }
 }
@@ -115,29 +111,4 @@ object Chain {
     */
   def concat[A](cs: Seq[Chain[A]]): Chain[A] = Chain.Many(cs)
 
-  private sealed trait ViewLeft[+A] {
-    private def ++[B >: A](that: ViewLeft[B]): ViewLeft[B] = this match {
-      case ViewLeft.NoneLeft => that
-      case ViewLeft.SomeLeft(tr, cr) => that match {
-        case ViewLeft.NoneLeft => this
-        case ViewLeft.SomeLeft(tl, cl) =>
-          ViewLeft.SomeLeft(tl, cl ++ Chain.Link(Chain(tr), cr))
-      }
-    }
-  }
-
-  private object ViewLeft {
-
-    case object NoneLeft extends ViewLeft[Nothing]
-
-    case class SomeLeft[A](t: A, c: Chain[A]) extends ViewLeft[A]
-
-    def apply[A](c: Chain[A]): ViewLeft[A] = c match {
-      case Empty => NoneLeft
-      case Link(l, r) => ViewLeft(l) ++ ViewLeft(r)
-      case Many(cs) => cs.map(apply).reduce(_ ++ _)
-      case Proxy(xs) if xs.isEmpty => NoneLeft
-      case Proxy(xs) => SomeLeft(xs.head, Chain.from(xs.tail))
-    }
-  }
 }
