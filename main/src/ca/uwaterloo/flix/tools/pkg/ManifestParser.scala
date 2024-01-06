@@ -16,12 +16,13 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
+import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk, traverse}
 import org.tomlj.{Toml, TomlArray, TomlInvalidTypeException, TomlParseResult, TomlTable}
 
 import java.io.{IOException, StringReader}
-import java.net.{MalformedURLException, URI, URL}
+import java.net.{URI, URL}
 import java.nio.file.Path
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.SetHasAsScala
@@ -90,6 +91,9 @@ object ManifestParser {
       authors <- getRequiredArrayProperty("package.authors", parser, p);
       authorsList <- convertTomlArrayToStringList(authors, p);
 
+      github <- getOptionalStringProperty("package.github", parser, p);
+      githubProject <- toGithubProject(github, p);
+
       deps <- getOptionalTableProperty("dependencies", parser, p);
       depsList <- collectDependencies(deps, flixDep = true, prodDep = true, jarDep = false, p);
 
@@ -105,7 +109,7 @@ object ManifestParser {
       jarDeps <- getOptionalTableProperty("jar-dependencies", parser, p);
       jarDepsList <- collectDependencies(jarDeps, flixDep = false, prodDep = false, jarDep = true, p)
 
-    ) yield Manifest(name, description, versionSemVer, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
+    ) yield Manifest(name, description, versionSemVer, flixSemVer, license, authorsList, githubProject, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
   }
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
@@ -119,7 +123,7 @@ object ManifestParser {
 
     val dottedKeys = parser.dottedKeySet().asScala.toSet
     val packageKeys = dottedKeys.filter(s => s.startsWith("package."))
-    val allowedPackageKeys = Set("package.name", "package.description", "package.version", "package.flix", "package.authors", "package.license")
+    val allowedPackageKeys = Set("package.name", "package.description", "package.version", "package.flix", "package.authors", "package.github", "package.license")
     val illegalPackageKeys = packageKeys.diff(allowedPackageKeys)
     if (illegalPackageKeys.nonEmpty) {
       return Err(ManifestError.IllegalPackageKeyFound(p, illegalPackageKeys.head))
@@ -207,6 +211,23 @@ object ManifestParser {
       }
     } catch {
       case e: NumberFormatException => Err(ManifestError.VersionNumberWrong(p, s, e.getMessage))
+    }
+  }
+
+  /**
+    * Converts an optional String `optS` to an optional reference to a GitHub project.
+    * Returns an error if the string is present but not in the correct format.
+    * The only allowed format is "username/repository".
+    */
+  private def toGithubProject(optS: Option[String], p: Path): Result[Option[GitHub.Project], ManifestError] = {
+    optS match {
+      case Some(s) =>
+        s.split('/') match {
+          case Array(owner, repo) if owner.nonEmpty && repo.nonEmpty =>
+            Ok(Some(GitHub.Project(owner, repo)))
+          case _ => Err(ManifestError.GithubRepoFormatError(p, s))
+        }
+      case None => Ok(None)
     }
   }
 

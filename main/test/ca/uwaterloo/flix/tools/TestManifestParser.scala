@@ -1,12 +1,13 @@
 package ca.uwaterloo.flix.tools
 
+import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyKind, ManifestError, ManifestParser, Repository, SemVer}
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
-import java.net.{URI, URL}
+import java.net.URI
 import java.nio.file.Paths
 
 class TestManifestParser extends AnyFunSuite {
@@ -22,6 +23,7 @@ class TestManifestParser extends AnyFunSuite {
       |flix = "0.33.0"
       |license = "Apache-2.0"
       |authors = ["John Doe <john@example.com>"]
+      |github = "johnDoe/hello-world"
       |
       |[dependencies]
       |"github:jls/tic-tac-toe" = "1.2.3"
@@ -115,6 +117,35 @@ class TestManifestParser extends AnyFunSuite {
         case Err(e) => e.message(f)
       }
     })
+  }
+
+  test("Ok.github.Some") {
+    assertResult(expected = Some(GitHub.Project("johnDoe", "hello-world")))(actual = {
+      ManifestParser.parse(tomlCorrect, null) match {
+        case Ok(manifest) => manifest.github
+        case Err(e) => e.message(f)
+      }
+    })
+  }
+
+  test("Ok.github.None") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |""".stripMargin
+    }
+    assertResult(expected = None)(actual =
+      ManifestParser.parse(toml, null) match {
+        case Ok(m) => m.github
+        case Err(e) => e.message(f)
+      }
+    )
   }
 
   test("Ok.dependencies") {
@@ -921,6 +952,147 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(ManifestError.AuthorNameError(null, "key at index 1 is a integer").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  // GitHub
+  test("Err.github.misspelled") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |guthib = "johnDoe/hello-world"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.IllegalPackageKeyFound(null, "package.guthib").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.github.wrongFormat.01") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |github = "hello-world"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.GithubRepoFormatError(null, "hello-world").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.github.wrongFormat.02") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |github = "johnDoe.hello-world"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.GithubRepoFormatError(null, "johnDoe.hello-world").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.github.wrongFormat.03") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |github = "github/johnDoe/hello-world"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.GithubRepoFormatError(null, "github/johnDoe/hello-world").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.github.wrongFormat.04") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |github = "johnDoe/"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.GithubRepoFormatError(null, "johnDoe/").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.github.wrongFormat.05") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |github = "/hello-world"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.GithubRepoFormatError(null, "/hello-world").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.github.wrongFormat.06") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |github = "/"
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.GithubRepoFormatError(null, "/").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
