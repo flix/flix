@@ -739,10 +739,9 @@ object Resolver {
         val name = qname.ident.name
         Kinds.get(name) match {
           case None =>
-            lookupRestrictableEnum(qname, env, ns0, root) match {
-              case Validation.Success(enum) =>
-                Validation.success(Kind.CaseSet(enum.sym))
-              case _failure =>
+            lookupRestrictableEnum(qname, env, ns0, root).toResult match {
+              case Result.Ok((enum0, Nil)) => Validation.success(Kind.CaseSet(enum0.sym))
+              case Result.Ok(_) | Result.Err(_) =>
                 // We don't know the kind, but we can find the best match.
                 val closestMatch = Similarity.closestMatch(name, Kinds)
                 Validation.toSoftFailure(closestMatch, ResolutionError.UndefinedKind(qname, ns0, loc))
@@ -750,9 +749,9 @@ object Resolver {
           case Some(kind) => Validation.success(kind)
         }
       } else {
-        lookupRestrictableEnum(qname, env, ns0, root) match {
-          case Validation.Success(enum) => Validation.success(Kind.CaseSet(enum.sym))
-          case _failure =>
+        lookupRestrictableEnum(qname, env, ns0, root).toResult match {
+          case Result.Ok((enum0, Nil)) => Validation.success(Kind.CaseSet(enum0.sym))
+          case Result.Ok(_) | Result.Err(_) =>
             // We don't know the kind, so default to Star.
             Validation.toSoftFailure(Kind.Star, ResolutionError.UndefinedKind(qname, ns0, loc))
         }
