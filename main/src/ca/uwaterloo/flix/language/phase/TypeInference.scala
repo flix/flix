@@ -121,67 +121,70 @@ object TypeInference {
               ///
               val inferredSc = Scheme.generalize(inferredTconstrs, inferredEconstrs, inferredType, renv0)
 
-              // get a substitution from the scheme comparison
-              val eqSubst = Scheme.checkLessThanEqual(inferredSc, declaredScheme, classEnv, eqEnv) match {
-                // Case 1: no errors, continue
-                case Validation.Success(s) => s
-                case failure =>
-                  val instanceErrs = failure.errors.collect {
-                    case UnificationError.NoMatchingInstance(tconstr) =>
-                      tconstr.arg.typeConstructor match {
-                        case Some(tc: TypeConstructor.Arrow) =>
-                          TypeError.MissingInstanceArrow(tconstr.head.sym, tconstr.arg, renv0, tconstr.loc)
-                        case _ =>
-                          if (tconstr.head.sym.name == "Eq")
-                            TypeError.MissingInstanceEq(tconstr.arg, renv0, tconstr.loc)
-                          else if (tconstr.head.sym.name == "Order")
-                            TypeError.MissingInstanceOrder(tconstr.arg, renv0, tconstr.loc)
-                          else if (tconstr.head.sym.name == "ToString")
-                            TypeError.MissingInstanceToString(tconstr.arg, renv0, tconstr.loc)
-                          else if (tconstr.head.sym.name == "Sendable")
-                            TypeError.MissingInstanceSendable(tconstr.arg, renv0, tconstr.loc)
-                          else
-                            TypeError.MissingInstance(tconstr.head.sym, tconstr.arg, renv0, tconstr.loc)
-                      }
-                    case UnificationError.UnsupportedEquality(tpe1, tpe2) =>
-                      TypeError.UnsupportedEquality(Ast.BroadEqualityConstraint(tpe1, tpe2), loc)
-                    case UnificationError.IrreducibleAssocType(sym, t) =>
-                      TypeError.IrreducibleAssocType(sym, t, loc)
-                  }
-                  // Case 2: non instance error
-                  if (instanceErrs.isEmpty) {
-                    //
-                    // Determine the most precise type error to emit.
-                    //
-                    val inferredEff = inferredSc.base.arrowEffectType
-                    val declaredEff = declaredScheme.base.arrowEffectType
-
-                    if (declaredEff == Type.Pure && inferredEff == Type.Impure) {
-                      // Case 1: Declared as pure, but impure.
-                      return Validation.toHardFailure(TypeError.ImpureDeclaredAsPure(loc))
-                    } else if (declaredEff == Type.Pure && inferredEff != Type.Pure) {
-                      // Case 2: Declared as pure, but effectful.
-                      return Validation.toHardFailure(TypeError.EffectfulDeclaredAsPure(inferredEff, loc))
-                    } else {
-                      // Case 3: Check if it is the effect that cannot be generalized.
-                      val inferredEffScheme = Scheme(inferredSc.quantifiers, Nil, Nil, inferredEff)
-                      val declaredEffScheme = Scheme(declaredScheme.quantifiers, Nil, Nil, declaredEff)
-                      Scheme.checkLessThanEqual(inferredEffScheme, declaredEffScheme, classEnv, eqEnv) match {
-                        case Validation.Success(_) =>
-                        // Case 3.1: The effect is not the problem. Regular generalization error.
-                        // Fall through to below.
-
-                        case _failure =>
-                          // Case 3.2: The effect cannot be generalized.
-                          return Validation.toHardFailure(TypeError.EffectGeneralizationError(declaredEff, inferredEff, loc))
-                      }
-
-                      return Validation.toHardFailure(TypeError.GeneralizationError(declaredScheme, minimizeScheme(inferredSc), loc))
+              def handleFailureCase(failures: List[UnificationError]) = {
+                val instanceErrs = failures.collect {
+                  case UnificationError.NoMatchingInstance(tconstr) =>
+                    tconstr.arg.typeConstructor match {
+                      case Some(tc: TypeConstructor.Arrow) =>
+                        TypeError.MissingInstanceArrow(tconstr.head.sym, tconstr.arg, renv0, tconstr.loc)
+                      case _ =>
+                        if (tconstr.head.sym.name == "Eq")
+                          TypeError.MissingInstanceEq(tconstr.arg, renv0, tconstr.loc)
+                        else if (tconstr.head.sym.name == "Order")
+                          TypeError.MissingInstanceOrder(tconstr.arg, renv0, tconstr.loc)
+                        else if (tconstr.head.sym.name == "ToString")
+                          TypeError.MissingInstanceToString(tconstr.arg, renv0, tconstr.loc)
+                        else if (tconstr.head.sym.name == "Sendable")
+                          TypeError.MissingInstanceSendable(tconstr.arg, renv0, tconstr.loc)
+                        else
+                          TypeError.MissingInstance(tconstr.head.sym, tconstr.arg, renv0, tconstr.loc)
                     }
+                  case UnificationError.UnsupportedEquality(tpe1, tpe2) =>
+                    TypeError.UnsupportedEquality(Ast.BroadEqualityConstraint(tpe1, tpe2), loc)
+                  case UnificationError.IrreducibleAssocType(sym, t) =>
+                    TypeError.IrreducibleAssocType(sym, t, loc)
+                }
+                // Case 2: non instance error
+                if (instanceErrs.isEmpty) {
+                  //
+                  // Determine the most precise type error to emit.
+                  //
+                  val inferredEff = inferredSc.base.arrowEffectType
+                  val declaredEff = declaredScheme.base.arrowEffectType
+
+                  if (declaredEff == Type.Pure && inferredEff == Type.Impure) {
+                    // Case 1: Declared as pure, but impure.
+                    return Validation.toHardFailure(TypeError.ImpureDeclaredAsPure(loc))
+                  } else if (declaredEff == Type.Pure && inferredEff != Type.Pure) {
+                    // Case 2: Declared as pure, but effectful.
+                    return Validation.toHardFailure(TypeError.EffectfulDeclaredAsPure(inferredEff, loc))
                   } else {
-                    // Case 3: instance error
-                    return Validation.HardFailure(instanceErrs)
+                    // Case 3: Check if it is the effect that cannot be generalized.
+                    val inferredEffScheme = Scheme(inferredSc.quantifiers, Nil, Nil, inferredEff)
+                    val declaredEffScheme = Scheme(declaredScheme.quantifiers, Nil, Nil, declaredEff)
+                    Scheme.checkLessThanEqual(inferredEffScheme, declaredEffScheme, classEnv, eqEnv) match {
+                      case Validation.Success(_) =>
+                      // Case 3.1: The effect is not the problem. Regular generalization error.
+                      // Fall through to below.
+
+                      case _failure =>
+                        // Case 3.2: The effect cannot be generalized.
+                        return Validation.toHardFailure(TypeError.EffectGeneralizationError(declaredEff, inferredEff, loc))
+                    }
+
+                    return Validation.toHardFailure(TypeError.GeneralizationError(declaredScheme, minimizeScheme(inferredSc), loc))
                   }
+                } else {
+                  // Case 3: instance error
+                  return Validation.HardFailure(instanceErrs)
+                }
+              }
+
+              // get a substitution from the scheme comparison
+              val eqSubst = Scheme.checkLessThanEqual(inferredSc, declaredScheme, classEnv, eqEnv).toResult match {
+                case Ok((s, Nil)) => s
+                case Ok((_, failures)) => handleFailureCase(failures)
+                case Err(failures) => handleFailureCase(failures)
               }
 
               // create a new substitution combining the econstr substitution and the base type substitution
