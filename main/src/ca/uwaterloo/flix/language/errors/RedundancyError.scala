@@ -139,25 +139,6 @@ object RedundancyError {
   }
 
   /**
-    * An error raised to indicate that an effect cast is redundant.
-    *
-    * @param loc the source location of the cast.
-    */
-  case class RedundantUncheckedEffectCast(loc: SourceLocation) extends RedundancyError with Recoverable {
-    def summary: String = "Redundant effect cast. The expression is already pure."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Redundant effect cast. The expression is already pure.
-         |
-         |${code(loc, "redundant cast.")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate a redundant type constraint.
     *
     * @param entailingTconstr the tconstr that entails the other.
@@ -184,6 +165,25 @@ object RedundancyError {
          |
          |""".stripMargin
     })
+  }
+
+  /**
+    * An error raised to indicate that an effect cast is redundant.
+    *
+    * @param loc the source location of the cast.
+    */
+  case class RedundantUncheckedEffectCast(loc: SourceLocation) extends RedundancyError with Recoverable {
+    def summary: String = "Redundant effect cast. The expression is already pure."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Redundant effect cast. The expression is already pure.
+         |
+         |${code(loc, "redundant cast.")}
+         |
+         |""".stripMargin
+    }
   }
 
   /**
@@ -367,6 +367,38 @@ object RedundancyError {
   }
 
   /**
+    * An error raised to indicate that the enum with the symbol `sym` is not used.
+    *
+    * @param sym the unused enum symbol.
+    */
+  case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError with Recoverable {
+    def summary: String = "Unused enum."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
+         |
+         |${code(sym.loc, "unused enum.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Use the enum.
+         |  (2)  Remove the enum.
+         |  (3)  Mark the enum as public.
+         |  (4)  Prefix the enum name with an underscore.
+         |
+         |""".stripMargin
+    })
+
+    def loc: SourceLocation = sym.loc
+  }
+
+  /**
     * An error raised to indicate that in the enum with symbol `sym` the case `tag` is not used.
     *
     * @param sym the enum symbol.
@@ -397,38 +429,6 @@ object RedundancyError {
     })
 
     def loc: SourceLocation = tag.loc
-  }
-
-  /**
-    * An error raised to indicate that the enum with the symbol `sym` is not used.
-    *
-    * @param sym the unused enum symbol.
-    */
-  case class UnusedEnumSym(sym: Symbol.EnumSym) extends RedundancyError with Recoverable {
-    def summary: String = "Unused enum."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unused enum '${red(sym.name)}'. Neither the enum nor its cases are ever used.
-         |
-         |${code(sym.loc, "unused enum.")}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Use the enum.
-         |  (2)  Remove the enum.
-         |  (3)  Mark the enum as public.
-         |  (4)  Prefix the enum name with an underscore.
-         |
-         |""".stripMargin
-    })
-
-    def loc: SourceLocation = sym.loc
   }
 
   /**
@@ -586,5 +586,4 @@ object RedundancyError {
          |""".stripMargin
     })
   }
-
 }

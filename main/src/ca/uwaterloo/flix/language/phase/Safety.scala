@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.SafetyError
@@ -31,8 +32,11 @@ object Safety {
     //
     // Collect all errors.
     //
-    val defErrors = ParOps.parMap(root.defs.values)(visitDef).flatten.toList
-    val errors = defErrors ++ visitSendable(root)
+    val classSigErrs = ParOps.parMap(root.classes.values.flatMap(_.sigs))(visitSig).flatten
+    val defErrs = ParOps.parMap(root.defs.values)(visitDef).flatten
+    val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef).flatten
+    val sigErrs = ParOps.parMap(root.sigs.values)(visitSig).flatten
+    val errors = classSigErrs ++ defErrs ++ instanceDefErrs ++ sigErrs ++ visitSendable(root)
 
     //
     // Check if any errors were found.
@@ -52,6 +56,19 @@ object Safety {
           List(SafetyError.IllegalSendableInstance(tpe, loc))
         else
           Nil
+    }
+  }
+
+  /**
+    * Performs safety and well-formedness checks on the given signature `sig`.
+    */
+  private def visitSig(sig: Sig)(implicit flix: Flix): List[SafetyError] = {
+    val renv = sig.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
+      case (acc, e) => acc.markRigid(e)
+    }
+    sig.exp match {
+      case Some(exp) => visitExp(exp, renv)
+      case None => Nil
     }
   }
 
@@ -265,9 +282,6 @@ object Safety {
 
       case Expr.Do(_, exps, _, _, _) =>
         exps.flatMap(visit)
-
-      case Expr.Resume(exp, _, _) =>
-        visit(exp)
 
       case Expr.InvokeConstructor(_, args, _, _, _) =>
         args.flatMap(visit)

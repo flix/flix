@@ -345,6 +345,27 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate an ill-formed equality constraint.
+    *
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEqualityConstraint(loc: SourceLocation) extends WeederError with Unrecoverable {
+    override def summary: String = "Illegal equality constraint."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal equality constraint.
+         |
+         |${code(loc, s"Equality constraints must have the form: `Assoc[var] ~ Type`.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate an invalid escape sequence.
     *
     * @param char the invalid escape character.
@@ -367,28 +388,25 @@ object WeederError {
       import formatter._
       s"${underline("Tip:")}" + " The valid escape sequences are '\\t', '\\\\', '\\\'', '\\\"', '\\${', '\\n', and '\\r'."
     })
-
   }
 
   /**
-    * An error raised to indicate an ill-formed equality constraint.
+    * An error raised to indicate that a negative atom is marked as fixed.
     *
-    * @param loc the location where the error occurred.
+    * @param loc the location where the illegal fixed atom occurs.
     */
-  case class IllegalEqualityConstraint(loc: SourceLocation) extends WeederError with Unrecoverable {
-    override def summary: String = "Illegal equality constraint."
+  case class IllegalFixedAtom(loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = "Illegal fixed atom"
 
-    override def message(formatter: Formatter): String = {
+    def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Illegal equality constraint.
          |
-         |${code(loc, s"Equality constraints must have the form: `Assoc[var] ~ Type`.")}
+         |>> Illegal fixed atom. A negative atom is implicitly fixed.
          |
+         |${code(loc, "Illegal fixed atom.")}
          |""".stripMargin
     }
-
-    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -436,25 +454,6 @@ object WeederError {
          |
          |${code(loc, "unexpected type ascription")}
          |
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that a negative atom is marked as fixed.
-    *
-    * @param loc the location where the illegal fixed atom occurs.
-    */
-  case class IllegalFixedAtom(loc: SourceLocation) extends WeederError with Recoverable {
-    def summary: String = "Illegal fixed atom"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |
-         |>> Illegal fixed atom. A negative atom is implicitly fixed.
-         |
-         |${code(loc, "Illegal fixed atom.")}
          |""".stripMargin
     }
   }
@@ -586,24 +585,25 @@ object WeederError {
       import formatter._
       s"${underline("Tip:")} A regex cannot be used as a pattern. It can be used in an `if` guard, e.g using `isMatch` or `isSubmatch`."
     })
-
   }
 
   /**
-    * An error raised to indicate a use of resume outside an effect handler.
+    * An error raised to indicate the presence of a guard in a restrictable choice rule.
     *
-    * @param loc the location where the error occurred.
+    * @param star whether the choose is of the star kind.
+    * @param loc  the location where the error occurs.
     */
-  case class IllegalResume(loc: SourceLocation) extends WeederError with Recoverable {
-    def summary: String = "Unexpected use of 'resume'. The 'resume' expression must occur in an effect handler."
+  case class IllegalRestrictableChooseGuard(star: Boolean, loc: SourceLocation) extends WeederError with Unrecoverable {
+    private val operationName: String = if (star) "choose*" else "choose"
+
+    def summary: String = s"cases of $operationName do not allow guards."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Unexpected use of 'resume'. The 'resume' expression must occur in an effect handler.
+         |>> $summary
          |
-         |${code(loc, "unexpected use of 'resume'")}
-         |
+         |${code(loc, "Disallowed guard.")}
          |""".stripMargin
     }
   }
@@ -660,27 +660,6 @@ object WeederError {
          |If a name is uppercase, the alias must be uppercase.
          |""".stripMargin
     })
-  }
-
-  /**
-    * An error raised to indicate the presence of a guard in a restrictable choice rule.
-    *
-    * @param star whether the choose is of the star kind.
-    * @param loc  the location where the error occurs.
-    */
-  case class IllegalRestrictableChooseGuard(star: Boolean, loc: SourceLocation) extends WeederError with Unrecoverable {
-    private val operationName: String = if (star) "choose*" else "choose"
-
-    def summary: String = s"cases of $operationName do not allow guards."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> $summary
-         |
-         |${code(loc, "Disallowed guard.")}
-         |""".stripMargin
-    }
   }
 
   /**
@@ -825,7 +804,26 @@ object WeederError {
       import formatter._
       s"${underline("Tip:")}" + " A Unicode escape sequence must be of the form \\uXXXX where X is a hexadecimal."
     })
+  }
 
+  /**
+    * An error raised to indicate a mismatched arity.
+    *
+    * @param expected the expected arity.
+    * @param actual   the actual arity.
+    * @param loc      the location where mismatch occurs.
+    */
+  case class MismatchedArity(expected: Int, actual: Int, loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = s"Mismatched arity: expected: $expected, actual: $actual."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Mismatched arity: expected: $expected, actual: $actual.
+         |
+         |${code(loc, "mismatched arity.")}
+         |""".stripMargin
+    }
   }
 
   /**
@@ -888,26 +886,6 @@ object WeederError {
          |
          |${code(loc, "missing kind.")}
          |
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate a mismatched arity.
-    *
-    * @param expected the expected arity.
-    * @param actual   the actual arity.
-    * @param loc      the location where mismatch occurs.
-    */
-  case class MismatchedArity(expected: Int, actual: Int, loc: SourceLocation) extends WeederError with Recoverable {
-    def summary: String = s"Mismatched arity: expected: $expected, actual: $actual."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Mismatched arity: expected: $expected, actual: $actual.
-         |
-         |${code(loc, "mismatched arity.")}
          |""".stripMargin
     }
   }
@@ -1077,5 +1055,4 @@ object WeederError {
          |""".stripMargin
     }
   }
-
 }

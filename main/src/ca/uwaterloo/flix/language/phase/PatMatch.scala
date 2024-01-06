@@ -111,11 +111,15 @@ object PatMatch {
     flix.phase("PatMatch") {
       implicit val r: TypedAst.Root = root
 
+      val classDefExprs = root.classes.values.flatMap(_.sigs).flatMap(_.exp)
+      val classDefErrs = ParOps.parMap(classDefExprs)(visitExp).flatten
+
       val defErrs = ParOps.parMap(root.defs.values)(defn => visitExp(defn.exp)).flatten
       val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(defn => visitExp(defn.exp)).flatten
       // Only need to check sigs with implementations
       val sigsErrs = root.sigs.values.flatMap(_.exp).flatMap(visitExp)
-      val errors = defErrs ++ instanceDefErrs ++ sigsErrs
+
+      val errors = classDefErrs ++ defErrs ++ instanceDefErrs ++ sigsErrs
 
       Validation.toSuccessOrSoftFailure(root, errors)
     }
@@ -199,7 +203,6 @@ object PatMatch {
         (exp :: ruleExps).flatMap(visitExp)
 
       case Expr.Do(_, exps, _, _, _) => exps.flatMap(visitExp)
-      case Expr.Resume(exp, _, _) => visitExp(exp)
       case Expr.InvokeConstructor(_, args, _, _, _) => args.flatMap(visitExp)
       case Expr.InvokeMethod(_, exp, args, _, _, _) => (exp :: args).flatMap(visitExp)
       case Expr.InvokeStaticMethod(_, args, _, _, _) => args.flatMap(visitExp)
