@@ -58,10 +58,15 @@ sealed trait Chain[+A] extends Iterable[A] {
     case Chain.Proxy(xs) => xs.length
   }
 
-  override def equals(obj: Any): Boolean = obj match {
-    case that: Chain[_] => this.toList == that.toList
-    case _ => false
-  }
+  /**
+    * Returns true if and only if `this` and `that` contain the same elements in the same order.
+    *
+    * You probably want to use this instead the [[equals]] method.
+    *
+    * NB.: This method exists because overriding the [[equals]] method causes a [[StackOverflowError]] within the [[List]] class.
+    */
+  def sameAs[B >: A](that: Chain[B]): Boolean = this.toList == that.toList
+
 }
 
 object Chain {
