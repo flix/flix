@@ -65,7 +65,30 @@ class TestChain extends AnyFunSuite {
   }
 
   test("TestEq.03") {
-    assertResult(Chain(1, 2, 3, 4, 5))(Chain(1, 2, 3, 4, 5))
+    val c1 = Chain(1, 2, 3, 4, 5)
+    assertResult(c1)(c1)
+  }
+
+  test("TestEq.04") {
+    val c1 = Chain(1, 2, 3, 4, 5)
+    val c2 = Chain(1, 2, 3, 4, 5)
+    assert(c1.sameAs(c2))
+  }
+
+  test("TestEq.05") {
+    assert(Chain.empty.sameAs(Chain.empty))
+  }
+
+  test("TestEq.06") {
+    val c1 = Chain(1) ++ Chain(2)
+    val c2 = Chain(1, 2)
+    assert(c1.sameAs(c2))
+  }
+
+  test("TestEq.07") {
+    val c1 = Chain(1) ++ Chain(2)
+    val c2 = Chain(1, 2)
+    assert(c1 != c2)
   }
 
 }
