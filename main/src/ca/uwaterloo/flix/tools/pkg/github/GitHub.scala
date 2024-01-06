@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.tools.pkg.github
 
-import ca.uwaterloo.flix.tools.pkg.{PackageError, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{PackageError, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Result, StreamOps}
 import org.json4s.JsonDSL._
@@ -77,7 +77,7 @@ object GitHub {
   /**
     * Publish a new release the given project.
     */
-  def publishRelease(project: Project, version: SemVer, apiKey: String): Result[Unit, PackageError] = {
+  def publishRelease(project: Project, version: SemVer, apiKey: String): Result[Unit, ReleaseError] = {
     val content: JValue = ("tag_name" -> s"v$version") ~ ("name" -> s"v$version")
     val jsonCompact = compact(render(content))
 
@@ -92,7 +92,7 @@ object GitHub {
       val outStream = conn.getOutputStream
       outStream.write(jsonCompact.getBytes("utf-8"))
     } catch {
-      case _: IOException => return Err(PackageError.ProjectNotFound(url, project))
+      case _: IOException => return Err(ReleaseError.ProjectInaccessible(project))
     }
 
     Ok(())

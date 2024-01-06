@@ -19,10 +19,10 @@ import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile}
 import ca.uwaterloo.flix.language.phase.{HtmlDocumentor, JsonDocumentor}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{SuccessUnit, ToFailure, ToSuccess, flatMapN}
+import ca.uwaterloo.flix.util.Validation.{SoftFailure, SuccessUnit, ToFailure, ToSuccess, flatMapN}
 import ca.uwaterloo.flix.util.{Formatter, Options, Validation}
 
 import java.io.{PrintStream, PrintWriter}
@@ -647,7 +647,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Check that there is a `flix.toml` file
     val tomlPath = getManifestFile(projectPath)
     if (!Files.exists(tomlPath)) {
-      return BootstrapError.FileError("Cannot create a release without a `flix.toml` file.").toFailure
+      return BootstrapError.ReleaseError(ReleaseError.MissingManifestError).toFailure
     }
 
     // Parse the `flix.toml` file
@@ -660,14 +660,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val githubRepo = manifest.github match {
       case Some(r) => r
       case None =>
-        return BootstrapError.ReleaseError("Cannot create a release without the `package.github` option in `flix.toml`.").toFailure
+        return BootstrapError.ReleaseError(ReleaseError.NoLinkedProjectError).toFailure
     }
 
     // Check if `--github-key` option is present
     val githubKey = o.githubKey match {
       case Some(k) => k
       case None =>
-        return BootstrapError.ReleaseError("Cannot create a release without the `--github-key` option.").toFailure
+        return BootstrapError.ReleaseError(ReleaseError.MissingApiKeyError).toFailure
     }
 
     // Ask for confirmation
@@ -678,21 +678,24 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       val response = readLine()
       response.toLowerCase match {
         case "y" => continue = true
-        case "n" => return BootstrapError.ReleaseError("Release cancelled.").toFailure
+        case "n" => return BootstrapError.ReleaseError(ReleaseError.Cancelled).toFailure
         case _ => // Continue loop
       }
     }
 
     // Build fpkg
-    buildPkg(o)
+    val buildResult = buildPkg(o)
+    buildResult match {
+      case Validation.Success(_) => // Continue
+      case Validation.SoftFailure(_, e) => return Validation.SoftFailure((), e)
+      case Validation.Failure(e) => return Validation.Failure(e)
+    }
 
     // Publish to GitHub
-    println("Releasing...")
     val publishResult = GitHub.publishRelease(githubRepo, manifest.version, githubKey)
     publishResult match {
       case Ok(()) => // Continue
-      case Err(e) =>
-        return BootstrapError.FlixPackageError(e).toFailure
+      case Err(e) => return BootstrapError.ReleaseError(e).toFailure
     }
 
     SuccessUnit

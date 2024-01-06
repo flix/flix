@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError}
 import ca.uwaterloo.flix.util.Formatter
 
@@ -42,8 +43,8 @@ object BootstrapError {
     override def message(f: Formatter): String = e.message(f)
   }
 
-  case class ReleaseError(e: String) extends BootstrapError {
-    override def message(f: Formatter): String = e
+  case class ReleaseError(e: pkg.ReleaseError) extends BootstrapError {
+    override def message(f: Formatter): String = e.message(f)
   }
 
   case class FileError(e: String) extends BootstrapError {
