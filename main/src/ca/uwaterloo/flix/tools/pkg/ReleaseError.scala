@@ -49,7 +49,7 @@ object ReleaseError {
   case object InvalidApiKeyError extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
-         | The given API-key is not valid or does not have the appropriate permissions.
+         | The API-key is not valid or does not have the necessary permissions.
          |""".stripMargin
   }
 
@@ -64,7 +64,7 @@ object ReleaseError {
   case class AlreadyExists(project: GitHub.Project, version: SemVer) extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
-         | Version $version of github:$project already exists.
+         | Release with version $version already exists.
          |""".stripMargin
   }
 

@@ -258,7 +258,7 @@ object Main {
         case Command.Release =>
           val o = options.copy(progress = false)
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
-            bootstrap => bootstrap.release(o)
+            bootstrap => bootstrap.release(o, formatter)
           } match {
             case Validation.Success(_) =>
               System.exit(0)

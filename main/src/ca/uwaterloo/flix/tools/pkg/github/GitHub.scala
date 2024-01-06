@@ -94,13 +94,7 @@ object GitHub {
 
       // Process response
       conn.getResponseCode match {
-        case x if 200 <= x && x <= 299 =>
-          println(
-            s"""|
-                | Successfully released github:$project v$version!
-                |""".stripMargin
-          )
-          Ok(())
+        case x if 200 <= x && x <= 299 => Ok(())
         case 401 => Err(ReleaseError.InvalidApiKeyError)
         case 404 => Err(ReleaseError.InvalidProject(project))
         case 422 => Err(ReleaseError.AlreadyExists(project, version))

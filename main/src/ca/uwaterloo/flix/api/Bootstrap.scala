@@ -643,7 +643,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Package the current project and release it on GitHub.
     */
-  def release(o: Options): Validation[Unit, BootstrapError] = {
+  def release(o: Options, formatter: Formatter): Validation[Unit, BootstrapError] = {
     // Check that there is a `flix.toml` file
     val tomlPath = getManifestFile(projectPath)
     if (!Files.exists(tomlPath)) {
@@ -674,7 +674,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // TODO: add -y flag for use with scripts
     var continue = false
     while (!continue) {
-      print(s"Release version ${manifest.version} of github:$githubRepo? [y/n]: ")
+      print(s"Release ${formatter.blue(s"github:$githubRepo")} ${formatter.yellow(s"v${manifest.version}")}? [y/n]: ")
       val response = readLine()
       response.toLowerCase match {
         case "y" => continue = true
@@ -697,6 +697,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Ok(()) => // Continue
       case Err(e) => return BootstrapError.ReleaseError(e).toFailure
     }
+
+    println(formatter.green(
+      s"""|
+          | Successfully released github:$githubRepo v${manifest.version}!
+          |""".stripMargin
+    ))
 
     SuccessUnit
   }
