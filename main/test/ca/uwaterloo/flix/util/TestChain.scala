@@ -64,4 +64,8 @@ class TestChain extends AnyFunSuite {
     assert(result)
   }
 
+  test("TestEq.03") {
+    assertResult(Chain(1, 2, 3, 4, 5))(Chain(1, 2, 3, 4, 5))
+  }
+
 }
