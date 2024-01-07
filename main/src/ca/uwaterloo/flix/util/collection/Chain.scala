@@ -112,9 +112,9 @@ sealed trait Chain[+A] {
     case Chain.Proxy(xs) => xs.length
   }
 
-  override def hashCode(): Int = this.toList.hashCode()
+  final override def hashCode(): Int = this.toList.hashCode()
 
-  override def equals(obj: Any): Boolean = obj match {
+  final override def equals(obj: Any): Boolean = obj match {
     case that: Chain[_] => this.toList == that.toList
     case _ => false
   }
