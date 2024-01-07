@@ -83,10 +83,10 @@ object ReleaseError {
          |""".stripMargin
   }
 
-  case class UnknownResponse(code: Int, message: String) extends ReleaseError {
+  case class Unexpected(code: Int, message: String) extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
-         | GitHub failed with an unknown response:
+         | GitHub failed with an unexpected response:
          |  $code: $message
          |""".stripMargin
   }

@@ -142,7 +142,7 @@ object GitHub {
           StreamOps.readAll(inStream)
         case 401 => return Err(ReleaseError.InvalidApiKeyError)
         case 404 => return Err(ReleaseError.InvalidProject(project))
-        case _ => return Err(ReleaseError.UnknownResponse(code, conn.getResponseMessage))
+        case _ => return Err(ReleaseError.Unexpected(code, conn.getResponseMessage))
       }
 
     } catch {
@@ -187,7 +187,7 @@ object GitHub {
       code match {
         case 201 => Ok(())
         case 401 => Err(ReleaseError.InvalidApiKeyError)
-        case _ => Err(ReleaseError.UnknownResponse(code, conn.getResponseMessage))
+        case _ => Err(ReleaseError.Unexpected(code, conn.getResponseMessage))
       }
 
     } catch {
@@ -225,7 +225,7 @@ object GitHub {
         case 401 => Err(ReleaseError.InvalidApiKeyError)
         case 404 => Err(ReleaseError.InvalidProject(project))
         case 422 => Err(ReleaseError.AlreadyExists(project, version))
-        case _ => Err(ReleaseError.UnknownResponse(code, conn.getResponseMessage))
+        case _ => Err(ReleaseError.Unexpected(code, conn.getResponseMessage))
       }
 
     } catch {
