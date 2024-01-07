@@ -164,7 +164,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     case Command.Build => bootstrap.build()(flix)
     case Command.BuildJar => bootstrap.buildJar(flix.options)
     case Command.BuildPkg => bootstrap.buildPkg(flix.options)
-    case Command.Release => bootstrap.release(flix.options, flix.getFormatter)
+    case Command.Release => bootstrap.release(flix.options)
     case Command.Check => bootstrap.check(flix.options)
     case Command.Doc => bootstrap.doc(flix.options)
     case Command.Test => bootstrap.test(flix.options)

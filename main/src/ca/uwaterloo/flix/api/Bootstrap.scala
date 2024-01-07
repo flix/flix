@@ -646,7 +646,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Package the current project and release it on GitHub.
     */
-  def release(o: Options, formatter: Formatter): Validation[Unit, BootstrapError] = {
+  def release(o: Options): Validation[Unit, BootstrapError] = {
+    val formatter = Formatter.getDefault
+
     // Check that there is a `flix.toml` file
     val tomlPath = getManifestFile(projectPath)
     if (!Files.exists(tomlPath)) {
