@@ -127,7 +127,7 @@ object Chain {
   /**
     * Returns a chain containing the given elements.
     */
-  def apply[A](xs: A*): Chain[A] = if (xs.isEmpty) Chain.empty else Chain.Proxy(xs)
+  def apply[A](xs: A*): Chain[A] = from(xs)
 
   /**
     * Returns a chain containing the given elements.
