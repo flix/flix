@@ -115,7 +115,12 @@ object GitHub {
     * Returns the ID of the release if successful.
     */
   private def createDraftRelease(project: Project, version: SemVer, apiKey: String): Result[String, ReleaseError] = {
-    val content: JValue = ("tag_name" -> s"v$version") ~ ("name" -> s"v$version") ~ ("draft" -> true)
+    val content: JValue =
+      ("tag_name" -> s"v$version") ~
+        ("name" -> s"v$version") ~
+        ("generate_release_notes" -> true) ~
+        ("draft" -> true)
+
     val jsonCompact = compact(render(content))
 
     val url = releasesUrl(project)
