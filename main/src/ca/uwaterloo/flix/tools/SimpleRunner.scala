@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.Main.{CmdOpts, Command}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.collection.Chain
 
 import java.nio.file.Path
 
@@ -111,7 +112,7 @@ object SimpleRunner {
         Result.Ok(())
 
       case failure =>
-        flix.mkMessages(failure.errors.toSeq.sortBy(_.source.name))
+        flix.mkMessages(Chain.from(failure.errors.toSeq.sortBy(_.source.name)))
           .foreach(println)
         println()
         println(s"Compilation failed with ${failure.errors.length} error(s).")

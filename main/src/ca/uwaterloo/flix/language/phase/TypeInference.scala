@@ -126,7 +126,7 @@ object TypeInference {
                 // Case 1: no errors, continue
                 case Validation.Success(s) => s
                 case failure =>
-                  val instanceErrs = failure.errors.collect {
+                  val instanceErrs = failure.errors.toList.collect {
                     case UnificationError.NoMatchingInstance(tconstr) =>
                       tconstr.arg.typeConstructor match {
                         case Some(tc: TypeConstructor.Arrow) =>

@@ -354,7 +354,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
           this.currentErrors = errors.toList
 
           // Publish diagnostics.
-          val results = PublishDiagnosticsParams.fromMessages(errors, flix.options.explain)
+          val results = PublishDiagnosticsParams.fromMessages(currentErrors, flix.options.explain)
           ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> results.map(_.toJSON))
       }
     } catch {
@@ -389,7 +389,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
 
     // Determine the status based on whether there are errors.
-    val results = PublishDiagnosticsParams.fromMessages(errors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
+    val results = PublishDiagnosticsParams.fromMessages(currentErrors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
   }
 
