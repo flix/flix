@@ -685,7 +685,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
     }
 
-    // Build fpkg
+    // Build artifacts
+    println("Building project...")
     val buildResult = buildPkg(o)
     buildResult match {
       case Validation.Success(_) => // Continue
@@ -694,6 +695,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Publish to GitHub
+    println("Publishing new release...")
     val artifacts = Files.list(getArtifactDirectory(projectPath)).iterator().asScala.toList
     val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubKey)
     publishResult match {
