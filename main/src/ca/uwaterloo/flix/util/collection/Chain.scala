@@ -44,6 +44,16 @@ sealed trait Chain[+A] extends Iterable[A] {
   }
 
   /**
+    * Returns `this` as a [[List]].
+    */
+  override def toList: List[A] = this match {
+    case Chain.Empty => List.empty
+    case Chain.Link(l, r) => l.toList ++ r.toList
+    case Chain.Many(cs) => cs.flatMap(_.toList).toList
+    case Chain.Proxy(xs) => xs.toList
+  }
+
+  /**
     * The empty chain.
     */
   override val empty: Chain[A] = Chain.Empty
@@ -71,58 +81,22 @@ object Chain {
   /**
     * The empty chain.
     */
-  private case object Empty extends Chain[Nothing] {
-
-    /**
-      * Returns `this` as a [[List]].
-      *
-      * NB.: This method must be overridden in each case class,
-      * otherwise it results in a [[StackOverflowError]].
-      */
-    override def toList: List[Nothing] = Nil
-  }
+  private case object Empty extends Chain[Nothing]
 
   /**
     * A concatenation of two chains.
     */
-  private case class Link[A](l: Chain[A], r: Chain[A]) extends Chain[A] {
-
-    /**
-      * Returns `this` as a [[List]].
-      *
-      * NB.: This method must be overridden in each case class,
-      * otherwise it results in a [[StackOverflowError]].
-      */
-    override def toList: List[A] = l.toList ++ r.toList
-  }
+  private case class Link[A](l: Chain[A], r: Chain[A]) extends Chain[A]
 
   /**
     * A concatenation of many chains.
     */
-  private case class Many[A](cs: Seq[Chain[A]]) extends Chain[A] {
-
-    /**
-      * Returns `this` as a [[List]].
-      *
-      * NB.: This method must be overridden in each case class,
-      * otherwise it results in a [[StackOverflowError]].
-      */
-    override def toList: List[A] = cs.flatMap(_.toList).toList
-  }
+  private case class Many[A](cs: Seq[Chain[A]]) extends Chain[A]
 
   /**
     * A chain wrapping a sequence.
     */
-  private case class Proxy[A](xs: Seq[A]) extends Chain[A] {
-
-    /**
-      * Returns `this` as a [[List]].
-      *
-      * NB.: This method must be overridden in each case class,
-      * otherwise it results in a [[StackOverflowError]].
-      */
-    override def toList: List[A] = xs.toList
-  }
+  private case class Proxy[A](xs: Seq[A]) extends Chain[A]
 
   /**
     * Returns a chain containing the given elements.
