@@ -91,8 +91,8 @@ object ManifestParser {
       authors <- getRequiredArrayProperty("package.authors", parser, p);
       authorsList <- convertTomlArrayToStringList(authors, p);
 
-      github <- getOptionalStringProperty("package.github", parser, p);
-      githubProject <- toGithubProject(github, p);
+      repository <- getOptionalStringProperty("package.repository", parser, p);
+      githubProject <- toGithubProject(repository, p);
 
       deps <- getOptionalTableProperty("dependencies", parser, p);
       depsList <- collectDependencies(deps, flixDep = true, prodDep = true, jarDep = false, p);
@@ -123,7 +123,7 @@ object ManifestParser {
 
     val dottedKeys = parser.dottedKeySet().asScala.toSet
     val packageKeys = dottedKeys.filter(s => s.startsWith("package."))
-    val allowedPackageKeys = Set("package.name", "package.description", "package.version", "package.flix", "package.authors", "package.github", "package.license")
+    val allowedPackageKeys = Set("package.name", "package.description", "package.version", "package.flix", "package.authors", "package.repository", "package.license")
     val illegalPackageKeys = packageKeys.diff(allowedPackageKeys)
     if (illegalPackageKeys.nonEmpty) {
       return Err(ManifestError.IllegalPackageKeyFound(p, illegalPackageKeys.head))
@@ -217,13 +217,18 @@ object ManifestParser {
   /**
     * Converts an optional String `optS` to an optional reference to a GitHub project.
     * Returns an error if the string is present but not in the correct format.
-    * The only allowed format is "username/repository".
+    * The only allowed format is "github:<username>/<repository>".
     */
   private def toGithubProject(optS: Option[String], p: Path): Result[Option[GitHub.Project], ManifestError] = {
     optS match {
-      case Some(s) => GitHub.parseProject(s) match {
-        case Ok(p) => Ok(Some(p))
-        case Err(_) => Err(ManifestError.GithubRepoFormatError(p, s))
+      case Some(s) =>
+        s.split(':') match {
+          case Array("github", repo) =>
+            GitHub.parseProject(repo) match {
+              case Ok(p) => Ok(Some(p))
+              case Err(_) => Err(ManifestError.RepositoryFormatError(p, s))
+            }
+          case _ => Err(ManifestError.RepositoryFormatError(p, s))
       }
       case None => Ok(None)
     }

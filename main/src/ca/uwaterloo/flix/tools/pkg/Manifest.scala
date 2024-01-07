@@ -23,5 +23,5 @@ case class Manifest(name: String,
                     flix: SemVer,
                     license: Option[String],
                     authors: List[String],
-                    github: Option[GitHub.Project],
+                    repository: Option[GitHub.Project],
                     dependencies: List[Dependency]) { }

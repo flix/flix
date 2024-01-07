@@ -79,11 +79,11 @@ object ManifestError {
          |""".stripMargin
   }
 
-  case class GithubRepoFormatError(path: Path, github: String) extends ManifestError {
+  case class RepositoryFormatError(path: Path, repository: String) extends ManifestError {
     override def message(f: Formatter): String =
       s"""
-         | A reference to a GitHub repository should be formatted like so: 'username/projectname'.
-         | Instead found: ${f.red(github)}.
+         | A reference to a repository should be formatted like so: 'github:username/projectname'.
+         | Instead found: ${f.red(repository)}.
          | The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
          |""".stripMargin
   }
@@ -221,7 +221,7 @@ object ManifestError {
       s"""
          | The toml file has an entry in the package table named ${f.red(entryName)}, which is not allowed.
          | Allowed entry names in the package table:
-         |   name, description, version, flix, authors, github, license
+         |   name, description, version, flix, authors, repository, license
          | The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
          |""".stripMargin
   }
