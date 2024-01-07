@@ -468,9 +468,6 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Function, Nil, op.loc)
       Iterator(t) ++ visitExps(exps)
 
-    case Expr.Resume(exp, _, _) =>
-      visitExp(exp)
-
     case Expr.InvokeConstructor(_, exps, _, _, _) =>
       exps.foldLeft(Iterator.empty[SemanticToken]) {
         case (acc, exp) => acc ++ visitExp(exp)
@@ -597,6 +594,8 @@ object SemanticTokensProvider {
       patsVal ++ patVal ++ tVal
 
     case Pattern.RecordEmpty(tpe, _) => Iterator.empty
+
+    case Pattern.Error(_, _) => Iterator.empty
   }
 
   /**
@@ -697,6 +696,7 @@ object SemanticTokensProvider {
     case TypeConstructor.CaseUnion(_) => false
     case TypeConstructor.CaseIntersection(_) => false
     case TypeConstructor.CaseSet(_, _) => false
+    case TypeConstructor.Error(_) => false
   }
 
   /**

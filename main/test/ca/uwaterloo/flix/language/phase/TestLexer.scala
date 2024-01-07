@@ -139,10 +139,16 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.UnterminatedChar](result)
   }
 
-  test("LexerError.UnterminatedChar.05") {
-    val input = "'a"
+  test("LexerError.UnterminatedRegex.01") {
+    val input = """ regex" """
     val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.UnterminatedChar](result)
+    expectError[LexerError.UnterminatedRegex](result)
+  }
+
+  test("LexerError.UnterminatedRegex.02") {
+    val input = """ regex"\" """
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedRegex](result)
   }
 
   test("LexerError.UnterminatedInfixFunction.01") {

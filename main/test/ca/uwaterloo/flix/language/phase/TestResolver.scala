@@ -386,7 +386,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit = try () with E {
-        |    def op() = resume()
+        |    def op() = ()
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -419,7 +419,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |eff E
         |
         |def f(): Unit = try () with E {
-        |    def op() = resume()
+        |    def op() = ()
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -661,7 +661,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchingReturnType](result)
+    expectError[ResolutionError.MismatchedReturnType](result)
   }
 
   test("MismatchingReturnType.02") {
@@ -672,7 +672,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchingReturnType](result)
+    expectError[ResolutionError.MismatchedReturnType](result)
   }
 
   test("MismatchingReturnType.03") {
@@ -684,7 +684,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchingReturnType](result)
+    expectError[ResolutionError.MismatchedReturnType](result)
   }
 
   test("UndefinedJvmField.01") {
@@ -970,17 +970,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedAssocType](result)
-  }
-
-  test("IllegalDerivation.01") {
-    val input =
-      """
-        |class C[a]
-        |
-        |enum E with C
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalDerivation](result)
   }
 
   test("IllegalType.01") {

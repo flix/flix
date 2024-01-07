@@ -181,8 +181,6 @@ object NamedAst {
 
     case class Do(op: Name.QName, args: List[Expr], loc: SourceLocation) extends Expr
 
-    case class Resume(exp: Expr, loc: SourceLocation) extends Expr
-
     case class InvokeConstructor(className: String, args: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
 
     case class InvokeMethod(className: String, methodName: String, exp: Expr, args: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
@@ -254,6 +252,8 @@ object NamedAst {
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
     case class RecordEmpty(loc: SourceLocation) extends Pattern
+
+    case class Error(loc: SourceLocation) extends Pattern
 
     object Record {
       case class RecordLabelPattern(label: Name.Label, pat: Pattern, loc: SourceLocation)

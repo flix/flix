@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-mod Fixpoint {
+mod Fixpoint.Phase.Compiler {
 
-    use Fixpoint.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
-    use Fixpoint.Ast.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Denotation, Polarity, VarSym}
-    use Fixpoint.Ast.Datalog.Datalog
-    use Fixpoint.Ast.Constraint.Constraint
-    use Fixpoint.Ast.HeadPredicate.HeadAtom
-    use Fixpoint.Ast.BodyPredicate.{BodyAtom}
-    use Fixpoint.Ast.BodyPredicate.{Functional}
-    use Fixpoint.Ast.BodyPredicate.{Guard0, Guard1, Guard2, Guard3, Guard4, Guard5}
-    use Fixpoint.Ast.isRelational
-    use Fixpoint.Shared.PredSym
-    use Fixpoint.Shared.PredSym.PredSym
+    use Fixpoint.Ast.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
+    use Fixpoint.Ast.Datalog.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Polarity, VarSym}
+    use Fixpoint.Ast.Datalog.Datalog.{Datalog}
+    use Fixpoint.Ast.Datalog.Constraint.Constraint
+    use Fixpoint.Ast.Datalog.HeadPredicate.HeadAtom
+    use Fixpoint.Ast.Datalog.BodyPredicate.{BodyAtom}
+    use Fixpoint.Ast.Datalog.BodyPredicate.{Functional}
+    use Fixpoint.Ast.Datalog.BodyPredicate.{Guard0, Guard1, Guard2, Guard3, Guard4, Guard5}
+    use Fixpoint.Ast.Shared.Denotation
+    use Fixpoint.Ast.Shared.isRelational
+    use Fixpoint.Ast.Shared.PredSym
+    use Fixpoint.Ast.Shared.PredSym.PredSym
 
     ///
     /// Compile the given Datalog program `d` to RAM.
@@ -36,7 +37,8 @@ mod Fixpoint {
     /// This means to compile all rules in stratum 0, then stratum 1 and so on.
     /// A rule belongs to the same stratum as its head predicate.
     ///
-    def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] = match d {
+    @Internal
+    pub def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] = match d {
         case Datalog(facts, rules) => region rc {
             let stmts = MutList.new(rc);
             Vector.forEach(compileRule(stmts), facts);
@@ -144,7 +146,7 @@ mod Fixpoint {
                     case _ => acc
                 }, loopBody, augBody) |>
                 RamStmt.Insert;
-            if (enableDebugging()) {
+            if (Fixpoint.Options.enableDebugging()) {
                 let comment = RamStmt.Comment(ToString.toString(rule));
                 MutList.push!(comment, stmts);
                 MutList.push!(insert, stmts)
@@ -212,7 +214,7 @@ mod Fixpoint {
                 case BodyAtom(_, _, Polarity.Positive, _, _) => true
                 case _ => false
             }, augBody);
-            if (enableDebugging()) {
+            if (Fixpoint.Options.enableDebugging()) {
                 let comment = RamStmt.Comment(ToString.toString(rule));
                 MutList.push!(comment, stmts);
                 Vector.forEach(match (_, rowVar) -> compile(rowVar), positiveAtoms)

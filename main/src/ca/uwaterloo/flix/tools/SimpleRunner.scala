@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.Main.{CmdOpts, Command}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util._
 
 import java.nio.file.Path
@@ -28,7 +27,7 @@ import java.nio.file.Path
   */
 object SimpleRunner {
 
-  def run(cwd: Path, cmdOpts: CmdOpts, options: Options): Validation[Unit, Int] = {
+  def run(cwd: Path, cmdOpts: CmdOpts, options: Options): Result[Unit, Int] = {
 
     // check if the --Xbenchmark-code-size flag was passed.
     if (cmdOpts.xbenchmarkCodeSize) {
@@ -109,14 +108,14 @@ object SimpleRunner {
             // Exit.
             System.exit(0)
         }
-        ().toSuccess
+        Result.Ok(())
 
       case failure =>
         flix.mkMessages(failure.errors.sortBy(_.source.name))
           .foreach(println)
         println()
         println(s"Compilation failed with ${failure.errors.length} error(s).")
-        1.toFailure
+        Result.Err(1)
     }
   }
 }

@@ -47,13 +47,17 @@ object TokenKind {
 
   case object Arrow extends TokenKind
 
+  case object ArrowThin extends TokenKind
+
   case object At extends TokenKind
 
-  case object BackArrow extends TokenKind
+  case object BackArrowThin extends TokenKind
 
   case object Backslash extends TokenKind
 
   case object Bang extends TokenKind
+
+  case object BangEqual extends TokenKind
 
   case object Bar extends TokenKind
 
@@ -76,6 +80,8 @@ object TokenKind {
   case object CommentBlock extends TokenKind
 
   case object CommentLine extends TokenKind
+
+  case object CommentDoc extends TokenKind
 
   case object CurlyL extends TokenKind
 
@@ -211,8 +217,6 @@ object TokenKind {
 
   case object KeywordRestrictable extends TokenKind
 
-  case object KeywordResume extends TokenKind
-
   case object KeywordSealed extends TokenKind
 
   case object KeywordSelect extends TokenKind
@@ -262,6 +266,8 @@ object TokenKind {
   case object LiteralInt32 extends TokenKind
 
   case object LiteralInt64 extends TokenKind
+
+  case object LiteralRegex extends TokenKind
 
   case object LiteralString extends TokenKind
 

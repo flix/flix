@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
@@ -26,7 +25,7 @@ import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 import scala.annotation.tailrec
 
@@ -46,9 +45,10 @@ object Stratifier {
   /**
     * Returns a stratified version of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Stratifier") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, StratificationError] = flix.phase("Stratifier") {
     implicit val g: LabelledPrecedenceGraph = root.precedenceGraph
     implicit val r: Root = root
+
     // Compute the stratification at every datalog expression in the ast.
     val newDefs = ParOps.parTraverseValues(root.defs)(visitDef(_))
     val newInstances = ParOps.parTraverseValues(root.instances)(traverse(_)(visitInstance(_)))
@@ -62,7 +62,7 @@ object Stratifier {
   /**
     * Performs Stratification of the given class `c0`.
     */
-  private def visitClass(c0: TypedAst.Class)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Class, CompilationMessage] = {
+  private def visitClass(c0: TypedAst.Class)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Class, StratificationError] = {
     val newLaws = traverse(c0.laws)(visitDef(_))
     val newSigs = traverse(c0.sigs)(visitSig(_))
     mapN(newLaws, newSigs) {
@@ -73,7 +73,7 @@ object Stratifier {
   /**
     * Performs Stratification of the given sig `s0`.
     */
-  private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Sig, CompilationMessage] = {
+  private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Sig, StratificationError] = {
     val newExp = traverseOpt(s0.exp)(visitExp(_))
     mapN(newExp){
       case ne => s0.copy(exp = ne)
@@ -84,13 +84,13 @@ object Stratifier {
   /**
     * Performs Stratification of the given instance `i0`.
     */
-  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Instance, CompilationMessage] =
+  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Instance, StratificationError] =
     traverse(i0.defs)(d => visitDef(d)).map(ds => i0.copy(defs = ds))
 
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[Def, CompilationMessage] =
+  private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[Def, StratificationError] =
     visitExp(def0.exp) map {
       case e => def0.copy(exp = e)
     }
@@ -98,18 +98,18 @@ object Stratifier {
   /**
     * Performs stratification of the given expression `exp0`.
     *
-    * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
+    * Returns [[Success]] if the expression is stratified. Otherwise returns [[HardFailure]] with a [[StratificationError]].
     */
   private def visitExp(exp0: Expr)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[Expr, StratificationError] = exp0 match {
-    case Expr.Cst(_, _, _) => exp0.toSuccess
+    case Expr.Cst(_, _, _) => Validation.success(exp0)
 
-    case Expr.Var(_, _, _) => exp0.toSuccess
+    case Expr.Var(_, _, _) => Validation.success(exp0)
 
-    case Expr.Def(_, _, _) => exp0.toSuccess
+    case Expr.Def(_, _, _) => Validation.success(exp0)
 
-    case Expr.Sig(_, _, _) => exp0.toSuccess
+    case Expr.Sig(_, _, _) => Validation.success(exp0)
 
-    case Expr.Hole(_, _, _) => exp0.toSuccess
+    case Expr.Hole(_, _, _) => Validation.success(exp0)
 
     case Expr.HoleWithExp(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
@@ -157,7 +157,7 @@ object Stratifier {
       }
 
     case Expr.Region(_, _) =>
-      exp0.toSuccess
+      Validation.success(exp0)
 
     case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
@@ -231,7 +231,7 @@ object Stratifier {
       }
 
     case Expr.RecordEmpty(tpe, loc) =>
-      Expr.RecordEmpty(tpe, loc).toSuccess
+      Validation.success(Expr.RecordEmpty(tpe, loc))
 
     case Expr.RecordSelect(base, label, tpe, eff, loc) =>
       mapN(visitExp(base)) {
@@ -352,11 +352,6 @@ object Stratifier {
         case es => Expr.Do(sym, es, tpe, eff, loc)
       }
 
-    case Expr.Resume(exp, tpe, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expr.Resume(e, tpe, loc)
-      }
-
     case Expr.InvokeConstructor(constructor, args, tpe, eff, loc) =>
       mapN(traverse(args)(visitExp)) {
         case as => Expr.InvokeConstructor(constructor, as, tpe, eff, loc)
@@ -383,7 +378,7 @@ object Stratifier {
       }
 
     case Expr.GetStaticField(field, tpe, eff, loc) =>
-      Expr.GetStaticField(field, tpe, eff, loc).toSuccess
+      Validation.success(Expr.GetStaticField(field, tpe, eff, loc))
 
     case Expr.PutStaticField(field, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
@@ -418,7 +413,7 @@ object Stratifier {
       }
 
       val defaultVal = default match {
-        case None => None.toSuccess
+        case None => Validation.success(None)
         case Some(exp) => visitExp(exp) map {
           case e => Some(e)
         }
@@ -539,7 +534,7 @@ object Stratifier {
   /**
     * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
     */
-  private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Validation[Unit, StratificationError] = {
+  private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Unit, StratificationError] = {
     // The key is the set of predicates that occur in the row type.
     val key = predicateSymbolsOf(tpe)
 
@@ -547,7 +542,10 @@ object Stratifier {
     val rg = g.restrict(key, labelEq(_, _))
 
     // Compute the stratification.
-    UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc).map(_ => ()).recoverOne[Unit](_ => ())
+    UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc) match {
+      case Result.Ok(_) => Validation.success(())
+      case Result.Err(e) => Validation.toSoftFailure((), e)
+    }
   }
 
   /**

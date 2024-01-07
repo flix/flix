@@ -29,6 +29,7 @@ object TypedAstOps {
       val patVal = binds(pat)
       patsVal ++ patVal
     case Pattern.RecordEmpty(_, _) => Map.empty
+    case Pattern.Error(_, _) => Map.empty
   }
 
   /**
@@ -85,7 +86,6 @@ object TypedAstOps {
     case Expr.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.TryWith(exp, _, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.Do(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.Resume(exp, _, _) => sigSymsOf(exp)
     case Expr.InvokeConstructor(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
     case Expr.InvokeMethod(_, exp, args, _, _, _) => sigSymsOf(exp) ++ args.flatMap(sigSymsOf)
     case Expr.InvokeStaticMethod(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
@@ -292,9 +292,6 @@ object TypedAstOps {
     case Expr.Do(_, exps, _, _, _) =>
       exps.flatMap(freeVars).toMap
 
-    case Expr.Resume(exp, _, _) =>
-      freeVars(exp)
-
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       args.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => acc ++ freeVars(exp)
@@ -405,6 +402,7 @@ object TypedAstOps {
       patsVal ++ patVal
 
     case Pattern.RecordEmpty(_, _) => Map.empty
+    case Pattern.Error(_, _) => Map.empty
   }
 
   /**

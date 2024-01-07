@@ -29,6 +29,15 @@ object ListMap {
     * Returns a singleton list map with a mapping from `k` to `v`.
     */
   def singleton[K, V](k: K, v: V): ListMap[K, V] = empty + (k -> v)
+
+  /**
+    * Creates a ListMap from the given iterable.
+    */
+  def from[K, V](it: Iterable[(K, V)]): ListMap[K, V] = {
+    it.iterator.foldLeft(ListMap.empty[K, V]) {
+      case (acc, (k, v)) => acc + (k, v)
+    }
+  }
 }
 
 /**
@@ -73,5 +82,15 @@ case class ListMap[K, V](m: Map[K, List[V]]) {
       case (macc, (k, vs)) => macc ++ (k -> vs)
     }
   }
+
+  /**
+   * Returns `this` list map without the mapping for `k`.
+   */
+  def -(k: K): ListMap[K, V] = ListMap(m - k)
+
+  /**
+   * Returns ´this´ list map without the mappings for ´ks´.
+   */
+  def --(ks: Iterable[K]): ListMap[K, V] = ListMap(m -- ks)
 
 }

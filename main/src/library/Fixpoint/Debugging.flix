@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-mod Fixpoint {
+mod Fixpoint.Debugging {
 
-    use Fixpoint.Ast.Datalog
-    use Fixpoint.Ram.RamStmt
-    use Fixpoint.Shared.PredSym
+    use Fixpoint.Ast.Datalog.Datalog
+    use Fixpoint.Ast.Ram.RamStmt
+    use Fixpoint.Ast.Shared.PredSym
 
     ///
     /// Invoked before the fixpoint computation.
     ///
     @Internal
     pub def notifyPreSolve(d: Datalog[v], _stf: Map[PredSym, Int32]): Unit \ IO with Order[v] = {
-        if (enableDebugging()) {
+        if (Fixpoint.Options.enableDebugging()) {
             println(String.repeat(80, "*"));
             println("** Datalog Input");
             println(String.repeat(80, "*"));
@@ -40,7 +40,7 @@ mod Fixpoint {
     ///
     @Internal
     pub def notifyPostSolve(d: Datalog[v]): Unit \ IO with Order[v] = {
-        if (enableDebugging()) {
+        if (Fixpoint.Options.enableDebugging()) {
             println(String.repeat(80, "*"));
             println("** Minimal Model");
             println(String.repeat(80, "*"));
@@ -55,7 +55,7 @@ mod Fixpoint {
     ///
     @Internal
     pub def notifyPreInterpret(s: RamStmt[v]): Unit \ IO with Order[v] = {
-        if (enableDebugging()) {
+        if (Fixpoint.Options.enableDebugging()) {
             println(String.repeat(80, "*"));
             println("** Relation Algebra Machine AST");
             println(String.repeat(80, "*"));

@@ -132,7 +132,7 @@ object DocAst {
 
     /** e.g. `x_2` */
     def VarWithOffset(sym: Symbol.VarSym): Expression =
-      AsIs(sym.toString + "_" + sym.getStackOffset.toString)
+      AsIs(sym.toString + "_" + sym.getStackOffset(0).toString)
 
     def Hole(sym: Symbol.HoleSym): Expression =
       AsIs("?" + sym.toString)
@@ -199,12 +199,6 @@ object DocAst {
     def Force(d: Expression): Expression =
       Keyword("force", d)
 
-    def Box(d: Expression): Expression =
-      Keyword("box", d)
-
-    def Unbox(d: Expression): Expression =
-      Keyword("unbox", d)
-
     def Index(idx: Int, d: Expression): Expression =
       Dot(d, AsIs(s"_$idx"))
 
@@ -243,9 +237,6 @@ object DocAst {
 
     def Do(sym: Symbol.OpSym, ds: List[Expression]): Expression =
       Keyword("do", App(AsIs(sym.toString), ds))
-
-    def Resume(d: Expression): Expression =
-      App(AsIs("resume"), List(d))
 
     def JavaInvokeMethod(m: Method, d: Expression, ds: List[Expression]): Expression =
       App(DoubleDot(d, AsIs(m.getName)), ds)

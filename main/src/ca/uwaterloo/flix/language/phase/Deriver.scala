@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, mapN, sequence}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.Validation.mapN
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 /**
   * Constructs instances derived from enums.
@@ -59,15 +59,15 @@ object Deriver {
       lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
       lazy val hashSym = PredefinedClasses.lookupClassSym("Hash", root)
       lazy val sendableSym = PredefinedClasses.lookupClassSym("Sendable", root)
-      sequence(derives.classes.map {
-        case Ast.Derivation(classSym, classLoc) if cases.isEmpty => DerivationError.IllegalDerivationForEmptyEnum(enumSym, classSym, classLoc).toFailure
-        case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum0, loc, root)
-        case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum0, loc, root)
-        case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum0, loc, root)
-        case Ast.Derivation(sym, loc) if sym == hashSym => mkHashInstance(enum0, loc, root)
-        case Ast.Derivation(sym, loc) if sym == sendableSym => mkSendableInstance(enum0, loc, root)
-        case unknownSym => throw InternalCompilerException(s"Unexpected derivation: $unknownSym", SourceLocation.Unknown)
-      })
+      Validation.traverse(derives.classes) {
+        case Ast.Derivation(classSym, loc) if cases.isEmpty => Validation.toSoftFailure(None, DerivationError.IllegalDerivationForEmptyEnum(enumSym, classSym, loc))
+        case Ast.Derivation(sym, loc) if sym == eqSym => mkEqInstance(enum0, loc, root).map(Some.apply)
+        case Ast.Derivation(sym, loc) if sym == orderSym => mkOrderInstance(enum0, loc, root).map(Some.apply)
+        case Ast.Derivation(sym, loc) if sym == toStringSym => mkToStringInstance(enum0, loc, root).map(Some.apply)
+        case Ast.Derivation(sym, loc) if sym == hashSym => mkHashInstance(enum0, loc, root).map(Some.apply)
+        case Ast.Derivation(sym, loc) if sym == sendableSym => mkSendableInstance(enum0, loc, root).map(Some.apply)
+        case Ast.Derivation(sym, loc) => Validation.toSoftFailure(None, DerivationError.IllegalDerivation(sym, Resolver.DerivableSyms, loc))
+      }.map(_.flatten)
   }
 
   /**
@@ -108,7 +108,7 @@ object Deriver {
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, eqClassSym, loc)
 
-      KindedAst.Instance(
+      Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
@@ -119,7 +119,7 @@ object Deriver {
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
-      ).toSuccess
+      ))
   }
 
   /**
@@ -128,7 +128,7 @@ object Deriver {
   private def mkEqImpl(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
       // create a match rule for each case
-      val mainMatchRules = cases.values.map(mkEqMatchRule(_, loc, root))
+      val mainMatchRules = getCasesInStableOrder(cases).map(mkEqMatchRule(_, loc, root))
 
       // create a default rule
       // `case _ => false`
@@ -137,7 +137,7 @@ object Deriver {
       // group the match rules in an expression
       KindedAst.Expr.Match(
         KindedAst.Expr.Tuple(List(mkVarExpr(param1, loc), mkVarExpr(param2, loc)), loc),
-        (mainMatchRules ++ List(defaultRule)).toList,
+        (mainMatchRules ++ List(defaultRule)),
         loc
       )
   }
@@ -258,7 +258,7 @@ object Deriver {
       val defn = KindedAst.Def(compareDefSym, spec, exp)
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, orderClassSym, loc)
-      KindedAst.Instance(
+      Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
@@ -269,7 +269,7 @@ object Deriver {
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
-      ).toSuccess
+      ))
   }
 
   /**
@@ -283,8 +283,8 @@ object Deriver {
 
       // Create the lambda mapping tags to indices
       val lambdaParamVarSym = Symbol.freshVarSym("e", BoundBy.FormalParam, loc)
-      val indexMatchRules = cases.values.zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
-      val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules.toList, loc)
+      val indexMatchRules = getCasesInStableOrder(cases).zipWithIndex.map { case (caze, index) => mkCompareIndexMatchRule(caze, index, loc) }
+      val indexMatchExp = KindedAst.Expr.Match(mkVarExpr(lambdaParamVarSym, loc), indexMatchRules, loc)
       val lambda = KindedAst.Expr.Lambda(
         KindedAst.FormalParam(lambdaParamVarSym, Ast.Modifiers.Empty, lambdaParamVarSym.tvar, Ast.TypeSource.Ascribed, loc),
         indexMatchExp,
@@ -292,7 +292,7 @@ object Deriver {
       )
 
       // Create the main match expression
-      val matchRules = cases.values.map(mkComparePairMatchRule(_, loc, root))
+      val matchRules = getCasesInStableOrder(cases).map(mkComparePairMatchRule(_, loc, root))
 
       // Create the default rule:
       // `case _ => compare(indexOf(x), indexOf(y))`
@@ -472,7 +472,7 @@ object Deriver {
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, toStringClassSym, loc)
 
-      KindedAst.Instance(
+      Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
@@ -483,7 +483,7 @@ object Deriver {
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
-      ).toSuccess
+      ))
   }
 
   /**
@@ -492,7 +492,7 @@ object Deriver {
   private def mkToStringImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
       // create a match rule for each case
-      val matchRules = cases.values.map(mkToStringMatchRule(_, loc, root))
+      val matchRules = getCasesInStableOrder(cases).map(mkToStringMatchRule(_, loc, root))
 
       // group the match rules in an expression
       KindedAst.Expr.Match(
@@ -607,7 +607,7 @@ object Deriver {
       val defn = KindedAst.Def(hashDefSym, spec, exp)
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, hashClassSym, loc)
-      KindedAst.Instance(
+      Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
@@ -618,7 +618,7 @@ object Deriver {
         assocs = Nil,
         ns = Name.RootNS,
         loc = loc
-      ).toSuccess
+      ))
   }
 
   /**
@@ -627,14 +627,14 @@ object Deriver {
   private def mkHashImpl(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
       // create a match rule for each case
-      val matchRules = cases.values.zipWithIndex.map {
+      val matchRules = getCasesInStableOrder(cases).zipWithIndex.map {
         case (caze, index) => mkHashMatchRule(caze, index, loc, root)
       }
 
       // group the match rules in an expression
       KindedAst.Expr.Match(
         mkVarExpr(param, loc),
-        matchRules.toList,
+        matchRules,
         loc
       )
   }
@@ -729,7 +729,7 @@ object Deriver {
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, sendableClassSym, loc)
 
-      KindedAst.Instance(
+      Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
@@ -740,7 +740,14 @@ object Deriver {
         assocs = Nil,
         ns = Name.RootNS,
         loc = loc
-      ).toSuccess
+      ))
+  }
+
+  /**
+    * Returns the cases in `m` in a *stable order* that relies on the order of their source locations.
+    */
+  private def getCasesInStableOrder(m: Map[Symbol.CaseSym, KindedAst.Case]): List[KindedAst.Case] = {
+    m.values.toList.sortBy(_.loc)
   }
 
   /**

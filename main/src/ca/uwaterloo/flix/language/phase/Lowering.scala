@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
   * This phase translates AST expressions related to the Datalog subset of the
-  * language into `Fixpoint/Ast` values (which are ordinary Flix values).
+  * language into `Fixpoint.Ast.Datalog` values (which are ordinary Flix values).
   * This allows the Datalog engine to be implemented as an ordinary Flix program.
   *
   * In addition to translating expressions, types must also be translated from
@@ -45,14 +45,14 @@ object Lowering {
   private object Defs {
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.box")
 
-    lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.solve")
-    lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.union")
-    lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.project")
-    lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint.rename")
+    lazy val Solve: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.solve")
+    lazy val Merge: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.union")
+    lazy val Filter: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.project")
+    lazy val Rename: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Solver.rename")
 
-    def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.injectInto$arity")
+    def ProjectInto(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint/Solver.injectInto$arity")
 
-    def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint.facts$arity")
+    def Facts(arity: Int): Symbol.DefnSym = Symbol.mkDefnSym(s"Fixpoint/Solver.facts$arity")
 
     lazy val DebugWithPrefix: Symbol.DefnSym = Symbol.mkDefnSym("Debug.debugWithPrefix")
 
@@ -74,21 +74,21 @@ object Lowering {
   }
 
   private object Enums {
-    lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Datalog")
-    lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Constraint")
+    lazy val Datalog: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.Datalog")
+    lazy val Constraint: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.Constraint")
 
-    lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadPredicate")
-    lazy val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyPredicate")
+    lazy val HeadPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.HeadPredicate")
+    lazy val BodyPredicate: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.BodyPredicate")
 
-    lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.HeadTerm")
-    lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.BodyTerm")
+    lazy val HeadTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.HeadTerm")
+    lazy val BodyTerm: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.BodyTerm")
 
-    lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Shared.PredSym")
-    lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.VarSym")
+    lazy val PredSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Shared.PredSym")
+    lazy val VarSym: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.VarSym")
 
-    lazy val Denotation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Denotation")
-    lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Polarity")
-    lazy val Fixity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.Fixity")
+    lazy val Denotation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Shared.Denotation")
+    lazy val Polarity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.Polarity")
+    lazy val Fixity: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast/Datalog.Fixity")
     lazy val SourceLocation: Symbol.EnumSym = Symbol.mkEnumSym("Fixpoint/Ast.SourceLocation")
 
     lazy val Comparison: Symbol.EnumSym = Symbol.mkEnumSym("Comparison")
@@ -556,8 +556,12 @@ object Lowering {
       val e = visitExp(exp)
       LoweredAst.Expr.ApplyAtomic(AtomicOp.InstanceOf(clazz), List(e), Type.Bool, e.eff, loc)
 
-    case TypedAst.Expr.CheckedCast(_, exp, _, _, _) =>
-      visitExp(exp)
+    case TypedAst.Expr.CheckedCast(_, exp, tpe, eff, loc) =>
+      // Note: We do *NOT* erase checked (i.e. safe) casts.
+      // In Java, `String` is a subtype of `Object`, but the Flix IR makes this upcast _explicit_.
+      val e = visitExp(exp)
+      val t = visitType(tpe)
+      LoweredAst.Expr.Cast(e, Some(t), None, t, eff, loc)
 
     case TypedAst.Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -586,11 +590,6 @@ object Lowering {
     case TypedAst.Expr.Do(sym, exps, tpe, eff, loc) =>
       val es = visitExps(exps)
       LoweredAst.Expr.Do(sym, es, tpe, eff, loc)
-
-    case TypedAst.Expr.Resume(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      LoweredAst.Expr.Resume(e, t, loc)
 
     case TypedAst.Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
       val es = visitExps(exps)
@@ -849,6 +848,8 @@ object Lowering {
 
     case TypedAst.Pattern.RecordEmpty(tpe, loc) =>
       LoweredAst.Pattern.RecordEmpty(visitType(tpe), loc)
+
+    case TypedAst.Pattern.Error(_, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
   }
 
   /**
@@ -981,7 +982,7 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.Datalog` value from the given list of Datalog constraints `cs`.
+    * Constructs a `Fixpoint/Ast/Datalog.Datalog` value from the given list of Datalog constraints `cs`.
     */
   private def mkDatalog(cs: List[TypedAst.Constraint], loc: SourceLocation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
     val factExps = cs.filter(c => c.body.isEmpty).map(visitConstraint)
@@ -1108,6 +1109,8 @@ object Lowering {
 
     case TypedAst.Pattern.RecordEmpty(_, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
 
+    case TypedAst.Pattern.Error(_, loc) => throw InternalCompilerException(s"Unexpected pattern: '$pat0'.", loc)
+
   }
 
   /**
@@ -1122,7 +1125,7 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.HeadTerm.Var` from the given variable symbol `sym`.
+    * Constructs a `Fixpoint/Ast/Datalog.HeadTerm.Var` from the given variable symbol `sym`.
     */
   private def mkHeadTermVar(sym: Symbol.VarSym)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
     val innerExp = mkVarSym(sym)
@@ -1130,14 +1133,14 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.HeadTerm.Lit` value which wraps the given expression `exp`.
+    * Constructs a `Fixpoint/Ast/Datalog.HeadTerm.Lit` value which wraps the given expression `exp`.
     */
   private def mkHeadTermLit(exp: LoweredAst.Expr)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
     mkTag(Enums.HeadTerm, "Lit", exp, Types.HeadTerm, exp.loc)
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.BodyTerm.Wild` from the given source location `loc`.
+    * Constructs a `Fixpoint/Ast/Datalog.BodyTerm.Wild` from the given source location `loc`.
     */
   private def mkBodyTermWild(loc: SourceLocation): LoweredAst.Expr = {
     val innerExp = LoweredAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)
@@ -1145,7 +1148,7 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.BodyTerm.Var` from the given variable symbol `sym`.
+    * Constructs a `Fixpoint/Ast/Datalog.BodyTerm.Var` from the given variable symbol `sym`.
     */
   private def mkBodyTermVar(sym: Symbol.VarSym): LoweredAst.Expr = {
     val innerExp = mkVarSym(sym)
@@ -1153,14 +1156,14 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.BodyTerm.Lit` from the given expression `exp0`.
+    * Constructs a `Fixpoint/Ast/Datalog.BodyTerm.Lit` from the given expression `exp0`.
     */
   private def mkBodyTermLit(exp: LoweredAst.Expr)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
     mkTag(Enums.BodyTerm, "Lit", exp, Types.BodyTerm, exp.loc)
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.Denotation` from the given denotation `d` and type `tpeOpt`
+    * Constructs a `Fixpoint/Ast/Shared.Denotation` from the given denotation `d` and type `tpeOpt`
     * (which must be the optional type of the last term).
     */
   private def mkDenotation(d: Denotation, tpeOpt: Option[Type], loc: SourceLocation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = d match {
@@ -1178,10 +1181,10 @@ object Lowering {
           // The type `Denotation[Boxed]`.
           val boxedDenotationType = Types.Denotation
 
-          val Lattice: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Ast.lattice")
+          val Lattice: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Ast/Shared.lattice")
           val LatticeType: Type = Type.mkPureArrow(Type.Unit, unboxedDenotationType, loc)
 
-          val Box: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Ast.box")
+          val Box: Symbol.DefnSym = Symbol.mkDefnSym("Fixpoint/Ast/Shared.box")
           val BoxType: Type = Type.mkPureArrow(unboxedDenotationType, boxedDenotationType, loc)
 
           val innerApply = LoweredAst.Expr.Apply(LoweredAst.Expr.Def(Lattice, LatticeType, loc), List(LoweredAst.Expr.Cst(Ast.Constant.Unit, Type.Unit, loc)), unboxedDenotationType, Type.Pure, loc)
@@ -1190,7 +1193,7 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.Polarity` from the given polarity `p`.
+    * Constructs a `Fixpoint/Ast/Datalog.Polarity` from the given polarity `p`.
     */
   private def mkPolarity(p: Polarity, loc: SourceLocation): LoweredAst.Expr = p match {
     case Polarity.Positive =>
@@ -1203,7 +1206,7 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.Fixity` from the given fixity `f`.
+    * Constructs a `Fixpoint/Ast/Datalog.Fixity` from the given fixity `f`.
     */
   private def mkFixity(f: Ast.Fixity, loc: SourceLocation): LoweredAst.Expr = f match {
     case Fixity.Loose =>
@@ -1216,7 +1219,7 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.PredSym` from the given predicate `pred`.
+    * Constructs a `Fixpoint/Ast/Shared.PredSym` from the given predicate `pred`.
     */
   private def mkPredSym(pred: Name.Pred): LoweredAst.Expr = pred match {
     case Name.Pred(sym, loc) =>
@@ -1227,7 +1230,7 @@ object Lowering {
   }
 
   /**
-    * Constructs a `Fixpoint/Ast.VarSym` from the given variable symbol `sym`.
+    * Constructs a `Fixpoint/Ast/Datalog.VarSym` from the given variable symbol `sym`.
     */
   private def mkVarSym(sym: Symbol.VarSym): LoweredAst.Expr = {
     val nameExp = LoweredAst.Expr.Cst(Ast.Constant.Str(sym.text), Type.Str, sym.loc)
@@ -1245,7 +1248,7 @@ object Lowering {
   }
 
   /**
-    * Returns a `Fixpoint/Ast.BodyPredicate.GuardX`.
+    * Returns a `Fixpoint/Ast/Datalog.BodyPredicate.GuardX`.
     */
   private def mkGuard(fvs: List[(Symbol.VarSym, Type)], exp: LoweredAst.Expr, loc: SourceLocation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
     // Compute the number of free variables.
@@ -1286,14 +1289,14 @@ object Lowering {
     // Lift the lambda expression to operate on boxed values.
     val liftedExp = liftXb(lambdaExp, fvs.map(_._2))
 
-    // Construct the `Fixpoint.Ast/BodyPredicate` value.
+    // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
     val innerExp = mkTuple(liftedExp :: varExps, loc)
     mkTag(Enums.BodyPredicate, s"Guard$arity", innerExp, Types.BodyPredicate, loc)
   }
 
   /**
-    * Returns a `Fixpoint.Ast.BodyPredicate.Functional`.
+    * Returns a `Fixpoint/Ast/Datalog.BodyPredicate.Functional`.
     */
   private def mkFunctional(outVars: List[Symbol.VarSym], inVars: List[(Symbol.VarSym, Type)], exp: LoweredAst.Expr, loc: SourceLocation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
     // Compute the number of in and out variables.
@@ -1333,7 +1336,7 @@ object Lowering {
     // Lift the lambda expression to operate on boxed values.
     val liftedExp = liftXY(outVars, lambdaExp, inVars.map(_._2), exp.tpe, exp.loc)
 
-    // Construct the `Fixpoint.Ast.BodyPredicate` value.
+    // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
     val boundVarVector = mkVector(outVars.map(mkVarSym), Types.VarSym, loc)
     val freeVarVector = mkVector(inVars.map(kv => mkVarSym(kv._1)), Types.VarSym, loc)
     val innerExp = mkTuple(boundVarVector :: liftedExp :: freeVarVector :: Nil, loc)
@@ -1341,7 +1344,7 @@ object Lowering {
   }
 
   /**
-    * Returns a `Fixpoint/Ast.Term.AppX`.
+    * Returns a `Fixpoint/Ast/Datalog.HeadTerm.AppX`.
     */
   private def mkAppTerm(fvs: List[(Symbol.VarSym, Type)], exp: LoweredAst.Expr, loc: SourceLocation)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Expr = {
     // Compute the number of free variables.
@@ -1382,7 +1385,7 @@ object Lowering {
     // Lift the lambda expression to operate on boxed values.
     val liftedExp = liftX(lambdaExp, fvs.map(_._2), exp.tpe)
 
-    // Construct the `Fixpoint.Ast/BodyPredicate` value.
+    // Construct the `Fixpoint/Ast/Datalog.BodyPredicate` value.
     val varExps = fvs.map(kv => mkVarSym(kv._1))
     val innerExp = mkTuple(liftedExp :: varExps, loc)
     mkTag(Enums.HeadTerm, s"App$arity", innerExp, Types.HeadTerm, loc)
@@ -1901,10 +1904,6 @@ object Lowering {
     case LoweredAst.Expr.Do(sym, exps, tpe, eff, loc) =>
       val es = exps.map(substExp(_, subst))
       LoweredAst.Expr.Do(sym, es, tpe, eff, loc)
-
-    case LoweredAst.Expr.Resume(exp, tpe, loc) =>
-      val e = substExp(exp, subst)
-      LoweredAst.Expr.Resume(e, tpe, loc)
 
     case LoweredAst.Expr.NewObject(_, _, _, _, _, _) => exp0
 

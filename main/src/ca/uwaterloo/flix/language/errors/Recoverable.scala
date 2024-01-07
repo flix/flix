@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Benjamin Dahse
+ * Copyright 2023 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-mod Fixpoint.Shared {
+package ca.uwaterloo.flix.language.errors
 
-    @Internal
-    pub enum PredSym with Eq, Order {
-        case PredSym(String, Int64)
-    }
-
-    instance ToString[PredSym] {
-        pub def toString(predSym: PredSym): String = match predSym {
-            case PredSym.PredSym(name, id) => if (id == 0i64) name else "${name}%${id}"
-        }
-    }
-
+/**
+  * A marker trait for errors that are recoverable.
+  */
+trait Recoverable {
+  final def cannotBeBothRecoverableAndUnrecoverable(): Unit = ()
 }

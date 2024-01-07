@@ -25,7 +25,7 @@ import scala.collection.mutable.ArrayBuffer
   * @tparam T the type of the value.
   * @tparam E the type of the error.
   */
-sealed trait Result[+T, E] {
+sealed trait Result[+T, +E] {
 
   /**
     * Retrieves the value from `this` result.
@@ -48,7 +48,7 @@ sealed trait Result[+T, E] {
   /**
     * Applies the given function `f` to the value of `this`.
     */
-  final def flatMap[B](f: T => Result[B, E]): Result[B, E] = this match {
+  final def flatMap[R >: E, B](f: T => Result[B, R]): Result[B, R] = this match {
     case Result.Ok(t) => f(t)
     case Result.Err(e) => Result.Err(e)
   }
@@ -58,7 +58,7 @@ sealed trait Result[+T, E] {
     */
   final def toValidation: Validation[T, E] = this match {
     case Result.Ok(t) => Validation.Success(t)
-    case Result.Err(e) => Validation.Failure(LazyList(e))
+    case Result.Err(e) => Validation.HardFailure(LazyList(e))
   }
 
   /**

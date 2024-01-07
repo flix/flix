@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.errors.TypeError.UnexpectedArgument
+import ca.uwaterloo.flix.language.errors.TypeError.UnexpectedArg
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -89,7 +89,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |}
          |""".stripMargin)
 
-    flix.compile().get
+    flix.compile().unsafeGet
   }
 
   test("Incremental.01") {
@@ -116,7 +116,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
     flix.remFlix(Path.of(FileG))
     flix.remFlix(Path.of(FileH))
 
-    flix.compile().get
+    flix.compile().unsafeGet
   }
 
   test("Incremental.02") {
@@ -141,7 +141,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |    pub def cf(x: String, y: a, z: a): a = C.cf(x, y, z)
          |}
          |""".stripMargin)
-    flix.compile().get
+    flix.compile().unsafeGet
   }
 
   test("Incremental.03") {
@@ -160,7 +160,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |pub def f(x: Bool): Bool = not x
          |
          |""".stripMargin)
-    flix.compile().get
+    flix.compile().unsafeGet
   }
 
   test("Incremental.04") {
@@ -169,7 +169,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |pub def f(x: Int32): Bool = x == 0
          |
          |""".stripMargin)
-    expectError[UnexpectedArgument](flix.compile())
+    expectError[UnexpectedArg](flix.compile())
   }
 
   test("Incremental.05") {
@@ -219,7 +219,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |    pub def cf(x: Int64, b: Int64, y: a, z: a): a = C.cf(x, b, y, z)
          |}
          |""".stripMargin)
-    flix.compile().get
+    flix.compile().unsafeGet
   }
 
   test("Incremental.06") {
@@ -266,7 +266,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |pub type alias L[a] = DDD.D[a]
          |""".stripMargin)
 
-    flix.compile().get
+    flix.compile().unsafeGet
   }
 
   test("Incremental.07") {
@@ -283,7 +283,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |pub type alias L[a] = { x = a }
          |""".stripMargin)
 
-    flix.compile().get
+    flix.compile().unsafeGet
   }
 
   test("Incremental.08") {
@@ -307,6 +307,6 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |pub enum G[a](D[a])
          |""".stripMargin)
 
-    flix.compile().get
+    flix.compile().unsafeGet
   }
 }

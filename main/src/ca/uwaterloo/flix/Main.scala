@@ -91,7 +91,6 @@ object Main {
       xnobooltable = cmdOpts.xnobooltable,
       xnoboolunif = cmdOpts.xnoboolunif,
       xnoqmc = cmdOpts.xnoqmc,
-      xstrictmono = cmdOpts.xstrictmono,
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphase = cmdOpts.xprintphase,
       xsummary = cmdOpts.xsummary,
@@ -119,14 +118,14 @@ object Main {
       cmdOpts.command match {
         case Command.None =>
           SimpleRunner.run(cwd, cmdOpts, options) match {
-            case Validation.Success(_) =>
+            case Result.Ok(_) =>
               System.exit(0)
             case _ =>
               System.exit(1)
           }
 
         case Command.Init =>
-          Bootstrap.init(cwd, options)(System.err) match {
+          Bootstrap.init(cwd)(System.err) match {
             case Validation.Success(_) =>
               System.exit(0)
             case failure =>
@@ -136,7 +135,10 @@ object Main {
 
         case Command.Check =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
-            bootstrap => bootstrap.check(options)
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
+              bootstrap.check(flix)
           } match {
             case Validation.Success(_) => System.exit(0)
             case failure =>
@@ -147,9 +149,9 @@ object Main {
         case Command.Build =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap =>
-              implicit val flix: Flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options)
-              bootstrap.build(loadClasses = false)
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(loadClassFiles = false))
+              bootstrap.build(flix)
           } match {
             case Validation.Success(_) => System.exit(0)
             case failure =>
@@ -159,7 +161,7 @@ object Main {
 
         case Command.BuildJar =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
-            bootstrap => bootstrap.buildJar(options)
+            bootstrap => bootstrap.buildJar()
           } match {
             case Validation.Success(_) =>
               System.exit(0)
@@ -170,7 +172,7 @@ object Main {
 
         case Command.BuildPkg =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
-            bootstrap => bootstrap.buildPkg(options)
+            bootstrap => bootstrap.buildPkg()
           } match {
             case Validation.Success(_) =>
               System.exit(0)
@@ -181,7 +183,10 @@ object Main {
 
         case Command.Doc =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
-            bootstrap => bootstrap.doc(options)
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
+              bootstrap.doc(flix)
           } match {
             case Validation.Success(_) =>
               System.exit(0)
@@ -193,11 +198,13 @@ object Main {
         case Command.Run =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
             bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options)
               val args: Array[String] = cmdOpts.args match {
                 case None => Array.empty
                 case Some(a) => a.split(" ")
               }
-              bootstrap.run(options, args)
+              bootstrap.run(flix, args)
           } match {
             case Validation.Success(_) =>
               System.exit(0)
@@ -207,9 +214,11 @@ object Main {
           }
 
         case Command.Benchmark =>
-          val o = options.copy(progress = false)
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
-            bootstrap => bootstrap.benchmark(o)
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.benchmark(flix)
           } match {
             case Validation.Success(_) =>
               System.exit(0)
@@ -219,9 +228,11 @@ object Main {
           }
 
         case Command.Test =>
-          val o = options.copy(progress = false)
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
-            bootstrap => bootstrap.test(o)
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.test(flix)
           } match {
             case Validation.Success(_) =>
               System.exit(0)
@@ -307,7 +318,6 @@ object Main {
                      xnobooltable: Boolean = false,
                      xnoboolunif: Boolean = false,
                      xnoqmc: Boolean = false,
-                     xstrictmono: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xprintphase: Set[String] = Set.empty,
                      xsummary: Boolean = false,
@@ -471,10 +481,6 @@ object Main {
       // Xlib
       opt[LibLevel]("Xlib").action((arg, c) => c.copy(xlib = arg)).
         text("[experimental] controls the amount of std. lib. to include (nix, min, all).")
-
-      // Xstrictmono
-      opt[Unit]("Xstrictmono").action((_, c) => c.copy(xstrictmono = true)).
-        text("[experimental] enables strict monomorphization.")
 
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).

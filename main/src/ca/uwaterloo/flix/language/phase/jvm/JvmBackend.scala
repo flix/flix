@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -45,8 +45,20 @@ object JvmBackend {
       // Compute the set of namespaces in the program.
       val namespaces = JvmOps.namespacesOf(root)
 
+      // Required generated types need to be present deeply (if you add `List[List[Int32]]` also add `List[Int32]`)
+      val requiredTypes = Set(
+        MonoType.Arrow(List(MonoType.Bool), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Char), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int8), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int16), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int32), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int64), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Float32), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Float64), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Object), MonoType.Object), // by resumptionWrappers
+      )
       // Retrieve all the types in the program.
-      val types = root.types
+      val types = root.types ++ requiredTypes
 
       // Filter the program types into different sets
       val erasedRefTypes = JvmOps.getErasedRefsOf(types)
@@ -63,9 +75,8 @@ object JvmBackend {
 
       // Generate function classes.
       val functionInterfaces = erasedFunctionTypes.map(genClass).toMap
-      val functionClasses = GenFunctionClasses.gen(root.defs)
+      val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs)
       val closureAbstractClasses = GenClosureAbstractClasses.gen(types)
-      val closureClasses = GenClosureClasses.gen(root.defs)
 
       // Generate enum classes.
       val enumInterfaces = GenEnumInterfaces.gen(root.enums.values)
@@ -113,15 +124,15 @@ object JvmBackend {
       val handlerInterface = Map(genClass(BackendObjType.Handler))
       val effectCallClass = Map(genClass(BackendObjType.EffectCall))
       val effectClasses = GenEffectClasses.gen(root.effects.values)
+      val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper).map(genClass).toMap
 
       // Collect all the classes and interfaces together.
       List(
         mainClass,
         namespaceClasses,
         functionInterfaces,
-        functionClasses,
+        functionAndClosureClasses,
         closureAbstractClasses,
-        closureClasses,
         enumInterfaces,
         tagClasses,
         tupleClasses,
@@ -152,7 +163,8 @@ object JvmBackend {
         resumptionNilClass,
         handlerInterface,
         effectCallClass,
-        effectClasses
+        effectClasses,
+        resumptionWrappers
       ).reduce(_ ++ _)
     }
 
@@ -192,7 +204,7 @@ object JvmBackend {
   /**
     * Returns a map from non-closure definition symbols to executable functions (backed by JVM backend).
     */
-  private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => AnyRef] =
+  private def getCompiledDefs(root: Root): Map[Symbol.DefnSym, () => AnyRef] =
     root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
       case (macc, (_, defn)) if defn.cparams.nonEmpty =>
         macc
@@ -204,7 +216,7 @@ object JvmBackend {
   /**
     * Returns a function object for the given definition symbol `sym`.
     */
-  private def link(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], AnyRef] = {
+  private def link(sym: Symbol.DefnSym, root: Root): java.util.function.Function[Array[AnyRef], AnyRef] = {
     // Retrieve the definition and its type.
     val defn = root.defs.getOrElse(sym, throw InternalCompilerException(s"Linking error: '$sym' cannot be found in root defs", SourceLocation.Unknown))
     // Check that the method is initialized.

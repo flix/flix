@@ -62,7 +62,8 @@ object Lexer {
 
   /**
    * The internal state of the lexer as it tokenizes a single source.
-   * At any point execution `start` represents the start of the token currently being considered,
+   * At any point execution `start` represents the start of the token currently being considered.
+   * Likewise `end` represents the end of the token currently being considered,
    * while `current` is the current read head of the lexer.
    * Note that both start and current are `Position`s since they are not necessarily on the same line.
    * `current` will always be on the same character as or past `start`.
@@ -71,6 +72,7 @@ object Lexer {
   private class State(val src: Ast.Source) {
     var start: Position = new Position(0, 0, 0)
     val current: Position = new Position(0, 0, 0)
+    var end: Position = new Position(0, 0, 0)
     val tokens: mutable.ListBuffer[Token] = mutable.ListBuffer.empty
     var interpolationNestingLevel: Int = 0
     // Compute a `ParserInput` when initializing a state for lexing a source.
@@ -91,7 +93,7 @@ object Lexer {
     flix.phase("Lexer") {
       if (flix.options.xparser) {
         // New lexer and parser disabled. Return immediately.
-        return Map.empty[Ast.Source, Array[Token]].toSuccess
+        return Validation.success(Map.empty[Ast.Source, Array[Token]])
       }
 
       // Compute the stale and fresh sources.
@@ -101,7 +103,7 @@ object Lexer {
       val results = ParOps.parMap(stale.keys)(src => mapN(tryLex(src))(tokens => src -> tokens))
 
       // Construct a map from each source to its tokens.
-      val reused = fresh.map(_.toSuccess[(Ast.Source, Array[Token]), CompilationMessage])
+      val reused = fresh.map(m => Validation.success(m))
       mapN(sequence(results ++ reused))(_.toMap)
     }
   }
@@ -117,7 +119,7 @@ object Lexer {
     } catch {
       case except: Throwable =>
         except.printStackTrace()
-        Array.empty[Token].toSuccess
+        Validation.success(Array.empty[Token])
     }
   }
 
@@ -139,10 +141,10 @@ object Lexer {
     addToken(TokenKind.Eof)
 
     val errors = s.tokens.collect {
-      case Token(TokenKind.Err(err), _, _, _, _, _) => err
+      case Token(TokenKind.Err(err), _, _, _, _, _, _, _) => err
     }
     if (errors.isEmpty) {
-      s.tokens.toArray.toSuccess
+      Validation.success(s.tokens.toArray)
     } else {
       Validation.SoftFailure(s.tokens.toArray, LazyList.from(errors))
     }
@@ -160,11 +162,14 @@ object Lexer {
     }
 
     val c = s.src.data(s.current.offset)
-    s.current.offset += 1
     if (c == '\n') {
+      s.end = new Position(s.current.line, s.current.column, s.current.offset)
+      s.current.offset += 1
       s.current.line += 1
       s.current.column = 0
     } else {
+      s.end = new Position(s.current.line, s.current.column + 1, s.current.offset)
+      s.current.offset += 1
       s.current.column += 1
     }
     c
@@ -287,7 +292,7 @@ object Lexer {
    * Afterwards `s.start` is reset to the next position after the previous token.
    */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
-    s.tokens += Token(kind, s.src.data, s.start.offset, s.current.offset, s.start.line, s.start.column)
+    s.tokens += Token(kind, s.src.data, s.start.offset, s.current.offset, s.start.line, s.start.column, s.end.line, s.end.column)
     s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }
 
@@ -331,7 +336,11 @@ object Lexer {
         TokenKind.Hash
       }
       case '/' => if (peek() == '/') {
-        acceptLineComment()
+        if (peekPeek().contains('/')) {
+          acceptDocComment()
+        } else {
+          acceptLineComment()
+        }
       } else if (peek() == '*') {
         acceptBlockComment()
       } else {
@@ -354,11 +363,13 @@ object Lexer {
       case _ if isKeyword("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
       case _ if isKeyword("**") => TokenKind.StarStar
-      case _ if isKeyword("<-") => TokenKind.BackArrow
+      case _ if isKeyword("<-") => TokenKind.BackArrowThin
       case _ if isKeyword("=>") => TokenKind.Arrow
+      case _ if isKeyword("->") => TokenKind.ArrowThin
       case _ if isKeyword("<=") => TokenKind.AngleLEqual
       case _ if isKeyword(">=") => TokenKind.AngleREqual
       case _ if isKeyword("==") => TokenKind.EqualEqual
+      case _ if isKeyword("!=") => TokenKind.BangEqual
       case _ if isKeyword("&&&") => TokenKind.TripleAmpersand
       case _ if isKeyword("<<<") => TokenKind.TripleAngleL
       case _ if isKeyword(">>>") => TokenKind.TripleAngleR
@@ -423,7 +434,6 @@ object Lexer {
       case _ if isKeyword("ref") => TokenKind.KeywordRef
       case _ if isKeyword("region") => TokenKind.KeywordRegion
       case _ if isKeyword("restrictable") => TokenKind.KeywordRestrictable
-      case _ if isKeyword("resume") => TokenKind.KeywordResume
       case _ if isKeyword("sealed") => TokenKind.KeywordSealed
       case _ if isKeyword("select") => TokenKind.KeywordSelect
       case _ if isKeyword("solve") => TokenKind.KeywordSolve
@@ -444,6 +454,7 @@ object Lexer {
       case _ if isKeyword("Map#") => TokenKind.MapHash
       case _ if isKeyword("List#") => TokenKind.ListHash
       case _ if isKeyword("Vector#") => TokenKind.VectorHash
+      case _ if isKeyword("regex\"") => acceptRegex()
       case _ if isMathNameChar(c) => acceptMathName()
       case _ if isGreekNameChar(c) => acceptGreekName()
       // User defined operators.
@@ -799,6 +810,23 @@ object Lexer {
   }
 
   /**
+   * Moves current position past a regex literal.
+   * If the regex  is unterminated a `TokenKind.Err` is returned.
+   */
+  private def acceptRegex()(implicit s: State): TokenKind = {
+    while (!eof()) {
+      val p = escapedPeek()
+      if (p.contains('"')) {
+        advance()
+        return TokenKind.LiteralRegex
+      }
+      advance()
+    }
+
+    TokenKind.Err(LexerError.UnterminatedRegex(sourceLocationAtStart()))
+  }
+
+  /**
    * Moves current position past a number literal. IE. "123i32" or "456.78f32"
    * It is optional to have a trailing type indicator on number literals.
    * If it is missing Flix defaults to `f64` for decimals and `i32` for integers.
@@ -872,6 +900,20 @@ object Lexer {
       }
     }
     TokenKind.CommentLine
+  }
+
+  /**
+   * Moves current position past a doc-comment
+   */
+  private def acceptDocComment()(implicit s: State): TokenKind = {
+    while (!eof()) {
+      if (peek() == '\n') {
+        return TokenKind.CommentDoc
+      } else {
+        advance()
+      }
+    }
+    TokenKind.CommentDoc
   }
 
   /**

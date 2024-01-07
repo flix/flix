@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-mod Fixpoint {
+mod Fixpoint.Phase.Simplifier {
 
-    use Fixpoint.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
-    use Fixpoint.Ram.RamTerm.{RowLoad, LoadLatVar, Lit, Meet}
+    use Fixpoint.Ast.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar}
+    use Fixpoint.Ast.Ram.RamTerm.{RowLoad, LoadLatVar, Lit, Meet}
 
     ///
     /// Optimize and simplify `stmt` by deleting redundant code and reordering code.
@@ -33,7 +33,8 @@ mod Fixpoint {
     ///         end
     ///     end
     ///
-    def simplifyStmt(stmt: RamStmt[v]): RamStmt[v] =
+    @Internal
+    pub def simplifyStmt(stmt: RamStmt[v]): RamStmt[v] =
         Option.getWithDefault(RamStmt.Seq(Vector#{}), simplifyHelper(Set#{}, stmt))
 
     def simplifyHelper(stratum: Set[RamSym[v]], stmt: RamStmt[v]): Option[RamStmt[v]] = match stmt {
@@ -42,24 +43,29 @@ mod Fixpoint {
                 newOp <- simplifyOp(stratum, op)
             ) yield {
                 match newOp {
-                    // Rewrite join loops that copy one relation into another into a `merge` statement.
-                    // search b ∈ B do
-                    //   project (b[0], b[1]) into A
-                    // end
-                    // ==>
-                    // merge B into A
-                    // If A and B have the same arity.
-                    case RelOp.Search(varB, relB, RelOp.Project(tuple, relA)) =>
-                        use Fixpoint.Ram.arityOf;
-                        let isCopy =
-                            Vector.map(t -> match t {
-                                case RamTerm.RowLoad(var, i) => if (varB == var) i else -1
-                                case _ => -1
-                            }, tuple) == Vector.range(0, arityOf(relB));
-                        if (isCopy)
-                            RamStmt.Merge(relB, relA)
-                        else
-                            RamStmt.Insert(newOp)
+                    //
+                    // DANGER! WILL ROBINSON! The following code is incorrect when a relation is being merged into a lattice.
+                    //
+                    // See #4719.
+                    //
+                    // // Rewrite join loops that copy one relation into another into a `merge` statement.
+                    // // search b ∈ B do
+                    // //   project (b[0], b[1]) into A
+                    // // end
+                    // // ==>
+                    // // merge B into A
+                    // // If A and B have the same arity.
+                    // case RelOp.Search(varB, relB, RelOp.Project(tuple, relA)) =>
+                    //     use Fixpoint.Ram.arityOf;
+                    //     let isCopy =
+                    //         Vector.map(t -> match t {
+                    //             case RamTerm.RowLoad(var, i) => if (varB == var) i else -1
+                    //             case _ => -1
+                    //         }, tuple) == Vector.range(0, arityOf(relB));
+                    //     if (isCopy)
+                    //         RamStmt.Merge(relB, relA)
+                    //     else
+                    //         RamStmt.Insert(newOp)
                     case _ => RamStmt.Insert(newOp)
                 }
             }

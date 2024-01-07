@@ -171,8 +171,6 @@ object DesugaredAst {
 
     case class Do(op: Name.QName, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class Resume(exp: Expr, loc: SourceLocation) extends Expr
-
     case class InvokeConstructor(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
 
     case class InvokeMethod(className: String, methodName: String, exp: Expr, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
@@ -244,6 +242,8 @@ object DesugaredAst {
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
     case class RecordEmpty(loc: SourceLocation) extends Pattern
+
+    case class Error(loc: SourceLocation) extends Pattern
 
     object Record {
       case class RecordLabelPattern(label: Name.Label, pat: Option[Pattern], loc: SourceLocation)

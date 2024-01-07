@@ -135,6 +135,10 @@ object Unification {
 
     case (_, _: Type.AssocType) => Result.Ok(Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2)))
 
+    case (Type.Cst(TypeConstructor.Error(k1), _), t2) if k1 == t2.kind => Result.Ok(Substitution.empty, Nil)
+
+    case (t1, Type.Cst(TypeConstructor.Error(k2), _)) if t1.kind == k2 => Result.Ok(Substitution.empty, Nil)
+
     case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
   }
 
@@ -190,7 +194,7 @@ object Unification {
           Err(TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, renv, loc))
 
         case Result.Err(UnificationError.OccursCheck(baseType1, baseType2)) =>
-          Err(TypeError.OccursCheckError(baseType1, baseType2, type1, type2, renv, loc))
+          Err(TypeError.OccursCheck(baseType1, baseType2, type1, type2, renv, loc))
 
         case Result.Err(UnificationError.UndefinedLabel(labelName, labelType, recordType)) =>
           Err(TypeError.UndefinedLabel(labelName, labelType, recordType, renv, loc))
@@ -199,7 +203,7 @@ object Unification {
           Err(TypeError.NonRecordType(tpe, renv, loc))
 
         case Result.Err(UnificationError.UndefinedPredicate(predSym, predType, schemaType)) =>
-          Err(TypeError.UndefinedPredicate(predSym, predType, schemaType, renv, loc))
+          Err(TypeError.UndefinedPred(predSym, predType, schemaType, renv, loc))
 
         case Result.Err(UnificationError.NonSchemaType(tpe)) =>
           Err(TypeError.NonSchemaType(tpe, renv, loc))
@@ -275,13 +279,13 @@ object Unification {
     // Note: The handler should *NOT* use `expectedTypes` nor `actualTypes` since they have not had their variables substituted.
     def handler(i: Int)(e: TypeError): TypeError = e match {
       case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>
-        TypeError.UnexpectedArgument(sym, i, fullType1, fullType2, renv, loc)
+        TypeError.UnexpectedArg(sym, i, fullType1, fullType2, renv, loc)
 
       case TypeError.MismatchedArrowEffects(_, _, fullType1, fullType2, renv, loc) =>
-        TypeError.UnexpectedArgument(sym, i, fullType1, fullType2, renv, loc)
+        TypeError.UnexpectedArg(sym, i, fullType1, fullType2, renv, loc)
 
       case TypeError.MismatchedTypes(_, _, fullType1, fullType2, renv, loc) =>
-        TypeError.UnexpectedArgument(sym, i, fullType1, fullType2, renv, loc)
+        TypeError.UnexpectedArg(sym, i, fullType1, fullType2, renv, loc)
       case e => e
     }
 
@@ -585,7 +589,7 @@ object Unification {
           econstr =>
             EqualityEnvironment.entail(Nil, econstr, renv, eqEnv) match {
               case Validation.Success(_) => true
-              case Validation.Failure(_) => false
+              case Validation.HardFailure(_) => false
               case Validation.SoftFailure(_, _) => false
             }
         }

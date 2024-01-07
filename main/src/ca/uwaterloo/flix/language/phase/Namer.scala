@@ -134,7 +134,7 @@ object Namer {
       }
 
     case inst@NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, assocs, defs, ns, loc) =>
-      addInstanceToTable(table0, ns, clazz.ident.name, inst).toSuccess
+      Validation.success(addInstanceToTable(table0, ns, clazz.ident.name, inst))
 
     case NamedAst.Declaration.Sig(sym, spec, exp) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
@@ -191,7 +191,7 @@ object Namer {
     */
   private def tryAddToTable(table: SymbolTable, ns: List[String], name: String, decl: NamedAst.Declaration): Validation[SymbolTable, NameError] = {
     lookupName(name, ns, table) match {
-      case LookupResult.NotDefined => addDeclToTable(table, ns, name, decl).toSuccess
+      case LookupResult.NotDefined => Validation.success(addDeclToTable(table, ns, name, decl))
       case LookupResult.AlreadyDefined(loc) => mkDuplicateNamePair(name, getSymLocation(decl), loc)
     }
   }
@@ -235,17 +235,17 @@ object Namer {
   /**
     * Creates a pair of errors reporting a duplicate type declaration at each location.
     */
-  private def mkDuplicateNamePair[T](name: String, loc1: SourceLocation, loc2: SourceLocation): Validation.Failure[T, NameError] = {
+  private def mkDuplicateNamePair[T](name: String, loc1: SourceLocation, loc2: SourceLocation): Validation.HardFailure[T, NameError] = {
     // NB: We report an error at both source locations.
     if (name.charAt(0).isUpper) {
       // Case 1: uppercase name
-      Failure(LazyList(
+      HardFailure(LazyList(
         NameError.DuplicateUpperName(name, loc1, loc2),
         NameError.DuplicateUpperName(name, loc2, loc1)
       ))
     } else {
       // Case 2: lowercase name
-      Failure(LazyList(
+      HardFailure(LazyList(
         NameError.DuplicateLowerName(name, loc1, loc2),
         NameError.DuplicateLowerName(name, loc2, loc1)
       ))
@@ -403,7 +403,7 @@ object Namer {
       val sym = Symbol.mkAssocTypeSym(clazz, ident)
       val tparam = getTypeParam(tparams0)
       val kind = visitKind(kind0)
-      NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, loc).toSuccess
+      Validation.success(NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, loc))
   }
 
   /**
@@ -595,7 +595,7 @@ object Namer {
   private def visitExp(exp0: DesugaredAst.Expr, ns0: Name.NName)(implicit level: Level, flix: Flix): Validation[NamedAst.Expr, NameError] = exp0 match {
 
     case DesugaredAst.Expr.Ambiguous(name, loc) =>
-      NamedAst.Expr.Ambiguous(name, loc).toSuccess
+      Validation.success(NamedAst.Expr.Ambiguous(name, loc))
 
     case DesugaredAst.Expr.OpenAs(name, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
@@ -603,10 +603,10 @@ object Namer {
       }
 
     case DesugaredAst.Expr.Open(name, loc) =>
-      NamedAst.Expr.Open(name, loc).toSuccess
+      Validation.success(NamedAst.Expr.Open(name, loc))
 
     case DesugaredAst.Expr.Hole(name, loc) =>
-      NamedAst.Expr.Hole(name, loc).toSuccess
+      Validation.success(NamedAst.Expr.Hole(name, loc))
 
     case DesugaredAst.Expr.HoleWithExp(exp, loc) =>
       mapN(visitExp(exp, ns0)) {
@@ -622,7 +622,8 @@ object Namer {
         }
       }
 
-    case DesugaredAst.Expr.Cst(cst, loc) => NamedAst.Expr.Cst(cst, loc).toSuccess
+    case DesugaredAst.Expr.Cst(cst, loc) =>
+      Validation.success(NamedAst.Expr.Cst(cst, loc))
 
     case DesugaredAst.Expr.Apply(exp, exps, loc) =>
       mapN(visitExp(exp, ns0), traverse(exps)(visitExp(_, ns0))) {
@@ -632,8 +633,6 @@ object Namer {
     case DesugaredAst.Expr.Lambda(fparam0, exp, loc) =>
       mapN(visitFormalParam(fparam0): Validation[NamedAst.FormalParam, NameError], visitExp(exp, ns0)) {
         case (p, e) => NamedAst.Expr.Lambda(p, e, loc)
-      }.recoverOne {
-        case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.Unary(sop, exp, loc) =>
@@ -680,7 +679,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.Region(tpe, loc) =>
-      NamedAst.Expr.Region(tpe, loc).toSuccess
+      Validation.success(NamedAst.Expr.Region(tpe, loc))
 
     case DesugaredAst.Expr.Scope(ident, exp, loc) =>
       // Introduce a fresh variable symbol for the region.
@@ -725,8 +724,6 @@ object Namer {
       }
       mapN(expVal, rulesVal) {
         case (e, rs) => NamedAst.Expr.TypeMatch(e, rs, loc)
-      }.recoverOne {
-        case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.RestrictableChoose(star, exp, rules, loc) =>
@@ -749,7 +746,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.RecordEmpty(loc) =>
-      NamedAst.Expr.RecordEmpty(loc).toSuccess
+      Validation.success(NamedAst.Expr.RecordEmpty(loc))
 
     case DesugaredAst.Expr.RecordSelect(exp, label, loc) =>
       mapN(visitExp(exp, ns0)) {
@@ -831,8 +828,6 @@ object Namer {
 
       mapN(expVal, expectedTypVal, expectedEffVal) {
         case (e, t, f) => NamedAst.Expr.Ascribe(e, t, f, loc)
-      }.recoverOne {
-        case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.InstanceOf(exp, className, loc) =>
@@ -852,8 +847,6 @@ object Namer {
 
       mapN(expVal, declaredTypVal, declaredEffVal) {
         case (e, t, f) => NamedAst.Expr.UncheckedCast(e, t, f, loc)
-      }.recoverOne {
-        case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.UncheckedMaskingCast(exp, loc) =>
@@ -894,8 +887,6 @@ object Namer {
       }
       mapN(eVal, rulesVal) {
         case (e, rules) => NamedAst.Expr.TryWith(e, eff, rules, loc)
-      }.recoverOne {
-        case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.Do(op, exps0, loc) =>
@@ -904,19 +895,11 @@ object Namer {
         exps => NamedAst.Expr.Do(op, exps, loc)
       }
 
-    case DesugaredAst.Expr.Resume(exp, loc) =>
-      val expVal = visitExp(exp, ns0)
-      mapN(expVal) {
-        e => NamedAst.Expr.Resume(e, loc)
-      }
-
     case DesugaredAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
       val argsVal = traverse(exps)(visitExp(_, ns0))
       val sigVal = traverse(sig)(visitType): Validation[List[NamedAst.Type], NameError]
       mapN(argsVal, sigVal) {
         case (as, sig) => NamedAst.Expr.InvokeConstructor(className, as, sig, loc)
-      }.recoverOne {
-        case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.InvokeMethod(className, methodName, exp, exps, sig, retTpe, loc) =>
@@ -926,8 +909,6 @@ object Namer {
       val retVal = visitType(retTpe): Validation[NamedAst.Type, NameError]
       mapN(expVal, argsVal, sigVal, retVal) {
         case (e, as, sig, ret) => NamedAst.Expr.InvokeMethod(className, methodName, e, as, sig, ret, loc)
-      }.recoverOne {
-        case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.InvokeStaticMethod(className, methodName, exps, sig, retTpe, loc) =>
@@ -936,10 +917,7 @@ object Namer {
       val retVal = visitType(retTpe): Validation[NamedAst.Type, NameError]
       mapN(argsVal, sigVal, retVal) {
         case (as, sig, ret) => NamedAst.Expr.InvokeStaticMethod(className, methodName, as, sig, ret, loc)
-      }.recoverOne {
-        case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
-
 
     case DesugaredAst.Expr.GetField(className, fieldName, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
@@ -952,7 +930,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.GetStaticField(className, fieldName, loc) =>
-      NamedAst.Expr.GetStaticField(className, fieldName, loc).toSuccess
+      Validation.success(NamedAst.Expr.GetStaticField(className, fieldName, loc))
 
     case DesugaredAst.Expr.PutStaticField(className, fieldName, exp, loc) =>
       mapN(visitExp(exp, ns0)) {
@@ -964,8 +942,6 @@ object Namer {
         case (tpe, ms) =>
           val name = s"Anon$$${flix.genSym.freshId()}"
           NamedAst.Expr.NewObject(name, tpe, ms, loc)
-      }.recoverOne {
-        case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.NewChannel(exp1, exp2, loc) =>
@@ -997,7 +973,7 @@ object Namer {
         case Some(exp) => visitExp(exp, ns0) map {
           case e => Some(e)
         }
-        case None => None.toSuccess
+        case None => Validation.success(None)
       }
 
       mapN(rulesVal, defaultVal) {
@@ -1045,8 +1021,6 @@ object Namer {
       val expVal = visitExp(exp, ns0)
       mapN(psVal, expVal) {
         case (ps, e) => NamedAst.Expr.FixpointLambda(ps, e, loc)
-      }.recoverOne {
-        case err: NameError.TypeNameError => NamedAst.Expr.Error(err)
       }
 
     case DesugaredAst.Expr.FixpointMerge(exp1, exp2, loc) =>
@@ -1115,6 +1089,8 @@ object Namer {
       NamedAst.Pattern.Record(psVal, pVal, loc)
 
     case DesugaredAst.Pattern.RecordEmpty(loc) => NamedAst.Pattern.RecordEmpty(loc)
+
+    case DesugaredAst.Pattern.Error(loc) => NamedAst.Pattern.Error(loc)
   }
 
   /**
@@ -1151,7 +1127,7 @@ object Namer {
   private def visitBodyPredicate(body: DesugaredAst.Predicate.Body, ns0: Name.NName)(implicit level: Level, flix: Flix): Validation[NamedAst.Predicate.Body, NameError] = body match {
     case DesugaredAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
       val ts = terms.map(visitPattern)
-      NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc).toSuccess
+      Validation.success(NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc))
 
     case DesugaredAst.Predicate.Body.Functional(idents, exp, loc) =>
       for {
@@ -1168,11 +1144,10 @@ object Namer {
   /**
     * Names the given type `tpe`.
     */
-  private def visitType(t0: DesugaredAst.Type)(implicit flix: Flix): Validation[NamedAst.Type, NameError.TypeNameError] = {
-    // TODO NS-REFACTOR seems like this is no longer failable. Use non-validation?
-    // TODO NS-REFACTOR Can we merge DesugaredAst.Type and NamedAst.Type and avoid this whole function?
-    def visit(tpe0: DesugaredAst.Type): Validation[NamedAst.Type, NameError.TypeNameError] = tpe0 match {
-      case DesugaredAst.Type.Unit(loc) => NamedAst.Type.Unit(loc).toSuccess
+  private def visitType(t0: DesugaredAst.Type)(implicit flix: Flix): Validation[NamedAst.Type, NameError] = {
+    def visit(tpe0: DesugaredAst.Type): Validation[NamedAst.Type, NameError] = tpe0 match {
+      case DesugaredAst.Type.Unit(loc) =>
+        Validation.success(NamedAst.Type.Unit(loc))
 
       case DesugaredAst.Type.Var(ident, loc) =>
         //
@@ -1180,13 +1155,13 @@ object Namer {
         //
         if (isSuspiciousTypeVarName(ident.name)) {
           // TODO NS-REFACTOR maybe check this at declaration site instead of use site
-          NameError.SuspiciousTypeVarName(ident.name, loc).toFailure
+          Validation.toSoftFailure(NamedAst.Type.Var(ident, loc), NameError.SuspiciousTypeVarName(ident.name, loc))
         } else {
-          NamedAst.Type.Var(ident, loc).toSuccess
+          Validation.success(NamedAst.Type.Var(ident, loc))
         }
 
       case DesugaredAst.Type.Ambiguous(qname, loc) =>
-        NamedAst.Type.Ambiguous(qname, loc).toSuccess
+        Validation.success(NamedAst.Type.Ambiguous(qname, loc))
 
       case DesugaredAst.Type.Tuple(elms, loc) =>
         mapN(traverse(elms)(visit)) {
@@ -1194,7 +1169,7 @@ object Namer {
         }
 
       case DesugaredAst.Type.RecordRowEmpty(loc) =>
-        NamedAst.Type.RecordRowEmpty(loc).toSuccess
+        Validation.success(NamedAst.Type.RecordRowEmpty(loc))
 
       case DesugaredAst.Type.RecordRowExtend(label, value, rest, loc) =>
         mapN(visit(value), visit(rest)) {
@@ -1207,7 +1182,7 @@ object Namer {
         }
 
       case DesugaredAst.Type.SchemaRowEmpty(loc) =>
-        NamedAst.Type.SchemaRowEmpty(loc).toSuccess
+        Validation.success(NamedAst.Type.SchemaRowEmpty(loc))
 
       case DesugaredAst.Type.SchemaRowExtendByAlias(qname, targs, rest, loc) =>
         mapN(traverse(targs)(visit), visit(rest)) {
@@ -1225,7 +1200,7 @@ object Namer {
         }
 
       case DesugaredAst.Type.Native(fqn, loc) =>
-        NamedAst.Type.Native(fqn, loc).toSuccess
+        Validation.success(NamedAst.Type.Native(fqn, loc))
 
       case DesugaredAst.Type.Arrow(tparams0, eff0, tresult0, loc) =>
         val tparamsVal = traverse(tparams0)(visit)
@@ -1241,10 +1216,10 @@ object Namer {
         }
 
       case DesugaredAst.Type.True(loc) =>
-        NamedAst.Type.True(loc).toSuccess
+        Validation.success(NamedAst.Type.True(loc))
 
       case DesugaredAst.Type.False(loc) =>
-        NamedAst.Type.False(loc).toSuccess
+        Validation.success(NamedAst.Type.False(loc))
 
       case DesugaredAst.Type.Not(tpe, loc) =>
         mapN(visit(tpe)) {
@@ -1276,9 +1251,11 @@ object Namer {
           case (t1, t2) => NamedAst.Type.Intersection(t1, t2, loc)
         }
 
-      case DesugaredAst.Type.Pure(loc) => NamedAst.Type.Pure(loc).toSuccess
+      case DesugaredAst.Type.Pure(loc) =>
+        Validation.success(NamedAst.Type.Pure(loc))
 
-      case DesugaredAst.Type.CaseSet(cases, loc) => NamedAst.Type.CaseSet(cases, loc).toSuccess
+      case DesugaredAst.Type.CaseSet(cases, loc) =>
+        Validation.success(NamedAst.Type.CaseSet(cases, loc))
 
       case DesugaredAst.Type.CaseComplement(tpe, loc) =>
         mapN(visitType(tpe)) {
@@ -1365,6 +1342,7 @@ object Namer {
     case DesugaredAst.Pattern.Tuple(elms, loc) => elms.flatMap(freeVars)
     case DesugaredAst.Pattern.Record(pats, pat, _) => recordPatternFreeVars(pats) ++ freeVars(pat)
     case DesugaredAst.Pattern.RecordEmpty(_) => Nil
+    case DesugaredAst.Pattern.Error(_) => Nil
   }
 
   /**
@@ -1426,7 +1404,7 @@ object Namer {
   /**
     * Translates the given weeded formal parameter to a named formal parameter.
     */
-  private def visitFormalParam(fparam: DesugaredAst.FormalParam)(implicit level: Level, flix: Flix): Validation[NamedAst.FormalParam, NameError.TypeNameError] = fparam match {
+  private def visitFormalParam(fparam: DesugaredAst.FormalParam)(implicit level: Level, flix: Flix): Validation[NamedAst.FormalParam, NameError] = fparam match {
     case DesugaredAst.FormalParam(ident, mod, optType, loc) =>
       // Generate a fresh variable symbol for the identifier.
       val freshSym = Symbol.freshVarSym(ident, BoundBy.FormalParam)
@@ -1443,9 +1421,9 @@ object Namer {
   /**
     * Translates the given weeded predicate parameter to a named predicate parameter.
     */
-  private def visitPredicateParam(pparam: DesugaredAst.PredicateParam)(implicit flix: Flix): Validation[NamedAst.PredicateParam, NameError.TypeNameError] = pparam match {
+  private def visitPredicateParam(pparam: DesugaredAst.PredicateParam)(implicit flix: Flix): Validation[NamedAst.PredicateParam, NameError] = pparam match {
     case DesugaredAst.PredicateParam.PredicateParamUntyped(pred, loc) =>
-      NamedAst.PredicateParam.PredicateParamUntyped(pred, loc).toSuccess
+      Validation.success(NamedAst.PredicateParam.PredicateParamUntyped(pred, loc))
 
     case DesugaredAst.PredicateParam.PredicateParamWithType(pred, den, tpes, loc) =>
       mapN(traverse(tpes)(visitType)) {

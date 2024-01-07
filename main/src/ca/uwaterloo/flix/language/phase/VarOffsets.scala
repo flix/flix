@@ -108,25 +108,25 @@ object VarOffsets {
 
     case Expr.TryCatch(exp, rules, _, _, _) =>
       val i1 = visitExp(exp, i0)
-      val i2 = i1 + 1
-      for (CatchRule(sym, _, _) <- rules) {
-        // NB: We reuse the same stack offset for each exception.
-        sym.setStackOffset(i1)
+      rules.foldLeft(i1) {
+        case (i2, CatchRule(sym, _, exp)) =>
+          val i3 = setStackOffset(sym, MonoType.Object, i2)
+          visitExp(exp, i3)
       }
-      visitExps(rules.map(_.exp), i2)
 
-    case Expr.TryWith(exp, _, rules, _, _, _) =>
-      val i1 = visitExp(exp, i0)
-      visitExps(rules.map(_.exp), i1)
+    case Expr.TryWith(exp, _, _, _, _, _) =>
+      // The expressions in TryWith are not executed here (concretely they're
+      // always closures) and should not have var offsets here.
+      // They don't contain binders so visiting them does nothing.
+      visitExp(exp, i0)
 
     case Expr.Do(_, exps, _, _, _) =>
       visitExps(exps, i0)
 
-    case Expr.Resume(exp, _, _) =>
-      visitExp(exp, i0)
-
     case Expr.NewObject(_, _, _, _, _, _, _) =>
-      // TODO - think about this after we've worked out what's going on in lambda lifting for NewObject
+      // The expressions in NewObject are not executed here (concretely they're
+      // always closures) and should not have var offsets here.
+      // They don't contain binders so visiting them does nothing.
       i0
 
   }

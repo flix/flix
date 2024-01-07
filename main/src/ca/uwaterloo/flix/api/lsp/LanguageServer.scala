@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{Failure, SoftFailure, Success}
+import ca.uwaterloo.flix.util.Validation.{HardFailure, SoftFailure, Success}
 import ca.uwaterloo.flix.util._
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
@@ -345,7 +345,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
           // Case 2: Compilation had non-critical errors. Build the reverse index.
           processSuccessfulCheck(requestId, root, errors, flix.options.explain, t)
 
-        case Failure(errors) =>
+        case HardFailure(errors) =>
           // Case 3: Compilation failed. Send back the error messages.
 
           // Mark the AST as outdated and update the current errors.

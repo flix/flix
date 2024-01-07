@@ -183,8 +183,6 @@ object ResolvedAst {
 
     case class Do(op: Ast.OpSymUse, args: List[Expr], loc: SourceLocation) extends Expr
 
-    case class Resume(exp: Expr, loc: SourceLocation) extends Expr
-
     case class InvokeConstructor(constructor: Constructor[_], args: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeMethod(method: Method, clazz: java.lang.Class[_], exp: Expr, args: List[Expr], loc: SourceLocation) extends Expr
@@ -256,6 +254,8 @@ object ResolvedAst {
     case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
     case class RecordEmpty(loc: SourceLocation) extends Pattern
+
+    case class Error(loc: SourceLocation) extends Pattern
 
     object Record {
       case class RecordLabelPattern(label: Name.Label, pat: Pattern, loc: SourceLocation)

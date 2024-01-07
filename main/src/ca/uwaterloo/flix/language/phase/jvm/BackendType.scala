@@ -64,6 +64,22 @@ sealed trait BackendType extends VoidableType {
   }
 
   /**
+    * Returns the erased type represented as [[JvmType]]. Arrays are erased.
+    */
+  def toErasedJvmType: JvmType = this match {
+    case BackendType.Array(_) => JvmType.Object
+    case BackendType.Reference(_) => JvmType.Object
+    case BackendType.Bool => JvmType.PrimBool
+    case BackendType.Char => JvmType.PrimChar
+    case BackendType.Int8 => JvmType.PrimByte
+    case BackendType.Int16 => JvmType.PrimShort
+    case BackendType.Int32 => JvmType.PrimInt
+    case BackendType.Int64 => JvmType.PrimLong
+    case BackendType.Float32 => JvmType.PrimFloat
+    case BackendType.Float64 => JvmType.PrimDouble
+  }
+
+  /**
     * A string representing the erased type. This is used for parametrized class names.
     */
   val toErasedString: String = this match {
@@ -158,8 +174,7 @@ object BackendType {
     case MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.String | MonoType.Regex |
          MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
          MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
-         MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) | MonoType.Native(_) |
-         MonoType.Region => BackendObjType.JavaObject.toTpe
+         MonoType.Native(_) | MonoType.Region => BackendObjType.JavaObject.toTpe
   }
 
   /**
@@ -186,11 +201,11 @@ object BackendType {
       // Maybe use clazz.getPackage and clazz.getSimpleName
       // TODO: Ugly hack.
       val fqn = clazz.getName.replace('.', '/')
-      BackendObjType.Native(JvmName.mk(fqn)).toTpe
-    case MonoType.Unit | MonoType.Lazy(_) | MonoType.Ref(_) |
-         MonoType.Tuple(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty |
-         MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) |
-         MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) => BackendObjType.JavaObject.toTpe
+      JvmName.mk(fqn).toTpe
+    case MonoType.Unit | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
+         MonoType.Arrow(_, _) | MonoType.RecordEmpty |
+         MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) =>
+      BackendObjType.JavaObject.toTpe
   }
 
   sealed trait PrimitiveType extends BackendType {

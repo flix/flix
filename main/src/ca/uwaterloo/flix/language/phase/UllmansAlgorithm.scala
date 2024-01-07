@@ -20,8 +20,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.StratificationError
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSoftFailure, ToSuccess}
-import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import java.util.Objects
 import scala.annotation.tailrec
@@ -76,7 +75,7 @@ object UllmansAlgorithm {
     *
     * See Database and Knowledge - Base Systems Volume 1 Ullman, Algorithm 3.5 p 133
     */
-  def stratify(g: DependencyGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Ast.Stratification, StratificationError] = {
+  def stratify(g: DependencyGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Result[Ast.Stratification, StratificationError] = {
     //
     // Maintain a mutable map from predicates to their (maximum) stratum number.
     //
@@ -134,7 +133,7 @@ object UllmansAlgorithm {
 
               // Check if we have found a strong cycle.
               if (newHeadStratum > maxStratum) {
-                return StratificationError(findStrongCycle(currentEdge, g), tpe, loc).toFailure
+                return Result.Err(StratificationError(findStrongCycle(currentEdge, g), tpe, loc))
               }
             }
         }
@@ -142,7 +141,7 @@ object UllmansAlgorithm {
     }
 
     // We are done. Successfully return the computed stratification.
-    Ast.Stratification(stratumOf.toMap).toSuccess
+    Result.Ok(Ast.Stratification(stratumOf.toMap))
   }
 
   /**

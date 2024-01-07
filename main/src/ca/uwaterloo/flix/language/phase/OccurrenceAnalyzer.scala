@@ -22,8 +22,7 @@ import ca.uwaterloo.flix.language.ast.LiftedAst.Expr
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, LabelSym, VarSym}
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, OccurrenceAst, Symbol}
-import ca.uwaterloo.flix.util.Validation.ToSuccess
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, OccurrenceAst, Symbol}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 /**
@@ -69,7 +68,7 @@ object OccurrenceAnalyzer {
     // Reassemble the ast root.
     val result = OccurrenceAst.Root(defs, enums, effects, root.entryPoint, root.sources)
 
-    result.toSuccess
+    Validation.success(result)
   }
 
   /**
@@ -265,10 +264,6 @@ object OccurrenceAnalyzer {
     case Expr.Do(op, exps, tpe, purity, loc) =>
       val (es, o1) = visitExps(sym0, exps)
       (OccurrenceAst.Expression.Do(op, es, tpe, purity, loc), o1.increaseSizeByOne())
-
-    case Expr.Resume(exp, tpe, loc) =>
-      val (e, o1) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.Resume(e, tpe, loc), o1.increaseSizeByOne())
 
     case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val (ms, o1) = methods.map {

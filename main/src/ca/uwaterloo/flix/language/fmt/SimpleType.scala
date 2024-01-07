@@ -259,6 +259,11 @@ object SimpleType {
     */
   case class Tuple(elms: List[SimpleType]) extends SimpleType
 
+  /**
+   * An error type.
+   */
+   case object Error extends SimpleType
+
   /////////
   // Fields
   /////////
@@ -534,6 +539,8 @@ object SimpleType {
 
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
+
+        case TypeConstructor.Error(_) => SimpleType.Error
       }
     }
 

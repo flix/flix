@@ -221,11 +221,6 @@ object Simplifier {
       val t = visitType(tpe)
       SimplifiedAst.Expr.Do(op, es, t, simplifyEffect(eff), loc)
 
-    case LoweredAst.Expr.Resume(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      SimplifiedAst.Expr.Resume(e, t, loc)
-
     case LoweredAst.Expr.NewObject(name, clazz, tpe, eff, methods0, loc) =>
       val t = visitType(tpe)
       val methods = methods0 map visitJvmMethod
@@ -339,6 +334,9 @@ object Simplifier {
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
 
           case TypeConstructor.Schema =>
+            throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
+
+          case TypeConstructor.Error(_) =>
             throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
         }
     }
@@ -707,10 +705,6 @@ object Simplifier {
       case SimplifiedAst.Expr.Do(op, exps, tpe, purity, loc) =>
         val es = exps.map(visitExp)
         SimplifiedAst.Expr.Do(op, es, tpe, purity, loc)
-
-      case SimplifiedAst.Expr.Resume(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        SimplifiedAst.Expr.Resume(e, tpe, loc)
 
       case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
         val methods = methods0 map visitJvmMethod

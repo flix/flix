@@ -20,6 +20,9 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.ParOps
 
 import java.util.concurrent.ConcurrentLinkedQueue
+import scala.annotation.tailrec
+import scala.collection.immutable.Queue
+import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
 object Reducer {
@@ -38,11 +41,13 @@ object Reducer {
 
   private def visitDef(d: LiftedAst.Def)(implicit ctx: SharedContext): ReducedAst.Def = d match {
     case LiftedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, purity, loc) =>
+      implicit val lctx: LocalContext = LocalContext.mk()
       val cs = cparams.map(visitFormalParam)
       val fs = fparams.map(visitFormalParam)
       val e = visitExpr(exp)
+      val ls = lctx.lparams.toList
       val stmt = ReducedAst.Stmt.Ret(e, e.tpe, e.loc)
-      ReducedAst.Def(ann, mod, sym, cs, fs, stmt, tpe, purity, loc)
+      ReducedAst.Def(ann, mod, sym, cs, fs, ls, 0, stmt, tpe, purity, loc)
   }
 
   private def visitEnum(d: LiftedAst.Enum): ReducedAst.Enum = d match {
@@ -66,7 +71,7 @@ object Reducer {
       ReducedAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
   }
 
-  private def visitExpr(exp0: LiftedAst.Expr)(implicit ctx: SharedContext): ReducedAst.Expr = exp0 match {
+  private def visitExpr(exp0: LiftedAst.Expr)(implicit lctx: LocalContext, ctx: SharedContext): ReducedAst.Expr = exp0 match {
     case LiftedAst.Expr.Cst(cst, tpe, loc) =>
       ReducedAst.Expr.Cst(cst, tpe, loc)
 
@@ -108,16 +113,19 @@ object Reducer {
       ReducedAst.Expr.JumpTo(sym, tpe, purity, loc)
 
     case LiftedAst.Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
+      lctx.lparams.addOne(ReducedAst.LocalParam(sym, exp1.tpe))
       val e1 = visitExpr(exp1)
       val e2 = visitExpr(exp2)
       ReducedAst.Expr.Let(sym, e1, e2, tpe, purity, loc)
 
     case LiftedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
+      lctx.lparams.addOne(ReducedAst.LocalParam(varSym, exp1.tpe))
       val e1 = visitExpr(exp1)
       val e2 = visitExpr(exp2)
       ReducedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
     case LiftedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
+      lctx.lparams.addOne(ReducedAst.LocalParam(sym, MonoType.Region))
       val e = visitExpr(exp)
       ReducedAst.Expr.Scope(sym, e, tpe, purity, loc)
 
@@ -125,6 +133,7 @@ object Reducer {
       val e = visitExpr(exp)
       val rs = rules map {
         case LiftedAst.CatchRule(sym, clazz, body) =>
+          lctx.lparams.addOne(ReducedAst.LocalParam(sym, MonoType.Object))
           val b = visitExpr(body)
           ReducedAst.CatchRule(sym, clazz, b)
       }
@@ -143,10 +152,6 @@ object Reducer {
     case LiftedAst.Expr.Do(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExpr)
       ReducedAst.Expr.Do(op, es, tpe, purity, loc)
-
-    case LiftedAst.Expr.Resume(exp, tpe, loc) =>
-      val e = visitExpr(exp)
-      ReducedAst.Expr.Resume(e, tpe, loc)
 
     case LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val es = methods.map(m => visitExpr(m.clo))
@@ -170,6 +175,19 @@ object Reducer {
     case LiftedAst.FormalParam(sym, mod, tpe, loc) =>
       ReducedAst.FormalParam(sym, mod, tpe, loc)
   }
+
+  /**
+    * Companion object for [[LocalContext]].
+    */
+  private object LocalContext {
+    def mk(): LocalContext = LocalContext(mutable.ArrayBuffer.empty)
+  }
+
+  /**
+    * A local non-shared context. Does not need to be thread-safe.
+    * @param lparams the bound variales in the def.
+    */
+  private case class LocalContext(lparams: mutable.ArrayBuffer[ReducedAst.LocalParam])
 
   /**
     * A context shared across threads.
@@ -236,8 +254,6 @@ object Reducer {
 
       case ReducedAst.Expr.Do(_, exps, tpe, _, _) => visitExps(exps) ++ Set(tpe)
 
-      case ReducedAst.Expr.Resume(exp, tpe, _) => visitExp(exp) ++ Set(tpe)
-
       case ReducedAst.Expr.NewObject(_, _, _, _, _, exps, _) =>
         visitExps(exps)
 
@@ -265,52 +281,53 @@ object Reducer {
         // the enum type itself
         val eType = e.tpe
         // the types inside the cases
-        val caseTypes = e.cases.values.flatMap(c => nestedTypesOf(c.tpe)(root, flix))
+        val caseTypes = e.cases.values.map(_.tpe)
         sacc + eType ++ caseTypes
     }
 
-    val result = defTypes ++ enumTypes
+    val effectTypes = root.effects.foldLeft(Set.empty[MonoType]) {
+      case (sacc, (_, e)) =>
+        val opTypes = e.ops.map{
+          case op =>
+            val paramTypes = op.fparams.map(_.tpe)
+            val resType = op.tpe
+            val continuationType = MonoType.Object
+            val correctedFunctionType: MonoType = MonoType.Arrow(paramTypes :+ continuationType, resType)
+            Set(correctedFunctionType)
+        }.foldLeft(Set.empty[MonoType]){case (acc, cur) => acc.union(cur)}
+        sacc ++ opTypes
+    }
 
-    result.flatMap(t => nestedTypesOf(t)(root, flix))
+    val result = defTypes ++ enumTypes ++ effectTypes
+
+    nestedTypesOf(Set.empty, Queue.from(result))
   }
 
   /**
-    * Returns all the type components of the given type `tpe`.
+    * Returns all the type components of the given `types`.
     *
-    * For example, if the given type is `Array[(Bool, Char, Int)]`
-    * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Array[(Bool, Char, Int)]`.
+    * For example, if the types is just the type `Array[(Bool, Char, Int)]`
+    * this returns the set `Bool`, `Char`, `Int`, `(Bool, Char, Int)`, and `Array[(Bool, Char, Int)]`
+    * (and the types in `acc`).
     */
-  private def nestedTypesOf(tpe: MonoType)(implicit root: ReducedAst.Root, flix: Flix): Set[MonoType] = {
-    tpe match {
-      case MonoType.Unit => Set(tpe)
-      case MonoType.Bool => Set(tpe)
-      case MonoType.Char => Set(tpe)
-      case MonoType.Float32 => Set(tpe)
-      case MonoType.Float64 => Set(tpe)
-      case MonoType.BigDecimal => Set(tpe)
-      case MonoType.Int8 => Set(tpe)
-      case MonoType.Int16 => Set(tpe)
-      case MonoType.Int32 => Set(tpe)
-      case MonoType.Int64 => Set(tpe)
-      case MonoType.BigInt => Set(tpe)
-      case MonoType.String => Set(tpe)
-      case MonoType.Regex => Set(tpe)
-      case MonoType.Region => Set(tpe)
-
-      case MonoType.Array(elm) => nestedTypesOf(elm) + tpe
-      case MonoType.Lazy(elm) => nestedTypesOf(elm) + tpe
-      case MonoType.Ref(elm) => nestedTypesOf(elm) + tpe
-      case MonoType.Tuple(elms) => elms.flatMap(nestedTypesOf).toSet + tpe
-      case MonoType.Enum(_) => Set(tpe)
-      case MonoType.Arrow(targs, tresult) => targs.flatMap(nestedTypesOf).toSet ++ nestedTypesOf(tresult) + tpe
-
-      case MonoType.RecordEmpty => Set(tpe)
-      case MonoType.RecordExtend(_, value, rest) => Set(tpe) ++ nestedTypesOf(value) ++ nestedTypesOf(rest)
-
-      case MonoType.SchemaEmpty => Set(tpe)
-      case MonoType.SchemaExtend(_, t, rest) => nestedTypesOf(t) ++ nestedTypesOf(rest) + t + rest
-
-      case MonoType.Native(_) => Set(tpe)
+  @tailrec
+  def nestedTypesOf(acc: Set[MonoType], types: Queue[MonoType]): Set[MonoType] = {
+    import MonoType._
+    types.dequeueOption match {
+      case Some((tpe, taskList)) =>
+        val taskList1 = tpe match {
+          case Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
+               Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) |
+               RecordEmpty | Native(_) => taskList
+          case Array(elm) => taskList.enqueue(elm)
+          case Lazy(elm) => taskList.enqueue(elm)
+          case Ref(elm) => taskList.enqueue(elm)
+          case Tuple(elms) => taskList.enqueueAll(elms)
+          case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
+          case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
+        }
+        nestedTypesOf(acc + tpe, taskList1)
+      case None => acc
     }
   }
 

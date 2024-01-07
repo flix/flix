@@ -21,206 +21,15 @@ import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, KindedAst, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
-import ca.uwaterloo.flix.util.Validation.ToSuccess
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 object TypeReconstruction {
 
   /**
-    * Reconstructs a type-checked AST.
-    *
-    * @param root      the untyped root
-    * @param defSubsts a map from definition symbols to inferred type substitutions
-    * @param sigSubsts a map from signature symbols to infered type substitutions
-    * @param oldRoot   a cached TypedAst root
-    * @param changeSet the change set representing changed sources since compiling the old root
-    */
-  def run(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution], sigSubsts: Map[Symbol.SigSym, Substitution], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, TypeError] = flix.subphase("TypeReconstruction") {
-    val classes = visitClasses(root, defSubsts, sigSubsts, oldRoot, changeSet)
-    val instances = visitInstances(root, defSubsts)
-    val defs = visitDefs(root, defSubsts, oldRoot, changeSet)
-    val enums = visitEnums(root)
-    val restrictableEnums = visitRestrictableEnums(root)
-    val effs = visitEffs(root)
-    val typeAliases = visitTypeAliases(root)
-    val sigs = classes.values.flatMap(_.sigs).map(sig => sig.sym -> sig).toMap
-    val modules = collectModules(root)
-
-    val classEnv = mkClassEnv(root.classes, root.instances)
-
-    val eqEnv = mkEqualityEnv(root.classes, root.instances)
-    val precedenceGraph = LabelledPrecedenceGraph.empty
-
-    TypedAst.Root(modules, classes, instances, sigs, defs, enums, restrictableEnums, effs, typeAliases, root.uses, root.entryPoint, root.sources, classEnv, eqEnv, root.names, precedenceGraph).toSuccess
-  }
-
-  /**
-    * Creates a class environment from the classes and instances in the root.
-    */
-  private def mkClassEnv(classes0: Map[Symbol.ClassSym, KindedAst.Class], instances0: Map[Symbol.ClassSym, List[KindedAst.Instance]])(implicit flix: Flix): Map[Symbol.ClassSym, Ast.ClassContext] =
-    flix.subphase("ClassEnv") {
-      classes0.map {
-        case (classSym, clazz) =>
-          val instances = instances0.getOrElse(classSym, Nil)
-          val envInsts = instances.map {
-            case KindedAst.Instance(_, _, _, _, tpe, tconstrs, _, _, _, _) => Ast.Instance(tpe, tconstrs)
-          }
-          // ignore the super class parameters since they should all be the same as the class param
-          val superClasses = clazz.superClasses.map(_.head.sym)
-          (classSym, Ast.ClassContext(superClasses, envInsts))
-      }
-    }
-
-  /**
-    * Creates an equality environment from the classes and instances in the root.
-    */
-  private def mkEqualityEnv(classes0: Map[Symbol.ClassSym, KindedAst.Class], instances0: Map[Symbol.ClassSym, List[KindedAst.Instance]])(implicit flix: Flix): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] =
-    flix.subphase("EqualityEnv") {
-
-      val assocs = for {
-        (classSym, _) <- classes0.iterator
-        inst <- instances0.getOrElse(classSym, Nil)
-        assoc <- inst.assocs
-      } yield (assoc.sym.sym, Ast.AssocTypeDef(assoc.arg, assoc.tpe))
-
-
-      assocs.foldLeft(ListMap.empty[Symbol.AssocTypeSym, Ast.AssocTypeDef]) {
-        case (acc, (sym, defn)) => acc + (sym -> defn)
-      }
-    }
-
-  /**
-    * Collects the symbols in the given root into a map.
-    */
-  private def collectModules(root: KindedAst.Root): Map[Symbol.ModuleSym, List[Symbol]] = root match {
-    case KindedAst.Root(classes, _, defs, enums, restrictableEnums, effects, typeAliases, _, _, _, loc) =>
-      val sigs = classes.values.flatMap { clazz => clazz.sigs.values.map(_.sym) }
-      val ops = effects.values.flatMap { eff => eff.ops.map(_.sym) }
-
-      val syms0 = classes.keys ++ defs.keys ++ enums.keys ++ effects.keys ++ typeAliases.keys ++ sigs ++ ops
-
-      // collect namespaces from prefixes of other symbols
-      // TODO this should be done in resolver once the duplicate namespace issue is managed
-      val namespaces = syms0.collect {
-        case sym: Symbol.DefnSym => sym.namespace
-        case sym: Symbol.EnumSym => sym.namespace
-        case sym: Symbol.RestrictableEnumSym => sym.namespace
-        case sym: Symbol.ClassSym => sym.namespace
-        case sym: Symbol.TypeAliasSym => sym.namespace
-        case sym: Symbol.EffectSym => sym.namespace
-      }.flatMap {
-        fullNs =>
-          fullNs.inits.collect {
-            case ns@(_ :: _) => new Symbol.ModuleSym(ns)
-          }
-      }.toSet
-      val syms = syms0 ++ namespaces
-
-      val groups = syms.groupBy {
-        case sym: Symbol.DefnSym => new Symbol.ModuleSym(sym.namespace)
-        case sym: Symbol.EnumSym => new Symbol.ModuleSym(sym.namespace)
-        case sym: Symbol.RestrictableEnumSym => new Symbol.ModuleSym(sym.namespace)
-        case sym: Symbol.ClassSym => new Symbol.ModuleSym(sym.namespace)
-        case sym: Symbol.TypeAliasSym => new Symbol.ModuleSym(sym.namespace)
-        case sym: Symbol.EffectSym => new Symbol.ModuleSym(sym.namespace)
-
-        case sym: Symbol.SigSym => new Symbol.ModuleSym(sym.clazz.namespace :+ sym.clazz.name)
-        case sym: Symbol.OpSym => new Symbol.ModuleSym(sym.eff.namespace :+ sym.eff.name)
-        case sym: Symbol.AssocTypeSym => new Symbol.ModuleSym(sym.clazz.namespace :+ sym.clazz.name)
-
-        case sym: Symbol.ModuleSym => new Symbol.ModuleSym(sym.ns.init)
-
-        case sym: Symbol.CaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.RestrictableCaseSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.VarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.KindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.UnkindedTypeVarSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-        case sym: Symbol.LabelSym => throw InternalCompilerException(s"unexpected symbol: $sym", SourceLocation.Unknown)
-        case sym: Symbol.HoleSym => throw InternalCompilerException(s"unexpected symbol: $sym", sym.loc)
-      }
-
-      groups.map {
-        case (k, v) => (k, v.toList)
-      }
-
-  }
-
-  /**
-    * Reconstructs types in the given defs.
-    */
-  private def visitDefs(root: KindedAst.Root, substs: Map[Symbol.DefnSym, Substitution], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Map[Symbol.DefnSym, TypedAst.Def] = {
-    flix.subphase("Defs") {
-      val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
-      ParOps.parMapValues(staleDefs) {
-        case defn => visitDef(defn, root, substs(defn.sym))
-      } ++ freshDefs
-    }
-  }
-
-  /**
-    * Reconstructs types in the given classes.
-    */
-  private def visitClasses(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution], sigSubsts: Map[Symbol.SigSym, Substitution], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Map[Symbol.ClassSym, TypedAst.Class] = {
-    flix.subphase("Classes") {
-      val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
-      ParOps.parMapValues(staleClasses)(visitClass(_, root, defSubsts, sigSubsts)) ++ freshClasses
-    }
-  }
-
-  /**
-    * Reconstructs types in the given instances.
-    */
-  private def visitInstances(root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution])(implicit flix: Flix): Map[Symbol.ClassSym, List[TypedAst.Instance]] = {
-    flix.subphase("Instances") {
-      ParOps.parMapValues(root.instances) {
-        case insts => insts.map(visitInstance(_, root, defSubsts))
-      }
-    }
-  }
-
-  /**
-    * Reconstructs types in the given class.
-    */
-  private def visitClass(clazz: KindedAst.Class, root: KindedAst.Root, defSubsts: Map[Symbol.DefnSym, Substitution], sigSubsts: Map[Symbol.SigSym, Substitution]): TypedAst.Class = clazz match {
-    case KindedAst.Class(doc, ann, mod, sym, tparam0, superClasses0, assocs0, sigs0, laws0, loc) =>
-      val tparam = visitTypeParam(tparam0, root) // TODO ASSOC-TYPES redundant?
-      val superClasses = superClasses0 // no subst to be done
-      val assocs = assocs0.map {
-        case KindedAst.AssocTypeSig(doc, mod, sym, tp0, kind, loc) =>
-          val tp = visitTypeParam(tp0, root) // TODO ASSOC-TYPES redundant?
-          TypedAst.AssocTypeSig(doc, mod, sym, tp, kind, loc) // TODO ASSOC-TYPES trivial
-      }
-      val sigs = sigs0.map {
-        case (sigSym, sig) => visitSig(sig, root, sigSubsts(sigSym))
-      }.toList
-      val laws = laws0.map {
-        case law => visitDef(law, root, defSubsts(law.sym))
-      }
-      TypedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc)
-  }
-
-  /**
-    * Reconstructs types in the given instance.
-    */
-  private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, substs: Map[Symbol.DefnSym, Substitution]): TypedAst.Instance = inst match {
-    case KindedAst.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
-      val tpe = tpe0 // TODO ASSOC-TYPES redundant?
-      val tconstrs = tconstrs0 // no subst to be done
-      val assocs = assocs0.map {
-        case KindedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) =>
-          TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) // TODO ASSOC-TYPES trivial
-      }
-      val defs = defs0.map {
-        case defn => visitDef(defn, root, substs(defn.sym))
-      }
-      TypedAst.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, ns, loc)
-  }
-
-  /**
     * Reconstructs types in the given def.
     */
-  private def visitDef(defn: KindedAst.Def, root: KindedAst.Root, subst: Substitution): TypedAst.Def = defn match {
+  def visitDef(defn: KindedAst.Def, root: KindedAst.Root, subst: Substitution): TypedAst.Def = defn match {
     case KindedAst.Def(sym, spec0, exp0) =>
       val spec = visitSpec(spec0, root, subst)
       val exp = visitExp(exp0)(root, subst)
@@ -230,7 +39,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given sig.
     */
-  private def visitSig(sig: KindedAst.Sig, root: KindedAst.Root, subst: Substitution): TypedAst.Sig = sig match {
+  def visitSig(sig: KindedAst.Sig, root: KindedAst.Root, subst: Substitution): TypedAst.Sig = sig match {
     case KindedAst.Sig(sym, spec0, exp0) =>
       val spec = visitSpec(spec0, root, subst)
       val exp = exp0.map(visitExp(_)(root, subst))
@@ -269,101 +78,9 @@ object TypeReconstruction {
   }
 
   /**
-    * Reconstructs types in the given enums.
-    */
-  private def visitEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.EnumSym, TypedAst.Enum] =
-    flix.subphase("Enums") {
-      // Visit every enum in the ast.
-      val result = root.enums.toList.map {
-        case (_, enum) => visitEnum(enum, root)
-      }
-
-      // Sequence the results and convert them back to a map.
-      result.toMap
-    }
-
-  /**
-    * Reconstructs types in the given enum.
-    */
-  private def visitEnum(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): (Symbol.EnumSym, TypedAst.Enum) = enum0 match {
-    case KindedAst.Enum(doc, ann, mod, enumSym, tparams0, derives, cases0, tpe, loc) =>
-      val tparams = tparams0.map(visitTypeParam(_, root))
-      val cases = cases0 map {
-        case (name, KindedAst.Case(caseSym, tagType, sc, caseLoc)) =>
-          name -> TypedAst.Case(caseSym, tagType, sc, caseLoc)
-      }
-
-      enumSym -> TypedAst.Enum(doc, ann, mod, enumSym, tparams, derives, cases, tpe, loc)
-  }
-
-
-  /**
-    * Reconstructs types in the given restrictable enums.
-    */
-  private def visitRestrictableEnums(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum] =
-    flix.subphase("RestrictableEnums") {
-      // Visit every restrictable enum in the ast.
-      val result = root.restrictableEnums.toList.map {
-        case (_, re) => visitRestrictableEnum(re, root)
-      }
-
-      // Sequence the results and convert them back to a map.
-      result.toMap
-    }
-
-  /**
-    * Reconstructs types in the given restrictable enum.
-    */
-  private def visitRestrictableEnum(enum0: KindedAst.RestrictableEnum, root: KindedAst.Root)(implicit flix: Flix): (Symbol.RestrictableEnumSym, TypedAst.RestrictableEnum) = enum0 match {
-    case KindedAst.RestrictableEnum(doc, ann, mod, enumSym, index0, tparams0, derives, cases0, tpe, loc) =>
-      val index = TypedAst.TypeParam(index0.name, index0.sym, index0.loc)
-      val tparams = tparams0.map(visitTypeParam(_, root))
-      val cases = cases0 map {
-        case (name, KindedAst.RestrictableCase(caseSym, tagType, sc, caseLoc)) =>
-          name -> TypedAst.RestrictableCase(caseSym, tagType, sc, caseLoc)
-      }
-
-      enumSym -> TypedAst.RestrictableEnum(doc, ann, mod, enumSym, index, tparams, derives, cases, tpe, loc)
-  }
-
-  /**
-    * Reconstructs types in the given type aliases.
-    */
-  private def visitTypeAliases(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.TypeAliasSym, TypedAst.TypeAlias] =
-    flix.subphase("TypeAliases") {
-      def visitTypeAlias(alias: KindedAst.TypeAlias): (Symbol.TypeAliasSym, TypedAst.TypeAlias) = alias match {
-        case KindedAst.TypeAlias(doc, mod, sym, tparams0, tpe, loc) =>
-          val tparams = tparams0.map(visitTypeParam(_, root))
-          sym -> TypedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
-      }
-
-      root.typeAliases.values.map(visitTypeAlias).toMap
-    }
-
-  /**
-    * Reconstructs types in the given effects.
-    */
-  private def visitEffs(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.EffectSym, TypedAst.Effect] = {
-    flix.subphase("Effs") {
-      root.effects.map {
-        case (sym, eff) => sym -> visitEff(eff, root)
-      }
-    }
-  }
-
-  /**
-    * Reconstructs types in the given effect.
-    */
-  private def visitEff(eff: KindedAst.Effect, root: KindedAst.Root)(implicit flix: Flix): TypedAst.Effect = eff match {
-    case KindedAst.Effect(doc, ann, mod, sym, ops0, loc) =>
-      val ops = ops0.map(visitOp(_, root))
-      TypedAst.Effect(doc, ann, mod, sym, ops, loc)
-  }
-
-  /**
     * Reconstructs types in the given operation.
     */
-  private def visitOp(op: KindedAst.Op, root: KindedAst.Root)(implicit flix: Flix): TypedAst.Op = op match {
+  def visitOp(op: KindedAst.Op, root: KindedAst.Root)(implicit flix: Flix): TypedAst.Op = op match {
     case KindedAst.Op(sym, spec0) =>
       val spec = visitSpec(spec0, root, Substitution.empty)
       TypedAst.Op(sym, spec)
@@ -703,11 +420,6 @@ object TypeReconstruction {
       val eff = Type.mkUnion(eff1 :: es.map(_.eff), loc)
       TypedAst.Expr.Do(op, es, tpe, eff, loc)
 
-    case KindedAst.Expr.Resume(exp, _, retTvar, loc) =>
-      val e = visitExp(exp)
-      val tpe = subst(retTvar)
-      TypedAst.Expr.Resume(e, tpe, loc)
-
     case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
       val as = args.map(visitExp(_))
       val tpe = getFlixType(constructor.getDeclaringClass)
@@ -931,6 +643,9 @@ object TypeReconstruction {
 
     case KindedAst.Pattern.RecordEmpty(loc) =>
       TypedAst.Pattern.RecordEmpty(Type.mkRecord(Type.RecordRowEmpty, loc), loc)
+
+    case KindedAst.Pattern.Error(tvar, loc) =>
+      TypedAst.Pattern.Error(subst(tvar), loc)
   }
 
 

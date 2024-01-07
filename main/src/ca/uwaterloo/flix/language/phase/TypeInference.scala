@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess, mapN, traverse, traverseValues}
+import ca.uwaterloo.flix.util.Validation.{mapN, traverse, traverseValues}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.ListMap
 
@@ -38,126 +38,9 @@ import scala.annotation.tailrec
 object TypeInference {
 
   /**
-    * Type checks the given AST root.
-    */
-  def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[(Map[Symbol.DefnSym, Substitution], Map[Symbol.SigSym, Substitution]), TypeError] = flix.subphase("TypeInference") {
-    val classEnv = mkClassEnv(root.classes, root.instances)
-    val eqEnv = mkEqualityEnv(root.classes, root.instances)
-    val classesVal = visitClasses(root, classEnv, eqEnv, oldRoot, changeSet)
-    val instancesVal = visitInstances(root, classEnv, eqEnv)
-    val defsVal = visitDefs(root, classEnv, eqEnv, oldRoot, changeSet)
-
-    mapN(classesVal, instancesVal, defsVal) {
-      case ((sigSubsts, defSubsts1), defSubsts2, defSubsts3) =>
-        val defSubsts = defSubsts1 ++ defSubsts2 ++ defSubsts3
-        (defSubsts, sigSubsts)
-    }
-  }
-
-  /**
-    * Creates a class environment from the classes and instances in the root.
-    */
-  private def mkClassEnv(classes0: Map[Symbol.ClassSym, KindedAst.Class], instances0: Map[Symbol.ClassSym, List[KindedAst.Instance]])(implicit flix: Flix): Map[Symbol.ClassSym, Ast.ClassContext] =
-    flix.subphase("ClassEnv") {
-      classes0.map {
-        case (classSym, clazz) =>
-          val instances = instances0.getOrElse(classSym, Nil)
-          val envInsts = instances.map {
-            case KindedAst.Instance(_, _, _, _, tpe, tconstrs, _, _, _, _) => Ast.Instance(tpe, tconstrs)
-          }
-          // ignore the super class parameters since they should all be the same as the class param
-          val superClasses = clazz.superClasses.map(_.head.sym)
-          (classSym, Ast.ClassContext(superClasses, envInsts))
-      }
-    }
-
-  /**
-    * Creates an equality environment from the classes and instances in the root.
-    */
-  private def mkEqualityEnv(classes0: Map[Symbol.ClassSym, KindedAst.Class], instances0: Map[Symbol.ClassSym, List[KindedAst.Instance]])(implicit flix: Flix): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] =
-    flix.subphase("EqualityEnv") {
-
-      val assocs = for {
-        (classSym, _) <- classes0.iterator
-        inst <- instances0.getOrElse(classSym, Nil)
-        assoc <- inst.assocs
-      } yield (assoc.sym.sym, Ast.AssocTypeDef(assoc.arg, assoc.tpe))
-
-
-      assocs.foldLeft(ListMap.empty[Symbol.AssocTypeSym, Ast.AssocTypeDef]) {
-        case (acc, (sym, defn)) => acc + (sym -> defn)
-      }
-    }
-
-  /**
-    * Performs type inference and reassembly on all classes in the given AST root.
-    *
-    * Returns [[Err]] if a definition fails to type check.
-    */
-  private def visitClasses(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[(Map[Symbol.SigSym, Substitution], Map[Symbol.DefnSym, Substitution]), TypeError] =
-    flix.subphase("Classes") {
-      // Don't bother to infer the fresh classes
-      val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
-      val result = ParOps.parTraverse(staleClasses.values)(visitClass(_, root, classEnv, eqEnv))
-      result.map {
-        case substs =>
-          val (sigSubsts, defSubsts) = substs.unzip
-          (sigSubsts.fold(Map.empty)(_ ++ _), defSubsts.fold(Map.empty)(_ ++ _))
-      }
-    }
-
-  /**
-    * Reassembles a single class.
-    */
-  private def visitClass(clazz: KindedAst.Class, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[(Map[Symbol.SigSym, Substitution], Map[Symbol.DefnSym, Substitution]), TypeError] = clazz match {
-    case KindedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs0, sigs0, laws0, loc) =>
-      val tconstr = Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
-      val sigsVal = traverseValues(sigs0)(visitSig(_, List(tconstr), root, classEnv, eqEnv))
-      val lawsVal = traverse(laws0) {
-        case law => mapN(visitDefn(law, List(tconstr), root, classEnv, eqEnv)) {
-          case subst => law.sym -> subst
-        }
-      }
-      mapN(sigsVal, lawsVal) {
-        case (sigs, laws) => (sigs, laws.toMap)
-      }
-  }
-
-  /**
-    * Performs type inference and reassembly on all instances in the given AST root.
-    *
-    * Returns [[Err]] if a definition fails to type check.
-    */
-  private def visitInstances(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, Substitution], TypeError] =
-    flix.subphase("Instances") {
-
-      val instances = for {
-        (_, insts) <- root.instances
-        inst <- insts
-      } yield inst
-
-      val result = ParOps.parTraverse(instances)(visitInstance(_, root, classEnv, eqEnv))
-
-      result.map {
-        case substs => substs.fold(Map.empty)(_ ++ _)
-      }
-    }
-
-  /**
-    * Reassembles a single instance.
-    */
-  private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, Substitution], TypeError] = inst match {
-    case KindedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs0, defs0, ns, loc) =>
-      val defs = defs0.map {
-        case defn => defn.sym -> defn
-      }.toMap
-      Validation.traverseValues(defs)(visitDefn(_, tconstrs, root, classEnv, eqEnv))
-  }
-
-  /**
     * Performs type inference and reassembly on the given definition `defn`.
     */
-  private def visitDefn(defn: KindedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
+  def visitDefn(defn: KindedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
     case KindedAst.Def(sym, spec0, exp0) =>
       flix.subtask(sym.toString, sample = true)
 
@@ -182,25 +65,12 @@ object TypeInference {
   /**
     * Performs type inference and reassembly on the given signature `sig`.
     */
-  private def visitSig(sig: KindedAst.Sig, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
+  def visitSig(sig: KindedAst.Sig, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
     case KindedAst.Sig(sym, spec0, Some(exp0)) =>
       typeCheckDecl(spec0, exp0, assumedTconstrs, root, classEnv, eqEnv, sym.loc)
     case KindedAst.Sig(sym, spec0, None) =>
-      Substitution.empty.toSuccess // TODO ASSOC-TYPES hack, should return Option or something
+      Validation.success(Substitution.empty) // TODO ASSOC-TYPES hack, should return Option or something
   }
-
-  /**
-    * Performs type inference and reassembly on all definitions in the given AST root.
-    *
-    * Returns [[Err]] if a definition fails to type check.
-    */
-  private def visitDefs(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.DefnSym, Substitution], TypeError] =
-    flix.subphase("Defs") {
-      // only infer the stale defs
-      val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
-
-      ParOps.parTraverseValues(staleDefs)(visitDefn(_, Nil, root, classEnv, eqEnv))
-    }
 
   /**
     * Infers the type of the given definition `defn0`.
@@ -260,16 +130,16 @@ object TypeInference {
                     case UnificationError.NoMatchingInstance(tconstr) =>
                       tconstr.arg.typeConstructor match {
                         case Some(tc: TypeConstructor.Arrow) =>
-                          TypeError.MissingArrowInstance(tconstr.head.sym, tconstr.arg, renv0, tconstr.loc)
+                          TypeError.MissingInstanceArrow(tconstr.head.sym, tconstr.arg, renv0, tconstr.loc)
                         case _ =>
                           if (tconstr.head.sym.name == "Eq")
-                            TypeError.MissingEq(tconstr.arg, renv0, tconstr.loc)
+                            TypeError.MissingInstanceEq(tconstr.arg, renv0, tconstr.loc)
                           else if (tconstr.head.sym.name == "Order")
-                            TypeError.MissingOrder(tconstr.arg, renv0, tconstr.loc)
+                            TypeError.MissingInstanceOrder(tconstr.arg, renv0, tconstr.loc)
                           else if (tconstr.head.sym.name == "ToString")
-                            TypeError.MissingToString(tconstr.arg, renv0, tconstr.loc)
+                            TypeError.MissingInstanceToString(tconstr.arg, renv0, tconstr.loc)
                           else if (tconstr.head.sym.name == "Sendable")
-                            TypeError.MissingSendable(tconstr.arg, renv0, tconstr.loc)
+                            TypeError.MissingInstanceSendable(tconstr.arg, renv0, tconstr.loc)
                           else
                             TypeError.MissingInstance(tconstr.head.sym, tconstr.arg, renv0, tconstr.loc)
                       }
@@ -288,10 +158,10 @@ object TypeInference {
 
                     if (declaredEff == Type.Pure && inferredEff == Type.Impure) {
                       // Case 1: Declared as pure, but impure.
-                      return TypeError.ImpureDeclaredAsPure(loc).toFailure
+                      return Validation.toHardFailure(TypeError.ImpureDeclaredAsPure(loc))
                     } else if (declaredEff == Type.Pure && inferredEff != Type.Pure) {
                       // Case 2: Declared as pure, but effectful.
-                      return TypeError.EffectfulDeclaredAsPure(inferredEff, loc).toFailure
+                      return Validation.toHardFailure(TypeError.EffectfulDeclaredAsPure(inferredEff, loc))
                     } else {
                       // Case 3: Check if it is the effect that cannot be generalized.
                       val inferredEffScheme = Scheme(inferredSc.quantifiers, Nil, Nil, inferredEff)
@@ -303,21 +173,21 @@ object TypeInference {
 
                         case _failure =>
                           // Case 3.2: The effect cannot be generalized.
-                          return TypeError.EffectGeneralizationError(declaredEff, inferredEff, loc).toFailure
+                          return Validation.toHardFailure(TypeError.EffectGeneralizationError(declaredEff, inferredEff, loc))
                       }
 
-                      return TypeError.GeneralizationError(declaredScheme, minimizeScheme(inferredSc), loc).toFailure
+                      return Validation.toHardFailure(TypeError.GeneralizationError(declaredScheme, minimizeScheme(inferredSc), loc))
                     }
                   } else {
                     // Case 3: instance error
-                    return Validation.Failure(instanceErrs)
+                    return Validation.HardFailure(instanceErrs)
                   }
               }
 
               // create a new substitution combining the econstr substitution and the base type substitution
-              (eqSubst @@ subst0).toSuccess
+              Validation.success((eqSubst @@ subst0))
 
-            case Err(e) => Validation.Failure(LazyList(e))
+            case Err(e) => Validation.HardFailure(LazyList(e))
           }
       }
   }
@@ -1056,7 +926,7 @@ object TypeInference {
 
         def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam]): InferMonad[Unit] = {
           if (expected.length != actual.length) {
-            InferMonad.errPoint(TypeError.InvalidOpParamCount(op, expected = expected.length, actual = actual.length, loc))
+            InferMonad.errPoint(TypeError.MismatchedOpArity(op, expected = expected.length, actual = actual.length, loc))
           } else {
             traverseM(expected zip actual) {
               case (ex, ac) =>
@@ -1116,7 +986,7 @@ object TypeInference {
         }
 
         if (operation.spec.fparams.length != args.length) {
-          InferMonad.errPoint(TypeError.InvalidOpParamCount(op.sym, expected = operation.spec.fparams.length, actual = args.length, loc))
+          InferMonad.errPoint(TypeError.MismatchedOpArity(op.sym, expected = operation.spec.fparams.length, actual = args.length, loc))
         } else {
           val argM = (args zip operation.spec.fparams) map {
             case (arg, fparam) => visitArg(arg, fparam)
@@ -1128,15 +998,6 @@ object TypeInference {
             resultEff = Type.mkUnion(effTpe :: operation.spec.eff :: effs, loc)
           } yield (resultTconstrs, resultTpe, resultEff)
         }
-
-      case KindedAst.Expr.Resume(exp, argTvar, retTvar, loc) =>
-        for {
-          (tconstrs, tpe, eff) <- visitExp(exp)
-          resultTconstrs = tconstrs
-          _ <- expectTypeM(expected = argTvar, actual = tpe, exp.loc)
-          resultTpe = retTvar
-          resultEff = eff
-        } yield (resultTconstrs, resultTpe, resultEff)
 
       case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
         val classType = getFlixType(constructor.getDeclaringClass)
@@ -1577,6 +1438,8 @@ object TypeInference {
         } yield resultType
 
       case KindedAst.Pattern.RecordEmpty(loc) => liftM(Type.mkRecord(Type.RecordRowEmpty, loc))
+
+      case KindedAst.Pattern.Error(tvar, _) => liftM(tvar)
 
     }
 

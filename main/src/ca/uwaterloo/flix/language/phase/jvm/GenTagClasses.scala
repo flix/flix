@@ -17,8 +17,8 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.{Case, Root}
-import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst}
+import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.ast.ReducedAst.Case
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
@@ -30,7 +30,7 @@ object GenTagClasses {
   /**
     * Returns the set of tuple interfaces for the given cases (also called tags).
     */
-  def gen(tags: Iterable[Case])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(tags: Iterable[Case])(implicit flix: Flix): Map[JvmName, JvmClass] = {
     tags.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, tag) =>
         val jvmType = JvmOps.getTagClassType(tag.sym)
@@ -91,7 +91,7 @@ object GenTagClasses {
     * throw new Exception("equals method shouldn't be called");
     * }
     */
-  private def genByteCode(tag: Case)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(tag: Case)(implicit flix: Flix): Array[Byte] = {
     // The JvmType of the interface for enum of `tag`.
     val superType = JvmOps.getEnumInterfaceType(tag.sym.enumSym)
 
@@ -138,9 +138,6 @@ object GenTagClasses {
     // Generate the `getBoxedTagValue` method.
     AsmOps.compileGetBoxedTagValueMethod(visitor, classType, valueType)
 
-    // Generate the `getTag` method.
-    compileGetTagMethod(visitor, tag.sym.name)
-
     compileToStringMethod(visitor, classType, tag)
 
     // Generate the `hashCode` method.
@@ -168,7 +165,7 @@ object GenTagClasses {
     * @param valueType   type of the `value` field
     * @param isSingleton if the class is a singleton this flag is set
     */
-  private def compileEnumConstructor(visitor: ClassWriter, classType: JvmType.Reference, valueType: JvmType, isSingleton: Boolean)(implicit root: Root, flix: Flix): Unit = {
+  private def compileEnumConstructor(visitor: ClassWriter, classType: JvmType.Reference, valueType: JvmType, isSingleton: Boolean): Unit = {
     // If this is a singleton then we should make the constructor private
     val specifier =
       ACC_PUBLIC
@@ -197,27 +194,7 @@ object GenTagClasses {
     constructor.visitEnd()
   }
 
-  /**
-    * Generates the `getTag()` method of the class which is the implementation of `getTag` method on `tagInterface`.
-    * This methods returns an string containing the tag name.
-    * For example, `Val$42` (corresponding to `Val[Char]`) has following `getTag()`method:
-    *
-    * public final String getTag() {
-    * return "Var";
-    * }
-    *
-    * @param visitor class visitor
-    * @param tag     tag String
-    */
-  def compileGetTagMethod(visitor: ClassWriter, tag: String)(implicit root: Root, flix: Flix): Unit = {
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getTag", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
-    method.visitLdcInsn(tag)
-    method.visitInsn(ARETURN)
-    method.visitMaxs(1, 1)
-    method.visitEnd()
-  }
-
-  def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference, tag: Case)(implicit root: Root, flix: Flix): Unit = {
+  def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference, tag: Case): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
     tag.tpe match {
       case MonoType.Unit => // "$Tag"
@@ -261,7 +238,7 @@ object GenTagClasses {
     * @param visitor   class visitor
     * @param classType JvmType.Reference of the class
     */
-  private def compileUnitInstance(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix): Unit = {
+  private def compileUnitInstance(visitor: ClassWriter, classType: JvmType.Reference): Unit = {
     val method = visitor.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null)
     method.visitCode()
 

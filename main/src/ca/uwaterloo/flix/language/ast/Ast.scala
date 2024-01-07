@@ -138,7 +138,9 @@ object Ast {
   /**
     * A common super type for AST nodes that represent annotations.
     */
-  trait Annotation
+  trait Annotation {
+    def loc: SourceLocation
+  }
 
   object Annotation {
 
@@ -179,7 +181,6 @@ object Ast {
     case class Internal(loc: SourceLocation) extends Annotation {
       override def toString: String = "@Internal"
     }
-
 
     /**
       * An annotation that marks a function definition as using parallel evaluation.
@@ -240,7 +241,7 @@ object Ast {
     /**
       * An AST node that represents a `@Test` annotation.
       *
-      * A function marked with `test` is evaluated as part of the test framework.
+      * A function marked with `Test` is evaluated as part of the test framework.
       *
       * @param loc the source location of the annotation.
       */
@@ -248,9 +249,27 @@ object Ast {
       override def toString: String = "@Test"
     }
 
+    /**
+     * An AST node that represents a `@TailRec` annotation.
+     *
+     * A function marked with `@TailRec` is guaranteed to be tail recursive by the compiler.
+     *
+     * @param loc the source location of the annotation.
+     */
     case class TailRecursive(loc: SourceLocation) extends Annotation {
       override def toString: String = "@Tailrec"
     }
+
+    /**
+     * An AST node that represents an undefined (i.e. erroneous) annotation.
+     *
+     * @param name the name of the annotation.
+     * @param loc the source location of the annotation.
+     */
+    case class Error(name: String, loc: SourceLocation) extends Annotation {
+      override def toString: String = "@" + name
+    }
+
   }
 
   /**
@@ -352,6 +371,11 @@ object Ast {
       dropWhile(_.trim.isEmpty).
       map(_.trim).
       mkString("\n")
+
+    /**
+      * Returns a string representation that hides the internals.
+      */
+    override def toString: String = "Doc(...)"
   }
 
   /**
@@ -398,6 +422,11 @@ object Ast {
       * Returns `true` if these modifiers contain the synthetic modifier.
       */
     def isSynthetic: Boolean = mod contains Modifier.Synthetic
+
+    /**
+      * Returns a string representation that hides the internals.
+      */
+    override def toString: String = "Modifiers(...)"
 
   }
 

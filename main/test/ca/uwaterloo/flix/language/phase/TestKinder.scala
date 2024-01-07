@@ -1025,6 +1025,6 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |def foo(): C.T[a] = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[KindError.MissingConstraint](result)
+    expectError[KindError.MissingTypeClassConstraint](result)
   }
 }

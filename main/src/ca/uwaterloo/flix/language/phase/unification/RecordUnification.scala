@@ -47,6 +47,10 @@ object RecordUnification {
           }
       }
 
+    case (Type.Cst(TypeConstructor.Error(_), _), _) => Ok((Substitution.empty, Nil))
+
+    case (_, Type.Cst(TypeConstructor.Error(_), _)) => Ok((Substitution.empty, Nil))
+
     case _ => throw InternalCompilerException(s"unexpected types: ($tpe1), ($tpe2)", tpe1.loc)
   }
 
