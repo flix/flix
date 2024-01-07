@@ -630,8 +630,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Package the current project and release it on GitHub.
     */
-  def release(o: Options): Validation[Unit, BootstrapError] = {
-    val formatter = Formatter.getDefault
+  def release(flix: Flix): Validation[Unit, BootstrapError] = {
+    val formatter = flix.getFormatter
 
     // Check that there is a `flix.toml` file
     val tomlPath = getManifestFile(projectPath)
@@ -653,13 +653,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Check if `--github-key` option is present
-    val githubKey = o.githubKey match {
+    val githubKey = flix.options.githubKey match {
       case Some(k) => k
       case None =>
         return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.MissingApiKey))
     }
 
-    if (!o.skipPrompts) {
+    if (!flix.options.skipPrompts) {
       // Ask for confirmation
       var continue = false
       while (!continue) {

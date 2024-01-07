@@ -268,9 +268,11 @@ object Main {
           System.exit(0)
 
         case Command.Release =>
-          val o = options.copy(progress = false)
           flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
-            bootstrap => bootstrap.release(o)
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.release(flix)
           } match {
             case Validation.Success(_) =>
               System.exit(0)
