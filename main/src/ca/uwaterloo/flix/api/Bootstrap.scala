@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.Main.CmdOpts
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile}
 import ca.uwaterloo.flix.language.phase.{HtmlDocumentor, JsonDocumentor}
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -24,7 +23,7 @@ import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manif
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
-import ca.uwaterloo.flix.util.{Formatter, Options, Validation}
+import ca.uwaterloo.flix.util.Validation
 
 import java.io.{PrintStream, PrintWriter}
 import java.nio.file._
