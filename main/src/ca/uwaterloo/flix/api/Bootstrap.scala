@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{SoftFailure, SuccessUnit, ToFailure, ToSuccess, flatMapN}
+import ca.uwaterloo.flix.util.Validation.{SuccessUnit, ToFailure, ToSuccess, flatMapN}
 import ca.uwaterloo.flix.util.{Formatter, Options, Validation}
 
 import java.io.{PrintStream, PrintWriter}
@@ -33,6 +33,8 @@ import java.util.{Calendar, GregorianCalendar}
 import scala.collection.mutable
 import scala.io.StdIn.readLine
 import scala.util.{Failure, Success, Using}
+import scala.jdk.CollectionConverters._
+
 
 object Bootstrap {
 
@@ -692,7 +694,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Publish to GitHub
-    val publishResult = GitHub.publishRelease(githubRepo, manifest.version, githubKey)
+    val artifacts = Files.list(getArtifactDirectory(projectPath)).iterator().asScala.toList
+    val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubKey)
     publishResult match {
       case Ok(()) => // Continue
       case Err(e) => return BootstrapError.ReleaseError(e).toFailure
