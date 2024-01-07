@@ -36,7 +36,7 @@ object ReleaseError {
   case object NoLinkedProject extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
-         | Cannot create a release without the `package.github` option in `flix.toml`.
+         | Cannot create a release without the `package.repository` option in `flix.toml`.
          |""".stripMargin
   }
 
