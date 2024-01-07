@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.Main.CmdOpts
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile}
 import ca.uwaterloo.flix.language.phase.{HtmlDocumentor, JsonDocumentor}
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -672,16 +673,17 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         return BootstrapError.ReleaseError(ReleaseError.MissingApiKey).toFailure
     }
 
-    // Ask for confirmation
-    // TODO: add -y flag for use with scripts
-    var continue = false
-    while (!continue) {
-      print(s"Release ${formatter.blue(s"github:$githubRepo")} ${formatter.yellow(s"v${manifest.version}")}? [y/n]: ")
-      val response = readLine()
-      response.toLowerCase match {
-        case "y" => continue = true
-        case "n" => return BootstrapError.ReleaseError(ReleaseError.Cancelled).toFailure
-        case _ => // Continue loop
+    if (!o.skipPrompts) {
+      // Ask for confirmation
+      var continue = false
+      while (!continue) {
+        print(s"Release ${formatter.blue(s"github:$githubRepo")} ${formatter.yellow(s"v${manifest.version}")}? [y/n]: ")
+        val response = readLine()
+        response.toLowerCase match {
+          case "y" => continue = true
+          case "n" => return BootstrapError.ReleaseError(ReleaseError.Cancelled).toFailure
+          case _ => // Continue loop
+        }
       }
     }
 

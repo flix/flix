@@ -84,6 +84,7 @@ object Main {
       test = Options.Default.test,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
+      skipPrompts = cmdOpts.skipPrompts,
       xbddthreshold = cmdOpts.xbddthreshold,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
@@ -293,6 +294,7 @@ object Main {
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      threads: Option[Int] = None,
+                     skipPrompts: Boolean = false,
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
@@ -436,6 +438,9 @@ object Main {
 
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
+
+      opt[Unit]("yes").action((_, c) => c.copy(skipPrompts = true)).
+        text("automatically answer yes to all prompts.")
 
       version("version").text("prints the version number.")
 
