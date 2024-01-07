@@ -346,6 +346,9 @@ object Bootstrap {
 
 class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
+  // The `flix.toml` manifest if in project mode, otherwise `None`
+  private var optManifest: Option[Manifest] = None
+
   // Timestamps at the point the sources were loaded
   private var timestamps: Map[Path, Long] = Map.empty
 
@@ -367,6 +370,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Ok(m) => m
       case Err(e) => return Validation.toHardFailure(BootstrapError.ManifestParseError(e))
     }
+    optManifest = Some(manifest)
 
     // 2. Check each dependency is available or download it.
     val manifests: List[Manifest] = FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
@@ -632,16 +636,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def release(flix: Flix): Validation[Unit, BootstrapError] = {
     val formatter = flix.getFormatter
 
-    // Check that there is a `flix.toml` file
-    val tomlPath = getManifestFile(projectPath)
-    if (!Files.exists(tomlPath)) {
-      return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.MissingManifest))
-    }
-
-    // Parse the `flix.toml` file
-    val manifest = ManifestParser.parse(tomlPath) match {
-      case Ok(m) => m
-      case Err(e) => return Validation.toHardFailure(BootstrapError.ManifestParseError(e))
+    // Ensure that we have a manifest
+    val manifest = optManifest match {
+      case Some(m) => m
+      case None => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.MissingManifest))
     }
 
     // Check if `github` option is present
