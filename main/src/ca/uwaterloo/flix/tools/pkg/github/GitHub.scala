@@ -99,7 +99,7 @@ object GitHub {
 
       val code = conn.getResponseCode
       code match {
-        case x if 200 <= x && x <= 299 => Err(ReleaseError.AlreadyExists(project, version))
+        case 200 => Err(ReleaseError.AlreadyExists(project, version))
         case _ => Ok(())
       }
 
@@ -137,7 +137,7 @@ object GitHub {
       // Process response errors
       val code = conn.getResponseCode
       code match {
-        case x if 200 <= x && x <= 299 =>
+        case 201 =>
           val inStream = conn.getInputStream
           StreamOps.readAll(inStream)
         case 401 => return Err(ReleaseError.InvalidApiKeyError)
@@ -162,7 +162,7 @@ object GitHub {
   }
 
   /**
-    * Uploads a single asset
+    * Uploads a single asset.
     */
   private def uploadAsset(assetPath: Path, project: Project, releaseId: String, apiKey: String): Result[Unit, ReleaseError] = {
     val assetName = assetPath.getFileName.toString
@@ -185,7 +185,7 @@ object GitHub {
       // Process response errors
       val code = conn.getResponseCode
       code match {
-        case x if 200 <= x && x <= 299 => Ok(())
+        case 201 => Ok(())
         case 401 => Err(ReleaseError.InvalidApiKeyError)
         case _ => Err(ReleaseError.UnknownResponse(code, conn.getResponseMessage))
       }
@@ -221,7 +221,7 @@ object GitHub {
       // Process response errors
       val code = conn.getResponseCode
       code match {
-        case x if 200 <= x && x <= 299 => Ok(())
+        case 200 => Ok(())
         case 401 => Err(ReleaseError.InvalidApiKeyError)
         case 404 => Err(ReleaseError.InvalidProject(project))
         case 422 => Err(ReleaseError.AlreadyExists(project, version))
