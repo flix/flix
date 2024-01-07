@@ -656,7 +656,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.MissingApiKey))
     }
 
-    if (!flix.options.skipPrompts) {
+    if (!flix.options.assumeYes) {
       // Ask for confirmation
       var continue = false
       while (!continue) {
