@@ -658,15 +658,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     if (!flix.options.assumeYes) {
       // Ask for confirmation
-      var continue = false
-      while (!continue) {
-        print(s"Release ${formatter.blue(s"github:$githubRepo")} ${formatter.yellow(s"v${manifest.version}")}? [y/n]: ")
-        val response = readLine()
-        response.toLowerCase match {
-          case "y" => continue = true
-          case "n" => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.Cancelled))
-          case _ => // Continue loop
-        }
+      print(s"Release ${formatter.blue(s"github:$githubRepo")} ${formatter.yellow(s"v${manifest.version}")}? [y/N]: ")
+      val response = readLine()
+      response.toLowerCase match {
+        case "y" => // Continue
+        case _ => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.Cancelled))
       }
     }
 
