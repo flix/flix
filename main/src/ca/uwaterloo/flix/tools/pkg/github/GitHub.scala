@@ -80,10 +80,32 @@ object GitHub {
     */
   def publishRelease(project: Project, version: SemVer, artifacts: Iterable[Path], apiKey: String): Result[Unit, ReleaseError] = {
     for (
+      _ <- verifyRelease(project, version, apiKey);
       id <- createDraftRelease(project, version, apiKey);
       _ <- Result.traverse(artifacts)(p => uploadAsset(p, project, id, apiKey));
       _ <- markReleaseReady(project, version, id, apiKey)
     ) yield Ok(())
+  }
+
+  /**
+    * Verifies that the release does not already exist.
+    */
+  private def verifyRelease(project: Project, version: SemVer, apiKey: String): Result[Unit, ReleaseError] = {
+    val url = releaseVersionUrl(project, version)
+
+    try {
+      val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
+      conn.addRequestProperty("Authorization", "Bearer " + apiKey)
+
+      val code = conn.getResponseCode
+      code match {
+        case x if 200 <= x && x <= 299 => Err(ReleaseError.AlreadyExists(project, version))
+        case _ => Ok(())
+      }
+
+    } catch {
+      case _: IOException => Err(ReleaseError.NetworkError)
+    }
   }
 
   /**
@@ -159,6 +181,7 @@ object GitHub {
       val code = conn.getResponseCode
       code match {
         case x if 200 <= x && x <= 299 => Ok(())
+        case 401 => Err(ReleaseError.InvalidApiKeyError)
         case _ => Err(ReleaseError.UnknownResponse(code, conn.getResponseMessage))
       }
 
@@ -174,7 +197,7 @@ object GitHub {
     val content: JValue = "draft" -> false
     val jsonCompact = compact(render(content))
 
-    val url = releaseUrl(project, releaseId)
+    val url = releaseIdUrl(project, releaseId)
 
     try {
       val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
@@ -255,8 +278,15 @@ object GitHub {
   /**
     * Returns the URL for updating information about this specific release.
     */
-  private def releaseUrl(project: Project, releaseId: String): URL = {
+  private def releaseIdUrl(project: Project, releaseId: String): URL = {
     new URL(s"${releasesUrl(project).toString}/$releaseId")
+  }
+
+  /**
+    * Returns the URL for viewing basic information about this specific release.
+    */
+  private def releaseVersionUrl(project: Project, version: SemVer): URL = {
+    new URL(s"${releasesUrl(project).toString}/tags/v$version")
   }
 
   /**
