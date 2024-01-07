@@ -75,4 +75,12 @@ object ReleaseError {
          |  $code: $message
          |""".stripMargin
   }
+
+  case class JsonError(json: String) extends ReleaseError {
+    override def message(f: Formatter): String =
+      s"""
+         | GitHub returned JSON in an unexpected format:
+         |  ${f.cyan(json)}
+         |""".stripMargin
+  }
 }

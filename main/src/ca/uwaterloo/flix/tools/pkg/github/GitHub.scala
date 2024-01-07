@@ -78,11 +78,24 @@ object GitHub {
     * Publish a new release the given project.
     */
   def publishRelease(project: Project, version: SemVer, apiKey: String): Result[Unit, ReleaseError] = {
-    val content: JValue = ("tag_name" -> s"v$version") ~ ("name" -> s"v$version")
+    for (
+      url <- createDraftRelease(project, version, apiKey);
+      _ <- markReleaseReady(project, version, url, apiKey)
+    ) yield Ok(())
+  }
+
+  /**
+    * Create a new release marked as a draft, meaning that it is not publicly visible.
+    * The release will not contain any assets (apart from the default zips of the source code).
+    *
+    * Returns the URL of the release if successful.
+    */
+  private def createDraftRelease(project: Project, version: SemVer, apiKey: String): Result[URL, ReleaseError] = {
+    val content: JValue = ("tag_name" -> s"v$version") ~ ("name" -> s"v$version") ~ ("draft" -> true)
     val jsonCompact = compact(render(content))
 
     val url = releasesUrl(project)
-    try {
+    val json = try {
       val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
       conn.setRequestMethod("POST")
       conn.addRequestProperty("Authorization", "Bearer " + apiKey)
@@ -92,14 +105,64 @@ object GitHub {
       val outStream = conn.getOutputStream
       outStream.write(jsonCompact.getBytes("utf-8"))
 
-      // Process response
-      conn.getResponseCode match {
+      // Process response errors
+      val code = conn.getResponseCode
+      code match {
+        case x if 200 <= x && x <= 299 =>
+          val inStream = conn.getInputStream
+          StreamOps.readAll(inStream)
+        case 401 => return Err(ReleaseError.InvalidApiKeyError)
+        case 404 => return Err(ReleaseError.InvalidProject(project))
+        case _ => return Err(ReleaseError.UnknownResponse(code, conn.getResponseMessage))
+      }
+
+    } catch {
+      case _: IOException => return Err(ReleaseError.NetworkError)
+    }
+
+    // Extract URL from returned JSON
+    val createdUrl = try {
+      val obj = parse(json).asInstanceOf[JObject]
+      val jsonUrl = (obj \ "url").asInstanceOf[JString]
+      jsonUrl.s
+    } catch {
+      case _: ClassCastException => return Err(ReleaseError.JsonError(json))
+    }
+
+    Ok(new URL(createdUrl))
+  }
+
+  /**
+    * Mark the given release as no longer being a draft, making it publicly available.
+    */
+  private def markReleaseReady(project: Project, version: SemVer, releaseUrl: URL, apiKey: String): Result[Unit, ReleaseError] = {
+    val content: JValue = "draft" -> false
+    val jsonCompact = compact(render(content))
+
+    try {
+      val conn = releaseUrl.openConnection().asInstanceOf[HttpsURLConnection]
+
+      // Java doesn't recognize "PATCH" as a valid request method (???)
+      conn.setRequestMethod("POST")
+      conn.setRequestProperty("X-HTTP-Method-Override", "PATCH")
+
+      conn.addRequestProperty("Authorization", "Bearer " + apiKey)
+      conn.setDoOutput(true)
+
+      // Send request
+      val outStream = conn.getOutputStream
+      outStream.write(jsonCompact.getBytes("utf-8"))
+
+      // Process response errors
+      val code = conn.getResponseCode
+      code match {
         case x if 200 <= x && x <= 299 => Ok(())
         case 401 => Err(ReleaseError.InvalidApiKeyError)
         case 404 => Err(ReleaseError.InvalidProject(project))
         case 422 => Err(ReleaseError.AlreadyExists(project, version))
-        case code => Err(ReleaseError.UnknownResponse(code, conn.getResponseMessage))
+        case _ => Err(ReleaseError.UnknownResponse(code, conn.getResponseMessage))
       }
+
     } catch {
       case _: IOException => Err(ReleaseError.NetworkError)
     }
