@@ -84,6 +84,7 @@ object Main {
       test = Options.Default.test,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
+      assumeYes = cmdOpts.assumeYes,
       xbddthreshold = cmdOpts.xbddthreshold,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
@@ -266,6 +267,21 @@ object Main {
           }
           System.exit(0)
 
+        case Command.Release =>
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.release(flix)
+          } match {
+            case Validation.Success(_) =>
+              System.exit(0)
+            case failure =>
+              failure.errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
+
+
         case Command.CompilerPerf =>
           CompilerPerf.run(options)
 
@@ -291,6 +307,7 @@ object Main {
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      threads: Option[Int] = None,
+                     assumeYes: Boolean = false,
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
@@ -342,6 +359,8 @@ object Main {
 
     case class Lsp(port: Int) extends Command
 
+    case object Release extends Command
+
     case object CompilerPerf extends Command
   }
 
@@ -390,6 +409,9 @@ object Main {
             .required()
         )
 
+      cmd("release").text("  release a new version to GitHub.")
+        .action((_, c) => c.copy(command = Command.Release))
+
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
         opt[Unit]("frontend")
           .action((_, c) => c.copy(XPerfFrontend = true))
@@ -428,6 +450,9 @@ object Main {
 
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
+
+      opt[Unit]("yes").action((_, c) => c.copy(assumeYes = true)).
+        text("automatically answer yes to all prompts.")
 
       version("version").text("prints the version number.")
 

@@ -45,6 +45,12 @@ class TestMain extends AnyFunSuite {
     assert(opts.command == Main.Command.BuildPkg)
   }
 
+  test("release") {
+    val args = Array("release")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Release)
+  }
+
   test("doc") {
     val args = Array("doc")
     val opts = Main.parseCmdOpts(args).get
@@ -109,6 +115,12 @@ class TestMain extends AnyFunSuite {
     val args = Array("--threads", "42", "p.flix")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.threads.contains(42))
+  }
+
+  test("--yes") {
+    val args = Array("--yes")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.assumeYes)
   }
 
   test("--Xbenchmark-code-size") {
