@@ -84,7 +84,7 @@ object ManifestParser {
       versionSemVer <- toFlixVer(version, p);
 
       repository <- getOptionalStringProperty("package.repository", parser, p);
-      githubProject <- toGithubProject(repository, p);
+      githubProject <- Result.traverseOpt(repository)(r => toGithubProject(r, p));
 
       flix <- getRequiredStringProperty("package.flix", parser, p);
       flixSemVer <- toFlixVer(flix, p);
@@ -215,22 +215,18 @@ object ManifestParser {
   }
 
   /**
-    * Converts an optional String `optS` to an optional reference to a GitHub project.
-    * Returns an error if the string is present but not in the correct format.
+    * Converts a String `s` to a reference to a GitHub project.
+    * Returns an error if the string is not in the correct format.
     * The only allowed format is "github:<username>/<repository>".
     */
-  private def toGithubProject(optS: Option[String], p: Path): Result[Option[GitHub.Project], ManifestError] = {
-    optS match {
-      case Some(s) =>
-        s.split(':') match {
-          case Array("github", repo) =>
-            GitHub.parseProject(repo) match {
-              case Ok(p) => Ok(Some(p))
-              case Err(_) => Err(ManifestError.RepositoryFormatError(p, s))
-            }
-          case _ => Err(ManifestError.RepositoryFormatError(p, s))
-      }
-      case None => Ok(None)
+  private def toGithubProject(s: String, p: Path): Result[GitHub.Project, ManifestError] = {
+    s.split(':') match {
+      case Array("github", repo) =>
+        GitHub.parseProject(repo) match {
+          case Ok(p) => Ok(p)
+          case Err(_) => Err(ManifestError.RepositoryFormatError(p, s))
+        }
+      case _ => Err(ManifestError.RepositoryFormatError(p, s))
     }
   }
 

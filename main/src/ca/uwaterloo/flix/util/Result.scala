@@ -130,6 +130,17 @@ object Result {
   }
 
   /**
+    * Traverses `o` applying the function `f` to the value, if it exists.
+    */
+  def traverseOpt[T, S, E](o: Option[T])(f: T => Result[S, E]): Result[Option[S], E] = o match {
+    case None => Ok(None)
+    case Some(x) => f(x) match {
+      case Ok(t) => Ok(Some(t))
+      case Err(e) => Err(e)
+    }
+  }
+
+  /**
     * Applies f to each element in the list and flattens the results.
     *
     * Fails at the first error found, or returns the new list.
