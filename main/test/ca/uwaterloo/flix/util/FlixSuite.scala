@@ -62,12 +62,15 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
 
     try {
       // Compile and Evaluate the program to obtain the compilationResult.
-      flix.compile() match {
-        case Success(compilationResult) =>
+      flix.compile().toResult match {
+        case Result.Ok((compilationResult, Nil)) =>
           runTests(name, compilationResult)
-        case failure =>
-          val es = failure.errors.map(_.message(flix.getFormatter)).mkString("\n")
-          fail(s"Unable to compile. Failed with: ${failure.errors.length} errors.\n\n$es")
+        case Result.Ok((_, failures)) =>
+          val es = failures.map(_.message(flix.getFormatter)).mkString("\n")
+          fail(s"Unable to compile. Failed with: ${failures.length} errors.\n\n$es")
+        case Result.Err(failures) =>
+          val es = failures.map(_.message(flix.getFormatter)).mkString("\n")
+          fail(s"Unable to compile. Failed with: ${failures.length} errors.\n\n$es")
       }
     } finally {
       // Remove the source path.
