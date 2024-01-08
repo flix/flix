@@ -235,6 +235,8 @@ object TokenKind {
 
   case object KeywordStatic extends TokenKind
 
+  case object KeywordStaticUppercase extends TokenKind
+
   case object KeywordTrait extends TokenKind
 
   case object KeywordTrue extends TokenKind

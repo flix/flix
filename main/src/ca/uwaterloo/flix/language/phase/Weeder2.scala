@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst, Type => AstType}
 import ca.uwaterloo.flix.language.errors.Parse2Error
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation._
@@ -636,7 +636,7 @@ object Weeder2 {
           case TreeKind.Expr.Lambda => visitLambda(tree)
           case TreeKind.Expr.LambdaMatch => visitLambdaMatch(tree)
           case TreeKind.Expr.Ref => visitReference(tree)
-          case TreeKind.Expr.Deref => visitDereference(tree)
+          case TreeKind.Expr.Static => visitStatic(tree)
           case TreeKind.Expr.LiteralList => visitLiteralList(tree)
           case TreeKind.Expr.LiteralSet => visitLiteralSet(tree)
           case TreeKind.Expr.LiteralVector => visitLiteralVector(tree)
@@ -715,6 +715,11 @@ object Weeder2 {
       }
     }
 
+    private def visitStatic(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Static)
+      Expr.Region(AstType.mkRegion(AstType.EffUniv, tree.loc), tree.loc).toSuccess
+    }
+
     private def visitScopeName(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.ScopeName)
       pickExpression(tree)
@@ -773,11 +778,6 @@ object Weeder2 {
       }
     }
 
-    private def visitDereference(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Deref)
-      mapN(pickExpression(tree))(Expr.Deref(_, tree.loc))
-    }
-
     private def visitScope(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Scope)
       val block = flatMapN(pick(TreeKind.Expr.Block, tree.children))(visitBlock)
@@ -798,10 +798,38 @@ object Weeder2 {
             case "discard" => Expr.Discard(expr, tree.loc)
             case "lazy" => Expr.Lazy(expr, tree.loc)
             case "force" => Expr.Force(expr, tree.loc)
-            case "-" => Expr.Apply(Expr.Ambiguous(Name.mkQName("Neg.neg", sp1, sp2), opTree.loc), List(expr), tree.loc)
+            case "deref" => Expr.Deref(expr, tree.loc)
             case "not" => Expr.Unary(SemanticOp.BoolOp.Not, expr, tree.loc)
-            // '+exp' is always the same as 'exp'
             case "+" => expr
+            case "-" =>
+              // Map unary minus into a constant if it is used on a number literal
+              val maybeCst: Option[Expr] = expr match {
+                case Expr.Cst(cst, loc) => cst match {
+                  case Constant.Float32(lit) => Some(Expr.Cst(Constant.Float32(-lit), loc))
+                  case Constant.Float64(lit) => Some(Expr.Cst(Constant.Float64(-lit), loc))
+                  case Constant.BigDecimal(lit) => Some(Expr.Cst(Constant.BigDecimal(lit.negate()), loc))
+                  case Constant.Int8(lit) => try {
+                    val num = JByte.parseByte(s"-$lit") // TODO: radix?
+                    Some(Expr.Cst(Constant.Int8(num), loc))
+                  } catch {
+                    case _: NumberFormatException => Some(WeededAst.Expr.Error(MalformedInt(loc)))
+                  }
+                  case Constant.Int16(lit) =>
+                    try {
+                      val num = JShort.parseShort(s"-$lit")  // TODO: radix?
+                      Some(Expr.Cst(Constant.Int16(num), loc))
+                    } catch {
+                      case _: NumberFormatException => Some(WeededAst.Expr.Error(MalformedInt(loc)))
+                    }
+                  case Constant.Int32(lit) => Some(Expr.Cst(Constant.Int32(-lit), loc))
+                  case Constant.Int64(lit) => Some(Expr.Cst(Constant.Int64(-lit), loc))
+                  case Constant.BigInt(lit) => Some(Expr.Cst(Constant.BigInt(lit.negate()), loc))
+                  case _ => None
+                }
+                case _ => None
+              }
+              maybeCst.getOrElse(Expr.Apply(Expr.Ambiguous(Name.mkQName("Neg.neg", sp1, sp2), opTree.loc), List(expr), tree.loc))
+
             case op => Expr.Apply(Expr.Ambiguous(Name.mkQName(op, sp1, sp2), opTree.loc), List(expr), tree.loc)
           }
         }
@@ -1133,11 +1161,35 @@ object Weeder2 {
         pick(TreeKind.Arguments, tree.children)
       ) {
         argTree =>
-          mapN(traverse(pickAll(TreeKind.Argument, argTree.children))(pickExpression)) {
+          mapN(
+            traverse(pickAll(TreeKind.Argument, argTree.children))(pickExpression),
+            traverse(pickAll(TreeKind.ArgumentNamed, argTree.children))(visitArgumentNamed)
+          )( (unnamed, named) => unnamed ++ named match  {
             // Add synthetic unit arguments if there are none
             case Nil => List(Expr.Cst(Ast.Constant.Unit, tree.loc))
-            case args => args
+            // TODO: sort by SourceLocation is only used for comparison with Weeder
+            case args => args.sortWith((a, b) => a.loc < b.loc)
+          })
+      }
+    }
+
+    private def visitArgumentNamed(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.ArgumentNamed)
+      flatMapN(
+        traverse(pickAll(TreeKind.Expr.Expr, tree.children))(visitExpression)
+      ) {
+        case e1 :: e2 :: Nil =>
+          // First expression must be a name
+          e1 match {
+            case Expr.Ambiguous(qname, loc) =>
+              Expr.RecordExtend(Name.mkLabel(qname.ident), e2, Expr.RecordEmpty(tree.loc), tree.loc).toSuccess
+            case _ =>
+              val err = Parse2Error.DevErr(tree.loc, s"NamedArgument does not have a name")
+              Validation.SoftFailure(Expr.Error(err), LazyList(err))
           }
+        case exprs =>
+          val err = Parse2Error.DevErr(tree.loc, s"Found ${exprs.length} expressions under NamedArgument")
+          Validation.SoftFailure(WeededAst.Expr.Error(err), LazyList(err))
       }
     }
 
@@ -1280,7 +1332,7 @@ object Weeder2 {
 
         case _ =>
           val err = UndefinedIntrinsic(loc)
-          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+          Validation.toSoftFailure(Expr.Error(err), err)
       }
     }
 
@@ -1356,7 +1408,7 @@ object Weeder2 {
       assert(tree.kind == TreeKind.Pattern.Variable)
       flatMapN(pickNameIdent(tree))(
         ident => {
-          if (ident.isWild)
+          if (ident.name == "_")
             Pattern.Wild(tree.loc).toSuccess
           else {
             seen.get(ident.name) match {
@@ -1578,8 +1630,21 @@ object Weeder2 {
 
     def toChar(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
-      val lit = token.text.stripPrefix("\'").head
-      Expr.Cst(Ast.Constant.Char(lit), loc).toSuccess
+      val lit = token.text.stripPrefix("\'").stripSuffix("\'")
+      if (lit.startsWith("\\u")) {
+        // Translate hex code
+        try {
+          val c = Integer.parseInt(lit.stripPrefix("\\u"), 16).toChar
+          Expr.Cst(Ast.Constant.Char(c), loc).toSuccess
+        } catch {
+          case _: NumberFormatException =>
+            val err = MalformedUnicodeEscapeSequence(token.text, loc)
+            Validation.toSoftFailure(Expr.Error(err), err)
+        }
+      } else {
+        Expr.Cst(Ast.Constant.Char(lit.head), loc).toSuccess
+      }
+
     }
 
     def toStringCst(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -2057,10 +2122,16 @@ object Weeder2 {
       case _ => false
     })
 
-    tree.children.headOption.map {
+    // Find the first sub-tree that isn't a comment
+    tree.children.find {
+      case Child.Tree(tree) if tree.kind != TreeKind.Comments => true
+      case _ => false
+    }.map {
       case Child.Tree(tree) => tree
-      case Child.Token(_) => throw InternalCompilerException(s"expected '${tree.kind}' to have a tree child", tree.loc)
-    }.getOrElse(throw InternalCompilerException(s"expected '${tree.kind}' to have a tree child", tree.loc))
+      case _ => throw InternalCompilerException(s"expected '${tree.kind}' to have a tree child that is not a comment", tree.loc)
+    }.getOrElse(
+      throw InternalCompilerException(s"expected '${tree.kind}' to have a tree child that is not a comment", tree.loc)
+    )
   }
 
   // A helper that collects the text in token children

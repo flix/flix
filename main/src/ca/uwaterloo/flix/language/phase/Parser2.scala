@@ -309,6 +309,8 @@ object Parser2 {
   private def close(mark: Mark.Opened, kind: TreeKind)(implicit s: State): Mark.Closed = {
     s.events(mark.index) = Event.Open(kind)
     s.events = s.events :+ Event.Close
+    // advance past any comments just after closing a mark.
+    comments()
     Mark.Closed(mark.index)
   }
 
@@ -444,7 +446,7 @@ object Parser2 {
     }
   }
 
-  private val NAME_DEFINITION = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek)
+  private val NAME_DEFINITION = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator, TokenKind.KeywordMod) // TODO: std. lib. defines functions named mod
   private val NAME_PARAMETER = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
   private val NAME_VARIABLE = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
   private val NAME_JAVA = List(TokenKind.NameJava, TokenKind.NameLowerCase, TokenKind.NameUpperCase)
@@ -930,10 +932,13 @@ object Parser2 {
       (OpKind.Unary, List(TokenKind.KeywordDiscard)), // discard
       (OpKind.Binary, List(TokenKind.InfixFunction)), // `my_function`
       (OpKind.Binary, List(TokenKind.UserDefinedOperator, TokenKind.NameMath)), // +=+
-      (OpKind.Unary, List(TokenKind.KeywordLazy, TokenKind.KeywordForce)), // lazy, force
+      (OpKind.Unary, List(TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDeref)), // lazy, force, deref
       (OpKind.Unary, List(TokenKind.Plus, TokenKind.Minus, TokenKind.TripleTilde)), // +, -, ~~~
       (OpKind.Unary, List(TokenKind.KeywordNot))
     )
+
+    // These operators are right associative, meaning for instance that "x :: y :: z" becomes "x :: (y :: z)" rather than "(x :: y) :: z"
+    private val rightAssoc: List[TokenKind] = List(TokenKind.ColonColon) // FCons
 
     private def rightBindsTighter(left: TokenKind, right: TokenKind, leftIsUnary: Boolean): Boolean = {
       def tightness(kind: TokenKind, opKind: OpKind = OpKind.Binary): Int = {
@@ -949,7 +954,8 @@ object Parser2 {
         assert(left == TokenKind.Eof)
         return true
       }
-      rt > lt
+
+      if (rt == lt && left == right && rightAssoc.contains(left)) true else rt > lt
     }
 
     /**
@@ -958,7 +964,16 @@ object Parser2 {
     private def arguments()(implicit s: State): Mark.Closed = {
       commaSeparated(
         TreeKind.Arguments,
-        asArgument(TreeKind.Argument, () => expression()),
+        asArgumentFlat(() => {
+          val mark = open()
+          expression()
+          if (eat(TokenKind.Equal)) {
+            expression()
+            close(mark, TreeKind.ArgumentNamed)
+          } else {
+            close(mark, TreeKind.Argument)
+          }
+        }),
       )
     }
 
@@ -983,7 +998,6 @@ object Parser2 {
         case TokenKind.KeywordCheckedECast => checkedEffectCast()
         case TokenKind.KeywordCheckedCast => checkedTypeCast()
         case TokenKind.KeywordRef => reference()
-        case TokenKind.KeywordDeref => dereference()
         case TokenKind.ListHash => listLiteral()
         case TokenKind.SetHash => setLiteral()
         case TokenKind.VectorHash => vectorLiteral()
@@ -1004,6 +1018,7 @@ object Parser2 {
              | TokenKind.KeywordFalse
              | TokenKind.KeywordNull => literal()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThin) unaryLambda() else name(NAME_VARIABLE)
+        case TokenKind.KeywordStaticUppercase => static()
         case TokenKind.NameLowerCase
              | TokenKind.NameUpperCase
              | TokenKind.NameMath
@@ -1014,7 +1029,8 @@ object Parser2 {
              | TokenKind.TripleTilde
              | TokenKind.KeywordLazy
              | TokenKind.KeywordForce
-             | TokenKind.KeywordDiscard => unary()
+             | TokenKind.KeywordDiscard
+             | TokenKind.KeywordDeref => unary()
         case TokenKind.HoleNamed
              | TokenKind.HoleAnonymous => hole()
         case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected expression, found $t"))
@@ -1047,6 +1063,13 @@ object Parser2 {
         (TokenKind.CurlyL, TokenKind.CurlyR)
       )
       close(mark, TreeKind.Expr.LiteralList)
+    }
+
+    private def static()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordStaticUppercase))
+      val mark = open()
+      expect(TokenKind.KeywordStaticUppercase)
+      close(mark, TreeKind.Expr.Static)
     }
 
     private def setLiteral()(implicit s: State): Mark.Closed = {
@@ -1193,14 +1216,6 @@ object Parser2 {
       expect(TokenKind.At)
       expression()
       close(mark, TreeKind.Expr.ScopeName)
-    }
-
-    private def dereference()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordDeref))
-      val mark = open()
-      expect(TokenKind.KeywordDeref)
-      expression()
-      close(mark, TreeKind.Expr.Deref)
     }
 
     private def letRecDef()(implicit s: State): Mark.Closed = {
@@ -1451,7 +1466,7 @@ object Parser2 {
       val mark = open()
       val op = nth(0)
       val markOp = open()
-      expectAny(List(TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde, TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDiscard))
+      expectAny(List(TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde, TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDiscard, TokenKind.KeywordDeref))
       close(markOp, TreeKind.Operator)
       expression(left = op, leftIsUnary = true)
       close(mark, TreeKind.Expr.Unary)
@@ -1770,6 +1785,8 @@ object Parser2 {
         case TokenKind.KeywordNot
              | TokenKind.Tilde
              | TokenKind.TildeTilde => unary()
+        // TODO: Static is used as a type name in std.lib but that should be an error since 'Static' is a reserved keyword
+        case TokenKind.KeywordStaticUppercase => name(List(TokenKind.KeywordStaticUppercase))
         case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected type, found $t"))
       }
       close(mark, TreeKind.Type.Type)

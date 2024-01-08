@@ -41,6 +41,8 @@ object UnstructuredTree {
 
     case object Argument extends TreeKind
 
+    case object ArgumentNamed extends TreeKind
+
     case object TypeParameters extends TreeKind
 
     case object TypeParameter extends TreeKind
@@ -199,6 +201,8 @@ object UnstructuredTree {
 
       case object Scope extends Expr
 
+      case object Static extends Expr
+
       case object LetMatch extends Expr
 
       case object Lambda extends Expr
@@ -226,8 +230,6 @@ object UnstructuredTree {
       case object Ref extends Expr
 
       case object ScopeName extends Expr
-
-      case object Deref extends Expr
 
       case object LiteralList extends Expr
 
