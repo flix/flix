@@ -111,6 +111,12 @@ class TestMain extends AnyFunSuite {
     assert(opts.threads.contains(42))
   }
 
+  test("--yes") {
+    val args = Array("--yes")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.assumeYes)
+  }
+
   test("--Xbenchmark-code-size") {
     val args = Array("--Xbenchmark-code-size", "p.flix")
     val opts = Main.parseCmdOpts(args).get
