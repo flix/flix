@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
+import ca.uwaterloo.flix.language.ast.ReducedAst.Def
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
@@ -30,7 +30,7 @@ object GenNamespaceClasses {
   /**
     * Returns the set of namespaces classes for the given set of namespaces.
     */
-  def gen(namespaces: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(namespaces: Set[NamespaceInfo])(implicit flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate a namespace class for each namespace and collect the results in a map.
     //
@@ -46,7 +46,7 @@ object GenNamespaceClasses {
   /**
     * Returns the namespace class for the given namespace `ns`.
     */
-  private def genBytecode(ns: NamespaceInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genBytecode(ns: NamespaceInfo)(implicit flix: Flix): Array[Byte] = {
     // JvmType for namespace
     val namespaceClassType = JvmOps.getNamespaceClassType(ns)
 
@@ -73,7 +73,7 @@ object GenNamespaceClasses {
   /**
     * Adding a shim for the function `defn` on namespace `ns`
     */
-  private def compileShimMethod(visitor: ClassWriter, defn: Def)(implicit root: Root, flix: Flix): Unit = {
+  private def compileShimMethod(visitor: ClassWriter, defn: Def): Unit = {
     // TODO: This can probably be removed (used in GenMain and other places)
     // Name of the shim
     val name = JvmOps.getDefMethodNameInNamespaceClass(defn.sym)
@@ -121,7 +121,7 @@ object GenNamespaceClasses {
   /**
     * Add the constructor for the class which initializes each field
     */
-  private def compileNamespaceConstructor(visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
+  private def compileNamespaceConstructor(visitor: ClassWriter): Unit = {
     // Method header
     val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
 

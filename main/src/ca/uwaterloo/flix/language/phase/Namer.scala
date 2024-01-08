@@ -895,12 +895,6 @@ object Namer {
         exps => NamedAst.Expr.Do(op, exps, loc)
       }
 
-    case DesugaredAst.Expr.Resume(exp, loc) =>
-      val expVal = visitExp(exp, ns0)
-      mapN(expVal) {
-        e => NamedAst.Expr.Resume(e, loc)
-      }
-
     case DesugaredAst.Expr.InvokeConstructor(className, exps, sig, loc) =>
       val argsVal = traverse(exps)(visitExp(_, ns0))
       val sigVal = traverse(sig)(visitType): Validation[List[NamedAst.Type], NameError]

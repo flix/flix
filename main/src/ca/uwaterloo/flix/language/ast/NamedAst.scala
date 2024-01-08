@@ -181,8 +181,6 @@ object NamedAst {
 
     case class Do(op: Name.QName, args: List[Expr], loc: SourceLocation) extends Expr
 
-    case class Resume(exp: Expr, loc: SourceLocation) extends Expr
-
     case class InvokeConstructor(className: String, args: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
 
     case class InvokeMethod(className: String, methodName: String, exp: Expr, args: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr

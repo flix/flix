@@ -1,5 +1,16 @@
 # Changelog
 
+Version 0.43.0:
+- Language: Flix now targets Java 21 bytecode (thanks Magnus!)
+- Language: Flix now uses `VirtualThread`s by default (thanks Magnus!) 
+- Compiler: Flix now requires Java 21 (thanks Magnus!)
+- Compiler: All `InstanceError`s are now recoverable (thanks Magnus!)
+- Compiler: All `RedundancyError`s are now recoverable (thanks Magnus!)
+- Compiler: All `SafetyErrors`s are now recoverable (thanks Magnus!)
+- Compiler: All `TypeError`s are now recoverable (thanks Matt!)
+- Compiler: Most `ResolutionError`s are now recoverable (thanks Magnus!)
+- Compiler: Most `WeederError`s are now recoverable (thanks Magnus!)
+
 Version 0.42.0:
 - Compiler: Use parallel evaluation in `ClosureConv` (thanks Magnus!)
 - Compiler: Use parallel evaluation in `Deriver` (thanks Magnus!)

@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBr
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
-import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 import org.objectweb.asm
+import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 object BytecodeInstructions {
 
@@ -39,7 +39,7 @@ object BytecodeInstructions {
 
     // TODO: sanitize varags
     def visitInvokeDynamicInstruction(methodName: String, descriptor: MethodDescriptor, bootstrapMethodHandle: Handle, bootstrapMethodArguments: Any*): Unit =
-      visitor.visitInvokeDynamicInsn(methodName, descriptor.toDescriptor, bootstrapMethodHandle.handle, bootstrapMethodArguments:_*)
+      visitor.visitInvokeDynamicInsn(methodName, descriptor.toDescriptor, bootstrapMethodHandle.handle, bootstrapMethodArguments: _*)
 
     def visitFieldInstruction(opcode: Int, owner: JvmName, fieldName: String, fieldType: BackendType): Unit =
       visitor.visitFieldInsn(opcode, owner.toInternalName, fieldName, fieldType.toDescriptor)
@@ -282,6 +282,25 @@ object BytecodeInstructions {
     f
   }
 
+  /**
+    * Make an object which the functional interface of `lambdaMethod`. The
+    * implementation of the functional method will be the static method
+    * represented by `callHandle`. `callD` is the method descriptor of the
+    * static method.
+    *
+    * `drop` is used for partial application of the static function.
+    * Lets say you want to implement the functional interface method of
+    * `Function<String, String>` with the partial application of the static
+    * function `String example(String, String)` with `"Hi"`. Then you can
+    * partially apply the leftmost argument by having `drop = 1`. This then
+    * means that the instruction returned will expect the missing string
+    * argument on the op stack.
+    *
+    * for a function with `k` arguments, `drop = n` means that given the first
+    * `k-n` arguments on the op stack, this will represent a function of the
+    * last `n` arguments to the original return type. This must of course
+    * correspond to the type of `lambdaMethod`.
+    */
   def mkStaticLambda(lambdaMethod: InterfaceMethod, callD: MethodDescriptor, callHandle: Handle, drop: Int): InstructionSet = f => {
     f.visitInvokeDynamicInstruction(
       lambdaMethod.name,

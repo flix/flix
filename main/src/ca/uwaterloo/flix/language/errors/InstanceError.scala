@@ -54,8 +54,6 @@ object InstanceError {
          |An instance type must be a type constructor applied to zero or more distinct type variables.
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -78,7 +76,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Rename one of the instances of the type variable."
     })
@@ -105,7 +103,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Remove this definition from the instance."
     })
@@ -132,8 +130,6 @@ object InstanceError {
          |A type class instance cannot use an associated type. Use the full type.
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -157,8 +153,6 @@ object InstanceError {
          |
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -182,8 +176,6 @@ object InstanceError {
          |A type class instance cannot use a type alias. Use the full type.
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -210,7 +202,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Modify the definition to match the signature."
     })
@@ -235,7 +227,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Add an implementation of the signature to the instance."
     })
@@ -266,7 +258,7 @@ object InstanceError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'."
     })
@@ -294,10 +286,33 @@ object InstanceError {
       """.stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Add the missing type constraint."
     })
+  }
+
+  /**
+    * Error indicating an orphan instance.
+    *
+    * @param sym the class symbol.
+    * @param tpe the instance type.
+    * @param loc the location where the error occurred.
+    */
+  case class OrphanInstance(sym: Symbol.ClassSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
+    override def summary: String = "Orphan instance."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |
+         |>> Orphan instance for type '${red(FormatType.formatType(tpe))}' in '${magenta(sym.name)}'.
+         |
+         |${code(loc, s"orphan instance")}
+         |
+         |An instance must be declared in the class's namespace or in the type's namespace.
+         |""".stripMargin
+    }
   }
 
   /**
@@ -322,37 +337,12 @@ object InstanceError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip: ")} Remove or change the type of one of the instances."
     })
 
     def loc: SourceLocation = loc1
-  }
-
-  /**
-    * Error indicating an orphan instance.
-    *
-    * @param sym the class symbol.
-    * @param tpe the instance type.
-    * @param loc the location where the error occurred.
-    */
-  case class OrphanInstance(sym: Symbol.ClassSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
-    override def summary: String = "Orphan instance."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |
-         |>> Orphan instance for type '${red(FormatType.formatType(tpe))}' in '${magenta(sym.name)}'.
-         |
-         |${code(loc, s"orphan instance")}
-         |
-         |An instance must be declared in the class's namespace or in the type's namespace.
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -377,8 +367,6 @@ object InstanceError {
          |Create a law for '$sym' or remove the 'lawful' modifier from the trait.
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -401,8 +389,5 @@ object InstanceError {
          |Either add the `override` modifier or remove the definition.
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
-
 }

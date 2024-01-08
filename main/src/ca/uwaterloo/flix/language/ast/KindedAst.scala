@@ -168,8 +168,6 @@ object KindedAst {
 
     case class Do(op: Ast.OpSymUse, args: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class Resume(exp: Expr, argTvar: Type.Var, retTvar: Type.Var, loc: SourceLocation) extends Expr
-
     case class InvokeConstructor(constructor: Constructor[_], args: List[Expr], loc: SourceLocation) extends Expr
 
     case class InvokeMethod(method: Method, clazz: java.lang.Class[_], exp: Expr, args: List[Expr], loc: SourceLocation) extends Expr

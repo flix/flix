@@ -46,7 +46,7 @@ import org.objectweb.asm.Opcodes._
 /// ```
 object GenEffectClasses {
 
-  def gen(effects: Iterable[Effect])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(effects: Iterable[Effect])(implicit flix: Flix): Map[JvmName, JvmClass] = {
     ParOps.parAgg(effects, Map.empty[JvmName, JvmClass])({
       case (macc, effect) =>
         val classType = JvmOps.getEffectDefinitionClassType(effect.sym)

@@ -127,10 +127,9 @@ object GenExpression {
     }
 
     case Expr.Var(sym, tpe, _) =>
-      val jvmType = JvmOps.getErasedJvmType(tpe)
-      val iLOAD = AsmOps.getLoadInstruction(jvmType)
-      mv.visitVarInsn(iLOAD, sym.getStackOffset(ctx.localOffset))
-      AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
+      val varType = JvmOps.getJvmType(tpe)
+      val xLoad = AsmOps.getLoadInstruction(varType)
+      mv.visitVarInsn(xLoad, sym.getStackOffset(ctx.localOffset))
 
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) => op match {
 
@@ -600,8 +599,6 @@ object GenExpression {
         val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tag.tpe))
         // Invoke `getValue()` method to extract the field of the tag
         mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
-        // Cast the object to it's type if it's not a primitive
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.Index(idx) =>
         val List(exp) = exps
@@ -611,8 +608,6 @@ object GenExpression {
         compileExpr(exp)
         // Retrieving the field `field${offset}`
         mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"field$idx", JvmOps.getErasedJvmType(tpe).toDescriptor)
-        // Cast the object to it's type if it's not a primitive
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.Tuple =>
         // We get the JvmType of the class for the tuple
@@ -664,9 +659,6 @@ object GenExpression {
 
         // Retrieve the value field  (To get the proper value)
         mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRecordExtendType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
-
-        // Cast the field value to the expected type.
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.RecordExtend(field) =>
         val List(exp1, exp2) = exps
@@ -864,8 +856,6 @@ object GenExpression {
         mv.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
         // Dereference the expression
         mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
-        // Cast underlying value to the correct type if the underlying type is Object
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.Assign =>
         val List(exp1, exp2) = exps
@@ -893,7 +883,7 @@ object GenExpression {
         val List(exp) = exps
         val className = asm.Type.getInternalName(clazz)
         compileExpr(exp)
-        mv.visitTypeInsn(INSTANCEOF, className.toString)
+        mv.visitTypeInsn(INSTANCEOF, className)
 
       case AtomicOp.Cast =>
         val List(exp) = exps
@@ -1012,24 +1002,15 @@ object GenExpression {
 
         exp2 match {
           // The expression represents the `Static` region, just start a thread directly
-          case Expr.ApplyAtomic(AtomicOp.Region, _, tpe, _, loc) =>
+          case Expr.ApplyAtomic(AtomicOp.Region, _, _, _, _) =>
 
             // Compile the expression, putting a function implementing the Runnable interface on the stack
             compileExpr(exp1)
             mv.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
 
             // make a thread and run it
-            // TODO: VirtualThreads: Enable by default once JDK 21+ becomes a requirement.
-            if (false) {
-              mv.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "startVirtualThread", s"(${JvmName.Runnable.toDescriptor})${JvmName.Thread.toDescriptor}", false)
-              mv.visitInsn(POP)
-            } else {
-              mv.visitTypeInsn(NEW, "java/lang/Thread")
-              mv.visitInsn(DUP_X1)
-              mv.visitInsn(SWAP)
-              mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Thread", "<init>", s"(${JvmName.Runnable.toDescriptor})${JvmType.Void.toDescriptor}", false)
-              mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Thread", "start", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
-            }
+            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Thread", "startVirtualThread", s"(${JvmName.Runnable.toDescriptor})${JvmName.Thread.toDescriptor}", false)
+            mv.visitInsn(POP)
 
           case _ =>
             // Compile the expression representing the region
@@ -1097,106 +1078,30 @@ object GenExpression {
         mv.visitFieldInsn(GETFIELD, internalClassType, "value", erasedType.toDescriptor)
 
         mv.visitLabel(end)
-        // The result of force is a generic object so a cast is needed.
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
-
-      case AtomicOp.BoxBool =>
-        val List(exp) = exps
-        compileExpr(exp)
-        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;", false)
-
-      case AtomicOp.BoxInt8 =>
-        val List(exp) = exps
-        compileExpr(exp)
-        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;", false)
-
-      case AtomicOp.BoxInt16 =>
-        val List(exp) = exps
-        compileExpr(exp)
-        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;", false)
-
-      case AtomicOp.BoxInt32 =>
-        val List(exp) = exps
-        compileExpr(exp)
-        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;", false)
-
-      case AtomicOp.BoxInt64 =>
-        val List(exp) = exps
-        compileExpr(exp)
-        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;", false)
-
-      case AtomicOp.BoxChar =>
-        val List(exp) = exps
-        compileExpr(exp)
-        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;", false)
-
-      case AtomicOp.BoxFloat32 =>
-        val List(exp) = exps
-        compileExpr(exp)
-        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;", false)
-
-      case AtomicOp.BoxFloat64 =>
-        val List(exp) = exps
-        compileExpr(exp)
-        mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;", false)
-
-      case AtomicOp.UnboxBool =>
-        val List(exp) = exps
-        compileExpr(exp)
-        mv.visitTypeInsn(CHECKCAST, "java/lang/Boolean")
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Boolean", "booleanValue", "()Z", false)
-
-      case AtomicOp.UnboxInt8 =>
-        val List(exp) = exps
-        compileExpr(exp)
-        mv.visitTypeInsn(CHECKCAST, "java/lang/Character")
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false)
-
-      case AtomicOp.UnboxInt16 =>
-        val List(exp) = exps
-        compileExpr(exp)
-        mv.visitTypeInsn(CHECKCAST, "java/lang/Short")
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Short", "shortValue", "()S", false)
-
-      case AtomicOp.UnboxInt32 =>
-        val List(exp) = exps
-        compileExpr(exp)
-        mv.visitTypeInsn(CHECKCAST, "java/lang/Integer")
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Integer", "intValue", "()I", false)
-
-      case AtomicOp.UnboxInt64 =>
-        val List(exp) = exps
-        compileExpr(exp)
-        mv.visitTypeInsn(CHECKCAST, "java/lang/Long")
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J", false)
-
-      case AtomicOp.UnboxChar =>
-        val List(exp) = exps
-        compileExpr(exp)
-        mv.visitTypeInsn(CHECKCAST, "java/lang/Character")
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Character", "charValue", "()C", false)
-
-      case AtomicOp.UnboxFloat32 =>
-        val List(exp) = exps
-        compileExpr(exp)
-        mv.visitTypeInsn(CHECKCAST, "java/lang/Float")
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Float", "floatValue", "()F", false)
-
-      case AtomicOp.UnboxFloat64 =>
-        val List(exp) = exps
-        compileExpr(exp)
-        mv.visitTypeInsn(CHECKCAST, "java/lang/Double")
-        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Double", "doubleValue", "()D", false)
 
       case AtomicOp.HoleError(sym) =>
         // Add source line number for debugging (failable by design)
         addSourceLine(mv, loc)
-        AsmOps.compileThrowHoleError(mv, sym.toString, loc)
+        AsmOps.compileReifiedSourceLocation(mv, loc)
+        val className = BackendObjType.HoleError.jvmName
+        mv.visitTypeInsn(NEW, className.toInternalName)
+        mv.visitInsn(DUP2)
+        mv.visitInsn(SWAP)
+        mv.visitLdcInsn(sym.toString)
+        mv.visitInsn(SWAP)
+        mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.String.toDescriptor}${BackendObjType.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
+        mv.visitInsn(ATHROW)
 
       case AtomicOp.MatchError =>
         // Add source line number for debugging (failable by design)
         addSourceLine(mv, loc)
-        AsmOps.compileThrowFlixError(mv, BackendObjType.MatchError.jvmName, loc)
+        val className = BackendObjType.MatchError.jvmName
+        AsmOps.compileReifiedSourceLocation(mv, loc)
+        mv.visitTypeInsn(NEW, className.toInternalName)
+        mv.visitInsn(DUP2)
+        mv.visitInsn(SWAP)
+        mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
+        mv.visitInsn(ATHROW)
     }
 
     case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
@@ -1264,7 +1169,6 @@ object GenExpression {
 
             mv.visitLabel(afterUnboxing)
           }
-          AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
       }
 
     case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) => ct match {
@@ -1321,10 +1225,9 @@ object GenExpression {
 
           mv.visitLabel(afterUnboxing)
         }
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
     }
 
-    case Expr.ApplySelfTail(sym, formals, exps, tpe, _, loc) =>
+    case Expr.ApplySelfTail(sym, _, exps, _, _, _) =>
       // The function abstract class name
       val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
       // Evaluate each argument and put the result on the Fn class.
@@ -1341,7 +1244,7 @@ object GenExpression {
       // Jump to the entry point of the method.
       mv.visitJumpInsn(GOTO, ctx.entryPoint)
 
-    case Expr.IfThenElse(exp1, exp2, exp3, _, _, loc) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       val ifElse = new Label()
       val ifEnd = new Label()
       compileExpr(exp1)
@@ -1352,7 +1255,7 @@ object GenExpression {
       compileExpr(exp3)
       mv.visitLabel(ifEnd)
 
-    case Expr.Branch(exp, branches, _, _, loc) =>
+    case Expr.Branch(exp, branches, _, _, _) =>
       // Calculating the updated jumpLabels map
       val updatedJumpLabels = branches.foldLeft(ctx.lenv)((map, branch) => map + (branch._1 -> new Label()))
       val ctx1 = ctx.copy(lenv = updatedJumpLabels)
@@ -1374,20 +1277,21 @@ object GenExpression {
       // label for the end of branches
       mv.visitLabel(endLabel)
 
-    case Expr.JumpTo(sym, _, _, loc) =>
+    case Expr.JumpTo(sym, _, _, _) =>
       // Jumping to the label
       mv.visitJumpInsn(GOTO, ctx.lenv(sym))
 
-    case Expr.Let(sym, exp1, exp2, _, _, loc) =>
+    case Expr.Let(sym, exp1, exp2, _, _, _) =>
       compileExpr(exp1)
       // Jvm Type of the `exp1`
       val jvmType = JvmOps.getJvmType(exp1.tpe)
       // Store instruction for `jvmType`
       val iStore = AsmOps.getStoreInstruction(jvmType)
+      AsmOps.castIfNotPrim(mv, jvmType)
       mv.visitVarInsn(iStore, sym.getStackOffset(ctx.localOffset))
       compileExpr(exp2)
 
-    case Expr.LetRec(varSym, index, defSym, exp1, exp2, _, _, loc) =>
+    case Expr.LetRec(varSym, index, defSym, exp1, exp2, _, _, _) =>
       // Jvm Type of the `exp1`
       val jvmType = JvmOps.getJvmType(exp1.tpe)
       // Store instruction for `jvmType`
@@ -1591,13 +1495,7 @@ object GenExpression {
       mv.visitLabel(afterUnboxing)
       AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
-
-
-    case Expr.Resume(_, _, loc) =>
-      throw InternalCompilerException(s"Explicit 'resume' not supported. Use the parameter bound resumption.", loc)
-
-
-    case Expr.NewObject(name, _, tpe, _, _, exps, loc) =>
+    case Expr.NewObject(name, _, _, _, _, exps, _) =>
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)
