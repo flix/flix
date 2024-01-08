@@ -683,8 +683,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     println(
       s"""
-         | Successfully released v${manifest.version}
-         | https://github.com/${githubRepo.owner}/${githubRepo.repo}/releases/tag/v${manifest.version}
+         |Successfully released v${manifest.version}
+         |https://github.com/${githubRepo.owner}/${githubRepo.repo}/releases/tag/v${manifest.version}
          |""".stripMargin
     )
 
