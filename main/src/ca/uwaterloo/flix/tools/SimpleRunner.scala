@@ -61,13 +61,16 @@ object SimpleRunner {
 
     // check if we should start a REPL
     if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
-      Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-        case Validation.Success(bootstrap) =>
+      Bootstrap.bootstrap(cwd, options.githubKey)(System.out).toResult match {
+        case Result.Ok((bootstrap, Nil)) =>
           val shell = new Shell(bootstrap, options)
           shell.loop()
           System.exit(0)
-        case failure =>
-          failure.errors.map(_.message(Formatter.getDefault)).foreach(println)
+        case Result.Ok((_, failures)) =>
+          failures.map(_.message(Formatter.getDefault)).foreach(println)
+          System.exit(1)
+        case Result.Err(failures) =>
+          failures.map(_.message(Formatter.getDefault)).foreach(println)
           System.exit(1)
       }
     }
@@ -91,8 +94,8 @@ object SimpleRunner {
 
     // evaluate main.
     val timer = new Timer(flix.compile())
-    timer.getResult match {
-      case Validation.Success(compilationResult) =>
+    timer.getResult.toResult match {
+      case Result.Ok((compilationResult, Nil)) =>
 
         compilationResult.getMain match {
           case None => // nop
@@ -110,11 +113,17 @@ object SimpleRunner {
         }
         Result.Ok(())
 
-      case failure =>
-        flix.mkMessages(failure.errors.sortBy(_.source.name))
+      case Result.Ok((_, failures)) =>
+        flix.mkMessages(failures.sortBy(_.source.name))
           .foreach(println)
         println()
-        println(s"Compilation failed with ${failure.errors.length} error(s).")
+        println(s"Compilation failed with ${failures.length} error(s).")
+        Result.Err(1)
+      case Result.Err(failures) =>
+        flix.mkMessages(failures.sortBy(_.source.name))
+          .foreach(println)
+        println()
+        println(s"Compilation failed with ${failures.length} error(s).")
         Result.Err(1)
     }
   }
