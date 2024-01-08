@@ -224,7 +224,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   /**
     * Exits the shell.
     */
-  private def execQuit()(implicit terminal: Terminal): Unit = {
+  private def execQuit(): Unit = {
     Thread.currentThread().interrupt()
   }
 
@@ -283,7 +283,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
           case Result.Ok((_, Nil)) =>
             // Compilation succeeded.
             w.println("Ok.")
-          case _failure =>
+          case _ =>
             // Compilation failed. Ignore the last fragment.
             fragments.pop()
             flix.remSourceCode(name)
@@ -347,7 +347,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     val checkResult = flix.check().toHardFailure
     checkResult.toResult match {
       case Result.Ok((root, Nil)) => this.root = Some(root)
-      case _failure => // no-op
+      case _ => // no-op
     }
 
     val result = Validation.flatMapN(checkResult)(flix.codeGen)
@@ -388,7 +388,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
           case None =>
         }
 
-      case _failure =>
+      case _ =>
     }
   }
 }
