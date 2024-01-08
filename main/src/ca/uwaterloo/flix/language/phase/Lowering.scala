@@ -163,7 +163,7 @@ object Lowering {
       case (_, v) => v.sym -> v
     }
 
-    LoweredAst.Root(classes, instances, sigs, defs, newEnums, effects, aliases, root.entryPoint, root.sources, root.classEnv, root.eqEnv)
+    LoweredAst.Root(classes, instances, sigs, defs, newEnums, effects, aliases, root.entryPoint, root.reachable, root.sources, root.classEnv, root.eqEnv)
   }
 
   /**
