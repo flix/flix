@@ -34,7 +34,7 @@ object Loader {
       //
       // Decorate each defn in the ast with its method object unless its a closure.
       //
-      for ((sym, defn) <- root.defs if defn.isEntryPoint) {
+      for ((sym, defn) <- root.defs if root.reachable.contains(sym)) {
         // Retrieve the namespace info of sym.
         val nsInfo = JvmOps.getNamespace(sym)
 

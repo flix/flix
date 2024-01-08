@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
+import scala.collection.mutable
+
 /**
   * Processes the entry point of the program.
   *
@@ -58,7 +60,6 @@ object EntryPoint {
     */
   private val DefaultEntryPoint = Symbol.mkDefnSym("main")
 
-
   /**
     * Introduces a new function `main%` which calls the entry point (if any).
     */
@@ -70,12 +71,27 @@ object EntryPoint {
           entryPoint =>
             root.copy(
               defs = root.defs + (entryPoint.sym -> entryPoint),
-              entryPoint = Some(entryPoint.sym)
+              entryPoint = Some(entryPoint.sym),
+              reachable = getReachable(root)
             )
         }
       // Case 2: No entry point. Don't touch anything.
-      case None => Validation.success(root)
+      case None => Validation.success(root.copy(reachable = getReachable(root)))
     }
+  }
+
+  /**
+   * Returns all reachable definitions.
+   */
+  private def getReachable(root: TypedAst.Root): Set[Symbol.DefnSym] = {
+    val s = mutable.Set.empty[Symbol.DefnSym]
+    for ((sym, defn) <- root.defs) {
+      if (defn.spec.ann.isBenchmark || defn.spec.ann.isTest) {
+        s += sym
+      }
+    }
+
+    s.toSet ++ root.entryPoint
   }
 
   /**
