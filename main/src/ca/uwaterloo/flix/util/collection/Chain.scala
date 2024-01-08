@@ -62,24 +62,18 @@ sealed trait Chain[+A] {
   /**
     * Returns `this` as a [[List]].
     */
-  final def toList: List[A] = {
+  final def toList: List[A] = this match {
     // N.B.: We have to use reflection to avoid
     // infinite recursion when pattern matching
     // since it calls the equals method which
     // depends on toList.
-    if (this.isInstanceOf[Chain.Empty.type]) {
-      List.empty
-    } else if (this.isInstanceOf[Chain.Link[A]]) {
-      val (l, r) = this.asInstanceOf[Chain.Link[A]].destruct
-      l.toList ++ r.toList
-    } else if (this.isInstanceOf[Chain.Many[A]]) {
-      val cs = this.asInstanceOf[Chain.Many[A]].destruct
+    case _: Chain.Empty.type => List.empty
+    case c: Chain.Link[A] => c.l.toList ++ c.r.toList
+    case c: Chain.Many[A] =>
       val buf = ListBuffer.empty[A]
-      cs.foreach(c => buf.addAll(c.iterator))
+      c.cs.foreach(c => buf.addAll(c.iterator))
       buf.toList
-    } else {
-      this.asInstanceOf[Chain.Proxy[A]].destruct.toList
-    }
+    case c: Chain.Proxy[A] => c.xs.toList
   }
 
   final def toSeq: Seq[A] = this match {
@@ -145,23 +139,17 @@ object Chain {
   /**
     * A concatenation of two chains.
     */
-  private case class Link[A](l: Chain[A], r: Chain[A]) extends Chain[A] {
-    def destruct: (Chain[A], Chain[A]) = (l, r)
-  }
+  private case class Link[A](l: Chain[A], r: Chain[A]) extends Chain[A]
 
   /**
     * A concatenation of many chains.
     */
-  private case class Many[A](cs: Seq[Chain[A]]) extends Chain[A] {
-    def destruct: Seq[Chain[A]] = cs
-  }
+  private case class Many[A](cs: Seq[Chain[A]]) extends Chain[A]
 
   /**
     * A chain wrapping a sequence.
     */
-  private case class Proxy[A](xs: Seq[A]) extends Chain[A] {
-    def destruct: Seq[A] = xs
-  }
+  private case class Proxy[A](xs: Seq[A]) extends Chain[A]
 
   /**
     * Returns a chain containing the given elements.
