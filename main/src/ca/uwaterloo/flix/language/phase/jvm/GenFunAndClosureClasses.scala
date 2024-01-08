@@ -207,9 +207,11 @@ object GenFunAndClosureClasses {
     // used for self-recursive tail calls
     val enterLabel = new Label()
     m.visitLabel(enterLabel)
-    m.visitVarInsn(ALOAD, 0)
-    m.visitVarInsn(ALOAD, 1)
-    m.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "onCall", MethodDescriptor.mkDescriptor(BackendObjType.Value.toTpe)(VoidableType.Void).toDescriptor, false)
+
+    // Add these lines to call onCall
+    // m.visitVarInsn(ALOAD, 0)
+    // m.visitVarInsn(ALOAD, 1)
+    // m.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "onCall", MethodDescriptor.mkDescriptor(BackendObjType.Value.toTpe)(VoidableType.Void).toDescriptor, false)
 
     loadParamsOf(cparams)
     loadParamsOf(fparams)
