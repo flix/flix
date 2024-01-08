@@ -45,6 +45,17 @@ sealed trait Validation[+T, +E] {
   }
 
   /**
+    * Applies `f` to every error (if any).
+    *
+    * Preserves the success value (if it exists).
+    */
+  final def mapErr[R](f: E => R): Validation[T, R] = this match {
+    case Validation.Success(t) => Validation.Success(t)
+    case Validation.SoftFailure(t, errors) => Validation.SoftFailure(t, errors.map(f))
+    case Validation.HardFailure(errors) => Validation.HardFailure(errors.map(f))
+  }
+
+  /**
     * Returns `this` validation with an additional recoverable error.
     */
   final def withSoftFailure[R >: E](e: R): Validation[T, R] = withSoftFailures(List(e))
