@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 
@@ -34,6 +35,8 @@ object ReducedAst {
                   sources: Map[Source, SourceLocation])
 
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, stmt: Stmt, tpe: MonoType, purity: Purity, loc: SourceLocation) {
+    def isEntryPoint(implicit flix: Flix): Boolean = cparams.isEmpty && (ann.isTest || ann.isBenchmark || flix.options.entryPoint.contains(sym))
+
     var method: Method = _
     val arrowType: MonoType.Arrow = MonoType.Arrow(fparams.map(_.tpe), tpe)
   }
