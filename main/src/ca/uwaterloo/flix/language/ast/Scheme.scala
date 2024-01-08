@@ -144,7 +144,7 @@ object Scheme {
                 val newEconstrs2 = sc2.econstrs.map(subst.apply).map(EqualityEnvironment.narrow) // TODO ASSOC-TYPES reduce, unsafe narrowing here
                 // ensure the eqenv entails the constraints and build up the substitution
                 val substVal = Validation.fold(newEconstrs1, Substitution.empty) {
-                  case (subst, econstr) => EqualityEnvironment.entail(newEconstrs2, subst(econstr), renv, eqEnv).map(_ @@ subst)
+                  case (subst, econstr) => mapN(EqualityEnvironment.entail(newEconstrs2, subst(econstr), renv, eqEnv))(_ @@ subst)
                 }
                 mapN(substVal) {
                   // combine the econstr substitution with the base type substitution

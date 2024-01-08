@@ -92,9 +92,8 @@ object ClassEnvironment {
     val tconstrs1 = tconstrs0.map {
       case Ast.TypeConstraint(head, tpe, loc) => Ast.TypeConstraint(head, Type.eraseAliases(tpe), loc)
     }
-    for {
-      tconstrs <- Validation.sequence(tconstrs1.map(toHeadNormalForm(_, classEnv)))
-    } yield simplify(tconstrs.flatten, classEnv)
+    val normalization = Validation.sequence(tconstrs1.map(toHeadNormalForm(_, classEnv)))
+    Validation.mapN(normalization)(tconstrs => simplify(tconstrs.flatten, classEnv))
   }
 
   /**
@@ -120,9 +119,8 @@ object ClassEnvironment {
 
       // NB: This is different from the THIH implementation.
       // We also check `leq` instead of just `unifies` in order to support complex types in instances.
-      for {
-        subst <- Scheme.checkLessThanEqual(instSc, tconstrSc, Map.empty, ListMap.empty) // TODO ASSOC-TYPES ListMap.empty right?
-      } yield inst.tconstrs.map(subst(_))
+      val substVal = Scheme.checkLessThanEqual(instSc, tconstrSc, Map.empty, ListMap.empty) // TODO ASSOC-TYPES ListMap.empty right?
+      Validation.mapN(substVal)(subst => inst.tconstrs.map(subst(_)))
     }
 
     val tconstrGroups = matchingInstances.map(tryInst).collect {

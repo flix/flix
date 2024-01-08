@@ -33,6 +33,7 @@ import java.nio.file.{Files, Path}
 import java.util.concurrent.ForkJoinPool
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.language.implicitConversions
 
 object Flix {
   /**
@@ -528,6 +529,10 @@ class Flix {
 
     // The default entry point
     val entryPoint = flix.options.entryPoint
+
+    implicit class MappableValidation[A, B](v: Validation[A, B]) {
+      implicit def map[C](f: A => C): Validation[C, B] = Validation.mapN(v)(f)
+    }
 
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
