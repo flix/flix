@@ -60,7 +60,7 @@ sealed trait Chain[+A] {
   /**
     * Returns `this` as a [[List]].
     */
-  def toList: List[A] = this match {
+  final def toList: List[A] = this match {
     case Chain.Empty => List.empty
     case Chain.Link(l, r) => l.toList ++ r.toList
     case Chain.Many(cs) => cs.flatMap(_.toList).toList
