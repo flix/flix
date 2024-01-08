@@ -102,7 +102,7 @@ class TestChain extends AnyFunSuite {
 
   test("TestEq.09") {
     val c1 = Chain(1) ++ Chain(2) ++ Chain(3) ++ Chain(4) ++ Chain(5)
-    val c2 = Chain(1, 2, 3, 4, 6)
+    val c2 = Chain(1, 2, 3, 4, 5)
     assert(c1 == c2)
   }
 
