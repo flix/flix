@@ -1693,6 +1693,7 @@ object Weeder2 {
 
     private def visitConstant(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
       assert(tree.kind == TreeKind.Type.Constant)
+
       text(tree).head match {
         case "false" => Type.False(tree.loc).toSuccess
         case "true" => Type.True(tree.loc).toSuccess

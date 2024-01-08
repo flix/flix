@@ -902,48 +902,49 @@ object Parser2 {
       lhs
     }
 
-    // A precedence table for binary operators, lower is higher precedence
-    private def BINARY_PRECEDENCE: List[List[TokenKind]] = List(
-      List(TokenKind.ColonEqual), // :=
-      List(TokenKind.ColonColon), // ::
-      List(TokenKind.KeywordOr),
-      List(TokenKind.KeywordAnd),
-      List(TokenKind.TripleBar), // |||
-      List(TokenKind.TripleCaret), // ^^^
-      List(TokenKind.TripleAmpersand), // &&&
-      List(TokenKind.EqualEqual, TokenKind.AngledEqual, TokenKind.BangEqual), // ==, <=>, !=
-      List(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual), // <, >, <=, >=
-      List(TokenKind.TripleAngleL, TokenKind.TripleAngleR), // <<<, >>>
-      List(TokenKind.Plus, TokenKind.Minus), // +, -
-      List(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash, TokenKind.KeywordMod), // *, **, /, mod
-      List(TokenKind.AngledPlus), // <+>
-      List(TokenKind.InfixFunction), // `my_function`
-      List(TokenKind.UserDefinedOperator, TokenKind.NameMath) // +=+
-    )
+    sealed trait OpKind
 
-    // A precedence table for unary operators, lower is higher precedence
-    private def UNARY_PRECEDENCE: List[List[TokenKind]] = List(
-      List(TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDiscard), // lazy, force, discard
-      List(TokenKind.Plus, TokenKind.Minus, TokenKind.TripleTilde), // +, -, ~~~
-      List(TokenKind.KeywordNot)
+    private object OpKind {
+
+      case object Unary extends OpKind
+
+      case object Binary extends OpKind
+    }
+
+    // A precedence table for binary operators, lower is higher precedence.
+    // Note that [[OpKind]] is necessary for the cases where the same token kind can be both unary and binary. IE. Plus or Minus
+    private def PRECEDENCE: List[(OpKind, List[TokenKind])] = List(
+      (OpKind.Binary, List(TokenKind.ColonEqual)), // :=
+      (OpKind.Binary, List(TokenKind.ColonColon)), // :: // TODO: :::
+      (OpKind.Binary, List(TokenKind.KeywordOr)),
+      (OpKind.Binary, List(TokenKind.KeywordAnd)),
+      (OpKind.Binary, List(TokenKind.TripleBar)), // |||
+      (OpKind.Binary, List(TokenKind.TripleCaret)), // ^^^
+      (OpKind.Binary, List(TokenKind.TripleAmpersand)), // &&&
+      (OpKind.Binary, List(TokenKind.EqualEqual, TokenKind.AngledEqual, TokenKind.BangEqual)), // ==, <=>, !=
+      (OpKind.Binary, List(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual)), // <, >, <=, >=
+      (OpKind.Binary, List(TokenKind.TripleAngleL, TokenKind.TripleAngleR)), // <<<, >>>
+      (OpKind.Binary, List(TokenKind.Plus, TokenKind.Minus)), // +, -
+      (OpKind.Binary, List(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash, TokenKind.KeywordMod)), // *, **, /, mod
+      (OpKind.Binary, List(TokenKind.AngledPlus)), // <+>
+      (OpKind.Unary, List(TokenKind.KeywordDiscard)), // discard
+      (OpKind.Binary, List(TokenKind.InfixFunction)), // `my_function`
+      (OpKind.Binary, List(TokenKind.UserDefinedOperator, TokenKind.NameMath)), // +=+
+      (OpKind.Unary, List(TokenKind.KeywordLazy, TokenKind.KeywordForce)), // lazy, force
+      (OpKind.Unary, List(TokenKind.Plus, TokenKind.Minus, TokenKind.TripleTilde)), // +, -, ~~~
+      (OpKind.Unary, List(TokenKind.KeywordNot))
     )
 
     private def rightBindsTighter(left: TokenKind, right: TokenKind, leftIsUnary: Boolean): Boolean = {
-      def unaryTightness(kind: TokenKind): Int = {
-        // Unary operators all bind tighter than binary ones.
-        // This is done by adding the length of the binary precedence table here:
-        UNARY_PRECEDENCE.indexWhere(l => l.contains(kind)) + BINARY_PRECEDENCE.length
-      }
-
-      def tightness(kind: TokenKind): Int = {
-        BINARY_PRECEDENCE.indexWhere(l => l.contains(kind))
+      def tightness(kind: TokenKind, opKind: OpKind = OpKind.Binary): Int = {
+        PRECEDENCE.indexWhere { case (k, l) => k == opKind && l.contains(kind) }
       }
 
       val rt = tightness(right)
       if (rt == -1) {
         return false
       }
-      val lt = if (leftIsUnary) unaryTightness(left) else tightness(left)
+      val lt = tightness(left, if (leftIsUnary) OpKind.Unary else OpKind.Binary)
       if (lt == -1) {
         assert(left == TokenKind.Eof)
         return true
@@ -1596,7 +1597,7 @@ object Parser2 {
     /**
      * ttype -> (typeDelimited arguments? | typeFunction) ( '\' effectSet )?
      */
-    def ttype(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
+    def ttype(left: TokenKind = TokenKind.Eof)(implicit s: State): Mark.Closed = {
       var lhs = if (left == TokenKind.ArrowThin) typeAndEffect() else typeDelimited()
 
       // handle Type argument application
@@ -1612,7 +1613,7 @@ object Parser2 {
       var continue = true
       while (continue) {
         val right = nth(0)
-        if (rightBindsTighter(left, right, leftIsUnary)) {
+        if (rightBindsTighter(left, right)) {
           val mark = openBefore(lhs)
           val markOp = open()
           advance()
@@ -1636,7 +1637,8 @@ object Parser2 {
     }
 
     // A precedence table for binary operators in types, lower is higher precedence
-    private def BINARY_PRECEDENCE: List[List[TokenKind]] = List(
+    private def TYPE_OP_PRECEDENCE: List[List[TokenKind]] = List(
+      // BINARY OPS
       List(TokenKind.ArrowThin), // ->
       List(TokenKind.PlusPlus, TokenKind.MinusMinus), // ++, --
       List(TokenKind.AmpersandAmpersand), // &&
@@ -1646,35 +1648,24 @@ object Parser2 {
       List(TokenKind.KeywordOr), // or
       List(TokenKind.KeywordAnd), // and
       List(TokenKind.Colon), // :
-    )
-
-    // A precedence table for unary operators in types, lower is higher precedence
-    private def UNARY_PRECEDENCE: List[List[TokenKind]] = List(
+      // UNARY OPS
       List(TokenKind.TildeTilde, TokenKind.Tilde, TokenKind.KeywordNot) // ~~~, ~, not
     )
 
-    private def rightBindsTighter(left: TokenKind, right: TokenKind, leftIsUnary: Boolean = false): Boolean = {
-      def tightness(kind: TokenKind): Int = {
-        BINARY_PRECEDENCE.indexWhere(l => l.contains(kind))
-      }
-
-      def unaryTightness(kind: TokenKind): Int = {
-        // Unary operators all bind tighter than binary ones.
-        // This is done by adding the length of the binary precedence table here:
-        UNARY_PRECEDENCE.indexWhere(l => l.contains(kind)) + BINARY_PRECEDENCE.length
-      }
-
-
-      val rt = tightness(right)
+    private def rightBindsTighter(left: TokenKind, right: TokenKind): Boolean = {
+      val rt = TYPE_OP_PRECEDENCE.indexWhere(l => l.contains(right))
       if (rt == -1) {
         return false
       }
-      val lt = if (leftIsUnary) unaryTightness(left) else tightness(left)
+
+      val lt = TYPE_OP_PRECEDENCE.indexWhere(l => l.contains(left))
       if (lt == -1) {
         assert(left == TokenKind.Eof)
         return true
       }
-      rt > lt
+      // NOTE: This >= rather than > makes it so that operators with equal precedence are left-associative.
+      // IE. 't + eff1 + eff2' becomes '(t + eff1) + eff2' rather than 't + (eff1 + eff2)'
+      rt >= lt
     }
 
     /**
@@ -1777,8 +1768,8 @@ object Parser2 {
              | TokenKind.KeywordFalse
              | TokenKind.KeywordTrue => constant()
         case TokenKind.KeywordNot
-          | TokenKind.Tilde
-          | TokenKind.TildeTilde => unary()
+             | TokenKind.Tilde
+             | TokenKind.TildeTilde => unary()
         case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected type, found $t"))
       }
       close(mark, TreeKind.Type.Type)
@@ -1790,7 +1781,7 @@ object Parser2 {
       val markOp = open()
       expectAny(List(TokenKind.Tilde, TokenKind.KeywordNot, TokenKind.TildeTilde))
       close(markOp, TreeKind.Operator)
-      ttype(left = op, leftIsUnary = true)
+      ttype(left = op)
       close(mark, TreeKind.Type.Unary)
     }
 
