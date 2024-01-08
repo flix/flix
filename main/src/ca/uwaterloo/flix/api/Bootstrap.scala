@@ -634,8 +634,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Package the current project and release it on GitHub.
     */
   def release(flix: Flix): Validation[Unit, BootstrapError] = {
-    val formatter = flix.getFormatter
-
     // Ensure that we have a manifest
     val manifest = optManifest match {
       case Some(m) => m
@@ -656,7 +654,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     if (!flix.options.assumeYes) {
       // Ask for confirmation
-      print(s"Release ${formatter.blue(s"github:$githubRepo")} ${formatter.yellow(s"v${manifest.version}")}? [y/N]: ")
+      print(s"Release github:$githubRepo v${manifest.version}? [y/N]: ")
       val response = readLine()
       response.toLowerCase match {
         case "y" => // Continue
@@ -683,12 +681,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Err(e) => return Validation.toHardFailure(BootstrapError.ReleaseError(e))
     }
 
-    println(formatter.green(
+    println(
       s"""
          | Successfully released v${manifest.version}
          | https://github.com/${githubRepo.owner}/${githubRepo.repo}/releases/tag/v${manifest.version}
          |""".stripMargin
-    ))
+    )
 
     Validation.Success(())
   }
