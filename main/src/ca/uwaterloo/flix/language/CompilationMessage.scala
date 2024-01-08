@@ -54,6 +54,6 @@ trait CompilationMessage {
   /**
     * Returns a formatted string with helpful suggestions.
     */
-  def explain(formatter: Formatter): Option[String]
+  def explain(formatter: Formatter): Option[String] = None
 
 }

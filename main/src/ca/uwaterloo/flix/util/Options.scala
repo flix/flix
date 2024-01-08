@@ -35,7 +35,7 @@ object Options {
     output = None,
     progress = false,
     test = false,
-    target = JvmTarget.Version18,
+    target = JvmTarget.Version21,
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
     xbddthreshold = None,
@@ -43,7 +43,6 @@ object Options {
     xnoboolspecialcases = false,
     xnobooltable = false,
     xnoboolunif = false,
-    xstrictmono = false,
     xnooptimizer = false,
     xprintphase = Set.empty,
     xnoqmc = false,
@@ -95,7 +94,6 @@ object Options {
   * @param xnoboolspecialcases disable Boolean unification shortcuts.
   * @param xnobooltable        disable Boolean minimization via tabling.
   * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
-  * @param xstrictmono         enables strict monomorphization.
   * @param xprintphase         prints the chosen phase ASTs to the build folder.
   * @param xsummary            prints a summary of the compiled modules.
   * @param xparser             disables new lexer and parser.
@@ -119,7 +117,6 @@ case class Options(lib: LibLevel,
                    xnobooltable: Boolean,
                    xnoboolunif: Boolean,
                    xnoqmc: Boolean,
-                   xstrictmono: Boolean,
                    xnooptimizer: Boolean,
                    xprintphase: Set[String],
                    xsummary: Boolean,
@@ -136,24 +133,9 @@ sealed trait JvmTarget
 object JvmTarget {
 
   /**
-    * Emit bytecode for Java 1.6.
+    * Emit bytecode for Java 21.
     */
-  object Version16 extends JvmTarget
-
-  /**
-    * Emit bytecode for Java 1.7.
-    */
-  object Version17 extends JvmTarget
-
-  /**
-    * Emit bytecode for Java 1.8.
-    */
-  object Version18 extends JvmTarget
-
-  /**
-    * Emit bytecode for Java 1.9.
-    */
-  object Version19 extends JvmTarget
+  object Version21 extends JvmTarget
 
 }
 

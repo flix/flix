@@ -66,11 +66,6 @@ object ResolutionError {
       }
       res
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -105,11 +100,6 @@ object ResolutionError {
       }
       res
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -160,7 +150,7 @@ object ResolutionError {
 
     override def loc: SourceLocation = loc1
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Remove one of the occurrences."
     })
@@ -208,11 +198,6 @@ object ResolutionError {
          |Expected a Java class or interface.
          |""".stripMargin
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -233,7 +218,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       "Every signature in a type class must mention the type variable of the class."
     })
 
@@ -256,11 +241,6 @@ object ResolutionError {
          |${code(loc, "illegal type.")}
          |""".stripMargin
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -281,7 +261,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       "Wildcard types (types starting with an underscore) are not allowed in this position."
     })
   }
@@ -307,7 +287,7 @@ object ResolutionError {
 
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Mark the class as public."
     })
@@ -333,7 +313,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Mark the definition as public."
     })
@@ -360,7 +340,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Mark the effect as public."
     })
@@ -387,7 +367,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Mark the definition as public."
     })
@@ -413,7 +393,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Mark the operation as public."
     })
@@ -440,7 +420,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Mark the definition as public."
     })
@@ -466,7 +446,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Mark the definition as public."
     })
@@ -493,7 +473,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Mark the type alias as public."
     })
@@ -524,11 +504,6 @@ object ResolutionError {
          |Expected type: $expectedType
          |""".stripMargin
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -572,7 +547,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Move the instance or sub class to the class's module."
     })
@@ -598,7 +573,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent associated type?"
     })
@@ -624,7 +599,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent class?"
     })
@@ -651,7 +626,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent effect?"
     })
@@ -682,7 +657,7 @@ object ResolutionError {
     /**
       * Returns a formatted string with helpful suggestions.
       */
-    def explain(formatter: Formatter): Option[String] = {
+    override def explain(formatter: Formatter): Option[String] = {
       if (raw".*\.[A-Z].*\.[A-Z].*".r matches name)
         Some(s"Static nested classes should be specified using '$$', e.g. java.util.Locale$$Builder")
       else
@@ -723,11 +698,6 @@ object ResolutionError {
       }
       res
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -766,11 +736,6 @@ object ResolutionError {
     private def appendFields: String = {
       fields.map(f => "  " + stripAccessModifier(f.toString) + System.lineSeparator()).mkString
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -814,11 +779,6 @@ object ResolutionError {
     private def appendMethods: String = {
       methods.map(m => "  " + stripAccessModifier(m.toString) + System.lineSeparator()).mkString
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -840,7 +800,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent kind?"
     })
@@ -868,7 +828,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent definition?"
     })
@@ -894,37 +854,10 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent operation?"
     })
-  }
-
-  /**
-    * Undefined Tag Error.
-    *
-    * @param tag the tag.
-    * @param ns  the current namespace.
-    * @param loc the location where the error occurred.
-    */
-  case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
-    def summary: String = s"Undefined tag: '$tag'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Undefined tag '${red(tag)}'.
-         |
-         |${code(loc, "tag not found.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Possible typo or non-existent tag?"
-    })
-
   }
 
   /**
@@ -947,7 +880,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent tag?"
     })
@@ -974,9 +907,36 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent type?"
+    })
+
+  }
+
+  /**
+    * Undefined Tag Error.
+    *
+    * @param tag the tag.
+    * @param ns  the current namespace.
+    * @param loc the location where the error occurred.
+    */
+  case class UndefinedTag(tag: String, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
+    def summary: String = s"Undefined tag: '$tag'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined tag '${red(tag)}'.
+         |
+         |${code(loc, "tag not found.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent tag?"
     })
 
   }
@@ -1001,7 +961,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Possible typo or non-existent type?"
     })
@@ -1027,7 +987,7 @@ object ResolutionError {
 
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       "Flix cannot find the type variable. Maybe there is a typo?"
     })
   }
@@ -1050,7 +1010,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Associated types must be fully applied."
     })
@@ -1075,7 +1035,7 @@ object ResolutionError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip:")} Type aliases must be fully applied."
     })

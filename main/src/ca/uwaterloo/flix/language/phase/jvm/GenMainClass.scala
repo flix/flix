@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, FormalParam, Root}
-import ca.uwaterloo.flix.language.ast.{MonoType, ReducedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.ClassWriter
@@ -50,7 +50,7 @@ object GenMainClass {
     */
   private def checkMainType(defn: Def): Unit = (defn.cparams, defn.fparams, defn.tpe) match {
     case (Nil, List(FormalParam(_, _, MonoType.Unit, _)), MonoType.Unit) => ()
-    case (cs @ _ :: _, _, _) =>
+    case (cs@_ :: _, _, _) =>
       val tupleType = MonoType.Tuple(cs.map(_.tpe))
       throw InternalCompilerException(s"Entrypoint function has unexpected captured parameters '$tupleType'", defn.loc)
     case (Nil, _, _) =>
@@ -106,7 +106,7 @@ object GenMainClass {
     *
     * `}`
     */
-  private def compileMainMethod(sym: Symbol.DefnSym, visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
+  private def compileMainMethod(sym: Symbol.DefnSym, visitor: ClassWriter)(implicit root: Root): Unit = {
     // The required java main signature `Array[String] -> Void`.
     val javaMainDescriptor = s"(${AsmOps.getArrayType(JvmType.String)})${JvmType.Void.toDescriptor}"
     // `public static void main(String[] args)`.
