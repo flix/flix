@@ -62,7 +62,15 @@ sealed trait Chain[+A] {
   /**
     * Returns `this` as a [[List]].
     */
-  def toList: List[A]
+  def toList: List[A] = this match {
+    case Chain.Empty => List.empty
+    case Chain.Link(l, r) => l.toList ++ r.toList
+    case Chain.Many(cs) =>
+      val buf = ListBuffer.empty[A]
+      cs.foreach(c => buf.addAll(c.iterator))
+      buf.toList
+    case Chain.Proxy(xs) => xs.toList
+  }
 
   final def toSeq: Seq[A] = this match {
     case Chain.Empty => Seq.empty
@@ -122,50 +130,22 @@ object Chain {
   /**
     * The empty chain.
     */
-  private case object Empty extends Chain[Nothing] {
-
-    /**
-      * Returns `this` as a [[List]].
-      */
-    override def toList: List[Nothing] = List.empty
-  }
+  private case object Empty extends Chain[Nothing]
 
   /**
     * A concatenation of two chains.
     */
-  private case class Link[A](l: Chain[A], r: Chain[A]) extends Chain[A] {
-
-    /**
-      * Returns `this` as a [[List]].
-      */
-    override def toList: List[A] = l.toList ++ r.toList
-  }
+  private case class Link[A](l: Chain[A], r: Chain[A]) extends Chain[A]
 
   /**
     * A concatenation of many chains.
     */
-  private case class Many[A](cs: Seq[Chain[A]]) extends Chain[A] {
-
-    /**
-      * Returns `this` as a [[List]].
-      */
-    override def toList: List[A] = {
-      val buf = ListBuffer.empty[A]
-      cs.foreach(c => buf.addAll(c.iterator))
-      buf.toList
-    }
-  }
+  private case class Many[A](cs: Seq[Chain[A]]) extends Chain[A]
 
   /**
     * A chain wrapping a sequence.
     */
-  private case class Proxy[A](xs: Seq[A]) extends Chain[A] {
-
-    /**
-      * Returns `this` as a [[List]].
-      */
-    override def toList: List[A] = xs.toList
-  }
+  private case class Proxy[A](xs: Seq[A]) extends Chain[A]
 
   /**
     * Returns a chain containing the given elements.
