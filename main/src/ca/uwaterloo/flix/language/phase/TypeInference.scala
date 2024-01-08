@@ -920,9 +920,11 @@ object TypeInference {
           resultEff = Type.mkUnion(eff :: ruleEffs, loc)
         } yield (constrs ++ ruleConstrs.flatten, resultTyp, resultEff)
 
-      case KindedAst.Expr.TryWith(exp, effUse, rules, tvar, loc) =>
+      case KindedAst.Expr.TryWith(exp, effUse, rules, tvar, evar, loc) =>
         val effect = root.effects(effUse.sym)
         val ops = effect.ops.map(op => op.sym -> op).toMap
+        val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
+        val continuationEffect = Type.freshVar(Kind.Eff, loc)
 
         def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam]): InferMonad[Unit] = {
           if (expected.length != actual.length) {
@@ -937,7 +939,7 @@ object TypeInference {
           }
         }
 
-        def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, tryBlockEff: Type): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = rule match {
+        def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = rule match {
           case KindedAst.HandlerRule(op, actualFparams0, body, opTvar) =>
             // Don't need to generalize since ops are monomorphic
             // Don't need to handle unknown op because resolver would have caught this
@@ -946,7 +948,7 @@ object TypeInference {
               case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, _, _, _, _)) =>
                 val resumptionArgType = opTpe
                 val resumptionResType = tryBlockTpe
-                val resumptionEff = tryBlockEff
+                val resumptionEff = continuationEffect
                 val expectedResumptionType = Type.mkArrowWithEffect(resumptionArgType, resumptionEff, resumptionResType, loc.asSynthetic)
                 for {
                   _ <- unifyFormalParams(op.sym, expected = expectedFparams, actual = actualFparams)
@@ -954,22 +956,24 @@ object TypeInference {
                   (actualTconstrs, actualTpe, actualEff) <- visitExp(body)
 
                   // unify the operation return type with its tvar
-                  _ <- unifyTypeM(opTpe, opTvar, body.loc)
+                  _ <- unifyTypeM(actualTpe, opTvar, body.loc)
 
                   // unify the handler result type with the whole block's tvar
-                  resultTpe <- expectTypeM(expected = tvar, actual = actualTpe, body.loc)
+                  resultTpe <- unifyTypeM(tvar, actualTpe, body.loc)
                 } yield (actualTconstrs, resultTpe, actualEff)
             }
         }
 
-        val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
         for {
           (tconstrs, tpe, bodyEff) <- visitExp(exp)
-          (tconstrss, _, effs) <- traverseM(rules)(visitHandlerRule(_, tpe, bodyEff)).map(_.unzip3)
+          _ <- expectTypeM(expected = effType, actual = bodyEff, exp.loc) // temp simplification
+          correctedBodyEff = Type.Pure // Type.mkDifference(bodyEff, effType, loc) // simplification
+          (tconstrss, _, effs) <- traverseM(rules)(visitHandlerRule(_, tpe)).map(_.unzip3)
+          _ <- unifyTypeM(continuationEffect, Type.mkUnion(correctedBodyEff :: effs, loc), loc)
           resultTconstrs = (tconstrs :: tconstrss).flatten
           resultTpe <- unifyTypeM(tvar, tpe, loc)
-          compositeEff = Type.mkUnion(bodyEff :: effs, bodyEff.loc.asSynthetic)
-          resultEff = Type.mkDifference(compositeEff, effType, loc)
+          resultEff = Type.mkUnion(correctedBodyEff :: effs, correctedBodyEff.loc.asSynthetic)
+          _ <- unifyTypeM(evar, resultEff, resultEff.loc)
         } yield (resultTconstrs, resultTpe, resultEff)
 
       case KindedAst.Expr.Do(op, args, tvar, loc) =>

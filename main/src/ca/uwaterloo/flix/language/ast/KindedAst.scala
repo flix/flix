@@ -164,7 +164,7 @@ object KindedAst {
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: Expr, eff: Ast.EffectSymUse, rules: List[HandlerRule], tvar: Type.Var, loc: SourceLocation) extends Expr
+    case class TryWith(exp: Expr, eff: Ast.EffectSymUse, rules: List[HandlerRule], tvar: Type.Var, evar: Type.Var, loc: SourceLocation) extends Expr
 
     case class Do(op: Ast.OpSymUse, args: List[Expr], tvar: Type.Var, loc: SourceLocation) extends Expr
 
