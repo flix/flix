@@ -94,6 +94,95 @@ object Parser2 {
         "Boxed.flix"
       )
 
+      val filesThatAreKnownToWork = List(
+        "Region.flix",
+        "UnorderedFoldable.flix",
+        "Monoid.flix",
+        "Reducible.flix",
+        "Char.flix",
+        "Comparison.flix",
+        "Fixpoint/Ram/RamTerm.flix",
+        "Fixpoint/Ast/HeadTerm.flix",
+        "Fixpoint/Ram/BoolExp.flix",
+        "Monad.flix",
+        "Fixpoint/Ast/Polarity.flix",
+        "Fixpoint/Stratifier.flix",
+        "Eq.flix",
+        "MutDeque.flix",
+        "CommutativeMonoid.flix",
+        "Concurrent/CyclicBarrier.flix",
+        "Iterator.flix",
+        "JoinLattice.flix",
+        "Identity.flix",
+        "FromString.flix",
+        "foo.flix",
+        "Group.flix",
+        "StringBuilder.flix",
+        "Closeable.flix",
+        "Fixpoint/Ast/VarSym.flix",
+        "MeetLattice.flix",
+        "ToString.flix",
+        "Boxable.flix",
+        "Iterable.flix",
+        "MultiMap.flix",
+        "Witherable.flix",
+        "Reflect.flix",
+        "Time/Instant.flix",
+        "Fixpoint/PredSymsOf.flix",
+        "LowerBound.flix",
+        "Assert.flix",
+        "Fixpoint/Options.flix",
+        "Object.flix",
+        "CommutativeSemiGroup.flix",
+        "MonadZero.flix",
+        "Sub.flix",
+        "Collectable.flix",
+        "Fixpoint/Debugging.flix",
+        "Fixpoint/Ast/Denotation.flix",
+        "Mul.flix",
+        "Fixpoint/Ram/RamSym.flix",
+        "Down.flix",
+        "Concurrent/Channel.flix",
+        "Sendable.flix",
+        "Chain.flix",
+        "Foldable.flix",
+        "Filterable.flix",
+        "Hash.flix",
+        "Div.flix",
+        "Boxed.flix",
+        "Fixpoint/Ast/BodyTerm.flix",
+        "Time.flix",
+        "UpperBound.flix",
+        "Time/Epoch.flix",
+        "Order.flix",
+        "CommutativeGroup.flix",
+        "Fixpoint/Ram/RamStmt.flix",
+        "PartialOrder.flix",
+        "MonadZip.flix",
+        "Fixpoint/Shared/PredSym.flix",
+        "Ref.flix",
+        "Fixpoint/Ast/PrecedenceGraph.flix",
+        "Nec.flix",
+        "Fixpoint/Ast/Fixity.flix",
+        "Reader.flix",
+        "MutMap.flix",
+        "Fixpoint/Ast/HeadPredicate.flix",
+        "Validation.flix",
+        "Neg.flix",
+        "Fixpoint/SubstitutePredSym.flix",
+        "Map.flix",
+        "Add.flix",
+        "Thread.flix",
+        "Time/Duration.flix",
+        "Option.flix",
+        "Fixpoint/Ram/RowVar.flix",
+        "MutList.flix",
+        "ToJava.flix",
+        "Set.flix",
+        "Array.flix",
+        "Vector.flix"
+      )
+
       println("p\tw\tfile")
 
       // For each file: If the parse was successful run Weeder2 on it.
@@ -145,7 +234,11 @@ object Parser2 {
                 case Success(t) =>
                   val hasSameStructure = diffWeededAsts(src, t)
                   if (hasSameStructure) {
-                    outString += s"\t${Console.GREEN}✔︎ ${Console.RESET}"
+                    if (!filesThatAreKnownToWork.contains(src.name)) {
+                      outString += s"\t${Console.GREEN}✔︎!${Console.RESET}"
+                    } else {
+                      outString += s"\t${Console.GREEN}✔︎ ${Console.RESET}"
+                    }
                   } else if (filesWhereMatchIsIgnored.contains(src.name)) {
                     outString += s"\t${Console.MAGENTA}★ ${Console.RESET}"
                   } else {
@@ -153,20 +246,37 @@ object Parser2 {
                   }
                   t.toSuccess
                 case SoftFailure(t, errors) =>
-                  outString += s"\t${Console.YELLOW}✘ ${Console.RESET}"
+                  if (filesThatAreKnownToWork.contains(src.name)) {
+                    outString += s"\t${Console.YELLOW}✘!${Console.RESET}"
+                  } else {
+                    outString += s"\t${Console.YELLOW}✘ ${Console.RESET}"
+                  }
                   diffWeededAsts(src, t)
                   fallback(src, errors)
                 case Failure(errors) =>
-                  outString += s"\t${Console.RED}✘ ${Console.RESET}"
+                  if (filesThatAreKnownToWork.contains(src.name)) {
+                    outString += s"\t${Console.RED}✘!${Console.RESET}"
+                  } else {
+                    outString += s"\t${Console.RED}✘ ${Console.RESET}"
+                  }
                   fallback(src, errors)
               }
             case SoftFailure(t, errors) =>
-              outString += s"${Console.YELLOW}✘ ${Console.RESET}\t-"
+              if (filesThatAreKnownToWork.contains(src.name)) {
+                outString += s"${Console.YELLOW}✘!${Console.RESET}\t-"
+              } else {
+                outString += s"${Console.YELLOW}✘ ${Console.RESET}\t-"
+              }
               if (DEBUG_FOCUS == src.name) {
                 println(t.toDebugString())
               }
               fallback(src, errors)
             case Failure(errors) =>
+              if (filesThatAreKnownToWork.contains(src.name)) {
+                outString += s"${Console.RED}✘!${Console.RESET}\t-"
+              } else {
+                outString += s"${Console.RED}✘ ${Console.RESET}\t-"
+              }
               outString += s"${Console.RED}✘ ${Console.RESET}\t-"
               fallback(src, errors)
           }
