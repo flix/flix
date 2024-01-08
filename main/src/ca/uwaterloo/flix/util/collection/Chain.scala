@@ -67,45 +67,45 @@ sealed trait Chain[+A] {
     case Chain.Proxy(xs) => xs.toList
   }
 
-  def toSeq: Seq[A] = this match {
+  final def toSeq: Seq[A] = this match {
     case Chain.Empty => Seq.empty
     case Chain.Link(l, r) => l.toSeq ++ r.toSeq
     case Chain.Many(cs) => cs.flatMap(_.toSeq)
     case Chain.Proxy(xs) => xs
   }
 
-  def map[B](f: A => B): Chain[B] = this match {
+  final def map[B](f: A => B): Chain[B] = this match {
     case Chain.Empty => Chain.empty
     case Chain.Link(l, r) => Chain.Link(l.map(f), r.map(f))
     case Chain.Many(cs) => Chain.Many(cs.map(_.map(f)))
     case Chain.Proxy(xs) => Chain.Proxy(xs.map(f))
   }
 
-  def foreach(f: A => Unit): Unit = this match {
+  final def foreach(f: A => Unit): Unit = this match {
     case Chain.Empty => ()
     case Chain.Link(l, r) => l.foreach(f); r.foreach(f)
     case Chain.Many(cs) => cs.foreach(_.foreach(f))
     case Chain.Proxy(xs) => xs.foreach(f)
   }
 
-  def exists(f: A => Boolean): Boolean = this match {
+  final def exists(f: A => Boolean): Boolean = this match {
     case Chain.Empty => false
     case Chain.Link(l, r) => l.exists(f) || r.exists(f)
     case Chain.Many(cs) => cs.exists(_.exists(f))
     case Chain.Proxy(xs) => xs.exists(f)
   }
 
-  def mkString(sep: String): String = this.toList.mkString(sep)
+  final def mkString(sep: String): String = this.toList.mkString(sep)
 
   /**
     * The empty chain.
     */
-  val empty: Chain[A] = Chain.Empty
+  final val empty: Chain[A] = Chain.Empty
 
   /**
     * Returns the amount of elements in the chain.
     */
-  def length: Int = this match {
+  final def length: Int = this match {
     case Chain.Empty => 0
     case Chain.Link(l, r) => l.length + r.length
     case Chain.Many(cs) => cs.map(_.length).sum
