@@ -675,7 +675,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Publish to GitHub
-    println("Publishing new release...")
+    println("Publishing a new release...")
     val artifacts = Files.list(getArtifactDirectory(projectPath)).iterator().asScala.toList
     val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubKey)
     publishResult match {
