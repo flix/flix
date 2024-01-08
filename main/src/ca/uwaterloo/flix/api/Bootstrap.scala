@@ -645,15 +645,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Check if `github` option is present
     val githubRepo = manifest.repository match {
       case Some(r) => r
-      case None =>
-        return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.NoLinkedProject))
+      case None => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.NoLinkedProject))
     }
 
     // Check if `--github-key` option is present
     val githubKey = flix.options.githubKey match {
       case Some(k) => k
-      case None =>
-        return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.MissingApiKey))
+      case None => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.MissingApiKey))
     }
 
     if (!flix.options.assumeYes) {
