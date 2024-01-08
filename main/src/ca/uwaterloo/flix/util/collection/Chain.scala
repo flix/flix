@@ -63,6 +63,10 @@ sealed trait Chain[+A] {
     * Returns `this` as a [[List]].
     */
   final def toList: List[A] = {
+    // N.B.: We have to use reflection to avoid
+    // infinite recursion when pattern matching
+    // since it calls the equals method which
+    // depends on toList.
     if (this.isInstanceOf[Chain.Empty.type]) {
       List.empty
     } else if (this.isInstanceOf[Chain.Link[A]]) {
