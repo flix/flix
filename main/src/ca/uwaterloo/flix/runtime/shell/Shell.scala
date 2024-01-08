@@ -279,8 +279,8 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         flix.addSourceCode(name, s)
 
         // And try to compile!
-        compile(progress = false) match {
-          case Validation.Success(_) =>
+        compile(progress = false).toResult match {
+          case Result.Ok((_, Nil)) =>
             // Compilation succeeded.
             w.println("Ok.")
           case _failure =>
@@ -345,19 +345,24 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
 
     val checkResult = flix.check().toHardFailure
-    checkResult match {
-      case Validation.Success(root) => this.root = Some(root)
+    checkResult.toResult match {
+      case Result.Ok((root, Nil)) => this.root = Some(root)
       case _failure => // no-op
     }
 
     val result = Validation.flatMapN(checkResult)(flix.codeGen)
-    result match {
-      case Validation.Success(_) => // Compilation successful, no-op
-      case failure =>
-        for (msg <- flix.mkMessages(failure.errors)) {
-          terminal.writer().print(msg)
-        }
-        terminal.writer().println()
+
+    def printFailures(failures: List[CompilationMessage]): Unit = {
+      for (msg <- flix.mkMessages(failures)) {
+        terminal.writer().print(msg)
+      }
+      terminal.writer().println()
+    }
+
+    result.toResult match {
+      case Result.Ok((_, Nil)) => // Compilation successful, no-op
+      case Result.Ok((_, failures)) => printFailures(failures)
+      case Result.Err(failures) => printFailures(failures)
     }
 
     result
@@ -368,8 +373,8 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     */
   private def run(main: Symbol.DefnSym)(implicit terminal: Terminal): Unit = {
     // Recompile the program.
-    compile(entryPoint = Some(main), progress = false) match {
-      case Validation.Success(result) =>
+    compile(entryPoint = Some(main), progress = false).toResult match {
+      case Result.Ok((result, _)) =>
         result.getMain match {
           case Some(m) =>
             // Evaluate the main function
