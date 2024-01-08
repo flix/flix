@@ -198,15 +198,17 @@ object Weeder2 {
       ) {
         case (modules, definitions, classes, instances, enums) =>
           val all: List[Declaration] = definitions ++ classes ++ modules ++ enums ++ instances
+
           // TODO: We need to sort these by source position for comparison with old parser. Can be removed for production
           def getLoc(d: Declaration): SourceLocation = d match {
             case Declaration.Namespace(_, _, _, loc) => loc
             case Declaration.Def(_, _, _, _, _, _, _, _, _, _, _, loc) => loc
             case Declaration.Class(_, _, _, _, _, _, _, _, _, loc) => loc
-            case Declaration.Instance(_, _, _, _, _, _,_, _, loc) => loc
+            case Declaration.Instance(_, _, _, _, _, _, _, _, loc) => loc
             case Declaration.Enum(_, _, _, _, _, _, _, loc) => loc
             case d => throw InternalCompilerException(s"TODO: handle ${d}", tree.loc)
           }
+
           all.sortWith((a, b) => getLoc(a) < getLoc(b))
       }
     }
@@ -283,8 +285,7 @@ object Weeder2 {
         // Single type in case -> flatten to ambiguous.
         case Type.Tuple(t :: Nil, _) => t
         // Multiple types in case -> do nothing
-        case Type.Tuple(_ :: _, _) => tpe
-        case _ => throw InternalCompilerException("Parser passed Non-tuple type in enum-case", loc)
+        case tpe => tpe
       }
     }
 
@@ -641,6 +642,7 @@ object Weeder2 {
           case TreeKind.Expr.LiteralVector => visitLiteralVector(tree)
           case TreeKind.Expr.LiteralArray => visitLiteralArray(tree)
           case TreeKind.Expr.LiteralMap => visitLiteralMap(tree)
+          case TreeKind.Expr.RecordSelect => visitRecordSelect(tree)
           case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
           case TreeKind.QName => visitExprQname(tree)
           case kind => failWith(s"TODO: implement expression of kind '$kind'", tree.loc)
@@ -676,7 +678,7 @@ object Weeder2 {
               // NB: We only use the source location of the identifier itself.
               val base = Expr.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.sp1, ident.sp2), ident.loc)
               labels.foldLeft(base: Expr) {
-                case (acc, label) => Expr.RecordSelect(acc, Name.mkLabel(label), label.loc) // TODO NS-REFACTOR should use better location
+                case (acc, label) => Expr.RecordSelect(acc, Name.mkLabel(label), label.loc)
               }.toSuccess
           }
       }
@@ -686,6 +688,17 @@ object Weeder2 {
       assert(tree.kind == TreeKind.Expr.Tuple)
       val expressions = pickAll(TreeKind.Expr.Expr, tree.children)
       mapN(traverse(expressions)(visitExpression))(Expr.Tuple(_, tree.loc))
+    }
+
+    private def visitRecordSelect(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.RecordSelect)
+      val idents = pickAll(TreeKind.Ident, tree.children)
+      mapN(pickExpression(tree), traverse(idents)(tokenToIdent))(
+        (expr, idents) =>
+          idents.foldLeft(expr) {
+            case (acc, ident) => Expr.RecordSelect(acc, Name.mkLabel(ident), ident.loc)
+          }
+      )
     }
 
     private def visitReference(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -777,26 +790,21 @@ object Weeder2 {
         pick(TreeKind.Operator, tree.children),
         pickExpression(tree)
       )(
-        (op, expr) =>
-          visitUnaryOperator(op) match {
-            case OperatorResult.BuiltIn(name) => Expr.Apply(Expr.Ambiguous(name, name.loc), List(expr), tree.loc)
-            case OperatorResult.Operator(o) => Expr.Unary(o, expr, tree.loc)
-            case OperatorResult.Unrecognized(ident) => Expr.Apply(Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(expr), tree.loc)
+        (opTree, expr) => {
+          val op = text(opTree).head
+          val sp1 = tree.loc.sp1
+          val sp2 = tree.loc.sp2
+          op match {
+            case "discard" => Expr.Discard(expr, tree.loc)
+            case "lazy" => Expr.Lazy(expr, tree.loc)
+            case "force" => Expr.Force(expr, tree.loc)
+            case "-" => Expr.Apply(Expr.Ambiguous(Name.mkQName("Neg.neg", sp1, sp2), opTree.loc), List(expr), tree.loc)
+            case "+" => Expr.Apply(Expr.Ambiguous(Name.mkQName("Add.add", sp1, sp2), opTree.loc), List(expr), tree.loc)
+            case "not" => Expr.Unary(SemanticOp.BoolOp.Not, expr, tree.loc)
+            case op => Expr.Apply(Expr.Ambiguous(Name.mkQName(op, sp1, sp2), opTree.loc), List(expr), tree.loc)
           }
+        }
       )
-    }
-
-    private def visitUnaryOperator(tree: Tree)(implicit s: State): OperatorResult = {
-      assert(tree.kind == TreeKind.Operator)
-      val op = text(tree).head
-      val sp1 = tree.loc.sp1
-      val sp2 = tree.loc.sp2
-      op match {
-        case "not" => OperatorResult.Operator(SemanticOp.BoolOp.Not)
-        case "-" => OperatorResult.BuiltIn(Name.mkQName("Neg.neg", sp1, sp2))
-        case "+" => OperatorResult.BuiltIn(Name.mkQName("Add.add", sp1, sp2))
-        case _ => OperatorResult.Unrecognized(Name.Ident(sp1, op, sp2))
-      }
     }
 
     private def visitLetRecDef(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -991,7 +999,8 @@ object Weeder2 {
             // SEMANTIC OPS
             case "and" => Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc)
             case "or" => Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc)
-            // FCONS
+            // SPECIAL
+            case ":=" => Expr.Assign(e1, e2, tree.loc)
             case "::" => Expr.FCons(e1, e2, tree.loc)
             // UNRECOGNIZED
             case id =>
@@ -1616,11 +1625,14 @@ object Weeder2 {
       }
     }
 
-    private def visitTuple(tree: Tree)(implicit s: State): Validation[Type.Tuple, CompilationMessage] = {
+    private def visitTuple(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
       assert(tree.kind == TreeKind.Type.Tuple)
       mapN(
         traverse(pickAll(TreeKind.Type.Type, tree.children))(visitType)
-      )(types => Type.Tuple(types, tree.loc))
+      ) {
+        case tpe :: Nil => tpe // flatten singleton tuple types
+        case types => Type.Tuple(types, tree.loc)
+      }
     }
 
     private def visitRecord(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {

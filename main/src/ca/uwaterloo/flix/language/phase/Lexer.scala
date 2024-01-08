@@ -59,6 +59,7 @@ object Lexer {
     '&' -> TokenKind.Ampersand,
     '|' -> TokenKind.Bar,
     '^' -> TokenKind.Caret,
+    '$' -> TokenKind.Dollar,
   )
 
   /**
@@ -325,7 +326,9 @@ object Lexer {
       } else {
         TokenKind.Dot
       }
-      case '_' => TokenKind.Underscore
+      case '_' =>
+        val p = peek()
+        if (p.isLetterOrDigit) acceptName(p.isUpper) else TokenKind.Underscore
       case '~' => TokenKind.Tilde
       case '\\' => TokenKind.Backslash
       case '$' => if (peek().isUpper) {
@@ -484,14 +487,14 @@ object Lexer {
    * Check that the potential keyword is sufficiently separated, taking care not to go out-of-bounds.
    * A keyword is separated if it is surrounded by whitespace, parenthesis, brackets or curlies.
    * Note that __comparison includes current__.
-   * TODO: The keyword ''new'' is used as a definition name in the standard library. IE: ''new(params..)''.
+   * TODO: Some keywords are used as a definition name in the standard library. IE: `new(params..)`.
    * TODO: Figure out how to support this without special handling.
    */
   private def isSeparated(keyword: String)(implicit s: State): Boolean = {
-    val VALID_SEPARATORS = if (keyword == "new") {
-      List( ')', '[', ']', '{', '}')
+    val VALID_SEPARATORS = if (List("from", "new", "get", "query").contains(keyword)) {
+      List( ')', '[', ']', '}', ',')
     } else {
-      List('(', ')', '[', ']', '{', '}')
+      List('(', ')', '[', ']', '{', '}', ',')
     }
     def isSep (c: Char) = c.isWhitespace || VALID_SEPARATORS.contains(c)
     s.src.data.lift(s.current.offset - 2).forall(isSep) && s.src.data.lift(s.current.offset + keyword.length - 1).forall(isSep)

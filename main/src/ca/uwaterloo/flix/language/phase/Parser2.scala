@@ -86,15 +86,6 @@ object Parser2 {
       }
 
       val filesWhereMatchIsIgnored = List(
-        // Reason: Old parser has error. It misses the first doc-comment after a use statement
-        "Fixpoint/SubstitutePredSym.flix",
-        "Fixpoint/PredSymsOf.flix",
-        "Time/Duration.flix",
-        "PartialOrder.flix",
-        "Concurrent/CyclicBarrier.flix",
-        "JoinLattice.flix",
-        "MeetLattice.flix",
-        "Thread.flix",
         // Reason: old Parser orders cases in match expression unpredictably.
         "Fixpoint/Ram/RamTerm.flix",
         "Fixpoint/Ast/HeadTerm.flix",
@@ -131,7 +122,7 @@ object Parser2 {
             println(formatWeededAst(newAst))
             println("[[[ END ]]]")
           }
-          val hasSameStructure = formatWeededAst(oldAst, withLocs = false) == formatWeededAst(newAst, withLocs = false)
+          val hasSameStructure = formatWeededAst(oldAst, matchingWithOldParser = true) == formatWeededAst(newAst, matchingWithOldParser = true)
           hasSameStructure
         })
 
@@ -408,7 +399,8 @@ object Parser2 {
 
   // A precedence table for binary operators, lower is higher precedence
   private def BINARY_PRECEDENCE: List[List[TokenKind]] = List(
-    List(TokenKind.ColonColon),
+    List(TokenKind.ColonEqual), // :=
+    List(TokenKind.ColonColon), // ::
     List(TokenKind.KeywordOr),
     List(TokenKind.KeywordAnd),
     List(TokenKind.TripleBar), // |||
@@ -426,6 +418,7 @@ object Parser2 {
 
   // A precedence table for unary operators, lower is higher precedence
   private def UNARY_PRECEDENCE: List[List[TokenKind]] = List(
+    List(TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDiscard), // lazy, force, discard
     List(TokenKind.Plus, TokenKind.Minus, TokenKind.TripleTilde), // +, -, ~~~
     List(TokenKind.KeywordNot)
   )
@@ -915,6 +908,17 @@ object Parser2 {
 
       var lhs = exprDelimited()
 
+      // Handle record select
+      if (eat(TokenKind.Dot)) {
+        val mark = openBefore(lhs)
+        name(NAME_FIELD)
+        while (eat(TokenKind.Dot)) {
+          name(NAME_FIELD)
+        }
+        lhs = close(mark, TreeKind.Expr.RecordSelect)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      }
+
       // Handle calls
       while (at(TokenKind.ParenL)) {
         val mark = openBefore(lhs)
@@ -1001,7 +1005,7 @@ object Parser2 {
              | TokenKind.KeywordTrue
              | TokenKind.KeywordFalse
              | TokenKind.KeywordNull => literal()
-        case  TokenKind.Underscore => name(NAME_VARIABLE)
+        case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThin) unaryLambda() else name(NAME_VARIABLE)
         case TokenKind.NameLowerCase
              | TokenKind.NameUpperCase
              | TokenKind.NameMath
@@ -1009,7 +1013,10 @@ object Parser2 {
         case TokenKind.Minus
              | TokenKind.KeywordNot
              | TokenKind.Plus
-             | TokenKind.TripleTilde => unary()
+             | TokenKind.TripleTilde
+             | TokenKind.KeywordLazy
+             | TokenKind.KeywordForce
+             | TokenKind.KeywordDiscard => unary()
         case TokenKind.HoleNamed
              | TokenKind.HoleAnonymous => hole()
         case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected expression, found $t"))
@@ -1038,7 +1045,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.ListHash)
       commaSeparatedFlat(
-        asArgumentFlat(() => expression()),
+        asArgumentFlat(() => expression(), TokenKind.CurlyR),
         (TokenKind.CurlyL, TokenKind.CurlyR)
       )
       close(mark, TreeKind.Expr.LiteralList)
@@ -1049,7 +1056,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.SetHash)
       commaSeparatedFlat(
-        asArgumentFlat(() => expression()),
+        asArgumentFlat(() => expression(), TokenKind.CurlyR),
         (TokenKind.CurlyL, TokenKind.CurlyR)
       )
       close(mark, TreeKind.Expr.LiteralSet)
@@ -1060,7 +1067,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.VectorHash)
       commaSeparatedFlat(
-        asArgumentFlat(() => expression()),
+        asArgumentFlat(() => expression(), TokenKind.CurlyR),
         (TokenKind.CurlyL, TokenKind.CurlyR)
       )
       close(mark, TreeKind.Expr.LiteralVector)
@@ -1071,11 +1078,11 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.ArrayHash)
       commaSeparatedFlat(
-        asArgumentFlat(() => expression()),
+        asArgumentFlat(() => expression(), TokenKind.CurlyR),
         (TokenKind.CurlyL, TokenKind.CurlyR)
       )
       if (at(TokenKind.At)) {
-          scopeName()
+        scopeName()
       }
       close(mark, TreeKind.Expr.LiteralArray)
     }
@@ -1092,7 +1099,7 @@ object Parser2 {
             expression()
           }
           close(mark, TreeKind.Expr.KeyValue)
-        }),
+        }, TokenKind.CurlyR),
         (TokenKind.CurlyL, TokenKind.CurlyR)
       )
       close(mark, TreeKind.Expr.LiteralMap)
@@ -1343,10 +1350,15 @@ object Parser2 {
       (nth(0), nth(1)) match {
         // Detect unit tuple
         case (TokenKind.ParenL, TokenKind.ParenR) =>
-          val mark = open()
-          advance()
-          advance()
-          close(mark, TreeKind.Expr.Tuple)
+          // Detect unit lambda: () -> expr
+          if (nth(2) == TokenKind.ArrowThin) {
+            lambda()
+          } else {
+            val mark = open()
+            advance()
+            advance()
+            close(mark, TreeKind.Expr.Tuple)
+          }
 
         case (TokenKind.ParenL, _) =>
           // Detect lambda function declaration
@@ -1434,7 +1446,7 @@ object Parser2 {
       val mark = open()
       val op = nth(0)
       val markOp = open()
-      expectAny(List(TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde))
+      expectAny(List(TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde, TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDiscard))
       close(markOp, TreeKind.Operator)
       expression(left = op, leftIsUnary = true)
       close(mark, TreeKind.Expr.Unary)
@@ -1574,6 +1586,7 @@ object Parser2 {
      * ttype -> (typeDelimited arguments? | typeFunction) ( '\' effectSet )?
      */
     def ttype(allowTrailingEffect: Boolean = false, allowTrailingArrow: Boolean = true)(implicit s: State): Mark.Closed = {
+      // TODO: Eliminate allowTrailingEffect and allowTrailing arrow by making new functions
       val mark = open()
       typeDelimited()
       var lhs = close(mark, TreeKind.Type.Type)
@@ -1917,12 +1930,13 @@ object Parser2 {
 
   // A helper function for formatting pretty printing ASTs.
   // It is generic to scala objects with some special handling for source positions and locations.
-  private def formatWeededAst(obj: Any, depth: Int = 0, withLocs: Boolean = true, paramName: Option[String] = None): String = {
+  private def formatWeededAst(obj: Any, depth: Int = 0, matchingWithOldParser: Boolean = false, paramName: Option[String] = None): String = {
     val indent = "  " * depth
     val prettyName = paramName.fold("")(x => s"$x: ")
     val ptype = obj match {
-      case obj: SourcePosition => if (withLocs) s"SourcePosition (${obj.line}, ${obj.col})" else ""
-      case obj: SourceLocation => if (withLocs) s"SourceLocation (${obj.beginLine}, ${obj.beginCol}) -> (${obj.endLine}, ${obj.endCol})" else ""
+      case obj: SourcePosition => if (!matchingWithOldParser) s"SourcePosition (${obj.line}, ${obj.col})" else ""
+      case obj: Ast.Doc => if (!matchingWithOldParser) s"Doc (${obj.lines})" else "Doc"
+      case obj: SourceLocation => if (!matchingWithOldParser) s"SourceLocation (${obj.beginLine}, ${obj.beginCol}) -> (${obj.endLine}, ${obj.endCol})" else ""
       case _: Iterable[Any] => ""
       case obj: Product => obj.productPrefix
       case _ => obj.toString
@@ -1933,11 +1947,12 @@ object Parser2 {
     obj match {
       case _: SourceLocation => acc
       case _: SourcePosition => acc
+      case _: Ast.Doc => acc
       case seq: Iterable[Any] =>
-        acc + seq.map(formatWeededAst(_, depth + 1, withLocs, None)).mkString("")
+        acc + seq.map(formatWeededAst(_, depth + 1, matchingWithOldParser, None)).mkString("")
       case obj: Product =>
         acc + (obj.productIterator zip obj.productElementNames)
-          .map { case (subObj, paramName) => formatWeededAst(subObj, depth + 1, withLocs, Some(paramName)) }.mkString("")
+          .map { case (subObj, paramName) => formatWeededAst(subObj, depth + 1, matchingWithOldParser, Some(paramName)) }.mkString("")
       case _ => acc
     }
   }

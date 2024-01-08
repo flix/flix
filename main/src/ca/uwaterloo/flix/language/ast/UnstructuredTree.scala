@@ -241,6 +241,8 @@ object UnstructuredTree {
 
       case object KeyValue extends Expr
 
+      case object RecordSelect extends Expr
+
     }
 
     ////// TYPES //////
