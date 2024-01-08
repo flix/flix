@@ -920,7 +920,7 @@ object TypeInference {
           resultEff = Type.mkUnion(eff :: ruleEffs, loc)
         } yield (constrs ++ ruleConstrs.flatten, resultTyp, resultEff)
 
-      case KindedAst.Expr.TryWith(exp, effUse, rules, tvar, evar, loc) =>
+      case KindedAst.Expr.TryWith(exp, effUse, rules, tvar, loc) =>
         val effect = root.effects(effUse.sym)
         val ops = effect.ops.map(op => op.sym -> op).toMap
         val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
@@ -973,7 +973,6 @@ object TypeInference {
           resultTconstrs = (tconstrs :: tconstrss).flatten
           resultTpe <- unifyTypeM(tvar, tpe, loc)
           resultEff = Type.mkUnion(correctedBodyEff :: effs, correctedBodyEff.loc.asSynthetic)
-          _ <- unifyTypeM(evar, resultEff, resultEff.loc)
         } yield (resultTconstrs, resultTpe, resultEff)
 
       case KindedAst.Expr.Do(op, args, tvar, loc) =>

@@ -779,7 +779,7 @@ object Kinder {
       // use the new henv for the handler
       val rulesVal = traverse(rules0)(visitHandlerRule(_, kenv0, taenv, tvar, root))
       mapN(expVal, rulesVal) {
-        case (exp, rules) => KindedAst.Expr.TryWith(exp, eff, rules, tvar, Type.freshVar(Kind.Eff, loc), loc)
+        case (exp, rules) => KindedAst.Expr.TryWith(exp, eff, rules, tvar, loc)
       }.recoverOne {
         case err: KindError =>
           val tvar = Type.freshVar(Kind.Star, loc.asSynthetic)

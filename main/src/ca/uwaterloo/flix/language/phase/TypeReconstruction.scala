@@ -401,7 +401,7 @@ object TypeReconstruction {
       val eff = Type.mkUnion(e.eff :: rs.map(_.exp.eff), loc)
       TypedAst.Expr.TryCatch(e, rs, tpe, eff, loc)
 
-    case KindedAst.Expr.TryWith(exp, effUse, rules, tvar, evar, loc) =>
+    case KindedAst.Expr.TryWith(exp, effUse, rules, tvar, loc) =>
       val e = visitExp(exp)
       val rs = rules map {
         case KindedAst.HandlerRule(op, fparams, hexp, htvar) =>
