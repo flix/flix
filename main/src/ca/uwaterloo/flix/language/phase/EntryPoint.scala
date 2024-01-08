@@ -72,7 +72,7 @@ object EntryPoint {
             root.copy(
               defs = root.defs + (entryPoint.sym -> entryPoint),
               entryPoint = Some(entryPoint.sym),
-              reachable = getReachable(root)
+              reachable = getReachable(root) + entryPoint.sym
             )
         }
       // Case 2: No entry point. Don't touch anything.
@@ -90,8 +90,7 @@ object EntryPoint {
         s += sym
       }
     }
-
-    s.toSet ++ root.entryPoint
+    s.toSet
   }
 
   /**
