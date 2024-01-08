@@ -15,14 +15,18 @@
  */
 package ca.uwaterloo.flix.tools.pkg.github
 
-import ca.uwaterloo.flix.tools.pkg.{PackageError, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{PackageError, ReleaseError, SemVer}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Result, StreamOps}
+import org.json4s.JsonDSL._
+import org.json4s._
 import org.json4s.JsonAST.{JArray, JValue}
-import org.json4s.native.JsonMethods.parse
+import org.json4s.native.JsonMethods.{compact, parse, render}
 
-import java.io.{IOException, InputStream}
+import java.io.{File, IOException, InputStream}
 import java.net.{URI, URL}
+import java.nio.file.{Files, Path}
+import javax.net.ssl.HttpsURLConnection
 
 /**
   * An interface for the GitHub API.
@@ -72,10 +76,168 @@ object GitHub {
   }
 
   /**
+    * Publish a new release the given project.
+    */
+  def publishRelease(project: Project, version: SemVer, artifacts: Iterable[Path], apiKey: String): Result[Unit, ReleaseError] = {
+    for (
+      _ <- verifyRelease(project, version, apiKey);
+      id <- createDraftRelease(project, version, apiKey);
+      _ <- Result.traverse(artifacts)(p => uploadAsset(p, project, id, apiKey));
+      _ <- markReleaseReady(project, version, id, apiKey)
+    ) yield Ok(())
+  }
+
+  /**
+    * Verifies that the release does not already exist.
+    */
+  private def verifyRelease(project: Project, version: SemVer, apiKey: String): Result[Unit, ReleaseError] = {
+    val url = releaseVersionUrl(project, version)
+
+    try {
+      val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
+      conn.addRequestProperty("Authorization", "Bearer " + apiKey)
+
+      val code = conn.getResponseCode
+      code match {
+        case 200 => Err(ReleaseError.ReleaseAlreadyExists(project, version))
+        case _ => Ok(())
+      }
+
+    } catch {
+      case _: IOException => Err(ReleaseError.NetworkError)
+    }
+  }
+
+  /**
+    * Create a new release marked as a draft, meaning that it is not publicly visible.
+    * The release will not contain any assets (apart from the default zips of the source code).
+    *
+    * Returns the ID of the release if successful.
+    */
+  private def createDraftRelease(project: Project, version: SemVer, apiKey: String): Result[String, ReleaseError] = {
+    val content: JValue =
+      ("tag_name" -> s"v$version") ~
+        ("name" -> s"v$version") ~
+        ("generate_release_notes" -> true) ~
+        ("draft" -> true)
+
+    val jsonCompact = compact(render(content))
+
+    val url = releasesUrl(project)
+    val json = try {
+      val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
+      conn.setRequestMethod("POST")
+      conn.addRequestProperty("Authorization", "Bearer " + apiKey)
+      conn.setDoOutput(true)
+
+      // Send request
+      val outStream = conn.getOutputStream
+      outStream.write(jsonCompact.getBytes("utf-8"))
+
+      // Process response errors
+      val code = conn.getResponseCode
+      code match {
+        case 201 =>
+          val inStream = conn.getInputStream
+          StreamOps.readAll(inStream)
+        case 401 => return Err(ReleaseError.InvalidApiKeyError)
+        case 404 => return Err(ReleaseError.RepositoryNotFound(project))
+        case _ => return Err(ReleaseError.UnexpectedResponseCode(code, conn.getResponseMessage))
+      }
+
+    } catch {
+      case _: IOException => return Err(ReleaseError.NetworkError)
+    }
+
+    // Extract URL from returned JSON
+    val id = try {
+      val obj = parse(json).asInstanceOf[JObject]
+      val jsonId = (obj \ "id").asInstanceOf[JInt]
+      jsonId.values.toString
+    } catch {
+      case _: ClassCastException => return Err(ReleaseError.UnexpectedResponseJson(json))
+    }
+
+    Ok(id)
+  }
+
+  /**
+    * Uploads a single asset.
+    */
+  private def uploadAsset(assetPath: Path, project: Project, releaseId: String, apiKey: String): Result[Unit, ReleaseError] = {
+    val assetName = assetPath.getFileName.toString
+    val assetData = Files.readAllBytes(assetPath)
+
+    val url = releaseAssetUploadUrl(project, releaseId, assetName)
+
+    try {
+      val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
+
+      conn.setRequestMethod("POST")
+      conn.addRequestProperty("Authorization", "Bearer " + apiKey)
+      conn.addRequestProperty("Content-Type", "application/octet-stream")
+      conn.setDoOutput(true)
+
+      // Send request
+      val outStream = conn.getOutputStream
+      outStream.write(assetData)
+
+      // Process response errors
+      val code = conn.getResponseCode
+      code match {
+        case 201 => Ok(())
+        case 401 => Err(ReleaseError.InvalidApiKeyError)
+        case _ => Err(ReleaseError.UnexpectedResponseCode(code, conn.getResponseMessage))
+      }
+
+    } catch {
+      case _: IOException => Err(ReleaseError.NetworkError)
+    }
+  }
+
+  /**
+    * Mark the given release as no longer being a draft, making it publicly available.
+    */
+  private def markReleaseReady(project: Project, version: SemVer, releaseId: String, apiKey: String): Result[Unit, ReleaseError] = {
+    val content: JValue = "draft" -> false
+    val jsonCompact = compact(render(content))
+
+    val url = releaseIdUrl(project, releaseId)
+
+    try {
+      val conn = url.openConnection().asInstanceOf[HttpsURLConnection]
+
+      // Java doesn't recognize "PATCH" as a valid request method (???)
+      conn.setRequestMethod("POST")
+      conn.setRequestProperty("X-HTTP-Method-Override", "PATCH")
+
+      conn.addRequestProperty("Authorization", "Bearer " + apiKey)
+      conn.setDoOutput(true)
+
+      // Send request
+      val outStream = conn.getOutputStream
+      outStream.write(jsonCompact.getBytes("utf-8"))
+
+      // Process response errors
+      val code = conn.getResponseCode
+      code match {
+        case 200 => Ok(())
+        case 401 => Err(ReleaseError.InvalidApiKeyError)
+        case 404 => Err(ReleaseError.RepositoryNotFound(project))
+        case 422 => Err(ReleaseError.ReleaseAlreadyExists(project, version))
+        case _ => Err(ReleaseError.UnexpectedResponseCode(code, conn.getResponseMessage))
+      }
+
+    } catch {
+      case _: IOException => Err(ReleaseError.NetworkError)
+    }
+  }
+
+  /**
     * Parses a GitHub project from an `<owner>/<repo>` string.
     */
   def parseProject(string: String): Result[Project, PackageError] = string.split('/') match {
-    case Array(owner, repo) => Ok(Project(owner, repo))
+    case Array(owner, repo) if owner.nonEmpty && repo.nonEmpty => Ok(Project(owner, repo))
     case _ => Err(PackageError.InvalidProjectName(string))
   }
 
@@ -116,6 +278,27 @@ object GitHub {
     */
   private def releasesUrl(project: Project): URL = {
     new URI(s"https://api.github.com/repos/${project.owner}/${project.repo}/releases").toURL
+  }
+
+  /**
+    * Returns the URL for updating information about this specific release.
+    */
+  private def releaseIdUrl(project: Project, releaseId: String): URL = {
+    new URL(s"${releasesUrl(project).toString}/$releaseId")
+  }
+
+  /**
+    * Returns the URL for viewing basic information about this specific release.
+    */
+  private def releaseVersionUrl(project: Project, version: SemVer): URL = {
+    new URL(s"${releasesUrl(project).toString}/tags/v$version")
+  }
+
+  /**
+    * Returns the URL that release assets can be uploaded to.
+    */
+  private def releaseAssetUploadUrl(project: Project, releaseId: String, assetName: String): URL = {
+    new URI(s"https://uploads.github.com/repos/${project.owner}/${project.repo}/releases/$releaseId/assets?name=$assetName").toURL
   }
 
   /**
