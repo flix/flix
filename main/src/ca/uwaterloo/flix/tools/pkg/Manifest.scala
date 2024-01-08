@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub
 case class Manifest(name: String,
                     description: String,
                     version: SemVer,
+                    repository: Option[GitHub.Project],
                     flix: SemVer,
                     license: Option[String],
                     authors: List[String],
-                    repository: Option[GitHub.Project],
                     dependencies: List[Dependency]) { }

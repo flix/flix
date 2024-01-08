@@ -83,6 +83,9 @@ object ManifestParser {
       version <- getRequiredStringProperty("package.version", parser, p);
       versionSemVer <- toFlixVer(version, p);
 
+      repository <- getOptionalStringProperty("package.repository", parser, p);
+      githubProject <- toGithubProject(repository, p);
+
       flix <- getRequiredStringProperty("package.flix", parser, p);
       flixSemVer <- toFlixVer(flix, p);
 
@@ -90,9 +93,6 @@ object ManifestParser {
 
       authors <- getRequiredArrayProperty("package.authors", parser, p);
       authorsList <- convertTomlArrayToStringList(authors, p);
-
-      repository <- getOptionalStringProperty("package.repository", parser, p);
-      githubProject <- toGithubProject(repository, p);
 
       deps <- getOptionalTableProperty("dependencies", parser, p);
       depsList <- collectDependencies(deps, flixDep = true, prodDep = true, jarDep = false, p);
@@ -109,7 +109,7 @@ object ManifestParser {
       jarDeps <- getOptionalTableProperty("jar-dependencies", parser, p);
       jarDepsList <- collectDependencies(jarDeps, flixDep = false, prodDep = false, jarDep = true, p)
 
-    ) yield Manifest(name, description, versionSemVer, flixSemVer, license, authorsList, githubProject, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
+    ) yield Manifest(name, description, versionSemVer, githubProject, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
   }
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
