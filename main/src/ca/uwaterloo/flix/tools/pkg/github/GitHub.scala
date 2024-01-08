@@ -141,7 +141,7 @@ object GitHub {
           val inStream = conn.getInputStream
           StreamOps.readAll(inStream)
         case 401 => return Err(ReleaseError.InvalidApiKeyError)
-        case 404 => return Err(ReleaseError.InvalidProject(project))
+        case 404 => return Err(ReleaseError.RepositoryNotFound(project))
         case _ => return Err(ReleaseError.UnexpectedResponseCode(code, conn.getResponseMessage))
       }
 
@@ -223,7 +223,7 @@ object GitHub {
       code match {
         case 200 => Ok(())
         case 401 => Err(ReleaseError.InvalidApiKeyError)
-        case 404 => Err(ReleaseError.InvalidProject(project))
+        case 404 => Err(ReleaseError.RepositoryNotFound(project))
         case 422 => Err(ReleaseError.ReleaseAlreadyExists(project, version))
         case _ => Err(ReleaseError.UnexpectedResponseCode(code, conn.getResponseMessage))
       }

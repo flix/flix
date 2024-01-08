@@ -40,14 +40,6 @@ object ReleaseError {
          |""".stripMargin
   }
 
-  case class InvalidProject(project: GitHub.Project) extends ReleaseError {
-    override def message(f: Formatter): String =
-      s"""
-         | The GitHub repository does not exist:
-         |  ${f.red(project.toString)}
-         |""".stripMargin
-  }
-
   case object MissingApiKey extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
@@ -80,6 +72,14 @@ object ReleaseError {
     override def message(f: Formatter): String =
       s"""
          | Release with version $version already exists.
+         |""".stripMargin
+  }
+
+  case class RepositoryNotFound(project: GitHub.Project) extends ReleaseError {
+    override def message(f: Formatter): String =
+      s"""
+         | The GitHub repository does not exist:
+         |  ${f.red(project.toString)}
          |""".stripMargin
   }
 
