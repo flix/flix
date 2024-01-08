@@ -217,7 +217,7 @@ object Instances {
                       case failure => failure.errors.map {
                         case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTypeClassConstraint(missingTconstr, superClass, clazz.loc)
                         case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
-                      }
+                      }.toList
                     }
                 }
               case None =>
