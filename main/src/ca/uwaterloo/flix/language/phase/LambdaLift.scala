@@ -44,7 +44,7 @@ object LambdaLift {
       case (macc, (sym, defn)) => macc + (sym -> defn)
     }
 
-    LiftedAst.Root(newDefs, enums, effects, root.entryPoint, root.sources)
+    LiftedAst.Root(newDefs, enums, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitDef(def0: SimplifiedAst.Def)(implicit ctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
@@ -198,10 +198,6 @@ object LambdaLift {
     case SimplifiedAst.Expr.Do(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
       LiftedAst.Expr.Do(op, es, tpe, purity, loc)
-
-    case SimplifiedAst.Expr.Resume(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      LiftedAst.Expr.Resume(e, tpe, loc)
 
     case SimplifiedAst.Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map(visitJvmMethod)

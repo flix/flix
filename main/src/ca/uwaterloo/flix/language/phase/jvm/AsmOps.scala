@@ -17,14 +17,11 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.Root
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, MethodVisitor}
-
-import scala.annotation.tailrec
 
 object AsmOps {
 
@@ -32,10 +29,7 @@ object AsmOps {
     * Returns the target JVM version.
     */
   def JavaVersion(implicit flix: Flix): Int = flix.options.target match {
-    case JvmTarget.Version16 => V1_6
-    case JvmTarget.Version17 => V1_7
-    case JvmTarget.Version18 => V1_8
-    case JvmTarget.Version19 => throw InternalCompilerException(s"Unsupported Java version: '1.9'.", SourceLocation.Unknown)
+    case JvmTarget.Version21 => V21
   }
 
   /**
@@ -263,7 +257,7 @@ object AsmOps {
     * return this.value;
     * }
     */
-  def compileGetBoxedTagValueMethod(visitor: ClassWriter, classType: JvmType.Reference, valueType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+  def compileGetBoxedTagValueMethod(visitor: ClassWriter, classType: JvmType.Reference, valueType: JvmType): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedTagValue", AsmOps.getMethodDescriptor(Nil, JvmType.Object), null, null)
 
     method.visitCode()
@@ -273,33 +267,6 @@ object AsmOps {
     method.visitInsn(ARETURN)
     method.visitMaxs(1, 1)
     method.visitEnd()
-  }
-
-  /**
-    * Generates code to throw a MatchError.
-    */
-  def compileThrowFlixError(mv: MethodVisitor, className: JvmName, loc: SourceLocation): Unit = {
-    compileReifiedSourceLocation(mv, loc)
-    mv.visitTypeInsn(NEW, className.toInternalName)
-    mv.visitInsn(DUP2)
-    mv.visitInsn(SWAP)
-    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
-    mv.visitInsn(ATHROW)
-  }
-
-  /**
-    * Generates code to throw a MatchError.
-    */
-  def compileThrowHoleError(mv: MethodVisitor, hole: String, loc: SourceLocation): Unit = {
-    compileReifiedSourceLocation(mv, loc)
-    val className = BackendObjType.HoleError.jvmName
-    mv.visitTypeInsn(NEW, className.toInternalName)
-    mv.visitInsn(DUP2)
-    mv.visitInsn(SWAP)
-    mv.visitLdcInsn(hole)
-    mv.visitInsn(SWAP)
-    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.String.toDescriptor}${BackendObjType.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
-    mv.visitInsn(ATHROW)
   }
 
   /**
@@ -347,7 +314,7 @@ object AsmOps {
   /**
     * Emits code that puts the function object of the def symbol `def` on top of the stack.
     */
-  def compileDefSymbol(sym: Symbol.DefnSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  def compileDefSymbol(sym: Symbol.DefnSym, mv: MethodVisitor): Unit = {
     // JvmType of Def
     val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
 

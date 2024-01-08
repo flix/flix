@@ -34,7 +34,7 @@ object Reducer {
     val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newEffs = ParOps.parMapValues(root.effects)(visitEff)
 
-    val newRoot = ReducedAst.Root(newDefs, newEnums, newEffs, Set.empty, ctx.anonClasses.asScala.toList, root.entryPoint, root.sources)
+    val newRoot = ReducedAst.Root(newDefs, newEnums, newEffs, Set.empty, ctx.anonClasses.asScala.toList, root.entryPoint, root.reachable, root.sources)
     val types = typesOf(newRoot)
     newRoot.copy(types = types)
   }
@@ -153,10 +153,6 @@ object Reducer {
       val es = exps.map(visitExpr)
       ReducedAst.Expr.Do(op, es, tpe, purity, loc)
 
-    case LiftedAst.Expr.Resume(exp, tpe, loc) =>
-      val e = visitExpr(exp)
-      ReducedAst.Expr.Resume(e, tpe, loc)
-
     case LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val es = methods.map(m => visitExpr(m.clo))
       val specs = methods.map {
@@ -258,8 +254,6 @@ object Reducer {
 
       case ReducedAst.Expr.Do(_, exps, tpe, _, _) => visitExps(exps) ++ Set(tpe)
 
-      case ReducedAst.Expr.Resume(exp, tpe, _) => visitExp(exp) ++ Set(tpe)
-
       case ReducedAst.Expr.NewObject(_, _, _, _, _, exps, _) =>
         visitExps(exps)
 
@@ -324,14 +318,13 @@ object Reducer {
         val taskList1 = tpe match {
           case Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
                Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) |
-               RecordEmpty | SchemaEmpty | Native(_) => taskList
+               RecordEmpty | Native(_) => taskList
           case Array(elm) => taskList.enqueue(elm)
           case Lazy(elm) => taskList.enqueue(elm)
           case Ref(elm) => taskList.enqueue(elm)
           case Tuple(elms) => taskList.enqueueAll(elms)
           case Arrow(targs, tresult) => taskList.enqueueAll(targs).enqueue(tresult)
           case RecordExtend(_, value, rest) => taskList.enqueue(value).enqueue(rest)
-          case SchemaExtend(_, t, rest) => taskList.enqueue(t).enqueue(rest)
         }
         nestedTypesOf(acc + tpe, taskList1)
       case None => acc
