@@ -397,55 +397,6 @@ object Parser2 {
     }
   }
 
-  // A precedence table for binary operators, lower is higher precedence
-  private def BINARY_PRECEDENCE: List[List[TokenKind]] = List(
-    List(TokenKind.ColonEqual), // :=
-    List(TokenKind.ColonColon), // ::
-    List(TokenKind.KeywordOr),
-    List(TokenKind.KeywordAnd),
-    List(TokenKind.TripleBar), // |||
-    List(TokenKind.TripleCaret), // ^^^
-    List(TokenKind.TripleAmpersand), // &&&
-    List(TokenKind.EqualEqual, TokenKind.AngledEqual, TokenKind.BangEqual), // ==, <=>, !=
-    List(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual), // <, >, <=, >=
-    List(TokenKind.TripleAngleL, TokenKind.TripleAngleR), // <<<, >>>
-    List(TokenKind.Plus, TokenKind.Minus), // +, -
-    List(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash, TokenKind.KeywordMod), // *, **, /, mod
-    List(TokenKind.AngledPlus), // <+>
-    List(TokenKind.InfixFunction), // `my_function`
-    List(TokenKind.UserDefinedOperator, TokenKind.NameMath) // +=+
-  )
-
-  // A precedence table for unary operators, lower is higher precedence
-  private def UNARY_PRECEDENCE: List[List[TokenKind]] = List(
-    List(TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDiscard), // lazy, force, discard
-    List(TokenKind.Plus, TokenKind.Minus, TokenKind.TripleTilde), // +, -, ~~~
-    List(TokenKind.KeywordNot)
-  )
-
-  private def rightBindsTighter(left: TokenKind, right: TokenKind, leftIsUnary: Boolean): Boolean = {
-    def unaryTightness(kind: TokenKind): Int = {
-      // Unary operators all bind tighter than binary ones.
-      // This is done by adding the length of the binary precedence table here:
-      UNARY_PRECEDENCE.indexWhere(l => l.contains(kind)) + BINARY_PRECEDENCE.length
-    }
-
-    def tightness(kind: TokenKind): Int = {
-      BINARY_PRECEDENCE.indexWhere(l => l.contains(kind))
-    }
-
-    val rt = tightness(right)
-    if (rt == -1) {
-      return false
-    }
-    val lt = if (leftIsUnary) unaryTightness(left) else tightness(left)
-    if (lt == -1) {
-      assert(left == TokenKind.Eof)
-      return true
-    }
-    rt > lt
-  }
-
   private def commaSeparated(kind: TreeKind, getItem: () => Mark.Closed, delimiters: (TokenKind, TokenKind) = (TokenKind.ParenL, TokenKind.ParenR), checkForItem: () => Boolean = () => true)(implicit s: State): Mark.Closed = {
     assert(at(delimiters._1))
     val mark = open()
@@ -635,7 +586,7 @@ object Parser2 {
         parameters()
       }
       expect(TokenKind.Colon)
-      Type.ttype(allowTrailingEffect = true)
+      Type.typeAndEffect()
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
@@ -827,7 +778,7 @@ object Parser2 {
         parameters()
       }
       expect(TokenKind.Colon)
-      Type.ttype(allowTrailingEffect = true)
+      Type.typeAndEffect()
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
@@ -879,7 +830,7 @@ object Parser2 {
         asArgument(TreeKind.Parameter, () => {
           name(NAME_PARAMETER)
           expect(TokenKind.Colon)
-          Type.ttype(allowTrailingEffect = true)
+          Type.ttype()
         }),
         (TokenKind.ParenL, TokenKind.ParenR),
         () => atAny(NAME_PARAMETER),
@@ -903,9 +854,6 @@ object Parser2 {
      * expression -> TODO
      */
     def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
-      // TODO: Go through all invocations of Expr.expression and decide if [[canBeStatement]] should be set.
-      // In the old parser there are different functions Stm and Expression for this, which can guide the decision.
-
       var lhs = exprDelimited()
 
       // Handle record select
@@ -952,6 +900,55 @@ object Parser2 {
       }
 
       lhs
+    }
+
+    // A precedence table for binary operators, lower is higher precedence
+    private def BINARY_PRECEDENCE: List[List[TokenKind]] = List(
+      List(TokenKind.ColonEqual), // :=
+      List(TokenKind.ColonColon), // ::
+      List(TokenKind.KeywordOr),
+      List(TokenKind.KeywordAnd),
+      List(TokenKind.TripleBar), // |||
+      List(TokenKind.TripleCaret), // ^^^
+      List(TokenKind.TripleAmpersand), // &&&
+      List(TokenKind.EqualEqual, TokenKind.AngledEqual, TokenKind.BangEqual), // ==, <=>, !=
+      List(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual), // <, >, <=, >=
+      List(TokenKind.TripleAngleL, TokenKind.TripleAngleR), // <<<, >>>
+      List(TokenKind.Plus, TokenKind.Minus), // +, -
+      List(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash, TokenKind.KeywordMod), // *, **, /, mod
+      List(TokenKind.AngledPlus), // <+>
+      List(TokenKind.InfixFunction), // `my_function`
+      List(TokenKind.UserDefinedOperator, TokenKind.NameMath) // +=+
+    )
+
+    // A precedence table for unary operators, lower is higher precedence
+    private def UNARY_PRECEDENCE: List[List[TokenKind]] = List(
+      List(TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDiscard), // lazy, force, discard
+      List(TokenKind.Plus, TokenKind.Minus, TokenKind.TripleTilde), // +, -, ~~~
+      List(TokenKind.KeywordNot)
+    )
+
+    private def rightBindsTighter(left: TokenKind, right: TokenKind, leftIsUnary: Boolean): Boolean = {
+      def unaryTightness(kind: TokenKind): Int = {
+        // Unary operators all bind tighter than binary ones.
+        // This is done by adding the length of the binary precedence table here:
+        UNARY_PRECEDENCE.indexWhere(l => l.contains(kind)) + BINARY_PRECEDENCE.length
+      }
+
+      def tightness(kind: TokenKind): Int = {
+        BINARY_PRECEDENCE.indexWhere(l => l.contains(kind))
+      }
+
+      val rt = tightness(right)
+      if (rt == -1) {
+        return false
+      }
+      val lt = if (leftIsUnary) unaryTightness(left) else tightness(left)
+      if (lt == -1) {
+        assert(left == TokenKind.Eof)
+        return true
+      }
+      rt > lt
     }
 
     /**
@@ -1111,16 +1108,23 @@ object Parser2 {
       expect(TokenKind.KeywordMatch)
 
       // Detect match lambda
+      // TODO: This is probably not a good way to do this.
       val isLambda = {
         var lookAhead = 0
         var isLambda = false
         var continue = true
+        // We need to track the parenthesis nesting level to handle match-expressions
+        // that include lambdas. IE. "match f(x -> g(x)) { case ... }".
+        // In these cases the ArrowThin __does not__ indicate that the expression being parsed is a match lambda.
+        var parenNestingLevel = 0
         while (continue && !eof()) {
           nth(lookAhead) match {
             // match expr { case ... }
             case TokenKind.KeywordCase => continue = false
             // match pattern -> expr
-            case TokenKind.ArrowThin => isLambda = true; continue = false
+            case TokenKind.ArrowThin if parenNestingLevel == 0 => isLambda = true; continue = false
+            case TokenKind.ParenL => parenNestingLevel += 1; lookAhead += 1
+            case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
             case _ => lookAhead += 1
           }
         }
@@ -1209,14 +1213,14 @@ object Parser2 {
         TreeKind.Parameters,
         asArgument(TreeKind.Parameter, () => {
           val lhs = name(NAME_PARAMETER)
-          if (eat(TokenKind.Colon)) Type.ttype(allowTrailingEffect = true) else lhs
+          if (eat(TokenKind.Colon)) Type.ttype() else lhs
         }),
         (TokenKind.ParenL, TokenKind.ParenR),
         () => atAny(NAME_PARAMETER),
       )
 
       if (eat(TokenKind.Colon)) {
-        Type.ttype()
+        Type.typeAndEffect()
       }
       expect(TokenKind.Equal)
       statement()
@@ -1289,7 +1293,7 @@ object Parser2 {
       if (eat(TokenKind.ParenL)) {
         expression()
         if (eat(TokenKind.KeywordAs)) {
-          Type.ttype()
+          Type.typeAndEffect()
         }
         expect(TokenKind.ParenR)
       }
@@ -1417,7 +1421,7 @@ object Parser2 {
         TreeKind.Parameters,
         asArgument(TreeKind.Parameter, () => {
           val lhs = name(NAME_PARAMETER)
-          if (eat(TokenKind.Colon)) Type.ttype(allowTrailingEffect = true) else lhs
+          if (eat(TokenKind.Colon)) Type.ttype() else lhs
         }),
         (TokenKind.ParenL, TokenKind.ParenR),
         () => atAny(NAME_PARAMETER),
@@ -1582,14 +1586,18 @@ object Parser2 {
   }
 
   private object Type {
+    def typeAndEffect()(implicit s: State): Mark.Closed = {
+      val lhs = ttype()
+      if (at(TokenKind.Backslash)) {
+        effectSet()
+      } else lhs
+    }
+
     /**
      * ttype -> (typeDelimited arguments? | typeFunction) ( '\' effectSet )?
      */
-    def ttype(allowTrailingEffect: Boolean = false, allowTrailingArrow: Boolean = true)(implicit s: State): Mark.Closed = {
-      // TODO: Eliminate allowTrailingEffect and allowTrailing arrow by making new functions
-      val mark = open()
-      typeDelimited()
-      var lhs = close(mark, TreeKind.Type.Type)
+    def ttype(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
+      var lhs = if (left == TokenKind.ArrowThin) typeAndEffect() else typeDelimited()
 
       // handle Type argument application
       if (at(TokenKind.BracketL)) {
@@ -1600,25 +1608,73 @@ object Parser2 {
         lhs = close(openBefore(lhs), TreeKind.Type.Type)
       }
 
-      // Handle function types
-      if (allowTrailingArrow && eat(TokenKind.ArrowThin)) {
-        val mark = openBefore(lhs)
-        ttype()
-        // Handle effect
-        if (at(TokenKind.Backslash)) {
-          effectSet()
+      // Handle binary operators
+      var continue = true
+      while (continue) {
+        val right = nth(0)
+        if (rightBindsTighter(left, right, leftIsUnary)) {
+          val mark = openBefore(lhs)
+          val markOp = open()
+          advance()
+          close(markOp, TreeKind.Operator)
+          ttype(right)
+          lhs = close(mark, TreeKind.Type.Binary)
+          lhs = close(openBefore(lhs), TreeKind.Type.Type)
+        } else {
+          continue = false
         }
-        lhs = close(mark, TreeKind.Type.Function)
-        // Wrap Function in Type.Type
+      }
+
+      // Handle kind ascriptions
+      if (eat(TokenKind.Colon)) {
+        Type.kind()
+        lhs = close(openBefore(lhs), TreeKind.Type.Ascribe)
         lhs = close(openBefore(lhs), TreeKind.Type.Type)
       }
 
-      // Handle effect
-      if (allowTrailingEffect && at(TokenKind.Backslash)) {
-        effectSet()
+      lhs
+    }
+
+    // A precedence table for binary operators in types, lower is higher precedence
+    private def BINARY_PRECEDENCE: List[List[TokenKind]] = List(
+      List(TokenKind.ArrowThin), // ->
+      List(TokenKind.PlusPlus, TokenKind.MinusMinus), // ++, --
+      List(TokenKind.AmpersandAmpersand), // &&
+      List(TokenKind.Plus, TokenKind.Minus), // +, -
+      List(TokenKind.Ampersand), // &
+      List(TokenKind.KeywordXor), // xor
+      List(TokenKind.KeywordOr), // or
+      List(TokenKind.KeywordAnd), // and
+      List(TokenKind.Colon), // :
+    )
+
+    // A precedence table for unary operators in types, lower is higher precedence
+    private def UNARY_PRECEDENCE: List[List[TokenKind]] = List(
+      List(TokenKind.TildeTilde, TokenKind.Tilde, TokenKind.KeywordNot) // ~~~, ~, not
+    )
+
+    private def rightBindsTighter(left: TokenKind, right: TokenKind, leftIsUnary: Boolean = false): Boolean = {
+      def tightness(kind: TokenKind): Int = {
+        BINARY_PRECEDENCE.indexWhere(l => l.contains(kind))
       }
 
-      lhs
+      def unaryTightness(kind: TokenKind): Int = {
+        // Unary operators all bind tighter than binary ones.
+        // This is done by adding the length of the binary precedence table here:
+        UNARY_PRECEDENCE.indexWhere(l => l.contains(kind)) + BINARY_PRECEDENCE.length
+      }
+
+
+      val rt = tightness(right)
+      if (rt == -1) {
+        return false
+      }
+      val lt = if (leftIsUnary) unaryTightness(left) else tightness(left)
+      if (lt == -1) {
+        assert(left == TokenKind.Eof)
+        return true
+      }
+      rt > lt
     }
 
     /**
@@ -1705,7 +1761,9 @@ object Parser2 {
      * Detects clearly delimited types such as names, records and tuples
      */
     private def typeDelimited()(implicit s: State): Mark.Closed = {
+      val mark = open()
       nth(0) match {
+        // TODO: Schema, SchemaRow, RecordRow, CaseSet
         case TokenKind.CurlyL => record()
         case TokenKind.ParenL => tuple()
         case TokenKind.NameUpperCase => name(NAME_TYPE, allowQualified = true)
@@ -1714,8 +1772,32 @@ object Parser2 {
         case TokenKind.NameMath
              | TokenKind.NameGreek
              | TokenKind.Underscore => name(NAME_VARIABLE)
+        case TokenKind.KeywordPure
+             | TokenKind.KeywordImpure
+             | TokenKind.KeywordFalse
+             | TokenKind.KeywordTrue => constant()
+        case TokenKind.KeywordNot
+          | TokenKind.Tilde
+          | TokenKind.TildeTilde => unary()
         case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected type, found $t"))
       }
+      close(mark, TreeKind.Type.Type)
+    }
+
+    private def unary()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      val op = nth(0)
+      val markOp = open()
+      expectAny(List(TokenKind.Tilde, TokenKind.KeywordNot, TokenKind.TildeTilde))
+      close(markOp, TreeKind.Operator)
+      ttype(left = op, leftIsUnary = true)
+      close(mark, TreeKind.Type.Unary)
+    }
+
+    private def constant()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      expectAny(List(TokenKind.KeywordPure, TokenKind.KeywordImpure, TokenKind.KeywordFalse, TokenKind.KeywordTrue))
+      close(mark, TreeKind.Type.Constant)
     }
 
     private def variable()(implicit s: State): Mark.Closed = {
@@ -1740,14 +1822,13 @@ object Parser2 {
      * tuple -> '(' (type (',' type)* )? ')'
      */
     def tuple()(implicit s: State): Mark.Closed = {
-      commaSeparated(TreeKind.Type.Tuple, asArgumentFlat(() => ttype(allowTrailingEffect = true)))
+      commaSeparated(TreeKind.Type.Tuple, asArgumentFlat(() => ttype()))
     }
 
     /**
      * record -> '{' (typeRecordField (',' typeRecordField)* )? ('|' Name.Variable)| '}'
      */
     private def record()(implicit s: State): Mark.Closed = {
-      // TODO: What does RecordRow do?
       assert(at(TokenKind.CurlyL))
       val mark = open()
       expect(TokenKind.CurlyL)
@@ -1813,15 +1894,19 @@ object Parser2 {
       close(mark, TreeKind.Type.Type)
     }
 
-    /**
-     * kind -> name ('->' kind)?
-     */
     def kind()(implicit s: State): Mark.Closed = {
       val mark = open()
-      name(NAME_KIND)
+      if (eat(TokenKind.ParenL)) {
+        kind()
+        expect(TokenKind.ParenR)
+      } else {
+        name(NAME_KIND)
+      }
+
       if (eat(TokenKind.ArrowThin)) {
         kind()
       }
+
       close(mark, TreeKind.Kind)
     }
   }
@@ -1836,7 +1921,7 @@ object Parser2 {
     private def ascription()(implicit s: State): Mark.Closed = {
       val mark = open()
       expect(TokenKind.Colon)
-      Type.ttype(allowTrailingEffect = true)
+      Type.typeAndEffect()
       close(mark, TreeKind.JvmOp.Ascription)
     }
 

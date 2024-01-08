@@ -254,7 +254,15 @@ object UnstructuredTree {
 
       case object Type extends Type
 
+      case object Binary extends Type
+
+      case object Unary extends Type
+
+      case object Constant extends Type
+
       case object Tuple extends Type
+
+      case object Ascribe extends Type
 
       case object Native extends Type
 

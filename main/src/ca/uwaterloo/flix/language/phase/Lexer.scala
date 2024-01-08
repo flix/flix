@@ -328,8 +328,11 @@ object Lexer {
       }
       case '_' =>
         val p = peek()
-        if (p.isLetterOrDigit) acceptName(p.isUpper) else TokenKind.Underscore
-      case '~' => TokenKind.Tilde
+        if (p.isLetterOrDigit) acceptName(p.isUpper)
+        else TokenKind.Underscore
+      case '~' => if (peek() == '~') {
+        advance(); TokenKind.TildeTilde
+      } else TokenKind.Tilde
       case '\\' => TokenKind.Backslash
       case '$' => if (peek().isUpper) {
         acceptBuiltIn()
@@ -371,6 +374,8 @@ object Lexer {
       }å
       case _ if isKeyword("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
+      case _ if isKeyword("++") => TokenKind.PlusPlus
+      case _ if isKeyword("--") => TokenKind.MinusMinus
       case _ if isKeyword("**") => TokenKind.StarStar
       case _ if isKeyword("<-") => TokenKind.ArrowThinL
       case _ if isKeyword("->") => TokenKind.ArrowThinR
@@ -380,6 +385,7 @@ object Lexer {
       case _ if isKeyword("==") => TokenKind.EqualEqual
       case _ if isKeyword("!=") => TokenKind.BangEqual
       case _ if isKeyword("&&&") => TokenKind.TripleAmpersand
+      case _ if isKeyword("&&") => TokenKind.AmpersandAmpersand
       case _ if isKeyword("<<<") => TokenKind.TripleAngleL
       case _ if isKeyword(">>>") => TokenKind.TripleAngleR
       case _ if isKeyword("^^^") => TokenKind.TripleCaret
@@ -457,6 +463,7 @@ object Lexer {
       case _ if isKeyword("with") => TokenKind.KeywordWith
       case _ if isKeyword("without") => TokenKind.KeywordWithout
       case _ if isKeyword("yield") => TokenKind.KeywordYield
+      case _ if isKeyword("xor") => TokenKind.KeywordXor
       case _ if isKeyword("Set#") => TokenKind.SetHash
       case _ if isKeyword("Array#") => TokenKind.ArrayHash
       case _ if isKeyword("Map#") => TokenKind.MapHash
@@ -472,8 +479,6 @@ object Lexer {
           acceptUserDefinedOp()
         } else if (c == '-' && p.isDigit) {
           acceptNumber() // negative numbers.
-        } else if (c == '+' && p.isDigit) {
-          acceptNumber() // unary plus before number.
         } else {
           ValidUserOpTokens.apply(c)
         }
@@ -492,11 +497,13 @@ object Lexer {
    */
   private def isSeparated(keyword: String)(implicit s: State): Boolean = {
     val VALID_SEPARATORS = if (List("from", "new", "get", "query").contains(keyword)) {
-      List( ')', '[', ']', '}', ',')
+      List(')', '[', ']', '}', ',', ';')
     } else {
-      List('(', ')', '[', ']', '{', '}', ',')
+      List('(', ')', '[', ']', '{', '}', ',', ';')
     }
-    def isSep (c: Char) = c.isWhitespace || VALID_SEPARATORS.contains(c)
+
+    def isSep(c: Char) = c.isWhitespace || VALID_SEPARATORS.contains(c)
+
     s.src.data.lift(s.current.offset - 2).forall(isSep) && s.src.data.lift(s.current.offset + keyword.length - 1).forall(isSep)
   }
 

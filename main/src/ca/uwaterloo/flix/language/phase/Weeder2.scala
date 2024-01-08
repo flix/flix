@@ -799,8 +799,9 @@ object Weeder2 {
             case "lazy" => Expr.Lazy(expr, tree.loc)
             case "force" => Expr.Force(expr, tree.loc)
             case "-" => Expr.Apply(Expr.Ambiguous(Name.mkQName("Neg.neg", sp1, sp2), opTree.loc), List(expr), tree.loc)
-            case "+" => Expr.Apply(Expr.Ambiguous(Name.mkQName("Add.add", sp1, sp2), opTree.loc), List(expr), tree.loc)
             case "not" => Expr.Unary(SemanticOp.BoolOp.Not, expr, tree.loc)
+            // '+exp' is always the same as 'exp'
+            case "+" => expr
             case op => Expr.Apply(Expr.Ambiguous(Name.mkQName(op, sp1, sp2), opTree.loc), List(expr), tree.loc)
           }
         }
@@ -1611,17 +1612,94 @@ object Weeder2 {
       val inner = unfold(tree)
       inner.kind match {
         case TreeKind.Type.Variable => visitVariable(inner)
+        case TreeKind.Type.Binary => visitBinary(inner)
+        case TreeKind.Type.Unary => visitUnary(inner)
         case TreeKind.Type.Apply => visitApply(inner)
         case TreeKind.Type.Tuple => visitTuple(inner)
-        case TreeKind.Type.Function => visitFunction(inner)
         case TreeKind.Type.Native => visitNative(inner)
         case TreeKind.Type.Record => visitRecord(inner)
+        case TreeKind.Type.Constant => visitConstant(inner)
         case TreeKind.QName => mapN(visitQName(inner))(Type.Ambiguous(_, inner.loc))
         case TreeKind.Ident => mapN(tokenToIdent(inner)) {
           case ident if ident.isWild => Type.Var(ident, tree.loc)
           case ident => Type.Ambiguous(Name.mkQName(ident), inner.loc)
         }
         case kind => failWith(s"TODO: implement type of kind '$kind'", tree.loc)
+      }
+    }
+
+    private def visitBinary(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Type.Binary)
+      val types = traverse(pickAll(TreeKind.Type.Type, tree.children))(visitType)
+      val op = pick(TreeKind.Operator, tree.children)
+      flatMapN(op, types) {
+        case (op, t1 :: t2 :: Nil) =>
+          text(op).head match {
+            // ARROW FUNCTIONS
+            case "->" => mapN(tryPickEffect(tree))(eff => {
+              val l = tree.loc.asSynthetic
+              val lastParam = t1 match {
+                case Type.Tuple(inners, _) => inners.last
+                case t => t
+              }
+              val initParams = t1 match {
+                case Type.Tuple(inners, _) => inners.init
+                case _ => List()
+              }
+              val base = Type.Arrow(List(lastParam), eff, t2, l)
+              initParams.foldRight(base)((acc, tpe) => Type.Arrow(List(acc), None, tpe, l))
+            })
+            // REGULAR TYPE OPERATORS
+            case "+" => Type.Union(t1, t2, tree.loc).toSuccess
+            case "-" => Type.Intersection(t1, Type.Complement(t2, tree.loc.asSynthetic), tree.loc).toSuccess
+            case "++" => Type.CaseUnion(t1, t2, tree.loc).toSuccess
+            case "&&" => Type.CaseIntersection(t1, t2, tree.loc).toSuccess
+            case "--" => Type.CaseIntersection(t1, Type.Complement(t2, tree.loc.asSynthetic), tree.loc).toSuccess
+            case "&" => Type.Intersection(t1, t2, tree.loc).toSuccess
+            case "xor" => Type.Or(
+              Type.And(t1, Type.Not(t2, tree.loc), tree.loc),
+              Type.And(Type.Not(t1, tree.loc), t2, tree.loc),
+              tree.loc
+            ).toSuccess
+            case "and" => Type.And(t1, t2, tree.loc).toSuccess
+            case "or" => Type.Or(t1, t2, tree.loc).toSuccess
+            // UNRECOGNIZED
+            // TODO: Use Type.Error here
+            case op => failWith(s"Unrecognized type operator '$op' ", tree.loc)
+          }
+
+        case (_, operands) => throw InternalCompilerException(s"Type.Binary tree with ${operands.length} operands", tree.loc)
+      }
+    }
+
+    private def visitUnary(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Type.Unary)
+      val types = traverse(pickAll(TreeKind.Type.Type, tree.children))(visitType)
+      val op = pick(TreeKind.Operator, tree.children)
+      flatMapN(op, types) {
+        case (op, t :: Nil) =>
+          text(op).head match {
+            case "~" => Type.Complement(t, tree.loc).toSuccess
+            case "~~" => Type.CaseComplement(t, tree.loc).toSuccess
+            case "not" => Type.Not(t, tree.loc).toSuccess
+            // UNRECOGNIZED
+            // TODO: Use Type.Error here
+            case op => failWith(s"Unrecognized type operator '$op' ", tree.loc)
+          }
+
+        case (_, operands) => throw InternalCompilerException(s"Type.Unary tree with ${operands.length} operands", tree.loc)
+      }
+    }
+
+    private def visitConstant(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Type.Constant)
+      text(tree).head match {
+        case "false" => Type.False(tree.loc).toSuccess
+        case "true" => Type.True(tree.loc).toSuccess
+        case "Pure" => Type.Pure(tree.loc).toSuccess
+        // TODO EFF-MIGRATION create dedicated Impure type
+        case "Impure" => Type.Complement(Type.Pure(tree.loc), tree.loc).toSuccess
+        case other => throw InternalCompilerException(s"'$other' used as Type.Constant", tree.loc)
       }
     }
 
@@ -1659,29 +1737,6 @@ object Weeder2 {
           val fqn = (List(head.stripPrefix("##")) ++ rest).mkString("")
           Type.Native(fqn, tree.loc).toSuccess
         case Nil => throw InternalCompilerException("Parser passed empty Type.Native", tree.loc)
-      }
-    }
-
-    private def visitFunction(tree: Tree)(implicit s: State): Validation[Type.Arrow, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Type.Function)
-      val types = pickAll(TreeKind.Type.Type, tree.children)
-      mapN(
-        traverse(types)(visitType),
-        tryPickEffect(tree)
-      ) {
-        case (params :: tresult :: Nil, eff) =>
-          val l = tree.loc.asSynthetic
-          val lastParam = params match {
-            case Type.Tuple(inners, _) => inners.last
-            case t => t
-          }
-          val initParams = params match {
-            case Type.Tuple(inners, _) => inners.init
-            case _ => List()
-          }
-          val base = WeededAst.Type.Arrow(List(lastParam), eff, tresult, l)
-          initParams.foldRight(base)((acc, tpe) => Type.Arrow(List(acc), None, tpe, l))
-        case (types, _) => throw InternalCompilerException(s"Malformed Type.Function: found '${types.length}' sub types, expected 2.", tree.loc)
       }
     }
 
