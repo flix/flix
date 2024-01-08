@@ -410,7 +410,7 @@ object TypeReconstruction {
           TypedAst.HandlerRule(op, fps, he)
       }
       val tpe = subst(tvar)
-      val eff = Type.mkUnion(rs.map(_.exp.eff), loc)
+      val eff = Type.mkUnion(rs.map(_.exp.eff), loc) // TODO temp simplification
       TypedAst.Expr.TryWith(e, effUse, rs, tpe, eff, loc)
 
     case KindedAst.Expr.Do(op, exps, tvar, loc) =>

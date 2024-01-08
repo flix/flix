@@ -966,8 +966,8 @@ object TypeInference {
 
         for {
           (tconstrs, tpe, bodyEff) <- visitExp(exp)
-          _ <- expectTypeM(expected = effType, actual = bodyEff, exp.loc) // temp simplification
-          correctedBodyEff = Type.Pure // Type.mkDifference(bodyEff, effType, loc) // simplification
+          _ <- expectTypeM(expected = effType, actual = bodyEff, exp.loc) // TODO temp simplification
+          correctedBodyEff = Type.Pure // Type.mkDifference(bodyEff, effType, loc) // TODO temp simplification
           (tconstrss, _, effs) <- traverseM(rules)(visitHandlerRule(_, tpe)).map(_.unzip3)
           _ <- unifyTypeM(continuationEffect, Type.mkUnion(correctedBodyEff :: effs, loc), loc)
           resultTconstrs = (tconstrs :: tconstrss).flatten
