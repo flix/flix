@@ -23,7 +23,7 @@ sealed trait Chain[+A] {
   /**
     * Returns an iterator over the chain, from left to right.
     */
-  def iterator: Iterator[A] = this match {
+  final def iterator: Iterator[A] = this match {
     case Chain.Empty => Iterator.empty
     case Chain.Link(l, r) => l.iterator ++ r.iterator
     case Chain.Many(cs) => cs.flatMap(_.iterator).iterator
@@ -33,7 +33,7 @@ sealed trait Chain[+A] {
   /**
     * Concatenates `this` chain and `that` chain.
     */
-  def ++[B >: A](that: Chain[B]): Chain[B] = {
+  final def ++[B >: A](that: Chain[B]): Chain[B] = {
     if (this == Chain.Empty) {
       that
     } else if (that == Chain.Empty) {
@@ -43,14 +43,14 @@ sealed trait Chain[+A] {
     }
   }
 
-  def isEmpty: Boolean = this match {
+  final def isEmpty: Boolean = this match {
     case Chain.Empty => true
     case Chain.Link(l, r) => l.isEmpty && r.isEmpty
     case Chain.Many(cs) => cs.forall(_.isEmpty)
     case Chain.Proxy(xs) => xs.isEmpty
   }
 
-  def head: Option[A] = this match {
+  final def head: Option[A] = this match {
     case Chain.Empty => None
     case Chain.Link(l, _) => l.head
     case Chain.Many(cs) => cs.find(_.head.isDefined).flatMap(_.head)
