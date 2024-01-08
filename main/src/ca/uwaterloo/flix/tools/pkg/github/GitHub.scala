@@ -99,7 +99,7 @@ object GitHub {
 
       val code = conn.getResponseCode
       code match {
-        case 200 => Err(ReleaseError.AlreadyExists(project, version))
+        case 200 => Err(ReleaseError.ReleaseAlreadyExists(project, version))
         case _ => Ok(())
       }
 
@@ -142,7 +142,7 @@ object GitHub {
           StreamOps.readAll(inStream)
         case 401 => return Err(ReleaseError.InvalidApiKeyError)
         case 404 => return Err(ReleaseError.InvalidProject(project))
-        case _ => return Err(ReleaseError.Unexpected(code, conn.getResponseMessage))
+        case _ => return Err(ReleaseError.UnexpectedResponseCode(code, conn.getResponseMessage))
       }
 
     } catch {
@@ -155,7 +155,7 @@ object GitHub {
       val jsonId = (obj \ "id").asInstanceOf[JInt]
       jsonId.values.toString
     } catch {
-      case _: ClassCastException => return Err(ReleaseError.JsonError(json))
+      case _: ClassCastException => return Err(ReleaseError.UnexpectedResponseJson(json))
     }
 
     Ok(id)
@@ -187,7 +187,7 @@ object GitHub {
       code match {
         case 201 => Ok(())
         case 401 => Err(ReleaseError.InvalidApiKeyError)
-        case _ => Err(ReleaseError.Unexpected(code, conn.getResponseMessage))
+        case _ => Err(ReleaseError.UnexpectedResponseCode(code, conn.getResponseMessage))
       }
 
     } catch {
@@ -224,8 +224,8 @@ object GitHub {
         case 200 => Ok(())
         case 401 => Err(ReleaseError.InvalidApiKeyError)
         case 404 => Err(ReleaseError.InvalidProject(project))
-        case 422 => Err(ReleaseError.AlreadyExists(project, version))
-        case _ => Err(ReleaseError.Unexpected(code, conn.getResponseMessage))
+        case 422 => Err(ReleaseError.ReleaseAlreadyExists(project, version))
+        case _ => Err(ReleaseError.UnexpectedResponseCode(code, conn.getResponseMessage))
       }
 
     } catch {

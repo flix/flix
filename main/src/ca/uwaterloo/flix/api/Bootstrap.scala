@@ -643,7 +643,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Check if `github` option is present
     val githubRepo = manifest.repository match {
       case Some(r) => r
-      case None => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.NoLinkedProject))
+      case None => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.MissingRepository))
     }
 
     // Check if `--github-key` option is present

@@ -26,38 +26,10 @@ sealed trait ReleaseError {
 }
 
 object ReleaseError {
-  case object MissingManifest extends ReleaseError {
-    override def message(f: Formatter): String =
-      s"""
-         | Cannot create a release without a `flix.toml` file.
-         |""".stripMargin
-  }
-
-  case object NoLinkedProject extends ReleaseError {
-    override def message(f: Formatter): String =
-      s"""
-         | Cannot create a release without the `package.repository` option in `flix.toml`.
-         |""".stripMargin
-  }
-
-  case object MissingApiKey extends ReleaseError {
-    override def message(f: Formatter): String =
-      s"""
-         | Cannot create a release without the `--github-key` option.
-         |""".stripMargin
-  }
-
   case object Cancelled extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
          | Release cancelled.
-         |""".stripMargin
-  }
-
-  case object NetworkError extends ReleaseError {
-    override def message(f: Formatter): String =
-      s"""
-         | Cannot reach GitHub at the current moment.
          |""".stripMargin
   }
 
@@ -76,14 +48,42 @@ object ReleaseError {
          |""".stripMargin
   }
 
-  case class AlreadyExists(project: GitHub.Project, version: SemVer) extends ReleaseError {
+  case object MissingApiKey extends ReleaseError {
+    override def message(f: Formatter): String =
+      s"""
+         | Cannot create a release without the `--github-key` option.
+         |""".stripMargin
+  }
+
+  case object MissingManifest extends ReleaseError {
+    override def message(f: Formatter): String =
+      s"""
+         | Cannot create a release without a `flix.toml` file.
+         |""".stripMargin
+  }
+
+  case object MissingRepository extends ReleaseError {
+    override def message(f: Formatter): String =
+      s"""
+         | Cannot create a release without the `package.repository` option in `flix.toml`.
+         |""".stripMargin
+  }
+
+  case object NetworkError extends ReleaseError {
+    override def message(f: Formatter): String =
+      s"""
+         | Cannot reach GitHub at the current moment.
+         |""".stripMargin
+  }
+
+  case class ReleaseAlreadyExists(project: GitHub.Project, version: SemVer) extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
          | Release with version $version already exists.
          |""".stripMargin
   }
 
-  case class Unexpected(code: Int, message: String) extends ReleaseError {
+  case class UnexpectedResponseCode(code: Int, message: String) extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
          | GitHub failed with an unexpected response:
@@ -91,7 +91,7 @@ object ReleaseError {
          |""".stripMargin
   }
 
-  case class JsonError(json: String) extends ReleaseError {
+  case class UnexpectedResponseJson(json: String) extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
          | GitHub returned JSON in an unexpected format:
