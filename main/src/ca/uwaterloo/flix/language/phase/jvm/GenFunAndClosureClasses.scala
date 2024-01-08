@@ -274,12 +274,12 @@ object GenFunAndClosureClasses {
     * Make a new `classType` with all the fields set to the same as `this`.
     * A partial copy is without local parameters and without pc
     */
-  private def mkCopy(classType: JvmType.Reference, defn: Def, partial: Boolean): InstructionSet = {
+  private def mkCopy(classType: JvmType.Reference, defn: Def): InstructionSet = {
     import BytecodeInstructions._
-    val pc = if (partial) List() else List(("pc", MonoType.Int32))
+    val pc = List(("pc", MonoType.Int32))
     val fparams = defn.fparams.zipWithIndex.map(p => (s"arg${p._2}", p._1.tpe))
     val cparams = defn.cparams.zipWithIndex.map(p => (s"clo${p._2}", p._1.tpe))
-    val lparams = if (partial) List() else defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe))
+    val lparams = defn.lparams.zipWithIndex.map(p => (s"l${p._2}", p._1.tpe))
     val params = pc ++ fparams ++ cparams ++ lparams
 
     def getThenPutField(name: String, tpe: MonoType): InstructionSet = cheat(mv => {
@@ -305,7 +305,7 @@ object GenFunAndClosureClasses {
     val m = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, copyName, nothingToTDescriptor(classType).toDescriptor, null, null)
     m.visitCode()
 
-    mkCopy(classType, defn, partial = true)(new BytecodeInstructions.F(m))
+    mkCopy(classType, defn)(new BytecodeInstructions.F(m))
     m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)
@@ -317,7 +317,7 @@ object GenFunAndClosureClasses {
     val m = visitor.visitMethod(ACC_PUBLIC, GenClosureAbstractClasses.GetUniqueThreadClosureFunctionName, AsmOps.getMethodDescriptor(Nil, closureAbstractClass), null, null)
     m.visitCode()
 
-    mkCopy(classType, defn, partial = false)(new BytecodeInstructions.F(m))
+    mkCopy(classType, defn)(new BytecodeInstructions.F(m))
     m.visitInsn(Opcodes.ARETURN)
 
     m.visitMaxs(999, 999)
