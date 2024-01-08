@@ -121,7 +121,7 @@ object TypeInference {
               ///
               val inferredSc = Scheme.generalize(inferredTconstrs, inferredEconstrs, inferredType, renv0)
 
-              def handleFailureCase(failures: List[UnificationError]) = {
+              def handleFailureCase(failures: List[UnificationError]): Validation[Substitution, TypeError] = {
                 val instanceErrs = failures.collect {
                   case UnificationError.NoMatchingInstance(tconstr) =>
                     tconstr.arg.typeConstructor match {
@@ -162,8 +162,8 @@ object TypeInference {
                     // Case 3: Check if it is the effect that cannot be generalized.
                     val inferredEffScheme = Scheme(inferredSc.quantifiers, Nil, Nil, inferredEff)
                     val declaredEffScheme = Scheme(declaredScheme.quantifiers, Nil, Nil, declaredEff)
-                    Scheme.checkLessThanEqual(inferredEffScheme, declaredEffScheme, classEnv, eqEnv) match {
-                      case Validation.Success(_) =>
+                    Scheme.checkLessThanEqual(inferredEffScheme, declaredEffScheme, classEnv, eqEnv).toResult match {
+                      case Result.Ok((_, Nil)) =>
                       // Case 3.1: The effect is not the problem. Regular generalization error.
                       // Fall through to below.
 
@@ -176,15 +176,15 @@ object TypeInference {
                   }
                 } else {
                   // Case 3: instance error
-                  return Validation.HardFailure(instanceErrs)
+                  return Validation.HardFailure(instanceErrs.to(LazyList))
                 }
               }
 
               // get a substitution from the scheme comparison
               val eqSubst = Scheme.checkLessThanEqual(inferredSc, declaredScheme, classEnv, eqEnv).toResult match {
                 case Ok((s, Nil)) => s
-                case Ok((_, failures)) => handleFailureCase(failures)
-                case Err(failures) => handleFailureCase(failures)
+                case Ok((_, failures)) => return handleFailureCase(failures)
+                case Err(failures) => return handleFailureCase(failures)
               }
 
               // create a new substitution combining the econstr substitution and the base type substitution
