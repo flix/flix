@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.util.collection
 
+import scala.collection.mutable.ListBuffer
+
 /**
   * A linear data structure that allows fast concatenation.
   */
@@ -60,12 +62,7 @@ sealed trait Chain[+A] {
   /**
     * Returns `this` as a [[List]].
     */
-  final def toList: List[A] = this match {
-    case Chain.Empty => List.empty
-    case Chain.Link(l, r) => l.toList ++ r.toList
-    case Chain.Many(cs) => cs.flatMap(_.toList).toList
-    case Chain.Proxy(xs) => xs.toList
-  }
+  def toList: List[A]
 
   final def toSeq: Seq[A] = this match {
     case Chain.Empty => Seq.empty
@@ -125,22 +122,50 @@ object Chain {
   /**
     * The empty chain.
     */
-  private case object Empty extends Chain[Nothing]
+  private case object Empty extends Chain[Nothing] {
+
+    /**
+      * Returns `this` as a [[List]].
+      */
+    override def toList: List[Nothing] = List.empty
+  }
 
   /**
     * A concatenation of two chains.
     */
-  private case class Link[A](l: Chain[A], r: Chain[A]) extends Chain[A]
+  private case class Link[A](l: Chain[A], r: Chain[A]) extends Chain[A] {
+
+    /**
+      * Returns `this` as a [[List]].
+      */
+    override def toList: List[A] = l.toList ++ r.toList
+  }
 
   /**
     * A concatenation of many chains.
     */
-  private case class Many[A](cs: Seq[Chain[A]]) extends Chain[A]
+  private case class Many[A](cs: Seq[Chain[A]]) extends Chain[A] {
+
+    /**
+      * Returns `this` as a [[List]].
+      */
+    override def toList: List[A] = {
+      val buf = ListBuffer.empty[A]
+      cs.foreach(c => buf.addAll(c.iterator))
+      buf.toList
+    }
+  }
 
   /**
     * A chain wrapping a sequence.
     */
-  private case class Proxy[A](xs: Seq[A]) extends Chain[A]
+  private case class Proxy[A](xs: Seq[A]) extends Chain[A] {
+
+    /**
+      * Returns `this` as a [[List]].
+      */
+    override def toList: List[A] = xs.toList
+  }
 
   /**
     * Returns a chain containing the given elements.
