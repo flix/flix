@@ -173,8 +173,8 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       flix.addSourceCode("<input>", input)
       flix.setOptions(opts)
 
-      flix.compile() match {
-        case Success(compilationResult) =>
+      flix.compile().toResult match {
+        case Result.Ok((compilationResult, Nil)) =>
           // Compilation was successful.
 
           // Determine if the main function is present.
@@ -191,9 +191,12 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
               Ok(timer.getResult, compilationResult.totalTime, timer.getElapsed)
           }
 
-        case failure =>
+        case Result.Ok((_, failures)) =>
           // Compilation failed. Retrieve and format the first error message.
-          Err(failure.errors.head.message(flix.getFormatter))
+          Err(failures.head.message(flix.getFormatter))
+        case Result.Err(failures) =>
+          // Compilation failed. Retrieve and format the first error message.
+          Err(failures.head.message(flix.getFormatter))
       }
     } catch {
       case ex: RuntimeException => Err(ex.getMessage)
