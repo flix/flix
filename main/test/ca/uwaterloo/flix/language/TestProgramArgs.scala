@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.{Options, Result, Validation}
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestProgramArgs extends AnyFunSuite with TestUtils {
@@ -32,9 +32,9 @@ class TestProgramArgs extends AnyFunSuite with TestUtils {
         |    case _ => ?incorrectNumberOfArgs
         |}
       """.stripMargin
-    val result = compile(input, Options.TestWithLibAll)
-    result match {
-      case Validation.Success(result) => result.getMain match {
+    val compilationValidation = compile(input, Options.TestWithLibAll)
+    compilationValidation.toResult match {
+      case Result.Ok((result, Nil)) => result.getMain match {
         case Some(main) => try {
           main.apply(Array(arg))
         } catch {
@@ -42,8 +42,11 @@ class TestProgramArgs extends AnyFunSuite with TestUtils {
         }
         case None => fail("No entrypoint")
       }
-      case failure =>
-        val actuals = failure.errors.map(_.getClass)
+      case Result.Ok((_, failures)) =>
+        val actuals = failures.map(_.getClass)
+        fail(s"Expected success, but found errors ${actuals.mkString(", ")}.")
+      case Result.Err(failures) =>
+        val actuals = failures.map(_.getClass)
         fail(s"Expected success, but found errors ${actuals.mkString(", ")}.")
     }
   }
