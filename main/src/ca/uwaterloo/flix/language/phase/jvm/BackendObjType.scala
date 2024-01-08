@@ -1637,8 +1637,8 @@ object BackendObjType {
           // () -> tail.rewind(v)
           thisLoad() ~ GETFIELD(TailField) ~
           v.load() ~
-          mkStaticLambda(Thunk.InvokeMethod, Resumption.StaticRewindMethod) ~
-          mkStaticLambda(Thunk.InvokeMethod, Handler.InstallHandlerMethod) ~
+          mkStaticLambda(Thunk.InvokeMethod, Resumption.StaticRewindMethod, drop = 0) ~
+          mkStaticLambda(Thunk.InvokeMethod, Handler.InstallHandlerMethod, drop = 0) ~
           xReturn(Thunk.toTpe)
       }))
   }
@@ -1725,7 +1725,7 @@ object BackendObjType {
               // thunk
               cons.load() ~ GETFIELD(FramesCons.HeadField) ~
               res.load() ~
-              mkStaticLambda(Thunk.InvokeMethod, Frame.StaticApplyMethod) ~
+              mkStaticLambda(Thunk.InvokeMethod, Frame.StaticApplyMethod, drop = 0) ~
               INVOKESTATIC(InstallHandlerMethod) ~
               xReturn(Result.toTpe)
             }
