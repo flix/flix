@@ -62,14 +62,21 @@ sealed trait Chain[+A] {
   /**
     * Returns `this` as a [[List]].
     */
-  def toList: List[A] = this match {
-    case Chain.Empty => List.empty
-    case Chain.Link(l, r) => l.toList ++ r.toList
-    case Chain.Many(cs) =>
+  final def toList: List[A] = {
+    if (this.isInstanceOf[Chain.Empty.type]) {
+      List.empty
+    } else if (this.isInstanceOf[Chain.Link[A]]) {
+      val (l, r) = Chain.destructLink(this.asInstanceOf[Chain.Link[A]])
+      l.toList ++ r.toList
+    } else if (this.isInstanceOf[Chain.Many[A]]) {
+      val cs = Chain.destructMany(this.asInstanceOf[Chain.Many[A]])
       val buf = ListBuffer.empty[A]
       cs.foreach(c => buf.addAll(c.iterator))
       buf.toList
-    case Chain.Proxy(xs) => xs.toList
+    } else {
+      val xs = Chain.destructProxy(this.asInstanceOf[Chain.Proxy[A]])
+      xs.toList
+    }
   }
 
   final def toSeq: Seq[A] = this match {
@@ -146,6 +153,12 @@ object Chain {
     * A chain wrapping a sequence.
     */
   private case class Proxy[A](xs: Seq[A]) extends Chain[A]
+
+  private def destructLink[A](c: Chain.Link[A]): (Chain[A], Chain[A]) = (c.l, c.r)
+
+  private def destructMany[A](c: Chain.Many[A]): Seq[Chain[A]] = c.cs
+
+  private def destructProxy[A](c: Chain.Proxy[A]): Seq[A] = c.xs
 
   /**
     * Returns a chain containing the given elements.
