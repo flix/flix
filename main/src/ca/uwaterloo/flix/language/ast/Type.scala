@@ -851,6 +851,9 @@ object Type {
 
   /**
     * Returns the type `tpe1 - tpe2`.
+    * Minus is defined as `a - b := a and (not b)` but the boolean boolean
+    * lattice and the set lattice is flipped(?) so we need to complement the
+    * definition such that `a - b := (not a) or b`
     */
   def mkDifference(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = mkIntersection(tpe1, mkComplement(tpe2, loc), loc)
 
