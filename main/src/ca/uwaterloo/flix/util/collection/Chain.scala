@@ -66,16 +66,15 @@ sealed trait Chain[+A] {
     if (this.isInstanceOf[Chain.Empty.type]) {
       List.empty
     } else if (this.isInstanceOf[Chain.Link[A]]) {
-      val (l, r) = Chain.destructLink(this.asInstanceOf[Chain.Link[A]])
+      val (l, r) = this.asInstanceOf[Chain.Link[A]].destruct
       l.toList ++ r.toList
     } else if (this.isInstanceOf[Chain.Many[A]]) {
-      val cs = Chain.destructMany(this.asInstanceOf[Chain.Many[A]])
+      val cs = this.asInstanceOf[Chain.Many[A]].destruct
       val buf = ListBuffer.empty[A]
       cs.foreach(c => buf.addAll(c.iterator))
       buf.toList
     } else {
-      val xs = Chain.destructProxy(this.asInstanceOf[Chain.Proxy[A]])
-      xs.toList
+      this.asInstanceOf[Chain.Proxy[A]].destruct.toList
     }
   }
 
@@ -142,23 +141,23 @@ object Chain {
   /**
     * A concatenation of two chains.
     */
-  private case class Link[A](l: Chain[A], r: Chain[A]) extends Chain[A]
+  private case class Link[A](l: Chain[A], r: Chain[A]) extends Chain[A] {
+    def destruct: (Chain[A], Chain[A]) = (l, r)
+  }
 
   /**
     * A concatenation of many chains.
     */
-  private case class Many[A](cs: Seq[Chain[A]]) extends Chain[A]
+  private case class Many[A](cs: Seq[Chain[A]]) extends Chain[A] {
+    def destruct: Seq[Chain[A]] = cs
+  }
 
   /**
     * A chain wrapping a sequence.
     */
-  private case class Proxy[A](xs: Seq[A]) extends Chain[A]
-
-  private def destructLink[A](c: Chain.Link[A]): (Chain[A], Chain[A]) = (c.l, c.r)
-
-  private def destructMany[A](c: Chain.Many[A]): Seq[Chain[A]] = c.cs
-
-  private def destructProxy[A](c: Chain.Proxy[A]): Seq[A] = c.xs
+  private case class Proxy[A](xs: Seq[A]) extends Chain[A] {
+    def destruct: Seq[A] = xs
+  }
 
   /**
     * Returns a chain containing the given elements.
