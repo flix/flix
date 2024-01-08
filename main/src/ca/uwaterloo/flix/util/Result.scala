@@ -46,6 +46,14 @@ sealed trait Result[+T, +E] {
   }
 
   /**
+    * If `this` is a [[Result.Err]] the given function `f` is applied to the contained error.
+    */
+  final def mapErr[F](f: E => F): Result[T, F] = this match {
+    case Result.Ok(t) => Result.Ok(t)
+    case Result.Err(e) => Result.Err(f(e))
+  }
+
+  /**
     * Applies the given function `f` to the value of `this`.
     */
   final def flatMap[R >: E, B](f: T => Result[B, R]): Result[B, R] = this match {

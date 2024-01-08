@@ -222,10 +222,8 @@ object ManifestParser {
   private def toGithubProject(s: String, p: Path): Result[GitHub.Project, ManifestError] = {
     s.split(':') match {
       case Array("github", repo) =>
-        GitHub.parseProject(repo) match {
-          case Ok(p) => Ok(p)
-          case Err(_) => Err(ManifestError.RepositoryFormatError(p, s))
-        }
+        GitHub.parseProject(repo)
+          .mapErr(_ => ManifestError.RepositoryFormatError(p, s))
       case _ => Err(ManifestError.RepositoryFormatError(p, s))
     }
   }
