@@ -85,7 +85,7 @@ sealed trait Validation[+T, +E] {
     */
   def recoverOne[U >: T](f: PartialFunction[E, U]): Validation[U, E] = this match {
     case Validation.HardFailure(errors) if errors.length == 1 =>
-      val one = errors.head.get
+      val one = errors.head
       if (f.isDefinedAt(one))
         Validation.SoftFailure(f(one), Chain(one))
       else
