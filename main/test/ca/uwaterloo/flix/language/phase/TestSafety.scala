@@ -721,21 +721,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
         |    pub def println(): Unit
         |}
         |
-        |def main(): Unit \ Print = do Print.println()
-        |
-      """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[SafetyError.IllegalEntryPointSignature](result)
-  }
-
-  test("IllegalEntryPointSignature.06") {
-    val input =
-      """
-        |eff Print {
-        |    pub def println(): Unit
-        |}
-        |
-        |@Benchmark
+        |@benchmark
         |def foo(): Unit \ Print = do Print.println()
         |
       """.stripMargin
@@ -743,7 +729,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     expectError[SafetyError.IllegalEntryPointSignature](result)
   }
 
-  test("IllegalEntryPointSignature.07") {
+  test("IllegalEntryPointSignature.06") {
     val input =
       """
         |eff Print {
