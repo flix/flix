@@ -662,6 +662,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       val response = readLine()
       response.toLowerCase match {
         case "y" => // Continue
+        case "yes" => // Continue
         case _ => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.Cancelled))
       }
     }
