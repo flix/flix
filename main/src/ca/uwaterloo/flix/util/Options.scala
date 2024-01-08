@@ -38,6 +38,7 @@ object Options {
     target = JvmTarget.Version21,
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
+    assumeYes = false,
     xbddthreshold = None,
     xnoboolcache = false,
     xnoboolspecialcases = false,
@@ -89,6 +90,7 @@ object Options {
   * @param target              the target JVM.
   * @param threads             selects the number of threads to use.
   * @param loadClassFiles      loads the generated class files into the JVM.
+  * @param assumeYes           run non-interactively and assume answer to all prompts is yes.
   * @param xbddthreshold       the threshold for when to use BDDs for SVE.
   * @param xnoboolcache        disable Boolean caches.
   * @param xnoboolspecialcases disable Boolean unification shortcuts.
@@ -111,6 +113,7 @@ case class Options(lib: LibLevel,
                    test: Boolean,
                    threads: Int,
                    loadClassFiles: Boolean,
+                   assumeYes: Boolean,
                    xbddthreshold: Option[Int],
                    xnoboolcache: Boolean,
                    xnoboolspecialcases: Boolean,
