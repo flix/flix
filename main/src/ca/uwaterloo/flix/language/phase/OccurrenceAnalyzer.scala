@@ -66,7 +66,7 @@ object OccurrenceAnalyzer {
     val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
 
     // Reassemble the ast root.
-    val result = OccurrenceAst.Root(defs, enums, effects, root.entryPoint, root.sources)
+    val result = OccurrenceAst.Root(defs, enums, effects, root.entryPoint, root.reachable, root.sources)
 
     Validation.success(result)
   }

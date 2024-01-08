@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.Def
+import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
 import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
@@ -30,7 +30,7 @@ object GenNamespaceClasses {
   /**
     * Returns the set of namespaces classes for the given set of namespaces.
     */
-  def gen(namespaces: Set[NamespaceInfo])(implicit flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(namespaces: Set[NamespaceInfo])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
     //
     // Generate a namespace class for each namespace and collect the results in a map.
     //
@@ -46,7 +46,7 @@ object GenNamespaceClasses {
   /**
     * Returns the namespace class for the given namespace `ns`.
     */
-  private def genBytecode(ns: NamespaceInfo)(implicit flix: Flix): Array[Byte] = {
+  private def genBytecode(ns: NamespaceInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
     // JvmType for namespace
     val namespaceClassType = JvmOps.getNamespaceClassType(ns)
 
@@ -58,7 +58,7 @@ object GenNamespaceClasses {
       BackendObjType.JavaObject.jvmName.toInternalName, null)
 
     // Adding an IFO field and a shim method for each function in `ns` with no captured args
-    for ((_, defn) <- ns.defs if defn.isEntryPoint) {
+    for ((sym, defn) <- ns.defs if root.reachable.contains(sym)) {
       // Compile the shim method.
       compileShimMethod(visitor, defn)
     }
