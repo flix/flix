@@ -972,7 +972,7 @@ object TypeInference {
           _ <- unifyTypeM(continuationEffect, Type.mkUnion(correctedBodyEff :: effs, loc), loc)
           resultTconstrs = (tconstrs :: tconstrss).flatten
           resultTpe <- unifyTypeM(tvar, tpe, loc)
-          resultEff = Type.mkUnion(correctedBodyEff :: effs, correctedBodyEff.loc.asSynthetic)
+          resultEff = continuationEffect
         } yield (resultTconstrs, resultTpe, resultEff)
 
       case KindedAst.Expr.Do(op, args, tvar, loc) =>
