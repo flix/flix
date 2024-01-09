@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.collection.Chain
 
 import java.io.File
 import java.net.BindException
@@ -126,7 +127,7 @@ object Main {
 
         case Command.Init =>
           Bootstrap.init(cwd)(System.err).toResult match {
-            case Result.Ok((_, Nil)) =>
+            case Result.Ok((_, Chain.empty)) =>
               System.exit(0)
 
             case Result.Ok((_, errors)) =>
@@ -145,7 +146,7 @@ object Main {
               flix.setOptions(options)
               bootstrap.check(flix)
           }.toResult match {
-            case Result.Ok((_, Nil)) =>
+            case Result.Ok((_, Chain.empty)) =>
               System.exit(0)
 
             case Result.Ok((_, errors)) =>
@@ -164,7 +165,7 @@ object Main {
               flix.setOptions(options.copy(loadClassFiles = false))
               bootstrap.build(flix)
           }.toResult match {
-            case Result.Ok((_, Nil)) =>
+            case Result.Ok((_, Chain.empty)) =>
               System.exit(0)
 
             case Result.Ok((_, errors)) =>
@@ -180,7 +181,7 @@ object Main {
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap => bootstrap.buildJar()
           }.toResult match {
-            case Result.Ok((_, Nil)) =>
+            case Result.Ok((_, Chain.empty)) =>
               System.exit(0)
 
             case Result.Ok((_, errors)) =>
@@ -196,7 +197,7 @@ object Main {
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap => bootstrap.buildPkg()
           }.toResult match {
-            case Result.Ok((_, Nil)) =>
+            case Result.Ok((_, Chain.empty)) =>
               System.exit(0)
 
             case Result.Ok((_, errors)) =>
@@ -215,7 +216,7 @@ object Main {
               flix.setOptions(options)
               bootstrap.doc(flix)
           }.toResult match {
-            case Result.Ok((_, Nil)) =>
+            case Result.Ok((_, Chain.empty)) =>
               System.exit(0)
 
             case Result.Ok((_, errors)) =>
@@ -238,7 +239,7 @@ object Main {
               }
               bootstrap.run(flix, args)
           }.toResult match {
-            case Result.Ok((_, Nil)) =>
+            case Result.Ok((_, Chain.empty)) =>
               System.exit(0)
 
             case Result.Ok((_, errors)) =>
@@ -257,7 +258,7 @@ object Main {
               flix.setOptions(options.copy(progress = false))
               bootstrap.benchmark(flix)
           }.toResult match {
-            case Result.Ok((_, Nil)) =>
+            case Result.Ok((_, Chain.empty)) =>
               System.exit(0)
 
             case Result.Ok((_, errors)) =>
@@ -276,7 +277,7 @@ object Main {
               flix.setOptions(options.copy(progress = false))
               bootstrap.test(flix)
           }.toResult match {
-            case Result.Ok((_, Nil)) =>
+            case Result.Ok((_, Chain.empty)) =>
               System.exit(0)
 
             case Result.Ok((_, errors)) =>
@@ -294,7 +295,7 @@ object Main {
             System.exit(1)
           }
           Bootstrap.bootstrap(cwd, options.githubToken)(System.err).toResult match {
-            case Result.Ok((bootstrap, Nil)) =>
+            case Result.Ok((bootstrap, Chain.empty)) =>
               val shell = new Shell(bootstrap, options)
               shell.loop()
               System.exit(0)
@@ -326,7 +327,7 @@ object Main {
               flix.setOptions(options.copy(progress = false))
               bootstrap.release(flix)
           }.toResult match {
-            case Result.Ok((_, Nil)) =>
+            case Result.Ok((_, Chain.empty)) =>
               System.exit(0)
             case Result.Ok((_, failures)) =>
               failures.map(_.message(formatter)).foreach(println)
