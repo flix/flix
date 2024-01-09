@@ -377,7 +377,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   private def run(main: Symbol.DefnSym)(implicit terminal: Terminal): Unit = {
     // Recompile the program.
     compile(entryPoint = Some(main), progress = false).toResult match {
-      case Result.Ok((result, _)) =>
+      case Result.Ok((result, Chain.empty)) =>
         result.getMain match {
           case Some(m) =>
             // Evaluate the main function
@@ -391,7 +391,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
           case None =>
         }
 
-      case _ =>
+      case _ => ()
     }
   }
 }
