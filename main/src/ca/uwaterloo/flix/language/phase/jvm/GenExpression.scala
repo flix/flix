@@ -1367,11 +1367,9 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
 
-    case Expr.TryWith(exp, _, _, tpe, purity, loc) =>
+    case Expr.TryWith(exp, _, _, _, _, _) =>
       // TODO (temp unhandled code)
-      // exp is a Unit -> exp.tpe closure
-      val unit = Expr.Cst(Ast.Constant.Unit, MonoType.Unit, loc)
-      compileExpr(Expr.ApplyClo(exp, List(unit), CallType.NonTailCall, tpe, purity, loc))
+      compileExpr(exp)
 
 
     case Expr.Do(_, _, _, _, _) =>
