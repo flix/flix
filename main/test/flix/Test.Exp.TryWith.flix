@@ -90,25 +90,24 @@ mod Test.Exp.TryWith {
         }
     }
 
-// TODO disabled until better type system is in
-//    @Test
-//    def testTryWith07(): Unit = {
-//        try {
-//            try {
-//                do Test.Exp.TryWith.Print.doIt();
-//                do Test.Exp.TryWith.Print2.doIt2()
-//            } with Print {
-//                def doIt(_cont) = ()
-//            }
-//        } with Print2 {
-//            def doIt2(_cont) = ()
-//        }
-//    }
+    @Test
+    def testTryWith07(): Unit = {
+        try {
+            try {
+                do Test.Exp.TryWith.Print.doIt();
+                do Test.Exp.TryWith.Print2.doIt2()
+            } with Print {
+                def doIt(_cont) = ()
+            }
+        } with Print2 {
+            def doIt2(_cont) = ()
+        }
+    }
 
     @Test
     def testTryWith08(): Unit = {
         try {
-            let _unit = try {
+            try {
                 do Test.Exp.TryWith.Print.doIt()
             } with Print {
                 def doIt(_cont) = ()

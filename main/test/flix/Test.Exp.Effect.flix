@@ -4,21 +4,21 @@ mod Test.Exp.Effect {
     // just making it public for redundancy purposes
     // @test
     pub def handleEff01(): Bool = {
-        try checked_ecast (true) with Fail {
+        try true with Fail {
             def fail(_, _cont) = false
         }
     }
 
     // @test
     pub def handleEff02(): Unit = {
-        try checked_ecast (()) with Fail {
+        try () with Fail {
             def fail(_, cont) = cont()
         }
     }
 
     // @test
     pub def handleEff03(): Bool = {
-        try checked_ecast (true) with Empty
+        try true with Empty
     }
 
     // @test
