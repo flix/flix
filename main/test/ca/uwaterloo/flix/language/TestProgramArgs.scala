@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{Options, Result, Validation}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -34,7 +35,7 @@ class TestProgramArgs extends AnyFunSuite with TestUtils {
       """.stripMargin
     val compilationValidation = compile(input, Options.TestWithLibAll)
     compilationValidation.toResult match {
-      case Result.Ok((result, Nil)) => result.getMain match {
+      case Result.Ok((result, Chain.empty)) => result.getMain match {
         case Some(main) => try {
           main.apply(Array(arg))
         } catch {
