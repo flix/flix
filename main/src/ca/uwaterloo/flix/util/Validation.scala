@@ -587,6 +587,10 @@ object Validation {
     case HardFailure(errors) => HardFailure(f(errors))
   }
 
+  /**
+    * Applies `f` to all errors in `t` and combines the result with `t` according to [[flatMapN]].
+    * Preserves the success value.
+    */
   def flatMapFailures[T, E, R](t: Validation[T, E])(f: Chain[E] => Validation[T, R]): Validation[T, R] = t match {
     case Success(v) => Success(v)
     case SoftFailure(v, errors) => flatMapN(SoftFailure(v, Chain.empty))(_ => f(errors))
