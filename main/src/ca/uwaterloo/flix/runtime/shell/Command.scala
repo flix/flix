@@ -61,6 +61,11 @@ object Command {
   case object BuildPkg extends Command
 
   /**
+    * Publishes a release of the current project to GitHub.
+    */
+  case object Release extends Command
+
+  /**
     * Checks the current project for errors.
     */
   case object Check extends Command
@@ -144,6 +149,9 @@ object Command {
 
     if (input == ":build-pkg" || input == ":pkg")
       return Command.BuildPkg
+
+    if (input == ":release")
+      return Command.Release
 
     if (input.startsWith(":eval"))
       return Command.ReloadAndEval(input.drop(":eval".length + 1))

@@ -874,7 +874,7 @@ object GenExpression {
         val List(exp) = exps
         val className = asm.Type.getInternalName(clazz)
         compileExpr(exp)
-        mv.visitTypeInsn(INSTANCEOF, className.toString)
+        mv.visitTypeInsn(INSTANCEOF, className)
 
       case AtomicOp.Cast =>
         val List(exp) = exps
@@ -993,7 +993,7 @@ object GenExpression {
 
         exp2 match {
           // The expression represents the `Static` region, just start a thread directly
-          case Expr.ApplyAtomic(AtomicOp.Region, _, tpe, _, loc) =>
+          case Expr.ApplyAtomic(AtomicOp.Region, _, _, _, _) =>
 
             // Compile the expression, putting a function implementing the Runnable interface on the stack
             compileExpr(exp1)
@@ -1073,15 +1073,29 @@ object GenExpression {
       case AtomicOp.HoleError(sym) =>
         // Add source line number for debugging (failable by design)
         addSourceLine(mv, loc)
-        AsmOps.compileThrowHoleError(mv, sym.toString, loc)
+        AsmOps.compileReifiedSourceLocation(mv, loc)
+        val className = BackendObjType.HoleError.jvmName
+        mv.visitTypeInsn(NEW, className.toInternalName)
+        mv.visitInsn(DUP2)
+        mv.visitInsn(SWAP)
+        mv.visitLdcInsn(sym.toString)
+        mv.visitInsn(SWAP)
+        mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.String.toDescriptor}${BackendObjType.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
+        mv.visitInsn(ATHROW)
 
       case AtomicOp.MatchError =>
         // Add source line number for debugging (failable by design)
         addSourceLine(mv, loc)
-        AsmOps.compileThrowFlixError(mv, BackendObjType.MatchError.jvmName, loc)
+        val className = BackendObjType.MatchError.jvmName
+        AsmOps.compileReifiedSourceLocation(mv, loc)
+        mv.visitTypeInsn(NEW, className.toInternalName)
+        mv.visitInsn(DUP2)
+        mv.visitInsn(SWAP)
+        mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
+        mv.visitInsn(ATHROW)
     }
 
-    case Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
+    case Expr.ApplyClo(exp, exps, ct, _, _, _) =>
       ct match {
         case CallType.TailCall =>
           // Type of the function abstract class
@@ -1131,7 +1145,7 @@ object GenExpression {
           BackendObjType.Result.unwindThunkToType(0 /* TODO */, ctx.newFrame, erasedResult)(new BytecodeInstructions.F(mv))
       }
 
-    case Expr.ApplyDef(sym, exps, ct, tpe, _, loc) => ct match {
+    case Expr.ApplyDef(sym, exps, ct, tpe, _, _) => ct match {
       case CallType.TailCall =>
         // Type of the function abstract class
         val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
@@ -1170,7 +1184,7 @@ object GenExpression {
         BackendObjType.Result.unwindThunkToType(0 /* TODO */, ctx.newFrame, BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(mv))
     }
 
-    case Expr.ApplySelfTail(sym, formals, exps, tpe, _, loc) =>
+    case Expr.ApplySelfTail(sym, _, exps, _, _, _) =>
       // The function abstract class name
       val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
       // Evaluate each argument and put the result on the Fn class.
@@ -1184,7 +1198,7 @@ object GenExpression {
       // Jump to the entry point of the method.
       mv.visitJumpInsn(GOTO, ctx.entryPoint)
 
-    case Expr.IfThenElse(exp1, exp2, exp3, _, _, loc) =>
+    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       val ifElse = new Label()
       val ifEnd = new Label()
       compileExpr(exp1)
@@ -1195,7 +1209,7 @@ object GenExpression {
       compileExpr(exp3)
       mv.visitLabel(ifEnd)
 
-    case Expr.Branch(exp, branches, _, _, loc) =>
+    case Expr.Branch(exp, branches, _, _, _) =>
       // Calculating the updated jumpLabels map
       val updatedJumpLabels = branches.foldLeft(ctx.lenv)((map, branch) => map + (branch._1 -> new Label()))
       val ctx1 = ctx.copy(lenv = updatedJumpLabels)
@@ -1217,11 +1231,11 @@ object GenExpression {
       // label for the end of branches
       mv.visitLabel(endLabel)
 
-    case Expr.JumpTo(sym, _, _, loc) =>
+    case Expr.JumpTo(sym, _, _, _) =>
       // Jumping to the label
       mv.visitJumpInsn(GOTO, ctx.lenv(sym))
 
-    case Expr.Let(sym, exp1, exp2, _, _, loc) =>
+    case Expr.Let(sym, exp1, exp2, _, _, _) =>
       compileExpr(exp1)
       // Jvm Type of the `exp1`
       val jvmType = JvmOps.getJvmType(exp1.tpe)
@@ -1231,7 +1245,7 @@ object GenExpression {
       mv.visitVarInsn(iStore, sym.getStackOffset(ctx.localOffset))
       compileExpr(exp2)
 
-    case Expr.LetRec(varSym, index, defSym, exp1, exp2, _, _, loc) =>
+    case Expr.LetRec(varSym, index, defSym, exp1, exp2, _, _, _) =>
       // Jvm Type of the `exp1`
       val jvmType = JvmOps.getJvmType(exp1.tpe)
       // Store instruction for `jvmType`
@@ -1354,17 +1368,17 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
 
-    case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+    case Expr.TryWith(exp, _, _, _, _, _) =>
       // TODO (temp unhandled code)
       compileExpr(exp)
 
 
-    case Expr.Do(op, exps, tpe, purity, loc) =>
+    case Expr.Do(_, _, _, _, _) =>
       // TODO (temp unit value)
       mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
 
-    case Expr.NewObject(name, _, tpe, _, _, exps, loc) =>
+    case Expr.NewObject(name, _, _, _, _, exps, _) =>
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)

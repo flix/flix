@@ -15,6 +15,8 @@
  */
 package ca.uwaterloo.flix.util.collection
 
+import scala.collection.mutable.ListBuffer
+
 /**
   * A linear data structure that allows fast concatenation.
   */
@@ -23,17 +25,17 @@ sealed trait Chain[+A] extends Iterable[A] {
   /**
     * Returns an iterator over the chain, from left to right.
     */
-  override def iterator: Iterator[A] = this match {
+  final def iterator: Iterator[A] = this match {
     case Chain.Empty => Iterator.empty
-    case Chain.Link(l, r) => Iterator.concat(l, r)
-    case Chain.Many(cs) => Iterator.concat(cs: _*)
+    case Chain.Link(l, r) => l.iterator ++ r.iterator
+    case Chain.Many(cs) => cs.flatMap(_.iterator).iterator
     case Chain.Proxy(xs) => xs.iterator
   }
 
   /**
     * Concatenates `this` chain and `that` chain.
     */
-  def ++[B >: A](that: Chain[B]): Chain[B] = {
+  final def ++[B >: A](that: Chain[B]): Chain[B] = {
     if (this == Chain.Empty) {
       that
     } else if (that == Chain.Empty) {
@@ -44,9 +46,43 @@ sealed trait Chain[+A] extends Iterable[A] {
   }
 
   /**
+    * Returns `this` as a [[List]].
+    */
+  override def toList: List[A] = this match {
+    // N.B.: We have to use reflection to avoid
+    // infinite recursion when pattern matching
+    // since it calls the equals method which
+    // depends on toList.
+    case _: Chain.Empty.type => List.empty
+    case c: Chain.Link[A] => c.l.toList ++ c.r.toList
+    case c: Chain.Many[A] =>
+      val buf = ListBuffer.empty[A]
+      c.cs.foreach(c => buf.addAll(c.iterator))
+      buf.toList
+    case c: Chain.Proxy[A] => c.xs.toList
+  }
+
+  /**
     * The empty chain.
     */
   override val empty: Chain[A] = Chain.Empty
+
+  /**
+    * Returns the amount of elements in the chain.
+    */
+  final def length: Int = this match {
+    case Chain.Empty => 0
+    case Chain.Link(l, r) => l.length + r.length
+    case Chain.Many(cs) => cs.map(_.length).sum
+    case Chain.Proxy(xs) => xs.length
+  }
+
+  final override def hashCode(): Int = this.toList.hashCode()
+
+  final override def equals(obj: Any): Boolean = obj match {
+    case that: Chain[_] => this.toList == that.toList
+    case _ => false
+  }
 }
 
 object Chain {
@@ -74,7 +110,22 @@ object Chain {
   /**
     * Returns a chain containing the given elements.
     */
-  def apply[A](xs: A*): Chain[A] = Chain.Proxy(xs)
+  def apply[A](xs: A*): Chain[A] = from(xs)
+
+  /**
+    * Returns a chain containing the given elements.
+    */
+  def from[A](xs: Seq[A]): Chain[A] = if (xs.isEmpty) Chain.empty else Chain.Proxy(xs)
+
+  /**
+    * Returns a chain containing the given elements.
+    */
+  def apply[A](xs: Iterable[A]): Chain[A] = from(xs)
+
+  /**
+    * Returns a chain containing the given elements.
+    */
+  def from[A](xs: Iterable[A]): Chain[A] = if (xs.isEmpty) Chain.empty else Chain.Proxy(xs.toSeq)
 
   /**
     * The empty chain.
@@ -85,4 +136,5 @@ object Chain {
     * Concatenates the given sequence of chains, in order.
     */
   def concat[A](cs: Seq[Chain[A]]): Chain[A] = Chain.Many(cs)
+
 }
