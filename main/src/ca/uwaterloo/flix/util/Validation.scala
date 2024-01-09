@@ -588,6 +588,21 @@ object Validation {
   }
 
   /**
+    * Applies `f` to the success value if there are no errors.
+    * Does nothing otherwise.
+    */
+  def onSuccess[T, E](t: Validation[T, E])(f: PartialFunction[T, Unit]): Unit = t match {
+    case Success(t) if f.isDefinedAt(t) => f(t)
+    case Success(_) | SoftFailure(_, _) | HardFailure(_) => ()
+  }
+
+  def onFailure[T, E](t: Validation[T, E])(f: PartialFunction[Chain[E], Unit]): Unit = t match {
+    case SoftFailure(_, errors) if f.isDefinedAt(errors) => f(errors)
+    case HardFailure(errors) if f.isDefinedAt(errors) => f(errors)
+    case Success(_) | SoftFailure(_, _) | HardFailure(_) => ()
+  }
+
+  /**
     * Folds Right over `xs` using the function `f` with the initial value `zero`.
     */
   def foldRight[T, U, E](xs: Seq[T])(zero: Validation[U, E])(f: (T, U) => Validation[U, E]): Validation[U, E] = {
