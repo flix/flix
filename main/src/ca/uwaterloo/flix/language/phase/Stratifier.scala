@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.errors.StratificationError
 import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 import scala.annotation.tailrec
@@ -499,7 +499,7 @@ object Stratifier {
     case Expr.Error(m, tpe, eff) =>
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
-      Validation.SoftFailure(Expr.Error(m, tpe, eff), LazyList.empty)
+      Validation.SoftFailure(Expr.Error(m, tpe, eff), Chain.empty)
 
   }
 

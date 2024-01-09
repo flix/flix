@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.Main.{CmdOpts, Command}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.runtime.shell.Shell
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.collection.Chain
 
 import java.nio.file.Path
 
@@ -61,7 +62,7 @@ object SimpleRunner {
 
     // check if we should start a REPL
     if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
-      Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
+      Bootstrap.bootstrap(cwd, options.githubToken)(System.out) match {
         case Validation.Success(bootstrap) =>
           val shell = new Shell(bootstrap, options)
           shell.loop()
@@ -111,7 +112,7 @@ object SimpleRunner {
         Result.Ok(())
 
       case failure =>
-        flix.mkMessages(failure.errors.sortBy(_.source.name))
+        flix.mkMessages(Chain.from(failure.errors.toSeq.sortBy(_.source.name)))
           .foreach(println)
         println()
         println(s"Compilation failed with ${failure.errors.length} error(s).")

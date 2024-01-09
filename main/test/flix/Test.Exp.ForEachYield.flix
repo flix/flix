@@ -297,4 +297,20 @@ mod Test.Exp.ForEachYield {
                 foreach (q <- c)
                     yield (x, q, z, y)
 
+    @test
+    def testForEachYieldLet01(): List[(Int32, Int32)] =
+        foreach (
+            x <- 1 :: 2 :: 3 :: Nil;
+            (a, b) = (10, 20);
+            y <- 4 :: 5 :: 6 :: Nil
+        ) yield ((x * y) + a, (x * y) + b)
+
+    @test
+    def testForEachYieldLet02(): List[(Int32, Int32)] =
+        foreach (
+            x <- 1 :: 2 :: 3 :: Nil;
+            (a, b) = (10, x);
+            y <- 4 :: 5 :: 6 :: Nil
+        ) yield ((x * y) + a, (x * y) + b)
+
 }

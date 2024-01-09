@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{mapN, traverse, traverseValues}
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
 
 import java.io.PrintWriter
 import scala.annotation.tailrec
@@ -126,7 +126,7 @@ object TypeInference {
                 // Case 1: no errors, continue
                 case Validation.Success(s) => s
                 case failure =>
-                  val instanceErrs = failure.errors.collect {
+                  val instanceErrs = failure.errors.toList.collect {
                     case UnificationError.NoMatchingInstance(tconstr) =>
                       tconstr.arg.typeConstructor match {
                         case Some(tc: TypeConstructor.Arrow) =>
@@ -180,14 +180,14 @@ object TypeInference {
                     }
                   } else {
                     // Case 3: instance error
-                    return Validation.HardFailure(instanceErrs)
+                    return Validation.HardFailure(Chain.from(instanceErrs))
                   }
               }
 
               // create a new substitution combining the econstr substitution and the base type substitution
               Validation.success((eqSubst @@ subst0))
 
-            case Err(e) => Validation.HardFailure(LazyList(e))
+            case Err(e) => Validation.HardFailure(Chain(e))
           }
       }
   }

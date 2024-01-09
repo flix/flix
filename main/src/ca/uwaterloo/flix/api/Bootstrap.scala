@@ -15,10 +15,11 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile}
+import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.language.phase.{HtmlDocumentor, JsonDocumentor}
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager}
+import ca.uwaterloo.flix.tools.pkg.github.GitHub
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
@@ -30,7 +31,10 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipOutputStream}
 import java.util.{Calendar, GregorianCalendar}
 import scala.collection.mutable
+import scala.io.StdIn.readLine
 import scala.util.{Failure, Success, Using}
+import scala.jdk.CollectionConverters._
+
 
 object Bootstrap {
 
@@ -320,7 +324,7 @@ object Bootstrap {
     * Creates a new Bootstrap object and initializes it.
     * If a `flix.toml` file exists, parses that to a Manifest and
     * downloads all required files. Otherwise checks the /lib folder
-    * to see what dependencies are already downloadet. Also finds
+    * to see what dependencies are already downloaded. Also finds
     * all .flix source files.
     * Then returns the initialized Bootstrap object or an error.
     */
@@ -341,6 +345,9 @@ object Bootstrap {
 }
 
 class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
+
+  // The `flix.toml` manifest if in project mode, otherwise `None`
+  private var optManifest: Option[Manifest] = None
 
   // Timestamps at the point the sources were loaded
   private var timestamps: Map[Path, Long] = Map.empty
@@ -363,6 +370,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Ok(m) => m
       case Err(e) => return Validation.toHardFailure(BootstrapError.ManifestParseError(e))
     }
+    optManifest = Some(manifest)
 
     // 2. Check each dependency is available or download it.
     val manifests: List[Manifest] = FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
@@ -620,5 +628,66 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           case Err(_) => Validation.toHardFailure(BootstrapError.GeneralError(List("Tester Error")))
         }
     }
+  }
+
+  /**
+    * Package the current project and release it on GitHub.
+    */
+  def release(flix: Flix): Validation[Unit, BootstrapError] = {
+    // Ensure that we have a manifest
+    val manifest = optManifest match {
+      case Some(m) => m
+      case None => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.MissingManifest))
+    }
+
+    // Check if `github` option is present
+    val githubRepo = manifest.repository match {
+      case Some(r) => r
+      case None => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.MissingRepository))
+    }
+
+    // Check if `--github-token` option is present
+    val githubToken = flix.options.githubToken match {
+      case Some(k) => k
+      case None => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.MissingApiKey))
+    }
+
+    if (!flix.options.assumeYes) {
+      // Ask for confirmation
+      print(s"Release github:$githubRepo v${manifest.version}? [y/N]: ")
+      val response = readLine()
+      response.toLowerCase match {
+        case "y" => // Continue
+        case "yes" => // Continue
+        case _ => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.Cancelled))
+      }
+    }
+
+    // Build artifacts
+    println("Building project...")
+    val buildResult = buildPkg()
+    buildResult match {
+      case Validation.Success(_) => // Continue
+      case Validation.SoftFailure(_, e) => return Validation.SoftFailure((), e)
+      case Validation.HardFailure(e) => return Validation.HardFailure(e)
+    }
+
+    // Publish to GitHub
+    println("Publishing a new release...")
+    val artifacts = List(getPkgFile(projectPath), getManifestFile(projectPath))
+    val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubToken)
+    publishResult match {
+      case Ok(()) => // Continue
+      case Err(e) => return Validation.toHardFailure(BootstrapError.ReleaseError(e))
+    }
+
+    println(
+      s"""
+         |Successfully released v${manifest.version}
+         |https://github.com/${githubRepo.owner}/${githubRepo.repo}/releases/tag/v${manifest.version}
+         |""".stripMargin
+    )
+
+    Validation.Success(())
   }
 }
