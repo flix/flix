@@ -250,7 +250,7 @@ object Instances {
       val insts = insts0
       // Check each instance against each instance that hasn't been checked yet
       val checks = insts.tails.toList
-      checks flatMap {
+      checks.flatMap {
         case inst :: unchecked =>
           // check that the instance is on a valid type, suppressing other errors if not
           checkSimple(inst) match {
