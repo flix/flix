@@ -577,14 +577,20 @@ object Validation {
     flatten(ap(mapN(t1, t2, t3, t4, t5, t6)(curry(f)))(t7))
 
   /**
-    * Applies `f` to every error in `t` (if any).
+    * Applies `f` to all errors in `t` (if any).
     *
     * Preserves the success value.
     */
-  def mapErr[T, R, E](t: Validation[T, E])(f: E => R): Validation[T, R] = t match {
-    case Success(t) => Success(t)
-    case SoftFailure(t, errors) => SoftFailure(t, Chain.from(errors.map(f)))
-    case HardFailure(errors) => HardFailure(Chain.from(errors.map(f)))
+  def mapFailures[T, E, R](t: Validation[T, E])(f: Chain[E] => Chain[R]): Validation[T, R] = t match {
+    case Success(v) => Success(v)
+    case SoftFailure(v, errors) => SoftFailure(v, f(errors))
+    case HardFailure(errors) => HardFailure(f(errors))
+  }
+
+  def flatMapFailures[T, E, R](t: Validation[T, E])(f: Chain[E] => Validation[T, R]): Validation[T, R] = t match {
+    case Success(v) => Success(v)
+    case SoftFailure(v, errors) => flatMapN(SoftFailure(v, Chain.empty))(_ => f(errors))
+    case HardFailure(errors) => flatMapN(HardFailure(Chain.empty))((_: T) => f(errors))
   }
 
   /**
@@ -592,7 +598,7 @@ object Validation {
     * Does nothing otherwise.
     */
   def onSuccess[T, E](t: Validation[T, E])(f: PartialFunction[T, Unit]): Unit = t match {
-    case Success(t) if f.isDefinedAt(t) => f(t)
+    case Success(v) if f.isDefinedAt(v) => f(v)
     case Success(_) | SoftFailure(_, _) | HardFailure(_) => ()
   }
 

@@ -473,11 +473,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def check(flix: Flix): Validation[Unit, BootstrapError] = {
     // Add sources and packages.
     reconfigureFlix(flix)
-
-    flix.check().toResult match {
-      case Result.Ok((_, Chain.empty)) => Validation.success(())
-      case Result.Ok((_, errors)) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
-      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+    Validation.mapFailures(Validation.mapN(flix.check())(_ => ())) {
+      errors => Chain(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 
@@ -492,10 +489,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    flix.compile().toResult match {
-      case Result.Ok((r, Chain.empty)) => Validation.success(r)
-      case Result.Ok((_, errors)) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
-      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+    Validation.flatMapFailures(flix.compile()) {
+      case errors => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 
@@ -598,14 +593,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    Validation.mapN(flix.check()) {
+    val checkVal = Validation.mapN(flix.check()) {
       case root =>
         JsonDocumentor.run(root)(flix)
         HtmlDocumentor.run(root)(flix)
-    }.toResult match {
-      case Result.Ok((_, Chain.empty)) => Validation.success(())
-      case Result.Ok((_, errors)) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
-      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+    }
+    Validation.flatMapFailures(Validation.mapN(checkVal)(_ => ())) {
+      case errors => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 
