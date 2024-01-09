@@ -596,6 +596,10 @@ object Validation {
     case Success(_) | SoftFailure(_, _) | HardFailure(_) => ()
   }
 
+  /**
+    * Applies `f` to all errors at once.
+    * Does nothing otherwise.
+    */
   def onFailure[T, E](t: Validation[T, E])(f: PartialFunction[Chain[E], Unit]): Unit = t match {
     case SoftFailure(_, errors) if f.isDefinedAt(errors) => f(errors)
     case HardFailure(errors) if f.isDefinedAt(errors) => f(errors)
