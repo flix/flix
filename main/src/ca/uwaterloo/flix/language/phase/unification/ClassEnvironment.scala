@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.ClassContext
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, Symbol, Type}
 import ca.uwaterloo.flix.util.{Result, Validation}
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
 
 import scala.annotation.tailrec
 
@@ -60,7 +60,7 @@ object ClassEnvironment {
     */
   def holds(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
     byInst(tconstr, classEnv).toResult match {
-      case Result.Ok((_, Nil)) => true
+      case Result.Ok((_, Chain.empty)) => true
       case _failure => false
     }
   }
@@ -76,7 +76,7 @@ object ClassEnvironment {
       case Nil => acc
       case head :: tail => entail(acc ++ tail, head, classEnv).toResult match {
         // Case 1: `head` is entailed by the other type constraints, skip it
-        case Result.Ok((_, Nil)) => loop(tail, acc)
+        case Result.Ok((_, Chain.empty)) => loop(tail, acc)
         // Case 2: `head` is not entailed, add it to the list
         case _failure => loop(tail, head :: acc)
       }
