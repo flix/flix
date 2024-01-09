@@ -29,7 +29,7 @@ object PublishDiagnosticsParams {
     val formatter: Formatter = Formatter.NoFormatter
 
     // Group the error messages by source.
-    val errorsBySource = errors.groupBy(_.loc.source)
+    val errorsBySource = errors.toList.groupBy(_.loc.source)
 
     // Translate each compilation message to a diagnostic.
     errorsBySource.foldLeft(Nil: List[PublishDiagnosticsParams]) {
@@ -60,6 +60,6 @@ object PublishDiagnosticsParams {
   * @param uri         The URI for which diagnostic information is reported.
   * @param diagnostics An array of diagnostic information items.
   */
-case class PublishDiagnosticsParams(uri: String, diagnostics: Iterable[Diagnostic]) {
+case class PublishDiagnosticsParams(uri: String, diagnostics: List[Diagnostic]) {
   def toJSON: JValue = ("uri" -> uri) ~ ("diagnostics" -> diagnostics.map(_.toJSON))
 }
