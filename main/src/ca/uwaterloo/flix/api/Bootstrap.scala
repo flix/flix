@@ -662,27 +662,24 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Build artifacts
     println("Building project...")
     val buildResult = buildPkg()
-    buildResult.toResult match {
-      case Result.Ok((_, Chain.empty)) => // Continue
-      case Result.Ok((_, e)) => return Validation.SoftFailure((), e)
-      case Result.Err(e) => return Validation.HardFailure(e)
-    }
+    Validation.onSuccess(buildResult) {
+      _ =>
+        // Publish to GitHub
+        println("Publishing a new release...")
+        val artifacts = List(getPkgFile(projectPath), getManifestFile(projectPath))
+        val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubToken)
+        publishResult match {
+          case Ok(()) => // Continue
+          case Err(e) => return Validation.toHardFailure(BootstrapError.ReleaseError(e))
+        }
 
-    // Publish to GitHub
-    println("Publishing a new release...")
-    val artifacts = List(getPkgFile(projectPath), getManifestFile(projectPath))
-    val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubToken)
-    publishResult match {
-      case Ok(()) => // Continue
-      case Err(e) => return Validation.toHardFailure(BootstrapError.ReleaseError(e))
+        println(
+          s"""
+             |Successfully released v${manifest.version}
+             |https://github.com/${githubRepo.owner}/${githubRepo.repo}/releases/tag/v${manifest.version}
+             |""".stripMargin
+        )
     }
-
-    println(
-      s"""
-         |Successfully released v${manifest.version}
-         |https://github.com/${githubRepo.owner}/${githubRepo.repo}/releases/tag/v${manifest.version}
-         |""".stripMargin
-    )
 
     Validation.success(())
   }
