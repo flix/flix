@@ -43,7 +43,7 @@ object ReleaseError {
   case object MissingApiKey extends ReleaseError {
     override def message(f: Formatter): String =
       s"""
-         | Cannot create a release without the `--github-key` option.
+         | Cannot create a release without the `--github-token` option.
          |""".stripMargin
   }
 

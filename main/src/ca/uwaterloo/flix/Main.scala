@@ -74,7 +74,7 @@ object Main {
       lib = cmdOpts.xlib,
       entryPoint = entryPoint,
       explain = cmdOpts.explain,
-      githubKey = cmdOpts.githubKey,
+      githubToken = cmdOpts.githubToken,
       incremental = Options.Default.incremental,
       json = cmdOpts.json,
       progress = true,
@@ -134,7 +134,7 @@ object Main {
           }
 
         case Command.Check =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
@@ -147,7 +147,7 @@ object Main {
           }
 
         case Command.Build =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(loadClassFiles = false))
@@ -160,7 +160,7 @@ object Main {
           }
 
         case Command.BuildJar =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap => bootstrap.buildJar()
           } match {
             case Validation.Success(_) =>
@@ -171,7 +171,7 @@ object Main {
           }
 
         case Command.BuildPkg =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap => bootstrap.buildPkg()
           } match {
             case Validation.Success(_) =>
@@ -182,7 +182,7 @@ object Main {
           }
 
         case Command.Doc =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
@@ -196,7 +196,7 @@ object Main {
           }
 
         case Command.Run =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
@@ -214,7 +214,7 @@ object Main {
           }
 
         case Command.Benchmark =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
@@ -228,7 +228,7 @@ object Main {
           }
 
         case Command.Test =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
@@ -246,7 +246,7 @@ object Main {
             println("The 'repl' command cannot be used with a list of files.")
             System.exit(1)
           }
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.err) match {
+          Bootstrap.bootstrap(cwd, options.githubToken)(System.err) match {
             case Validation.Success(bootstrap) =>
               val shell = new Shell(bootstrap, options)
               shell.loop()
@@ -268,7 +268,7 @@ object Main {
           System.exit(0)
 
         case Command.Release =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
@@ -303,7 +303,7 @@ object Main {
                      entryPoint: Option[String] = None,
                      explain: Boolean = false,
                      installDeps: Boolean = true,
-                     githubKey: Option[String] = None,
+                     githubToken: Option[String] = None,
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      threads: Option[Int] = None,
@@ -433,7 +433,7 @@ object Main {
       opt[Unit]("explain").action((_, c) => c.copy(explain = true)).
         text("provides suggestions on how to solve a problem.")
 
-      opt[String]("github-key").action((s, c) => c.copy(githubKey = Some(s))).
+      opt[String]("github-token").action((s, c) => c.copy(githubToken = Some(s))).
         text("API key to use for GitHub dependency resolution.")
 
       help("help").text("prints this usage information.")
