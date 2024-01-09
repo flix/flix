@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.fmt._
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.util.Formatter.AnsiTerminalFormatter
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.collection.Chain
 import org.jline.reader.{EndOfFileException, LineReader, LineReaderBuilder, UserInterruptException}
 import org.jline.terminal.{Terminal, TerminalBuilder}
 
@@ -164,6 +165,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     case Command.Build => bootstrap.build(flix)
     case Command.BuildJar => bootstrap.buildJar()
     case Command.BuildPkg => bootstrap.buildPkg()
+    case Command.Release => bootstrap.release(flix)
     case Command.Check => bootstrap.check(flix)
     case Command.Doc => bootstrap.doc(flix)
     case Command.Test => bootstrap.test(flix)
@@ -242,6 +244,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     w.println("  :build :b                   Builds (i.e. compiles) the current project.")
     w.println("  :build-jar :jar             Builds a jar-file from the current project.")
     w.println("  :build-pkg :pkg             Builds a fpkg-file from the current project.")
+    w.println("  :release                    Publishes a release of the current project to GitHub.")
     w.println("  :check :c                   Checks the current project for errors.")
     w.println("  :doc :d                     Generates API documentation for the current project.")
     w.println("  :test :t                    Runs the tests for the current project.")
@@ -280,7 +283,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
 
         // And try to compile!
         compile(progress = false).toResult match {
-          case Result.Ok((_, Nil)) =>
+          case Result.Ok((_, Chain.empty)) =>
             // Compilation succeeded.
             w.println("Ok.")
           case _ =>
@@ -346,13 +349,13 @@ class Shell(bootstrap: Bootstrap, options: Options) {
 
     val checkResult = flix.check().toHardFailure
     checkResult.toResult match {
-      case Result.Ok((root, Nil)) => this.root = Some(root)
+      case Result.Ok((root, Chain.empty)) => this.root = Some(root)
       case _ => // no-op
     }
 
     val result = Validation.flatMapN(checkResult)(flix.codeGen)
 
-    def printFailures(failures: List[CompilationMessage]): Unit = {
+    def printFailures(failures: Chain[CompilationMessage]): Unit = {
       for (msg <- flix.mkMessages(failures)) {
         terminal.writer().print(msg)
       }
@@ -360,7 +363,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     }
 
     result.toResult match {
-      case Result.Ok((_, Nil)) => // Compilation successful, no-op
+      case Result.Ok((_, Chain.empty)) => // Compilation successful, no-op
       case Result.Ok((_, failures)) => printFailures(failures)
       case Result.Err(failures) => printFailures(failures)
     }

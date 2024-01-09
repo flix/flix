@@ -28,7 +28,7 @@ object Options {
     lib = LibLevel.All,
     entryPoint = None,
     explain = false,
-    githubKey = None,
+    githubToken = None,
     installDeps = false,
     incremental = true,
     json = false,
@@ -38,6 +38,7 @@ object Options {
     target = JvmTarget.Version21,
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
+    assumeYes = false,
     xbddthreshold = None,
     xnoboolcache = false,
     xnoboolspecialcases = false,
@@ -79,7 +80,7 @@ object Options {
   * @param lib                 selects the level of libraries to include.
   * @param entryPoint          specifies the main entry point.
   * @param explain             enables additional explanations.
-  * @param githubKey           the API key to use for GitHub dependency resolution.
+  * @param githubToken           the API key to use for GitHub dependency resolution.
   * @param incremental         enables incremental compilation.
   * @param installDeps         enables automatic installation of dependencies.
   * @param json                enable json output.
@@ -89,6 +90,7 @@ object Options {
   * @param target              the target JVM.
   * @param threads             selects the number of threads to use.
   * @param loadClassFiles      loads the generated class files into the JVM.
+  * @param assumeYes           run non-interactively and assume answer to all prompts is yes.
   * @param xbddthreshold       the threshold for when to use BDDs for SVE.
   * @param xnoboolcache        disable Boolean caches.
   * @param xnoboolspecialcases disable Boolean unification shortcuts.
@@ -101,7 +103,7 @@ object Options {
 case class Options(lib: LibLevel,
                    entryPoint: Option[Symbol.DefnSym],
                    explain: Boolean,
-                   githubKey: Option[String],
+                   githubToken: Option[String],
                    incremental: Boolean,
                    installDeps: Boolean,
                    json: Boolean,
@@ -111,6 +113,7 @@ case class Options(lib: LibLevel,
                    test: Boolean,
                    threads: Int,
                    loadClassFiles: Boolean,
+                   assumeYes: Boolean,
                    xbddthreshold: Option[Int],
                    xnoboolcache: Boolean,
                    xnoboolspecialcases: Boolean,

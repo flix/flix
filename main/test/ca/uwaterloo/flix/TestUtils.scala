@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{Formatter, Options, Result, Validation}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -35,7 +36,7 @@ trait TestUtils {
   def compile(s: String, o: Options): Validation[CompilationResult, CompilationMessage] =
     new Flix().setOptions(o).addSourceCode("<test>", s).compile()
 
-  private def errorString(errors: Seq[CompilationMessage]): String = {
+  private def errorString(errors: Chain[CompilationMessage]): String = {
     errors.map(_.message(Formatter.NoFormatter)).mkString("\n\n")
   }
 
@@ -43,7 +44,7 @@ trait TestUtils {
     * Asserts that the validation is a failure with a value of the parametric type `T`.
     */
   def expectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result.toResult match {
-    case Result.Ok((_, Nil)) => fail(s"Expected Failure, but got Success.")
+    case Result.Ok((_, Chain.empty)) => fail(s"Expected Failure, but got Success.")
 
     case Result.Ok((_, failures)) =>
       val expected = classTag.runtimeClass
@@ -68,7 +69,7 @@ trait TestUtils {
     * Asserts that the validation does not contain a value of the parametric type `T`.
     */
   def rejectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result.toResult match {
-    case Result.Ok((_, Nil)) => ()
+    case Result.Ok((_, Chain.empty)) => ()
 
     case Result.Ok((_, failures)) =>
       val rejected = classTag.runtimeClass
@@ -90,7 +91,7 @@ trait TestUtils {
     * Asserts that the validation is successful.
     */
   def expectSuccess(result: Validation[CompilationResult, CompilationMessage]): Unit = result.toResult match {
-    case Result.Ok((_, Nil)) => ()
+    case Result.Ok((_, Chain.empty)) => ()
     case Result.Ok((_, failures)) =>
       fail(s"Expected success, but found errors:\n\n${errorString(failures)}.")
     case Result.Err(failures) =>

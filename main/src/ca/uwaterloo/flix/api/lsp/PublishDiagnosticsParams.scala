@@ -25,7 +25,7 @@ import org.json4s._
   * Companion object of [[PublishDiagnosticsParams]].
   */
 object PublishDiagnosticsParams {
-  def fromMessages(errors: List[CompilationMessage], explain: Boolean): List[PublishDiagnosticsParams] = {
+  def fromMessages(errors: Iterable[CompilationMessage], explain: Boolean): List[PublishDiagnosticsParams] = {
     val formatter: Formatter = Formatter.NoFormatter
 
     // Group the error messages by source.
@@ -60,6 +60,6 @@ object PublishDiagnosticsParams {
   * @param uri         The URI for which diagnostic information is reported.
   * @param diagnostics An array of diagnostic information items.
   */
-case class PublishDiagnosticsParams(uri: String, diagnostics: List[Diagnostic]) {
+case class PublishDiagnosticsParams(uri: String, diagnostics: Iterable[Diagnostic]) {
   def toJSON: JValue = ("uri" -> uri) ~ ("diagnostics" -> diagnostics.map(_.toJSON))
 }

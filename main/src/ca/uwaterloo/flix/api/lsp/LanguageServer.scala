@@ -26,6 +26,7 @@ import ca.uwaterloo.flix.language.phase.extra.CodeHinter
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.collection.Chain
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -336,9 +337,9 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     try {
       // Run the compiler up to the type checking phase.
       flix.check().toResult match {
-        case Result.Ok((root, Nil)) =>
+        case Result.Ok((root, Chain.empty)) =>
           // Case 1: Compilation was successful. Build the reverse index.
-          processSuccessfulCheck(requestId, root, List.empty, flix.options.explain, t)
+          processSuccessfulCheck(requestId, root, Chain.empty, flix.options.explain, t)
 
         case Result.Ok((root, errors)) =>
           // Case 2: Compilation had non-critical errors. Build the reverse index.
@@ -349,10 +350,10 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
 
           // Mark the AST as outdated and update the current errors.
           this.current = false
-          this.currentErrors = errors
+          this.currentErrors = errors.toList
 
           // Publish diagnostics.
-          val results = PublishDiagnosticsParams.fromMessages(errors, flix.options.explain)
+          val results = PublishDiagnosticsParams.fromMessages(currentErrors, flix.options.explain)
           ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> results.map(_.toJSON))
       }
     } catch {
@@ -369,13 +370,13 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   /**
     * Helper function for [[processCheck]] which handles successful and soft failure compilations.
     */
-  private def processSuccessfulCheck(requestId: String, root: Root, errors: List[CompilationMessage], explain: Boolean, t0: Long): JValue = {
+  private def processSuccessfulCheck(requestId: String, root: Root, errors: Chain[CompilationMessage], explain: Boolean, t0: Long): JValue = {
     val oldRoot = this.root
     this.root = Some(root)
     this.index = Indexer.visitRoot(root)
     this.delta = DeltaContext.mergeDeltas(this.delta, Differ.difference(oldRoot, root))
     this.current = true
-    this.currentErrors = errors
+    this.currentErrors = errors.toList
 
     // Compute elapsed time.
     val e = System.nanoTime() - t0
@@ -387,14 +388,14 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val codeHints = CodeHinter.run(root, sources.keySet.toSet)(flix, index)
 
     // Determine the status based on whether there are errors.
-    val results = PublishDiagnosticsParams.fromMessages(errors, explain) ::: PublishDiagnosticsParams.fromCodeHints(codeHints)
+    val results = PublishDiagnosticsParams.fromMessages(currentErrors, explain) ++ PublishDiagnosticsParams.fromCodeHints(codeHints)
     ("id" -> requestId) ~ ("status" -> ResponseStatus.Success) ~ ("time" -> e) ~ ("result" -> results.map(_.toJSON))
   }
 
   /**
     * Processes a shutdown request.
     */
-  private def processShutdown()(implicit ws: WebSocket): Nothing = {
+  private def processShutdown(): Nothing = {
     System.exit(0)
     throw null // unreachable
   }

@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.{mapN, traverse, traverseValues}
 import ca.uwaterloo.flix.util._
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
 
 import java.io.PrintWriter
 import scala.annotation.tailrec
@@ -121,7 +121,7 @@ object TypeInference {
               ///
               val inferredSc = Scheme.generalize(inferredTconstrs, inferredEconstrs, inferredType, renv0)
 
-              def handleFailureCase(failures: List[UnificationError]): Validation[Substitution, TypeError] = {
+              def handleFailureCase(failures: Chain[UnificationError]): Validation[Substitution, TypeError] = {
                 val instanceErrs = failures.collect {
                   case UnificationError.NoMatchingInstance(tconstr) =>
                     tconstr.arg.typeConstructor match {
@@ -163,7 +163,7 @@ object TypeInference {
                     val inferredEffScheme = Scheme(inferredSc.quantifiers, Nil, Nil, inferredEff)
                     val declaredEffScheme = Scheme(declaredScheme.quantifiers, Nil, Nil, declaredEff)
                     Scheme.checkLessThanEqual(inferredEffScheme, declaredEffScheme, classEnv, eqEnv).toResult match {
-                      case Result.Ok((_, Nil)) =>
+                      case Result.Ok((_, Chain.empty)) =>
                       // Case 3.1: The effect is not the problem. Regular generalization error.
                       // Fall through to below.
 
@@ -176,13 +176,13 @@ object TypeInference {
                   }
                 } else {
                   // Case 3: instance error
-                  return Validation.HardFailure(instanceErrs.to(LazyList))
+                  return Validation.HardFailure(Chain.from(instanceErrs))
                 }
               }
 
               // get a substitution from the scheme comparison
               val eqSubst = Scheme.checkLessThanEqual(inferredSc, declaredScheme, classEnv, eqEnv).toResult match {
-                case Ok((s, Nil)) => s
+                case Ok((s, Chain.empty)) => s
                 case Ok((_, failures)) => return handleFailureCase(failures)
                 case Err(failures) => return handleFailureCase(failures)
               }
@@ -190,7 +190,7 @@ object TypeInference {
               // create a new substitution combining the econstr substitution and the base type substitution
               Validation.success((eqSubst @@ subst0))
 
-            case Err(e) => Validation.HardFailure(LazyList(e))
+            case Err(e) => Validation.HardFailure(Chain(e))
           }
       }
   }
