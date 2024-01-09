@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 object Unification {
@@ -588,7 +588,7 @@ object Unification {
         econstrs.forall {
           econstr =>
             EqualityEnvironment.entail(Nil, econstr, renv, eqEnv).toResult match {
-              case Result.Ok((_, Nil)) => true
+              case Result.Ok((_, Chain.empty)) => true
               case _failure => false
             }
         }
