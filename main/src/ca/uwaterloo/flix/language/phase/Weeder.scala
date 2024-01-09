@@ -25,6 +25,7 @@ import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.language.errors._
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
@@ -415,7 +416,7 @@ object Weeder {
                   val enumName = ident.name
                   val loc1 = otherTag.ident.loc
                   val loc2 = mkSL(caze.ident.sp1, caze.ident.sp2)
-                  HardFailure(LazyList(
+                  HardFailure(Chain(
                     // NB: We report an error at both source locations.
                     DuplicateTag(enumName, tagName, loc1, loc2),
                     DuplicateTag(enumName, tagName, loc2, loc1)
@@ -884,13 +885,23 @@ object Weeder {
 
     case ParsedAst.Expression.ApplicativeFor(sp1, frags, exp, sp2) =>
       val loc = mkSL(sp1, sp2).asSynthetic
-      val fs = traverse(frags)(visitForFragmentGenerator(_))
+      val (gens, bad) = frags.partition {
+        case _: ParsedAst.ForFragment.Generator => true
+        case _ => false
+      }
+      val gs = traverse(gens)(g => visitForFragmentGenerator(g.asInstanceOf[ParsedAst.ForFragment.Generator]))
+      val errs = traverse(bad)(visitForFragment(_))
       val e = visitExp(exp)
-      flatMapN(fs, e) {
+      flatMapN(errs, gs, e) {
         case _ if frags.isEmpty =>
           val err = EmptyForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
-        case (fs1, e1) => Validation.success(WeededAst.Expr.ApplicativeFor(fs1, e1, loc))
+
+        case (es, _, _) if es.nonEmpty =>
+          val err = WeederError.IllegalForAFragment(loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+
+        case (_, fs, e1) => Validation.success(WeededAst.Expr.ApplicativeFor(fs, e1, loc))
       }
 
     case ParsedAst.Expression.ForEach(sp1, frags, exp, sp2) =>
@@ -901,9 +912,15 @@ object Weeder {
         case _ if frags.isEmpty =>
           val err = EmptyForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
-        case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
-          val err = IllegalForFragment(loc1)
+
+        case (WeededAst.ForFragment.Guard(_, _) :: _, _) =>
+          val err = IllegalForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+
+        case (WeededAst.ForFragment.Let(_, _, _) :: _, _) =>
+          val err = IllegalForFragment(loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+
         case (fs1, e1) => Validation.success(WeededAst.Expr.ForEach(fs1, e1, loc))
       }
 
@@ -915,9 +932,15 @@ object Weeder {
         case _ if frags.isEmpty =>
           val err = EmptyForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
-        case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
-          val err = IllegalForFragment(loc1)
+
+        case (WeededAst.ForFragment.Guard(_, _) :: _, _) =>
+          val err = IllegalForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+
+        case (WeededAst.ForFragment.Let(_, _, _) :: _, _) =>
+          val err = IllegalForFragment(loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+
         case (fs1, e1) => Validation.success(WeededAst.Expr.MonadicFor(fs1, e1, loc))
       }
 
@@ -929,9 +952,15 @@ object Weeder {
         case _ if frags.isEmpty =>
           val err = EmptyForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
-        case (WeededAst.ForFragment.Guard(_, loc1) :: _, _) =>
-          val err = IllegalForFragment(loc1)
+
+        case (WeededAst.ForFragment.Guard(_, _) :: _, _) =>
+          val err = IllegalForFragment(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+
+        case (WeededAst.ForFragment.Let(_, _, _) :: _, _) =>
+          val err = IllegalForFragment(loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+
         case (fs1, e1) => Validation.success(WeededAst.Expr.ForEachYield(fs1, e1, loc))
       }
 
@@ -2710,6 +2739,7 @@ object Weeder {
   private def visitForFragment(frag0: ParsedAst.ForFragment)(implicit flix: Flix): Validation[WeededAst.ForFragment, WeederError] = frag0 match {
     case gen: ParsedAst.ForFragment.Generator => visitForFragmentGenerator(gen)
     case guard: ParsedAst.ForFragment.Guard => visitForFragmentGuard(guard)
+    case let: ParsedAst.ForFragment.Let => visitForFragmentLet(let)
   }
 
   /**
@@ -2734,6 +2764,19 @@ object Weeder {
       val e = visitExp(exp)
       mapN(e) {
         case e1 => WeededAst.ForFragment.Guard(e1, loc)
+      }
+  }
+
+  /**
+    * Performs weeding on the given [[ParsedAst.ForFragment.Let]] `frag0`.
+    */
+  private def visitForFragmentLet(frag0: ParsedAst.ForFragment.Let)(implicit flix: Flix): Validation[WeededAst.ForFragment.Let, WeederError] = frag0 match {
+    case ParsedAst.ForFragment.Let(sp1, pat, exp, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val pVal = visitPattern(pat)
+      val eVal = visitExp(exp)
+      mapN(pVal, eVal) {
+        case (p, e) => WeededAst.ForFragment.Let(p, e, loc)
       }
   }
 
