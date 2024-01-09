@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.collection.Chain
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.server.WebSocketServer
@@ -174,7 +174,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
       flix.setOptions(opts)
 
       flix.compile().toResult match {
-        case Result.Ok((compilationResult, Nil)) =>
+        case Result.Ok((compilationResult, Chain.empty)) =>
           // Compilation was successful.
 
           // Determine if the main function is present.
