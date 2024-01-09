@@ -75,7 +75,7 @@ object Stratifier {
     */
   private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Sig, StratificationError] = {
     val newExp = traverseOpt(s0.exp)(visitExp(_))
-    mapN(newExp){
+    mapN(newExp) {
       case ne => s0.copy(exp = ne)
     }
   }
@@ -85,13 +85,13 @@ object Stratifier {
     * Performs Stratification of the given instance `i0`.
     */
   private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Instance, StratificationError] =
-    traverse(i0.defs)(d => visitDef(d)).map(ds => i0.copy(defs = ds))
+    mapN(traverse(i0.defs)(d => visitDef(d)))(ds => i0.copy(defs = ds))
 
   /**
     * Performs stratification of the given definition `def0`.
     */
   private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[Def, StratificationError] =
-    visitExp(def0.exp) map {
+    mapN(visitExp(def0.exp)) {
       case e => def0.copy(exp = e)
     }
 
@@ -180,7 +180,7 @@ object Stratifier {
       }
 
     case Expr.Discard(exp, eff, loc) =>
-      visitExp(exp) map {
+      mapN(visitExp(exp)) {
         case e => Expr.Discard(e, eff, loc)
       }
 
@@ -333,7 +333,8 @@ object Stratifier {
 
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val rulesVal = traverse(rules) {
-        case CatchRule(sym, clazz, e) => visitExp(e).map(CatchRule(sym, clazz, _))
+        case CatchRule(sym, clazz, e) =>
+          mapN(visitExp(e))(CatchRule(sym, clazz, _))
       }
       mapN(visitExp(exp), rulesVal) {
         case (e, rs) => Expr.TryCatch(e, rs, tpe, eff, loc)
@@ -341,7 +342,8 @@ object Stratifier {
 
     case Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
       val rulesVal = traverse(rules) {
-        case HandlerRule(op, fparams, e) => visitExp(e).map(HandlerRule(op, fparams, _))
+        case HandlerRule(op, fparams, e) =>
+          mapN(visitExp(e))(HandlerRule(op, fparams, _))
       }
       mapN(visitExp(exp), rulesVal) {
         case (e, rs) => Expr.TryWith(e, sym, rs, tpe, eff, loc)
@@ -414,9 +416,10 @@ object Stratifier {
 
       val defaultVal = default match {
         case None => Validation.success(None)
-        case Some(exp) => visitExp(exp) map {
-          case e => Some(e)
-        }
+        case Some(exp) =>
+          mapN(visitExp(exp)) {
+            case e => Some(e)
+          }
       }
 
       mapN(rulesVal, defaultVal) {

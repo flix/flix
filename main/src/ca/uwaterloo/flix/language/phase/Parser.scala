@@ -54,7 +54,7 @@ object Parser {
       val result = ParOps.parTraverse(stale.keys)(parseRoot)
 
       // Combine the ASTs into one abstract syntax tree.
-      result.map {
+      mapN(result) {
         case as =>
           val m = as.foldLeft(fresh) {
             case (acc, (src, u)) => acc + (src -> u)

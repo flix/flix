@@ -336,10 +336,10 @@ object Bootstrap {
     val tomlPath = getManifestFile(path)
     if (Files.exists(tomlPath)) {
       out.println("Found `flix.toml'. Checking dependencies...")
-      bootstrap.projectMode().map(_ => bootstrap)
+      Validation.mapN(bootstrap.projectMode())(_ => bootstrap)
     } else {
       out.println("No `flix.toml'. Will load source files from `*.flix`, `src/**`, and `test/**`.")
-      bootstrap.folderMode().map(_ => bootstrap)
+      Validation.mapN(bootstrap.folderMode())(_ => bootstrap)
     }
   }
 }
@@ -584,7 +584,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Runs all benchmarks in the flix package for the project.
     */
   def benchmark(flix: Flix): Validation[Unit, BootstrapError] = {
-    build(flix).map {
+    Validation.mapN(build(flix)) {
       compilationResult =>
         Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(flix.options)
     }
@@ -597,7 +597,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    flix.check() map {
+    Validation.mapN(flix.check()) {
       root =>
         JsonDocumentor.run(root)(flix)
         HtmlDocumentor.run(root)(flix)
@@ -611,9 +611,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Runs the main function in flix package for the project.
     */
   def run(flix: Flix, args: Array[String]): Validation[Unit, BootstrapError] = {
-    build(flix).map(_.getMain).map {
-      case None => ()
-      case Some(main) => main(args)
+    Validation.mapN(build(flix)) {
+      _.getMain match {
+        case None => ()
+        case Some(main) => main(args)
+      }
     }
   }
 

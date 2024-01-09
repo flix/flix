@@ -67,7 +67,7 @@ object Weeder {
       // Compute the stale and fresh sources.
       val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
 
-      ParOps.parTraverseValues(stale)(visitCompilationUnit).map {
+      mapN(ParOps.parTraverseValues(stale)(visitCompilationUnit)) {
         result =>
           val m = fresh ++ result
           WeededAst.Root(m, root.entryPoint, root.names)
@@ -847,7 +847,7 @@ object Weeder {
 
     case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
-      visitExp(exp).map {
+      mapN(visitExp(exp)) {
         case e => visitUnaryOperator(op) match {
           case OperatorResult.BuiltIn(name) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(name, name.loc), List(e), loc)
           case OperatorResult.Operator(o) => WeededAst.Expr.Unary(o, e, loc)
@@ -879,7 +879,7 @@ object Weeder {
 
     case ParsedAst.Expression.Discard(sp1, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
-      visitExp(exp).map {
+      mapN(visitExp(exp)) {
         case e => WeededAst.Expr.Discard(e, loc)
       }
 
@@ -1076,7 +1076,7 @@ object Weeder {
       }
 
     case ParsedAst.Expression.Tuple(sp1, elms, sp2) =>
-      traverse(elms)(visitArgument(_)).map {
+      mapN(traverse(elms)(visitArgument(_))) {
         case args => WeededAst.Expr.Tuple(args, mkSL(sp1, sp2))
       }
 
@@ -1290,7 +1290,7 @@ object Weeder {
     case ParsedAst.Expression.InstanceOf(exp, className, sp2) =>
       val sp1 = leftMostSourcePosition(exp)
       val loc = mkSL(sp1, sp2)
-      visitExp(exp).map {
+      mapN(visitExp(exp)) {
         case e => WeededAst.Expr.InstanceOf(e, className.toString, loc)
       }
 
@@ -1331,7 +1331,7 @@ object Weeder {
 
     case ParsedAst.Expression.Do(sp1, op, args0, sp2) =>
       val loc = mkSL(sp1, sp2)
-      val argsVal = traverse(args0)(visitArgument(_)).map(getArguments(_, loc))
+      val argsVal = mapN(traverse(args0)(visitArgument(_)))(getArguments(_, loc))
       mapN(argsVal) {
         args => WeededAst.Expr.Do(op, args, loc)
       }
@@ -1340,7 +1340,7 @@ object Weeder {
       val expVal = visitExp(exp)
       val rulesVal = traverse(rules) {
         case ParsedAst.CatchRule(ident, fqn, body) =>
-          visitExp(body).map {
+          mapN(visitExp(body)) {
             case b => WeededAst.CatchRule(ident, fqn.toString, b)
           }
       }
@@ -1379,9 +1379,10 @@ object Weeder {
       }
 
       val defaultVal = exp match {
-        case Some(exp) => visitExp(exp).map {
-          case e => Some(e)
-        }
+        case Some(exp) =>
+          mapN(visitExp(exp)) {
+            case e => Some(e)
+          }
         case None => Validation.success(None)
       }
 
@@ -1409,12 +1410,12 @@ object Weeder {
       }
 
     case ParsedAst.Expression.Lazy(sp1, exp, sp2) =>
-      visitExp(exp).map {
+      mapN(visitExp(exp)) {
         case e => WeededAst.Expr.Lazy(e, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Force(sp1, exp, sp2) =>
-      visitExp(exp).map {
+      mapN(visitExp(exp)) {
         case e => WeededAst.Expr.Force(e, mkSL(sp1, sp2))
       }
 
@@ -1428,7 +1429,7 @@ object Weeder {
     case ParsedAst.Expression.FixpointConstraintSet(sp1, cs0, sp2) =>
       val loc = mkSL(sp1, sp2)
 
-      traverse(cs0)(visitConstraint(_)).map {
+      mapN(traverse(cs0)(visitConstraint(_))) {
         case cs => WeededAst.Expr.FixpointConstraintSet(cs, loc)
       }
 
@@ -1533,7 +1534,7 @@ object Weeder {
   private def visitArgument(arg: ParsedAst.Argument)(implicit flix: Flix): Validation[WeededAst.Expr, WeederError] = arg match {
     // Case 1: Named parameter. Turn it into a record.
     case ParsedAst.Argument.Named(name, exp0, sp2) =>
-      visitExp(exp0).map {
+      mapN(visitExp(exp0)) {
         exp =>
           val loc = mkSL(name.sp1, sp2)
           WeededAst.Expr.RecordExtend(Name.mkLabel(name), exp, WeededAst.Expr.RecordEmpty(loc), loc)
@@ -1804,7 +1805,8 @@ object Weeder {
             val loc = mkSL(sp1, sp2)
             val lit = WeededAst.Pattern.Cst(Ast.Constant.Unit, loc.asSynthetic)
             Validation.success(WeededAst.Pattern.Tag(qname, lit, loc))
-          case Some(pat) => visit(pat).map {
+          case Some(pat) =>
+            mapN(visit(pat)) {
             case p => WeededAst.Pattern.Tag(qname, p, mkSL(sp1, sp2))
           }
         }
@@ -1815,7 +1817,7 @@ object Weeder {
         /*
          * Rewrites empty tuples to Unit and eliminate single-element tuples.
          */
-        traverse(pats)(visit).map {
+        mapN(traverse(pats)(visit)) {
           case Nil => WeededAst.Pattern.Cst(Ast.Constant.Unit, loc)
           case x :: Nil => x
           case xs => WeededAst.Pattern.Tuple(xs, loc)
@@ -1980,7 +1982,7 @@ object Weeder {
       }
     }
 
-    traverse(l)(visitAnnotation).withSoftFailures(errors).map {
+    mapN(traverse(l)(visitAnnotation).withSoftFailures(errors)) {
       case as => Ast.Annotations(as)
     }
   }
@@ -2031,7 +2033,7 @@ object Weeder {
       }
     }
 
-    traverse(l)(visitModifier(_, legalModifiers)).withSoftFailures(errors).map {
+    mapN(traverse(l)(visitModifier(_, legalModifiers)).withSoftFailures(errors)) {
       case ms => Ast.Modifiers(ms)
     }
   }
@@ -2300,7 +2302,7 @@ object Weeder {
   private def visitTypeNoWild(tpe: ParsedAst.Type): Validation[Option[WeededAst.Type], WeederError] = tpe match {
     case ParsedAst.Type.Var(_, ident, _) if ident.isWild =>
       Validation.success(None)
-    case _ => visitType(tpe).map(t => Some(t))
+    case _ => mapN(visitType(tpe))(Some(_))
   }
 
   /**

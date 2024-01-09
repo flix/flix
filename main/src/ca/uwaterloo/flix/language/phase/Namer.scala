@@ -636,7 +636,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.Unary(sop, exp, loc) =>
-      visitExp(exp, ns0) map {
+      mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.Unary(sop, e, loc)
       }
 
@@ -661,7 +661,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.Discard(exp, loc) =>
-      visitExp(exp, ns0) map {
+      mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.Discard(e, loc)
       }
 
@@ -741,7 +741,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.Tuple(exps, loc) =>
-      traverse(exps)(e => visitExp(e, ns0)) map {
+      mapN(traverse(exps)(e => visitExp(e, ns0))) {
         case es => NamedAst.Expr.Tuple(es, loc)
       }
 
@@ -784,7 +784,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.ArrayLength(exp, loc) =>
-      visitExp(exp, ns0) map {
+      mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.ArrayLength(e, loc)
       }
 
@@ -799,7 +799,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.VectorLength(exp, loc) =>
-      visitExp(exp, ns0) map {
+      mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.VectorLength(e, loc)
       }
 
@@ -810,7 +810,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.Deref(exp, loc) =>
-      visitExp(exp, ns0) map {
+      mapN(visitExp(exp, ns0)) {
         case e =>
           NamedAst.Expr.Deref(e, loc)
       }
@@ -831,7 +831,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.InstanceOf(exp, className, loc) =>
-      visitExp(exp, ns0) map {
+      mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.InstanceOf(e, className, loc)
       }
 
@@ -950,7 +950,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.GetChannel(exp, loc) =>
-      visitExp(exp, ns0) map {
+      mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.GetChannel(e, loc)
       }
 
@@ -970,7 +970,7 @@ object Namer {
       }
 
       val defaultVal = exp match {
-        case Some(exp) => visitExp(exp, ns0) map {
+        case Some(exp) => mapN(visitExp(exp, ns0)) {
           case e => Some(e)
         }
         case None => Validation.success(None)
@@ -1001,12 +1001,12 @@ object Namer {
       }
 
     case DesugaredAst.Expr.Lazy(exp, loc) =>
-      visitExp(exp, ns0) map {
+      mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.Lazy(e, loc)
       }
 
     case DesugaredAst.Expr.Force(exp, loc) =>
-      visitExp(exp, ns0) map {
+      mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.Force(e, loc)
       }
 
@@ -1029,7 +1029,7 @@ object Namer {
       }
 
     case DesugaredAst.Expr.FixpointSolve(exp, loc) =>
-      visitExp(exp, ns0) map {
+      mapN(visitExp(exp, ns0)) {
         case e => NamedAst.Expr.FixpointSolve(e, loc)
       }
 
@@ -1116,9 +1116,10 @@ object Namer {
     */
   private def visitHeadPredicate(head: DesugaredAst.Predicate.Head, ns0: Name.NName)(implicit level: Level, flix: Flix): Validation[NamedAst.Predicate.Head, NameError] = head match {
     case DesugaredAst.Predicate.Head.Atom(pred, den, exps, loc) =>
-      for {
-        es <- traverse(exps)(t => visitExp(t, ns0))
-      } yield NamedAst.Predicate.Head.Atom(pred, den, es, loc)
+      val expsVal = traverse(exps)(t => visitExp(t, ns0))
+      mapN(expsVal) {
+        case es => NamedAst.Predicate.Head.Atom(pred, den, es, loc)
+      }
   }
 
   /**
@@ -1130,15 +1131,16 @@ object Namer {
       Validation.success(NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc))
 
     case DesugaredAst.Predicate.Body.Functional(idents, exp, loc) =>
-      for {
-        e <- visitExp(exp, ns0)
-      } yield NamedAst.Predicate.Body.Functional(idents, e, loc)
+      val expVal = visitExp(exp, ns0)
+      mapN(expVal) {
+        case e => NamedAst.Predicate.Body.Functional(idents, e, loc)
+      }
 
     case DesugaredAst.Predicate.Body.Guard(exp, loc) =>
-      for {
-        e <- visitExp(exp, ns0)
-      } yield NamedAst.Predicate.Body.Guard(e, loc)
-
+      val expVal = visitExp(exp, ns0)
+      mapN(expVal) {
+        case e => NamedAst.Predicate.Body.Guard(e, loc)
+      }
   }
 
   /**

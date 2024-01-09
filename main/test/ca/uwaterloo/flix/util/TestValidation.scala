@@ -25,67 +25,76 @@ import org.scalatest.funsuite.AnyFunSuite
 class TestValidation extends AnyFunSuite {
 
   test("map01") {
-    val result = Validation.success("foo").map {
+    val result = mapN(Validation.success("foo")) {
       case x => x.toUpperCase
     }
     assertResult(Validation.success("FOO"))(result)
   }
 
   test("map02") {
-    val result = Validation.success("foo").map {
+    val one = mapN(Validation.success("foo")) {
       case x => x.toUpperCase
-    }.map {
+    }
+    val result = mapN(one) {
       case y => y.reverse
     }
     assertResult(Validation.success("OOF"))(result)
   }
 
   test("map03") {
-    val result = Validation.success("foo").map {
+    val one = mapN(Validation.success("foo")) {
       case x => x.toUpperCase
-    }.map {
+    }
+    val two = mapN(one) {
       case y => y.reverse
-    }.map {
+    }
+    val result = mapN(two) {
       case z => z + z
     }
     assertResult(Validation.success("OOFOOF"))(result)
   }
 
   test("map04") {
-    val result = Validation.success("abc").map {
+    val one = mapN(Validation.success("abc")) {
       case x => x.length
-    }.map {
+    }
+    val result = mapN(one) {
       case y => y < 5
     }
     assertResult(Validation.success(true))(result)
   }
 
   test("map05") {
-    val result = Validation.success[String, Exception]("abc").map {
+    val one = mapN(Validation.success[String, Exception]("abc")) {
       case x => x.charAt(1)
-    }.map {
+    }
+    val two = mapN(one) {
       case y => y + 3
-    }.map {
+    }
+    val result = mapN(two) {
       case z => z.toChar.toString
     }
     assertResult(Validation.success("e"))(result)
   }
 
   test("map06") {
-    val result = SoftFailure("abc", Chain.empty).map {
+    val one = mapN(SoftFailure("abc", Chain.empty)) {
       case x => x.length
-    }.map {
+    }
+    val result = mapN(one) {
       case y => y < 5
     }
     assertResult(SoftFailure(true, Chain.empty))(result)
   }
 
   test("map07") {
-    val result = SoftFailure("abc", Chain.empty).map {
+    val one = mapN(SoftFailure("abc", Chain.empty)) {
       case x => x.charAt(1)
-    }.map {
+    }
+    val two = mapN(one) {
       case y => y + 3
-    }.map {
+    }
+    val result = mapN(two) {
       case z => z.toChar.toString
     }
     assertResult(SoftFailure("e", Chain.empty))(result)
@@ -93,9 +102,10 @@ class TestValidation extends AnyFunSuite {
 
   test("map08") {
     val ex = new RuntimeException()
-    val result = SoftFailure("abc", Chain(ex)).map {
+    val one = mapN(SoftFailure("abc", Chain(ex))) {
       case x => x.length
-    }.map {
+    }
+    val result = mapN(one) {
       case y => y < 5
     }
     assertResult(SoftFailure(true, Chain(ex)))(result)
@@ -103,11 +113,13 @@ class TestValidation extends AnyFunSuite {
 
   test("map09") {
     val ex = new RuntimeException()
-    val result = SoftFailure("abc", Chain(ex)).map {
+    val one = mapN(SoftFailure("abc", Chain(ex))) {
       case x => x.charAt(1)
-    }.map {
+    }
+    val two = mapN(one) {
       case y => y + 3
-    }.map {
+    }
+    val result = mapN(two) {
       case z => z.toChar.toString
     }
     assertResult(SoftFailure("e", Chain(ex)))(result)
