@@ -646,8 +646,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case None => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.MissingRepository))
     }
 
-    // Check if `--github-key` option is present
-    val githubKey = flix.options.githubKey match {
+    // Check if `--github-token` option is present
+    val githubToken = flix.options.githubToken match {
       case Some(k) => k
       case None => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.MissingApiKey))
     }
@@ -675,7 +675,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Publish to GitHub
     println("Publishing a new release...")
     val artifacts = List(getPkgFile(projectPath), getManifestFile(projectPath))
-    val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubKey)
+    val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubToken)
     publishResult match {
       case Ok(()) => // Continue
       case Err(e) => return Validation.toHardFailure(BootstrapError.ReleaseError(e))
