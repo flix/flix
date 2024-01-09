@@ -126,7 +126,7 @@ object ClassEnvironment {
     }
 
     val tconstrGroups = matchingInstances.map(tryInst).map(_.toResult).collect {
-      case Result.Ok((tconstrs, Nil)) => tconstrs
+      case Result.Ok((tconstrs, Chain.empty)) => tconstrs
     }
 
     tconstrGroups match {
