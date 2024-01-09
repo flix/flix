@@ -334,11 +334,7 @@ object Lexer {
         advance(); TokenKind.TildeTilde
       } else TokenKind.Tilde
       case '\\' => TokenKind.Backslash
-      case '$' => if (peek().isUpper) {
-        acceptBuiltIn()
-      } else {
-        TokenKind.Dollar
-      }
+      case '$' if peek().isUpper => acceptBuiltIn()
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
@@ -347,17 +343,9 @@ object Lexer {
       } else {
         TokenKind.Hash
       }
-      case '/' => if (peek() == '/') {
-        if (peekPeek().contains('/')) {
-          acceptDocComment()
-        } else {
-          acceptLineComment()
-        }
-      } else if (peek() == '*') {
-        acceptBlockComment()
-      } else {
-        TokenKind.Slash
-      }
+      case _ if isKeyword("///") => acceptDocComment()
+      case _ if isKeyword("/*") => acceptBlockComment()
+      case '/' => if (peek() == '/') acceptLineComment() else TokenKind.Slash
       case ':' => if (peek() == ':') {
         advance()
         TokenKind.ColonColon
@@ -503,7 +491,6 @@ object Lexer {
     }
 
     def isSep(c: Char) = c.isWhitespace || VALID_SEPARATORS.contains(c)
-
     s.src.data.lift(s.current.offset - 2).forall(isSep) && s.src.data.lift(s.current.offset + keyword.length - 1).forall(isSep)
   }
 
@@ -873,9 +860,8 @@ object Lexer {
   private def acceptNumber()(implicit s: State): TokenKind = {
     var isDecimal = false
     var isScientificNotation = false
-    val isHex = peekPeek().contains('x')
+    val isHex = peek() == 'x'
     if (isHex) {
-      advance() // consume '0'
       advance() // consume 'x'
     }
 

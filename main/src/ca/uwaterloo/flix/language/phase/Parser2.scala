@@ -95,6 +95,18 @@ object Parser2 {
       )
 
       val filesThatAreKnownToWork = List(
+        "Float64.flix",
+        "DelayList.flix",
+        "MutSet.flix",
+        "File.flix",
+        "CodePoint.flix",
+        "Applicative.flix",
+        "SemiGroup.flix",
+        "System.flix",
+        "Fixpoint/VarsToIndices.flix",
+        "BigDecimal.flix",
+        "Functor.flix",
+        "Random.flix",
         "MutQueue.flix",
         "Concurrent/Condition.flix",
         "Result.flix",
@@ -421,16 +433,16 @@ object Parser2 {
   private def open()(implicit s: State): Mark.Opened = {
     val mark = Mark.Opened(s.events.length)
     s.events = s.events :+ Event.Open(TreeKind.ErrorTree(Parse2Error.DevErr(currentSourceLocation(), "Unclosed parser mark")))
-    // advance past any comments just after opening a new mark.
+    // Consume any comments just before opening a new mark
     comments()
     mark
   }
 
   private def close(mark: Mark.Opened, kind: TreeKind)(implicit s: State): Mark.Closed = {
     s.events(mark.index) = Event.Open(kind)
-    s.events = s.events :+ Event.Close
-    // advance past any comments just after closing a mark.
+    // Consume any comments just before closing a mark
     comments()
+    s.events = s.events :+ Event.Close
     Mark.Closed(mark.index)
   }
 
@@ -478,6 +490,8 @@ object Parser2 {
   }
 
   private def at(kind: TokenKind)(implicit s: State): Boolean = {
+    // Consume any comments before checking for the expected [[Tokenkind]]
+    comments()
     nth(0) == kind
   }
 
@@ -566,7 +580,7 @@ object Parser2 {
     }
   }
 
-  private val NAME_DEFINITION = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator, TokenKind.KeywordMod) // TODO: std. lib. defines functions named mod
+  private val NAME_DEFINITION = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator, TokenKind.KeywordMod, TokenKind.KeywordChoose, TokenKind.PlusPlus, TokenKind.KeywordOpen) // TODO: std. lib. defines functions named mod
   private val NAME_PARAMETER = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
   private val NAME_VARIABLE = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
   private val NAME_JAVA = List(TokenKind.NameJava, TokenKind.NameLowerCase, TokenKind.NameUpperCase)
@@ -607,7 +621,6 @@ object Parser2 {
     usesOrImports()
     while (!eof()) {
       Decl.declaration()
-      comments()
     }
     close(mark, TreeKind.Source)
   }
@@ -678,10 +691,13 @@ object Parser2 {
   private object Decl {
     def declaration()(implicit s: State): Mark.Closed = {
       val mark = open()
+      // TODO: Find better way to handle "DocComment LineComment DocComment"
+      while(at(TokenKind.CommentDoc) && !eof()) {
+        docComment()
+      }
       if (at(TokenKind.KeywordMod)) {
         return module(mark)
       }
-      docComment()
       annotations()
       modifiers()
       nth(0) match {
@@ -726,7 +742,6 @@ object Parser2 {
         usesOrImports()
         while (!at(TokenKind.CurlyR) && !eof()) {
           declaration()
-          comments() // TODO: This should not be called manually, we need better design
         }
         expect(TokenKind.CurlyR)
       }
@@ -760,16 +775,17 @@ object Parser2 {
       }
       // enum body
       if (eat(TokenKind.CurlyL)) {
-        while (atAny(List(TokenKind.KeywordCase, TokenKind.Comma)) && !eof()) {
+        while (atAny(List(TokenKind.CommentDoc, TokenKind.KeywordCase)) && !eof()) {
           val mark = open()
-          eatAny(List(TokenKind.KeywordCase, TokenKind.Comma))
-          eatAny(List(TokenKind.KeywordCase, TokenKind.Comma))
+          docComment()
+          expect(TokenKind.KeywordCase)
           name(NAME_TAG)
           if (at(TokenKind.ParenL)) {
             val mark = open()
             Type.tuple()
             close(mark, TreeKind.Type.Type)
           }
+          eat(TokenKind.Comma)
           close(mark, TreeKind.Case)
         }
         expect(TokenKind.CurlyR)
@@ -826,7 +842,11 @@ object Parser2 {
         expect(TokenKind.CurlyL)
         while (!at(TokenKind.CurlyR) && !eof()) {
           val mark = open()
-          docComment()
+
+          // TODO: Find better way to handle "DocComment LineComment DocComment"
+          while (at(TokenKind.CommentDoc) && !eof()) {
+            docComment()
+          }
           annotations() // TODO: associated types cant have annotations
           modifiers()
           nth(0) match {
@@ -1098,7 +1118,6 @@ object Parser2 {
     }
 
     private def exprDelimited()(implicit s: State): Mark.Closed = {
-      comments()
       val mark = open()
       // Handle clearly delimited expressions
       nth(0) match {

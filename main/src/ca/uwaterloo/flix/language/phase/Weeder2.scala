@@ -270,7 +270,8 @@ object Weeder2 {
       val maybeType = tryPick(TreeKind.Type.Type, tree.children)
       mapN(
         pickNameIdent(tree),
-        traverseOpt(maybeType)(Types.visitType)
+        traverseOpt(maybeType)(Types.visitType),
+        // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
       ) {
         (ident, maybeType) =>
           val tpe = maybeType
@@ -611,53 +612,51 @@ object Weeder2 {
       }
     }
 
-    def visitExpression(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Expr)
-      tree.children(0) match {
-        case Child.Tree(tree) => tree.kind match {
-          case TreeKind.Expr.Literal => visitLiteral(tree)
-          case TreeKind.Expr.Tuple => visitTuple(tree)
-          case TreeKind.Expr.Call => visitCall(tree)
-          case TreeKind.Expr.LetImport => visitLetImport(tree)
-          case TreeKind.Expr.Binary => visitBinary(tree)
-          case TreeKind.Expr.Unary => visitUnary(tree)
-          case TreeKind.Expr.Paren => visitParen(tree)
-          case TreeKind.Expr.IfThenElse => visitIfThenElse(tree)
-          case TreeKind.Expr.Block => visitBlock(tree)
-          case TreeKind.Expr.Statement => visitStatement(tree)
-          case TreeKind.Expr.Use => visitExprUse(tree)
-          case TreeKind.Expr.Try => visitTry(tree)
-          case TreeKind.Expr.LetRecDef => visitLetRecDef(tree)
-          case TreeKind.Expr.Ascribe => visitAscribe(tree)
-          case TreeKind.Expr.Match => visitMatch(tree)
-          case TreeKind.Expr.TypeMatch => visitTypeMatch(tree)
-          case TreeKind.Expr.CheckedTypeCast => visitCheckedTypeCast(tree)
-          case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCast(tree)
-          case TreeKind.Expr.UncheckedCast => visitUncheckedCast(tree)
-          case TreeKind.Expr.UncheckedMaskingCast => visitUncheckedMaskingCast(tree)
-          case TreeKind.Expr.StringInterpolation => visitStringInterpolation(tree)
-          case TreeKind.Expr.LetMatch => visitLetMatch(tree)
-          case TreeKind.Expr.Foreach => visitForeach(tree)
-          case TreeKind.Expr.ForeachYield => visitForeachYield(tree)
-          case TreeKind.Expr.ForMonadic => visitForMonadic(tree)
-          case TreeKind.Expr.ForApplicative => visitForApplicative(tree)
-          case TreeKind.Expr.Hole => visitHole(tree)
-          case TreeKind.Expr.Scope => visitScope(tree)
-          case TreeKind.Expr.Lambda => visitLambda(tree)
-          case TreeKind.Expr.LambdaMatch => visitLambdaMatch(tree)
-          case TreeKind.Expr.Ref => visitReference(tree)
-          case TreeKind.Expr.Static => visitStatic(tree)
-          case TreeKind.Expr.LiteralList => visitLiteralList(tree)
-          case TreeKind.Expr.LiteralSet => visitLiteralSet(tree)
-          case TreeKind.Expr.LiteralVector => visitLiteralVector(tree)
-          case TreeKind.Expr.LiteralArray => visitLiteralArray(tree)
-          case TreeKind.Expr.LiteralMap => visitLiteralMap(tree)
-          case TreeKind.Expr.RecordSelect => visitRecordSelect(tree)
-          case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
-          case TreeKind.QName => visitExprQname(tree)
-          case kind => failWith(s"TODO: implement expression of kind '$kind'", tree.loc)
-        }
-        case _ => throw InternalCompilerException(s"Expr.Expr had token child", tree.loc)
+    def visitExpression(exprTree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(exprTree.kind == TreeKind.Expr.Expr)
+      val tree = unfold(exprTree)
+      tree.kind match {
+        case TreeKind.Expr.Literal => visitLiteral(tree)
+        case TreeKind.Expr.Tuple => visitTuple(tree)
+        case TreeKind.Expr.Call => visitCall(tree)
+        case TreeKind.Expr.LetImport => visitLetImport(tree)
+        case TreeKind.Expr.Binary => visitBinary(tree)
+        case TreeKind.Expr.Unary => visitUnary(tree)
+        case TreeKind.Expr.Paren => visitParen(tree)
+        case TreeKind.Expr.IfThenElse => visitIfThenElse(tree)
+        case TreeKind.Expr.Block => visitBlock(tree)
+        case TreeKind.Expr.Statement => visitStatement(tree)
+        case TreeKind.Expr.Use => visitExprUse(tree)
+        case TreeKind.Expr.Try => visitTry(tree)
+        case TreeKind.Expr.LetRecDef => visitLetRecDef(tree)
+        case TreeKind.Expr.Ascribe => visitAscribe(tree)
+        case TreeKind.Expr.Match => visitMatch(tree)
+        case TreeKind.Expr.TypeMatch => visitTypeMatch(tree)
+        case TreeKind.Expr.CheckedTypeCast => visitCheckedTypeCast(tree)
+        case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCast(tree)
+        case TreeKind.Expr.UncheckedCast => visitUncheckedCast(tree)
+        case TreeKind.Expr.UncheckedMaskingCast => visitUncheckedMaskingCast(tree)
+        case TreeKind.Expr.StringInterpolation => visitStringInterpolation(tree)
+        case TreeKind.Expr.LetMatch => visitLetMatch(tree)
+        case TreeKind.Expr.Foreach => visitForeach(tree)
+        case TreeKind.Expr.ForeachYield => visitForeachYield(tree)
+        case TreeKind.Expr.ForMonadic => visitForMonadic(tree)
+        case TreeKind.Expr.ForApplicative => visitForApplicative(tree)
+        case TreeKind.Expr.Hole => visitHole(tree)
+        case TreeKind.Expr.Scope => visitScope(tree)
+        case TreeKind.Expr.Lambda => visitLambda(tree)
+        case TreeKind.Expr.LambdaMatch => visitLambdaMatch(tree)
+        case TreeKind.Expr.Ref => visitReference(tree)
+        case TreeKind.Expr.Static => visitStatic(tree)
+        case TreeKind.Expr.LiteralList => visitLiteralList(tree)
+        case TreeKind.Expr.LiteralSet => visitLiteralSet(tree)
+        case TreeKind.Expr.LiteralVector => visitLiteralVector(tree)
+        case TreeKind.Expr.LiteralArray => visitLiteralArray(tree)
+        case TreeKind.Expr.LiteralMap => visitLiteralMap(tree)
+        case TreeKind.Expr.RecordSelect => visitRecordSelect(tree)
+        case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
+        case TreeKind.QName => visitExprQname(tree)
+        case kind => failWith(s"TODO: implement expression of kind '$kind'", tree.loc)
       }
     }
 
