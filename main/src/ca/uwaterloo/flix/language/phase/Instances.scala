@@ -213,17 +213,13 @@ object Instances {
                 // Case 1: An instance matches. Check that its constraints are entailed by this instance.
                 superInst.tconstrs.flatMap {
                   tconstr =>
-                    ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv).toResult match {
-                      case Result.Ok((_, Chain.empty)) => Nil
-                      case Result.Ok((_, errors)) => errors.map {
-                        case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTypeClassConstraint(missingTconstr, superClass, clazz.loc)
-                        case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
-                      }.toList
-                      case Result.Err(errors) => errors.map {
-                        case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTypeClassConstraint(missingTconstr, superClass, clazz.loc)
-                        case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
-                      }.toList
-                    }
+                    Validation.mapFailures(ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv)) {
+                      case errors =>
+                        Chain.from(errors.map {
+                          case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTypeClassConstraint(missingTconstr, superClass, clazz.loc)
+                          case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
+                        })
+                    }.errors.toList
                 }
               case None =>
                 // Case 2: No instance matches. Error.
