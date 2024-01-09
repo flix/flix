@@ -2020,4 +2020,55 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedVarSym](result)
   }
 
+  test("ForEachYieldUnusedVar.01") {
+    val input =
+      """
+        |def f(): List[Int32] =
+        |    foreach (
+        |        x <- 1 :: 2 :: 3 :: Nil
+        |    ) yield 10
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("ForEachYieldUnusedVar.02") {
+    val input =
+      """
+        |def f(): List[Int32] =
+        |    foreach (
+        |        x <- 1 :: 2 :: 3 :: Nil;
+        |        y = 10
+        |    ) yield x
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[RedundancyError.UnusedVarSym](result)
+  }
+
+  test("ForEachYieldShadowedVariable.01") {
+    val input =
+      """
+        |def f(): List[Int32] =
+        |    foreach (
+        |        x <- 1 :: 2 :: 3 :: Nil;
+        |        (x, y) = (10, 20)
+        |    ) yield x * y
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[RedundancyError.ShadowedName](result)
+  }
+
+  test("ForEachYieldShadowedVariable.02") {
+    val input =
+      """
+        |def f(): List[Int32] =
+        |    foreach (
+        |        x <- 1 :: 2 :: 3 :: Nil;
+        |        (x, y) = (10, 20)
+        |    ) yield x * y
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibAll)
+    expectError[RedundancyError.ShadowingName](result)
+  }
+
 }
