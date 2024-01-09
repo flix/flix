@@ -205,7 +205,7 @@ object Instances {
     def checkSuperInstances(inst: TypedAst.Instance): List[InstanceError] = inst match {
       case TypedAst.Instance(_, _, _, clazz, tpe, tconstrs, _, _, _, _) =>
         val superClasses = root.classEnv(clazz.sym).superClasses
-        superClasses flatMap {
+        superClasses.flatMap {
           superClass =>
             // Find the instance of the superclass matching the type of this instance.
             findInstanceForType(tpe, superClass) match {
