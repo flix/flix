@@ -63,7 +63,7 @@ object SimpleRunner {
     // check if we should start a REPL
     if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
       Bootstrap.bootstrap(cwd, options.githubToken)(System.out).toResult match {
-        case Result.Ok((bootstrap, Nil)) =>
+        case Result.Ok((bootstrap, Chain.empty)) =>
           val shell = new Shell(bootstrap, options)
           shell.loop()
           System.exit(0)
@@ -96,7 +96,7 @@ object SimpleRunner {
     // evaluate main.
     val timer = new Timer(flix.compile())
     timer.getResult.toResult match {
-      case Result.Ok((compilationResult, Nil)) =>
+      case Result.Ok((compilationResult, Chain.empty)) =>
 
         compilationResult.getMain match {
           case None => // nop
@@ -121,7 +121,7 @@ object SimpleRunner {
         println(s"Compilation failed with ${failures.length} error(s).")
         Result.Err(1)
       case Result.Err(failures) =>
-        flix.mkMessages(failures.toSeq.sortBy(_.source.name))
+        flix.mkMessages(Chain.from(failures.toSeq.sortBy(_.source.name)))
           .foreach(println)
         println()
         println(s"Compilation failed with ${failures.length} error(s).")

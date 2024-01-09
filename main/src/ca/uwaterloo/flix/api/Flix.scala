@@ -505,7 +505,7 @@ class Flix {
     * Converts a list of compiler error messages to a list of printable messages.
     * Decides whether or not to append the explanation.
     */
-  def mkMessages(errors: Iterable[CompilationMessage]): List[String] = {
+  def mkMessages(errors: Chain[CompilationMessage]): List[String] = {
     if (options.explain)
       errors.toSeq.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
     else
