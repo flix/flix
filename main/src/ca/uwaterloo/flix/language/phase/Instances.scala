@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, RigidityEnv, Scheme, Symb
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 object Instances {
@@ -213,11 +214,11 @@ object Instances {
                 superInst.tconstrs flatMap {
                   tconstr =>
                     ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv).toResult match {
-                      case Result.Ok((_, Nil)) => Nil
+                      case Result.Ok((_, Chain.empty)) => Nil
                       case Result.Ok((_, errors)) => errors.map {
                         case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTypeClassConstraint(missingTconstr, superClass, clazz.loc)
                         case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
-                      }
+                      }.toList
                       case Result.Err(errors) => errors.map {
                         case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTypeClassConstraint(missingTconstr, superClass, clazz.loc)
                         case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
