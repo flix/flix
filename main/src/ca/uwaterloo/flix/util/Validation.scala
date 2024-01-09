@@ -577,6 +577,17 @@ object Validation {
     flatten(ap(mapN(t1, t2, t3, t4, t5, t6)(curry(f)))(t7))
 
   /**
+    * Applies `f` to every error in `t` (if any).
+    *
+    * Preserves the success value.
+    */
+  def mapErr[T, R, E](t: Validation[T, E])(f: E => R): Validation[T, R] = t match {
+    case Success(t) => Success(t)
+    case SoftFailure(t, errors) => SoftFailure(t, Chain.from(errors.map(f)))
+    case HardFailure(errors) => HardFailure(Chain.from(errors.map(f)))
+  }
+
+  /**
     * Folds Right over `xs` using the function `f` with the initial value `zero`.
     */
   def foldRight[T, U, E](xs: Seq[T])(zero: Validation[U, E])(f: (T, U) => Validation[U, E]): Validation[U, E] = {
