@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, MonoType, Purity, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Level, MonoType, Purity, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.collection.immutable.SortedSet
@@ -127,7 +127,11 @@ object ClosureConv {
       Expr.TryCatch(e, rs, tpe, purity, loc)
 
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-      val e = visitExp(exp)
+      // Lift the body and all the rule expressions
+      val expLoc = exp.loc.asSynthetic
+      val freshSym = Symbol.freshVarSym("_closureConv", Ast.BoundBy.FormalParam, expLoc)(Level.Default, flix)
+      val fp = FormalParam(freshSym, Ast.Modifiers.Empty, MonoType.Unit, expLoc)
+      val e = mkLambdaClosure(List(fp), exp, MonoType.Arrow(List(MonoType.Unit), tpe), expLoc)
       val rs = rules map {
         case HandlerRule(opUse, fparams, body) =>
           val cloType = MonoType.Arrow(fparams.map(_.tpe), body.tpe)
