@@ -211,7 +211,7 @@ object Instances {
             findInstanceForType(tpe, superClass) match {
               case Some((superInst, subst)) =>
                 // Case 1: An instance matches. Check that its constraints are entailed by this instance.
-                superInst.tconstrs flatMap {
+                superInst.tconstrs.flatMap {
                   tconstr =>
                     ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv).toResult match {
                       case Result.Ok((_, Chain.empty)) => Nil
