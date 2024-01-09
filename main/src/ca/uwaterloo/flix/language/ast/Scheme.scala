@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, EqualityEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 object Scheme {
@@ -102,7 +102,7 @@ object Scheme {
     */
   def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
     checkLessThanEqual(sc1, sc2, classEnv, eqEnv).toResult match {
-      case Result.Ok((_, Nil)) => true
+      case Result.Ok((_, Chain.empty)) => true
       case _ => false
     }
   }
