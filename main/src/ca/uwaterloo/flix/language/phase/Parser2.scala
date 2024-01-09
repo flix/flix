@@ -704,11 +704,27 @@ object Parser2 {
         case TokenKind.KeywordDef => definition(mark)
         case TokenKind.KeywordClass | TokenKind.KeywordTrait => typeClass(mark)
         case TokenKind.KeywordInstance => instance(mark)
-        case TokenKind.KeywordEnum => enumeration(mark)
+        case TokenKind.KeywordType => typeAlias(mark)
+        case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumeration(mark)
         case _ =>
           advance()
           closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), s"Expected declaration but found ${nth(0)}"))
       }
+    }
+
+    private def typeAlias(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordType))
+      expect(TokenKind.KeywordType)
+      expect(TokenKind.KeywordAlias)
+      name(NAME_TYPE)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+
+      if (eat(TokenKind.Equal)) {
+        Type.ttype()
+      }
+      close(mark, TreeKind.Decl.TypeAlias)
     }
 
     /**
@@ -749,9 +765,9 @@ object Parser2 {
     }
 
     private def enumeration(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordEnum))
-      expect(TokenKind.KeywordEnum)
+      assert(atAny(List(TokenKind.KeywordRestrictable, TokenKind.KeywordEnum)))
       val isRestrictable = eat(TokenKind.KeywordRestrictable)
+      expect(TokenKind.KeywordEnum)
       name(NAME_TYPE)
       if (isRestrictable) {
         expect(TokenKind.BracketL)

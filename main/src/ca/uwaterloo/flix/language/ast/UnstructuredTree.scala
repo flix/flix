@@ -77,25 +77,27 @@ object UnstructuredTree {
     }
 
     object Decl {
-      case object Module extends TreeKind
+      case object Module extends Decl
 
-      case object Enum extends TreeKind
+      case object Enum extends Decl
 
-      case object RestrictableEnum extends TreeKind
+      case object RestrictableEnum extends Decl
 
-      case object Law extends TreeKind
+      case object Law extends Decl
 
-      case object Def extends TreeKind
+      case object Def extends Decl
 
-      case object Class extends TreeKind
+      case object Class extends Decl
 
-      case object Instance extends TreeKind
+      case object TypeAlias extends Decl
 
-      case object Signature extends TreeKind
+      case object Instance extends Decl
 
-      case object AssociatedTypeSig extends TreeKind
+      case object Signature extends Decl
 
-      case object AssociatedTypeDef extends TreeKind
+      case object AssociatedTypeSig extends Decl
+
+      case object AssociatedTypeDef extends Decl
 
     }
 

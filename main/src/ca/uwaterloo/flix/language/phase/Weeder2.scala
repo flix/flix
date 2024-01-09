@@ -188,16 +188,18 @@ object Weeder2 {
       val classes = pickAll(TreeKind.Decl.Class, tree.children)
       val instances = pickAll(TreeKind.Decl.Instance, tree.children)
       val enums = pickAll(TreeKind.Decl.Enum, tree.children)
+      val typeAliases = pickAll(TreeKind.Decl.TypeAlias, tree.children)
       // TODO: Restrictable enums
       mapN(
         traverse(modules)(visitModule),
         traverse(definitions)(visitDefinition),
         traverse(classes)(visitTypeClass),
         traverse(instances)(visitInstance),
-        traverse(enums)(visitEnum)
+        traverse(enums)(visitEnum),
+        traverse(typeAliases)(visitTypeAlias)
       ) {
-        case (modules, definitions, classes, instances, enums) =>
-          val all: List[Declaration] = definitions ++ classes ++ modules ++ enums ++ instances
+        case (modules, definitions, classes, instances, enums, typeAliases) =>
+          val all: List[Declaration] = definitions ++ classes ++ modules ++ enums ++ instances ++ typeAliases
 
           // TODO: We need to sort these by source position for comparison with old parser. Can be removed for production
           def getLoc(d: Declaration): SourceLocation = d match {
@@ -206,7 +208,8 @@ object Weeder2 {
             case Declaration.Class(_, _, _, _, _, _, _, _, _, loc) => loc
             case Declaration.Instance(_, _, _, _, _, _, _, _, loc) => loc
             case Declaration.Enum(_, _, _, _, _, _, _, loc) => loc
-            case d => throw InternalCompilerException(s"TODO: handle ${d}", tree.loc)
+            case Declaration.TypeAlias(_, _, _, _, _, loc) => loc
+            case d => throw InternalCompilerException(s"TODO: handle $d", tree.loc)
           }
 
           all.sortWith((a, b) => getLoc(a) < getLoc(b))
@@ -225,6 +228,19 @@ object Weeder2 {
           qname.namespace.idents.foldRight(base: Declaration.Namespace) {
             case (ident, acc) => Declaration.Namespace(ident, Nil, List(acc), tree.loc)
           }
+      }
+    }
+
+    private def visitTypeAlias(tree: Tree)(implicit s: State): Validation[Declaration.TypeAlias, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Decl.TypeAlias)
+      mapN(
+        pickDocumentation(tree),
+        pickModifiers(tree),
+        pickNameIdent(tree),
+        Types.pickParameters(tree),
+        Types.pickType(tree)
+      ) {
+        (doc, mods, ident, tparams, tpe) => Declaration.TypeAlias(doc, mods, ident, tparams, tpe, tree.loc)
       }
     }
 
