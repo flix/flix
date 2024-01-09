@@ -98,8 +98,8 @@ object GenTagClasses {
     // The JvmType of the class for `tag`..
     val classType = JvmOps.getTagClassType(tag.sym)
 
-    // The JvmType of the value of `tag`.
-    val valueType = JvmOps.asErasedJvmType(tag.tpe)
+    // The erased JvmType of the value of `tag`.
+    val valueType = JvmOps.getErasedJvmType(tag.tpe)
 
     // Create a new class writer.
     val visitor = AsmOps.mkClassWriter()
@@ -202,13 +202,18 @@ object GenTagClasses {
         method.visitInsn(ARETURN)
 
       case _ => // "$Tag($value)" or "$Tag$value" if value already prints "(...)"
+        val printParanthesis = tag.tpe match {
+          case MonoType.Tuple(_) => false
+          case MonoType.Unit => false
+          case _ => true
+        }
         method.visitLdcInsn("") // for last join call
 
         method.visitInsn(ICONST_3)
         method.visitTypeInsn(ANEWARRAY, JvmType.String.name.toInternalName)
         method.visitInsn(DUP)
         method.visitInsn(ICONST_0)
-        method.visitLdcInsn(tag.sym.name + "(")
+        method.visitLdcInsn(tag.sym.name + (if (printParanthesis) "(" else ""))
         method.visitInsn(AASTORE)
         method.visitInsn(DUP)
         method.visitInsn(ICONST_1)
@@ -218,7 +223,7 @@ object GenTagClasses {
         method.visitInsn(AASTORE)
         method.visitInsn(DUP)
         method.visitInsn(ICONST_2)
-        method.visitLdcInsn(")")
+        method.visitLdcInsn(if (printParanthesis) ")" else "")
         method.visitInsn(AASTORE)
         method.visitMethodInsn(INVOKESTATIC, JvmType.String.name.toInternalName, "join", "(Ljava/lang/CharSequence;[Ljava/lang/CharSequence;)Ljava/lang/String;", false)
         method.visitInsn(ARETURN)

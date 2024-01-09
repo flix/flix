@@ -131,7 +131,7 @@ mod TestDebug {
     }
 
     @test
-    def testEnumStringify01(): Bool = stringify(Card.Card(Suit.Hearts, Rank.N(5))) == "Card((Hearts(()), N(5)))"
+    def testEnumStringify01(): Bool = stringify(Card.Card(Suit.Hearts, Rank.N(5)))  == "Card(Hearts, N(5))"
 
 
     pub enum Poly[a, b] {
@@ -142,7 +142,7 @@ mod TestDebug {
     }
 
     @test
-    def testPolyStringify01(): Bool = stringify(Poly.NoneOfThem) == "NoneOfThem(())"
+    def testPolyStringify01(): Bool = stringify(Poly.NoneOfThem) == "NoneOfThem"
 
     @test
     def testPolyStringify02(): Bool = stringify(Poly.This(123)) == "This(123)"
@@ -151,7 +151,7 @@ mod TestDebug {
     def testPolyStringify03(): Bool = stringify(Poly.That("Hello World!")) == "That(Hello World!)"
 
     @test
-    def testPolyStringify04(): Bool = stringify(Poly.Both(123, "Hello World!")) == "Both((123, Hello World!))"
+    def testPolyStringify04(): Bool = stringify(Poly.Both(123, "Hello World!")) == "Both(123, Hello World!)"
 
     @test
     def testRecordStringify01(): Bool = stringify({label = (1, 2)}) == "{label = (1, 2)}"

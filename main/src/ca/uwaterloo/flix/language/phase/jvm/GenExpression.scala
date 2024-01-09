@@ -589,6 +589,7 @@ object GenExpression {
         val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tag.tpe))
         // Invoke `getValue()` method to extract the field of the tag
         mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
+        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tag.tpe))
 
       case AtomicOp.Index(idx) =>
         val List(exp) = exps

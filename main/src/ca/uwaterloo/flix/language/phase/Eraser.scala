@@ -16,9 +16,6 @@ import ca.uwaterloo.flix.util.collection.MapOps
   * This means that expressions should cast their output but assume correct
   * input types.
   *
-  * - Enum
-  *   - definition erasure
-  *   - untag casting
   * - Ref
   *   - component type erasure
   *   - deref casting
@@ -31,6 +28,7 @@ import ca.uwaterloo.flix.util.collection.MapOps
   * - Lazy
   *   - component type erasure
   *   - force casting
+  * - Enum (todo)
   * - function returns (todo)
   */
 object Eraser {
@@ -88,8 +86,7 @@ object Eraser {
         case AtomicOp.ScopeExit => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Is(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Tag(_) => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.Untag(_) =>
-          castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
+        case AtomicOp.Untag(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Index(_) =>
           castExp(ApplyAtomic(op, es, erase(tpe), purity, loc), t, purity, loc)
         case AtomicOp.Tuple => ApplyAtomic(op, es, t, purity, loc)
@@ -167,7 +164,7 @@ object Eraser {
 
   private def visitCase(c: Case): Case = c match {
     case Case(sym, tpe, loc) =>
-      Case(sym, erase(tpe), loc)
+      Case(sym, visitType(tpe), loc)
   }
 
   private def visitEffect(eff: Effect): Effect = eff match {
