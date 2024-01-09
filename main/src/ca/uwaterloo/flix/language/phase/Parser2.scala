@@ -95,6 +95,15 @@ object Parser2 {
       )
 
       val filesThatAreKnownToWork = List(
+        "Concurrent/Condition.flix",
+        "Result.flix",
+        "Concurrent/ReentrantLock.flix",
+        "Int32.flix",
+        "Int64.flix",
+        "Int8.flix",
+        "Float32.flix",
+        "Int16.flix",
+        "IOError.flix",
         "Region.flix",
         "UnorderedFoldable.flix",
         "Monoid.flix",
@@ -936,7 +945,7 @@ object Parser2 {
     /**
      * parameters -> '(' (parameter (',' parameter)* )? ')'
      */
-    private def parameters()(implicit s: State): Mark.Closed = {
+    def parameters()(implicit s: State): Mark.Closed = {
       commaSeparated(
         TreeKind.Parameters,
         asArgument(TreeKind.Parameter, () => {
@@ -1108,6 +1117,7 @@ object Parser2 {
         case TokenKind.KeywordCheckedECast => checkedEffectCast()
         case TokenKind.KeywordCheckedCast => checkedTypeCast()
         case TokenKind.KeywordRef => reference()
+        case TokenKind.KeywordTry => tryCatch()
         case TokenKind.ListHash => listLiteral()
         case TokenKind.SetHash => setLiteral()
         case TokenKind.VectorHash => vectorLiteral()
@@ -1146,6 +1156,74 @@ object Parser2 {
         case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected expression, found $t"))
       }
       close(mark, TreeKind.Expr.Expr)
+    }
+
+    private def tryCatch()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordTry))
+      val mark = open()
+      expect(TokenKind.KeywordTry)
+      expression()
+      if (at(TokenKind.KeywordCatch)) {
+        catchBody()
+      }
+      if (at(TokenKind.KeywordWith)) {
+        handlerBody()
+      }
+      close(mark, TreeKind.Expr.Try)
+    }
+
+    private def catchBody()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordCatch))
+      val mark = open()
+      expect(TokenKind.KeywordCatch)
+      expect(TokenKind.CurlyL)
+      while (at(TokenKind.KeywordCase) && !eof()) {
+        catchRule()
+        eat(TokenKind.Comma)
+      }
+      expect(TokenKind.CurlyR)
+      close(mark, TreeKind.Expr.Catch)
+    }
+
+    private def handlerBody()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordWith))
+      val mark = open()
+      expect(TokenKind.KeywordWith)
+      name(NAME_EFFECT, allowQualified = true)
+      if (eat(TokenKind.CurlyL)) {
+        while (at(TokenKind.KeywordDef) && !eof()) {
+          tryHandlerRule()
+          eat(TokenKind.Comma)
+        }
+        expect(TokenKind.CurlyR)
+      }
+      close(mark, TreeKind.Expr.TryHandler)
+    }
+
+    private def catchRule()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordCase))
+      val mark = open()
+      expect(TokenKind.KeywordCase)
+      name(NAME_VARIABLE)
+      if (eat(TokenKind.Colon)) {
+        name(NAME_JAVA, allowQualified = true)
+      }
+      if (eat(TokenKind.Arrow)) {
+        expression()
+      }
+      close(mark, TreeKind.Expr.CatchRule)
+    }
+
+    private def tryHandlerRule()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordDef))
+      val mark = open()
+      expect(TokenKind.KeywordDef)
+      name(List(TokenKind.UserDefinedOperator))
+      Decl.parameters()
+      if (eat(TokenKind.Equal)) {
+        expression()
+      }
+      close(mark, TreeKind.Expr.TryHandlerRule)
     }
 
     private def ifThenElse()(implicit s: State): Mark.Closed = {

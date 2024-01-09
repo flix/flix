@@ -183,6 +183,16 @@ object UnstructuredTree {
 
       case object Call extends Expr
 
+      case object Try extends Expr
+
+      case object TryHandler extends Expr
+
+      case object TryHandlerRule extends Expr
+
+      case object Catch extends Expr
+
+      case object CatchRule extends Expr
+
       case object Intrinsic extends Expr
 
       case object LetImport extends Expr

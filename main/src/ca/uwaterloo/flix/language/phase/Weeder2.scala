@@ -492,6 +492,11 @@ object Weeder2 {
       }
     }
 
+    private def pickConstraints(tree: Tree): Validation[List[EqualityConstraint], CompilationMessage] = {
+      // TODO
+      List.empty.toSuccess
+    }
+
     val ALL_MODIFIERS: Set[TokenKind] = Set(
       TokenKind.KeywordSealed,
       TokenKind.KeywordLawful,
@@ -621,6 +626,7 @@ object Weeder2 {
           case TreeKind.Expr.Block => visitBlock(tree)
           case TreeKind.Expr.Statement => visitStatement(tree)
           case TreeKind.Expr.Use => visitExprUse(tree)
+          case TreeKind.Expr.Try => visitTry(tree)
           case TreeKind.Expr.LetRecDef => visitLetRecDef(tree)
           case TreeKind.Expr.Ascribe => visitAscribe(tree)
           case TreeKind.Expr.Match => visitMatch(tree)
@@ -688,6 +694,69 @@ object Weeder2 {
       assert(tree.kind == TreeKind.Expr.Tuple)
       val expressions = pickAll(TreeKind.Expr.Expr, tree.children)
       mapN(traverse(expressions)(visitExpression))(Expr.Tuple(_, tree.loc))
+    }
+
+    private def visitTry(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Try)
+      val maybeCatch = tryPick(TreeKind.Expr.Catch, tree.children)
+      val maybeHandler = tryPick(TreeKind.Expr.TryHandler, tree.children)
+      flatMapN(
+        pickExpression(tree),
+        traverseOpt(maybeCatch)(visitCatch),
+        traverseOpt(maybeHandler)(visitTryHandler),
+      ) {
+        // Case: try expr catch { rules... }
+        case (expr, Some(rules), None) => Expr.TryCatch(expr, rules, tree.loc).toSuccess
+        // Case: try expr with eff { handlers... }
+        case (expr, None, Some((eff, handlers))) => Expr.TryWith(expr, eff, handlers, tree.loc).toSuccess
+        // Bad case: try expr catch { rules... } with eff { handlers... }
+        case (expr, Some(rules), Some(_)) => Validation.SoftFailure(
+          Expr.TryCatch(expr, rules, tree.loc),
+          LazyList(Parse2Error.DevErr(tree.loc, s"Cannot use both `catch` and `with` on try-catch expression"))
+        )
+        // Bad case: try expr
+        case (expr, None, None) => Validation.SoftFailure(
+          Expr.TryCatch(expr, List.empty, tree.loc),
+          LazyList(Parse2Error.DevErr(tree.loc, s"Missing `catch` on try-catch expression"))
+        )
+      }
+    }
+
+    private def visitCatch(tree: Tree)(implicit s: State): Validation[List[CatchRule], CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Catch)
+      val rules = pickAll(TreeKind.Expr.CatchRule, tree.children)
+      traverse(rules)(visitCatchRule)
+    }
+
+    private def javaQnameToFqn(qname: Name.QName): String = {
+      (qname.namespace.idents.map(_.name.stripPrefix("##")) :+ qname.ident.name).mkString(".")
+    }
+
+    private def visitCatchRule(tree: Tree)(implicit s: State): Validation[CatchRule, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.CatchRule)
+      mapN(
+        pickNameIdent(tree),
+        pickQName(tree),
+        pickExpression(tree)
+      )((ident, qname, expr) => CatchRule(ident, javaQnameToFqn(qname), expr))
+    }
+
+    private def visitTryHandler(tree: Tree)(implicit s: State): Validation[(Name.QName, List[HandlerRule]), CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.TryHandler)
+      val rules = pickAll(TreeKind.Expr.TryHandler, tree.children)
+      mapN(
+        pickQName(tree), // This qname is an effect
+        traverse(rules)(visitTryHandlerRule)
+      )((eff, handlers) => (eff, handlers))
+    }
+
+    private def visitTryHandlerRule(tree: Tree)(implicit s: State): Validation[HandlerRule, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.CatchRule)
+      mapN(
+        pickNameIdent(tree),
+        Decls.pickFormalParameters(tree),
+        pickExpression(tree)
+      )((ident, fparams, expr) => HandlerRule(ident, fparams, expr))
     }
 
     private def visitRecordSelect(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -2052,11 +2121,6 @@ object Weeder2 {
     }
   }
 
-  private def pickConstraints(tree: Tree): Validation[List[EqualityConstraint], CompilationMessage] = {
-    // TODO
-    List.empty.toSuccess
-  }
-
   private def pickQName(tree: Tree)(implicit s: State): Validation[Name.QName, CompilationMessage] = {
     flatMapN(pick(TreeKind.QName, tree.children))(visitQName)
   }
@@ -2212,27 +2276,5 @@ object Weeder2 {
      * Indicates that the thing is forbidden.
      */
     case object Forbidden extends Presence
-  }
-
-  /**
-   * The result of weeding an operator.
-   */
-  private sealed trait OperatorResult
-
-  private object OperatorResult {
-    /**
-     * The operator represents a signature or definition from the core library.
-     */
-    case class BuiltIn(name: Name.QName) extends OperatorResult
-
-    /**
-     * The operator represents a semantic operator.
-     */
-    case class Operator(op: SemanticOp) extends OperatorResult
-
-    /**
-     * The operator is unrecognized: it must have been defined elsewhere.
-     */
-    case class Unrecognized(ident: Name.Ident) extends OperatorResult
   }
 }
