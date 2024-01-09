@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
-import ca.uwaterloo.flix.util.Validation.Success
+import ca.uwaterloo.flix.util.collection.Chain
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path, Paths}
@@ -63,7 +63,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     try {
       // Compile and Evaluate the program to obtain the compilationResult.
       flix.compile().toResult match {
-        case Result.Ok((compilationResult, Nil)) =>
+        case Result.Ok((compilationResult, Chain.empty)) =>
           runTests(name, compilationResult)
         case Result.Ok((_, failures)) =>
           val es = failures.map(_.message(flix.getFormatter)).mkString("\n")
