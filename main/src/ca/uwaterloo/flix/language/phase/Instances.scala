@@ -126,10 +126,10 @@ object Instances {
       (inst1.tpe, inst2.tpe) match {
         case (Type.Cst(TypeConstructor.Error(_), _), _) =>
           // Suppress error for Type.Error.
-          return Nil
+          Nil
         case (_, Type.Cst(TypeConstructor.Error(_), _)) =>
           // Suppress error for Type.Error.
-          return Nil
+          Nil
         case (tpe1, tpe2) =>
           Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
             case Ok(_) =>
