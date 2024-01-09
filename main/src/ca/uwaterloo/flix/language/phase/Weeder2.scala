@@ -637,6 +637,10 @@ object Weeder2 {
           case TreeKind.Expr.UncheckedMaskingCast => visitUncheckedMaskingCast(tree)
           case TreeKind.Expr.StringInterpolation => visitStringInterpolation(tree)
           case TreeKind.Expr.LetMatch => visitLetMatch(tree)
+          case TreeKind.Expr.Foreach => visitForeach(tree)
+          case TreeKind.Expr.ForeachYield => visitForeachYield(tree)
+          case TreeKind.Expr.ForMonadic => visitForMonadic(tree)
+          case TreeKind.Expr.ForApplicative => visitForApplicative(tree)
           case TreeKind.Expr.Hole => visitHole(tree)
           case TreeKind.Expr.Scope => visitScope(tree)
           case TreeKind.Expr.Lambda => visitLambda(tree)
@@ -655,6 +659,78 @@ object Weeder2 {
         }
         case _ => throw InternalCompilerException(s"Expr.Expr had token child", tree.loc)
       }
+    }
+
+    private def forFragmentLoc(frag: ForFragment): SourceLocation = frag match {
+      case ForFragment.Generator(_, _, loc) => loc
+      case ForFragment.Guard(_, loc) => loc
+    }
+
+    private def visitForeach(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Foreach)
+      val guards = pickAll(TreeKind.Expr.Guard, tree.children)
+      val generators = pickAll(TreeKind.Expr.Generator, tree.children)
+      mapN(
+        traverse(guards)(visitGuard),
+        traverse(generators)(visitGenerator),
+        pickExpression(tree)
+      )((guards, generators, expr) => {
+        // TODO: Sorting by SourceLocation is only used for comparison with Weeder
+        val fragments = (generators ++ guards).sortWith((a, b) => forFragmentLoc(a) < forFragmentLoc(b))
+        Expr.ForEach(fragments, expr, tree.loc)
+      })
+    }
+
+    private def visitForeachYield(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.ForeachYield)
+      val guards = pickAll(TreeKind.Expr.Guard, tree.children)
+      val generators = pickAll(TreeKind.Expr.Generator, tree.children)
+      mapN(
+        traverse(guards)(visitGuard),
+        traverse(generators)(visitGenerator),
+        pickExpression(tree)
+      )((guards, generators, expr) => {
+        // TODO: Sorting by SourceLocation is only used for comparison with Weeder
+        val fragments = (generators ++ guards).sortWith((a, b) => forFragmentLoc(a) < forFragmentLoc(b))
+        Expr.ForEachYield(fragments, expr, tree.loc)
+      })
+    }
+
+    private def visitForMonadic(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.ForMonadic)
+      val guards = pickAll(TreeKind.Expr.Guard, tree.children)
+      val generators = pickAll(TreeKind.Expr.Generator, tree.children)
+      mapN(
+        traverse(guards)(visitGuard),
+        traverse(generators)(visitGenerator),
+        pickExpression(tree)
+      )((guards, generators, expr) => {
+        // TODO: Sorting by SourceLocation is only used for comparison with Weeder
+        val fragments = (generators ++ guards).sortWith((a, b) => forFragmentLoc(a) < forFragmentLoc(b))
+        Expr.MonadicFor(fragments, expr, tree.loc)
+      })
+    }
+
+    private def visitForApplicative(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.ForApplicative)
+      val generators = pickAll(TreeKind.Expr.Generator, tree.children)
+      mapN(
+        traverse(generators)(visitGenerator),
+        pickExpression(tree)
+      )((generators, expr) => Expr.ForEach(generators, expr, tree.loc))
+    }
+
+    private def visitGuard(tree: Tree)(implicit s: State): Validation[ForFragment, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Guard)
+      mapN(pickExpression(tree))(ForFragment.Guard(_, tree.loc))
+    }
+
+    private def visitGenerator(tree: Tree)(implicit s: State): Validation[ForFragment, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Generator)
+      mapN(
+        Patterns.pickPattern(tree),
+        pickExpression(tree)
+      )((pat, expr) => ForFragment.Generator(pat, expr, tree.loc))
     }
 
     private def visitExprQname(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -885,7 +961,7 @@ object Weeder2 {
                   }
                   case Constant.Int16(lit) =>
                     try {
-                      val num = JShort.parseShort(s"-$lit")  // TODO: radix?
+                      val num = JShort.parseShort(s"-$lit") // TODO: radix?
                       Some(Expr.Cst(Constant.Int16(num), loc))
                     } catch {
                       case _: NumberFormatException => Some(WeededAst.Expr.Error(MalformedInt(loc)))
@@ -1233,7 +1309,7 @@ object Weeder2 {
           mapN(
             traverse(pickAll(TreeKind.Argument, argTree.children))(pickExpression),
             traverse(pickAll(TreeKind.ArgumentNamed, argTree.children))(visitArgumentNamed)
-          )( (unnamed, named) => unnamed ++ named match  {
+          )((unnamed, named) => unnamed ++ named match {
             // Add synthetic unit arguments if there are none
             case Nil => List(Expr.Cst(Ast.Constant.Unit, tree.loc))
             // TODO: sort by SourceLocation is only used for comparison with Weeder

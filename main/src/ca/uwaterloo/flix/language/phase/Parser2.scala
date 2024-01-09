@@ -95,6 +95,7 @@ object Parser2 {
       )
 
       val filesThatAreKnownToWork = List(
+        "MutQueue.flix",
         "Concurrent/Condition.flix",
         "Result.flix",
         "Concurrent/ReentrantLock.flix",
@@ -1101,6 +1102,8 @@ object Parser2 {
       val mark = open()
       // Handle clearly delimited expressions
       nth(0) match {
+        // TODO: par, spawn, select, debug strings, do, resume, open, open_as, choose, restrictable choose,
+        // TODO: newobject, JvmMethod, instanceof, without, recordlit, recordop
         case TokenKind.ParenL => parenOrTupleOrLambda()
         case TokenKind.CurlyL => block()
         case TokenKind.KeywordIf => ifThenElse()
@@ -1116,6 +1119,9 @@ object Parser2 {
         case TokenKind.KeywordUncheckedCast => uncheckedCast()
         case TokenKind.KeywordCheckedECast => checkedEffectCast()
         case TokenKind.KeywordCheckedCast => checkedTypeCast()
+        case TokenKind.KeywordForeach => foreach()
+        case TokenKind.KeywordForM | TokenKind.KeywordFor => forM()
+        case TokenKind.KeywordForA => forA()
         case TokenKind.KeywordRef => reference()
         case TokenKind.KeywordTry => tryCatch()
         case TokenKind.ListHash => listLiteral()
@@ -1156,6 +1162,82 @@ object Parser2 {
         case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected expression, found $t"))
       }
       close(mark, TreeKind.Expr.Expr)
+    }
+
+    private def foreach()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordForeach))
+      val mark = open()
+      var kind: TreeKind = TreeKind.Expr.Foreach
+      expect(TokenKind.KeywordForeach)
+      if (at(TokenKind.ParenL)) {
+        forFragments()
+      }
+      if (eat(TokenKind.KeywordYield)) { kind = TreeKind.Expr.ForeachYield }
+      expression()
+      close(mark, kind)
+    }
+
+    private def forA()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordForA))
+      val mark = open()
+      expect(TokenKind.KeywordForA)
+      if (eat(TokenKind.ParenL)) {
+        while(!at(TokenKind.ParenR) && !eof()) {
+          generatorFragment()
+          expect(TokenKind.Semi)
+        }
+        expect(TokenKind.ParenR)
+      }
+      if (eat(TokenKind.KeywordYield)) {
+        expression()
+      }
+      close(mark, TreeKind.Expr.ForApplicative)
+    }
+
+    private def forM()(implicit s: State): Mark.Closed = {
+      assert(atAny(List(TokenKind.KeywordForM, TokenKind.KeywordFor)))
+      val mark = open()
+      expectAny(List(TokenKind.KeywordForM, TokenKind.KeywordFor))
+      if (at(TokenKind.ParenL)) {
+        forFragments()
+      }
+      if (eat(TokenKind.KeywordYield)) {
+        expression()
+      }
+      close(mark, TreeKind.Expr.ForMonadic)
+    }
+
+    private def forFragments()(implicit s: State): Unit = {
+      assert(at(TokenKind.ParenL))
+      expect(TokenKind.ParenL)
+      while(!at(TokenKind.ParenR) && !eof()) {
+        if (at(TokenKind.KeywordIf)) {
+          guardFragment()
+        } else {
+          generatorFragment()
+        }
+        if (!at(TokenKind.ParenR)) {
+          expect(TokenKind.Semi)
+        }
+      }
+      expect(TokenKind.ParenR)
+    }
+
+    private def guardFragment()(implicit s: State): Unit = {
+      assert(at(TokenKind.KeywordIf))
+      val mark = open()
+      expect(TokenKind.KeywordIf)
+      expression()
+      close(mark, TreeKind.Expr.Guard)
+    }
+
+    private def generatorFragment()(implicit s: State): Unit = {
+      val mark = open()
+      Pattern.pattern()
+      if (eat(TokenKind.BackArrowThin)) {
+        expression()
+      }
+      close(mark, TreeKind.Expr.Generator)
     }
 
     private def tryCatch()(implicit s: State): Mark.Closed = {

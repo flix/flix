@@ -193,6 +193,18 @@ object UnstructuredTree {
 
       case object CatchRule extends Expr
 
+      case object Foreach extends Expr
+
+      case object ForeachYield extends Expr
+
+      case object ForMonadic extends Expr
+
+      case object ForApplicative extends Expr
+
+      case object Guard extends Expr
+
+      case object Generator extends Expr
+
       case object Intrinsic extends Expr
 
       case object LetImport extends Expr
