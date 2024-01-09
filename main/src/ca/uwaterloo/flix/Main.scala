@@ -69,12 +69,17 @@ object Main {
       case Some(s) => Some(Symbol.mkDefnSym(s))
     }
 
+    // Get GitHub token
+    val githubToken =
+      cmdOpts.githubToken
+        .orElse(sys.env.get("GITHUB_TOKEN"))
+
     // construct flix options.
     var options = Options(
       lib = cmdOpts.xlib,
       entryPoint = entryPoint,
       explain = cmdOpts.explain,
-      githubToken = cmdOpts.githubToken,
+      githubToken = githubToken,
       incremental = Options.Default.incremental,
       json = cmdOpts.json,
       progress = true,
