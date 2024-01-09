@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{Options, Result, Validation}
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -27,7 +28,7 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
   def expectRuntimeError(v: Validation[CompilationResult, CompilationMessage], name: String): Unit = {
     expectSuccess(v)
     v.toResult match {
-      case Result.Ok((t, Nil)) => t.getMain match {
+      case Result.Ok((t, Chain.empty)) => t.getMain match {
         case Some(main) => try {
           main.apply(Array.empty)
           fail("No runtime error thrown")
@@ -55,7 +56,7 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
   }
 
   test("SpawnedThreadError.01") {
-     val input =
+    val input =
       """
         |def main(): Unit \ IO = region rc {
         |    spawn { bug!("Something bad happened") } @ rc;
@@ -67,35 +68,35 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
   }
 
   test("SpawnedThreadError.02") {
-     val input =
-       """
-         |def main(): Unit \ IO = region rc {
-         |    spawn {
-         |        spawn { bug!("Something bad happened")  } @ rc
-         |    } @ rc;
-         |    Thread.sleep(Time.Duration.fromSeconds(1))
-         |}
+    val input =
+      """
+        |def main(): Unit \ IO = region rc {
+        |    spawn {
+        |        spawn { bug!("Something bad happened")  } @ rc
+        |    } @ rc;
+        |    Thread.sleep(Time.Duration.fromSeconds(1))
+        |}
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
     expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
   }
 
   test("SpawnedThreadError.03") {
-     val input =
-       """
-         |def main(): Unit \ IO = region rc {
-         |    spawn {
-         |        spawn { String.concat(checked_cast(null), "foo") } @ rc
-         |    } @ rc;
-         |    Thread.sleep(Time.Duration.fromSeconds(1))
-         |}
+    val input =
+      """
+        |def main(): Unit \ IO = region rc {
+        |    spawn {
+        |        spawn { String.concat(checked_cast(null), "foo") } @ rc
+        |    } @ rc;
+        |    Thread.sleep(Time.Duration.fromSeconds(1))
+        |}
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
     expectRuntimeError(result, "NullPointerException")
   }
 
   test("SpawnedThreadError.04") {
-     val input =
+    val input =
       """
         |def main(): Unit \ IO = region rc {
         |    let (_tx, rx) = Channel.unbuffered(rc);
