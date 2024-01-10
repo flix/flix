@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.util
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.{CompilationResult, TestFn}
-import ca.uwaterloo.flix.util.Validation.Success
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Path, Paths}
@@ -45,10 +44,10 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
   def mkTest(path: String)(implicit options: Options): Unit = {
     val p = Paths.get(path)
     val n = p.getFileName.toString
-    test(n)(compileAndRun(n, p))
+    test(n)(compileAndRun(p))
   }
 
-  private def compileAndRun(name: String, path: Path)(implicit options: Options): Unit = {
+  private def compileAndRun(path: Path)(implicit options: Options): Unit = {
     // Construct a new fresh Flix object if incremental compilation is disabled.
     if (!incremental) {
       flix = new Flix()
@@ -64,7 +63,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
       // Compile and Evaluate the program to obtain the compilationResult.
       flix.compile().toHardResult match {
         case Result.Ok(compilationResult) =>
-          runTests(name, compilationResult)
+          runTests(compilationResult)
         case Result.Err(errors) =>
           val es = errors.map(_.message(flix.getFormatter)).mkString("\n")
           fail(s"Unable to compile. Failed with: ${errors.length} errors.\n\n$es")
@@ -75,7 +74,7 @@ class FlixSuite(incremental: Boolean) extends AnyFunSuite {
     }
   }
 
-  private def runTests(name: String, compilationResult: CompilationResult): Unit = {
+  private def runTests(compilationResult: CompilationResult): Unit = {
     // Group the tests by namespace.
     val testsByNamespace = compilationResult.getTests.groupBy(_._1.namespace)
 
