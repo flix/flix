@@ -122,11 +122,11 @@ object TypeInference {
               val inferredSc = Scheme.generalize(inferredTconstrs, inferredEconstrs, inferredType, renv0)
 
               // get a substitution from the scheme comparison
-              val eqSubst = Scheme.checkLessThanEqual(inferredSc, declaredScheme, classEnv, eqEnv) match {
+              val eqSubst = Scheme.checkLessThanEqual(inferredSc, declaredScheme, classEnv, eqEnv).toHardResult match {
                 // Case 1: no errors, continue
-                case Validation.Success(s) => s
-                case failure =>
-                  val instanceErrs = failure.errors.toList.collect {
+                case Result.Ok(s) => s
+                case Result.Err(errors) =>
+                  val instanceErrs = errors.toList.collect {
                     case UnificationError.NoMatchingInstance(tconstr) =>
                       tconstr.arg.typeConstructor match {
                         case Some(tc: TypeConstructor.Arrow) =>
@@ -166,12 +166,12 @@ object TypeInference {
                       // Case 3: Check if it is the effect that cannot be generalized.
                       val inferredEffScheme = Scheme(inferredSc.quantifiers, Nil, Nil, inferredEff)
                       val declaredEffScheme = Scheme(declaredScheme.quantifiers, Nil, Nil, declaredEff)
-                      Scheme.checkLessThanEqual(inferredEffScheme, declaredEffScheme, classEnv, eqEnv) match {
-                        case Validation.Success(_) =>
+                      Scheme.checkLessThanEqual(inferredEffScheme, declaredEffScheme, classEnv, eqEnv).toHardResult match {
+                        case Result.Ok(_) =>
                         // Case 3.1: The effect is not the problem. Regular generalization error.
                         // Fall through to below.
 
-                        case _failure =>
+                        case Result.Err(_) =>
                           // Case 3.2: The effect cannot be generalized.
                           return Validation.toHardFailure(TypeError.EffectGeneralizationError(declaredEff, inferredEff, loc))
                       }
