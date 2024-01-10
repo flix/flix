@@ -113,19 +113,19 @@ class TestChain extends AnyFunSuite {
   }
 
   test("TestHead.01") {
-    assertResult(Chain.empty.head)(None)
+    assertResult(Chain.empty.headOption)(None)
   }
 
   test("TestHead.02") {
-    assertResult(Chain(1).head)(Some(1))
+    assertResult(Chain(1).headOption)(Some(1))
   }
 
   test("TestHead.03") {
-    assertResult(Chain(2, 1).head)(Some(2))
+    assertResult(Chain(2, 1).headOption)(Some(2))
   }
 
   test("TestHead.04") {
-    assertResult(Chain(3, 2, 1).head)(Some(3))
+    assertResult(Chain(3, 2, 1).headOption)(Some(3))
   }
 
 }

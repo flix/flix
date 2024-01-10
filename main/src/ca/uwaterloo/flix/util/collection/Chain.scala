@@ -20,7 +20,7 @@ import scala.annotation.tailrec
 /**
   * A linear data structure that allows fast concatenation.
   */
-sealed trait Chain[+A] {
+sealed trait Chain[+A] extends Iterable[A] {
 
   /**
     * Returns an iterator over the chain, from left to right.
@@ -47,12 +47,12 @@ sealed trait Chain[+A] {
   /**
     * The empty chain.
     */
-  final val empty: Chain[A] = Chain.Empty
+  override val empty: Chain[A] = Chain.Empty
 
   /**
     * Returns `true` if and only if `this` contains no elements.
     */
-  final def isEmpty: Boolean = this match {
+  override def isEmpty: Boolean = this match {
     case Chain.Empty => true
     case Chain.Link(l, r) => l.isEmpty && r.isEmpty
     case Chain.Proxy(xs) => xs.isEmpty
@@ -62,10 +62,10 @@ sealed trait Chain[+A] {
     * Returns the leftmost element if any exists.
     */
   @tailrec
-  final def head: Option[A] = this match {
+  override def headOption: Option[A] = this match {
     case Chain.Empty => None
-    case Chain.Link(Chain.empty, r) => r.head
-    case Chain.Link(l, _) => l.head
+    case Chain.Link(Chain.empty, r) => r.headOption
+    case Chain.Link(l, _) => l.headOption
     case Chain.Proxy(xs) => xs.headOption
   }
 
@@ -81,7 +81,7 @@ sealed trait Chain[+A] {
   /**
     * Returns `this` as a [[List]].
     */
-  final def toList: List[A] = this match {
+  override def toList: List[A] = this match {
     // N.B.: We have to use reflection to avoid
     // infinite recursion when pattern matching
     // since it calls the equals method which
