@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceKind, Sour
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.Chain
 import org.parboiled2.ParserInput
 
 import scala.collection.mutable
@@ -146,7 +147,7 @@ object Lexer {
     if (errors.isEmpty) {
       Validation.success(s.tokens.toArray)
     } else {
-      Validation.SoftFailure(s.tokens.toArray, LazyList.from(errors))
+      Validation.SoftFailure(s.tokens.toArray, Chain.from(errors))
     }
   }
 

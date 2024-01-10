@@ -422,6 +422,7 @@ object SafetyError {
       import formatter._
       s"""${line(kind, source.name)}
          |>> No implementation found for method '${red(method.getName)}' of superclass '${red(clazz.getName)}'.
+         |>> Signature: '${method.toString}'
          |
          |${code(loc, "the object occurs here.")}
          |""".stripMargin

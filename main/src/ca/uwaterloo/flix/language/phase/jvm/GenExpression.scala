@@ -599,6 +599,7 @@ object GenExpression {
         val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tag.tpe))
         // Invoke `getValue()` method to extract the field of the tag
         mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
+        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tag.tpe))
 
       case AtomicOp.Index(idx) =>
         val List(exp) = exps
@@ -607,7 +608,7 @@ object GenExpression {
         // evaluating the `base`
         compileExpr(exp)
         // Retrieving the field `field${offset}`
-        mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"field$idx", JvmOps.getErasedJvmType(tpe).toDescriptor)
+        mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"field$idx", JvmOps.asErasedJvmType(tpe).toDescriptor)
 
       case AtomicOp.Tuple =>
         // We get the JvmType of the class for the tuple
@@ -619,7 +620,8 @@ object GenExpression {
         // Evaluating all the elements to be stored in the tuple class
         exps.foreach(compileExpr)
         // Erased type of `elms`
-        val erasedElmTypes = exps.map(_.tpe).map(JvmOps.getErasedJvmType)
+        val MonoType.Tuple(elmTypes) = tpe
+        val erasedElmTypes = elmTypes.map(JvmOps.asErasedJvmType)
         // Descriptor of constructor
         val constructorDescriptor = AsmOps.getMethodDescriptor(erasedElmTypes, JvmType.Void)
         // Invoking the constructor
@@ -821,7 +823,7 @@ object GenExpression {
 
         // the previous function is already partial
         val MonoType.Ref(refValueType) = tpe
-        val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
+        val backendRefType = BackendObjType.Ref(BackendType.asErasedBackendType(refValueType))
 
         // Create a new reference object
         mv.visitTypeInsn(NEW, classType.name.toInternalName)
@@ -834,9 +836,9 @@ object GenExpression {
         // Evaluate the underlying expression
         compileExpr(exp)
         // Erased type of the value of the reference
-        val valueErasedType = JvmOps.getErasedJvmType(tpe.asInstanceOf[MonoType.Ref].tpe)
+        val valueType = JvmOps.asErasedJvmType(tpe.asInstanceOf[MonoType.Ref].tpe)
         // set the field with the ref value
-        mv.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, valueErasedType.toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, valueType.toDescriptor)
 
       case AtomicOp.Deref =>
         val List(exp) = exps
@@ -1415,10 +1417,7 @@ object GenExpression {
       mv.visitLabel(afterTryAndCatch)
 
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-      val pcPoint = ctx.pcCounter(0) + 1
-      val pcPointLabel = ctx.pcLabels(pcPoint)
-      ctx.pcCounter(0) += 1
-
+      // exp is a Unit -> exp.tpe closure
       val effectJvmName = JvmOps.getEffectDefinitionClassType(effUse.sym).name
       val ins = {
         import BytecodeInstructions._
@@ -1436,17 +1435,26 @@ object GenExpression {
         // frames
         NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
         // continuation
-        ctx.newFrame ~ DUP() ~ cheat(m => compileInt(pcPoint)(m)) ~ ctx.setPc ~
+        cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~
         // call installHandler
-        INVOKESTATIC(BackendObjType.Handler.InstallHandlerMethod) ~
-        xReturn(BackendObjType.Result.toTpe)
+        INVOKESTATIC(BackendObjType.Handler.InstallHandlerMethod)
       }
       ins(new BytecodeInstructions.F(mv))
+      // handle value/suspend/thunk
+      val pcPoint = ctx.pcCounter(0) + 1
+      val pcPointLabel = ctx.pcLabels(pcPoint)
+      val afterUnboxing = new Label()
+      ctx.pcCounter(0) += 1
+      val erasedResult = BackendType.toErasedBackendType(tpe)
+      BackendObjType.Result.unwindThunkToType(pcPoint, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
+      mv.visitJumpInsn(GOTO, afterUnboxing)
 
       mv.visitLabel(pcPointLabel)
       printPc(mv, pcPoint)
-      compileExpr(exp)
+      mv.visitVarInsn(ALOAD, 1)
+      BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
 
+      mv.visitLabel(afterUnboxing)
 
     case Expr.Do(op, exps, tpe, _, _) =>
       val pcPoint = ctx.pcCounter(0) + 1

@@ -37,7 +37,7 @@ object Simplifier {
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
-    SimplifiedAst.Root(defs, enums, effects, root.entryPoint, root.sources)
+    SimplifiedAst.Root(defs, enums, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitDef(decl: LoweredAst.Def)(implicit flix: Flix): SimplifiedAst.Def = decl match {

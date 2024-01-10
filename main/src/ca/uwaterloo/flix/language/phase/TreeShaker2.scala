@@ -38,7 +38,7 @@ object TreeShaker2 {
     */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("TreeShaker2") {
     // Compute the symbols that are always reachable.
-    val initReach = initReachable(root)
+    val initReach = root.reachable
 
     // Compute the symbols that are transitively reachable.
     val allReachable = ParOps.parReach(initReach, visitSym(_, root))
@@ -50,32 +50,6 @@ object TreeShaker2 {
 
     // Reassemble the AST.
     root.copy(defs = newDefs)
-  }
-
-  /**
-    * Returns the symbols that are always reachable.
-    */
-  private def initReachable(root: Root): Set[Symbol.DefnSym] = {
-    // A set used to collect the symbols of reachable functions.
-    var reachable: Set[Symbol.DefnSym] = Set.empty
-
-    //
-    // (a) The main function is always reachable (if it exists).
-    //
-    reachable = reachable ++ root.entryPoint
-
-    //
-    // (b) A function annotated with @benchmark or @test is always reachable.
-    //
-    for ((sym, defn) <- root.defs) {
-      val isBenchmark = defn.ann.isBenchmark
-      val isTest = defn.ann.isTest
-      if (isBenchmark || isTest) {
-        reachable = reachable + sym
-      }
-    }
-
-    reachable
   }
 
   /**
