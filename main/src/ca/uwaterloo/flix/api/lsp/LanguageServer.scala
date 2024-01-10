@@ -337,16 +337,16 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     val t = System.nanoTime()
     try {
       // Run the compiler up to the type checking phase.
-      flix.check() match {
-        case Success(root) =>
+      flix.check().toSoftResult match {
+        case Result.Ok((root, Chain.empty)) =>
           // Case 1: Compilation was successful. Build the reverse index.
           processSuccessfulCheck(requestId, root, Chain.empty, flix.options.explain, t)
 
-        case SoftFailure(root, errors) =>
+        case Result.Ok((root, errors)) =>
           // Case 2: Compilation had non-critical errors. Build the reverse index.
           processSuccessfulCheck(requestId, root, errors, flix.options.explain, t)
 
-        case HardFailure(errors) =>
+        case Result.Err(errors) =>
           // Case 3: Compilation failed. Send back the error messages.
 
           // Mark the AST as outdated and update the current errors.
