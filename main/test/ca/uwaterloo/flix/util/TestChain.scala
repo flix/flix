@@ -190,4 +190,24 @@ class TestChain extends AnyFunSuite {
     Chain(1, 2, 3).foreach(x => r = x)
     assertResult(r)(3)
   }
+
+  test("TestToSeq.01") {
+    assertResult(Chain.empty.toSeq)(Seq.empty)
+  }
+
+  test("TestToSeq.02") {
+    assertResult(Chain(1, 2, 3, 4).toSeq)(Seq(1, 2, 3, 4))
+  }
+
+  test("TestToSeq.03") {
+    assertResult((Chain(1, 2) ++ Chain(3, 4)).toSeq)(Seq(1, 2, 3, 4))
+  }
+
+  test("TestToSeq.04") {
+    assertResult((Chain.empty ++ Chain(10, 20, 30, 50)).toSeq)(Seq(10, 20, 30, 50))
+  }
+
+  test("TestToSeq.05") {
+    assertResult((Chain(1, 2, 3, 4) ++ Chain.empty).toSeq)(Seq(1, 2, 3, 4))
+  }
 }

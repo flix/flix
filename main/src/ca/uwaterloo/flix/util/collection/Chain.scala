@@ -97,6 +97,15 @@ sealed trait Chain[+A] {
   }
 
   /**
+    * Returns `this` as a [[Seq]].
+    */
+  final def toSeq: Seq[A] = this match {
+    case Chain.Empty => Seq.empty
+    case Chain.Link(l, r) => l.toSeq ++ r.toSeq
+    case Chain.Proxy(xs) => xs
+  }
+
+  /**
     * Returns `this` as a [[List]].
     */
   final def toList: List[A] = this match {
