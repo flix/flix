@@ -259,7 +259,7 @@ class TestChain extends AnyFunSuite {
     assertResult(Chain(1, 2, 3).mkString("+"))("1+2+3")
   }
 
-  test("TestMkString.02") {
+  test("TestMkString.03") {
     val chain = Chain(1) ++ Chain(2) ++ Chain(3) ++ Chain(4) ++ Chain(5)
     assertResult(chain.mkString("-"))("1-2-3-4-5")
   }
