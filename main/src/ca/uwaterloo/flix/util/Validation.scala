@@ -73,8 +73,8 @@ sealed trait Validation[+T, +E] {
     * Transform exactly one hard error into a soft error using the given function `f`.
     */
   def recoverOne[U >: T](f: PartialFunction[E, U]): Validation[U, E] = this match {
-    case Validation.HardFailure(errors) if errors.length == 1 =>
-      val one = errors.head
+    case Validation.HardFailure(errors) if errors.head.isDefined =>
+      val one = errors.head.get
       if (f.isDefinedAt(one))
         Validation.SoftFailure(f(one), Chain(one))
       else
