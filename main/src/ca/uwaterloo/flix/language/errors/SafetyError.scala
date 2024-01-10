@@ -143,6 +143,28 @@ object SafetyError {
   }
 
   /**
+    * An error raised to indicate that a reachable entry point has an illegal signature.
+    *
+    * @param loc the location of the defn.
+    */
+  case class IllegalEntryPointSignature(loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Illegal entry point signature"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal entry point signature. An entry point must take a single Unit
+         |>> argument and be pure or have the IO effect.
+         |
+         |${code(loc, "illegal signature.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised to indicate an illegal use of a wildcard in a negative atom.
     *
     * @param loc the position of the body atom containing the illegal wildcard.
@@ -276,50 +298,6 @@ object SafetyError {
          |An example of a type parameter of kind 'Region':
          |
          |enum MyEnum[r: Region] { ... }
-         |""".stripMargin
-    )
-  }
-
-  /**
-    * An error raised to indicate that a function marked with the `@test` annotation
-    * has at least one non-unit parameter.
-    *
-    * @param loc the source location of the parameter.
-    */
-  case class IllegalTestParameters(loc: SourceLocation) extends SafetyError with Recoverable {
-    def summary: String = s"Test entry point must not have parameters."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Test entry point must not have parameters.
-
-         |${code(loc, "Parameter for test function occurs here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some(
-      s"""
-         |A test function must not have parameters.
-         |
-         |If you need to test your code with different values,
-         |you can create a helper function that takes parameters.
-         |Then, you can call the helper function with different
-         |values to perform various tests.
-         |
-         |Example
-         |
-         |    @test
-         |    def test01(x: Int32): Int32 = x + 1
-         |
-         |Should be
-         |
-         |    @test
-         |    def test01(): Int32 = testHelper(1)
-         |
-         |    def testHelper(x: Int32): Int32 = x + 1
-         |
          |""".stripMargin
     )
   }
