@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.util.collection
 
-import scala.annotation.tailrec
-
 /**
   * A linear data structure that allows fast concatenation.
   */
@@ -61,7 +59,6 @@ sealed trait Chain[+A] extends Iterable[A] {
   /**
     * Returns the leftmost element if any exists.
     */
-  @tailrec
   override def headOption: Option[A] = this match {
     case Chain.Empty => None
     case Chain.Link(Chain.empty, r) => r.headOption
