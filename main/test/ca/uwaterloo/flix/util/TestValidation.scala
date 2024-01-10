@@ -433,24 +433,44 @@ class TestValidation extends AnyFunSuite {
     assertResult(Validation.HardFailure(Chain(ex, ex)))(result)
   }
 
-  test("toResult01") {
+  test("toSoftResult01") {
     val t = Validation.success[String, DummyError]("abc")
-    val result = t.toResult
-    assertResult(Result.Ok(("abc", List.empty)))(result)
+    val result = t.toSoftResult
+    assertResult(Result.Ok(("abc", Chain.empty)))(result)
   }
 
-  test("toResult02") {
+  test("toSoftResult02") {
     val e = DummyRecoverable()
     val t = Validation.toSoftFailure("xyz", e)
-    val result = t.toResult
-    assertResult(Result.Ok(("xyz", List(e))))(result)
+    val result = t.toSoftResult
+    assertResult(Result.Ok(("xyz", Chain(e))))(result)
   }
 
-  test("toResult03") {
+  test("toSoftResult03") {
     val e = DummyUnrecoverable()
     val t = Validation.toHardFailure[String, DummyUnrecoverable](e)
-    val result = t.toResult
-    assertResult(Result.Err(List(e)))(result)
+    val result = t.toSoftResult
+    assertResult(Result.Err(Chain(e)))(result)
+  }
+
+  test("toHardResult01") {
+    val t = Validation.success[String, DummyError]("abc")
+    val result = t.toHardResult
+    assertResult(Result.Ok("abc"))(result)
+  }
+
+  test("toHardResult02") {
+    val e = DummyRecoverable()
+    val t = Validation.toSoftFailure("xyz", e)
+    val result = t.toHardResult
+    assertResult(Result.Err(Chain(e)))(result)
+  }
+
+  test("toHardResult03") {
+    val e = DummyUnrecoverable()
+    val t = Validation.toHardFailure[String, DummyUnrecoverable](e)
+    val result = t.toHardResult
+    assertResult(Result.Err(Chain(e)))(result)
   }
 
   trait DummyError
