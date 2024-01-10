@@ -253,7 +253,6 @@ object GenFunAndClosureClasses {
     }
     returnValue(new BytecodeInstructions.F(m))
 
-    m.toString
     m.visitMaxs(999, 999)
     m.visitEnd()
   }
