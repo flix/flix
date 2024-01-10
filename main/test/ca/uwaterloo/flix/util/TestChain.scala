@@ -20,11 +20,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestChain extends AnyFunSuite {
 
-  test("TestChain.01") {
-    val chain = Chain.empty
-    assert(chain.isEmpty)
-  }
-
   test("TestChain.02") {
     val chain = Chain(1, 2, 3, 4)
     assert(chain.toList == List(1, 2, 3, 4))
@@ -110,6 +105,18 @@ class TestChain extends AnyFunSuite {
     val c1 = Chain(1) ++ Chain(2) ++ Chain(3) ++ Chain(4) ++ Chain(5)
     val c2 = Chain(2, 2, 3, 4, 6)
     assert(c1 != c2)
+  }
+
+  test("TestIsEmpty.01") {
+    assert(Chain.empty.isEmpty)
+  }
+
+  test("TestIsEmpty.02") {
+    assert(Chain(1).isEmpty)
+  }
+
+  test("TestIsEmpty.03") {
+    assert(Chain(1, 2).isEmpty)
   }
 
   test("TestHead.01") {
