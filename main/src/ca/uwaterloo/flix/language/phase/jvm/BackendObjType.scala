@@ -1314,15 +1314,14 @@ object BackendObjType {
     }
 
     /**
-      * Expects a Thunk on the stack and leaves a non-Thunk Result.
+      * Expects a result on the stack and leaves a non-Thunk Result.
       * [..., Result] --> [..., Suspension|Value]
       */
     def unwindThunk(): InstructionSet = {
-      INVOKEINTERFACE(Thunk.InvokeMethod) ~
-        whileLoop(Condition.NE)(DUP() ~ INSTANCEOF(Thunk.jvmName)) {
-          CHECKCAST(Thunk.jvmName) ~
-            INVOKEINTERFACE(Thunk.InvokeMethod)
-        }
+      whileLoop(Condition.NE)(DUP() ~ INSTANCEOF(Thunk.jvmName)) {
+        CHECKCAST(Thunk.jvmName) ~
+          INVOKEINTERFACE(Thunk.InvokeMethod)
+      }
     }
 
     /**
