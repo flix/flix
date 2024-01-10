@@ -88,6 +88,15 @@ sealed trait Chain[+A] {
   }
 
   /**
+    * Applies `f` this every element in `this`.
+    */
+  final def foreach(f: A => Unit): Unit = this match {
+    case Chain.Empty => ()
+    case Chain.Link(l, r) => l.foreach(f); r.foreach(f)
+    case Chain.Proxy(xs) => xs.foreach(f)
+  }
+
+  /**
     * Returns `this` as a [[List]].
     */
   final def toList: List[A] = this match {

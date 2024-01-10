@@ -179,4 +179,15 @@ class TestChain extends AnyFunSuite {
     assertResult(Chain(7, 8).map(i => i > 2))(Chain(true, true))
   }
 
+  test("TestForeach.01") {
+    var r = 21
+    Chain.empty.foreach(x => r = x)
+    assertResult(r)(21)
+  }
+
+  test("TestForeach.02") {
+    var r = 21
+    Chain(1, 2, 3).foreach(x => r = x)
+    assertResult(r)(3)
+  }
 }
