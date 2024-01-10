@@ -115,11 +115,11 @@ class TestChain extends AnyFunSuite {
   }
 
   test("TestIsEmpty.02") {
-    assert(Chain(1).isEmpty)
+    assert(!Chain(1).isEmpty)
   }
 
   test("TestIsEmpty.03") {
-    assert(Chain(1, 2).isEmpty)
+    assert(!Chain(1, 2).isEmpty)
   }
 
   test("TestHead.01") {
