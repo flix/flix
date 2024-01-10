@@ -51,7 +51,7 @@ class TestChain extends AnyFunSuite {
       Chain(1, 2),
       Chain.empty ++ Chain(3, 4)
     )
-    val chain = Chain.concat(chains)
+    val chain = chains.fold(Chain.empty)(_ ++ _)
     assert(chain.toList == List(1, 2, 3, 4))
   }
 
@@ -77,7 +77,7 @@ class TestChain extends AnyFunSuite {
   }
 
   test("TestEq.05") {
-    val c1 = Chain.concat(Seq(Chain(1), Chain(2), Chain(3), Chain(4), Chain(5)))
+    val c1 = Seq(Chain(1), Chain(2), Chain(3), Chain(4), Chain(5)).fold(Chain.empty)(_ ++ _)
     val c2 = Chain(1, 2, 3, 4, 5)
     assertResult(c1)(c2)
   }
@@ -95,7 +95,7 @@ class TestChain extends AnyFunSuite {
   }
 
   test("TestEq.08") {
-    val c1 = Chain.concat(Seq(Chain(1), Chain(2), Chain(3), Chain(4), Chain(5)))
+    val c1 = Seq(Chain(1), Chain(2), Chain(3), Chain(4), Chain(5)).fold(Chain.empty)(_ ++ _)
     val c2 = Chain(1, 2, 3, 4, 6)
     assert(c1 != c2)
   }

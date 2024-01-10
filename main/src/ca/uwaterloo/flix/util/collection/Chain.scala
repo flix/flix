@@ -15,8 +15,6 @@
  */
 package ca.uwaterloo.flix.util.collection
 
-import scala.collection.mutable.ListBuffer
-
 /**
   * A linear data structure that allows fast concatenation.
   */
@@ -28,7 +26,6 @@ sealed trait Chain[+A] extends Iterable[A] {
   final def iterator: Iterator[A] = this match {
     case Chain.Empty => Iterator.empty
     case Chain.Link(l, r) => l.iterator ++ r.iterator
-    case Chain.Many(cs) => cs.flatMap(_.iterator).iterator
     case Chain.Proxy(xs) => xs.iterator
   }
 
@@ -46,23 +43,6 @@ sealed trait Chain[+A] extends Iterable[A] {
   }
 
   /**
-    * Returns `this` as a [[List]].
-    */
-  override def toList: List[A] = this match {
-    // N.B.: We have to use reflection to avoid
-    // infinite recursion when pattern matching
-    // since it calls the equals method which
-    // depends on toList.
-    case _: Chain.Empty.type => List.empty
-    case c: Chain.Link[A] => c.l.toList ++ c.r.toList
-    case c: Chain.Many[A] =>
-      val buf = ListBuffer.empty[A]
-      c.cs.foreach(c => buf.addAll(c.iterator))
-      buf.toList
-    case c: Chain.Proxy[A] => c.xs.toList
-  }
-
-  /**
     * The empty chain.
     */
   override val empty: Chain[A] = Chain.Empty
@@ -73,8 +53,20 @@ sealed trait Chain[+A] extends Iterable[A] {
   final def length: Int = this match {
     case Chain.Empty => 0
     case Chain.Link(l, r) => l.length + r.length
-    case Chain.Many(cs) => cs.map(_.length).sum
     case Chain.Proxy(xs) => xs.length
+  }
+
+  /**
+    * Returns `this` as a [[List]].
+    */
+  override def toList: List[A] = this match {
+    // N.B.: We have to use reflection to avoid
+    // infinite recursion when pattern matching
+    // since it calls the equals method which
+    // depends on toList.
+    case _: Chain.Empty.type => List.empty
+    case c: Chain.Link[A] => c.l.toList ++ c.r.toList
+    case c: Chain.Proxy[A] => c.xs.toList
   }
 
   final override def hashCode(): Int = this.toList.hashCode()
@@ -98,14 +90,14 @@ object Chain {
   private case class Link[A](l: Chain[A], r: Chain[A]) extends Chain[A]
 
   /**
-    * A concatenation of many chains.
-    */
-  private case class Many[A](cs: Seq[Chain[A]]) extends Chain[A]
-
-  /**
     * A chain wrapping a sequence.
     */
   private case class Proxy[A](xs: Seq[A]) extends Chain[A]
+
+  /**
+    * The empty chain.
+    */
+  val empty: Chain[Nothing] = Chain.Empty
 
   /**
     * Returns a chain containing the given elements.
@@ -126,15 +118,5 @@ object Chain {
     * Returns a chain containing the given elements.
     */
   def from[A](xs: Iterable[A]): Chain[A] = if (xs.isEmpty) Chain.empty else Chain.Proxy(xs.toSeq)
-
-  /**
-    * The empty chain.
-    */
-  val empty: Chain[Nothing] = Chain.Empty
-
-  /**
-    * Concatenates the given sequence of chains, in order.
-    */
-  def concat[A](cs: Seq[Chain[A]]): Chain[A] = Chain.Many(cs)
 
 }
