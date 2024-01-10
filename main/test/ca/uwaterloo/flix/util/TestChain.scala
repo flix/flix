@@ -20,34 +20,37 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestChain extends AnyFunSuite {
 
-  test("TestChain.02") {
-    val chain = Chain(1, 2, 3, 4)
-    assert(chain.toList == List(1, 2, 3, 4))
+  test("TestToList.01") {
+    assertResult(Chain.empty.toList)(List.empty)
   }
 
-  test("TestChain.03") {
+  test("TestToList.02") {
+    assertResult(Chain(1, 2, 3, 4).toList)(List(1, 2, 3, 4))
+  }
+
+  test("TestToList.03") {
     val chain = Chain(1, 2) ++ Chain(3, 4)
-    assert(chain.toList == List(1, 2, 3, 4))
+    assertResult(chain.toList)(List(1, 2, 3, 4))
   }
 
-  test("TestChain.04") {
+  test("TestToList.04") {
     val chain = Chain.empty ++ Chain(1, 2, 3, 4)
-    assert(chain.toList == List(1, 2, 3, 4))
+    assertResult(chain.toList)(List(1, 2, 3, 4))
   }
 
-  test("TestChain.05") {
+  test("TestToList.05") {
     val chain = Chain(1, 2, 3, 4) ++ Chain.empty
-    assert(chain.toList == List(1, 2, 3, 4))
+    assertResult(chain.toList)(List(1, 2, 3, 4))
   }
 
-  test("TestChain.06") {
+  test("TestToList.06") {
     val chains = List(
       Chain.empty,
       Chain(1, 2),
       Chain.empty ++ Chain(3, 4)
     )
     val chain = chains.fold(Chain.empty)(_ ++ _)
-    assert(chain.toList == List(1, 2, 3, 4))
+    assertResult(chain.toList)(List(1, 2, 3, 4))
   }
 
   test("TestEq.01") {
