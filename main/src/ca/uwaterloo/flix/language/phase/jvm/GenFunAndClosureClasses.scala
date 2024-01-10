@@ -31,6 +31,9 @@ import org.objectweb.asm.{ClassWriter, Label, MethodVisitor, Opcodes}
   */
 object GenFunAndClosureClasses {
 
+  /** Print functional call information at runtime if true */
+  val onCallDebugging = false
+
   /**
     * Returns a map of function- and closure-classes for the given set `defs`.
     */
@@ -149,7 +152,7 @@ object GenFunAndClosureClasses {
     compileInvokeMethod(visitor, classType)
     compileFrameMethod(visitor, classType, defn)
     compileCopyMethod(visitor, classType, defn)
-    compileOnCall(visitor, classType, defn)
+    if (onCallDebugging) compileOnCall(visitor, classType, defn)
     if (kind == Closure) compileGetUniqueThreadClosureMethod(visitor, classType, defn)
 
     visitor.visitEnd()
@@ -208,10 +211,11 @@ object GenFunAndClosureClasses {
     val enterLabel = new Label()
     m.visitLabel(enterLabel)
 
-    // Add these lines to call onCall
-    // m.visitVarInsn(ALOAD, 0)
-    // m.visitVarInsn(ALOAD, 1)
-    // m.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "onCall", MethodDescriptor.mkDescriptor(BackendObjType.Value.toTpe)(VoidableType.Void).toDescriptor, false)
+    if (onCallDebugging) {
+      m.visitVarInsn(ALOAD, 0)
+      m.visitVarInsn(ALOAD, 1)
+      m.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "onCall", MethodDescriptor.mkDescriptor(BackendObjType.Value.toTpe)(VoidableType.Void).toDescriptor, false)
+    }
 
     loadParamsOf(cparams)
     loadParamsOf(fparams)

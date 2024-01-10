@@ -1436,6 +1436,8 @@ object GenExpression {
         NEW(BackendObjType.FramesNil.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.FramesNil.Constructor) ~
         // continuation
         cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~
+        // exp.arg0 should be set to unit here but from lifting we know that it is unused so the
+        // implicit null is fine.
         // call installHandler
         INVOKESTATIC(BackendObjType.Handler.InstallHandlerMethod)
       }
@@ -1518,7 +1520,7 @@ object GenExpression {
 
   }
 
-  private def printPc(mv: MethodVisitor, pcPoint: Int): Unit = {
+  private def printPc(mv: MethodVisitor, pcPoint: Int): Unit = if (!GenFunAndClosureClasses.onCallDebugging) () else {
     val printStream = JvmName(List("java", "io"), "PrintStream")
     mv.visitFieldInsn(GETSTATIC, JvmName(List("java", "lang"), "System").toInternalName, "out", printStream.toDescriptor)
     mv.visitLdcInsn("pc = ")
