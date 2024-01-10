@@ -136,7 +136,7 @@ object JvmOps {
     */
   def getFunctionInterfaceType(tpe: MonoType): JvmType.Reference = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-      getFunctionInterfaceType(targs.map(getErasedJvmType), getErasedJvmType(tresult))
+      getFunctionInterfaceType(targs.map(getErasedJvmType), asErasedJvmType(tresult))
     case _ =>
       throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
@@ -175,7 +175,7 @@ object JvmOps {
     */
   def getClosureAbstractClassType(tpe: MonoType): JvmType.Reference = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-      getClosureAbstractClassType(targs.map(getErasedJvmType), getErasedJvmType(tresult))
+      getClosureAbstractClassType(targs.map(getErasedJvmType), asErasedJvmType(tresult))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
 

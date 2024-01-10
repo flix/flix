@@ -29,7 +29,9 @@ import ca.uwaterloo.flix.util.collection.MapOps
   *   - component type erasure
   *   - force casting
   * - Enum (todo)
-  * - function returns (todo)
+  * - Function
+  *   - result type erasure, this includes return types of effect operations and defs
+  *   - function call return value casting
   */
 object Eraser {
 
@@ -42,7 +44,7 @@ object Eraser {
 
   private def visitDef(defn: Def): Def = defn match {
     case Def(ann, mod, sym, cparams, fparams, exp, tpe, purity, loc) =>
-      Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), visitExp(exp), visitType(tpe), purity, loc)
+      Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), visitExp(exp), erase(tpe), purity, loc)
   }
 
   private def visitParam(fp: FormalParam): FormalParam = fp match {
@@ -67,6 +69,7 @@ object Eraser {
 
   private def visitJvmMethod(method: JvmMethod): JvmMethod = method match {
     case JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+      // return type is not erased to maintain class signatures
       JvmMethod(ident, fparams.map(visitParam), visitExp(clo), visitType(retTpe), purity, loc)
   }
 
@@ -174,7 +177,7 @@ object Eraser {
 
   private def visitOp(op: Op): Op = op match {
     case Op(sym, ann, mod, fparams, tpe, purity, loc) =>
-      Op(sym, ann, mod, fparams.map(visitParam), visitType(tpe), purity, loc)
+      Op(sym, ann, mod, fparams.map(visitParam), erase(tpe), purity, loc)
   }
 
   private def visitType(tpe: MonoType): MonoType = tpe match {
@@ -197,7 +200,7 @@ object Eraser {
     case Ref(tpe) => Ref(erase(tpe))
     case Tuple(elms) => Tuple(elms.map(erase))
     case MonoType.Enum(sym) => MonoType.Enum(sym)
-    case Arrow(args, result) => Arrow(args.map(visitType), visitType(result))
+    case Arrow(args, result) => Arrow(args.map(visitType), erase(result))
     case RecordEmpty => RecordEmpty
     case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
     case Native(clazz) => Native(clazz)
