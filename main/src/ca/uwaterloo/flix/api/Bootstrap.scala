@@ -23,7 +23,8 @@ import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manif
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.collection.Chain
+import ca.uwaterloo.flix.util.{Result, Validation}
 
 import java.io.{PrintStream, PrintWriter}
 import java.nio.file._
@@ -33,7 +34,6 @@ import java.util.{Calendar, GregorianCalendar}
 import scala.collection.mutable
 import scala.io.StdIn.readLine
 import scala.util.{Failure, Success, Using}
-import scala.jdk.CollectionConverters._
 
 
 object Bootstrap {
@@ -475,9 +475,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    flix.check() match {
-      case Validation.Success(_) => Validation.success(())
-      case failure => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(failure.errors)))
+    flix.check().toHardResult match {
+      case Result.Ok(_) => Validation.success(())
+      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 
@@ -492,9 +492,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    flix.compile() match {
-      case Validation.Success(r) => Validation.success(r)
-      case failure => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(failure.errors)))
+    flix.compile().toHardResult match {
+      case Result.Ok(r) => Validation.success(r)
+      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 
@@ -601,9 +601,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       root =>
         JsonDocumentor.run(root)(flix)
         HtmlDocumentor.run(root)(flix)
-    } match {
-      case Validation.Success(_) => Validation.success(())
-      case failure => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(failure.errors)))
+    }.toHardResult match {
+      case Result.Ok(_) => Validation.success(())
+      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 
@@ -668,10 +668,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Build artifacts
     println("Building project...")
     val buildResult = buildPkg()
-    buildResult match {
-      case Validation.Success(_) => // Continue
-      case Validation.SoftFailure(_, e) => return Validation.SoftFailure((), e)
-      case Validation.HardFailure(e) => return Validation.HardFailure(e)
+    buildResult.toSoftResult match {
+      case Result.Ok((_, Chain.empty)) => // Continue
+      case Result.Ok((_, e)) => return Validation.SoftFailure((), e)
+      case Result.Err(e) => return Validation.HardFailure(e)
     }
 
     // Publish to GitHub
@@ -690,6 +690,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
          |""".stripMargin
     )
 
-    Validation.Success(())
+    Validation.success(())
   }
 }
