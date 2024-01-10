@@ -79,6 +79,15 @@ sealed trait Chain[+A] {
   }
 
   /**
+    * Returns `true` if and only if an element in `this` satisfies the predicate `f`.
+    */
+  final def exists(f: A => Boolean): Boolean = this match {
+    case Chain.Empty => false
+    case Chain.Link(l, r) => l.exists(f) || r.exists(f)
+    case Chain.Proxy(xs) => xs.exists(f)
+  }
+
+  /**
     * Returns a new [[Chain]] with `f` applied to every element in `this`.
     */
   final def map[B](f: A => B): Chain[B] = this match {

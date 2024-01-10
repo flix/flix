@@ -213,4 +213,42 @@ class TestChain extends AnyFunSuite {
   test("TestToSeq.05") {
     assertResult((Chain(1, 2, 3, 4) ++ Chain.empty).toSeq)(Seq(1, 2, 3, 4))
   }
+
+
+  test("TestExists.01") {
+    assertResult(Chain.empty.exists((i: Int) => i > 3))(false)
+  }
+
+  test("TestExists.02") {
+    assertResult(Chain(1).exists(i => i > 3))(false)
+  }
+
+  test("TestExists.03") {
+    assertResult(Chain(5).exists(i => i > 3))(true)
+  }
+
+  test("TestExists.04") {
+    assertResult(Chain(1, 2).exists(i => i > 3))(false)
+  }
+
+  test("TestExists.05") {
+    assertResult(Chain(1, 6).exists(i => i > 3))(true)
+  }
+
+  test("TestExists.06") {
+    assertResult(Chain(6, 1).exists(i => i > 3))(true)
+  }
+
+  test("TestExists.07") {
+    assertResult(Chain(16, 6).exists(i => i > 3))(true)
+  }
+
+  test("TestExists.08") {
+    assertResult(Chain(1, -9, 3).exists(i => i > 3))(false)
+  }
+
+  test("TestExists.09") {
+    assertResult(Chain(1, 9, 3).exists(i => i > 3))(true)
+  }
+
 }
