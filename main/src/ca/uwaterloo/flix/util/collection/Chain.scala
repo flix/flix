@@ -15,10 +15,12 @@
  */
 package ca.uwaterloo.flix.util.collection
 
+import scala.annotation.tailrec
+
 /**
   * A linear data structure that allows fast concatenation.
   */
-sealed trait Chain[+A] extends Iterable[A] {
+sealed trait Chain[+A] {
 
   /**
     * Returns an iterator over the chain, from left to right.
@@ -45,12 +47,12 @@ sealed trait Chain[+A] extends Iterable[A] {
   /**
     * The empty chain.
     */
-  override val empty: Chain[A] = Chain.Empty
+  final val empty: Chain[A] = Chain.Empty
 
   /**
     * Returns `true` if and only if `this` contains no elements.
     */
-  override def isEmpty: Boolean = this match {
+  final def isEmpty: Boolean = this match {
     case Chain.Empty => true
     case Chain.Link(l, r) => l.isEmpty && r.isEmpty
     case Chain.Proxy(xs) => xs.isEmpty
@@ -59,10 +61,11 @@ sealed trait Chain[+A] extends Iterable[A] {
   /**
     * Returns the leftmost element if any exists.
     */
-  override def headOption: Option[A] = this match {
+  @tailrec
+  final def head: Option[A] = this match {
     case Chain.Empty => None
-    case Chain.Link(Chain.empty, r) => r.headOption
-    case Chain.Link(l, _) => l.headOption
+    case Chain.Link(Chain.empty, r) => r.head
+    case Chain.Link(l, _) => l.head
     case Chain.Proxy(xs) => xs.headOption
   }
 
@@ -76,9 +79,18 @@ sealed trait Chain[+A] extends Iterable[A] {
   }
 
   /**
+    * Returns a new [[Chain]] with `f` applied to every element in `this`.
+    */
+  final def map[B](f: A => B): Chain[B] = this match {
+    case Chain.Empty => Chain.empty
+    case Chain.Link(l, r) => Chain.Link(l.map(f), r.map(f))
+    case Chain.Proxy(xs) => Chain.Proxy(xs.map(f))
+  }
+
+  /**
     * Returns `this` as a [[List]].
     */
-  override def toList: List[A] = this match {
+  final def toList: List[A] = this match {
     // N.B.: We have to use reflection to avoid
     // infinite recursion when pattern matching
     // since it calls the equals method which

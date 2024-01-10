@@ -151,5 +151,32 @@ class TestChain extends AnyFunSuite {
     assertResult(Chain(1, 2, 3).length)(3)
   }
 
+  test("TestMap.01") {
+    assertResult(Chain.empty.map((i: Int) => i > 2))(Chain.empty)
+  }
+
+  test("TestMap.02") {
+    assertResult(Chain(1).map(i => i > 2))(Chain(false))
+  }
+
+  test("TestMap.03") {
+    assertResult(Chain(3).map(i => i > 2))(Chain(true))
+  }
+
+  test("TestMap.04") {
+    assertResult(Chain(1, 2).map(i => i > 2))(Chain(false, false))
+  }
+
+  test("TestMap.05") {
+    assertResult(Chain(1, 8).map(i => i > 2))(Chain(false, true))
+  }
+
+  test("TestMap.06") {
+    assertResult(Chain(8, 1).map(i => i > 2))(Chain(true, false))
+  }
+
+  test("TestMap.07") {
+    assertResult(Chain(7, 8).map(i => i > 2))(Chain(true, true))
+  }
 
 }
