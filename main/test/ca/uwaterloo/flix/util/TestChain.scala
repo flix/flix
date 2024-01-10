@@ -111,4 +111,21 @@ class TestChain extends AnyFunSuite {
     val c2 = Chain(2, 2, 3, 4, 6)
     assert(c1 != c2)
   }
+
+  test("TestHead.01") {
+    assertResult(Chain.empty.head)(None)
+  }
+
+  test("TestHead.02") {
+    assertResult(Chain(1).head)(Some(1))
+  }
+
+  test("TestHead.03") {
+    assertResult(Chain(2, 1).head)(Some(2))
+  }
+
+  test("TestHead.04") {
+    assertResult(Chain(3, 2, 1).head)(Some(3))
+  }
+
 }
