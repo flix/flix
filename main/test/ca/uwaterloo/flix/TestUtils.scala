@@ -75,6 +75,6 @@ trait TestUtils {
   def expectSuccess(result: Validation[CompilationResult, CompilationMessage]): Unit = result match {
     case Validation.Success(_) => ()
     case failure =>
-      fail(s"Expected success, but found errors:\n\n${errorString(failure.errors)}.")
+      fail(s"Expected success, but found errors:\n\n${errorString(failure.errors.toSeq)}.")
   }
 }

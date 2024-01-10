@@ -147,9 +147,9 @@ object Typer {
   private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
     flix.subphase("Defs") {
       val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
-      ParOps.parTraverseValues(staleDefs) {
+      mapN(ParOps.parTraverseValues(staleDefs) {
         case defn => visitDef(defn, assumedTconstrs = Nil, root, classEnv, eqEnv)
-      }.map(_ ++ freshDefs)
+      })(_ ++ freshDefs)
     }
   }
 
@@ -171,7 +171,7 @@ object Typer {
   private def visitClasses(root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, TypedAst.Class], TypeError] =
     flix.subphase("Classes") {
       val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
-      ParOps.parTraverseValues(staleClasses)(visitClass(_, root, classEnv, eqEnv)).map(_ ++ freshClasses)
+      mapN(ParOps.parTraverseValues(staleClasses)(visitClass(_, root, classEnv, eqEnv)))(_ ++ freshClasses)
     }
 
   /**

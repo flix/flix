@@ -27,12 +27,14 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.collection.Chain
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
 import java.util.concurrent.ForkJoinPool
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.language.implicitConversions
 
 object Flix {
   /**
@@ -504,11 +506,11 @@ class Flix {
     * Converts a list of compiler error messages to a list of printable messages.
     * Decides whether or not to append the explanation.
     */
-  def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
+  def mkMessages(errors: Chain[CompilationMessage]): List[String] = {
     if (options.explain)
-      errors.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
+      errors.toSeq.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
     else
-      errors.sortBy(_.loc).map(cm => cm.message(formatter)).toList
+      errors.toSeq.sortBy(_.loc).map(cm => cm.message(formatter)).toList
   }
 
   /**
@@ -528,6 +530,10 @@ class Flix {
 
     // The default entry point
     val entryPoint = flix.options.entryPoint
+
+    implicit class MappableValidation[A, B](v: Validation[A, B]) {
+      implicit def map[C](f: A => C): Validation[C, B] = Validation.mapN(v)(f)
+    }
 
     /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {

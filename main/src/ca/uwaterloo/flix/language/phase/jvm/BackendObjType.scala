@@ -1314,15 +1314,14 @@ object BackendObjType {
     }
 
     /**
-      * Expects a Thunk on the stack and leaves a non-Thunk Result.
+      * Expects a Result on the stack and leaves a non-Thunk Result.
       * [..., Result] --> [..., Suspension|Value]
       */
     def unwindThunk(): InstructionSet = {
-      INVOKEINTERFACE(Thunk.InvokeMethod) ~
-        whileLoop(Condition.NE)(DUP() ~ INSTANCEOF(Thunk.jvmName)) {
-          CHECKCAST(Thunk.jvmName) ~
-            INVOKEINTERFACE(Thunk.InvokeMethod)
-        }
+      whileLoop(Condition.NE)(DUP() ~ INSTANCEOF(Thunk.jvmName)) {
+        CHECKCAST(Thunk.jvmName) ~
+          INVOKEINTERFACE(Thunk.InvokeMethod)
+      }
     }
 
     /**
@@ -1330,7 +1329,7 @@ object BackendObjType {
       * If the result is a Suspension, this will return a modified Suspension.
       * If the result in NOT a Suspension, this will leave it on the stack.
       * [..., Result] --> [..., Thunk|Value]
-      * side effect: might return
+      * side effect: Will return a modified suspension if a suspension occurs
       */
     def handleSuspension(pc: Int, newFrame: InstructionSet): InstructionSet = {
       DUP() ~ INSTANCEOF(Suspension.jvmName) ~
@@ -1359,7 +1358,7 @@ object BackendObjType {
       * Expects a Result on the stack and leaves something of the given tpe but erased.
       * This might return if a Suspension is encountered.
       * [..., Result] --> [..., Value.value: tpe]
-      * side effect: Might return
+      * side effect: Will return any Suspension found
       */
     def unwindThunkToType(pc: Int, newFrame: InstructionSet, tpe: BackendType): InstructionSet = {
       unwindThunk() ~
@@ -1368,10 +1367,10 @@ object BackendObjType {
     }
 
     /**
-      * Expects a Thunk on the stack and leaves something of the given tpe but erased.
-      * Assumes that the thunk is control-pure, i.e. never returns a suspension.
+      * Expects a Result on the stack and leaves something of the given tpe but erased.
+      * Assumes that the result is control-pure, i.e. it is not a suspension and will never return a suspension through a thunk.
       * [..., Result] --> [..., Value.value: tpe]
-      * side effect: might crash
+      * side effect: crashes on suspensions
       */
     def unwindSuspensionFreeThunkToType(tpe: BackendType): InstructionSet = {
       unwindThunk() ~ CHECKCAST(Value.jvmName) ~ GETFIELD(Value.fieldFromType(tpe))
