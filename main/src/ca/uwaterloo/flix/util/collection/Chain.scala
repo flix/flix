@@ -46,6 +46,21 @@ sealed trait Chain[+A] extends Iterable[A] {
   }
 
   /**
+    * The empty chain.
+    */
+  override val empty: Chain[A] = Chain.Empty
+
+  /**
+    * Returns the amount of elements in the chain.
+    */
+  final def length: Int = this match {
+    case Chain.Empty => 0
+    case Chain.Link(l, r) => l.length + r.length
+    case Chain.Many(cs) => cs.map(_.length).sum
+    case Chain.Proxy(xs) => xs.length
+  }
+
+  /**
     * Returns `this` as a [[List]].
     */
   override def toList: List[A] = this match {
@@ -60,21 +75,6 @@ sealed trait Chain[+A] extends Iterable[A] {
       c.cs.foreach(c => buf.addAll(c.iterator))
       buf.toList
     case c: Chain.Proxy[A] => c.xs.toList
-  }
-
-  /**
-    * The empty chain.
-    */
-  override val empty: Chain[A] = Chain.Empty
-
-  /**
-    * Returns the amount of elements in the chain.
-    */
-  final def length: Int = this match {
-    case Chain.Empty => 0
-    case Chain.Link(l, r) => l.length + r.length
-    case Chain.Many(cs) => cs.map(_.length).sum
-    case Chain.Proxy(xs) => xs.length
   }
 
   final override def hashCode(): Int = this.toList.hashCode()
