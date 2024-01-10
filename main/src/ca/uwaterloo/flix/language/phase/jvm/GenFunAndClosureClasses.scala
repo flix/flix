@@ -251,8 +251,8 @@ object GenFunAndClosureClasses {
       import BackendObjType._
       import BytecodeInstructions._
       NEW(Value.jvmName) ~ DUP() ~ INVOKESPECIAL(Value.Constructor) ~ DUP() ~
-        xSwap(lowerLarge = BackendType.toErasedBackendType(defn.tpe).is64BitWidth, higherLarge = true) ~ // two objects on top of the stack
-        PUTFIELD(Value.fieldFromType(BackendType.toErasedBackendType(defn.tpe))) ~
+        xSwap(lowerLarge = BackendType.asErasedBackendType(defn.tpe).is64BitWidth, higherLarge = true) ~ // two objects on top of the stack
+        PUTFIELD(Value.fieldFromType(BackendType.asErasedBackendType(defn.tpe))) ~
         xReturn(Result.toTpe)
     }
     returnValue(new BytecodeInstructions.F(m))

@@ -49,7 +49,8 @@ object GenMainClass {
     * Throws `InternalCompilerException` if the type  of `defn` is not `Unit -> Unit`.
     */
   private def checkMainType(defn: Def): Unit = (defn.cparams, defn.fparams, defn.tpe) match {
-    case (Nil, List(FormalParam(_, _, MonoType.Unit, _)), MonoType.Unit) => ()
+    // todo this is too broad
+    case (Nil, List(FormalParam(_, _, MonoType.Unit, _)), MonoType.Object) => ()
     case (cs@_ :: _, _, _) =>
       val tupleType = MonoType.Tuple(cs.map(_.tpe))
       throw InternalCompilerException(s"Entrypoint function has unexpected captured parameters '$tupleType'", defn.loc)
