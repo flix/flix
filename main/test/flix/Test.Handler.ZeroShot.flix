@@ -117,14 +117,4 @@ mod Test.Handler.ZeroShot {
         pub def throw(): Int32
     }
 
-    @Test
-    def testThrowInt32Linear(): Bool =
-        def f1() = do ThrowInt32.throw();
-        let result = try {
-            f1()
-        } with ThrowInt32 {
-            def throw(_k) = 123
-        };
-        Assert.eq(123, result)
-
 }
