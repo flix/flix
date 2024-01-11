@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.util._
 
 import java.io.File
 import java.net.BindException
-import java.nio.file.Paths
+import java.nio.file.{Files, Paths}
 
 /**
   * The main entry point for the Flix compiler and runtime.
@@ -37,6 +37,8 @@ object Main {
     * The main method.
     */
   def main(argv: Array[String]): Unit = {
+
+    val cwd = Paths.get(".").toAbsolutePath.normalize()
 
     // parse command line options.
     val cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {
@@ -69,9 +71,17 @@ object Main {
       case Some(s) => Some(Symbol.mkDefnSym(s))
     }
 
-    // Get GitHub token
+    // get GitHub token
     val githubToken =
       cmdOpts.githubToken
+        .orElse {
+          val tokenFile = cwd.resolve("./.GITHUB_TOKEN").normalize()
+          Option.when(
+            Files.isReadable(tokenFile)
+          )(
+            Files.readString(tokenFile)
+          )
+        }
         .orElse(sys.env.get("GITHUB_TOKEN"))
 
     // construct flix options.
@@ -113,8 +123,6 @@ object Main {
     if (System.console() == null) {
       options = options.copy(progress = false)
     }
-
-    val cwd = Paths.get(".").toAbsolutePath.normalize()
 
     // check if command was passed.
     try {
