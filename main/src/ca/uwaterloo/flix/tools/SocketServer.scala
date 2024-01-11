@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util._
 import org.java_websocket.WebSocket
 import org.java_websocket.handshake.ClientHandshake
@@ -193,7 +192,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
 
         case Result.Err(errors) =>
           // Compilation failed. Retrieve and format the first error message.
-          Err(errors.head.message(flix.getFormatter))
+          Err(errors.head.get.message(flix.getFormatter))
       }
     } catch {
       case ex: RuntimeException => Err(ex.getMessage)
