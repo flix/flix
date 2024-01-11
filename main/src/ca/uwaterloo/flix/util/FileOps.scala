@@ -24,6 +24,22 @@ import java.nio.file.{Files, LinkOption, Path}
 object FileOps {
 
   /**
+    * Reads the contents of the file at the given path `p` if it is possible.
+    *
+    * Returns None if:
+    * - The path doesn't exist.
+    * - The path isn't a file.
+    * - The current process doesn't have the necessary permissions.
+    */
+  def readString(p: Path): Option[String] = {
+    Option.when(
+      Files.isReadable(p)
+    )(
+      Files.readString(p)
+    )
+  }
+
+  /**
    * Writes the given string `s` to the given file path `p`.
    *
    * Creates the parent directory of `p` if needed.

@@ -74,14 +74,7 @@ object Main {
     // get GitHub token
     val githubToken =
       cmdOpts.githubToken
-        .orElse {
-          val tokenFile = cwd.resolve("./.GITHUB_TOKEN").normalize()
-          Option.when(
-            Files.isReadable(tokenFile)
-          )(
-            Files.readString(tokenFile)
-          )
-        }
+        .orElse(FileOps.readString(cwd.resolve("./.GITHUB_TOKEN")))
         .orElse(sys.env.get("GITHUB_TOKEN"))
         .map { t =>
           val trimmed = t.trim
