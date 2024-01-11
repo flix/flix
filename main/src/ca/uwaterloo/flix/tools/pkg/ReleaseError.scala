@@ -46,6 +46,7 @@ object ReleaseError {
          | Cannot create a release without a GitHub token.
          | This can be passed via:
          | - The --github-token command line option.
+         | - A file named .GITHUB_TOKEN in the project's root.
          | - The GITHUB_TOKEN environment variable.
          |""".stripMargin
   }
