@@ -365,28 +365,14 @@ object BackendObjType {
       */
     def specialization(): List[FunctionInterface] = {
       (args, result) match {
-        case (BackendType.Reference(BackendObjType.JavaObject) :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
-          ObjFunction :: ObjConsumer :: Nil
-        case (BackendType.Reference(BackendObjType.JavaObject) :: Nil, BackendType.Bool) =>
-          ObjPredicate :: Nil
-        case (BackendType.Int32 :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
-          IntFunction :: IntConsumer :: Nil
-        case (BackendType.Int32 :: Nil, BackendType.Bool) =>
-          IntPredicate :: Nil
-        case (BackendType.Int32 :: Nil, BackendType.Int32) =>
-          IntUnaryOperator :: Nil
-        case (BackendType.Int64 :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
-          LongFunction :: LongConsumer :: Nil
-        case (BackendType.Int64 :: Nil, BackendType.Bool) =>
-          LongPredicate :: Nil
-        case (BackendType.Int64 :: Nil, BackendType.Int64) =>
-          LongUnaryOperator :: Nil
-        case (BackendType.Float64 :: Nil, BackendType.Reference(BackendObjType.JavaObject)) =>
-          DoubleFunction :: DoubleConsumer :: Nil
-        case (BackendType.Float64 :: Nil, BackendType.Bool) =>
-          DoublePredicate :: Nil
-        case (BackendType.Float64 :: Nil, BackendType.Float64) =>
-          DoubleUnaryOperator :: Nil
+        case (BackendType.Reference(BackendObjType.JavaObject) :: Nil, _) =>
+          ObjFunction :: ObjConsumer :: ObjPredicate :: Nil
+        case (BackendType.Int32 :: Nil, _) =>
+          IntFunction :: IntConsumer :: IntPredicate :: IntUnaryOperator :: Nil
+        case (BackendType.Int64 :: Nil, _) =>
+          LongFunction :: LongConsumer :: LongPredicate :: LongUnaryOperator :: Nil
+        case (BackendType.Float64 :: Nil, _) =>
+          DoubleFunction :: DoubleConsumer :: DoublePredicate :: DoubleUnaryOperator :: Nil
         case _ => Nil
       }
     }
@@ -1331,7 +1317,7 @@ object BackendObjType {
       * [..., Result] --> [..., Thunk|Value]
       * side effect: Will return a modified suspension if a suspension occurs
       */
-    def handleSuspension(pc: Int, newFrame: InstructionSet): InstructionSet = {
+    def handleSuspension(pc: Int, newFrame: InstructionSet, setPc: InstructionSet): InstructionSet = {
       DUP() ~ INSTANCEOF(Suspension.jvmName) ~
       ifCondition(Condition.NE) {
         DUP() ~ CHECKCAST(Suspension.jvmName) ~ // [..., s]
@@ -1345,7 +1331,7 @@ object BackendObjType {
         DUP2() ~ GETFIELD(Suspension.PrefixField) ~ // [..., s', s, s', s.prefix]
         // Make the new frame and push it
         newFrame ~
-        /* TODO with pc */
+        DUP() ~ cheat(mv => GenExpression.compileInt(pc)(mv)) ~ setPc ~
         INVOKEINTERFACE(Frames.PushMethod) ~ // [..., s', s, s', prefix']
         PUTFIELD(Suspension.PrefixField) ~ // [..., s', s]
         POP() ~ // [..., s']
@@ -1355,15 +1341,15 @@ object BackendObjType {
     }
 
     /**
-      * Expects a Result on the stack and leaves something of the given tpe but erased.
+      * Expects a Result on the stack and leaves a Value.
       * This might return if a Suspension is encountered.
       * [..., Result] --> [..., Value.value: tpe]
       * side effect: Will return any Suspension found
       */
-    def unwindThunkToType(pc: Int, newFrame: InstructionSet, tpe: BackendType): InstructionSet = {
+    def unwindThunkToValue(pc: Int, newFrame: InstructionSet, setPc: InstructionSet): InstructionSet = {
       unwindThunk() ~
-      handleSuspension(pc, newFrame) ~
-      CHECKCAST(Value.jvmName) ~ GETFIELD(Value.fieldFromType(tpe))
+      handleSuspension(pc, newFrame, setPc) ~
+      CHECKCAST(Value.jvmName)
     }
 
     /**
@@ -1374,6 +1360,16 @@ object BackendObjType {
       */
     def unwindSuspensionFreeThunkToType(tpe: BackendType): InstructionSet = {
       unwindThunk() ~ CHECKCAST(Value.jvmName) ~ GETFIELD(Value.fieldFromType(tpe))
+    }
+
+    /**
+      * Expects a Result on the stack and leaves a Value.
+      * Assumes that the result is control-pure, i.e. it is not a suspension and will never return a suspension through a thunk.
+      * [..., Result] --> [..., Value]
+      * side effect: crashes on suspensions
+      */
+    def unwindSuspensionFreeThunk(): InstructionSet = {
+      unwindThunk() ~ CHECKCAST(Value.jvmName)
     }
   }
 

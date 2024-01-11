@@ -668,9 +668,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Build artifacts
     println("Building project...")
     val buildResult = buildPkg()
-    buildResult.toSoftResult match {
-      case Result.Ok((_, Chain.empty)) => // Continue
-      case Result.Ok((_, e)) => return Validation.SoftFailure((), e)
+    buildResult.toHardResult match {
+      case Result.Ok(_) => // Continue
       case Result.Err(e) => return Validation.HardFailure(e)
     }
 

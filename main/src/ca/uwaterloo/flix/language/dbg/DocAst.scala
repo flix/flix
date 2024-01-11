@@ -218,7 +218,13 @@ object DocAst {
     }
 
     def Cast(d: Expression, tpe: Type): Expression =
-      DoubleKeyword("unsafe_cast", d, "as", Right(tpe))
+      DoubleKeyword("cast", d, "as", Right(tpe))
+
+    def Unbox(d: Expression, tpe: Type): Expression =
+      DoubleKeyword("unbox", d, "as", Right(tpe))
+
+    def Box(d: Expression): Expression =
+      Keyword("box", d)
 
     def Without(d: Expression, sym: Symbol.EffectSym): Expression =
       Binary(d, "without", AsIs(sym.toString))
