@@ -91,6 +91,7 @@ object Bootstrap {
          |artifact/
          |build/
          |lib/
+         |.GITHUB_TOKEN
          |""".stripMargin
     }
 
