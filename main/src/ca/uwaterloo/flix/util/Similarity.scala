@@ -39,7 +39,7 @@ object Similarity {
     *
     * See https://en.wikibooks.org/wiki/Algorithm_Implementation/Strings/Levenshtein_distance#Scala
     */
-  private def levenshtein(s1: String, s2: String): Int = {
+  def levenshtein(s1: String, s2: String): Int = {
     val lenStr1 = s1.length
     val lenStr2 = s2.length
 
