@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.ClassContext
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, Symbol, Type}
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{Result, Validation}
 import ca.uwaterloo.flix.util.collection.ListMap
 
 import scala.annotation.tailrec
@@ -59,9 +59,9 @@ object ClassEnvironment {
     * Returns true iff the given type constraint holds under the given class environment.
     */
   def holds(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
-    byInst(tconstr, classEnv) match {
-      case Validation.Success(_) => true
-      case _failure => false
+    byInst(tconstr, classEnv).toHardResult match {
+      case Result.Ok(_) => true
+      case Result.Err(_) => false
     }
   }
 
@@ -74,11 +74,11 @@ object ClassEnvironment {
     def loop(tconstrs0: List[Ast.TypeConstraint], acc: List[Ast.TypeConstraint]): List[Ast.TypeConstraint] = tconstrs0 match {
       // Case 0: no tconstrs left to process, we're done
       case Nil => acc
-      case head :: tail => entail(acc ++ tail, head, classEnv) match {
+      case head :: tail => entail(acc ++ tail, head, classEnv).toHardResult match {
         // Case 1: `head` is entailed by the other type constraints, skip it
-        case Validation.Success(_) => loop(tail, acc)
+        case Result.Ok(_) => loop(tail, acc)
         // Case 2: `head` is not entailed, add it to the list
-        case _failure => loop(tail, head :: acc)
+        case Result.Err(_) => loop(tail, head :: acc)
       }
     }
 
@@ -123,8 +123,8 @@ object ClassEnvironment {
       Validation.mapN(substVal)(subst => inst.tconstrs.map(subst(_)))
     }
 
-    val tconstrGroups = matchingInstances.map(tryInst).collect {
-      case Validation.Success(tconstrs) => tconstrs
+    val tconstrGroups = matchingInstances.map(tryInst).map(_.toHardResult).collect {
+      case Result.Ok(tconstrs) => tconstrs
     }
 
     tconstrGroups match {
