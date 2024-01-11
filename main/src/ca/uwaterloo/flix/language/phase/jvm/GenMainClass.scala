@@ -138,7 +138,7 @@ object GenMainClass {
       BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
     main.visitFieldInsn(PUTFIELD, defnClass.name.toInternalName, "arg0", BackendObjType.JavaObject.jvmName.toDescriptor)
 
-    BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.tpe))(new BytecodeInstructions.F(main))
+    BackendObjType.Result.unwindSuspensionFreeThunk()(new BytecodeInstructions.F(main))
     // The return value is ignored.
     main.visitInsn(POP)
 

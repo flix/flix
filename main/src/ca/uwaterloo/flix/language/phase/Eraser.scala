@@ -30,7 +30,7 @@ import ca.uwaterloo.flix.util.collection.MapOps
   *   - force casting
   * - Enum (todo)
   * - Function
-  *   - result type erasure, this includes return types of effect operations and defs
+  *   - result type boxing, this includes return types of defs and their applications
   *   - function call return value casting
   */
 object Eraser {
@@ -44,7 +44,9 @@ object Eraser {
 
   private def visitDef(defn: Def): Def = defn match {
     case Def(ann, mod, sym, cparams, fparams, exp, tpe, purity, loc) =>
-      Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), visitExp(exp), erase(tpe), purity, loc)
+      val eNew = visitExp(exp)
+      val e = Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), purity, loc)
+      Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), e, box(tpe), purity, loc)
   }
 
   private def visitParam(fp: FormalParam): FormalParam = fp match {
@@ -109,6 +111,8 @@ object Eraser {
         case AtomicOp.Assign => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InstanceOf(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Cast => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Unbox => ApplyAtomic(op, es, t, purity, loc)
+        case AtomicOp.Box => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InvokeConstructor(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InvokeMethod(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.InvokeStaticMethod(_) => ApplyAtomic(op, es, t, purity, loc)
@@ -125,13 +129,13 @@ object Eraser {
       }
 
     case ApplyClo(exp, exps, ct, tpe, purity, loc) =>
-      val ac = ApplyClo(visitExp(exp), exps.map(visitExp), ct, visitType(tpe), purity, loc)
+      val ac = ApplyClo(visitExp(exp), exps.map(visitExp), ct, box(tpe), purity, loc)
       if (ct == CallType.TailCall) ac
-      else castExp(ac, ac.tpe, purity, loc)
+      else castExp(unboxExp(ac, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-      val ad = ApplyDef(sym, exps.map(visitExp), ct, visitType(tpe), purity, loc)
+      val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)
       if (ct == CallType.TailCall) ad
-      else castExp(ad, ad.tpe, purity, loc)
+      else castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
       ApplySelfTail(sym, formals.map(visitParam), actuals.map(visitExp), visitType(tpe), purity, loc)
     case IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
@@ -149,7 +153,8 @@ object Eraser {
     case TryCatch(exp, rules, tpe, purity, loc) =>
       TryCatch(visitExp(exp), rules.map(visitCatchRule), visitType(tpe), purity, loc)
     case TryWith(exp, effUse, rules, tpe, purity, loc) =>
-      TryWith(visitExp(exp), effUse, rules.map(visitHandlerRule), visitType(tpe), purity, loc)
+      val tw = TryWith(visitExp(exp), effUse, rules.map(visitHandlerRule), box(tpe), purity, loc)
+      castExp(unboxExp(tw, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case Do(op, exps, tpe, purity, loc) =>
       Do(op, exps.map(visitExp), visitType(tpe), purity, loc)
     case NewObject(name, clazz, tpe, purity, methods, loc) =>
@@ -158,6 +163,10 @@ object Eraser {
 
   private def castExp(exp: Expr, t: MonoType, purity: Purity, loc: SourceLocation): Expr = {
     Expr.ApplyAtomic(AtomicOp.Cast, List(exp), t, purity, loc.asSynthetic)
+  }
+
+  private def unboxExp(exp: Expr, t: MonoType, purity: Purity, loc: SourceLocation): Expr = {
+    Expr.ApplyAtomic(AtomicOp.Unbox, List(exp), t, purity, loc.asSynthetic)
   }
 
   private def visitEnum(e: LiftedAst.Enum): LiftedAst.Enum = e match {
@@ -200,7 +209,7 @@ object Eraser {
     case Ref(tpe) => Ref(erase(tpe))
     case Tuple(elms) => Tuple(elms.map(erase))
     case MonoType.Enum(sym) => MonoType.Enum(sym)
-    case Arrow(args, result) => Arrow(args.map(visitType), erase(result))
+    case Arrow(args, result) => Arrow(args.map(visitType), box(result))
     case RecordEmpty => RecordEmpty
     case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
     case Native(clazz) => Native(clazz)
@@ -219,5 +228,7 @@ object Eraser {
          Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) | Arrow(_, _) |
          RecordEmpty | RecordExtend(_, _, _) | Native(_) => MonoType.Object
   }
+
+  private def box(tpe: MonoType): MonoType = MonoType.Object
 
 }
