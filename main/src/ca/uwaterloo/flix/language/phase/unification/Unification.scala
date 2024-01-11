@@ -513,6 +513,29 @@ object Unification {
   }
 
   /**
+    * Replaces every occurrence of the effect symbol `sym` with pure in `eff`.
+    *
+    * Note: Does not work for polymorphic effects.
+    */
+  def purifyEff(sym: Symbol.EffectSym, eff: Type): InferMonad[Type] = {
+    def visit(t: Type): Type = t match {
+      case Type.Var(_, _) => t
+      case Type.Cst(tc, _) => tc match {
+        case TypeConstructor.Effect(sym2) if sym == sym2 => Type.Pure
+        case _ => t
+      }
+      case Type.Apply(tpe1, tpe2, loc) => Type.Apply(visit(tpe1), visit(tpe2), loc)
+      case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(visit), visit(tpe), loc)
+      case Type.AssocType(cst, arg, kind, loc) => Type.AssocType(cst, visit(arg), kind, loc)
+    }
+
+    InferMonad { case (s, econstrs, renv) =>
+      val res = visit(s(eff))
+      Ok((s, econstrs, renv, res))
+    }
+  }
+
+  /**
     * Returns the given effect formula `tpe` with the (possibly rigid) type variable `tvar` replaced by `Pure`.
     */
   private def purify(tvar: Type.Var, tpe: Type): Type = tpe.typeConstructor match {
