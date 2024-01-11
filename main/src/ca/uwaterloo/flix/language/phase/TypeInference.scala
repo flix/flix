@@ -923,7 +923,6 @@ object TypeInference {
       case KindedAst.Expr.TryWith(exp, effUse, rules, tvar, loc) =>
         val effect = root.effects(effUse.sym)
         val ops = effect.ops.map(op => op.sym -> op).toMap
-        val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
         val continuationEffect = Type.freshVar(Kind.Eff, loc)
 
         def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam]): InferMonad[Unit] = {
