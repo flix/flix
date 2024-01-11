@@ -322,6 +322,7 @@ object CodeActionProvider {
 
   /**
     * Returns a list of quickfix code action to suggest possibly correct spellings.
+    * Uses Levenshtein Distance to find closed spellings.
     */
   private def mkFixMisspelling(qn: Name.QName, loc: SourceLocation, env: Map[String, Symbol.VarSym], uri: String): List[CodeAction] = {
     if (qn.ident.name.length > 3) {
