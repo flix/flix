@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.util._
 
 import java.io.File
 import java.net.BindException
-import java.nio.file.{Files, Paths}
+import java.nio.file.Paths
 
 /**
   * The main entry point for the Flix compiler and runtime.
