@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-mod Fixpoint {
+mod Fixpoint.Solver {
 
     use Boxable.{box, unbox}
-    use Fixpoint.Ast.{Datalog, Constraint, HeadTerm, Denotation}
-    use Fixpoint.Ast.Datalog.{Datalog, Model, Join}
-    use Fixpoint.Ast.Constraint.Constraint
-    use Fixpoint.Ast.HeadPredicate.HeadAtom
-    use Fixpoint.Ast.Denotation.{Relational, Latticenal}
-    use Fixpoint.Ram.RamSym
-    use Fixpoint.Shared.PredSym
-    use Fixpoint.Shared.PredSym.PredSym
+    use Fixpoint.Ast.Datalog.{Datalog, Constraint, HeadTerm}
+    use Fixpoint.Ast.Datalog.Datalog.{Datalog, Model, Join}
+    use Fixpoint.Ast.Datalog.Constraint.Constraint
+    use Fixpoint.Ast.Datalog.HeadPredicate.HeadAtom
+    use Fixpoint.Ast.Ram.RamSym
+    use Fixpoint.Ast.Shared.Denotation
+    use Fixpoint.Ast.Shared.Denotation.{Relational, Latticenal}
+    use Fixpoint.Ast.Shared.PredSym
+    use Fixpoint.Ast.Shared.PredSym.PredSym
+    use Fixpoint.Interpreter.Database
 
     ///
     /// Returns the minimal model of the given Datalog program `d`.
@@ -33,7 +35,7 @@ mod Fixpoint {
     ///
     @Internal
     pub def solve(d: Datalog[v]): Datalog[v] with Order[v] =
-        stratify(d) |> solveWithStratification(d)
+        Fixpoint.Phase.Stratifier.stratify(d) |> solveWithStratification(d)
 
     ///
     /// Returns the minimal model of the given Datalog program `d`.
@@ -42,24 +44,24 @@ mod Fixpoint {
     ///
     @Internal
     def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
-        masked_cast(notifyPreSolve(d, stf));
+        masked_cast(Fixpoint.Debugging.notifyPreSolve(d, stf));
         let compiler = cs ->
-            compile(cs, stf) |>
-            simplifyStmt |>
-            queryStmt |>
-            lowerStmt;
+            Fixpoint.Phase.Compiler.compile(cs, stf) |>
+            Fixpoint.Phase.Simplifier.simplifyStmt |>
+            Fixpoint.Phase.IndexSelection.queryStmt |>
+            Fixpoint.Phase.VarsToIndices.lowerStmt;
         let model = match d {
             case Datalog(_) => region rc {
-                compiler(d) |> interpret(rc) |> toModel
+                compiler(d) |> Fixpoint.Interpreter.interpret(rc) |> toModel
             }
             case Model(_) => d
             case Join(Model(m), cs) => region rc {
                 let db = Map.map(Map.toMutMap(rc), m) |> Map.toMutMap(rc);
-                compiler(cs) |> interpretWithDatabase(rc, db) |> toModel
+                compiler(cs) |> Fixpoint.Interpreter.interpretWithDatabase(rc, db) |> toModel
             }
             case _ => bug!("Datalog normalization bug")
         };
-        masked_cast(notifyPostSolve(model));
+        masked_cast(Fixpoint.Debugging.notifyPostSolve(model));
         model
     }
 
@@ -73,7 +75,7 @@ mod Fixpoint {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
             Datalog(Vector.append(edb1, edb2), Vector.append(idb1, idb2))
         case (Model(db1), Model(db2)) =>
-            use Fixpoint.Ram.toDenotation;
+            use Fixpoint.Ast.Ram.toDenotation;
             let union = ramSym -> match toDenotation(ramSym) {
                 case Relational => Map.union
                 case Latticenal(_, _, lub, _) => Map.unionWith(lub)
@@ -715,7 +717,7 @@ mod Fixpoint {
             pFacts |> MutList.toVector
         }
         case Model(db) => region rc {
-            use Fixpoint.Ram.toDenotation;
+            use Fixpoint.Ast.Ram.toDenotation;
             let pFacts = MutList.new(rc);
             let query = ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {

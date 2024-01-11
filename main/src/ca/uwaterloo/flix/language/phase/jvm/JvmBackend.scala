@@ -45,9 +45,19 @@ object JvmBackend {
       // Compute the set of namespaces in the program.
       val namespaces = JvmOps.namespacesOf(root)
 
-      val objectToObject = MonoType.Arrow(List(MonoType.Object), MonoType.Object) // by resumptionWrapper
+      // Required generated types need to be present deeply (if you add `List[List[Int32]]` also add `List[Int32]`)
+      val requiredTypes = Set(
+        MonoType.Arrow(List(MonoType.Bool), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Char), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int8), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int16), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int32), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Int64), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Float32), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Float64), MonoType.Object), // by resumptionWrappers
+        MonoType.Arrow(List(MonoType.Object), MonoType.Object), // by resumptionWrappers
+      )
       // Retrieve all the types in the program.
-      val requiredTypes = Set(objectToObject) // note that required types need to be present deeply (if you add `List[Int32]` also add `Int32`)
       val types = root.types ++ requiredTypes
 
       // Filter the program types into different sets
@@ -114,7 +124,7 @@ object JvmBackend {
       val handlerInterface = Map(genClass(BackendObjType.Handler))
       val effectCallClass = Map(genClass(BackendObjType.EffectCall))
       val effectClasses = GenEffectClasses.gen(root.effects.values)
-      val resumptionWrapper = Map(genClass(BackendObjType.ResumptionWrapper))
+      val resumptionWrappers = BackendType.erasedTypes.map(BackendObjType.ResumptionWrapper).map(genClass).toMap
 
       // Collect all the classes and interfaces together.
       List(
@@ -154,7 +164,7 @@ object JvmBackend {
         handlerInterface,
         effectCallClass,
         effectClasses,
-        resumptionWrapper
+        resumptionWrappers
       ).reduce(_ ++ _)
     }
 
@@ -194,7 +204,7 @@ object JvmBackend {
   /**
     * Returns a map from non-closure definition symbols to executable functions (backed by JVM backend).
     */
-  private def getCompiledDefs(root: Root)(implicit flix: Flix): Map[Symbol.DefnSym, () => AnyRef] =
+  private def getCompiledDefs(root: Root): Map[Symbol.DefnSym, () => AnyRef] =
     root.defs.foldLeft(Map.empty[Symbol.DefnSym, () => AnyRef]) {
       case (macc, (_, defn)) if defn.cparams.nonEmpty =>
         macc
@@ -206,7 +216,7 @@ object JvmBackend {
   /**
     * Returns a function object for the given definition symbol `sym`.
     */
-  private def link(sym: Symbol.DefnSym, root: Root)(implicit flix: Flix): java.util.function.Function[Array[AnyRef], AnyRef] = {
+  private def link(sym: Symbol.DefnSym, root: Root): java.util.function.Function[Array[AnyRef], AnyRef] = {
     // Retrieve the definition and its type.
     val defn = root.defs.getOrElse(sym, throw InternalCompilerException(s"Linking error: '$sym' cannot be found in root defs", SourceLocation.Unknown))
     // Check that the method is initialized.

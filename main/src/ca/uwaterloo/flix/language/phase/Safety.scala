@@ -4,6 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.SafetyError
@@ -31,8 +32,12 @@ object Safety {
     //
     // Collect all errors.
     //
-    val defErrors = ParOps.parMap(root.defs.values)(visitDef).flatten.toList
-    val errors = defErrors ++ visitSendable(root)
+    val classSigErrs = ParOps.parMap(root.classes.values.flatMap(_.sigs))(visitSig).flatten
+    val defErrs = ParOps.parMap(root.defs.values)(visitDef).flatten
+    val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef).flatten
+    val sigErrs = ParOps.parMap(root.sigs.values)(visitSig).flatten
+    val entryPointErrs = ParOps.parMap(root.reachable)(visitEntryPoint(_)(root)).flatten
+    val errors = classSigErrs ++ defErrs ++ instanceDefErrs ++ sigErrs ++ entryPointErrs ++ visitSendable(root)
 
     //
     // Check if any errors were found.
@@ -56,37 +61,70 @@ object Safety {
   }
 
   /**
+    * Performs safety and well-formedness checks on the given signature `sig`.
+    */
+  private def visitSig(sig: Sig)(implicit flix: Flix): List[SafetyError] = {
+    val renv = sig.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
+      case (acc, e) => acc.markRigid(e)
+    }
+    sig.exp match {
+      case Some(exp) => visitExp(exp, renv)
+      case None => Nil
+    }
+  }
+
+  /**
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
   private def visitDef(def0: Def)(implicit flix: Flix): List[SafetyError] = {
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    visitTestEntryPoint(def0) ::: visitExp(def0.exp, renv)
+    visitExp(def0.exp, renv)
   }
 
   /**
-    * Checks that if `def0` is a test entry point that it is well-behaved.
+    * Checks that every every reachable function entry point has a valid signature.
+    *
+    * A signature is valid if there is a single argument of type `Unit` and if it is pure or has the IO effect.
     */
-  private def visitTestEntryPoint(def0: Def): List[SafetyError] = {
-    if (def0.spec.ann.isTest) {
-      def isUnitType(fparam: FormalParam): Boolean = fparam.tpe.typeConstructor.contains(TypeConstructor.Unit)
-
-      val hasUnitParameter = def0.spec.fparams match {
-        case fparam :: Nil => isUnitType(fparam)
-        case _ => false
-      }
-
-      if (!hasUnitParameter) {
-        val err = SafetyError.IllegalTestParameters(def0.sym.loc)
-        List(err)
-      } else {
+  private def visitEntryPoint(sym: Symbol.DefnSym)(implicit root: Root): List[SafetyError] = {
+    if (!root.reachable.contains(sym)) {
+      // The function is not an entry point. No restrictions.
+      Nil
+    } else {
+      val defn = root.defs(sym)
+      if (hasUnitParameter(defn) && isPureOrIO(defn)) {
         Nil
+      } else {
+        SafetyError.IllegalEntryPointSignature(defn.sym.loc) :: Nil
       }
     }
+  }
 
-    else Nil
+  /**
+    * Returns `true` if the given `defn` has a single `Unit` parameter.
+    */
+  private def hasUnitParameter(defn: Def): Boolean = {
+    defn.spec.fparams match {
+      case fparam :: Nil =>
+        // Case 1: A single parameter. Must be Unit.
+        fparam.tpe.typeConstructor.contains(TypeConstructor.Unit)
+      case _ =>
+        // Case 2: Multiple parameters.
+        false
+    }
+  }
 
+  /**
+    * Returns `true` if the given `defn` is pure or has the IO effect.
+    */
+  private def isPureOrIO(defn: Def): Boolean = {
+    defn.spec.eff.typeConstructor match {
+      case Some(TypeConstructor.Pure) => true
+      case Some(TypeConstructor.EffUniv) => true
+      case _ => false
+    }
   }
 
   /**
@@ -265,9 +303,6 @@ object Safety {
 
       case Expr.Do(_, exps, _, _, _) =>
         exps.flatMap(visit)
-
-      case Expr.Resume(exp, _, _) =>
-        visit(exp)
 
       case Expr.InvokeConstructor(_, args, _, _, _) =>
         args.flatMap(visit)

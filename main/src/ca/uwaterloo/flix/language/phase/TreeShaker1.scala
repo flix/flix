@@ -62,34 +62,8 @@ object TreeShaker1 {
     * Returns the symbols that are always reachable.
     */
   private def initReachable(root: Root): Set[ReachableSym] = {
-    // A set used to collect the symbols of reachable functions.
-    var reachable: Set[ReachableSym] = Set.empty
-
-    //
-    // (a) The main function is always reachable (if it exists).
-    //
-    reachable = reachable ++ root.entryPoint.map(ReachableSym.DefnSym)
-
-    //
-    // (b) A function annotated with @benchmark or @test is always reachable.
-    //
-    for ((sym, defn) <- root.defs) {
-      if (isBenchmark(defn) || isTest(defn)) {
-        reachable = reachable + ReachableSym.DefnSym(sym)
-      }
-    }
-    reachable
+    root.reachable.map(ReachableSym.DefnSym)
   }
-
-  /**
-    * Returns `true` if `defn` is annotated with `@benchmark`
-    */
-  private def isBenchmark(defn: LoweredAst.Def): Boolean = defn.spec.ann.isBenchmark
-
-  /**
-    * Returns `true` if `defn` is annotated with `@test`
-    */
-  private def isTest(defn: LoweredAst.Def): Boolean = defn.spec.ann.isTest
 
   /**
     * Returns the symbols reachable from the given symbol `sym`.
@@ -100,7 +74,7 @@ object TreeShaker1 {
     *
     * (b) The class symbol of a reachable sig symbol.
     *
-    * (c)Every expression in a class instance of a reachable class symbol is reachable.
+    * (c) Every expression in a class instance of a reachable class symbol is reachable.
     *
     */
   private def visitSym(sym: ReachableSym, root: Root): Set[ReachableSym] = sym match {
@@ -190,9 +164,6 @@ object TreeShaker1 {
 
     case Expr.Do(_, exps, _, _, _) =>
       visitExps(exps)
-
-    case Expr.Resume(exp, _, _) =>
-      visitExp(exp)
 
     case Expr.TryWith(exp, _, rules, _, _, _) =>
       visitExp(exp) ++ visitExps(rules.map(_.exp))

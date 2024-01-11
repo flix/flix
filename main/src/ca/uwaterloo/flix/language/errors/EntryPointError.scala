@@ -33,13 +33,39 @@ sealed trait EntryPointError extends CompilationMessage {
 object EntryPointError {
 
   /**
+    * Error indicating the specified entry point is missing.
+    *
+    * @param sym the entry point function.
+    * @param loc the location where the error occurred.
+    */
+  case class EntryPointNotFound(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError with Recoverable {
+    override def summary: String = s"Entry point ${sym} not found."
+
+    // NB: We do not print the source location,
+    // as it is arbitrary and not related to the error.
+    override def message(formatter: Formatter): String = {
+      s""">> The entry point ${sym} cannot be found.
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      s"""
+         |Possible fixes:
+         |
+         |  (1)  Change the specified entry point to an existing function.
+         |  (2)  Add an entry point function ${sym}.
+         |
+         |""".stripMargin
+    })
+  }
+
+  /**
     * Error indicating one or more arguments to an entry point function.
     *
     * @param sym the entry point function.
     * @param loc the location where the error occurred.
     */
   case class IllegalEntryPointArgs(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError with Recoverable {
-
     override def summary: String = s"Unexpected entry point argument(s)."
 
     override def message(formatter: Formatter): String = {
@@ -55,6 +81,30 @@ object EntryPointError {
   }
 
   /**
+    * Error indicating an illegal effect of the entry point function.
+    *
+    * @param sym the entry point function.
+    * @param eff the effect.
+    * @param loc the location where the error occurred.
+    */
+  case class IllegalEntryPointEff(sym: Symbol.DefnSym, eff: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError with Recoverable {
+    override def summary: String = s"Unexpected entry point effect: ${FormatType.formatType(eff)}."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unhandled effect: '${red(FormatType.formatType(eff))}'.
+         |
+         |${code(loc, "unhandled effect")}
+         |
+         |The entry point cannot have any effect other than IO.
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * Error indicating an illegal result type to an entry point function.
     *
     * @param sym the entry point function.
@@ -62,7 +112,6 @@ object EntryPointError {
     * @param loc the location where the error occurred.
     */
   case class IllegalEntryPointResult(sym: Symbol.DefnSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends EntryPointError with Recoverable {
-
     override def summary: String = s"Unexpected entry point result type: ${FormatType.formatType(tpe)}."
 
     override def message(formatter: Formatter): String = {
@@ -87,33 +136,6 @@ object EntryPointError {
          |  enum Color with ToString {
          |    case Red, Green, Blue
          |  }
-         |
-         |""".stripMargin
-    })
-  }
-
-  /**
-    * Error indicating the specified entry point is missing.
-    *
-    * @param sym the entry point function.
-    * @param loc the location where the error occurred.
-    */
-  case class EntryPointNotFound(sym: Symbol.DefnSym, loc: SourceLocation) extends EntryPointError with Recoverable {
-    override def summary: String = s"Entry point ${sym} not found."
-
-    // NB: We do not print the source location,
-    // as it is arbitrary and not related to the error.
-    override def message(formatter: Formatter): String = {
-      s""">> The entry point ${sym} cannot be found.
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      s"""
-         |Possible fixes:
-         |
-         |  (1)  Change the specified entry point to an existing function.
-         |  (2)  Add an entry point function ${sym}.
          |
          |""".stripMargin
     })

@@ -28,7 +28,7 @@ import scala.collection.mutable
   * We pass the platform class loader as the parent to avoid it delegating to the system classloader
   * (otherwise compiled Flix code has access to all classes within the compiler)
   */
-class FlixClassLoader(classes: Map[String, JvmClass])(implicit flix: Flix) extends ClassLoader(ClassLoader.getPlatformClassLoader()) {
+class FlixClassLoader(classes: Map[String, JvmClass])(implicit flix: Flix) extends ClassLoader(ClassLoader.getPlatformClassLoader) {
 
   /**
     * An internal cache of already loaded classes.

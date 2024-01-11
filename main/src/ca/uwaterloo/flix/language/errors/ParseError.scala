@@ -41,9 +41,4 @@ case class ParseError(msg: String, ctx: SyntacticContext, loc: SourceLocation) e
        |Syntactic Context: $ctx.
        |""".stripMargin
   }
-
-  /**
-    * Returns a formatted string with helpful suggestions.
-    */
-  def explain(formatter: Formatter): Option[String] = None
 }

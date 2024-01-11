@@ -143,31 +143,25 @@ object SafetyError {
   }
 
   /**
-    * An error raised to indicate an illegal relational use of the lattice variable `sym`.
+    * An error raised to indicate that a reachable entry point has an illegal signature.
     *
-    * @param sym the variable symbol.
-    * @param loc the source location of the atom where the illegal use occurs.
+    * @param loc the location of the defn.
     */
-  case class IllegalRelationalUseOfLatticeVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError with Recoverable {
-    def summary: String = s"Illegal relational use of the lattice variable '$sym'."
+  case class IllegalEntryPointSignature(loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Illegal entry point signature"
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Illegal relational use of the lattice variable '${red(sym.text)}'. Use `fix`?
+         |>> Illegal entry point signature. An entry point must take a single Unit
+         |>> argument and be pure or have the IO effect.
          |
-         |${code(loc, "the illegal use occurs here.")}
+         |${code(loc, "illegal signature.")}
+         |
          |""".stripMargin
     }
 
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = Some({
-      s"""A lattice variable cannot be used as relational variable unless the atom
-         |from which it originates is marked with `fix`.
-         |""".stripMargin
-    })
+    override def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -186,11 +180,6 @@ object SafetyError {
          |${code(loc, "the wildcard occurs in this negated atom.")}
          |""".stripMargin
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -209,11 +198,6 @@ object SafetyError {
          |${code(loc, "the variable occurs in this negated atom.")}
          |""".stripMargin
     }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -233,7 +217,7 @@ object SafetyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       if (!sym.isWild)
         s"""${underline("Tip:")} Ensure that the variable occurs in at least one positive atom.""".stripMargin
@@ -258,8 +242,34 @@ object SafetyError {
          |${code(loc, "pattern occurs in this body atom.")}
          |""".stripMargin
     }
+  }
 
-    def explain(formatter: Formatter): Option[String] = None
+  /**
+    * An error raised to indicate an illegal relational use of the lattice variable `sym`.
+    *
+    * @param sym the variable symbol.
+    * @param loc the source location of the atom where the illegal use occurs.
+    */
+  case class IllegalRelationalUseOfLatticeVar(sym: Symbol.VarSym, loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Illegal relational use of the lattice variable '$sym'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal relational use of the lattice variable '${red(sym.text)}'. Use `fix`?
+         |
+         |${code(loc, "the illegal use occurs here.")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain(formatter: Formatter): Option[String] = Some({
+      s"""A lattice variable cannot be used as relational variable unless the atom
+         |from which it originates is marked with `fix`.
+         |""".stripMargin
+    })
   }
 
   /**
@@ -283,55 +293,11 @@ object SafetyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some(
+    override def explain(formatter: Formatter): Option[String] = Some(
       s"""
          |An example of a type parameter of kind 'Region':
          |
          |enum MyEnum[r: Region] { ... }
-         |""".stripMargin
-    )
-  }
-
-  /**
-    * An error raised to indicate that a function marked with the `@test` annotation
-    * has at least one non-unit parameter.
-    *
-    * @param loc the source location of the parameter.
-    */
-  case class IllegalTestParameters(loc: SourceLocation) extends SafetyError with Recoverable {
-    def summary: String = s"Test entry point must not have parameters."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Test entry point must not have parameters.
-
-         |${code(loc, "Parameter for test function occurs here.")}
-         |
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some(
-      s"""
-         |A test function must not have parameters.
-         |
-         |If you need to test your code with different values,
-         |you can create a helper function that takes parameters.
-         |Then, you can call the helper function with different
-         |values to perform various tests.
-         |
-         |Example
-         |
-         |    @test
-         |    def test01(x: Int32): Int32 = x + 1
-         |
-         |Should be
-         |
-         |    @test
-         |    def test01(): Int32 = testHelper(1)
-         |
-         |    def testHelper(x: Int32): Int32 = x + 1
-         |
          |""".stripMargin
     )
   }
@@ -413,9 +379,40 @@ object SafetyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          | The first argument to any method must be 'this', and must have the same type as the superclass.
+         |""".stripMargin
+    })
+  }
+
+  /**
+    * An error raised to indicate an unimplemented superclass method
+    *
+    * @param clazz  The type of the superclass.
+    * @param method The unimplemented method.
+    * @param loc    The source location of the object derivation.
+    */
+  case class NewObjectMissingMethod(clazz: java.lang.Class[_], method: java.lang.reflect.Method, loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"No implementation found for method '${method.getName}' of superclass '${clazz.getName}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> No implementation found for method '${red(method.getName)}' of superclass '${red(clazz.getName)}'.
+         |>> Signature: '${method.toString}'
+         |
+         |${code(loc, "the object occurs here.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      val parameterTypes = (clazz +: method.getParameterTypes).map(formatJavaType)
+      val returnType = formatJavaType(method.getReturnType)
+      s"""
+         | Try adding a method with the following signature:
+         |
+         | def ${method.getName}(${parameterTypes.mkString(", ")}): $returnType
          |""".stripMargin
     })
   }
@@ -437,38 +434,6 @@ object SafetyError {
          |${code(loc, "missing constructor.")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
-    * An error raised to indicate an unimplemented superclass method
-    *
-    * @param clazz  The type of the superclass.
-    * @param method The unimplemented method.
-    * @param loc    The source location of the object derivation.
-    */
-  case class NewObjectMissingMethod(clazz: java.lang.Class[_], method: java.lang.reflect.Method, loc: SourceLocation) extends SafetyError with Recoverable {
-    def summary: String = s"No implementation found for method '${method.getName}' of superclass '${clazz.getName}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> No implementation found for method '${red(method.getName)}' of superclass '${red(clazz.getName)}'.
-         |
-         |${code(loc, "the object occurs here.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      val parameterTypes = (clazz +: method.getParameterTypes).map(formatJavaType)
-      val returnType = formatJavaType(method.getReturnType)
-      s"""
-         | Try adding a method with the following signature:
-         |
-         | def ${method.getName}(${parameterTypes.mkString(", ")}): $returnType
-         |""".stripMargin
-    })
   }
 
   /**
@@ -492,7 +457,7 @@ object SafetyError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       s"""
          | The first argument to any method must be 'this', and must have the same type as the superclass.
          |""".stripMargin
@@ -516,8 +481,6 @@ object SafetyError {
          |${code(loc, "non-public class.")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -538,8 +501,6 @@ object SafetyError {
          |${code(loc, "the method occurs here.")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -551,5 +512,4 @@ object SafetyError {
     else
       s"##${t.getName}"
   }
-
 }

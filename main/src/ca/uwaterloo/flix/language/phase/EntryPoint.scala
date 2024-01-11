@@ -23,6 +23,8 @@ import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
 
+import scala.collection.mutable
+
 /**
   * Processes the entry point of the program.
   *
@@ -58,7 +60,6 @@ object EntryPoint {
     */
   private val DefaultEntryPoint = Symbol.mkDefnSym("main")
 
-
   /**
     * Introduces a new function `main%` which calls the entry point (if any).
     */
@@ -70,12 +71,26 @@ object EntryPoint {
           entryPoint =>
             root.copy(
               defs = root.defs + (entryPoint.sym -> entryPoint),
-              entryPoint = Some(entryPoint.sym)
+              entryPoint = Some(entryPoint.sym),
+              reachable = getReachable(root) + entryPoint.sym
             )
         }
       // Case 2: No entry point. Don't touch anything.
-      case None => Validation.success(root)
+      case None => Validation.success(root.copy(reachable = getReachable(root)))
     }
+  }
+
+  /**
+   * Returns all reachable definitions.
+   */
+  private def getReachable(root: TypedAst.Root): Set[Symbol.DefnSym] = {
+    val s = mutable.Set.empty[Symbol.DefnSym]
+    for ((sym, defn) <- root.defs) {
+      if (defn.spec.ann.isBenchmark || defn.spec.ann.isTest) {
+        s += sym
+      }
+    }
+    s.toSet
   }
 
   /**
@@ -158,11 +173,15 @@ object EntryPoint {
     * Returns a flag indicating whether the result should be printed, cast, or unchanged.
     */
   private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
-    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _, _), _) =>
+    case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, declaredEff, _, _, _), _) =>
       val resultTpe = declaredScheme.base.arrowResultType
       val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
       val resultSc = Scheme.generalize(Nil, Nil, resultTpe, RigidityEnv.empty)
 
+      // Check for [[IllegalEntryPointEffect]]
+      if (declaredEff != Type.Pure && declaredEff != Type.Impure) {
+        return Validation.toSoftFailure((),EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc))
+      }
 
       if (Scheme.equal(unitSc, resultSc, classEnv, ListMap.empty)) { // TODO ASSOC-TYPES better eqEnv
         // Case 1: XYZ -> Unit.

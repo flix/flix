@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.{Enum, Root}
+import ca.uwaterloo.flix.language.ast.ReducedAst.Enum
 import org.objectweb.asm.Opcodes._
 
 /**
@@ -28,7 +28,7 @@ object GenEnumInterfaces {
   /**
     * Returns the set of enum interfaces for the given enums.
     */
-  def gen(enums: Iterable[Enum])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(enums: Iterable[Enum])(implicit flix: Flix): Map[JvmName, JvmClass] = {
     enums.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, e) =>
         // Construct enum interface.
@@ -42,7 +42,7 @@ object GenEnumInterfaces {
   /**
     * Generates an interface for the given type.
     */
-  private def genByteCode(interfaceType: JvmType.Reference)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(interfaceType: JvmType.Reference)(implicit flix: Flix): Array[Byte] = {
     // Create a new class writer.
     val visitor = AsmOps.mkClassWriter()
 

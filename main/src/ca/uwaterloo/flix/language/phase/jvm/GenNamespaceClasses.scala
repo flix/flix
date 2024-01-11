@@ -58,7 +58,7 @@ object GenNamespaceClasses {
       BackendObjType.JavaObject.jvmName.toInternalName, null)
 
     // Adding an IFO field and a shim method for each function in `ns` with no captured args
-    for ((_, defn) <- ns.defs if defn.cparams.isEmpty) {
+    for ((sym, defn) <- ns.defs if root.reachable.contains(sym)) {
       // Compile the shim method.
       compileShimMethod(visitor, defn)
     }
@@ -73,7 +73,7 @@ object GenNamespaceClasses {
   /**
     * Adding a shim for the function `defn` on namespace `ns`
     */
-  private def compileShimMethod(visitor: ClassWriter, defn: Def)(implicit root: Root, flix: Flix): Unit = {
+  private def compileShimMethod(visitor: ClassWriter, defn: Def): Unit = {
     // TODO: This can probably be removed (used in GenMain and other places)
     // Name of the shim
     val name = JvmOps.getDefMethodNameInNamespaceClass(defn.sym)
@@ -121,7 +121,7 @@ object GenNamespaceClasses {
   /**
     * Add the constructor for the class which initializes each field
     */
-  private def compileNamespaceConstructor(visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
+  private def compileNamespaceConstructor(visitor: ClassWriter): Unit = {
     // Method header
     val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
 

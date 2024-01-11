@@ -28,22 +28,22 @@ object Options {
     lib = LibLevel.All,
     entryPoint = None,
     explain = false,
-    githubKey = None,
+    githubToken = None,
     installDeps = false,
     incremental = true,
     json = false,
     output = None,
     progress = false,
     test = false,
-    target = JvmTarget.Version18,
+    target = JvmTarget.Version21,
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
+    assumeYes = false,
     xbddthreshold = None,
     xnoboolcache = false,
     xnoboolspecialcases = false,
     xnobooltable = false,
     xnoboolunif = false,
-    xstrictmono = false,
     xnooptimizer = false,
     xprintphase = Set.empty,
     xnoqmc = false,
@@ -80,7 +80,7 @@ object Options {
   * @param lib                 selects the level of libraries to include.
   * @param entryPoint          specifies the main entry point.
   * @param explain             enables additional explanations.
-  * @param githubKey           the API key to use for GitHub dependency resolution.
+  * @param githubToken           the API key to use for GitHub dependency resolution.
   * @param incremental         enables incremental compilation.
   * @param installDeps         enables automatic installation of dependencies.
   * @param json                enable json output.
@@ -90,12 +90,12 @@ object Options {
   * @param target              the target JVM.
   * @param threads             selects the number of threads to use.
   * @param loadClassFiles      loads the generated class files into the JVM.
+  * @param assumeYes           run non-interactively and assume answer to all prompts is yes.
   * @param xbddthreshold       the threshold for when to use BDDs for SVE.
   * @param xnoboolcache        disable Boolean caches.
   * @param xnoboolspecialcases disable Boolean unification shortcuts.
   * @param xnobooltable        disable Boolean minimization via tabling.
   * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
-  * @param xstrictmono         enables strict monomorphization.
   * @param xprintphase         prints the chosen phase ASTs to the build folder.
   * @param xsummary            prints a summary of the compiled modules.
   * @param xparser             disables new lexer and parser.
@@ -103,7 +103,7 @@ object Options {
 case class Options(lib: LibLevel,
                    entryPoint: Option[Symbol.DefnSym],
                    explain: Boolean,
-                   githubKey: Option[String],
+                   githubToken: Option[String],
                    incremental: Boolean,
                    installDeps: Boolean,
                    json: Boolean,
@@ -113,13 +113,13 @@ case class Options(lib: LibLevel,
                    test: Boolean,
                    threads: Int,
                    loadClassFiles: Boolean,
+                   assumeYes: Boolean,
                    xbddthreshold: Option[Int],
                    xnoboolcache: Boolean,
                    xnoboolspecialcases: Boolean,
                    xnobooltable: Boolean,
                    xnoboolunif: Boolean,
                    xnoqmc: Boolean,
-                   xstrictmono: Boolean,
                    xnooptimizer: Boolean,
                    xprintphase: Set[String],
                    xsummary: Boolean,
@@ -136,24 +136,9 @@ sealed trait JvmTarget
 object JvmTarget {
 
   /**
-    * Emit bytecode for Java 1.6.
+    * Emit bytecode for Java 21.
     */
-  object Version16 extends JvmTarget
-
-  /**
-    * Emit bytecode for Java 1.7.
-    */
-  object Version17 extends JvmTarget
-
-  /**
-    * Emit bytecode for Java 1.8.
-    */
-  object Version18 extends JvmTarget
-
-  /**
-    * Emit bytecode for Java 1.9.
-    */
-  object Version19 extends JvmTarget
+  object Version21 extends JvmTarget
 
 }
 

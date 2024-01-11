@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, CallType}
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Level, Purity, SemanticOp, SourceLocation, Symbol}
@@ -183,11 +183,6 @@ object EffectBinder {
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
-    case Expr.Resume(_, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Binder]
-      val e = visitExprInnerWithBinders(binders)(exp)
-      bindBinders(binders, e)
-
     case Expr.NewObject(_, _, _, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
@@ -223,13 +218,13 @@ object EffectBinder {
       Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
-      lctx.pcPoints += 1
+      if (ct == CallType.NonTailCall && purity != Purity.Pure) lctx.pcPoints += 1
       val e = visitExprWithBinders(binders)(exp)
       val es = exps.map(visitExprWithBinders(binders))
       Expr.ApplyClo(e, es, ct, tpe, purity, loc)
 
     case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-      lctx.pcPoints += 1
+      if (ct == CallType.NonTailCall && purity != Purity.Pure) lctx.pcPoints += 1
       val es = exps.map(visitExprWithBinders(binders))
       Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
@@ -287,10 +282,6 @@ object EffectBinder {
     case Expr.NewObject(name, clazz, tpe, purity, methods, exps, loc) =>
       val es = exps.map(visitExprInnerWithBinders(binders))
       Expr.NewObject(name, clazz, tpe, purity, methods, es, loc)
-
-    case Expr.Resume(exp, tpe, loc) =>
-      val e = visitExprWithBinders(binders)(exp)
-      Expr.Resume(e, tpe, loc)
   }
 
   /**
@@ -329,7 +320,6 @@ object EffectBinder {
       case Expr.TryCatch(_, _, _, _, _) => letBindExpr(binders)(e)
       case Expr.TryWith(_, _, _, _, _, _) => letBindExpr(binders)(e)
       case Expr.Do(_, _, _, _, _) => letBindExpr(binders)(e)
-      case Expr.Resume(_, _, _) => letBindExpr(binders)(e)
       case Expr.NewObject(_, _, _, _, _, _, _) => letBindExpr(binders)(e)
     }
 

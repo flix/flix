@@ -242,9 +242,6 @@ object PredDeps {
         case (acc, exp) => acc + visitExp(exp)
       }
 
-    case Expr.Resume(exp, _, _) =>
-      visitExp(exp)
-
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       args.foldLeft(LabelledPrecedenceGraph.empty) {
         case (acc, e) => acc + visitExp(e)

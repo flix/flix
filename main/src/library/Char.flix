@@ -199,7 +199,7 @@ mod Char {
     pub def maxValue(): Char = '\uffff'
 
     ///
-    /// Returns the integer value representated by Char `c` (e.g. '1' => `Some(1)``)
+    /// Returns the integer value the Char `c` represents (e.g. '1' => `Some(1)``)
     /// or `None` if `c` does not represent a number.
     ///
     /// This function cannot handle supplementary characters.
@@ -211,9 +211,8 @@ mod Char {
             case i          => Some(i)
         }
 
-
     ///
-    /// Returns the integer value representated by Char `c` with respect to `radix`. E.g.
+    /// Returns the integer value Char `c` represents with respect to `radix`. E.g.
     /// `digit(radix = 10, '1') => Some(1)`
     /// `digit(radix = 16, 'a') => Some(11)`
     ///

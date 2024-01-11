@@ -50,7 +50,7 @@ object NameError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       """Flix does not support overloading. For example, you cannot define two
         |functions with the same name, even if their formal parameters differ.
         |
@@ -85,8 +85,6 @@ object NameError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = None
-
     def loc: SourceLocation = loc1
 
   }
@@ -110,7 +108,7 @@ object NameError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       """Flix uses lowercase variable names.
         |
         |The type variable looks suspiciously like the name of a built-in type.

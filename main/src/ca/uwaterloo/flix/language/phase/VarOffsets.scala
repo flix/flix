@@ -123,9 +123,6 @@ object VarOffsets {
     case Expr.Do(_, exps, _, _, _) =>
       visitExps(exps, i0)
 
-    case Expr.Resume(exp, _, _) =>
-      visitExp(exp, i0)
-
     case Expr.NewObject(_, _, _, _, _, _, _) =>
       // The expressions in NewObject are not executed here (concretely they're
       // always closures) and should not have var offsets here.

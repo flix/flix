@@ -50,7 +50,7 @@ mod IDE {
     ///
     pub def run(ide: IDE[p, n, d, f, l]): Vector[(n, d, l)]
         with LowerBound[f], JoinLattice[f], MeetLattice[f],
-             LowerBound[l], JoinLattice[l], MeetLattice[l],
+             LowerBound[l], UpperBound[l], JoinLattice[l], MeetLattice[l],
              Order[n], Order[d], Order[p], Order[f],  Order[l] =
 
         // Extract main.
@@ -127,7 +127,7 @@ mod IDE {
             EshEndReturn(target, ide.zero, call, ide.zero, ide.id) :- CallGraph(call, target).
 
             // TODO: Ondrej: Add comment.
-            ResultProc(ide.main, ide.zero; LowerBound.minValue()).
+            ResultProc(ide.main, ide.zero; UpperBound.maxValue()).
 
             // TODO: Ondrej: Add comment.
             JumpFn(ide.zero, n, ide.zero; ide.id) :- StartNode(main, n).
@@ -171,6 +171,13 @@ mod ConstantProp {
     ///
     instance LowerBound[Const] {
         pub def minValue(): Const = Const.Bot
+    }
+
+    ///
+    /// The Top Element of `Const`.
+    ///
+    instance UpperBound[Const] {
+        pub def maxValue(): Const = Const.Top
     }
 
     ///
@@ -419,3 +426,35 @@ def main(): Unit \ IO =
         });
 
     println(result)
+
+    // Prints:
+    // Vector#{
+    //     (emain, x, Cst(-9)),
+    //     (emain, zero, Top),
+    //     (ep, a, Top),
+    //     (ep, x, Top),
+    //     (ep, zero, Top),
+    //     (n1, zero, Top),
+    //     (n2, x, Cst(-9)),
+    //     (n2, zero, Top),
+    //     (n3, x, Cst(-9)),
+    //     (n3, zero, Top),
+    //     (n4, a, Top),
+    //     (n4, zero, Top),
+    //     (n5, a, Top),
+    //     (n5, zero, Top),
+    //     (n6, a, Top),
+    //     (n6, zero, Top),
+    //     (n7, a, Top),
+    //     (n7, x, Top),
+    //     (n7, zero, Top),
+    //     (n8, a, Top),
+    //     (n8, x, Top),
+    //     (n8, zero, Top),
+    //     (n9, a, Top),
+    //     (n9, x, Top),
+    //     (n9, zero, Top),
+    //     (smain, zero, Top),
+    //     (sp, a, Top),
+    //     (sp, zero, Top)
+    // }

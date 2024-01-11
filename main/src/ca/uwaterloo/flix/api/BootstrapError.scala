@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
+import ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.language.errors.Unrecoverable
 import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError}
 import ca.uwaterloo.flix.util.Formatter
@@ -40,6 +41,10 @@ object BootstrapError {
   }
 
   case class JarPackageError(e: PackageError) extends BootstrapError with Unrecoverable {
+    override def message(f: Formatter): String = e.message(f)
+  }
+
+  case class ReleaseError(e: pkg.ReleaseError) extends BootstrapError with Unrecoverable {
     override def message(f: Formatter): String = e.message(f)
   }
 

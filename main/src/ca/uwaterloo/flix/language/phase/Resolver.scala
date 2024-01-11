@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.language.errors.ResolutionError._
 import ca.uwaterloo.flix.language.errors.Recoverable
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.{ListMap, MapOps}
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
 import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, ParOps, Result, Similarity, Validation}
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
@@ -233,7 +233,7 @@ object Resolver {
       flatMapN(tparamsVal) {
         case tparams =>
           val env = env0 ++ mkTypeParamEnv(tparams.tparams)
-          semiResolveType(tpe0, Wildness.ForbidWild, env, ns, root)(Level.Top, flix) map {
+          mapN(semiResolveType(tpe0, Wildness.ForbidWild, env, ns, root)(Level.Top, flix)) {
             tpe => ResolvedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc)
           }
       }
@@ -289,7 +289,7 @@ object Resolver {
     val errors = cycle.map {
       sym => ResolutionError.CyclicTypeAliases(cycle, sym.loc)
     }
-    Validation.HardFailure(LazyList.from(errors))
+    Validation.HardFailure(Chain.from(errors))
   }
 
   /**
@@ -318,7 +318,7 @@ object Resolver {
   def finishResolveTypeAliases(aliases0: List[ResolvedAst.Declaration.TypeAlias]): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ResolutionError] = {
     Validation.fold(aliases0, Map.empty[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
       case (taenv, ResolvedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe0, loc)) =>
-        finishResolveType(tpe0, taenv) map {
+        mapN(finishResolveType(tpe0, taenv)) {
           tpe =>
             val alias = ResolvedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc)
             taenv + (sym -> alias)
@@ -403,7 +403,7 @@ object Resolver {
       val errors = cycle.map {
         sym => ResolutionError.CyclicClassHierarchy(cycle, sym.loc)
       }
-      Validation.HardFailure(LazyList.from(errors))
+      Validation.HardFailure(Chain.from(errors))
     }
 
     val classSyms = classes.values.map(_.sym)
@@ -739,10 +739,10 @@ object Resolver {
         val name = qname.ident.name
         Kinds.get(name) match {
           case None =>
-            lookupRestrictableEnum(qname, env, ns0, root) match {
-              case Validation.Success(enum) =>
+            lookupRestrictableEnum(qname, env, ns0, root).toHardResult match {
+              case Result.Ok(enum) =>
                 Validation.success(Kind.CaseSet(enum.sym))
-              case _failure =>
+              case Result.Err(_) =>
                 // We don't know the kind, but we can find the best match.
                 val closestMatch = Similarity.closestMatch(name, Kinds)
                 Validation.toSoftFailure(closestMatch, ResolutionError.UndefinedKind(qname, ns0, loc))
@@ -750,9 +750,9 @@ object Resolver {
           case Some(kind) => Validation.success(kind)
         }
       } else {
-        lookupRestrictableEnum(qname, env, ns0, root) match {
-          case Validation.Success(enum) => Validation.success(Kind.CaseSet(enum.sym))
-          case _failure =>
+        lookupRestrictableEnum(qname, env, ns0, root).toHardResult match {
+          case Result.Ok(enum) => Validation.success(Kind.CaseSet(enum.sym))
+          case Result.Err(_) =>
             // We don't know the kind, so default to Star.
             Validation.toSoftFailure(Kind.Star, ResolutionError.UndefinedKind(qname, ns0, loc))
         }
@@ -1106,7 +1106,7 @@ object Resolver {
           }
 
         case NamedAst.Expr.Discard(exp, loc) =>
-          visitExp(exp, env0) map {
+          mapN(visitExp(exp, env0)) {
             case e => ResolvedAst.Expr.Discard(e, loc)
           }
 
@@ -1423,12 +1423,6 @@ object Resolver {
               ResolvedAst.Expr.Do(opUse, es, loc)
           }
 
-        case NamedAst.Expr.Resume(exp, loc) =>
-          val expVal = visitExp(exp, env0)
-          mapN(expVal) {
-            e => ResolvedAst.Expr.Resume(e, loc)
-          }
-
         case NamedAst.Expr.InvokeConstructor(className, args, sig, loc) =>
           lookupJvmClass(className, loc) match {
             case Result.Ok(clazz) =>
@@ -1665,7 +1659,7 @@ object Resolver {
         case NamedAst.Expr.Error(m) =>
           // Note: We must NOT use [[Validation.toSoftFailure]] because
           // that would duplicate the error inside the Validation.
-          Validation.SoftFailure(ResolvedAst.Expr.Error(m), LazyList.empty)
+          Validation.SoftFailure(ResolvedAst.Expr.Error(m), Chain.empty)
       }
 
       /**
@@ -2473,7 +2467,7 @@ object Resolver {
         } else {
           // Case 2: The type alias is fully applied.
           // Apply the types within the alias, then apply any leftover types.
-          traverse(targs)(finishResolveType(_, taenv)) map {
+          mapN(traverse(targs)(finishResolveType(_, taenv))) {
             resolvedArgs =>
               val (usedArgs, extraArgs) = resolvedArgs.splitAt(numParams)
               UnkindedType.mkApply(applyAlias(alias, usedArgs, loc), extraArgs, tpe0.loc)
@@ -2501,27 +2495,27 @@ object Resolver {
         }
 
       case _: UnkindedType.Var =>
-        traverse(targs)(finishResolveType(_, taenv)) map {
+        mapN(traverse(targs)(finishResolveType(_, taenv))) {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
 
       case _: UnkindedType.Cst =>
-        traverse(targs)(finishResolveType(_, taenv)) map {
+        mapN(traverse(targs)(finishResolveType(_, taenv))) {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
 
       case _: UnkindedType.Enum =>
-        traverse(targs)(finishResolveType(_, taenv)) map {
+        mapN(traverse(targs)(finishResolveType(_, taenv))) {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
 
       case _: UnkindedType.RestrictableEnum =>
-        traverse(targs)(finishResolveType(_, taenv)) map {
+        mapN(traverse(targs)(finishResolveType(_, taenv))) {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
 
       case _: UnkindedType.CaseSet =>
-        traverse(targs)(finishResolveType(_, taenv)) map {
+        mapN(traverse(targs)(finishResolveType(_, taenv))) {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
 
@@ -2563,7 +2557,7 @@ object Resolver {
         }
 
       case _: UnkindedType.Error =>
-        traverse(targs)(finishResolveType(_, taenv)) map {
+        mapN(traverse(targs)(finishResolveType(_, taenv))) {
           resolvedArgs => UnkindedType.mkApply(baseType, resolvedArgs, tpe0.loc)
         }
 
@@ -3010,7 +3004,7 @@ object Resolver {
     * Otherwise fails with a resolution error.
     */
   private def getEnumTypeIfAccessible(enum0: NamedAst.Declaration.Enum, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
-    getEnumIfAccessible(enum0, ns0, loc) map {
+    mapN(getEnumIfAccessible(enum0, ns0, loc)) {
       case enum => mkEnum(enum.sym, loc)
     }
 
@@ -3020,7 +3014,7 @@ object Resolver {
     * Otherwise fails with a resolution error.
     */
   private def getRestrictableEnumTypeIfAccessible(enum0: NamedAst.Declaration.RestrictableEnum, ns0: Name.NName, loc: SourceLocation): Validation[UnkindedType, ResolutionError] =
-    getRestrictableEnumIfAccessible(enum0, ns0, loc) map {
+    mapN(getRestrictableEnumIfAccessible(enum0, ns0, loc)) {
       case enum => mkRestrictableEnum(enum.sym, loc)
     }
 
@@ -3061,7 +3055,7 @@ object Resolver {
     * Otherwise fails with a resolution error.
     */
   private def getTypeAliasTypeIfAccessible(alia0: NamedAst.Declaration.TypeAlias, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[UnkindedType, ResolutionError] = {
-    getTypeAliasIfAccessible(alia0, ns0, loc) map {
+    mapN(getTypeAliasIfAccessible(alia0, ns0, loc)) {
       alias => mkUnappliedTypeAlias(alias.sym, loc)
     }
   }
@@ -3086,7 +3080,7 @@ object Resolver {
     * Otherwise fails with a resolution error.
     */
   private def getAssocTypeTypeIfAccessible(assoc0: NamedAst.Declaration.AssocTypeSig, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[UnkindedType, ResolutionError] = {
-    getAssocTypeIfAccessible(assoc0, ns0, loc) map {
+    mapN(getAssocTypeIfAccessible(assoc0, ns0, loc)) {
       assoc => mkUnappliedAssocType(assoc0.sym, loc)
     }
   }
@@ -3128,7 +3122,7 @@ object Resolver {
     * Otherwise fails with a resolution error.
     */
   private def getEffectTypeIfAccessible(eff0: NamedAst.Declaration.Effect, ns0: Name.NName, root: NamedAst.Root, loc: SourceLocation): Validation[UnkindedType, ResolutionError] = {
-    getEffectIfAccessible(eff0, ns0, loc) map {
+    mapN(getEffectIfAccessible(eff0, ns0, loc)) {
       alias => mkEffect(alias.sym, loc)
     }
   }

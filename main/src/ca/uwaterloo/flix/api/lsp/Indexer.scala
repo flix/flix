@@ -358,9 +358,6 @@ object Indexer {
       val parent = Entity.Exp(exp0)
       traverse(exps)(visitExp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(op.sym, op.loc, parent)
 
-    case Expr.Resume(exp, _, _) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
-
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args) ++ Index.occurrenceOf(exp0)
 

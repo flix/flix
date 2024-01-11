@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Formatter
@@ -29,6 +28,31 @@ sealed trait DerivationError extends CompilationMessage {
 }
 
 object DerivationError {
+
+  /**
+    * An error raised to indicate an illegal derivation.
+    *
+    * @param sym       the class symbol of the illegal derivation.
+    * @param legalSyms the list of class symbols of legal derivations.
+    * @param loc       the location where the error occurred.
+    */
+  case class IllegalDerivation(sym: Symbol.ClassSym, legalSyms: List[Symbol.ClassSym], loc: SourceLocation) extends DerivationError with Recoverable {
+    override def summary: String = s"Illegal derivation: ${sym.name}"
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Illegal derivation '${red(sym.name)}'.
+         |
+         |${code(loc, "Illegal derivation.")}
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
+    })
+  }
 
   /**
     * Illegal type class derivation for an empty enum.
@@ -50,34 +74,5 @@ object DerivationError {
          |Flix cannot derive any instances for an empty enumeration.
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
-
-  /**
-    * An error raised to indicate an illegal derivation.
-    *
-    * @param sym       the class symbol of the illegal derivation.
-    * @param legalSyms the list of class symbols of legal derivations.
-    * @param loc       the location where the error occurred.
-    */
-  case class IllegalDerivation(sym: Symbol.ClassSym, legalSyms: List[Symbol.ClassSym], loc: SourceLocation) extends DerivationError with Recoverable {
-    override def summary: String = s"Illegal derivation: ${sym.name}"
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal derivation '${red(sym.name)}'.
-         |
-         |${code(loc, "Illegal derivation.")}
-         |""".stripMargin
-    }
-
-    def explain(formatter: Formatter): Option[String] = Some({
-      import formatter._
-      s"${underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
-    })
-
-  }
-
 }

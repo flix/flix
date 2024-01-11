@@ -18,7 +18,6 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
@@ -31,7 +30,7 @@ object GenTupleClasses {
   /**
     * Returns the set of tuple classes for the given set of types `ts`.
     */
-  def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(ts: Set[MonoType])(implicit flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, tpe@MonoType.Tuple(elms)) =>
         // Case 1: The type constructor is a tuple.
@@ -96,7 +95,7 @@ object GenTupleClasses {
     * }
     *
     */
-  private def genByteCode(classType: JvmType.Reference, monoTargs: List[MonoType])(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(classType: JvmType.Reference, monoTargs: List[MonoType])(implicit flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -146,7 +145,7 @@ object GenTupleClasses {
     * elements of the tuple in the same order that they appear on the tuple but if the element is a primitive then it will
     * box the value.
     */
-  private def compileGetBoxedValueMethod(visitor: ClassWriter, classType: JvmType.Reference, fields: List[JvmType])(implicit root: Root, flix: Flix): Unit = {
+  private def compileGetBoxedValueMethod(visitor: ClassWriter, classType: JvmType.Reference, fields: List[JvmType]): Unit = {
     // header of the method
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedValue", s"()[Ljava/lang/Object;", null, null)
 
@@ -189,7 +188,7 @@ object GenTupleClasses {
     * this.field1 = var2;
     * }
     */
-  def compileTupleConstructor(visitor: ClassWriter, classType: JvmType.Reference, fields: List[JvmType])(implicit root: Root, flix: Flix): Unit = {
+  private def compileTupleConstructor(visitor: ClassWriter, classType: JvmType.Reference, fields: List[JvmType]): Unit = {
 
     val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(fields, JvmType.Void), null, null)
 
@@ -221,7 +220,7 @@ object GenTupleClasses {
     constructor.visitEnd()
   }
 
-  def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference, fields: List[MonoType])(implicit root: Root, flix: Flix): Unit = {
+  def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference, fields: List[MonoType]): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
     // this is for the new bytecode framework
     val methodF = new BytecodeInstructions.F(method)

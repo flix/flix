@@ -51,7 +51,64 @@ class TestChain extends AnyFunSuite {
       Chain(1, 2),
       Chain.empty ++ Chain(3, 4)
     )
-    val chain = Chain.concat(chains)
+    val chain = chains.fold(Chain.empty)(_ ++ _)
     assert(chain.toList == List(1, 2, 3, 4))
+  }
+
+  test("TestEq.01") {
+    assertResult(Chain.empty)(Chain.empty)
+  }
+
+  test("TestEq.02") {
+    val c1 = Chain(1, 2, 3, 4, 5)
+    assertResult(c1)(c1)
+  }
+
+  test("TestEq.03") {
+    val c1 = Chain(1, 2, 3, 4, 5)
+    val c2 = Chain(1, 2, 3, 4, 5)
+    assertResult(c1)(c2)
+  }
+
+  test("TestEq.04") {
+    val c1 = Chain(1) ++ Chain(2)
+    val c2 = Chain(1, 2)
+    assertResult(c1)(c2)
+  }
+
+  test("TestEq.05") {
+    val c1 = Seq(Chain(1), Chain(2), Chain(3), Chain(4), Chain(5)).fold(Chain.empty)(_ ++ _)
+    val c2 = Chain(1, 2, 3, 4, 5)
+    assertResult(c1)(c2)
+  }
+
+  test("TestEq.06") {
+    val c1 = Chain(1, 2, 3, 4, 5)
+    val c2 = Chain(1, 1, 3, 4, 5)
+    assert(c1 != c2)
+  }
+
+  test("TestEq.07") {
+    val c1 = Chain(1) ++ Chain(3)
+    val c2 = Chain(1, 2)
+    assert(c1 != c2)
+  }
+
+  test("TestEq.08") {
+    val c1 = Seq(Chain(1), Chain(2), Chain(3), Chain(4), Chain(5)).fold(Chain.empty)(_ ++ _)
+    val c2 = Chain(1, 2, 3, 4, 6)
+    assert(c1 != c2)
+  }
+
+  test("TestEq.09") {
+    val c1 = Chain(1) ++ Chain(2) ++ Chain(3) ++ Chain(4) ++ Chain(5)
+    val c2 = Chain(1, 2, 3, 4, 5)
+    assert(c1 == c2)
+  }
+
+  test("TestEq.10") {
+    val c1 = Chain(1) ++ Chain(2) ++ Chain(3) ++ Chain(4) ++ Chain(5)
+    val c2 = Chain(2, 2, 3, 4, 6)
+    assert(c1 != c2)
   }
 }

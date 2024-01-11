@@ -74,7 +74,6 @@ object LiftedAstPrinter {
         (op.sym, fparams.map(printFormalParam), print(exp))
     })
     case Do(op, exps, _, _, _) => DocAst.Expression.Do(op.sym, exps.map(print))
-    case Resume(exp, _, _) => DocAst.Expression.Resume(print(exp))
     case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map {
       case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(clo), MonoTypePrinter.print(retTpe))

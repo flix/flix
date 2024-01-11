@@ -66,7 +66,7 @@ object OccurrenceAnalyzer {
     val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
 
     // Reassemble the ast root.
-    val result = OccurrenceAst.Root(defs, enums, effects, root.entryPoint, root.sources)
+    val result = OccurrenceAst.Root(defs, enums, effects, root.entryPoint, root.reachable, root.sources)
 
     Validation.success(result)
   }
@@ -264,10 +264,6 @@ object OccurrenceAnalyzer {
     case Expr.Do(op, exps, tpe, purity, loc) =>
       val (es, o1) = visitExps(sym0, exps)
       (OccurrenceAst.Expression.Do(op, es, tpe, purity, loc), o1.increaseSizeByOne())
-
-    case Expr.Resume(exp, tpe, loc) =>
-      val (e, o1) = visitExp(sym0, exp)
-      (OccurrenceAst.Expression.Resume(e, tpe, loc), o1.increaseSizeByOne())
 
     case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
       val (ms, o1) = methods.map {

@@ -12,8 +12,8 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.scala-lang:scala-library:2.13.11!!'
-    implementation 'org.scala-lang:scala-reflect:2.13.11!!'
+    implementation 'org.scala-lang:scala-library:2.13.12!!'
+    implementation 'org.scala-lang:scala-reflect:2.13.12!!'
 
     implementation('org.java-websocket:Java-WebSocket:1.5.3')
     implementation('org.jline:jline:3.22.0')
@@ -47,8 +47,8 @@ tasks.withType(ScalaCompile) {
             "-Ypatmat-exhaust-depth", "400",
             "-release", "11"
     ]
-    compileScala.sourceCompatibility = 11
-    compileScala.targetCompatibility = 11
+    compileScala.sourceCompatibility = 21
+    compileScala.targetCompatibility = 21
 }
 
 sourceSets {

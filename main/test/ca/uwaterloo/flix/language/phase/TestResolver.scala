@@ -386,7 +386,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit = try () with E {
-        |    def op() = resume()
+        |    def op() = ()
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -419,7 +419,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |eff E
         |
         |def f(): Unit = try () with E {
-        |    def op() = resume()
+        |    def op() = ()
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

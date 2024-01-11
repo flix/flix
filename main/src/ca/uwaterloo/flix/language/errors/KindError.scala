@@ -52,8 +52,6 @@ object KindError {
          |Kind Two: ${magenta(formatKind(k2))}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -76,8 +74,6 @@ object KindError {
          |
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -101,8 +97,6 @@ object KindError {
          |Actual kind:   ${magenta(formatKind(actualKind))}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
   }
 
   /**
@@ -123,7 +117,7 @@ object KindError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
+    override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
       s"${underline("Tip: ")} Add a kind annotation."
     })

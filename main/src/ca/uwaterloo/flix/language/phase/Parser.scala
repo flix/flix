@@ -54,7 +54,7 @@ object Parser {
       val result = ParOps.parTraverse(stale.keys)(parseRoot)
 
       // Combine the ASTs into one abstract syntax tree.
-      result.map {
+      mapN(result) {
         case as =>
           val m = as.foldLeft(fresh) {
             case (acc, (src, u)) => acc + (src -> u)
@@ -644,17 +644,21 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Expression ~ optional(optWS ~ ";" ~ optWS ~ Stm ~ SP ~> ParsedAst.Expression.Stm)
     }
 
-    def GuardFragment: Rule1[ParsedAst.ForFragment.Guard] = rule {
-      SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Guard
-    }
-
-    def GeneratorFragment: Rule1[ParsedAst.ForFragment.Generator] = rule {
-      SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Generator
-    }
-
     def ForFragment: Rule1[ParsedAst.ForFragment] = {
+      def GuardFragment: Rule1[ParsedAst.ForFragment.Guard] = rule {
+        SP ~ keyword("if") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Guard
+      }
+
+      def GeneratorFragment: Rule1[ParsedAst.ForFragment.Generator] = rule {
+        SP ~ Pattern ~ WS ~ keyword("<-") ~ WS ~ Expression ~ SP ~> ParsedAst.ForFragment.Generator
+      }
+
+      def LetFragment: Rule1[ParsedAst.ForFragment.Let] = rule {
+        SP ~ Pattern ~ optWS ~ atomic("=") ~ optWS ~ Expression ~ SP ~> ParsedAst.ForFragment.Let
+      }
+
       rule {
-        GeneratorFragment | GuardFragment
+        GeneratorFragment | GuardFragment | LetFragment
       }
     }
 
@@ -663,7 +667,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def ApplicativeFor: Rule1[ParsedAst.Expression.ApplicativeFor] = rule {
-      SP ~ keyword("forA") ~ optWS ~ "(" ~ optWS ~ zeroOrMore(GeneratorFragment).separatedBy(optWS ~ ";" ~ optWS) ~ optWS ~ ")" ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ApplicativeFor
+      SP ~ keyword("forA") ~ optWS ~ ForFragments ~ optWS ~ keyword("yield") ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.ApplicativeFor
     }
 
     def ForEach: Rule1[ParsedAst.Expression.ForEach] = rule {
@@ -820,7 +824,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         SelectChannel | Spawn | ParYield | Lazy | Force |
         CheckedTypeCast | CheckedEffectCast | UncheckedCast | UncheckedMaskingCast | Intrinsic | ArrayLit | VectorLit | ListLit |
         SetLit | FMap | ConstraintSet | FixpointLambda | FixpointProject | FixpointSolveWithProject |
-        FixpointQueryWithSelect | Interpolation | Literal | Resume | Do |
+        FixpointQueryWithSelect | Interpolation | Literal | Do |
         Discard | Debug | ApplicativeFor | ForEachYield | MonadicFor | ForEach | NewObject |
         UnaryLambda | Open | OpenAs | HolyName | QName | Hole
     }
@@ -992,10 +996,6 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Do: Rule1[ParsedAst.Expression] = rule {
       SP ~ keyword("do") ~ WS ~ Names.QualifiedOperation ~ ArgumentList ~ SP ~> ParsedAst.Expression.Do
-    }
-
-    def Resume: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("resume") ~ Argument ~ SP ~> ParsedAst.Expression.Resume
     }
 
     def Debug: Rule1[ParsedAst.Expression.Debug] = {

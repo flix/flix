@@ -16,8 +16,9 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
-import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
+import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.Opcodes
 
 import scala.annotation.tailrec
@@ -61,6 +62,22 @@ sealed trait BackendType extends VoidableType {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 |
          BackendType.Int32 | BackendType.Int64 | BackendType.Float32 | BackendType.Float64 => this
     case BackendType.Array(_) | BackendType.Reference(_) => BackendObjType.JavaObject.toTpe
+  }
+
+  /**
+    * Returns the erased type represented as [[JvmType]]. Arrays are erased.
+    */
+  def toErasedJvmType: JvmType = this match {
+    case BackendType.Array(_) => JvmType.Object
+    case BackendType.Reference(_) => JvmType.Object
+    case BackendType.Bool => JvmType.PrimBool
+    case BackendType.Char => JvmType.PrimChar
+    case BackendType.Int8 => JvmType.PrimByte
+    case BackendType.Int16 => JvmType.PrimShort
+    case BackendType.Int32 => JvmType.PrimInt
+    case BackendType.Int64 => JvmType.PrimLong
+    case BackendType.Float32 => JvmType.PrimFloat
+    case BackendType.Float64 => JvmType.PrimDouble
   }
 
   /**
@@ -158,8 +175,23 @@ object BackendType {
     case MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.String | MonoType.Regex |
          MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
          MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
-         MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) | MonoType.Native(_) |
-         MonoType.Region => BackendObjType.JavaObject.toTpe
+         MonoType.Native(_) | MonoType.Region => BackendObjType.JavaObject.toTpe
+  }
+
+  def asErasedBackendType(tpe: MonoType): BackendType = tpe match {
+    case MonoType.Bool => Bool
+    case MonoType.Char => Char
+    case MonoType.Int8 => Int8
+    case MonoType.Int16 => Int16
+    case MonoType.Int32 => Int32
+    case MonoType.Int64 => Int64
+    case MonoType.Float32 => Float32
+    case MonoType.Float64 => Float64
+    case MonoType.Native(clazz) if clazz == classOf[Object] => BackendObjType.JavaObject.toTpe
+    case MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.String | MonoType.Regex |
+         MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
+         MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
+         MonoType.Native(_) | MonoType.Region => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
   }
 
   /**
@@ -186,11 +218,11 @@ object BackendType {
       // Maybe use clazz.getPackage and clazz.getSimpleName
       // TODO: Ugly hack.
       val fqn = clazz.getName.replace('.', '/')
-      BackendObjType.Native(JvmName.mk(fqn)).toTpe
-    case MonoType.Unit | MonoType.Lazy(_) | MonoType.Ref(_) |
-         MonoType.Tuple(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty |
-         MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) |
-         MonoType.SchemaEmpty | MonoType.SchemaExtend(_, _, _) => BackendObjType.JavaObject.toTpe
+      JvmName.mk(fqn).toTpe
+    case MonoType.Unit | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
+         MonoType.Arrow(_, _) | MonoType.RecordEmpty |
+         MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) =>
+      BackendObjType.JavaObject.toTpe
   }
 
   sealed trait PrimitiveType extends BackendType {

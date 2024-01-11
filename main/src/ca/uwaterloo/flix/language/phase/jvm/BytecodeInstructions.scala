@@ -20,8 +20,8 @@ import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch.{FalseBr
 import ca.uwaterloo.flix.language.phase.jvm.ClassMaker._
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor.mkDescriptor
-import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 import org.objectweb.asm
+import org.objectweb.asm.{Label, MethodVisitor, Opcodes}
 
 object BytecodeInstructions {
 
@@ -34,12 +34,12 @@ object BytecodeInstructions {
 
     def visitInstruction(opcode: Int): Unit = visitor.visitInsn(opcode)
 
-    def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: MethodDescriptor): Unit =
-      visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor.toDescriptor, opcode == Opcodes.INVOKEINTERFACE)
+    def visitMethodInstruction(opcode: Int, owner: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean): Unit =
+      visitor.visitMethodInsn(opcode, owner.toInternalName, methodName, descriptor.toDescriptor, isInterface)
 
     // TODO: sanitize varags
     def visitInvokeDynamicInstruction(methodName: String, descriptor: MethodDescriptor, bootstrapMethodHandle: Handle, bootstrapMethodArguments: Any*): Unit =
-      visitor.visitInvokeDynamicInsn(methodName, descriptor.toDescriptor, bootstrapMethodHandle.handle, bootstrapMethodArguments:_*)
+      visitor.visitInvokeDynamicInsn(methodName, descriptor.toDescriptor, bootstrapMethodHandle.handle, bootstrapMethodArguments: _*)
 
     def visitFieldInstruction(opcode: Int, owner: JvmName, fieldName: String, fieldType: BackendType): Unit =
       visitor.visitFieldInsn(opcode, owner.toInternalName, fieldName, fieldType.toDescriptor)
@@ -76,6 +76,10 @@ object BytecodeInstructions {
 
   def mkStaticHandle(m: StaticMethod): Handle = {
     Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, m.clazz.toInternalName, m.name, m.d.toDescriptor, false))
+  }
+
+  def mkStaticHandle(m: StaticInterfaceMethod): Handle = {
+    Handle(new asm.Handle(Opcodes.H_INVOKESTATIC, m.clazz.toInternalName, m.name, m.d.toDescriptor, true))
   }
 
   //
@@ -278,60 +282,91 @@ object BytecodeInstructions {
     f
   }
 
-  def mkStaticLambda(lambdaMethod: AbstractMethod, call: StaticMethod): InstructionSet = f => {
+  /**
+    * Make an object which the functional interface of `lambdaMethod`. The
+    * implementation of the functional method will be the static method
+    * represented by `callHandle`. `callD` is the method descriptor of the
+    * static method.
+    *
+    * `drop` is used for partial application of the static function.
+    * Lets say you want to implement the functional interface method of
+    * `Function<String, String>` with the partial application of the static
+    * function `String example(String, String)` with `"Hi"`. Then you can
+    * partially apply the leftmost argument by having `drop = 1`. This then
+    * means that the instruction returned will expect the missing string
+    * argument on the op stack.
+    *
+    * for a function with `k` arguments, `drop = n` means that given the first
+    * `k-n` arguments on the op stack, this will represent a function of the
+    * last `n` arguments to the original return type. This must of course
+    * correspond to the type of `lambdaMethod`.
+    */
+  def mkStaticLambda(lambdaMethod: InterfaceMethod, callD: MethodDescriptor, callHandle: Handle, drop: Int): InstructionSet = f => {
     f.visitInvokeDynamicInstruction(
       lambdaMethod.name,
-      mkDescriptor(call.d.arguments: _*)(lambdaMethod.clazz.toTpe),
+      mkDescriptor(callD.arguments.dropRight(drop): _*)(lambdaMethod.clazz.toTpe),
       mkStaticHandle(BackendObjType.LambdaMetaFactory.MetaFactoryMethod),
       lambdaMethod.d.toAsmType,
-      mkStaticHandle(call).handle,
+      callHandle.handle,
       lambdaMethod.d.toAsmType
     )
     f
   }
 
+  def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticMethod, drop: Int): InstructionSet =
+    mkStaticLambda(lambdaMethod, call.d, mkStaticHandle(call), drop)
+
+  def mkStaticLambda(lambdaMethod: InterfaceMethod, call: StaticInterfaceMethod, drop: Int): InstructionSet =
+    mkStaticLambda(lambdaMethod, call.d, mkStaticHandle(call), drop)
+
   def INVOKEINTERFACE(interfaceName: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKEINTERFACE, interfaceName, methodName, descriptor)
+    f.visitMethodInstruction(Opcodes.INVOKEINTERFACE, interfaceName, methodName, descriptor, isInterface = true)
     f
   }
 
   def INVOKEINTERFACE(m: InterfaceMethod): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKEINTERFACE, m.clazz, m.name, m.d)
+    f.visitMethodInstruction(Opcodes.INVOKEINTERFACE, m.clazz, m.name, m.d, isInterface = true)
     f
   }
 
   def INVOKESPECIAL(className: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, methodName, descriptor)
+    val isInterface = false // OBS this is not technically true if you use it to call private interface methods(?)
+    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, className, methodName, descriptor, isInterface = isInterface)
     f
   }
 
   def INVOKESPECIAL(c: ConstructorMethod): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, c.clazz, c.name, c.d)
+    f.visitMethodInstruction(Opcodes.INVOKESPECIAL, c.clazz, c.name, c.d, isInterface = false)
     f
   }
 
-  def INVOKESTATIC(className: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKESTATIC, className, methodName, descriptor)
+  def INVOKESTATIC(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false): InstructionSet = f => {
+    f.visitMethodInstruction(Opcodes.INVOKESTATIC, className, methodName, descriptor, isInterface)
     f
   }
 
   def INVOKESTATIC(m: StaticMethod): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d)
+    f.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d, isInterface = false)
     f
   }
 
-  def INVOKEVIRTUAL(className: JvmName, methodName: String, descriptor: MethodDescriptor): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, className, methodName, descriptor)
+  def INVOKESTATIC(m: StaticInterfaceMethod): InstructionSet = f => {
+    f.visitMethodInstruction(Opcodes.INVOKESTATIC, m.clazz, m.name, m.d, isInterface = true)
+    f
+  }
+
+  def INVOKEVIRTUAL(className: JvmName, methodName: String, descriptor: MethodDescriptor, isInterface: Boolean = false): InstructionSet = f => {
+    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, className, methodName, descriptor, isInterface)
     f
   }
 
   def INVOKEVIRTUAL(m: AbstractMethod): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d)
+    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d, isInterface = false)
     f
   }
 
   def INVOKEVIRTUAL(m: InstanceMethod): InstructionSet = f => {
-    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d)
+    f.visitMethodInstruction(Opcodes.INVOKEVIRTUAL, m.clazz, m.name, m.d, isInterface = false)
     f
   }
 

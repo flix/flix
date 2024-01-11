@@ -47,8 +47,6 @@ object MonoTypePrinter {
     case MonoType.Arrow(args, result) => Type.Arrow(args.map(print), print(result))
     case MonoType.RecordEmpty => Type.RecordEmpty
     case MonoType.RecordExtend(label, value, rest) => Type.RecordExtend(label, print(value), print(rest))
-    case MonoType.SchemaEmpty => Type.SchemaEmpty
-    case MonoType.SchemaExtend(name, tpe, rest) => Type.SchemaExtend(name, print(tpe), print(rest))
     case MonoType.Native(clazz) => Type.Native(clazz)
   }
 

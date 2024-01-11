@@ -35,8 +35,8 @@ object Optimizer {
     if (!flix.options.xnooptimizer) {
       for (_ <- 1 to 2) {
         val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(result)
-        val afterInliner = Inliner.run(afterOccurrenceAnalyzer.get)
-        result = afterInliner.get
+        val afterInliner = Inliner.run(afterOccurrenceAnalyzer.unsafeGet)
+        result = afterInliner.unsafeGet
       }
     }
 

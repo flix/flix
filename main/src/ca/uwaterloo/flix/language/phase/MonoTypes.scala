@@ -324,11 +324,6 @@ object MonoTypes {
       val p = visitType(eff)
       Expr.Do(op, es, t, p, loc)
 
-    case Expr.Resume(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      val t = visitType(tpe)
-      Expr.Resume(e, t, loc)
-
     case Expr.NewObject(name, clazz, tpe, eff, methods, loc) =>
       val t = visitType(tpe)
       val p = visitType(eff)

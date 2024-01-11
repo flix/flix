@@ -17,7 +17,6 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.Root
 import ca.uwaterloo.flix.language.ast.MonoType
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label}
@@ -30,7 +29,7 @@ object GenLazyClasses {
   /**
     * Returns the set of lazy classes for the given set of types `ts`.
     */
-  def gen(ts: Set[MonoType])(implicit root: Root, flix: Flix): Map[JvmName, JvmClass] = {
+  def gen(ts: Set[MonoType])(implicit flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
       case (macc, tpe@MonoType.Lazy(valueType)) =>
         // Case 1: The type constructor is a lazy value.
@@ -67,7 +66,7 @@ object GenLazyClasses {
     * force, unless expression != null.
     * Note that expression is volatile to ensure that this check is correctly synchronized.
     */
-  private def genByteCode(classType: JvmType.Reference, erasedType: JvmType, valueType: MonoType)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(classType: JvmType.Reference, erasedType: JvmType, valueType: MonoType)(implicit flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -113,7 +112,7 @@ object GenLazyClasses {
     *   }
     * }
     */
-  private def compileForceMethod(visitor: ClassWriter, classType: JvmType.Reference, erasedType: JvmType, valueType: MonoType)(implicit root: Root, flix: Flix): Unit = {
+  private def compileForceMethod(visitor: ClassWriter, classType: JvmType.Reference, erasedType: JvmType, valueType: MonoType): Unit = {
     val erasedValueTypeDescriptor = erasedType.toDescriptor
     val internalClassType = classType.name.toInternalName
     val returnIns = AsmOps.getReturnInstruction(erasedType)
@@ -201,7 +200,7 @@ object GenLazyClasses {
     * The constructor takes a expression object, which should be a function that takes
     * no argument and returns something of type tpe, related to the type of the lazy class.
     */
-  def compileLazyConstructor(visitor: ClassWriter, classType: JvmType.Reference)(implicit root: Root, flix: Flix): Unit = {
+  private def compileLazyConstructor(visitor: ClassWriter, classType: JvmType.Reference): Unit = {
     val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), null, null)
 
     constructor.visitCode()

@@ -217,8 +217,6 @@ object TokenKind {
 
   case object KeywordRestrictable extends TokenKind
 
-  case object KeywordResume extends TokenKind
-
   case object KeywordSealed extends TokenKind
 
   case object KeywordSelect extends TokenKind

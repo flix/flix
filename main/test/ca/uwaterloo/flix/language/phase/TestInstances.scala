@@ -37,21 +37,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.OverlappingInstances](result)
   }
 
-
   test("Test.OverlappingInstance.02") {
-    val input =
-      """
-        |class C[a]
-        |
-        |instance C[a]
-        |
-        |instance C[Int32]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.OverlappingInstances](result)
-  }
-
-  test("Test.OverlappingInstance.03") {
     val input =
       """
         |class C[a]
@@ -64,7 +50,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.OverlappingInstances](result)
   }
 
-  test("Test.OverlappingInstance.04") {
+  test("Test.OverlappingInstance.03") {
     val input =
       """
         |class C[a]
@@ -77,7 +63,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.OverlappingInstances](result)
   }
 
-  test("Test.OverlappingInstance.05") {
+  test("Test.OverlappingInstance.04") {
     val input =
       """
         |enum Box[a] {
@@ -94,7 +80,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.OverlappingInstances](result)
   }
 
-  test("Test.OverlappingInstances.06") {
+  test("Test.OverlappingInstances.05") {
     val input =
       """
         | class C[a] {
