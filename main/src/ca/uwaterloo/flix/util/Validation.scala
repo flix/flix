@@ -84,12 +84,24 @@ sealed trait Validation[+T, +E] {
 
   /**
     * Returns `this` as a [[Result]].
-    * Both [[Validation.Success]] and [[Validation.SoftFailure]] are treated as [[Result.Ok]].
+    * Returns [[Result.Ok]] if and only if there are no errors.
+    * Returns [[Result.Err]] otherwise.
     */
-  def toResult: Result[(T, List[E]), List[E]] = this match {
-    case Validation.Success(t) => Result.Ok((t, List.empty))
-    case Validation.SoftFailure(t, errors) => Result.Ok((t, errors.toList))
-    case Validation.HardFailure(errors) => Result.Err(errors.toList)
+  def toHardResult: Result[T, Chain[E]] = this match {
+    case Validation.Success(t) => Result.Ok(t)
+    case Validation.SoftFailure(_, errors) => Result.Err(errors)
+    case Validation.HardFailure(errors) => Result.Err(errors)
+  }
+
+  /**
+    * Returns `this` as a [[Result]].
+    * If any success value exists it will be returned as a [[Result.Ok]] along with a possibly non-empty list of errors.
+    * This is meant for when a success value is useful in the presence of errors.
+    */
+  def toSoftResult: Result[(T, Chain[E]), Chain[E]] = this match {
+    case Validation.Success(t) => Result.Ok((t, Chain.empty))
+    case Validation.SoftFailure(t, errors) => Result.Ok((t, errors))
+    case Validation.HardFailure(errors) => Result.Err(errors)
   }
 }
 
@@ -169,7 +181,7 @@ object Validation {
   /**
     * Represents a success `value`.
     */
-  case class Success[T, E](t: T) extends Validation[T, E] {
+  private case class Success[T, E](t: T) extends Validation[T, E] {
     def errors: Chain[E] = Chain.empty
   }
 
