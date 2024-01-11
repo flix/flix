@@ -23,8 +23,7 @@ import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manif
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
-import ca.uwaterloo.flix.util.collection.Chain
-import ca.uwaterloo.flix.util.{Result, Validation}
+import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
 
 import java.io.{PrintStream, PrintWriter}
 import java.nio.file._
@@ -328,17 +327,17 @@ object Bootstrap {
     * all .flix source files.
     * Then returns the initialized Bootstrap object or an error.
     */
-  def bootstrap(path: Path, apiKey: Option[String])(implicit out: PrintStream): Validation[Bootstrap, BootstrapError] = {
+  def bootstrap(path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Validation[Bootstrap, BootstrapError] = {
     //
     // Determine the mode: If `path/flix.toml` exists then "project" mode else "folder mode".
     //
     val bootstrap = new Bootstrap(path, apiKey)
     val tomlPath = getManifestFile(path)
     if (Files.exists(tomlPath)) {
-      out.println("Found `flix.toml'. Checking dependencies...")
+      out.println("Found `flix.toml`. Checking dependencies...")
       Validation.mapN(bootstrap.projectMode())(_ => bootstrap)
     } else {
-      out.println("No `flix.toml'. Will load source files from `*.flix`, `src/**`, and `test/**`.")
+      out.println(s"""No `flix.toml`. Will load source files from `${formatter.blue("*.flix")}`, `${formatter.blue("src/**")}`, and `${formatter.blue("test/**")}`.""")
       Validation.mapN(bootstrap.folderMode())(_ => bootstrap)
     }
   }
@@ -501,7 +500,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds a jar package for the project.
     */
-  def buildJar(): Validation[Unit, BootstrapError] = {
+  def buildJar(flix: Flix): Validation[Unit, BootstrapError] = {
+    val formatter = flix.getFormatter
+
     // The path to the jar file.
     val jarFile = Bootstrap.getJarFile(projectPath)
 
@@ -510,7 +511,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Check whether it is safe to write to the file.
     if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
-      return Validation.toHardFailure(BootstrapError.FileError(s"The path '$jarFile' exists and is not a jar-file. Refusing to overwrite."))
+      return Validation.toHardFailure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
     }
 
     // Construct a new zip file.
@@ -540,7 +541,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds a flix package for the project.
     */
-  def buildPkg(): Validation[Unit, BootstrapError] = {
+  def buildPkg(flix: Flix): Validation[Unit, BootstrapError] = {
+    val formatter = flix.getFormatter
+
     // Check that there is a `flix.toml` file.
     if (!Files.exists(getManifestFile(projectPath))) {
       return Validation.toHardFailure(BootstrapError.FileError("Cannot create a Flix package without a `flix.toml` file."))
@@ -554,7 +557,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Check whether it is safe to write to the file.
     if (Files.exists(pkgFile) && !Bootstrap.isPkgFile(pkgFile)) {
-      return Validation.toHardFailure(BootstrapError.FileError(s"The path '$pkgFile' exists and is not a fpkg-file. Refusing to overwrite."))
+      return Validation.toHardFailure(BootstrapError.FileError(s"The path '${formatter.red(pkgFile.toString)}' exists and is not a fpkg-file. Refusing to overwrite."))
     }
 
     // Copy the `flix.toml` to the artifact directory.
@@ -669,7 +672,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Build artifacts
     println("Building project...")
-    val buildResult = buildPkg()
+    val buildResult = buildPkg(flix)
     buildResult.toHardResult match {
       case Result.Ok(_) => // Continue
       case Result.Err(e) => return Validation.HardFailure(e)
