@@ -246,15 +246,7 @@ object GenFunAndClosureClasses {
     GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix)
     assert(ctx.pcCounter(0) == pcLabels.size, s"${(classType.name, ctx.pcCounter(0), pcLabels.size)}")
 
-    // returning a Value
-    val returnValue = {
-      import BackendObjType._
-      import BytecodeInstructions._
-      NEW(Value.jvmName) ~ DUP() ~ INVOKESPECIAL(Value.Constructor) ~ DUP() ~
-        xSwap(lowerLarge = BackendType.asErasedBackendType(defn.tpe).is64BitWidth, higherLarge = true) ~ // two objects on top of the stack
-        PUTFIELD(Value.fieldFromType(BackendType.asErasedBackendType(defn.tpe))) ~
-        xReturn(Result.toTpe)
-    }
+    val returnValue = BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)
     returnValue(new BytecodeInstructions.F(m))
 
     m.visitMaxs(999, 999)

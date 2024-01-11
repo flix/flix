@@ -72,6 +72,10 @@ object AtomicOp {
 
   case object Cast extends AtomicOp
 
+  case object Unbox extends AtomicOp
+
+  case object Box extends AtomicOp
+
   case class InvokeConstructor(constructor: Constructor[_]) extends AtomicOp
 
   case class InvokeMethod(method: Method) extends AtomicOp

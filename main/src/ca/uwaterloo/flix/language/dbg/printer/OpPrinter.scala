@@ -178,6 +178,8 @@ object OpPrinter {
     case (AtomicOp.Untag(sym), List(d)) => Untag(sym, d)
     case (AtomicOp.InstanceOf(clazz), List(d)) => InstanceOf(d, clazz)
     case (AtomicOp.Cast, List(d)) => Cast(d, tpe)
+    case (AtomicOp.Unbox, List(d)) => Unbox(d, tpe)
+    case (AtomicOp.Box, List(d)) => Box(d)
     case (AtomicOp.Index(idx), List(d)) => Index(idx, d)
     case (AtomicOp.RecordSelect(label), List(d)) => RecordSelect(label, d)
     case (AtomicOp.RecordRestrict(label), List(d)) => RecordRestrict(label, d)

@@ -892,6 +892,28 @@ object GenExpression {
         compileExpr(exp)
         AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
+      case AtomicOp.Unbox =>
+        val List(exp) = exps
+        compileExpr(exp)
+        // this is a value
+        val valueField = BackendObjType.Value.fieldFromType(BackendType.asErasedBackendType(tpe))
+        val ins = BytecodeInstructions.GETFIELD(valueField)
+        mv.visitTypeInsn(CHECKCAST, BackendObjType.Value.jvmName.toInternalName)
+        ins(new BytecodeInstructions.F(mv))
+
+      case AtomicOp.Box =>
+        val List(exp) = exps
+        compileExpr(exp)
+        val erasedExpTpe = BackendType.toErasedBackendType(exp.tpe)
+        val valueField = BackendObjType.Value.fieldFromType(erasedExpTpe)
+        val ins = {
+          import BytecodeInstructions._
+          NEW(BackendObjType.Value.jvmName) ~ DUP() ~ INVOKESPECIAL(BackendObjType.Value.Constructor) ~ DUP() ~
+          xSwap(lowerLarge = erasedExpTpe.is64BitWidth, higherLarge = true) ~ // two objects on top of the stack
+          PUTFIELD(valueField)
+        }
+        ins(new BytecodeInstructions.F(mv))
+
       case AtomicOp.InvokeConstructor(constructor) =>
         // Add source line number for debugging (can fail when calling unsafe java methods)
         addSourceLine(mv, loc)
@@ -1106,7 +1128,7 @@ object GenExpression {
         mv.visitInsn(ATHROW)
     }
 
-    case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
+    case Expr.ApplyClo(exp, exps, ct, _, purity, _) =>
       ct match {
         case CallType.TailCall =>
           // Type of the function abstract class
@@ -1134,8 +1156,6 @@ object GenExpression {
           // Type of the function abstract class
           val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
           val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
-          // previous JvmOps functions are already partial pattern matches
-          val MonoType.Arrow(_, closureResultType) = exp.tpe
 
           compileExpr(exp)
           // Casting to JvmType of closure abstract class
@@ -1152,28 +1172,26 @@ object GenExpression {
               s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
           }
           // Calling unwind and unboxing
-          val erasedResult = BackendType.toErasedBackendType(closureResultType)
 
-          if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunkToType(erasedResult)(new BytecodeInstructions.F(mv))
+          if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunk()(new BytecodeInstructions.F(mv))
           else {
             val pcPoint = ctx.pcCounter(0) + 1
             val pcPointLabel = ctx.pcLabels(pcPoint)
             val afterUnboxing = new Label()
             ctx.pcCounter(0) += 1
-            BackendObjType.Result.unwindThunkToType(pcPoint, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
+            BackendObjType.Result.unwindThunkToValue(pcPoint, ctx.newFrame, ctx.setPc)(new BytecodeInstructions.F(mv))
             mv.visitJumpInsn(GOTO, afterUnboxing)
 
             mv.visitLabel(pcPointLabel)
             printPc(mv, pcPoint)
 
             mv.visitVarInsn(ALOAD, 1)
-            BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
 
             mv.visitLabel(afterUnboxing)
           }
       }
 
-    case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) => ct match {
+    case Expr.ApplyDef(sym, exps, ct, _, purity, _) => ct match {
       case CallType.TailCall =>
         // Type of the function abstract class
         val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
@@ -1209,21 +1227,19 @@ object GenExpression {
             s"arg$i", JvmOps.getErasedJvmType(arg.tpe).toDescriptor)
         }
         // Calling unwind and unboxing
-        val erasedResult = BackendType.toErasedBackendType(tpe)
 
-        if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunkToType(erasedResult)(new BytecodeInstructions.F(mv))
+        if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunk()(new BytecodeInstructions.F(mv))
         else {
           val pcPoint = ctx.pcCounter(0) + 1
           val pcPointLabel = ctx.pcLabels(pcPoint)
           val afterUnboxing = new Label()
           ctx.pcCounter(0) += 1
-          BackendObjType.Result.unwindThunkToType(pcPoint, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
+          BackendObjType.Result.unwindThunkToValue(pcPoint, ctx.newFrame, ctx.setPc)(new BytecodeInstructions.F(mv))
           mv.visitJumpInsn(GOTO, afterUnboxing)
 
           mv.visitLabel(pcPointLabel)
           printPc(mv, pcPoint)
           mv.visitVarInsn(ALOAD, 1)
-          BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
 
           mv.visitLabel(afterUnboxing)
         }
@@ -1416,7 +1432,7 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
 
-    case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+    case Expr.TryWith(exp, effUse, rules, _, _, _) =>
       // exp is a Unit -> exp.tpe closure
       val effectJvmName = JvmOps.getEffectDefinitionClassType(effUse.sym).name
       val ins = {
@@ -1447,14 +1463,12 @@ object GenExpression {
       val pcPointLabel = ctx.pcLabels(pcPoint)
       val afterUnboxing = new Label()
       ctx.pcCounter(0) += 1
-      val erasedResult = BackendType.toErasedBackendType(tpe)
-      BackendObjType.Result.unwindThunkToType(pcPoint, ctx.newFrame, ctx.setPc, erasedResult)(new BytecodeInstructions.F(mv))
+      BackendObjType.Result.unwindThunkToValue(pcPoint, ctx.newFrame, ctx.setPc)(new BytecodeInstructions.F(mv))
       mv.visitJumpInsn(GOTO, afterUnboxing)
 
       mv.visitLabel(pcPointLabel)
       printPc(mv, pcPoint)
       mv.visitVarInsn(ALOAD, 1)
-      BytecodeInstructions.GETFIELD(BackendObjType.Value.fieldFromType(erasedResult))(new BytecodeInstructions.F(mv))
 
       mv.visitLabel(afterUnboxing)
 
