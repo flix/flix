@@ -24,19 +24,14 @@ import java.nio.file.{Files, LinkOption, Path}
 object FileOps {
 
   /**
-    * Reads the contents of the file at the given path `p` if it is possible.
-    *
-    * Returns None if:
-    * - The path doesn't exist.
-    * - The path isn't a file.
-    * - The current process doesn't have the necessary permissions.
+    * Reads the first line of the file at the given path `p` if it is possible.
     */
-  def readString(p: Path): Option[String] = {
-    Option.when(
-      Files.isReadable(p)
-    )(
-      Files.readString(p)
-    )
+  def readLine(p: Path): Option[String] = {
+    try {
+      Some(Files.lines(p).findFirst().get())
+    } catch {
+      case _: Throwable => None
+    }
   }
 
   /**

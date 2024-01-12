@@ -74,19 +74,8 @@ object Main {
     // get GitHub token
     val githubToken =
       cmdOpts.githubToken
-        .orElse(FileOps.readString(cwd.resolve("./.GITHUB_TOKEN")))
+        .orElse(FileOps.readLine(cwd.resolve("./.GITHUB_TOKEN")))
         .orElse(sys.env.get("GITHUB_TOKEN"))
-        .map { t =>
-          val trimmed = t.trim
-
-          // if the token contains newlines, any requests using it in the header will be malformed
-          if (trimmed.contains("\n")) {
-            Console.err.println("GitHub token must not contain any newline characters. Will now exit.")
-            System.exit(1)
-          }
-
-          trimmed
-        }
 
     // construct flix options.
     var options = Options(
