@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.shell
 
-import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
+import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -152,6 +152,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     * Executes the given command `cmd`.
     */
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = {
+    implicit val formatter: Formatter = Formatter.getDefault
     implicit val out: PrintStream = new PrintStream(terminal.output())
     cmd match {
       case Command.Nop => // nop
@@ -162,14 +163,14 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case Command.Praise => execPraise()
       case Command.Eval(s) => execEval(s)
       case Command.ReloadAndEval(s) => execReloadAndEval(s)
-      case Command.Init => Bootstrap.init(bootstrap.projectPath)
-      case Command.Build => bootstrap.build(flix)
-      case Command.BuildJar => bootstrap.buildJar()
-      case Command.BuildPkg => bootstrap.buildPkg()
-      case Command.Release => bootstrap.release(flix)
-      case Command.Check => bootstrap.check(flix)
-      case Command.Doc => bootstrap.doc(flix)
-      case Command.Test => bootstrap.test(flix)
+      case Command.Init => execBootstrap(Bootstrap.init(bootstrap.projectPath))
+      case Command.Build => execBootstrap(bootstrap.build(flix))
+      case Command.BuildJar => execBootstrap(bootstrap.buildJar())
+      case Command.BuildPkg => execBootstrap(bootstrap.buildPkg())
+      case Command.Release => execBootstrap(bootstrap.release(flix))
+      case Command.Check => execBootstrap(bootstrap.check(flix))
+      case Command.Doc => execBootstrap(bootstrap.doc(flix))
+      case Command.Test => execBootstrap(bootstrap.test(flix))
       case Command.Unknown(s) => execUnknown(s)
     }
   }
@@ -323,6 +324,13 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   private def execReloadAndEval(s: String)(implicit terminal: Terminal): Unit = {
     execReload()
     execEval(s)
+  }
+
+  /**
+    * Executes the given bootstrap function and prints any errors.
+    */
+  private def execBootstrap[T](f: => Validation[T, BootstrapError])(implicit formatter: Formatter, out: PrintStream): Unit = {
+    f.errors.map(_.message(formatter)).foreach(out.println)
   }
 
   /**
