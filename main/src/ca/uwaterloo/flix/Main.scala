@@ -291,7 +291,7 @@ object Main {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
-              bootstrap.release(flix)
+              bootstrap.release(flix)(System.err)
           }.toHardResult match {
             case Result.Ok(_) =>
               System.exit(0)
