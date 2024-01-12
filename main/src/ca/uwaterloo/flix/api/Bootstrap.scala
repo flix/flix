@@ -500,8 +500,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds a jar package for the project.
     */
-  def buildJar(flix: Flix): Validation[Unit, BootstrapError] = {
-    val formatter = flix.getFormatter
+  def buildJar()(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
 
     // The path to the jar file.
     val jarFile = Bootstrap.getJarFile(projectPath)
@@ -541,8 +540,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds a flix package for the project.
     */
-  def buildPkg(flix: Flix): Validation[Unit, BootstrapError] = {
-    val formatter = flix.getFormatter
+  def buildPkg()(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
 
     // Check that there is a `flix.toml` file.
     if (!Files.exists(getManifestFile(projectPath))) {
@@ -639,7 +637,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Package the current project and release it on GitHub.
     */
   def release(flix: Flix)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
-    val formatter = flix.getFormatter
+    implicit val formatter: Formatter = flix.getFormatter
 
     // Ensure that we have a manifest
     val manifest = optManifest match {
@@ -672,7 +670,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Build artifacts
     out.println("Building project...")
-    val buildResult = buildPkg(flix)
+    val buildResult = buildPkg()
     buildResult.toHardResult match {
       case Result.Ok(_) => // Continue
       case Result.Err(e) => return Validation.HardFailure(e)

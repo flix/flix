@@ -41,7 +41,7 @@ class TestBootstrap extends AnyFunSuite {
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val flix = new Flix
     b.build(flix)
-    b.buildJar(flix)
+    b.buildJar()(Formatter.getDefault)
 
     val packageName = p.getFileName.toString
     val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
@@ -55,7 +55,7 @@ class TestBootstrap extends AnyFunSuite {
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     val flix = new Flix
     b.build(flix)
-    b.buildJar(flix)
+    b.buildJar()(Formatter.getDefault)
 
     val packageName = p.getFileName.toString
     val jarPath = p.resolve("artifact").resolve(packageName + ".jar")
@@ -77,12 +77,12 @@ class TestBootstrap extends AnyFunSuite {
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
     b.build(flix)
-    b.buildJar(flix)
+    b.buildJar()(Formatter.getDefault)
 
     def hash1 = calcHash(jarPath)
 
     b.build(flix)
-    b.buildJar(flix)
+    b.buildJar()(Formatter.getDefault)
 
     def hash2 = calcHash(jarPath)
 
@@ -96,7 +96,7 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.init(p)(System.out)
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildPkg(new Flix())
+    b.buildPkg()(Formatter.getDefault)
 
     val packageName = p.getFileName.toString
     val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
@@ -109,7 +109,7 @@ class TestBootstrap extends AnyFunSuite {
     Bootstrap.init(p)(System.out)
 
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildPkg(new Flix())
+    b.buildPkg()(Formatter.getDefault)
 
     val packageName = p.getFileName.toString
     val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
@@ -127,14 +127,12 @@ class TestBootstrap extends AnyFunSuite {
     val packageName = p.getFileName.toString
     val packagePath = p.resolve("artifact").resolve(packageName + ".fpkg")
 
-    val flix = new Flix()
-
     val b = Bootstrap.bootstrap(p, None)(Formatter.getDefault, System.out).unsafeGet
-    b.buildPkg(flix)
+    b.buildPkg()(Formatter.getDefault)
 
     def hash1 = calcHash(packagePath)
 
-    b.buildPkg(flix)
+    b.buildPkg()(Formatter.getDefault)
 
     def hash2 = calcHash(packagePath)
 

@@ -152,6 +152,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     * Executes the given command `cmd`.
     */
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = {
+    implicit val formatter: Formatter = flix.getFormatter
     implicit val out: PrintStream = new PrintStream(terminal.output())
     cmd match {
       case Command.Nop => // nop
@@ -164,8 +165,8 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case Command.ReloadAndEval(s) => execReloadAndEval(s)
       case Command.Init => Bootstrap.init(bootstrap.projectPath)
       case Command.Build => bootstrap.build(flix)
-      case Command.BuildJar => bootstrap.buildJar(flix)
-      case Command.BuildPkg => bootstrap.buildPkg(flix)
+      case Command.BuildJar => bootstrap.buildJar()
+      case Command.BuildPkg => bootstrap.buildPkg()
       case Command.Release => bootstrap.release(flix)
       case Command.Check => bootstrap.check(flix)
       case Command.Doc => bootstrap.doc(flix)
