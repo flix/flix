@@ -151,24 +151,27 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   /**
     * Executes the given command `cmd`.
     */
-  private def execute(cmd: Command)(implicit terminal: Terminal): Unit = cmd match {
-    case Command.Nop => // nop
-    case Command.Reload => execReload()
-    case Command.Info(s) => execInfo(s)
-    case Command.Quit => execQuit()
-    case Command.Help => execHelp()
-    case Command.Praise => execPraise()
-    case Command.Eval(s) => execEval(s)
-    case Command.ReloadAndEval(s) => execReloadAndEval(s)
-    case Command.Init => Bootstrap.init(bootstrap.projectPath)(new PrintStream(terminal.output()))
-    case Command.Build => bootstrap.build(flix)
-    case Command.BuildJar => bootstrap.buildJar()
-    case Command.BuildPkg => bootstrap.buildPkg()
-    case Command.Release => bootstrap.release(flix)
-    case Command.Check => bootstrap.check(flix)
-    case Command.Doc => bootstrap.doc(flix)
-    case Command.Test => bootstrap.test(flix)
-    case Command.Unknown(s) => execUnknown(s)
+  private def execute(cmd: Command)(implicit terminal: Terminal): Unit = {
+    implicit val out: PrintStream = new PrintStream(terminal.output())
+    cmd match {
+      case Command.Nop => // nop
+      case Command.Reload => execReload()
+      case Command.Info(s) => execInfo(s)
+      case Command.Quit => execQuit()
+      case Command.Help => execHelp()
+      case Command.Praise => execPraise()
+      case Command.Eval(s) => execEval(s)
+      case Command.ReloadAndEval(s) => execReloadAndEval(s)
+      case Command.Init => Bootstrap.init(bootstrap.projectPath)
+      case Command.Build => bootstrap.build(flix)
+      case Command.BuildJar => bootstrap.buildJar()
+      case Command.BuildPkg => bootstrap.buildPkg()
+      case Command.Release => bootstrap.release(flix)
+      case Command.Check => bootstrap.check(flix)
+      case Command.Doc => bootstrap.doc(flix)
+      case Command.Test => bootstrap.test(flix)
+      case Command.Unknown(s) => execUnknown(s)
+    }
   }
 
   /**
