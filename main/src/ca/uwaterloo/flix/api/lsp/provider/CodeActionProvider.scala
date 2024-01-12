@@ -325,10 +325,13 @@ object CodeActionProvider {
     * Uses Levenshtein Distance to find closed spellings.
     */
   private def mkFixMisspelling(qn: Name.QName, loc: SourceLocation, env: Map[String, Symbol.VarSym], uri: String): List[CodeAction] = {
-    if (qn.ident.name.length > 3) {
-      val possibleNames = env.toList.map(_._1).filter(n => (n.length - qn.ident.name.length).abs < 3)
-      possibleNames.filter(n => Similarity.levenshtein(qn.ident.name, n) < 3).map(mkCorrectSpelling(_, loc, uri))
-    } else
+    val minLength = 3
+    val maxDistance = 3
+    val possibleNames: List[String] = env.toList.map(_._1).filter(n => (n.length - qn.ident.name.length).abs < maxDistance)
+                                                          .filter(n => Similarity.levenshtein(n, qn.ident.name) < maxDistance)
+    if (qn.ident.name.length > minLength)
+      possibleNames.map(n => mkCorrectSpelling(n, loc, uri))
+    else
       Nil
   }
 
@@ -336,14 +339,14 @@ object CodeActionProvider {
     * Internal helper function for `mkFixMisspelling`.
     * Returns a quickfix code action for a possibly correct name.
     */
-  private def mkCorrectSpelling(correct_name: String, loc: SourceLocation, uri: String): CodeAction =
+  private def mkCorrectSpelling(correctName: String, loc: SourceLocation, uri: String): CodeAction =
     CodeAction(
-      title = s"Spelling fix: do you mean `$correct_name`?",
+      title = s"Did you mean: `$correctName`?",
       kind = CodeActionKind.QuickFix,
       edit = Some(WorkspaceEdit(
         Map(uri -> List(TextEdit(
           Range(Position.fromBegin(loc), Position.fromEnd(loc)),
-          correct_name
+          correctName
         )))
       )),
       command = None
