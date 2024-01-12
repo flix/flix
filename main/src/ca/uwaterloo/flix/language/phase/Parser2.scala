@@ -86,7 +86,17 @@ object Parser2 {
       }
 
       val filesThatAreKnownToWork = List(
+        "List.flix",
+        "Nel.flix",
         "Float64.flix",
+        "BigInt.flix",
+        "Fixpoint/IndexSelection.flix",
+        "Fixpoint/Simplifier.flix",
+        "Fixpoint/Interpreter.flix",
+        "Fixpoint/Simplifier.flix",
+        "Fixpoint/Compiler.flix",
+        "Fixpoint/Ram/RelOp.flix",
+        "Traversable.flix",
         "Channel.flix",
         "Fixpoint/Ast/BodyPredicate.flix",
         "Bool.flix",
@@ -1070,7 +1080,7 @@ object Parser2 {
     // Note that [[OpKind]] is necessary for the cases where the same token kind can be both unary and binary. IE. Plus or Minus
     private def PRECEDENCE: List[(OpKind, List[TokenKind])] = List(
       (OpKind.Binary, List(TokenKind.ColonEqual)), // :=
-      (OpKind.Binary, List(TokenKind.ColonColon)), // :: // TODO: :::
+      (OpKind.Binary, List(TokenKind.ColonColon, TokenKind.TripleColon)), // ::, :::
       (OpKind.Binary, List(TokenKind.KeywordOr)),
       (OpKind.Binary, List(TokenKind.KeywordAnd)),
       (OpKind.Binary, List(TokenKind.TripleBar)), // |||
@@ -1091,7 +1101,7 @@ object Parser2 {
     )
 
     // These operators are right associative, meaning for instance that "x :: y :: z" becomes "x :: (y :: z)" rather than "(x :: y) :: z"
-    private val rightAssoc: List[TokenKind] = List(TokenKind.ColonColon) // FCons
+    private val rightAssoc: List[TokenKind] = List(TokenKind.ColonColon, TokenKind.TripleColon) // FCons, FAppend
 
     private def rightBindsTighter(left: TokenKind, right: TokenKind, leftIsUnary: Boolean): Boolean = {
       def tightness(kind: TokenKind, opKind: OpKind = OpKind.Binary): Int = {

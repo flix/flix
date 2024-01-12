@@ -1205,6 +1205,7 @@ object Weeder2 {
             // SPECIAL
             case ":=" => Expr.Assign(e1, e2, tree.loc)
             case "::" => Expr.FCons(e1, e2, tree.loc)
+            case ":::" => Expr.FAppend(e1, e2, tree.loc)
             // UNRECOGNIZED
             case id =>
               val ident = Name.Ident(tree.loc.sp1, id, tree.loc.sp2)

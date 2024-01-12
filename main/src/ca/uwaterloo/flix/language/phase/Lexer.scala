@@ -346,14 +346,11 @@ object Lexer {
       case _ if isKeyword("///") => acceptDocComment()
       case _ if isKeyword("/*") => acceptBlockComment()
       case '/' => if (peek() == '/') acceptLineComment() else TokenKind.Slash
-      case ':' => if (peek() == ':') {
-        advance()
-        TokenKind.ColonColon
-      } else if (peek() == '=') {
-        advance()
-        TokenKind.ColonEqual
-      } else {
-        TokenKind.Colon
+      case ':' =>  (peek(), peekPeek()) match {
+        case (':', Some(':')) => advance(); advance(); TokenKind.TripleColon
+        case (':', _) => advance(); TokenKind.ColonColon
+        case ('=', _) => advance(); TokenKind.ColonEqual
+        case (_, _) => TokenKind.Colon
       }
       case '@' => if (peek().isLetter) {
         acceptAnnotation()
