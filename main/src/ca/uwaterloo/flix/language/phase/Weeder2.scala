@@ -646,6 +646,7 @@ object Weeder2 {
         case TreeKind.Expr.LetRecDef => visitLetRecDef(tree)
         case TreeKind.Expr.Ascribe => visitAscribe(tree)
         case TreeKind.Expr.Match => visitMatch(tree)
+        case TreeKind.Expr.ParYield => visitParYield(tree)
         case TreeKind.Expr.TypeMatch => visitTypeMatch(tree)
         case TreeKind.Expr.CheckedTypeCast => visitCheckedTypeCast(tree)
         case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCast(tree)
@@ -674,6 +675,25 @@ object Weeder2 {
         case TreeKind.QName => visitExprQname(tree)
         case kind => failWith(s"TODO: implement expression of kind '$kind'", tree.loc)
       }
+    }
+
+    private def visitParYield(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.ParYield)
+      val fragments = pickAll(TreeKind.Expr.ParYieldFragment, tree.children)
+      mapN(
+        traverse(fragments)(visitParYieldFragment),
+        pickExpression(tree)
+      )((fragments, expr) => {
+        Expr.ParYield(fragments, expr, tree.loc)
+      })
+    }
+
+    private def visitParYieldFragment(tree: Tree)(implicit s: State): Validation[ParYieldFragment, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.ParYieldFragment)
+      mapN(
+        Patterns.pickPattern(tree),
+        pickExpression(tree)
+      )((pat, expr) => ParYieldFragment(pat, expr, tree.loc))
     }
 
     private def forFragmentLoc(frag: ForFragment): SourceLocation = frag match {

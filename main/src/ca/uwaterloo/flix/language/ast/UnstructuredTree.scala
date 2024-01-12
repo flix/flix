@@ -253,6 +253,10 @@ object UnstructuredTree {
 
       case object Ref extends Expr
 
+      case object ParYield extends Expr
+
+      case object ParYieldFragment extends Expr
+
       case object Spawn extends Expr
 
       case object ScopeName extends Expr

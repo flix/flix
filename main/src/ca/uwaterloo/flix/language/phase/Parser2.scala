@@ -86,6 +86,8 @@ object Parser2 {
       }
 
       val filesThatAreKnownToWork = List(
+        "RedBlackTree.flix",
+        "DelayMap.flix",
         "List.flix",
         "Nel.flix",
         "Float64.flix",
@@ -534,51 +536,47 @@ object Parser2 {
     }
   }
 
-  private def commaSeparated(kind: TreeKind, getItem: () => Mark.Closed, delimiters: (TokenKind, TokenKind) = (TokenKind.ParenL, TokenKind.ParenR), checkForItem: () => Boolean = () => true)(implicit s: State): Mark.Closed = {
-    assert(at(delimiters._1))
-    val mark = open()
-    commaSeparatedFlat(getItem, delimiters, checkForItem)
-    close(mark, kind)
+  private class Separated(
+                           val getItem: () => Mark.Closed,
+                           val checkForItem: () => Boolean,
+                           var separator: TokenKind,
+                           var leftDelim: TokenKind,
+                           var rightDelim: TokenKind
+                         ) {
+    def within(left: TokenKind, right: TokenKind): Separated = {
+      this.leftDelim = left
+      this.rightDelim = right
+      this
+    }
+
+    def by(separator: TokenKind): Separated = {
+      this.separator = separator
+      this
+    }
+
+    def zeroOrMore()(implicit s: State): Unit = {
+      assert(at(leftDelim))
+      expect(leftDelim)
+      var continue = true
+      while (continue && !at(rightDelim) && !eof()) {
+        if (checkForItem()) {
+          getItem()
+          if (!at(rightDelim)) {
+            expect(separator)
+          }
+        } else {
+          continue = false
+        }
+      }
+      if (at(separator)) {
+        advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Trailing $separator"))
+      }
+      expect(rightDelim)
+    }
   }
 
-  private def commaSeparatedFlat(getItem: () => Mark.Closed, delimiters: (TokenKind, TokenKind) = (TokenKind.ParenL, TokenKind.ParenR), checkForItem: () => Boolean = () => true)(implicit s: State): Unit = {
-    assert(at(delimiters._1))
-    expect(delimiters._1)
-    var continue = true
-    while (continue && !at(delimiters._2) && !eof()) {
-      if (checkForItem()) {
-        getItem()
-      } else {
-        continue = false
-      }
-    }
-
-    if (at(TokenKind.Comma)) {
-      advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "Trailing comma."))
-    }
-
-    expect(delimiters._2)
-  }
-
-  private def asArgument(kind: TreeKind, rule: () => Mark.Closed, delimiter: TokenKind = TokenKind.ParenR)(implicit s: State): () => Mark.Closed = {
-    () => {
-      val mark = open()
-      rule()
-      if (!at(delimiter)) {
-        expect(TokenKind.Comma)
-      }
-      close(mark, kind)
-    }
-  }
-
-  private def asArgumentFlat(rule: () => Mark.Closed, delimiter: TokenKind = TokenKind.ParenR)(implicit s: State): () => Mark.Closed = {
-    () => {
-      val closed = rule()
-      if (!at(delimiter)) {
-        expect(TokenKind.Comma)
-      }
-      closed
-    }
+  private def separated(getItem: () => Mark.Closed, checkForItem: () => Boolean = () => true): Separated = {
+    new Separated(getItem, checkForItem, TokenKind.Comma, TokenKind.ParenL, TokenKind.ParenR)
   }
 
   // TODO: std. lib. defines functions named with keywords (IE. def mod(): Int32 = ...). These also pop up in expressions, because they are now passed around and called.
@@ -657,12 +655,11 @@ object Parser2 {
 
     // handle use many case
     if (at(TokenKind.DotCurlyL)) {
-      commaSeparated(
-        TreeKind.UsesOrImports.UseMany,
-        asArgumentFlat(() => aliasedName(NAME_USE), TokenKind.CurlyR),
-        (TokenKind.DotCurlyL, TokenKind.CurlyR),
-        () => atAny(NAME_USE)
-      )
+      val mark = open()
+      separated(() => aliasedName(NAME_USE), checkForItem = () => atAny(NAME_USE))
+        .within(TokenKind.DotCurlyL, TokenKind.CurlyR)
+        .zeroOrMore()
+      close(mark, TreeKind.UsesOrImports.UseMany)
     }
 
     close(mark, TreeKind.UsesOrImports.Use)
@@ -676,11 +673,10 @@ object Parser2 {
 
     // handle import many case
     if (at(TokenKind.DotCurlyL)) {
-      commaSeparated(
-        TreeKind.UsesOrImports.ImportMany,
-        asArgumentFlat(() => aliasedName(NAME_JAVA), TokenKind.CurlyR),
-        (TokenKind.DotCurlyL, TokenKind.CurlyR)
-      )
+      val mark = open()
+      separated(() => aliasedName(NAME_JAVA))
+        .within(TokenKind.DotCurlyL, TokenKind.CurlyR)
+      close(mark, TreeKind.UsesOrImports.ImportMany)
     }
 
     close(mark, TreeKind.UsesOrImports.Import)
@@ -990,16 +986,17 @@ object Parser2 {
      * parameters -> '(' (parameter (',' parameter)* )? ')'
      */
     def parameters()(implicit s: State): Mark.Closed = {
-      commaSeparated(
-        TreeKind.Parameters,
-        asArgument(TreeKind.Parameter, () => {
-          name(NAME_PARAMETER)
-          expect(TokenKind.Colon)
-          Type.ttype()
-        }),
-        (TokenKind.ParenL, TokenKind.ParenR),
-        () => atAny(NAME_PARAMETER),
-      )
+      val mark = open()
+      separated(parameter, checkForItem = () => atAny(NAME_PARAMETER)).zeroOrMore()
+      close(mark, TreeKind.Parameters)
+    }
+
+    def parameter()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_PARAMETER)
+      expect(TokenKind.Colon)
+      Type.ttype()
+      close(mark, TreeKind.Parameter)
     }
   }
 
@@ -1125,19 +1122,20 @@ object Parser2 {
      * arguments -> '(' (argument (',' argument)* )? ')'
      */
     private def arguments()(implicit s: State): Mark.Closed = {
-      commaSeparated(
-        TreeKind.Arguments,
-        asArgumentFlat(() => {
-          val mark = open()
-          expression()
-          if (eat(TokenKind.Equal)) {
-            expression()
-            close(mark, TreeKind.ArgumentNamed)
-          } else {
-            close(mark, TreeKind.Argument)
-          }
-        }),
-      )
+      val mark = open()
+      separated(argument).zeroOrMore()
+      close(mark, TreeKind.Arguments)
+    }
+
+    private def argument()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      expression()
+      if (eat(TokenKind.Equal)) {
+        expression()
+        close(mark, TreeKind.ArgumentNamed)
+      } else {
+        close(mark, TreeKind.Argument)
+      }
     }
 
     private def exprDelimited()(implicit s: State): Mark.Closed = {
@@ -1155,6 +1153,7 @@ object Parser2 {
         case TokenKind.KeywordRegion => region()
         case TokenKind.KeywordLet => letMatch()
         case TokenKind.KeywordSpawn => spawn()
+        case TokenKind.KeywordPar => parYield()
         case TokenKind.LiteralStringInterpolationL => interpolatedString()
         case TokenKind.KeywordTypeMatch => typematch()
         case TokenKind.KeywordMatch => matchOrMatchLambda()
@@ -1210,6 +1209,25 @@ object Parser2 {
         case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected expression, found $t"))
       }
       close(mark, TreeKind.Expr.Expr)
+    }
+
+    private def parYield()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordPar))
+      val mark = open()
+      expect(TokenKind.KeywordPar)
+      separated(parYieldFragment)
+        .by(TokenKind.Semi)
+        .zeroOrMore()
+      expect(TokenKind.KeywordYield)
+      expression()
+      close(mark, TreeKind.Expr.ParYield)
+    }
+    private def parYieldFragment()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      Pattern.pattern()
+      expect(TokenKind.BackArrowThin)
+      expression()
+      close(mark, TreeKind.Expr.ParYieldFragment)
     }
 
     private def spawn()(implicit s: State): Mark.Closed = {
@@ -1389,10 +1407,9 @@ object Parser2 {
       assert(at(TokenKind.ListHash))
       val mark = open()
       expect(TokenKind.ListHash)
-      commaSeparatedFlat(
-        asArgumentFlat(() => expression(), TokenKind.CurlyR),
-        (TokenKind.CurlyL, TokenKind.CurlyR)
-      )
+      separated(() => expression())
+        .within(TokenKind.CurlyL, TokenKind.CurlyR)
+        .zeroOrMore()
       close(mark, TreeKind.Expr.LiteralList)
     }
 
@@ -1407,10 +1424,9 @@ object Parser2 {
       assert(at(TokenKind.SetHash))
       val mark = open()
       expect(TokenKind.SetHash)
-      commaSeparatedFlat(
-        asArgumentFlat(() => expression(), TokenKind.CurlyR),
-        (TokenKind.CurlyL, TokenKind.CurlyR)
-      )
+      separated(() => expression())
+        .within(TokenKind.CurlyL, TokenKind.CurlyR)
+        .zeroOrMore()
       close(mark, TreeKind.Expr.LiteralSet)
     }
 
@@ -1418,10 +1434,9 @@ object Parser2 {
       assert(at(TokenKind.VectorHash))
       val mark = open()
       expect(TokenKind.VectorHash)
-      commaSeparatedFlat(
-        asArgumentFlat(() => expression(), TokenKind.CurlyR),
-        (TokenKind.CurlyL, TokenKind.CurlyR)
-      )
+      separated(() => expression())
+        .within(TokenKind.CurlyL, TokenKind.CurlyR)
+        .zeroOrMore()
       close(mark, TreeKind.Expr.LiteralVector)
     }
 
@@ -1429,10 +1444,9 @@ object Parser2 {
       assert(at(TokenKind.ArrayHash))
       val mark = open()
       expect(TokenKind.ArrayHash)
-      commaSeparatedFlat(
-        asArgumentFlat(() => expression(), TokenKind.CurlyR),
-        (TokenKind.CurlyL, TokenKind.CurlyR)
-      )
+      separated(() => expression())
+        .within(TokenKind.CurlyL, TokenKind.CurlyR)
+        .zeroOrMore()
       if (at(TokenKind.At)) {
         scopeName()
       }
@@ -1443,18 +1457,19 @@ object Parser2 {
       assert(at(TokenKind.MapHash))
       val mark = open()
       expect(TokenKind.MapHash)
-      commaSeparatedFlat(
-        asArgumentFlat(() => {
-          val mark = open()
-          expression()
-          if (eat(TokenKind.Arrow)) {
-            expression()
-          }
-          close(mark, TreeKind.Expr.KeyValue)
-        }, TokenKind.CurlyR),
-        (TokenKind.CurlyL, TokenKind.CurlyR)
-      )
+      separated(mapLiteralValue)
+        .within(TokenKind.CurlyL, TokenKind.CurlyR)
+        .zeroOrMore()
       close(mark, TreeKind.Expr.LiteralMap)
+    }
+
+    private def mapLiteralValue()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      expression()
+      if (eat(TokenKind.Arrow)) {
+        expression()
+      }
+      close(mark, TreeKind.Expr.KeyValue)
     }
 
     private def matchOrMatchLambda()(implicit s: State): Mark.Closed = {
@@ -1555,16 +1570,17 @@ object Parser2 {
       Decl.annotations()
       expect(TokenKind.KeywordDef)
       name(NAME_DEFINITION)
-
-      commaSeparated(
-        TreeKind.Parameters,
-        asArgument(TreeKind.Parameter, () => {
-          val lhs = name(NAME_PARAMETER)
-          if (eat(TokenKind.Colon)) Type.ttype() else lhs
-        }),
-        (TokenKind.ParenL, TokenKind.ParenR),
-        () => atAny(NAME_PARAMETER),
-      )
+      val markParams = open()
+      separated(() => {
+        val mark = open()
+        name(NAME_PARAMETER)
+        if (eat(TokenKind.Colon)) {
+          Type.ttype()
+        }
+        close(mark, TreeKind.Parameter)
+      }, checkForItem = () => atAny(NAME_PARAMETER))
+        .zeroOrMore()
+      close(markParams, TreeKind.Parameters)
 
       if (eat(TokenKind.Colon)) {
         Type.typeAndEffect()
@@ -1764,15 +1780,18 @@ object Parser2 {
 
     private def lambda()(implicit s: State): Mark.Closed = {
       val mark = open()
-      commaSeparated(
-        TreeKind.Parameters,
-        asArgument(TreeKind.Parameter, () => {
-          val lhs = name(NAME_PARAMETER)
-          if (eat(TokenKind.Colon)) Type.ttype() else lhs
-        }),
-        (TokenKind.ParenL, TokenKind.ParenR),
-        () => atAny(NAME_PARAMETER),
-      )
+      val markParams = open()
+      separated(() => {
+        val mark = open()
+        name(NAME_PARAMETER)
+        if (eat(TokenKind.Colon)) {
+          Type.ttype()
+        }
+        close(mark, TreeKind.Parameter)
+      }, checkForItem = () => atAny(NAME_PARAMETER))
+        .zeroOrMore()
+
+      close(markParams, TreeKind.Parameters)
       expect(TokenKind.ArrowThin)
       expression()
       close(mark, TreeKind.Expr.Lambda)
@@ -1916,7 +1935,9 @@ object Parser2 {
 
     private def tuple()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.ParenL))
-      commaSeparated(TreeKind.Pattern.Tuple, asArgumentFlat(pattern))
+      val mark = open()
+      separated(pattern).zeroOrMore()
+      close(mark, TreeKind.Pattern.Tuple)
     }
 
     private def record()(implicit s: State): Mark.Closed = {
@@ -2035,32 +2056,38 @@ object Parser2 {
      * arguments -> '[' ( argument ( ',' argument )* ) ']'?
      */
     def arguments()(implicit s: State): Mark.Closed = {
-      commaSeparated(
-        TreeKind.Type.Arguments,
-        asArgument(TreeKind.Type.Argument, () => ttype(), TokenKind.BracketR),
-        (TokenKind.BracketL, TokenKind.BracketR),
-      )
+      val mark = open()
+      separated(argument)
+        .within(TokenKind.BracketL, TokenKind.BracketR)
+        .zeroOrMore()
+      close(mark, TreeKind.Type.Arguments)
+    }
+
+    def argument()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      ttype()
+      close(mark, TreeKind.Type.Argument)
     }
 
     /**
      * parameters -> '[' (typeParameter (',' typeParameter)* )? ']'
      */
     def parameters()(implicit s: State): Mark.Closed = {
-      commaSeparated(
-        TreeKind.TypeParameters,
-        asArgument(
-          TreeKind.Parameter, () => {
-            var closed = name(NAME_VARIABLE ++ NAME_TYPE)
-            if (at(TokenKind.Colon)) {
-              expect(TokenKind.Colon)
-              closed = Type.kind()
-            }
-            closed
-          },
-          TokenKind.BracketR),
-        (TokenKind.BracketL, TokenKind.BracketR),
-        () => atAny(NAME_VARIABLE ++ NAME_TYPE),
-      )
+      val mark = open()
+      separated(parameter, () => atAny(NAME_VARIABLE ++ NAME_TYPE))
+        .within(TokenKind.BracketL, TokenKind.BracketR)
+        .zeroOrMore()
+      close(mark, TreeKind.TypeParameters)
+    }
+
+    def parameter()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_VARIABLE ++ NAME_TYPE)
+      if (at(TokenKind.Colon)) {
+        expect(TokenKind.Colon)
+        Type.kind()
+      }
+      close(mark, TreeKind.Parameter)
     }
 
     def constraints()(implicit s: State): Mark.Closed = {
@@ -2178,7 +2205,9 @@ object Parser2 {
      * tuple -> '(' (type (',' type)* )? ')'
      */
     def tuple()(implicit s: State): Mark.Closed = {
-      commaSeparated(TreeKind.Type.Tuple, asArgumentFlat(() => ttype()))
+      val mark = open()
+      separated(() => ttype()).zeroOrMore()
+      close(mark, TreeKind.Type.Tuple)
     }
 
     /**
@@ -2227,12 +2256,13 @@ object Parser2 {
     private def effectSet()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.Backslash))
       expect(TokenKind.Backslash)
+
       if (at(TokenKind.CurlyL)) {
-        commaSeparated(
-          TreeKind.Type.EffectSet,
-          asArgumentFlat(effect, TokenKind.CurlyR),
-          (TokenKind.CurlyL, TokenKind.CurlyR),
-        )
+        val mark = open()
+        separated(effect)
+          .within(TokenKind.CurlyL, TokenKind.CurlyR)
+          .zeroOrMore()
+        close(mark, TreeKind.Type.EffectSet)
       } else {
         val mark = open()
         effect()
@@ -2270,7 +2300,9 @@ object Parser2 {
   private object JvmOp {
     private def signature()(implicit s: State): Unit = {
       if (at(TokenKind.ParenL)) {
-        commaSeparated(TreeKind.JvmOp.Signature, asArgumentFlat(() => Type.ttype()))
+        val mark = open()
+        separated(() => Type.ttype()).zeroOrMore()
+        close(mark, TreeKind.JvmOp.Signature)
       }
     }
 
