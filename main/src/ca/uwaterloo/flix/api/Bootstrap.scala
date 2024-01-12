@@ -334,10 +334,10 @@ object Bootstrap {
     val bootstrap = new Bootstrap(path, apiKey)
     val tomlPath = getManifestFile(path)
     if (Files.exists(tomlPath)) {
-      out.println("Found `flix.toml`. Checking dependencies...")
+      out.println(s"Found `${formatter.blue("flix.toml")}`. Checking dependencies...")
       Validation.mapN(bootstrap.projectMode())(_ => bootstrap)
     } else {
-      out.println(s"""No `flix.toml`. Will load source files from `${formatter.blue("*.flix")}`, `${formatter.blue("src/**")}`, and `${formatter.blue("test/**")}`.""")
+      out.println(s"""No `${formatter.blue("flix.toml")}`. Will load source files from `${formatter.blue("*.flix")}`, `${formatter.blue("src/**")}`, and `${formatter.blue("test/**")}`.""")
       Validation.mapN(bootstrap.folderMode())(_ => bootstrap)
     }
   }
@@ -544,7 +544,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Check that there is a `flix.toml` file.
     if (!Files.exists(getManifestFile(projectPath))) {
-      return Validation.toHardFailure(BootstrapError.FileError("Cannot create a Flix package without a `flix.toml` file."))
+      return Validation.toHardFailure(BootstrapError.FileError(s"Cannot create a Flix package without a `${formatter.red("flix.toml")}` file."))
     }
 
     // Create the artifact directory, if it does not exist.
