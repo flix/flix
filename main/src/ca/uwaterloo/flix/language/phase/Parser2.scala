@@ -1142,7 +1142,7 @@ object Parser2 {
       val mark = open()
       // Handle clearly delimited expressions
       nth(0) match {
-        // TODO: par, spawn, select, debug strings, do, resume, open, open_as, choose, restrictable choose,
+        // TODO: select, debug strings, do, resume, open, open_as, choose, restrictable choose, query, inject, project
         // TODO: newobject, JvmMethod, instanceof, without, recordlit, recordop
         case TokenKind.ParenL => parenOrTupleOrLambda()
         case TokenKind.CurlyL => block()
@@ -2194,7 +2194,11 @@ object Parser2 {
       var continue = true
       while (continue && !eof()) {
         nth(0) match {
-          case TokenKind.NameJava | TokenKind.NameUpperCase | TokenKind.NameLowerCase | TokenKind.Dot => advance()
+          case TokenKind.NameJava
+               | TokenKind.NameUpperCase
+               | TokenKind.NameLowerCase
+               | TokenKind.Dot
+               | TokenKind.Dollar => advance()
           case _ => continue = false
         }
       }

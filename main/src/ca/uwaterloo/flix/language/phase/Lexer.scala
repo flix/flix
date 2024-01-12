@@ -601,7 +601,7 @@ object Lexer {
       if (p == '?') {
         advance()
         return TokenKind.HoleVariable
-      } else if (!p.isLetter && !p.isDigit && p != '_' && p != '!') {
+      } else if (!p.isLetter && !p.isDigit && p != '_' && p != '!' && p != '$') {
         return kind
       }
       advance()
