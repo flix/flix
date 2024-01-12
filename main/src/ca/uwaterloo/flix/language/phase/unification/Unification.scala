@@ -525,7 +525,7 @@ object Unification {
         case _ => t
       }
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(visit(tpe1), visit(tpe2), loc)
-      case Type.Alias(cst, args, tpe, loc) => Type.Alias(cst, args.map(visit), visit(tpe), loc)
+      case Type.Alias(cst, _, tpe, _) => visit(tpe)
       case Type.AssocType(cst, arg, kind, loc) => Type.AssocType(cst, visit(arg), kind, loc)
     }
 
