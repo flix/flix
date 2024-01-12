@@ -923,7 +923,6 @@ object TypeInference {
       case KindedAst.Expr.TryWith(exp, effUse, rules, tvar, loc) =>
         val effect = root.effects(effUse.sym)
         val ops = effect.ops.map(op => op.sym -> op).toMap
-        val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
         val continuationEffect = Type.freshVar(Kind.Eff, loc)
 
         def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam]): InferMonad[Unit] = {
@@ -966,8 +965,7 @@ object TypeInference {
 
         for {
           (tconstrs, tpe, bodyEff) <- visitExp(exp)
-          _ <- expectTypeM(expected = effType, actual = bodyEff, exp.loc) // TODO temp simplification
-          correctedBodyEff = Type.Pure // Type.mkDifference(bodyEff, effType, loc) // TODO temp simplification
+          correctedBodyEff <- purifyEff(effUse.sym, bodyEff) // Note: Does not work for polymorphic effects.
           (tconstrss, _, effs) <- traverseM(rules)(visitHandlerRule(_, tpe)).map(_.unzip3)
           _ <- unifyTypeM(continuationEffect, Type.mkUnion(correctedBodyEff :: effs, loc), loc)
           resultTconstrs = (tconstrs :: tconstrss).flatten
