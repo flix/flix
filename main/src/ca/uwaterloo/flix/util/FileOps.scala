@@ -24,6 +24,17 @@ import java.nio.file.{Files, LinkOption, Path}
 object FileOps {
 
   /**
+    * Reads the first line of the file at the given path `p` if it is possible.
+    */
+  def readLine(p: Path): Option[String] = {
+    try {
+      Some(Files.lines(p).findFirst().get())
+    } catch {
+      case _: Throwable => None
+    }
+  }
+
+  /**
    * Writes the given string `s` to the given file path `p`.
    *
    * Creates the parent directory of `p` if needed.

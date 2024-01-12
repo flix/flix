@@ -38,6 +38,8 @@ object Main {
     */
   def main(argv: Array[String]): Unit = {
 
+    val cwd = Paths.get(".").toAbsolutePath.normalize()
+
     // parse command line options.
     val cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {
       Console.err.println("Unable to parse command line arguments. Will now exit.")
@@ -69,9 +71,10 @@ object Main {
       case Some(s) => Some(Symbol.mkDefnSym(s))
     }
 
-    // Get GitHub token
+    // get GitHub token
     val githubToken =
       cmdOpts.githubToken
+        .orElse(FileOps.readLine(cwd.resolve("./.GITHUB_TOKEN")))
         .orElse(sys.env.get("GITHUB_TOKEN"))
 
     // construct flix options.
@@ -113,8 +116,6 @@ object Main {
     if (System.console() == null) {
       options = options.copy(progress = false)
     }
-
-    val cwd = Paths.get(".").toAbsolutePath.normalize()
 
     // check if command was passed.
     try {
