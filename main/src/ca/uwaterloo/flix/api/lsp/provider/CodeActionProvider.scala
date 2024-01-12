@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.errors.{RedundancyError, ResolutionError, TypeError}
+import ca.uwaterloo.flix.util.Similarity
 
 object CodeActionProvider {
 
@@ -33,9 +34,9 @@ object CodeActionProvider {
     * Returns code actions based on the current errors.
     */
   private def getActionsFromErrors(uri: String, range: Range, currentErrors: List[CompilationMessage])(implicit index: Index, root: Root, flix: Flix): List[CodeAction] = currentErrors.flatMap {
-    case ResolutionError.UndefinedName(qn, _, _, _, loc) if onSameLine(range, loc) =>
+    case ResolutionError.UndefinedName(qn, _, env, _, loc) if onSameLine(range, loc) =>
       if (qn.namespace.isRoot)
-        mkUseDef(qn.ident, uri)
+        mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
       else
         Nil
     case ResolutionError.UndefinedClass(qn, _, loc) if onSameLine(range, loc) =>
@@ -318,6 +319,38 @@ object CodeActionProvider {
     )),
     command = None
   )
+
+  /**
+    * Returns a list of quickfix code action to suggest possibly correct spellings.
+    * Uses Levenshtein Distance to find closed spellings.
+    */
+  private def mkFixMisspelling(qn: Name.QName, loc: SourceLocation, env: Map[String, Symbol.VarSym], uri: String): List[CodeAction] = {
+    val minLength = 3
+    val maxDistance = 3
+    val possibleNames: List[String] = env.toList.map(_._1).filter(n => (n.length - qn.ident.name.length).abs < maxDistance)
+                                                          .filter(n => Similarity.levenshtein(n, qn.ident.name) < maxDistance)
+    if (qn.ident.name.length > minLength)
+      possibleNames.map(n => mkCorrectSpelling(n, loc, uri))
+    else
+      Nil
+  }
+
+  /**
+    * Internal helper function for `mkFixMisspelling`.
+    * Returns a quickfix code action for a possibly correct name.
+    */
+  private def mkCorrectSpelling(correctName: String, loc: SourceLocation, uri: String): CodeAction =
+    CodeAction(
+      title = s"Did you mean: `$correctName`?",
+      kind = CodeActionKind.QuickFix,
+      edit = Some(WorkspaceEdit(
+        Map(uri -> List(TextEdit(
+          Range(Position.fromBegin(loc), Position.fromEnd(loc)),
+          correctName
+        )))
+      )),
+      command = None
+    )
 
   /**
     * Returns a quickfix code action to derive the `Eq` type class for the given type `tpe` if it is an enum.

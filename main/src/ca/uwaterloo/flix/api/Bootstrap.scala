@@ -638,7 +638,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Package the current project and release it on GitHub.
     */
-  def release(flix: Flix): Validation[Unit, BootstrapError] = {
+  def release(flix: Flix)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
     val formatter = flix.getFormatter
 
     // Ensure that we have a manifest
@@ -661,7 +661,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     if (!flix.options.assumeYes) {
       // Ask for confirmation
-      print(s"Release ${formatter.blue(s"github:$githubRepo")} ${formatter.yellow(s"v${manifest.version}")}? [y/N]: ")
+      out.print(s"Release ${formatter.blue(s"github:$githubRepo")} ${formatter.yellow(s"v${manifest.version}")}? [y/N]: ")
       val response = readLine()
       response.toLowerCase match {
         case "y" => // Continue
@@ -671,7 +671,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Build artifacts
-    println("Building project...")
+    out.println("Building project...")
     val buildResult = buildPkg(flix)
     buildResult.toHardResult match {
       case Result.Ok(_) => // Continue
@@ -679,7 +679,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     // Publish to GitHub
-    println("Publishing a new release...")
+    out.println("Publishing a new release...")
     val artifacts = List(getPkgFile(projectPath), getManifestFile(projectPath))
     val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubToken)
     publishResult match {
@@ -687,7 +687,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Err(e) => return Validation.toHardFailure(BootstrapError.ReleaseError(e))
     }
 
-    println(formatter.green(
+    out.println(formatter.green(
       s"""
          |Successfully released v${manifest.version}
          |${formatter.underline(s"https://github.com/${githubRepo.owner}/${githubRepo.repo}/releases/tag/v${manifest.version}")}
