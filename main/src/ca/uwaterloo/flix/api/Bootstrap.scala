@@ -87,6 +87,7 @@ object Bootstrap {
     newFileIfAbsent(gitignoreFile) {
       s"""*.fpkg
          |*.jar
+         |.GITHUB_TOKEN
          |artifact/
          |build/
          |lib/
