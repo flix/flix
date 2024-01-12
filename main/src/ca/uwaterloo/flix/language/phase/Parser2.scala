@@ -86,6 +86,8 @@ object Parser2 {
       }
 
       val filesThatAreKnownToWork = List(
+        "Prelude.flix",
+        "Environment.flix",
         "RedBlackTree.flix",
         "DelayMap.flix",
         "List.flix",
@@ -582,7 +584,7 @@ object Parser2 {
   // TODO: std. lib. defines functions named with keywords (IE. def mod(): Int32 = ...). These also pop up in expressions, because they are now passed around and called.
   // TODO: std. lib. has patterns matching keywords (IE. match query { ... }).
   // TODO: This should eventually be removed once a good solution has been agreed upon.
-  private val KEYWORDS_IN_STDLIB = List(TokenKind.KeywordMod, TokenKind.KeywordChoose, TokenKind.PlusPlus, TokenKind.KeywordOpen, TokenKind.KeywordAnd, TokenKind.KeywordOr, TokenKind.KeywordNot, TokenKind.KeywordFor, TokenKind.KeywordQuery, TokenKind.KeywordNew, TokenKind.KeywordSolve, TokenKind.KeywordProject)
+  private val KEYWORDS_IN_STDLIB = List(TokenKind.KeywordMod, TokenKind.KeywordChoose, TokenKind.PlusPlus, TokenKind.KeywordOpen, TokenKind.KeywordAnd, TokenKind.KeywordOr, TokenKind.KeywordNot, TokenKind.KeywordFor, TokenKind.KeywordQuery, TokenKind.KeywordNew, TokenKind.KeywordSolve, TokenKind.KeywordProject, TokenKind.KeywordDebug)
   private val KEYWORDS_USED_AS_TYPES_IN_STDLIB = List(TokenKind.KeywordStaticUppercase)
 
   private val NAME_DEFINITION = KEYWORDS_IN_STDLIB ++ List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
@@ -708,11 +710,48 @@ object Parser2 {
         case TokenKind.KeywordClass | TokenKind.KeywordTrait => typeClass(mark)
         case TokenKind.KeywordInstance => instance(mark)
         case TokenKind.KeywordType => typeAlias(mark)
+        case TokenKind.KeywordEff => effect(mark)
         case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumeration(mark)
         case _ =>
           advance()
           closeWithError(mark, Parse2Error.DevErr(currentSourceLocation(), s"Expected declaration but found ${nth(0)}"))
       }
+    }
+
+    private def effect(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordEff))
+      expect(TokenKind.KeywordEff)
+      name(NAME_EFFECT)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+
+      if (eat(TokenKind.CurlyL)) {
+        while(!at(TokenKind.CurlyR) && !eof()) {
+          operation()
+        }
+        expect(TokenKind.CurlyR)
+      }
+      close(mark, TreeKind.Decl.Effect)
+    }
+
+    private def operation()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      docComment()
+      annotations()
+      modifiers()
+      expect(TokenKind.KeywordDef)
+      name(NAME_DEFINITION)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      parameters()
+      expect(TokenKind.Colon)
+      Type.typeAndEffect()
+      if (at(TokenKind.KeywordWith)) {
+        Type.constraints()
+      }
+      close(mark, TreeKind.Decl.Operation)
     }
 
     private def typeAlias(mark: Mark.Opened)(implicit s: State): Mark.Closed = {

@@ -189,6 +189,7 @@ object Weeder2 {
       val instances = pickAll(TreeKind.Decl.Instance, tree.children)
       val enums = pickAll(TreeKind.Decl.Enum, tree.children)
       val typeAliases = pickAll(TreeKind.Decl.TypeAlias, tree.children)
+      val effects = pickAll(TreeKind.Decl.Effect, tree.children)
       // TODO: Restrictable enums
       mapN(
         traverse(modules)(visitModule),
@@ -196,10 +197,11 @@ object Weeder2 {
         traverse(classes)(visitTypeClass),
         traverse(instances)(visitInstance),
         traverse(enums)(visitEnum),
-        traverse(typeAliases)(visitTypeAlias)
+        traverse(typeAliases)(visitTypeAlias),
+        traverse(effects)(visitEffect)
       ) {
-        case (modules, definitions, classes, instances, enums, typeAliases) =>
-          val all: List[Declaration] = definitions ++ classes ++ modules ++ enums ++ instances ++ typeAliases
+        case (modules, definitions, classes, instances, enums, typeAliases, effects) =>
+          val all: List[Declaration] = definitions ++ classes ++ modules ++ enums ++ instances ++ typeAliases ++ effects
 
           // TODO: We need to sort these by source position for comparison with old parser. Can be removed for production
           def getLoc(d: Declaration): SourceLocation = d match {
@@ -209,10 +211,11 @@ object Weeder2 {
             case Declaration.Instance(_, _, _, _, _, _, _, _, loc) => loc
             case Declaration.Enum(_, _, _, _, _, _, _, loc) => loc
             case Declaration.TypeAlias(_, _, _, _, _, loc) => loc
+            case Declaration.Effect(_, _, _, _, _, loc) => loc
             case d => throw InternalCompilerException(s"TODO: handle $d", tree.loc)
           }
 
-          all.sortWith((a, b) => getLoc(a) < getLoc(b))
+          all.sortBy(getLoc)
       }
     }
 
@@ -230,6 +233,38 @@ object Weeder2 {
           }
       }
     }
+
+    private def visitEffect(tree: Tree)(implicit s: State): Validation[Declaration.Effect, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Decl.Effect)
+      val ops = pickAll(TreeKind.Decl.Operation, tree.children)
+      mapN(
+        pickDocumentation(tree),
+        pickAnnotations(tree),
+        pickModifiers(tree),
+        pickNameIdent(tree),
+        traverse(ops)(visitOperation)
+      ) {
+        (doc, ann, mods, ident, ops) => Declaration.Effect(doc, ann, mods, ident, ops, tree.loc)
+      }
+    }
+
+    private def visitOperation(tree: Tree)(implicit s: State): Validation[Declaration.Op, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Decl.Operation)
+      mapN(
+        pickDocumentation(tree),
+        pickAnnotations(tree),
+        pickModifiers(tree),
+        pickNameIdent(tree),
+        Types.pickParameters(tree),
+        pickFormalParameters(tree),
+        Types.pickType(tree),
+        Types.pickConstraints(tree)
+      ) {
+        (doc, ann, mods, ident, tparams, fparams, tpe, tconstrs) => Declaration.Op(doc, ann, mods, ident, fparams, tpe, tconstrs, loc = tree.loc)
+      }
+    }
+
+
 
     private def visitTypeAlias(tree: Tree)(implicit s: State): Validation[Declaration.TypeAlias, CompilationMessage] = {
       assert(tree.kind == TreeKind.Decl.TypeAlias)

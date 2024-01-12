@@ -87,6 +87,10 @@ object UnstructuredTree {
 
       case object Def extends Decl
 
+      case object Effect extends Decl
+
+      case object Operation extends Decl
+
       case object Class extends Decl
 
       case object TypeAlias extends Decl
