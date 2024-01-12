@@ -571,14 +571,20 @@ object Parser2 {
     }
   }
 
-  private val NAME_DEFINITION = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator, TokenKind.KeywordMod, TokenKind.KeywordChoose, TokenKind.PlusPlus, TokenKind.KeywordOpen, TokenKind.KeywordAnd, TokenKind.KeywordOr, TokenKind.KeywordNot) // TODO: std. lib. defines functions named mod
+  // TODO: std. lib. defines functions named with keywords (IE. def mod(): Int32 = ...). These also pop up in expressions, because they are now passed around and called.
+  // TODO: std. lib. has patterns matching keywords (IE. match query { ... }).
+  // TODO: This should eventually be removed once a good solution has been agreed upon.
+  private val KEYWORDS_IN_STDLIB = List(TokenKind.KeywordMod, TokenKind.KeywordChoose, TokenKind.PlusPlus, TokenKind.KeywordOpen, TokenKind.KeywordAnd, TokenKind.KeywordOr, TokenKind.KeywordNot, TokenKind.KeywordFor, TokenKind.KeywordQuery, TokenKind.KeywordNew, TokenKind.KeywordSolve, TokenKind.KeywordProject)
+  private val KEYWORDS_USED_AS_TYPES_IN_STDLIB = List(TokenKind.KeywordStaticUppercase)
+
+  private val NAME_DEFINITION = KEYWORDS_IN_STDLIB ++ List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
   private val NAME_PARAMETER = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
-  private val NAME_VARIABLE = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
+  private val NAME_VARIABLE = KEYWORDS_IN_STDLIB ++ List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
   private val NAME_JAVA = List(TokenKind.NameJava, TokenKind.NameLowerCase, TokenKind.NameUpperCase)
   private val NAME_QNAME = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
   private val NAME_USE = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
   private val NAME_FIELD = List(TokenKind.NameLowerCase)
-  private val NAME_TYPE = List(TokenKind.NameUpperCase)
+  private val NAME_TYPE = KEYWORDS_USED_AS_TYPES_IN_STDLIB ++ List(TokenKind.NameUpperCase)
   private val NAME_KIND = List(TokenKind.NameUpperCase)
   private val NAME_EFFECT = List(TokenKind.NameUpperCase)
   private val NAME_MODULE = List(TokenKind.NameUpperCase)
@@ -683,7 +689,7 @@ object Parser2 {
     def declaration()(implicit s: State): Mark.Closed = {
       val mark = open()
       // TODO: Find better way to handle "DocComment LineComment DocComment"
-      while(at(TokenKind.CommentDoc) && !eof()) {
+      while (at(TokenKind.CommentDoc) && !eof()) {
         docComment()
       }
       if (at(TokenKind.KeywordMod)) {
@@ -1176,6 +1182,11 @@ object Parser2 {
              | TokenKind.NameUpperCase
              | TokenKind.NameMath
              | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThin) unaryLambda() else name(NAME_DEFINITION, allowQualified = true)
+        // TODO: std. lib. uses keywords as variable names. Only match the specific cases known here as matching all KEYWORDS_IN_STDLIB causes issues.
+        case TokenKind.KeywordQuery
+             | TokenKind.KeywordNew
+             | TokenKind.KeywordProject
+        => name(NAME_DEFINITION ++ List(TokenKind.KeywordNew, TokenKind.KeywordQuery, TokenKind.KeywordProject), allowQualified = true)
         case TokenKind.Minus
              | TokenKind.KeywordNot
              | TokenKind.Plus
@@ -1210,7 +1221,9 @@ object Parser2 {
       if (at(TokenKind.ParenL)) {
         forFragments()
       }
-      if (eat(TokenKind.KeywordYield)) { kind = TreeKind.Expr.ForeachYield }
+      if (eat(TokenKind.KeywordYield)) {
+        kind = TreeKind.Expr.ForeachYield
+      }
       expression()
       close(mark, kind)
     }
@@ -1220,7 +1233,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordForA)
       if (eat(TokenKind.ParenL)) {
-        while(!at(TokenKind.ParenR) && !eof()) {
+        while (!at(TokenKind.ParenR) && !eof()) {
           generatorFragment()
           expect(TokenKind.Semi)
         }
@@ -1248,7 +1261,7 @@ object Parser2 {
     private def forFragments()(implicit s: State): Unit = {
       assert(at(TokenKind.ParenL))
       expect(TokenKind.ParenL)
-      while(!at(TokenKind.ParenR) && !eof()) {
+      while (!at(TokenKind.ParenR) && !eof()) {
         if (at(TokenKind.KeywordIf)) {
           guardFragment()
         } else {
@@ -1771,13 +1784,23 @@ object Parser2 {
     }
 
     private def unary()(implicit s: State): Mark.Closed = {
-      val mark = open()
-      val op = nth(0)
-      val markOp = open()
-      expectAny(List(TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde, TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDiscard, TokenKind.KeywordDeref))
-      close(markOp, TreeKind.Operator)
-      expression(left = op, leftIsUnary = true)
-      close(mark, TreeKind.Expr.Unary)
+      if (s.src.name == "BigInt.flix" && at(TokenKind.KeywordNot) && nth(1) == TokenKind.ParenL) {
+        // TODO: std. lib uses a call to a function named 'not' in 'BigInt.flix'. That needs special handling here.
+        val markCall = open()
+        val markExprInner = open()
+        name(List(TokenKind.KeywordNot))
+        close(markExprInner, TreeKind.Expr.Expr)
+        arguments()
+        close(markCall, TreeKind.Expr.Call)
+      } else {
+        val mark = open()
+        val op = nth(0)
+        val markOp = open()
+        expectAny(List(TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde, TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDiscard, TokenKind.KeywordDeref))
+        close(markOp, TreeKind.Operator)
+        expression(left = op, leftIsUnary = true)
+        close(mark, TreeKind.Expr.Unary)
+      }
     }
 
     private def letImport()(implicit s: State): Mark.Closed = {
@@ -1825,7 +1848,14 @@ object Parser2 {
         case TokenKind.NameLowerCase
              | TokenKind.NameGreek
              | TokenKind.NameMath
-             | TokenKind.Underscore => variable()
+             | TokenKind.Underscore
+             | TokenKind.KeywordQuery => variable()
+        // TODO: std.lib uses keywords as variable names.
+        case t if KEYWORDS_IN_STDLIB.contains(t) =>
+          val mark = open()
+          name(KEYWORDS_IN_STDLIB)
+          close(mark, TreeKind.Pattern.Variable)
+
         case TokenKind.LiteralString
              | TokenKind.LiteralChar
              | TokenKind.LiteralFloat32
