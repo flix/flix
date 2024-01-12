@@ -275,8 +275,7 @@ object Weeder2 {
               cases.toSuccess.withSoftFailures(errors)
           }
           mapN(casesVal) {
-            // TODO: Cases do not need to be reversed, this is just for tree matching during development
-            cases => Declaration.Enum(doc, ann, mods, ident, tparams, derivations, cases.reverse, tree.loc)
+            cases => Declaration.Enum(doc, ann, mods, ident, tparams, derivations, cases, tree.loc)
           }
       }
     }
@@ -663,6 +662,7 @@ object Weeder2 {
         case TreeKind.Expr.Lambda => visitLambda(tree)
         case TreeKind.Expr.LambdaMatch => visitLambdaMatch(tree)
         case TreeKind.Expr.Ref => visitReference(tree)
+        case TreeKind.Expr.Spawn => visitSpawn(tree)
         case TreeKind.Expr.Static => visitStatic(tree)
         case TreeKind.Expr.LiteralList => visitLiteralList(tree)
         case TreeKind.Expr.LiteralSet => visitLiteralSet(tree)
@@ -872,6 +872,20 @@ object Weeder2 {
         case (expr1, None) =>
           val err = Parse2Error.DevErr(tree.loc, "Missing scope in ref")
           Validation.SoftFailure(Expr.Ref(expr1, Expr.Error(err), tree.loc), LazyList(err))
+      }
+    }
+
+    private def visitSpawn(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Spawn)
+      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree.children)
+      flatMapN(
+        pickExpression(tree),
+        traverseOpt(scopeName)(visitScopeName)
+      ) {
+        case (expr1, Some(expr2)) => Expr.Spawn(expr1, expr2, tree.loc).toSuccess
+        case (expr1, None) =>
+          val err = Parse2Error.DevErr(tree.loc, "Missing scope in spawn")
+          Validation.SoftFailure(Expr.Spawn(expr1, Expr.Error(err), tree.loc), LazyList(err))
       }
     }
 

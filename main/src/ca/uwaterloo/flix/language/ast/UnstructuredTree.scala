@@ -253,6 +253,8 @@ object UnstructuredTree {
 
       case object Ref extends Expr
 
+      case object Spawn extends Expr
+
       case object ScopeName extends Expr
 
       case object LiteralList extends Expr

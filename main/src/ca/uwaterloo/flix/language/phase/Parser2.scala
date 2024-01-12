@@ -85,17 +85,13 @@ object Parser2 {
         case LibLevel.All => ""
       }
 
-      val filesWhereMatchIsIgnored = List(
-        // Reason: old Parser orders cases in match expression unpredictably.
-        "Fixpoint/Ram/RamTerm.flix",
-        "Fixpoint/Ast/HeadTerm.flix",
-        "Fixpoint/Ram/BoolExp.flix",
-        "Fixpoint/Ram/RamStmt.flix",
-        "Boxed.flix"
-      )
-
       val filesThatAreKnownToWork = List(
         "Float64.flix",
+        "Channel.flix",
+        "Fixpoint/Ast/BodyPredicate.flix",
+        "Bool.flix",
+        "Boxed.flix",
+        "Fixpoint/Ram/BoolExp.flix",
         "DelayList.flix",
         "MutSet.flix",
         "File.flix",
@@ -123,9 +119,6 @@ object Parser2 {
         "Reducible.flix",
         "Char.flix",
         "Comparison.flix",
-        "Fixpoint/Ram/RamTerm.flix",
-        "Fixpoint/Ast/HeadTerm.flix",
-        "Fixpoint/Ram/BoolExp.flix",
         "Monad.flix",
         "Fixpoint/Ast/Polarity.flix",
         "Fixpoint/Stratifier.flix",
@@ -261,8 +254,6 @@ object Parser2 {
                     } else {
                       outString += s"\t${Console.GREEN}✔︎ ${Console.RESET}"
                     }
-                  } else if (filesWhereMatchIsIgnored.contains(src.name)) {
-                    outString += s"\t${Console.MAGENTA}★ ${Console.RESET}"
                   } else {
                     outString += s"\t${Console.YELLOW}!=${Console.RESET}"
                   }
@@ -580,7 +571,7 @@ object Parser2 {
     }
   }
 
-  private val NAME_DEFINITION = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator, TokenKind.KeywordMod, TokenKind.KeywordChoose, TokenKind.PlusPlus, TokenKind.KeywordOpen) // TODO: std. lib. defines functions named mod
+  private val NAME_DEFINITION = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator, TokenKind.KeywordMod, TokenKind.KeywordChoose, TokenKind.PlusPlus, TokenKind.KeywordOpen, TokenKind.KeywordAnd, TokenKind.KeywordOr, TokenKind.KeywordNot) // TODO: std. lib. defines functions named mod
   private val NAME_PARAMETER = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
   private val NAME_VARIABLE = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
   private val NAME_JAVA = List(TokenKind.NameJava, TokenKind.NameLowerCase, TokenKind.NameUpperCase)
@@ -1147,6 +1138,7 @@ object Parser2 {
         case TokenKind.KeywordUse => exprUse()
         case TokenKind.KeywordRegion => region()
         case TokenKind.KeywordLet => letMatch()
+        case TokenKind.KeywordSpawn => spawn()
         case TokenKind.LiteralStringInterpolationL => interpolatedString()
         case TokenKind.KeywordTypeMatch => typematch()
         case TokenKind.KeywordMatch => matchOrMatchLambda()
@@ -1197,6 +1189,17 @@ object Parser2 {
         case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected expression, found $t"))
       }
       close(mark, TreeKind.Expr.Expr)
+    }
+
+    private def spawn()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordSpawn))
+      val mark = open()
+      expect(TokenKind.KeywordSpawn)
+      expression()
+      if (at(TokenKind.At)) {
+        scopeName()
+      }
+      close(mark, TreeKind.Expr.Spawn)
     }
 
     private def foreach()(implicit s: State): Mark.Closed = {

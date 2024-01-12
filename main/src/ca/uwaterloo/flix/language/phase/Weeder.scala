@@ -372,7 +372,8 @@ object Weeder {
 
       mapN(annVal, modVal, tparamsVal, casesVal) {
         case (ann, mod, tparams, cases) =>
-          List(WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives, cases.values.toList, mkSL(sp1, sp2)))
+          val sortedCases = cases.values.toList.sortBy(_.loc)
+          List(WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives, sortedCases, mkSL(sp1, sp2)))
       }
   }
 
