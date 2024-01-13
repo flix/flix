@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.tools._
 import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util._
 
-import java.io.File
+import java.io.{File, PrintStream}
 import java.net.BindException
 import java.nio.file.Paths
 
@@ -119,7 +119,8 @@ object Main {
 
     // check if command was passed.
     try {
-      val formatter = Formatter.getDefault
+      implicit val formatter: Formatter = Formatter.getDefault
+      implicit val out: PrintStream = System.err
 
       cmdOpts.command match {
         case Command.None =>
@@ -131,7 +132,7 @@ object Main {
           }
 
         case Command.Init =>
-          Bootstrap.init(cwd)(System.err).toHardResult match {
+          Bootstrap.init(cwd).toHardResult match {
             case Result.Ok(_) =>
               System.exit(0)
             case Result.Err(errors) =>
@@ -140,7 +141,7 @@ object Main {
           }
 
         case Command.Check =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
@@ -154,7 +155,7 @@ object Main {
           }
 
         case Command.Build =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(loadClassFiles = false))
@@ -168,7 +169,7 @@ object Main {
           }
 
         case Command.BuildJar =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap => bootstrap.buildJar()
           }.toHardResult match {
             case Result.Ok(_) =>
@@ -179,7 +180,7 @@ object Main {
           }
 
         case Command.BuildPkg =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap => bootstrap.buildPkg()
           }.toHardResult match {
             case Result.Ok(_) =>
@@ -190,7 +191,7 @@ object Main {
           }
 
         case Command.Doc =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
@@ -204,7 +205,7 @@ object Main {
           }
 
         case Command.Run =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
@@ -222,7 +223,7 @@ object Main {
           }
 
         case Command.Benchmark =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
@@ -236,7 +237,7 @@ object Main {
           }
 
         case Command.Test =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
@@ -254,7 +255,7 @@ object Main {
             println("The 'repl' command cannot be used with a list of files.")
             System.exit(1)
           }
-          Bootstrap.bootstrap(cwd, options.githubToken)(System.err).toHardResult match {
+          Bootstrap.bootstrap(cwd, options.githubToken).toHardResult match {
             case Result.Ok(bootstrap) =>
               val shell = new Shell(bootstrap, options)
               shell.loop()
@@ -276,7 +277,7 @@ object Main {
           System.exit(0)
 
         case Command.Release =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
