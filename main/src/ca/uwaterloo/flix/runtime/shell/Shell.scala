@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.shell
 
-import ca.uwaterloo.flix.api.{Bootstrap, Flix, Version}
+import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
@@ -151,23 +151,28 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   /**
     * Executes the given command `cmd`.
     */
-  private def execute(cmd: Command)(implicit terminal: Terminal): Unit = cmd match {
-    case Command.Nop => // nop
-    case Command.Reload => execReload()
-    case Command.Info(s) => execInfo(s)
-    case Command.Quit => execQuit()
-    case Command.Help => execHelp()
-    case Command.Praise => execPraise()
-    case Command.Eval(s) => execEval(s)
-    case Command.ReloadAndEval(s) => execReloadAndEval(s)
-    case Command.Init => Bootstrap.init(bootstrap.projectPath)(new PrintStream(terminal.output()))
-    case Command.Build => bootstrap.build(flix)
-    case Command.BuildJar => bootstrap.buildJar()
-    case Command.BuildPkg => bootstrap.buildPkg()
-    case Command.Check => bootstrap.check(flix)
-    case Command.Doc => bootstrap.doc(flix)
-    case Command.Test => bootstrap.test(flix)
-    case Command.Unknown(s) => execUnknown(s)
+  private def execute(cmd: Command)(implicit terminal: Terminal): Unit = {
+    implicit val formatter: Formatter = Formatter.getDefault
+    implicit val out: PrintStream = new PrintStream(terminal.output())
+    cmd match {
+      case Command.Nop => // nop
+      case Command.Reload => execReload()
+      case Command.Info(s) => execInfo(s)
+      case Command.Quit => execQuit()
+      case Command.Help => execHelp()
+      case Command.Praise => execPraise()
+      case Command.Eval(s) => execEval(s)
+      case Command.ReloadAndEval(s) => execReloadAndEval(s)
+      case Command.Init => execBootstrap(Bootstrap.init(bootstrap.projectPath))
+      case Command.Build => execBootstrap(bootstrap.build(flix))
+      case Command.BuildJar => execBootstrap(bootstrap.buildJar())
+      case Command.BuildPkg => execBootstrap(bootstrap.buildPkg())
+      case Command.Release => execBootstrap(bootstrap.release(flix))
+      case Command.Check => execBootstrap(bootstrap.check(flix))
+      case Command.Doc => execBootstrap(bootstrap.doc(flix))
+      case Command.Test => execBootstrap(bootstrap.test(flix))
+      case Command.Unknown(s) => execUnknown(s)
+    }
   }
 
   /**
@@ -224,7 +229,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   /**
     * Exits the shell.
     */
-  private def execQuit()(implicit terminal: Terminal): Unit = {
+  private def execQuit(): Unit = {
     Thread.currentThread().interrupt()
   }
 
@@ -242,6 +247,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     w.println("  :build :b                   Builds (i.e. compiles) the current project.")
     w.println("  :build-jar :jar             Builds a jar-file from the current project.")
     w.println("  :build-pkg :pkg             Builds a fpkg-file from the current project.")
+    w.println("  :release                    Publishes a release of the current project to GitHub.")
     w.println("  :check :c                   Checks the current project for errors.")
     w.println("  :doc :d                     Generates API documentation for the current project.")
     w.println("  :test :t                    Runs the tests for the current project.")
@@ -279,11 +285,11 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         flix.addSourceCode(name, s)
 
         // And try to compile!
-        compile(progress = false) match {
-          case Validation.Success(_) =>
+        compile(progress = false).toHardResult match {
+          case Result.Ok(_) =>
             // Compilation succeeded.
             w.println("Ok.")
-          case _failure =>
+          case Result.Err(_) =>
             // Compilation failed. Ignore the last fragment.
             fragments.pop()
             flix.remSourceCode(name)
@@ -321,6 +327,13 @@ class Shell(bootstrap: Bootstrap, options: Options) {
   }
 
   /**
+    * Executes the given bootstrap function and prints any errors.
+    */
+  private def execBootstrap[T](f: => Validation[T, BootstrapError])(implicit formatter: Formatter, out: PrintStream): Unit = {
+    f.errors.map(_.message(formatter)).foreach(out.println)
+  }
+
+  /**
     * Removes all code fragments, restoring the REPL to an initial state
     */
   private def clearFragments(): Unit = {
@@ -345,16 +358,16 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     flix.setOptions(options.copy(entryPoint = entryPoint, progress = progress))
 
     val checkResult = flix.check().toHardFailure
-    checkResult match {
-      case Validation.Success(root) => this.root = Some(root)
-      case _failure => // no-op
+    checkResult.toHardResult match {
+      case Result.Ok(root) => this.root = Some(root)
+      case Result.Err(_) => // no-op
     }
 
     val result = Validation.flatMapN(checkResult)(flix.codeGen)
-    result match {
-      case Validation.Success(_) => // Compilation successful, no-op
-      case failure =>
-        for (msg <- flix.mkMessages(failure.errors)) {
+    result.toHardResult match {
+      case Result.Ok(_) => // Compilation successful, no-op
+      case Result.Err(errors) =>
+        for (msg <- flix.mkMessages(errors)) {
           terminal.writer().print(msg)
         }
         terminal.writer().println()
@@ -368,8 +381,8 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     */
   private def run(main: Symbol.DefnSym)(implicit terminal: Terminal): Unit = {
     // Recompile the program.
-    compile(entryPoint = Some(main), progress = false) match {
-      case Validation.Success(result) =>
+    compile(entryPoint = Some(main), progress = false).toHardResult match {
+      case Result.Ok(result) =>
         result.getMain match {
           case Some(m) =>
             // Evaluate the main function
@@ -383,7 +396,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
           case None =>
         }
 
-      case _failure =>
+      case Result.Err(_) => ()
     }
   }
 }

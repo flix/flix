@@ -15,14 +15,16 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile}
+import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.language.phase.{HtmlDocumentor, JsonDocumentor}
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager}
+import ca.uwaterloo.flix.tools.pkg.github.GitHub
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.collection.Chain
+import ca.uwaterloo.flix.util.{Result, Validation}
 
 import java.io.{PrintStream, PrintWriter}
 import java.nio.file._
@@ -30,7 +32,9 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipOutputStream}
 import java.util.{Calendar, GregorianCalendar}
 import scala.collection.mutable
+import scala.io.StdIn.readLine
 import scala.util.{Failure, Success, Using}
+
 
 object Bootstrap {
 
@@ -84,6 +88,7 @@ object Bootstrap {
     newFileIfAbsent(gitignoreFile) {
       s"""*.fpkg
          |*.jar
+         |.GITHUB_TOKEN
          |artifact/
          |build/
          |lib/
@@ -320,7 +325,7 @@ object Bootstrap {
     * Creates a new Bootstrap object and initializes it.
     * If a `flix.toml` file exists, parses that to a Manifest and
     * downloads all required files. Otherwise checks the /lib folder
-    * to see what dependencies are already downloadet. Also finds
+    * to see what dependencies are already downloaded. Also finds
     * all .flix source files.
     * Then returns the initialized Bootstrap object or an error.
     */
@@ -332,15 +337,18 @@ object Bootstrap {
     val tomlPath = getManifestFile(path)
     if (Files.exists(tomlPath)) {
       out.println("Found `flix.toml'. Checking dependencies...")
-      bootstrap.projectMode().map(_ => bootstrap)
+      Validation.mapN(bootstrap.projectMode())(_ => bootstrap)
     } else {
       out.println("No `flix.toml'. Will load source files from `*.flix`, `src/**`, and `test/**`.")
-      bootstrap.folderMode().map(_ => bootstrap)
+      Validation.mapN(bootstrap.folderMode())(_ => bootstrap)
     }
   }
 }
 
 class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
+
+  // The `flix.toml` manifest if in project mode, otherwise `None`
+  private var optManifest: Option[Manifest] = None
 
   // Timestamps at the point the sources were loaded
   private var timestamps: Map[Path, Long] = Map.empty
@@ -363,6 +371,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Ok(m) => m
       case Err(e) => return Validation.toHardFailure(BootstrapError.ManifestParseError(e))
     }
+    optManifest = Some(manifest)
 
     // 2. Check each dependency is available or download it.
     val manifests: List[Manifest] = FlixPackageManager.findTransitiveDependencies(manifest, projectPath, apiKey) match {
@@ -467,9 +476,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    flix.check() match {
-      case Validation.Success(_) => Validation.success(())
-      case failure => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(failure.errors)))
+    flix.check().toHardResult match {
+      case Result.Ok(_) => Validation.success(())
+      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 
@@ -484,9 +493,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    flix.compile() match {
-      case Validation.Success(r) => Validation.success(r)
-      case failure => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(failure.errors)))
+    flix.compile().toHardResult match {
+      case Result.Ok(r) => Validation.success(r)
+      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 
@@ -576,7 +585,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Runs all benchmarks in the flix package for the project.
     */
   def benchmark(flix: Flix): Validation[Unit, BootstrapError] = {
-    build(flix).map {
+    Validation.mapN(build(flix)) {
       compilationResult =>
         Benchmarker.benchmark(compilationResult, new PrintWriter(System.out, true))(flix.options)
     }
@@ -589,13 +598,13 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    flix.check() map {
+    Validation.mapN(flix.check()) {
       root =>
         JsonDocumentor.run(root)(flix)
         HtmlDocumentor.run(root)(flix)
-    } match {
-      case Validation.Success(_) => Validation.success(())
-      case failure => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(failure.errors)))
+    }.toHardResult match {
+      case Result.Ok(_) => Validation.success(())
+      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 
@@ -603,9 +612,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Runs the main function in flix package for the project.
     */
   def run(flix: Flix, args: Array[String]): Validation[Unit, BootstrapError] = {
-    build(flix).map(_.getMain).map {
-      case None => ()
-      case Some(main) => main(args)
+    Validation.mapN(build(flix)) {
+      _.getMain match {
+        case None => ()
+        case Some(main) => main(args)
+      }
     }
   }
 
@@ -620,5 +631,65 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           case Err(_) => Validation.toHardFailure(BootstrapError.GeneralError(List("Tester Error")))
         }
     }
+  }
+
+  /**
+    * Package the current project and release it on GitHub.
+    */
+  def release(flix: Flix)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+    // Ensure that we have a manifest
+    val manifest = optManifest match {
+      case Some(m) => m
+      case None => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.MissingManifest))
+    }
+
+    // Check if `github` option is present
+    val githubRepo = manifest.repository match {
+      case Some(r) => r
+      case None => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.MissingRepository))
+    }
+
+    // Check if `--github-token` option is present
+    val githubToken = flix.options.githubToken match {
+      case Some(k) => k
+      case None => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.MissingApiKey))
+    }
+
+    if (!flix.options.assumeYes) {
+      // Ask for confirmation
+      out.print(s"Release github:$githubRepo v${manifest.version}? [y/N]: ")
+      val response = readLine()
+      response.toLowerCase match {
+        case "y" => // Continue
+        case "yes" => // Continue
+        case _ => return Validation.toHardFailure(BootstrapError.ReleaseError(ReleaseError.Cancelled))
+      }
+    }
+
+    // Build artifacts
+    out.println("Building project...")
+    val buildResult = buildPkg()
+    buildResult.toHardResult match {
+      case Result.Ok(_) => // Continue
+      case Result.Err(e) => return Validation.HardFailure(e)
+    }
+
+    // Publish to GitHub
+    out.println("Publishing a new release...")
+    val artifacts = List(getPkgFile(projectPath), getManifestFile(projectPath))
+    val publishResult = GitHub.publishRelease(githubRepo, manifest.version, artifacts, githubToken)
+    publishResult match {
+      case Ok(()) => // Continue
+      case Err(e) => return Validation.toHardFailure(BootstrapError.ReleaseError(e))
+    }
+
+    out.println(
+      s"""
+         |Successfully released v${manifest.version}
+         |https://github.com/${githubRepo.owner}/${githubRepo.repo}/releases/tag/v${manifest.version}
+         |""".stripMargin
+    )
+
+    Validation.success(())
   }
 }

@@ -25,7 +25,7 @@ import org.json4s._
   * Companion object of [[PublishDiagnosticsParams]].
   */
 object PublishDiagnosticsParams {
-  def fromMessages(errors: LazyList[CompilationMessage], explain: Boolean): List[PublishDiagnosticsParams] = {
+  def fromMessages(errors: Iterable[CompilationMessage], explain: Boolean): List[PublishDiagnosticsParams] = {
     val formatter: Formatter = Formatter.NoFormatter
 
     // Group the error messages by source.

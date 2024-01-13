@@ -34,7 +34,7 @@ object Reducer {
     val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newEffs = ParOps.parMapValues(root.effects)(visitEff)
 
-    val newRoot = ReducedAst.Root(newDefs, newEnums, newEffs, Set.empty, ctx.anonClasses.asScala.toList, root.entryPoint, root.sources)
+    val newRoot = ReducedAst.Root(newDefs, newEnums, newEffs, Set.empty, ctx.anonClasses.asScala.toList, root.entryPoint, root.reachable, root.sources)
     val types = typesOf(newRoot)
     newRoot.copy(types = types)
   }

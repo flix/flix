@@ -38,6 +38,8 @@ object Main {
     */
   def main(argv: Array[String]): Unit = {
 
+    val cwd = Paths.get(".").toAbsolutePath.normalize()
+
     // parse command line options.
     val cmdOpts: CmdOpts = parseCmdOpts(argv).getOrElse {
       Console.err.println("Unable to parse command line arguments. Will now exit.")
@@ -69,12 +71,18 @@ object Main {
       case Some(s) => Some(Symbol.mkDefnSym(s))
     }
 
+    // get GitHub token
+    val githubToken =
+      cmdOpts.githubToken
+        .orElse(FileOps.readLine(cwd.resolve("./.GITHUB_TOKEN")))
+        .orElse(sys.env.get("GITHUB_TOKEN"))
+
     // construct flix options.
     var options = Options(
       lib = cmdOpts.xlib,
       entryPoint = entryPoint,
       explain = cmdOpts.explain,
-      githubKey = cmdOpts.githubKey,
+      githubToken = githubToken,
       incremental = Options.Default.incremental,
       json = cmdOpts.json,
       progress = true,
@@ -84,6 +92,7 @@ object Main {
       test = Options.Default.test,
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
+      assumeYes = cmdOpts.assumeYes,
       xbddthreshold = cmdOpts.xbddthreshold,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
@@ -108,8 +117,6 @@ object Main {
       options = options.copy(progress = false)
     }
 
-    val cwd = Paths.get(".").toAbsolutePath.normalize()
-
     // check if command was passed.
     try {
       val formatter = Formatter.getDefault
@@ -124,78 +131,80 @@ object Main {
           }
 
         case Command.Init =>
-          Bootstrap.init(cwd)(System.err) match {
-            case Validation.Success(_) =>
+          Bootstrap.init(cwd)(System.err).toHardResult match {
+            case Result.Ok(_) =>
               System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.Check =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
               bootstrap.check(flix)
-          } match {
-            case Validation.Success(_) => System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+          }.toHardResult match {
+            case Result.Ok(_) =>
+              System.exit(0)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.Build =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(loadClassFiles = false))
               bootstrap.build(flix)
-          } match {
-            case Validation.Success(_) => System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+          }.toHardResult match {
+            case Result.Ok(_) =>
+              System.exit(0)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.BuildJar =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap => bootstrap.buildJar()
-          } match {
-            case Validation.Success(_) =>
+          }.toHardResult match {
+            case Result.Ok(_) =>
               System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.BuildPkg =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap => bootstrap.buildPkg()
-          } match {
-            case Validation.Success(_) =>
+          }.toHardResult match {
+            case Result.Ok(_) =>
               System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.Doc =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
               bootstrap.doc(flix)
-          } match {
-            case Validation.Success(_) =>
+          }.toHardResult match {
+            case Result.Ok(_) =>
               System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.Run =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options)
@@ -204,39 +213,39 @@ object Main {
                 case Some(a) => a.split(" ")
               }
               bootstrap.run(flix, args)
-          } match {
-            case Validation.Success(_) =>
+          }.toHardResult match {
+            case Result.Ok(_) =>
               System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.Benchmark =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.benchmark(flix)
-          } match {
-            case Validation.Success(_) =>
+          }.toHardResult match {
+            case Result.Ok(_) =>
               System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
         case Command.Test =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubKey)(System.err)) {
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
               bootstrap.test(flix)
-          } match {
-            case Validation.Success(_) =>
+          }.toHardResult match {
+            case Result.Ok(_) =>
               System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
@@ -245,13 +254,13 @@ object Main {
             println("The 'repl' command cannot be used with a list of files.")
             System.exit(1)
           }
-          Bootstrap.bootstrap(cwd, options.githubKey)(System.err) match {
-            case Validation.Success(bootstrap) =>
+          Bootstrap.bootstrap(cwd, options.githubToken)(System.err).toHardResult match {
+            case Result.Ok(bootstrap) =>
               val shell = new Shell(bootstrap, options)
               shell.loop()
               System.exit(0)
-            case failure =>
-              failure.errors.map(_.message(formatter)).foreach(println)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
 
@@ -265,6 +274,21 @@ object Main {
               throw new RuntimeException(ex)
           }
           System.exit(0)
+
+        case Command.Release =>
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)(System.err)) {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.release(flix)(System.err)
+          }.toHardResult match {
+            case Result.Ok(_) =>
+              System.exit(0)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
+
 
         case Command.CompilerPerf =>
           CompilerPerf.run(options)
@@ -287,10 +311,11 @@ object Main {
                      entryPoint: Option[String] = None,
                      explain: Boolean = false,
                      installDeps: Boolean = true,
-                     githubKey: Option[String] = None,
+                     githubToken: Option[String] = None,
                      json: Boolean = false,
                      listen: Option[Int] = None,
                      threads: Option[Int] = None,
+                     assumeYes: Boolean = false,
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
@@ -342,6 +367,8 @@ object Main {
 
     case class Lsp(port: Int) extends Command
 
+    case object Release extends Command
+
     case object CompilerPerf extends Command
   }
 
@@ -390,6 +417,9 @@ object Main {
             .required()
         )
 
+      cmd("release").text("  release a new version to GitHub.")
+        .action((_, c) => c.copy(command = Command.Release))
+
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
         opt[Unit]("frontend")
           .action((_, c) => c.copy(XPerfFrontend = true))
@@ -411,7 +441,7 @@ object Main {
       opt[Unit]("explain").action((_, c) => c.copy(explain = true)).
         text("provides suggestions on how to solve a problem.")
 
-      opt[String]("github-key").action((s, c) => c.copy(githubKey = Some(s))).
+      opt[String]("github-token").action((s, c) => c.copy(githubToken = Some(s))).
         text("API key to use for GitHub dependency resolution.")
 
       help("help").text("prints this usage information.")
@@ -428,6 +458,9 @@ object Main {
 
       opt[Int]("threads").action((n, c) => c.copy(threads = Some(n))).
         text("number of threads to use for compilation.")
+
+      opt[Unit]("yes").action((_, c) => c.copy(assumeYes = true)).
+        text("automatically answer yes to all prompts.")
 
       version("version").text("prints the version number.")
 
