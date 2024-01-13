@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manif
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
-import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{Result, Validation}
 
 import java.io.{PrintStream, PrintWriter}
@@ -601,7 +600,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     Validation.mapN(flix.check()) {
       root =>
         JsonDocumentor.run(root)(flix)
-        HtmlDocumentor.run(root)(flix)
+        HtmlDocumentor.run(root, optManifest.flatMap(m => m.modules))(flix)
     }.toHardResult match {
       case Result.Ok(_) => Validation.success(())
       case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))

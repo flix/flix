@@ -71,9 +71,9 @@ object HtmlDocumentor {
     */
   val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
 
-  def run(root: TypedAst.Root)(implicit flix: Flix): Unit = {
+  def run(root: TypedAst.Root, includedModules: Option[List[String]])(implicit flix: Flix): Unit = {
     val modulesRoot = splitModules(root)
-    val filteredModulesRoot = filterModules(modulesRoot)
+    val filteredModulesRoot = filterModules(modulesRoot, includedModules)
 
     def visitMod(mod: Module): Unit = {
       val out = documentModule(mod)
@@ -282,34 +282,49 @@ object HtmlDocumentor {
   /**
     * Filter the module, `mod`, and its children, removing all items and empty modules, which shouldn't appear in the documentation.
     */
-  private def filterModules(mod: Module): Module = {
-    filterEmpty(filterItems(mod))
+  private def filterModules(mod: Module, includedModules: Option[List[String]]): Module = {
+    filterEmpty(filterContents(mod, includedModules))
   }
 
   /**
     * Returns a tree of modules corresponding to the given input,
-    * but with all items that shouldn't appear in the documentation removed.
+    * but with all contained items that shouldn't appear in the documentation removed.
     */
-  private def filterItems(mod: Module): Module = mod match {
+  private def filterContents(mod: Module, includedModules: Option[List[String]]): Module = mod match {
     case Module(sym, parent, uses, submodules, classes, effects, enums, typeAliases, defs) =>
-      Module(
-        sym,
-        parent,
-        uses,
-        submodules.map(filterItems),
-        classes.filter(c => c.decl.mod.isPublic && !c.decl.ann.isInternal).map(filterClass),
-        effects.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(filterEffect),
-        enums.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(filterEnum),
-        typeAliases.filter(t => t.mod.isPublic),
-        defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
-      )
+      val modIsIncluded = includedModules.forall(i => i.contains(mod.qualifiedName))
+      if (modIsIncluded) {
+        Module(
+          sym,
+          parent,
+          uses,
+          submodules.map(m => filterContents(m, includedModules)),
+          classes.filter(c => c.decl.mod.isPublic && !c.decl.ann.isInternal).map(c => filterClass(c, includedModules)),
+          effects.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(e => filterEffect(e, includedModules)),
+          enums.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(e => filterEnum(e, includedModules)),
+          typeAliases.filter(t => t.mod.isPublic),
+          defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
+        )
+      } else {
+        Module(
+          sym,
+          parent,
+          Nil,
+          submodules.map(m => filterContents(m, includedModules)),
+          Nil,
+          Nil,
+          Nil,
+          Nil,
+          Nil,
+        )
+      }
   }
 
   /**
     * Returns a `Class` corresponding to the given `clazz`,
     * but with all items that shouldn't appear in the documentation removed.
     */
-  private def filterClass(clazz: Class): Class = clazz match {
+  private def filterClass(clazz: Class, includedModules: Option[List[String]]): Class = clazz match {
     case Class(TypedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, _, laws, loc), signatures, defs, instances, parent, companionMod) =>
       Class(
         TypedAst.Class(
@@ -328,7 +343,7 @@ object HtmlDocumentor {
         defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
         instances.filter(i => i.mod.isPublic && !i.ann.isInternal),
         parent,
-        companionMod.map(filterItems)
+        companionMod.map(m => filterContents(m, includedModules))
       )
   }
 
@@ -336,18 +351,18 @@ object HtmlDocumentor {
     * Returns an `Effect` corresponding to the given `eff`,
     * but with all items that shouldn't appear in the documentation removed.
     */
-  private def filterEffect(eff: Effect): Effect = eff match {
+  private def filterEffect(eff: Effect, includedModules: Option[List[String]]): Effect = eff match {
     case Effect(eff, parent, companionMod) =>
-      Effect(eff, parent, companionMod.map(filterItems))
+      Effect(eff, parent, companionMod.map(m => filterContents(m, includedModules)))
   }
 
   /**
     * Returns an `Enum` corresponding to the given `enm`,
     * but with all items that shouldn't appear in the documentation removed.
     */
-  private def filterEnum(enm: Enum): Enum = enm match {
+  private def filterEnum(enm: Enum, includedModules: Option[List[String]]): Enum = enm match {
     case Enum(enm, parent, companionMod) =>
-      Enum(enm, parent, companionMod.map(filterItems))
+      Enum(enm, parent, companionMod.map(m => filterContents(m, includedModules)))
   }
 
   /**
@@ -1345,7 +1360,7 @@ object HtmlDocumentor {
   }
 
   /**
-    * A represention of a module that's easier to work with while generating documention.
+    * A represention of a module that's easier to work with while generating documentation.
     */
   private case class Module(sym: Symbol.ModuleSym,
                             parent: Option[Symbol.ModuleSym],
