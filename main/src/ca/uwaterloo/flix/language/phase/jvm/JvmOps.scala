@@ -101,6 +101,30 @@ object JvmOps {
   }
 
   /**
+    * Returns the erased JvmType of the given Flix type `tpe`.
+    *
+    * Every primitive type is mapped to itself and every other type is mapped to Object.
+    */
+  def asErasedJvmType(tpe: MonoType): JvmType = {
+    import MonoType._
+    tpe match {
+      case Bool => JvmType.PrimBool
+      case Char => JvmType.PrimChar
+      case Float32 => JvmType.PrimFloat
+      case Float64 => JvmType.PrimDouble
+      case Int8 => JvmType.PrimByte
+      case Int16 => JvmType.PrimShort
+      case Int32 => JvmType.PrimInt
+      case Int64 => JvmType.PrimLong
+      case Native(clazz) if clazz == classOf[Object] => JvmType.Object
+      case Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
+           Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) | RecordEmpty |
+           RecordExtend(_, _, _) | Native(_) =>
+        throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
+    }
+  }
+
+  /**
     * Returns the function abstract class type `FnX$Y$Z` for the given type `tpe`.
     *
     * For example:
@@ -112,7 +136,7 @@ object JvmOps {
     */
   def getFunctionInterfaceType(tpe: MonoType): JvmType.Reference = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-      getFunctionInterfaceType(targs.map(getErasedJvmType), getErasedJvmType(tresult))
+      getFunctionInterfaceType(targs.map(getErasedJvmType), asErasedJvmType(tresult))
     case _ =>
       throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
@@ -151,7 +175,7 @@ object JvmOps {
     */
   def getClosureAbstractClassType(tpe: MonoType): JvmType.Reference = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-      getClosureAbstractClassType(targs.map(getErasedJvmType), getErasedJvmType(tresult))
+      getClosureAbstractClassType(targs.map(getErasedJvmType), asErasedJvmType(tresult))
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
 
@@ -239,7 +263,7 @@ object JvmOps {
       val arity = elms.length
 
       // Compute the stringified erased type of each type argument.
-      val args = elms.map(tpe => stringify(getErasedJvmType(tpe)))
+      val args = elms.map(tpe => stringify(asErasedJvmType(tpe)))
 
       // The JVM name is of the form TupleArity$Arg0$Arg1$Arg2
       val name = JvmName.mkClassName(s"Tuple$arity", args)
@@ -250,7 +274,7 @@ object JvmOps {
 
   def getLazyClassType(tpe: MonoType.Lazy): JvmType.Reference = tpe match {
     case MonoType.Lazy(tpe) =>
-      val arg = stringify(getErasedJvmType(tpe))
+      val arg = stringify(asErasedJvmType(tpe))
       val name = JvmName.mkClassName("Lazy", arg)
       JvmType.Reference(JvmName(RootPackage, name))
   }
@@ -306,7 +330,7 @@ object JvmOps {
 
     case MonoType.RecordExtend(_, value, _) =>
       // Compute the stringified erased type of value.
-      val valueType = stringify(getErasedJvmType(value))
+      val valueType = stringify(asErasedJvmType(value))
 
       // The JVM name is of the form RecordExtend
       val name = JvmName.mkClassName("RecordExtend", valueType)
@@ -330,7 +354,7 @@ object JvmOps {
   def getRecordType(tpe: MonoType): JvmType.Reference = {
 
     // Compute the stringified erased type of 'tpe'.
-    val valueType = JvmOps.stringify(JvmOps.getErasedJvmType(tpe))
+    val valueType = JvmOps.stringify(JvmOps.asErasedJvmType(tpe))
 
     // The JVM name is of the form RecordExtend
     val name = JvmName.mkClassName("RecordExtend", valueType)
@@ -362,7 +386,7 @@ object JvmOps {
   def getRefClassType(tpe: MonoType): JvmType.Reference = tpe match {
     case MonoType.Ref(elmType) =>
       // Compute the stringified erased type of the argument.
-      val arg = stringify(getErasedJvmType(elmType))
+      val arg = stringify(asErasedJvmType(elmType))
 
       // The JVM name is of the form TArity$Arg0$Arg1$Arg2
       val name = JvmName.mkClassName("Ref", arg)
@@ -481,7 +505,7 @@ object JvmOps {
     */
   def getErasedRefsOf(types: Iterable[MonoType]): Set[BackendObjType.Ref] =
     types.foldLeft(Set.empty[BackendObjType.Ref]) {
-      case (acc, MonoType.Ref(tpe)) => acc + BackendObjType.Ref(BackendType.toErasedBackendType(tpe))
+      case (acc, MonoType.Ref(tpe)) => acc + BackendObjType.Ref(BackendType.asErasedBackendType(tpe))
       case (acc, _) => acc
     }
 
@@ -492,7 +516,7 @@ object JvmOps {
     types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
       case (acc, MonoType.RecordExtend(field, value, _)) =>
         // TODO: should use mono -> backend transformation on `rest`
-        acc + BackendObjType.RecordExtend(field, BackendType.toErasedBackendType(value), BackendObjType.RecordEmpty.toTpe)
+        acc + BackendObjType.RecordExtend(field, BackendType.asErasedBackendType(value), BackendObjType.RecordEmpty.toTpe)
       case (acc, _) => acc
     }
 

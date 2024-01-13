@@ -1366,6 +1366,13 @@ object Desugar {
       case (WeededAst.ForFragment.Guard(exp1, loc1), acc) =>
         val e1 = visitExp(exp1)
         DesugaredAst.Expr.IfThenElse(e1, acc, DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc1.asSynthetic), loc1.asSynthetic)
+
+      case (WeededAst.ForFragment.Let(pat1, exp1, loc1), acc) =>
+        // Rewrite to pattern match
+        val p1 = visitPattern(pat1)
+        val e1 = visitExp(exp1)
+        val matchRule = DesugaredAst.MatchRule(p1, None, acc)
+        DesugaredAst.Expr.Match(e1, List(matchRule), loc1.asSynthetic)
     }
     DesugaredAst.Expr.Scope(regIdent, foreachExp, loc0)
   }
@@ -1402,6 +1409,13 @@ object Desugar {
         val e1 = visitExp(exp1)
         val zero = mkApplyFqn(fqnZero, List(DesugaredAst.Expr.Cst(Ast.Constant.Unit, loc1.asSynthetic)), loc1.asSynthetic)
         DesugaredAst.Expr.IfThenElse(e1, acc, zero, loc1.asSynthetic)
+
+      case (WeededAst.ForFragment.Let(pat1, exp1, loc1), acc) =>
+        // Rewrite to pattern match
+        val p1 = visitPattern(pat1)
+        val e1 = visitExp(exp1)
+        val matchRule = DesugaredAst.MatchRule(p1, None, acc)
+        DesugaredAst.Expr.Match(e1, List(matchRule), loc1.asSynthetic)
     }
   }
 
@@ -1475,6 +1489,13 @@ object Desugar {
 
         // 2. Wrap acc in if-then-else exp: if (exp1) acc else Iterator.empty(empty)
         DesugaredAst.Expr.IfThenElse(e1, acc, empty, loc1)
+
+      case (WeededAst.ForFragment.Let(pat1, exp1, loc1), acc) =>
+        // Rewrite to pattern match
+        val p1 = visitPattern(pat1)
+        val e1 = visitExp(exp1)
+        val matchRule = DesugaredAst.MatchRule(p1, None, acc)
+        DesugaredAst.Expr.Match(e1, List(matchRule), loc1.asSynthetic)
     }
 
     // Wrap in Collectable.collect function.

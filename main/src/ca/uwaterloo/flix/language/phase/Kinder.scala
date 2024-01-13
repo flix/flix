@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnvironment
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
 import ca.uwaterloo.flix.util.Validation.{flatMapN, fold, mapN, traverse, traverseOpt}
+import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import scala.collection.immutable.SortedSet
@@ -168,8 +169,8 @@ object Kinder {
     fold(aliases, Map.empty[Symbol.TypeAliasSym, KindedAst.TypeAlias]) {
       case (taenv, sym) =>
         val alias = root.typeAliases(sym)
-        visitTypeAlias(alias, taenv, root) map {
-          kind => taenv + (sym -> kind)
+        mapN(visitTypeAlias(alias, taenv, root)) {
+          case kind => taenv + (sym -> kind)
         }
     }
   }
@@ -209,7 +210,7 @@ object Kinder {
     val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
 
     val result = ParOps.parTraverseValues(staleClasses)(visitClass(_, taenv, root))
-    result.map(freshClasses ++ _)
+    mapN(result)(freshClasses ++ _)
   }
 
   /**
@@ -225,7 +226,7 @@ object Kinder {
       flatMapN(tparamsVal, superClassesVal, assocsVal) {
         case (tparam, superClasses, assocs) =>
           val sigsVal = traverse(sigs0) {
-            case (sigSym, sig0) => visitSig(sig0, tparam, kenv, taenv, root).map(sig => sigSym -> sig)
+            case (sigSym, sig0) => mapN(visitSig(sig0, tparam, kenv, taenv, root))(sig => sigSym -> sig)
           }
           val lawsVal = traverse(laws0)(visitDef(_, Nil, kenv, taenv, root)) // TODO ASSOC-TYPES need to include super classes?
           mapN(sigsVal, lawsVal) {
@@ -276,7 +277,7 @@ object Kinder {
     val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
 
     val result = ParOps.parTraverseValues(staleDefs)(visitDef(_, Nil, KindEnv.empty, taenv, root))
-    result.map(freshDefs ++ _)
+    mapN(result)(freshDefs ++ _)
   }
 
   /**
@@ -511,7 +512,7 @@ object Kinder {
       }
 
     case ResolvedAst.Expr.Discard(exp, loc) =>
-      visitExp(exp, kenv0, taenv, henv0, root) map {
+      mapN(visitExp(exp, kenv0, taenv, henv0, root)) {
         case e => KindedAst.Expr.Discard(e, loc)
       }
 
@@ -959,7 +960,7 @@ object Kinder {
       val pvar = Type.freshVar(Kind.Eff, m.loc)
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
-      Validation.SoftFailure(KindedAst.Expr.Error(m, tvar, pvar), LazyList.empty)
+      Validation.SoftFailure(KindedAst.Expr.Error(m, tvar, pvar), Chain.empty)
   }
 
   /**

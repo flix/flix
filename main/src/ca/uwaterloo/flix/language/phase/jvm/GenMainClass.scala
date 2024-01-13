@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, FormalParam, Root}
 import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
@@ -48,7 +49,8 @@ object GenMainClass {
     * Throws `InternalCompilerException` if the type  of `defn` is not `Unit -> Unit`.
     */
   private def checkMainType(defn: Def): Unit = (defn.cparams, defn.fparams, defn.tpe) match {
-    case (Nil, List(FormalParam(_, _, MonoType.Unit, _)), MonoType.Unit) => ()
+    // todo this is too broad
+    case (Nil, List(FormalParam(_, _, MonoType.Unit, _)), MonoType.Object) => ()
     case (cs@_ :: _, _, _) =>
       val tupleType = MonoType.Tuple(cs.map(_.tpe))
       throw InternalCompilerException(s"Entrypoint function has unexpected captured parameters '$tupleType'", defn.loc)
@@ -66,7 +68,7 @@ object GenMainClass {
     }
   }
 
-  private def genByteCode(sym: Symbol.DefnSym, jvmType: JvmType.Reference)(implicit flix: Flix): Array[Byte] = {
+  private def genByteCode(sym: Symbol.DefnSym, jvmType: JvmType.Reference)(implicit root: Root, flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -105,7 +107,7 @@ object GenMainClass {
     *
     * `}`
     */
-  private def compileMainMethod(sym: Symbol.DefnSym, visitor: ClassWriter): Unit = {
+  private def compileMainMethod(sym: Symbol.DefnSym, visitor: ClassWriter)(implicit root: Root): Unit = {
     // The required java main signature `Array[String] -> Void`.
     val javaMainDescriptor = s"(${AsmOps.getArrayType(JvmType.String)})${JvmType.Void.toDescriptor}"
     // `public static void main(String[] args)`.
@@ -122,20 +124,26 @@ object GenMainClass {
     main.visitMethodInsn(INVOKESTATIC, BackendObjType.Global.jvmName.toInternalName,
       BackendObjType.Global.SetArgsMethod.name, setArgsDescriptor, false)
 
-    // Push `Unit` on the stack.
+    val defn = root.defs(sym)
+    val defnClass = JvmOps.getFunctionDefinitionClassType(sym)
+
+    // create class obj
+    main.visitTypeInsn(NEW, defnClass.name.toInternalName)
+    main.visitInsn(DUP)
+    main.visitMethodInsn(INVOKESPECIAL, defnClass.name.toInternalName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid.toDescriptor, false)
+
+    // Put `Unit` as the first argument.
+    main.visitInsn(DUP)
     main.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName,
       BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
+    main.visitFieldInsn(PUTFIELD, defnClass.name.toInternalName, "arg0", BackendObjType.JavaObject.jvmName.toDescriptor)
 
-    // Call the `Ns.m_entrypoint` method.
-    val nsClassName = JvmOps.getNamespaceClassType(JvmOps.getNamespace(sym)).name.toInternalName
-    val mainMethodName = JvmOps.getDefMethodNameInNamespaceClass(sym)
-    val erasedUnit = JvmOps.getErasedJvmType(MonoType.Unit)
-    val mainDescriptor = AsmOps.getMethodDescriptor(List(erasedUnit), erasedUnit)
-    main.visitMethodInsn(INVOKESTATIC, nsClassName, mainMethodName, mainDescriptor, false)
+    BackendObjType.Result.unwindSuspensionFreeThunk()(new BytecodeInstructions.F(main))
     // The return value is ignored.
+    main.visitInsn(POP)
 
     main.visitInsn(RETURN)
-    main.visitMaxs(1, 1)
+    main.visitMaxs(999, 999)
     main.visitEnd()
   }
 

@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, CallType}
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Level, Purity, SemanticOp, SourceLocation, Symbol}
@@ -218,13 +218,13 @@ object EffectBinder {
       Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
-      lctx.pcPoints += 1
+      if (ct == CallType.NonTailCall && purity != Purity.Pure) lctx.pcPoints += 1
       val e = visitExprWithBinders(binders)(exp)
       val es = exps.map(visitExprWithBinders(binders))
       Expr.ApplyClo(e, es, ct, tpe, purity, loc)
 
     case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-      lctx.pcPoints += 1
+      if (ct == CallType.NonTailCall && purity != Purity.Pure) lctx.pcPoints += 1
       val es = exps.map(visitExprWithBinders(binders))
       Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 

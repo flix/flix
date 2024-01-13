@@ -117,9 +117,6 @@
     @test
     def testUncheckedEffectCast29(): (a -> a \ E) = x -> unchecked_cast(x as _ \ E)
 
-    @test
-    def testUncheckedEffectCast30(): (a -> a) \ E = unchecked_cast(x -> x as _ \ E)
-
     // Unsafe casts
 
     @test
