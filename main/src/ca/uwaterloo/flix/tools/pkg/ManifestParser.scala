@@ -86,6 +86,9 @@ object ManifestParser {
       repository <- getOptionalStringProperty("package.repository", parser, p);
       githubProject <- Result.traverseOpt(repository)(r => toGithubProject(r, p));
 
+      modules <- getOptionalArrayProperty("package.modules", parser, p);
+      modulesList <- Result.traverseOpt(modules)(m => convertTomlArrayToStringList(m, p));
+
       flix <- getRequiredStringProperty("package.flix", parser, p);
       flixSemVer <- toFlixVer(flix, p);
 
@@ -109,7 +112,7 @@ object ManifestParser {
       jarDeps <- getOptionalTableProperty("jar-dependencies", parser, p);
       jarDepsList <- collectDependencies(jarDeps, flixDep = false, prodDep = false, jarDep = true, p)
 
-    ) yield Manifest(name, description, versionSemVer, githubProject, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
+    ) yield Manifest(name, description, versionSemVer, githubProject, modulesList, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
   }
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
@@ -123,7 +126,7 @@ object ManifestParser {
 
     val dottedKeys = parser.dottedKeySet().asScala.toSet
     val packageKeys = dottedKeys.filter(s => s.startsWith("package."))
-    val allowedPackageKeys = Set("package.name", "package.description", "package.version", "package.flix", "package.authors", "package.repository", "package.license")
+    val allowedPackageKeys = Set("package.name", "package.description", "package.version", "package.repository", "package.modules", "package.flix", "package.authors", "package.license")
     val illegalPackageKeys = packageKeys.diff(allowedPackageKeys)
     if (illegalPackageKeys.nonEmpty) {
       return Err(ManifestError.IllegalPackageKeyFound(p, illegalPackageKeys.head))
@@ -178,6 +181,20 @@ object ManifestParser {
       Ok(array)
     } catch {
       case e: IllegalArgumentException => Err(ManifestError.MissingRequiredProperty(p, propString, Some(e.getMessage)))
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Array", e.getMessage))
+    }
+  }
+
+  /**
+    * Parses an Array which might be at `propString`
+    * and returns the Array as an Option.
+    */
+  private def getOptionalArrayProperty(propString: String, parser: TomlParseResult, p: Path): Result[Option[TomlArray], ManifestError] = {
+    try {
+      val array = parser.getArray(propString)
+      Ok(Option(array))
+    } catch {
+      case e: IllegalArgumentException => Ok(None)
       case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Array", e.getMessage))
     }
   }

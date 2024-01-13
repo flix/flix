@@ -221,7 +221,7 @@ object ManifestError {
       s"""
          |The toml file has an entry in the package table named ${f.red(entryName)}, which is not allowed.
          |Allowed entry names in the package table:
-         |  name, description, version, flix, authors, repository, license
+         |  name, description, version, repository, modules, flix, authors, license
          |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
          |""".stripMargin
   }
