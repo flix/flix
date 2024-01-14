@@ -307,9 +307,8 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
         ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> ("data" -> Nil))
 
     case Request.InlayHint(id, uri, range) =>
-      if (current)
-        ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root.orNull, flix).map(_.toJSON))
-      else
+        // InlayHints disable due to poor ergonomics.
+        // ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> InlayHintProvider.processInlayHints(uri, range)(index, root.orNull, flix).map(_.toJSON))
         ("id" -> id) ~ ("status" -> ResponseStatus.Success) ~ ("result" -> Nil)
 
     case Request.ShowAst(id, phase) =>
