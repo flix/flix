@@ -79,16 +79,13 @@ object EffectBinder {
     */
   private def visitDef(defn: Def)(implicit flix: Flix): Def = {
     implicit val lctx: LocalContext = LocalContext.mk()
-    val stmt = visitStmt(defn.stmt)
-    defn.copy(stmt = stmt, lparams = defn.lparams ++ lctx.lparams.toList, pcPoints = lctx.pcPoints)
+    val expr = visitExpr(defn.expr)
+    defn.copy(expr = expr, lparams = defn.lparams ++ lctx.lparams.toList, pcPoints = lctx.pcPoints)
   }
 
-  /**
-    * Transforms the [[Stmt]] such that effect operations will be run without an
-    * operand stack.
-    */
-  private def visitStmt(stmt: Stmt)(implicit lctx: LocalContext, flix: Flix): Stmt = stmt match {
-    case Stmt.Ret(expr, tpe, loc) => Stmt.Ret(visitExpr(expr), tpe, loc)
+  private def visitJvmMethod(method: JvmMethod)(implicit lctx: LocalContext, flix: Flix): JvmMethod = method match {
+    case JvmMethod(ident, fparams, exp, tpe, purity, loc) =>
+      JvmMethod(ident, fparams, visitExpr(exp), tpe, purity, loc)
   }
 
   /**
@@ -183,7 +180,7 @@ object EffectBinder {
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
-    case Expr.NewObject(_, _, _, _, _, _, _) =>
+    case Expr.NewObject(_, _, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
@@ -279,9 +276,9 @@ object EffectBinder {
       val es = exps.map(visitExprWithBinders(binders))
       Expr.Do(op, es, tpe, purity, loc)
 
-    case Expr.NewObject(name, clazz, tpe, purity, methods, exps, loc) =>
-      val es = exps.map(visitExprInnerWithBinders(binders))
-      Expr.NewObject(name, clazz, tpe, purity, methods, es, loc)
+    case Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
+      val ms = methods.map(visitJvmMethod)
+      Expr.NewObject(name, clazz, tpe, purity, ms, loc)
   }
 
   /**
@@ -320,7 +317,7 @@ object EffectBinder {
       case Expr.TryCatch(_, _, _, _, _) => letBindExpr(binders)(e)
       case Expr.TryWith(_, _, _, _, _, _) => letBindExpr(binders)(e)
       case Expr.Do(_, _, _, _, _) => letBindExpr(binders)(e)
-      case Expr.NewObject(_, _, _, _, _, _, _) => letBindExpr(binders)(e)
+      case Expr.NewObject(_, _, _, _, _, _) => letBindExpr(binders)(e)
     }
 
     bind(visitExprInnerWithBinders(binders)(exp))

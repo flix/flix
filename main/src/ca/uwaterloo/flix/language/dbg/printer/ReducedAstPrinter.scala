@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.ReducedAst.{Expr, Stmt}
+import ca.uwaterloo.flix.language.ast.ReducedAst.Expr
 import ca.uwaterloo.flix.language.ast.{ReducedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -69,19 +69,12 @@ object ReducedAstPrinter {
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case ReducedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
     })
-    case Expr.TryWith(exp, effUse, rules, _, _, _) => DocAst.Expression.TryWith(print(exp), effUse.sym, rules.map{
+    case Expr.TryWith(exp, effUse, rules, _, _, _) => DocAst.Expression.TryWith(print(exp), effUse.sym, rules.map {
       case ReducedAst.HandlerRule(op, fparams, exp) =>
         (op.sym, fparams.map(printFormalParam), print(exp))
     })
     case Expr.Do(op, exps, _, _, _) => DocAst.Expression.Do(op.sym, exps.map(print))
-    case Expr.NewObject(name, clazz, tpe, _, methods, exps, _) => DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.zip(exps).map(printJvmMethod))
-  }
-
-  /**
-    * Returns the [[DocAst.Expression]] representation of `stmt`.
-    */
-  def print(stmt: ReducedAst.Stmt): DocAst.Expression = stmt match {
-    case Stmt.Ret(expr, _, _) => DocAst.Expression.Ret(print(expr))
+    case Expr.NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map(printJvmMethod))
   }
 
   /**
@@ -101,7 +94,8 @@ object ReducedAstPrinter {
   /**
     * Returns the [[DocAst.JvmMethod]] representation of `method`.
     */
-  private def printJvmMethod(method: (ReducedAst.JvmMethod, ReducedAst.Expr)): DocAst.JvmMethod = method match {
-    case (m, clo) => DocAst.JvmMethod(m.ident, m.fparams map printFormalParam, print(clo), MonoTypePrinter.print(m.tpe))
+  private def printJvmMethod(method: ReducedAst.JvmMethod): DocAst.JvmMethod = method match {
+    case ReducedAst.JvmMethod(ident, fparams, exp, tpe, _, _) =>
+      DocAst.JvmMethod(ident, fparams map printFormalParam, print(exp), MonoTypePrinter.print(tpe))
   }
 }
