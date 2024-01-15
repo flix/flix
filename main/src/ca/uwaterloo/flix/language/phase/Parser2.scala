@@ -88,6 +88,10 @@ object Parser2 {
       val filesThatAreKnownToWork = List(
         "Fixpoint/Ram/RamTerm.flix",
         "Fixpoint/Ast/HeadTerm.flix",
+        "Fixpoint/Solver.flix",
+        "Fixpoint/Ast/Datalog.flix",
+        "Fixpoint/Ast/Constraint.flix",
+        "GetOpt.flix",
         "Prelude.flix",
         "Debug.flix",
         "String.flix",
@@ -1145,7 +1149,7 @@ object Parser2 {
       (OpKind.Binary, List(TokenKind.AngledPlus)), // <+>
       (OpKind.Unary, List(TokenKind.KeywordDiscard)), // discard
       (OpKind.Binary, List(TokenKind.InfixFunction)), // `my_function`
-      (OpKind.Binary, List(TokenKind.UserDefinedOperator, TokenKind.NameMath)), // +=+
+      (OpKind.Binary, List(TokenKind.UserDefinedOperator, TokenKind.NameMath, TokenKind.PlusPlus)), // +=+, TODO: PlusPlus is a user defined op, but is also used as type case union
       (OpKind.Unary, List(TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDeref)), // lazy, force, deref
       (OpKind.Unary, List(TokenKind.Plus, TokenKind.Minus, TokenKind.TripleTilde)), // +, -, ~~~
       (OpKind.Unary, List(TokenKind.KeywordNot))
