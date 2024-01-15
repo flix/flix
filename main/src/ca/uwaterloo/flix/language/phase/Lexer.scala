@@ -482,7 +482,7 @@ object Lexer {
    */
   private def isSeparated(keyword: String)(implicit s: State): Boolean = {
     val VALID_SEPARATORS = if (List("from", "new", "get", "query").contains(keyword)) {
-      List(')', '[', ']', '}', ',', ';')
+      List('[', ']', '}', ',', ';')
     } else {
       List('(', ')', '[', ']', '{', '}', ',', ';')
     }

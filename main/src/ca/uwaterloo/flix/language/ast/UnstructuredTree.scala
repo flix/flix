@@ -213,6 +213,10 @@ object UnstructuredTree {
 
       case object Intrinsic extends Expr
 
+      case object NewObject extends Expr
+
+      case object JvmMethod extends Expr
+
       case object LetImport extends Expr
 
       case object LetRecDef extends Expr
@@ -264,6 +268,18 @@ object UnstructuredTree {
       case object Spawn extends Expr
 
       case object ScopeName extends Expr
+
+      case object LiteralRecord extends Expr
+
+      case object LiteralRecordField extends Expr
+
+      case object RecordOperation extends Expr
+
+      case object RecordOpExtend extends Expr
+
+      case object RecordOpRestrict extends Expr
+
+      case object RecordOpUpdate extends Expr
 
       case object LiteralList extends Expr
 

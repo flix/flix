@@ -678,6 +678,7 @@ object Weeder2 {
         case TreeKind.Expr.Statement => visitStatement(tree)
         case TreeKind.Expr.Use => visitExprUse(tree)
         case TreeKind.Expr.Try => visitTry(tree)
+        case TreeKind.Expr.NewObject => visitNewObject(tree)
         case TreeKind.Expr.LetRecDef => visitLetRecDef(tree)
         case TreeKind.Expr.Ascribe => visitAscribe(tree)
         case TreeKind.Expr.Match => visitMatch(tree)
@@ -700,6 +701,7 @@ object Weeder2 {
         case TreeKind.Expr.Ref => visitReference(tree)
         case TreeKind.Expr.Spawn => visitSpawn(tree)
         case TreeKind.Expr.Static => visitStatic(tree)
+        case TreeKind.Expr.LiteralRecord => visitLiteralRecord(tree)
         case TreeKind.Expr.LiteralList => visitLiteralList(tree)
         case TreeKind.Expr.LiteralSet => visitLiteralSet(tree)
         case TreeKind.Expr.LiteralVector => visitLiteralVector(tree)
@@ -712,15 +714,33 @@ object Weeder2 {
       }
     }
 
+    private def visitNewObject(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.NewObject)
+      val methods = pickAll(TreeKind.Expr.JvmMethod, tree.children)
+      mapN(
+        Types.pickType(tree),
+        traverse(methods)(visitJvmMethod),
+      )((tpe, methods) => Expr.NewObject(tpe, methods, tree.loc))
+    }
+
+    private def visitJvmMethod(tree: Tree)(implicit s: State): Validation[JvmMethod, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.JvmMethod)
+      mapN(
+        pickNameIdent(tree),
+        pickExpression(tree),
+        Decls.pickFormalParameters(tree),
+        Types.pickType(tree),
+        Types.tryPickEffect(tree),
+      )((ident, expr, fparams, tpe, eff) => JvmMethod(ident, fparams, expr, tpe, eff, tree.loc))
+    }
+
     private def visitParYield(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.ParYield)
       val fragments = pickAll(TreeKind.Expr.ParYieldFragment, tree.children)
       mapN(
         traverse(fragments)(visitParYieldFragment),
         pickExpression(tree)
-      )((fragments, expr) => {
-        Expr.ParYield(fragments, expr, tree.loc)
-      })
+      )((fragments, expr) => Expr.ParYield(fragments, expr, tree.loc))
     }
 
     private def visitParYieldFragment(tree: Tree)(implicit s: State): Validation[ParYieldFragment, CompilationMessage] = {
@@ -952,6 +972,23 @@ object Weeder2 {
     private def visitScopeName(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.ScopeName)
       pickExpression(tree)
+    }
+
+    private def visitLiteralRecord(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LiteralRecord)
+      val fields = pickAll(TreeKind.Expr.LiteralRecordField, tree.children)
+      mapN(
+        traverse(fields)(visitLiteralRecordField)
+      )(fields => fields.foldRight(Expr.RecordEmpty(tree.loc.asSynthetic) : Expr){
+        case ((label, expr, loc), acc) => Expr.RecordExtend(label, expr, acc, loc)
+      })
+    }
+
+    private def visitLiteralRecordField(tree: Tree)(implicit s: State): Validation[(Name.Label, Expr, SourceLocation), CompilationMessage] = {
+      mapN(
+        pickNameIdent(tree),
+        pickExpression(tree)
+      )((ident, expr) => (Name.mkLabel(ident), expr, tree.loc))
     }
 
     private def visitLiteralList(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -1289,7 +1326,8 @@ object Weeder2 {
           if (lit == "") {
             acc.toSuccess
           } else {
-            val cst = Expr.Cst(Ast.Constant.Str(lit), loc)
+            val unescapedLit = StringContext.processEscapes(lit)
+            val cst = Expr.Cst(Ast.Constant.Str(unescapedLit), loc)
             Expr.Binary(SemanticOp.StringOp.Concat, acc, cst, tree.loc.asSynthetic).toSuccess
           }
         // An expression part: Apply 'toString' to it and concat the result
@@ -1880,7 +1918,8 @@ object Weeder2 {
     def toStringCst(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
       val lit = token.text.stripPrefix("\"").stripSuffix("\"")
-      Expr.Cst(Ast.Constant.Str(lit), loc).toSuccess
+      val unescapedLit = StringContext.processEscapes(lit)
+      Expr.Cst(Ast.Constant.Str(unescapedLit), loc).toSuccess
     }
   }
 

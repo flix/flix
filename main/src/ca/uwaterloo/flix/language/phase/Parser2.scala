@@ -87,6 +87,12 @@ object Parser2 {
 
       val filesThatAreKnownToWork = List(
         "Prelude.flix",
+        "Benchmark.flix",
+        "Files.flix",
+        "Console.flix",
+        "Adaptor.flix",
+        "MutDisjointSets.flix",
+        "Regex.flix",
         "Environment.flix",
         "RedBlackTree.flix",
         "DelayMap.flix",
@@ -556,7 +562,7 @@ object Parser2 {
       this
     }
 
-    def zeroOrMore()(implicit s: State): Unit = {
+    def zeroOrMore(followedBy: Option[() => Mark.Closed] = None)(implicit s: State): Unit = {
       assert(at(leftDelim))
       expect(leftDelim)
       var continue = true
@@ -572,6 +578,11 @@ object Parser2 {
       }
       if (at(separator)) {
         advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Trailing $separator"))
+      }
+
+      followedBy match {
+        case Some(rule) => rule()
+        case None =>
       }
       expect(rightDelim)
     }
@@ -727,7 +738,7 @@ object Parser2 {
       }
 
       if (eat(TokenKind.CurlyL)) {
-        while(!at(TokenKind.CurlyR) && !eof()) {
+        while (!at(TokenKind.CurlyR) && !eof()) {
           operation()
         }
         expect(TokenKind.CurlyR)
@@ -1013,7 +1024,7 @@ object Parser2 {
       close(mark, TreeKind.Annotations)
     }
 
-    private def docComment()(implicit s: State): Mark.Closed = {
+    def docComment()(implicit s: State): Mark.Closed = {
       val mark = open()
       while (at(TokenKind.CommentDoc) && !eof()) {
         advance()
@@ -1181,10 +1192,9 @@ object Parser2 {
       val mark = open()
       // Handle clearly delimited expressions
       nth(0) match {
-        // TODO: select, debug strings, do, resume, open, open_as, choose, restrictable choose, query, inject, project
-        // TODO: newobject, JvmMethod, instanceof, without, recordlit, recordop
+        // TODO: select, debug strings, do, resume, open, open_as, choose, restrictable choose, query, inject, project, instanceof, without,
         case TokenKind.ParenL => parenOrTupleOrLambda()
-        case TokenKind.CurlyL => block()
+        case TokenKind.CurlyL => blockOrRecord()
         case TokenKind.KeywordIf => ifThenElse()
         case TokenKind.KeywordImport => letImport()
         case TokenKind.BuiltIn => intrinsic()
@@ -1204,6 +1214,7 @@ object Parser2 {
         case TokenKind.KeywordForM | TokenKind.KeywordFor => forM()
         case TokenKind.KeywordForA => forA()
         case TokenKind.KeywordRef => reference()
+        case TokenKind.KeywordNew => newObject()
         case TokenKind.KeywordTry => tryCatch()
         case TokenKind.ListHash => listLiteral()
         case TokenKind.SetHash => setLiteral()
@@ -1250,6 +1261,32 @@ object Parser2 {
       close(mark, TreeKind.Expr.Expr)
     }
 
+    private def newObject()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordNew))
+      val mark = open()
+      expect(TokenKind.KeywordNew)
+      Type.ttype()
+      expect(TokenKind.CurlyL)
+      while (at(TokenKind.KeywordDef) && !eof()) {
+        jvmMethod()
+      }
+      expect(TokenKind.CurlyR)
+      close(mark, TreeKind.Expr.NewObject)
+    }
+
+    private def jvmMethod()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordDef))
+      val mark = open()
+      expect(TokenKind.KeywordDef)
+      name(NAME_JAVA)
+      Decl.parameters()
+      expect(TokenKind.Colon)
+      Type.typeAndEffect()
+      expect(TokenKind.Equal)
+      Expr.statement()
+      close(mark, TreeKind.Expr.JvmMethod)
+    }
+
     private def parYield()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordPar))
       val mark = open()
@@ -1261,6 +1298,7 @@ object Parser2 {
       expression()
       close(mark, TreeKind.Expr.ParYield)
     }
+
     private def parYieldFragment()(implicit s: State): Mark.Closed = {
       val mark = open()
       Pattern.pattern()
@@ -1550,6 +1588,8 @@ object Parser2 {
         if (eat(TokenKind.CurlyL)) {
           while (at(TokenKind.KeywordCase) && !eof()) {
             matchRule()
+            // TODO: These two calls should be removed
+            comments()
           }
           expect(TokenKind.CurlyR)
         }
@@ -1834,6 +1874,67 @@ object Parser2 {
       expect(TokenKind.ArrowThin)
       expression()
       close(mark, TreeKind.Expr.Lambda)
+    }
+
+    private def blockOrRecord()(implicit s: State): Mark.Closed = {
+      // Detemines if a '{' is opening a block or a record literal.
+      assert(at(TokenKind.CurlyL))
+      (nth(1), nth(2)) match {
+        case (TokenKind.NameLowerCase, TokenKind.Equal) => recordLiteral()
+        case _ => block()
+        // TODO: Record operations
+      }
+    }
+
+    private def recordLiteral()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.CurlyL))
+      val mark = open()
+      separated(recordLiteralField)
+        .within(TokenKind.CurlyL, TokenKind.CurlyR)
+        .zeroOrMore()
+      close(mark, TreeKind.Expr.LiteralRecord)
+    }
+
+    private def recordLiteralField()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      name(NAME_FIELD)
+      expect(TokenKind.Equal)
+      expression()
+      close(mark, TreeKind.Expr.LiteralRecordField)
+    }
+
+    private def recordOperation()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.CurlyL))
+      val mark = open()
+      separated(recordOp)
+        .within(TokenKind.CurlyL, TokenKind.CurlyR)
+        .zeroOrMore(followedBy = Some(() => {
+          expect(TokenKind.Bar)
+          expression()
+        }))
+
+      close(mark, TreeKind.Expr.RecordOperation)
+    }
+
+    private def recordOp()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      nth(0) match {
+        case TokenKind.Plus =>
+          advance()
+          name(NAME_FIELD)
+          expect(TokenKind.Equal)
+          expression()
+          close(mark, TreeKind.Expr.RecordOpExtend)
+        case TokenKind.Minus =>
+          name(NAME_FIELD)
+          close(mark, TreeKind.Expr.RecordOpRestrict)
+        case TokenKind.NameLowerCase =>
+          name(NAME_FIELD)
+          expect(TokenKind.Equal)
+          expression()
+          close(mark, TreeKind.Expr.RecordOpUpdate)
+        case k => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected record operation but found $k"))
+      }
     }
 
     /**
