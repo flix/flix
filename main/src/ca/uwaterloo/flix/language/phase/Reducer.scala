@@ -40,14 +40,14 @@ object Reducer {
   }
 
   private def visitDef(d: LiftedAst.Def)(implicit ctx: SharedContext): ReducedAst.Def = d match {
-    case LiftedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, purity, loc) =>
+    case LiftedAst.Def(ann, mod, sym, cparams, fparams, pcPoints, exp, tpe, purity, loc) =>
       implicit val lctx: LocalContext = LocalContext.mk()
       val cs = cparams.map(visitFormalParam)
       val fs = fparams.map(visitFormalParam)
       val e = visitExpr(exp)
       val ls = lctx.lparams.toList
       val stmt = ReducedAst.Stmt.Ret(e, e.tpe, e.loc)
-      ReducedAst.Def(ann, mod, sym, cs, fs, ls, 0, stmt, tpe, purity, loc)
+      ReducedAst.Def(ann, mod, sym, cs, fs, ls, pcPoints, stmt, tpe, purity, loc)
   }
 
   private def visitEnum(d: LiftedAst.Enum): ReducedAst.Enum = d match {
