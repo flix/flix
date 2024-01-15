@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 
