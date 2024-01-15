@@ -731,9 +731,13 @@ object Lexer {
     var kind: TokenKind = TokenKind.LiteralString
     while (!eof()) {
       var p = escapedPeek()
-      // Check for the beginning of an string interpolation.
-      if (!previousPrevious().contains('\\') && previous().contains('$') && p.contains('{')) {
-        acceptStringInterpolation() match {
+      // Check for the beginning of a string interpolation.
+      val prevPrev = previousPrevious()
+      val prev = previous()
+      val isInterpolation = !prevPrev.contains('\\') && prev.contains('$') && p.contains('{')
+      val isDebug = !prevPrev.contains('\\') && prev.contains('%') && p.contains('{')
+      if (isInterpolation || isDebug) {
+        acceptStringInterpolation(isDebug) match {
           case e@TokenKind.Err(_) => return e
           case k =>
             // Resume regular string literal tokenization by resetting p and prev.
@@ -757,6 +761,7 @@ object Lexer {
 
   /**
    * Moves current position past an interpolated expression within a string. IE. "Hi ${name}!".
+   * This function also handles debug strings like "Value: %{x}".
    * Note that this function works a little differently to the other `accept*` functions
    * since it will produce a number of tokens before returning.
    * This is necessary since it must be able to move past any expressions,
@@ -770,7 +775,7 @@ object Lexer {
    * "My favorite number is ${ { "${"//"}"40 + 2} }!"
    * "${"${}"}"
    */
-  private def acceptStringInterpolation()(implicit s: State): TokenKind = {
+  private def acceptStringInterpolation(isDebug: Boolean = false)(implicit s: State): TokenKind = {
     // Handle max nesting level
     s.interpolationNestingLevel += 1
     if (s.interpolationNestingLevel > InterpolatedStringMaxNestingLevel) {
@@ -779,7 +784,7 @@ object Lexer {
     }
     val startLocation = sourceLocationAtCurrent()
     advance() // Consume '{'.
-    addToken(TokenKind.LiteralStringInterpolationL)
+    addToken(if (isDebug) TokenKind.LiteralDebugStringL else TokenKind.LiteralStringInterpolationL)
     // consume tokens until a terminating '}' is found
     var blockNestingLevel = 0
     while (!eof()) {
@@ -797,7 +802,7 @@ object Lexer {
         if (kind == TokenKind.CurlyR) {
           if (blockNestingLevel == 0) {
             s.interpolationNestingLevel -= 1
-            return TokenKind.LiteralStringInterpolationR
+            return if (isDebug) TokenKind.LiteralDebugStringR else TokenKind.LiteralStringInterpolationR
           }
           blockNestingLevel -= 1
         }

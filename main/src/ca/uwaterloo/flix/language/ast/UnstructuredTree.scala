@@ -251,6 +251,8 @@ object UnstructuredTree {
 
       case object StringInterpolation extends Expr
 
+      case object StringInterpolationDebug extends Expr
+
       case object Match extends Expr
 
       case object MatchRule extends Expr

@@ -86,7 +86,11 @@ object Parser2 {
       }
 
       val filesThatAreKnownToWork = List(
+        "Fixpoint/Ram/RamTerm.flix",
+        "Fixpoint/Ast/HeadTerm.flix",
         "Prelude.flix",
+        "Debug.flix",
+        "String.flix",
         "Benchmark.flix",
         "Files.flix",
         "Console.flix",
@@ -1203,7 +1207,8 @@ object Parser2 {
         case TokenKind.KeywordLet => letMatch()
         case TokenKind.KeywordSpawn => spawn()
         case TokenKind.KeywordPar => parYield()
-        case TokenKind.LiteralStringInterpolationL => interpolatedString()
+        case TokenKind.LiteralStringInterpolationL
+             | TokenKind.LiteralDebugStringL => interpolatedString()
         case TokenKind.KeywordTypeMatch => typematch()
         case TokenKind.KeywordMatch => matchOrMatchLambda()
         case TokenKind.KeywordMaskedCast => uncheckedMaskingCast()
@@ -1234,7 +1239,8 @@ object Parser2 {
              | TokenKind.LiteralBigInt
              | TokenKind.KeywordTrue
              | TokenKind.KeywordFalse
-             | TokenKind.KeywordNull => literal()
+             | TokenKind.KeywordNull
+             | TokenKind.LiteralRegex => literal()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThin) unaryLambda() else name(NAME_VARIABLE)
         case TokenKind.KeywordStaticUppercase => static()
         case TokenKind.NameLowerCase
@@ -1760,14 +1766,14 @@ object Parser2 {
     }
 
     private def interpolatedString()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.LiteralStringInterpolationL))
+      assert(atAny(List(TokenKind.LiteralStringInterpolationL, TokenKind.LiteralDebugStringL)))
       val mark = open()
-      var continue = eat(TokenKind.LiteralStringInterpolationL)
+      var continue = eatAny(List(TokenKind.LiteralStringInterpolationL, TokenKind.LiteralDebugStringL))
       while (continue && !eof()) {
         expression()
-        continue = eat(TokenKind.LiteralStringInterpolationL)
+        continue = eatAny(List(TokenKind.LiteralStringInterpolationL, TokenKind.LiteralDebugStringL))
       }
-      expect(TokenKind.LiteralStringInterpolationR)
+      expectAny(List(TokenKind.LiteralStringInterpolationR, TokenKind.LiteralDebugStringR))
       close(mark, TreeKind.Expr.StringInterpolation)
     }
 

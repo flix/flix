@@ -1317,12 +1317,14 @@ object Weeder2 {
     private def visitStringInterpolation(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.StringInterpolation)
       val init = WeededAst.Expr.Cst(Ast.Constant.Str(""), tree.loc)
-      // TODO: There is also Debug strings!
+      var isDebug = false
       Validation.fold(tree.children, init: WeededAst.Expr) {
         // A string part: Concat it onto the result
         case (acc, Child.Token(token)) =>
+          isDebug = token.kind == TokenKind.LiteralDebugStringL
           val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
-          val lit = token.text.stripPrefix("\"").stripSuffix("\"").stripPrefix("}").stripSuffix("${")
+          val lit0 = token.text.stripPrefix("\"").stripSuffix("\"").stripPrefix("}")
+          val lit = if (isDebug) lit0.stripSuffix("%{") else lit0.stripSuffix("${")
           if (lit == "") {
             acc.toSuccess
           } else {
@@ -1334,7 +1336,11 @@ object Weeder2 {
         case (acc, Child.Tree(tree)) if tree.kind == TreeKind.Expr.Expr =>
           mapN(visitExpression(tree))(expr => {
             val loc = tree.loc.asSynthetic
-            val str = Expr.Apply(Expr.Ambiguous(Name.mkQName("ToString.toString"), loc), List(expr), loc)
+            val funcName = if (isDebug) {
+              isDebug = false
+              "Debug.stringify"
+            } else "ToString.toString"
+            val str = Expr.Apply(Expr.Ambiguous(Name.mkQName(funcName), loc), List(expr), loc)
             Expr.Binary(SemanticOp.StringOp.Concat, acc, str, loc)
           })
         case (_, Child.Tree(t)) => throw InternalCompilerException(s"Parser placed child of kind '${t.kind}' in string interpolation", tree.loc)
@@ -1887,7 +1893,9 @@ object Weeder2 {
     def toRegex(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
       try {
-        val pattern = JPattern.compile(token.text.stripPrefix("regex\"").stripSuffix("\""))
+        val lit = token.text.stripPrefix("regex\"").stripSuffix("\"")
+        val unescapedLit = StringContext.processEscapes(lit)
+        val pattern = JPattern.compile(unescapedLit)
         Expr.Cst(Ast.Constant.Regex(pattern), loc).toSuccess
       } catch {
         case ex: PatternSyntaxException =>
