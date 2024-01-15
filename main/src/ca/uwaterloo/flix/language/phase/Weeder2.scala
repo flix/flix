@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.Ast.Constant
+import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst, Type => AstType}
 import ca.uwaterloo.flix.language.errors.Parse2Error
@@ -263,7 +263,6 @@ object Weeder2 {
         (doc, ann, mods, ident, tparams, fparams, tpe, tconstrs) => Declaration.Op(doc, ann, mods, ident, fparams, tpe, tconstrs, loc = tree.loc)
       }
     }
-
 
 
     private def visitTypeAlias(tree: Tree)(implicit s: State): Validation[Declaration.TypeAlias, CompilationMessage] = {
@@ -678,6 +677,10 @@ object Weeder2 {
         case TreeKind.Expr.Statement => visitStatement(tree)
         case TreeKind.Expr.Use => visitExprUse(tree)
         case TreeKind.Expr.Try => visitTry(tree)
+        case TreeKind.Expr.FixpointQuery => visitFixpointQuery(tree)
+        case TreeKind.Expr.FixpointConstraintSet => visitFixpointConstraintSet(tree)
+        case TreeKind.Expr.FixpointSolve => visitFixpointSolve(tree)
+        case TreeKind.Expr.FixpointProject => visitFixpointProject(tree)
         case TreeKind.Expr.NewObject => visitNewObject(tree)
         case TreeKind.Expr.LetRecDef => visitLetRecDef(tree)
         case TreeKind.Expr.Ascribe => visitAscribe(tree)
@@ -711,6 +714,80 @@ object Weeder2 {
         case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
         case TreeKind.QName => visitExprQname(tree)
         case kind => failWith(s"TODO: implement expression of kind '$kind'", tree.loc)
+      }
+    }
+
+    private def visitFixpointProject(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.FixpointProject)
+      val expressions = pickAll(TreeKind.Expr.Expr, tree.children)
+      val idents = pickAll(TreeKind.Ident, tree.children)
+      flatMapN(
+        traverse(expressions)(visitExpression),
+        traverse(idents)(tokenToIdent)
+      ) {
+        case (exprs, idents) if exprs.length != idents.length =>
+          // Check for mismatched arity
+          val err = MismatchedArity(exprs.length, idents.length, tree.loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+
+        case (exprs, idents) =>
+          val init = Expr.FixpointConstraintSet(Nil, tree.loc)
+          exprs.zip(idents).foldRight(init: Expr) {
+            case ((exp, ident), acc) =>
+              val pred = Name.mkPred(ident)
+              val innerExp = Expr.FixpointInject(exp, pred, tree.loc)
+              WeededAst.Expr.FixpointMerge(innerExp, acc, tree.loc)
+          }.toSuccess
+      }
+    }
+
+    private def visitFixpointSolve(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.FixpointSolve)
+      val expressions = pickAll(TreeKind.Expr.Expr, tree.children)
+      val idents = pickAll(TreeKind.Ident, tree.children)
+      mapN(
+        traverse(expressions)(visitExpression),
+        traverse(idents)(tokenToIdent)
+      ) {
+        (exprs, idents) =>
+          val optIdents = if (idents.isEmpty) None else Some(idents)
+          Expr.FixpointSolveWithProject(exprs, optIdents, tree.loc)
+      }
+    }
+
+    private def visitFixpointQuery(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.FixpointQuery)
+      val expressions = traverse(pickAll(TreeKind.Expr.Expr, tree.children))(visitExpression)
+      val selects = flatMapN(pick(TreeKind.Expr.FixpointSelect, tree.children))(
+        selectTree => traverse(pickAll(TreeKind.Expr.Expr, selectTree.children))(visitExpression)
+      )
+      val froms = flatMapN(pick(TreeKind.Expr.FixpointFrom, tree.children))(
+        fromTree => traverse(pickAll(TreeKind.Predicate.Atom, fromTree.children))(Predicates.visitAtom)
+      )
+      val where = traverseOpt(tryPick(TreeKind.Expr.FixpointWhere, tree.children))(pickExpression)
+      mapN(expressions, selects, froms, where) {
+        (expressions, selects, froms, where) =>
+          val whereList = where.map(w => List(w)).getOrElse(List.empty)
+          Expr.FixpointQueryWithSelect(expressions, selects, froms, whereList, tree.loc)
+      }
+    }
+
+    private def visitFixpointConstraintSet(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.FixpointConstraintSet)
+      val constraints = pickAll(TreeKind.Expr.FixpointConstraint, tree.children)
+      mapN(traverse(constraints)(visitFixpointConstraint)) {
+        constraints => Expr.FixpointConstraintSet(constraints, tree.loc)
+      }
+    }
+
+    private def visitFixpointConstraint(tree: Tree)(implicit s: State): Validation[Constraint, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.FixpointConstraint)
+      val bodyItems = pickAll(TreeKind.Predicate.Body, tree.children)
+      mapN(
+        Predicates.pickHead(tree),
+        traverse(bodyItems)(Predicates.visitBody),
+      ) {
+        (head, body) => Constraint(head, body, tree.loc)
       }
     }
 
@@ -979,7 +1056,7 @@ object Weeder2 {
       val fields = pickAll(TreeKind.Expr.LiteralRecordField, tree.children)
       mapN(
         traverse(fields)(visitLiteralRecordField)
-      )(fields => fields.foldRight(Expr.RecordEmpty(tree.loc.asSynthetic) : Expr){
+      )(fields => fields.foldRight(Expr.RecordEmpty(tree.loc.asSynthetic): Expr) {
         case ((label, expr, loc), acc) => Expr.RecordExtend(label, expr, acc, loc)
       })
     }
@@ -1931,6 +2008,91 @@ object Weeder2 {
     }
   }
 
+  private object Predicates {
+    def pickHead(tree: Tree)(implicit s: State): Validation[Predicate.Head.Atom, CompilationMessage] = {
+      flatMapN(
+        pick(TreeKind.Predicate.Head, tree.children)
+      )(tree => {
+        flatMapN(
+          pickNameIdent(tree),
+          pick(TreeKind.Predicate.TermList, tree.children)
+        )(
+          (ident, tree) => {
+            val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree.children))(Exprs.visitExpression)
+            val maybeLatTerm = tryPickLatticeTermExpr(tree)
+            mapN(exprs, maybeLatTerm) {
+              case (exprs, None) => Predicate.Head.Atom(Name.mkPred(ident), Denotation.Relational, exprs, tree.loc)
+              case (exprs, Some(term)) => Predicate.Head.Atom(Name.mkPred(ident), Denotation.Latticenal, exprs ::: term :: Nil, tree.loc)
+            }
+          })
+      })
+    }
+
+
+    def visitBody(parentTree: Tree)(implicit s: State): Validation[Predicate.Body, CompilationMessage] = {
+      assert(parentTree.kind == TreeKind.Predicate.Body)
+      val tree = unfold(parentTree)
+      tree.kind match {
+        case TreeKind.Predicate.Atom => visitAtom(tree)
+        case TreeKind.Predicate.Guard => visitGuard(tree)
+        case TreeKind.Predicate.Functional => visitFunctional(tree)
+        case kind => throw InternalCompilerException(s"expected predicate body but found '$kind'", tree.loc)
+      }
+    }
+
+    def visitAtom(tree: Tree)(implicit s: State): Validation[Predicate.Body.Atom, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Predicate.Atom)
+      val fixity = if (hasToken(TokenKind.KeywordFix, tree)) Fixity.Fixed else Fixity.Loose
+      val polarity = if (hasToken(TokenKind.KeywordNot, tree)) Polarity.Negative else Polarity.Positive
+
+      flatMapN(
+        pickNameIdent(tree),
+        pick(TreeKind.Predicate.PatternList, tree.children)
+      )(
+        (ident, tree) => {
+          val exprs = traverse(pickAll(TreeKind.Pattern.Pattern, tree.children))(tree => Patterns.visitPattern(tree))
+          val maybeLatTerm = tryPickLatticeTermPattern(tree)
+          flatMapN(exprs, maybeLatTerm) {
+            case (pats, None) =>
+              // Check for `[[IllegalFixedAtom]]`.
+              val errors = (polarity, fixity) match {
+                case (Ast.Polarity.Negative, Ast.Fixity.Fixed) => Some(IllegalFixedAtom(tree.loc))
+                case _ => None
+              }
+              Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, pats, tree.loc)
+                .toSuccess
+                .withSoftFailures(errors)
+            case (pats, Some(term)) => Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, pats ::: term :: Nil, tree.loc).toSuccess
+          }
+        })
+    }
+
+    private def visitGuard(tree: Tree)(implicit s: State): Validation[Predicate.Body.Guard, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Predicate.Guard)
+      mapN(Exprs.pickExpression(tree))(Predicate.Body.Guard(_, tree.loc))
+    }
+
+    private def visitFunctional(tree: Tree)(implicit s: State): Validation[Predicate.Body.Functional, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Predicate.Functional)
+      val idents = pickAll(TreeKind.Ident, tree.children)
+      mapN(
+        traverse(idents)(tokenToIdent),
+        Exprs.pickExpression(tree)
+      ) {
+        (idents, expr) => Predicate.Body.Functional(idents, expr, tree.loc)
+      }
+    }
+
+    private def tryPickLatticeTermExpr(tree: Tree)(implicit s: State): Validation[Option[Expr], CompilationMessage] = {
+      traverseOpt(tryPick(TreeKind.Predicate.LatticeTerm, tree.children))(Exprs.pickExpression)
+    }
+
+    private def tryPickLatticeTermPattern(tree: Tree)(implicit s: State): Validation[Option[Pattern], CompilationMessage] = {
+      traverseOpt(tryPick(TreeKind.Predicate.LatticeTerm, tree.children))(t => Patterns.pickPattern(t))
+    }
+
+  }
+
   private object Types {
     def pickType(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
       flatMapN(pick(TreeKind.Type.Type, tree.children))(visitType)
@@ -1960,6 +2122,7 @@ object Weeder2 {
         case TreeKind.Type.Tuple => visitTuple(inner)
         case TreeKind.Type.Native => visitNative(inner)
         case TreeKind.Type.Record => visitRecord(inner)
+        case TreeKind.Type.Schema => visitSchema(inner)
         case TreeKind.Type.Constant => visitConstant(inner)
         case TreeKind.QName => mapN(visitQName(inner))(Type.Ambiguous(_, inner.loc))
         case TreeKind.Ident => mapN(tokenToIdent(inner)) {
@@ -2030,6 +2193,45 @@ object Weeder2 {
           }
 
         case (_, operands) => throw InternalCompilerException(s"Type.Unary tree with ${operands.length} operands", tree.loc)
+      }
+    }
+
+    private def visitSchema(parentTree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      assert(parentTree.kind == TreeKind.Type.Schema)
+      val maybeRest = tryPick(TreeKind.Ident, parentTree.children)
+      flatMapN(
+        traverseOpt(maybeRest)(tokenToIdent)
+      ) { maybeRest =>
+        val rest = maybeRest match {
+          case None => WeededAst.Type.SchemaRowEmpty(parentTree.loc)
+          case Some(name) => WeededAst.Type.Var(name, name.loc)
+        }
+
+        val row = Validation.foldRight(pickAllTrees(parentTree))(rest.toSuccess) {
+          case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithAlias =>
+            mapN(
+              pickQName(parentTree),
+              Types.pickArguments(tree)
+            ) {
+              (qname, targs) => Type.SchemaRowExtendByAlias(qname, targs, acc, tree.loc)
+            }
+
+          case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithTypes =>
+            val types = pickAll(TreeKind.Type.Type, tree.children)
+            val maybeLatTerm = tryPick(TreeKind.Predicate.LatticeTerm, tree.children)
+            mapN(
+              pickQName(tree),
+              traverse(types)(Types.visitType),
+              traverseOpt(maybeLatTerm)(Types.pickType)
+            ) {
+              case (qname, tps, None) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Relational, tps, acc, tree.loc)
+              case (qname, tps, Some(t)) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Latticenal, tps :+ t, acc, tree.loc)
+            }
+
+          case (_, acc) => acc.toSuccess
+        }
+
+        mapN(row)(Type.Schema(_, parentTree.loc))
       }
     }
 
@@ -2390,7 +2592,7 @@ object Weeder2 {
    */
   private def unfold(tree: Tree): Tree = {
     assert(tree.kind match {
-      case TreeKind.Type.Type | TreeKind.Expr.Expr | TreeKind.JvmOp.JvmOp => true
+      case TreeKind.Type.Type | TreeKind.Expr.Expr | TreeKind.JvmOp.JvmOp | TreeKind.Predicate.Body => true
       case _ => false
     })
 
@@ -2404,6 +2606,21 @@ object Weeder2 {
     }.getOrElse(
       throw InternalCompilerException(s"expected '${tree.kind}' to have a tree child that is not a comment", tree.loc)
     )
+  }
+
+  // A helper that tries to find a token child of a specific kind
+  private def hasToken(kind: TokenKind, tree: Tree): Boolean = {
+    tree.children.exists {
+      case Child.Token(t) => t.kind == kind
+      case _ => false
+    }
+  }
+
+  // A helper that picks all subtrees
+  private def pickAllTrees(tree: Tree): List[Tree] = {
+    tree.children.collect {
+      case Child.Tree(t) => t
+    }.toList
   }
 
   // A helper that collects the text in token children

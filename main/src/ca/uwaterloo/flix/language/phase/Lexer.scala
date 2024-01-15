@@ -338,10 +338,10 @@ object Lexer {
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case '#' => if (peek() == '#') {
-        acceptJavaName()
-      } else {
-        TokenKind.Hash
+      case '#' => peek() match {
+        case '#' => acceptJavaName()
+        case '{' => advance(); TokenKind.HashCurlyL
+        case _ => TokenKind.Hash
       }
       case _ if isKeyword("///") => acceptDocComment()
       case _ if isKeyword("/*") => acceptBlockComment()
@@ -350,6 +350,7 @@ object Lexer {
         case (':', Some(':')) => advance(); advance(); TokenKind.TripleColon
         case (':', _) => advance(); TokenKind.ColonColon
         case ('=', _) => advance(); TokenKind.ColonEqual
+        case ('-', _) => advance(); TokenKind.ColonMinus
         case (_, _) => TokenKind.Colon
       }
       case '@' => if (peek().isLetter) {
@@ -884,7 +885,7 @@ object Lexer {
           advance()
 
         // Dots mark a decimal but are otherwise ignored
-        case '.' =>
+        case '.' if peekPeek().exists(_.isDigit) =>
           if (isDecimal) {
             return TokenKind.Err(LexerError.DoubleDottedNumber(sourceLocationAtCurrent()))
           }

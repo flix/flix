@@ -297,6 +297,22 @@ object UnstructuredTree {
 
       case object RecordSelect extends Expr
 
+      case object FixpointConstraintSet extends Expr
+
+      case object FixpointConstraint extends Expr
+
+      case object FixpointProject extends Expr
+
+      case object FixpointSolve extends Expr
+
+      case object FixpointQuery extends Expr
+
+      case object FixpointFrom extends Expr
+
+      case object FixpointWhere extends Expr
+
+      case object FixpointSelect extends Expr
+
     }
 
     ////// TYPES //////
@@ -343,6 +359,37 @@ object UnstructuredTree {
       case object Function extends Type
 
       case object EffectSet extends Type
+
+      case object Schema extends Type
+
+      case object PredicateWithAlias extends Type
+
+      case object PredicateWithTypes extends Type
+
+    }
+
+    ////// PREDICATES //////
+    sealed trait Predicate extends TreeKind {
+      override def debug_name: Option[String] = Some("Predicate")
+    }
+
+    object Predicate {
+
+      case object Head extends Predicate
+
+      case object TermList extends Predicate
+
+      case object LatticeTerm extends Predicate
+
+      case object PatternList extends Predicate
+
+      case object Body extends Predicate
+
+      case object Guard extends Predicate
+
+      case object Functional extends Predicate
+
+      case object Atom extends Predicate
 
     }
 
