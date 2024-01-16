@@ -40,9 +40,9 @@ mod Test.Handler.ZeroShot.Int8 {
     @Test
     def testRecursiveLetRec01(): Bool =
         def f() = do Throw.throw();
-        def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
+        def r(x) = if (x == 0i8) f() else { r(x - 1i8); unreachable!() } ;
         let result = try {
-            r(0)
+            r(0i8)
         } with Throw {
             def throw(_k) = 42i8
         };
@@ -51,9 +51,9 @@ mod Test.Handler.ZeroShot.Int8 {
     @Test
     def testRecursiveLetRec02(): Bool =
         def f() = do Throw.throw();
-        def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
+        def r(x) = if (x == 0i8) f() else { r(x - 1i8); unreachable!() } ;
         let result = try {
-            r(1)
+            r(1i8)
         } with Throw {
             def throw(_k) = 42i8
         };
@@ -62,9 +62,9 @@ mod Test.Handler.ZeroShot.Int8 {
     @Test
     def testRecursiveLetRec03(): Bool =
         def f() = do Throw.throw();
-        def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
+        def r(x) = if (x == 0i8) f() else { r(x - 1i8); unreachable!() } ;
         let result = try {
-            r(10)
+            r(10i8)
         } with Throw {
             def throw(_k) = 42i8
         };
@@ -73,7 +73,7 @@ mod Test.Handler.ZeroShot.Int8 {
     @Test
     def testMutualRecursive01(): Bool =
         let result = try {
-            mutual1(0)
+            mutual1(0i8)
         } with Throw {
             def throw(_k) = 42i8
         };
@@ -82,7 +82,7 @@ mod Test.Handler.ZeroShot.Int8 {
     @Test
     def testMutualRecursive02(): Bool =
         let result = try {
-            mutual1(1)
+            mutual1(1i8)
         } with Throw {
             def throw(_k) = 42i8
         };
@@ -91,7 +91,7 @@ mod Test.Handler.ZeroShot.Int8 {
     @Test
     def testMutualRecursive03(): Bool =
         let result = try {
-            mutual1(2)
+            mutual1(2i8)
         } with Throw {
             def throw(_k) = 42i8
         };
@@ -100,7 +100,7 @@ mod Test.Handler.ZeroShot.Int8 {
     @Test
     def testMutualRecursive04(): Bool =
         let result = try {
-            mutual1(3)
+            mutual1(3i8)
         } with Throw {
             def throw(_k) = 42i8
         };
@@ -109,7 +109,7 @@ mod Test.Handler.ZeroShot.Int8 {
     @Test
     def testMutualRecursive05(): Bool =
         let result = try {
-            mutual1(10)
+            mutual1(10i8)
         } with Throw {
             def throw(_k) = 42i8
         };
@@ -120,9 +120,9 @@ mod Test.Handler.ZeroShot.Int8 {
          unreachable!()
 
     def mutual1(x: Int8): Int8 \ Throw =
-        if (x == 0) f() else { mutual2(x - 1); unreachable!() }
+        if (x == 0i8) f() else { mutual2(x - 1i8); unreachable!() }
 
     def mutual2(x: Int8): Int8 \ Throw =
-        if (x == 0) f() else { mutual1(x - 1); unreachable!() }
+        if (x == 0i8) f() else { mutual1(x - 1i8); unreachable!() }
 
 }

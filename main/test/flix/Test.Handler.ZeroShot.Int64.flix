@@ -10,9 +10,9 @@ mod Test.Handler.ZeroShot.Int64 {
         let result = try {
             f1()
         } with Throw {
-            def throw(_k) = 42i64i64
+            def throw(_k) = 42i64
         };
-        Assert.eq(42i64i64, result)
+        Assert.eq(42i64, result)
 
     @Test
     def testLinear02(): Bool =
@@ -21,9 +21,9 @@ mod Test.Handler.ZeroShot.Int64 {
         let result = try {
             f2()
         } with Throw {
-            def throw(_k) = 42i64i64
+            def throw(_k) = 42i64
         };
-        Assert.eq(42i64i64, result)
+        Assert.eq(42i64, result)
 
     @Test
     def testLinear03(): Bool =
@@ -33,96 +33,96 @@ mod Test.Handler.ZeroShot.Int64 {
         let result = try {
             f3()
         } with Throw {
-            def throw(_k) = 42i64i64
+            def throw(_k) = 42i64
         };
-        Assert.eq(42i64i64, result)
+        Assert.eq(42i64, result)
 
     @Test
     def testRecursiveLetRec01(): Bool =
         def f() = do Throw.throw();
-        def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
+        def r(x) = if (x == 0i64) f() else { r(x - 1i64); unreachable!() } ;
         let result = try {
-            r(0)
+            r(0i64)
         } with Throw {
-            def throw(_k) = 42i64i64
+            def throw(_k) = 42i64
         };
-        Assert.eq(42i64i64, result)
+        Assert.eq(42i64, result)
 
     @Test
     def testRecursiveLetRec02(): Bool =
         def f() = do Throw.throw();
-        def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
+        def r(x) = if (x == 0i64) f() else { r(x - 1i64); unreachable!() } ;
         let result = try {
-            r(1)
+            r(1i64)
         } with Throw {
-            def throw(_k) = 42i64i64
+            def throw(_k) = 42i64
         };
-        Assert.eq(42i64i64, result)
+        Assert.eq(42i64, result)
 
     @Test
     def testRecursiveLetRec03(): Bool =
         def f() = do Throw.throw();
-        def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
+        def r(x) = if (x == 0i64) f() else { r(x - 1i64); unreachable!() } ;
         let result = try {
-            r(10)
+            r(10i64)
         } with Throw {
-            def throw(_k) = 42i64i64
+            def throw(_k) = 42i64
         };
-        Assert.eq(42i64i64, result)
+        Assert.eq(42i64, result)
 
     @Test
     def testMutualRecursive01(): Bool =
         let result = try {
-            mutual1(0)
+            mutual1(0i64)
         } with Throw {
-            def throw(_k) = 42i64i64
+            def throw(_k) = 42i64
         };
-        Assert.eq(42i64i64, result)
+        Assert.eq(42i64, result)
 
     @Test
     def testMutualRecursive02(): Bool =
         let result = try {
-            mutual1(1)
+            mutual1(1i64)
         } with Throw {
-            def throw(_k) = 42i64i64
+            def throw(_k) = 42i64
         };
-        Assert.eq(42i64i64, result)
+        Assert.eq(42i64, result)
 
     @Test
     def testMutualRecursive03(): Bool =
         let result = try {
-            mutual1(2)
+            mutual1(2i64)
         } with Throw {
-            def throw(_k) = 42i64i64
+            def throw(_k) = 42i64
         };
-        Assert.eq(42i64i64, result)
+        Assert.eq(42i64, result)
 
     @Test
     def testMutualRecursive04(): Bool =
         let result = try {
-            mutual1(3)
+            mutual1(3i64)
         } with Throw {
-            def throw(_k) = 42i64i64
+            def throw(_k) = 42i64
         };
-        Assert.eq(42i64i64, result)
+        Assert.eq(42i64, result)
 
     @Test
     def testMutualRecursive05(): Bool =
         let result = try {
-            mutual1(10)
+            mutual1(10i64)
         } with Throw {
-            def throw(_k) = 42i64i64
+            def throw(_k) = 42i64
         };
-        Assert.eq(42i64i64, result)
+        Assert.eq(42i64, result)
 
     def f(): Int64 \ Throw =
          do Throw.throw();
          unreachable!()
 
     def mutual1(x: Int64): Int64 \ Throw =
-        if (x == 0) f() else { mutual2(x - 1); unreachable!() }
+        if (x == 0i64) f() else { mutual2(x - 1i64); unreachable!() }
 
     def mutual2(x: Int64): Int64 \ Throw =
-        if (x == 0) f() else { mutual1(x - 1); unreachable!() }
+        if (x == 0i64) f() else { mutual1(x - 1i64); unreachable!() }
 
 }
