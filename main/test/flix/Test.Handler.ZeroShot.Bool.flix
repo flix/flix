@@ -115,6 +115,15 @@ mod Test.Handler.ZeroShot.Bool {
         };
         Assert.eq(true, result)
 
+    @Test
+    def testMutualRecursive06(): Bool =
+        let result = try {
+            mutual1(10)
+        } with Throw {
+            def throw(_k) = false
+        };
+        Assert.eq(false, result)
+
     def f(): Bool \ Throw =
          do Throw.throw();
          unreachable!()
