@@ -46,8 +46,7 @@ object Reducer {
       val fs = fparams.map(visitFormalParam)
       val e = visitExpr(exp)
       val ls = lctx.lparams.toList
-      val stmt = ReducedAst.Stmt.Ret(e, e.tpe, e.loc)
-      ReducedAst.Def(ann, mod, sym, cs, fs, ls, pcPoints, stmt, tpe, purity, loc)
+      ReducedAst.Def(ann, mod, sym, cs, fs, ls, pcPoints, e, tpe, purity, loc)
   }
 
   private def visitEnum(d: LiftedAst.Enum): ReducedAst.Enum = d match {
@@ -154,15 +153,15 @@ object Reducer {
       ReducedAst.Expr.Do(op, es, tpe, purity, loc)
 
     case LiftedAst.Expr.NewObject(name, clazz, tpe, purity, methods, loc) =>
-      val es = methods.map(m => visitExpr(m.clo))
       val specs = methods.map {
-        case LiftedAst.JvmMethod(ident, fparams, _, retTpe, purity, loc) =>
+        case LiftedAst.JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
           val f = fparams.map(visitFormalParam)
-          ReducedAst.JvmMethod(ident, f, retTpe, purity, loc)
+          val c = visitExpr(clo)
+          ReducedAst.JvmMethod(ident, f, c, retTpe, purity, loc)
       }
       ctx.anonClasses.add(ReducedAst.AnonClass(name, clazz, tpe, specs, loc))
 
-      ReducedAst.Expr.NewObject(name, clazz, tpe, purity, specs, es, loc)
+      ReducedAst.Expr.NewObject(name, clazz, tpe, purity, specs, loc)
 
   }
 
@@ -213,7 +212,7 @@ object Reducer {
       }
 
       // Compute the types in the expression.
-      val expressionTypes = visitStmt(defn.stmt)
+      val expressionTypes = visitExp(defn.expr)
 
       // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
 
@@ -254,8 +253,7 @@ object Reducer {
 
       case ReducedAst.Expr.Do(_, exps, tpe, _, _) => visitExps(exps) ++ Set(tpe)
 
-      case ReducedAst.Expr.NewObject(_, _, _, _, _, exps, _) =>
-        visitExps(exps)
+      case ReducedAst.Expr.NewObject(_, _, _, _, methods, _) => visitExps(methods.map(_.exp))
 
       case ReducedAst.Expr.ApplyAtomic(_, exps, tpe, _, _) => visitExps(exps) + tpe
 
@@ -265,10 +263,6 @@ object Reducer {
       exps.foldLeft(Set.empty[MonoType]) {
         case (sacc, e) => sacc ++ visitExp(e)
       }
-    }
-
-    def visitStmt(s: ReducedAst.Stmt): Set[MonoType] = s match {
-      case ReducedAst.Stmt.Ret(e, tpe, loc) => visitExp(e)
     }
 
     // Visit every definition.

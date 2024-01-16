@@ -117,7 +117,7 @@ object GenAnonymousClasses {
     * Method
     */
   private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter): Unit = method match {
-    case JvmMethod(ident, fparams, tpe, _, _) =>
+    case JvmMethod(ident, fparams, _, tpe, _, _) =>
       val args = fparams.map(_.tpe)
       val boxedResult = MonoType.Object
       val arrowType = MonoType.Arrow(args, boxedResult)
