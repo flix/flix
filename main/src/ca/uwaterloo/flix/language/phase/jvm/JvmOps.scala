@@ -136,31 +136,10 @@ object JvmOps {
     */
   def getFunctionInterfaceType(tpe: MonoType): JvmType.Reference = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-      getFunctionInterfaceType(targs.map(getErasedJvmType), asErasedJvmType(tresult))
+      val arrowType = BackendObjType.Arrow(targs.map(BackendType.toErasedBackendType), BackendType.asErasedBackendType(tresult))
+      JvmType.Reference(arrowType.jvmName)
     case _ =>
       throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
-  }
-
-  /**
-    * Returns the function abstract class type `FnX$Y$Z` for the given types.
-    *
-    * For example:
-    *
-    * (Int)(Int)          =>  Fn2$Int$Int
-    * (Int, String)(Int)   =>  Fn3$Int$Obj$Int
-    */
-  def getFunctionInterfaceType(args: List[JvmType], res: JvmType): JvmType.Reference = {
-    getFunctionInterfaceType(args.map(_.toErased).map(stringify), stringify(res.toErased))
-  }
-
-  /**
-    * The JVM name is of the form `FnArity$argTypes0$argTypes1$..$resType`
-    */
-  private def getFunctionInterfaceType(argTypes: List[String], resType: String): JvmType.Reference = {
-    val arity = argTypes.length
-    val typeStrings = argTypes :+ resType
-    val name = JvmName.mkClassName(s"Fn$arity", typeStrings)
-    JvmType.Reference(JvmName(RootPackage, name))
   }
 
   /**

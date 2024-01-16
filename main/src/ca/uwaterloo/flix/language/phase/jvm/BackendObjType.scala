@@ -564,21 +564,12 @@ object BackendObjType {
       mkDescriptor(StringBuilder.toTpe)(String.toTpe))
   }
 
-  // case object SchemaEmpty extends BackendObjType
-
-  //  case class SchemaExtend(name: String, tpe: BackendType, rest: BackendType) extends BackendObjType
-
-  //  case class Relation(tpes: List[BackendType]) extends BackendObjType
-
-  //  case class Lattice(tpes: List[BackendType]) extends BackendObjType
-
   /**
     * Represents a JVM type not represented in BackendObjType.
     * This should not be used for `java.lang.String` for example since `BackendObjType.String`
     * represents this type.
     */
   case class Native(className: JvmName) extends BackendObjType
-
 
   case object ReifiedSourceLocation extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
