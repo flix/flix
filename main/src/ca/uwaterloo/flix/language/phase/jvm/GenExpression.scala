@@ -1057,25 +1057,26 @@ object GenExpression {
         val List(exp) = exps
 
         // Find the Lazy class name (Lazy$tpe).
-        val classType = JvmOps.getLazyClassType(tpe.asInstanceOf[MonoType.Lazy]).name.toInternalName
+        val MonoType.Lazy(elmType) = tpe
+        val classType = BackendObjType.Lazy(BackendType.asErasedBackendType(elmType))
+        val internalClassName = classType.jvmName.toInternalName
 
         // Make a new lazy object and dup it to leave it on the stack.
-        mv.visitTypeInsn(NEW, classType)
+        mv.visitTypeInsn(NEW, internalClassName)
         mv.visitInsn(DUP)
 
         // Compile the thunked expression and call new Lazy$erased_tpe(expression).
         compileExpr(exp)
-        mv.visitMethodInsn(INVOKESPECIAL, classType, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
+        mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
 
       case AtomicOp.Force =>
         val List(exp) = exps
 
         // Find the Lazy class type (Lazy$tpe) and the inner value type.
-        val classMonoType = exp.tpe.asInstanceOf[MonoType.Lazy]
-        val classType = JvmOps.getLazyClassType(classMonoType)
-        val internalClassType = classType.name.toInternalName
-        val MonoType.Lazy(tpe) = classMonoType
-        val erasedType = JvmOps.getErasedJvmType(tpe)
+        val MonoType.Lazy(elmType) = exp.tpe
+        val erasedElmType = BackendType.asErasedBackendType(elmType)
+        val classType = BackendObjType.Lazy(erasedElmType)
+        val internalClassType = classType.jvmName.toInternalName
 
         // Emit code for the lazy expression.
         compileExpr(exp)
@@ -1093,13 +1094,13 @@ object GenExpression {
         mv.visitJumpInsn(IFNULL, alreadyInit)
 
         // Call force().
-        mv.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "force", AsmOps.getMethodDescriptor(Nil, erasedType), false)
+        mv.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "force", MethodDescriptor.mkDescriptor()(erasedElmType).toDescriptor, false)
         // goto the cast to undo erasure
         mv.visitJumpInsn(GOTO, end)
 
         mv.visitLabel(alreadyInit)
         // Retrieve the erased value
-        mv.visitFieldInsn(GETFIELD, internalClassType, "value", erasedType.toDescriptor)
+        mv.visitFieldInsn(GETFIELD, internalClassType, "value", erasedElmType.toDescriptor)
 
         mv.visitLabel(end)
 
