@@ -643,7 +643,7 @@ object GenExpression {
         // We get the JvmType of the record interface
         val interfaceType = JvmOps.getRecordInterfaceType()
 
-        val backendRecordExtendType = BackendObjType.RecordExtend(field.name, BackendType.toErasedBackendType(tpe), BackendObjType.RecordEmpty.toTpe)
+        val backendRecordExtendType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
 
         // Compile the expression exp (which should be a record), as we need to have on the stack a record in order to call
         // lookupField
@@ -673,7 +673,7 @@ object GenExpression {
 
         // Previous functions are already partial matches
         val MonoType.RecordExtend(_, recordValueType, _) = tpe
-        val backendRecordExtendType = BackendObjType.RecordExtend(field.name, BackendType.toErasedBackendType(recordValueType), BackendObjType.RecordEmpty.toTpe)
+        val backendRecordExtendType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(recordValueType))
 
         // Instantiating a new object of tuple
         mv.visitTypeInsn(NEW, classType.name.toInternalName)
