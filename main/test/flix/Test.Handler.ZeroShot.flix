@@ -38,34 +38,38 @@ mod Test.Handler.ZeroShot {
         Assert.eq((), result)
 
     @Test
-    def testRecursiveLetRec01(): Unit =
+    def testRecursiveLetRec01(): Bool =
         def f() = do Throw.throw();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
-        try {
+        let result = try {
             r(0)
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testRecursiveLetRec02(): Unit =
+    def testRecursiveLetRec02(): Bool =
         def f() = do Throw.throw();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
-        try {
+        let result = try {
             r(1)
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testRecursiveLetRec03(): Unit =
+    def testRecursiveLetRec03(): Bool =
         def f() = do Throw.throw();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
-        try {
+        let result = try {
             r(10)
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
+
     @Test
     def testMutualRecursive01(): Unit =
         try {
