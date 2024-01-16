@@ -1,4 +1,4 @@
-mod Test.Handler.ZeroShot {
+mod Test.Handler.ZeroShot.Unit {
 
     eff Throw {
         pub def throw(): Unit
