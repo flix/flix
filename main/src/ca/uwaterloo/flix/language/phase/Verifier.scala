@@ -36,7 +36,7 @@ object Verifier {
       case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
     }
     try {
-      visitStmt(decl.stmt)(root, env, Map.empty)
+      visitExpr(decl.expr)(root, env, Map.empty)
     } catch {
       case UnexpectedType(expected, found, loc) =>
         println(s"Unexpected type near ${loc.format}")
@@ -321,15 +321,10 @@ object Verifier {
       // TODO: VERIFIER: Add support for Do.
       tpe
 
-    case Expr.NewObject(name, clazz, tpe, methods, _, _, loc) =>
+    case Expr.NewObject(name, clazz, tpe, methods, _, loc) =>
       // TODO: VERIFIER: Add support for NewObject.
       tpe
 
-  }
-
-  private def visitStmt(stmt: ReducedAst.Stmt)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = stmt match {
-    case Stmt.Ret(expr, tpe, loc) =>
-      visitExpr(expr)
   }
 
   /**

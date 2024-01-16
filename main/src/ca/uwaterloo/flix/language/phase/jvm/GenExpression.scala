@@ -643,7 +643,7 @@ object GenExpression {
         // We get the JvmType of the record interface
         val interfaceType = JvmOps.getRecordInterfaceType()
 
-        val backendRecordExtendType = BackendObjType.RecordExtend(field.name, BackendType.toErasedBackendType(tpe), BackendObjType.RecordEmpty.toTpe)
+        val backendRecordExtendType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
 
         // Compile the expression exp (which should be a record), as we need to have on the stack a record in order to call
         // lookupField
@@ -673,7 +673,7 @@ object GenExpression {
 
         // Previous functions are already partial matches
         val MonoType.RecordExtend(_, recordValueType, _) = tpe
-        val backendRecordExtendType = BackendObjType.RecordExtend(field.name, BackendType.toErasedBackendType(recordValueType), BackendObjType.RecordEmpty.toTpe)
+        val backendRecordExtendType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(recordValueType))
 
         // Instantiating a new object of tuple
         mv.visitTypeInsn(NEW, classType.name.toInternalName)
@@ -1048,25 +1048,26 @@ object GenExpression {
         val List(exp) = exps
 
         // Find the Lazy class name (Lazy$tpe).
-        val classType = JvmOps.getLazyClassType(tpe.asInstanceOf[MonoType.Lazy]).name.toInternalName
+        val MonoType.Lazy(elmType) = tpe
+        val classType = BackendObjType.Lazy(BackendType.asErasedBackendType(elmType))
+        val internalClassName = classType.jvmName.toInternalName
 
         // Make a new lazy object and dup it to leave it on the stack.
-        mv.visitTypeInsn(NEW, classType)
+        mv.visitTypeInsn(NEW, internalClassName)
         mv.visitInsn(DUP)
 
         // Compile the thunked expression and call new Lazy$erased_tpe(expression).
         compileExpr(exp)
-        mv.visitMethodInsn(INVOKESPECIAL, classType, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
+        mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
 
       case AtomicOp.Force =>
         val List(exp) = exps
 
         // Find the Lazy class type (Lazy$tpe) and the inner value type.
-        val classMonoType = exp.tpe.asInstanceOf[MonoType.Lazy]
-        val classType = JvmOps.getLazyClassType(classMonoType)
-        val internalClassType = classType.name.toInternalName
-        val MonoType.Lazy(tpe) = classMonoType
-        val erasedType = JvmOps.getErasedJvmType(tpe)
+        val MonoType.Lazy(elmType) = exp.tpe
+        val erasedElmType = BackendType.asErasedBackendType(elmType)
+        val classType = BackendObjType.Lazy(erasedElmType)
+        val internalClassType = classType.jvmName.toInternalName
 
         // Emit code for the lazy expression.
         compileExpr(exp)
@@ -1084,13 +1085,13 @@ object GenExpression {
         mv.visitJumpInsn(IFNULL, alreadyInit)
 
         // Call force().
-        mv.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "force", AsmOps.getMethodDescriptor(Nil, erasedType), false)
+        mv.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "force", MethodDescriptor.mkDescriptor()(erasedElmType).toDescriptor, false)
         // goto the cast to undo erasure
         mv.visitJumpInsn(GOTO, end)
 
         mv.visitLabel(alreadyInit)
         // Retrieve the erased value
-        mv.visitFieldInsn(GETFIELD, internalClassType, "value", erasedType.toDescriptor)
+        mv.visitFieldInsn(GETFIELD, internalClassType, "value", erasedElmType.toDescriptor)
 
         mv.visitLabel(end)
 
@@ -1510,7 +1511,8 @@ object GenExpression {
       mv.visitLabel(afterUnboxing)
       AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
-    case Expr.NewObject(name, _, _, _, _, exps, _) =>
+    case Expr.NewObject(name, _, _, _, methods, _) =>
+      val exps = methods.map(_.exp)
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)
@@ -1551,13 +1553,6 @@ object GenExpression {
       case BackendType.Float32 => mv.visitIntInsn(NEWARRAY, T_FLOAT)
       case BackendType.Float64 => mv.visitIntInsn(NEWARRAY, T_DOUBLE)
     }
-  }
-
-  /**
-    * Emits code for the given statement `stmt0` to the given method `visitor` in the `currentClass`.
-    */
-  def compileStmt(stmt0: Stmt)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = stmt0 match {
-    case Stmt.Ret(e, _, _) => compileExpr(e)
   }
 
   private def visitComparisonPrologue(exp1: Expr, exp2: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): (Label, Label) = {

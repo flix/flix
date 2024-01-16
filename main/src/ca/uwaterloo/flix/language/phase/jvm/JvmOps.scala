@@ -272,13 +272,6 @@ object JvmOps {
       JvmType.Reference(JvmName(RootPackage, name))
   }
 
-  def getLazyClassType(tpe: MonoType.Lazy): JvmType.Reference = tpe match {
-    case MonoType.Lazy(tpe) =>
-      val arg = stringify(asErasedJvmType(tpe))
-      val name = JvmName.mkClassName("Lazy", arg)
-      JvmType.Reference(JvmName(RootPackage, name))
-  }
-
   /**
     * Returns the record interface type `Record`.
     *
@@ -494,8 +487,7 @@ object JvmOps {
   def getErasedRecordExtendsOf(types: Iterable[MonoType]): Set[BackendObjType.RecordExtend] =
     types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
       case (acc, MonoType.RecordExtend(field, value, _)) =>
-        // TODO: should use mono -> backend transformation on `rest`
-        acc + BackendObjType.RecordExtend(field, BackendType.asErasedBackendType(value), BackendObjType.RecordEmpty.toTpe)
+        acc + BackendObjType.RecordExtend(BackendType.asErasedBackendType(value))
       case (acc, _) => acc
     }
 
