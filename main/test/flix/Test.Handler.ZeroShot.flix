@@ -1,7 +1,7 @@
 mod Test.Handler.ZeroShot {
 
     eff Throw {
-        pub def throw(): Unit
+        pub def throw(): Void
     }
 
     @Test
