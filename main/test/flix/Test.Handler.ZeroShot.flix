@@ -5,34 +5,37 @@ mod Test.Handler.ZeroShot {
     }
 
     @Test
-    def testLinear01(): Unit =
+    def testLinear01(): Bool =
         def f1() = do Throw.throw();
-        try {
+        let result = try {
             f1()
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testLinear02(): Unit =
+    def testLinear02(): Bool =
         def f1() = do Throw.throw();
         def f2() = { f1(); unreachable!() };
-        try {
+        let result = try {
             f2()
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testLinear03(): Unit =
+    def testLinear03(): Bool =
         def f1() = do Throw.throw();
         def f2() = { f1(); unreachable!() };
         def f3() = { f2(); unreachable!() };
-        try {
+        let result = try {
             f3()
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
     def testRecursiveLetRec01(): Unit =
