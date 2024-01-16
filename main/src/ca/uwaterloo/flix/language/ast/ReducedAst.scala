@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.Purity.Pure
 
@@ -35,7 +34,7 @@ object ReducedAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, stmt: Stmt, tpe: MonoType, purity: Purity, loc: SourceLocation) {
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) {
     var method: Method = _
     val arrowType: MonoType.Arrow = MonoType.Arrow(fparams.map(_.tpe), tpe)
   }
@@ -90,19 +89,7 @@ object ReducedAst {
 
     case class Do(op: Ast.OpSymUse, exps: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[JvmMethod], exps: List[Expr], loc: SourceLocation) extends Expr
-
-  }
-
-  sealed trait Stmt {
-    def tpe: MonoType
-
-    def loc: SourceLocation
-  }
-
-  object Stmt {
-
-    case class Ret(expr: Expr, tpe: MonoType, loc: SourceLocation) extends Stmt
+    case class NewObject(name: String, clazz: java.lang.Class[_], tpe: MonoType, purity: Purity, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
   }
 
@@ -110,7 +97,7 @@ object ReducedAst {
 
   case class Case(sym: Symbol.CaseSym, tpe: MonoType, loc: SourceLocation)
 
-  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], tpe: MonoType, purity: Purity, loc: SourceLocation)
+  case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation)
 
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 

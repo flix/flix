@@ -636,7 +636,7 @@ object GenExpression {
       case AtomicOp.RecordSelect(field) =>
         val List(exp) = exps
 
-        // We get the JvmType of the record interface
+        val backendRecordExtendType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
         val interfaceType = BackendObjType.Record
         val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
         val recordInternalName = recordType.jvmName.toInternalName
@@ -812,27 +812,22 @@ object GenExpression {
       case AtomicOp.Ref =>
         val List(exp) = exps
 
-        // JvmType of the reference class
-        val classType = JvmOps.getRefClassType(tpe)
-
-        // the previous function is already partial
         val MonoType.Ref(refValueType) = tpe
-        val backendRefType = BackendObjType.Ref(BackendType.asErasedBackendType(refValueType))
+        val refType = BackendObjType.Ref(BackendType.asErasedBackendType(refValueType))
+        val internalClassName = refType.jvmName.toInternalName
 
         // Create a new reference object
-        mv.visitTypeInsn(NEW, classType.name.toInternalName)
+        mv.visitTypeInsn(NEW, internalClassName)
         // Duplicate it since one instance will get consumed by constructor
         mv.visitInsn(DUP)
         // Call the constructor
-        mv.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+        mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
         // Duplicate it since one instance will get consumed by putfield
         mv.visitInsn(DUP)
         // Evaluate the underlying expression
         compileExpr(exp)
-        // Erased type of the value of the reference
-        val valueType = JvmOps.asErasedJvmType(tpe.asInstanceOf[MonoType.Ref].tpe)
         // set the field with the ref value
-        mv.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, valueType.toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, internalClassName, refType.ValueField.name, refType.tpe.toDescriptor)
 
       case AtomicOp.Deref =>
         val List(exp) = exps
@@ -841,17 +836,16 @@ object GenExpression {
 
         // Evaluate the exp
         compileExpr(exp)
-        // JvmType of the reference class
-        val classType = JvmOps.getRefClassType(exp.tpe)
 
         // the previous function is already partial
         val MonoType.Ref(refValueType) = exp.tpe
-        val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
+        val refType = BackendObjType.Ref(BackendType.asErasedBackendType(refValueType))
+        val internalClassName = refType.jvmName.toInternalName
 
         // Cast the ref
-        mv.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
+        mv.visitTypeInsn(CHECKCAST, internalClassName)
         // Dereference the expression
-        mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
+        mv.visitFieldInsn(GETFIELD, internalClassName, refType.ValueField.name, refType.tpe.toDescriptor)
 
       case AtomicOp.Assign =>
         val List(exp1, exp2) = exps
@@ -863,15 +857,12 @@ object GenExpression {
         compileExpr(exp1)
         // Evaluating the value to be assigned to the reference
         compileExpr(exp2)
-        // JvmType of the reference class
-        val classType = JvmOps.getRefClassType(exp1.tpe)
 
         // the previous function is already partial
         val MonoType.Ref(refValueType) = exp1.tpe
-        val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
-
+        val refType = BackendObjType.Ref(BackendType.asErasedBackendType(refValueType))
         // Invoke `setValue` method to set the value to the given number
-        mv.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, refType.jvmName.toInternalName, refType.ValueField.name, refType.tpe.toDescriptor)
         // Since the return type is unit, we put an instance of unit on top of the stack
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
@@ -1051,25 +1042,26 @@ object GenExpression {
         val List(exp) = exps
 
         // Find the Lazy class name (Lazy$tpe).
-        val classType = JvmOps.getLazyClassType(tpe.asInstanceOf[MonoType.Lazy]).name.toInternalName
+        val MonoType.Lazy(elmType) = tpe
+        val classType = BackendObjType.Lazy(BackendType.asErasedBackendType(elmType))
+        val internalClassName = classType.jvmName.toInternalName
 
         // Make a new lazy object and dup it to leave it on the stack.
-        mv.visitTypeInsn(NEW, classType)
+        mv.visitTypeInsn(NEW, internalClassName)
         mv.visitInsn(DUP)
 
         // Compile the thunked expression and call new Lazy$erased_tpe(expression).
         compileExpr(exp)
-        mv.visitMethodInsn(INVOKESPECIAL, classType, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
+        mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
 
       case AtomicOp.Force =>
         val List(exp) = exps
 
         // Find the Lazy class type (Lazy$tpe) and the inner value type.
-        val classMonoType = exp.tpe.asInstanceOf[MonoType.Lazy]
-        val classType = JvmOps.getLazyClassType(classMonoType)
-        val internalClassType = classType.name.toInternalName
-        val MonoType.Lazy(tpe) = classMonoType
-        val erasedType = JvmOps.getErasedJvmType(tpe)
+        val MonoType.Lazy(elmType) = exp.tpe
+        val erasedElmType = BackendType.asErasedBackendType(elmType)
+        val classType = BackendObjType.Lazy(erasedElmType)
+        val internalClassType = classType.jvmName.toInternalName
 
         // Emit code for the lazy expression.
         compileExpr(exp)
@@ -1087,13 +1079,13 @@ object GenExpression {
         mv.visitJumpInsn(IFNULL, alreadyInit)
 
         // Call force().
-        mv.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "force", AsmOps.getMethodDescriptor(Nil, erasedType), false)
+        mv.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "force", MethodDescriptor.mkDescriptor()(erasedElmType).toDescriptor, false)
         // goto the cast to undo erasure
         mv.visitJumpInsn(GOTO, end)
 
         mv.visitLabel(alreadyInit)
         // Retrieve the erased value
-        mv.visitFieldInsn(GETFIELD, internalClassType, "value", erasedType.toDescriptor)
+        mv.visitFieldInsn(GETFIELD, internalClassType, "value", erasedElmType.toDescriptor)
 
         mv.visitLabel(end)
 
@@ -1513,7 +1505,8 @@ object GenExpression {
       mv.visitLabel(afterUnboxing)
       AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
-    case Expr.NewObject(name, _, _, _, _, exps, _) =>
+    case Expr.NewObject(name, _, _, _, methods, _) =>
+      val exps = methods.map(_.exp)
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)
@@ -1554,13 +1547,6 @@ object GenExpression {
       case BackendType.Float32 => mv.visitIntInsn(NEWARRAY, T_FLOAT)
       case BackendType.Float64 => mv.visitIntInsn(NEWARRAY, T_DOUBLE)
     }
-  }
-
-  /**
-    * Emits code for the given statement `stmt0` to the given method `visitor` in the `currentClass`.
-    */
-  def compileStmt(stmt0: Stmt)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = stmt0 match {
-    case Stmt.Ret(e, _, _) => compileExpr(e)
   }
 
   private def visitComparisonPrologue(exp1: Expr, exp2: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): (Label, Label) = {
