@@ -643,7 +643,7 @@ object GenExpression {
         // We get the JvmType of the record interface
         val interfaceType = JvmOps.getRecordInterfaceType()
 
-        val backendRecordExtendType = BackendObjType.RecordExtend(field.name, BackendType.toErasedBackendType(tpe), BackendObjType.RecordEmpty.toTpe)
+        val backendRecordExtendType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
 
         // Compile the expression exp (which should be a record), as we need to have on the stack a record in order to call
         // lookupField
@@ -673,7 +673,7 @@ object GenExpression {
 
         // Previous functions are already partial matches
         val MonoType.RecordExtend(_, recordValueType, _) = tpe
-        val backendRecordExtendType = BackendObjType.RecordExtend(field.name, BackendType.toErasedBackendType(recordValueType), BackendObjType.RecordEmpty.toTpe)
+        val backendRecordExtendType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(recordValueType))
 
         // Instantiating a new object of tuple
         mv.visitTypeInsn(NEW, classType.name.toInternalName)
@@ -1520,7 +1520,8 @@ object GenExpression {
       mv.visitLabel(afterUnboxing)
       AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
-    case Expr.NewObject(name, _, _, _, _, exps, _) =>
+    case Expr.NewObject(name, _, _, _, methods, _) =>
+      val exps = methods.map(_.exp)
       val className = JvmName(ca.uwaterloo.flix.language.phase.jvm.JvmName.RootPackage, name).toInternalName
       mv.visitTypeInsn(NEW, className)
       mv.visitInsn(DUP)
@@ -1561,13 +1562,6 @@ object GenExpression {
       case BackendType.Float32 => mv.visitIntInsn(NEWARRAY, T_FLOAT)
       case BackendType.Float64 => mv.visitIntInsn(NEWARRAY, T_DOUBLE)
     }
-  }
-
-  /**
-    * Emits code for the given statement `stmt0` to the given method `visitor` in the `currentClass`.
-    */
-  def compileStmt(stmt0: Stmt)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): Unit = stmt0 match {
-    case Stmt.Ret(e, _, _) => compileExpr(e)
   }
 
   private def visitComparisonPrologue(exp1: Expr, exp2: Expr)(implicit mv: MethodVisitor, ctx: MethodContext, root: Root, flix: Flix): (Label, Label) = {
