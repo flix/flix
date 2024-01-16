@@ -818,27 +818,22 @@ object GenExpression {
       case AtomicOp.Ref =>
         val List(exp) = exps
 
-        // JvmType of the reference class
-        val classType = JvmOps.getRefClassType(tpe)
-
-        // the previous function is already partial
         val MonoType.Ref(refValueType) = tpe
-        val backendRefType = BackendObjType.Ref(BackendType.asErasedBackendType(refValueType))
+        val refType = BackendObjType.Ref(BackendType.asErasedBackendType(refValueType))
+        val internalClassName = refType.jvmName.toInternalName
 
         // Create a new reference object
-        mv.visitTypeInsn(NEW, classType.name.toInternalName)
+        mv.visitTypeInsn(NEW, internalClassName)
         // Duplicate it since one instance will get consumed by constructor
         mv.visitInsn(DUP)
         // Call the constructor
-        mv.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+        mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
         // Duplicate it since one instance will get consumed by putfield
         mv.visitInsn(DUP)
         // Evaluate the underlying expression
         compileExpr(exp)
-        // Erased type of the value of the reference
-        val valueType = JvmOps.asErasedJvmType(tpe.asInstanceOf[MonoType.Ref].tpe)
         // set the field with the ref value
-        mv.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, valueType.toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, internalClassName, refType.ValueField.name, refType.tpe.toDescriptor)
 
       case AtomicOp.Deref =>
         val List(exp) = exps
@@ -847,17 +842,16 @@ object GenExpression {
 
         // Evaluate the exp
         compileExpr(exp)
-        // JvmType of the reference class
-        val classType = JvmOps.getRefClassType(exp.tpe)
 
         // the previous function is already partial
         val MonoType.Ref(refValueType) = exp.tpe
-        val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
+        val refType = BackendObjType.Ref(BackendType.asErasedBackendType(refValueType))
+        val internalClassName = refType.jvmName.toInternalName
 
         // Cast the ref
-        mv.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
+        mv.visitTypeInsn(CHECKCAST, internalClassName)
         // Dereference the expression
-        mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
+        mv.visitFieldInsn(GETFIELD, internalClassName, refType.ValueField.name, refType.tpe.toDescriptor)
 
       case AtomicOp.Assign =>
         val List(exp1, exp2) = exps
@@ -869,15 +863,12 @@ object GenExpression {
         compileExpr(exp1)
         // Evaluating the value to be assigned to the reference
         compileExpr(exp2)
-        // JvmType of the reference class
-        val classType = JvmOps.getRefClassType(exp1.tpe)
 
         // the previous function is already partial
         val MonoType.Ref(refValueType) = exp1.tpe
-        val backendRefType = BackendObjType.Ref(BackendType.toErasedBackendType(refValueType))
-
+        val refType = BackendObjType.Ref(BackendType.asErasedBackendType(refValueType))
         // Invoke `setValue` method to set the value to the given number
-        mv.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRefType.ValueField.name, JvmOps.getErasedJvmType(exp2.tpe).toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, refType.jvmName.toInternalName, refType.ValueField.name, refType.tpe.toDescriptor)
         // Since the return type is unit, we put an instance of unit on top of the stack
         mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
 
