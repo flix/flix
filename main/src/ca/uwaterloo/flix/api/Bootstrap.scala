@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
-import ca.uwaterloo.flix.language.phase.{HtmlDocumentor, JsonDocumentor}
+import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError}
@@ -601,7 +601,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     Validation.mapN(flix.check()) {
       root =>
-        JsonDocumentor.run(root)(flix)
         HtmlDocumentor.run(root)(flix)
     }.toHardResult match {
       case Result.Ok(_) => Validation.success(())
