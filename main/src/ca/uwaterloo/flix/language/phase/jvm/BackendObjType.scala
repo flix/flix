@@ -42,7 +42,7 @@ sealed trait BackendObjType {
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkClassName("Tuple", elms))
     case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
     case BackendObjType.RecordEmpty => JvmName(RootPackage, mkClassName(s"RecordEmpty"))
-    case BackendObjType.RecordExtend(_, value, _) => JvmName(RootPackage, mkClassName("RecordExtend", value))
+    case BackendObjType.RecordExtend(value) => JvmName(RootPackage, mkClassName("RecordExtend", value))
     case BackendObjType.Record => JvmName(RootPackage, mkClassName("Record"))
     case BackendObjType.ReifiedSourceLocation => JvmName(DevFlixRuntime, mkClassName("ReifiedSourceLocation"))
     case BackendObjType.Global => JvmName(DevFlixRuntime, "Global") // "Global" is fixed in source code, so should not be mangled and $ suffixed
@@ -453,7 +453,7 @@ object BackendObjType {
     ))
   }
 
-  case class RecordExtend(field: String, value: BackendType, rest: BackendType) extends BackendObjType with Generatable {
+  case class RecordExtend(value: BackendType) extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, interfaces = List(Record.jvmName))
 
