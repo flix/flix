@@ -1,11 +1,14 @@
 mod Test.Type.Void {
 
-    // We check that `Void` can be used as where another type is expected.
-    // -- But only for do expressions.
+    // We check that `Void` is given a polymorphic type when used as the type of an effect operation.
 
     pub eff Throw {
         pub def throw(): Void
     }
+
+    pub def voidable01(): Void \ Throw = do Throw.throw()
+
+    pub def voidable02(): a \ Throw = do Throw.throw()
 
     @Test
     pub def testVoid01(): Unit =
