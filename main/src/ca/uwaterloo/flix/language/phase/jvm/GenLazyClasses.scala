@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import org.objectweb.asm.Opcodes._
 import org.objectweb.asm.{ClassWriter, Label}
 
@@ -31,14 +32,14 @@ object GenLazyClasses {
     */
   def gen(ts: Set[MonoType])(implicit flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe@MonoType.Lazy(valueType)) =>
+      case (macc, MonoType.Lazy(valueType)) =>
         // Case 1: The type constructor is a lazy value.
         // Construct lazy class.
-        val fullType = JvmOps.getLazyClassType(tpe)
-        val jvmName = fullType.name
+        val erasedValueType = BackendType.asErasedBackendType(valueType)
+        val classType = BackendObjType.Lazy(erasedValueType)
+        val jvmName = classType.jvmName
         if (!macc.contains(jvmName)) {
-          val bytecode = genByteCode(fullType, JvmOps.getErasedJvmType(valueType), valueType)
-          macc + (jvmName -> JvmClass(jvmName, bytecode))
+          macc + (jvmName -> JvmClass(jvmName, genByteCode(classType)))
         } else {
           macc
         }
@@ -66,7 +67,7 @@ object GenLazyClasses {
     * force, unless expression != null.
     * Note that expression is volatile to ensure that this check is correctly synchronized.
     */
-  private def genByteCode(classType: JvmType.Reference, erasedType: JvmType, valueType: MonoType)(implicit flix: Flix): Array[Byte] = {
+  private def genByteCode(classType: BackendObjType.Lazy)(implicit flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -74,12 +75,12 @@ object GenLazyClasses {
     val superClass = BackendObjType.JavaObject.jvmName.toInternalName
 
     // Initialize the visitor to create a class.
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null, superClass, null)
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.jvmName.toInternalName, null, superClass, null)
 
     AsmOps.compileField(visitor, "expression", JvmType.Object, isStatic = false, isPrivate = false, isVolatile = true)
-    AsmOps.compileField(visitor, "value", erasedType, isStatic = false, isPrivate = false, isVolatile = false)
+    AsmOps.compileField(visitor, "value", classType.tpe.toErasedJvmType, isStatic = false, isPrivate = false, isVolatile = false)
     AsmOps.compileField(visitor, "lock", JvmType.Reference(JvmName.ReentrantLock), isStatic = false, isPrivate = true, isVolatile = false)
-    compileForceMethod(visitor, classType, erasedType, valueType)
+    compileForceMethod(visitor, classType)
 
     // Emit the code for the constructor
     compileLazyConstructor(visitor, classType)
@@ -112,15 +113,13 @@ object GenLazyClasses {
     *   }
     * }
     */
-  private def compileForceMethod(visitor: ClassWriter, classType: JvmType.Reference, erasedType: JvmType, valueType: MonoType): Unit = {
-    val erasedValueTypeDescriptor = erasedType.toDescriptor
-    val internalClassType = classType.name.toInternalName
-    val returnIns = AsmOps.getReturnInstruction(erasedType)
+  private def compileForceMethod(visitor: ClassWriter, classType: BackendObjType.Lazy): Unit = {
+    val internalClassType = classType.jvmName.toInternalName
     val functionType = JvmType.Reference(BackendObjType.Thunk.jvmName)
 
     // Header of the method.
-    val returnDescription = AsmOps.getMethodDescriptor(Nil, erasedType)
-    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "force", returnDescription, null, null)
+    val forceDescriptor = MethodDescriptor.mkDescriptor()(classType.tpe)
+    val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "force", forceDescriptor.toDescriptor, null, null)
     method.visitCode()
 
     // lock.lockInterruptibly()
@@ -152,9 +151,9 @@ object GenLazyClasses {
     method.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.toDescriptor)
     method.visitTypeInsn(CHECKCAST, functionType.name.toInternalName)
     // [this, value] the result of expression remains on the stack.
-    BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(valueType))(new BytecodeInstructions.F(method))
+    BackendObjType.Result.unwindSuspensionFreeThunkToType(classType.tpe)(new BytecodeInstructions.F(method))
     // [] this.value now stores the result from expression.
-    method.visitFieldInsn(PUTFIELD, internalClassType, "value", erasedValueTypeDescriptor)
+    method.visitFieldInsn(PUTFIELD, internalClassType, "value", classType.tpe.toDescriptor)
 
     // [this] this is pushed to update expression such that evaluation is skipped the next call.
     method.visitVarInsn(ALOAD, 0)
@@ -167,7 +166,7 @@ object GenLazyClasses {
     // [this] this is pushed to retrieve this.value.
     method.visitVarInsn(ALOAD, 0)
     // [this.value] the return value is now on the stack.
-    method.visitFieldInsn(GETFIELD, internalClassType, "value", erasedValueTypeDescriptor)
+    method.visitFieldInsn(GETFIELD, internalClassType, "value", classType.tpe.toDescriptor)
 
     // Finally block for non-exception case
     method.visitLabel(afterTryBlock)
@@ -178,7 +177,7 @@ object GenLazyClasses {
     method.visitMethodInsn(INVOKEVIRTUAL, JvmName.ReentrantLock.toInternalName, "unlock", JvmName.MethodDescriptor.NothingToVoid.toDescriptor, false)
 
     // [] Return the value of appropriate type.
-    method.visitInsn(returnIns)
+    method.visitInsn(AsmOps.getReturnInstruction(classType.tpe.toErasedJvmType))
 
     // Finally block for exception case
     method.visitLabel(finallyBlock)
@@ -200,7 +199,7 @@ object GenLazyClasses {
     * The constructor takes a expression object, which should be a function that takes
     * no argument and returns something of type tpe, related to the type of the lazy class.
     */
-  private def compileLazyConstructor(visitor: ClassWriter, classType: JvmType.Reference): Unit = {
+  private def compileLazyConstructor(visitor: ClassWriter, classType: BackendObjType.Lazy): Unit = {
     val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), null, null)
 
     constructor.visitCode()
@@ -215,7 +214,7 @@ object GenLazyClasses {
     // [this, expression] now ready to put field.
     constructor.visitVarInsn(ALOAD, 1)
     // [] expression has the value of the argument.
-    constructor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "expression", JvmType.Object.toDescriptor)
+    constructor.visitFieldInsn(PUTFIELD, classType.jvmName.toInternalName, "expression", JvmType.Object.toDescriptor)
 
     // lock = new ReentrantLock()
     constructor.visitVarInsn(ALOAD, 0)
@@ -223,7 +222,7 @@ object GenLazyClasses {
     constructor.visitInsn(DUP)
     constructor.visitMethodInsn(INVOKESPECIAL, JvmName.ReentrantLock.toInternalName, "<init>",
       JvmName.MethodDescriptor.NothingToVoid.toDescriptor, false)
-    constructor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, "lock", JvmName.ReentrantLock.toDescriptor)
+    constructor.visitFieldInsn(PUTFIELD, classType.jvmName.toInternalName, "lock", JvmName.ReentrantLock.toDescriptor)
 
     // [] Return nothing.
     constructor.visitInsn(RETURN)

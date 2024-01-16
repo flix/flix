@@ -272,13 +272,6 @@ object JvmOps {
       JvmType.Reference(JvmName(RootPackage, name))
   }
 
-  def getLazyClassType(tpe: MonoType.Lazy): JvmType.Reference = tpe match {
-    case MonoType.Lazy(tpe) =>
-      val arg = stringify(asErasedJvmType(tpe))
-      val name = JvmName.mkClassName("Lazy", arg)
-      JvmType.Reference(JvmName(RootPackage, name))
-  }
-
   /**
     * Returns the record interface type `Record`.
     *
