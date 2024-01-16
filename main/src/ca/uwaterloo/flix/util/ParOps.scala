@@ -16,11 +16,11 @@
 
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.api.Flix
+
 import java.util
 import java.util.concurrent.{Callable, CountDownLatch, RecursiveTask}
 import scala.jdk.CollectionConverters._
-import ca.uwaterloo.flix.api.Flix
-
 import scala.reflect.ClassTag
 
 object ParOps {
@@ -31,9 +31,19 @@ object ParOps {
   private val SequentialThreshold: Int = 4
 
   /**
+    * Returns true if the compiler is running on a single thread.
+    */
+  private def singleThreaded(implicit flix: Flix): Boolean = flix.options.threads == 1
+
+  /**
     * Applies the function `f` to every element of `xs` in parallel.
     */
   def parMap[A, B: ClassTag](xs: Iterable[A])(f: A => B)(implicit flix: Flix): Iterable[B] = {
+    // Just map if we're single-threaded.
+    if (singleThreaded) {
+      return xs.map(f)
+    }
+
     // Compute the size of the input and construct a new empty array to hold the result.
     val size = xs.size
     val out: Array[B] = new Array(size)
@@ -87,6 +97,10 @@ object ParOps {
     * Aggregates the result of applying `seq` and `comb` to `xs`.
     */
   def parAgg[A: ClassTag, S](xs: Iterable[A], z: => S)(seq: (S, A) => S, comb: (S, S) => S)(implicit flix: Flix): S = {
+    // Just fold if we're single-threaded.
+    if (singleThreaded) {
+      return xs.foldLeft(z)(seq)
+    }
     /**
       * A ForkJoin task that operates on the array `a` from the interval `b` to `e`.
       */
@@ -125,6 +139,9 @@ object ParOps {
     * Computes the set of reachables Ts starting from `init` and using the `next` function.
     */
   def parReach[T](init: Set[T], next: T => Set[T])(implicit flix: Flix): Set[T] = {
+    if (singleThreaded) {
+      return seqReach(init, next)
+    }
     // A wrapper for the next function.
     class NextCallable(t: T) extends Callable[Set[T]] {
       override def call(): Set[T] = next(t)
@@ -156,6 +173,29 @@ object ParOps {
       val newReach = futures.asScala.foldLeft(Set.empty[T]) {
         case (acc, future) => acc ++ future.get()
       }
+
+      // Update delta and reach.
+      delta = newReach -- reach
+      reach = reach ++ delta
+    }
+
+    // Return the set of reachable Ts.
+    reach
+  }
+
+  /**
+    * Computes the set of reachables Ts starting from `init` and using the `next` function.
+    */
+  private def seqReach[T](init: Set[T], next: T => Set[T]): Set[T] = {
+    // A mutable variable that holds the currently reachable Ts.
+    var reach = init
+
+    // A mutable variable that holds the reachable Ts discovered in the last iteration.
+    var delta = init
+
+    // Iterate until the fixpoint is reached.
+    while (delta.nonEmpty) {
+      val newReach = delta.flatMap(next)
 
       // Update delta and reach.
       delta = newReach -- reach

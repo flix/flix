@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, CallType}
-import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Level, Purity, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression
@@ -29,9 +29,7 @@ import scala.collection.mutable
 
 /**
   * This phase transforms the AST such that all effect operations will happen on
-  * an empty operand stack in [[GenExpression]]. This means that additional
-  * let-bindings are introduced which means that [[Def.lparams]] must be updated
-  * accordingly.
+  * an empty operand stack in [[GenExpression]].
   *
   * The number of "pc points" must be counted, which is the number of points
   * where a continuation will be used. This includes do operations, all calls
@@ -58,13 +56,13 @@ object EffectBinder {
   /**
     * A local non-shared context. Does not need to be thread-safe.
     */
-  private case class LocalContext(lparams: mutable.ArrayBuffer[LocalParam], var pcPoints: Int)
+  private case class LocalContext(var pcPoints: Int)
 
   /**
     * Companion object for [[LocalContext]].
     */
   private object LocalContext {
-    def mk(): LocalContext = LocalContext(mutable.ArrayBuffer.empty, 0)
+    def mk(): LocalContext = LocalContext(0)
   }
 
   private sealed trait Binder
@@ -79,13 +77,15 @@ object EffectBinder {
     */
   private def visitDef(defn: Def)(implicit flix: Flix): Def = {
     implicit val lctx: LocalContext = LocalContext.mk()
-    val expr = visitExpr(defn.expr)
-    defn.copy(expr = expr, lparams = defn.lparams ++ lctx.lparams.toList, pcPoints = lctx.pcPoints)
+    val exp = visitExpr(defn.exp)
+    defn.copy(exp = exp, pcPoints = lctx.pcPoints)
   }
 
   private def visitJvmMethod(method: JvmMethod)(implicit lctx: LocalContext, flix: Flix): JvmMethod = method match {
-    case JvmMethod(ident, fparams, exp, tpe, purity, loc) =>
-      JvmMethod(ident, fparams, visitExpr(exp), tpe, purity, loc)
+    case JvmMethod(ident, fparams, clo, retTpe, purity, loc) =>
+      // JvmMethods are generated as their own functions so let-binding do not
+      // span across
+      JvmMethod(ident, fparams, visitExpr(clo), retTpe, purity, loc)
   }
 
   /**
@@ -330,7 +330,6 @@ object EffectBinder {
   private def letBindExpr(binders: mutable.ArrayBuffer[Binder])(e: Expr)(implicit lctx: LocalContext, flix: Flix): Expr.Var = {
     val loc = e.loc.asSynthetic
     val sym = Symbol.freshVarSym("anf", BoundBy.Let, loc)(Level.Default, flix)
-    lctx.lparams.addOne(LocalParam(sym, e.tpe))
     binders.addOne(LetBinder(sym, e, loc))
     Expr.Var(sym, e.tpe, loc)
   }
