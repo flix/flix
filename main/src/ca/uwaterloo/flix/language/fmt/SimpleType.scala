@@ -41,6 +41,8 @@ object SimpleType {
   // Primitives
   /////////////
 
+  case object Void extends SimpleType
+
   case object Unit extends SimpleType
 
   case object Null extends SimpleType
@@ -308,6 +310,7 @@ object SimpleType {
       case Type.AssocType(cst, arg, _, _) =>
         mkApply(Name(cst.sym.name), (arg :: t.typeArguments).map(visit))
       case Type.Cst(tc, _) => tc match {
+        case TypeConstructor.Void => Void
         case TypeConstructor.Unit => Unit
         case TypeConstructor.Null => Null
         case TypeConstructor.Bool => Bool
