@@ -5,103 +5,115 @@ mod Test.Handler.ZeroShot {
     }
 
     @Test
-    def testLinear01(): Unit =
+    def testLinear01(): Bool =
         def f1() = do Throw.throw();
-        try {
+        let result = try {
             f1()
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testLinear02(): Unit =
+    def testLinear02(): Bool =
         def f1() = do Throw.throw();
         def f2() = { f1(); unreachable!() };
-        try {
+        let result = try {
             f2()
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testLinear03(): Unit =
+    def testLinear03(): Bool =
         def f1() = do Throw.throw();
         def f2() = { f1(); unreachable!() };
         def f3() = { f2(); unreachable!() };
-        try {
+        let result = try {
             f3()
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testRecursiveLetRec01(): Unit =
+    def testRecursiveLetRec01(): Bool =
         def f() = do Throw.throw();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
-        try {
+        let result = try {
             r(0)
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testRecursiveLetRec02(): Unit =
+    def testRecursiveLetRec02(): Bool =
         def f() = do Throw.throw();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
-        try {
+        let result = try {
             r(1)
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testRecursiveLetRec03(): Unit =
+    def testRecursiveLetRec03(): Bool =
         def f() = do Throw.throw();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
-        try {
+        let result = try {
             r(10)
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
+
     @Test
-    def testMutualRecursive01(): Unit =
-        try {
+    def testMutualRecursive01(): Bool =
+        let result = try {
             mutual1(0)
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testMutualRecursive02(): Unit =
-        try {
+    def testMutualRecursive02(): Bool =
+        let result = try {
             mutual1(1)
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testMutualRecursive03(): Unit =
-        try {
+    def testMutualRecursive03(): Bool =
+        let result = try {
             mutual1(2)
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testMutualRecursive04(): Unit =
-        try {
+    def testMutualRecursive04(): Bool =
+        let result = try {
             mutual1(3)
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testMutualRecursive05(): Unit =
-        try {
+    def testMutualRecursive05(): Bool =
+        let result = try {
             mutual1(10)
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     def f(): Unit \ Throw =
          do Throw.throw();
