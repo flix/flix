@@ -1,9 +1,13 @@
 mod Test.Handler.ZeroShot.Recursive {
 
+    eff Throw {
+        pub def throw(): Unit
+    }
+
     @Test
     def testRecursiveTryWith01(): Bool =
         def r(x) = try {
-            if (x == 0) 0 else { r(x - 1); do Throw.throw(); unreachable!() }
+            if (x == 0) 0 else { let _ = r(x - 1); do Throw.throw(); unreachable!() }
         } with Throw {
             def throw(_k) = 42
         };
@@ -12,7 +16,7 @@ mod Test.Handler.ZeroShot.Recursive {
     @Test
     def testRecursiveTryWith02(): Bool =
         def r(x) = try {
-            if (x == 0) 0 else { r(x - 1); do Throw.throw(); unreachable!() }
+            if (x == 0) 0 else { let _ = r(x - 1); do Throw.throw(); unreachable!() }
         } with Throw {
             def throw(_k) = 42
         };
@@ -21,7 +25,7 @@ mod Test.Handler.ZeroShot.Recursive {
     @Test
     def testRecursiveTryWith03(): Bool =
         def r(x) = try {
-            if (x == 0) 0 else { r(x - 1); do Throw.throw(); unreachable!() }
+            if (x == 0) 0 else { let _ = r(x - 1); do Throw.throw(); unreachable!() }
         } with Throw {
             def throw(_k) = 42
         };
@@ -30,7 +34,7 @@ mod Test.Handler.ZeroShot.Recursive {
     @Test
     def testRecursiveTryWith04(): Bool =
         def r(x) = try {
-            if (x == 0) 0 else { r(x - 1); do Throw.throw(); unreachable!() }
+            if (x == 0) 0 else { let _ = r(x - 1); do Throw.throw(); unreachable!() }
         } with Throw {
             def throw(_k) = 42
         };
@@ -39,7 +43,7 @@ mod Test.Handler.ZeroShot.Recursive {
     @Test
     def testRecursiveTryWith05(): Bool =
         def r(x) = try {
-            if (x == 0) 0 else { r(x - 1); do Throw.throw(); unreachable!() }
+            if (x == 0) 0 else { let _ = r(x - 1); do Throw.throw(); unreachable!() }
         } with Throw {
             def throw(_k) = 42
         };
