@@ -4,11 +4,6 @@
 pub type alias Static = Impure
 
 ///
-/// The empty type.
-///
-pub enum Void
-
-///
 /// An enum that holds type information where a witness is not available.
 ///
 pub enum Proxy[_] {
