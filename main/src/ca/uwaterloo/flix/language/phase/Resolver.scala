@@ -2240,6 +2240,7 @@ object Resolver {
 
       case NamedAst.Type.Ambiguous(qname, loc) if qname.isUnqualified => qname.ident.name match {
         // Basic Types
+        case "Void" => Validation.success(UnkindedType.Cst(TypeConstructor.Void, loc))
         case "Unit" => Validation.success(UnkindedType.Cst(TypeConstructor.Unit, loc))
         case "Null" => Validation.success(UnkindedType.Cst(TypeConstructor.Null, loc))
         case "Bool" => Validation.success(UnkindedType.Cst(TypeConstructor.Bool, loc))
@@ -3242,6 +3243,10 @@ object Resolver {
     baseType match {
       // Case 1: Constant: Match on the type.
       case UnkindedType.Cst(tc, _) => tc match {
+        case TypeConstructor.Void =>
+          // Flix `Void` is _not_ Java's `void`.
+          Result.Err(ResolutionError.IllegalType(tpe, loc))
+
         case TypeConstructor.Unit => Result.Ok(Class.forName("java.lang.Object"))
 
         case TypeConstructor.Bool => Result.Ok(classOf[Boolean])
