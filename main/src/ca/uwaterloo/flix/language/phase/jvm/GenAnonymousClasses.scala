@@ -118,10 +118,11 @@ object GenAnonymousClasses {
     */
   private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter): Unit = method match {
     case JvmMethod(ident, fparams, _, tpe, _, _) =>
-      val erasedArgs = fparams.map(_.tpe).map(JvmOps.getErasedJvmType)
-      val boxedResult = JvmType.Object
-      val closureAbstractClass = JvmOps.getClosureAbstractClassType(erasedArgs, boxedResult)
-      val functionInterface = JvmOps.getFunctionInterfaceType(erasedArgs, boxedResult)
+      val args = fparams.map(_.tpe)
+      val boxedResult = MonoType.Object
+      val arrowType = MonoType.Arrow(args, boxedResult)
+      val closureAbstractClass = JvmOps.getClosureAbstractClassType(arrowType)
+      val functionInterface = JvmOps.getFunctionInterfaceType(arrowType)
 
       // Create the field that will store the closure implementing the body of the method
       AsmOps.compileField(classVisitor, cloName, closureAbstractClass, isStatic = false, isPrivate = false, isVolatile = false)
