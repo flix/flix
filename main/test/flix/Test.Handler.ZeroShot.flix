@@ -71,44 +71,49 @@ mod Test.Handler.ZeroShot {
         Assert.eq((), result)
 
     @Test
-    def testMutualRecursive01(): Unit =
-        try {
+    def testMutualRecursive01(): Bool =
+        let result = try {
             mutual1(0)
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testMutualRecursive02(): Unit =
-        try {
+    def testMutualRecursive02(): Bool =
+        let result = try {
             mutual1(1)
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testMutualRecursive03(): Unit =
-        try {
+    def testMutualRecursive03(): Bool =
+        let result = try {
             mutual1(2)
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testMutualRecursive04(): Unit =
-        try {
+    def testMutualRecursive04(): Bool =
+        let result = try {
             mutual1(3)
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     @Test
-    def testMutualRecursive05(): Unit =
-        try {
+    def testMutualRecursive05(): Bool =
+        let result = try {
             mutual1(10)
         } with Throw {
             def throw(_k) = ()
-        }
+        };
+        Assert.eq((), result)
 
     def f(): Unit \ Throw =
          do Throw.throw();
