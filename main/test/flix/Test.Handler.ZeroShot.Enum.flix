@@ -124,7 +124,7 @@ mod Test.Handler.ZeroShot.Enum {
         };
         Assert.eq(None, result)
 
-    def f(): AtomicInt \ Throw =
+    def f(): Option[Int32] \ Throw =
          do Throw.throw();
          unreachable!()
 
