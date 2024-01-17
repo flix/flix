@@ -629,21 +629,17 @@ object GenExpression {
 
       case AtomicOp.RecordEmpty =>
         // We get the JvmType of the class for the RecordEmpty
-        val classType = JvmOps.getRecordEmptyClassType()
+        val classType = BackendObjType.RecordEmpty
         // Instantiating a new object of tuple
-        mv.visitFieldInsn(GETSTATIC, classType.name.toInternalName, BackendObjType.RecordEmpty.SingletonField.name, classType.toDescriptor)
+        mv.visitFieldInsn(GETSTATIC, classType.jvmName.toInternalName, BackendObjType.RecordEmpty.SingletonField.name, classType.toDescriptor)
 
       case AtomicOp.RecordSelect(field) =>
         val List(exp) = exps
 
-        // Get the correct record extend class, given the expression type 'tpe'
-        // We get the JvmType of the extended record class to retrieve the proper field
-        val classType = JvmOps.getRecordType(tpe)
-
-        // We get the JvmType of the record interface
-        val interfaceType = JvmOps.getRecordInterfaceType()
-
         val backendRecordExtendType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
+        val interfaceType = BackendObjType.Record
+        val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
+        val recordInternalName = recordType.jvmName.toInternalName
 
         // Compile the expression exp (which should be a record), as we need to have on the stack a record in order to call
         // lookupField
@@ -653,54 +649,52 @@ object GenExpression {
         mv.visitLdcInsn(field.name)
 
         // Invoke the lookupField method on the record. (To get the proper record object)
-        mv.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, "lookupField",
-          AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
+        mv.visitMethodInsn(INVOKEINTERFACE, interfaceType.jvmName.toInternalName, "lookupField",
+          MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(interfaceType.toTpe).toDescriptor, true)
 
         // Cast to proper record extend class
-        mv.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
+        mv.visitTypeInsn(CHECKCAST, recordInternalName)
 
         // Retrieve the value field  (To get the proper value)
-        mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, backendRecordExtendType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
+        mv.visitFieldInsn(GETFIELD, recordInternalName, recordType.ValueField.name, JvmOps.getErasedJvmType(tpe).toDescriptor)
 
       case AtomicOp.RecordExtend(field) =>
         val List(exp1, exp2) = exps
 
-        // We get the JvmType of the class for the record extend
-        val classType = JvmOps.getRecordExtendClassType(tpe)
-
         // We get the JvmType of the record interface
-        val interfaceType = JvmOps.getRecordInterfaceType()
+        val interfaceType = BackendObjType.Record
 
         // Previous functions are already partial matches
         val MonoType.RecordExtend(_, recordValueType, _) = tpe
-        val backendRecordExtendType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(recordValueType))
+        val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(recordValueType))
+        val classInternalName = recordType.jvmName.toInternalName
 
         // Instantiating a new object of tuple
-        mv.visitTypeInsn(NEW, classType.name.toInternalName)
+        mv.visitTypeInsn(NEW, classInternalName)
         mv.visitInsn(DUP)
         // Invoking the constructor
-        mv.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
+        mv.visitMethodInsn(INVOKESPECIAL, classInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
 
         // Put the label of field (which is going to be the extension).
         mv.visitInsn(DUP)
         mv.visitLdcInsn(field.name)
-        mv.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRecordExtendType.LabelField.name, BackendObjType.String.toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.LabelField.name, BackendObjType.String.toDescriptor)
 
         // Put the value of the field onto the stack, since it is an expression we first need to compile it.
         mv.visitInsn(DUP)
         compileExpr(exp1)
-        mv.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRecordExtendType.ValueField.name, JvmOps.getErasedJvmType(exp1.tpe).toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.ValueField.name, JvmOps.getErasedJvmType(exp1.tpe).toDescriptor)
 
         // Put the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
         mv.visitInsn(DUP)
         compileExpr(exp2)
-        mv.visitFieldInsn(PUTFIELD, classType.name.toInternalName, backendRecordExtendType.RestField.name, interfaceType.toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.RestField.name, interfaceType.toDescriptor)
 
       case AtomicOp.RecordRestrict(field) =>
         val List(exp) = exps
 
         // We get the JvmType of the record interface
-        val interfaceType = JvmOps.getRecordInterfaceType()
+        val interfaceType = BackendObjType.Record
 
         // Push the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
         compileExpr(exp)
@@ -708,8 +702,8 @@ object GenExpression {
         mv.visitLdcInsn(field.name)
 
         // Invoking the restrictField method
-        mv.visitMethodInsn(INVOKEINTERFACE, interfaceType.name.toInternalName, BackendObjType.Record.RestrictFieldMethod.name,
-          AsmOps.getMethodDescriptor(List(JvmType.String), interfaceType), true)
+        mv.visitMethodInsn(INVOKEINTERFACE, interfaceType.jvmName.toInternalName, interfaceType.RestrictFieldMethod.name,
+          MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(interfaceType.toTpe).toDescriptor, true)
 
       case AtomicOp.ArrayLit =>
         // We push the 'length' of the array on top of stack

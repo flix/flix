@@ -65,8 +65,8 @@ object JvmOps {
     case MonoType.Lazy(_) => JvmType.Object
     case MonoType.Ref(elmType) => JvmType.Reference(BackendObjType.Ref(BackendType.asErasedBackendType(elmType)).jvmName)
     case MonoType.Tuple(_) => getTupleClassType(tpe.asInstanceOf[MonoType.Tuple])
-    case MonoType.RecordEmpty => getRecordInterfaceType()
-    case MonoType.RecordExtend(_, _, _) => getRecordInterfaceType()
+    case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
+    case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.Enum(sym) => getEnumInterfaceType(sym)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Native(clazz) =>
@@ -249,90 +249,6 @@ object JvmOps {
 
       // The type resides in the root package.
       JvmType.Reference(JvmName(RootPackage, name))
-  }
-
-  /**
-    * Returns the record interface type `Record`.
-    *
-    * For example,
-    *
-    * {}                    =>  Record
-    * {x :: Int}            =>  Record
-    * {x :: Str, y :: Int}  =>  Record
-    */
-  def getRecordInterfaceType(): JvmType.Reference = {
-
-    // The JVM name is of the form Record
-    val name = JvmName.mkClassName("Record")
-
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(RootPackage, name))
-  }
-
-  /**
-    * Returns the empty record class type `RecordEmtpy`
-    *
-    * For example,
-    *
-    * {}         =>    RecordEmpty
-    *
-    */
-  def getRecordEmptyClassType(): JvmType.Reference = {
-
-    // The JVM name is of the form RecordEmpty
-    val name = JvmName.mkClassName("RecordEmpty")
-
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(RootPackage, name))
-  }
-
-
-  /**
-    * Returns the extended record class type `RecordExtend$X` for the given type 'tpe'
-    *
-    * For example,
-    *
-    * {+z :: Int  | {}}                   =>    RecordExtend$Int
-    * {+y :: Char | {z :: Int}            =>    RecordExtend$Char
-    * {+x :: Str | {y :: Char, z :: Int}  =>    RecordExtend$Obj
-    *
-    * NB: The given type `tpe` must be a Record type
-    */
-  def getRecordExtendClassType(tpe: MonoType): JvmType.Reference = tpe match {
-
-    case MonoType.RecordExtend(_, value, _) =>
-      // Compute the stringified erased type of value.
-      val valueType = stringify(asErasedJvmType(value))
-
-      // The JVM name is of the form RecordExtend
-      val name = JvmName.mkClassName("RecordExtend", valueType)
-
-      // The type resides in the root package.
-      JvmType.Reference(JvmName(RootPackage, name))
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
-  }
-
-
-  /**
-    * Returns the extended record class type `RecordExtend$X` which contains the given type 'tpe'
-    *
-    * For example,
-    *
-    * Int                   =>  RecordExtend$Int
-    * Char                  =>  RecordExtend$Char
-    * {x :: Char, y :: Int} =>  RecordExtend$Obj
-    *
-    */
-  def getRecordType(tpe: MonoType): JvmType.Reference = {
-
-    // Compute the stringified erased type of 'tpe'.
-    val valueType = JvmOps.stringify(JvmOps.asErasedJvmType(tpe))
-
-    // The JVM name is of the form RecordExtend
-    val name = JvmName.mkClassName("RecordExtend", valueType)
-
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(JvmOps.RootPackage, name))
   }
 
   /**
