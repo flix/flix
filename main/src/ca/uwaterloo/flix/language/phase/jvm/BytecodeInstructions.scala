@@ -56,6 +56,9 @@ object BytecodeInstructions {
     def visitLoadConstantInstruction(v: Any): Unit =
       visitor.visitLdcInsn(v)
 
+    def visitTryCatchBlock(beforeTry: Label, afterTry: Label, handlerStart: Label): Unit =
+      visitor.visitTryCatchBlock(beforeTry, afterTry, handlerStart, null)
+
     def cheat(command: MethodVisitor => Unit): Unit = command(visitor)
   }
 
@@ -484,6 +487,23 @@ object BytecodeInstructions {
     f.visitJumpInstruction(opcodeOf(negated(c)), jumpLabel)
     f = i(f)
     f.visitLabel(jumpLabel)
+    f
+  }
+
+  def tryCatch(body: InstructionSet)(catchI: InstructionSet): InstructionSet = f0 => {
+    var f = f0
+    val beforeTry = new Label()
+    val afterTry = new Label()
+    val handlerStart = new Label()
+    val afterEverything = new Label()
+    f.visitTryCatchBlock(beforeTry, afterTry, handlerStart)
+    f.visitLabel(beforeTry)
+    f = body(f)
+    f.visitLabel(afterTry)
+    f.visitJumpInstruction(Opcodes.GOTO, afterEverything)
+    f.visitLabel(handlerStart)
+    f = catchI(f)
+    f.visitLabel(afterEverything)
     f
   }
 
