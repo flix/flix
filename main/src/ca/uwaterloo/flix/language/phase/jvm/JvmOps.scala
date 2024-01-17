@@ -64,7 +64,7 @@ object JvmOps {
     case MonoType.Array(_) => JvmType.Object
     case MonoType.Lazy(_) => JvmType.Object
     case MonoType.Ref(elmType) => JvmType.Reference(BackendObjType.Ref(BackendType.asErasedBackendType(elmType)).jvmName)
-    case MonoType.Tuple(_) => getTupleClassType(tpe.asInstanceOf[MonoType.Tuple])
+    case MonoType.Tuple(elms) => JvmType.Reference(BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType)).jvmName)
     case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.Enum(sym) => getEnumInterfaceType(sym)
@@ -221,34 +221,6 @@ object JvmOps {
     val name = JvmName.mkClassName(sym.enumSym.name, sym.name)
     // The tag class resides in its namespace package.
     JvmType.Reference(JvmName(sym.namespace, name))
-  }
-
-  /**
-    * Returns the tuple class type `TupleX$Y$Z` for the given type `tpe`.
-    *
-    * For example,
-    *
-    * (Int, Int)              =>    Tuple2$Int$Int
-    * (Int, Int, Int)         =>    Tuple3$Int$Int$Int
-    * (Bool, Char, Int)       =>    Tuple3$Bool$Char$Int
-    * (Bool, List[Int])       =>    Tuple2$Bool$Obj
-    * (Bool, (Int, Int))      =>    Tuple2$Bool$Obj
-    *
-    * NB: The given type `tpe` must be a tuple type.
-    */
-  def getTupleClassType(tpe: MonoType.Tuple): JvmType.Reference = tpe match {
-    case MonoType.Tuple(elms) =>
-      // Compute the arity of the tuple.
-      val arity = elms.length
-
-      // Compute the stringified erased type of each type argument.
-      val args = elms.map(tpe => stringify(asErasedJvmType(tpe)))
-
-      // The JVM name is of the form TupleArity$Arg0$Arg1$Arg2
-      val name = JvmName.mkClassName(s"Tuple$arity", args)
-
-      // The type resides in the root package.
-      JvmType.Reference(JvmName(RootPackage, name))
   }
 
   /**
