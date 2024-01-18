@@ -58,10 +58,11 @@ object Loader {
       }
 
       if (shouldMainExist) {
-        val mainName = JvmOps.getMainClassType().name
-        val mainClass = loadedClasses.getOrElse(mainName, throw InternalCompilerException(s"Class not found: '${mainName.toInternalName}'.", SourceLocation.Unknown))
-        val mainMethods = allMethods.getOrElse(mainClass, throw InternalCompilerException(s"methods for '${mainName.toInternalName}' not found.", SourceLocation.Unknown))
-        val mainMethod = mainMethods.getOrElse("main", throw InternalCompilerException(s"Cannot find 'main' method of '${mainName.toInternalName}'", SourceLocation.Unknown))
+        val mainName = JvmName.Main
+        val mainInternalName = mainName.toInternalName
+        val mainClass = loadedClasses.getOrElse(mainName, throw InternalCompilerException(s"Class not found: '$mainInternalName'.", SourceLocation.Unknown))
+        val mainMethods = allMethods.getOrElse(mainClass, throw InternalCompilerException(s"methods for '$mainInternalName' not found.", SourceLocation.Unknown))
+        val mainMethod = mainMethods.getOrElse("main", throw InternalCompilerException(s"Cannot find 'main' method of '$mainInternalName'", SourceLocation.Unknown))
 
         // This is a specialized version of the link function in JvmBackend
         def mainFunction(args: Array[String]): Unit = {
