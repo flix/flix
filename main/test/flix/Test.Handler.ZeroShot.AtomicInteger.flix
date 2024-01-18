@@ -6,24 +6,26 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInteger \ {} as mk;
         mk(n)
 
+    def toInt(n: AtomicInteger): Int32 =
+        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
+        intValue(n)
+
     eff Throw {
         pub def throw(): AtomicInteger
     }
 
     @Test
     def testLinear01(): Bool =
-        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         def f1() = do Throw.throw();
         let result = try {
             f1()
         } with Throw {
             def throw(_k) = newAtomicInteger(42)
         };
-        Assert.eq(intValue(newAtomicInteger(42)), intValue(result))
+        Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
     def testLinear02(): Bool =
-        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         def f1() = do Throw.throw();
         def f2() = { f1(); unreachable!() };
         let result = try {
@@ -31,11 +33,10 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         } with Throw {
             def throw(_k) = newAtomicInteger(42)
         };
-        Assert.eq(intValue(newAtomicInteger(42)), intValue(result))
+        Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
     def testLinear03(): Bool =
-        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         def f1() = do Throw.throw();
         def f2() = { f1(); unreachable!() };
         def f3() = { f2(); unreachable!() };
@@ -44,11 +45,10 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         } with Throw {
             def throw(_k) = newAtomicInteger(42)
         };
-        Assert.eq(intValue(newAtomicInteger(42)), intValue(result))
+        Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
     def testRecursiveLetRec01(): Bool =
-        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         def f() = do Throw.throw();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = try {
@@ -56,11 +56,10 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         } with Throw {
             def throw(_k) = newAtomicInteger(42)
         };
-        Assert.eq(intValue(newAtomicInteger(42)), intValue(result))
+        Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
     def testRecursiveLetRec02(): Bool =
-        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         def f() = do Throw.throw();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = try {
@@ -68,11 +67,10 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         } with Throw {
             def throw(_k) = newAtomicInteger(42)
         };
-        Assert.eq(intValue(newAtomicInteger(42)), intValue(result))
+        Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
     def testRecursiveLetRec03(): Bool =
-        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         def f() = do Throw.throw();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
         let result = try {
@@ -80,67 +78,61 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         } with Throw {
             def throw(_k) = newAtomicInteger(42)
         };
-        Assert.eq(intValue(newAtomicInteger(42)), intValue(result))
+        Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
     def testMutualRecursive01(): Bool =
-        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         let result = try {
             mutual1(0)
         } with Throw {
             def throw(_k) = newAtomicInteger(42)
         };
-        Assert.eq(intValue(newAtomicInteger(42)), intValue(result))
+        Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
     def testMutualRecursive02(): Bool =
-        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         let result = try {
             mutual1(1)
         } with Throw {
             def throw(_k) = newAtomicInteger(42)
         };
-        Assert.eq(intValue(newAtomicInteger(42)), intValue(result))
+        Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
     def testMutualRecursive03(): Bool =
-        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         let result = try {
             mutual1(2)
         } with Throw {
             def throw(_k) = newAtomicInteger(42)
         };
-        Assert.eq(intValue(newAtomicInteger(42)), intValue(result))
+        Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
     def testMutualRecursive04(): Bool =
-        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         let result = try {
             mutual1(3)
         } with Throw {
             def throw(_k) = newAtomicInteger(42)
         };
-        Assert.eq(intValue(newAtomicInteger(42)), intValue(result))
+        Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
     def testMutualRecursive05(): Bool =
-        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         let result = try {
             mutual1(10)
         } with Throw {
             def throw(_k) = newAtomicInteger(42)
         };
-        Assert.eq(intValue(newAtomicInteger(42)), intValue(result))
+        Assert.eq(toInt(newAtomicInteger(42)), toInt(result))
 
     @Test
     def testMutualRecursive06(): Bool =
-        import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         let result = try {
             mutual1(10)
         } with Throw {
             def throw(_k) = newAtomicInteger(40)
         };
-        Assert.eq(intValue(newAtomicInteger(40)), intValue(result))
+        Assert.eq(toInt(newAtomicInteger(40)), toInt(result))
 
     def f(): AtomicInteger \ Throw =
          do Throw.throw();
