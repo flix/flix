@@ -1043,16 +1043,14 @@ object GenExpression {
 
         // Find the Lazy class name (Lazy$tpe).
         val MonoType.Lazy(elmType) = tpe
-        val classType = BackendObjType.Lazy(BackendType.asErasedBackendType(elmType))
-        val internalClassName = classType.jvmName.toInternalName
+        val lazyType = BackendObjType.Lazy(BackendType.asErasedBackendType(elmType))
 
-        // Make a new lazy object and dup it to leave it on the stack.
-        mv.visitTypeInsn(NEW, internalClassName)
-        mv.visitInsn(DUP)
-
-        // Compile the thunked expression and call new Lazy$erased_tpe(expression).
-        compileExpr(exp)
-        mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.Void), false)
+        val ins = {
+          import BytecodeInstructions._
+          NEW(lazyType.jvmName) ~
+            DUP() ~  cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ INVOKESPECIAL(lazyType.Constructor)
+        }
+        ins(new BytecodeInstructions.F(mv))
 
       case AtomicOp.Force =>
         val List(exp) = exps
@@ -1060,34 +1058,22 @@ object GenExpression {
         // Find the Lazy class type (Lazy$tpe) and the inner value type.
         val MonoType.Lazy(elmType) = exp.tpe
         val erasedElmType = BackendType.asErasedBackendType(elmType)
-        val classType = BackendObjType.Lazy(erasedElmType)
-        val internalClassType = classType.jvmName.toInternalName
+        val lazyType = BackendObjType.Lazy(erasedElmType)
 
         // Emit code for the lazy expression.
         compileExpr(exp)
 
-        // Lazy$tpe is expected.
-        mv.visitTypeInsn(CHECKCAST, internalClassType)
-
-        // Dup for later lazy.value or lazy.force(context)
-        mv.visitInsn(DUP)
-        // Get expression
-        mv.visitFieldInsn(GETFIELD, internalClassType, "expression", JvmType.Object.toDescriptor)
-        val alreadyInit = new Label()
-        val end = new Label()
-        // If expression == null the we just use lazy.value, otherwise lazy.force(context)
-        mv.visitJumpInsn(IFNULL, alreadyInit)
-
-        // Call force().
-        mv.visitMethodInsn(INVOKEVIRTUAL, internalClassType, "force", MethodDescriptor.mkDescriptor()(erasedElmType).toDescriptor, false)
-        // goto the cast to undo erasure
-        mv.visitJumpInsn(GOTO, end)
-
-        mv.visitLabel(alreadyInit)
-        // Retrieve the erased value
-        mv.visitFieldInsn(GETFIELD, internalClassType, "value", erasedElmType.toDescriptor)
-
-        mv.visitLabel(end)
+        val ins = {
+          import BytecodeInstructions._
+          CHECKCAST(lazyType.jvmName) ~
+          DUP() ~ GETFIELD(lazyType.ExpField) ~
+          ifConditionElse(Condition.NONNULL)(
+            INVOKEVIRTUAL(lazyType.ForceMethod)
+          )(
+            GETFIELD(lazyType.ValueField)
+          )
+        }
+        ins(new BytecodeInstructions.F(mv))
 
       case AtomicOp.HoleError(sym) =>
         // Add source line number for debugging (failable by design)
