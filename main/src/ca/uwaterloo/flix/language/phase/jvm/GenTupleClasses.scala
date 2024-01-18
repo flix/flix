@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
@@ -32,13 +33,12 @@ object GenTupleClasses {
     */
   def gen(ts: Set[MonoType])(implicit flix: Flix): Map[JvmName, JvmClass] = {
     ts.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, tpe@MonoType.Tuple(elms)) =>
+      case (macc, MonoType.Tuple(elms)) =>
         // Case 1: The type constructor is a tuple.
         // Construct tuple class.
-        val jvmType = JvmOps.getTupleClassType(tpe)
-        val jvmName = jvmType.name
-        val bytecode = genByteCode(jvmType, elms)
-        macc + (jvmName -> JvmClass(jvmName, bytecode))
+        val tupleType = BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType))
+        val jvmName = tupleType.jvmName
+        macc + (jvmName -> JvmClass(jvmName, genByteCode(tupleType)))
       case (macc, _) =>
         // Case 2: The type constructor is a non-tuple.
         // Nothing to be done. Return the map.
@@ -95,37 +95,31 @@ object GenTupleClasses {
     * }
     *
     */
-  private def genByteCode(classType: JvmType.Reference, monoTargs: List[MonoType])(implicit flix: Flix): Array[Byte] = {
+  private def genByteCode(tupleType: BackendObjType.Tuple)(implicit flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
-
-    val targs = monoTargs.map(JvmOps.getErasedJvmType)
 
     // internal name of super
     val superClass = BackendObjType.JavaObject.jvmName.toInternalName
 
     // Initialize the visitor to create a class.
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null, superClass, null)
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, tupleType.jvmName.toInternalName, null, superClass, null)
 
     // Source of the class
-    visitor.visitSource(classType.name.toInternalName, null)
+    visitor.visitSource(tupleType.jvmName.toInternalName, null)
 
     // Adding fields and getters and setters to the class
-    for ((field, ind) <- targs.zipWithIndex) {
-      // Name of the field
-      val fieldName = s"field$ind"
-
-      // Defining fields of the tuple
-      AsmOps.compileField(visitor, fieldName, field, isStatic = false, isPrivate = false, isVolatile = false)
+    for ((field, ind) <- tupleType.elms.zipWithIndex) {
+      visitor.visitField(ACC_PUBLIC, s"field$ind", field.toDescriptor, null, null).visitEnd()
     }
 
     // Emit the code for the constructor
-    compileTupleConstructor(visitor, classType, targs)
+    compileTupleConstructor(visitor, tupleType)
 
     // Emit the code for `getBoxedValue()` method
-    compileGetBoxedValueMethod(visitor, classType, targs)
+    compileGetBoxedValueMethod(visitor, tupleType)
 
-    compileToStringMethod(visitor, classType, monoTargs)
+    compileToStringMethod(visitor, tupleType)
 
     // Generate `hashCode` method
     AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
@@ -145,18 +139,18 @@ object GenTupleClasses {
     * elements of the tuple in the same order that they appear on the tuple but if the element is a primitive then it will
     * box the value.
     */
-  private def compileGetBoxedValueMethod(visitor: ClassWriter, classType: JvmType.Reference, fields: List[JvmType]): Unit = {
+  private def compileGetBoxedValueMethod(visitor: ClassWriter, tupleType: BackendObjType.Tuple): Unit = {
     // header of the method
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedValue", s"()[Ljava/lang/Object;", null, null)
 
     method.visitCode()
 
     // Creating an array of objected
-    method.visitLdcInsn(fields.length)
+    method.visitLdcInsn(tupleType.elms.length)
     method.visitTypeInsn(ANEWARRAY, BackendObjType.JavaObject.jvmName.toInternalName)
 
     // Putting boxed of value on the array
-    fields.zipWithIndex.foreach { case (field, ind) =>
+    tupleType.elms.zipWithIndex.foreach { case (field, ind) =>
       // Duplicating the array address
       method.visitInsn(DUP)
 
@@ -164,7 +158,7 @@ object GenTupleClasses {
       method.visitLdcInsn(ind)
 
       // Boxing the field
-      AsmOps.boxField(method, field, classType, s"field$ind")
+      AsmOps.boxField(method, field, tupleType.jvmName, s"field$ind")
 
       // Storing the value inside the array
       method.visitInsn(AASTORE)
@@ -188,29 +182,22 @@ object GenTupleClasses {
     * this.field1 = var2;
     * }
     */
-  private def compileTupleConstructor(visitor: ClassWriter, classType: JvmType.Reference, fields: List[JvmType]): Unit = {
-
-    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(fields, JvmType.Void), null, null)
+  private def compileTupleConstructor(visitor: ClassWriter, tupleType: BackendObjType.Tuple): Unit = {
+    val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", MethodDescriptor(tupleType.elms, VoidableType.Void).toDescriptor, null, null)
 
     constructor.visitCode()
     constructor.visitVarInsn(ALOAD, 0)
 
     // Call the super (java.lang.Object) constructor
-    constructor.visitMethodInsn(INVOKESPECIAL, BackendObjType.JavaObject.jvmName.toInternalName, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), false)
+    constructor.visitMethodInsn(INVOKESPECIAL, BackendObjType.JavaObject.jvmName.toInternalName, "<init>", MethodDescriptor.NothingToVoid.toDescriptor, false)
 
     var offset: Int = 1
 
-    for ((field, ind) <- fields.zipWithIndex) {
-      val iLoad = AsmOps.getLoadInstruction(field)
-
+    for ((field, ind) <- tupleType.elms.zipWithIndex) {
       constructor.visitVarInsn(ALOAD, 0)
-      constructor.visitVarInsn(iLoad, offset)
-      constructor.visitFieldInsn(PUTFIELD, classType.name.toInternalName, s"field$ind", field.toDescriptor)
-
-      field match {
-        case JvmType.PrimLong | JvmType.PrimDouble => offset += 2
-        case _ => offset += 1
-      }
+      BytecodeInstructions.xLoad(field, offset)(new BytecodeInstructions.F(constructor))
+      constructor.visitFieldInsn(PUTFIELD, tupleType.jvmName.toInternalName, s"field$ind", field.toDescriptor)
+      if (field.is64BitWidth) offset += 2 else offset += 1
     }
     // Return
     constructor.visitInsn(RETURN)
@@ -220,7 +207,7 @@ object GenTupleClasses {
     constructor.visitEnd()
   }
 
-  def compileToStringMethod(visitor: ClassWriter, classType: JvmType.Reference, fields: List[MonoType]): Unit = {
+  def compileToStringMethod(visitor: ClassWriter, tupleType: BackendObjType.Tuple): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "toString", AsmOps.getMethodDescriptor(Nil, JvmType.String), null, null)
     // this is for the new bytecode framework
     val methodF = new BytecodeInstructions.F(method)
@@ -236,20 +223,19 @@ object GenTupleClasses {
     // create the inner string, which is the comma separated fields
     method.visitLdcInsn(", ")
     //     new array
-    method.visitLdcInsn(fields.length)
+    method.visitLdcInsn(tupleType.elms.length)
     method.visitTypeInsn(ANEWARRAY, JvmType.String.name.toInternalName)
     //     the running index
     method.visitInsn(ICONST_M1)
     //     store string reps of fields
-    for ((field, ind) <- fields.zipWithIndex) {
-      val jvmType = JvmOps.getErasedJvmType(field)
+    for ((field, ind) <- tupleType.elms.zipWithIndex) {
       // add to index
       method.visitInsn(ICONST_1)
       method.visitInsn(IADD)
       method.visitInsn(DUP2)
       method.visitVarInsn(ALOAD, 0)
-      method.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"field$ind", jvmType.toDescriptor)
-      BytecodeInstructions.xToString(BackendType.toErasedBackendType(field))(methodF)
+      method.visitFieldInsn(GETFIELD, tupleType.jvmName.toInternalName, s"field$ind", field.toDescriptor)
+      BytecodeInstructions.xToString(field)(methodF)
       method.visitInsn(AASTORE)
     }
     method.visitInsn(POP)

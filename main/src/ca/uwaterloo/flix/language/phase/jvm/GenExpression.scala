@@ -603,29 +603,29 @@ object GenExpression {
 
       case AtomicOp.Index(idx) =>
         val List(exp) = exps
-        // We get the JvmType of the class for the tuple
-        val classType = JvmOps.getTupleClassType(exp.tpe.asInstanceOf[MonoType.Tuple])
+
+        val MonoType.Tuple(elmTypes) = exp.tpe
+        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.asErasedBackendType))
         // evaluating the `base`
         compileExpr(exp)
         // Retrieving the field `field${offset}`
-        mv.visitFieldInsn(GETFIELD, classType.name.toInternalName, s"field$idx", JvmOps.asErasedJvmType(tpe).toDescriptor)
+        mv.visitFieldInsn(GETFIELD, tupleType.jvmName.toInternalName, s"field$idx", JvmOps.asErasedJvmType(tpe).toDescriptor)
 
       case AtomicOp.Tuple =>
         // We get the JvmType of the class for the tuple
-        val classType = JvmOps.getTupleClassType(tpe.asInstanceOf[MonoType.Tuple])
+        val MonoType.Tuple(elmTypes) = tpe
+        val tupleType = BackendObjType.Tuple(elmTypes.map(BackendType.asErasedBackendType))
+        val internalClassName = tupleType.jvmName.toInternalName
         // Instantiating a new object of tuple
-        mv.visitTypeInsn(NEW, classType.name.toInternalName)
+        mv.visitTypeInsn(NEW, internalClassName)
         // Duplicating the class
         mv.visitInsn(DUP)
         // Evaluating all the elements to be stored in the tuple class
         exps.foreach(compileExpr)
-        // Erased type of `elms`
-        val MonoType.Tuple(elmTypes) = tpe
-        val erasedElmTypes = elmTypes.map(JvmOps.asErasedJvmType)
         // Descriptor of constructor
-        val constructorDescriptor = AsmOps.getMethodDescriptor(erasedElmTypes, JvmType.Void)
+        val constructorDescriptor = MethodDescriptor(tupleType.elms, VoidableType.Void)
         // Invoking the constructor
-        mv.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
+        mv.visitMethodInsn(INVOKESPECIAL, internalClassName, "<init>", constructorDescriptor.toDescriptor, false)
 
       case AtomicOp.RecordEmpty =>
         // We get the JvmType of the class for the RecordEmpty
