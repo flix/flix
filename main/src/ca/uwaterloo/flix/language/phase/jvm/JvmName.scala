@@ -71,6 +71,13 @@ object JvmName {
     JvmName(l.init.toList, l.last)
   }
 
+  def ofClass(clazz: Class[_]): JvmName = {
+    // TODO: Ugly hack.
+    // Maybe use clazz.getPackage and clazz.getSimpleName
+    val fqn = clazz.getName.replace('.', '/')
+    JvmName.mk(fqn)
+  }
+
   val RootPackage: List[String] = Nil
 
   /**

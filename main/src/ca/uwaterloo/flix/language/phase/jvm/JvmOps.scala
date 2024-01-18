@@ -69,10 +69,7 @@ object JvmOps {
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.Enum(sym) => getEnumInterfaceType(sym)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
-    case MonoType.Native(clazz) =>
-      // TODO: Ugly hack.
-      val fqn = clazz.getName.replace('.', '/')
-      JvmType.Reference(JvmName.mk(fqn))
+    case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
 
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
@@ -259,7 +256,7 @@ object JvmOps {
   }
 
   /**
-    * Returns the namespace type for the given namespace `ns`.
+    * Returns the namespace name for the given namespace `ns`.
     *
     * For example:
     *
@@ -268,10 +265,20 @@ object JvmOps {
     * Foo.Bar     =>  Foo.Bar.Ns
     * Foo.Bar.Baz =>  Foo.Bar.Baz.Ns
     */
-  def getNamespaceClassType(ns: NamespaceInfo): JvmType.Reference = {
-    val pkg = ns.ns
+  def getNamespaceClassType(ns: NamespaceInfo): JvmName = {
+    getNamespaceName(ns.ns)
+  }
+
+  /**
+    * Returns the namespace name of the given definition symbol `sym`.
+    */
+  def getNamespaceName(sym: Symbol.DefnSym): JvmName = {
+    getNamespaceName(sym.namespace)
+  }
+
+  private def getNamespaceName(ns: List[String]): JvmName = {
     val name = JvmName.mkClassName("Ns")
-    JvmType.Reference(JvmName(pkg, name))
+    JvmName(ns, name)
   }
 
   /**
@@ -300,13 +307,6 @@ object JvmOps {
     case JvmType.PrimInt => "Int32"
     case JvmType.PrimLong => "Int64"
     case JvmType.Reference(_) => "Obj"
-  }
-
-  /**
-    * Returns the namespace info of the given definition symbol `sym`.
-    */
-  def getNamespace(sym: Symbol.DefnSym): NamespaceInfo = {
-    NamespaceInfo(sym.namespace, Map.empty) // TODO: Magnus: Empty map.
   }
 
   /**
