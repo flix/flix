@@ -214,11 +214,7 @@ object BackendType {
     case MonoType.BigInt => BackendObjType.BigInt.toTpe
     case MonoType.String => BackendObjType.String.toTpe
     case MonoType.Regex => BackendObjType.Regex.toTpe
-    case MonoType.Native(clazz) =>
-      // Maybe use clazz.getPackage and clazz.getSimpleName
-      // TODO: Ugly hack.
-      val fqn = clazz.getName.replace('.', '/')
-      JvmName.mk(fqn).toTpe
+    case MonoType.Native(clazz) => JvmName.ofClass(clazz).toTpe
     case MonoType.Unit | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
          MonoType.Arrow(_, _) | MonoType.RecordEmpty |
          MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) =>
