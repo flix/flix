@@ -366,6 +366,16 @@ object JvmOps {
     }
 
   /**
+    * Returns the set of erased tuple types in `types` without searching recursively.
+    */
+  def getErasedTupleTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Tuple] =
+    types.foldLeft(Set.empty[BackendObjType.Tuple]) {
+      case (acc, MonoType.Tuple(elms)) =>
+        acc + BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType))
+      case (acc, _) => acc
+    }
+
+  /**
     * Writes the given JVM class `clazz` to a sub path under the given `prefixPath`.
     *
     * For example, if the prefix path is `/tmp/` and the class name is Foo.Bar.Baz
