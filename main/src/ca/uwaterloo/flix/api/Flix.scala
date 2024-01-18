@@ -109,8 +109,8 @@ class Flix {
   private var cachedTailrecAst: LiftedAst.Root = LiftedAst.empty
   private var cachedOptimizerAst: LiftedAst.Root = LiftedAst.empty
   private var cachedTreeShaker2Ast: LiftedAst.Root = LiftedAst.empty
-  private var cachedEffectBinderAst: LiftedAst.Root = LiftedAst.empty
-  private var cachedEraserAst: LiftedAst.Root = LiftedAst.empty
+  private var cachedEffectBinderAst: ReducedAst.Root = ReducedAst.empty
+  private var cachedEraserAst: ReducedAst.Root = ReducedAst.empty
   private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
   private var cachedVarOffsetsAst: ReducedAst.Root = ReducedAst.empty
 
@@ -134,9 +134,9 @@ class Flix {
 
   def getTreeShaker2Ast: LiftedAst.Root = cachedTreeShaker2Ast
 
-  def getEffectBinderAst: LiftedAst.Root = cachedEffectBinderAst
+  def getEffectBinderAst: ReducedAst.Root = cachedEffectBinderAst
 
-  def getEraserAst: LiftedAst.Root = cachedEraserAst
+  def getEraserAst: ReducedAst.Root = cachedEraserAst
 
   def getReducerAst: ReducedAst.Root = cachedReducerAst
 
