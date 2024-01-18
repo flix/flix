@@ -1,7 +1,7 @@
 /**
  * An implementation of the constant propagation lattice.
  */
-namespace Domain/Constant {
+mod Domain.Constant {
 
     ///
     /// The elements of the constant propagation lattice.
@@ -18,190 +18,222 @@ namespace Domain/Constant {
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
 //    #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
-    pub def leq(e1: Constant, e2: Constant): Bool = match (e1, e2) {
-        case (Bot, _)           => true
-        case (Cst(n1), Cst(n2)) => n1 == n2
-        case (_, Top)           => true
-        case _                  => false
-    }
+    pub def leq(e1: Constant, e2: Constant): Bool =
+        use Constant.{Top, Cst, Bot};
+        match (e1, e2) {
+            case (Bot, _)           => true
+            case (Cst(n1), Cst(n2)) => n1 == n2
+            case (_, Top)           => true
+            case _                  => false
+        }
 
     ///
     /// Returns the least upper bound of `e1` and `e2`.
     ///
 //    #upperBound #leastUpperBound #commutative #associative
-    pub def lub(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-        case (Bot, x)           => x
-        case (x, Bot)           => x
-        case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Top
-        case _                  => Top
-    }
+    pub def lub(e1: Constant, e2: Constant): Constant =
+        use Constant.{Top, Cst, Bot};
+        match (e1, e2) {
+            case (Bot, x)           => x
+            case (x, Bot)           => x
+            case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Top
+            case _                  => Top
+        }
 
     ///
     /// Returns the greatest lower bound of `e1` and `e2`.
     ///
 //    #lowerBound #greatestLowerBound #commutative #associative
-    pub def glb(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-        case (Top, x)           => x
-        case (x, Top)           => x
-        case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Bot
-        case _                  => Bot
-    }
+    pub def glb(e1: Constant, e2: Constant): Constant =
+        use Constant.{Top, Cst, Bot};
+        match (e1, e2) {
+            case (Top, x)           => x
+            case (x, Top)           => x
+            case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Bot
+            case _                  => Bot
+        }
 
     ///
     /// The lattice height function.
     ///
 //    #nonNegative
-    pub def height(e: Constant): BigInt = match e {
-        case Top    => 0ii
-        case Cst(_) => 1ii
-        case Bot    => 2ii
-    }
+    pub def height(e: Constant): BigInt =
+        use Constant.{Top, Cst, Bot};
+        match e {
+            case Top    => 0ii
+            case Cst(_) => 1ii
+            case Bot    => 2ii
+        }
 
     ///
     /// Abstracts a concrete integer into the Sign domain.
     ///
-    pub def alpha(i: Int32): Constant = Cst(i)
+    pub def alpha(i: Int32): Constant = Constant.Cst(i)
 
     /**
      * Over-approximates integer `increment`.
      */
 //    #safe1(x -> x + 1)
 //    #strict1 #monotone1
-    pub def inc(e: Constant): Constant = match e {
-        case Bot    => Bot
-        case Cst(n) => Cst(n + 1)
-        case Top    => Top
-    }
+    pub def inc(e: Constant): Constant =
+        use Constant.{Top, Cst, Bot};
+        match e {
+            case Bot    => Bot
+            case Cst(n) => Cst(n + 1)
+            case Top    => Top
+        }
 
     ///
     /// Over-approximates integer `decrement`.
     ///
 //    #safe1(x -> x - 1)
 //    #strict1 #monotone1
-    pub def dec(e: Constant): Constant = match e {
-        case Bot    => Bot
-        case Cst(n) => Cst(n - 1)
-        case Top    => Top
-    }
+    pub def dec(e: Constant): Constant =
+        use Constant.{Top, Cst, Bot};
+        match e {
+            case Bot    => Bot
+            case Cst(n) => Cst(n - 1)
+            case Top    => Top
+        }
 
     ///
     /// Over-approximates integer `addition`.
     ///
 //    #safe2((x, y) -> x + y)
 //    #strict2 #monotone2 #commutative #associative
-    pub def plus(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 + n2)
-        case _                  => Top
-    }
+    pub def plus(e1: Constant, e2: Constant): Constant =
+        use Constant.{Top, Cst, Bot};
+        match (e1, e2) {
+            case (Bot, _)           => Bot
+            case (_, Bot)           => Bot
+            case (Cst(n1), Cst(n2)) => Cst(n1 + n2)
+            case _                  => Top
+        }
 
     ///
     /// Over-approximates integer `subtraction`.
     ///
 //    #safe2((x, y) -> x - y)
 //    #strict2 #monotone2
-    pub def minus(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 - n2)
-        case _                  => Top
-    }
+    pub def minus(e1: Constant, e2: Constant): Constant =
+        use Constant.{Top, Cst, Bot};
+        match (e1, e2) {
+            case (Bot, _)           => Bot
+            case (_, Bot)           => Bot
+            case (Cst(n1), Cst(n2)) => Cst(n1 - n2)
+            case _                  => Top
+        }
 
     ///
     /// Over-approximates integer `multiplication`.
     ///
 //    #safe2((x, y) -> x * y)
 //    #strict2 #monotone2 #commutative #associative
-    pub def times(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 * n2)
-        case _                  => Top
-    }
+    pub def times(e1: Constant, e2: Constant): Constant =
+        use Constant.{Top, Cst, Bot};
+        match (e1, e2) {
+            case (Bot, _)           => Bot
+            case (_, Bot)           => Bot
+            case (Cst(n1), Cst(n2)) => Cst(n1 * n2)
+            case _                  => Top
+        }
 
     ///
     /// Over-approximates integer `division`.
     ///
 //    #safe2((x, y) -> x / y)
 //    #strict2 #monotone2
-    pub def divide(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 / n2)
-        case _                  => Top
-    }
+    pub def divide(e1: Constant, e2: Constant): Constant =
+        use Constant.{Top, Cst, Bot};
+        match (e1, e2) {
+            case (Bot, _)           => Bot
+            case (_, Bot)           => Bot
+            case (Cst(n1), Cst(n2)) => Cst(n1 / n2)
+            case _                  => Top
+        }
 
     ///
     /// Over-approximates integer `modulus`.
     ///
 //    #safe2((x, y) -> x `rem` y)
 //    #strict2 #monotone2
-    pub def modulo(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 `rem` n2)
-        case _                  => Top
-    }
+    pub def modulo(e1: Constant, e2: Constant): Constant =
+        use Constant.{Top, Cst, Bot};
+        match (e1, e2) {
+            case (Bot, _)           => Bot
+            case (_, Bot)           => Bot
+            case (Cst(n1), Cst(n2)) => Cst(n1 `Int32.rem` n2)
+            case _                  => Top
+        }
 
     ///
     /// Over-approximates `bitwise negation`.
     ///
 //    #safe1(x -> ~~~x)
 //    #strict1 #monotone1
-    pub def negate(e: Constant): Constant = match e {
-        case Bot       => Bot
-        case Cst(n)    => Cst(~~~ n)
-        case Top       => Top
-    }
+    pub def negate(e: Constant): Constant =
+        use Constant.{Top, Cst, Bot};
+        match e {
+            case Bot       => Bot
+            case Cst(n)    => Cst(Int32.bitwiseNot(n))
+            case Top       => Top
+        }
 
     ///
     /// Over-approximates `bitwise and`.
     ///
 //    #safe2((x, y) -> x &&& y)
 //    #strict2 #monotone2 #commutative #associative
-    pub def and(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 &&& n2)
-        case _                  => Top
-    }
+    pub def and(e1: Constant, e2: Constant): Constant =
+        use Constant.{Top, Cst, Bot};
+        match (e1, e2) {
+            case (Bot, _)           => Bot
+            case (_, Bot)           => Bot
+            case (Cst(n1), Cst(n2)) => Cst(n1 `Int32.bitwiseAnd` n2)
+            case _                  => Top
+        }
 
     ///
     /// Over-approximates `bitwise or`.
     ///
 //    #safe2((x, y) -> x ||| y)
 //    #strict2 #monotone2 #commutative #associative
-    pub def or(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 ||| n2)
-        case _                  => Top
-    }
+    pub def or(e1: Constant, e2: Constant): Constant =
+        use Constant.{Top, Cst, Bot};
+        match (e1, e2) {
+            case (Bot, _)           => Bot
+            case (_, Bot)           => Bot
+            case (Cst(n1), Cst(n2)) => Cst(n1 `Int32.bitwiseOr` n2)
+            case _                  => Top
+        }
 
     ///
     /// Over-approximates `bitwise xor`.
     ///
 //    #safe2((x, y) -> x ^^^ y)
 //    #strict2 #monotone2 #commutative #associative
-    pub def xor(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(n1 ^^^ n2)
-        case _                  => Top
-    }
+    pub def xor(e1: Constant, e2: Constant): Constant =
+        use Constant.{Top, Cst, Bot};
+        match (e1, e2) {
+            case (Bot, _)           => Bot
+            case (_, Bot)           => Bot
+            case (Cst(n1), Cst(n2)) => Cst(n1 `Int32.bitwiseXor` n2)
+            case _                  => Top
+        }
 
     ///
     /// Over-approximates `bitwise left shift`.
     ///
 //    #safe2((x, y) -> Int32.shiftLeft(x, y))
 //    #strict2 #monotone2
-    pub def leftShift(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(Int32.shiftLeft(n1, n2))
-        case _                  => Top
-    }
+    pub def leftShift(e1: Constant, e2: Constant): Constant =
+        use Constant.{Top, Cst, Bot};
+        match (e1, e2) {
+            case (Bot, _)           => Bot
+            case (_, Bot)           => Bot
+            case (Cst(n1), Cst(n2)) => Cst(Int32.leftShift(n1, n2))
+            case _                  => Top
+        }
 
     ///
     /// Over-approximates `bitwise right shift`.
@@ -209,32 +241,36 @@ namespace Domain/Constant {
     ///
 //    #safe2((x, y) -> Int32.shiftRight(x, y))
 //    #strict2 #monotone2
-    pub def rightShift(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-        case (Bot, _)           => Bot
-        case (_, Bot)           => Bot
-        case (Cst(n1), Cst(n2)) => Cst(Int32.shiftRight(n1, n2))
-        case _                  => Top
-    }
+    pub def rightShift(e1: Constant, e2: Constant): Constant =
+        use Constant.{Top, Cst, Bot};
+        match (e1, e2) {
+            case (Bot, _)           => Bot
+            case (_, Bot)           => Bot
+            case (Cst(n1), Cst(n2)) => Cst(Int32.rightShift(n1, n2))
+            case _                  => Top
+        }
 
     ///
     /// Over-approximates `equal`.
     ///
 //    #PartialOrder.safe2((x, y) -> x == y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+//    #Bounded.strict2(Bot, Bot, Belnap.Belnap.Bot)
 //    #PartialOrder.monotone2(leq, leq, Belnap.leq)
 //    #commutative
-    pub def eq(e1: Constant, e2: Constant): Belnap.Belnap = match (e1, e2) {
-        case (Bot, _)           => Belnap/Belnap.Bot
-        case (_, Bot)           => Belnap/Belnap.Bot
-        case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 == n2)
-        case _                  => Belnap/Belnap.Top
-    }
+    pub def eq(e1: Constant, e2: Constant): Belnap.Belnap =
+        use Constant.{Top, Cst, Bot};
+        match (e1, e2) {
+            case (Bot, _)           => Belnap.Belnap.Bot
+            case (_, Bot)           => Belnap.Belnap.Bot
+            case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 == n2)
+            case _                  => Belnap.Belnap.Top
+        }
 
     ///
     /// Over-approximates `not equal`.
     ///
 //    #PartialOrder.safe2((x, y) -> x != y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+//    #Bounded.strict2(Bot, Bot, Belnap.Belnap.Bot)
 //    #PartialOrder.monotone2(leq, leq, Belnap.leq)
 //    #commutative
     pub def neq(e1: Constant, e2: Constant): Belnap.Belnap = Belnap.not(eq(e1, e2))
@@ -243,20 +279,22 @@ namespace Domain/Constant {
     /// Over-approximates `less than`.
     ///
 //    #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+//    #Bounded.strict2(Bot, Bot, Belnap.Belnap.Bot)
 //    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    pub def less(e1: Constant, e2: Constant): Belnap.Belnap = match (e1, e2) {
-        case (Bot, _)           => Belnap/Belnap.Bot
-        case (_, Bot)           => Belnap/Belnap.Bot
-        case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 < n2)
-        case _                  => Belnap/Belnap.Top
-    }
+    pub def less(e1: Constant, e2: Constant): Belnap.Belnap =
+        use Constant.{Top, Cst, Bot};
+        match (e1, e2) {
+            case (Bot, _)           => Belnap.Belnap.Bot
+            case (_, Bot)           => Belnap.Belnap.Bot
+            case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 < n2)
+            case _                  => Belnap.Belnap.Top
+        }
 
     ///
     /// Over-approximates `less than or equal`.
     ///
 //    #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap/Belnap.Bot)
+//    #Bounded.strict2(Bot, Bot, Belnap.Belnap.Bot)
 //    #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def lessEqual(e1: Constant, e2: Constant): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
 
