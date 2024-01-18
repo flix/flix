@@ -490,6 +490,23 @@ object BytecodeInstructions {
     f
   }
 
+  /**
+    * Using [[ifCondition]] uses less jumps, so use that if the conditional code
+    * is returns or throws
+    */
+  def ifConditionElse(c: Condition)(i: InstructionSet)(otherwise: InstructionSet): InstructionSet = f0 => {
+    var f = f0
+    val conditionLabel = new Label()
+    val endLabel = new Label()
+    f.visitJumpInstruction(opcodeOf(c), conditionLabel)
+    f = otherwise(f)
+    f.visitJumpInstruction(Opcodes.GOTO, endLabel)
+    f.visitLabel(conditionLabel)
+    f = i(f)
+    f.visitLabel(endLabel)
+    f
+  }
+
   def tryCatch(body: InstructionSet)(catchI: InstructionSet): InstructionSet = f0 => {
     var f = f0
     val beforeTry = new Label()

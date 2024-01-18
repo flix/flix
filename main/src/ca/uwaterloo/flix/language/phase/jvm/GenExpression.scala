@@ -1067,10 +1067,11 @@ object GenExpression {
           import BytecodeInstructions._
           CHECKCAST(lazyType.jvmName) ~
           DUP() ~ GETFIELD(lazyType.ExpField) ~
-          ifCondition(Condition.NONNULL)(
+          ifConditionElse(Condition.NONNULL)(
             INVOKEVIRTUAL(lazyType.ForceMethod)
-          ) ~
+          )(
             GETFIELD(lazyType.ValueField)
+          )
         }
         ins(new BytecodeInstructions.F(mv))
 

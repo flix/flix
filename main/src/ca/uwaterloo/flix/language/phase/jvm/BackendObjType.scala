@@ -159,6 +159,9 @@ object BackendObjType {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
 
       cm.mkConstructor(Constructor)
+      cm.mkField(ExpField)
+      cm.mkField(ValueField)
+      cm.mkField(LockField)
       cm.mkMethod(ForceMethod)
 
       cm.closeClassMaker()
