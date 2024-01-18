@@ -1,8 +1,6 @@
 /**
  * An implementation of the four-valued boolean lattice named for Nuel Belnap.
  */
-use Bool.{∧, ∨, →, ↔, ⊕}
-
 mod Belnap {
 
     ///
