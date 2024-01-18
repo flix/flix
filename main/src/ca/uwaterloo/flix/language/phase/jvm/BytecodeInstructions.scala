@@ -242,6 +242,11 @@ object BytecodeInstructions {
     f
   }
 
+  def IADD(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.IADD)
+    f
+  }
+
   def ICONST_0(): InstructionSet = f => {
     f.visitInstruction(Opcodes.ICONST_0)
     f
@@ -269,6 +274,11 @@ object BytecodeInstructions {
 
   def ICONST_5(): InstructionSet = f => {
     f.visitInstruction(Opcodes.ICONST_5)
+    f
+  }
+
+  def ICONST_M1(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.ICONST_M1)
     f
   }
 
@@ -522,6 +532,17 @@ object BytecodeInstructions {
   def withName(index: Int, tpe: BackendType)(body: Variable => InstructionSet): InstructionSet =
     body(new Variable(tpe, index))
 
+  def withNames(index: Int, tpes: List[BackendType])(body: (Int, List[Variable]) => InstructionSet): InstructionSet = {
+    var runningIndex = index
+    val variables = tpes.map(tpe => {
+      val variable = new Variable(tpe, runningIndex)
+      val stackSize = if (tpe.is64BitWidth) 2 else 1
+      runningIndex = runningIndex + stackSize
+      variable
+    })
+    body(runningIndex, variables)
+  }
+
   def xLoad(tpe: BackendType, index: Int): InstructionSet = tpe match {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => ILOAD(index)
     case BackendType.Int64 => LLOAD(index)
@@ -588,8 +609,8 @@ object BytecodeInstructions {
     case BackendType.Array(BackendType.Reference(_) | BackendType.Array(_)) => INVOKESTATIC(BackendObjType.Arrays.DeepToString)
   }
 
-  def composeN(ins: List[InstructionSet]): InstructionSet =
-    ins.foldLeft(nop())(compose)
+  def composeN(ins: IterableOnce[InstructionSet]): InstructionSet =
+    ins.iterator.foldLeft(nop())(compose)
 
   /**
     * Sequential composition with `sep` between elements.
