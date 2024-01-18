@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-mod Reachable/Imperative {
-    pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Order[n] =
+mod Reachable.Imperative {
+    pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Iterable[f], Order[n] =
         region rc {
             // collect edge lists
             let edgeMap = MutMap.new(rc);
-            foreach((start, end) <- Foldable.iterator(rc, edges)) {
+            foreach((start, end) <- edges) {
                 let startEdges = MutMap.getOrElsePut!(start, MutList.new(rc), edgeMap);
                 MutList.push!(end, startEdges)
             };
@@ -34,12 +34,12 @@ mod Reachable/Imperative {
                     reachable |> MutSet.add!(node);
                     // add all non-reached end points to tasklist
                     let endPoints = MutMap.getWithDefault(node, MutList.new(rc), edgeMap);
-                    foreach(nextNode <- Iterable.iterator(endPoints)) {
+                    MutList.forEach(nextNode -> {
                         let alreadyReached = MutSet.memberOf(nextNode, reachable);
                         if (not alreadyReached)
                             taskList |> MutDeque.pushFront(nextNode)
                         else ()
-                    };
+                    }, endPoints);
                     whileLoop()
                 })
             };
@@ -51,7 +51,7 @@ mod Reachable/Imperative {
     pub def test(): Bool = Graphs.validate(reachable)
 }
 
-mod Reachable/Functional {
+mod Reachable.Functional {
     pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Order[n] =
         // collect edge lists
         let edgeMap = (Map.empty(), edges) ||> Foldable.foldLeft(map -> match (start, end) -> {
@@ -75,7 +75,7 @@ mod Reachable/Functional {
     pub def test(): Bool = Graphs.validate(reachable)
 }
 
-mod Reachable/Logic {
+mod Reachable.Logic {
     pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Order[n] =
         let edgeFacts = project edges into Edge;
         // origin is reachable and this set is expanded by the edge facts
@@ -83,7 +83,7 @@ mod Reachable/Logic {
             Reachable(origin).
             Reachable(end) :- Reachable(start), Edge(start, end).
         };
-        query edgeFacts, reachable select x from Reachable(x) |> List.toSet
+        query edgeFacts, reachable select x from Reachable(x) |> Vector.toSet
 
     @test
     pub def test(): Bool = Graphs.validate(reachable)
