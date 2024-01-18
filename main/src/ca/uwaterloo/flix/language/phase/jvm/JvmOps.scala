@@ -337,6 +337,15 @@ object JvmOps {
     }
 
   /**
+    * Returns the set of erased lazy types in `types` without searching recursively.
+    */
+  def getErasedLazyTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Lazy] =
+    types.foldLeft(Set.empty[BackendObjType.Lazy]) {
+      case (acc, MonoType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.asErasedBackendType(tpe))
+      case (acc, _) => acc
+    }
+
+  /**
     * Returns the set of erased record extend types in `types` without searching recursively.
     */
   def getErasedRecordExtendsOf(types: Iterable[MonoType]): Set[BackendObjType.RecordExtend] =
