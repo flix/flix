@@ -174,6 +174,7 @@ object JvmName {
   //
 
   val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
+  val Main: JvmName = JvmName(RootPackage, "Main")
 
 }
 
