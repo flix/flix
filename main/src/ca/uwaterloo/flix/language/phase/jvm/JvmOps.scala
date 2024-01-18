@@ -69,10 +69,7 @@ object JvmOps {
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.Enum(sym) => getEnumInterfaceType(sym)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
-    case MonoType.Native(clazz) =>
-      // TODO: Ugly hack.
-      val fqn = clazz.getName.replace('.', '/')
-      JvmType.Reference(JvmName.mk(fqn))
+    case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
 
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
@@ -336,6 +333,15 @@ object JvmOps {
   def getErasedRefsOf(types: Iterable[MonoType]): Set[BackendObjType.Ref] =
     types.foldLeft(Set.empty[BackendObjType.Ref]) {
       case (acc, MonoType.Ref(tpe)) => acc + BackendObjType.Ref(BackendType.asErasedBackendType(tpe))
+      case (acc, _) => acc
+    }
+
+  /**
+    * Returns the set of erased lazy types in `types` without searching recursively.
+    */
+  def getErasedLazyTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Lazy] =
+    types.foldLeft(Set.empty[BackendObjType.Lazy]) {
+      case (acc, MonoType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.asErasedBackendType(tpe))
       case (acc, _) => acc
     }
 

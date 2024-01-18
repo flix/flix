@@ -1,17 +1,17 @@
 mod Test.Handler.Gen {
 
-    eff Gen {
-        pub def gen(x: Int32): Unit
+    eff Ask {
+        pub def ask(x: Int32): Unit
     }
 
-    def generator(x: Int32): Unit \ Gen =
-        do Gen.gen(x); generator(x + 1)
+    def generator(x: Int32): Unit \ Ask =
+        do Ask.ask(x); generator(x + 1)
 
     def sample(limit: Int32): List[Int32] =
         try {
             generator(0); Nil
-        } with Gen {
-            def gen(x, k) = if (x == limit) Nil else x :: k()
+        } with Ask {
+            def ask(x, k) = if (x == limit) Nil else x :: k()
         }
 
     @Test
