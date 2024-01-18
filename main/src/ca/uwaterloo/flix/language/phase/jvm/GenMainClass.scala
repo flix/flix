@@ -38,11 +38,8 @@ object GenMainClass {
     case Some(defn) =>
       checkMainType(defn)
 
-      val jvmType = JvmOps.getMainClassType()
-      val jvmName = jvmType.name
-      val bytecode = genByteCode(defn.sym, jvmType)
-
-      Map(jvmName -> JvmClass(jvmName, bytecode))
+      val jvmName = JvmName.Main
+      Map(jvmName -> JvmClass(jvmName, genByteCode(defn.sym, jvmName)))
   }
 
   /**
@@ -62,13 +59,10 @@ object GenMainClass {
     * Optionally returns the main definition in the given AST `root`.
     */
   private def getMain(root: Root): Option[Def] = {
-    root.entryPoint match {
-      case None => None
-      case Some(sym) => root.defs.get(sym)
-    }
+    root.entryPoint.flatMap(root.defs.get)
   }
 
-  private def genByteCode(sym: Symbol.DefnSym, jvmType: JvmType.Reference)(implicit root: Root, flix: Flix): Array[Byte] = {
+  private def genByteCode(sym: Symbol.DefnSym, mainName: JvmName)(implicit flix: Flix): Array[Byte] = {
     // class writer
     val visitor = AsmOps.mkClassWriter()
 
@@ -77,10 +71,10 @@ object GenMainClass {
 
     // Initialize the visitor to create a class.
     visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL,
-      jvmType.name.toInternalName, null, superClass, null)
+      mainName.toInternalName, null, superClass, null)
 
     // Source of the class
-    visitor.visitSource(jvmType.name.toInternalName, null)
+    visitor.visitSource(mainName.toInternalName, null)
 
     // Emit the code for the main method
     compileMainMethod(sym, visitor)
@@ -107,7 +101,7 @@ object GenMainClass {
     *
     * `}`
     */
-  private def compileMainMethod(sym: Symbol.DefnSym, visitor: ClassWriter)(implicit root: Root): Unit = {
+  private def compileMainMethod(sym: Symbol.DefnSym, visitor: ClassWriter): Unit = {
     // The required java main signature `Array[String] -> Void`.
     val javaMainDescriptor = s"(${AsmOps.getArrayType(JvmType.String)})${JvmType.Void.toDescriptor}"
     // `public static void main(String[] args)`.
@@ -124,7 +118,6 @@ object GenMainClass {
     main.visitMethodInsn(INVOKESTATIC, BackendObjType.Global.jvmName.toInternalName,
       BackendObjType.Global.SetArgsMethod.name, setArgsDescriptor, false)
 
-    val defn = root.defs(sym)
     val defnClass = JvmOps.getFunctionDefinitionClassType(sym)
 
     // create class obj

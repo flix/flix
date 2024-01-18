@@ -61,8 +61,8 @@ object ShowAstProvider {
         case "Tailrec" => astObject(phase, AstPrinter.formatLiftedAst(flix.getTailrecAst))
         case "Optimizer" => astObject(phase, AstPrinter.formatLiftedAst(flix.getOptimizerAst))
         case "TreeShaker2" => astObject(phase, AstPrinter.formatLiftedAst(flix.getTreeShaker2Ast))
-        case "EffectBinder" => astObject(phase, AstPrinter.formatLiftedAst(flix.getEffectBinderAst))
-        case "Eraser" => astObject(phase, AstPrinter.formatLiftedAst(flix.getEraserAst))
+        case "EffectBinder" => astObject(phase, AstPrinter.formatReducedAst(flix.getEffectBinderAst))
+        case "Eraser" => astObject(phase, AstPrinter.formatReducedAst(flix.getEraserAst))
         case "Reducer" => astObject(phase, AstPrinter.formatReducedAst(flix.getReducerAst))
         case "VarOffsets" => astObject(phase, AstPrinter.formatReducedAst(flix.getVarOffsetsAst))
         case _ =>
