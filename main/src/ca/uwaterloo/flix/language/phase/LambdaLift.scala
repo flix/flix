@@ -51,7 +51,7 @@ object LambdaLift {
     case SimplifiedAst.Def(ann, mod, sym, fparams, exp, tpe, purity, loc) =>
       val fs = fparams.map(visitFormalParam)
       val e = visitExp(exp)(sym, ctx, flix)
-      LiftedAst.Def(ann, mod, sym, Nil, fs, -1, e, tpe, purity, loc)
+      LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, purity, loc)
   }
 
   private def visitEnum(enum0: SimplifiedAst.Enum): LiftedAst.Enum = enum0 match {
@@ -105,7 +105,7 @@ object LambdaLift {
 
       // Construct a new definition.
       val defTpe = arrowTpe.result
-      val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, -1, liftedExp, defTpe, liftedExp.purity, loc)
+      val defn = LiftedAst.Def(ann, mod, freshSymbol, cs, fs, liftedExp, defTpe, liftedExp.purity, loc)
 
       // Add the new definition to the map of lifted definitions.
       ctx.liftedDefs.add(freshSymbol -> defn)
