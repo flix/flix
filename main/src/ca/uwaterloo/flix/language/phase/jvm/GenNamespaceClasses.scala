@@ -36,25 +36,20 @@ object GenNamespaceClasses {
     //
     ParOps.parMap(namespaces) {
       case ns =>
-        val jvmType = JvmOps.getNamespaceClassType(ns)
-        val jvmName = jvmType.name
-        val bytecode = genBytecode(ns)
-        jvmName -> JvmClass(jvmName, bytecode)
+        val jvmName = JvmOps.getNamespaceClassType(ns)
+        jvmName -> JvmClass(jvmName, genBytecode(jvmName, ns))
     }.toMap
   }
 
   /**
     * Returns the namespace class for the given namespace `ns`.
     */
-  private def genBytecode(ns: NamespaceInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
-    // JvmType for namespace
-    val namespaceClassType = JvmOps.getNamespaceClassType(ns)
-
+  private def genBytecode(jvmName: JvmName, ns: NamespaceInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
 
     // Class header
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, namespaceClassType.name.toInternalName, null,
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, jvmName.toInternalName, null,
       BackendObjType.JavaObject.jvmName.toInternalName, null)
 
     // Adding an IFO field and a shim method for each function in `ns` with no captured args
