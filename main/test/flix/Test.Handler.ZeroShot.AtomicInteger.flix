@@ -1,14 +1,17 @@
 mod Test.Handler.ZeroShot.AtomicInteger {
 
-    type alias AtomicInt = ##java.util.concurrent.atomic.AtomicInteger
+    type alias AtomicInteger = ##java.util.concurrent.atomic.AtomicInteger
+
+    def newAtomicInteger(n: Int32): AtomicInteger =
+        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInteger \ {} as mk;
+        mk(n)
 
     eff Throw {
-        pub def throw(): AtomicInt
+        pub def throw(): AtomicInteger
     }
 
     @Test
     def testLinear01(): Bool =
-        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInt \ {} as newAtomicInteger;
         import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         def f1() = do Throw.throw();
         let result = try {
@@ -20,7 +23,6 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testLinear02(): Bool =
-        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInt \ {} as newAtomicInteger;
         import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         def f1() = do Throw.throw();
         def f2() = { f1(); unreachable!() };
@@ -33,7 +35,6 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testLinear03(): Bool =
-        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInt \ {} as newAtomicInteger;
         import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         def f1() = do Throw.throw();
         def f2() = { f1(); unreachable!() };
@@ -47,7 +48,6 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testRecursiveLetRec01(): Bool =
-        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInt \ {} as newAtomicInteger;
         import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         def f() = do Throw.throw();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
@@ -60,7 +60,6 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testRecursiveLetRec02(): Bool =
-        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInt \ {} as newAtomicInteger;
         import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         def f() = do Throw.throw();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
@@ -73,7 +72,6 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testRecursiveLetRec03(): Bool =
-        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInt \ {} as newAtomicInteger;
         import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         def f() = do Throw.throw();
         def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
@@ -86,7 +84,6 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testMutualRecursive01(): Bool =
-        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInt \ {} as newAtomicInteger;
         import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         let result = try {
             mutual1(0)
@@ -97,7 +94,6 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testMutualRecursive02(): Bool =
-        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInt \ {} as newAtomicInteger;
         import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         let result = try {
             mutual1(1)
@@ -108,7 +104,6 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testMutualRecursive03(): Bool =
-        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInt \ {} as newAtomicInteger;
         import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         let result = try {
             mutual1(2)
@@ -119,7 +114,6 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testMutualRecursive04(): Bool =
-        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInt \ {} as newAtomicInteger;
         import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         let result = try {
             mutual1(3)
@@ -130,7 +124,6 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testMutualRecursive05(): Bool =
-        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInt \ {} as newAtomicInteger;
         import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         let result = try {
             mutual1(10)
@@ -141,7 +134,6 @@ mod Test.Handler.ZeroShot.AtomicInteger {
 
     @Test
     def testMutualRecursive06(): Bool =
-        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInt \ {} as newAtomicInteger;
         import java.util.concurrent.atomic.AtomicInteger.intValue(): Int32 \ {} as intValue;
         let result = try {
             mutual1(10)
@@ -150,14 +142,14 @@ mod Test.Handler.ZeroShot.AtomicInteger {
         };
         Assert.eq(intValue(newAtomicInteger(40)), intValue(result))
 
-    def f(): AtomicInt \ Throw =
+    def f(): AtomicInteger \ Throw =
          do Throw.throw();
          unreachable!()
 
-    def mutual1(x: Int32): AtomicInt \ Throw =
+    def mutual1(x: Int32): AtomicInteger \ Throw =
         if (x == 0) f() else { mutual2(x - 1); unreachable!() }
 
-    def mutual2(x: Int32): AtomicInt \ Throw =
+    def mutual2(x: Int32): AtomicInteger \ Throw =
         if (x == 0) f() else { mutual1(x - 1); unreachable!() }
 
 }
