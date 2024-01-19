@@ -57,7 +57,6 @@ mod Test.Handler.Gen.Char {
     def range(a: Char, b: Char): List[Char] =
         List.unfold(i -> if (i >= b) None else Some((i, next(i))), a)
 
-
     @Test
     def testSample01(): Bool =
         Assert.eq(Nil, sample('a'))
