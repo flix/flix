@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, g
 import ca.uwaterloo.flix.language.phase.{HtmlDocumentor, JsonDocumentor}
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, IncludedModules, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
@@ -597,10 +597,15 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
+    val includedModules = optManifest match {
+      case None => IncludedModules.All
+      case Some(manifest) => manifest.modules
+    }
+
     Validation.mapN(flix.check()) {
       root =>
         JsonDocumentor.run(root)(flix)
-        HtmlDocumentor.run(root, optManifest.flatMap(m => m.modules))(flix)
+        HtmlDocumentor.run(root, includedModules)(flix)
     }.toHardResult match {
       case Result.Ok(_) => Validation.success(())
       case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))

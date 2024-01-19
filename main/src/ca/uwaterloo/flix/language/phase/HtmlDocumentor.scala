@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
+import ca.uwaterloo.flix.tools.pkg.IncludedModules
 import ca.uwaterloo.flix.util.LocalResource
 
 import java.io.IOException
@@ -71,7 +72,7 @@ object HtmlDocumentor {
     */
   val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
 
-  def run(root: TypedAst.Root, includedModules: Option[List[String]])(implicit flix: Flix): Unit = {
+  def run(root: TypedAst.Root, includedModules: IncludedModules)(implicit flix: Flix): Unit = {
     val modulesRoot = splitModules(root)
     val filteredModulesRoot = filterModules(modulesRoot, includedModules)
 
@@ -282,7 +283,7 @@ object HtmlDocumentor {
   /**
     * Filter the module, `mod`, and its children, removing all items and empty modules, which shouldn't appear in the documentation.
     */
-  private def filterModules(mod: Module, includedModules: Option[List[String]]): Module = {
+  private def filterModules(mod: Module, includedModules: IncludedModules): Module = {
     filterEmpty(filterContents(mod, includedModules))
   }
 
@@ -290,9 +291,9 @@ object HtmlDocumentor {
     * Returns a tree of modules corresponding to the given input,
     * but with all contained items that shouldn't appear in the documentation removed.
     */
-  private def filterContents(mod: Module, includedModules: Option[List[String]]): Module = mod match {
+  private def filterContents(mod: Module, includedModules: IncludedModules): Module = mod match {
     case Module(sym, parent, uses, submodules, classes, effects, enums, typeAliases, defs) =>
-      val modIsIncluded = includedModules.forall(i => i.contains(mod.qualifiedName))
+      val modIsIncluded = includedModules.contains(sym)
       if (modIsIncluded) {
         Module(
           sym,
@@ -324,7 +325,7 @@ object HtmlDocumentor {
     * Returns a `Class` corresponding to the given `clazz`,
     * but with all items that shouldn't appear in the documentation removed.
     */
-  private def filterClass(clazz: Class, includedModules: Option[List[String]]): Class = clazz match {
+  private def filterClass(clazz: Class, includedModules: IncludedModules): Class = clazz match {
     case Class(TypedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, _, laws, loc), signatures, defs, instances, parent, companionMod) =>
       Class(
         TypedAst.Class(
@@ -351,7 +352,7 @@ object HtmlDocumentor {
     * Returns an `Effect` corresponding to the given `eff`,
     * but with all items that shouldn't appear in the documentation removed.
     */
-  private def filterEffect(eff: Effect, includedModules: Option[List[String]]): Effect = eff match {
+  private def filterEffect(eff: Effect, includedModules: IncludedModules): Effect = eff match {
     case Effect(eff, parent, companionMod) =>
       Effect(eff, parent, companionMod.map(m => filterContents(m, includedModules)))
   }
@@ -360,7 +361,7 @@ object HtmlDocumentor {
     * Returns an `Enum` corresponding to the given `enm`,
     * but with all items that shouldn't appear in the documentation removed.
     */
-  private def filterEnum(enm: Enum, includedModules: Option[List[String]]): Enum = enm match {
+  private def filterEnum(enm: Enum, includedModules: IncludedModules): Enum = enm match {
     case Enum(enm, parent, companionMod) =>
       Enum(enm, parent, companionMod.map(m => filterContents(m, includedModules)))
   }
