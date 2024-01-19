@@ -69,10 +69,7 @@ object JvmOps {
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.Enum(sym) => getEnumInterfaceType(sym)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
-    case MonoType.Native(clazz) =>
-      // TODO: Ugly hack.
-      val fqn = clazz.getName.replace('.', '/')
-      JvmType.Reference(JvmName.mk(fqn))
+    case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
 
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
@@ -224,18 +221,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the Main  `Main`
-    */
-  def getMainClassType(): JvmType.Reference = {
-
-    // The JVM name is of the form Main
-    val name = "Main"
-
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(RootPackage, name))
-  }
-
-  /**
     * Returns the function definition class for the given symbol.
     *
     * For example:
@@ -271,7 +256,7 @@ object JvmOps {
   }
 
   /**
-    * Returns the namespace type for the given namespace `ns`.
+    * Returns the namespace name for the given namespace `ns`.
     *
     * For example:
     *
@@ -280,10 +265,20 @@ object JvmOps {
     * Foo.Bar     =>  Foo.Bar.Ns
     * Foo.Bar.Baz =>  Foo.Bar.Baz.Ns
     */
-  def getNamespaceClassType(ns: NamespaceInfo): JvmType.Reference = {
-    val pkg = ns.ns
+  def getNamespaceClassType(ns: NamespaceInfo): JvmName = {
+    getNamespaceName(ns.ns)
+  }
+
+  /**
+    * Returns the namespace name of the given definition symbol `sym`.
+    */
+  def getNamespaceName(sym: Symbol.DefnSym): JvmName = {
+    getNamespaceName(sym.namespace)
+  }
+
+  private def getNamespaceName(ns: List[String]): JvmName = {
     val name = JvmName.mkClassName("Ns")
-    JvmType.Reference(JvmName(pkg, name))
+    JvmName(ns, name)
   }
 
   /**
@@ -315,13 +310,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the namespace info of the given definition symbol `sym`.
-    */
-  def getNamespace(sym: Symbol.DefnSym): NamespaceInfo = {
-    NamespaceInfo(sym.namespace, Map.empty) // TODO: Magnus: Empty map.
-  }
-
-  /**
     * Returns the set of namespaces in the given AST `root`.
     */
   def namespacesOf(root: Root): Set[NamespaceInfo] = {
@@ -349,11 +337,20 @@ object JvmOps {
     }
 
   /**
+    * Returns the set of erased lazy types in `types` without searching recursively.
+    */
+  def getErasedLazyTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Lazy] =
+    types.foldLeft(Set.empty[BackendObjType.Lazy]) {
+      case (acc, MonoType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.asErasedBackendType(tpe))
+      case (acc, _) => acc
+    }
+
+  /**
     * Returns the set of erased record extend types in `types` without searching recursively.
     */
   def getErasedRecordExtendsOf(types: Iterable[MonoType]): Set[BackendObjType.RecordExtend] =
     types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
-      case (acc, MonoType.RecordExtend(field, value, _)) =>
+      case (acc, MonoType.RecordExtend(_, value, _)) =>
         acc + BackendObjType.RecordExtend(BackendType.asErasedBackendType(value))
       case (acc, _) => acc
     }
@@ -365,6 +362,16 @@ object JvmOps {
     types.foldLeft(Set.empty[BackendObjType.Arrow]) {
       case (acc, MonoType.Arrow(args, result)) =>
         acc + BackendObjType.Arrow(args.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(result))
+      case (acc, _) => acc
+    }
+
+  /**
+    * Returns the set of erased tuple types in `types` without searching recursively.
+    */
+  def getErasedTupleTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Tuple] =
+    types.foldLeft(Set.empty[BackendObjType.Tuple]) {
+      case (acc, MonoType.Tuple(elms)) =>
+        acc + BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType))
       case (acc, _) => acc
     }
 

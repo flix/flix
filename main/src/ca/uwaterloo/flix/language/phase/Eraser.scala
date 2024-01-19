@@ -2,10 +2,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.CallType
-import ca.uwaterloo.flix.language.ast.LiftedAst.Expr._
-import ca.uwaterloo.flix.language.ast.LiftedAst._
-import ca.uwaterloo.flix.language.ast.MonoType._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, MonoType, Purity, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.ReducedAst.Expr._
+import ca.uwaterloo.flix.language.ast.ReducedAst._
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MapOps
 
@@ -43,15 +42,20 @@ object Eraser {
   }
 
   private def visitDef(defn: Def): Def = defn match {
-    case Def(ann, mod, sym, cparams, fparams, pcPoints, exp, tpe, purity, loc) =>
+    case Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, purity, loc) =>
       val eNew = visitExp(exp)
       val e = Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), purity, loc)
-      Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), pcPoints, e, box(tpe), purity, loc)
+      Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), lparams.map(visitLocalParam), pcPoints, e, box(tpe), purity, loc)
   }
 
   private def visitParam(fp: FormalParam): FormalParam = fp match {
     case FormalParam(sym, mod, tpe, loc) =>
       FormalParam(sym, mod, visitType(tpe), loc)
+  }
+
+  private def visitLocalParam(p: LocalParam): LocalParam = p match {
+    case LocalParam(sym, tpe) =>
+      LocalParam(sym, visitType(tpe))
   }
 
   private def visitBranch(branch: (Symbol.LabelSym, Expr)): (Symbol.LabelSym, Expr) = branch match {
@@ -169,9 +173,9 @@ object Eraser {
     Expr.ApplyAtomic(AtomicOp.Unbox, List(exp), t, purity, loc.asSynthetic)
   }
 
-  private def visitEnum(e: LiftedAst.Enum): LiftedAst.Enum = e match {
-    case LiftedAst.Enum(ann, mod, sym, cases, tpe, loc) =>
-      LiftedAst.Enum(ann, mod, sym, MapOps.mapValues(cases)(visitCase), visitType(tpe), loc)
+  private def visitEnum(e: Enum): Enum = e match {
+    case Enum(ann, mod, sym, cases, tpe, loc) =>
+      Enum(ann, mod, sym, MapOps.mapValues(cases)(visitCase), visitType(tpe), loc)
   }
 
   private def visitCase(c: Case): Case = c match {
@@ -189,44 +193,50 @@ object Eraser {
       Op(sym, ann, mod, fparams.map(visitParam), erase(tpe), purity, loc)
   }
 
-  private def visitType(tpe: MonoType): MonoType = tpe match {
-    case Unit => Unit
-    case Bool => Bool
-    case Char => Char
-    case Float32 => Float32
-    case Float64 => Float64
-    case BigDecimal => BigDecimal
-    case Int8 => Int8
-    case Int16 => Int16
-    case Int32 => Int32
-    case Int64 => Int64
-    case BigInt => BigInt
-    case String => String
-    case Regex => Regex
-    case Region => Region
-    case Array(tpe) => Array(visitType(tpe))
-    case Lazy(tpe) => Lazy(erase(tpe))
-    case Ref(tpe) => Ref(erase(tpe))
-    case Tuple(elms) => Tuple(elms.map(erase))
-    case MonoType.Enum(sym) => MonoType.Enum(sym)
-    case Arrow(args, result) => Arrow(args.map(visitType), box(result))
-    case RecordEmpty => RecordEmpty
-    case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
-    case Native(clazz) => Native(clazz)
+  private def visitType(tpe: MonoType): MonoType = {
+    import MonoType._
+    tpe match {
+      case Unit => Unit
+      case Bool => Bool
+      case Char => Char
+      case Float32 => Float32
+      case Float64 => Float64
+      case BigDecimal => BigDecimal
+      case Int8 => Int8
+      case Int16 => Int16
+      case Int32 => Int32
+      case Int64 => Int64
+      case BigInt => BigInt
+      case String => String
+      case Regex => Regex
+      case Region => Region
+      case Array(tpe) => Array(visitType(tpe))
+      case Lazy(tpe) => Lazy(erase(tpe))
+      case Ref(tpe) => Ref(erase(tpe))
+      case Tuple(elms) => Tuple(elms.map(erase))
+      case MonoType.Enum(sym) => MonoType.Enum(sym)
+      case Arrow(args, result) => Arrow(args.map(visitType), box(result))
+      case RecordEmpty => RecordEmpty
+      case RecordExtend(label, value, rest) => RecordExtend(label, erase(value), visitType(rest))
+      case Native(clazz) => Native(clazz)
+    }
   }
 
-  private def erase(tpe: MonoType): MonoType = tpe match {
-    case Bool => Bool
-    case Char => Char
-    case Float32 => Float32
-    case Float64 => Float64
-    case Int8 => Int8
-    case Int16 => Int16
-    case Int32 => Int32
-    case Int64 => Int64
-    case Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
-         Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) | Arrow(_, _) |
-         RecordEmpty | RecordExtend(_, _, _) | Native(_) => MonoType.Object
+  private def erase(tpe: MonoType): MonoType = {
+    import MonoType._
+    tpe match {
+      case Bool => Bool
+      case Char => Char
+      case Float32 => Float32
+      case Float64 => Float64
+      case Int8 => Int8
+      case Int16 => Int16
+      case Int32 => Int32
+      case Int64 => Int64
+      case Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
+           Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) | Arrow(_, _) |
+           RecordEmpty | RecordExtend(_, _, _) | Native(_) => MonoType.Object
+    }
   }
 
   private def box(tpe: MonoType): MonoType = MonoType.Object

@@ -58,6 +58,7 @@ sealed trait BackendObjType {
     case BackendObjType.BigInt => JvmName(List("java", "math"), "BigInteger")
     case BackendObjType.JavaObject => JvmName(JavaLang, "Object")
     case BackendObjType.String => JvmName(JavaLang, "String")
+    case BackendObjType.CharSequence => JvmName(JavaLang, "CharSequence")
     case BackendObjType.Arrays => JvmName(JavaUtil, "Arrays")
     case BackendObjType.StringBuilder => JvmName(JavaLang, "StringBuilder")
     case BackendObjType.Objects => JvmName(JavaLang, "Objects")
@@ -69,6 +70,7 @@ sealed trait BackendObjType {
     case BackendObjType.Thread => JvmName(JavaLang, "Thread")
     case BackendObjType.ThreadBuilderOfVirtual => JvmName(JavaLang, "Thread$Builder$OfVirtual")
     case BackendObjType.ThreadUncaughtExceptionHandler => JvmName(JavaLang, "Thread$UncaughtExceptionHandler")
+    case BackendObjType.ReentrantLock => JvmName.ReentrantLock
     // Effects Runtime
     case BackendObjType.Result => JvmName(DevFlixRuntime, mkClassName("Result"))
     case BackendObjType.Value => JvmName(DevFlixRuntime, mkClassName("Value"))
@@ -152,7 +154,65 @@ object BackendObjType {
 
   case object BigInt extends BackendObjType
 
-  case class Lazy(tpe: BackendType) extends BackendObjType
+  case class Lazy(tpe: BackendType) extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
+
+      cm.mkConstructor(Constructor)
+      cm.mkField(ExpField)
+      cm.mkField(ValueField)
+      cm.mkField(LockField)
+      cm.mkMethod(ForceMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def ExpField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, IsVolatile, "expression", JavaObject.toTpe)
+
+    def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "value", tpe)
+
+    private def LockField: InstanceField = InstanceField(this.jvmName, IsPrivate, NotFinal, NotVolatile, "lock", ReentrantLock.toTpe)
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(JavaObject.toTpe), Some(_ => {
+      withName(1, JavaObject.toTpe)(exp =>
+        // super()
+        thisLoad() ~ INVOKESPECIAL(JavaObject.Constructor) ~
+        // this.exp = exp
+        thisLoad() ~ exp.load() ~ PUTFIELD(ExpField) ~
+        // this.lock = new ReentrantLock()
+        thisLoad() ~
+        NEW(ReentrantLock.jvmName) ~ DUP() ~ INVOKESPECIAL(ReentrantLock.Constructor) ~
+        PUTFIELD(LockField) ~
+        // return
+        RETURN()
+      )
+    }))
+
+    def ForceMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, IsFinal, "force", mkDescriptor()(tpe), Some(_ => {
+      val unlockLock = thisLoad() ~ GETFIELD(LockField) ~ INVOKEVIRTUAL(ReentrantLock.UnlockMethod)
+      thisLoad() ~ GETFIELD(LockField) ~ INVOKEVIRTUAL(ReentrantLock.LockInterruptiblyMethod) ~
+      tryCatch{
+        thisLoad() ~ GETFIELD(ExpField) ~
+        // if the expression is not null, compute the value and erase the expression
+        ifCondition(Condition.NONNULL)(
+          thisLoad() ~
+          // get expression as thunk
+          DUP() ~ GETFIELD(ExpField) ~ CHECKCAST(Thunk.jvmName) ~
+          // this.value = thunk.unwind()
+          Result.unwindSuspensionFreeThunkToType(tpe) ~ PUTFIELD(ValueField) ~
+          // this.exp = null
+          thisLoad() ~ pushNull() ~ PUTFIELD(ExpField)
+        ) ~
+        thisLoad() ~ GETFIELD(ValueField)
+      }{
+         // catch
+         unlockLock ~ ATHROW()
+      } ~
+        unlockLock ~ xReturn(tpe)
+    }))
+
+  }
 
   case class Ref(tpe: BackendType) extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
@@ -169,12 +229,77 @@ object BackendObjType {
     def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "value", tpe)
   }
 
-  case class Tuple(elms: List[BackendType]) extends BackendObjType
+  case class Tuple(elms: List[BackendType]) extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
+
+      elms.indices.foreach(i => cm.mkField(IndexField(i)))
+      cm.mkConstructor(Constructor)
+      cm.mkMethod(ToStringMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def IndexField(i: Int): InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, s"field$i", elms(i))
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, elms, Some(_ => {
+      withNames(1, elms){ case (_, variables) =>
+        thisLoad() ~
+        // super()
+        DUP() ~ INVOKESPECIAL(JavaObject.Constructor) ~
+        // this.field$i = var$j
+        // fields are numbered consecutively while variables skip indices based
+        // on their stack size
+        composeN(variables.zipWithIndex.map{case (elm, i) =>
+          DUP() ~ elm.load() ~ PUTFIELD(IndexField(i))
+        }) ~
+        RETURN()
+      }
+    }))
+
+    def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ => {
+      // [...] -> [..., "(v1, v2, ...)"]
+      def commaSepElmString(): InstructionSet = {
+        // new String[elms.length] // referred to as `elms`
+        cheat(mv => GenExpression.compileInt(elms.length)(mv)) ~ ANEWARRAY(String.jvmName) ~
+        ICONST_M1() ~ // running index referred to as `j`
+        // current stack [elms, j]
+        composeN(elms.indices.map(i => {
+          val field = IndexField(i)
+          // j = j + 1
+          ICONST_1() ~ IADD() ~
+          // [elms, j] -> [elms, j, elms, j]
+          DUP2() ~
+          // this.field$i.toString
+          thisLoad() ~ GETFIELD(field) ~ xToString(field.tpe) ~
+          // [elms, j, elms, j, string] -> [elms, j]
+          AASTORE()
+        })) ~
+        POP() ~
+        // [elms] -> [", ", elms]
+        pushString(", ") ~ SWAP() ~
+        INVOKESTATIC(String.JoinMethod)
+      }
+      // new String[3] // referred to as `arr`
+      ICONST_3() ~ ANEWARRAY(String.jvmName) ~
+      // arr[0] = "("
+      DUP() ~ ICONST_0() ~ pushString("(") ~ AASTORE() ~
+      // arr[1] = "(v1, v2, v3)"
+      DUP() ~ ICONST_1() ~ commaSepElmString() ~ AASTORE() ~
+      // arr[2] = ")"
+      DUP() ~ ICONST_2() ~ pushString(")") ~ AASTORE() ~
+      // ["", arr]
+      pushString("") ~ SWAP() ~
+      INVOKESTATIC(String.JoinMethod) ~
+      xReturn(String.toTpe)
+    }))
+
+  }
 
   //case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType
 
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType with Generatable {
-
 
     /**
       * Represents a function interface from `java.util.function`.
@@ -1100,6 +1225,10 @@ object BackendObjType {
   //
 
   case object String extends BackendObjType {
+
+    def JoinMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, NotFinal,
+      "join", mkDescriptor(CharSequence.toTpe, BackendType.Array(CharSequence.toTpe))(String.toTpe), None)
+
     def BoolValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
       "valueOf", mkDescriptor(BackendType.Bool)(this.jvmName.toTpe), None)
 
@@ -1129,6 +1258,8 @@ object BackendObjType {
     def ObjectValueOf: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
       "valueOf", mkDescriptor(BackendObjType.JavaObject.toTpe)(this.jvmName.toTpe), None)
   }
+
+  case object CharSequence extends BackendObjType
 
   case object Arrays extends BackendObjType {
     def BoolArrToString: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal,
@@ -1281,6 +1412,16 @@ object BackendObjType {
 
     def UncaughtExceptionMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "uncaughtException",
       mkDescriptor(Thread.toTpe, JvmName.Throwable.toTpe)(VoidableType.Void), None)
+  }
+
+  case object ReentrantLock extends BackendObjType {
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, Nil, None)
+
+    def UnlockMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "unlock", MethodDescriptor.NothingToVoid, None)
+
+    def LockInterruptiblyMethod: InstanceMethod = InstanceMethod(this.jvmName, IsPublic, NotFinal, "lockInterruptibly", MethodDescriptor.NothingToVoid, None)
+
   }
 
   case object Result extends BackendObjType with Generatable {
