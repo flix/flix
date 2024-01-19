@@ -33,6 +33,10 @@ object NormalType {
     override def hashCode(): Int = Objects.hash(tpe1, tpe2)
   }
 
+  val Pure: NormalType = NormalType.Cst(TypeConstructor.Pure)
+
+  val EffUniv: NormalType = NormalType.Cst(TypeConstructor.EffUniv)
+
   /**
     * Returns the type `Complement(tpe0)`.
     */
@@ -100,7 +104,8 @@ object NormalType {
     */
   def mkCaseComplement(tpe: NormalType): NormalType = tpe match {
     case NormalType.Cst(TypeConstructor.CaseSet(syms, enumSym)) =>
-      NormalType.Cst(TypeConstructor.CaseSet(enumSym.universe - syms, enumSym))
+      NormalType.Cst(TypeConstructor.CaseSet(enumSym.universe -- syms, enumSym))
+    case _ => ???
   }
 
   /**
