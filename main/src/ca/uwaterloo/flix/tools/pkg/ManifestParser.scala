@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, Ma
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk, traverse}
+import ca.uwaterloo.flix.language.ast.Symbol
 import org.tomlj.{Toml, TomlArray, TomlInvalidTypeException, TomlParseResult, TomlTable}
 
 import java.io.{IOException, StringReader}
@@ -87,7 +88,7 @@ object ManifestParser {
       githubProject <- Result.traverseOpt(repository)(r => toGithubProject(r, p));
 
       modules <- getOptionalArrayProperty("package.modules", parser, p);
-      modulesList <- Result.traverseOpt(modules)(m => convertTomlArrayToStringList(m, p));
+      includedModules <- toIncludedModules(modules, p);
 
       flix <- getRequiredStringProperty("package.flix", parser, p);
       flixSemVer <- toFlixVer(flix, p);
@@ -112,7 +113,7 @@ object ManifestParser {
       jarDeps <- getOptionalTableProperty("jar-dependencies", parser, p);
       jarDepsList <- collectDependencies(jarDeps, flixDep = false, prodDep = false, jarDep = true, p)
 
-    ) yield Manifest(name, description, versionSemVer, githubProject, modulesList, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
+    ) yield Manifest(name, description, versionSemVer, githubProject, includedModules, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
   }
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
@@ -484,6 +485,31 @@ object ManifestParser {
       }
     }
     Ok(stringSet.toList)
+  }
+
+  /**
+    * Creates the `IncludedModules` object from `optArray`.
+    */
+  private def toIncludedModules(optArray: Option[TomlArray], p: Path): Result[IncludedModules, ManifestError] = {
+    optArray match {
+      case None =>
+        Ok(IncludedModules.All)
+      case Some(array) =>
+        var moduleSet = Set.empty[Symbol.ModuleSym]
+        for (i <- 0 until array.size()) {
+          try {
+            val string = array.getString(i)
+            val namespace = string.split('.').toList
+            val sym = Symbol.mkModuleSym(namespace)
+            moduleSet += sym
+          } catch {
+            case e: TomlInvalidTypeException =>
+              return Err(ManifestError.ManifestParseError(p, e.getMessage))
+          }
+        }
+        Ok(IncludedModules.Selected(moduleSet))
+
+    }
   }
 
   /**

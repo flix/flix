@@ -1,9 +1,10 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyKind, ManifestError, ManifestParser, Repository, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyKind, IncludedModules, ManifestError, ManifestParser, Repository, SemVer}
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.language.ast.Symbol
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
@@ -21,7 +22,7 @@ class TestManifestParser extends AnyFunSuite {
       |description = "A simple program"
       |version = "0.1.0"
       |repository = "github:johnDoe/hello-world"
-      |modules = ["FirstMod", "SecondMod"]
+      |modules = ["FirstMod", "SecondMod.Foo"]
       |flix = "0.33.0"
       |license = "Apache-2.0"
       |authors = ["John Doe <john@example.com>"]
@@ -103,7 +104,7 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.modules.Some") {
-    assertResult(expected = Some(List("FirstMod", "SecondMod")))(actual = {
+    assertResult(expected = IncludedModules.Selected(Set(Symbol.mkModuleSym(List("FirstMod")), Symbol.mkModuleSym(List("SecondMod", "Foo")))))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.modules
         case Err(e) => e.message(f)
@@ -123,7 +124,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(expected = None)(actual =
+    assertResult(expected = IncludedModules.All)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) => m.modules
         case Err(e) => e.message(f)
