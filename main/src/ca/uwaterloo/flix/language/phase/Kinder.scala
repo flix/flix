@@ -62,11 +62,6 @@ object Kinder {
     */
   private val IoSym = new Symbol.EffectSym(Nil, "IO", SourceLocation.Unknown)
 
-  /**
-    * The symbol for the NonDet effect.
-    */
-  private val NonDetSym = new Symbol.EffectSym(Nil, "NonDet", SourceLocation.Unknown)
-
   def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[KindedAst.Root, KindError] = flix.phase("Kinder") {
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
@@ -1184,7 +1179,7 @@ object Kinder {
     case tvar: UnkindedType.Var => visitTypeVar(tvar, expectedKind, kenv)
 
     // TODO EFF-MIGRATION temporary hack to maintain behavior of IO
-    case UnkindedType.Cst(TypeConstructor.Effect(sym), loc) if (sym == IoSym || sym == NonDetSym) =>
+    case UnkindedType.Cst(TypeConstructor.Effect(IoSym), loc) =>
       unify(expectedKind, Kind.Eff) match {
         case Some(_) => Validation.success(Type.Cst(TypeConstructor.EffUniv, loc))
         case None => Validation.toHardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = Kind.Eff, loc = loc))
