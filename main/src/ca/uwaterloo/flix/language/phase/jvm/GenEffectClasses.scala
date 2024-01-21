@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Effect, Op, Root}
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{MonoType, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 import org.objectweb.asm.ClassWriter
@@ -86,12 +86,13 @@ object GenEffectClasses {
 
   private def genFieldAndMethod(visitor: ClassWriter, effectType: JvmType.Reference, op: Op): Unit = {
     // Field
-    val writtenOpArgs = op.fparams.map(_.tpe).map(JvmOps.getErasedJvmType)
+    val writtenOpArgsMono = op.fparams.map(_.tpe)
+    val arrowType = MonoType.Arrow(writtenOpArgsMono :+ MonoType.Object, MonoType.Object)
+
     val resumption = JvmType.Reference(BackendObjType.Resumption.jvmName)
-    val opResult = JvmType.Object // actually a Value
-    val modifiedArgs = writtenOpArgs :+ resumption
+    val writtenOpArgs = writtenOpArgsMono.map(JvmOps.getErasedJvmType)
     val opName = JvmOps.getEffectOpName(op.sym)
-    val opFunctionType = JvmOps.getFunctionInterfaceType(modifiedArgs, opResult)
+    val opFunctionType = JvmOps.getFunctionInterfaceType(arrowType)
     visitor.visitField(ACC_PUBLIC, opName, opFunctionType.toDescriptor, null, null)
     // Method
     // 1. Cast the given generic handler to the current effect
@@ -128,7 +129,7 @@ object GenEffectClasses {
     mv.visitVarInsn(ALOAD, handlerOffset + 1) // the resumption is the stack offset after handler
     mv.visitMethodInsn(INVOKESPECIAL, wrapperName, JvmName.ConstructorMethod, wrapperType.Constructor.d.toDescriptor, false)
 
-    mv.visitFieldInsn(PUTFIELD, opFunctionType.name.toInternalName, s"arg${modifiedArgs.size - 1}", resumption.toErased.toDescriptor)
+    mv.visitFieldInsn(PUTFIELD, opFunctionType.name.toInternalName, s"arg${writtenOpArgs.size}", resumption.toErased.toDescriptor)
     // call invoke
     val invokeMethod = BackendObjType.Thunk.InvokeMethod
     mv.visitMethodInsn(INVOKEVIRTUAL, opFunctionType.name.toInternalName, invokeMethod.name, invokeMethod.d.toDescriptor, false)
@@ -154,13 +155,8 @@ object GenEffectClasses {
   def opFieldType(sym: Symbol.OpSym)(implicit root: Root): JvmType = {
     val effect = root.effects(sym.eff)
     val op = effect.ops.find(op => op.sym == sym).getOrElse(throw InternalCompilerException(s"Could not find op '$sym' in effect '$effect'.", sym.loc))
-    val writtenOpArgs = op.fparams.map(_.tpe).map(JvmOps.getErasedJvmType)
-    val cont = JvmType.Object
-
-    val methodArgs = writtenOpArgs ++ List(cont)
-    val methodResult = JvmType.Object
-
-    JvmOps.getFunctionInterfaceType(methodArgs, methodResult)
+    val writtenOpArgs = op.fparams.map(_.tpe)
+    JvmOps.getFunctionInterfaceType(MonoType.Arrow(writtenOpArgs :+ MonoType.Object, MonoType.Object))
   }
 
 }

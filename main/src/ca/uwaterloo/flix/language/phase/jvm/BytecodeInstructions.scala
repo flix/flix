@@ -56,6 +56,9 @@ object BytecodeInstructions {
     def visitLoadConstantInstruction(v: Any): Unit =
       visitor.visitLdcInsn(v)
 
+    def visitTryCatchBlock(beforeTry: Label, afterTry: Label, handlerStart: Label): Unit =
+      visitor.visitTryCatchBlock(beforeTry, afterTry, handlerStart, null)
+
     def cheat(command: MethodVisitor => Unit): Unit = command(visitor)
   }
 
@@ -242,6 +245,11 @@ object BytecodeInstructions {
     f
   }
 
+  def IADD(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.IADD)
+    f
+  }
+
   def ICONST_0(): InstructionSet = f => {
     f.visitInstruction(Opcodes.ICONST_0)
     f
@@ -269,6 +277,11 @@ object BytecodeInstructions {
 
   def ICONST_5(): InstructionSet = f => {
     f.visitInstruction(Opcodes.ICONST_5)
+    f
+  }
+
+  def ICONST_M1(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.ICONST_M1)
     f
   }
 
@@ -487,6 +500,40 @@ object BytecodeInstructions {
     f
   }
 
+  /**
+    * Using [[ifCondition]] uses less jumps, so use that if the conditional code
+    * is returns or throws
+    */
+  def ifConditionElse(c: Condition)(i: InstructionSet)(otherwise: InstructionSet): InstructionSet = f0 => {
+    var f = f0
+    val conditionLabel = new Label()
+    val endLabel = new Label()
+    f.visitJumpInstruction(opcodeOf(c), conditionLabel)
+    f = otherwise(f)
+    f.visitJumpInstruction(Opcodes.GOTO, endLabel)
+    f.visitLabel(conditionLabel)
+    f = i(f)
+    f.visitLabel(endLabel)
+    f
+  }
+
+  def tryCatch(body: InstructionSet)(catchI: InstructionSet): InstructionSet = f0 => {
+    var f = f0
+    val beforeTry = new Label()
+    val afterTry = new Label()
+    val handlerStart = new Label()
+    val afterEverything = new Label()
+    f.visitTryCatchBlock(beforeTry, afterTry, handlerStart)
+    f.visitLabel(beforeTry)
+    f = body(f)
+    f.visitLabel(afterTry)
+    f.visitJumpInstruction(Opcodes.GOTO, afterEverything)
+    f.visitLabel(handlerStart)
+    f = catchI(f)
+    f.visitLabel(afterEverything)
+    f
+  }
+
   def invokeConstructor(className: JvmName, descriptor: MethodDescriptor): InstructionSet =
     INVOKESPECIAL(className, JvmName.ConstructorMethod, descriptor)
 
@@ -521,6 +568,17 @@ object BytecodeInstructions {
 
   def withName(index: Int, tpe: BackendType)(body: Variable => InstructionSet): InstructionSet =
     body(new Variable(tpe, index))
+
+  def withNames(index: Int, tpes: List[BackendType])(body: (Int, List[Variable]) => InstructionSet): InstructionSet = {
+    var runningIndex = index
+    val variables = tpes.map(tpe => {
+      val variable = new Variable(tpe, runningIndex)
+      val stackSize = if (tpe.is64BitWidth) 2 else 1
+      runningIndex = runningIndex + stackSize
+      variable
+    })
+    body(runningIndex, variables)
+  }
 
   def xLoad(tpe: BackendType, index: Int): InstructionSet = tpe match {
     case BackendType.Bool | BackendType.Char | BackendType.Int8 | BackendType.Int16 | BackendType.Int32 => ILOAD(index)
@@ -588,8 +646,8 @@ object BytecodeInstructions {
     case BackendType.Array(BackendType.Reference(_) | BackendType.Array(_)) => INVOKESTATIC(BackendObjType.Arrays.DeepToString)
   }
 
-  def composeN(ins: List[InstructionSet]): InstructionSet =
-    ins.foldLeft(nop())(compose)
+  def composeN(ins: IterableOnce[InstructionSet]): InstructionSet =
+    ins.iterator.foldLeft(nop())(compose)
 
   /**
     * Sequential composition with `sep` between elements.

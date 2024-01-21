@@ -55,11 +55,7 @@ object VarOffsets {
     }
 
     // Compute stack offset for the body.
-    visitStm(defn.stmt, offset)
-  }
-
-  private def visitStm(stmt: Stmt, i0: Int): Int = stmt match {
-    case Stmt.Ret(e, _, _) => visitExp(e, i0)
+    visitExp(defn.expr, offset)
   }
 
   private def visitExp(e0: Expr, i0: Int): Int = e0 match {
@@ -123,7 +119,7 @@ object VarOffsets {
     case Expr.Do(_, exps, _, _, _) =>
       visitExps(exps, i0)
 
-    case Expr.NewObject(_, _, _, _, _, _, _) =>
+    case Expr.NewObject(_, _, _, _, _, _) =>
       // The expressions in NewObject are not executed here (concretely they're
       // always closures) and should not have var offsets here.
       // They don't contain binders so visiting them does nothing.
