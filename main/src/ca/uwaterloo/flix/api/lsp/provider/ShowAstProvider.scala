@@ -42,7 +42,7 @@ object ShowAstProvider {
       val phases = List("Parser", "Weeder", "Kinder", "Resolver", "TypedAst",
         "Documentor", "Lowering", "TreeShaker1", "MonoDefs",
         "MonoTypes", "Simplifier", "ClosureConv", "LambdaLift", "Tailrec",
-        "Optimizer", "TreeShaker2", "Eraser", "Reducer", "EffectBinder", "VarOffsets")
+        "Optimizer", "TreeShaker2", "EffectBinder", "Eraser", "Reducer", "VarOffsets")
 
       phase match {
         case "Parser" => astObject(phase, "Work In Progress")
@@ -61,9 +61,9 @@ object ShowAstProvider {
         case "Tailrec" => astObject(phase, AstPrinter.formatLiftedAst(flix.getTailrecAst))
         case "Optimizer" => astObject(phase, AstPrinter.formatLiftedAst(flix.getOptimizerAst))
         case "TreeShaker2" => astObject(phase, AstPrinter.formatLiftedAst(flix.getTreeShaker2Ast))
-        case "Eraser" => astObject(phase, AstPrinter.formatLiftedAst(flix.getEraserAst))
-        case "Reducer" => astObject(phase, AstPrinter.formatReducedAst(flix.getReducerAst))
         case "EffectBinder" => astObject(phase, AstPrinter.formatReducedAst(flix.getEffectBinderAst))
+        case "Eraser" => astObject(phase, AstPrinter.formatReducedAst(flix.getEraserAst))
+        case "Reducer" => astObject(phase, AstPrinter.formatReducedAst(flix.getReducerAst))
         case "VarOffsets" => astObject(phase, AstPrinter.formatReducedAst(flix.getVarOffsetsAst))
         case _ =>
           astObject(phase, s"Unknown phase: '$phase'. Try one of these ${phases.map(s => s"'$s'").mkString(", ")}")

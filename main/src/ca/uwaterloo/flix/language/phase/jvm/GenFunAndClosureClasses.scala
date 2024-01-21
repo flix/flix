@@ -243,7 +243,7 @@ object GenFunAndClosureClasses {
         POP()
     }
     val ctx = GenExpression.MethodContext(classType, enterLabel, Map(), newFrame, setPc, localOffset, pcLabels.prepended(null), Array(0))
-    GenExpression.compileStmt(defn.stmt)(m, ctx, root, flix)
+    GenExpression.compileExpr(defn.expr)(m, ctx, root, flix)
     assert(ctx.pcCounter(0) == pcLabels.size, s"${(classType.name, ctx.pcCounter(0), pcLabels.size)}")
 
     val returnValue = BytecodeInstructions.xReturn(BackendObjType.Result.toTpe)

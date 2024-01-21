@@ -986,6 +986,16 @@ object TypeInference {
           } yield (tconstrs, tpe, eff)
         }
 
+        // We special case the result type of the operation.
+        val operationType = operation.spec.tpe.typeConstructor match {
+          case Some(TypeConstructor.Void) =>
+            // The operation type is `Void`. Flix does not have subtyping, but here we want something close to it.
+            // Hence we treat `Void` as a fresh type variable.
+            // An alternative would be to allow empty pattern matches, but that is cumbersome.
+            Type.freshVar(Kind.Star, operation.spec.tpe.loc, false, Ast.VarText.Absent)
+          case _ => operation.spec.tpe
+        }
+
         if (operation.spec.fparams.length != args.length) {
           InferMonad.errPoint(TypeError.MismatchedOpArity(op.sym, expected = operation.spec.fparams.length, actual = args.length, loc))
         } else {
@@ -995,7 +1005,7 @@ object TypeInference {
           for {
             (tconstrss, _, effs) <- seqM(argM).map(_.unzip3)
             resultTconstrs = tconstrss.flatten
-            resultTpe <- unifyTypeM(operation.spec.tpe, tvar, loc)
+            resultTpe <- unifyTypeM(tvar, operationType, loc)
             resultEff = Type.mkUnion(effTpe :: operation.spec.eff :: effs, loc)
           } yield (resultTconstrs, resultTpe, resultEff)
         }

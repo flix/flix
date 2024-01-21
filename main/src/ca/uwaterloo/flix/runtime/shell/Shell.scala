@@ -152,7 +152,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     * Executes the given command `cmd`.
     */
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = {
-    implicit val formatter: Formatter = Formatter.getDefault
+    implicit val formatter: Formatter = flix.getFormatter
     implicit val out: PrintStream = new PrintStream(terminal.output())
     cmd match {
       case Command.Nop => // nop

@@ -63,16 +63,13 @@ object JvmOps {
     // Compound
     case MonoType.Array(_) => JvmType.Object
     case MonoType.Lazy(_) => JvmType.Object
-    case MonoType.Ref(_) => getRefClassType(tpe)
-    case MonoType.Tuple(_) => getTupleClassType(tpe.asInstanceOf[MonoType.Tuple])
-    case MonoType.RecordEmpty => getRecordInterfaceType()
-    case MonoType.RecordExtend(_, _, _) => getRecordInterfaceType()
+    case MonoType.Ref(elmType) => JvmType.Reference(BackendObjType.Ref(BackendType.asErasedBackendType(elmType)).jvmName)
+    case MonoType.Tuple(elms) => JvmType.Reference(BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType)).jvmName)
+    case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
+    case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.Enum(sym) => getEnumInterfaceType(sym)
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
-    case MonoType.Native(clazz) =>
-      // TODO: Ugly hack.
-      val fqn = clazz.getName.replace('.', '/')
-      JvmType.Reference(JvmName.mk(fqn))
+    case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
 
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
@@ -136,31 +133,10 @@ object JvmOps {
     */
   def getFunctionInterfaceType(tpe: MonoType): JvmType.Reference = tpe match {
     case MonoType.Arrow(targs, tresult) =>
-      getFunctionInterfaceType(targs.map(getErasedJvmType), asErasedJvmType(tresult))
+      val arrowType = BackendObjType.Arrow(targs.map(BackendType.toErasedBackendType), BackendType.asErasedBackendType(tresult))
+      JvmType.Reference(arrowType.jvmName)
     case _ =>
       throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
-  }
-
-  /**
-    * Returns the function abstract class type `FnX$Y$Z` for the given types.
-    *
-    * For example:
-    *
-    * (Int)(Int)          =>  Fn2$Int$Int
-    * (Int, String)(Int)   =>  Fn3$Int$Obj$Int
-    */
-  def getFunctionInterfaceType(args: List[JvmType], res: JvmType): JvmType.Reference = {
-    getFunctionInterfaceType(args.map(_.toErased).map(stringify), stringify(res.toErased))
-  }
-
-  /**
-    * The JVM name is of the form `FnArity$argTypes0$argTypes1$..$resType`
-    */
-  private def getFunctionInterfaceType(argTypes: List[String], resType: String): JvmType.Reference = {
-    val arity = argTypes.length
-    val typeStrings = argTypes :+ resType
-    val name = JvmName.mkClassName(s"Fn$arity", typeStrings)
-    JvmType.Reference(JvmName(RootPackage, name))
   }
 
   /**
@@ -245,158 +221,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the tuple class type `TupleX$Y$Z` for the given type `tpe`.
-    *
-    * For example,
-    *
-    * (Int, Int)              =>    Tuple2$Int$Int
-    * (Int, Int, Int)         =>    Tuple3$Int$Int$Int
-    * (Bool, Char, Int)       =>    Tuple3$Bool$Char$Int
-    * (Bool, List[Int])       =>    Tuple2$Bool$Obj
-    * (Bool, (Int, Int))      =>    Tuple2$Bool$Obj
-    *
-    * NB: The given type `tpe` must be a tuple type.
-    */
-  def getTupleClassType(tpe: MonoType.Tuple): JvmType.Reference = tpe match {
-    case MonoType.Tuple(elms) =>
-      // Compute the arity of the tuple.
-      val arity = elms.length
-
-      // Compute the stringified erased type of each type argument.
-      val args = elms.map(tpe => stringify(asErasedJvmType(tpe)))
-
-      // The JVM name is of the form TupleArity$Arg0$Arg1$Arg2
-      val name = JvmName.mkClassName(s"Tuple$arity", args)
-
-      // The type resides in the root package.
-      JvmType.Reference(JvmName(RootPackage, name))
-  }
-
-  def getLazyClassType(tpe: MonoType.Lazy): JvmType.Reference = tpe match {
-    case MonoType.Lazy(tpe) =>
-      val arg = stringify(asErasedJvmType(tpe))
-      val name = JvmName.mkClassName("Lazy", arg)
-      JvmType.Reference(JvmName(RootPackage, name))
-  }
-
-  /**
-    * Returns the record interface type `Record`.
-    *
-    * For example,
-    *
-    * {}                    =>  Record
-    * {x :: Int}            =>  Record
-    * {x :: Str, y :: Int}  =>  Record
-    */
-  def getRecordInterfaceType(): JvmType.Reference = {
-
-    // The JVM name is of the form Record
-    val name = JvmName.mkClassName("Record")
-
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(RootPackage, name))
-  }
-
-  /**
-    * Returns the empty record class type `RecordEmtpy`
-    *
-    * For example,
-    *
-    * {}         =>    RecordEmpty
-    *
-    */
-  def getRecordEmptyClassType(): JvmType.Reference = {
-
-    // The JVM name is of the form RecordEmpty
-    val name = JvmName.mkClassName("RecordEmpty")
-
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(RootPackage, name))
-  }
-
-
-  /**
-    * Returns the extended record class type `RecordExtend$X` for the given type 'tpe'
-    *
-    * For example,
-    *
-    * {+z :: Int  | {}}                   =>    RecordExtend$Int
-    * {+y :: Char | {z :: Int}            =>    RecordExtend$Char
-    * {+x :: Str | {y :: Char, z :: Int}  =>    RecordExtend$Obj
-    *
-    * NB: The given type `tpe` must be a Record type
-    */
-  def getRecordExtendClassType(tpe: MonoType): JvmType.Reference = tpe match {
-
-    case MonoType.RecordExtend(_, value, _) =>
-      // Compute the stringified erased type of value.
-      val valueType = stringify(asErasedJvmType(value))
-
-      // The JVM name is of the form RecordExtend
-      val name = JvmName.mkClassName("RecordExtend", valueType)
-
-      // The type resides in the root package.
-      JvmType.Reference(JvmName(RootPackage, name))
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
-  }
-
-
-  /**
-    * Returns the extended record class type `RecordExtend$X` which contains the given type 'tpe'
-    *
-    * For example,
-    *
-    * Int                   =>  RecordExtend$Int
-    * Char                  =>  RecordExtend$Char
-    * {x :: Char, y :: Int} =>  RecordExtend$Obj
-    *
-    */
-  def getRecordType(tpe: MonoType): JvmType.Reference = {
-
-    // Compute the stringified erased type of 'tpe'.
-    val valueType = JvmOps.stringify(JvmOps.asErasedJvmType(tpe))
-
-    // The JVM name is of the form RecordExtend
-    val name = JvmName.mkClassName("RecordExtend", valueType)
-
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(JvmOps.RootPackage, name))
-  }
-
-  /**
-    * Returns the Main  `Main`
-    */
-  def getMainClassType(): JvmType.Reference = {
-
-    // The JVM name is of the form Main
-    val name = "Main"
-
-    // The type resides in the root package.
-    JvmType.Reference(JvmName(RootPackage, name))
-  }
-
-  /**
-    * Returns reference class type for the given type `tpe`.
-    *
-    * Ref[Bool]              =>    Ref$Bool
-    * Ref[List[Int]          =>    Ref$Obj
-    *
-    * NB: The type must be a reference type.
-    */
-  def getRefClassType(tpe: MonoType): JvmType.Reference = tpe match {
-    case MonoType.Ref(elmType) =>
-      // Compute the stringified erased type of the argument.
-      val arg = stringify(asErasedJvmType(elmType))
-
-      // The JVM name is of the form TArity$Arg0$Arg1$Arg2
-      val name = JvmName.mkClassName("Ref", arg)
-
-      // The type resides in the ca.uwaterloo.flix.api.cell package.
-      JvmType.Reference(JvmName(Nil, name))
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
-  }
-
-  /**
     * Returns the function definition class for the given symbol.
     *
     * For example:
@@ -432,7 +256,7 @@ object JvmOps {
   }
 
   /**
-    * Returns the namespace type for the given namespace `ns`.
+    * Returns the namespace name for the given namespace `ns`.
     *
     * For example:
     *
@@ -441,10 +265,20 @@ object JvmOps {
     * Foo.Bar     =>  Foo.Bar.Ns
     * Foo.Bar.Baz =>  Foo.Bar.Baz.Ns
     */
-  def getNamespaceClassType(ns: NamespaceInfo): JvmType.Reference = {
-    val pkg = ns.ns
+  def getNamespaceClassType(ns: NamespaceInfo): JvmName = {
+    getNamespaceName(ns.ns)
+  }
+
+  /**
+    * Returns the namespace name of the given definition symbol `sym`.
+    */
+  def getNamespaceName(sym: Symbol.DefnSym): JvmName = {
+    getNamespaceName(sym.namespace)
+  }
+
+  private def getNamespaceName(ns: List[String]): JvmName = {
     val name = JvmName.mkClassName("Ns")
-    JvmType.Reference(JvmName(pkg, name))
+    JvmName(ns, name)
   }
 
   /**
@@ -476,13 +310,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the namespace info of the given definition symbol `sym`.
-    */
-  def getNamespace(sym: Symbol.DefnSym): NamespaceInfo = {
-    NamespaceInfo(sym.namespace, Map.empty) // TODO: Magnus: Empty map.
-  }
-
-  /**
     * Returns the set of namespaces in the given AST `root`.
     */
   def namespacesOf(root: Root): Set[NamespaceInfo] = {
@@ -510,13 +337,21 @@ object JvmOps {
     }
 
   /**
+    * Returns the set of erased lazy types in `types` without searching recursively.
+    */
+  def getErasedLazyTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Lazy] =
+    types.foldLeft(Set.empty[BackendObjType.Lazy]) {
+      case (acc, MonoType.Lazy(tpe)) => acc + BackendObjType.Lazy(BackendType.asErasedBackendType(tpe))
+      case (acc, _) => acc
+    }
+
+  /**
     * Returns the set of erased record extend types in `types` without searching recursively.
     */
   def getErasedRecordExtendsOf(types: Iterable[MonoType]): Set[BackendObjType.RecordExtend] =
     types.foldLeft(Set.empty[BackendObjType.RecordExtend]) {
-      case (acc, MonoType.RecordExtend(field, value, _)) =>
-        // TODO: should use mono -> backend transformation on `rest`
-        acc + BackendObjType.RecordExtend(field, BackendType.asErasedBackendType(value), BackendObjType.RecordEmpty.toTpe)
+      case (acc, MonoType.RecordExtend(_, value, _)) =>
+        acc + BackendObjType.RecordExtend(BackendType.asErasedBackendType(value))
       case (acc, _) => acc
     }
 
@@ -527,6 +362,16 @@ object JvmOps {
     types.foldLeft(Set.empty[BackendObjType.Arrow]) {
       case (acc, MonoType.Arrow(args, result)) =>
         acc + BackendObjType.Arrow(args.map(BackendType.toErasedBackendType), BackendType.toErasedBackendType(result))
+      case (acc, _) => acc
+    }
+
+  /**
+    * Returns the set of erased tuple types in `types` without searching recursively.
+    */
+  def getErasedTupleTypesOf(types: Iterable[MonoType]): Set[BackendObjType.Tuple] =
+    types.foldLeft(Set.empty[BackendObjType.Tuple]) {
+      case (acc, MonoType.Tuple(elms)) =>
+        acc + BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType))
       case (acc, _) => acc
     }
 

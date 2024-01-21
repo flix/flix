@@ -66,9 +66,9 @@ object AstPrinter {
       if (asts.contains("Tailrec")) writeToDisk("Tailrec", formatLiftedAst(flix.getTailrecAst))
       if (asts.contains("Optimizer")) writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
       if (asts.contains("TreeShaker2")) writeToDisk("TreeShaker2", formatLiftedAst(flix.getTreeShaker2Ast))
-      if (asts.contains("Eraser")) writeToDisk("Eraser", formatLiftedAst(flix.getEraserAst))
-      if (asts.contains("Reducer")) writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
       if (asts.contains("EffectBinder")) writeToDisk("EffectBinder", formatReducedAst(flix.getEffectBinderAst))
+      if (asts.contains("Eraser")) writeToDisk("Eraser", formatReducedAst(flix.getEraserAst))
+      if (asts.contains("Reducer")) writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
       if (asts.contains("VarOffsets")) writeToDisk("VarOffsets", formatReducedAst(flix.getVarOffsetsAst))
       if (asts.contains("JvmBackend")) () // wip
     }
@@ -111,9 +111,9 @@ object AstPrinter {
     writeToDisk("Tailrec", formatLiftedAst(flix.getTailrecAst))
     writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
     writeToDisk("TreeShaker2", formatLiftedAst(flix.getTreeShaker2Ast))
-    writeToDisk("Eraser", formatLiftedAst(flix.getEraserAst))
-    writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
     writeToDisk("EffectBinder", formatReducedAst(flix.getEffectBinderAst))
+    writeToDisk("Eraser", formatReducedAst(flix.getEraserAst))
+    writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
     writeToDisk("VarOffsets", formatReducedAst(flix.getVarOffsetsAst))
   }
 

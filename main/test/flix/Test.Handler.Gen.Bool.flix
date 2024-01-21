@@ -1,0 +1,68 @@
+mod Test.Handler.Gen.Bool {
+
+    eff Gen {
+        pub def gen(): Bool
+    }
+
+    def generator(): Unit \ Gen =
+        do Gen.gen(); generator()
+
+    def sample(limit: Int32): List[Bool] =
+        region rc {
+            let counter = ref (0, true) @ rc;
+            try {
+                generator(); Nil
+            } with Gen {
+                def gen(k) =
+                    let (i, b) = getAndInc(counter);
+                    if (i == limit) Nil else b :: k(b)
+            }
+        }
+
+    def next(b: Bool): Bool = if (b) false else true
+
+    def getAndInc(r: Ref[(Int32, Bool), r]): (Int32, Bool) \ r =
+        let (i, b) = deref r;
+        r := (i + 1, next(b));
+        (i, b)
+
+    def range(a: Int32, b: Int32): List[Bool] =
+        List.unfold(match (i, v) -> if (i >= b) None else Some((v, (i + 1, next(v)))), (a, true))
+
+    @Test
+    def testSample01(): Bool =
+        Assert.eq(Nil, sample(0))
+
+    @Test
+    def testSample02(): Bool =
+        Assert.eq(true :: Nil, sample(1))
+
+    @Test
+    def testSample03(): Bool =
+        Assert.eq(true :: false :: Nil, sample(2))
+
+    @Test
+    def testSample04(): Bool =
+        Assert.eq(true :: false :: true :: Nil, sample(3))
+
+    @Test
+    def testSample05(): Bool =
+        Assert.eq(true :: false :: true :: false :: Nil, sample(4))
+
+    @Test
+    def testSample06(): Bool =
+        Assert.eq(true :: false :: true :: false :: true :: Nil, sample(5))
+
+    @Test
+    def testSample07(): Bool =
+        Assert.eq(true :: false :: true :: false :: true :: false :: Nil, sample(6))
+
+    @Test
+    def testSample08(): Bool =
+        Assert.eq(range(0, 10), sample(10))
+
+    @Test
+    def testSample09(): Bool =
+        Assert.eq(range(0, 100), sample(100))
+
+}
