@@ -33,13 +33,12 @@ mod IDE {
         zero            = d,
         main            = p,
         cfg             = List[(n, n)],
-        startNodes      = List[(p, n)],            // TODO: Ondrej: Should this also be a function?
+        startNodes      = List[(p, n)],
         endNodes        = List[(p, n)],
         callGraph       = List[(n, p)],
-        eshIntra        = List[(n, d, d, f)],      // TODO: Ought to be a function: (n, d)      -> (d, f)
-        eshCallStart    = List[(n, d, p, d, f)],   // TODO: Ought to be a function: (n, d, p)   -> (d, f)
-        eshCallStartFn  = (n, d, p) -> Vector[(d, f)],
-        eshEndReturn    = List[(p, d, n, d, f)],   // TODO: Ought to be a function: (p, d, n)   -> (d, f)
+        eshIntra        = (n, d) -> Vector[(d, f)],
+        eshCallStart    = (n, d, p) -> Vector[(d, f)],
+        eshEndReturn    = (p, d, n) -> Vector[(d, f)],
         id              = f,
         apply           = (f, l) -> l,
         compose         = (f, f) -> f
@@ -60,6 +59,13 @@ mod IDE {
         let apply = ide.apply;
         let compose = ide.compose;
 
+        def prependId(v) = Vector.append(Vector#{(ide.zero, ide.id)}, v);
+        def augmentForZero(d, v) = if (d == ide.zero) prependId(v) else v;
+
+        def eshIntra1(n, d) = augmentForZero(d, ide.eshIntra(n, d));
+        def eshCallStart1(n, d, p) = augmentForZero(d, ide.eshCallStart(n, d, p));
+        def eshEndReturn1(p, d, n) = augmentForZero(d, ide.eshEndReturn(p, d, n));
+
         ///
         /// The core IDE Framework.
         ///
@@ -75,7 +81,7 @@ mod IDE {
             JumpFn(d1, m, d3; compose(long, short)) :-
                 CFG(n, m),
                 JumpFn(d1, n, d2; long),
-                EshIntra(n, d2, d3, short).
+                let (d3, short) = eshIntra1(n, d2).
 
             // use summary
             JumpFn(d1, m, d3; compose(caller, summary)) :-
@@ -83,13 +89,14 @@ mod IDE {
                 JumpFn(d1, n, d2; caller),
                 SummaryFn(n, d2, d3; summary).
 
-            JumpFn(d3, start, d3; ide.id) :-
+            EshCallStart(call, d2, target, d3, f) :-
                 JumpFn(_d1, call, d2; nonbottom1),
                 CallGraph(call, target),
+                let (d3, f) = eshCallStart1(call, d2, target).
+
+            JumpFn(d3, start, d3; ide.id) :-
                 EshCallStart(call, d2, target, d3, nonbottom2),
-                StartNode(target, start),
-                if (nonbottom1 != LowerBound.minValue() and
-                    nonbottom2 != LowerBound.minValue()). // TODO: Ondrej: Why are these checks here?
+                StartNode(target, start).
 
             // compute summary
             SummaryFn(call, d4, d5; compose(compose(cs, se), er)) :-
@@ -98,7 +105,7 @@ mod IDE {
                 EndNode(target, end),
                 EshCallStart(call, d4, target, d1, cs),
                 JumpFn(d1, end, d2; se),
-                EshEndReturn(target, d2, call, d5, er).
+                let (d5, er) = eshEndReturn1(target, d2, call).
 
             // tabulate result
             Results(n, d; apply(fn, vp)) :-
@@ -111,21 +118,6 @@ mod IDE {
                 Results(call, d; v),
                 EshCallStart(call, d, proc, dp, cs).
 
-            // Variant by Magnus that uses the functional.
-            ResultProc(proc, dp; apply(cs,v)) :-
-                Proc(proc),
-                Results(call, d; v),
-                let (dp, cs) = ide.eshCallStartFn(call, d, proc).
-
-            // TODO: Ondrej: Add comment.
-            EshIntra(n, ide.zero, ide.zero, ide.id) :- CFG(n,_).
-
-            // TODO: Ondrej: Add comment.
-            EshCallStart(call, ide.zero, target, ide.zero, ide.id) :- CallGraph(call, target).
-
-            // TODO: Ondrej: Add comment.
-            EshEndReturn(target, ide.zero, call, ide.zero, ide.id) :- CallGraph(call, target).
-
             // TODO: Ondrej: Add comment.
             ResultProc(ide.main, ide.zero; UpperBound.maxValue()).
 
@@ -136,9 +128,8 @@ mod IDE {
 
 
         let f1 = inject ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
-        let f2 = inject ide.eshIntra, ide.eshCallStart, ide.eshEndReturn into EshIntra, EshCallStart, EshEndReturn;
 
-        query p, f1, f2 select (n, d, l) from Results(n, d; l)
+        query p, f1 select (n, d, l) from Results(n, d; l)
 
 }
 
@@ -287,7 +278,7 @@ mod ConstantProp {
                             MicroFunction.NonBot(1, 0, Const.Top)
                         }
                     else {
-                        unreachable!()
+                        ?unreachable
                     }
             }
     }
@@ -370,34 +361,28 @@ def main(): Unit \ IO =
         ("main","emain") ::
         ("p","ep") :: Nil;
 
-    let eshIntra =
-        ("smain","zero","x", ConstantProp.MicroFunction.Bot) ::
-        ("n2","x","x", ConstantProp.id()) ::
-        ("n3","x","x", ConstantProp.id()) ::
+    def eshIntra(n, d) = match (n, d) {
+        case ("smain","zero") => Vector#{("x", ConstantProp.MicroFunction.Bot)}
+        case ("n2","x") => Vector#{("x", ConstantProp.id())}
+        case ("n3","x") => Vector#{("x", ConstantProp.id())}
 
-        ("sp","a","a", ConstantProp.id()) ::
-        ("sp","x","x", ConstantProp.id()) ::
-        ("n4","a","a", ConstantProp.id()) ::
-        ("n4","x","x", ConstantProp.id()) ::
-        ("n5","a","a", ConstantProp.MicroFunction.NonBot(1,-2, ConstantProp.Const.Bot)) ::
-        ("n5","x","x", ConstantProp.id()) ::
-        ("n6","a","a", ConstantProp.id()) ::
-        ("n7","a","a", ConstantProp.id()) ::
-        ("n7","x","x", ConstantProp.id()) ::
-        ("n8","a","a", ConstantProp.MicroFunction.NonBot(1,2, ConstantProp.Const.Bot)) ::
-        ("n8","x","x", ConstantProp.id()) ::
-        ("n9","a","a", ConstantProp.id()) ::
-        ("n9","a","x", ConstantProp.MicroFunction.NonBot(-2,5, ConstantProp.Const.Bot)) :: Nil;
+        case ("sp","a") => Vector#{("a", ConstantProp.id())}
+        case ("sp","x") => Vector#{("x", ConstantProp.id())}
+        case ("n4","a") => Vector#{("a", ConstantProp.id())}
+        case ("n4","x") => Vector#{("x", ConstantProp.id())}
+        case ("n5","a") => Vector#{("a", ConstantProp.MicroFunction.NonBot(1,-2, ConstantProp.Const.Bot))}
+        case ("n5","x") => Vector#{("x", ConstantProp.id())}
+        case ("n6","a") => Vector#{("a", ConstantProp.id())}
+        case ("n7","a") => Vector#{("a", ConstantProp.id())}
+        case ("n7","x") => Vector#{("x", ConstantProp.id())}
+        case ("n8","a") => Vector#{("a", ConstantProp.MicroFunction.NonBot(1,2, ConstantProp.Const.Bot))}
+        case ("n8","x") => Vector#{("x", ConstantProp.id())}
+        case ("n9","a") => Vector#{("a", ConstantProp.id()), ("x", ConstantProp.MicroFunction.NonBot(-2,5, ConstantProp.Const.Bot))}
 
-    let eshCallStart =
-        ("n1","zero","p","a",ConstantProp.MicroFunction.NonBot(0,7,ConstantProp.Const.Bot)) ::
-        ("n1","x","p","x",ConstantProp.id()) ::
-        ("n6","a","p","a",ConstantProp.id()) ::
-        ("n6","x","p","x",ConstantProp.id()) :: Nil;
+        case _ => Vector#{}
+    };
 
-    // As a functional.
-    // Does this function need to be paramterized over the call graph (???)
-    def eshCallStartFn(n, d, p) = match (n, d, p) {
+    def eshCallStart(n, d, p) = match (n, d, p) {
         case ("n1", "zero", "p")    => Vector#{("a",ConstantProp.MicroFunction.NonBot(0,7,ConstantProp.Const.Bot))}
         case ("n1","x","p")         => Vector#{("x",ConstantProp.id())}
         case ("n6","a","p")         => Vector#{("a",ConstantProp.id())}
@@ -405,9 +390,11 @@ def main(): Unit \ IO =
         case _ => Vector#{}
     };
 
-    let eshEndReturn =
-        ("p", "x", "n1", "x", ConstantProp.id()) ::
-        ("p", "x", "n6", "x", ConstantProp.id()) :: Nil;
+    def eshEndReturn(p, d, n) = match (p, d, n) {
+        case ("p", "x", "n1") => Vector#{("x", ConstantProp.id())}
+        case ("p", "x", "n6") => Vector#{("x", ConstantProp.id())}
+        case _ => Vector#{}
+    };
 
     let result = IDE.run({
         zero            = "zero",
@@ -417,8 +404,7 @@ def main(): Unit \ IO =
         endNodes        = endNodes,
         callGraph       = callGraph,
         eshIntra        = eshIntra,
-        eshCallStart    = eshCallStart,         // Right now both are used, but obv. only the functional should be.
-        eshCallStartFn  = eshCallStartFn,       // Right now both are used, but obv. only the functional should be.
+        eshCallStart    = eshCallStart,
         eshEndReturn    = eshEndReturn,
         id              = ConstantProp.id(),
         apply           = ConstantProp.apply,
