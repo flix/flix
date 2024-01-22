@@ -4,11 +4,6 @@
 pub type alias Static = Impure
 
 ///
-/// The empty type.
-///
-pub enum Void
-
-///
 /// An enum that holds type information where a witness is not available.
 ///
 pub enum Proxy[_] {
@@ -22,15 +17,6 @@ pub enum Proxy[_] {
 /// operation that interacts with the environment.
 ///
 pub eff IO
-
-///
-/// The Non-Deterministic Effect.
-///
-/// The `NonDet` effect represents "functions" that behave like relations,
-/// i.e. they have no side-effects, and given the same input their output
-//// there is a fixed set of output.
-///
-pub eff NonDet
 
 ///
 /// The pure identity function.

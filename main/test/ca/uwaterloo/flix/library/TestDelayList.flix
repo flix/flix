@@ -3030,28 +3030,28 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ NonDet =
+    def shuffle01(): Bool \ IO =
         let l1: List[Int32] = Nil;
         let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
 
         DelayList.length(l2) == 0 and DelayList.toSet(l2) == Set#{}
 
     @test
-    def shuffle02(): Bool \ NonDet =
+    def shuffle02(): Bool \ IO =
         let l1 = 1 :: Nil;
         let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
 
         DelayList.length(l2) == 1 and DelayList.toSet(l2) == Set#{1}
 
     @test
-    def shuffle03(): Bool \ NonDet =
+    def shuffle03(): Bool \ IO =
         let l1 = 1 :: 2 :: 3 :: Nil;
         let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
 
         DelayList.length(l2) == 3 and DelayList.toSet(l2) == Set#{1, 2, 3}
 
     @test
-    def shuffle04(): Bool \ NonDet =
+    def shuffle04(): Bool \ IO =
         let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
         let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
 

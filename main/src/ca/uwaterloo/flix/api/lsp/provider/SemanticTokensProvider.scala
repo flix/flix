@@ -645,6 +645,7 @@ object SemanticTokensProvider {
     */
   private def isVisibleTypeConstructor(tycon: TypeConstructor): Boolean = tycon match {
     // visible
+    case TypeConstructor.Void => true
     case TypeConstructor.Unit => true
     case TypeConstructor.Null => true
     case TypeConstructor.Bool => true

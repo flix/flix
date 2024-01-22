@@ -15,6 +15,15 @@ sealed trait TypeConstructor {
 object TypeConstructor {
 
   /**
+    * A type constructor that represent the Void type.
+    *
+    * The `Void` type is uninhabited and should not be confused which Java's `void` which is `Unit` in Flix.
+    */
+  case object Void extends TypeConstructor {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
     * A type constructor that represent the Unit type.
     */
   case object Unit extends TypeConstructor {

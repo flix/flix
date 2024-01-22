@@ -62,8 +62,10 @@ object JvmBackend {
 
       // Filter the program types into different sets
       val erasedRefTypes = JvmOps.getErasedRefsOf(types)
+      val erasedLazyTypes = JvmOps.getErasedLazyTypesOf(types)
       val erasedExtendTypes = JvmOps.getErasedRecordExtendsOf(types)
       val erasedFunctionTypes = JvmOps.getErasedArrowsOf(types)
+      val erasedTuplesTypes = JvmOps.getErasedTupleTypesOf(types)
 
       //
       // Second, generate classes.
@@ -82,7 +84,7 @@ object JvmBackend {
       val enumInterfaces = GenEnumInterfaces.gen(root.enums.values)
       val tagClasses = GenTagClasses.gen(root.enums.values.flatMap(_.cases.values))
 
-      val tupleClasses = GenTupleClasses.gen(types)
+      val tupleClasses = erasedTuplesTypes.map(genClass).toMap
 
       // Generate record classes.
       val recordInterfaces = Map(genClass(BackendObjType.Record))
@@ -91,7 +93,7 @@ object JvmBackend {
 
       val refClasses = erasedRefTypes.map(genClass).toMap
 
-      val lazyClasses = GenLazyClasses.gen(types)
+      val lazyClasses = erasedLazyTypes.map(genClass).toMap
 
       val anonClasses = GenAnonymousClasses.gen(root.anonClasses)
 
