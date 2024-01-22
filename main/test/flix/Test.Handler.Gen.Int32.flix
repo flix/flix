@@ -1,18 +1,28 @@
-mod Test.Handler.Ask {
+mod Test.Handler.Gen.Int32 {
 
-    eff Ask {
-        pub def ask(x: Int32): Unit
+    eff Gen {
+        pub def gen(): Int32
     }
 
-    def generator(x: Int32): Unit \ Ask =
-        do Ask.ask(x); generator(x + 1)
+    def generator(): Unit \ Gen =
+        do Gen.gen(); generator()
 
     def sample(limit: Int32): List[Int32] =
-        try {
-            generator(0); Nil
-        } with Ask {
-            def ask(x, k) = if (x == limit) Nil else x :: k()
+        region rc {
+            let counter = ref 0 @ rc;
+            try {
+                generator(); Nil
+            } with Gen {
+                def gen(k) =
+                    let i = getAndInc(counter);
+                    if (i == limit) Nil else i :: k(i)
+            }
         }
+
+    def getAndInc(r: Ref[Int32, r]): Int32 \ r =
+        let i = deref r;
+        r := (i + 1);
+        i
 
     @Test
     def testSample01(): Bool =

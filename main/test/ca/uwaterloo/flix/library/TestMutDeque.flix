@@ -1183,7 +1183,7 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ NonDet = region rc {
+    def shuffle01(): Bool \ IO = region rc {
         let l: List[Int32] = Nil;
         let d1 = List.toMutDeque(rc, l);
         let d2 = MutDeque.shuffle(rc, Random.new(), d1);
@@ -1192,7 +1192,7 @@ mod TestMutDeque {
     }
 
     @test
-    def shuffle02(): Bool \ NonDet = region rc {
+    def shuffle02(): Bool \ IO = region rc {
         let l = 1 :: Nil;
         let d1 = List.toMutDeque(rc, l);
         let d2 = MutDeque.shuffle(rc, Random.new(), d1);
@@ -1201,7 +1201,7 @@ mod TestMutDeque {
     }
 
     @test
-    def shuffle03(): Bool \ NonDet = region rc {
+    def shuffle03(): Bool \ IO = region rc {
         let l = 1 :: 2 :: 3 :: Nil;
         let d1 = List.toMutDeque(rc, l);
         let d2 = MutDeque.shuffle(rc, Random.new(), d1);
@@ -1210,7 +1210,7 @@ mod TestMutDeque {
     }
 
     @test
-    def shuffle04(): Bool \ NonDet = region rc {
+    def shuffle04(): Bool \ IO = region rc {
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
         let d1 = List.toMutDeque(rc, l);
         let d2 = MutDeque.shuffle(rc, Random.new(), d1);

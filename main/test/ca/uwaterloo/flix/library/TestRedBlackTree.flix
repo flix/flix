@@ -90,13 +90,13 @@ mod TestRedBlackTree {
         checkBinarySearchTreeInvariant(tree)
 
     @test
-    def testBinarySearchTreeInvariant10(): Bool \ NonDet = checkBinarySearchTreeInvariant(random(10))
+    def testBinarySearchTreeInvariant10(): Bool \ IO = checkBinarySearchTreeInvariant(random(10))
 
     @test
-    def testBinarySearchTreeInvariant11(): Bool \ NonDet = checkBinarySearchTreeInvariant(random(100))
+    def testBinarySearchTreeInvariant11(): Bool \ IO = checkBinarySearchTreeInvariant(random(100))
 
     @test
-    def testBinarySearchTreeInvariant12(): Bool \ NonDet = checkBinarySearchTreeInvariant(random(1000))
+    def testBinarySearchTreeInvariant12(): Bool \ IO = checkBinarySearchTreeInvariant(random(1000))
 
     @test
     def testRedParentInvariant01(): Bool =
@@ -138,13 +138,13 @@ mod TestRedBlackTree {
         checkRedParentInvariant(tree)
 
     @test
-    def testRedParentInvariant10(): Bool \ NonDet = checkRedParentInvariant(random(10))
+    def testRedParentInvariant10(): Bool \ IO = checkRedParentInvariant(random(10))
 
     @test
-    def testRedParentInvariant11(): Bool \ NonDet = checkRedParentInvariant(random(100))
+    def testRedParentInvariant11(): Bool \ IO = checkRedParentInvariant(random(100))
 
     @test
-    def testRedParentInvariant12(): Bool \ NonDet = checkRedParentInvariant(random(1000))
+    def testRedParentInvariant12(): Bool \ IO = checkRedParentInvariant(random(1000))
 
     ///
     /// Returns `true` if and only if the binary search tree invariant holds for `tree`.
@@ -191,7 +191,7 @@ mod TestRedBlackTree {
     ///
     /// Returns a tree with `n` nodes `x -> ()` where `x` is a random integer.
     ///
-    def random(n: Int32): RedBlackTree[Int32, Unit] \ NonDet = {
+    def random(n: Int32): RedBlackTree[Int32, Unit] \ IO = {
         let seed = 42i64;
         let r = Random.newWithSeed(seed);
         List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(),
