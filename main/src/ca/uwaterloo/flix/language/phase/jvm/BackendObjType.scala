@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Symbol
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkClassName
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch._
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
@@ -51,6 +52,7 @@ sealed trait BackendObjType {
     case BackendObjType.MatchError => JvmName(DevFlixRuntime, mkClassName("MatchError"))
     case BackendObjType.Region => JvmName(DevFlixRuntime, mkClassName("Region"))
     case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, mkClassName("UncaughtExceptionHandler"))
+    case BackendObjType.Main(_) => JvmName.Main
     // Java classes
     case BackendObjType.Native(className) => className
     case BackendObjType.Regex => JvmName(List("java", "util", "regex"), "Pattern")
@@ -1218,6 +1220,29 @@ object BackendObjType {
       ALOAD(2) ~ INVOKEVIRTUAL(Region.ReportChildExceptionMethod) ~
       RETURN()
     ))
+  }
+
+  case class Main(sym: Symbol.DefnSym) extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal)
+
+      cm.mkStaticMethod(MainMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def MainMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, NotFinal, "main", mkDescriptor(BackendType.Array(String.toTpe))(VoidableType.Void), Some(_ => {
+      val defName = JvmOps.getFunctionDefinitionClassType(sym).name
+      withName(0, BackendType.Array(String.toTpe))(args =>
+        args.load() ~ INVOKESTATIC(Global.SetArgsMethod) ~
+        NEW(defName) ~ DUP() ~ INVOKESPECIAL(defName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid) ~
+        DUP() ~ GETSTATIC(Unit.SingletonField) ~ PUTFIELD(InstanceField(defName, IsPublic, NotFinal, NotVolatile, "arg0", JavaObject.toTpe)) ~
+        Result.unwindSuspensionFreeThunk() ~
+        POP() ~ RETURN()
+      )
+    }))
+
   }
 
   //
