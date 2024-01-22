@@ -1299,6 +1299,7 @@ object Namer {
     * Returns `true` if the given string `s` is a suspicious type variable name.
     */
   private def isSuspiciousTypeVarName(s: String): Boolean = s match {
+    case "void" => true
     case "unit" => true
     case "bool" => true
     case "char" => true

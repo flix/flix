@@ -152,7 +152,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     * Executes the given command `cmd`.
     */
   private def execute(cmd: Command)(implicit terminal: Terminal): Unit = {
-    implicit val formatter: Formatter = Formatter.getDefault
+    implicit val formatter: Formatter = flix.getFormatter
     implicit val out: PrintStream = new PrintStream(terminal.output())
     cmd match {
       case Command.Nop => // nop
@@ -311,6 +311,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         run(main)
         // Remove immediately so it doesn't confuse subsequent compilations (e.g. reloads or declarations)
         flix.remSourceCode("<shell>")
+        flix.setOptions(flix.options.copy(entryPoint = None))
 
       case Category.Unknown =>
         // The input is not recognized. Output an error message.

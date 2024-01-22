@@ -16,15 +16,14 @@
 package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
-import ca.uwaterloo.flix.language.phase.{HtmlDocumentor, JsonDocumentor}
+import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
-import ca.uwaterloo.flix.util.collection.Chain
-import ca.uwaterloo.flix.util.{Result, Validation}
+import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
 
 import java.io.{PrintStream, PrintWriter}
 import java.nio.file._
@@ -329,17 +328,17 @@ object Bootstrap {
     * all .flix source files.
     * Then returns the initialized Bootstrap object or an error.
     */
-  def bootstrap(path: Path, apiKey: Option[String])(implicit out: PrintStream): Validation[Bootstrap, BootstrapError] = {
+  def bootstrap(path: Path, apiKey: Option[String])(implicit formatter: Formatter, out: PrintStream): Validation[Bootstrap, BootstrapError] = {
     //
     // Determine the mode: If `path/flix.toml` exists then "project" mode else "folder mode".
     //
     val bootstrap = new Bootstrap(path, apiKey)
     val tomlPath = getManifestFile(path)
     if (Files.exists(tomlPath)) {
-      out.println("Found `flix.toml'. Checking dependencies...")
+      out.println(s"Found `${formatter.blue("flix.toml")}`. Checking dependencies...")
       Validation.mapN(bootstrap.projectMode())(_ => bootstrap)
     } else {
-      out.println("No `flix.toml'. Will load source files from `*.flix`, `src/**`, and `test/**`.")
+      out.println(s"""No `${formatter.blue("flix.toml")}`. Will load source files from `${formatter.blue("*.flix")}`, `${formatter.blue("src/**")}`, and `${formatter.blue("test/**")}`.""")
       Validation.mapN(bootstrap.folderMode())(_ => bootstrap)
     }
   }
@@ -364,7 +363,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Then makes a list of all flix source files, flix packages
     * and .jar files that this project uses.
     */
-  private def projectMode()(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+  private def projectMode()(implicit formatter: Formatter, out: PrintStream): Validation[Unit, BootstrapError] = {
     // 1. Read, parse, and validate flix.toml.
     val tomlPath = Bootstrap.getManifestFile(projectPath)
     val manifest = ManifestParser.parse(tomlPath) match {
@@ -502,7 +501,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds a jar package for the project.
     */
-  def buildJar(): Validation[Unit, BootstrapError] = {
+  def buildJar()(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+
     // The path to the jar file.
     val jarFile = Bootstrap.getJarFile(projectPath)
 
@@ -511,7 +511,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Check whether it is safe to write to the file.
     if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
-      return Validation.toHardFailure(BootstrapError.FileError(s"The path '$jarFile' exists and is not a jar-file. Refusing to overwrite."))
+      return Validation.toHardFailure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
     }
 
     // Construct a new zip file.
@@ -541,10 +541,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Builds a flix package for the project.
     */
-  def buildPkg(): Validation[Unit, BootstrapError] = {
+  def buildPkg()(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+
     // Check that there is a `flix.toml` file.
     if (!Files.exists(getManifestFile(projectPath))) {
-      return Validation.toHardFailure(BootstrapError.FileError("Cannot create a Flix package without a `flix.toml` file."))
+      return Validation.toHardFailure(BootstrapError.FileError(s"Cannot create a Flix package without a `${formatter.red("flix.toml")}` file."))
     }
 
     // Create the artifact directory, if it does not exist.
@@ -555,7 +556,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     // Check whether it is safe to write to the file.
     if (Files.exists(pkgFile) && !Bootstrap.isPkgFile(pkgFile)) {
-      return Validation.toHardFailure(BootstrapError.FileError(s"The path '$pkgFile' exists and is not a fpkg-file. Refusing to overwrite."))
+      return Validation.toHardFailure(BootstrapError.FileError(s"The path '${formatter.red(pkgFile.toString)}' exists and is not a fpkg-file. Refusing to overwrite."))
     }
 
     // Copy the `flix.toml` to the artifact directory.
@@ -600,7 +601,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     Validation.mapN(flix.check()) {
       root =>
-        JsonDocumentor.run(root)(flix)
         HtmlDocumentor.run(root)(flix)
     }.toHardResult match {
       case Result.Ok(_) => Validation.success(())
@@ -637,6 +637,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     * Package the current project and release it on GitHub.
     */
   def release(flix: Flix)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+    implicit val formatter: Formatter = flix.getFormatter
+
     // Ensure that we have a manifest
     val manifest = optManifest match {
       case Some(m) => m
@@ -657,7 +659,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     if (!flix.options.assumeYes) {
       // Ask for confirmation
-      out.print(s"Release github:$githubRepo v${manifest.version}? [y/N]: ")
+      out.print(s"Release ${formatter.blue(s"github:$githubRepo")} ${formatter.yellow(s"v${manifest.version}")}? [y/N]: ")
       val response = readLine()
       response.toLowerCase match {
         case "y" => // Continue
@@ -683,12 +685,12 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Err(e) => return Validation.toHardFailure(BootstrapError.ReleaseError(e))
     }
 
-    out.println(
+    out.println(formatter.green(
       s"""
          |Successfully released v${manifest.version}
-         |https://github.com/${githubRepo.owner}/${githubRepo.repo}/releases/tag/v${manifest.version}
+         |${formatter.underline(s"https://github.com/${githubRepo.owner}/${githubRepo.repo}/releases/tag/v${manifest.version}")}
          |""".stripMargin
-    )
+    ))
 
     Validation.success(())
   }

@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.api.Bootstrap
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.tools.pkg.Dependency.MavenDependency
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk}
 
 import java.io.PrintStream
@@ -38,7 +38,7 @@ object MavenPackageManager {
     * dependencies using coursier in the /lib/cache folder of `path`.
     * Returns a list of paths to the downloadet .jars.
     */
-  def installAll(manifests: List[Manifest], path: Path)(implicit out: PrintStream): Result[List[Path], PackageError] = {
+  def installAll(manifests: List[Manifest], path: Path)(implicit formatter: Formatter, out: PrintStream): Result[List[Path], PackageError] = {
     out.println("Resolving Maven dependencies...")
 
     val depStrings = manifests.flatMap(manifest => getMavenDependencyStrings(manifest))
@@ -56,7 +56,7 @@ object MavenPackageManager {
 
         val fetch = resolution.dependencies.foldLeft(Fetch())(
           (f, dep) => {
-            out.println(s"  Adding `${dep.module}' (${dep.version}).")
+            out.println(s"  Adding `${formatter.blue(dep.module.toString)}' (${formatter.cyan(s"v${dep.version}")}).")
             f.addDependencies(dep)
         })
         out.println("  Running Maven dependency resolver.")
