@@ -191,7 +191,7 @@ object Reducer {
       // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
 
       // Return the types in the defn.
-      cParamTypes ++ expressionTypes + defn.arrowType + defn.originalTpe
+      cParamTypes ++ expressionTypes + defn.arrowType + defn.unboxedType.tpe
     }
 
     def visitExp(exp0: Expr): Set[MonoType] = (exp0 match {

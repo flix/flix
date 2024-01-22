@@ -43,10 +43,10 @@ object Eraser {
 
   private def visitDef(defn: Def): Def = defn match {
     case Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, originalTpe, purity, loc) =>
-      if (tpe != originalTpe) throw InternalCompilerException(s"Types in def do not align. tpe = '$tpe', originalTpe = '$originalTpe'", loc)
+      if (tpe != originalTpe.tpe) throw InternalCompilerException(s"Types in def do not align. tpe = '$tpe', originalTpe = '$originalTpe'", loc)
       val eNew = visitExp(exp)
       val e = Expr.ApplyAtomic(AtomicOp.Box, List(eNew), box(tpe), purity, loc)
-      Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), lparams.map(visitLocalParam), pcPoints, e, box(tpe), erase(originalTpe), purity, loc)
+      Def(ann, mod, sym, cparams.map(visitParam), fparams.map(visitParam), lparams.map(visitLocalParam), pcPoints, e, box(tpe), UnboxedType(erase(originalTpe.tpe)), purity, loc)
   }
 
   private def visitParam(fp: FormalParam): FormalParam = fp match {

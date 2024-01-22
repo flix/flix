@@ -74,7 +74,7 @@ object GenNamespaceClasses {
 
     // Erased argument and result type.
     val erasedArgs = defn.fparams.map(_.tpe).map(JvmOps.getErasedJvmType)
-    val erasedResult = JvmOps.getErasedJvmType(defn.originalTpe)
+    val erasedResult = JvmOps.getErasedJvmType(defn.unboxedType.tpe)
 
     // Method header
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, name, AsmOps.getMethodDescriptor(erasedArgs, erasedResult), null, null)
@@ -101,7 +101,7 @@ object GenNamespaceClasses {
       // Incrementing the offset
       offset += AsmOps.getStackSize(arg)
     }
-    BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.originalTpe))(new BytecodeInstructions.F(method))
+    BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.unboxedType.tpe))(new BytecodeInstructions.F(method))
     // no erasure here because the ns function works on erased values
 
     // Return
