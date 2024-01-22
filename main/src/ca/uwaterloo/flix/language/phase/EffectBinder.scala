@@ -86,7 +86,7 @@ object EffectBinder {
       val exp = visitExpr(exp0)
       // OBS lctx.pcPoints is mutated by visitExpr
       val pcPoints = lctx.pcPoints
-      ReducedAst.Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, purity, loc)
+      ReducedAst.Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, tpe, purity, loc)
   }
 
   private def visitEnum(e: LiftedAst.Enum): ReducedAst.Enum = e match {
