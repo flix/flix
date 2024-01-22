@@ -71,7 +71,8 @@ object JvmBackend {
       // Second, generate classes.
       //
 
-      val mainClass = GenMainClass.gen()
+      def genMain(defn: Def): (JvmName, JvmClass) = genClass(BackendObjType.Main(defn.sym))
+      val mainClass = root.getMain.map(main => Map(genMain(main))).getOrElse(Map.empty)
 
       val namespaceClasses = GenNamespaceClasses.gen(namespaces)
 
