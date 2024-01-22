@@ -57,7 +57,7 @@ object Loader {
         defn.method = method
       }
 
-      if (shouldMainExist) {
+      if (root.getMain.isDefined) {
         val mainName = JvmName.Main
         val mainInternalName = mainName.toInternalName
         val mainClass = loadedClasses.getOrElse(mainName, throw InternalCompilerException(s"Class not found: '$mainInternalName'.", SourceLocation.Unknown))
@@ -80,11 +80,6 @@ object Loader {
         Some(mainFunction)
       } else None
     }
-  }
-
-  private def shouldMainExist(implicit root: Root): Boolean = {
-    // These two lookups match the condition that genMainClass has for generation.
-    root.entryPoint.flatMap(root.defs.get).isDefined
   }
 
   /**
