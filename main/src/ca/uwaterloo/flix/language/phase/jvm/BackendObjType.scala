@@ -710,8 +710,6 @@ object BackendObjType {
       cm.mkField(EndLineField)
       cm.mkField(EndColField)
 
-      cm.mkMethod(EqualsMethod)
-      cm.mkMethod(HashCodeMethod)
       cm.mkMethod(ToStringMethod)
 
       cm.closeClassMaker()
@@ -755,59 +753,6 @@ object BackendObjType {
         // create the string
         INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ ARETURN()
     ))
-
-    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(_ =>
-      withName(1, JavaObject.toTpe) { otherObj =>
-        // check exact equality
-        thisLoad() ~
-          otherObj.load() ~
-          ifCondition(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
-          // check `other == null`
-          otherObj.load() ~
-          ifCondition(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
-          // the class equality
-          thisLoad() ~
-          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          otherObj.load() ~
-          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          ifCondition(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
-          // check individual fields
-          otherObj.load() ~
-          CHECKCAST(this.jvmName) ~
-          storeWithName(2, this.toTpe) { otherLoc =>
-            thisLoad() ~ GETFIELD(BeginLineField) ~
-              otherLoc.load() ~ GETFIELD(BeginLineField) ~
-              ifCondition(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
-              thisLoad() ~ GETFIELD(BeginColField) ~
-              otherLoc.load() ~ GETFIELD(BeginColField) ~
-              ifCondition(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
-              thisLoad() ~ GETFIELD(EndLineField) ~
-              otherLoc.load() ~ GETFIELD(EndLineField) ~
-              ifCondition(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
-              thisLoad() ~ GETFIELD(EndColField) ~
-              otherLoc.load() ~ GETFIELD(EndColField) ~
-              ifCondition(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
-              thisLoad() ~ GETFIELD(SourceField) ~
-              otherLoc.load() ~ GETFIELD(SourceField) ~
-              INVOKESTATIC(Objects.EqualsMethod) ~
-              IRETURN()
-          }
-      }
-    ))
-
-    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(_ =>
-      ICONST_5() ~ ANEWARRAY(JavaObject.jvmName) ~
-        DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(SourceField) ~ AASTORE() ~
-        DUP() ~ ICONST_1() ~ thisLoad() ~ GETFIELD(BeginLineField) ~ boxInt() ~ AASTORE() ~
-        DUP() ~ ICONST_2() ~ thisLoad() ~ GETFIELD(BeginColField) ~ boxInt() ~ AASTORE() ~
-        DUP() ~ ICONST_3() ~ thisLoad() ~ GETFIELD(EndLineField) ~ boxInt() ~ AASTORE() ~
-        DUP() ~ ICONST_4() ~ thisLoad() ~ GETFIELD(EndColField) ~ boxInt() ~ AASTORE() ~
-        INVOKESTATIC(Objects.HashMethod) ~
-        IRETURN()
-    ))
-
-    private def boxInt(): InstructionSet = INVOKESTATIC(JvmName.Integer, "valueOf",
-      mkDescriptor(BackendType.Int32)(JvmName.Integer.toTpe))
   }
 
   case object Global extends BackendObjType with Generatable {
@@ -910,10 +855,6 @@ object BackendObjType {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, FlixError.jvmName)
 
       cm.mkConstructor(Constructor)
-      cm.mkField(HoleField)
-      cm.mkField(LocationField)
-      cm.mkMethod(EqualsMethod)
-      cm.mkMethod(HashCodeMethod)
 
       cm.closeClassMaker()
     }
@@ -932,62 +873,10 @@ object BackendObjType {
               loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
               INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
               INVOKESPECIAL(FlixError.Constructor) ~
-              // save the arguments locally
-              thisLoad() ~ hole.load() ~ PUTFIELD(HoleField) ~
-              thisLoad() ~ loc.load() ~ PUTFIELD(LocationField) ~
               RETURN()
           }
         }
       ))
-
-    private def HoleField: InstanceField =
-      InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "hole", String.toTpe)
-
-    private def LocationField: InstanceField =
-      InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
-
-    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(_ =>
-      withName(1, JavaObject.toTpe) { other =>
-        // check exact equality
-        thisLoad() ~ other.load() ~
-          ifCondition(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
-          // check for null
-          other.load() ~
-          ifCondition(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
-          // check for class equality
-          thisLoad() ~
-          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          other.load() ~
-          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          ifCondition(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
-          // cast the other obj
-          other.load() ~ CHECKCAST(this.jvmName) ~
-          storeWithName(2, HoleError.toTpe) { otherHoleError =>
-            // compare the hole field
-            thisLoad() ~ GETFIELD(HoleField) ~
-              otherHoleError.load() ~ GETFIELD(HoleField) ~
-              INVOKESTATIC(Objects.EqualsMethod) ~
-              ifCondition(Condition.EQ)(pushBool(false) ~ IRETURN()) ~
-              // compare the location field
-              thisLoad() ~ GETFIELD(LocationField) ~
-              otherHoleError.load() ~ GETFIELD(LocationField) ~
-              INVOKESTATIC(Objects.EqualsMethod) ~
-              IRETURN()
-          }
-      }
-    ))
-
-    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(_ =>
-      ICONST_2() ~
-        ANEWARRAY(JavaObject.jvmName) ~
-        // store hole
-        DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(HoleField) ~ AASTORE() ~
-        // store location
-        DUP() ~ ICONST_1() ~ thisLoad() ~ GETFIELD(LocationField) ~ AASTORE() ~
-        // hash the array
-        INVOKESTATIC(Objects.HashMethod) ~
-        IRETURN()
-    ))
   }
 
   case object MatchError extends BackendObjType with Generatable {
@@ -996,11 +885,6 @@ object BackendObjType {
       val cm = ClassMaker.mkClass(MatchError.jvmName, IsFinal, superClass = FlixError.jvmName)
 
       cm.mkConstructor(Constructor)
-
-      cm.mkField(LocationField)
-
-      cm.mkMethod(EqualsMethod)
-      cm.mkMethod(HashCodeMethod)
 
       cm.closeClassMaker()
     }
@@ -1015,45 +899,7 @@ object BackendObjType {
         INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
         INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
         INVOKESPECIAL(FlixError.Constructor) ~
-        thisLoad() ~
-        ALOAD(1) ~
-        PUTFIELD(MatchError.LocationField) ~
         RETURN()
-    ))
-
-    def LocationField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
-
-    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(_ =>
-      withName(1, JavaObject.toTpe) { otherObj =>
-        // check exact equality
-        thisLoad() ~
-          otherObj.load() ~
-          ifCondition(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
-          // check `other == null`
-          otherObj.load() ~
-          ifCondition(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
-          // the class equality
-          thisLoad() ~
-          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          otherObj.load() ~
-          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          ifCondition(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
-          // check individual fields
-          ALOAD(1) ~ CHECKCAST(this.jvmName) ~
-          storeWithName(2, this.toTpe) { otherErr =>
-            thisLoad() ~ GETFIELD(LocationField) ~
-              otherErr.load() ~ GETFIELD(MatchError.LocationField) ~
-              INVOKESTATIC(Objects.EqualsMethod) ~
-              IRETURN()
-          }
-      }
-    ))
-
-    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(_ =>
-      ICONST_1() ~ ANEWARRAY(JavaObject.jvmName) ~
-        DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(LocationField) ~ AASTORE() ~
-        INVOKESTATIC(Objects.HashMethod) ~
-        IRETURN()
     ))
   }
 
