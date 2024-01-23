@@ -24,15 +24,13 @@ mod Test.Handler.Spawn.Float32 {
 
     def runGenAsk(tx: Sender[Float32, rc]): Unit \ rc =
         try {
-            do Ask.ask(
-                try {
-                    do Gen.gen()
-                } with Gen {
-                    def gen(k) = k(21.0f32)
-                }
-            )
+            try {
+                do Ask.ask(do Gen.gen())
+            } with Gen {
+                def gen(k) = k(42.0f32)
+            }
         } with Ask {
-            def ask(x, _) = Channel.send(21.0f32 + x, tx)
+            def ask(x, _) = Channel.send(x + x, tx)
         }
 
     @Test
@@ -60,6 +58,6 @@ mod Test.Handler.Spawn.Float32 {
             spawn runGenAsk(tx) @ rc;
             Channel.recv(rx)
         };
-        Assert.eq(42.0f32, result)
+        Assert.eq(84.0f32, result)
 
 }
