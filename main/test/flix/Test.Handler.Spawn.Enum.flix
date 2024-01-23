@@ -24,16 +24,14 @@ mod Test.Handler.Spawn.Enum {
 
     def runGenAsk(tx: Sender[Option[Int32], rc]): Unit \ rc =
         try {
-            do Ask.ask(
-                try {
-                    do Gen.gen()
-                } with Gen {
-                    def gen(k) = k(Some(21))
-                }
-            )
+            try {
+                do Ask.ask(do Gen.gen())
+            } with Gen {
+                def gen(k) = k(42)
+            }
         } with Ask {
             def ask(x, _) = match x {
-                case Some(x1) => Channel.send(Some(21 + x1), tx)
+                case Some(x1) => Channel.send(Some(x1 + x1), tx)
                 case None     => unreachable!()
             }
         }
@@ -63,6 +61,6 @@ mod Test.Handler.Spawn.Enum {
             spawn runGenAsk(tx) @ rc;
             Channel.recv(rx)
         };
-        Assert.eq(Some(42), result)
+        Assert.eq(Some(84), result)
 
 }
