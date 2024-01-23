@@ -24,15 +24,13 @@ mod Test.Handler.Spawn.Int16 {
 
     def runGenAsk(tx: Sender[Int16, rc]): Unit \ rc =
         try {
-            do Ask.ask(
-                try {
-                    do Gen.gen()
-                } with Gen {
-                    def gen(k) = k(21i16)
-                }
-            )
+            try {
+                do Ask.ask(do Gen.gen())
+            } with Gen {
+                def gen(k) = k(42i16)
+            }
         } with Ask {
-            def ask(x, _) = Channel.send(21i16 + x, tx)
+            def ask(x, _) = Channel.send(x + x, tx)
         }
 
     @Test
@@ -60,6 +58,6 @@ mod Test.Handler.Spawn.Int16 {
             spawn runGenAsk(tx) @ rc;
             Channel.recv(rx)
         };
-        Assert.eq(42i16, result)
+        Assert.eq(84i16, result)
 
 }
