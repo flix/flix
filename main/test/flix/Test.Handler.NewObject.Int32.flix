@@ -15,7 +15,7 @@ mod Test.Handler.NewObject.Int32 {
             try {
               do Ask.ask(42)
             } with Ask {
-                def ask(x, k) = k(Ref.put(x, r))
+                def ask(x, _) = Ref.put(x, r)
             }
     }
 
@@ -25,6 +25,21 @@ mod Test.Handler.NewObject.Int32 {
               Ref.put(do Gen.gen(), r)
             } with Gen {
                 def gen(k) = k(42)
+            }
+    }
+
+    def newGenAskRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
+        def run(_this: Runnable): Unit \ { IO , rc } =
+            try {
+                do Ask.ask(
+                    try {
+                        do Gen.gen()
+                    } with Gen {
+                        def gen(k) = k(42)
+                    }
+                )
+            } with Ask {
+                def ask(x, _) = Ref.put(x + x, r)
             }
     }
 
@@ -46,6 +61,16 @@ mod Test.Handler.NewObject.Int32 {
             run(newGenRunnable(r));
             let result = Ref.get(r);
             Assert.eq(42, result)
+        }
+
+    @Test
+    def testRunnable03(): Bool \ IO =
+        import java.lang.Runnable.run(): Unit \ IO;
+        region rc {
+            let r = Ref.new(rc, 0);
+            run(newGenAskRunnable(r));
+            let result = Ref.get(r);
+            Assert.eq(84, result)
         }
 
 }
