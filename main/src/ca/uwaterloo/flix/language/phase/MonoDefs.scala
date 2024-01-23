@@ -291,7 +291,6 @@ object MonoDefs {
       // Reassemble the AST.
       root.copy(
         defs = ctx.toMap,
-        classes = Map.empty,
         instances = Map.empty,
         sigs = Map.empty
       )
@@ -314,7 +313,6 @@ object MonoDefs {
     // NB: Removes the type parameters as the function is now monomorphic.
     val spec0 = defn.spec
     val spec = Spec(
-      spec0.doc,
       spec0.ann,
       spec0.mod,
       Nil,
@@ -322,7 +320,6 @@ object MonoDefs {
       Scheme(Nil, Nil, Nil, subst(defn.spec.declaredScheme.base)),
       subst(spec0.retTpe),
       subst(spec0.eff),
-      spec0.tconstrs,
       spec0.loc
     )
     val specializedDefn = defn.copy(sym = freshSym, spec = spec, exp = specializedExp)
@@ -662,9 +659,9 @@ object MonoDefs {
    * Returns the new formal parameter and an environment mapping the variable symbol to a fresh variable symbol.
    */
   private def specializeFormalParam(fparam0: FormalParam, subst0: StrictSubstitution)(implicit flix: Flix): (FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
-    val FormalParam(sym, mod, tpe, src, loc) = fparam0
+    val FormalParam(sym, mod, tpe, loc) = fparam0
     val freshSym = Symbol.freshVarSym(sym)
-    (FormalParam(freshSym, mod, subst0(tpe), src, loc), Map(sym -> freshSym))
+    (FormalParam(freshSym, mod, subst0(tpe), loc), Map(sym -> freshSym))
   }
 
   /**

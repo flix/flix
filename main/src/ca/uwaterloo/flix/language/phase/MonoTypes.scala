@@ -140,12 +140,12 @@ object MonoTypes {
     * Returns a [[LoweredAst.Spec]] with specialized enums and without aliases in its types.
     */
   private def visitSpec(spec: LoweredAst.Spec)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): LoweredAst.Spec = spec match {
-    case LoweredAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, tconstrs, loc) =>
+    case LoweredAst.Spec(ann, mod, tparams, fparams, declaredScheme, retTpe, eff, loc) =>
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
       val rt = visitType(retTpe)
       val p = visitType(eff)
-      LoweredAst.Spec(doc, ann, mod, tparams, fs, ds, rt, p, tconstrs, loc)
+      LoweredAst.Spec(ann, mod, tparams, fs, ds, rt, p, loc)
   }
 
   /**
@@ -410,9 +410,9 @@ object MonoTypes {
     * Returns a formal param with specialized enums in its type and no aliases.
     */
   private def visitFormalParam(p: LoweredAst.FormalParam)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): LoweredAst.FormalParam = p match {
-    case LoweredAst.FormalParam(sym, mod, tpe, src, loc) =>
+    case LoweredAst.FormalParam(sym, mod, tpe, loc) =>
       val t = visitType(tpe)
-      LoweredAst.FormalParam(sym, mod, t, src, loc)
+      LoweredAst.FormalParam(sym, mod, t, loc)
   }
 
   /**
@@ -460,10 +460,9 @@ object MonoTypes {
     * Specialize the given case `caze` belonging to the given enum `enumSym`.
     */
   private def specializeCase(enumSym: Symbol.EnumSym, caze: LoweredAst.Case, subst: Substitution)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): (Symbol.CaseSym, LoweredAst.Case) = caze match {
-    case LoweredAst.Case(caseSym, caseTpe, caseSc, caseLoc) =>
+    case LoweredAst.Case(caseSym, caseTpe, caseLoc) =>
       val freshCaseSym = new Symbol.CaseSym(enumSym, caseSym.name, caseSym.loc)
-      val newCaseSc = Scheme(caseSc.quantifiers, caseSc.tconstrs, caseSc.econstrs, subst(caseSc.base))
-      val caze = LoweredAst.Case(freshCaseSym, visitType(subst(caseTpe)), visitScheme(newCaseSc), caseLoc)
+      val caze = LoweredAst.Case(freshCaseSym, visitType(subst(caseTpe)), caseLoc)
       (freshCaseSym, caze)
   }
 

@@ -153,17 +153,12 @@ object Lowering {
     val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val restrictableEnums = ParOps.parMapValues(root.restrictableEnums)(visitRestrictableEnum)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
-    val aliases = ParOps.parMapValues(root.typeAliases)(visitTypeAlias)
-
-    // TypedAst.Sigs are shared between the `sigs` field and the `classes` field.
-    // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting classes.
-    val classes = ParOps.parMapValues(root.classes)(c => visitClass(c, sigs))
 
     val newEnums = enums ++ restrictableEnums.map {
       case (_, v) => v.sym -> v
     }
 
-    LoweredAst.Root(classes, instances, sigs, defs, newEnums, effects, aliases, root.entryPoint, root.reachable, root.sources, root.classEnv, root.eqEnv)
+    LoweredAst.Root(instances, sigs, defs, newEnums, effects, root.entryPoint, root.reachable, root.sources, root.eqEnv)
   }
 
   /**
@@ -190,51 +185,44 @@ object Lowering {
     * Lowers the given instance `inst0`.
     */
   private def visitInstance(inst0: TypedAst.Instance)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Instance = inst0 match {
-    case TypedAst.Instance(doc, ann, mod, sym, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
-      val tpe = visitType(tpe0)
-      val tconstrs = tconstrs0.map(visitTypeConstraint)
-      val assocs = assocs0.map {
-        case TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) => LoweredAst.AssocTypeDef(doc, mod, sym, args, tpe, loc)
-      }
+    case TypedAst.Instance(_, _, _, _, _, _, _, defs0, _, _) =>
       val defs = defs0.map(visitDef)
-      LoweredAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
+      LoweredAst.Instance(defs)
   }
 
   /**
     * Lowers the given enum `enum0`.
     */
   private def visitEnum(enum0: TypedAst.Enum)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Enum = enum0 match {
-    case TypedAst.Enum(doc, ann, mod, sym, tparams0, derives, cases0, tpe0, loc) =>
+    case TypedAst.Enum(_, ann, mod, sym, tparams0, _, cases0, tpe0, loc) =>
       val tparams = tparams0.map(visitTypeParam)
       val tpe = visitType(tpe0)
       val cases = cases0.map {
-        case (_, TypedAst.Case(caseSym, caseTpeDeprecated0, caseSc0, loc)) =>
+        case (_, TypedAst.Case(caseSym, caseTpeDeprecated0, _, loc)) =>
           val caseTpeDeprecated = visitType(caseTpeDeprecated0)
-          val caseSc = visitScheme(caseSc0)
-          (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, caseSc, loc))
+          (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, loc))
       }
-      LoweredAst.Enum(doc, ann, mod, sym, tparams, derives, cases, tpe, loc)
+      LoweredAst.Enum(ann, mod, sym, tparams, cases, tpe, loc)
   }
 
   /**
     * Lowers the given enum `enum0` from a restrictable enum into a regular enum.
     */
   private def visitRestrictableEnum(enum0: TypedAst.RestrictableEnum)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Enum = enum0 match {
-    case TypedAst.RestrictableEnum(doc, ann, mod, sym0, index0, tparams0, derives, cases0, tpe0, loc) =>
+    case TypedAst.RestrictableEnum(_, ann, mod, sym0, index0, tparams0, _, cases0, tpe0, loc) =>
       // index is erased since related checking has concluded.
       // Restrictable tag is lowered into a regular tag
       val index = visitTypeParam(index0)
       val tparams = tparams0.map(visitTypeParam)
       val tpe = visitType(tpe0)
       val cases = cases0.map {
-        case (_, TypedAst.RestrictableCase(caseSym0, caseTpeDeprecated0, caseSc0, loc)) =>
+        case (_, TypedAst.RestrictableCase(caseSym0, caseTpeDeprecated0, _, loc)) =>
           val caseTpeDeprecated = visitType(caseTpeDeprecated0)
-          val caseSc = visitScheme(caseSc0)
           val caseSym = visitRestrictableCaseSym(caseSym0)
-          (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, caseSc, loc))
+          (caseSym, LoweredAst.Case(caseSym, caseTpeDeprecated, loc))
       }
       val sym = visitRestrictableEnumSym(sym0)
-      LoweredAst.Enum(doc, ann, mod, sym, index :: tparams, derives, cases, tpe, loc)
+      LoweredAst.Enum(ann, mod, sym, index :: tparams, cases, tpe, loc)
   }
 
   /**
@@ -262,9 +250,9 @@ object Lowering {
     * Lowers the given `effect`.
     */
   private def visitEffect(effect: TypedAst.Effect)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Effect = effect match {
-    case TypedAst.Effect(doc, ann, mod, sym, ops0, loc) =>
+    case TypedAst.Effect(_, ann, mod, sym, ops0, loc) =>
       val ops = ops0.map(visitOp)
-      LoweredAst.Effect(doc, ann, mod, sym, ops, loc)
+      LoweredAst.Effect(ann, mod, sym, ops, loc)
   }
 
   /**
@@ -277,55 +265,21 @@ object Lowering {
   }
 
   /**
-    * Lowers the given type `alias`.
-    */
-  private def visitTypeAlias(alias: TypedAst.TypeAlias)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.TypeAlias = alias match {
-    case TypedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
-      val tparams = tparams0.map(visitTypeParam)
-      val tpe = visitType(tpe0)
-      LoweredAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
-  }
-
-  /**
-    * Lowers the given type constraint `tconstr0`.
-    */
-  private def visitTypeConstraint(tconstr0: Ast.TypeConstraint)(implicit root: TypedAst.Root, flix: Flix): Ast.TypeConstraint = tconstr0 match {
-    case Ast.TypeConstraint(head, tpe0, loc) =>
-      val tpe = visitType(tpe0)
-      Ast.TypeConstraint(head, tpe, loc)
-  }
-
-  /**
-    * Lowers the given class `clazz0`, with the given lowered sigs `sigs`.
-    */
-  private def visitClass(clazz0: TypedAst.Class, sigs: Map[Symbol.SigSym, LoweredAst.Sig])(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Class = clazz0 match {
-    case TypedAst.Class(doc, ann, mod, sym, tparam0, superClasses0, assocs0, signatures0, laws0, loc) =>
-      val tparam = visitTypeParam(tparam0)
-      val superClasses = superClasses0.map(visitTypeConstraint)
-      val assocs = assocs0.map {
-        case TypedAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc) => LoweredAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc)
-      }
-      val signatures = signatures0.map(sig => sigs(sig.sym))
-      val laws = laws0.map(visitDef)
-      LoweredAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, signatures, laws, loc)
-  }
-
-  /**
     * Lowers the given `spec0`.
     */
   private def visitSpec(spec0: TypedAst.Spec)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Spec = spec0 match {
-    case TypedAst.Spec(doc, ann, mod, tparams0, fparams, declaredScheme, retTpe, eff, tconstrs, econstrs, loc) => // TODO ASSOC-TYPES econstrs needed in lowering?
+    case TypedAst.Spec(_, ann, mod, tparams0, fparams, declaredScheme, retTpe, eff, _, econstrs, loc) => // TODO ASSOC-TYPES econstrs needed in lowering?
       val tparam = tparams0.map(visitTypeParam)
       val fs = fparams.map(visitFormalParam)
       val ds = visitScheme(declaredScheme)
-      LoweredAst.Spec(doc, ann, mod, tparam, fs, ds, retTpe, eff, tconstrs, loc)
+      LoweredAst.Spec(ann, mod, tparam, fs, ds, retTpe, eff, loc)
   }
 
   /**
     * Lowers the given `tparam`.
     */
   private def visitTypeParam(tparam: TypedAst.TypeParam)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.TypeParam = tparam match {
-    case TypedAst.TypeParam(name, sym, loc) => LoweredAst.TypeParam(name, sym, loc)
+    case TypedAst.TypeParam(name, sym, _) => LoweredAst.TypeParam(name, sym)
   }
 
   /**
@@ -904,9 +858,9 @@ object Lowering {
     * Lowers the given formal parameter `fparam0`.
     */
   private def visitFormalParam(fparam0: TypedAst.FormalParam)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.FormalParam = fparam0 match {
-    case TypedAst.FormalParam(sym, mod, tpe, src, loc) =>
+    case TypedAst.FormalParam(sym, mod, tpe, _, loc) =>
       val t = visitType(tpe)
-      LoweredAst.FormalParam(sym, mod, t, src, loc)
+      LoweredAst.FormalParam(sym, mod, t, loc)
   }
 
   /**
@@ -1263,7 +1217,7 @@ object Lowering {
     if (fvs.isEmpty) {
       val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
       // Construct a lambda that takes the unit argument.
-      val fparam = LoweredAst.FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, loc)
+      val fparam = LoweredAst.FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = LoweredAst.Expr.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.BodyPredicate, s"Guard0", lambdaExp, Types.BodyPredicate, loc)
@@ -1281,7 +1235,7 @@ object Lowering {
     val lambdaExp = fvs.foldRight(freshExp) {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
-        val fparam = LoweredAst.FormalParam(freshSym, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+        val fparam = LoweredAst.FormalParam(freshSym, Ast.Modifiers.Empty, tpe, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
         LoweredAst.Expr.Lambda(fparam, acc, lambdaType, loc)
     }
@@ -1328,7 +1282,7 @@ object Lowering {
     val lambdaExp = inVars.foldRight(freshExp) {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
-        val fparam = LoweredAst.FormalParam(freshSym, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+        val fparam = LoweredAst.FormalParam(freshSym, Ast.Modifiers.Empty, tpe, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
         LoweredAst.Expr.Lambda(fparam, acc, lambdaType, loc)
     }
@@ -1359,7 +1313,7 @@ object Lowering {
     if (fvs.isEmpty) {
       val sym = Symbol.freshVarSym("_unit", BoundBy.FormalParam, loc)
       // Construct a lambda that takes the unit argument.
-      val fparam = LoweredAst.FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, loc)
+      val fparam = LoweredAst.FormalParam(sym, Ast.Modifiers.Empty, Type.Unit, loc)
       val tpe = Type.mkPureArrow(Type.Unit, exp.tpe, loc)
       val lambdaExp = LoweredAst.Expr.Lambda(fparam, exp, tpe, loc)
       return mkTag(Enums.HeadTerm, s"App0", lambdaExp, Types.HeadTerm, loc)
@@ -1377,7 +1331,7 @@ object Lowering {
     val lambdaExp = fvs.foldRight(freshExp) {
       case ((oldSym, tpe), acc) =>
         val freshSym = freshVars(oldSym)
-        val fparam = LoweredAst.FormalParam(freshSym, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)
+        val fparam = LoweredAst.FormalParam(freshSym, Ast.Modifiers.Empty, tpe, loc)
         val lambdaType = Type.mkPureArrow(tpe, acc.tpe, loc)
         LoweredAst.Expr.Lambda(fparam, acc, lambdaType, loc)
     }
@@ -1913,9 +1867,9 @@ object Lowering {
     * Applies the given substitution `subst` to the given formal param `fparam0`.
     */
   private def substFormalParam(fparam0: LoweredAst.FormalParam, subst: Map[Symbol.VarSym, Symbol.VarSym]): LoweredAst.FormalParam = fparam0 match {
-    case LoweredAst.FormalParam(sym, mod, tpe, src, loc) =>
+    case LoweredAst.FormalParam(sym, mod, tpe, loc) =>
       val s = subst.getOrElse(sym, sym)
-      LoweredAst.FormalParam(s, mod, tpe, src, loc)
+      LoweredAst.FormalParam(s, mod, tpe, loc)
   }
 
 }

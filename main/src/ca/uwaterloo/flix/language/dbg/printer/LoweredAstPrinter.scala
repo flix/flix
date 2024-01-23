@@ -26,15 +26,15 @@ object LoweredAstPrinter {
     */
   def print(root: LoweredAst.Root): DocAst.Program = {
     val enums = root.enums.values.map {
-      case LoweredAst.Enum(_, ann, mod, sym, tparams, _, cases0, _, _) =>
+      case LoweredAst.Enum(ann, mod, sym, tparams, cases0, _, _) =>
         val cases = cases0.values.map {
-          case LoweredAst.Case(sym, tpe, _, _) =>
+          case LoweredAst.Case(sym, tpe, _) =>
             DocAst.Case(sym, TypePrinter.print(tpe))
         }.toList
         DocAst.Enum(ann, mod, sym, tparams.map(printTypeParam), cases)
     }.toList
     val defs = root.defs.values.map {
-      case LoweredAst.Def(sym, LoweredAst.Spec(_, ann, mod, _, fparams, _, retTpe, eff, _, _), exp) =>
+      case LoweredAst.Def(sym, LoweredAst.Spec(ann, mod, _, fparams, _, retTpe, eff, _), exp) =>
         DocAst.Def(
           ann,
           mod,
@@ -141,7 +141,7 @@ object LoweredAstPrinter {
     * Returns the [[DocAst.Expression.Ascription]] representation of `fp`.
     */
   private def printFormalParam(fp: LoweredAst.FormalParam): DocAst.Expression.Ascription = {
-    val LoweredAst.FormalParam(sym, _, tpe, _, _) = fp
+    val LoweredAst.FormalParam(sym, _, tpe, _) = fp
     DocAst.Expression.Ascription(DocAst.Expression.Var(sym), TypePrinter.print(tpe))
   }
 
@@ -149,7 +149,7 @@ object LoweredAstPrinter {
     * Returns the [[DocAst.TypeParam]] representation of `tp`.
     */
   private def printTypeParam(tp: LoweredAst.TypeParam): DocAst.TypeParam = tp match {
-    case LoweredAst.TypeParam(_, sym, _) =>
+    case LoweredAst.TypeParam(_, sym) =>
       DocAst.TypeParam(sym)
   }
 }
