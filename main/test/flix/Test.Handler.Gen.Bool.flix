@@ -19,15 +19,13 @@ mod Test.Handler.Gen.Bool {
             }
         }
 
-    def next(b: Bool): Bool = if (b) false else true
-
     def getAndInc(r: Ref[(Int32, Bool), r]): (Int32, Bool) \ r =
         let (i, b) = deref r;
-        r := (i + 1, next(b));
+        r := (i + 1, not b);
         (i, b)
 
     def range(a: Int32, b: Int32): List[Bool] =
-        List.unfold(match (i, v) -> if (i >= b) None else Some((v, (i + 1, next(v)))), (a, true))
+        List.unfold(match (i, v) -> if (i >= b) None else Some((v, (i + 1, not v))), (a, true))
 
     @Test
     def testSample01(): Bool =
