@@ -79,7 +79,7 @@ object QuineMcCluskey {
     if (typeList.size == 1) {
       typeList.head
     } else {
-      Type.mkIntersection(typeList, SourceLocation.Unknown)
+      Type.mkUnion(typeList, SourceLocation.Unknown)
     }
   }
 
@@ -102,7 +102,7 @@ object QuineMcCluskey {
         tpe
       }
     }.toList
-    Type.mkUnion(typeVars, SourceLocation.Unknown)
+    Type.mkIntersection(typeVars, SourceLocation.Unknown)
   }
 
   /**

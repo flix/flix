@@ -148,12 +148,12 @@ trait BoolAlg[F] {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$sym'.", sym.loc)
       case Some(x) => mkVar(x)
     }
-    case Type.Pure => mkTrue
-    case Type.EffUniv => mkFalse
+    case Type.Pure => mkFalse
+    case Type.EffUniv => mkTrue
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => mkNot(fromType(tpe1, env))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => mkAnd(fromType(tpe1, env), fromType(tpe2, env))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => mkOr(fromType(tpe1, env), fromType(tpe2, env))
-    case Type.Cst(TypeConstructor.Error(_), _) => mkTrue
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => mkOr(fromType(tpe1, env), fromType(tpe2, env))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => mkAnd(fromType(tpe1, env), fromType(tpe2, env))
+    case Type.Cst(TypeConstructor.Error(_), _) => mkFalse
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
   }
 

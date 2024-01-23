@@ -119,7 +119,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     if(!flix.options.xnoqmc) {
       toTypeQMC(f, env)
     } else {
-      createTypeFromBDDAux(f, Type.Pure, env)
+      createTypeFromBDDAux(f, Type.EffUniv, env)
     }
   }
 
@@ -132,7 +132,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     */
   private def createTypeFromBDDAux(dd: DD, tpe: Type, env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
     if (dd.isLeaf) {
-      return if (dd.isTrue) tpe else Type.EffUniv
+      return if (dd.isTrue) tpe else Type.Pure
     }
 
     val currentVar = dd.getVariable
@@ -142,16 +142,16 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
       case None => throw InternalCompilerException(s"unexpected unknown ID: $currentVar", SourceLocation.Unknown)
     }
 
-    val lowType = Type.mkApply(Type.Union, List(tpe, Type.Apply(Type.Complement, typeVar, typeVar.loc)), typeVar.loc)
+    val lowType = Type.mkApply(Type.Intersection, List(tpe, Type.Apply(Type.Complement, typeVar, typeVar.loc)), typeVar.loc)
     val lowRes = createTypeFromBDDAux(dd.getLow, lowType, env)
-    val highType = Type.mkApply(Type.Union, List(tpe, typeVar), typeVar.loc)
+    val highType = Type.mkApply(Type.Intersection, List(tpe, typeVar), typeVar.loc)
     val highRes = createTypeFromBDDAux(dd.getHigh, highType, env)
 
     (lowRes, highRes) match {
-      case (Type.EffUniv, Type.EffUniv) => Type.EffUniv
-      case (Type.EffUniv, _) => highRes
-      case (_, Type.EffUniv) => lowRes
-      case (t1, _) => Type.mkApply(Type.Intersection, List(lowRes, highRes), t1.loc)
+      case (Type.Pure, Type.Pure) => Type.Pure
+      case (Type.Pure, _) => highRes
+      case (_, Type.Pure) => lowRes
+      case (t1, _) => Type.mkApply(Type.Union, List(lowRes, highRes), t1.loc)
     }
   }
 
@@ -162,9 +162,9 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     //Easy shortcuts if formula is true, false or a variable
     if (f.isLeaf) {
       if (f.isTrue) {
-        return Type.Pure
-      } else {
         return Type.EffUniv
+      } else {
+        return Type.Pure
       }
     }
     if (isVar(f)) {
