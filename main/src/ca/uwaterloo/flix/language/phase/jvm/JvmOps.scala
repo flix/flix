@@ -67,7 +67,7 @@ object JvmOps {
     case MonoType.Tuple(elms) => JvmType.Reference(BackendObjType.Tuple(elms.map(BackendType.asErasedBackendType)).jvmName)
     case MonoType.RecordEmpty => JvmType.Reference(BackendObjType.Record.jvmName)
     case MonoType.RecordExtend(_, _, _) => JvmType.Reference(BackendObjType.Record.jvmName)
-    case MonoType.Enum(sym) => getEnumInterfaceType(sym)
+    case MonoType.Enum(_) => JvmType.Object
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
 
@@ -187,21 +187,6 @@ object JvmOps {
 
     // The result type.
     JvmType.Reference(JvmName(pkg, name))
-  }
-
-  /**
-    * Returns the enum interface type `IEnum$` for the given type `tpe`.
-    *
-    * For example,
-    *
-    * Color                 =>      IColor$
-    *
-    * NB: The given type `tpe` must be an enum type.
-    */
-  def getEnumInterfaceType(sym: Symbol.EnumSym): JvmType.Reference = {
-    // The enum resides in its namespace package.
-    val name = JvmName.mkClassName("I", sym.name)
-    JvmType.Reference(JvmName(sym.namespace, name))
   }
 
   /**
