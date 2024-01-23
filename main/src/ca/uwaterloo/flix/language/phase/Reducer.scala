@@ -49,12 +49,12 @@ object Reducer {
   }
 
   private def visitDef(d: Def)(implicit ctx: SharedContext): Def = d match {
-    case Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, purity, loc) =>
+    case Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, originalTpe, purity, loc) =>
       implicit val lctx: LocalContext = LocalContext.mk()
       assert(lparams.isEmpty, s"Unexpected def local params before Reducer: $lparams")
       val e = visitExpr(exp)
       val ls = lctx.lparams.toList
-      Def(ann, mod, sym, cparams, fparams, ls, pcPoints, e, tpe, purity, loc)
+      Def(ann, mod, sym, cparams, fparams, ls, pcPoints, e, tpe, originalTpe, purity, loc)
   }
 
   private def visitExpr(exp0: Expr)(implicit lctx: LocalContext, ctx: SharedContext): Expr = exp0 match {
@@ -191,7 +191,7 @@ object Reducer {
       // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
 
       // Return the types in the defn.
-      cParamTypes ++ expressionTypes + defn.arrowType
+      cParamTypes ++ expressionTypes + defn.arrowType + defn.unboxedType.tpe
     }
 
     def visitExp(exp0: Expr): Set[MonoType] = (exp0 match {

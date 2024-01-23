@@ -1,4 +1,4 @@
-mod Test.Handler.Gen {
+mod Test.Handler.Ask {
 
     eff Ask {
         pub def ask(x: Int32): Unit

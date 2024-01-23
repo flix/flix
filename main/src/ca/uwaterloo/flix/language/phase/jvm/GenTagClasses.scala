@@ -61,8 +61,7 @@ object GenTagClasses {
     * public Object value;
     *
     * Classes generated at this step implements the interface corresponding the symbol of the enum case and they include
-    * implementations of following methods: `getTag()`, `getValue()`, `getBoxedTagValue()`,`toString()`, `hashCode()` and
-    * `equals(Object)`.
+    * implementations of following methods: `getTag()`, `getValue()`, `getBoxedTagValue()`, ad `toString()`.
     * `getTag()` is the function which returns the name of the enum case. `getValue()` returns the value of `value` field.
     * `getBoxedTagValue()` returns the `value` field but the result is boxed inside an object. As an example, `getValue()` and
     * `getBoxedTagValue()` of the class representing `Some$123` (corresponding to `Some[Int32]`) is as follows:
@@ -77,19 +76,6 @@ object GenTagClasses {
     *
     * Next, we will generate the `toString()` method.
     *
-    * Next, we will generate the `hashCode()` method which will always throws an exception, since `hashCode` should not be called.
-    * The `hashCode` method is always the following:
-    *
-    * public String hashCode() throws Exception {
-    * throw new Exception("hashCode method shouldn't be called")
-    * }
-    *
-    * Finally, we generate the `equals(Obj)` method which will always throws an exception, since `equals` should not be called.
-    * The `equals` method is always the following:
-    *
-    * public boolean equals(Object var1) throws Exception {
-    * throw new Exception("equals method shouldn't be called");
-    * }
     */
   private def genByteCode(tag: Case)(implicit flix: Flix): Array[Byte] = {
     // The JvmType of the interface for enum of `tag`.
@@ -139,14 +125,6 @@ object GenTagClasses {
     AsmOps.compileGetBoxedTagValueMethod(visitor, classType, valueType)
 
     compileToStringMethod(visitor, classType, tag)
-
-    // Generate the `hashCode` method.
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "hashCode", AsmOps.getMethodDescriptor(Nil, JvmType.PrimInt),
-      "hashCode method shouldn't be called")
-
-    // Generate the `equals` method.
-    AsmOps.compileExceptionThrowerMethod(visitor, ACC_PUBLIC + ACC_FINAL, "equals", AsmOps.getMethodDescriptor(List(JvmType.Object), JvmType.PrimBool),
-      "equals method shouldn't be called")
 
     // Complete the visitor and get the bytecode.
     visitor.visitEnd()

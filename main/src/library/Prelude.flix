@@ -19,15 +19,6 @@ pub enum Proxy[_] {
 pub eff IO
 
 ///
-/// The Non-Deterministic Effect.
-///
-/// The `NonDet` effect represents "functions" that behave like relations,
-/// i.e. they have no side-effects, and given the same input their output
-//// there is a fixed set of output.
-///
-pub eff NonDet
-
-///
 /// The pure identity function.
 ///
 pub def identity(x: a): a = x

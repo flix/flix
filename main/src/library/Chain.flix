@@ -956,7 +956,7 @@ mod Chain {
     ///
     /// Shuffles `c` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, c: Chain[a]): Chain[a] \ NonDet = region rc {
+    pub def shuffle(rnd: Random, c: Chain[a]): Chain[a] \ IO = region rc {
         toArray(rc, c) !> Array.shuffle(rnd) |> Array.toChain
     }
 
