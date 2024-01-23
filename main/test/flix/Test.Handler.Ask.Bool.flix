@@ -1,31 +1,23 @@
-mod Test.Handler.Gen.Bool {
+mod Test.Handler.Ask.Bool {
 
-    eff Gen {
-        pub def gen(): Bool
+    eff Ask {
+        pub def ask(x: Int32): Unit
     }
 
-    def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+    def generator(x: Int32): Unit \ Ask =
+        do Ask.ask(x); generator(x + 1)
 
     def sample(limit: Int32): List[Bool] =
-        region rc {
-            let counter = ref (0, true) @ rc;
-            try {
-                generator(); Nil
-            } with Gen {
-                def gen(k) =
-                    let (i, b) = getAndInc(counter);
-                    if (i == limit) Nil else b :: k(b)
-            }
+        try {
+            generator(0); Nil
+        } with Ask {
+            def ask(x, k) = if (x == limit) Nil else next(x) :: k()
         }
 
-    def getAndInc(r: Ref[(Int32, Bool), r]): (Int32, Bool) \ r =
-        let (i, b) = deref r;
-        r := (i + 1, not b);
-        (i, b)
+    def next(i: Int32): Bool = if (Int32.mod(i, 2) == 0) true else false
 
     def range(a: Int32, b: Int32): List[Bool] =
-        List.unfold(match (i, v) -> if (i >= b) None else Some((v, (i + 1, not v))), (a, true))
+        List.unfold(i -> if (i >= b) None else Some((next(i), i + 1)), a)
 
     @Test
     def testSample01(): Bool =
