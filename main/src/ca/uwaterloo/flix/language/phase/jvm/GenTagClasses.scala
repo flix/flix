@@ -78,9 +78,6 @@ object GenTagClasses {
     *
     */
   private def genByteCode(tag: Case)(implicit flix: Flix): Array[Byte] = {
-    // The JvmType of the interface for enum of `tag`.
-    val superType = JvmOps.getEnumInterfaceType(tag.sym.enumSym)
-
     // The JvmType of the class for `tag`..
     val classType = JvmOps.getTagClassType(tag.sym)
 
@@ -93,11 +90,8 @@ object GenTagClasses {
     // The super class of the generated class.
     val superClass = BackendObjType.JavaObject.jvmName.toInternalName
 
-    // The interfaces implemented by the generated class.
-    val implementedInterfaces = Array(superType.name.toInternalName)
-
     // The class header.
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null, superClass, implementedInterfaces)
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, classType.name.toInternalName, null, superClass, null)
 
     // The source of the generated class.
     visitor.visitSource(classType.name.toInternalName, null)

@@ -856,9 +856,18 @@ object BackendObjType {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, FlixError.jvmName)
 
       cm.mkConstructor(Constructor)
+      // These fields allow external equality checking.
+      cm.mkField(HoleField)
+      cm.mkField(LocationField)
 
       cm.closeClassMaker()
     }
+
+    private def HoleField: InstanceField =
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "hole", String.toTpe)
+
+    private def LocationField: InstanceField =
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic,
       List(String.toTpe, ReifiedSourceLocation.toTpe), Some(_ =>
@@ -874,6 +883,9 @@ object BackendObjType {
               loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
               INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
               INVOKESPECIAL(FlixError.Constructor) ~
+              // save the arguments locally
+              thisLoad() ~ hole.load() ~ PUTFIELD(HoleField) ~
+              thisLoad() ~ loc.load() ~ PUTFIELD(LocationField) ~
               RETURN()
           }
         }
@@ -886,9 +898,13 @@ object BackendObjType {
       val cm = ClassMaker.mkClass(MatchError.jvmName, IsFinal, superClass = FlixError.jvmName)
 
       cm.mkConstructor(Constructor)
+      // This field allows external equality checking.
+      cm.mkField(LocationField)
 
       cm.closeClassMaker()
     }
+
+    def LocationField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(MatchError.jvmName, IsPublic, List(ReifiedSourceLocation.toTpe), Some(_ =>
       thisLoad() ~
@@ -900,6 +916,10 @@ object BackendObjType {
         INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
         INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
         INVOKESPECIAL(FlixError.Constructor) ~
+        // save argument locally
+        thisLoad() ~
+        ALOAD(1) ~
+        PUTFIELD(this.LocationField) ~
         RETURN()
     ))
   }
@@ -910,9 +930,16 @@ object BackendObjType {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = FlixError.jvmName)
 
       cm.mkConstructor(Constructor)
+      // This field allows external equality checking.
+      cm.mkField(EffectNameField)
+      cm.mkField(LocationField)
 
       cm.closeClassMaker()
     }
+
+    def EffectNameField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "effectName", String.toTpe)
+
+    def LocationField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(Suspension.toTpe, ReifiedSourceLocation.toTpe), Some(_ =>
       withName(1, Suspension.toTpe)(suspension => withName(2, ReifiedSourceLocation.toTpe)(loc => {
@@ -929,6 +956,13 @@ object BackendObjType {
         INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
         INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
         INVOKESPECIAL(FlixError.Constructor) ~
+        // save arguments locally
+        thisLoad() ~
+        suspension.load() ~ GETFIELD(Suspension.EffSymField) ~
+        PUTFIELD(EffectNameField) ~
+        thisLoad() ~
+        loc.load() ~
+        PUTFIELD(LocationField) ~
         RETURN()
       }))
     ))
@@ -1528,7 +1562,7 @@ object BackendObjType {
     def InvokeMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "invoke", mkDescriptor()(Result.toTpe))
 
     def RunMethod: DefaultMethod = DefaultMethod(this.jvmName, IsPublic, NotFinal, "run", mkDescriptor()(VoidableType.Void), Some(_ =>
-      thisLoad() ~ Result.unwindThunk() ~ CHECKCAST(Value.jvmName) ~ POP() ~ RETURN()
+      thisLoad() ~ Result.unwindSuspensionFreeThunk(SourceLocation.Unknown) ~ POP() ~ RETURN()
     ))
   }
 
