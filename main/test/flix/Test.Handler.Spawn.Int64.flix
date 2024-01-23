@@ -24,15 +24,13 @@ mod Test.Handler.Spawn.Int64 {
 
     def runGenAsk(tx: Sender[Int64, rc]): Unit \ rc =
         try {
-            do Ask.ask(
-                try {
-                    do Gen.gen()
-                } with Gen {
-                    def gen(k) = k(21i64)
-                }
-            )
+            try {
+                do Ask.ask(do Gen.gen())
+            } with Gen {
+                def gen(k) = k(42i64)
+            }
         } with Ask {
-            def ask(x, _) = Channel.send(21i64 + x, tx)
+            def ask(x, _) = Channel.send(x + x, tx)
         }
 
     @Test
@@ -60,6 +58,6 @@ mod Test.Handler.Spawn.Int64 {
             spawn runGenAsk(tx) @ rc;
             Channel.recv(rx)
         };
-        Assert.eq(42i64, result)
+        Assert.eq(84i64, result)
 
 }
