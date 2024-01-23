@@ -6,7 +6,7 @@ mod Test.Handler.NewObject.Int32 {
         pub def ask(x: Int32): Unit
     }
 
-    def newGenRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
+    def newAskRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
         def run(_this: Runnable): Unit \ { IO , rc} =
             try {
               do Ask.ask(42)
@@ -20,7 +20,7 @@ mod Test.Handler.NewObject.Int32 {
         import java.lang.Runnable.run(): Unit \ IO;
         region rc {
             let r = Ref.new(rc, 0);
-            run(newGenRunnable(r));
+            run(newAskRunnable(r));
             let result = Ref.get(r);
             Assert.eq(42, result)
         }
