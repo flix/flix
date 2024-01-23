@@ -37,42 +37,42 @@ mod Test.Handler.OneShot.Int32 {
         };
         Assert.eq(84, result)
 
-
-///////////////////////////////////////////////////////////////////
-/*
-
     @Test
     def testRecursiveLetRec01(): Bool =
-        def f() = do Throw.throw();
-        def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
+        def f() = do Ask.ask(42);
+        def r(x) = if (x == 0) f() else r(x - 1);
         let result = try {
             r(0)
-        } with Throw {
-            def throw(_k) = 42
+        } with Ask {
+            def ask(x, k) = k(x + x)
         };
-        Assert.eq(42, result)
+        Assert.eq(84, result)
 
     @Test
     def testRecursiveLetRec02(): Bool =
-        def f() = do Throw.throw();
-        def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
+        def f() = do Ask.ask(42);
+        def r(x) = if (x == 0) f() else r(x - 1);
         let result = try {
             r(1)
-        } with Throw {
-            def throw(_k) = 42
+        } with Ask {
+            def ask(x, k) = k(x + x)
         };
-        Assert.eq(42, result)
+        Assert.eq(84, result)
 
     @Test
     def testRecursiveLetRec03(): Bool =
-        def f() = do Throw.throw();
-        def r(x) = if (x == 0) f() else { r(x - 1); unreachable!() } ;
+        def f() = do Ask.ask(42);
+        def r(x) = if (x == 0) f() else r(x - 1);
         let result = try {
             r(10)
-        } with Throw {
-            def throw(_k) = 42
+        } with Ask {
+            def ask(x, k) = k(x + x)
         };
-        Assert.eq(42, result)
+        Assert.eq(84, result)
+
+
+///////////////////////////////////////////////////////////////////
+/*
 
     @Test
     def testMutualRecursive01(): Bool =
