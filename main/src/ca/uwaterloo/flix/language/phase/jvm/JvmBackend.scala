@@ -105,6 +105,7 @@ object JvmBackend {
       val rslClass = Map(genClass(BackendObjType.ReifiedSourceLocation))
       val holeErrorClass = Map(genClass(BackendObjType.HoleError))
       val matchErrorClass = Map(genClass(BackendObjType.MatchError))
+      val unhandledEffectErrorClass = Map(genClass(BackendObjType.UnhandledEffectError))
 
       val globalClass = Map(genClass(BackendObjType.Global))
 
@@ -150,6 +151,7 @@ object JvmBackend {
         rslClass,
         holeErrorClass,
         matchErrorClass,
+        unhandledEffectErrorClass,
         globalClass,
         regionClass,
         uncaughtExceptionHandlerClass,

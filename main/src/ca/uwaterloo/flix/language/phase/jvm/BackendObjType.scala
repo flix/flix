@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkClassName
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch._
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
@@ -50,6 +50,7 @@ sealed trait BackendObjType {
     case BackendObjType.FlixError => JvmName(DevFlixRuntime, mkClassName("FlixError"))
     case BackendObjType.HoleError => JvmName(DevFlixRuntime, mkClassName("HoleError"))
     case BackendObjType.MatchError => JvmName(DevFlixRuntime, mkClassName("MatchError"))
+    case BackendObjType.UnhandledEffectError => JvmName(DevFlixRuntime, mkClassName("UnhandledEffectError"))
     case BackendObjType.Region => JvmName(DevFlixRuntime, mkClassName("Region"))
     case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, mkClassName("UncaughtExceptionHandler"))
     case BackendObjType.Main(_) => JvmName.Main
@@ -202,7 +203,7 @@ object BackendObjType {
           // get expression as thunk
           DUP() ~ GETFIELD(ExpField) ~ CHECKCAST(Thunk.jvmName) ~
           // this.value = thunk.unwind()
-          Result.unwindSuspensionFreeThunkToType(tpe) ~ PUTFIELD(ValueField) ~
+          Result.unwindSuspensionFreeThunkToType(tpe, SourceLocation.Unknown) ~ PUTFIELD(ValueField) ~
           // this.exp = null
           thisLoad() ~ pushNull() ~ PUTFIELD(ExpField)
         ) ~
@@ -338,105 +339,105 @@ object BackendObjType {
           Some(_ =>
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, SourceLocation.Unknown) ~ ARETURN()
           ))
         case ObjConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(JavaObject.toTpe)(VoidableType.Void),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, SourceLocation.Unknown) ~ RETURN()
           ))
         case ObjPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(JavaObject.toTpe)(BackendType.Bool),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, SourceLocation.Unknown) ~ IRETURN()
           ))
         case IntFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Int32)(JavaObject.toTpe),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, SourceLocation.Unknown) ~ ARETURN()
           ))
         case IntConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Int32)(VoidableType.Void),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, SourceLocation.Unknown) ~ RETURN()
           ))
         case IntPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Int32)(BackendType.Bool),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, SourceLocation.Unknown) ~ IRETURN()
           ))
         case IntUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsInt",
           mkDescriptor(BackendType.Int32)(BackendType.Int32),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Int32) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Int32, SourceLocation.Unknown) ~ IRETURN()
           ))
         case LongFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Int64)(JavaObject.toTpe),
           Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, SourceLocation.Unknown) ~ ARETURN()
           ))
         case LongConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Int64)(VoidableType.Void),
           Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, SourceLocation.Unknown) ~ RETURN()
           ))
         case LongPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Int64)(BackendType.Bool),
           Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, SourceLocation.Unknown) ~ IRETURN()
           ))
         case LongUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsLong",
           mkDescriptor(BackendType.Int64)(BackendType.Int64),
           Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Int64) ~ LRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Int64, SourceLocation.Unknown) ~ LRETURN()
           ))
         case DoubleFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Float64)(JavaObject.toTpe),
           Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, SourceLocation.Unknown) ~ ARETURN()
           ))
         case DoubleConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Float64)(VoidableType.Void),
           Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, SourceLocation.Unknown) ~ RETURN()
           ))
         case DoublePredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Float64)(BackendType.Bool),
           Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, SourceLocation.Unknown) ~ IRETURN()
           ))
         case DoubleUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsDouble",
           mkDescriptor(BackendType.Float64)(BackendType.Float64),
           Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Float64) ~ DRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Float64, SourceLocation.Unknown) ~ DRETURN()
           ))
 
       }
@@ -903,6 +904,38 @@ object BackendObjType {
     ))
   }
 
+  case object UnhandledEffectError extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = FlixError.jvmName)
+
+      cm.mkConstructor(Constructor)
+
+      cm.closeClassMaker()
+    }
+
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(Suspension.toTpe, ReifiedSourceLocation.toTpe), Some(_ =>
+      withName(1, Suspension.toTpe)(suspension => withName(2, ReifiedSourceLocation.toTpe)(loc => {
+      thisLoad() ~
+        NEW(StringBuilder.jvmName) ~
+        DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+        pushString("Unhandled effect '") ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        suspension.load() ~ GETFIELD(Suspension.EffSymField) ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        pushString("' at ") ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKESPECIAL(FlixError.Constructor) ~
+        RETURN()
+      }))
+    ))
+
+  }
+
+
   case object Region extends BackendObjType with Generatable {
 
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
@@ -1084,7 +1117,7 @@ object BackendObjType {
         args.load() ~ INVOKESTATIC(Global.SetArgsMethod) ~
         NEW(defName) ~ DUP() ~ INVOKESPECIAL(defName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid) ~
         DUP() ~ GETSTATIC(Unit.SingletonField) ~ PUTFIELD(InstanceField(defName, IsPublic, NotFinal, NotVolatile, "arg0", JavaObject.toTpe)) ~
-        Result.unwindSuspensionFreeThunk() ~
+        Result.unwindSuspensionFreeThunk(SourceLocation.Unknown) ~
         POP() ~ RETURN()
       )
     }))
@@ -1352,7 +1385,7 @@ object BackendObjType {
     def unwindThunkToValue(pc: Int, newFrame: InstructionSet, setPc: InstructionSet): InstructionSet = {
       unwindThunk() ~
       handleSuspension(pc, newFrame, setPc) ~
-      CHECKCAST(Value.jvmName)
+      CHECKCAST(Value.jvmName) // Cannot fail
     }
 
     /**
@@ -1361,8 +1394,11 @@ object BackendObjType {
       * [..., Result] --> [..., Value.value: tpe]
       * side effect: crashes on suspensions
       */
-    def unwindSuspensionFreeThunkToType(tpe: BackendType): InstructionSet = {
-      unwindThunk() ~ CHECKCAST(Value.jvmName) ~ GETFIELD(Value.fieldFromType(tpe))
+    def unwindSuspensionFreeThunkToType(tpe: BackendType, loc: SourceLocation): InstructionSet = {
+      unwindThunk() ~
+      crashIfSuspension(loc) ~
+      CHECKCAST(Value.jvmName) ~ // Cannot fail
+      GETFIELD(Value.fieldFromType(tpe))
     }
 
     /**
@@ -1371,8 +1407,26 @@ object BackendObjType {
       * [..., Result] --> [..., Value]
       * side effect: crashes on suspensions
       */
-    def unwindSuspensionFreeThunk(): InstructionSet = {
-      unwindThunk() ~ CHECKCAST(Value.jvmName)
+    def unwindSuspensionFreeThunk(loc: SourceLocation): InstructionSet = {
+      unwindThunk() ~ crashIfSuspension(loc) ~ CHECKCAST(Value.jvmName)
+    }
+
+    /**
+      * [..., Result] -> [..., Value|Thunk]
+      * side effect: if the result is a suspension, a [[UnhandledEffectError]] is thrown.
+      */
+    def crashIfSuspension(loc: SourceLocation): InstructionSet = {
+      DUP() ~ INSTANCEOF(Suspension.jvmName) ~
+      ifCondition(Condition.NE)(
+        CHECKCAST(Suspension.jvmName) ~
+        NEW(UnhandledEffectError.jvmName) ~
+          // [.., suspension, UEE] -> [.., suspension, UEE, UEE, suspension]
+          DUP2() ~ SWAP() ~
+          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
+          // [.., suspension, UEE, UEE, suspension, rsl] -> [.., suspension, UEE]
+          INVOKESPECIAL(UnhandledEffectError.Constructor) ~
+          ATHROW()
+      )
     }
   }
 

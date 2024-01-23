@@ -117,7 +117,7 @@ object GenAnonymousClasses {
     * Method
     */
   private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter): Unit = method match {
-    case JvmMethod(ident, fparams, _, tpe, _, _) =>
+    case JvmMethod(ident, fparams, _, tpe, _, loc) =>
       val args = fparams.map(_.tpe)
       val boxedResult = MonoType.Object
       val arrowType = MonoType.Arrow(args, boxedResult)
@@ -150,7 +150,7 @@ object GenAnonymousClasses {
       }
 
       // Invoke the closure
-      BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(tpe))(new BytecodeInstructions.F(methodVisitor))
+      BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(tpe), loc)(new BytecodeInstructions.F(methodVisitor))
 
       tpe match {
         case MonoType.Array(_) => methodVisitor.visitTypeInsn(CHECKCAST, getDescriptorHacked(tpe))
