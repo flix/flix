@@ -24,11 +24,13 @@ mod Test.Handler.Spawn.Int32 {
 
     def runGenAsk(tx: Sender[Int32, rc]): Unit \ rc =
         try {
-            try {
-                do Ask.ask(do Gen.gen())
-            } with Gen {
-                def gen(k) = k(21)
-            }
+            do Ask.ask(
+                try {
+                    do Gen.gen()
+                } with Gen {
+                    def gen(k) = k(21)
+                }
+            )
         } with Ask {
             def ask(x, _) = Channel.send(21 + x, tx)
         }
