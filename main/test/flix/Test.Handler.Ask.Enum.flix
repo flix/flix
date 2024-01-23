@@ -1,30 +1,17 @@
-mod Test.Handler.Gen.Enum {
+mod Test.Handler.Ask.Enum {
 
-    eff Gen {
-        pub def gen(): Option[Int32]
+    eff Ask {
+        pub def ask(x: Int32): Unit
     }
 
-    def generator(): Unit \ Gen =
-        do Gen.gen(); generator()
+    def generator(x: Int32): Unit \ Ask =
+        do Ask.ask(x); generator(x + 1)
 
     def sample(limit: Int32): List[Option[Int32]] =
-        region rc {
-            let counter = ref Some(0) @ rc;
-            try {
-                generator(); Nil
-            } with Gen {
-                def gen(k) =
-                    let i = getAndInc(counter);
-                    if (i == limit) Nil else Some(i) :: k(Some(i))
-            }
-        }
-
-    def getAndInc(r: Ref[Option[Int32], r]): Int32 \ r =
-        match deref r {
-            case Some(i) =>
-                r := Some(i + 1);
-                i
-            case None => unreachable!()
+        try {
+            generator(0); Nil
+        } with Ask {
+            def ask(x, k) = if (x == limit) Nil else Some(x) :: k()
         }
 
     def range(a: Int32, b: Int32): List[Option[Int32]] =

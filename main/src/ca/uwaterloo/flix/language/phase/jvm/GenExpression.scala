@@ -1100,7 +1100,7 @@ object GenExpression {
         mv.visitInsn(ATHROW)
     }
 
-    case Expr.ApplyClo(exp, exps, ct, _, purity, _) =>
+    case Expr.ApplyClo(exp, exps, ct, _, purity, loc) =>
       ct match {
         case CallType.TailCall =>
           // Type of the function abstract class
@@ -1145,7 +1145,7 @@ object GenExpression {
           }
           // Calling unwind and unboxing
 
-          if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunk()(new BytecodeInstructions.F(mv))
+          if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunk(loc)(new BytecodeInstructions.F(mv))
           else {
             val pcPoint = ctx.pcCounter(0) + 1
             val pcPointLabel = ctx.pcLabels(pcPoint)
@@ -1163,7 +1163,7 @@ object GenExpression {
           }
       }
 
-    case Expr.ApplyDef(sym, exps, ct, _, purity, _) => ct match {
+    case Expr.ApplyDef(sym, exps, ct, _, purity, loc) => ct match {
       case CallType.TailCall =>
         // Type of the function abstract class
         val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
@@ -1200,7 +1200,7 @@ object GenExpression {
         }
         // Calling unwind and unboxing
 
-        if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunk()(new BytecodeInstructions.F(mv))
+        if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunk(loc)(new BytecodeInstructions.F(mv))
         else {
           val pcPoint = ctx.pcCounter(0) + 1
           val pcPointLabel = ctx.pcLabels(pcPoint)
