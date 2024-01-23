@@ -22,6 +22,17 @@ mod Test.Handler.Spawn.Int32 {
             def gen(k) = k(42)
         }
 
+    def runGenAsk(tx: Sender[Int32, rc]): Unit \ rc =
+        try {
+            try {
+                do Ask.ask(do Gen.gen())
+            } with Gen {
+                def gen(k) = k(21)
+            }
+        } with Ask {
+            def ask(x, _) = Channel.send(21 + x, tx)
+        }
+
     @Test
     def testSpawn01(): Bool \ IO =
         let result = region rc {
@@ -36,6 +47,15 @@ mod Test.Handler.Spawn.Int32 {
         let result = region rc {
             let (tx, rx) = Channel.unbuffered(rc);
             spawn runAsk(tx) @ rc;
+            Channel.recv(rx)
+        };
+        Assert.eq(42, result)
+
+    @Test
+    def testSpawn03(): Bool \ IO =
+        let result = region rc {
+            let (tx, rx) = Channel.unbuffered(rc);
+            spawn runGenAsk(tx) @ rc;
             Channel.recv(rx)
         };
         Assert.eq(42, result)
