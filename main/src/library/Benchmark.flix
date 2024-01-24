@@ -63,7 +63,7 @@ mod Benchmark {
     /// One seconds is `1_000_000_000i64`.
     ///
     @Experimental
-    pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 \ IO = region rc {
+    pub def runWithBudget(bs: Array[Benchmark, r], budget: Int64): Int32 \ IO + r = region rc {
         if (Array.length(bs) == 0) {
             println("No benchmarks");
             1

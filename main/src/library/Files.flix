@@ -446,7 +446,7 @@ mod Files {
         IOError.tryCatch(_ -> {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.readAllBytes(##java.nio.file.Path): Array[Int8, r] \ IO;
+            import static java.nio.file.Files.readAllBytes(##java.nio.file.Path): Array[Int8, r] \ IO + r;
 
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
@@ -515,7 +515,7 @@ mod Files {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;
                 import new java.io.FileInputStream(##java.io.File): ##java.io.FileInputStream \ IO as newInputStream;
-                import java.io.FileInputStream.read(Array[Int8, r]): Int32 \ IO;
+                import java.io.FileInputStream.read(Array[Int8, r]): Int32 \ IO + r;
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
@@ -888,7 +888,7 @@ mod Files {
     ///
     /// Recursively traverses the directory.
     ///
-    pub def walk(rc: Region[r], f: String): Result[IOError, Iterator[String, r, r]] \ IO =
+    pub def walk(rc: Region[r], f: String): Result[IOError, Iterator[String, r, r]] \ IO + r =
         IOError.tryCatch(_ -> {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;

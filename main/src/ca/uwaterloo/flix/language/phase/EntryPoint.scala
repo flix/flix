@@ -53,7 +53,7 @@ object EntryPoint {
     * The scheme of the entry point function.
     * `Unit -> Unit`
     */
-  private val EntryPointScheme = Scheme(Nil, Nil, Nil, Type.mkImpureArrow(Type.Unit, Type.Unit, SourceLocation.Unknown))
+  private val EntryPointScheme = Scheme(Nil, Nil, Nil, Type.mkIoArrow(Type.Unit, Type.Unit, SourceLocation.Unknown))
 
   /**
     * The default entry point in case none is specified. (`main`)

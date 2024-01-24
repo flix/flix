@@ -1395,7 +1395,7 @@ object Lowering {
     * Make a new channel expression
     */
   private def mkNewChannel(exp: LoweredAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
-    val newChannel = LoweredAst.Expr.Def(Defs.ChannelNew, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
+    val newChannel = LoweredAst.Expr.Def(Defs.ChannelNew, Type.mkIoArrow(exp.tpe, tpe, loc), loc)
     LoweredAst.Expr.Apply(newChannel, exp :: Nil, tpe, eff, loc)
   }
 
@@ -1403,7 +1403,7 @@ object Lowering {
     * Make a new channel tuple (sender, receiver) expression
     */
   private def mkNewChannelTuple(exp: LoweredAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
-    val newChannel = LoweredAst.Expr.Def(Defs.ChannelNewTuple, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
+    val newChannel = LoweredAst.Expr.Def(Defs.ChannelNewTuple, Type.mkIoArrow(exp.tpe, tpe, loc), loc)
     LoweredAst.Expr.Apply(newChannel, exp :: Nil, tpe, eff, loc)
   }
 
@@ -1411,7 +1411,7 @@ object Lowering {
     * Make a channel get expression
     */
   private def mkGetChannel(exp: LoweredAst.Expr, tpe: Type, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
-    val getChannel = LoweredAst.Expr.Def(Defs.ChannelGet, Type.mkImpureArrow(exp.tpe, tpe, loc), loc)
+    val getChannel = LoweredAst.Expr.Def(Defs.ChannelGet, Type.mkIoArrow(exp.tpe, tpe, loc), loc)
     LoweredAst.Expr.Apply(getChannel, exp :: Nil, tpe, eff, loc)
   }
 
@@ -1419,7 +1419,7 @@ object Lowering {
     * Make a channel put expression
     */
   private def mkPutChannel(exp1: LoweredAst.Expr, exp2: LoweredAst.Expr, eff: Type, loc: SourceLocation): LoweredAst.Expr = {
-    val putChannel = LoweredAst.Expr.Def(Defs.ChannelPut, Type.mkImpureUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc), loc)
+    val putChannel = LoweredAst.Expr.Def(Defs.ChannelPut, Type.mkIoUncurriedArrow(List(exp2.tpe, exp1.tpe), Type.Unit, loc), loc)
     LoweredAst.Expr.Apply(putChannel, List(exp2, exp1), Type.Unit, eff, loc)
   }
 
@@ -1442,7 +1442,7 @@ object Lowering {
     val locksType = Types.mkList(Types.ConcurrentReentrantLock, loc)
 
     val selectRetTpe = Type.mkTuple(List(Type.Int32, locksType), loc)
-    val selectTpe = Type.mkImpureUncurriedArrow(List(admins.tpe, Type.Bool), selectRetTpe, loc)
+    val selectTpe = Type.mkIoUncurriedArrow(List(admins.tpe, Type.Bool), selectRetTpe, loc)
     val select = LoweredAst.Expr.Def(Defs.ChannelSelectFrom, selectTpe, loc)
     val blocking = default match {
       case Some(_) => LoweredAst.Expr.Cst(Ast.Constant.Bool(false), Type.Bool, loc)
@@ -1465,7 +1465,7 @@ object Lowering {
           case Type.Apply(_, t, _) => t
           case _ => throw InternalCompilerException("Unexpected channel type found.", loc)
         }
-        val get = LoweredAst.Expr.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkImpureUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
+        val get = LoweredAst.Expr.Def(Defs.ChannelUnsafeGetAndUnlock, Type.mkIoUncurriedArrow(List(chan.tpe, locksType), getTpe, loc), loc)
         val getExp = LoweredAst.Expr.Apply(get, List(LoweredAst.Expr.Var(chSym, chan.tpe, loc), LoweredAst.Expr.Var(locksSym, locksType, loc)), getTpe, eff, loc)
         val e = LoweredAst.Expr.Let(sym, Ast.Modifiers.Empty, getExp, exp, exp.tpe, eff, loc)
         LoweredAst.MatchRule(pat, None, e)

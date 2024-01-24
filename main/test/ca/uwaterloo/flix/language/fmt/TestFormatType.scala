@@ -129,7 +129,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
   }
 
   test("FormatType.Arrow.External.04") {
-    val tpe = Type.mkImpureUncurriedArrow(Type.Int8 :: Type.Int16 :: Nil, Type.Int32, loc)
+    val tpe = Type.mkIoUncurriedArrow(Type.Int8 :: Type.Int16 :: Nil, Type.Int32, loc)
 
     val expected = raw"Int8 -> (Int16 -> Int32 \ IO)"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
