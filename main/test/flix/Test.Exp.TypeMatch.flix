@@ -684,6 +684,17 @@ mod Test.Exp.ReifyType {
         case _: _ => false
     }
 
+    @Test
+    def typeMatchPolymorphic03(): Bool = typematch Nil {
+        case _: List[Unit] => false
+        case x: List[_] => typematch x {
+           case _: List[Unit] => false
+           case _: List[_] => true
+           case _: _ => true
+       }
+        case _: _ => true
+    }
+
     //////////////////////////////////////
     // Recursive tests                  //
     //////////////////////////////////////

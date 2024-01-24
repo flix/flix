@@ -606,7 +606,7 @@ class Flix {
     /** Remember to update [[AstPrinter]] about the list of phases. */
     cachedLoweringAst = Lowering.run(typedAst)
     cachedTreeShaker1Ast = TreeShaker1.run(cachedLoweringAst)
-    cachedMonoDefsAst = MonoDefs.run(cachedTreeShaker1Ast)
+    cachedMonoDefsAst = John.convert(MonoDefs.run(cachedTreeShaker1Ast))
     cachedMonoTypesAst = MonoTypes.run(cachedMonoDefsAst)
     cachedSimplifierAst = Simplifier.run(cachedMonoTypesAst)
     cachedClosureConvAst = ClosureConv.run(cachedSimplifierAst)

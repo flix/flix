@@ -165,59 +165,11 @@ object LoweredAst {
     }
   }
 
-  sealed trait Predicate {
-    def loc: SourceLocation
-  }
-
-  object Predicate {
-
-    sealed trait Head extends Predicate
-
-    object Head {
-
-      case class Atom(pred: Name.Pred, den: Denotation, terms: List[Expr], tpe: Type, loc: SourceLocation) extends Predicate.Head
-
-    }
-
-    sealed trait Body extends Predicate
-
-    object Body {
-
-      case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[Pattern], tpe: Type, loc: SourceLocation) extends Predicate.Body
-
-      case class Functional(outVars: List[Symbol.VarSym], exp: Expr, loc: SourceLocation) extends Predicate.Body
-
-      case class Guard(exp: Expr, loc: SourceLocation) extends Predicate.Body
-
-    }
-
-  }
-
   case class Attribute(name: String, tpe: Type, loc: SourceLocation)
 
   case class Case(sym: Symbol.CaseSym, tpe: Type, sc: Scheme, loc: SourceLocation)
 
-  case class Constraint(cparams: List[ConstraintParam], head: Predicate.Head, body: List[Predicate.Body], loc: SourceLocation)
-
-  sealed trait ConstraintParam {
-    def sym: Symbol.VarSym
-
-    def tpe: Type
-
-    def loc: SourceLocation
-  }
-
-  object ConstraintParam {
-
-    case class HeadParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ConstraintParam
-
-    case class RuleParam(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends ConstraintParam
-
-  }
-
   case class FormalParam(sym: Symbol.VarSym, mod: Ast.Modifiers, tpe: Type, src: Ast.TypeSource, loc: SourceLocation)
-
-  case class PredicateParam(pred: Name.Pred, tpe: Type, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, retTpe: Type, eff: Type, loc: SourceLocation)
 
