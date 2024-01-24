@@ -23,7 +23,7 @@ mod Eff {
 
 mod Eff.Logger {
 
-    pub enum Severity with Eq, Order {
+    pub enum Severity with Eq, Order, ToString {
         case Fatal
         case Warn
         case Info
@@ -41,12 +41,35 @@ mod Eff.Logger {
 
     pub def trace(msg: a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Trace, () -> "${msg}")
 
-    // TODO: DOC
-    pub def toListHandler(f: Unit -> a \ ef + Logger): (a, List[String]) \ ef + IO = region rc {
+    pub def toListHandler(f: Unit -> a \ ef): (a, List[String]) \ ef = region rc {
         let l = MutList.new(rc);
-        // TODO: Here we would use a MutList to collect the formatted messages and then return them.
-        // A question is whether instead of String, we should have some LogMessage data structure?
-        checked_ecast(???)
+        let ans = try f() with Logger {
+            def log(_, msgF, k) = {
+                MutList.push!(msgF(), l);
+                k()
+            }
+        };
+        let xs = MutList.toList(l);
+        (ans, xs)
+    }
+
+    pub def ioHandlerWithSeverity(s: Severity, f: Unit -> a \ ef): a \ ef + IO =
+        try f() with Logger {
+            def log(s1, msgF, k) = {
+                if (s1 <= s) {
+                    let t = Time.Instant.now();
+                    let msg = msgF();
+                    let message = "[${t}] [${s1}] - ${msg}";
+                    println(message);
+                    k()
+                }
+                else k()
+            }
+        }
+
+    pub def infoExample(): Int32 \ Logger = {
+        do Eff.Logger.log(Severity.Info, _ -> "A1");
+        1000
     }
 
 }
