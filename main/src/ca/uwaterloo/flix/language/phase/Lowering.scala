@@ -1448,7 +1448,7 @@ object Lowering {
       case Some(_) => LoweredAst.Expr.Cst(Ast.Constant.Bool(false), Type.Bool, loc)
       case None => LoweredAst.Expr.Cst(Ast.Constant.Bool(true), Type.Bool, loc)
     }
-    LoweredAst.Expr.Apply(select, List(admins, blocking), selectRetTpe, Type.Impure, loc)
+    LoweredAst.Expr.Apply(select, List(admins, blocking), selectRetTpe, Type.IO, loc)
   }
 
   /**
@@ -1657,7 +1657,7 @@ object Lowering {
   private def mkParWait(exp: LoweredAst.Expr, sym: Symbol.VarSym): LoweredAst.Expr = {
     val loc = exp.loc.asSynthetic
     val chExp = mkChannelExp(sym, exp.tpe, loc)
-    mkGetChannel(chExp, exp.tpe, Type.Impure, loc)
+    mkGetChannel(chExp, exp.tpe, Type.IO, loc)
   }
 
   /**
@@ -1669,9 +1669,9 @@ object Lowering {
       case ((sym, e), acc) =>
         val loc = e.loc.asSynthetic
         val e1 = mkChannelExp(sym, e.tpe, loc) // The channel `ch`
-        val e2 = mkPutChannel(e1, e, Type.Impure, loc) // The put exp: `ch <- exp0`.
+        val e2 = mkPutChannel(e1, e, Type.IO, loc) // The put exp: `ch <- exp0`.
         val e3 = LoweredAst.Expr.ApplyAtomic(AtomicOp.Region, List.empty, Type.Unit, Type.Pure, loc)
-        val e4 = LoweredAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(e2, e3), Type.Unit, Type.Impure, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
+        val e4 = LoweredAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(e2, e3), Type.Unit, Type.IO, loc) // Spawn the put expression from above i.e. `spawn ch <- exp0`.
         LoweredAst.Expr.Stm(e4, acc, acc.tpe, Type.mkUnion(e4.eff, acc.eff, loc), loc) // Return a statement expression containing the other spawn expressions along with this one.
     }
 
@@ -1679,7 +1679,7 @@ object Lowering {
     chanSymsWithExps.foldRight(spawns: LoweredAst.Expr) {
       case ((sym, e), acc) =>
         val loc = e.loc.asSynthetic
-        val chan = mkNewChannel(LoweredAst.Expr.Cst(Ast.Constant.Int32(1), Type.Int32, loc), mkChannelTpe(e.tpe, loc), Type.Impure, loc) // The channel exp `chan 1`
+        val chan = mkNewChannel(LoweredAst.Expr.Cst(Ast.Constant.Int32(1), Type.Int32, loc), mkChannelTpe(e.tpe, loc), Type.IO, loc) // The channel exp `chan 1`
         LoweredAst.Expr.Let(sym, Modifiers(List(Ast.Modifier.Synthetic)), chan, acc, acc.tpe, Type.mkUnion(e.eff, acc.eff, loc), loc) // The let-binding `let ch = chan 1`
     }
   }
@@ -1722,7 +1722,7 @@ object Lowering {
       case (p, sym, e) =>
         val loc = e.loc.asSynthetic
         val chExp = mkChannelExp(sym, e.tpe, loc)
-        (p, mkGetChannel(chExp, e.tpe, Type.Impure, loc))
+        (p, mkGetChannel(chExp, e.tpe, Type.IO, loc))
     }.foldRight(exp) {
       case ((pat, chan), e) => mkLetMatch(pat, chan, e)
     }

@@ -1040,7 +1040,7 @@ object Type {
     else if (c.isArray) {
       val comp = c.getComponentType
       val elmType = getFlixType(comp)
-      Type.mkArray(elmType, Type.EffUniv, SourceLocation.Unknown)
+      Type.mkArray(elmType, Type.IO, SourceLocation.Unknown)
     }
     // otherwise native type
     else {

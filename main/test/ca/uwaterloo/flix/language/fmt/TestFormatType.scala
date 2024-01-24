@@ -120,7 +120,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
   test("FormatType.Arrow.External.03") {
     val paramType = Type.Var(new Symbol.KindedTypeVarSym(0, Ast.VarText.Absent, Kind.Star, isRegion = true, Level.Top, loc), loc)
     val returnType = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.Absent, Kind.Star, isRegion = true, Level.Top, loc), loc)
-    val tpe = Type.mkArrowWithEffect(paramType, Type.Impure, returnType, loc)
+    val tpe = Type.mkArrowWithEffect(paramType, Type.IO, returnType, loc)
 
     val expected = raw"t0! -> t1! \ IO"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
@@ -420,7 +420,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
   }
 
   test("FormatPartialType.Arrow.External.02") {
-    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3), loc), List(Type.Impure, Type.Str), loc)
+    val tpe = Type.mkApply(Type.Cst(TypeConstructor.Arrow(3), loc), List(Type.IO, Type.Str), loc)
 
     val expected = raw"String -> (? -> ? \ IO)"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)

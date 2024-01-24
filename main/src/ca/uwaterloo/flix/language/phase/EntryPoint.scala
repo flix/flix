@@ -179,7 +179,7 @@ object EntryPoint {
       val resultSc = Scheme.generalize(Nil, Nil, resultTpe, RigidityEnv.empty)
 
       // Check for [[IllegalEntryPointEffect]]
-      if (declaredEff != Type.Pure && declaredEff != Type.Impure) {
+      if (declaredEff != Type.Pure && declaredEff != Type.IO) {
         return Validation.toSoftFailure((),EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc))
       }
 
@@ -214,7 +214,7 @@ object EntryPoint {
       fparams = List(TypedAst.FormalParam(argSym, Ast.Modifiers.Empty, Type.Unit, Ast.TypeSource.Ascribed, SourceLocation.Unknown)),
       declaredScheme = EntryPointScheme,
       retTpe = Type.Unit,
-      eff = Type.Impure,
+      eff = Type.IO,
       tconstrs = Nil,
       econstrs = Nil,
       loc = SourceLocation.Unknown
@@ -230,9 +230,9 @@ object EntryPoint {
     // one of:
     // printUnlessUnit(func(args))
     val printSym = root.defs(new Symbol.DefnSym(None, Nil, "printUnlessUnit", SourceLocation.Unknown)).sym
-    val printTpe = Type.mkArrowWithEffect(oldEntryPoint.spec.declaredScheme.base.arrowResultType, Type.Impure, Type.Unit, SourceLocation.Unknown)
+    val printTpe = Type.mkArrowWithEffect(oldEntryPoint.spec.declaredScheme.base.arrowResultType, Type.IO, Type.Unit, SourceLocation.Unknown)
     val printFunc = TypedAst.Expr.Def(printSym, printTpe, SourceLocation.Unknown)
-    val print = TypedAst.Expr.Apply(printFunc, List(call), Type.Unit, Type.Impure, SourceLocation.Unknown)
+    val print = TypedAst.Expr.Apply(printFunc, List(call), Type.Unit, Type.IO, SourceLocation.Unknown)
 
     val sym = new Symbol.DefnSym(None, Nil, "main" + Flix.Delimiter, SourceLocation.Unknown)
 
