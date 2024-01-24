@@ -363,7 +363,7 @@ mod Files {
     ///
     /// Returns an iterator of the given file `f`
     ///
-    pub def readLinesIter(rc: Region[r], f: String): Iterator[Result[IOError, String], IO, r] \ { r, IO } =
+    pub def readLinesIter(rc: Region[r], f: String): Iterator[Result[IOError, String], IO + r, r] \ { r, IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -374,7 +374,7 @@ mod Files {
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
             let line = ref readLine(reader) @ rc;
-            let next = () -> {
+            let next = () -> checked_ecast({
                 if (not Object.isNull(deref line)) {
                     try {
                         let l = deref line;
@@ -390,7 +390,7 @@ mod Files {
                 } else {
                     None
                 }
-            };
+            });
             Iterator.iterate(rc, next)
         } catch {
             case ex: ##java.io.IOException =>
@@ -403,7 +403,7 @@ mod Files {
     /// The options `opts` to apply consists of
     /// `charSet` - the specific charset to be used to decode the bytes.
     ///
-    pub def readLinesIterWith(rc: Region[r], opts: {charSet = String}, f: String): Iterator[Result[IOError, String], IO, r] \ { r, IO } =
+    pub def readLinesIterWith(rc: Region[r], opts: {charSet = String}, f: String): Iterator[Result[IOError, String], IO + r, r] \ { r, IO } =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
@@ -415,7 +415,7 @@ mod Files {
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath, forName(opts.charSet));
             let line = ref readLine(reader) @ rc;
-            let next = () -> {
+            let next = () -> checked_ecast({
                 if (not Object.isNull(deref line)) {
                     try {
                         let l = deref line;
@@ -431,7 +431,7 @@ mod Files {
                 } else {
                     None
                 }
-            };
+            });
             Iterator.iterate(rc, next)
         } catch {
             case ex: ##java.io.IOException =>
@@ -510,7 +510,7 @@ mod Files {
     ///
     /// Returns an iterator of the bytes in the given `file` in chunks of size `chunkSize`.
     ///
-    pub def readChunks(rc: Region[r], chunkSize: Int32, f: String): Iterator[Result[IOError, Array[Int8, r]], IO, r] \ IO =
+    pub def readChunks(rc: Region[r], chunkSize: Int32, f: String): Iterator[Result[IOError, Array[Int8, r]], IO + r, r] \ IO =
         if (0 < chunkSize) {
             try {
                 import new java.io.File(String): ##java.io.File \ IO as newFile;
@@ -521,7 +521,7 @@ mod Files {
                 let stream = newInputStream(javaFile);
                 let bytes = ref Array.new(rc, chunkSize) @ rc;
                 let numberRead = ref read(stream, deref bytes) @ rc;
-                let next = () -> {
+                let next = () -> checked_ecast({
                     if (deref numberRead >= 0) {
                         try {
                             let chunk = deref bytes;
@@ -539,7 +539,7 @@ mod Files {
                     } else {
                         None
                     }
-                };
+                });
                 Iterator.iterate(rc, next)
             } catch {
                 case ex: ##java.io.IOException =>

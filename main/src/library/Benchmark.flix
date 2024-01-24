@@ -87,7 +87,7 @@ mod Benchmark {
     ///
     /// Runs every benchmark in `bs` once and estimates its duration.
     ///
-    def warmupAndEstimate(rc1: Region[r1], bs: Array[Benchmark, r]): Array[(Benchmark, Int64), r1] \ IO = {
+    def warmupAndEstimate(rc1: Region[r1], bs: Array[Benchmark, r]): Array[(Benchmark, Int64), r1] \ r1 + r + IO = {
         Console.print("Warmup: ");
         bs |> Array.map(rc1, b -> {
             let time = runBenchmarkOnce(b);
@@ -99,7 +99,7 @@ mod Benchmark {
     ///
     /// Runs all the given benchmarks with estimates `bs` and the given time `budget`.
     ///
-    def runAll(bs: Array[(Benchmark, Int64), r], budget: Int64): Unit \ IO = {
+    def runAll(bs: Array[(Benchmark, Int64), r], budget: Int64): Unit \ r + IO = {
         let budgetPerBenchmark = budget / (Int32.toInt64(Array.length(bs)));
         bs |> Array.forEach(match (b, cost) ->
             let iters = iterations(cost, budgetPerBenchmark);
