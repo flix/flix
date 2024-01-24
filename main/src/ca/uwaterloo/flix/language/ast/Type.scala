@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.language.ast.Symbol
 
 import java.util.Objects
 import scala.annotation.tailrec
@@ -324,6 +325,11 @@ object Type {
     * Represents the empty effect set.
     */
   val Pure: Type = Type.Cst(TypeConstructor.Pure, SourceLocation.Unknown)
+
+  /**
+    * Represents the IO effect.
+    */
+  val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.mkEffectSym(Name.RootNS, Name.Ident(SourcePosition.Unknown, "IO", SourcePosition.Unknown))), SourceLocation.Unknown)
 
   /**
     * Represents the universal effect set.

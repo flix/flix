@@ -251,7 +251,7 @@ object FormatType {
         case Mode.Type => "Pure"
         case Mode.Purity => "{}"
       }
-      case SimpleType.All => "Univ"
+      case SimpleType.All => "Impure"
       case SimpleType.Region => "Region"
       case SimpleType.Record(labels) =>
         val labelString = labels.map(visitRecordLabelType).mkString(", ")
