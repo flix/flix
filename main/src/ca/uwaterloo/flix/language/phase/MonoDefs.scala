@@ -89,8 +89,6 @@ object MonoDefs {
             case Some(tpe) => tpe.map(default)
             case None => default(t)
           }
-          // Erase concrete effects like Print.
-          case Type.Cst(TypeConstructor.Effect(_), _) => Type.EffUniv
           case Type.Cst(_, _) => t
           case Type.Apply(t1, t2, loc) =>
             val y = visit(t2)

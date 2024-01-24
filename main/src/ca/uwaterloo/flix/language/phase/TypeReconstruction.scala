@@ -381,7 +381,7 @@ object TypeReconstruction {
       // We explicitly mark a `Mask` expression as Impure.
       val e = visitExp(exp)
       val tpe = e.tpe
-      val eff = e.eff // MATT ????????
+      val eff = Type.Impure
       TypedAst.Expr.UncheckedMaskingCast(e, tpe, eff, loc)
 
     case KindedAst.Expr.Without(exp, effUse, loc) =>
