@@ -53,7 +53,7 @@ object Simplifier {
   private def visitEnum(decl: LoweredAst.Enum)(implicit flix: Flix): SimplifiedAst.Enum = decl match {
     case LoweredAst.Enum(_, ann, mod, sym, _, _, cases0, enumType, loc) =>
       val cases = cases0.map {
-        case (tag, LoweredAst.Case(caseSym, tagType, _, tagLoc)) => tag -> SimplifiedAst.Case(caseSym, visitType(tagType), tagLoc)
+        case (tag, LoweredAst.Case(caseSym, _, _, tagLoc)) => tag -> SimplifiedAst.Case(caseSym, null /* unused */, tagLoc)
       }
       SimplifiedAst.Enum(ann, mod, sym, cases, visitType(enumType), loc)
   }
@@ -287,7 +287,7 @@ object Simplifier {
           case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
-            val enumSym = new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
+            val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
             MonoType.Enum(enumSym)
 
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)

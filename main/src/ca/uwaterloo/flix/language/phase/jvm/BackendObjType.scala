@@ -41,6 +41,8 @@ sealed trait BackendObjType {
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkClassName("Lazy", tpe))
     case BackendObjType.Ref(tpe) => JvmName(RootPackage, mkClassName("Ref", tpe))
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkClassName("Tuple", elms))
+    case BackendObjType.Tagged => JvmName(RootPackage, mkClassName("Tagged"))
+    case BackendObjType.Tag(tpe) => JvmName(RootPackage, mkClassName("Tag", tpe))
     case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
     case BackendObjType.RecordEmpty => JvmName(RootPackage, mkClassName(s"RecordEmpty"))
     case BackendObjType.RecordExtend(value) => JvmName(RootPackage, mkClassName("RecordExtend", value))
@@ -301,6 +303,57 @@ object BackendObjType {
   }
 
   //case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType
+
+  case object Tagged extends BackendObjType with Generatable {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkAbstractClass(this.jvmName)
+
+      cm.mkConstructor(Constructor)
+
+      cm.mkField(NameField)
+
+      cm.closeClassMaker()
+    }
+
+    def NameField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "tag", String.toTpe)
+
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
+  }
+
+  case class Tag(tpe: BackendType) extends BackendObjType with Generatable {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = Tagged.jvmName)
+
+      cm.mkConstructor(Constructor)
+      cm.mkField(ValueField)
+      cm.mkMethod(ToStringMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def NameField: InstanceField = Tagged.NameField
+
+    def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "value", tpe)
+
+    def Constructor: ConstructorMethod = nullarySuperConstructor(Tagged.Constructor)
+
+    def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ => {
+      // new String[4] // referred to as `arr`
+      ICONST_4() ~ ANEWARRAY(String.jvmName) ~
+      // arr[0] = "Enum"
+      DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(NameField) ~ AASTORE() ~
+      // arr[1] = "("
+      DUP() ~ ICONST_1() ~ pushString("(") ~ AASTORE() ~
+      // arr[2] = this.value.toString()
+      DUP() ~ ICONST_2() ~ thisLoad() ~ GETFIELD(ValueField) ~ xToString(ValueField.tpe) ~ AASTORE() ~
+      // arr[3] = ")"
+      DUP() ~ ICONST_3() ~ pushString(")") ~ AASTORE() ~
+      // ["", arr]
+      pushString("") ~ SWAP() ~
+      INVOKESTATIC(String.JoinMethod) ~
+      xReturn(String.toTpe)
+    }))
+  }
 
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType with Generatable {
 

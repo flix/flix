@@ -50,9 +50,9 @@ object EffectBinder {
     */
   def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("EffectBinder") {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
-    val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
+//    val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
-    ReducedAst.Root(newDefs, newEnums, newEffects, Set.empty, Nil, root.entryPoint, root.reachable, root.sources)
+    ReducedAst.Root(newDefs, Map.empty, newEffects, Set.empty, Nil, root.entryPoint, root.reachable, root.sources)
   }
 
   /**
