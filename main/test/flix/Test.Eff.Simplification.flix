@@ -3,23 +3,23 @@ mod Test.Eff.Simplification {
     def testPureAndPure(): Unit \ {Pure, Pure} = pure()
 
     @test
-    def testPureAndImpure(): Unit \ {Pure, Impure} = impure()
+    def testPureAndIo(): Unit \ {Pure, IO} = io()
 
     @test
-    def testImpureAndImpure(): Unit \ {Impure, Impure} = impure()
+    def testIoAndIo(): Unit \ {IO, IO} = io()
 
     @test
     def testPureOrPure(): Unit \ Pure & Pure = pure()
 
     @test
-    def testPureOrImpure(): Unit \ Pure & Impure = pure()
+    def testPureOrIo(): Unit \ Pure & IO = pure()
 
     @test
-    def testImpureOrImpure(): Unit \ Impure & Impure = impure()
+    def testIoOrIo(): Unit \ IO & IO = io()
 
     /// a pure function
     def pure(): Unit \ {} = ()
 
-    /// an impure function
-    def impure(): Unit \ Impure = unchecked_cast(() as _ \ Impure)
+    /// an io function
+    def io(): Unit \ IO = unchecked_cast(() as _ \ IO)
 }

@@ -752,7 +752,7 @@ mod Test.Exp.ReifyType {
                 "Not Array"
         }
 
-    def reg2(x: a): String \ Impure =
+    def reg2(x: a): String \ IO =
         typematch x {
             case y: Array[_, _] =>
                 checked_ecast(Array.get(0, y));
