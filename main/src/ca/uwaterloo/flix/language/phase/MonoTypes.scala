@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.CaseSymUse
 import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LoweredAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeNormalization}
+import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeMinimization, TypeNormalization}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.collection.mutable
@@ -437,7 +437,7 @@ object MonoTypes {
     */
   private def specializeEnum(sym: Symbol.EnumSym, args0: List[Type], loc: SourceLocation)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): Symbol.EnumSym = {
     // type arguments
-    val args = args0.map(eraseAliases).map(TypeNormalization.normalizeType)
+    val args = args0.map(eraseAliases).map(TypeMinimization.minimizeType).map(TypeNormalization.normalizeType)
 
     // assemble enum type (e.g. `List[Int32]`)
     val tpe = Type.mkEnum(sym, args, loc)
