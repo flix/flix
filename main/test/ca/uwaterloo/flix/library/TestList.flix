@@ -2915,4 +2915,18 @@ def literal05(): Bool =
 def literal06(): Bool =
     not List.isEmpty(List#{{}})
 
+/////////////////////////////////////////////////////////////////////////////
+// frequency                                                               //
+/////////////////////////////////////////////////////////////////////////////
+@Test
+def frequency01(): Bool =
+    let l = List#{"a"};
+    let m = Map#{"a" => 1};
+    Assert.eq(m, frequency(l))
+
+@Test
+def frequency01(): Bool =
+    let l = List#{"b", "a", "c", "a", "b", "a"};
+    let m = Map#{"a" => 3, "b" => 2, "c" => 1};
+    Assert.eq(m, frequency(l))
 }
