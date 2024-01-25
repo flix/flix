@@ -762,8 +762,8 @@ mod Test.Exp.ReifyType {
         }
 
     @Test
-     def testReg1(): Bool \ Impure = reg1(Array#{1, 2, 3} @ Static) == "Array"
+     def testReg1(): Bool \ IO = reg1(Array#{1, 2, 3} @ Static) == "Array"
 
     @Test
-     def testReg2(): Bool \ Impure = reg2(Array#{1, 2, 3} @ Static) == "Array"
+     def testReg2(): Bool \ IO = reg2(Array#{1, 2, 3} @ Static) == "Array"
 }

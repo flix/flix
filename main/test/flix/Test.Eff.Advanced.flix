@@ -49,7 +49,7 @@ mod Test.Eff.Advanced {
     def pure(): Unit = ()
 
     /// An impure function from Unit -> Unit.
-    def impure(): Unit \ Impure = discard Array#{1, 2, 3} @ Static; ()
+    def impure(): Unit \ Impure = checked_ecast(())
 
     /// A function that requires a pure function
     def requiresPure(_f: a -> b): Unit = ()

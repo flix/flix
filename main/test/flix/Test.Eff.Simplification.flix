@@ -3,10 +3,10 @@ mod Test.Eff.Simplification {
     def testPureAndPure(): Unit \ {Pure, Pure} = pure()
 
     @test
-    def testPureAndImpure(): Unit \ {Pure, IO} = impure()
+    def testPureAndImpure(): Unit \ {Pure, Impure} = impure()
 
     @test
-    def testImpureAndImpure(): Unit \ {IO, IO} = impure()
+    def testImpureAndImpure(): Unit \ {Impure, Impure} = impure()
 
     @test
     def testPureOrPure(): Unit \ Pure & Pure = pure()
@@ -21,5 +21,5 @@ mod Test.Eff.Simplification {
     def pure(): Unit \ {} = ()
 
     /// an impure function
-    def impure(): Unit \ IO = unchecked_cast(() as _ \ IO)
+    def impure(): Unit \ Impure = unchecked_cast(() as _ \ Impure)
 }
