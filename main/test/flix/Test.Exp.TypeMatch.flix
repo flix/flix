@@ -754,8 +754,8 @@ mod Test.Exp.ReifyType {
 
     def reg2(x: a): String \ IO =
         typematch x {
-            case y: Array[_, _] =>
-                checked_ecast(Array.get(0, y));
+            case y: Array[_, Static] =>
+                Array.get(0, y);
                 "Array"
             case _: _ =>
                 "Not Array"
