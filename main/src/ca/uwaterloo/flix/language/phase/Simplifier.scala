@@ -732,8 +732,9 @@ object Simplifier {
     */
   private def simplifyEffect(eff: Type): Purity = eff match {
     case Type.Cst(TypeConstructor.Pure, _) => Purity.Pure
-    case Type.Cst(TypeConstructor.EffUniv, _) => Purity.Impure
-    case _ => throw InternalCompilerException(s"Unexpected purity '$eff'", eff.loc)
+    case _ => Purity.Impure // MATT ?????
+//    case Type.Cst(TypeConstructor.EffUniv, _) => Purity.Impure
+//    case _ => throw InternalCompilerException(s"Unexpected purity '$eff'", eff.loc)
   }
 
   /**
