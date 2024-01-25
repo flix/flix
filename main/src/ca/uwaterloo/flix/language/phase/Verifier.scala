@@ -222,30 +222,12 @@ object Verifier {
           check(expected = argTpe2)(t2, loc)
           check(expected = tpe)(actual = resTpe, loc)
 
-        case AtomicOp.Tag(sym) =>
-          root.enums.get(sym.enumSym) match {
-            case None => throw InternalCompilerException(s"Unknown enum sym: '$sym'", loc)
-            case Some(e) => e.cases.get(sym) match {
-              case None => throw InternalCompilerException(s"Unknown enum case sym: '$sym' of '${e.sym}'", loc)
-              case Some(caze) =>
-                val List(t) = ts
-                check(expected = caze.tpe)(t, loc)
-                check(expected = e.tpe)(tpe, loc)
-                tpe
-            }
-          }
-        case AtomicOp.Untag(sym) =>
-          root.enums.get(sym.enumSym) match {
-            case None => throw InternalCompilerException(s"Unknown enum sym: '$sym'", loc)
-            case Some(e) => e.cases.get(sym) match {
-              case None => throw InternalCompilerException(s"Unknown enum case sym: '$sym' of '${e.sym}'", loc)
-              case Some(caze) =>
-                val List(t) = ts
-                check(expected = e.tpe)(t, loc)
-                check(expected = caze.tpe)(tpe, loc)
-                tpe
-            }
-          }
+        case AtomicOp.Tag(_) =>
+          // enum types have been erased so no checking can be done
+          tpe
+        case AtomicOp.Untag(_) =>
+          // enum types have been erased so no checking can be done
+          tpe
         case _ => tpe // TODO: VERIFIER: Add rest
       }
 
