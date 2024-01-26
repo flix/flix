@@ -44,7 +44,7 @@ object Instances {
   /**
     * Checks that all signatures in `class0` are used in laws if `class0` is marked `lawful`.
     */
-  def checkLawApplication(class0: TypedAst.Class): List[InstanceError] = class0 match {
+  private def checkLawApplication(class0: TypedAst.Class): List[InstanceError] = class0 match {
     // Case 1: lawful class
     case TypedAst.Class(_, _, mod, _, _, _, _, sigs, laws, _) if mod.isLawful =>
       val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
@@ -61,7 +61,7 @@ object Instances {
   /**
     * Performs validations on a single class.
     */
-  def visitClass(class0: TypedAst.Class): List[InstanceError] = {
+  private def visitClass(class0: TypedAst.Class): List[InstanceError] = {
     checkLawApplication(class0)
   }
 
@@ -80,7 +80,7 @@ object Instances {
     * * The class's companion namespace.
     * * The same namespace as its type.
     */
-  def checkOrphan(inst: TypedAst.Instance)(implicit flix: Flix): List[InstanceError] = inst match {
+  private def checkOrphan(inst: TypedAst.Instance)(implicit flix: Flix): List[InstanceError] = inst match {
     case TypedAst.Instance(_, _, _, clazz, tpe, _, _, _, ns, _) => tpe.typeConstructor match {
       // Case 1: Enum type in the same namespace as the instance: not an orphan
       case Some(TypeConstructor.Enum(enumSym, _)) if enumSym.namespace == ns.idents.map(_.name) => Nil
@@ -96,7 +96,7 @@ object Instances {
     * * all type variables are unique
     * * all type arguments are variables
     */
-  def checkSimple(inst: TypedAst.Instance)(implicit flix: Flix): List[InstanceError] = inst match {
+  private def checkSimple(inst: TypedAst.Instance)(implicit flix: Flix): List[InstanceError] = inst match {
     case TypedAst.Instance(_, _, _, clazz, tpe, _, _, _, _, _) => tpe match {
       case _: Type.Cst => Nil
       case _: Type.Var => List(InstanceError.ComplexInstance(tpe, clazz.sym, clazz.loc))
@@ -122,7 +122,7 @@ object Instances {
   /**
     * Checks for overlap of instance types, assuming the instances are of the same class.
     */
-  def checkOverlap(inst1: TypedAst.Instance, heads: Map[TypeConstructor, TypedAst.Instance])(implicit flix: Flix): List[InstanceError] = {
+  private def checkOverlap(inst1: TypedAst.Instance, heads: Map[TypeConstructor, TypedAst.Instance])(implicit flix: Flix): List[InstanceError] = {
     // Note: We have that Type.Error unifies with any other type, hence we filter such instances here.
     unsafeGetHead(inst1) match {
       case TypeConstructor.Error(_) =>
@@ -145,7 +145,7 @@ object Instances {
   /**
     * Checks that every signature in `clazz` is implemented in `inst`, and that `inst` does not have any extraneous definitions.
     */
-  def checkSigMatch(inst: TypedAst.Instance, root: TypedAst.Root)(implicit flix: Flix): List[InstanceError] = {
+  private def checkSigMatch(inst: TypedAst.Instance, root: TypedAst.Root)(implicit flix: Flix): List[InstanceError] = {
     val clazz = root.classes(inst.clazz.sym)
 
     // Step 1: check that each signature has an implementation.
@@ -202,7 +202,7 @@ object Instances {
     * Checks that there is an instance for each super class of the class of `inst`,
     * and that the constraints on `inst` entail the constraints on the super instance.
     */
-  def checkSuperInstances(inst: TypedAst.Instance, root: TypedAst.Root)(implicit flix: Flix): List[InstanceError] = inst match {
+  private def checkSuperInstances(inst: TypedAst.Instance, root: TypedAst.Root)(implicit flix: Flix): List[InstanceError] = inst match {
     case TypedAst.Instance(_, _, _, clazz, tpe, tconstrs, _, _, _, _) =>
       val superClasses = root.classEnv(clazz.sym).superClasses
       superClasses flatMap {
@@ -231,7 +231,7 @@ object Instances {
   /**
     * Reassembles an instance
     */
-  def checkInstance(inst: TypedAst.Instance, root: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
+  private def checkInstance(inst: TypedAst.Instance, root: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
     val isClassStable = inst.clazz.loc.source.stable
     val isInstanceStable = inst.loc.source.stable
     val isIncremental = changeSet.isInstanceOf[ChangeSet.Changes]
@@ -245,7 +245,7 @@ object Instances {
   /**
     * Reassembles a set of instances of the same class.
     */
-  def checkInstancesOfClass(insts0: List[TypedAst.Instance], root: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
+  private def checkInstancesOfClass(insts0: List[TypedAst.Instance], root: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
 
     // Instances can be uniquely identified by their heads,
     // due to the non-complexity rule and non-overlap rule.
@@ -272,7 +272,7 @@ object Instances {
     *
     * The head of an instance `Clazz[T[a, b, c]]` is T
     */
-  def unsafeGetHead(inst: TypedAst.Instance): TypeConstructor = {
+  private def unsafeGetHead(inst: TypedAst.Instance): TypeConstructor = {
     inst.tpe.typeConstructor match {
       case Some(tc) => tc
       case None => throw InternalCompilerException("unexpected non-simple type",  inst.clazz.loc)
