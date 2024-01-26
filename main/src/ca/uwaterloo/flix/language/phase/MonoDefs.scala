@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.LoweredAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -30,39 +30,39 @@ import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
 /**
- * Monomorphization is a whole-program compilation strategy that replaces every reference to a parametric function with
- * a reference to a non-parametric version (of that function) specialized to the concrete types of the reference.
- *
- * For example, the polymorphic program:
- *
- * -   def fst[a, b](p: (a, b)): a = let (x, y) = p ; x
- * -   def f: Bool = fst((true, 'a'))
- * -   def g: Int32 = fst((42, "foo"))
- *
- * is, roughly speaking, translated to:
- *
- * -   def fst$1(p: (Bool, Char)): Bool = let (x, y) = p ; x
- * -   def fst$2(p: (Int32, Str)): Int32 = let (x, y) = p ; x
- * -   def f: Bool = fst$1((true, 'a'))
- * -   def g: Bool = fst$2((42, "foo"))
- *
- * At a high-level, monomorphization works as follows:
- *
- * 1. We maintain a queue of functions and the concrete types they must be specialized to.
- * 2. We populate the queue by specialization of non-parametric function definitions and other top-level expressions.
- * 3. We iteratively extract a function from the queue and specialize it:
- *    a. We replace every type variable appearing anywhere in the definition by its concrete type.
- *       b. We create new fresh local variable symbols (since the function is effectively being copied).
- *       c. We enqueue (or re-used) other functions referenced by the current function which require specialization.
- *       4. We reconstruct the AST from the specialized functions and remove all parametric functions.
- */
+  * Monomorphization is a whole-program compilation strategy that replaces every reference to a parametric function with
+  * a reference to a non-parametric version (of that function) specialized to the concrete types of the reference.
+  *
+  * For example, the polymorphic program:
+  *
+  * -   def fst[a, b](p: (a, b)): a = let (x, y) = p ; x
+  * -   def f: Bool = fst((true, 'a'))
+  * -   def g: Int32 = fst((42, "foo"))
+  *
+  * is, roughly speaking, translated to:
+  *
+  * -   def fst$1(p: (Bool, Char)): Bool = let (x, y) = p ; x
+  * -   def fst$2(p: (Int32, Str)): Int32 = let (x, y) = p ; x
+  * -   def f: Bool = fst$1((true, 'a'))
+  * -   def g: Bool = fst$2((42, "foo"))
+  *
+  * At a high-level, monomorphization works as follows:
+  *
+  * 1. We maintain a queue of functions and the concrete types they must be specialized to.
+  * 2. We populate the queue by specialization of non-parametric function definitions and other top-level expressions.
+  * 3. We iteratively extract a function from the queue and specialize it:
+  *    a. We replace every type variable appearing anywhere in the definition by its concrete type.
+  *       b. We create new fresh local variable symbols (since the function is effectively being copied).
+  *       c. We enqueue (or re-used) other functions referenced by the current function which require specialization.
+  *       4. We reconstruct the AST from the specialized functions and remove all parametric functions.
+  */
 object MonoDefs {
 
   /**
-   * A strict substitution is similar to a regular substitution except that free type variables are replaced by the
-   * Unit type. In other words, when performing a type substitution if there is no requirement on a polymorphic type
-   * we assume it to be Unit. This is safe since otherwise the type would not be polymorphic after type-inference.
-   */
+    * A strict substitution is similar to a regular substitution except that free type variables are replaced by the
+    * Unit type. In other words, when performing a type substitution if there is no requirement on a polymorphic type
+    * we assume it to be Unit. This is safe since otherwise the type would not be polymorphic after type-inference.
+    */
   private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
 
     private def default(tpe0: Type): Type = tpe0.kind match {
@@ -76,10 +76,10 @@ object MonoDefs {
     }
 
     /**
-     * Applies `this` substitution to the given type `tpe`.
-     *
-     * NB: Applies the substitution first, then replaces every type variable with the unit type.
-     */
+      * Applies `this` substitution to the given type `tpe`.
+      *
+      * NB: Applies the substitution first, then replaces every type variable with the unit type.
+      */
     def apply(tpe0: Type): Type = {
       // NB: The order of cases has been determined by code coverage analysis.
       def visit(t: Type): Type =
@@ -125,73 +125,61 @@ object MonoDefs {
     }
 
     /**
-     * Adds the given mapping to the substitution.
-     */
+      * Adds the given mapping to the substitution.
+      */
     def +(kv: (Symbol.KindedTypeVarSym, Type)): StrictSubstitution = kv match {
       case (tvar, tpe) => StrictSubstitution(s ++ Substitution.singleton(tvar, tpe), eqEnv)
     }
 
     /**
-     * Returns the non-strict version of this substitution.
-     */
+      * Returns the non-strict version of this substitution.
+      */
     def nonStrict: Substitution = s
   }
 
   /**
-   * An exception raised to indicate that the Monomorpher encountered an unexpected non-constant Boolean.
-   *
-   * @param tpe the non-constant Boolean type.
-   * @param loc the location of the type.
-   */
-  // TODO: Possibly this one should be removed.
-  case class UnexpectedNonConstBool(tpe: Type, loc: SourceLocation) extends RuntimeException
-
-
-  // TODO: Monomorph: We use exceptions here as a temporary stop-gap. We should consider to restructure and use Validation.
-
-  /**
-   * Holds the mutable data used throughout monomorphization.
-   *
-   * This class is thread-safe.
-   */
+    * Holds the mutable data used throughout monomorphization.
+    *
+    * This class is thread-safe.
+    */
   private class Context() {
 
     /**
-     * A function-local queue of pending (fresh symbol, function definition, and substitution)-triples.
-     *
-     * For example, if the queue contains the entry:
-     *
-     * -   (f$1, f, [a -> Int])
-     *
-     * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
-     *
-     * Note: We use a concurrent linked queue (which is non-blocking) so threads can enqueue items without contention.
-     */
+      * A function-local queue of pending (fresh symbol, function definition, and substitution)-triples.
+      *
+      * For example, if the queue contains the entry:
+      *
+      * -   (f$1, f, [a -> Int])
+      *
+      * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
+      *
+      * Note: We use a concurrent linked queue (which is non-blocking) so threads can enqueue items without contention.
+      */
     private val defQueue: ConcurrentLinkedQueue[(Symbol.DefnSym, Def, StrictSubstitution)] = new ConcurrentLinkedQueue
 
     /**
-     * Returns `true` if the queue is non-empty.
-     *
-     * Note: This is not synchronized.
-     */
+      * Returns `true` if the queue is non-empty.
+      *
+      * Note: This is not synchronized.
+      */
     def nonEmpty: Boolean = {
       !defQueue.isEmpty
     }
 
     /**
-     * Enqueues the given symbol, def, and substitution triple.
-     *
-     * Note: This is not synchronized.
-     */
+      * Enqueues the given symbol, def, and substitution triple.
+      *
+      * Note: This is not synchronized.
+      */
     def enqueue(sym: Symbol.DefnSym, defn: Def, subst: StrictSubstitution): Unit = {
       defQueue.add((sym, defn, subst))
     }
 
     /**
-     * Dequeues an element from the queue.
-     *
-     * Note: This is not synchronized.
-     */
+      * Dequeues an element from the queue.
+      *
+      * Note: This is not synchronized.
+      */
     def dequeueAll: Array[(Symbol.DefnSym, Def, StrictSubstitution)] = {
       val r = defQueue.toArray(Array.empty[(Symbol.DefnSym, Def, StrictSubstitution)])
       defQueue.clear()
@@ -199,55 +187,55 @@ object MonoDefs {
     }
 
     /**
-     * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
-     *
-     * For example, if the function:
-     *
-     * -   def fst[a, b](x: a, y: b): a = ...
-     *
-     * has been specialized w.r.t. to `Int` and `Str` then this map will contain an entry:
-     *
-     * -   (fst, (Int, Str) -> Int) -> fst$1
-     */
+      * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
+      *
+      * For example, if the function:
+      *
+      * -   def fst[a, b](x: a, y: b): a = ...
+      *
+      * has been specialized w.r.t. to `Int` and `Str` then this map will contain an entry:
+      *
+      * -   (fst, (Int, Str) -> Int) -> fst$1
+      */
     private val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
 
     /**
-     * Optionally returns the specialized def symbol for the given symbol `sym` and type `tpe`.
-     */
+      * Optionally returns the specialized def symbol for the given symbol `sym` and type `tpe`.
+      */
     def getDef2Def(sym: Symbol.DefnSym, tpe: Type): Option[Symbol.DefnSym] = synchronized {
       def2def.get((sym, tpe))
     }
 
     /**
-     * Adds a new def2def binding for the given symbol `sym1` and type `tpe`.
-     */
+      * Adds a new def2def binding for the given symbol `sym1` and type `tpe`.
+      */
     def putDef2Def(sym1: Symbol.DefnSym, tpe: Type, sym2: Symbol.DefnSym): Unit = synchronized {
       def2def.put((sym1, tpe), sym2)
     }
 
     /**
-     * A map used to collect specialized definitions, etc.
-     */
+      * A map used to collect specialized definitions, etc.
+      */
     private val specializedDefns: mutable.Map[Symbol.DefnSym, LoweredAst.Def] = mutable.Map.empty
 
     /**
-     * Adds a new specialized definition for the given def symbol `sym`.
-     */
+      * Adds a new specialized definition for the given def symbol `sym`.
+      */
     def putSpecializedDef(sym: Symbol.DefnSym, defn: LoweredAst.Def): Unit = synchronized {
       specializedDefns.put(sym, defn)
     }
 
     /**
-     * Returns the specialized definitions as an immutable map.
-     */
+      * Returns the specialized definitions as an immutable map.
+      */
     def toMap: Map[Symbol.DefnSym, LoweredAst.Def] = synchronized {
       specializedDefns.toMap
     }
   }
 
   /**
-   * Performs monomorphization of the given AST `root`.
-   */
+    * Performs monomorphization of the given AST `root`.
+    */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("MonoDefs") {
 
     implicit val r: Root = root
@@ -261,48 +249,44 @@ object MonoDefs {
       case (_, defn) => defn.spec.tparams.isEmpty
     }
 
-    try {
-      /*
-       * Perform specialization of all non-parametric function definitions.
-       *
-       * We perform specialization in parallel.
-       *
-       * This will enqueue additional functions for specialization.
-       */
-      ParOps.parMap(nonParametricDefns) {
-        case (sym, defn) =>
-          // We use an empty substitution because the defs are non-parametric.
-          mkFreshDefn(sym, defn, empty)
-      }
-
-      /*
-       * Perform function specialization until the queue is empty.
-       *
-       * We perform specialization in parallel along the frontier, i.e. each frontier is done in parallel.
-       */
-      while (ctx.nonEmpty) {
-        // Extract a function from the queue and specializes it w.r.t. its substitution.
-        val queue = ctx.dequeueAll
-        ParOps.parMap(queue) {
-          case (freshSym, defn, subst) => mkFreshDefn(freshSym, defn, subst)
-        }
-      }
-
-      // Reassemble the AST.
-      root.copy(
-        defs = ctx.toMap,
-        classes = Map.empty,
-        instances = Map.empty,
-        sigs = Map.empty
-      )
-    } catch {
-      case UnexpectedNonConstBool(tpe, loc) => throw InternalCompilerException(s"Unexpected non-const Bool: '$tpe'", loc)
+    /*
+     * Perform specialization of all non-parametric function definitions.
+     *
+     * We perform specialization in parallel.
+     *
+     * This will enqueue additional functions for specialization.
+     */
+    ParOps.parMap(nonParametricDefns) {
+      case (sym, defn) =>
+        // We use an empty substitution because the defs are non-parametric.
+        mkFreshDefn(sym, defn, empty)
     }
+
+    /*
+     * Perform function specialization until the queue is empty.
+     *
+     * We perform specialization in parallel along the frontier, i.e. each frontier is done in parallel.
+     */
+    while (ctx.nonEmpty) {
+      // Extract a function from the queue and specializes it w.r.t. its substitution.
+      val queue = ctx.dequeueAll
+      ParOps.parMap(queue) {
+        case (freshSym, defn, subst) => mkFreshDefn(freshSym, defn, subst)
+      }
+    }
+
+    // Reassemble the AST.
+    root.copy(
+      defs = ctx.toMap,
+      classes = Map.empty,
+      instances = Map.empty,
+      sigs = Map.empty
+    )
   }
 
   /**
-   * Adds a specialized def for the given symbol `freshSym` and def `defn` with the given substitution `subst`.
-   */
+    * Adds a specialized def for the given symbol `freshSym` and def `defn` with the given substitution `subst`.
+    */
   private def mkFreshDefn(freshSym: Symbol.DefnSym, defn: Def, subst: StrictSubstitution)(implicit ctx: Context, root: Root, flix: Flix): Unit = {
     // Specialize the formal parameters and introduce fresh local variable symbols.
     val (fparams, env0) = specializeFormalParams(defn.spec.fparams, subst)
@@ -332,15 +316,15 @@ object MonoDefs {
   }
 
   /**
-   * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the given substitution `subst`.
-   *
-   * Replaces every reference to a parametric function with a reference to its specialized version.
-   *
-   * Replaces every local variable symbol with a fresh local variable symbol.
-   *
-   * If a specialized version of a function does not yet exists, a fresh symbol is created for it, and the
-   * definition and substitution is enqueued.
-   */
+    * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the given substitution `subst`.
+    *
+    * Replaces every reference to a parametric function with a reference to its specialized version.
+    *
+    * Replaces every local variable symbol with a fresh local variable symbol.
+    *
+    * If a specialized version of a function does not yet exists, a fresh symbol is created for it, and the
+    * definition and substitution is enqueued.
+    */
   private def visitExp(exp0: Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, root: Root, flix: Flix): Expr = exp0 match {
     case Expr.Var(sym, tpe, loc) =>
       Expr.Var(env0(sym), subst(tpe), loc)
@@ -505,10 +489,10 @@ object MonoDefs {
   }
 
   /**
-   * Specializes the given pattern `p0` w.r.t. the current substitution.
-   *
-   * Returns the new pattern and a mapping from variable symbols to fresh variable symbols.
-   */
+    * Specializes the given pattern `p0` w.r.t. the current substitution.
+    *
+    * Returns the new pattern and a mapping from variable symbols to fresh variable symbols.
+    */
   private def visitPat(p0: Pattern, subst: StrictSubstitution)(implicit flix: Flix): (Pattern, Map[Symbol.VarSym, Symbol.VarSym]) = p0 match {
     case Pattern.Wild(tpe, loc) => (Pattern.Wild(subst(tpe), loc), Map.empty)
     case Pattern.Var(sym, tpe, loc) =>
@@ -535,10 +519,10 @@ object MonoDefs {
   }
 
   /**
-   * Specializes the given method `method` w.r.t. the current substitution.
-   *
-   * Returns the new method.
-   */
+    * Specializes the given method `method` w.r.t. the current substitution.
+    *
+    * Returns the new method.
+    */
   private def visitJvmMethod(method: JvmMethod, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, root: Root, flix: Flix): JvmMethod = method match {
     case JvmMethod(ident, fparams0, exp0, tpe, eff, loc) =>
       val (fparams, env1) = specializeFormalParams(fparams0, subst)
@@ -547,8 +531,8 @@ object MonoDefs {
   }
 
   /**
-   * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
-   */
+    * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
+    */
   private def specializeDefSym(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: Root, flix: Flix): Symbol.DefnSym = {
     // Lookup the definition and its declared type.
     val defn = root.defs(sym)
@@ -565,8 +549,8 @@ object MonoDefs {
   }
 
   /**
-   * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
-   */
+    * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
+    */
   private def specializeSigSym(sym: Symbol.SigSym, tpe0: Type)(implicit ctx: Context, root: Root, flix: Flix): Symbol.DefnSym = {
     // Perform erasure on the type
     val tpe = eraseType(tpe0)
@@ -597,23 +581,23 @@ object MonoDefs {
   }
 
   /**
-   * Converts a signature with an implementation into the equivalent definition.
-   */
+    * Converts a signature with an implementation into the equivalent definition.
+    */
   private def sigToDef(sigSym: Symbol.SigSym, spec: LoweredAst.Spec, exp: LoweredAst.Expr): LoweredAst.Def = {
     LoweredAst.Def(sigSymToDefnSym(sigSym), spec, exp)
   }
 
   /**
-   * Converts a SigSym into the equivalent DefnSym.
-   */
+    * Converts a SigSym into the equivalent DefnSym.
+    */
   private def sigSymToDefnSym(sigSym: Symbol.SigSym): Symbol.DefnSym = {
     val ns = sigSym.clazz.namespace :+ sigSym.clazz.name
     new Symbol.DefnSym(None, ns, sigSym.name, sigSym.loc)
   }
 
   /**
-   * Returns the def symbol corresponding to the specialized def `defn` w.r.t. to the type `tpe`.
-   */
+    * Returns the def symbol corresponding to the specialized def `defn` w.r.t. to the type `tpe`.
+    */
   private def specializeDef(defn: LoweredAst.Def, tpe: Type)(implicit ctx: Context, root: Root, flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
     val subst = infallibleUnify(defn.spec.declaredScheme.base, tpe)
@@ -642,10 +626,10 @@ object MonoDefs {
   }
 
   /**
-   * Specializes the given formal parameters `fparams0` w.r.t. the given substitution `subst0`.
-   *
-   * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
-   */
+    * Specializes the given formal parameters `fparams0` w.r.t. the given substitution `subst0`.
+    *
+    * Returns the new formal parameters and an environment mapping the variable symbol for each parameter to a fresh symbol.
+    */
   private def specializeFormalParams(fparams0: List[FormalParam], subst0: StrictSubstitution)(implicit flix: Flix): (List[FormalParam], Map[Symbol.VarSym, Symbol.VarSym]) = {
     // Return early if there are no formal parameters.
     if (fparams0.isEmpty)
@@ -657,10 +641,10 @@ object MonoDefs {
   }
 
   /**
-   * Specializes the given formal parameter `fparam0` w.r.t. the given substitution `subst0`.
-   *
-   * Returns the new formal parameter and an environment mapping the variable symbol to a fresh variable symbol.
-   */
+    * Specializes the given formal parameter `fparam0` w.r.t. the given substitution `subst0`.
+    *
+    * Returns the new formal parameter and an environment mapping the variable symbol to a fresh variable symbol.
+    */
   private def specializeFormalParam(fparam0: FormalParam, subst0: StrictSubstitution)(implicit flix: Flix): (FormalParam, Map[Symbol.VarSym, Symbol.VarSym]) = {
     val FormalParam(sym, mod, tpe, src, loc) = fparam0
     val freshSym = Symbol.freshVarSym(sym)
@@ -668,8 +652,8 @@ object MonoDefs {
   }
 
   /**
-   * Unifies `tpe1` and `tpe2` which must be unifiable.
-   */
+    * Unifies `tpe1` and `tpe2` which must be unifiable.
+    */
   private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit root: Root, flix: Flix): StrictSubstitution = {
     Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
       case Result.Ok((subst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
@@ -680,10 +664,10 @@ object MonoDefs {
   }
 
   /**
-   * Performs type erasure on the given type `tpe`.
-   *
-   * Flix does not erase normal types, but it does erase Boolean and caseset formulas.
-   */
+    * Performs type erasure on the given type `tpe`.
+    *
+    * Flix does not erase normal types, but it does erase Boolean and caseset formulas.
+    */
   private def eraseType(tpe: Type)(implicit root: Root, flix: Flix): Type = tpe match {
     case Type.Var(sym, loc) =>
       sym.kind match {
