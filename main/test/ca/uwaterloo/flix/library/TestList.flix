@@ -2922,11 +2922,11 @@ def literal06(): Bool =
 def frequency01(): Bool =
     let l = List#{"a"};
     let m = Map#{"a" => 1};
-    Assert.eq(m, frequency(l))
+    Assert.eq(m, List.frequency(l))
 
 @Test
 def frequency02(): Bool =
     let l = List#{"b", "a", "c", "a", "b", "a"};
     let m = Map#{"a" => 3, "b" => 2, "c" => 1};
-    Assert.eq(m, frequency(l))
+    Assert.eq(m, List.frequency(l))
 }
