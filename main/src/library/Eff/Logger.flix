@@ -68,6 +68,10 @@ mod Eff.Logger {
         }
 
     pub def infoExample(): Int32 \ Logger = {
+        // Using the proper API (i.e. `info` or another of the log functions
+        // that wrap the `log` effect) currently fails.
+        // info("A1");
+        // We have to use the `log` effect directly to avoid a runtime crash.
         do Eff.Logger.log(Severity.Info, _ -> "A1");
         1000
     }
