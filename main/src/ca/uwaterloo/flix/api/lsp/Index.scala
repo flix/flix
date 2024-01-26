@@ -30,6 +30,11 @@ object Index {
     MultiMap.empty, MultiMap.empty, MultiMap.empty, MultiMap.empty)
 
   /**
+    * Merges all the given indices.
+    */
+  def all(indices: Index*): Index = indices.foldLeft(Index.empty)(_ ++ _)
+
+  /**
     * Returns an index for the given `class0`.
     */
   def occurrenceOf(class0: TypedAst.Class): Index = empty + Entity.Class(class0)
