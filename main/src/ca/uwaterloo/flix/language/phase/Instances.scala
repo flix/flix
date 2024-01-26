@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
-import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 object Instances {
@@ -71,7 +70,7 @@ object Instances {
     */
   private def visitInstances(root: TypedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
     // Check the instances of each class in parallel.
-    val results = ParOps.parMap(root.instances.values)(checkInstancesOfClass)
+    val results = ParOps.parMap(root.instances.values)(checkInstancesOfClass(_, root, changeSet))
     results.flatten.toList
   }
 
@@ -123,24 +122,23 @@ object Instances {
   /**
     * Checks for overlap of instance types, assuming the instances are of the same class.
     */
-  def checkOverlap(inst1: TypedAst.Instance, inst2: TypedAst.Instance)(implicit flix: Flix): List[InstanceError] = {
+  def checkOverlap(inst1: TypedAst.Instance, heads: Map[TypeConstructor, TypedAst.Instance])(implicit flix: Flix): List[InstanceError] = {
     // Note: We have that Type.Error unifies with any other type, hence we filter such instances here.
-    (inst1.tpe, inst2.tpe) match {
-      case (Type.Cst(TypeConstructor.Error(_), _), _) =>
+    unsafeGetHead(inst1) match {
+      case TypeConstructor.Error(_) =>
         // Suppress error for Type.Error.
-        return Nil
-      case (_, Type.Cst(TypeConstructor.Error(_), _)) =>
-        // Suppress error for Type.Error.
-        return Nil
-      case (tpe1, tpe2) =>
-        Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
-          case Ok(_) =>
-            List(
-              InstanceError.OverlappingInstances(inst1.clazz.sym, inst1.clazz.loc, inst2.clazz.loc),
-              InstanceError.OverlappingInstances(inst1.clazz.sym, inst2.clazz.loc, inst1.clazz.loc)
-            )
-          case Err(_) => Nil
-        }
+        Nil
+      case tc => heads.get(tc) match {
+        // Case 1: No match. No Error.
+        case None =>
+          Nil
+        // Case 2: An instance matching this type exists. Error.
+        case Some(inst2) =>
+          List(
+            InstanceError.OverlappingInstances(inst1.clazz.sym, inst1.clazz.loc, inst2.clazz.loc),
+            InstanceError.OverlappingInstances(inst1.clazz.sym, inst2.clazz.loc, inst1.clazz.loc)
+          )
+      }
     }
   }
 
@@ -247,18 +245,37 @@ object Instances {
   /**
     * Reassembles a set of instances of the same class.
     */
-  def checkInstancesOfClass(insts0: List[TypedAst.Instance])(implicit flix: Flix): List[InstanceError] = {
-    val insts = insts0
-    // Check each instance against each instance that hasn't been checked yet
-    val checks = insts.tails.toList
-    checks flatMap {
-      case inst :: unchecked =>
-        // check that the instance is on a valid type, suppressing other errors if not
-        checkSimple(inst) match {
-          case Nil => unchecked.flatMap(checkOverlap(_, inst)) ::: checkInstance(inst)
-          case errs => errs
-        }
-      case Nil => Nil
+  def checkInstancesOfClass(insts0: List[TypedAst.Instance], root: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
+
+    // Instances can be uniquely identified by their heads,
+    // due to the non-complexity rule and non-overlap rule.
+    // This maps each instance head to its corresponding instance.
+    var heads = Map.empty[TypeConstructor, TypedAst.Instance]
+
+    insts0.flatMap {
+      // check that the instance is on a valid type, suppressing other errors if not
+      case inst => checkSimple(inst) match {
+        // Case 1: No Errors. Run other checks.
+        case Nil =>
+          val res = checkOverlap(inst, heads) ::: checkInstance(inst, root, changeSet)
+          // add the head to the set
+          heads += (unsafeGetHead(inst) -> inst)
+          res
+        // Case 2: Errors. Skip other checks.
+        case errs => errs
+      }
+    }
+  }
+
+  /**
+    * Retrieves the head of a simple instance.
+    *
+    * The head of an instance `Clazz[T[a, b, c]]` is T
+    */
+  def unsafeGetHead(inst: TypedAst.Instance): TypeConstructor = {
+    inst.tpe.typeConstructor match {
+      case Some(tc) => tc
+      case None => throw InternalCompilerException("unexpected non-simple type",  inst.clazz.loc)
     }
   }
 }
