@@ -20,7 +20,7 @@ object IteratorOps {
   /**
     * Concatenates the given iterators.
     */
-  def all[A](iters: Iterator[A]*): Iterator[A] = {
+  def all[A](iters: IterableOnce[A]*): Iterator[A] = {
     iters.foldLeft(Iterator.empty)(_ ++ _)
   }
 
