@@ -1211,7 +1211,7 @@ object Kinder {
 
     case UnkindedType.Alias(cst, args0, t0, loc) =>
       taenv(cst.sym) match {
-        case KindedAst.TypeAlias(_, _, _, tparams, tpe, _) =>
+        case KindedAst.TypeAlias(_, _, _, _, tparams, tpe, _) =>
           val argsVal = traverse(tparams.zip(args0)) {
             case (tparam, arg) => visitType(arg, tparam.sym.kind, kenv, taenv, root)
           }
