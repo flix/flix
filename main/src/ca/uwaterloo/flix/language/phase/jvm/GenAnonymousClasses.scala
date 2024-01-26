@@ -150,7 +150,7 @@ object GenAnonymousClasses {
       }
 
       // Invoke the closure
-      BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(tpe), loc)(new BytecodeInstructions.F(methodVisitor))
+      BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(tpe), Some("in anonymous class method"), loc)(new BytecodeInstructions.F(methodVisitor))
 
       tpe match {
         case MonoType.Array(_) => methodVisitor.visitTypeInsn(CHECKCAST, getDescriptorHacked(tpe))
