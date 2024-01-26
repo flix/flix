@@ -1,4 +1,4 @@
-mod Test.Handler.NewObject.Int32 {
+mod Test.Handler.NewObject {
 
     import java.lang.Runnable
 
