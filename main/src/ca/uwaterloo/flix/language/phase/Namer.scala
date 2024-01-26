@@ -385,13 +385,13 @@ object Namer {
     * Performs naming on the given type alias `alias0`.
     */
   private def visitTypeAlias(alias0: DesugaredAst.Declaration.TypeAlias, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.TypeAlias, NameError] = alias0 match {
-    case DesugaredAst.Declaration.TypeAlias(doc, mod0, ident, tparams0, tpe0, loc) =>
+    case DesugaredAst.Declaration.TypeAlias(doc, ann, mod0, ident, tparams0, tpe0, loc) =>
       val mod = visitModifiers(mod0, ns0)
       val tparams = getTypeParams(tparams0)
       mapN(visitType(tpe0)) {
         tpe =>
           val sym = Symbol.mkTypeAliasSym(ns0, ident)
-          NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+          NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc)
       }
   }
 
