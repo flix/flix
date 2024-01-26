@@ -50,7 +50,7 @@ object Instances {
       val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
         case (acc, TypedAst.Def(_, _, exp)) => acc ++ TypedAstOps.sigSymsOf(exp)
       }
-      val unusedSigs = sigs.map(_.sym).toSet.removedAll(usedSigs)
+      val unusedSigs = sigs.map(_.sym).toSet -- usedSigs
       unusedSigs.toList.map {
         sig => InstanceError.UnlawfulSignature(sig, sig.loc)
       }
