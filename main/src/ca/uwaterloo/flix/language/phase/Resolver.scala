@@ -228,13 +228,13 @@ object Resolver {
     * Type aliases within the type are given temporary placeholders.
     */
   def semiResolveTypeAlias(alias: NamedAst.Declaration.TypeAlias, env0: ListMap[String, Resolution], ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[ResolvedAst.Declaration.TypeAlias, ResolutionError] = alias match {
-    case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
+    case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams0, tpe0, loc) =>
       val tparamsVal = resolveTypeParams(tparams0, env0, ns, root)
       flatMapN(tparamsVal) {
         case tparams =>
           val env = env0 ++ mkTypeParamEnv(tparams.tparams)
           mapN(semiResolveType(tpe0, Wildness.ForbidWild, env, ns, root)(Level.Top, flix)) {
-            tpe => ResolvedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+            tpe => ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc)
           }
       }
   }
@@ -317,10 +317,10 @@ object Resolver {
     */
   def finishResolveTypeAliases(aliases0: List[ResolvedAst.Declaration.TypeAlias]): Validation[Map[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias], ResolutionError] = {
     Validation.fold(aliases0, Map.empty[Symbol.TypeAliasSym, ResolvedAst.Declaration.TypeAlias]) {
-      case (taenv, ResolvedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe0, loc)) =>
+      case (taenv, ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe0, loc)) =>
         mapN(finishResolveType(tpe0, taenv)) {
           tpe =>
-            val alias = ResolvedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+            val alias = ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc)
             taenv + (sym -> alias)
         }
     }
@@ -370,7 +370,7 @@ object Resolver {
       resolveEnum(enum, env0, taenv, ns0, root)
     case enum@NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, index, tparams, derives, cases, loc) =>
       resolveRestrictableEnum(enum, env0, taenv, ns0, root)
-    case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
+    case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc) =>
       Validation.success(taenv(sym))
     case eff@NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) =>
       resolveEffect(eff, env0, taenv, ns0, root)
@@ -3443,7 +3443,7 @@ object Resolver {
     case NamedAst.Declaration.Def(sym, spec, exp) => sym
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym
     case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym
-    case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym
+    case NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc) => sym
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, loc) => sym
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym
     case NamedAst.Declaration.Op(sym, spec) => sym

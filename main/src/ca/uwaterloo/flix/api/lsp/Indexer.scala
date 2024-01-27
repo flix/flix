@@ -133,13 +133,14 @@ object Indexer {
     * Returns a reverse index for the given type alias `alias0`.
     */
   private def visitTypeAlias(alias0: TypeAlias): Index = alias0 match {
-    case TypeAlias(_, _, _, tparams, tpe, _) =>
+    case TypeAlias(_, _, _, _, tparams, tpe, _) =>
       Index.all(
         Index.occurrenceOf(alias0),
         traverse(tparams)(visitTypeParam),
         visitType(tpe),
       )
   }
+
 
   /**
     * Returns a reverse index for the given associated type definition `assoc`.
