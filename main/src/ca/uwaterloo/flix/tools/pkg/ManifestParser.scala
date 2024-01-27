@@ -88,7 +88,8 @@ object ManifestParser {
       githubProject <- Result.traverseOpt(repository)(r => toGithubProject(r, p));
 
       modules <- getOptionalArrayProperty("package.modules", parser, p);
-      packageModules <- toPackageModules(modules, p);
+      moduleStrings <- Result.traverseOpt(modules)(m => convertTomlArrayToStringList(m, p));
+      packageModules <- toPackageModules(moduleStrings, p);
 
       flix <- getRequiredStringProperty("package.flix", parser, p);
       flixSemVer <- toFlixVer(flix, p);
@@ -488,25 +489,17 @@ object ManifestParser {
   }
 
   /**
-    * Creates the `PackageModules` object from `optArray`.
+    * Creates the `PackageModules` object from `optList`.
     */
-  private def toPackageModules(optArray: Option[TomlArray], p: Path): Result[PackageModules, ManifestError] = {
-    optArray match {
+  private def toPackageModules(optList: Option[List[String]], p: Path): Result[PackageModules, ManifestError] = {
+    optList match {
       case None =>
         Ok(PackageModules.All)
-      case Some(array) =>
-        var moduleSet = Set.empty[Symbol.ModuleSym]
-        for (i <- 0 until array.size()) {
-          try {
-            val string = array.getString(i)
-            val namespace = string.split('.').toList
-            val sym = Symbol.mkModuleSym(namespace)
-            moduleSet += sym
-          } catch {
-            case e: TomlInvalidTypeException =>
-              return Err(ManifestError.ManifestParseError(p, e.getMessage))
-          }
-        }
+      case Some(list) =>
+        val moduleSet = list.map { string =>
+          val namespace = string.split('.').toList
+          Symbol.mkModuleSym(namespace)
+        }.toSet
         Ok(PackageModules.Selected(moduleSet))
 
     }
