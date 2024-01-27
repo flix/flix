@@ -17,17 +17,17 @@ package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.language.ast.Symbol
 
-sealed trait IncludedModules {
+sealed trait PackageModules {
   def contains(sym: Symbol.ModuleSym): Boolean = this match {
-    case IncludedModules.All => true
-    case IncludedModules.Selected(included) => included.contains(sym)
+    case PackageModules.All => true
+    case PackageModules.Selected(included) => included.contains(sym)
   }
 }
 
-object IncludedModules {
+object PackageModules {
 
-  case object All extends IncludedModules
+  case object All extends PackageModules
 
-  case class Selected(included: Set[Symbol.ModuleSym]) extends IncludedModules
+  case class Selected(included: Set[Symbol.ModuleSym]) extends PackageModules
 
 }

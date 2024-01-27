@@ -490,10 +490,10 @@ object ManifestParser {
   /**
     * Creates the `IncludedModules` object from `optArray`.
     */
-  private def toIncludedModules(optArray: Option[TomlArray], p: Path): Result[IncludedModules, ManifestError] = {
+  private def toIncludedModules(optArray: Option[TomlArray], p: Path): Result[PackageModules, ManifestError] = {
     optArray match {
       case None =>
-        Ok(IncludedModules.All)
+        Ok(PackageModules.All)
       case Some(array) =>
         var moduleSet = Set.empty[Symbol.ModuleSym]
         for (i <- 0 until array.size()) {
@@ -507,7 +507,7 @@ object ManifestParser {
               return Err(ManifestError.ManifestParseError(p, e.getMessage))
           }
         }
-        Ok(IncludedModules.Selected(moduleSet))
+        Ok(PackageModules.Selected(moduleSet))
 
     }
   }

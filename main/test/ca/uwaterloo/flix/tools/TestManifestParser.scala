@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyKind, IncludedModules, ManifestError, ManifestParser, Repository, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyKind, PackageModules, ManifestError, ManifestParser, Repository, SemVer}
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -104,7 +104,7 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.modules.Some") {
-    assertResult(expected = IncludedModules.Selected(Set(Symbol.mkModuleSym(List("FirstMod")), Symbol.mkModuleSym(List("SecondMod", "Foo")))))(actual = {
+    assertResult(expected = PackageModules.Selected(Set(Symbol.mkModuleSym(List("FirstMod")), Symbol.mkModuleSym(List("SecondMod", "Foo")))))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.modules
         case Err(e) => e.message(f)
@@ -124,7 +124,7 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(expected = IncludedModules.All)(actual =
+    assertResult(expected = PackageModules.All)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) => m.modules
         case Err(e) => e.message(f)
