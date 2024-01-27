@@ -1395,7 +1395,7 @@ mod List {
     }
 
     ///
-    /// Returns the frequency for each element in list l
+    /// Returns the frequency for each element in list `l`
     ///
     pub def frequency(l: List[t]): Map[t, Int32] with Order[t] =
         def freq(ll, m) = match ll {
