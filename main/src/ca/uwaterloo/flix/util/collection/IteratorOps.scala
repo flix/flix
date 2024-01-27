@@ -21,7 +21,7 @@ object IteratorOps {
     * Concatenates the given iterators.
     */
   def all[A](iters: IterableOnce[A]*): Iterator[A] = {
-    iters.foldLeft(Iterator.empty)(_ ++ _)
+    iters.foldLeft(Iterator.empty[A])(_ ++ _)
   }
 
 }
