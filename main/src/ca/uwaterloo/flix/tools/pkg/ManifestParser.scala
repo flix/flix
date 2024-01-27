@@ -88,7 +88,7 @@ object ManifestParser {
       githubProject <- Result.traverseOpt(repository)(r => toGithubProject(r, p));
 
       modules <- getOptionalArrayProperty("package.modules", parser, p);
-      includedModules <- toIncludedModules(modules, p);
+      packageModules <- toPackageModules(modules, p);
 
       flix <- getRequiredStringProperty("package.flix", parser, p);
       flixSemVer <- toFlixVer(flix, p);
@@ -113,7 +113,7 @@ object ManifestParser {
       jarDeps <- getOptionalTableProperty("jar-dependencies", parser, p);
       jarDepsList <- collectDependencies(jarDeps, flixDep = false, prodDep = false, jarDep = true, p)
 
-    ) yield Manifest(name, description, versionSemVer, githubProject, includedModules, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
+    ) yield Manifest(name, description, versionSemVer, githubProject, packageModules, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
   }
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
@@ -488,9 +488,9 @@ object ManifestParser {
   }
 
   /**
-    * Creates the `IncludedModules` object from `optArray`.
+    * Creates the `PackageModules` object from `optArray`.
     */
-  private def toIncludedModules(optArray: Option[TomlArray], p: Path): Result[PackageModules, ManifestError] = {
+  private def toPackageModules(optArray: Option[TomlArray], p: Path): Result[PackageModules, ManifestError] = {
     optArray match {
       case None =>
         Ok(PackageModules.All)
