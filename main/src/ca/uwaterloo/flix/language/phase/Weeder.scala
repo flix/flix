@@ -472,15 +472,16 @@ object Weeder {
     * Performs weeding on the given type alias declaration `d0`.
     */
   private def visitTypeAlias(d0: ParsedAst.Declaration.TypeAlias)(implicit flix: Flix): Validation[List[WeededAst.Declaration.TypeAlias], WeederError] = d0 match {
-    case ParsedAst.Declaration.TypeAlias(doc0, mod0, sp1, ident, tparams0, tpe0, sp2) =>
+    case ParsedAst.Declaration.TypeAlias(doc0, ann0, mod0, sp1, ident, tparams0, tpe0, sp2) =>
       val doc = visitDoc(doc0)
+      val annVal = visitAnnotations(ann0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
       val tparamsVal = visitTypeParams(tparams0)
       val tpeVal = visitType(tpe0)
 
-      mapN(modVal, tparamsVal, tpeVal) {
-        case (mod, tparams, tpe) =>
-          List(WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, mkSL(sp1, sp2)))
+      mapN(annVal, modVal, tparamsVal, tpeVal) {
+        case (ann, mod, tparams, tpe) =>
+          List(WeededAst.Declaration.TypeAlias(doc, ann, mod, ident, tparams, tpe, mkSL(sp1, sp2)))
       }
   }
 

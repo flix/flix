@@ -300,7 +300,7 @@ object HtmlDocumentor {
         classes.filter(c => c.decl.mod.isPublic && !c.decl.ann.isInternal).map(filterClass),
         effects.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(filterEffect),
         enums.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(filterEnum),
-        typeAliases.filter(t => t.mod.isPublic),
+        typeAliases.filter(t => t.mod.isPublic && !t.ann.isInternal),
         defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
       )
   }
