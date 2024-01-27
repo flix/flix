@@ -280,7 +280,7 @@ object Lowering {
     * Lowers the given type `alias`.
     */
   private def visitTypeAlias(alias: TypedAst.TypeAlias)(implicit root: TypedAst.Root, flix: Flix): LoweredAst.TypeAlias = alias match {
-    case TypedAst.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
+    case TypedAst.TypeAlias(doc, _, mod, sym, tparams0, tpe0, loc) =>
       val tparams = tparams0.map(visitTypeParam)
       val tpe = visitType(tpe0)
       LoweredAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
