@@ -18,19 +18,16 @@ package ca.uwaterloo.flix.tools.pkg
 import ca.uwaterloo.flix.language.ast.Symbol
 
 sealed trait IncludedModules {
-  def contains(sym: Symbol.ModuleSym): Boolean
+  def contains(sym: Symbol.ModuleSym): Boolean = this match {
+    case IncludedModules.All => true
+    case IncludedModules.Selected(included) => included.contains(sym)
+  }
 }
 
 object IncludedModules {
 
-  case object All extends IncludedModules {
-    override def contains(sym: Symbol.ModuleSym): Boolean =
-      true
-  }
+  case object All extends IncludedModules
 
-  case class Selected(included: Set[Symbol.ModuleSym]) extends IncludedModules {
-    override def contains(sym: Symbol.ModuleSym): Boolean =
-      included.contains(sym)
-  }
+  case class Selected(included: Set[Symbol.ModuleSym]) extends IncludedModules
 
 }
