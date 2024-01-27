@@ -1394,19 +1394,18 @@ mod List {
         toArray(rc, l) !> Array.shuffle(rnd) |> Array.toList
     }
 
-     ///
-     /// Returns the frequency for each element in list l
-     ///
-     pub def frequency(l: List[l]): Map[t, Int32] with Order[t] =
-         def freq(ll, m) =
-         match ll {
+    ///
+    /// Returns the frequency for each element in list l
+    ///
+    pub def frequency(l: List[t]): Map[t, Int32] with Order[t] =
+        def freq(ll, m) = match ll {
             case List.Nil   => m
-            case (x::xs)     =>
+            case (x::xs)    =>
                 match Map.get(x,m) {
-                    case None       => freq(xs, Map.insert(x, l, m))
+                    case None       => freq(xs, Map.insert(x, 1, m))
                     case Some(_)    => freq(xs, Map.update(v -> Some(v+1), x, m))
                 }
-         };
-     freq(l, Map#{})
+        };
+    freq(l, Map#{})
 
 }
