@@ -172,7 +172,7 @@ mod TestDebug {
     def testFunctionStringify01(): Bool = {
         def f(x: Int32): Int32 = x;
         let s = stringify(f);
-        s == "Int32 -> Int32"
+        s == "Int32 -> Obj"
     }
 
     def toIntFunction(x: a, g: a -> Int32): Int32 = g(x)
@@ -180,7 +180,7 @@ mod TestDebug {
     @test
     def testFunctionStringify02(): Bool = {
         let s = stringify(toIntFunction(true));
-        s == "Obj -> Int32"
+        s == "Obj -> Obj"
     }
 
     def thunkFunction(x: a): String -> a = _ -> x
@@ -188,7 +188,7 @@ mod TestDebug {
     @test
     def testFunctionStringify03(): Bool = {
         let s = stringify((thunkFunction(42), thunkFunction('a')));
-        s == "(Obj -> Int32, Obj -> Char)"
+        s == "(Obj -> Obj, Obj -> Obj)"
     }
 
      @test

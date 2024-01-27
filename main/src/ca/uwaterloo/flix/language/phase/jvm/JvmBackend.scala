@@ -71,7 +71,8 @@ object JvmBackend {
       // Second, generate classes.
       //
 
-      val mainClass = GenMainClass.gen()
+      def genMain(defn: Def): (JvmName, JvmClass) = genClass(BackendObjType.Main(defn.sym))
+      val mainClass = root.getMain.map(main => Map(genMain(main))).getOrElse(Map.empty)
 
       val namespaceClasses = GenNamespaceClasses.gen(namespaces)
 
@@ -80,8 +81,6 @@ object JvmBackend {
       val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs)
       val closureAbstractClasses = GenClosureAbstractClasses.gen(types)
 
-      // Generate enum classes.
-      val enumInterfaces = GenEnumInterfaces.gen(root.enums.values)
       val tagClasses = GenTagClasses.gen(root.enums.values.flatMap(_.cases.values))
 
       val tupleClasses = erasedTuplesTypes.map(genClass).toMap
@@ -104,6 +103,7 @@ object JvmBackend {
       val rslClass = Map(genClass(BackendObjType.ReifiedSourceLocation))
       val holeErrorClass = Map(genClass(BackendObjType.HoleError))
       val matchErrorClass = Map(genClass(BackendObjType.MatchError))
+      val unhandledEffectErrorClass = Map(genClass(BackendObjType.UnhandledEffectError))
 
       val globalClass = Map(genClass(BackendObjType.Global))
 
@@ -135,7 +135,6 @@ object JvmBackend {
         functionInterfaces,
         functionAndClosureClasses,
         closureAbstractClasses,
-        enumInterfaces,
         tagClasses,
         tupleClasses,
         recordInterfaces,
@@ -149,6 +148,7 @@ object JvmBackend {
         rslClass,
         holeErrorClass,
         matchErrorClass,
+        unhandledEffectErrorClass,
         globalClass,
         regionClass,
         uncaughtExceptionHandlerClass,
