@@ -1406,6 +1406,6 @@ mod List {
                     case Some(_)    => freq(xs, Map.update(v -> Some(v+1), x, m))
                 }
         };
-    freq(l, Map#{})
+        freq(l, Map#{})
 
 }
