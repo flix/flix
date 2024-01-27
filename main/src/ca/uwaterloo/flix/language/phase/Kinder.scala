@@ -145,14 +145,14 @@ object Kinder {
     * Returns the kind of the type alias.
     */
   private def visitTypeAlias(alias: ResolvedAst.Declaration.TypeAlias, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.TypeAlias, KindError] = alias match {
-    case ResolvedAst.Declaration.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
+    case ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams0, tpe0, loc) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams0)
 
       val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv))
       val tpeVal = visitType(tpe0, Kind.Wild, kenv, taenv, root)
 
       mapN(tparamsVal, tpeVal) {
-        case (tparams, tpe) => KindedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+        case (tparams, tpe) => KindedAst.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc)
       }
   }
 
@@ -1211,7 +1211,7 @@ object Kinder {
 
     case UnkindedType.Alias(cst, args0, t0, loc) =>
       taenv(cst.sym) match {
-        case KindedAst.TypeAlias(_, _, _, tparams, tpe, _) =>
+        case KindedAst.TypeAlias(_, _, _, _, tparams, tpe, _) =>
           val argsVal = traverse(tparams.zip(args0)) {
             case (tparam, arg) => visitType(arg, tparam.sym.kind, kenv, taenv, root)
           }
