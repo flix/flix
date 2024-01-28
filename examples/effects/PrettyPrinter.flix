@@ -81,7 +81,7 @@ mod PrettyPrinter {
     type alias Pretty = Emit + Layout + LayoutChoice
 
     def group(p: Unit -> Unit \ Layout): Unit \ Layout + LayoutChoice =
-        (do Choice.choice()) |> in(p)
+        (do LayoutChoice.choice()) |> in(p)
 
     def softLine(): Unit \ Pretty = group(line)
 
