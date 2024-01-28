@@ -19,6 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.language.ast.Symbol
 
 import java.util.Objects
 import scala.annotation.tailrec
@@ -326,6 +327,11 @@ object Type {
   val Pure: Type = Type.Cst(TypeConstructor.Pure, SourceLocation.Unknown)
 
   /**
+    * Represents the IO effect.
+    */
+  val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.mkEffectSym(Name.RootNS, Name.Ident(SourcePosition.Unknown, "IO", SourcePosition.Unknown))), SourceLocation.Unknown)
+
+  /**
     * Represents the universal effect set.
     */
   val EffUniv: Type = Type.Cst(TypeConstructor.EffUniv, SourceLocation.Unknown)
@@ -620,7 +626,7 @@ object Type {
   /**
     * Constructs the impure arrow type A ~> B.
     */
-  def mkImpureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Impure, b, loc)
+  def mkIoArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, IO, b, loc)
 
   /**
     * Constructs the arrow type A -> B \ p.
@@ -635,7 +641,7 @@ object Type {
   /**
     * Constructs the impure curried arrow type A_1 -> (A_2  -> ... -> A_n) ~> B.
     */
-  def mkImpureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Impure, b, loc)
+  def mkIoCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, IO, b, loc)
 
   /**
     * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B \ e.
@@ -654,7 +660,7 @@ object Type {
   /**
     * Constructs the impure uncurried arrow type (A_1, ..., A_n) ~> B.
     */
-  def mkImpureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Impure, b, loc)
+  def mkIoUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, IO, b, loc)
 
   /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B \ p.
@@ -1034,7 +1040,7 @@ object Type {
     else if (c.isArray) {
       val comp = c.getComponentType
       val elmType = getFlixType(comp)
-      Type.mkArray(elmType, Type.EffUniv, SourceLocation.Unknown)
+      Type.mkArray(elmType, Type.IO, SourceLocation.Unknown)
     }
     // otherwise native type
     else {

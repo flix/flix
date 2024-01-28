@@ -120,9 +120,9 @@ object Safety {
     * Returns `true` if the given `defn` is pure or has the IO effect.
     */
   private def isPureOrIO(defn: Def): Boolean = {
-    defn.spec.eff.typeConstructor match {
-      case Some(TypeConstructor.Pure) => true
-      case Some(TypeConstructor.EffUniv) => true
+    defn.spec.eff match {
+      case Type.Pure => true
+      case Type.IO => true
       case _ => false
     }
   }

@@ -187,7 +187,7 @@ object TypeReconstruction {
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = Type.Unit
-      val eff = Type.Impure
+      val eff = Type.IO
       TypedAst.Expr.ScopeExit(e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.Match(matchExp, rules, loc) =>
@@ -423,68 +423,68 @@ object TypeReconstruction {
     case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
       val as = args.map(visitExp(_))
       val tpe = getFlixType(constructor.getDeclaringClass)
-      val eff = Type.Impure
+      val eff = Type.IO
       TypedAst.Expr.InvokeConstructor(constructor, as, tpe, eff, loc)
 
     case KindedAst.Expr.InvokeMethod(method, _, exp, args, loc) =>
       val e = visitExp(exp)
       val as = args.map(visitExp(_))
       val tpe = getFlixType(method.getReturnType)
-      val eff = Type.Impure
+      val eff = Type.IO
       TypedAst.Expr.InvokeMethod(method, e, as, tpe, eff, loc)
 
     case KindedAst.Expr.InvokeStaticMethod(method, args, loc) =>
       val as = args.map(visitExp(_))
       val tpe = getFlixType(method.getReturnType)
-      val eff = Type.Impure
+      val eff = Type.IO
       TypedAst.Expr.InvokeStaticMethod(method, as, tpe, eff, loc)
 
     case KindedAst.Expr.GetField(field, _, exp, loc) =>
       val e = visitExp(exp)
       val tpe = getFlixType(field.getType)
-      val eff = Type.Impure
+      val eff = Type.IO
       TypedAst.Expr.GetField(field, e, tpe, eff, loc)
 
     case KindedAst.Expr.PutField(field, _, exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = Type.Unit
-      val eff = Type.Impure
+      val eff = Type.IO
       TypedAst.Expr.PutField(field, e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.GetStaticField(field, loc) =>
       val tpe = getFlixType(field.getType)
-      val eff = Type.Impure
+      val eff = Type.IO
       TypedAst.Expr.GetStaticField(field, tpe, eff, loc)
 
     case KindedAst.Expr.PutStaticField(field, exp, loc) =>
       val e = visitExp(exp)
       val tpe = Type.Unit
-      val eff = Type.Impure
+      val eff = Type.IO
       TypedAst.Expr.PutStaticField(field, e, tpe, eff, loc)
 
     case KindedAst.Expr.NewObject(name, clazz, methods, loc) =>
       val tpe = getFlixType(clazz)
-      val eff = Type.Impure
+      val eff = Type.IO
       val ms = methods map visitJvmMethod
       TypedAst.Expr.NewObject(name, clazz, tpe, eff, ms, loc)
 
     case KindedAst.Expr.NewChannel(exp1, exp2, tvar, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
-      val eff = Type.Impure
+      val eff = Type.IO
       TypedAst.Expr.NewChannel(e1, e2, subst(tvar), eff, loc)
 
     case KindedAst.Expr.GetChannel(exp, tvar, loc) =>
       val e = visitExp(exp)
-      val eff = Type.Impure
+      val eff = Type.IO
       TypedAst.Expr.GetChannel(e, subst(tvar), eff, loc)
 
     case KindedAst.Expr.PutChannel(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = Type.mkUnit(loc)
-      val eff = Type.Impure
+      val eff = Type.IO
       TypedAst.Expr.PutChannel(e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.SelectChannel(rules, default, tvar, loc) =>
@@ -495,14 +495,14 @@ object TypeReconstruction {
           TypedAst.SelectChannelRule(sym, c, b)
       }
       val d = default.map(visitExp(_))
-      val eff = Type.Impure
+      val eff = Type.IO
       TypedAst.Expr.SelectChannel(rs, d, subst(tvar), eff, loc)
 
     case KindedAst.Expr.Spawn(exp1, exp2, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)
       val tpe = Type.Unit
-      val eff = Type.Impure
+      val eff = Type.IO
       TypedAst.Expr.Spawn(e1, e2, tpe, eff, loc)
 
     case KindedAst.Expr.ParYield(frags, exp, loc) =>

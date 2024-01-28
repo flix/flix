@@ -738,7 +738,7 @@ object Desugar {
       Expr.NewObject(t, ms, loc)
 
     case WeededAst.Expr.Static(loc) =>
-      val tpe = Type.mkRegion(Type.EffUniv, loc)
+      val tpe = Type.mkRegion(Type.IO, loc)
       DesugaredAst.Expr.Region(tpe, loc)
 
     case WeededAst.Expr.NewChannel(exp1, exp2, loc) =>

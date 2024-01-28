@@ -156,14 +156,11 @@ object TypeInference {
                     val inferredEff = inferredSc.base.arrowEffectType
                     val declaredEff = declaredScheme.base.arrowEffectType
 
-                    if (declaredEff == Type.Pure && inferredEff == Type.Impure) {
-                      // Case 1: Declared as pure, but impure.
-                      return Validation.toHardFailure(TypeError.ImpureDeclaredAsPure(loc))
-                    } else if (declaredEff == Type.Pure && inferredEff != Type.Pure) {
-                      // Case 2: Declared as pure, but effectful.
+                    if (declaredEff == Type.Pure && inferredEff != Type.Pure) {
+                      // Case 1: Declared as pure, but effectful.
                       return Validation.toHardFailure(TypeError.EffectfulDeclaredAsPure(inferredEff, loc))
                     } else {
-                      // Case 3: Check if it is the effect that cannot be generalized.
+                      // Case 2: Check if it is the effect that cannot be generalized.
                       val inferredEffScheme = Scheme(inferredSc.quantifiers, Nil, Nil, inferredEff)
                       val declaredEffScheme = Scheme(declaredScheme.quantifiers, Nil, Nil, declaredEff)
                       Scheme.checkLessThanEqual(inferredEffScheme, declaredEffScheme, classEnv, eqEnv).toHardResult match {
@@ -614,7 +611,7 @@ object TypeInference {
           _ <- expectTypeM(expected = Type.mkUncurriedArrowWithEffect(Type.Unit :: Nil, p, Type.Unit, loc.asSynthetic), actual = tpe1, exp1.loc)
           _ <- expectTypeM(expected = regionType, actual = tpe2, exp2.loc)
           resultTyp = Type.Unit
-          resultEff = Type.mkUnion(Type.Impure, regionVar, loc)
+          resultEff = Type.mkUnion(Type.IO, regionVar, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expr.Match(exp, rules, loc) =>
@@ -1015,7 +1012,7 @@ object TypeInference {
         for {
           (constrs, _, _) <- traverseM(args)(visitExp).map(_.unzip3)
           resultTyp = classType
-          resultEff = Type.Impure
+          resultEff = Type.IO
         } yield (constrs.flatten, resultTyp, resultEff)
 
       case KindedAst.Expr.InvokeMethod(method, clazz, exp, args, loc) =>
@@ -1026,7 +1023,7 @@ object TypeInference {
           objectTyp <- unifyTypeM(baseTyp, classType, loc)
           (constrs, tpes, effs) <- traverseM(args)(visitExp).map(_.unzip3)
           resultTyp = getFlixType(method.getReturnType)
-          resultEff = Type.Impure
+          resultEff = Type.IO
         } yield (baseConstrs ++ constrs.flatten, resultTyp, resultEff)
 
       case KindedAst.Expr.InvokeStaticMethod(method, args, loc) =>
@@ -1034,7 +1031,7 @@ object TypeInference {
         for {
           (constrs, tpes, effs) <- traverseM(args)(visitExp).map(_.unzip3)
           resultTyp = returnType
-          resultEff = Type.Impure
+          resultEff = Type.IO
         } yield (constrs.flatten, resultTyp, resultEff)
 
       case KindedAst.Expr.GetField(field, clazz, exp, loc) =>
@@ -1044,7 +1041,7 @@ object TypeInference {
           (constrs, tpe, _) <- visitExp(exp)
           objectTyp <- expectTypeM(expected = classType, actual = tpe, exp.loc)
           resultTyp = fieldType
-          resultEff = Type.Impure
+          resultEff = Type.IO
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expr.PutField(field, clazz, exp1, exp2, loc) =>
@@ -1056,13 +1053,13 @@ object TypeInference {
           _ <- expectTypeM(expected = classType, actual = tpe1, exp1.loc)
           _ <- expectTypeM(expected = fieldType, actual = tpe2, exp2.loc)
           resultTyp = Type.Unit
-          resultEff = Type.Impure
+          resultEff = Type.IO
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expr.GetStaticField(field, loc) =>
         val fieldType = getFlixType(field.getType)
         val resultTyp = fieldType
-        val resultEff = Type.Impure
+        val resultEff = Type.IO
         liftM(List.empty, resultTyp, resultEff)
 
       case KindedAst.Expr.PutStaticField(field, exp, loc) =>
@@ -1070,7 +1067,7 @@ object TypeInference {
           (valueConstrs, valueTyp, _) <- visitExp(exp)
           fieldTyp <- expectTypeM(expected = getFlixType(field.getType), actual = valueTyp, exp.loc)
           resultTyp = Type.Unit
-          resultEff = Type.Impure
+          resultEff = Type.IO
         } yield (valueConstrs, resultTyp, resultEff)
 
       case KindedAst.Expr.NewObject(_, clazz, methods, loc) =>
@@ -1099,7 +1096,7 @@ object TypeInference {
         for {
           (constrs, _, _) <- traverseM(methods)(inferJvmMethod).map(_.unzip3)
           resultTyp = getFlixType(clazz)
-          resultEff = Type.Impure
+          resultEff = Type.IO
         } yield (constrs.flatten, resultTyp, resultEff)
 
 
@@ -1185,7 +1182,7 @@ object TypeInference {
           (constrs2, tpe2, _) <- visitExp(exp2)
           _ <- expectTypeM(expected = regionType, actual = tpe2, exp2.loc)
           resultTyp = Type.Unit
-          resultEff = Type.mkUnion(Type.Impure, regionVar, loc)
+          resultEff = Type.mkUnion(Type.IO, regionVar, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expr.ParYield(frags, exp, loc) =>

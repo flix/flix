@@ -433,7 +433,7 @@ object DocAstFormatter {
 
   private def formatEffect(effect: Eff, paren: Boolean = true)(implicit i: Indent): Doc = effect match {
     case Eff.Pure => empty
-    case Eff.Impure => text(" ") :: text("\\") +: text("IO")
+    case Eff.Impure => text(" ") :: text("\\") +: text("Impure")
     case Eff.AsIs(s) => text(" ") :: text("\\") +: text(s)
   }
 
