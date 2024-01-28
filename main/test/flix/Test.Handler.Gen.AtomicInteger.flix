@@ -17,15 +17,15 @@ mod Test.Handler.Gen.AtomicInteger {
     def generator(): Unit \ Gen =
         do Gen.gen(); generator()
 
-    def sample(limit: Int32): List[Int32] =
+    def sample(limit: Int32): List[AtomicInteger] =
         region rc {
             let counter = ref newAtomicInteger(0) @ rc;
             try {
                 generator(); Nil
             } with Gen {
                 def gen(k) =
-                    let i = toInt(getAndInc(counter));
-                    if (i == limit) Nil else i :: k(newAtomicInteger(i))
+                    let i = getAndInc(counter);
+                    if (toInt(i) == limit) Nil else i :: k(i)
             }
         }
 
@@ -34,43 +34,43 @@ mod Test.Handler.Gen.AtomicInteger {
         r := newAtomicInteger(i + 1);
         newAtomicInteger(i)
 
-    def range(a: AtomicInteger, b: AtomicInteger): List[Int32] =
-        List.unfold(i -> if (toInt(i) >= toInt(b)) None else Some((toInt(i), newAtomicInteger(toInt(i) + 1))), a)
+    def range(a: AtomicInteger, b: AtomicInteger): List[AtomicInteger] =
+        List.unfold(i -> if (toInt(i) >= toInt(b)) None else Some((i, newAtomicInteger(toInt(i) + 1))), a)
 
     @Test
     def testSample01(): Bool =
-        Assert.eq(Nil, sample(0))
+        Assert.eq(Nil, sample(0) |> List.map(toInt))
 
     @Test
     def testSample02(): Bool =
-        Assert.eq(0 :: Nil, sample(1))
+        Assert.eq(0 :: Nil, sample(1) |> List.map(toInt))
 
     @Test
     def testSample03(): Bool =
-        Assert.eq(0 :: 1 :: Nil, sample(2))
+        Assert.eq(0 :: 1 :: Nil, sample(2) |> List.map(toInt))
 
     @Test
     def testSample04(): Bool =
-        Assert.eq(0 :: 1 :: 2 :: Nil, sample(3))
+        Assert.eq(0 :: 1 :: 2 :: Nil, sample(3) |> List.map(toInt))
 
     @Test
     def testSample05(): Bool =
-        Assert.eq(0 :: 1 :: 2 :: 3 :: Nil, sample(4))
+        Assert.eq(0 :: 1 :: 2 :: 3 :: Nil, sample(4) |> List.map(toInt))
 
     @Test
     def testSample06(): Bool =
-        Assert.eq(0 :: 1 :: 2 :: 3 :: 4 :: Nil, sample(5))
+        Assert.eq(0 :: 1 :: 2 :: 3 :: 4 :: Nil, sample(5) |> List.map(toInt))
 
     @Test
     def testSample07(): Bool =
-        Assert.eq(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil, sample(6))
+        Assert.eq(0 :: 1 :: 2 :: 3 :: 4 :: 5 :: Nil, sample(6) |> List.map(toInt))
 
     @Test
     def testSample08(): Bool =
-        Assert.eq(range(newAtomicInteger(0), newAtomicInteger(10)), sample(10))
+        Assert.eq(range(newAtomicInteger(0), newAtomicInteger(10)) |> List.map(toInt), sample(10) |> List.map(toInt))
 
     @Test
     def testSample09(): Bool =
-        Assert.eq(range(newAtomicInteger(0), newAtomicInteger(100)), sample(100))
+        Assert.eq(range(newAtomicInteger(0), newAtomicInteger(100)) |> List.map(toInt), sample(100) |> List.map(toInt))
 
 }

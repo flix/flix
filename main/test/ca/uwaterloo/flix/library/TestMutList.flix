@@ -2468,7 +2468,7 @@ mod TestMutList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ NonDet = region rc {
+    def shuffle01(): Bool \ IO = region rc {
         let l: List[Int32] = Nil;
         let v = MutList.shuffle(rc, Random.new(), List.toMutList(rc, l));
         MutList.sort!(v);
@@ -2477,7 +2477,7 @@ mod TestMutList {
     }
 
     @test
-    def shuffle02(): Bool \ NonDet = region rc {
+    def shuffle02(): Bool \ IO = region rc {
         let l = 1 :: Nil;
         let v = MutList.shuffle(rc, Random.new(), List.toMutList(rc, l));
         MutList.sort!(v);
@@ -2486,7 +2486,7 @@ mod TestMutList {
     }
 
     @test
-    def shuffle03(): Bool \ NonDet = region rc {
+    def shuffle03(): Bool \ IO = region rc {
         let l = 1 :: 2 :: 3 :: Nil;
         let v = MutList.shuffle(rc, Random.new(), List.toMutList(rc, l));
         MutList.sort!(v);
@@ -2495,7 +2495,7 @@ mod TestMutList {
     }
 
     @test
-    def shuffle04(): Bool \ NonDet = region rc {
+    def shuffle04(): Bool \ IO = region rc {
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
         let v = MutList.shuffle(rc, Random.new(), List.toMutList(rc, l));
         MutList.sort!(v);

@@ -22,6 +22,7 @@ class ExampleSuite extends FlixSuite(incremental = true) {
   private implicit val TestOptions: Options = Options.TestWithLibAll
 
   mkTestDir("examples")
+  mkTestDir("examples/effects")
   mkTestDir("examples/larger-examples/datalog")
   mkTestDir("examples/larger-examples/program-analysis")
   mkTestDir("examples/larger-examples/restrictable-variants")
