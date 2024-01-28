@@ -69,13 +69,12 @@ object GenNamespaceClasses {
     * Adding a shim for the function `defn` on namespace `ns`
     */
   private def compileShimMethod(visitor: ClassWriter, defn: Def): Unit = {
-    // TODO: This can probably be removed (used in GenMain and other places)
     // Name of the shim
     val name = JvmOps.getDefMethodNameInNamespaceClass(defn.sym)
 
     // Erased argument and result type.
-    val erasedArgs = defn.arrowType.args.map(JvmOps.getErasedJvmType)
-    val erasedResult = JvmOps.getErasedJvmType(defn.tpe)
+    val erasedArgs = defn.fparams.map(_.tpe).map(JvmOps.getErasedJvmType)
+    val erasedResult = JvmOps.getErasedJvmType(defn.unboxedType.tpe)
 
     // Method header
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, name, AsmOps.getMethodDescriptor(erasedArgs, erasedResult), null, null)
@@ -102,7 +101,7 @@ object GenNamespaceClasses {
       // Incrementing the offset
       offset += AsmOps.getStackSize(arg)
     }
-    BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.tpe))(new BytecodeInstructions.F(method))
+    BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.unboxedType.tpe), defn.loc)(new BytecodeInstructions.F(method))
     // no erasure here because the ns function works on erased values
 
     // Return
