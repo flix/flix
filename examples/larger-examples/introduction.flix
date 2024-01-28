@@ -17,7 +17,7 @@
 //
 // We can think of this lattice as the result of the analysis.
 //
-lat LocalVar(k: String, v: Constant)
+enum LocalVar({k = String, v = Constant})
 
 //
 // To define the constant propagation lattice, we begin by defining the

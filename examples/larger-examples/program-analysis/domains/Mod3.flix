@@ -3,7 +3,7 @@
  *
  * Note: The Parity domain (e.g. even and odd) can be viewed as the Mod2 domain.
  */
-namespace Domain/Mod3 {
+mod Domain.Mod3 {
 
     ///
     /// The elements of the modulo three lattice.
@@ -72,9 +72,9 @@ namespace Domain/Mod3 {
     ///
     pub def alpha(i: BigInt): Mod3 = {
     // TODO: The verifier must handle errors so it never enters a Switch/MatchError.
-        if      ((i rem 3ii == 1ii) or (i rem 3ii == -1ii)) One
-        else if ((i rem 3ii == 2ii) or (i rem 3ii == -2ii)) Two
-        else                                            Zer
+        if      ((i `rem` 3ii == 1ii) or (i `rem` 3ii == -1ii)) One
+        else if ((i `rem` 3ii == 2ii) or (i `rem` 3ii == -2ii)) Two
+        else                                                    Zer
     }
 
     ///
