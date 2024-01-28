@@ -67,10 +67,10 @@ mod PrettyPrinter {
             def flow(k) = k(dir)
         }
 
-    def horizontal(p: Unit -> \ Layout): Unit \ Layout =
+    def horizontal(p: Unit -> Unit \ Layout): Unit \ Layout =
         Direction.Horizontal |> in(p)
 
-    def vertical(p: Unit -> \ Layout): Unit \ Layout =
+    def vertical(p: Unit -> Unit \ Layout): Unit \ Layout =
         Direction.Vertical |> in(p)
 
     eff LayoutChoice[a] {
