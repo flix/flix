@@ -1,7 +1,7 @@
 /**
  * An implementation of Prefix-Suffix domain.
  */
-namespace Domain/PrefixSuffix {
+mod Domain.PrefixSuffix {
 
     ///
     /// The elements of the prefix-suffix lattice.

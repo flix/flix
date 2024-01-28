@@ -7,7 +7,7 @@
 ///
 use Bool.{∧, ∨, →, ↔, ⊕}
 
-namespace Domain/Interval {
+mod Domain.Interval {
 
     ///
     /// The elements of the interval lattice.
