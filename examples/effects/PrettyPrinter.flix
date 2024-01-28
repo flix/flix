@@ -64,7 +64,7 @@ mod PrettyPrinter {
         try {
             doc()
         } with Flow {
-            def flow(k) = k(dir)
+            def flow(k) = k(direction)
         }
 
     def horizontal(p: Unit -> Unit \ Layout): Unit \ Layout =
