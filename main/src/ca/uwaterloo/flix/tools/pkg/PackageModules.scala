@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,19 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-import ca.uwaterloo.flix.tools.pkg.github.GitHub
+import ca.uwaterloo.flix.language.ast.Symbol
 
-case class Manifest(name: String,
-                    description: String,
-                    version: SemVer,
-                    repository: Option[GitHub.Project],
-                    modules: PackageModules,
-                    flix: SemVer,
-                    license: Option[String],
-                    authors: List[String],
-                    dependencies: List[Dependency]) { }
+sealed trait PackageModules {
+  def contains(sym: Symbol.ModuleSym): Boolean = this match {
+    case PackageModules.All => true
+    case PackageModules.Selected(included) => included.contains(sym)
+  }
+}
+
+object PackageModules {
+
+  case object All extends PackageModules
+
+  case class Selected(included: Set[Symbol.ModuleSym]) extends PackageModules
+
+}
