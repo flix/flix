@@ -1,9 +1,10 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyKind, ManifestError, ManifestParser, Repository, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyKind, PackageModules, ManifestError, ManifestParser, Repository, SemVer}
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.language.ast.Symbol
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.io.File
@@ -21,6 +22,7 @@ class TestManifestParser extends AnyFunSuite {
       |description = "A simple program"
       |version = "0.1.0"
       |repository = "github:johnDoe/hello-world"
+      |modules = ["FirstMod", "SecondMod.Foo"]
       |flix = "0.33.0"
       |license = "Apache-2.0"
       |authors = ["John Doe <john@example.com>"]
@@ -96,6 +98,35 @@ class TestManifestParser extends AnyFunSuite {
     assertResult(expected = None)(actual =
       ManifestParser.parse(toml, null) match {
         case Ok(m) => m.repository
+        case Err(e) => e.message(f)
+      }
+    )
+  }
+
+  test("Ok.modules.Some") {
+    assertResult(expected = PackageModules.Selected(Set(Symbol.mkModuleSym(List("FirstMod")), Symbol.mkModuleSym(List("SecondMod", "Foo")))))(actual = {
+      ManifestParser.parse(tomlCorrect, null) match {
+        case Ok(manifest) => manifest.modules
+        case Err(e) => e.message(f)
+      }
+    })
+  }
+
+  test("Ok.modules.None") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |flix = "0.33.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |""".stripMargin
+    }
+    assertResult(expected = PackageModules.All)(actual =
+      ManifestParser.parse(toml, null) match {
+        case Ok(m) => m.modules
         case Err(e) => e.message(f)
       }
     )
@@ -807,6 +838,47 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(ManifestError.RepositoryFormatError(null, "github:/").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  // Modules
+  test("Err.modules.misspelled") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |modjules = ["FirsMod", "SecondMod"]
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.IllegalPackageKeyFound(null, "package.modjules").message(f))(ManifestParser.parse(toml, null) match {
+      case Ok(manifest) => manifest
+      case Err(e) => e.message(f)
+    })
+  }
+
+  test("Err.modules.type") {
+    val toml = {
+      """
+        |[package]
+        |name = "hello-world"
+        |description = "A simple program"
+        |version = "0.1.0"
+        |modules = 123
+        |flix = "0.33.0"
+        |license = "Apache-2.0"
+        |authors = ["John Doe <john@example.com>"]
+        |
+        |""".stripMargin
+    }
+    assertResult(ManifestError.RequiredPropertyHasWrongType(null, "package.modules", "Array", "Value of 'package.modules' is a integer").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })

@@ -328,9 +328,9 @@ object Typer {
   private def visitTypeAliases(root: KindedAst.Root)(implicit flix: Flix): Map[Symbol.TypeAliasSym, TypedAst.TypeAlias] =
     flix.subphase("TypeAliases") {
       def visitTypeAlias(alias: KindedAst.TypeAlias): (Symbol.TypeAliasSym, TypedAst.TypeAlias) = alias match {
-        case KindedAst.TypeAlias(doc, mod, sym, tparams0, tpe, loc) =>
+        case KindedAst.TypeAlias(doc, ann, mod, sym, tparams0, tpe, loc) =>
           val tparams = tparams0.map(visitTypeParam(_, root))
-          sym -> TypedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+          sym -> TypedAst.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc)
       }
 
       root.typeAliases.values.map(visitTypeAlias).toMap

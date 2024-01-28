@@ -1,3 +1,3 @@
-namespace HelloLibrary {
+mod HelloLibrary {
     def foo(): Unit = ???
 }
