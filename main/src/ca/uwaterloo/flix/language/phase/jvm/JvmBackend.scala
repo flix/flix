@@ -176,7 +176,7 @@ object JvmBackend {
       flix.subphase("WriteClasses") {
         for ((_, jvmClass) <- allClasses) {
           flix.subtask(jvmClass.name.toBinaryName, sample = true)
-          JvmOps.writeClass(flix.options.output.get, jvmClass)
+          JvmOps.writeClass(flix.options.output.get.resolve("class/"), jvmClass)
         }
       }
     }
