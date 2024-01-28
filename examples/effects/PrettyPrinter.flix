@@ -73,7 +73,7 @@ mod PrettyPrinter {
     def vertical(p: Unit -> Unit \ Layout): Unit \ Layout =
         Direction.Vertical |> in(p)
 
-    eff LayoutChoice[a] {
+    eff LayoutChoice {
         pub def choice(): Direction
         pub def fail(): a
     }
