@@ -21,6 +21,8 @@ mod PrettyPrinter {
         pub def flow(): Direction
     }
 
+    type alias Layout = Indent + DefaultIndentation + Flow
+
     eff Emit {
         pub def emitText(content: String): Unit
         pub def emitNewline(): Unit
@@ -45,10 +47,50 @@ mod PrettyPrinter {
 
     def lineBreak(): Unit \ Flow + Emit + Indent = lineOr("")
 
-    def in(doc: Unit -> a \ Indent + DefaultIndentation + Flow, n: Int32): a \ DefaultIndentation + Flow =
+    def in(doc: Unit -> a \ Layout, n: Int32): a \ DefaultIndentation + Flow =
         try {
             doc()
         } with Indent {
             def indent(k) = k(n)
         }
+
+    def nest(doc: Unit -> a \ Layout, j: Int32): a \ Layout =
+        (do Indent.indent() + j) |> in(doc)
+
+    def nested(doc: Unit -> a \ Layout): a \ Layout =
+        nest(doc, do DefaultIndentation.defaultIndentation())
+
+    def inDirection(doc: Unit -> a \ Layout, direction: Direction): a \ Indent + DefaultIndentation =
+        try {
+            doc()
+        } with Flow {
+            def flow(k) = k(dir)
+        }
+
+    def horizontal(p: Unit -> \ Layout): Unit \ Layout =
+        Direction.Horizontal |> in(p)
+
+    def vertical(p: Unit -> \ Layout): Unit \ Layout =
+        Direction.Vertical |> in(p)
+
+    eff LayoutChoice[a] {
+        pub def choice(): Direction
+        pub def fail(): a
+    }
+
+    type alias Pretty = Emit + Layout + LayoutChoice
+
+    def group(p: Unit -> Unit \ Layout): Unit \ Layout + LayoutChoice =
+        (do Choice.choice()) |> in(p)
+
+    def softLine(): Unit \ Pretty = group(line)
+
+    def softBreak(): Unit \ Pretty = group(lineBreak)
+
+    // Examples
+
+    pub def main(): Unit \ IO = {
+        println("")
+    }
+
 }
