@@ -1396,7 +1396,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MultipleCatchBlocks](result)
   }
 
-  test("MixedTryCatchWithRules.01") {
+  test("MixedTryCatchWithBlocks.01") {
     val input =
       """
         |eff A {
@@ -1416,7 +1416,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MultipleCatchBlocks](result)
   }
 
-  test("MixedTryCatchWithRules.02") {
+  test("MixedTryCatchWithBlocks.02") {
     val input =
       """
         |eff A {

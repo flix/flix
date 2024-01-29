@@ -914,7 +914,7 @@ object WeederError {
     *
     * @param loc The location of the try-expression.
     */
-  case class MixedTryCatchWithRules(loc: SourceLocation) extends WeederError with Recoverable {
+  case class MixedTryCatchWithBlocks(loc: SourceLocation) extends WeederError with Recoverable {
     def summary: String = "A try-expression can only contain a single catch block or multiple effect handlers."
 
     def message(formatter: Formatter): String = {

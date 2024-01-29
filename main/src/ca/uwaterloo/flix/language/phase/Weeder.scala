@@ -1341,13 +1341,15 @@ object Weeder {
       val expVal = visitExp(exp)
       // Check that we either only have catches or effect handlers
       val (hs0, cs0) = catchOrHandlers.partition {
-        case ParsedAst.CatchOrHandler.Handler(_, _) => true
-        case ParsedAst.CatchOrHandler.Catch(_) => false
+        case _: ParsedAst.CatchOrHandler.Handler => true
+        case _: ParsedAst.CatchOrHandler.Catch => false
       }
-      (hs0.asInstanceOf[Seq[ParsedAst.CatchOrHandler.Handler]], cs0.asInstanceOf[Seq[ParsedAst.CatchOrHandler.Catch]]) match {
+      (hs0.toList.asInstanceOf[List[ParsedAst.CatchOrHandler.Handler]],
+        cs0.toList.asInstanceOf[List[ParsedAst.CatchOrHandler.Catch]]) match {
         case (h :: Nil, Nil) =>
           // Case single try-with
-          val handlerVal = visitEffectHandler(ParsedAst.CatchOrHandler.Handler(h.eff, h.rules))
+          val handler0 = h
+          val handlerVal = visitEffectHandler(ParsedAst.CatchOrHandler.Handler(handler0.eff, handler0.rules))
           mapN(expVal, handlerVal) {
             case (exp, handler) => WeededAst.Expr.TryWith(exp, handler, loc)
           }
@@ -1378,7 +1380,7 @@ object Weeder {
 
         case (_ :: _, _ :: _) =>
           // Bad situation: we have both catches and effect handlers
-          val err = WeederError.MixedTryCatchWithRules(loc)
+          val err = WeederError.MixedTryCatchWithBlocks(loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
       }
 
