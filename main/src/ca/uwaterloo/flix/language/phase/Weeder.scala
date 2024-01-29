@@ -1360,7 +1360,7 @@ object Weeder {
           // [] --> [_unit]
           // [x] --> [_unit, x]
           // [x, ...] --> [x, ...]
-          val fparamsValPrefix = if (fparams0.sizeIs == 1) visitFormalParams(ParsedAst.FormalParamList.empty, Presence.Forbidden) else Validation.success(Nil)
+          val fparamsValPrefix = if (fparams0.fparams.sizeIs == 1) visitFormalParams(ParsedAst.FormalParamList(Seq.empty), Presence.Forbidden) else Validation.success(Nil)
           val fparamsValSuffix = visitFormalParams(fparams0, Presence.Forbidden)
           val bodyVal = visitExp(body0)
           mapN(fparamsValPrefix, fparamsValSuffix, bodyVal) {
@@ -1808,8 +1808,8 @@ object Weeder {
             Validation.success(WeededAst.Pattern.Tag(qname, lit, loc))
           case Some(pat) =>
             mapN(visit(pat)) {
-              case p => WeededAst.Pattern.Tag(qname, p, mkSL(sp1, sp2))
-            }
+            case p => WeededAst.Pattern.Tag(qname, p, mkSL(sp1, sp2))
+          }
         }
 
       case ParsedAst.Pattern.Tuple(sp1, pats, sp2) =>
@@ -2409,7 +2409,7 @@ object Weeder {
     //
     // Special Case: Check if no formal parameters are present. If so, introduce a unit parameter.
     //
-    if (fparams.isEmpty) {
+    if (fparams.fparams.isEmpty) {
       val sp1 = SourcePosition.Unknown
       val sp2 = SourcePosition.Unknown
       val loc = mkSL(sp1, sp2)
@@ -2423,25 +2423,24 @@ object Weeder {
     //
     val seen = mutable.Map.empty[String, ParsedAst.FormalParam]
     val errors = mutable.ArrayBuffer.empty[WeederError.DuplicateFormalParam]
-    fparams.foreach {
-      case fparam =>
-        seen.get(fparam.ident.name) match {
-          case None =>
-            if (!fparam.ident.name.startsWith("_")) {
-              // Wildcards cannot be duplicate.
-              seen += (fparam.ident.name -> fparam)
-            }
-          case Some(otherParam) =>
-            val name = fparam.ident.name
-            val loc1 = mkSL(otherParam.sp1, otherParam.sp2)
-            val loc2 = mkSL(fparam.sp1, fparam.sp2)
-            // NB: We report an error at both source locations.
-            errors += DuplicateFormalParam(name, loc1, loc2)
-            errors += DuplicateFormalParam(name, loc2, loc1)
-        }
+    for (fparam <- fparams.fparams) {
+      seen.get(fparam.ident.name) match {
+        case None =>
+          if (!fparam.ident.name.startsWith("_")) {
+            // Wildcards cannot be duplicate.
+            seen += (fparam.ident.name -> fparam)
+          }
+        case Some(otherParam) =>
+          val name = fparam.ident.name
+          val loc1 = mkSL(otherParam.sp1, otherParam.sp2)
+          val loc2 = mkSL(fparam.sp1, fparam.sp2)
+          // NB: We report an error at both source locations.
+          errors += DuplicateFormalParam(name, loc1, loc2)
+          errors += DuplicateFormalParam(name, loc2, loc1)
+      }
     }
 
-    traverse(fparams)(visitFormalParam(_, typePresence)).withSoftFailures(errors)
+    traverse(fparams.fparams)(visitFormalParam(_, typePresence)).withSoftFailures(errors)
   }
 
   /**
