@@ -73,7 +73,7 @@ object CompletionUtils {
 
       val eff = eff0 match {
         case Type.Cst(TypeConstructor.Pure, _) => ""
-        case Type.Cst(TypeConstructor.EffUniv, _) => raw" \ IO"
+        case Type.Cst(TypeConstructor.Univ, _) => raw" \ IO"
         case p => raw" \ " + FormatType.formatType(p)
       }
 

@@ -682,7 +682,7 @@ object SemanticTokensProvider {
     case TypeConstructor.Vector => true
     case TypeConstructor.Ref => true
     case TypeConstructor.Pure => true
-    case TypeConstructor.EffUniv => true
+    case TypeConstructor.Univ => true
     case TypeConstructor.True => true
     case TypeConstructor.False => true
     case TypeConstructor.Effect(_) => true

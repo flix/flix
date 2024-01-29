@@ -176,7 +176,7 @@ object HoverProvider {
 
     val p = eff0 match {
       case Type.Cst(TypeConstructor.Pure, _) => ""
-      case Type.Cst(TypeConstructor.EffUniv, _) => raw" \ IO"
+      case Type.Cst(TypeConstructor.Univ, _) => raw" \ IO"
       case eff => raw" \ " + FormatType.formatType(eff)
     }
 

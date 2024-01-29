@@ -446,7 +446,7 @@ object SimpleType {
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
         case TypeConstructor.Pure => Pure
-        case TypeConstructor.EffUniv => Univ
+        case TypeConstructor.Univ => Univ
 
         case TypeConstructor.True => True
         case TypeConstructor.False => False
