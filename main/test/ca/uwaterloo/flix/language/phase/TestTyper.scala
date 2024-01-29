@@ -1260,4 +1260,54 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.UnexpectedEffect](result)
   }
 
+  test("TestIOAndCustomEffect.04") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |eff AskTell {
+        |    pub def askTell(x: Int32): Int32
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = try {
+        |        do Gen.gen();
+        |        do AskTell.askTell(42)
+        |    } with Gen {
+        |        def gen(k) = k("a")
+        |    };
+        |    do Gen.gen();
+        |    checked_ecast(())
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.UnexpectedEffect](result)
+  }
+
+  test("TestIOAndCustomEffect.05") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |eff AskTell {
+        |    pub def askTell(x: Int32): Int32
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = try {
+        |        do Gen.gen();
+        |        do AskTell.askTell(42)
+        |    } with Gen {
+        |        def gen(k) = k("a")
+        |    };
+        |    do AskTell.asktell(42);
+        |    checked_ecast(())
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.UnexpectedEffect](result)
+  }
+
 }
