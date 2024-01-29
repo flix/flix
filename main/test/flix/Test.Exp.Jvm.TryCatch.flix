@@ -59,6 +59,17 @@ mod Test.Exp.Jvm.TestTryCatch {
         }
 
     @test
+    def testMultipleExceptions03(): Bool \ IO =
+        try {
+            exception();
+            false
+        } catch {
+            case _: ##java.lang.IllegalArgumentException => false
+        } catch {
+            case _: ##java.lang.ArithmeticException => true
+        }
+
+    @test
     def testBinding01(): Bool \ IO =
         import java.lang.Object.toString(): ##java.lang.String \ IO;
         import java.lang.String.isEmpty(): Bool \ IO;
