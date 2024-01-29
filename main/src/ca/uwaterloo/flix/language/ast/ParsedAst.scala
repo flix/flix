@@ -1874,37 +1874,33 @@ object ParsedAst {
   case class Annotation(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition)
 
 
+  /**
+    * A common super-type for lists of handlers.
+    */
   sealed trait HandlerList
 
   object HandlerList {
 
-    case class CatchHandlerList(handlers: Seq[CatchOrHandler.Catch]) extends HandlerList
+    case class CatchHandlerList(handlers: Seq[Catch]) extends HandlerList
 
-    case class WithHandlerList(handlers: Seq[CatchOrHandler.Handler]) extends HandlerList
+    case class WithHandlerList(handlers: Seq[WithHandler]) extends HandlerList
 
   }
 
   /**
-    * An enum representing the handler of a `try` expression.
+    * A `catch` block for handling Java exceptions.
+    *
+    * @param rules the catch rules.
     */
-  sealed trait CatchOrHandler
+  case class Catch(rules: Seq[ParsedAst.CatchRule])
 
-  object CatchOrHandler {
-    /**
-      * A `catch` block for handling Java exceptions.
-      *
-      * @param rules the catch rules.
-      */
-    case class Catch(rules: Seq[ParsedAst.CatchRule]) extends CatchOrHandler
-
-    /**
-      * A `with` block for handling Flix effects.
-      *
-      * @param eff   the effect to be handled.
-      * @param rules the handler rules.
-      */
-    case class Handler(eff: Name.QName, rules: Option[Seq[ParsedAst.HandlerRule]]) extends CatchOrHandler
-  }
+  /**
+    * A `with` block for handling Flix effects.
+    *
+    * @param eff   the effect to be handled.
+    * @param rules the handler rules.
+    */
+  case class WithHandler(eff: Name.QName, rules: Option[Seq[ParsedAst.HandlerRule]])
 
   /**
     * String Interpolation Part.

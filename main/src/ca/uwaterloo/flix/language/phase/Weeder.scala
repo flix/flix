@@ -1339,7 +1339,7 @@ object Weeder {
     case ParsedAst.Expression.Try(sp1, exp, ParsedAst.HandlerList.CatchHandlerList(handlers0), sp2) =>
       val expVal = visitExp(exp)
       val rulesVal = traverse(handlers0) {
-        case ParsedAst.CatchOrHandler.Catch(rules) => traverse(rules) {
+        case ParsedAst.Catch(rules) => traverse(rules) {
           case ParsedAst.CatchRule(ident, fqn, body) =>
             mapN(visitExp(body)) {
               case b => WeededAst.CatchRule(ident, fqn.toString, b)
@@ -2637,7 +2637,7 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the [[ParsedAst.CatchOrHandler.Handler]] `handler0`.
+    * Performs weeding on the [[ParsedAst.WithHandler]] `handler0`.
     *
     * For each handler rule we add an extra resumption argument
     * so both an empty parameter list and a singleton parameter list should be padded with unit
@@ -2648,7 +2648,7 @@ object Weeder {
     *
     * `[x, ...] --> [x, ...]`
     */
-  private def visitWithHandler(handler0: ParsedAst.CatchOrHandler.Handler)(implicit flix: Flix): Validation[WeededAst.WithHandler, WeederError] = {
+  private def visitWithHandler(handler0: ParsedAst.WithHandler)(implicit flix: Flix): Validation[WeededAst.WithHandler, WeederError] = {
     val handlerVals = traverse(handler0.rules.getOrElse(Seq.empty)) {
       case ParsedAst.HandlerRule(op, fparams0, body0) =>
         val fparamsValPrefix = if (fparams0.sizeIs == 1) visitFormalParams(Seq.empty, Presence.Forbidden) else Validation.success(Nil)
