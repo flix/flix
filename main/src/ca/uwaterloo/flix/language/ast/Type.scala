@@ -329,7 +329,7 @@ object Type {
   /**
     * Represents the IO effect.
     */
-  val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.mkEffectSym(Name.RootNS, Name.Ident(SourcePosition.Unknown, "IO", SourcePosition.Unknown))), SourceLocation.Unknown)
+  val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)
 
   /**
     * Represents the universal effect set.
