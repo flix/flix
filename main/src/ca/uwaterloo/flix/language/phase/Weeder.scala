@@ -3037,7 +3037,6 @@ object Weeder {
     case ParsedAst.Expression.Without(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Do(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Try(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.TryChainedHandlers(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ParYield(sp1, _, _, _) => sp1

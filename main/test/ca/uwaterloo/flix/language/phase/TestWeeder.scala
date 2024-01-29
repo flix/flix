@@ -101,9 +101,9 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     // and other escapes are not processed in triple-quoted strings.
     // So we use BS in the input and replace it with a real backslash afterward.
     val input =
-    """
-      |def f(): String = "BSuINVALID"
-      |""".stripMargin.replace("BS", "\\")
+      """
+        |def f(): String = "BSuINVALID"
+        |""".stripMargin.replace("BS", "\\")
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
@@ -1378,5 +1378,61 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.UnqualifiedUse](result)
+  }
+
+  test("MultipleCatchBlocks.01") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    try {
+        |      42
+        |    } catch {
+        |      case _ => 24
+        |    } catch {
+        |      case _ => 24
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MultipleCatchBlocks](result)
+  }
+
+  test("MixedTryCatchWithRules.01") {
+    val input =
+      """
+        |eff A {
+        |    pub def a(): Int32
+        |}
+        |
+        |def f(): Int32 =
+        |    try {
+        |      42
+        |    } catch {
+        |      case _ => 24
+        |    } with A {
+        |      def a(_) = 24
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MultipleCatchBlocks](result)
+  }
+
+  test("MixedTryCatchWithRules.02") {
+    val input =
+      """
+        |eff A {
+        |    pub def a(): Int32
+        |}
+        |
+        |def f(): Int32 =
+        |    try {
+        |      42
+        |    } with A {
+        |      def a(_) = 24
+        |    } catch {
+        |      case _ => 24
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MultipleCatchBlocks](result)
   }
 }
