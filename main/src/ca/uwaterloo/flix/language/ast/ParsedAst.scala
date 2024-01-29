@@ -1772,6 +1772,7 @@ object ParsedAst {
   case class FormalParam(sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ident: Name.Ident, tpe: Option[ParsedAst.Type], sp2: SourcePosition)
 
   /**
+    * Wrapper for a list of [[ParsedAst.FormalParam]].
     *
     * @param fparams the list of [[FormalParam]]s.
     */
