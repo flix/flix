@@ -322,7 +322,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def TypeAlias: Rule1[ParsedAst.Declaration.TypeAlias] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ keyword("alias") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.TypeAlias
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ keyword("alias") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.TypeAlias
     }
 
     def AssocTypeSig: Rule1[ParsedAst.Declaration.AssocTypeSig] = rule {
@@ -838,7 +838,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def UncheckedCast: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("unchecked_cast") ~ optWS ~ "(" ~ Expression ~ WS ~ "as" ~ optWS ~ TypeAndEffect ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.UncheckedCast
+      SP ~ keyword("unchecked_cast") ~ optWS ~ "(" ~ optWS ~ Expression ~ WS ~ "as" ~ optWS ~ TypeAndEffect ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.UncheckedCast
     }
 
     def UncheckedMaskingCast: Rule1[ParsedAst.Expression.UncheckedMaskingCast] = rule {
@@ -1481,7 +1481,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       // NB: Record must come before EffectSet as they overlap
       // NB: CaseComplement must come before Complement as they overlap
       Arrow | Tuple | Record | RecordRow | Schema | SchemaRow | CaseSet | EffectSet | Not | CaseComplement | Complement |
-        Native | True | False | Pure | Impure | Var | Ambiguous
+        Native | True | False | Pure | Univ | Var | Ambiguous
     }
 
     def Arrow: Rule1[ParsedAst.Type] = {
@@ -1560,8 +1560,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       SP ~ keyword("Pure") ~ SP ~> ParsedAst.Type.Pure
     }
 
-    def Impure: Rule1[ParsedAst.Type] = rule {
-      SP ~ keyword("Impure") ~ SP ~> ParsedAst.Type.Impure
+    def Univ: Rule1[ParsedAst.Type] = rule {
+      SP ~ keyword("Univ") ~ SP ~> ParsedAst.Type.Univ
     }
 
     def Not: Rule1[ParsedAst.Type] = rule {

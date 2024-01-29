@@ -50,7 +50,7 @@ mod TestFile {
     /// Helper - open an existing file for reading, run `reader`, use `test`
     /// to check what has been read and close the file.
     ///
-    def testReadFunction(path: String, reader: File -> Result[IOError, a] \IO, test: a -> Bool \ ef): Result[IOError, Bool] \ {ef, IO} =
+    def testReadFunction(path: String, reader: File -> Result[IOError, a] \ rEf, test: a -> Bool \ tEf): Result[IOError, Bool] \ {rEf, tEf, IO} =
         match File.open(path, ReadOnly) {
             case Ok(f)    => match reader(f) {
                 case Ok(a)    => Functor.replace(File.close!(f), test(a))
@@ -63,7 +63,7 @@ mod TestFile {
     /// Helper - open an existing file for reading, run `reader`, use `test`
     /// to check what has been read and close the file.
     ///
-    def testWriteFunctionWithReadBack(path: String, writer: File -> Result[IOError, b] \IO, reader: File -> Result[IOError, a] \IO, test: a -> Bool \ ef): Result[IOError, Bool] \ {ef, IO} =
+    def testWriteFunctionWithReadBack(path: String, writer: File -> Result[IOError, b] \ wEf, reader: File -> Result[IOError, a] \ rEf, test: a -> Bool \ tEf): Result[IOError, Bool] \ {wEf, rEf, tEf, IO} =
         match File.open(path, ReadWrite) {
             case Ok(f)    => match writer(f) {
                 case Ok(_)    => match (File.seek!(0i64, f) *> reader(f)) {

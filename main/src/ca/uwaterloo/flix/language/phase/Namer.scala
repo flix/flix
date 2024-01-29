@@ -158,7 +158,7 @@ object Namer {
         }
       }
 
-    case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) =>
+    case NamedAst.Declaration.TypeAlias(doc, _, mod, sym, tparams, tpe, loc) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, loc) =>
@@ -385,13 +385,13 @@ object Namer {
     * Performs naming on the given type alias `alias0`.
     */
   private def visitTypeAlias(alias0: DesugaredAst.Declaration.TypeAlias, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.TypeAlias, NameError] = alias0 match {
-    case DesugaredAst.Declaration.TypeAlias(doc, mod0, ident, tparams0, tpe0, loc) =>
+    case DesugaredAst.Declaration.TypeAlias(doc, ann, mod0, ident, tparams0, tpe0, loc) =>
       val mod = visitModifiers(mod0, ns0)
       val tparams = getTypeParams(tparams0)
       mapN(visitType(tpe0)) {
         tpe =>
           val sym = Symbol.mkTypeAliasSym(ns0, ident)
-          NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+          NamedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc)
       }
   }
 
@@ -1316,7 +1316,7 @@ object Namer {
     case "vector" => true
     case "ref" => true
     case "pure" => true
-    case "impure" => true
+    case "univ" => true
     case _ => false
   }
 
@@ -1555,7 +1555,7 @@ object Namer {
     case NamedAst.Declaration.Def(sym, spec, exp) => sym.loc
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.loc
     case NamedAst.Declaration.RestrictableEnum(doc, ann, mod, sym, ident, tparams, derives, cases, loc) => sym.loc
-    case NamedAst.Declaration.TypeAlias(doc, mod, sym, tparams, tpe, loc) => sym.loc
+    case NamedAst.Declaration.TypeAlias(doc, _, mod, sym, tparams, tpe, loc) => sym.loc
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) => sym.loc
     case NamedAst.Declaration.Op(sym, spec) => sym.loc
     case NamedAst.Declaration.Case(sym, tpe, _) => sym.loc

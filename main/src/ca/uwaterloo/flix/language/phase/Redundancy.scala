@@ -919,7 +919,7 @@ object Redundancy {
     * {{{
     * Int32                                        =>     throw
     * Int32 -> String -> Int32 \ Pure              =>     Pure
-    * (Int32, String) -> String -> Bool \ IO   =>     Impure
+    * (Int32, String) -> String -> Bool \ IO       =>     IO
     * }}}
     *
     * NB: Assumes that `this` type is an arrow.

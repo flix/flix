@@ -178,7 +178,7 @@ object ParsedAst {
       * @param tpe     the type of the opaque type.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class TypeAlias(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class TypeAlias(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Associated Type Signature Declaration.
@@ -1483,12 +1483,12 @@ object ParsedAst {
     case class Pure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * The Impure type constructor.
+      * The Univ type constructor.
       *
       * @param sp1 the position of the first character in the type.
       * @param sp2 the position of the last character in the type.
       */
-    case class Impure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
+    case class Univ(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * A type representing an effect set.

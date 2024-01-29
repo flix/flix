@@ -333,7 +333,7 @@ object TypeConstructor {
   /**
     * A type constructor that represents the universal effect set.
     */
-  case object EffUniv extends TypeConstructor {
+  case object Univ extends TypeConstructor {
     def kind: Kind = Kind.Eff
   }
 

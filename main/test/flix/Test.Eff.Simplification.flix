@@ -1,25 +1,19 @@
 mod Test.Eff.Simplification {
-    @test
-    def testPureAndPure(): Unit \ {Pure, Pure} = pure()
+    pub def testPureAndPure(): Unit \ {Pure, Pure} = pure()
 
-    @test
-    def testPureAndImpure(): Unit \ {Pure, IO} = impure()
+    pub def testPureAndIo(): Unit \ {Pure, IO} = io()
 
-    @test
-    def testImpureAndImpure(): Unit \ {IO, IO} = impure()
+    pub def testIoAndIo(): Unit \ {IO, IO} = io()
 
-    @test
-    def testPureOrPure(): Unit \ Pure & Pure = pure()
+    pub def testPureOrPure(): Unit \ Pure & Pure = pure()
 
-    @test
-    def testPureOrImpure(): Unit \ Pure & Impure = pure()
+    pub def testPureOrIo(): Unit \ Pure & IO = pure()
 
-    @test
-    def testImpureOrImpure(): Unit \ Impure & Impure = impure()
+    pub def testIoOrIo(): Unit \ IO & IO = io()
 
     /// a pure function
     def pure(): Unit \ {} = ()
 
-    /// an impure function
-    def impure(): Unit \ IO = unchecked_cast(() as _ \ IO)
+    /// an io function
+    def io(): Unit \ IO = unchecked_cast(() as _ \ IO)
 }

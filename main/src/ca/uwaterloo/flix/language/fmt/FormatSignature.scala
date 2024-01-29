@@ -69,7 +69,7 @@ object FormatSignature {
     */
   private def formatResultTypeAndEff(tpe: Type, eff: Type)(implicit flix: Flix): String = eff match {
     case Type.Cst(TypeConstructor.Pure, _) => FormatType.formatType(tpe)
-    case Type.Cst(TypeConstructor.EffUniv, _) => s"${FormatType.formatType(tpe)} \\ IO"
+    case Type.Cst(TypeConstructor.Univ, _) => s"${FormatType.formatType(tpe)} \\ IO"
     case eff => s"${FormatType.formatType(tpe)} \\ ${FormatType.formatType(eff)}"
   }
 }

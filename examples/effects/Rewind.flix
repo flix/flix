@@ -26,7 +26,7 @@ mod RewindExample {
     /// 3. not divisible by 2 (so not 0, 2, 4, 6, 8, ...)
     /// 4. not divisible by 3 (so not 0, 3, 6, 9, ...)
     /// And we will this by guessing and retrying
-    def search(k: Int32): Int32 \ IO = {
+    def search(k: Int32): Int32 \ Rewind + IO = {
         println("Beginning to search!");
         let random = Random.newWithSeed(123i64);
         do Rewind.save("start");
