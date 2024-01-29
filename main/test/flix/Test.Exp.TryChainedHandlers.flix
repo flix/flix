@@ -1,4 +1,4 @@
-mod Test.Exp.TryChainedHandlers.flix {
+mod Test.Exp.TryChainedHandlers {
 
     eff A {
         pub def a(): String
@@ -13,9 +13,9 @@ mod Test.Exp.TryChainedHandlers.flix {
         let result = try {
             String.concat(do A.a(), do B.b())
         } with A {
-            def a() = k("a")
+            def a(k) = k("a")
         } with B {
-            def b() = k("b")
+            def b(k) = k("b")
         };
         Assert.eq("ab", result)
 
@@ -28,6 +28,6 @@ mod Test.Exp.TryChainedHandlers.flix {
         } with A {
             def a() = k("a")
         };
-        Assert.eq("ba", result)
+        Assert.eq("ab", result)
 
 }
