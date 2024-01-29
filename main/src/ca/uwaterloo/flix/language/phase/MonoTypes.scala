@@ -479,7 +479,7 @@ object MonoTypes {
     * Replaces all effects in the type with Impure.
     */
   private def eraseEffects(tpe: Type): Type = tpe match {
-    case Type.Cst(TypeConstructor.Effect(_), _) => Type.Impure
+    case Type.Cst(TypeConstructor.Effect(_), _) => Type.Univ
     case t@Type.Cst(_, _) => t
     case Type.Apply(tpe1, tpe2, loc) =>
       Type.Apply(eraseEffects(tpe1), eraseEffects(tpe2), loc)
