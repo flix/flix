@@ -1335,8 +1335,31 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.UnexpectedEffect](result)
   }
-
   test("TestIOAndCustomEffect.07") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |eff AskTell {
+        |    pub def askTell(x: Int32): Int32
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = try {
+        |        do Gen.gen()
+        |    } with Gen {
+        |        def gen(k) = k("a")
+        |    };
+        |    do AskTell.askTell(42);
+        |    checked_ecast(())
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.UnexpectedEffect](result)
+  }
+
+  test("TestIOAndCustomEffect.08") {
     val input =
       """
         |eff Gen {
@@ -1349,7 +1372,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    let _ = try {
-        |        do Gen.gen();
+        |        do Gen.gen()
         |    } with Gen {
         |        def gen(k) = do AskTell.askTell(k("a"))
         |    };
