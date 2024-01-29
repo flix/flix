@@ -548,7 +548,7 @@ object Unification {
     case Some(tc) => tc match {
       case TypeConstructor.Pure => Type.Pure
 
-      case TypeConstructor.EffUniv => Type.EffUniv
+      case TypeConstructor.Univ => Type.Univ
 
       case TypeConstructor.Complement =>
         val List(t) = tpe.typeArguments
