@@ -191,9 +191,9 @@ object WeededAst {
 
     case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: Expr, eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
+    case class TryWith(exp: Expr, handler: Handler, loc: SourceLocation) extends Expr
 
-    case class TryChainedWith(exp: Expr, handlers: List[List[HandlerRule]], loc: SourceLocation) extends Expr
+    case class TryChainedWith(exp: Expr, handlers: List[Handler], loc: SourceLocation) extends Expr
 
     case class Do(op: Name.QName, exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -439,6 +439,8 @@ object WeededAst {
   case class CatchRule(ident: Name.Ident, className: String, exp: Expr)
 
   case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr)
+
+  case class Handler(eff: Name.QName, rules: List[HandlerRule])
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

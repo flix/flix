@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation}
 import ca.uwaterloo.flix.language.ast.ParsedAst.TypeParams
 import ca.uwaterloo.flix.language.ast.WeededAst.Pattern
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.language.errors._
 import ca.uwaterloo.flix.util.Validation._
@@ -1352,19 +1351,19 @@ object Weeder {
 
     // not handling these rules yet
     case ParsedAst.Expression.Try(sp1, exp0, ParsedAst.CatchOrHandler.Handler(eff, rules0), sp2) =>
-      val expVal = visitExp(exp0)
-      val rulesVal = visitEffectHandler(ParsedAst.CatchOrHandler.Handler(eff, rules0))
       val loc = mkSL(sp1, sp2)
-      mapN(expVal, rulesVal) {
-        case (exp, rules) => WeededAst.Expr.TryWith(exp, eff, rules, loc)
+      val expVal = visitExp(exp0)
+      val handlerVal = visitEffectHandler(ParsedAst.CatchOrHandler.Handler(eff, rules0))
+      mapN(expVal, handlerVal) {
+        case (exp, handler) => WeededAst.Expr.TryWith(exp, handler, loc)
       }
 
-    case ParsedAst.Expression.TryChainedHandlers(sp1, exp0, handlers, sp2) =>
+    case ParsedAst.Expression.TryChainedHandlers(sp1, exp0, handlers0, sp2) =>
       val loc = mkSL(sp1, sp2)
       val expVal = visitExp(exp0)
-      val handlersVal = traverse(handlers)(visitEffectHandler)
+      val handlersVal = traverse(handlers0)(visitEffectHandler)
       mapN(expVal, handlersVal) {
-        case (e, hs) => WeededAst.Expr.TryChainedWith(e, hs, loc)
+        case (exp, handlers) => WeededAst.Expr.TryChainedWith(exp, handlers, loc)
       }
 
     case ParsedAst.Expression.SelectChannel(sp1, rules, exp, sp2) =>
@@ -2655,8 +2654,8 @@ object Weeder {
     *
     * `[x, ...] --> [x, ...]`
     */
-  private def visitEffectHandler(handler0: ParsedAst.CatchOrHandler.Handler)(implicit flix: Flix): Validation[List[WeededAst.HandlerRule], WeederError] = {
-    traverse(handler0.rules.getOrElse(Seq.empty)) {
+  private def visitEffectHandler(handler0: ParsedAst.CatchOrHandler.Handler)(implicit flix: Flix): Validation[WeededAst.Handler, WeederError] = {
+    val handlerVals = traverse(handler0.rules.getOrElse(Seq.empty)) {
       case ParsedAst.HandlerRule(op, fparams0, body0) =>
         val fparamsValPrefix = if (fparams0.sizeIs == 1) visitFormalParams(Seq.empty, Presence.Forbidden) else Validation.success(Nil)
         val fparamsValSuffix = visitFormalParams(fparams0, Presence.Forbidden)
@@ -2664,6 +2663,9 @@ object Weeder {
         mapN(fparamsValPrefix, fparamsValSuffix, bodyVal) {
           case (fparamsPrefix, fparamsSuffix, body) => WeededAst.HandlerRule(op, fparamsPrefix ++ fparamsSuffix, body)
         }
+    }
+    mapN(handlerVals) {
+      case hs => WeededAst.Handler(handler0.eff, hs)
     }
   }
 
