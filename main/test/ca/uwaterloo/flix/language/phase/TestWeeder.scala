@@ -1413,7 +1413,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MultipleCatchBlocks](result)
+    expectError[WeederError.MixedTryCatchWithBlocks](result)
   }
 
   test("MixedTryCatchWithBlocks.02") {
@@ -1433,6 +1433,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MultipleCatchBlocks](result)
+    expectError[WeederError.MixedTryCatchWithBlocks](result)
   }
 }
