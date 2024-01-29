@@ -1387,9 +1387,9 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    try {
         |      42
         |    } catch {
-        |      case _ => 24
+        |      case _: ##java.lang.Exception => 24
         |    } catch {
-        |      case _ => 24
+        |      case _: ##java.lang.Exception => 24
         |    }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -1407,7 +1407,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    try {
         |      42
         |    } catch {
-        |      case _ => 24
+        |      case _: ##java.lang.Exception => 24
         |    } with A {
         |      def a(_) = 24
         |    }
@@ -1429,7 +1429,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |    } with A {
         |      def a(_) = 24
         |    } catch {
-        |      case _ => 24
+        |      case _: ##java.lang.Exception => 24
         |    }
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
