@@ -1881,13 +1881,23 @@ object ParsedAst {
 
   object HandlerList {
 
-    case class CatchHandlerList(handlers: Seq[TryHandlers.Catch]) extends HandlerList
+    /**
+      * A wrapper for a list of [[TryHandler.Catch]]es. This ensures that only catch-handlers are in the list.
+      *
+      * @param handlers The list of [[TryHandler.Catch]]
+      */
+    case class CatchHandlerList(handlers: Seq[TryHandler.Catch]) extends HandlerList
 
-    case class WithHandlerList(handlers: Seq[TryHandlers.WithHandler]) extends HandlerList
+    /**
+      * A wrapper for a list of [[TryHandler.WithHandler]]es. This ensures that only with-handlers are in the list.
+      *
+      * @param handlers The list of [[TryHandler.WithHandler]]
+      */
+    case class WithHandlerList(handlers: Seq[TryHandler.WithHandler]) extends HandlerList
 
   }
 
-  object TryHandlers {
+  object TryHandler {
 
     /**
       * A `catch` block for handling Java exceptions.
