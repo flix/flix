@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -137,6 +137,10 @@ object BoolFormula {
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Not(fromEffType(tpe1, m))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => And(fromEffType(tpe1, m), fromEffType(tpe2, m))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Or(fromEffType(tpe1, m), fromEffType(tpe2, m))
+    case Type.AssocType(Ast.AssocTypeConstructor(sym, _), arg, _, _) => m.getForward(VarOrEff.Assoc(sym, arg)) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound associated effect: '$sym'.", sym.loc)
+      case Some(x) => Var(x)
+    }
     case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", tpe.loc)
   }
 
@@ -181,6 +185,7 @@ object BoolFormula {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
       case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
       case Some(VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), loc)
+      case Some(VarOrEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, loc), arg, Kind.Eff, loc)
     }
     case Not(f1) => Type.mkComplement(toEffType(f1, m, loc), loc)
     case And(t1, t2) => Type.mkUnion(toEffType(t1, m, loc), toEffType(t2, m, loc), loc)
@@ -199,6 +204,7 @@ object BoolFormula {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
       case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)
       case Some(VarOrEff.Eff(sym)) => throw InternalCompilerException(s"Unexpected effect in Boolean type: '$sym'.'", loc)
+      case Some(VarOrEff.Assoc(sym, arg)) => throw InternalCompilerException(s"Unexpected associated effect in Boolean type: '$sym'.'", loc)
     }
     case Not(f1) => Type.mkNot(toBoolType(f1, m, loc), loc)
     case And(t1, t2) => Type.mkAnd(toBoolType(t1, m, loc), toBoolType(t2, m, loc), loc)
@@ -220,6 +226,11 @@ object BoolFormula {
       * An effect constant.
       */
     case class Eff(sym: Symbol.EffectSym) extends VarOrEff
+
+    /**
+      * An associated effect.
+      */
+    case class Assoc(sym: Symbol.AssocTypeSym, arg: Type) extends VarOrEff
   }
 
 }

@@ -185,6 +185,7 @@ class Flix {
 
     // String
     "ToString.flix" -> LocalResource.get("/src/library/ToString.flix"),
+    "ToString2.flix" -> LocalResource.get("/src/library/ToString2.flix"),
 
     // Reflect
     "Reflect.flix" -> LocalResource.get("/src/library/Reflect.flix"),
@@ -256,6 +257,7 @@ class Flix {
     "CommutativeMonoid.flix" -> LocalResource.get("/src/library/CommutativeMonoid.flix"),
     "CommutativeSemiGroup.flix" -> LocalResource.get("/src/library/CommutativeSemiGroup.flix"),
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
+    "Foldable2.flix" -> LocalResource.get("/src/library/Foldable2.flix"),
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
     "Filterable.flix" -> LocalResource.get("/src/library/Filterable.flix"),
@@ -270,6 +272,7 @@ class Flix {
     "Traversable.flix" -> LocalResource.get("/src/library/Traversable.flix"),
     "Witherable.flix" -> LocalResource.get("/src/library/Witherable.flix"),
     "UnorderedFoldable.flix" -> LocalResource.get("/src/library/UnorderedFoldable.flix"),
+    "UnorderedFoldable2.flix" -> LocalResource.get("/src/library/UnorderedFoldable2.flix"),
     "Collectable.flix" -> LocalResource.get("/src/library/Collectable.flix"),
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
@@ -304,13 +307,17 @@ class Flix {
     "Fixpoint/Ast/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PrecedenceGraph.flix"),
     "Fixpoint/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Ram.flix"),
 
-    "Eff/Random.flix" -> LocalResource.get("/src/library/Eff/Random.flix"),
+//    "Eff/Random.flix" -> LocalResource.get("/src/library/Eff/Random.flix"),
+    // MATT hack
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
     "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
     "Adaptor.flix" -> LocalResource.get("/src/library/Adaptor.flix"),
     "ToJava.flix" -> LocalResource.get("/src/library/ToJava.flix"),
+
+    "Index.flix" -> LocalResource.get("/src/library/Index.flix"),
+    "IndexMut.flix" -> LocalResource.get("/src/library/IndexMut.flix"),
   )
 
   /**

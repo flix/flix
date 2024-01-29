@@ -18,43 +18,52 @@
 /// A trait for subtraction.
 ///
 pub trait Sub[a] {
+    type Aef: Eff
     ///
     /// Returns the difference of `x` and `y`.
     ///
-    pub def sub(x: a, y: a): a
+    pub def sub(x: a, y: a): a \ Sub.Aef[a]
 }
 
 instance Sub[Float32] {
+    type Aef = Pure
     pub def sub(x: Float32, y: Float32): Float32 = $FLOAT32_SUB$(x, y)
 }
 
 instance Sub[Float64] {
+    type Aef = Pure
     pub def sub(x: Float64, y: Float64): Float64 = $FLOAT64_SUB$(x, y)
 }
 
 instance Sub[BigDecimal] {
+    type Aef = Pure
     pub def sub(x: BigDecimal, y: BigDecimal): BigDecimal =
         import java.math.BigDecimal.subtract(BigDecimal): BigDecimal \ {};
         x `subtract` y
 }
 
 instance Sub[Int8] {
+    type Aef = Pure
     pub def sub(x: Int8, y: Int8): Int8 = $INT8_SUB$(x, y)
 }
 
 instance Sub[Int16] {
+    type Aef = Pure
     pub def sub(x: Int16, y: Int16): Int16 = $INT16_SUB$(x, y)
 }
 
 instance Sub[Int32] {
+    type Aef = Pure
     pub def sub(x: Int32, y: Int32): Int32 = $INT32_SUB$(x, y)
 }
 
 instance Sub[Int64] {
+    type Aef = Pure
     pub def sub(x: Int64, y: Int64): Int64 = $INT64_SUB$(x, y)
 }
 
 instance Sub[BigInt] {
+    type Aef = Pure
     pub def sub(x: BigInt, y: BigInt): BigInt =
         import java.math.BigInteger.subtract(BigInt): BigInt \ {};
         x `subtract` y

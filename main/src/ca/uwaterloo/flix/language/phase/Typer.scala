@@ -19,6 +19,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.LabelledPrecedenceGraph
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingContext
+import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.Validation.{mapN, traverse}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -157,7 +159,12 @@ object Typer {
     * Reconstructs types in the given def.
     */
   private def visitDef(defn: KindedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = {
-    val substVal = TypeInference.visitDefn(defn, assumedTconstrs, root, classEnv, eqEnv)
+    implicit val r = root
+    implicit val context = new TypingContext
+    val (tpe, eff) = ConstraintGeneration.visitExp(defn.exp)
+    val renv = context.renv
+    val constrs = context.constrs.toList
+    val substVal = ConstraintResolution.visitDef(defn, classEnv, eqEnv, root, ConstraintResolution.InfResult(constrs, tpe, eff, renv))
     mapN(substVal) {
       case subst => TypeReconstruction.visitDef(defn, root, subst)
     }
@@ -198,9 +205,18 @@ object Typer {
     * Performs type inference and reassembly on the given signature `sig`.
     */
   private def visitSig(sig: KindedAst.Sig, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Sig, TypeError] = {
-    val substVal = TypeInference.visitSig(sig, assumedTconstrs, root, classEnv, eqEnv)
-    mapN(substVal) {
-      case subst => TypeReconstruction.visitSig(sig, root, subst)
+    implicit val r = root
+    implicit val context = new TypingContext
+    sig.exp match {
+      case None => Validation.success(TypeReconstruction.visitSig(sig, root, Substitution.empty))
+      case Some(exp) =>
+        val (tpe, eff) = ConstraintGeneration.visitExp(exp)
+        val renv = context.renv
+        val constrs = context.constrs.toList
+        val substVal = ConstraintResolution.visitSig(sig, assumedTconstrs, classEnv, eqEnv, root, ConstraintResolution.InfResult(constrs, tpe, eff, renv))
+        mapN(substVal) {
+          case subst => TypeReconstruction.visitSig(sig, root, subst)
+        }
     }
   }
 

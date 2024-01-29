@@ -177,6 +177,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
       // minimize case set formulas if present
       val tpe = x.kind match {
         case Kind.CaseSet(sym) => SetFormula.minimizeType(this.apply(t), sym, sym.universe, SourceLocation.Unknown)
+        case Kind.Eff => TypeMinimization.minimizeType(this.apply(t))(null)
         case _ => this.apply(t)
       }
       newTypeMap.update(x, tpe)

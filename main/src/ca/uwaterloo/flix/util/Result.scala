@@ -40,7 +40,7 @@ sealed trait Result[+T, +E] {
   }
 
   /**
-    * Applies the given function `f` to value of `this` wrapping it in [[Result.Ok]].
+    * Applies the given function `f` to the value of `this` wrapping it in [[Result.Ok]].
     */
   final def map[U](f: T => U): Result[U, E] = this match {
     case Result.Ok(t) => Result.Ok(f(t))

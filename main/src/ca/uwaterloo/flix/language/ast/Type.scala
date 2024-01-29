@@ -84,6 +84,19 @@ sealed trait Type {
   }
 
   /**
+    * Gets all the associated types in the given type.
+    */
+  def assocs: Set[Type.AssocType] = this match {
+    case t: Type.AssocType => Set(t)
+
+    case _: Type.Cst => Set.empty
+    case _: Type.Var => Set.empty
+
+    case Type.Apply(tpe1, tpe2, _) => tpe1.assocs ++ tpe2.assocs
+    case Type.Alias(_, _, tpe, _) => tpe.assocs
+  }
+
+  /**
     * Optionally returns the type constructor of `this` type.
     *
     * Return `None` if the type constructor is a variable.
@@ -449,6 +462,10 @@ object Type {
     * A type expression that a represents a type application tpe1[tpe2].
     */
   case class Apply(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Type {
+    if (tpe1.size > 1000 || tpe2.size > 1000) {
+      throw InternalCompilerException("bad", loc)
+    }
+
     /**
       * Returns the kind of `this` type.
       *

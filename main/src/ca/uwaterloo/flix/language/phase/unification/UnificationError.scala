@@ -136,4 +136,11 @@ object UnificationError {
     */
   case class IrreducibleAssocType(sym: Symbol.AssocTypeSym, t: Type) extends UnificationError
 
+  /**
+    * A unification error resulting from too many resolution iterations.
+    *
+    * @param n the number of iterations conducted.
+    */
+  case class IterationLimit(n: Int) extends UnificationError
+
 }
