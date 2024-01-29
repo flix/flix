@@ -1040,12 +1040,12 @@ object ParsedAst {
     /**
       * Try Expression.
       *
-      * @param sp1             the position of the first character in the expression.
-      * @param exp             the guarded expression.
-      * @param catchOrHandlers list of the handlers (catch/with) of the try expression.
-      * @param sp2             the position of the last character in the expression.
+      * @param sp1      the position of the first character in the expression.
+      * @param exp      the guarded expression.
+      * @param handlers list of the handlers (catch/with) of the try expression.
+      * @param sp2      the position of the last character in the expression.
       */
-    case class Try(sp1: SourcePosition, exp: ParsedAst.Expression, catchOrHandlers: Seq[ParsedAst.CatchOrHandler], sp2: SourcePosition) extends ParsedAst.Expression
+    case class Try(sp1: SourcePosition, exp: ParsedAst.Expression, handlers: HandlerList, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * SelectChannel Expression.
@@ -1872,6 +1872,17 @@ object ParsedAst {
     * @param sp2   the position of the last character in the annotation.
     */
   case class Annotation(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition)
+
+
+  sealed trait HandlerList
+
+  object HandlerList {
+
+    case class CatchHandlerList(handlers: Seq[CatchOrHandler.Catch]) extends HandlerList
+
+    case class WithHandlerList(handlers: Seq[CatchOrHandler.Handler]) extends HandlerList
+
+  }
 
   /**
     * An enum representing the handler of a `try` expression.
