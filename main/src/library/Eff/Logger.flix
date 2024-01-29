@@ -41,7 +41,7 @@ mod Eff.Logger {
 
     pub def trace(msg: a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Trace, () -> "${msg}")
 
-    pub def toListHandler(f: Unit -> a \ ef): (a, List[String]) \ ef = region rc {
+    pub def toListHandler(f: Unit -> a \ Logger ): (List[String], a) = region rc {
         let l = MutList.new(rc);
         let ans = try f() with Logger {
             def log(_, msgF, k) = {
@@ -50,10 +50,10 @@ mod Eff.Logger {
             }
         };
         let xs = MutList.toList(l);
-        (ans, xs)
+        (xs, ans)
     }
 
-    pub def ioHandlerWithSeverity(s: Severity, f: Unit -> a \ ef): a \ ef + IO =
+    pub def ioHandlerWithSeverity(s: Severity, f: Unit -> a \ Logger): a \ IO =
         try f() with Logger {
             def log(s1, msgF, k) = {
                 if (s1 <= s) {
@@ -68,11 +68,8 @@ mod Eff.Logger {
         }
 
     pub def infoExample(): Int32 \ Logger = {
-        // Using the proper API (i.e. `info` or another of the log functions
-        // that wrap the `log` effect) currently fails.
-        // info("A1");
-        // We have to use the `log` effect directly to avoid a runtime crash.
-        do Eff.Logger.log(Severity.Info, _ -> "A1");
+        info("A1");
+        warn("A2");
         1000
     }
 
