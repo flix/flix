@@ -1303,7 +1303,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    } with Gen {
         |        def gen(k) = k("a")
         |    };
-        |    do AskTell.asktell(42);
+        |    do AskTell.askTell(42);
         |    checked_ecast(())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -1329,7 +1329,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        def gen(k) = k("a")
         |    };
         |    do Gen.gen();
-        |    do AskTell.asktell(42);
+        |    do AskTell.askTell(42);
         |    checked_ecast(())
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
