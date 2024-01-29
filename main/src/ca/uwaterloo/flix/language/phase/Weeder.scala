@@ -1378,7 +1378,8 @@ object Weeder {
 
         case (_ :: _, _ :: _) =>
           // Bad situation: we have both catches and effect handlers
-          ???
+          val err = WeederError.MixedTryCatchWithRules(loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
       }
 
     case ParsedAst.Expression.SelectChannel(sp1, rules, exp, sp2) =>
