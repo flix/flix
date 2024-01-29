@@ -1210,7 +1210,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |pub def f(): Unit \ IO =
         |    do Gen.gen();
-        |    checked_ecast(())
+        |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.UnexpectedEffect](result)
@@ -1230,7 +1230,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        def gen(k) = k("a")
         |    };
         |    do Gen.gen();
-        |    checked_ecast(())
+        |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.UnexpectedEffect](result)
@@ -1254,7 +1254,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    } with Gen {
         |        def gen(k) = k("a")
         |    };
-        |    checked_ecast(())
+        |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.UnexpectedEffect](result)
@@ -1279,7 +1279,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        def gen(k) = k("a")
         |    };
         |    do Gen.gen();
-        |    checked_ecast(())
+        |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.UnexpectedEffect](result)
@@ -1304,7 +1304,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        def gen(k) = k("a")
         |    };
         |    do AskTell.askTell(42);
-        |    checked_ecast(())
+        |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.UnexpectedEffect](result)
@@ -1330,7 +1330,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    };
         |    do Gen.gen();
         |    do AskTell.askTell(42);
-        |    checked_ecast(())
+        |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.UnexpectedEffect](result)
@@ -1353,7 +1353,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        def gen(k) = k("a")
         |    };
         |    do AskTell.askTell(42);
-        |    checked_ecast(())
+        |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.UnexpectedEffect](result)
@@ -1376,7 +1376,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    } with Gen {
         |        def gen(k) = do AskTell.askTell(k("a"))
         |    };
-        |    checked_ecast(())
+        |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError.UnexpectedEffect](result)
