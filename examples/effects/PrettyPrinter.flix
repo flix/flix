@@ -47,7 +47,7 @@ mod PrettyPrinter {
 
     def lineBreak(): Unit \ Flow + Emit + Indent = lineOr("")
 
-    def in(doc: Unit -> a \ Layout, n: Int32): a \ Layout - Flow =
+    def in(doc: Unit -> a \ Layout, n: Int32): a \ DefaultIndentation + Flow =
         try {
             doc()
         } with Indent {
@@ -60,32 +60,32 @@ mod PrettyPrinter {
     def nested(doc: Unit -> a \ Layout): a \ Layout =
         nest(doc, do DefaultIndentation.defaultIndentation())
 
-    def inDirection(doc: Unit -> a \ Pretty, direction: Direction): a \ Pretty - Flow =
+    def inDirection(doc: Unit -> a \ Layout, direction: Direction): a \ Indent + DefaultIndentation =
         try {
             doc()
         } with Flow {
             def flow(k) = k(direction)
         }
 
-    def horizontal(p: Unit -> Unit \ Pretty): Unit \ Pretty =
+    def horizontal(p: Unit -> Unit \ Layout): Unit \ Indent + DefaultIndentation =
         Direction.Horizontal |> inDirection(p)
 
-    def vertical(p: Unit -> Unit \ Pretty): Unit \ Pretty =
+    def vertical(p: Unit -> Unit \ Layout): Unit \ Indent + DefaultIndentation =
         Direction.Vertical |> inDirection(p)
 
     eff LayoutChoice {
         pub def choice(): Direction
-        pub def fail(): a
+        pub def fail(): Unit
     }
 
     type alias Pretty = Emit + Layout + LayoutChoice
 
-    def group(p: Unit -> Unit \ Pretty): Unit \ Pretty =
+    def group(p: Unit -> Unit \ Layout): Unit \ Indent + DefaultIndentation + LayoutChoice =
         (do LayoutChoice.choice()) |> inDirection(p)
 
-    def softLine(): Unit \ Pretty = group(line)
+    def softLine(): Unit \ Indent + DefaultIndentation + LayoutChoice = group(line)
 
-    def softBreak(): Unit \ Pretty = group(lineBreak)
+    def softBreak(): Unit \ Indent + DefaultIndentation + LayoutChoice = group(lineBreak)
 
     // Examples
 
