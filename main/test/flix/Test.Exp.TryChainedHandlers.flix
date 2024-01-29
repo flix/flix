@@ -24,9 +24,9 @@ mod Test.Exp.TryChainedHandlers {
         let result = try {
             String.concat(do A.a(), do B.b())
         } with B {
-            def b() = k("b")
+            def b(k) = k("b")
         } with A {
-            def a() = k("a")
+            def a(k) = k("a")
         };
         Assert.eq("ab", result)
 
