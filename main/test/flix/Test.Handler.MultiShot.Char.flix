@@ -10,7 +10,7 @@ mod Test.Handler.MultiShot.Char {
         let result = try {
             f1()
         } with AskTell {
-            def askTell(x, k) = if (k(next(x)) == 'b') k(next(x)) else unreachable!()
+            def askTell(x, k) = next(k(next(k(next(x)))))
         };
         Assert.eq('b', result)
 
@@ -21,7 +21,7 @@ mod Test.Handler.MultiShot.Char {
         let result = try {
             f2()
         } with AskTell {
-            def askTell(x, k) = if (k(next(x)) == 'b') k(next(x)) else unreachable!()
+            def askTell(x, k) = next(k(next(k(next(x)))))
         };
         Assert.eq('b', result)
 
@@ -33,7 +33,7 @@ mod Test.Handler.MultiShot.Char {
         let result = try {
             f3()
         } with AskTell {
-            def askTell(x, k) = if (k(next(x)) == 'b') k(next(x)) else unreachable!()
+            def askTell(x, k) = next(k(next(k(next(x)))))
         };
         Assert.eq('b', result)
 
@@ -44,7 +44,7 @@ mod Test.Handler.MultiShot.Char {
         let result = try {
             r(0)
         } with AskTell {
-            def askTell(x, k) = if (k(next(x)) == 'b') k(next(x)) else unreachable!()
+            def askTell(x, k) = next(k(next(k(next(x)))))
         };
         Assert.eq('b', result)
 
@@ -55,7 +55,7 @@ mod Test.Handler.MultiShot.Char {
         let result = try {
             r(1)
         } with AskTell {
-            def askTell(x, k) = if (k(next(x)) == 'b') k(next(x)) else unreachable!()
+            def askTell(x, k) = next(k(next(k(next(x)))))
         };
         Assert.eq('b', result)
 
@@ -66,7 +66,7 @@ mod Test.Handler.MultiShot.Char {
         let result = try {
             r(10)
         } with AskTell {
-            def askTell(x, k) = if (k(next(x)) == 'b') k(next(x)) else unreachable!()
+            def askTell(x, k) = next(k(next(k(next(x)))))
         };
         Assert.eq('b', result)
 
@@ -75,7 +75,7 @@ mod Test.Handler.MultiShot.Char {
         let result = try {
             mutual1(0)
         } with AskTell {
-            def askTell(x, k) = if (k(next(x)) == 'b') k(next(x)) else unreachable!()
+            def askTell(x, k) = next(k(next(k(next(x)))))
         };
         Assert.eq('b', result)
 
@@ -84,7 +84,7 @@ mod Test.Handler.MultiShot.Char {
         let result = try {
             mutual1(1)
         } with AskTell {
-            def askTell(x, k) = if (k(next(x)) == 'b') k(next(x)) else unreachable!()
+            def askTell(x, k) = next(k(next(k(next(x)))))
         };
         Assert.eq('b', result)
 
@@ -93,7 +93,7 @@ mod Test.Handler.MultiShot.Char {
         let result = try {
             mutual1(2)
         } with AskTell {
-            def askTell(x, k) = if (k(next(x)) == 'b') k(next(x)) else unreachable!()
+            def askTell(x, k) = next(k(next(k(next(x)))))
         };
         Assert.eq('b', result)
 
@@ -102,7 +102,7 @@ mod Test.Handler.MultiShot.Char {
         let result = try {
             mutual1(3)
         } with AskTell {
-            def askTell(x, k) = if (k(next(x)) == 'b') k(next(x)) else unreachable!()
+            def askTell(x, k) = next(k(next(k(next(x)))))
         };
         Assert.eq('b', result)
 
@@ -111,7 +111,7 @@ mod Test.Handler.MultiShot.Char {
         let result = try {
             mutual1(10)
         } with AskTell {
-            def askTell(x, k) = if (k(next(x)) == 'b') k(next(x)) else unreachable!()
+            def askTell(x, k) = next(k(next(k(next(x)))))
         };
         Assert.eq('b', result)
 
