@@ -1027,7 +1027,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         keyword("def") ~ WS ~ Names.Operation ~ FormalParamList ~ optWS ~ atomic("=") ~ optWS ~ Expression ~> ParsedAst.HandlerRule
       }
 
-      def HandlerBody: Rule1[ParsedAst.CatchOrHandler] = rule {
+      def HandlerBody: Rule1[ParsedAst.CatchOrHandler.Handler] = rule {
         keyword("with") ~ optWS ~ Names.QualifiedEffect ~ optional(optWS ~ "{" ~ optWS ~ zeroOrMore(HandlerRule).separatedBy(CaseSeparator) ~ optWS ~ "}") ~> ParsedAst.CatchOrHandler.Handler
       }
 
@@ -1035,8 +1035,18 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         CatchBody | HandlerBody
       }
 
-      rule {
+      def NormalTry: Rule1[ParsedAst.Expression.Try] = rule {
         SP ~ keyword("try") ~ WS ~ Expression ~ optWS ~ Body ~ SP ~> ParsedAst.Expression.Try
+      }
+
+      def ChainedTry: Rule1[ParsedAst.Expression.TryChainedHandlers] = rule {
+        SP ~ keyword("try") ~ WS ~ Expression ~ optWS ~ HandlerBody ~ optWS ~ oneOrMore(HandlerBody).separatedBy(optWS) ~ SP ~>
+          ((sp1: SourcePosition, exp: ParsedAst.Expression, handler1: ParsedAst.CatchOrHandler.Handler, otherHandlers: Seq[ParsedAst.CatchOrHandler.Handler], sp2: SourcePosition) =>
+            ParsedAst.Expression.TryChainedHandlers(sp1, exp, Seq.concat(Seq(handler1), otherHandlers), sp2))
+      }
+
+      rule {
+        ChainedTry | NormalTry
       }
     }
 

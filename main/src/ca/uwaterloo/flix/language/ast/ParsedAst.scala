@@ -1045,7 +1045,17 @@ object ParsedAst {
       * @param catchOrHandler the handler (catch/with) of the try expression.
       * @param sp2            the position of the last character in the expression.
       */
-    case class Try(sp1: SourcePosition, exp: ParsedAst.Expression, catchOrHandler: CatchOrHandler, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Try(sp1: SourcePosition, exp: ParsedAst.Expression, catchOrHandler: ParsedAst.CatchOrHandler, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * [[Try]] Expression with multiple handlers.
+      *
+      * @param sp1      the position of the first character in the expression.
+      * @param exp      the guarded expression.
+      * @param handlers the handlers (with-clauses) of the try expression.
+      * @param sp2      the position of the last character in the expression.
+      */
+    case class TryChainedHandlers(sp1: SourcePosition, exp: ParsedAst.Expression, handlers: Seq[ParsedAst.CatchOrHandler.Handler], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * SelectChannel Expression.
