@@ -29,7 +29,7 @@ import java.nio.file.{Files, Path}
 
 object ConstraintResolution {
 
-  private val MaxIterations = 200
+  private val MaxIterations = 1000
 
   private var record = false
 

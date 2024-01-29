@@ -597,7 +597,7 @@ object ConstraintGeneration {
         c.expectTypeM(expected = Type.mkArrowWithEffect(Type.Unit, evar, Type.Unit, loc.asSynthetic), actual = tpe1, exp1.loc)
         c.expectTypeM(expected = regionTpe, actual = tpe2, exp2.loc)
         val resTpe = Type.Unit
-        val resEff = Type.mkUnion(Type.Impure, regionVar, loc)
+        val resEff = Type.mkUnion(Type.IO, regionVar, loc)
         (resTpe, resEff)
 
       case Expr.Match(exp, rules, loc) =>
@@ -981,7 +981,7 @@ object ConstraintGeneration {
         val classTpe = getFlixType(constructor.getDeclaringClass)
         val (_, _) = args.map(visitExp).unzip
         val resTpe = classTpe
-        val resEff = Type.Impure
+        val resEff = Type.IO
         (resTpe, resEff)
 
       case Expr.InvokeMethod(method, clazz, exp, args, loc)
@@ -991,7 +991,7 @@ object ConstraintGeneration {
         c.unifyTypeM(baseTyp, classTpe, loc)
         val (_, _) = args.map(visitExp).unzip
         val resTpe = getFlixType(method.getReturnType)
-        val resEff = Type.Impure
+        val resEff = Type.IO
         (resTpe, resEff)
 
       case Expr.InvokeStaticMethod(method, args, loc)
@@ -999,7 +999,7 @@ object ConstraintGeneration {
         val returnTpe = getFlixType(method.getReturnType)
         val (_, _) = args.map(visitExp).unzip
         val resTpe = getFlixType(method.getReturnType)
-        val resEff = Type.Impure
+        val resEff = Type.IO
         (resTpe, resEff)
 
       case Expr.GetField(field, clazz, exp, loc)
@@ -1009,7 +1009,7 @@ object ConstraintGeneration {
         val (tpe, _) = visitExp(exp)
         c.expectTypeM(expected = classType, actual = tpe, exp.loc)
         val resTpe = fieldType
-        val resEff = Type.Impure
+        val resEff = Type.IO
         (resTpe, resEff)
 
       case Expr.PutField(field, clazz, exp1, exp2, loc)
@@ -1021,14 +1021,14 @@ object ConstraintGeneration {
         c.expectTypeM(expected = classType, actual = tpe1, exp1.loc)
         c.expectTypeM(expected = fieldType, actual = tpe2, exp2.loc)
         val resTpe = Type.Unit
-        val resEff = Type.Impure
+        val resEff = Type.IO
         (resTpe, resEff)
 
       case Expr.GetStaticField(field, loc)
       =>
         val fieldType = getFlixType(field.getType)
         val resTpe = fieldType
-        val resEff = Type.Impure
+        val resEff = Type.IO
         (resTpe, resEff)
 
       case Expr.PutStaticField(field, exp, loc)
@@ -1036,7 +1036,7 @@ object ConstraintGeneration {
         val (valueTyp, _) = visitExp(exp)
         c.expectTypeM(expected = getFlixType(field.getType), actual = valueTyp, exp.loc)
         val resTpe = Type.Unit
-        val resEff = Type.Impure
+        val resEff = Type.IO
         (resTpe, resEff)
 
       case Expr.NewObject(name, clazz, methods, loc)
@@ -1064,7 +1064,7 @@ object ConstraintGeneration {
 
         methods.foreach(visitJvmMethod)
         val resTpe = getFlixType(clazz)
-        val resEff = Type.Impure
+        val resEff = Type.IO
         (resTpe, resEff)
 
       case Expr.NewChannel(exp1, exp2, tvar, loc)
@@ -1148,7 +1148,7 @@ object ConstraintGeneration {
         val (tpe2, _) = visitExp(exp2)
         c.expectTypeM(expected = regionType, actual = tpe2, exp2.loc)
         val resTpe = Type.Unit
-        val resEff = Type.mkUnion(Type.Impure, regionVar, loc)
+        val resEff = Type.mkUnion(Type.IO, regionVar, loc)
         (resTpe, resEff)
 
       case Expr.ParYield(frags, exp, loc)
