@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.util.collection.MultiMap
 
+import scala.collection.IterableOps
+
 object ParsedAst {
 
   /**
@@ -1772,10 +1774,36 @@ object ParsedAst {
   case class FormalParam(sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ident: Name.Ident, tpe: Option[ParsedAst.Type], sp2: SourcePosition)
 
   /**
-    *
-    * @param fparams the list of [[FormalParam]]s.
+    * Represents a List of [[FormalParam]]s.
     */
-  case class FormalParamList(fparams: Seq[ParsedAst.FormalParam])
+  sealed trait FormalParamList {
+
+    def sizeIs: IterableOps.SizeCompareOps = this match {
+      case FormalParamList.FormalParamSeq(fparams) => fparams.sizeIs
+    }
+
+    def isEmpty: Boolean = this.sizeIs == 0
+
+    def foreach(f: FormalParam => Unit): Unit = this match {
+      case FormalParamList.FormalParamSeq(fparams) => fparams.foreach(f)
+    }
+
+  }
+
+  object FormalParamList {
+
+    /**
+      * A wrapper for a [[Seq]] of [[FormalParam]].
+      *
+      * @param fparams the [[Seq]] of [[FormalParam]]s.
+      */
+    private case class FormalParamSeq(fparams: Seq[ParsedAst.FormalParam]) extends FormalParamList
+
+    val empty: FormalParamList = FormalParamSeq(Seq.empty)
+
+    def from(fparams: Seq[ParsedAst.FormalParam]): FormalParamList = FormalParamSeq(fparams)
+
+  }
 
   /**
     * A common super-type for predicate parameters.
