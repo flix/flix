@@ -1881,26 +1881,30 @@ object ParsedAst {
 
   object HandlerList {
 
-    case class CatchHandlerList(handlers: Seq[Catch]) extends HandlerList
+    case class CatchHandlerList(handlers: Seq[TryHandlers.Catch]) extends HandlerList
 
-    case class WithHandlerList(handlers: Seq[WithHandler]) extends HandlerList
+    case class WithHandlerList(handlers: Seq[TryHandlers.WithHandler]) extends HandlerList
 
   }
 
-  /**
-    * A `catch` block for handling Java exceptions.
-    *
-    * @param rules the catch rules.
-    */
-  case class Catch(rules: Seq[ParsedAst.CatchRule])
+  object TryHandlers {
 
-  /**
-    * A `with` block for handling Flix effects.
-    *
-    * @param eff   the effect to be handled.
-    * @param rules the handler rules.
-    */
-  case class WithHandler(eff: Name.QName, rules: Option[Seq[ParsedAst.HandlerRule]])
+    /**
+      * A `catch` block for handling Java exceptions.
+      *
+      * @param rules the catch rules.
+      */
+    case class Catch(rules: Seq[ParsedAst.CatchRule])
+
+    /**
+      * A `with` block for handling Flix effects.
+      *
+      * @param eff   the effect to be handled.
+      * @param rules the handler rules.
+      */
+    case class WithHandler(eff: Name.QName, rules: Option[Seq[ParsedAst.HandlerRule]])
+
+  }
 
   /**
     * String Interpolation Part.
