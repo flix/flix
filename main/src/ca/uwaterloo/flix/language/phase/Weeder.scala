@@ -1353,23 +1353,18 @@ object Weeder {
     // not handling these rules yet
     case ParsedAst.Expression.Try(sp1, exp0, ParsedAst.CatchOrHandler.Handler(eff, rules0), sp2) =>
       val expVal = visitExp(exp0)
-      val rulesVal = traverse(rules0.getOrElse(Seq.empty)) {
-        case ParsedAst.HandlerRule(op, fparams0, body0) =>
-          // In this case, we want an extra resumption argument
-          // so both an empty list and a singleton list should be padded with unit
-          // [] --> [_unit]
-          // [x] --> [_unit, x]
-          // [x, ...] --> [x, ...]
-          val fparamsValPrefix = if (fparams0.sizeIs == 1) visitFormalParams(Seq.empty, Presence.Forbidden) else Validation.success(Nil)
-          val fparamsValSuffix = visitFormalParams(fparams0, Presence.Forbidden)
-          val bodyVal = visitExp(body0)
-          mapN(fparamsValPrefix, fparamsValSuffix, bodyVal) {
-            case (fparamsPrefix, fparamsSuffix, body) => WeededAst.HandlerRule(op, fparamsPrefix ++ fparamsSuffix, body)
-          }
-      }
+      val rulesVal = visitEffectHandler(ParsedAst.CatchOrHandler.Handler(eff, rules0))
       val loc = mkSL(sp1, sp2)
       mapN(expVal, rulesVal) {
         case (exp, rules) => WeededAst.Expr.TryWith(exp, eff, rules, loc)
+      }
+
+    case ParsedAst.Expression.TryChainedHandlers(sp1, exp0, handlers, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val expVal = visitExp(exp0)
+      val handlersVal = traverse(handlers)(visitEffectHandler)
+      mapN(expVal, handlersVal) {
+        case (e, hs) => WeededAst.Expr.TryChainedWith(e, hs, loc)
       }
 
     case ParsedAst.Expression.SelectChannel(sp1, rules, exp, sp2) =>
@@ -1808,8 +1803,8 @@ object Weeder {
             Validation.success(WeededAst.Pattern.Tag(qname, lit, loc))
           case Some(pat) =>
             mapN(visit(pat)) {
-            case p => WeededAst.Pattern.Tag(qname, p, mkSL(sp1, sp2))
-          }
+              case p => WeededAst.Pattern.Tag(qname, p, mkSL(sp1, sp2))
+            }
         }
 
       case ParsedAst.Pattern.Tuple(sp1, pats, sp2) =>
@@ -2649,6 +2644,30 @@ object Weeder {
   }
 
   /**
+    * Performs weeding on the [[ParsedAst.CatchOrHandler.Handler]] `handler0`.
+    *
+    * For each handler rule we add an extra resumption argument
+    * so both an empty parameter list and a singleton parameter list should be padded with unit
+    *
+    * `[] --> [_unit]`
+    *
+    * `[x] --> [_unit, x]`
+    *
+    * `[x, ...] --> [x, ...]`
+    */
+  private def visitEffectHandler(handler0: ParsedAst.CatchOrHandler.Handler)(implicit flix: Flix): Validation[List[WeededAst.HandlerRule], WeederError] = {
+    traverse(handler0.rules.getOrElse(Seq.empty)) {
+      case ParsedAst.HandlerRule(op, fparams0, body0) =>
+        val fparamsValPrefix = if (fparams0.sizeIs == 1) visitFormalParams(Seq.empty, Presence.Forbidden) else Validation.success(Nil)
+        val fparamsValSuffix = visitFormalParams(fparams0, Presence.Forbidden)
+        val bodyVal = visitExp(body0)
+        mapN(fparamsValPrefix, fparamsValSuffix, bodyVal) {
+          case (fparamsPrefix, fparamsSuffix, body) => WeededAst.HandlerRule(op, fparamsPrefix ++ fparamsSuffix, body)
+        }
+    }
+  }
+
+  /**
     * Performs weeding on the given JvmMethod.
     */
   private def visitJvmMethod(method: ParsedAst.JvmMethod)(implicit flix: Flix): Validation[WeededAst.JvmMethod, WeederError] = method match {
@@ -3000,6 +3019,7 @@ object Weeder {
     case ParsedAst.Expression.Without(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Do(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Try(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.TryChainedHandlers(sp1, _, _, _) => sp1
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ParYield(sp1, _, _, _) => sp1
