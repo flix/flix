@@ -372,7 +372,7 @@ object MonoDefs {
       val env1 = env0 + (sym -> freshSym)
       // forcedly mark the region variable as Impure inside the region
       val subst1 = StrictSubstitution(subst.s.unbind(regionVar.sym), subst.eqEnv)
-      val subst2 = subst1 + (regionVar.sym -> Type.Impure)
+      val subst2 = subst1 + (regionVar.sym -> Type.Univ)
       Expr.Scope(freshSym, regionVar, visitExp(exp, env1, subst2), subst(tpe), subst(eff), loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>

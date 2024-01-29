@@ -334,12 +334,7 @@ object Type {
   /**
     * Represents the universal effect set.
     */
-  val EffUniv: Type = Type.Cst(TypeConstructor.EffUniv, SourceLocation.Unknown)
-
-  /**
-    * Represents the universal effect set.
-    */
-  val Impure: Type = EffUniv
+  val Univ: Type = Type.Cst(TypeConstructor.Univ, SourceLocation.Unknown)
 
   /**
     * Represents the Complement type constructor.
@@ -576,7 +571,7 @@ object Type {
   /**
     * Returns the EffUniv type with the given source location `loc`.
     */
-  def mkEffUniv(loc: SourceLocation): Type = Type.Cst(TypeConstructor.EffUniv, loc)
+  def mkEffUniv(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Univ, loc)
 
   /**
     * Returns the type `Sender[tpe, reg]` with the given optional source location `loc`.
@@ -624,7 +619,7 @@ object Type {
   def mkPureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Pure, b, loc)
 
   /**
-    * Constructs the impure arrow type A ~> B.
+    * Constructs the IO arrow type A -> B \ IO.
     */
   def mkIoArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, IO, b, loc)
 
@@ -639,7 +634,7 @@ object Type {
   def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Pure, b, loc)
 
   /**
-    * Constructs the impure curried arrow type A_1 -> (A_2  -> ... -> A_n) ~> B.
+    * Constructs the IO curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B \ IO.
     */
   def mkIoCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, IO, b, loc)
 
@@ -658,7 +653,7 @@ object Type {
   def mkPureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Pure, b, loc)
 
   /**
-    * Constructs the impure uncurried arrow type (A_1, ..., A_n) ~> B.
+    * Constructs the IO uncurried arrow type (A_1, ..., A_n) -> B \ IO.
     */
   def mkIoUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, IO, b, loc)
 
@@ -790,7 +785,7 @@ object Type {
     */
   def mkComplement(tpe0: Type, loc: SourceLocation): Type = tpe0 match {
     case Type.Pure => Type.mkEffUniv(loc)
-    case Type.EffUniv => Type.mkPure(loc)
+    case Type.Univ => Type.mkPure(loc)
     case _ => Type.Apply(Type.Cst(TypeConstructor.Complement, loc), tpe0, loc)
   }
 
@@ -809,8 +804,8 @@ object Type {
   def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.Pure, _), _) => tpe2
     case (_, Type.Cst(TypeConstructor.Pure, _)) => tpe1
-    case (Type.Cst(TypeConstructor.EffUniv, _), _) => Type.EffUniv
-    case (_, Type.Cst(TypeConstructor.EffUniv, _)) => Type.EffUniv
+    case (Type.Cst(TypeConstructor.Univ, _), _) => Type.Univ
+    case (_, Type.Cst(TypeConstructor.Univ, _)) => Type.Univ
     case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.Union, tpe1, loc), tpe2, loc)
   }
@@ -841,8 +836,8 @@ object Type {
   def mkIntersection(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.Pure, _), _) => Type.Pure
     case (_, Type.Cst(TypeConstructor.Pure, _)) => Type.Pure
-    case (Type.Cst(TypeConstructor.EffUniv, _), _) => tpe2
-    case (_, Type.Cst(TypeConstructor.EffUniv, _)) => tpe1
+    case (Type.Cst(TypeConstructor.Univ, _), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.Univ, _)) => tpe1
     case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.Intersection, tpe1, loc), tpe2, loc)
   }
@@ -851,7 +846,7 @@ object Type {
     * Returns the type `Or(tpe1, Or(tpe2, ...))`.
     */
   def mkIntersection(tpes: List[Type], loc: SourceLocation): Type = tpes match {
-    case Nil => Type.EffUniv
+    case Nil => Type.Univ
     case x :: xs => mkIntersection(x, mkIntersection(xs, loc), loc)
   }
 
