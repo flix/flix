@@ -1316,7 +1316,7 @@ object Namer {
     case "vector" => true
     case "ref" => true
     case "pure" => true
-    case "impure" => true
+    case "univ" => true
     case _ => false
   }
 

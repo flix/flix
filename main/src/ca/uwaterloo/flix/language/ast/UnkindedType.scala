@@ -360,7 +360,7 @@ object UnkindedType {
     * Constructs the type a -> b \ IO
     */
   def mkIoArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    val eff = Some(UnkindedType.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "IO", SourceLocation.Unknown)), loc))
+    val eff = Some(UnkindedType.Cst(TypeConstructor.Effect(Symbol.IO), loc))
     mkApply(UnkindedType.Arrow(eff, 2, loc), List(a, b), loc)
   }
 
@@ -575,7 +575,7 @@ object UnkindedType {
       val elmType = getFlixType(comp)
       UnkindedType.mkApply(
         UnkindedType.Cst(TypeConstructor.Array, SourceLocation.Unknown),
-        List(elmType, UnkindedType.Cst(TypeConstructor.Effect(new Symbol.EffectSym(Nil, "IO", SourceLocation.Unknown)), SourceLocation.Unknown)),
+        List(elmType, UnkindedType.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)),
         SourceLocation.Unknown
       )
     }
