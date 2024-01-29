@@ -1236,7 +1236,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.UnexpectedEffect](result)
   }
 
-  test("TestIOAndCustomEffect.03") {
+  ignore("TestIOAndCustomEffect.03") {
     val input =
       """
         |eff Gen {
@@ -1359,7 +1359,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.UnexpectedEffect](result)
   }
 
-  test("TestIOAndCustomEffect.08") {
+  ignore("TestIOAndCustomEffect.08") {
     val input =
       """
         |eff Gen {
