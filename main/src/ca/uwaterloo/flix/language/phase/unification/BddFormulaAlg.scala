@@ -132,7 +132,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     */
   private def createTypeFromBDDAux(dd: DD, tpe: Type, env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
     if (dd.isLeaf) {
-      return if (dd.isTrue) tpe else Type.EffUniv
+      return if (dd.isTrue) tpe else Type.Univ
     }
 
     val currentVar = dd.getVariable
@@ -148,9 +148,9 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     val highRes = createTypeFromBDDAux(dd.getHigh, highType, env)
 
     (lowRes, highRes) match {
-      case (Type.EffUniv, Type.EffUniv) => Type.EffUniv
-      case (Type.EffUniv, _) => highRes
-      case (_, Type.EffUniv) => lowRes
+      case (Type.Univ, Type.Univ) => Type.Univ
+      case (Type.Univ, _) => highRes
+      case (_, Type.Univ) => lowRes
       case (t1, _) => Type.mkApply(Type.Intersection, List(lowRes, highRes), t1.loc)
     }
   }
@@ -164,7 +164,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
       if (f.isTrue) {
         return Type.Pure
       } else {
-        return Type.EffUniv
+        return Type.Univ
       }
     }
     if (isVar(f)) {

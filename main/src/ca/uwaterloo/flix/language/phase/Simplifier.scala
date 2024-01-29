@@ -315,7 +315,7 @@ object Simplifier {
           case TypeConstructor.Or => MonoType.Unit
 
           case TypeConstructor.Pure => MonoType.Unit
-          case TypeConstructor.EffUniv => MonoType.Unit
+          case TypeConstructor.Univ => MonoType.Unit
           case TypeConstructor.Complement => MonoType.Unit
           case TypeConstructor.Union => MonoType.Unit
           case TypeConstructor.Intersection => MonoType.Unit

@@ -182,8 +182,8 @@ object FormatType {
       case SimpleType.Lazy => true
       case SimpleType.True => true
       case SimpleType.False => true
-      case SimpleType.Empty => true
-      case SimpleType.All => true
+      case SimpleType.Pure => true
+      case SimpleType.Univ => true
       case SimpleType.Region => true
       case SimpleType.RecordConstructor(_) => true
       case SimpleType.Record(_) => true
@@ -247,11 +247,11 @@ object FormatType {
       case SimpleType.Lazy => "Lazy"
       case SimpleType.False => "false"
       case SimpleType.True => "true"
-      case SimpleType.Empty => mode match {
+      case SimpleType.Pure => mode match {
         case Mode.Type => "Pure"
         case Mode.Purity => "{}"
       }
-      case SimpleType.All => "Impure"
+      case SimpleType.Univ => "Univ"
       case SimpleType.Region => "Region"
       case SimpleType.Record(labels) =>
         val labelString = labels.map(visitRecordLabelType).mkString(", ")

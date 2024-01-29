@@ -1483,12 +1483,12 @@ object ParsedAst {
     case class Pure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * The Impure type constructor.
+      * The Univ type constructor.
       *
       * @param sp1 the position of the first character in the type.
       * @param sp2 the position of the last character in the type.
       */
-    case class Impure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
+    case class Univ(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * A type representing an effect set.
