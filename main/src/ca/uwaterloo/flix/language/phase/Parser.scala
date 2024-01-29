@@ -1040,9 +1040,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def ChainedTry: Rule1[ParsedAst.Expression.TryChainedHandlers] = rule {
-        SP ~ keyword("try") ~ WS ~ Expression ~ optWS ~ HandlerBody ~ optWS ~ oneOrMore(HandlerBody).separatedBy(optWS) ~ SP ~>
-          ((sp1: SourcePosition, exp: ParsedAst.Expression, handler1: ParsedAst.CatchOrHandler.Handler, otherHandlers: Seq[ParsedAst.CatchOrHandler.Handler], sp2: SourcePosition) =>
-            ParsedAst.Expression.TryChainedHandlers(sp1, exp, Seq.concat(Seq(handler1), otherHandlers), sp2))
+        SP ~ keyword("try") ~ WS ~ Expression ~ optWS ~ HandlerBody ~ optWS ~ oneOrMore(HandlerBody).separatedBy(optWS) ~ SP ~> ParsedAst.Expression.TryChainedHandlers
       }
 
       rule {

@@ -1358,10 +1358,10 @@ object Weeder {
         case (exp, handler) => WeededAst.Expr.TryWith(exp, handler, loc)
       }
 
-    case ParsedAst.Expression.TryChainedHandlers(sp1, exp0, handlers0, sp2) =>
+    case ParsedAst.Expression.TryChainedHandlers(sp1, exp0, handler0, handlers0, sp2) =>
       val loc = mkSL(sp1, sp2)
       val expVal = visitExp(exp0)
-      val handlersVal = traverse(handlers0)(visitEffectHandler)
+      val handlersVal = traverse(Seq.concat(Seq(handler0), handlers0))(visitEffectHandler)
       mapN(expVal, handlersVal) {
         case (exp, handlers) => WeededAst.Expr.TryChainedWith(exp, handlers, loc)
       }
@@ -3021,7 +3021,7 @@ object Weeder {
     case ParsedAst.Expression.Without(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Do(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Try(sp1, _, _, _) => sp1
-    case ParsedAst.Expression.TryChainedHandlers(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.TryChainedHandlers(sp1, _, _, _, _) => sp1
     case ParsedAst.Expression.SelectChannel(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Spawn(sp1, _, _, _) => sp1
     case ParsedAst.Expression.ParYield(sp1, _, _, _) => sp1
