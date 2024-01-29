@@ -1035,16 +1035,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         CatchBody | HandlerBody
       }
 
-      def NormalTry: Rule1[ParsedAst.Expression.Try] = rule {
-        SP ~ keyword("try") ~ WS ~ Expression ~ optWS ~ Body ~ SP ~> ParsedAst.Expression.Try
-      }
-
-      def ChainedTry: Rule1[ParsedAst.Expression.TryChainedHandlers] = rule {
-        SP ~ keyword("try") ~ WS ~ Expression ~ optWS ~ HandlerBody ~ optWS ~ oneOrMore(HandlerBody).separatedBy(optWS) ~ SP ~> ParsedAst.Expression.TryChainedHandlers
-      }
-
       rule {
-        ChainedTry | NormalTry
+        SP ~ keyword("try") ~ WS ~ Expression ~ optWS ~ oneOrMore(Body).separatedBy(optWS) ~ SP ~> ParsedAst.Expression.Try
       }
     }
 

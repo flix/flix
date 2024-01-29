@@ -910,6 +910,25 @@ object WeederError {
   }
 
   /**
+    * An error raised to indicate that a try-catch expression has multiple catch-blocks.
+    *
+    * @param loc the location of the try-catch expression.
+    */
+  case class MultipleCatchBlocks(loc: SourceLocation) extends WeederError with Recoverable {
+    def summary: String = "A try-catch expression may only contain 1 catch-block."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Multiple catch-blocks. A try-catch expression may only contain 1 catch-block.
+         |
+         |${code(loc, "Multiple catch-blocks")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
     *
     * @param name the name of the variable.
