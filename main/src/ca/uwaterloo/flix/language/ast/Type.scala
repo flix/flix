@@ -339,7 +339,7 @@ object Type {
   /**
     * Represents the universal effect set.
     */
-  val Impure: Type = EffUniv
+  val Univ: Type = EffUniv
 
   /**
     * Represents the Complement type constructor.
@@ -624,7 +624,7 @@ object Type {
   def mkPureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Pure, b, loc)
 
   /**
-    * Constructs the impure arrow type A ~> B.
+    * Constructs the IO arrow type A -> B \ IO.
     */
   def mkIoArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, IO, b, loc)
 
@@ -639,7 +639,7 @@ object Type {
   def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Pure, b, loc)
 
   /**
-    * Constructs the impure curried arrow type A_1 -> (A_2  -> ... -> A_n) ~> B.
+    * Constructs the IO curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B \ IO.
     */
   def mkIoCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, IO, b, loc)
 
@@ -658,7 +658,7 @@ object Type {
   def mkPureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Pure, b, loc)
 
   /**
-    * Constructs the impure uncurried arrow type (A_1, ..., A_n) ~> B.
+    * Constructs the IO uncurried arrow type (A_1, ..., A_n) -> B \ IO.
     */
   def mkIoUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, IO, b, loc)
 

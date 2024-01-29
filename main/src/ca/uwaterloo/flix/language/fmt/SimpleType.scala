@@ -83,9 +83,9 @@ object SimpleType {
 
   case object Lazy extends SimpleType
 
-  case object Empty extends SimpleType
+  case object Pure extends SimpleType
 
-  case object All extends SimpleType
+  case object Univ extends SimpleType
 
   case object False extends SimpleType
 
@@ -336,7 +336,7 @@ object SimpleType {
               List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
 
             // Case 2: Pure function.
-            case eff :: tpes if eff == Empty || fmt.ignorePur =>
+            case eff :: tpes if eff == Pure || fmt.ignorePur =>
               // NB: safe to reduce because arity is always at least 2
               tpes.padTo(arity, Hole).reduceRight(PureArrow)
 
@@ -445,8 +445,8 @@ object SimpleType {
               Lattice(tpes, lat)
             case _ :: _ :: _ => throw new OverAppliedType(t.loc)
           }
-        case TypeConstructor.Pure => Empty
-        case TypeConstructor.EffUniv => All
+        case TypeConstructor.Pure => Pure
+        case TypeConstructor.EffUniv => Univ
 
         case TypeConstructor.True => True
         case TypeConstructor.False => False

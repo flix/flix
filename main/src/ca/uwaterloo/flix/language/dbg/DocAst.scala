@@ -361,7 +361,7 @@ object DocAst {
 
     case object Pure extends Eff
 
-    case object Impure extends Eff
+    case object Univ extends Eff
 
     case class AsIs(s: String) extends Eff
 
