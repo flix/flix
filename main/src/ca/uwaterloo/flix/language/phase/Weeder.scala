@@ -1336,52 +1336,28 @@ object Weeder {
         args => WeededAst.Expr.Do(op, args, loc)
       }
 
-    case ParsedAst.Expression.Try(sp1, exp, catchOrHandlers, sp2) =>
-      val loc = mkSL(sp1, sp2)
+    case ParsedAst.Expression.Try(sp1, exp, ParsedAst.HandlerList.CatchHandlerList(handlers0), sp2) =>
       val expVal = visitExp(exp)
-      // Check that we either only have catches or effect handlers
-      val (hs0, cs0) = catchOrHandlers.partition {
-        case _: ParsedAst.CatchOrHandler.Handler => true
-        case _: ParsedAst.CatchOrHandler.Catch => false
+      val rulesVal = traverse(handlers0) {
+        case ParsedAst.CatchOrHandler.Catch(rules) => traverse(rules) {
+          case ParsedAst.CatchRule(ident, fqn, body) =>
+            mapN(visitExp(body)) {
+              case b => WeededAst.CatchRule(ident, fqn.toString, b)
+            }
+        }
       }
-      (hs0.toList.asInstanceOf[List[ParsedAst.CatchOrHandler.Handler]],
-        cs0.toList.asInstanceOf[List[ParsedAst.CatchOrHandler.Catch]]) match {
-        case (h :: Nil, Nil) =>
-          // Case single try-with
-          val handler0 = h
-          val handlerVal = visitEffectHandler(ParsedAst.CatchOrHandler.Handler(handler0.eff, handler0.rules))
-          mapN(expVal, handlerVal) {
-            case (exp, handler) => WeededAst.Expr.TryWith(exp, handler, loc)
-          }
 
-        case (hs, Nil) =>
-          // Case multiple try-withs
-          val handlersVal = traverse(hs)(visitEffectHandler)
-          mapN(expVal, handlersVal) {
-            case (exp, handlers) => WeededAst.Expr.TryChainedWith(exp, handlers, loc)
-          }
+      mapN(expVal, rulesVal) {
+        case (e, rs) => WeededAst.Expr.TryCatch(e, rs.flatten, mkSL(sp1, sp2))
+      }
 
-        case (Nil, c :: Nil) =>
-          // Case try-catch
-          val rulesVal = traverse(c.rules) {
-            case ParsedAst.CatchRule(ident, fqn, body) =>
-              mapN(visitExp(body)) {
-                case b => WeededAst.CatchRule(ident, fqn.toString, b)
-              }
-          }
-          mapN(expVal, rulesVal) {
-            case (e, rs) => WeededAst.Expr.TryCatch(e, rs, loc)
-          }
-
-        case (Nil, _) =>
-          // Bad situation: More than 1 catch handler
-          val err = WeederError.MultipleCatchBlocks(loc)
-          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
-
-        case (_ :: _, _ :: _) =>
-          // Bad situation: we have both catches and effect handlers
-          val err = WeederError.MixedTryCatchWithBlocks(loc)
-          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+    // not handling these rules yet
+    case ParsedAst.Expression.Try(sp1, exp0, ParsedAst.HandlerList.WithHandlerList(handlers0), sp2) =>
+      val loc = mkSL(sp1, sp2)
+      val expVal = visitExp(exp0)
+      val handlerVal = traverse(handlers0)(visitWithHandler)
+      mapN(expVal, handlerVal) {
+        case (exp, handlers) => WeededAst.Expr.TryWith(exp, handlers, loc)
       }
 
     case ParsedAst.Expression.SelectChannel(sp1, rules, exp, sp2) =>
@@ -2672,7 +2648,7 @@ object Weeder {
     *
     * `[x, ...] --> [x, ...]`
     */
-  private def visitEffectHandler(handler0: ParsedAst.CatchOrHandler.Handler)(implicit flix: Flix): Validation[WeededAst.Handler, WeederError] = {
+  private def visitWithHandler(handler0: ParsedAst.CatchOrHandler.Handler)(implicit flix: Flix): Validation[WeededAst.WithHandler, WeederError] = {
     val handlerVals = traverse(handler0.rules.getOrElse(Seq.empty)) {
       case ParsedAst.HandlerRule(op, fparams0, body0) =>
         val fparamsValPrefix = if (fparams0.sizeIs == 1) visitFormalParams(Seq.empty, Presence.Forbidden) else Validation.success(Nil)
@@ -2683,7 +2659,7 @@ object Weeder {
         }
     }
     mapN(handlerVals) {
-      case hs => WeededAst.Handler(handler0.eff, hs)
+      case hs => WeededAst.WithHandler(handler0.eff, hs)
     }
   }
 

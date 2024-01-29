@@ -910,44 +910,6 @@ object WeederError {
   }
 
   /**
-    * An error raised to indicate that a try-expression has both catch-rules and effect-handler-rules.
-    *
-    * @param loc The location of the try-expression.
-    */
-  case class MixedTryCatchWithBlocks(loc: SourceLocation) extends WeederError with Recoverable {
-    def summary: String = "A try-expression can only contain a single catch block or multiple effect handlers."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Contains both catch and effect handler(s). A try-expression can only contain a single catch block or multiple effect handlers.
-         |
-         |${code(loc, "Contains both catch and effect handler(s).")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * An error raised to indicate that a try-catch expression has multiple catch-blocks.
-    *
-    * @param loc the location of the try-catch expression.
-    */
-  case class MultipleCatchBlocks(loc: SourceLocation) extends WeederError with Recoverable {
-    def summary: String = "A try-catch expression may only contain 1 catch-block."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Multiple catch-blocks. A try-catch expression may only contain 1 catch-block.
-         |
-         |${code(loc, "Multiple catch-blocks.")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
     * An error raised to indicate that the variable `name` occurs multiple times in the same pattern.
     *
     * @param name the name of the variable.

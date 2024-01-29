@@ -689,12 +689,7 @@ object Desugar {
       val rs = rules.map(visitCatchRule)
       Expr.TryCatch(e, rs, loc)
 
-    case WeededAst.Expr.TryWith(exp, handler, loc) =>
-      val e = visitExp(exp)
-      val rs = handler.rules.map(visitHandlerRule)
-      Expr.TryWith(e, handler.eff, rs, loc)
-
-    case WeededAst.Expr.TryChainedWith(exp, handlers, loc) =>
+    case WeededAst.Expr.TryWith(exp, handlers, loc) =>
       val e = visitExp(exp)
       handlers.foldLeft(e) {
         case (acc, handler) =>
