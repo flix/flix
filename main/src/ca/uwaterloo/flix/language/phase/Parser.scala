@@ -838,7 +838,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def UncheckedCast: Rule1[ParsedAst.Expression] = rule {
-      SP ~ keyword("unchecked_cast") ~ optWS ~ "(" ~ Expression ~ WS ~ "as" ~ optWS ~ TypeAndEffect ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.UncheckedCast
+      SP ~ keyword("unchecked_cast") ~ optWS ~ "(" ~ optWS ~ Expression ~ WS ~ "as" ~ optWS ~ TypeAndEffect ~ optWS ~ ")" ~ SP ~> ParsedAst.Expression.UncheckedCast
     }
 
     def UncheckedMaskingCast: Rule1[ParsedAst.Expression.UncheckedMaskingCast] = rule {
