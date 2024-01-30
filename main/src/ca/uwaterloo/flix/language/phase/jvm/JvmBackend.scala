@@ -81,7 +81,8 @@ object JvmBackend {
       val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs)
       val closureAbstractClasses = GenClosureAbstractClasses.gen(types)
 
-      val tagClasses = GenTagClasses.gen(root.enums.values.flatMap(_.cases.values))
+      val taggedAbstractClass = Map(genClass(BackendObjType.Tagged))
+      val tagClasses = BackendType.erasedTypes.map(tpe => genClass(BackendObjType.Tag(tpe))).toMap
 
       val tupleClasses = erasedTuplesTypes.map(genClass).toMap
 
@@ -135,6 +136,7 @@ object JvmBackend {
         functionInterfaces,
         functionAndClosureClasses,
         closureAbstractClasses,
+        taggedAbstractClass,
         tagClasses,
         tupleClasses,
         recordInterfaces,

@@ -62,31 +62,11 @@ object OccurrenceAnalyzer {
   def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = flix.subphase("OccurrenceAnalyzer") {
 
     val defs = visitDefs(root.defs)
-    val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
     val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
 
-    // Reassemble the ast root.
-    val result = OccurrenceAst.Root(defs, enums, effects, root.entryPoint, root.reachable, root.sources)
+    val result = OccurrenceAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
 
     Validation.success(result)
-  }
-
-  /**
-    * Translates the given enum `enum0` to the OccurrenceAst.
-    */
-  private def visitEnum(enum0: LiftedAst.Enum): OccurrenceAst.Enum = {
-    val cases = enum0.cases.map {
-      case (k, v) =>
-        k -> visitCase(v)
-    }
-    OccurrenceAst.Enum(enum0.ann, enum0.mod, enum0.sym, cases, enum0.tpe, enum0.loc)
-  }
-
-  /**
-    * Translates the given case `case0` to the OccurrenceAst.
-    */
-  private def visitCase(case0: LiftedAst.Case): OccurrenceAst.Case = {
-    OccurrenceAst.Case(case0.sym, case0.tpe, case0.loc)
   }
 
   private def visitEffect(effect: LiftedAst.Effect): OccurrenceAst.Effect = effect match {

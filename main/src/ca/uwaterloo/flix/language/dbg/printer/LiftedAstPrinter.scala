@@ -27,14 +27,6 @@ object LiftedAstPrinter {
     * Returns the [[DocAst.Program]] representation of `root`.
     */
   def print(root: LiftedAst.Root): DocAst.Program = {
-    val enums = root.enums.values.map {
-      case LiftedAst.Enum(ann, mod, sym, cases0, _, _) =>
-        val cases = cases0.values.map {
-          case LiftedAst.Case(sym, tpe, _) =>
-            DocAst.Case(sym, MonoTypePrinter.print(tpe))
-        }.toList
-        DocAst.Enum(ann, mod, sym, Nil, cases)
-    }.toList
     val defs = root.defs.values.map {
       case LiftedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, purity, _) =>
         DocAst.Def(
@@ -47,7 +39,7 @@ object LiftedAstPrinter {
           print(exp)
         )
     }.toList
-    DocAst.Program(enums, defs)
+    DocAst.Program(Nil, defs)
   }
 
   /**
