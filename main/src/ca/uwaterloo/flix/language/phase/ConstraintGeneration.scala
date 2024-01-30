@@ -588,18 +588,6 @@ object ConstraintGeneration {
         val resEff = evar
         (resTpe, resEff)
 
-      case Expr.ScopeExit(exp1, exp2, loc) =>
-        val regionVar = Type.freshVar(Kind.Eff, loc)
-        val regionTpe = Type.mkRegion(regionVar, loc)
-        val evar = Type.freshVar(Kind.Eff, loc)
-        val (tpe1, _) = visitExp(exp1)
-        val (tpe2, _) = visitExp(exp2)
-        c.expectTypeM(expected = Type.mkArrowWithEffect(Type.Unit, evar, Type.Unit, loc.asSynthetic), actual = tpe1, exp1.loc)
-        c.expectTypeM(expected = regionTpe, actual = tpe2, exp2.loc)
-        val resTpe = Type.Unit
-        val resEff = Type.mkUnion(Type.IO, regionVar, loc)
-        (resTpe, resEff)
-
       case Expr.Match(exp, rules, loc) =>
         val patterns = rules.map(_.pat)
         val guards = rules.flatMap(_.guard)
