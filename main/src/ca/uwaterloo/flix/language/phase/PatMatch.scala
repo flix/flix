@@ -148,7 +148,6 @@ object PatMatch {
       case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
       case Expr.Region(_, _) => Nil
       case Expr.Scope(_, _, exp, _, _, _) => visitExp(exp)
-      case Expr.ScopeExit(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
       case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => List(exp1, exp2, exp3).flatMap(visitExp)
       case Expr.Stm(exp1, exp2, _, _, _) => List(exp1, exp2).flatMap(visitExp)
       case Expr.Discard(exp, _, _) => visitExp(exp)

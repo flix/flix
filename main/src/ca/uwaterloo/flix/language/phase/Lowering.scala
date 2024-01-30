@@ -407,12 +407,6 @@ object Lowering {
       val t = visitType(tpe)
       LoweredAst.Expr.Scope(sym, regionVar, e, t, eff, loc)
 
-    case TypedAst.Expr.ScopeExit(exp1, exp2, tpe, eff, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val t = visitType(tpe)
-      LoweredAst.Expr.ApplyAtomic(AtomicOp.ScopeExit, List(e1, e2), t, eff, loc)
-
     case TypedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1)
       val e2 = visitExp(exp2)

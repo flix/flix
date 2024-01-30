@@ -801,8 +801,6 @@ object Weeder {
           case ("VECTOR_GET", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.VectorLoad(e1, e2, loc))
           case ("VECTOR_LENGTH", e1 :: Nil) => Validation.success(WeededAst.Expr.VectorLength(e1, loc))
 
-          case ("SCOPE_EXIT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.ScopeExit(e1, e2, loc))
-
           case _ =>
             val err = UndefinedIntrinsic(loc)
             Validation.toSoftFailure(WeededAst.Expr.Error(err), err)

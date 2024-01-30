@@ -383,11 +383,6 @@ object Redundancy {
       else
         (innerUsed ++ shadowedVar) - sym
 
-    case Expr.ScopeExit(exp1, exp2, _, _, _) =>
-      val us1 = visitExp(exp1, env0, rc)
-      val us2 = visitExp(exp2, env0, rc)
-      us1 ++ us2
-
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       val us1 = visitExp(exp1, env0, rc)
       val us2 = visitExp(exp2, env0, rc)

@@ -213,10 +213,6 @@ object DocAst {
     def Spawn(d1: Expression, d2: Expression): Expression =
       InRegion(Keyword("spawn", d1), d2)
 
-    def ScopeExit(d1: Expression, d2: Expression): Expression = {
-      DoubleKeyword("add_exit_function", d1, "to", Left(d2))
-    }
-
     def Cast(d: Expression, tpe: Type): Expression =
       DoubleKeyword("cast", d, "as", Right(tpe))
 
