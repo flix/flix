@@ -203,7 +203,7 @@ object BackendObjType {
           // get expression as thunk
           DUP() ~ GETFIELD(ExpField) ~ CHECKCAST(Thunk.jvmName) ~
           // this.value = thunk.unwind()
-          Result.unwindSuspensionFreeThunkToType(tpe, SourceLocation.Unknown) ~ PUTFIELD(ValueField) ~
+          Result.unwindSuspensionFreeThunkToType(tpe, "during call to Lazy.force", SourceLocation.Unknown) ~ PUTFIELD(ValueField) ~
           // this.exp = null
           thisLoad() ~ pushNull() ~ PUTFIELD(ExpField)
         ) ~
@@ -339,105 +339,105 @@ object BackendObjType {
           Some(_ =>
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, SourceLocation.Unknown) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ ARETURN()
           ))
         case ObjConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(JavaObject.toTpe)(VoidableType.Void),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, SourceLocation.Unknown) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ RETURN()
           ))
         case ObjPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(JavaObject.toTpe)(BackendType.Bool),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, SourceLocation.Unknown) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
           ))
         case IntFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Int32)(JavaObject.toTpe),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, SourceLocation.Unknown) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ ARETURN()
           ))
         case IntConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Int32)(VoidableType.Void),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, SourceLocation.Unknown) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ RETURN()
           ))
         case IntPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Int32)(BackendType.Bool),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, SourceLocation.Unknown) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
           ))
         case IntUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsInt",
           mkDescriptor(BackendType.Int32)(BackendType.Int32),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Int32, SourceLocation.Unknown) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Int32, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
           ))
         case LongFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Int64)(JavaObject.toTpe),
           Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, SourceLocation.Unknown) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ ARETURN()
           ))
         case LongConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Int64)(VoidableType.Void),
           Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, SourceLocation.Unknown) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ RETURN()
           ))
         case LongPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Int64)(BackendType.Bool),
           Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, SourceLocation.Unknown) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
           ))
         case LongUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsLong",
           mkDescriptor(BackendType.Int64)(BackendType.Int64),
           Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Int64, SourceLocation.Unknown) ~ LRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Int64, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ LRETURN()
           ))
         case DoubleFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Float64)(JavaObject.toTpe),
           Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, SourceLocation.Unknown) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ ARETURN()
           ))
         case DoubleConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Float64)(VoidableType.Void),
           Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, SourceLocation.Unknown) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ RETURN()
           ))
         case DoublePredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Float64)(BackendType.Bool),
           Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, SourceLocation.Unknown) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
           ))
         case DoubleUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsDouble",
           mkDescriptor(BackendType.Float64)(BackendType.Float64),
           Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Float64, SourceLocation.Unknown) ~ DRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Float64, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ DRETURN()
           ))
 
       }
@@ -941,19 +941,18 @@ object BackendObjType {
 
     def LocationField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
 
-    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(Suspension.toTpe, ReifiedSourceLocation.toTpe), Some(_ =>
-      withName(1, Suspension.toTpe)(suspension => withName(2, ReifiedSourceLocation.toTpe)(loc => {
-      thisLoad() ~
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(Suspension.toTpe, String.toTpe, ReifiedSourceLocation.toTpe), Some(_ =>
+      withName(1, Suspension.toTpe)(suspension => withName(2, String.toTpe)(info => withName(3, ReifiedSourceLocation.toTpe)(loc => {
+        val appendString = INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
+        thisLoad() ~
         NEW(StringBuilder.jvmName) ~
         DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
-        pushString("Unhandled effect '") ~
-        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
-        suspension.load() ~ GETFIELD(Suspension.EffSymField) ~
-        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
-        pushString("' at ") ~
-        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
-        loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
-        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        pushString("Unhandled effect '") ~ appendString ~
+        suspension.load() ~ GETFIELD(Suspension.EffSymField) ~ appendString ~
+        pushString("' (") ~ appendString ~
+        info.load() ~ appendString ~
+        pushString(") at ") ~ appendString ~
+        loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ appendString ~
         INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
         INVOKESPECIAL(FlixError.Constructor) ~
         // save arguments locally
@@ -964,7 +963,7 @@ object BackendObjType {
         loc.load() ~
         PUTFIELD(LocationField) ~
         RETURN()
-      }))
+      })))
     ))
 
   }
@@ -1151,7 +1150,7 @@ object BackendObjType {
         args.load() ~ INVOKESTATIC(Global.SetArgsMethod) ~
         NEW(defName) ~ DUP() ~ INVOKESPECIAL(defName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid) ~
         DUP() ~ GETSTATIC(Unit.SingletonField) ~ PUTFIELD(InstanceField(defName, IsPublic, NotFinal, NotVolatile, "arg0", JavaObject.toTpe)) ~
-        Result.unwindSuspensionFreeThunk(SourceLocation.Unknown) ~
+        Result.unwindSuspensionFreeThunk(s"in ${this.jvmName.toBinaryName}", SourceLocation.Unknown) ~
         POP() ~ RETURN()
       )
     }))
@@ -1428,9 +1427,9 @@ object BackendObjType {
       * [..., Result] --> [..., Value.value: tpe]
       * side effect: crashes on suspensions
       */
-    def unwindSuspensionFreeThunkToType(tpe: BackendType, loc: SourceLocation): InstructionSet = {
+    def unwindSuspensionFreeThunkToType(tpe: BackendType, errorHint: String, loc: SourceLocation): InstructionSet = {
       unwindThunk() ~
-      crashIfSuspension(loc) ~
+      crashIfSuspension(errorHint, loc) ~
       CHECKCAST(Value.jvmName) ~ // Cannot fail
       GETFIELD(Value.fieldFromType(tpe))
     }
@@ -1441,23 +1440,24 @@ object BackendObjType {
       * [..., Result] --> [..., Value]
       * side effect: crashes on suspensions
       */
-    def unwindSuspensionFreeThunk(loc: SourceLocation): InstructionSet = {
-      unwindThunk() ~ crashIfSuspension(loc) ~ CHECKCAST(Value.jvmName)
+    def unwindSuspensionFreeThunk(errorHint: String, loc: SourceLocation): InstructionSet = {
+      unwindThunk() ~ crashIfSuspension(errorHint, loc) ~ CHECKCAST(Value.jvmName)
     }
 
     /**
       * [..., Result] -> [..., Value|Thunk]
       * side effect: if the result is a suspension, a [[UnhandledEffectError]] is thrown.
       */
-    def crashIfSuspension(loc: SourceLocation): InstructionSet = {
+    def crashIfSuspension(errorHint: String, loc: SourceLocation): InstructionSet = {
       DUP() ~ INSTANCEOF(Suspension.jvmName) ~
       ifCondition(Condition.NE)(
         CHECKCAST(Suspension.jvmName) ~
         NEW(UnhandledEffectError.jvmName) ~
           // [.., suspension, UEE] -> [.., suspension, UEE, UEE, suspension]
           DUP2() ~ SWAP() ~
+          pushString(errorHint) ~
           cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
-          // [.., suspension, UEE, UEE, suspension, rsl] -> [.., suspension, UEE]
+          // [.., suspension, UEE, UEE, suspension, info, rsl] -> [.., suspension, UEE]
           INVOKESPECIAL(UnhandledEffectError.Constructor) ~
           ATHROW()
       )
@@ -1562,7 +1562,7 @@ object BackendObjType {
     def InvokeMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "invoke", mkDescriptor()(Result.toTpe))
 
     def RunMethod: DefaultMethod = DefaultMethod(this.jvmName, IsPublic, NotFinal, "run", mkDescriptor()(VoidableType.Void), Some(_ =>
-      thisLoad() ~ Result.unwindSuspensionFreeThunk(SourceLocation.Unknown) ~ POP() ~ RETURN()
+      thisLoad() ~ Result.unwindSuspensionFreeThunk(s"in ${JvmName.Runnable.toBinaryName}", SourceLocation.Unknown) ~ POP() ~ RETURN()
     ))
   }
 
