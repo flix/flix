@@ -20,23 +20,30 @@ jobs:
                 repo: context.repo.repo,
                 body: 'Rerunning tests...'
               })
-      - name: Lookup branches
+      - name: Rerun Tests
         uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: >
-            var runs_promise = github.rest.actions.listWorkflowRunsForRepo({
+            github.rest.actions.listWorkflowRunsForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
               head_sha: context.sha,
               status: "failure"
-            });
-            runs_promise.then(runs => {
-              runs.data.workflow_runs.forEach(run => {
-                github.rest.actions.reRunWorkflowFailedJobs({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  run_id: run.id
+            }).then(runs => {
+              var count = runs.data.total_count;
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: 'Rerunning ' + count + 'failed tests...' 
+              }).then(_ => {
+                runs.data.workflow_runs.forEach(run => {
+                  github.rest.actions.reRunWorkflowFailedJobs({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    run_id: run.id
+                  })
                 })
               })
             });
