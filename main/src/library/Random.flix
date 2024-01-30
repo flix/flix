@@ -59,6 +59,26 @@ mod Random {
         nextDouble(o)
 
     ///
+    /// Returns the next pseudorandom 8-bit integer value from the given random number generator `r`.
+    ///
+    pub def nextInt8(r: Random): Int8 \ IO =
+        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer \ {};
+        import java.lang.Integer.byteValue(): Int8 \ {};
+        nextInRange(r, minInclusive = Int8.toInt32(Int8.minValue()), maxExclusive = Int8.toInt32(Int8.maxValue()) + 1)
+        |> valueOf
+        |> byteValue
+
+    ///
+    /// Returns the next pseudorandom 16-bit integer value from the given random number generator `r`.
+    ///
+    pub def nextInt16(r: Random): Int16 \ IO =
+        import static java.lang.Integer.valueOf(Int32): ##java.lang.Integer \ {};
+        import java.lang.Integer.shortValue(): Int16 \ {};
+        nextInRange(r, minInclusive = Int16.toInt32(Int16.minValue()), maxExclusive = Int16.toInt32(Int16.maxValue()) + 1)
+        |> valueOf
+        |> shortValue
+
+    ///
     /// Returns the next pseudorandom 32-bit integer value from the given random number generator `r`.
     ///
     pub def nextInt32(r: Random): Int32 \ IO =
@@ -89,4 +109,12 @@ mod Random {
         import java.util.Random.nextInt(Int32): Int32 \ IO;
         let Random(o) = r;
         nextInt(o, m)
+
+    ///
+    /// Returns the next pseudorandom 32-bit integer value between `minInclusive` and `maxExclusive` using the given random number generator `r`.
+    ///
+    pub def nextInRange(r: Random, minInclusive: { minInclusive = Int32 }, maxExclusive: { maxExclusive = Int32 }): Int32 \ IO =
+        import java.util.Random.nextInt(Int32, Int32): Int32 \ IO;
+        let Random(s) = r;
+        nextInt(s, minInclusive.minInclusive, maxExclusive.maxExclusive)
 }
