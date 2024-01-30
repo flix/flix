@@ -9,17 +9,6 @@ jobs:
     if: github.event.issue.pull_request && contains(github.event.comment.body, '!!!rerun')
     runs-on: ubuntu-latest
     steps:
-      - name: Acknowledge request
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: >
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: 'Rerunning tests...'
-              })
       - name: Rerun Tests
         uses: actions/github-script@v6
         with:
@@ -36,7 +25,7 @@ jobs:
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: 'Rerunning ' + count + 'failed tests...' 
+                body: 'Rerunning ' + count + ' failed test(s)...' 
               }).then(_ => {
                 runs.data.workflow_runs.forEach(run => {
                   github.rest.actions.reRunWorkflowFailedJobs({
