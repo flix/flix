@@ -1631,7 +1631,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def FormalParamList: Rule1[ParsedAst.FormalParamList] = rule {
-    "(" ~ optWS ~ zeroOrMore(FormalParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.FormalParamList
+    SP ~ "(" ~ optWS ~ zeroOrMore(FormalParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.FormalParamList
   }
 
   def PredicateParam: Rule1[ParsedAst.PredicateParam] = rule {
