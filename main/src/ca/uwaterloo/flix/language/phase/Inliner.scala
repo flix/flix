@@ -63,12 +63,9 @@ object Inliner {
     */
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): Validation[LiftedAst.Root, CompilationMessage] = flix.subphase("Inliner") {
     val defs = ParOps.parMapValues(root.defs)(d => visitDef(d)(flix, root))
-    val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
-    // TODO RESTR-VARS add restrictable enums
-
-    Validation.success(LiftedAst.Root(defs, enums, effects, root.entryPoint, root.reachable, root.sources))
+    Validation.success(LiftedAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources))
   }
 
   /**
@@ -84,17 +81,6 @@ object Inliner {
       case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
     }
     LiftedAst.Def(def0.ann, def0.mod, def0.sym, cparams, fparams, convertedExp, def0.tpe, convertedExp.purity, def0.loc)
-  }
-
-  /**
-    * Converts enum from OccurrenceAst to LiftedAst
-    */
-  private def visitEnum(enum0: OccurrenceAst.Enum): LiftedAst.Enum = {
-    val cases = enum0.cases.map {
-      case (sym, caze) =>
-        sym -> LiftedAst.Case(sym, caze.tpe, caze.loc)
-    }
-    LiftedAst.Enum(enum0.ann, enum0.mod, enum0.sym, cases, enum0.tpe, enum0.loc)
   }
 
   private def visitEffect(effect: OccurrenceAst.Effect): LiftedAst.Effect = effect match {
@@ -135,8 +121,6 @@ object Inliner {
     case OccurrenceAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp(_, subst0))
       op match {
-        case AtomicOp.Is(sym) if isSingleCaseEnum(sym, es) => LiftedAst.Expr.Cst(Ast.Constant.Bool(true), MonoType.Bool, loc)
-
         case AtomicOp.Untag(_) =>
           val List(e) = es
           // Inline expressions of the form Untag(Tag(e)) => e
@@ -584,15 +568,4 @@ object Inliner {
       }
   }
 
-  /**
-    * Helper function for dealing with [[AtomicOp]].
-    * Returns `true` if `sym` is an enum with one case and `exps` is pure.
-    */
-  private def isSingleCaseEnum(sym: Symbol.CaseSym, exps: List[LiftedAst.Expr])(implicit root: OccurrenceAst.Root): Boolean =
-    exps match {
-      case e :: Nil =>
-        val enum0 = root.enums(sym.enumSym)
-        enum0.cases.size == 1 && e.purity == Pure
-      case _ => false
-    }
 }

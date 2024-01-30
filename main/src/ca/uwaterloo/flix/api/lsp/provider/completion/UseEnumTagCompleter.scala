@@ -115,11 +115,11 @@ object UseEnumTagCompleter extends Completer {
    */
   private def mkEnumSym(segment: List[String]): Symbol.EnumSym = {
     if (segment.isEmpty) {
-      new Symbol.EnumSym(None, Nil, "", SourceLocation.Unknown)
+      new Symbol.EnumSym(Nil, "", SourceLocation.Unknown)
     } else {
       val ns = segment.dropRight(1)
       val name = segment.takeRight(1).mkString
-      new Symbol.EnumSym(None, ns, name, SourceLocation.Unknown)
+      new Symbol.EnumSym(ns, name, SourceLocation.Unknown)
     }
   }
 

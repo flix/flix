@@ -50,9 +50,8 @@ object EffectBinder {
     */
   def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("EffectBinder") {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
-    val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
-    ReducedAst.Root(newDefs, newEnums, newEffects, Set.empty, Nil, root.entryPoint, root.reachable, root.sources)
+    ReducedAst.Root(newDefs, newEffects, Set.empty, Nil, root.entryPoint, root.reachable, root.sources)
   }
 
   /**
@@ -89,17 +88,6 @@ object EffectBinder {
       // OBS lctx.pcPoints is mutated by visitExpr
       val pcPoints = lctx.pcPoints
       ReducedAst.Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, ReducedAst.UnboxedType(tpe), purity, loc)
-  }
-
-  private def visitEnum(e: LiftedAst.Enum): ReducedAst.Enum = e match {
-    case LiftedAst.Enum(ann, mod, sym, cases0, tpe, loc) =>
-      val cases = MapOps.mapValues(cases0)(visitCase)
-      ReducedAst.Enum(ann, mod, sym, cases, tpe, loc)
-  }
-
-  private def visitCase(c: LiftedAst.Case): ReducedAst.Case = c match {
-    case LiftedAst.Case(sym, tpe, loc) =>
-      ReducedAst.Case(sym, tpe, loc)
   }
 
   private def visitEffect(e: LiftedAst.Effect): ReducedAst.Effect = e match {
