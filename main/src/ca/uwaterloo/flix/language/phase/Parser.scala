@@ -1194,8 +1194,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
-      SP ~ FormalParam ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ((sp1: SourcePosition, param: ParsedAst.FormalParam, body: ParsedAst.Expression, sp2: SourcePosition) =>
-        ParsedAst.Expression.Lambda(sp1, ParsedAst.FormalParamList(Seq(param)), body, sp2))
+      SP ~ FormalParam ~ SP ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ((sp1: SourcePosition, param: ParsedAst.FormalParam, sp2: SourcePosition, body: ParsedAst.Expression, sp3: SourcePosition) =>
+        ParsedAst.Expression.Lambda(sp1, ParsedAst.FormalParamList(sp1, Seq(param), sp2), body, sp3))
     }
 
     def Lambda: Rule1[ParsedAst.Expression.Lambda] = rule {
