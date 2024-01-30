@@ -130,7 +130,7 @@ object ConstraintResolution {
     }
   }
 
-  def visitDef(defn: KindedAst.Def, cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root, infResult: InfResult)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
+  def visitDef(defn: KindedAst.Def, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root, infResult: InfResult)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
     case KindedAst.Def(sym, KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc), exp) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
@@ -144,11 +144,11 @@ object ConstraintResolution {
         case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, tpe)
       }
 
-      val renv = tparams.foldLeft(infRenv) {
+      val renv = tparams.foldLeft(infRenv ++ renv0) {
         case (acc, KindedAst.TypeParam(name, sym, loc)) => acc.markRigid(sym)
       }
 
-      val cenv = expandClassEnv(cenv0, tconstrs)
+      val cenv = expandClassEnv(cenv0, tconstrs ++ tconstrs0)
       val eqEnv = expandEqualityEnv(eqEnv0, econstrs) // MATT need instance eq stuff
 
       val tpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectLeft, loc)

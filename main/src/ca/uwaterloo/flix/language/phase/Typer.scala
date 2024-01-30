@@ -150,7 +150,7 @@ object Typer {
     flix.subphase("Defs") {
       val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
       mapN(ParOps.parTraverseValues(staleDefs) {
-        case defn => visitDef(defn, assumedTconstrs = Nil, root, classEnv, eqEnv)
+        case defn => visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, classEnv, eqEnv)
       })(_ ++ freshDefs)
     }
   }
@@ -158,13 +158,13 @@ object Typer {
   /**
     * Reconstructs types in the given def.
     */
-  private def visitDef(defn: KindedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = {
+  private def visitDef(defn: KindedAst.Def, tconstrs0: List[Ast.TypeConstraint], renv0: RigidityEnv, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = {
     implicit val r = root
     implicit val context = new TypingContext
     val (tpe, eff) = ConstraintGeneration.visitExp(defn.exp)
-    val renv = context.renv
-    val constrs = context.constrs.toList
-    val substVal = ConstraintResolution.visitDef(defn, classEnv, eqEnv, root, ConstraintResolution.InfResult(constrs, tpe, eff, renv))
+    val infRenv = context.renv
+    val infTconstrs = context.constrs.toList
+    val substVal = ConstraintResolution.visitDef(defn, renv0, tconstrs0, classEnv, eqEnv, root, ConstraintResolution.InfResult(infTconstrs, tpe, eff, infRenv))
     mapN(substVal) {
       case subst => TypeReconstruction.visitDef(defn, root, subst)
     }
@@ -187,6 +187,7 @@ object Typer {
   private def visitClass(clazz: KindedAst.Class, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Class, TypeError] = clazz match {
     case KindedAst.Class(doc, ann, mod, sym, tparam0, superClasses0, assocs0, sigs0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0, root) // TODO ASSOC-TYPES redundant?
+      val renv = RigidityEnv.empty.markRigid(tparam0.sym)
       val superClasses = superClasses0 // no subst to be done
       val assocs = assocs0.map {
         case KindedAst.AssocTypeSig(doc, mod, sym, tp0, kind, loc) =>
@@ -194,8 +195,8 @@ object Typer {
           TypedAst.AssocTypeSig(doc, mod, sym, tp, kind, loc) // TODO ASSOC-TYPES trivial
       }
       val tconstr = Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
-      val sigsVal = traverse(sigs0.values)(visitSig(_, List(tconstr), root, classEnv, eqEnv))
-      val lawsVal = traverse(laws0)(visitDef(_, List(tconstr), root, classEnv, eqEnv))
+      val sigsVal = traverse(sigs0.values)(visitSig(_, List(tconstr), root, classEnv, eqEnv)) // MATT need renv?
+      val lawsVal = traverse(laws0)(visitDef(_, List(tconstr), renv, root, classEnv, eqEnv))
       mapN(sigsVal, lawsVal) {
         case (sigs, laws) => TypedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc)
       }
@@ -250,12 +251,13 @@ object Typer {
   private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
     case KindedAst.Instance(doc, ann, mod, sym, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       val tpe = tpe0 // TODO ASSOC-TYPES redundant?
+      val renv = tpe0.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
       val tconstrs = tconstrs0 // no subst to be done
       val assocs = assocs0.map {
         case KindedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) =>
           TypedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc) // TODO ASSOC-TYPES trivial
       }
-      val defsVal = Validation.traverse(defs0)(visitDef(_, tconstrs, root, classEnv, eqEnv))
+      val defsVal = Validation.traverse(defs0)(visitDef(_, tconstrs, renv, root, classEnv, eqEnv))
       mapN(defsVal) {
         case defs => TypedAst.Instance(doc, ann, mod, sym, tpe, tconstrs, assocs, defs, ns, loc)
       }
