@@ -222,12 +222,20 @@ object Verifier {
           check(expected = argTpe2)(t2, loc)
           check(expected = tpe)(actual = resTpe, loc)
 
-        case AtomicOp.Tag(_) =>
-          // enum types have been erased so no checking can be done
+        case AtomicOp.Is(sym) =>
+          val List(t1) = ts
+          check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
+          check(expected = MonoType.Bool)(actual = tpe, loc)
+
+        case AtomicOp.Tag(sym) =>
+          val List(t1) = ts
+          check(expected = MonoType.Enum(sym.enumSym))(actual = tpe, loc)
+
+        case AtomicOp.Untag(sym) =>
+          val List(t1) = ts
+          check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
           tpe
-        case AtomicOp.Untag(_) =>
-          // enum types have been erased so no checking can be done
-          tpe
+
         case _ => tpe // TODO: VERIFIER: Add rest
       }
 

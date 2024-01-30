@@ -318,6 +318,12 @@ object BackendObjType {
     def NameField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "tag", String.toTpe)
 
     def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
+
+    /** [...] -> [..., tagName] */
+    def mkTagName(sym: Symbol.CaseSym): InstructionSet = pushString(JvmOps.getTagName(sym))
+
+    /** [..., tagName1, tagName2] --> [..., tagName1 == tagName2] */
+    def eqTagName(): InstructionSet = INVOKEVIRTUAL(JavaObject.EqualsMethod)
   }
 
   case class Tag(tpe: BackendType) extends BackendObjType with Generatable {
