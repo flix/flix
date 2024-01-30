@@ -28,12 +28,14 @@ jobs:
             var runs_promise = github.rest.actions.listWorkflowRunsForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              head_sha: context.sha
+              head_sha: context.sha,
+              status: "failure"
             });
             runs_promise.then(runs => {
-              github.rest.actions.reRunWorkflowFailedJobs({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                run_id: runs.data.workflow_runs[0].id
-              });
+              runs.data.workflow_runs.forEach(run =>
+                github.rest.actions.reRunWorkflowFailedJobs({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  run_id: run.id
+                });
             });
