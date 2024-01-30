@@ -1127,7 +1127,7 @@ object GenExpression {
           }
           // Calling unwind and unboxing
 
-          if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunk(loc)(new BytecodeInstructions.F(mv))
+          if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc)(new BytecodeInstructions.F(mv))
           else {
             val pcPoint = ctx.pcCounter(0) + 1
             val pcPointLabel = ctx.pcLabels(pcPoint)
@@ -1182,7 +1182,7 @@ object GenExpression {
         }
         // Calling unwind and unboxing
 
-        if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunk(loc)(new BytecodeInstructions.F(mv))
+        if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)(new BytecodeInstructions.F(mv))
         else {
           val pcPoint = ctx.pcCounter(0) + 1
           val pcPointLabel = ctx.pcLabels(pcPoint)
