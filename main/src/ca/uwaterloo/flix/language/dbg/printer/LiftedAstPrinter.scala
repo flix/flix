@@ -57,6 +57,7 @@ object LiftedAstPrinter {
     case JumpTo(sym, _, _, _) => DocAst.Expression.JumpTo(sym)
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Stmt(exp1, exp2, _, _, _) => DocAst.Expression.Stm(print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case LiftedAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))
