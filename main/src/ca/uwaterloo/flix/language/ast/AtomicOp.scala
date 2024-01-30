@@ -32,8 +32,6 @@ object AtomicOp {
 
   case object Region extends AtomicOp
 
-  case object ScopeExit extends AtomicOp
-
   case class Is(sym: Symbol.CaseSym) extends AtomicOp
 
   case class Tag(sym: Symbol.CaseSym) extends AtomicOp

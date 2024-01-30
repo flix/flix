@@ -45,7 +45,7 @@ object Weeder {
     */
   private val ReservedWords = Set(
     "!=", "*", "**", "+", "-", "..", "/", ":", "::", ":::", ":=", "<", "<+>", "<-", "<=",
-    "<=>", "==", "=>", ">", ">=", "???", "@", "Absent", "Bool", "Impure", "Nil", "Predicate", "Present", "Pure",
+    "<=>", "==", "=>", ">", ">=", "???", "@", "Absent", "Bool", "Univ", "Nil", "Predicate", "Present", "Pure",
     "RecordRow", "Region", "SchemaRow", "Type", "alias", "case", "catch", "chan",
     "class", "def", "deref", "else", "enum", "false", "fix", "force",
     "if", "import", "inline", "instance", "instanceof", "into", "law", "lawful", "lazy", "let", "let*", "match",
@@ -801,8 +801,6 @@ object Weeder {
           case ("VECTOR_GET", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.VectorLoad(e1, e2, loc))
           case ("VECTOR_LENGTH", e1 :: Nil) => Validation.success(WeededAst.Expr.VectorLength(e1, loc))
 
-          case ("SCOPE_EXIT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.ScopeExit(e1, e2, loc))
-
           case _ =>
             val err = UndefinedIntrinsic(loc)
             Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
@@ -1360,7 +1358,7 @@ object Weeder {
           // [] --> [_unit]
           // [x] --> [_unit, x]
           // [x, ...] --> [x, ...]
-          val fparamsValPrefix = if (fparams0.sizeIs == 1) visitFormalParams(Seq.empty, Presence.Forbidden) else Validation.success(Nil)
+          val fparamsValPrefix = if (fparams0.fparams.sizeIs == 1) visitFormalParams(ParsedAst.FormalParamList(Seq.empty), Presence.Forbidden) else Validation.success(Nil)
           val fparamsValSuffix = visitFormalParams(fparams0, Presence.Forbidden)
           val bodyVal = visitExp(body0)
           mapN(fparamsValPrefix, fparamsValSuffix, bodyVal) {
@@ -2233,7 +2231,7 @@ object Weeder {
       val loc = mkSL(sp1, sp2)
       Validation.success(WeededAst.Type.Pure(loc))
 
-    case ParsedAst.Type.Impure(sp1, sp2) =>
+    case ParsedAst.Type.Univ(sp1, sp2) =>
       val loc = mkSL(sp1, sp2)
       // TODO EFF-MIGRATION create dedicated Impure type
       Validation.success(WeededAst.Type.Complement(WeededAst.Type.Pure(loc), loc))
@@ -2315,7 +2313,7 @@ object Weeder {
     case _: ParsedAst.Type.True => Validation.success(())
     case _: ParsedAst.Type.False => Validation.success(())
     case _: ParsedAst.Type.Pure => Validation.success(())
-    case _: ParsedAst.Type.Impure => Validation.success(())
+    case _: ParsedAst.Type.Univ => Validation.success(())
     case _ =>
       val sp1 = leftMostSourcePosition(t)
       val sp2 = t.sp2
@@ -2405,11 +2403,11 @@ object Weeder {
     *
     * Checks for [[DuplicateFormalParam]], [[MissingFormalParamAscription]], and [[DuplicateFormalParam]].
     */
-  private def visitFormalParams(fparams: Seq[ParsedAst.FormalParam], typePresence: Presence): Validation[List[WeededAst.FormalParam], WeederError] = {
+  private def visitFormalParams(fparams: ParsedAst.FormalParamList, typePresence: Presence): Validation[List[WeededAst.FormalParam], WeederError] = {
     //
     // Special Case: Check if no formal parameters are present. If so, introduce a unit parameter.
     //
-    if (fparams.isEmpty) {
+    if (fparams.fparams.isEmpty) {
       val sp1 = SourcePosition.Unknown
       val sp2 = SourcePosition.Unknown
       val loc = mkSL(sp1, sp2)
@@ -2423,7 +2421,7 @@ object Weeder {
     //
     val seen = mutable.Map.empty[String, ParsedAst.FormalParam]
     val errors = mutable.ArrayBuffer.empty[WeederError.DuplicateFormalParam]
-    for (fparam <- fparams) {
+    for (fparam <- fparams.fparams) {
       seen.get(fparam.ident.name) match {
         case None =>
           if (!fparam.ident.name.startsWith("_")) {
@@ -2440,7 +2438,7 @@ object Weeder {
       }
     }
 
-    traverse(fparams)(visitFormalParam(_, typePresence)).withSoftFailures(errors)
+    traverse(fparams.fparams)(visitFormalParam(_, typePresence)).withSoftFailures(errors)
   }
 
   /**
@@ -3042,7 +3040,7 @@ object Weeder {
     case ParsedAst.Type.Intersection(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Union(tpe1, _, _) => leftMostSourcePosition(tpe1)
     case ParsedAst.Type.Pure(sp1, _) => sp1
-    case ParsedAst.Type.Impure(sp1, _) => sp1
+    case ParsedAst.Type.Univ(sp1, _) => sp1
     case ParsedAst.Type.EffectSet(sp1, _, _) => sp1
     case ParsedAst.Type.CaseComplement(sp1, _, _) => sp1
     case ParsedAst.Type.CaseDifference(tpe1, _, _) => leftMostSourcePosition(tpe1)

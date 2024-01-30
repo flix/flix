@@ -752,18 +752,18 @@ mod Test.Exp.ReifyType {
                 "Not Array"
         }
 
-    def reg2(x: a): String \ Impure =
+    def reg2(x: a): String \ IO =
         typematch x {
-            case y: Array[_, _] =>
-                checked_ecast(Array.get(0, y));
+            case y: Array[_, Static] =>
+                Array.get(0, y);
                 "Array"
             case _: _ =>
                 "Not Array"
         }
 
     @Test
-     def testReg1(): Bool \ Impure = reg1(Array#{1, 2, 3} @ Static) == "Array"
+     def testReg1(): Bool \ IO = reg1(Array#{1, 2, 3} @ Static) == "Array"
 
     @Test
-     def testReg2(): Bool \ Impure = reg2(Array#{1, 2, 3} @ Static) == "Array"
+     def testReg2(): Bool \ IO = reg2(Array#{1, 2, 3} @ Static) == "Array"
 }

@@ -117,11 +117,11 @@ object EnumTagCompleter extends Completer {
     */
   private def mkEnumSym(fqn: List[String]): EnumSym = {
     if (fqn.isEmpty) {
-      new EnumSym(None, Nil, "", SourceLocation.Unknown)
+      new EnumSym(Nil, "", SourceLocation.Unknown)
     } else {
       val ns = fqn.dropRight(1)
       val name = fqn.takeRight(1).mkString
-      new EnumSym(None, ns, name, SourceLocation.Unknown)
+      new EnumSym(ns, name, SourceLocation.Unknown)
     }
   }
 }

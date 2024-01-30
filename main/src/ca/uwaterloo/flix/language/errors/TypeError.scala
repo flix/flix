@@ -137,35 +137,6 @@ object TypeError {
   }
 
   /**
-    * Impure function declared as pure.
-    *
-    * @param loc the location where the error occurred.
-    */
-  case class ImpureDeclaredAsPure(loc: SourceLocation) extends TypeError with Unrecoverable {
-    def summary: String = "Impure function declared as pure."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> ${red("Impure")} function declared as ${green("pure")}.
-         |
-         |${code(loc, "impure function.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      """A function whose body is impure must be declared as so.
-        |
-        |For example:
-        |
-        |  def example(): Unit \ IO = println("hello")
-        |                      ^^^^
-        |""".stripMargin
-    })
-  }
-
-  /**
     * Irreducible associated type error
     *
     * @param sym the associated type symbol.

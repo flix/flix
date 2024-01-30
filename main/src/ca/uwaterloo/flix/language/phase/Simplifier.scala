@@ -34,10 +34,9 @@ object Simplifier {
 
   def run(root: LoweredAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
     val defs = ParOps.parMapValues(root.defs)(visitDef)
-    val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
-    SimplifiedAst.Root(defs, enums, effects, root.entryPoint, root.reachable, root.sources)
+    SimplifiedAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitDef(decl: LoweredAst.Def)(implicit flix: Flix): SimplifiedAst.Def = decl match {
@@ -48,14 +47,6 @@ object Simplifier {
       val retType = visitType(funType.arrowResultType)
       val eff = simplifyEffect(funType.arrowEffectType)
       SimplifiedAst.Def(spec.ann, spec.mod, sym, fs, e, retType, eff, sym.loc)
-  }
-
-  private def visitEnum(decl: LoweredAst.Enum)(implicit flix: Flix): SimplifiedAst.Enum = decl match {
-    case LoweredAst.Enum(_, ann, mod, sym, _, _, cases0, enumType, loc) =>
-      val cases = cases0.map {
-        case (tag, LoweredAst.Case(caseSym, tagType, _, tagLoc)) => tag -> SimplifiedAst.Case(caseSym, visitType(tagType), tagLoc)
-      }
-      SimplifiedAst.Enum(ann, mod, sym, cases, visitType(enumType), loc)
   }
 
   private def visitEffect(decl: LoweredAst.Effect)(implicit flix: Flix): SimplifiedAst.Effect = decl match {
@@ -287,7 +278,7 @@ object Simplifier {
           case TypeConstructor.Enum(sym, _) => MonoType.Enum(sym)
 
           case TypeConstructor.RestrictableEnum(sym, _) =>
-            val enumSym = new Symbol.EnumSym(None, sym.namespace, sym.name, sym.loc)
+            val enumSym = new Symbol.EnumSym(sym.namespace, sym.name, sym.loc)
             MonoType.Enum(enumSym)
 
           case TypeConstructor.Native(clazz) => MonoType.Native(clazz)
@@ -315,7 +306,7 @@ object Simplifier {
           case TypeConstructor.Or => MonoType.Unit
 
           case TypeConstructor.Pure => MonoType.Unit
-          case TypeConstructor.EffUniv => MonoType.Unit
+          case TypeConstructor.Univ => MonoType.Unit
           case TypeConstructor.Complement => MonoType.Unit
           case TypeConstructor.Union => MonoType.Unit
           case TypeConstructor.Intersection => MonoType.Unit
@@ -732,8 +723,7 @@ object Simplifier {
     */
   private def simplifyEffect(eff: Type): Purity = eff match {
     case Type.Cst(TypeConstructor.Pure, _) => Purity.Pure
-    case Type.Cst(TypeConstructor.EffUniv, _) => Purity.Impure
-    case _ => throw InternalCompilerException(s"Unexpected purity '$eff'", eff.loc)
+    case _ => Purity.Impure
   }
 
   /**
