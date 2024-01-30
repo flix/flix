@@ -32,11 +32,11 @@ jobs:
               status: "failure"
             });
             runs_promise.then(runs => {
-              runs.data.workflow_runs.forEach(run =>
+              runs.data.workflow_runs.forEach(run => {
                 github.rest.actions.reRunWorkflowFailedJobs({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   run_id: run.id
                 })
               })
-            })
+            });
