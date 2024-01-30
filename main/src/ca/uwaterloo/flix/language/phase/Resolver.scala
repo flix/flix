@@ -1137,13 +1137,6 @@ object Resolver {
             e => ResolvedAst.Expr.Scope(sym, regionVar, e, loc)
           }
 
-        case NamedAst.Expr.ScopeExit(exp1, exp2, loc) =>
-          val e1Val = visitExp(exp1, env0)
-          val e2Val = visitExp(exp2, env0)
-          mapN(e1Val, e2Val) {
-            case (e1, e2) => ResolvedAst.Expr.ScopeExit(e1, e2, loc)
-          }
-
         case NamedAst.Expr.Match(exp, rules, loc) =>
           val rulesVal = traverse(rules) {
             case NamedAst.MatchRule(pat, guard, body) =>

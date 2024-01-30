@@ -92,7 +92,6 @@ object Eraser {
         case AtomicOp.Unary(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Binary(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Region => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.ScopeExit => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Is(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Tag(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Untag(_) => ApplyAtomic(op, es, t, purity, loc)
