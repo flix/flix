@@ -1284,6 +1284,11 @@ object GenExpression {
       mv.visitVarInsn(iStore, varSym.getStackOffset(ctx.localOffset))
       compileExpr(exp2)
 
+    case Expr.Stmt(exp1, exp2, _, _, _) =>
+      compileExpr(exp1)
+      BytecodeInstructions.xPop(BackendType.toErasedBackendType(exp1.tpe))(new BytecodeInstructions.F(mv))
+      compileExpr(exp2)
+
     case Expr.Scope(sym, exp, _, _, loc) =>
       // Adding source line number for debugging
       addSourceLine(mv, loc)

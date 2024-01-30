@@ -303,6 +303,11 @@ object Verifier {
       val bodyType = visitExpr(exp2)(root, env1, lenv)
       checkEq(bodyType, tpe, loc)
 
+    case Expr.Stmt(exp1, exp2, tpe, _, loc) =>
+      val firstType = visitExpr(exp1)
+      val secondType = visitExpr(exp2)
+      checkEq(secondType, tpe, loc)
+
     case Expr.Scope(sym, exp, tpe, _, loc) =>
       checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Region), lenv), loc)
 

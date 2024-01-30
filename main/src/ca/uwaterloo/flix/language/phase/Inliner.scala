@@ -212,8 +212,12 @@ object Inliner {
       /// Both code size and runtime are reduced
       if (isDeadAndPure(occur, exp1.purity)) {
         visitExp(exp2, subst0)
-      } else {
+      } else if (occur == Dead && occur != DontInline) {
         /// Case 2:
+        /// If `sym` is never used (it is `Dead`) and it is safe to inline then make a Stmt.
+        LiftedAst.Expr.Stmt(visitExp(exp1, subst0), visitExp(exp2, subst0), tpe, purity, loc)
+      } else {
+        /// Case 3:
         /// If `exp1` occurs once and it is pure, then it is safe to inline.
         /// There is a small decrease in code size and runtime.
         val wantToPreInline = isUsedOnceAndPure(occur, exp1.purity)
@@ -222,7 +226,7 @@ object Inliner {
           visitExp(exp2, subst1)
         } else {
           val e1 = visitExp(exp1, subst0)
-          /// Case 3:
+          /// Case 4:
           /// If `e1` is trivial and pure, then it is safe to inline.
           // Code size and runtime are not impacted, because only trivial expressions are inlined
           val wantToPostInline = isTrivialAndPure(e1, exp1.purity) && occur != DontInline
@@ -232,7 +236,7 @@ object Inliner {
             val subst1 = subst0 + (sym -> Expr.LiftedExp(e1))
             visitExp(exp2, subst1)
           } else {
-            /// Case 4:
+            /// Case 5:
             /// If none of the previous cases pass, `sym` is not inlined. Return a let expression with the visited expressions
             /// Code size and runtime are not impacted
             val e2 = visitExp(exp2, subst0)
@@ -245,6 +249,18 @@ object Inliner {
       val e1 = visitExp(exp1, subst0)
       val e2 = visitExp(exp2, subst0)
       LiftedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.Stmt(exp1, exp2, tpe, purity, loc) =>
+      /// Case 1:
+      /// If `exp1` is pure, so it has no side effects, then it is safe to remove
+      /// Both code size and runtime are reduced
+      if (exp1.purity == Purity.Pure) {
+        visitExp(exp2, subst0)
+      } else {
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        LiftedAst.Expr.Stmt(e1, e2, tpe, purity, loc)
+      }
 
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
@@ -442,6 +458,11 @@ object Inliner {
       val e1 = substituteExp(exp1, env1)
       val e2 = substituteExp(exp2, env1)
       LiftedAst.Expr.LetRec(freshVar, index, defSym, e1, e2, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.Stmt(exp1, exp2, tpe, purity, loc) =>
+      val e1 = substituteExp(exp1, env0)
+      val e2 = substituteExp(exp2, env0)
+      LiftedAst.Expr.Stmt(e1, e2, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
