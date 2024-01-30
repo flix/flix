@@ -323,7 +323,10 @@ object BackendObjType {
     def mkTagName(sym: Symbol.CaseSym): InstructionSet = pushString(JvmOps.getTagName(sym))
 
     /** [..., tagName1, tagName2] --> [..., tagName1 == tagName2] */
-    def eqTagName(): InstructionSet = INVOKEVIRTUAL(JavaObject.EqualsMethod)
+    def eqTagName(): InstructionSet = {
+      // ACMP is okay since tag strings are loaded through ldc instructions
+      ifConditionElse(Condition.ACMPEQ)(pushBool(true))(pushBool(false))
+    }
   }
 
   case class Tag(tpe: BackendType) extends BackendObjType with Generatable {
