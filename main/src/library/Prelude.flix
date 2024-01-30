@@ -1,7 +1,7 @@
 ///
 /// Static is a type alias for false and denotes the global lifetime.
 ///
-pub type alias Static = Impure
+pub type alias Static = IO
 
 ///
 /// An enum that holds type information where a witness is not available.

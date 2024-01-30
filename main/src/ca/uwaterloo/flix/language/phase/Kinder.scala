@@ -57,11 +57,6 @@ import scala.collection.immutable.SortedSet
   */
 object Kinder {
 
-  /**
-    * The symbol for the IO effect.
-    */
-  private val IoSym = new Symbol.EffectSym(Nil, "IO", SourceLocation.Unknown)
-
   def run(root: ResolvedAst.Root, oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[KindedAst.Root, KindError] = flix.phase("Kinder") {
 
     // Type aliases must be processed first in order to provide a `taenv` for looking up type alias symbols.
@@ -145,14 +140,14 @@ object Kinder {
     * Returns the kind of the type alias.
     */
   private def visitTypeAlias(alias: ResolvedAst.Declaration.TypeAlias, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.TypeAlias, KindError] = alias match {
-    case ResolvedAst.Declaration.TypeAlias(doc, mod, sym, tparams0, tpe0, loc) =>
+    case ResolvedAst.Declaration.TypeAlias(doc, ann, mod, sym, tparams0, tpe0, loc) =>
       val kenv = getKindEnvFromTypeParamsDefaultStar(tparams0)
 
       val tparamsVal = traverse(tparams0.tparams)(visitTypeParam(_, kenv))
       val tpeVal = visitType(tpe0, Kind.Wild, kenv, taenv, root)
 
       mapN(tparamsVal, tpeVal) {
-        case (tparams, tpe) => KindedAst.TypeAlias(doc, mod, sym, tparams, tpe, loc)
+        case (tparams, tpe) => KindedAst.TypeAlias(doc, ann, mod, sym, tparams, tpe, loc)
       }
   }
 
@@ -538,13 +533,6 @@ object Kinder {
           mapN(expVal) {
             exp => KindedAst.Expr.Scope(sym, rv, exp, pvar, loc)
           }
-      }
-
-    case ResolvedAst.Expr.ScopeExit(exp10, exp20, loc) =>
-      val exp1Val = visitExp(exp10, kenv0, taenv, henv0, root)
-      val exp2Val = visitExp(exp20, kenv0, taenv, henv0, root)
-      mapN(exp1Val, exp2Val) {
-        case (exp1, exp2) => KindedAst.Expr.ScopeExit(exp1, exp2, loc)
       }
 
     case ResolvedAst.Expr.Match(exp0, rules0, loc) =>
@@ -1178,13 +1166,6 @@ object Kinder {
   private def visitType(tpe0: UnkindedType, expectedKind: Kind, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Type, KindError] = tpe0 match {
     case tvar: UnkindedType.Var => visitTypeVar(tvar, expectedKind, kenv)
 
-    // TODO EFF-MIGRATION temporary hack to maintain behavior of IO
-    case UnkindedType.Cst(TypeConstructor.Effect(IoSym), loc) =>
-      unify(expectedKind, Kind.Eff) match {
-        case Some(_) => Validation.success(Type.Cst(TypeConstructor.EffUniv, loc))
-        case None => Validation.toHardFailure(KindError.UnexpectedKind(expectedKind = expectedKind, actualKind = Kind.Eff, loc = loc))
-      }
-
     case UnkindedType.Cst(cst, loc) =>
       val kind = cst.kind
       unify(expectedKind, kind) match {
@@ -1211,7 +1192,7 @@ object Kinder {
 
     case UnkindedType.Alias(cst, args0, t0, loc) =>
       taenv(cst.sym) match {
-        case KindedAst.TypeAlias(_, _, _, tparams, tpe, _) =>
+        case KindedAst.TypeAlias(_, _, _, _, tparams, tpe, _) =>
           val argsVal = traverse(tparams.zip(args0)) {
             case (tparam, arg) => visitType(arg, tparam.sym.kind, kenv, taenv, root)
           }

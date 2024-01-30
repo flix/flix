@@ -17,16 +17,10 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.CaseSymUse
 import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Pattern}
-import ca.uwaterloo.flix.language.ast.Type.eraseAliases
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Kind, LoweredAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeNormalization}
+import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
-
-import scala.annotation.tailrec
-import scala.collection.mutable
 
 /**
   * This phase does two things:

@@ -133,7 +133,7 @@ object BoolFormula {
       case Some(x) => Var(x)
     }
     case Type.Pure => True
-    case Type.EffUniv => False
+    case Type.Univ => False
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Not(fromEffType(tpe1, m))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => And(fromEffType(tpe1, m), fromEffType(tpe2, m))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Or(fromEffType(tpe1, m), fromEffType(tpe2, m))
@@ -176,7 +176,7 @@ object BoolFormula {
     */
   private def toEffType(f: BoolFormula, m: Bimap[VarOrEff, Int], loc: SourceLocation): Type = f match {
     case True => Type.Pure
-    case False => Type.EffUniv
+    case False => Type.Univ
     case Var(x) => m.getBackward(x) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$x'.", loc)
       case Some(VarOrEff.Var(sym)) => Type.Var(sym, loc)

@@ -29,6 +29,11 @@ sealed trait Symbol
 object Symbol {
 
   /**
+    * The symbol for the IO effect.
+    */
+  val IO: EffectSym = mkEffectSym(Name.RootNS, Ident(SourcePosition.Unknown, "IO", SourcePosition.Unknown))
+
+  /**
     * Returns a fresh def symbol based on the given symbol.
     */
   def freshDefnSym(sym: DefnSym)(implicit flix: Flix): DefnSym = {

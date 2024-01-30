@@ -49,24 +49,24 @@ object TypeNormalization {
       t1 match {
         // Simplify effect set formulas.
         case Type.Cst(TypeConstructor.Complement, _) => t2 match {
-          case Type.Pure => Type.EffUniv
-          case Type.EffUniv => Type.Pure
+          case Type.Pure => Type.Univ
+          case Type.Univ => Type.Pure
           case _ => throw InternalCompilerException(s"Unexpected non-simple effect: $tpe", applyLoc)
         }
         case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) =>
           (x, t2) match {
             case (Type.Pure, Type.Pure) => Type.Pure
-            case (Type.Pure, Type.EffUniv) => Type.EffUniv
-            case (Type.EffUniv, Type.Pure) => Type.EffUniv
-            case (Type.EffUniv, Type.EffUniv) => Type.EffUniv
+            case (Type.Pure, Type.Univ) => Type.Univ
+            case (Type.Univ, Type.Pure) => Type.Univ
+            case (Type.Univ, Type.Univ) => Type.Univ
             case _ => throw InternalCompilerException(s"Unexpected non-simple effect: $tpe", applyLoc)
           }
         case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) =>
           (x, t2) match {
             case (Type.Pure, Type.Pure) => Type.Pure
-            case (Type.Pure, Type.EffUniv) => Type.Pure
-            case (Type.EffUniv, Type.Pure) => Type.Pure
-            case (Type.EffUniv, Type.EffUniv) => Type.EffUniv
+            case (Type.Pure, Type.Univ) => Type.Pure
+            case (Type.Univ, Type.Pure) => Type.Pure
+            case (Type.Univ, Type.Univ) => Type.Univ
             case _ => throw InternalCompilerException(s"Unexpected non-simple effect: $tpe", applyLoc)
           }
 
