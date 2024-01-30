@@ -195,7 +195,7 @@ object Typer {
           TypedAst.AssocTypeSig(doc, mod, sym, tp, kind, loc) // TODO ASSOC-TYPES trivial
       }
       val tconstr = Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
-      val sigsVal = traverse(sigs0.values)(visitSig(_, List(tconstr), root, classEnv, eqEnv)) // MATT need renv?
+      val sigsVal = traverse(sigs0.values)(visitSig(_, renv, List(tconstr), root, classEnv, eqEnv)) // MATT need renv?
       val lawsVal = traverse(laws0)(visitDef(_, List(tconstr), renv, root, classEnv, eqEnv))
       mapN(sigsVal, lawsVal) {
         case (sigs, laws) => TypedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc)
@@ -205,7 +205,7 @@ object Typer {
   /**
     * Performs type inference and reassembly on the given signature `sig`.
     */
-  private def visitSig(sig: KindedAst.Sig, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Sig, TypeError] = {
+  private def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Sig, TypeError] = {
     implicit val r = root
     implicit val context = new TypingContext
     sig.exp match {
@@ -214,7 +214,7 @@ object Typer {
         val (tpe, eff) = ConstraintGeneration.visitExp(exp)
         val renv = context.renv
         val constrs = context.constrs.toList
-        val substVal = ConstraintResolution.visitSig(sig, assumedTconstrs, classEnv, eqEnv, root, ConstraintResolution.InfResult(constrs, tpe, eff, renv))
+        val substVal = ConstraintResolution.visitSig(sig, renv0, tconstrs0, classEnv, eqEnv, root, ConstraintResolution.InfResult(constrs, tpe, eff, renv))
         mapN(substVal) {
           case subst => TypeReconstruction.visitSig(sig, root, subst)
         }
