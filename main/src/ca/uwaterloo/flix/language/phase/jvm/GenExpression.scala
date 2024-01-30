@@ -550,7 +550,9 @@ object GenExpression {
         val ins = {
           import BytecodeInstructions._
           CHECKCAST(taggedType.jvmName) ~ GETFIELD(taggedType.NameField) ~
-            pushString(JvmOps.getTagName(sym)) ~ INVOKEVIRTUAL(JavaObject.EqualsMethod)
+            pushString(JvmOps.getTagName(sym)) ~
+            // ACMP is okay since tag strings are loaded through ldc instructions
+            ifConditionElse(Condition.ACMPNE)(pushBool(true))(pushBool(false))
         }
         ins(new BytecodeInstructions.F(mv))
 

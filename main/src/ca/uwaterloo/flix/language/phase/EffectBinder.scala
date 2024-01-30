@@ -88,11 +88,6 @@ object EffectBinder {
       ReducedAst.Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, ReducedAst.UnboxedType(tpe), purity, loc)
   }
 
-  private def visitCase(c: LiftedAst.Case): ReducedAst.Case = c match {
-    case LiftedAst.Case(sym, tpe, loc) =>
-      ReducedAst.Case(sym, tpe, loc)
-  }
-
   private def visitEffect(e: LiftedAst.Effect): ReducedAst.Effect = e match {
     case LiftedAst.Effect(ann, mod, sym, ops0, loc) =>
       val ops = ops0.map(visitOp)

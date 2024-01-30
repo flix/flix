@@ -44,8 +44,7 @@ object MonoTypes {
     //   - econstrs
 
     val defs = ParOps.parMapValues(root.defs)(visitDef)
-    val enums = ParOps.parMapValues(root.enums)(visitEnum)
-    root.copy(defs = defs, enums = enums)
+    root.copy(defs = defs, enums = Map.empty)
   }
 
   /**
@@ -330,22 +329,6 @@ object MonoTypes {
       // all fields except base should be "unused"/empty
       val b = visitType(base)
       Scheme(quantifiers, tconstrs, econstrs, b)
-  }
-
-  private def visitEnum(e: LoweredAst.Enum): LoweredAst.Enum = e match {
-    case LoweredAst.Enum(doc, ann, mod, sym, _, derives, cases0, tpe0, loc) =>
-      val cases = MapOps.mapValues(cases0)(visitCase)
-      val tpe = Type.Cst(TypeConstructor.Enum(sym, Kind.Star), tpe0.loc)
-      LoweredAst.Enum(doc, ann, mod, sym, Nil, derives, cases, tpe, loc)
-  }
-
-  private def visitCase(caze: LoweredAst.Case): LoweredAst.Case = caze match {
-    case LoweredAst.Case(sym, _, _, loc) =>
-      // The type is unknown after this point, so its erased
-      val errorType = Type.Cst(TypeConstructor.Error(Kind.Wild), loc)
-      val tpe = errorType
-      val deletedScheme = Scheme(Nil, Nil, Nil, errorType)
-      LoweredAst.Case(sym, tpe, deletedScheme, loc)
   }
 
 }

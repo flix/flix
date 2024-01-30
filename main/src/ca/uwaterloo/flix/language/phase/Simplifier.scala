@@ -34,10 +34,9 @@ object Simplifier {
 
   def run(root: LoweredAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
     val defs = ParOps.parMapValues(root.defs)(visitDef)
-    val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
-    SimplifiedAst.Root(defs, enums, effects, root.entryPoint, root.reachable, root.sources)
+    SimplifiedAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitDef(decl: LoweredAst.Def)(implicit flix: Flix): SimplifiedAst.Def = decl match {
@@ -48,14 +47,6 @@ object Simplifier {
       val retType = visitType(funType.arrowResultType)
       val eff = simplifyEffect(funType.arrowEffectType)
       SimplifiedAst.Def(spec.ann, spec.mod, sym, fs, e, retType, eff, sym.loc)
-  }
-
-  private def visitEnum(decl: LoweredAst.Enum)(implicit flix: Flix): SimplifiedAst.Enum = decl match {
-    case LoweredAst.Enum(_, ann, mod, sym, _, _, cases0, enumType, loc) =>
-      val cases = cases0.map {
-        case (tag, LoweredAst.Case(caseSym, _, _, tagLoc)) => tag -> SimplifiedAst.Case(caseSym, null /* unused */, tagLoc)
-      }
-      SimplifiedAst.Enum(ann, mod, sym, cases, visitType(enumType), loc)
   }
 
   private def visitEffect(decl: LoweredAst.Effect)(implicit flix: Flix): SimplifiedAst.Effect = decl match {
