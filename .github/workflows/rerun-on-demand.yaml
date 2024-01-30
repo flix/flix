@@ -14,24 +14,30 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: >
-            github.rest.actions.listWorkflowRunsForRepo({
+            github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              head_sha: context.sha,
-              // status: "failure"
-            }).then(runs => {
-              var count = runs.data.total_count;
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
+              pull_number: context.issue.number
+            }).then(pull =>
+              github.rest.actions.listWorkflowRunsForRepo({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: 'Rerunning ' + count + ' failed test(s)...' 
-              }).then(_ => {
-                runs.data.workflow_runs.forEach(run => {
-                  github.rest.actions.reRunWorkflowFailedJobs({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    run_id: run.id
+                head_sha: pull.head.sha,
+                status: "failure"
+              }).then(runs => {
+                var count = runs.data.total_count;
+                github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: 'Rerunning ' + count + ' failed test(s)...' 
+                }).then(_ => {
+                  runs.data.workflow_runs.forEach(run => {
+                    github.rest.actions.reRunWorkflowFailedJobs({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      run_id: run.id
+                    })
                   })
                 })
               })
