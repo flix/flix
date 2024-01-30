@@ -34,6 +34,6 @@ jobs:
               github.rest.actions.reRunWorkflowFailedJobs({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                run_id: runs.workflow_runs[0].workflow_id
+                run_id: runs.data.workflow_runs[0].workflow_id
               });
             });
