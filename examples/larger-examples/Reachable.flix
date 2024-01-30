@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-namespace Reachable/Imperative {
+mod Reachable.Imperative {
     pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Order[n] =
         region rc {
             // collect edge lists
@@ -51,7 +51,7 @@ namespace Reachable/Imperative {
     pub def test(): Bool = Graphs.validate(reachable)
 }
 
-namespace Reachable/Functional {
+mod Reachable.Functional {
     pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Order[n] =
         // collect edge lists
         let edgeMap = (Map.empty(), edges) ||> Foldable.foldLeft(map -> match (start, end) -> {
@@ -75,7 +75,7 @@ namespace Reachable/Functional {
     pub def test(): Bool = Graphs.validate(reachable)
 }
 
-namespace Reachable/Logic {
+mod Reachable.Logic {
     pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Order[n] =
         let edgeFacts = project edges into Edge;
         // origin is reachable and this set is expanded by the edge facts
@@ -89,7 +89,7 @@ namespace Reachable/Logic {
     pub def test(): Bool = Graphs.validate(reachable)
 }
 
-namespace Graphs {
+mod Graphs {
     pub def graph1(): Set[(Int32, Int32)] = Set#{}
 
     pub def graph2(): Set[(Int32, Int32)] = Set#{

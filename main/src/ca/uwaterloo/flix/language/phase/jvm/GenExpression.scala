@@ -541,24 +541,6 @@ object GenExpression {
         mv.visitInsn(ACONST_NULL)
         mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
 
-      case AtomicOp.ScopeExit =>
-        val List(exp1, exp2) = exps
-
-        // Compile the expression, putting a function implementing the Runnable interface on the stack
-        compileExpr(exp1)
-        mv.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
-
-        // Compile the expression representing the region
-        compileExpr(exp2)
-        mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
-
-        // Call the Region's `runOnExit` method
-        mv.visitInsn(SWAP)
-        mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.RunOnExitMethod.name, BackendObjType.Region.RunOnExitMethod.d.toDescriptor, false)
-
-        // Put a Unit value on the stack
-        mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
-
       case AtomicOp.Is(sym) =>
         val List(exp) = exps
         // We get the JvmType of the class for tag

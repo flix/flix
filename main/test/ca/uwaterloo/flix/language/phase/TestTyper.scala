@@ -837,13 +837,13 @@ class TestTyper extends AnyFunSuite with TestUtils {
     // Regression test.
     // See https://github.com/flix/flix/issues/3634
     val input =
-    """
-      |enum E[a: Type, ef: Eff](Unit)
-      |def f(g: E[Int32, Pure]): Bool = ???
-      |def mkE(): E[Int32, Pure] \ ef = ???
-      |
-      |def g(): Bool = f(mkE)
-      |""".stripMargin
+      """
+        |enum E[a: Type, ef: Eff](Unit)
+        |def f(g: E[Int32, Pure]): Bool = ???
+        |def mkE(): E[Int32, Pure] \ ef = ???
+        |
+        |def g(): Bool = f(mkE)
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.UnexpectedArg](result)
   }
@@ -1200,4 +1200,186 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError.UndefinedLabel](result)
   }
+
+  test("TestIOAndCustomEffect.01") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    do Gen.gen();
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.UnexpectedEffect](result)
+  }
+
+  test("TestIOAndCustomEffect.02") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = try {
+        |        do Gen.gen()
+        |    } with Gen {
+        |        def gen(k) = k("a")
+        |    };
+        |    do Gen.gen();
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.UnexpectedEffect](result)
+  }
+
+  ignore("TestIOAndCustomEffect.03") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |eff AskTell {
+        |    pub def askTell(x: Int32): Int32
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = try {
+        |        do Gen.gen();
+        |        do AskTell.askTell(42)
+        |    } with Gen {
+        |        def gen(k) = k("a")
+        |    };
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.UnexpectedEffect](result)
+  }
+
+  test("TestIOAndCustomEffect.04") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |eff AskTell {
+        |    pub def askTell(x: Int32): Int32
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = try {
+        |        do Gen.gen();
+        |        do AskTell.askTell(42)
+        |    } with Gen {
+        |        def gen(k) = k("a")
+        |    };
+        |    do Gen.gen();
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.UnexpectedEffect](result)
+  }
+
+  test("TestIOAndCustomEffect.05") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |eff AskTell {
+        |    pub def askTell(x: Int32): Int32
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = try {
+        |        do Gen.gen();
+        |        do AskTell.askTell(42)
+        |    } with Gen {
+        |        def gen(k) = k("a")
+        |    };
+        |    do AskTell.askTell(42);
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.UnexpectedEffect](result)
+  }
+
+  test("TestIOAndCustomEffect.06") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |eff AskTell {
+        |    pub def askTell(x: Int32): Int32
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = try {
+        |        do Gen.gen();
+        |        do AskTell.askTell(42)
+        |    } with Gen {
+        |        def gen(k) = k("a")
+        |    };
+        |    do Gen.gen();
+        |    do AskTell.askTell(42);
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.UnexpectedEffect](result)
+  }
+  test("TestIOAndCustomEffect.07") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |eff AskTell {
+        |    pub def askTell(x: Int32): Int32
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = try {
+        |        do Gen.gen()
+        |    } with Gen {
+        |        def gen(k) = k("a")
+        |    };
+        |    do AskTell.askTell(42);
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.UnexpectedEffect](result)
+  }
+
+  ignore("TestIOAndCustomEffect.08") {
+    val input =
+      """
+        |eff Gen {
+        |    pub def gen(): String
+        |}
+        |
+        |eff AskTell {
+        |    pub def askTell(x: String): String
+        |}
+        |
+        |pub def f(): Unit \ IO =
+        |    let _ = try {
+        |        do Gen.gen()
+        |    } with Gen {
+        |        def gen(k) = do AskTell.askTell(k("a"))
+        |    };
+        |    ()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError.UnexpectedEffect](result)
+  }
+
 }

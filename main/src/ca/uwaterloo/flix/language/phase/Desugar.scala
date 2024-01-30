@@ -158,10 +158,10 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.TypeAlias]] `typeAlias0`.
     */
   private def visitTypeAlias(typeAlias0: WeededAst.Declaration.TypeAlias): DesugaredAst.Declaration.TypeAlias = typeAlias0 match {
-    case WeededAst.Declaration.TypeAlias(doc, mod, ident, tparams0, tpe0, loc) =>
+    case WeededAst.Declaration.TypeAlias(doc, ann, mod, ident, tparams0, tpe0, loc) =>
       val tparams = visitTypeParams(tparams0)
       val tpe = visitType(tpe0)
-      DesugaredAst.Declaration.TypeAlias(doc, mod, ident, tparams, tpe, loc)
+      DesugaredAst.Declaration.TypeAlias(doc, ann, mod, ident, tparams, tpe, loc)
   }
 
   /**
@@ -534,11 +534,6 @@ object Desugar {
       val e = visitExp(exp)
       Expr.Scope(ident, e, loc)
 
-    case WeededAst.Expr.ScopeExit(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.ScopeExit(e1, e2, loc)
-
     case WeededAst.Expr.Match(exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitMatchRule)
@@ -738,7 +733,7 @@ object Desugar {
       Expr.NewObject(t, ms, loc)
 
     case WeededAst.Expr.Static(loc) =>
-      val tpe = Type.mkRegion(Type.EffUniv, loc)
+      val tpe = Type.mkRegion(Type.IO, loc)
       DesugaredAst.Expr.Region(tpe, loc)
 
     case WeededAst.Expr.NewChannel(exp1, exp2, loc) =>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Paul Butcher
+ * Copyright 2024 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.util.collection
 
-mod Region {
+object IteratorOps {
 
-  ///
-  /// Add x to a stack of `Closeable` to be closed when the region exits:
-  ///
-  /// * `Closeable`s are guaranteed to be closed after any threads within the
-  ///   region have been joined.
-  /// * `Closeable`s are guaranteed to be closed in the reverse order in
-  ///   which they're added (most recently added first).
-  ///
-  pub def closeOnExit(x: a, rc: Region[r]): Unit \ {r, IO} with Closeable[a] =
-      $SCOPE_EXIT$(() -> Closeable.close(x), rc)
+  /**
+    * Concatenates the given iterators.
+    */
+  def all[A](iters: IterableOnce[A]*): Iterator[A] = {
+    iters.foldLeft(Iterator.empty[A])(_ ++ _)
+  }
+
 }

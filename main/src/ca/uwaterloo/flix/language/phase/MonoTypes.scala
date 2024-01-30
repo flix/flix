@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.CaseSymUse
 import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.ast.Type.eraseAliases
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LoweredAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeNormalization}
+import ca.uwaterloo.flix.language.phase.unification.{Substitution, TypeMinimization, TypeNormalization}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.collection.mutable
@@ -437,7 +437,7 @@ object MonoTypes {
     */
   private def specializeEnum(sym: Symbol.EnumSym, args0: List[Type], loc: SourceLocation)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): Symbol.EnumSym = {
     // type arguments
-    val args = args0.map(eraseAliases).map(TypeNormalization.normalizeType)
+    val args = args0.map(eraseAliases).map(eraseEffects).map(TypeNormalization.normalizeType)
 
     // assemble enum type (e.g. `List[Int32]`)
     val tpe = Type.mkEnum(sym, args, loc)
@@ -473,6 +473,22 @@ object MonoTypes {
   private def specializeCaseSymUse(sym: CaseSymUse, args: List[Type], loc: SourceLocation)(implicit ctx: SharedContext, root: LoweredAst.Root, flix: Flix): CaseSymUse = {
     val freshEnumSym = specializeEnum(sym.sym.enumSym, args, loc)
     Ast.CaseSymUse(new Symbol.CaseSym(freshEnumSym, sym.sym.name, sym.sym.loc), sym.loc)
+  }
+
+  /**
+    * Replaces all effects in the type with Impure.
+    */
+  private def eraseEffects(tpe: Type): Type = tpe match {
+    case Type.Cst(TypeConstructor.Effect(_), _) => Type.Univ
+    case t@Type.Cst(_, _) => t
+    case Type.Apply(tpe1, tpe2, loc) =>
+      Type.Apply(eraseEffects(tpe1), eraseEffects(tpe2), loc)
+    case Type.Alias(_, _, _, loc) =>
+      throw InternalCompilerException("unexpected type var", loc)
+    case Type.AssocType(_, _, _, loc) =>
+      throw InternalCompilerException("unexpected associated type", loc)
+    case Type.Var(_, _) =>
+      throw InternalCompilerException("unexpected type var", SourceLocation.Unknown)
   }
 
 }
