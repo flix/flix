@@ -68,7 +68,7 @@ object GenAnonymousClasses {
     val currentClass = JvmType.Reference(className)
     compileConstructor(superClass, visitor)
 
-    obj.methods.zipWithIndex.foreach { case (m, i) => compileMethod(currentClass, m, s"clo$i", visitor) }
+    obj.methods.zipWithIndex.foreach { case (m, i) => compileMethod(currentClass, m, s"clo$i", visitor, obj) }
 
     visitor.visitEnd()
     visitor.toByteArray
@@ -116,7 +116,7 @@ object GenAnonymousClasses {
   /**
     * Method
     */
-  private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter): Unit = method match {
+  private def compileMethod(currentClass: JvmType.Reference, method: JvmMethod, cloName: String, classVisitor: ClassWriter, obj: AnonClass): Unit = method match {
     case JvmMethod(ident, fparams, _, tpe, _, loc) =>
       val args = fparams.map(_.tpe)
       val boxedResult = MonoType.Object
@@ -150,7 +150,7 @@ object GenAnonymousClasses {
       }
 
       // Invoke the closure
-      BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(tpe), Some("in anonymous class method"), loc)(new BytecodeInstructions.F(methodVisitor))
+      BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(tpe), s"in anonymous class method ${ident.name} of ${obj.clazz.getSimpleName}", loc)(new BytecodeInstructions.F(methodVisitor))
 
       tpe match {
         case MonoType.Array(_) => methodVisitor.visitTypeInsn(CHECKCAST, getDescriptorHacked(tpe))
