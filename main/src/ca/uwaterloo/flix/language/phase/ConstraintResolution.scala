@@ -192,27 +192,6 @@ object ConstraintResolution {
       }).toValidation // TODO check leftovers
   }
 
-  def visitLaw(defn: KindedAst.Def, classConstrs: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root, rootConstrs: ConstraintGeneration.PhaseResult)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
-    case KindedAst.Def(sym, KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc), exp) =>
-      val (infConstrs, infTpe, infEff, infRenv) = rootConstrs.defs(sym)
-
-      val initialSubst = fparams.foldLeft(Substitution.empty) {
-        case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, tpe)
-      }
-
-      val renv = tparams.foldLeft(infRenv) {
-        case (acc, KindedAst.TypeParam(name, sym, loc)) => acc.markRigid(sym)
-      }
-
-      val cenv = expandClassEnv(cenv0, classConstrs ++ tconstrs)
-      val eqEnv = expandEqualityEnv(eqEnv0, econstrs) // MATT consider class econstrs
-
-      val tpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectLeft, loc)
-      val effConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectLeft, loc)
-      val constrs = tpeConstr :: effConstr :: infConstrs
-      resolve(constrs, renv, cenv, eqEnv, initialSubst).map(_.newSubst).toValidation // TODO check leftovers
-  }
-
   def visitSig(sig: KindedAst.Sig, classConstrs: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root, infResult: InfResult)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
     case KindedAst.Sig(_, _, None) => Validation.success(Substitution.empty)
     case KindedAst.Sig(sym, KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc), exp) =>
