@@ -17,10 +17,13 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Kind.kindArgs
 import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+
+import scala.annotation.tailrec
 
 /**
   * This phase does two things:
@@ -290,25 +293,72 @@ object MonoTypes {
   }
 
   /**
-    * Returns a type where 1) aliases are removed and 2) enums are non-parametric.
+    * Returns the given type where
+    * - aliases have been removed.
+    * - `Enum[a, b, c]` have been replaced by `Enum`.
+    *
+    * Assumes that the type has no
+    * - Associated types.
+    * - Variables.
+    * - Enums have kind `_ => _ => ... => Star` (arrows >= 0).
     */
-  private def visitType(tpe: Type): Type = tpe match {
-    case Type.Cst(TypeConstructor.Enum(sym, _), loc) =>
-      // Remove type arguments from enums.
-      Type.Cst(TypeConstructor.Enum(sym, Kind.Star), loc)
-    case Type.Cst(tc, loc) =>
-      Type.Cst(tc, loc)
-    case Type.Apply(tpe1, tpe2, loc) =>
-      Type.Apply(visitType(tpe1), visitType(tpe2), loc)
-    case Type.Alias(_, _, tpe, _) =>
-      // Remove Alias types.
-      visitType(tpe)
-    case Type.Var(sym, loc) =>
-      // Assumed to have been removed earlier.
-      throw InternalCompilerException(s"Unexpected type var: '$sym'", loc)
-    case Type.AssocType(cst, _, _, loc) =>
-      // Assumed to have been removed earlier.
-      throw InternalCompilerException(s"Unexpected associated type: '${cst.sym}'", loc)
+  private def visitType(tpe: Type): Type = {
+    val (t, 0) = visitTypeAux(tpe)
+    t
+  }
+
+  /**
+    * Returns the given type where
+    * - aliases have been removed.
+    * - `Enum[a, b, c]` have been replaced by `Enum`.
+    *
+    * Returns a number which indicates the number of applies to be removed. e.g.
+    * for the enum above, visiting the enum itself in the above would return `3`
+    * because three type arguments should be removed.
+    *
+    * Assumes that the type has no
+    * - Associated types.
+    * - Variables.
+    * - Enums have kind `_ => _ => ... => Star` (arrows >= 0).
+    */
+  private def visitTypeAux(tpe: Type): (Type, Int) = {
+    tpe match {
+      case Type.Cst(TypeConstructor.Enum(sym, kind0), loc) =>
+        val arity = kindArity(kind0, 0, loc)
+        (Type.Cst(TypeConstructor.Enum(sym, Kind.Star), loc), arity)
+      case Type.Cst(tc, loc) =>
+        (Type.Cst(tc, loc), 0)
+      case Type.Apply(tpe1, tpe2, loc) =>
+        val (t1, toRemove) = visitTypeAux(tpe1)
+        if (toRemove > 0) (t1, toRemove-1)
+        else {
+          val (t2, 0) = visitTypeAux(tpe2)
+          (Type.Apply(t1, t2, loc), 0)
+        }
+      case Type.Alias(_, _, tpe, _) =>
+        // Remove Alias types.
+        visitTypeAux(tpe)
+      case Type.Var(sym, loc) =>
+        // Assumed to have been removed earlier.
+        throw InternalCompilerException(s"Unexpected type var: '$sym'", loc)
+      case Type.AssocType(cst, _, _, loc) =>
+        // Assumed to have been removed earlier.
+        throw InternalCompilerException(s"Unexpected associated type: '${cst.sym}'", loc)
+    }
+  }
+
+  /**
+    * Returns the arity of the kind.
+    *
+    * Assumes that the kind is `_ => _ => _ => Star` (arrows >= 0).
+    */
+  @tailrec
+  private def kindArity(kind0: Kind, acc: Int, loc: SourceLocation): Int = {
+    kind0 match {
+      case Kind.Star => acc
+      case Kind.Arrow(_, k2) => kindArity(k2, acc+1, loc)
+      case other => throw InternalCompilerException(s"Unexpected kind '$other'", loc)
+    }
   }
 
   /**
