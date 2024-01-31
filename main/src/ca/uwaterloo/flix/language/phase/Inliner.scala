@@ -319,12 +319,22 @@ object Inliner {
   }
 
   /**
+    * Checks if `sym` is wild (e.g. `_unit`) and  `exp` is pure.
+    */
+  private def isWildAndPure(sym: Symbol.VarSym, exp: LiftedAst.Expr): Boolean = {
+    sym.isWild && exp.purity == Pure
+  }
+
+  /**
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     * Substitute variables in `exp0` via the filled substitution map `env0`
     */
   private def bindFormals(exp0: OccurrenceAst.Expression, symbols: List[Symbol.VarSym], args: List[LiftedAst.Expr], env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst.Root, flix: Flix): LiftedAst.Expr = {
     (symbols, args) match {
+      case (sym :: nextSymbols, e1 :: nextExpressions) if isWildAndPure(sym, e1) =>
+        // if the parameter unused and the arguemnt is pure, then throw it away.
+        bindFormals(exp0, nextSymbols, nextExpressions, env0)
       case (sym :: nextSymbols, e1 :: nextExpressions) =>
         val freshVar = Symbol.freshVarSym(sym)
         val env1 = env0 + (sym -> freshVar)
