@@ -38,15 +38,15 @@ object Verifier {
     try {
       visitExpr(decl.expr)(root, env, Map.empty)
     } catch {
-      case UnexpectedType(expected, found, loc) =>
-        println(s"Unexpected type near ${loc.format}")
+      case UnexpectedType(expected, found, astNode, loc) =>
+        println(s"Unexpected type near ${loc.format} in $astNode")
         println()
         println(s"  expected = $expected")
         println(s"  found    = $found")
         println()
 
-      case MismatchedTypes(tpe1, tpe2, loc) =>
-        println(s"Mismatched types near ${loc.format}")
+      case MismatchedTypes(tpe1, tpe2, astNode, loc) =>
+        println(s"Mismatched types near ${loc.format} in $astNode")
         println()
         println(s"  tpe1 = $tpe1")
         println(s"  tpe2 = $tpe2")
@@ -58,26 +58,26 @@ object Verifier {
   private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
-      case Constant.Unit => check(expected = MonoType.Unit)(actual = tpe, loc)
+      case Constant.Unit => check(expected = MonoType.Unit)(actual = tpe, expr.getClass.getSimpleName, loc)
       case Constant.Null => tpe
-      case Constant.Bool(_) => check(expected = MonoType.Bool)(actual = tpe, loc)
-      case Constant.Char(_) => check(expected = MonoType.Char)(actual = tpe, loc)
-      case Constant.Float32(_) => check(expected = MonoType.Float32)(actual = tpe, loc)
-      case Constant.Float64(_) => check(expected = MonoType.Float64)(actual = tpe, loc)
-      case Constant.BigDecimal(_) => check(expected = MonoType.BigDecimal)(actual = tpe, loc)
-      case Constant.Int8(_) => check(expected = MonoType.Int8)(actual = tpe, loc)
-      case Constant.Int16(_) => check(expected = MonoType.Int16)(actual = tpe, loc)
-      case Constant.Int32(_) => check(expected = MonoType.Int32)(actual = tpe, loc)
-      case Constant.Int64(_) => check(expected = MonoType.Int64)(actual = tpe, loc)
-      case Constant.BigInt(_) => check(expected = MonoType.BigInt)(actual = tpe, loc)
-      case Constant.Str(_) => check(expected = MonoType.String)(actual = tpe, loc)
-      case Constant.Regex(_) => check(expected = MonoType.Regex)(actual = tpe, loc)
+      case Constant.Bool(_) => check(expected = MonoType.Bool)(actual = tpe, expr.getClass.getSimpleName, loc)
+      case Constant.Char(_) => check(expected = MonoType.Char)(actual = tpe, expr.getClass.getSimpleName, loc)
+      case Constant.Float32(_) => check(expected = MonoType.Float32)(actual = tpe, expr.getClass.getSimpleName, loc)
+      case Constant.Float64(_) => check(expected = MonoType.Float64)(actual = tpe, expr.getClass.getSimpleName, loc)
+      case Constant.BigDecimal(_) => check(expected = MonoType.BigDecimal)(actual = tpe, expr.getClass.getSimpleName, loc)
+      case Constant.Int8(_) => check(expected = MonoType.Int8)(actual = tpe, expr.getClass.getSimpleName, loc)
+      case Constant.Int16(_) => check(expected = MonoType.Int16)(actual = tpe, expr.getClass.getSimpleName, loc)
+      case Constant.Int32(_) => check(expected = MonoType.Int32)(actual = tpe, expr.getClass.getSimpleName, loc)
+      case Constant.Int64(_) => check(expected = MonoType.Int64)(actual = tpe, expr.getClass.getSimpleName, loc)
+      case Constant.BigInt(_) => check(expected = MonoType.BigInt)(actual = tpe, expr.getClass.getSimpleName, loc)
+      case Constant.Str(_) => check(expected = MonoType.String)(actual = tpe, expr.getClass.getSimpleName, loc)
+      case Constant.Regex(_) => check(expected = MonoType.Regex)(actual = tpe, expr.getClass.getSimpleName, loc)
     }
 
     case Expr.Var(sym, tpe1, loc) => env.get(sym) match {
       case None => throw InternalCompilerException(s"Unknown variable sym: '$sym'", loc)
       case Some(tpe2) =>
-        checkEq(tpe1, tpe2, loc)
+        checkEq(tpe1, tpe2, expr.getClass.getSimpleName, loc)
     }
 
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) =>
@@ -100,8 +100,8 @@ object Verifier {
             case SemanticOp.Int64Op.Not => MonoType.Int64
             case _ => throw InternalCompilerException(s"Invalid unary operator: '$sop'", loc)
           }
-          check(expected = opTpe)(actual = t, loc)
-          check(expected = tpe)(actual = opTpe, loc)
+          check(expected = opTpe)(actual = t, expr.getClass.getSimpleName, loc)
+          check(expected = tpe)(actual = opTpe, expr.getClass.getSimpleName, loc)
 
         case AtomicOp.Binary(sop) =>
           val List(t1, t2) = ts
@@ -218,22 +218,22 @@ object Verifier {
 
             case _ => throw InternalCompilerException(s"Invalid binary operator: '$sop'", loc)
           }
-          check(expected = argTpe1)(t1, loc)
-          check(expected = argTpe2)(t2, loc)
-          check(expected = tpe)(actual = resTpe, loc)
+          check(expected = argTpe1)(t1, expr.getClass.getSimpleName, loc)
+          check(expected = argTpe2)(t2, expr.getClass.getSimpleName, loc)
+          check(expected = tpe)(actual = resTpe, expr.getClass.getSimpleName, loc)
 
         case AtomicOp.Is(sym) =>
           val List(t1) = ts
-          check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
-          check(expected = MonoType.Bool)(actual = tpe, loc)
+          check(expected = MonoType.Enum(sym.enumSym))(actual = t1, expr.getClass.getSimpleName, loc)
+          check(expected = MonoType.Bool)(actual = tpe, expr.getClass.getSimpleName, loc)
 
         case AtomicOp.Tag(sym) =>
           val List(t1) = ts
-          check(expected = MonoType.Enum(sym.enumSym))(actual = tpe, loc)
+          check(expected = MonoType.Enum(sym.enumSym))(actual = tpe, expr.getClass.getSimpleName, loc)
 
         case AtomicOp.Untag(sym) =>
           val List(t1) = ts
-          check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
+          check(expected = MonoType.Enum(sym.enumSym))(actual = t1, expr.getClass.getSimpleName, loc)
           tpe
 
         case _ => tpe // TODO: VERIFIER: Add rest
@@ -242,30 +242,30 @@ object Verifier {
     case Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
       val lamType1 = visitExpr(exp)
       val lamType2 = MonoType.Arrow(exps.map(visitExpr), tpe)
-      checkEq(lamType1, lamType2, loc)
+      checkEq(lamType1, lamType2, expr.getClass.getSimpleName, loc)
       tpe
 
     case Expr.ApplyDef(sym, exps, ct, tpe, _, loc) =>
       val defn = root.defs(sym)
       val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
       val actual = MonoType.Arrow(exps.map(visitExpr), tpe)
-      check(expected = declared)(actual = actual, loc)
+      check(expected = declared)(actual = actual, expr.getClass.getSimpleName, loc)
       tpe
 
     case Expr.ApplySelfTail(sym, formals, actuals, tpe, _, loc) =>
       val defn = root.defs(sym)
       val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
       val actual = MonoType.Arrow(actuals.map(visitExpr), tpe)
-      check(expected = declared)(actual = actual, loc)
+      check(expected = declared)(actual = actual, expr.getClass.getSimpleName, loc)
       tpe
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
       val condType = visitExpr(exp1)
       val thenType = visitExpr(exp2)
       val elseType = visitExpr(exp3)
-      check(expected = MonoType.Bool)(actual = condType, loc)
-      checkEq(tpe, thenType, loc)
-      checkEq(tpe, elseType, loc)
+      check(expected = MonoType.Bool)(actual = condType, expr.getClass.getSimpleName, loc)
+      checkEq(tpe, thenType, expr.getClass.getSimpleName, loc)
+      checkEq(tpe, elseType, expr.getClass.getSimpleName, loc)
 
     case Expr.Branch(exp, branches, tpe, _, loc) =>
       val lenv1 = branches.foldLeft(lenv) {
@@ -273,40 +273,40 @@ object Verifier {
       }
       branches.foreach {
         case (label, body) =>
-          checkEq(tpe, visitExpr(body)(root, env, lenv1), loc)
+          checkEq(tpe, visitExpr(body)(root, env, lenv1), expr.getClass.getSimpleName, loc)
       }
       tpe
 
     case Expr.JumpTo(sym, tpe1, _, loc) => lenv.get(sym) match {
       case None => throw InternalCompilerException(s"Unknown label sym: '$sym'.", loc)
-      case Some(tpe2) => checkEq(tpe1, tpe2, loc)
+      case Some(tpe2) => checkEq(tpe1, tpe2, expr.getClass.getSimpleName, loc)
     }
 
     case Expr.Let(sym, exp1, exp2, tpe, _, loc) =>
       val letBoundType = visitExpr(exp1)
       val bodyType = visitExpr(exp2)(root, env + (sym -> letBoundType), lenv)
-      checkEq(bodyType, tpe, loc)
+      checkEq(bodyType, tpe, expr.getClass.getSimpleName, loc)
 
     case Expr.LetRec(varSym, _, defSym, exp1, exp2, tpe, _, loc) =>
       val env1 = env + (varSym -> exp1.tpe)
       val letBoundType = visitExpr(exp1)(root, env1, lenv)
       val bodyType = visitExpr(exp2)(root, env1, lenv)
-      checkEq(bodyType, tpe, loc)
+      checkEq(bodyType, tpe, expr.getClass.getSimpleName, loc)
 
     case Expr.Stmt(exp1, exp2, tpe, _, loc) =>
       val firstType = visitExpr(exp1)
       val secondType = visitExpr(exp2)
-      checkEq(secondType, tpe, loc)
+      checkEq(secondType, tpe, expr.getClass.getSimpleName, loc)
 
     case Expr.Scope(sym, exp, tpe, _, loc) =>
-      checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Region), lenv), loc)
+      checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Region), lenv), expr.getClass.getSimpleName, loc)
 
     case Expr.TryCatch(exp, rules, tpe, _, loc) =>
       for (CatchRule(sym, clazz, exp) <- rules) {
-        checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Native(clazz)), lenv), loc)
+        checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Native(clazz)), lenv), expr.getClass.getSimpleName, loc)
       }
       val t = visitExpr(exp)
-      checkEq(tpe, t, loc)
+      checkEq(tpe, t, expr.getClass.getSimpleName, loc)
 
     case Expr.TryWith(_, _, _, tpe, _, _) =>
       // TODO: VERIFIER: Add support for TryWith.
@@ -325,31 +325,31 @@ object Verifier {
   /**
     * Asserts that the the given type `expected` is equal to the `actual` type.
     */
-  private def check(expected: MonoType)(actual: MonoType, loc: SourceLocation): MonoType = {
+  private def check(expected: MonoType)(actual: MonoType, astNode: String, loc: SourceLocation): MonoType = {
     if (expected == actual)
       expected
     else
-      throw UnexpectedType(expected, actual, loc)
+      throw UnexpectedType(expected, actual, astNode, loc)
   }
 
   /**
     * Asserts that the two given types `tpe1` and `tpe2` are the same.
     */
-  private def checkEq(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): MonoType = {
+  private def checkEq(tpe1: MonoType, tpe2: MonoType, astNode: String, loc: SourceLocation): MonoType = {
     if (tpe1 == tpe2)
       tpe1
     else
-      throw MismatchedTypes(tpe1, tpe2, loc)
+      throw MismatchedTypes(tpe1, tpe2, astNode, loc)
   }
 
   /**
     * An exception raised because the `expected` type does not match the `found` type.
     */
-  private case class UnexpectedType(expected: MonoType, found: MonoType, loc: SourceLocation) extends RuntimeException
+  private case class UnexpectedType(expected: MonoType, found: MonoType, astNode: String, loc: SourceLocation) extends RuntimeException
 
   /**
     * An exception raised because `tpe1` is not equal to `tpe2`.
     */
-  private case class MismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation) extends RuntimeException
+  private case class MismatchedTypes(tpe1: MonoType, tpe2: MonoType, astNode: String, loc: SourceLocation) extends RuntimeException
 
 }
