@@ -235,7 +235,6 @@ object MonoDefs {
     * Performs monomorphization of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("MonoDefs") {
-
     implicit val r: Root = root
     implicit val ctx: Context = new Context()
     val empty = StrictSubstitution(Substitution.empty, root.eqEnv)
