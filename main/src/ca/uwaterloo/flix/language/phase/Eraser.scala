@@ -131,13 +131,14 @@ object Eraser {
 
     case ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       val ac = ApplyClo(visitExp(exp), exps.map(visitExp), ct, box(tpe), purity, loc)
-      castExp(unboxExp(ac, erase(tpe), purity, loc), visitType(tpe), purity, loc)
+      if (ct == CallType.TailCall) ac
+      else castExp(unboxExp(ac, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
       val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)
-      castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
+      if (ct == CallType.TailCall) ad
+      else castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
-      val ast = ApplySelfTail(sym, formals.map(visitParam), actuals.map(visitExp), box(tpe), purity, loc)
-      castExp(unboxExp(ast, erase(tpe), purity, loc), visitType(tpe), purity, loc)
+      ApplySelfTail(sym, formals.map(visitParam), actuals.map(visitExp), visitType(tpe), purity, loc)
     case IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), visitType(tpe), purity, loc)
     case Branch(exp, branches, tpe, purity, loc) =>
