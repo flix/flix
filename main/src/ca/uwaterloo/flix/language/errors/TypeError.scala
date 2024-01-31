@@ -852,17 +852,12 @@ object TypeError {
   }
 
   // MATT temp hack
-  case class TimeoutError(defn: String) extends TypeError with Unrecoverable {
+  case class SomeError(summary: String) extends TypeError with Unrecoverable {
 
     /**
       * Returns the primary source location of the error.
       */
     override def loc: SourceLocation = SourceLocation.Unknown
-
-    /**
-      * Returns a short description of the error message.
-      */
-    override def summary: String = "Timeout: $defn"
 
     /**
       * Returns the formatted error message.

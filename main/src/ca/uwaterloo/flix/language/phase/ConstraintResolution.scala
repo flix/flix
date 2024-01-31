@@ -134,8 +134,8 @@ object ConstraintResolution {
     case KindedAst.Def(sym, KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc), exp) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
-      if (sym.name == "Fixpoint.Ast.Datalog.toString$30158") {
-        startLogging()
+      if (sym.toString == "Graph.withinDistanceOf") {
+//        startLogging()
       }
       log(sym)
 
@@ -154,12 +154,14 @@ object ConstraintResolution {
       val tpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectLeft, loc)
       val effConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectLeft, loc)
       val constrs = tpeConstr :: effConstr :: infConstrs
-      resolve(constrs, renv, cenv, eqEnv, initialSubst).map {
+      resolve(constrs, renv, cenv, eqEnv, initialSubst).flatMap {
         case ReductionResult(_, subst, _, deferred, progress) =>
-
           stopLogging()
-
-          subst
+          if (deferred.nonEmpty) {
+            Result.Err(TypeError.SomeError("leftover constraints: " + deferred))
+          } else {
+            Result.Ok(subst)
+          }
       }.toValidation
   }
 
@@ -418,9 +420,10 @@ object ConstraintResolution {
                     simplifyClass(c, arg, classEnv, eqEnv, renv0, loc)
                 } map {
                   case res =>
-                    val prog = progress || res.exists { case (_, p) => p }
+                    // MATT always made progress?
+//                    val prog = progress || res.exists { case (_, p) => p }
                     val cs = res.flatMap { case (c, _) => c }
-                    (cs, prog)
+                    (cs, true)
                 }
             }
         }
