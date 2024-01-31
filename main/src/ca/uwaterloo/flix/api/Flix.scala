@@ -185,7 +185,6 @@ class Flix {
 
     // String
     "ToString.flix" -> LocalResource.get("/src/library/ToString.flix"),
-    "ToString2.flix" -> LocalResource.get("/src/library/ToString2.flix"),
 
     // Reflect
     "Reflect.flix" -> LocalResource.get("/src/library/Reflect.flix"),
@@ -318,6 +317,8 @@ class Flix {
 
     "Index.flix" -> LocalResource.get("/src/library/Index.flix"),
     "IndexMut.flix" -> LocalResource.get("/src/library/IndexMut.flix"),
+
+    "ToString2.flix" -> LocalResource.get("/src/library/ToString2.flix"),
   )
 
   /**
