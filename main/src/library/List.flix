@@ -1399,8 +1399,8 @@ mod List {
     ///
     pub def frequency(l: List[t]): Map[t, Int32] with Order[t] =
         def freq(ll, m) = match ll {
-            case List.Nil   => m
-            case (x::xs)    =>
+            case Nil   => m
+            case x::xs    =>
                 match Map.get(x,m) {
                     case None       => freq(xs, Map.insert(x, 1, m))
                     case Some(_)    => freq(xs, Map.update(v -> Some(v+1), x, m))
