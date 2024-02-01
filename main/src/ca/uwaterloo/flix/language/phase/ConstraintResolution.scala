@@ -135,7 +135,7 @@ object ConstraintResolution {
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
       if (sym.toString == "foo") {
-        startLogging()
+//        startLogging()
       }
       log(sym)
 
