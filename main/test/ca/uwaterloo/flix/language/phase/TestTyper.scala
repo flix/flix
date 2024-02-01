@@ -416,7 +416,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
          |
          |def foo(x: E): String = ToString.toString(x)
          |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
+    val result = compile(input, Options.TestWithLibMin.copy(threads = 1)) // MATT
     expectError[TypeError.MissingInstanceToString](result)
   }
 

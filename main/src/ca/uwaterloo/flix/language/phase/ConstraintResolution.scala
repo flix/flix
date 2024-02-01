@@ -134,8 +134,8 @@ object ConstraintResolution {
     case KindedAst.Def(sym, KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc), exp) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
-      if (sym.toString == "Graph.withinDistanceOf") {
-//        startLogging()
+      if (sym.toString == "foo") {
+        startLogging()
       }
       log(sym)
 

@@ -305,6 +305,7 @@ object ConstraintGeneration {
 
             val (tpes, effs) = exps.map(visitExp).unzip
             c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc), loc)
+            c.addTypeConstraintsM(constrs1, loc)
             c.unifyTypeM(tvar2, declaredType, loc)
             c.unifyTypeM(tvar, declaredResultType, loc)
             c.unifyEffM(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
