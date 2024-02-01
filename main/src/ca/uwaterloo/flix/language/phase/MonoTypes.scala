@@ -17,10 +17,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Kind.kindArgs
 import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
@@ -330,7 +328,7 @@ object MonoTypes {
         (Type.Cst(tc, loc), 0)
       case Type.Apply(tpe1, tpe2, loc) =>
         val (t1, toRemove) = visitTypeAux(tpe1)
-        if (toRemove > 0) (t1, toRemove-1)
+        if (toRemove > 0) (t1, toRemove - 1)
         else {
           val (t2, 0) = visitTypeAux(tpe2)
           (Type.Apply(t1, t2, loc), 0)
@@ -356,7 +354,7 @@ object MonoTypes {
   private def kindArity(kind0: Kind, acc: Int, loc: SourceLocation): Int = {
     kind0 match {
       case Kind.Star => acc
-      case Kind.Arrow(_, k2) => kindArity(k2, acc+1, loc)
+      case Kind.Arrow(_, k2) => kindArity(k2, acc + 1, loc)
       case other => throw InternalCompilerException(s"Unexpected kind '$other'", loc)
     }
   }
