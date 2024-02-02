@@ -63,7 +63,7 @@ object Options {
   /**
     * Default test options with the standard library.
     */
-  val TestWithLibAll: Options = DefaultTest
+  val TestWithLibAll: Options = DefaultTest.copy(threads=1) // MATT
 
   /**
     * Default test options with the minimal library.

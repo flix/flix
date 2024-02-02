@@ -606,9 +606,9 @@ object Unification {
     */
   def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
     Unification.unifyTypes(tpe1, tpe2, renv) match {
-      case Result.Ok((_, econstrs)) =>
+      case Result.Ok((subst, econstrs)) =>
         // check that all econstrs hold under the environment
-        econstrs.forall {
+        econstrs.map(subst.apply).forall {
           econstr =>
             EqualityEnvironment.entail(Nil, econstr, renv, eqEnv).toHardResult match {
               case Result.Ok(_) => true
