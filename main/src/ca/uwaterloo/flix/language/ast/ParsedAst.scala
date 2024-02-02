@@ -1042,7 +1042,7 @@ object ParsedAst {
       *
       * @param sp1      the position of the first character in the expression.
       * @param exp      the guarded expression.
-      * @param handlers list of the handlers (catch/with) of the try expression.
+      * @param handlers the list of catch- or with-blocks of the try expression.
       * @param sp2      the position of the last character in the expression.
       */
     case class Try(sp1: SourcePosition, exp: ParsedAst.Expression, handlers: HandlerList, sp2: SourcePosition) extends ParsedAst.Expression
