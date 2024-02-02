@@ -1919,7 +1919,7 @@ object ParsedAst {
       * @param eff   the effect to be handled.
       * @param rules the handler rules.
       */
-    case class WithHandler(eff: Name.QName, rules: Option[Seq[ParsedAst.HandlerRule]])
+    case class WithHandler(eff: Name.QName, rules: Seq[ParsedAst.HandlerRule])
 
   }
 

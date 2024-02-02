@@ -2647,7 +2647,7 @@ object Weeder {
     * `[x, ...] --> [x, ...]`
     */
   private def visitWithHandler(handler0: ParsedAst.TryHandler.WithHandler)(implicit flix: Flix): Validation[WeededAst.WithHandler, WeederError] = {
-    val handlerVals = traverse(handler0.rules.getOrElse(Seq.empty)) {
+    val handlerVals = traverse(handler0.rules) {
       case ParsedAst.HandlerRule(op, fparams0, body0) =>
         val fparamsValPrefix = if (fparams0.fparams.sizeIs == 1) visitFormalParams(ParsedAst.FormalParamList(Seq.empty), Presence.Forbidden) else Validation.success(Nil)
         val fparamsValSuffix = visitFormalParams(fparams0, Presence.Forbidden)
