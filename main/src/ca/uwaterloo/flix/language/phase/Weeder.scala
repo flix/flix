@@ -1358,7 +1358,11 @@ object Weeder {
           // [] --> [_unit]
           // [x] --> [_unit, x]
           // [x, ...] --> [x, ...]
-          val fparamsValPrefix = if (fparams0.fparams.sizeIs == 1) visitFormalParams(ParsedAst.FormalParamList(SourcePosition.Unknown, Seq.empty, SourcePosition.Unknown), Presence.Forbidden) else Validation.success(Nil)
+          val fparamsValPrefix =
+            if (fparams0.fparams.sizeIs == 1)
+              visitFormalParams(ParsedAst.FormalParamList(fparams0.sp1, Seq.empty, fparams0.sp2), Presence.Forbidden)
+            else
+              Validation.success(Nil)
           val fparamsValSuffix = visitFormalParams(fparams0, Presence.Forbidden)
           val bodyVal = visitExp(body0)
           mapN(fparamsValPrefix, fparamsValSuffix, bodyVal) {
@@ -1806,8 +1810,8 @@ object Weeder {
             Validation.success(WeededAst.Pattern.Tag(qname, lit, loc))
           case Some(pat) =>
             mapN(visit(pat)) {
-            case p => WeededAst.Pattern.Tag(qname, p, mkSL(sp1, sp2))
-          }
+              case p => WeededAst.Pattern.Tag(qname, p, mkSL(sp1, sp2))
+            }
         }
 
       case ParsedAst.Pattern.Tuple(sp1, pats, sp2) =>
