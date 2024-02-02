@@ -6,7 +6,6 @@ import ca.uwaterloo.flix.language.ast.ReducedAst.Expr._
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.ParOps
-import ca.uwaterloo.flix.util.collection.MapOps
 
 /**
   * Erase types and introduce corresponding casting
@@ -36,9 +35,8 @@ object Eraser {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Eraser") {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
-    val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
-    root.copy(defs = newDefs, enums = newEnums, effects = newEffects)
+    root.copy(defs = newDefs, effects = newEffects)
   }
 
   private def visitDef(defn: Def): Def = defn match {
@@ -151,6 +149,8 @@ object Eraser {
       Let(sym, visitExp(exp1), visitExp(exp2), visitType(tpe), purity, loc)
     case LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
       LetRec(varSym, index, defSym, visitExp(exp1), visitExp(exp2), visitType(tpe), purity, loc)
+    case Stmt(exp1, exp2, tpe, purity, loc) =>
+      Stmt(visitExp(exp1), visitExp(exp2), visitType(tpe), purity, loc)
     case Scope(sym, exp, tpe, purity, loc) =>
       Scope(sym, visitExp(exp), visitType(tpe), purity, loc)
     case TryCatch(exp, rules, tpe, purity, loc) =>
@@ -170,16 +170,6 @@ object Eraser {
 
   private def unboxExp(exp: Expr, t: MonoType, purity: Purity, loc: SourceLocation): Expr = {
     Expr.ApplyAtomic(AtomicOp.Unbox, List(exp), t, purity, loc.asSynthetic)
-  }
-
-  private def visitEnum(e: Enum): Enum = e match {
-    case Enum(ann, mod, sym, cases, tpe, loc) =>
-      Enum(ann, mod, sym, MapOps.mapValues(cases)(visitCase), visitType(tpe), loc)
-  }
-
-  private def visitCase(c: Case): Case = c match {
-    case Case(sym, tpe, loc) =>
-      Case(sym, visitType(tpe), loc)
   }
 
   private def visitEffect(eff: Effect): Effect = eff match {
