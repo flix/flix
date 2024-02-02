@@ -17,11 +17,6 @@ mod Test.Exp.Effect {
     }
 
     // @test
-    pub def handleEff03(): Bool = {
-        try true with Empty
-    }
-
-    // @test
     pub def perform01(): Unit \ Fail = {
         do Test.Exp.Effect.Fail.fail(":(")
     }
