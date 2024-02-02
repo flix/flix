@@ -601,19 +601,6 @@ object TypeInference {
           resultTyp = tpe
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expr.ScopeExit(exp1, exp2, loc) =>
-        val regionVar = Type.freshVar(Kind.Eff, loc)
-        val regionType = Type.mkRegion(regionVar, loc)
-        val p = Type.freshVar(Kind.Eff, loc)
-        for {
-          (constrs1, tpe1, _) <- visitExp(exp1)
-          (constrs2, tpe2, _) <- visitExp(exp2)
-          _ <- expectTypeM(expected = Type.mkUncurriedArrowWithEffect(Type.Unit :: Nil, p, Type.Unit, loc.asSynthetic), actual = tpe1, exp1.loc)
-          _ <- expectTypeM(expected = regionType, actual = tpe2, exp2.loc)
-          resultTyp = Type.Unit
-          resultEff = Type.mkUnion(Type.IO, regionVar, loc)
-        } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
       case KindedAst.Expr.Match(exp, rules, loc) =>
         val patterns = rules.map(_.pat)
         val guards = rules.flatMap(_.guard)

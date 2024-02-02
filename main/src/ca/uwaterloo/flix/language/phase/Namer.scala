@@ -693,11 +693,6 @@ object Namer {
         case e => NamedAst.Expr.Scope(sym, regionVar, e, loc)
       }
 
-    case DesugaredAst.Expr.ScopeExit(exp1, exp2, loc) =>
-      mapN(visitExp(exp1, ns0), visitExp(exp2, ns0)) {
-        case (e1, e2) => NamedAst.Expr.ScopeExit(e1, e2, loc)
-      }
-
     case DesugaredAst.Expr.Match(exp, rules, loc) =>
       val expVal = visitExp(exp, ns0)
       val rulesVal = traverse(rules) {

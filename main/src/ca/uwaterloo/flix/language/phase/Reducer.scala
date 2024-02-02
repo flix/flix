@@ -109,6 +109,11 @@ object Reducer {
       val e2 = visitExpr(exp2)
       Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
+    case Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
+      val e1 = visitExpr(exp1)
+      val e2 = visitExpr(exp2)
+      Expr.Stmt(e1, e2, tpe, purity, loc)
+
     case Expr.Scope(sym, exp, tpe, purity, loc) =>
       lctx.lparams.addOne(LocalParam(sym, MonoType.Region))
       val e = visitExpr(exp)
@@ -219,6 +224,8 @@ object Reducer {
 
       case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
 
+      case Expr.Stmt(exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
+
       case Expr.Scope(_, exp, _, _, _) => visitExp(exp)
 
       case Expr.TryCatch(exp, rules, _, _, _) => visitExp(exp) ++ visitExps(rules.map(_.exp))
@@ -246,15 +253,6 @@ object Reducer {
       case (sacc, defn) => sacc ++ visitDefn(defn)
     }, _ ++ _)
 
-    val enumTypes = root.enums.foldLeft(Set.empty[MonoType]) {
-      case (sacc, (_, e)) =>
-        // the enum type itself
-        val eType = e.tpe
-        // the types inside the cases
-        val caseTypes = e.cases.values.map(_.tpe)
-        sacc + eType ++ caseTypes
-    }
-
     val effectTypes = root.effects.foldLeft(Set.empty[MonoType]) {
       case (sacc, (_, e)) =>
         val opTypes = e.ops.map{
@@ -268,7 +266,7 @@ object Reducer {
         sacc ++ opTypes
     }
 
-    val result = defTypes ++ enumTypes ++ effectTypes
+    val result = defTypes ++ effectTypes
 
     nestedTypesOf(Set.empty, Queue.from(result))
   }

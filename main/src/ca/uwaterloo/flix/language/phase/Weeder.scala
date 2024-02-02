@@ -800,8 +800,6 @@ object Weeder {
           case ("VECTOR_GET", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.VectorLoad(e1, e2, loc))
           case ("VECTOR_LENGTH", e1 :: Nil) => Validation.success(WeededAst.Expr.VectorLength(e1, loc))
 
-          case ("SCOPE_EXIT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.ScopeExit(e1, e2, loc))
-
           case _ =>
             val err = UndefinedIntrinsic(loc)
             Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
@@ -2393,11 +2391,11 @@ object Weeder {
     *
     * Checks for [[DuplicateFormalParam]], [[MissingFormalParamAscription]], and [[DuplicateFormalParam]].
     */
-  private def visitFormalParams(fparams: Seq[ParsedAst.FormalParam], typePresence: Presence): Validation[List[WeededAst.FormalParam], WeederError] = {
+  private def visitFormalParams(fparams: ParsedAst.FormalParamList, typePresence: Presence): Validation[List[WeededAst.FormalParam], WeederError] = {
     //
     // Special Case: Check if no formal parameters are present. If so, introduce a unit parameter.
     //
-    if (fparams.isEmpty) {
+    if (fparams.fparams.isEmpty) {
       val sp1 = SourcePosition.Unknown
       val sp2 = SourcePosition.Unknown
       val loc = mkSL(sp1, sp2)
@@ -2411,7 +2409,7 @@ object Weeder {
     //
     val seen = mutable.Map.empty[String, ParsedAst.FormalParam]
     val errors = mutable.ArrayBuffer.empty[WeederError.DuplicateFormalParam]
-    for (fparam <- fparams) {
+    for (fparam <- fparams.fparams) {
       seen.get(fparam.ident.name) match {
         case None =>
           if (!fparam.ident.name.startsWith("_")) {
@@ -2428,7 +2426,7 @@ object Weeder {
       }
     }
 
-    traverse(fparams)(visitFormalParam(_, typePresence)).withSoftFailures(errors)
+    traverse(fparams.fparams)(visitFormalParam(_, typePresence)).withSoftFailures(errors)
   }
 
   /**
@@ -2651,7 +2649,7 @@ object Weeder {
   private def visitWithHandler(handler0: ParsedAst.TryHandler.WithHandler)(implicit flix: Flix): Validation[WeededAst.WithHandler, WeederError] = {
     val handlerVals = traverse(handler0.rules.getOrElse(Seq.empty)) {
       case ParsedAst.HandlerRule(op, fparams0, body0) =>
-        val fparamsValPrefix = if (fparams0.sizeIs == 1) visitFormalParams(Seq.empty, Presence.Forbidden) else Validation.success(Nil)
+        val fparamsValPrefix = if (fparams0.fparams.sizeIs == 1) visitFormalParams(ParsedAst.FormalParamList(Seq.empty), Presence.Forbidden) else Validation.success(Nil)
         val fparamsValSuffix = visitFormalParams(fparams0, Presence.Forbidden)
         val bodyVal = visitExp(body0)
         mapN(fparamsValPrefix, fparamsValSuffix, bodyVal) {
