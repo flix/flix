@@ -222,30 +222,20 @@ object Verifier {
           check(expected = argTpe2)(t2, loc)
           check(expected = tpe)(actual = resTpe, loc)
 
+        case AtomicOp.Is(sym) =>
+          val List(t1) = ts
+          check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
+          check(expected = MonoType.Bool)(actual = tpe, loc)
+
         case AtomicOp.Tag(sym) =>
-          root.enums.get(sym.enumSym) match {
-            case None => throw InternalCompilerException(s"Unknown enum sym: '$sym'", loc)
-            case Some(e) => e.cases.get(sym) match {
-              case None => throw InternalCompilerException(s"Unknown enum case sym: '$sym' of '${e.sym}'", loc)
-              case Some(caze) =>
-                val List(t) = ts
-                check(expected = caze.tpe)(t, loc)
-                check(expected = e.tpe)(tpe, loc)
-                tpe
-            }
-          }
+          val List(t1) = ts
+          check(expected = MonoType.Enum(sym.enumSym))(actual = tpe, loc)
+
         case AtomicOp.Untag(sym) =>
-          root.enums.get(sym.enumSym) match {
-            case None => throw InternalCompilerException(s"Unknown enum sym: '$sym'", loc)
-            case Some(e) => e.cases.get(sym) match {
-              case None => throw InternalCompilerException(s"Unknown enum case sym: '$sym' of '${e.sym}'", loc)
-              case Some(caze) =>
-                val List(t) = ts
-                check(expected = e.tpe)(t, loc)
-                check(expected = caze.tpe)(tpe, loc)
-                tpe
-            }
-          }
+          val List(t1) = ts
+          check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
+          tpe
+
         case _ => tpe // TODO: VERIFIER: Add rest
       }
 
@@ -302,6 +292,11 @@ object Verifier {
       val letBoundType = visitExpr(exp1)(root, env1, lenv)
       val bodyType = visitExpr(exp2)(root, env1, lenv)
       checkEq(bodyType, tpe, loc)
+
+    case Expr.Stmt(exp1, exp2, tpe, _, loc) =>
+      val firstType = visitExpr(exp1)
+      val secondType = visitExpr(exp2)
+      checkEq(secondType, tpe, loc)
 
     case Expr.Scope(sym, exp, tpe, _, loc) =>
       checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Region), lenv), loc)

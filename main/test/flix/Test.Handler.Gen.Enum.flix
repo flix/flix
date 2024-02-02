@@ -28,7 +28,7 @@ mod Test.Handler.Gen.Enum {
         }
 
     def range(a: Int32, b: Int32): List[Option[Int32]] =
-        List.unfold(i -> if (i >= b) None else Some((Some(i), i + 1)), (a))
+        List.unfold(i -> if (i >= b) None else Some((Some(i), i + 1)), a)
 
     @Test
     def testSample01(): Bool =

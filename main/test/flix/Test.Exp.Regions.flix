@@ -1383,21 +1383,4 @@ mod Test.Exp.Regions {
             }
         }
 
-    @test
-    def testRegionExit01(): Bool \ IO = region rc1 {
-        let x  = ref false @ rc1;
-        region rc2 {
-            spawn { Thread.sleep(Time.Duration.fromMilliSeconds(10)); x := true } @ rc2
-        };
-        deref x
-    }
-
-    @test
-    def testRegionExit02(): Bool \ IO = region rc1 {
-        let x = ref false @ rc1;
-        region rc2 {
-            $SCOPE_EXIT$(() -> x := true, rc2)
-        };
-        deref x
-    }
 }

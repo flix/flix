@@ -1,7 +1,7 @@
 /**
  * An implementation of the parity domain lifted over the constant propagation domain.
  */
-namespace Domain/ConstantParity {
+mod Domain.ConstantParity {
 
     ///
     /// The elements of the constant-parity lattice.
@@ -224,7 +224,7 @@ namespace Domain/ConstantParity {
     ///
     /// Returns `true` iff the given number `n` is odd.
     ///
-    pub def isOdd(n: BigInt): Bool = (n rem 2ii) != 0ii
+    pub def isOdd(n: BigInt): Bool = (n `rem` 2ii) != 0ii
 
     ///
     /// Returns `true` iff the given number `n` is even.

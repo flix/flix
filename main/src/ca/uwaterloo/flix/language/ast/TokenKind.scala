@@ -163,8 +163,6 @@ object TokenKind {
 
   case object KeywordImport extends TokenKind
 
-  case object KeywordImpure extends TokenKind
-
   case object KeywordInject extends TokenKind
 
   case object KeywordInline extends TokenKind
@@ -236,6 +234,8 @@ object TokenKind {
   case object KeywordTypeMatch extends TokenKind
 
   case object KeywordUncheckedCast extends TokenKind
+
+  case object KeywordUniv extends TokenKind
 
   case object KeywordUse extends TokenKind
 

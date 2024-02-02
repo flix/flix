@@ -1,5 +1,5 @@
 /// A function that sends every element of a list
-def sendAll(l: List[Int32], s: Sender[Int32, r]): Unit \ IO =
+def sendAll(l: List[Int32], s: Sender[Int32, r]): Unit \ r + IO =
     match l {
         case Nil     => ()
         case x :: xs => Channel.send(x, s); sendAll(xs, s)
@@ -7,7 +7,7 @@ def sendAll(l: List[Int32], s: Sender[Int32, r]): Unit \ IO =
 
 /// A function that receives n elements
 /// and collects them into a list.
-def recvN(n: Int32, r: Receiver[Int32, r]): List[Int32] \ IO =
+def recvN(n: Int32, r: Receiver[Int32, r]): List[Int32] \ r + IO =
     match n {
         case 0 => Nil
         case _ => Channel.recv(r) :: recvN(n - 1, r)

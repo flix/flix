@@ -81,9 +81,8 @@ object JvmBackend {
       val functionAndClosureClasses = GenFunAndClosureClasses.gen(root.defs)
       val closureAbstractClasses = GenClosureAbstractClasses.gen(types)
 
-      // Generate enum classes.
-      val enumInterfaces = GenEnumInterfaces.gen(root.enums.values)
-      val tagClasses = GenTagClasses.gen(root.enums.values.flatMap(_.cases.values))
+      val taggedAbstractClass = Map(genClass(BackendObjType.Tagged))
+      val tagClasses = BackendType.erasedTypes.map(tpe => genClass(BackendObjType.Tag(tpe))).toMap
 
       val tupleClasses = erasedTuplesTypes.map(genClass).toMap
 
@@ -137,7 +136,7 @@ object JvmBackend {
         functionInterfaces,
         functionAndClosureClasses,
         closureAbstractClasses,
-        enumInterfaces,
+        taggedAbstractClass,
         tagClasses,
         tupleClasses,
         recordInterfaces,
@@ -179,7 +178,7 @@ object JvmBackend {
       flix.subphase("WriteClasses") {
         for ((_, jvmClass) <- allClasses) {
           flix.subtask(jvmClass.name.toBinaryName, sample = true)
-          JvmOps.writeClass(flix.options.output.get, jvmClass)
+          JvmOps.writeClass(flix.options.output.get.resolve("class/"), jvmClass)
         }
       }
     }

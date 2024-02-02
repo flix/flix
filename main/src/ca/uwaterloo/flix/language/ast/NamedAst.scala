@@ -50,7 +50,7 @@ object NamedAst {
 
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: TypeParams, derives: Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
-    case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: TypeParams, tpe: Type, loc: SourceLocation) extends Declaration
+    case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: TypeParams, tpe: Type, loc: SourceLocation) extends Declaration
 
     case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, loc: SourceLocation) extends Declaration
 
@@ -122,8 +122,6 @@ object NamedAst {
     case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends Expr
 
     case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: Expr, loc: SourceLocation) extends Expr
-
-    case class ScopeExit(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
 

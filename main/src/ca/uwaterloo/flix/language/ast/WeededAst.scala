@@ -49,7 +49,7 @@ object WeededAst {
 
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, index: TypeParam, tparams: TypeParams, derives: Derivations, cases: List[RestrictableCase], loc: SourceLocation) extends Declaration
 
-    case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparams: TypeParams, tpe: Type, loc: SourceLocation) extends Declaration
+    case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: TypeParams, tpe: Type, loc: SourceLocation) extends Declaration
 
     case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparam: TypeParam, kind: Kind, loc: SourceLocation)
 
@@ -116,8 +116,6 @@ object WeededAst {
     case class LetImport(op: JvmOp, exp: Expr, loc: SourceLocation) extends Expr
 
     case class Scope(ident: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
-
-    case class ScopeExit(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
 

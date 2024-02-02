@@ -1,7 +1,7 @@
 //
 // An implementation of the parity domain.
 //
-namespace Domain/Parity {
+mod Domain.Parity {
 
     ///
     /// The elements of the parity lattice.

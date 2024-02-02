@@ -148,6 +148,11 @@ object Bootstrap {
   private def getBuildDirectory(p: Path): Path = p.resolve("./build/").normalize()
 
   /**
+    * Returns the directory of the output .class-files relative to the given path `p`.
+    */
+  private def getClassDirectory(p: Path): Path = getBuildDirectory(p).resolve("./class/")
+
+  /**
     * Returns the path to the LICENSE file relative to the given path `p`.
     */
   private def getLicenseFile(p: Path): Path = p.resolve("./LICENSE.md").normalize()
@@ -527,8 +532,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       // Add all class files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-      for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(Bootstrap.getBuildDirectory(projectPath))
-        .map { path => (path, Bootstrap.convertPathToRelativeFileName(Bootstrap.getBuildDirectory(projectPath), path)) }
+      for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(Bootstrap.getClassDirectory(projectPath))
+        .map { path => (path, Bootstrap.convertPathToRelativeFileName(Bootstrap.getClassDirectory(projectPath), path)) }
         .sortBy(_._2)) {
         Bootstrap.addToZip(zip, fileNameWithSlashes, buildFile)
       }
