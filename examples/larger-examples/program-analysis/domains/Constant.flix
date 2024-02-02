@@ -17,14 +17,13 @@ mod Domain.Constant {
     ///
     /// Returns `true` iff `e1` is less than or equal to `e2`.
     ///
-//    #reflexive #antiSymmetric #transitive #leastElement(Bot) #greatestElement(Top)
+//    #reflexive #antiSymmetric #transitive #leastElement(Constant.Bot) #greatestElement(Constant.Top)
     pub def leq(e1: Constant, e2: Constant): Bool =
-        use Constant.{Top, Cst, Bot};
         match (e1, e2) {
-            case (Bot, _)           => true
-            case (Cst(n1), Cst(n2)) => n1 == n2
-            case (_, Top)           => true
-            case _                  => false
+            case (Constant.Bot, _)                    => true
+            case (Constant.Cst(n1), Constant.Cst(n2)) => n1 == n2
+            case (_, Constant.Top)                    => true
+            case _                                    => false
         }
 
     ///
@@ -32,12 +31,11 @@ mod Domain.Constant {
     ///
 //    #upperBound #leastUpperBound #commutative #associative
     pub def lub(e1: Constant, e2: Constant): Constant =
-        use Constant.{Top, Cst, Bot};
         match (e1, e2) {
-            case (Bot, x)           => x
-            case (x, Bot)           => x
-            case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Top
-            case _                  => Top
+            case (Constant.Bot, x)                    => x
+            case (x, Constant.Bot)                    => x
+            case (Constant.Cst(n1), Constant.Cst(n2)) => if (n1 == n2) e1 else Constant.Top
+            case _                                    => Constant.Top
         }
 
     ///
@@ -45,12 +43,11 @@ mod Domain.Constant {
     ///
 //    #lowerBound #greatestLowerBound #commutative #associative
     pub def glb(e1: Constant, e2: Constant): Constant =
-        use Constant.{Top, Cst, Bot};
         match (e1, e2) {
-            case (Top, x)           => x
-            case (x, Top)           => x
-            case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Bot
-            case _                  => Bot
+            case (Constant.Top, x)                    => x
+            case (x, Constant.Top)                    => x
+            case (Constant.Cst(n1), Constant.Cst(n2)) => if (n1 == n2) e1 else Constant.Bot
+            case _                                    => Constant.Bot
         }
 
     ///
@@ -58,11 +55,10 @@ mod Domain.Constant {
     ///
 //    #nonNegative
     pub def height(e: Constant): BigInt =
-        use Constant.{Top, Cst, Bot};
         match e {
-            case Top    => 0ii
-            case Cst(_) => 1ii
-            case Bot    => 2ii
+            case Constant.Top    => 0ii
+            case Constant.Cst(_) => 1ii
+            case Constant.Bot    => 2ii
         }
 
     ///
@@ -76,11 +72,10 @@ mod Domain.Constant {
 //    #safe1(x -> x + 1)
 //    #strict1 #monotone1
     pub def inc(e: Constant): Constant =
-        use Constant.{Top, Cst, Bot};
         match e {
-            case Bot    => Bot
-            case Cst(n) => Cst(n + 1)
-            case Top    => Top
+            case Constant.Bot    => Constant.Bot
+            case Constant.Cst(n) => Constant.Cst(n + 1)
+            case Constant.Top    => Constant.Top
         }
 
     ///
@@ -89,11 +84,10 @@ mod Domain.Constant {
 //    #safe1(x -> x - 1)
 //    #strict1 #monotone1
     pub def dec(e: Constant): Constant =
-        use Constant.{Top, Cst, Bot};
         match e {
-            case Bot    => Bot
-            case Cst(n) => Cst(n - 1)
-            case Top    => Top
+            case Constant.Bot    => Constant.Bot
+            case Constant.Cst(n) => Constant.Cst(n - 1)
+            case Constant.Top    => Constant.Top
         }
 
     ///
@@ -102,12 +96,11 @@ mod Domain.Constant {
 //    #safe2((x, y) -> x + y)
 //    #strict2 #monotone2 #commutative #associative
     pub def plus(e1: Constant, e2: Constant): Constant =
-        use Constant.{Top, Cst, Bot};
         match (e1, e2) {
-            case (Bot, _)           => Bot
-            case (_, Bot)           => Bot
-            case (Cst(n1), Cst(n2)) => Cst(n1 + n2)
-            case _                  => Top
+            case (Constant.Bot, _)                    => Constant.Bot
+            case (_, Constant.Bot)                    => Constant.Bot
+            case (Constant.Cst(n1), Constant.Cst(n2)) => Constant.Cst(n1 + n2)
+            case _                                    => Constant.Top
         }
 
     ///
@@ -116,12 +109,11 @@ mod Domain.Constant {
 //    #safe2((x, y) -> x - y)
 //    #strict2 #monotone2
     pub def minus(e1: Constant, e2: Constant): Constant =
-        use Constant.{Top, Cst, Bot};
         match (e1, e2) {
-            case (Bot, _)           => Bot
-            case (_, Bot)           => Bot
-            case (Cst(n1), Cst(n2)) => Cst(n1 - n2)
-            case _                  => Top
+            case (Constant.Bot, _)                    => Constant.Bot
+            case (_, Constant.Bot)                    => Constant.Bot
+            case (Constant.Cst(n1), Constant.Cst(n2)) => Constant.Cst(n1 - n2)
+            case _                                    => Constant.Top
         }
 
     ///
@@ -130,12 +122,11 @@ mod Domain.Constant {
 //    #safe2((x, y) -> x * y)
 //    #strict2 #monotone2 #commutative #associative
     pub def times(e1: Constant, e2: Constant): Constant =
-        use Constant.{Top, Cst, Bot};
         match (e1, e2) {
-            case (Bot, _)           => Bot
-            case (_, Bot)           => Bot
-            case (Cst(n1), Cst(n2)) => Cst(n1 * n2)
-            case _                  => Top
+            case (Constant.Bot, _)                    => Constant.Bot
+            case (_, Constant.Bot)                    => Constant.Bot
+            case (Constant.Cst(n1), Constant.Cst(n2)) => Constant.Cst(n1 * n2)
+            case _                                    => Constant.Top
         }
 
     ///
@@ -144,12 +135,11 @@ mod Domain.Constant {
 //    #safe2((x, y) -> x / y)
 //    #strict2 #monotone2
     pub def divide(e1: Constant, e2: Constant): Constant =
-        use Constant.{Top, Cst, Bot};
         match (e1, e2) {
-            case (Bot, _)           => Bot
-            case (_, Bot)           => Bot
-            case (Cst(n1), Cst(n2)) => Cst(n1 / n2)
-            case _                  => Top
+            case (Constant.Bot, _)                    => Constant.Bot
+            case (_, Constant.Bot)                    => Constant.Bot
+            case (Constant.Cst(n1), Constant.Cst(n2)) => Constant.Cst(n1 / n2)
+            case _                                    => Constant.Top
         }
 
     ///
@@ -158,12 +148,11 @@ mod Domain.Constant {
 //    #safe2((x, y) -> x `rem` y)
 //    #strict2 #monotone2
     pub def modulo(e1: Constant, e2: Constant): Constant =
-        use Constant.{Top, Cst, Bot};
         match (e1, e2) {
-            case (Bot, _)           => Bot
-            case (_, Bot)           => Bot
-            case (Cst(n1), Cst(n2)) => Cst(n1 `Int32.rem` n2)
-            case _                  => Top
+            case (Constant.Bot, _)                    => Constant.Bot
+            case (_, Constant.Bot)                    => Constant.Bot
+            case (Constant.Cst(n1), Constant.Cst(n2)) => Constant.Cst(n1 `Int32.rem` n2)
+            case _                                    => Constant.Top
         }
 
     ///
@@ -172,11 +161,10 @@ mod Domain.Constant {
 //    #safe1(x -> ~~~x)
 //    #strict1 #monotone1
     pub def negate(e: Constant): Constant =
-        use Constant.{Top, Cst, Bot};
         match e {
-            case Bot       => Bot
-            case Cst(n)    => Cst(Int32.bitwiseNot(n))
-            case Top       => Top
+            case Constant.Bot    => Constant.Bot
+            case Constant.Cst(n) => Constant.Cst(Int32.bitwiseNot(n))
+            case Constant.Top    => Constant.Top
         }
 
     ///
@@ -185,12 +173,11 @@ mod Domain.Constant {
 //    #safe2((x, y) -> x &&& y)
 //    #strict2 #monotone2 #commutative #associative
     pub def and(e1: Constant, e2: Constant): Constant =
-        use Constant.{Top, Cst, Bot};
         match (e1, e2) {
-            case (Bot, _)           => Bot
-            case (_, Bot)           => Bot
-            case (Cst(n1), Cst(n2)) => Cst(n1 `Int32.bitwiseAnd` n2)
-            case _                  => Top
+            case (Constant.Bot, _)                    => Constant.Bot
+            case (_, Constant.Bot)                    => Constant.Bot
+            case (Constant.Cst(n1), Constant.Cst(n2)) => Constant.Cst(n1 `Int32.bitwiseAnd` n2)
+            case _                                    => Constant.Top
         }
 
     ///
@@ -199,12 +186,11 @@ mod Domain.Constant {
 //    #safe2((x, y) -> x ||| y)
 //    #strict2 #monotone2 #commutative #associative
     pub def or(e1: Constant, e2: Constant): Constant =
-        use Constant.{Top, Cst, Bot};
         match (e1, e2) {
-            case (Bot, _)           => Bot
-            case (_, Bot)           => Bot
-            case (Cst(n1), Cst(n2)) => Cst(n1 `Int32.bitwiseOr` n2)
-            case _                  => Top
+            case (Constant.Bot, _)                    => Constant.Bot
+            case (_, Constant.Bot)                    => Constant.Bot
+            case (Constant.Cst(n1), Constant.Cst(n2)) => Constant.Cst(n1 `Int32.bitwiseOr` n2)
+            case _                                    => Constant.Top
         }
 
     ///
@@ -213,12 +199,11 @@ mod Domain.Constant {
 //    #safe2((x, y) -> x ^^^ y)
 //    #strict2 #monotone2 #commutative #associative
     pub def xor(e1: Constant, e2: Constant): Constant =
-        use Constant.{Top, Cst, Bot};
         match (e1, e2) {
-            case (Bot, _)           => Bot
-            case (_, Bot)           => Bot
-            case (Cst(n1), Cst(n2)) => Cst(n1 `Int32.bitwiseXor` n2)
-            case _                  => Top
+            case (Constant.Bot, _)                    => Constant.Bot
+            case (_, Constant.Bot)                    => Constant.Bot
+            case (Constant.Cst(n1), Constant.Cst(n2)) => Constant.Cst(n1 `Int32.bitwiseXor` n2)
+            case _                                    => Constant.Top
         }
 
     ///
@@ -227,12 +212,11 @@ mod Domain.Constant {
 //    #safe2((x, y) -> Int32.shiftLeft(x, y))
 //    #strict2 #monotone2
     pub def leftShift(e1: Constant, e2: Constant): Constant =
-        use Constant.{Top, Cst, Bot};
         match (e1, e2) {
-            case (Bot, _)           => Bot
-            case (_, Bot)           => Bot
-            case (Cst(n1), Cst(n2)) => Cst(Int32.leftShift(n1, n2))
-            case _                  => Top
+            case (Constant.Bot, _)                    => Constant.Bot
+            case (_, Constant.Bot)                    => Constant.Bot
+            case (Constant.Cst(n1), Constant.Cst(n2)) => Constant.Cst(Int32.leftShift(n1, n2))
+            case _                                    => Constant.Top
         }
 
     ///
@@ -242,12 +226,11 @@ mod Domain.Constant {
 //    #safe2((x, y) -> Int32.shiftRight(x, y))
 //    #strict2 #monotone2
     pub def rightShift(e1: Constant, e2: Constant): Constant =
-        use Constant.{Top, Cst, Bot};
         match (e1, e2) {
-            case (Bot, _)           => Bot
-            case (_, Bot)           => Bot
-            case (Cst(n1), Cst(n2)) => Cst(Int32.rightShift(n1, n2))
-            case _                  => Top
+            case (Constant.Bot, _)                    => Constant.Bot
+            case (_, Constant.Bot)                    => Constant.Bot
+            case (Constant.Cst(n1), Constant.Cst(n2)) => Constant.Cst(Int32.rightShift(n1, n2))
+            case _                                    => Constant.Top
         }
 
     instance LowerBound[Constant] {
@@ -282,9 +265,9 @@ mod Domain.Constant {
 
 //    law greatestElement(leq: (Constant, Constant) -> Bool, top: Constant): Bool = Bounded.greatestElement(top, leq)
 
-//    law strict1(f: Constant -> Constant): Bool = Bounded.strict1(f, Bot, Bot)
+//    law strict1(f: Constant -> Constant): Bool = Bounded.strict1(f, Constant.Bot, Constant.Bot)
 
-//    law strict2(f: (Constant, Constant) -> Constant): Bool = Bounded.strict2(f, Bot, Bot, Bot)
+//    law strict2(f: (Constant, Constant) -> Constant): Bool = Bounded.strict2(f, Constant.Bot, Constant.Bot, Constant.Bot)
 
 //    law monotone1(f: Constant -> Constant): Bool = PartialOrder.monotone1(f, leq, leq)
 
