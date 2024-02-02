@@ -1774,9 +1774,11 @@ object ParsedAst {
   /**
     * Wrapper for a list of [[ParsedAst.FormalParam]].
     *
+    * @param sp1     the position of the opening parenthesis.
     * @param fparams the list of [[FormalParam]]s.
+    * @param sp2     the position of the closing parenthesis.
     */
-  case class FormalParamList(fparams: Seq[ParsedAst.FormalParam])
+  case class FormalParamList(sp1: SourcePosition, fparams: Seq[ParsedAst.FormalParam], sp2: SourcePosition)
 
   /**
     * A common super-type for predicate parameters.
