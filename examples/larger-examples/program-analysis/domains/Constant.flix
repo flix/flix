@@ -250,6 +250,7 @@ mod Domain.Constant {
             case _                  => Top
         }
 
+/*
     ///
     /// Over-approximates `equal`.
     ///
@@ -297,6 +298,7 @@ mod Domain.Constant {
 //    #Bounded.strict2(Bot, Bot, Belnap.Belnap.Bot)
 //    #PartialOrder.monotone2(leq, leq, Belnap.leq)
     pub def lessEqual(e1: Constant, e2: Constant): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
+*/
 
     instance LowerBound[Constant] {
         pub def minValue(): Constant = Constant.Bot
