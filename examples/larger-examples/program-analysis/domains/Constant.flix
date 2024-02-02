@@ -250,56 +250,6 @@ mod Domain.Constant {
             case _                  => Top
         }
 
-/*
-    ///
-    /// Over-approximates `equal`.
-    ///
-//    #PartialOrder.safe2((x, y) -> x == y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap.Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-//    #commutative
-    pub def eq(e1: Constant, e2: Constant): Belnap.Belnap =
-        use Constant.{Top, Cst, Bot};
-        match (e1, e2) {
-            case (Bot, _)           => Belnap.Belnap.Bot
-            case (_, Bot)           => Belnap.Belnap.Bot
-            case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 == n2)
-            case _                  => Belnap.Belnap.Top
-        }
-
-    ///
-    /// Over-approximates `not equal`.
-    ///
-//    #PartialOrder.safe2((x, y) -> x != y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap.Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-//    #commutative
-    pub def neq(e1: Constant, e2: Constant): Belnap.Belnap = Belnap.not(eq(e1, e2))
-
-    ///
-    /// Over-approximates `less than`.
-    ///
-//    #PartialOrder.safe2((x, y) -> x < y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap.Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    pub def less(e1: Constant, e2: Constant): Belnap.Belnap =
-        use Constant.{Top, Cst, Bot};
-        match (e1, e2) {
-            case (Bot, _)           => Belnap.Belnap.Bot
-            case (_, Bot)           => Belnap.Belnap.Bot
-            case (Cst(n1), Cst(n2)) => Belnap.alpha(n1 < n2)
-            case _                  => Belnap.Belnap.Top
-        }
-
-    ///
-    /// Over-approximates `less than or equal`.
-    ///
-//    #PartialOrder.safe2((x, y) -> x <= y, alpha, Belnap.alpha, Belnap.leq)
-//    #Bounded.strict2(Bot, Bot, Belnap.Belnap.Bot)
-//    #PartialOrder.monotone2(leq, leq, Belnap.leq)
-    pub def lessEqual(e1: Constant, e2: Constant): Belnap.Belnap = Belnap.or(e1 `less` e2, e1 `eq` e2)
-*/
-
     instance LowerBound[Constant] {
         pub def minValue(): Constant = Constant.Bot
     }
