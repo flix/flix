@@ -689,7 +689,7 @@ object Desugar {
       handlers.foldLeft(e) {
         case (acc, handler) =>
           val rs = handler.rules.map(visitHandlerRule)
-          Expr.TryWith(acc, handler.eff, rs, loc.asSynthetic)
+          Expr.TryWith(acc, handler.eff, rs, loc)
       }
 
     case WeededAst.Expr.Do(op, exps, loc) =>
