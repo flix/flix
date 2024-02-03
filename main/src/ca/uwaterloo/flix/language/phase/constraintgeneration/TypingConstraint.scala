@@ -22,6 +22,9 @@ import ca.uwaterloo.flix.language.phase.unification.Substitution
 sealed trait TypingConstraint {
 
   lazy val index: (Int, Int, Int) = this match {
+    case TypingConstraint.Equality(tvar1: Type.Var, Type.Pure, _, _) => (0, 0, 0)
+    case TypingConstraint.Equality(Type.Pure, tvar2: Type.Var, _, _) => (0, 0, 0)
+    case TypingConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, _, _) if tvar1 != tvar2 => (0, 0, 0)
     case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested, loc) => (0, 0, 0)
     case TypingConstraint.Equality(tpe1, tpe2, prov, loc) =>
       val tvars = (tpe1.typeVars ++ tpe2.typeVars)
