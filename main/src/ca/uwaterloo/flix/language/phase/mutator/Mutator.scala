@@ -19,11 +19,12 @@ object Mutator {
     ArithBinaryMutator,
   )
 
+  // TODO: refactor logic to run mutants iteratively and not collect all of them
   def run(root: Root)(implicit flix: Flix): List[Validation[Root, CompilationMessage]] = flix.phase("Mutator") {
-    root.defs.values.toList.map { defn =>
-      val mutatedDefs = mutateDef(defn)
-
-      root.copy(defs = root.defs + mutatedDefs.map(mutatedDef => mutatedDef.sym -> mutatedDef)).toSuccess
+    root.defs.values.toList.flatMap { defn =>
+      mutateDef(defn).map { mutatedDef =>
+        root.copy(defs = root.defs + (mutatedDef.sym -> mutatedDef)).toSuccess
+      }
     }
   }
 
