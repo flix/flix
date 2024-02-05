@@ -23,19 +23,19 @@ instance PartialOrder[Dist] {
 
 instance JoinLattice[Dist] {
     pub def leastUpperBound(x: Dist, y: Dist): Dist = match (x, y) {
-        case (Dist.Bot, _)           => y
-        case (_, Dist.Bot)           => x
+        case (Dist.Bot, _)                => y
+        case (_, Dist.Bot)                => x
         case (Dist.Dst(n1), Dist.Dst(n2)) => Dist.Dst(Int32.min(n1, n2))
-        case _                  => Dist.Top
+        case _                            => Dist.Top
     }
 }
 
 instance MeetLattice[Dist] {
     pub def greatestLowerBound(x: Dist, y: Dist): Dist = match (x, y) {
-        case (Dist.Top, z) => z
-        case (z, Dist.Top) => z
+        case (Dist.Top, z)                => z
+        case (z, Dist.Top)                => z
         case (Dist.Dst(n1), Dist.Dst(n2)) => Dist.Dst(Int32.max(n1, n2))
-        case _ => Dist.Bot
+        case _                            => Dist.Bot
     }
 }
 
@@ -44,10 +44,10 @@ instance MeetLattice[Dist] {
 /// Returns the sum of two given distances.
 ///
 def sum(e1: Dist, e2: Dist): Dist = match (e1, e2) {
-  case (Dist.Top, _) => Dist.Top
-  case (_, Dist.Top) => Dist.Top
+  case (Dist.Top, _)                => Dist.Top
+  case (_, Dist.Top)                => Dist.Top
   case (Dist.Dst(n1), Dist.Dst(n2)) => Dist.Dst(n1 + n2)
-  case _ => Dist.Bot
+  case _                            => Dist.Bot
 }
 
 ///
@@ -55,9 +55,9 @@ def sum(e1: Dist, e2: Dist): Dist = match (e1, e2) {
 /// Returns `true` if the given distance `d` is negative.
 ///
 def negativeDist(d: Dist): Bool = match d {
-  case Dist.Top => true
+  case Dist.Top    => true
   case Dist.Dst(x) => x < 0
-  case _ => false
+  case _           => false
 }
 
 def main(): Unit \ IO =
