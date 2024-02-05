@@ -221,7 +221,7 @@ mod Set {
         match purityOf2(cmp) {
             case Purity.Pure(g) =>
                 if (useParallelEvaluation(s))
-                    let h = (kl, _, kr, _) -> g((kl, kr));
+                    let h = (kl, _, kr, _) -> g(kl, kr);
                     let Set(t) = s;
                     let o = RedBlackTree.parMinimumBy(threads() - 1, h, t);
                     Option.map(fst, o)
@@ -252,7 +252,7 @@ mod Set {
         match purityOf2(cmp) {
             case Purity.Pure(g) =>
                 if (useParallelEvaluation(s))
-                    let h = (kl, _, kr, _) -> g((kl, kr));
+                    let h = (kl, _, kr, _) -> g(kl, kr);
                     let Set(t) = s;
                     let o = RedBlackTree.parMaximumBy(threads() - 1, h, t);
                     Option.map(fst, o)
