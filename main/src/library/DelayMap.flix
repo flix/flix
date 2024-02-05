@@ -157,7 +157,7 @@ mod DelayMap {
         match purityOf2(f) {
             case Purity.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    let h = (k, v) -> g((k, force v));
+                    let h = (k, v) -> g(k, force v);
                     let DMap(t) = m;
                     RedBlackTree.parCount(threads() - 1, h, t)
                 else
@@ -199,7 +199,7 @@ mod DelayMap {
         match purityOf2(cmp) {
             case Purity.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    let h = (kl, _, kr, _) -> g((kl, kr));
+                    let h = (kl, _, kr, _) -> g(kl, kr);
                     let DMap(t) = m;
                     let res = RedBlackTree.parMinimumBy(threads() - 1, h, t);
                     match res {
@@ -232,7 +232,7 @@ mod DelayMap {
         match purityOf2(cmp) {
             case Purity.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    let h = (_, vl, _, vr) -> g((force vl, force vr));
+                    let h = (_, vl, _, vr) -> g(force vl, force vr);
                     let DMap(t) = m;
                     let res = RedBlackTree.parMinimumBy(threads() - 1, h, t);
                     match res {
@@ -270,7 +270,7 @@ mod DelayMap {
         match purityOf2(cmp) {
             case Purity.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    let h = (kl, _, kr, _) -> g((kl, kr));
+                    let h = (kl, _, kr, _) -> g(kl, kr);
                     let DMap(t) = m;
                     let res = RedBlackTree.parMaximumBy(threads() - 1, h, t);
                     match res {
@@ -304,7 +304,7 @@ mod DelayMap {
         match purityOf2(cmp) {
             case Purity.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    let h = (_, vl, _, vr) -> g((force vl, force vr));
+                    let h = (_, vl, _, vr) -> g(force vl, force vr);
                     let DMap(t) = m;
                     let res = RedBlackTree.parMaximumBy(threads() - 1, h, t);
                     match res {
@@ -355,8 +355,8 @@ mod DelayMap {
     @Experimental @LazyWhenPure
     pub def insertWithKey(f: (k, v, v) -> v \ ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         match purityOf3(f) {
-            case Purity.Pure(g)   => insertWithKeyL((x, y, z) -> g((x, y, z)), k, v, m)
-            case Purity.Impure(g) => insertWithKeyE((x, y, z) -> g((x, y, z)), k, v, m)
+            case Purity.Pure(g)   => insertWithKeyL(g, k, v, m)
+            case Purity.Impure(g) => insertWithKeyE(g, k, v, m)
         }
 
     ///
@@ -400,8 +400,8 @@ mod DelayMap {
     @Experimental @ParallelWhenPure @LazyWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef =
         match purityOf2(f) {
-            case Purity.Pure(g)   => mapWithKeyL((x, y) -> g((x, y)), m)
-            case Purity.Impure(g) => mapWithKeyE((x, y) -> g((x, y)), m)
+            case Purity.Pure(g)   => mapWithKeyL(g, m)
+            case Purity.Impure(g) => mapWithKeyE(g, m)
         }
 
     ///
@@ -510,8 +510,8 @@ mod DelayMap {
     @Experimental @LazyWhenPure
     pub def unionWithKey(f: (k, v, v) -> v \ ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         match purityOf3(f) {
-            case Purity.Pure(g)   => unionWithKeyL((x, y, z) -> g((x, y, z)), m1, m2)
-            case Purity.Impure(g) => unionWithKeyE((x, y, z) -> g((x, y, z)), m1, m2)
+            case Purity.Pure(g)   => unionWithKeyL(g, m1, m2)
+            case Purity.Impure(g) => unionWithKeyE(g, m1, m2)
         }
 
     ///
@@ -708,8 +708,8 @@ mod DelayMap {
     @Experimental @LazyWhenPure
     pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         match purityOf2(f) {
-            case Purity.Pure(g)   => updateWithKeyL((x, y) -> g((x, y)), k, m)
-            case Purity.Impure(g) => updateWithKeyE((x, y) -> g((x, y)), k, m)
+            case Purity.Pure(g)   => updateWithKeyL(g, k, m)
+            case Purity.Impure(g) => updateWithKeyE(g, k, m)
         }
 
     ///
@@ -845,7 +845,7 @@ mod DelayMap {
         match purityOf2(f) {
             case Purity.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    let h = (k, v) -> g((k, force v));
+                    let h = (k, v) -> g(k, force v);
                     RedBlackTree.parSumWith(threads() - 1, h, t)
                 else
                     sw()
