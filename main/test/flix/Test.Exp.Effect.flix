@@ -101,8 +101,6 @@ mod Test.Exp.Effect {
 
     pub def enumWithEffect05(f: Do[Console + (ef - Fail)]): Bool = ???
 
-    eff Empty
-
     eff Fail {
         pub def fail(x: String): Unit
     }
