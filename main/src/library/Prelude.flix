@@ -170,7 +170,13 @@ enum Purity[a: Type, b: Type, ef: Eff] {
     case Impure(a -> b \ ef)
 }
 
-def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
+pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
     case g: a -> b \ Pure => Purity.Pure(g)
     case _: _             => Purity.Impure(f)
 }
+
+pub def uncurry(f: a -> b -> c \ ef): (((a, b)) -> c \ ef) =
+    match (x, y) -> f(x, y)
+
+pub def curry(f: ((a, b)) -> c \ ef): (a -> b -> c \ ef) =
+    x -> y -> f((x, y))
