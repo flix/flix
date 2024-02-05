@@ -165,7 +165,7 @@ pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
     }
 }
 
-enum Purity[a: Type, b: Type, ef: Eff] {
+pub enum Purity[a: Type, b: Type, ef: Eff] {
     case Pure(a -> b)
     case Impure(a -> b \ ef)
 }
@@ -175,8 +175,7 @@ pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
     case _: _             => Purity.Impure(f)
 }
 
-pub def uncurry(f: a -> b -> c \ ef): (((a, b)) -> c \ ef) =
-    match (x, y) -> f(x, y)
-
-pub def curry(f: ((a, b)) -> c \ ef): (a -> b -> c \ ef) =
-    x -> y -> f((x, y))
+pub def purityOf2(f: a -> b -> c \ ef): Purity[a -> b, c, ef] = typematch f {
+    case g: (a, b) -> c \ Pure => Purity.Pure(x -> y -> g(x, y))
+    case _: _                  => Purity.Impure(f)
+}
