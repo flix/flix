@@ -135,7 +135,7 @@ object ConstraintResolution {
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
       if (sym.toString == "Test.Exp.Record.Extend.testRecordExtend03") {
-        startLogging()
+//        startLogging()
       }
       log(sym)
 
