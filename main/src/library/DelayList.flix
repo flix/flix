@@ -400,10 +400,9 @@ mod DelayList {
     ///
     @Experimental @LazyWhenPure
     pub def map(f: a -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
-        typematch f {
-            case g: a -> b \ {} => mapL(g, l)
-            case g: a -> b \ ef => mapE(g, l)
-            case _: _           => unreachable!()
+        match purityOf(f) {
+            case Purity.Pure(g)   => mapL(g, l)
+            case Purity.Impure(g) => mapE(g, l)
         }
 
     ///
