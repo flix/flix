@@ -621,12 +621,12 @@ mod RedBlackTree {
     @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 \ ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] \ ef =
         match purityOf2(f) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(t))
                     parMapWithKey(threads() - 1, g, t)
                 else
                     seqMapWithKey(f, t)
-            case Purity.Impure(_) => seqMapWithKey(f, t)
+            case Purity2.Impure(_) => seqMapWithKey(f, t)
         }
 
     ///

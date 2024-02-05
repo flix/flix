@@ -155,14 +155,14 @@ mod DelayMap {
     pub def count(f: (k, v) -> Bool \ ef, m: DelayMap[k, v]): Int32 \ ef =
         def c() = foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m);
         match purityOf2(f) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g(k, force v);
                     let DMap(t) = m;
                     RedBlackTree.parCount(threads() - 1, h, t)
                 else
                     c()
-            case Purity.Impure(_) => c()
+            case Purity2.Impure(_) => c()
         }
 
     ///
@@ -197,7 +197,7 @@ mod DelayMap {
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let DMap(t) = m;
@@ -208,7 +208,7 @@ mod DelayMap {
                     }
                 else
                     min()
-            case Purity.Impure(_) => min()
+            case Purity2.Impure(_) => min()
         }
     ///
     /// Optionally finds `k => v` where `v` is the smallest value.
@@ -230,7 +230,7 @@ mod DelayMap {
     pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(force vl, force vr);
                     let DMap(t) = m;
@@ -241,7 +241,7 @@ mod DelayMap {
                     }
                 else
                     min()
-            case Purity.Impure(_) => min()
+            case Purity2.Impure(_) => min()
         }
 
     ///
@@ -268,7 +268,7 @@ mod DelayMap {
     pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let DMap(t) = m;
@@ -279,7 +279,7 @@ mod DelayMap {
                     }
                 else
                     max()
-            case Purity.Impure(_) => max()
+            case Purity2.Impure(_) => max()
         }
 
     ///
@@ -302,7 +302,7 @@ mod DelayMap {
     pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(force vl, force vr);
                     let DMap(t) = m;
@@ -313,7 +313,7 @@ mod DelayMap {
                     }
                 else
                     max()
-            case Purity.Impure(_) => max()
+            case Purity2.Impure(_) => max()
         }
 
     ///
@@ -355,8 +355,8 @@ mod DelayMap {
     @Experimental @LazyWhenPure
     pub def insertWithKey(f: (k, v, v) -> v \ ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         match purityOf3(f) {
-            case Purity.Pure(g)   => insertWithKeyL(g, k, v, m)
-            case Purity.Impure(g) => insertWithKeyE(g, k, v, m)
+            case Purity3.Pure(g)   => insertWithKeyL(g, k, v, m)
+            case Purity3.Impure(g) => insertWithKeyE(g, k, v, m)
         }
 
     ///
@@ -400,8 +400,8 @@ mod DelayMap {
     @Experimental @ParallelWhenPure @LazyWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef =
         match purityOf2(f) {
-            case Purity.Pure(g)   => mapWithKeyL(g, m)
-            case Purity.Impure(g) => mapWithKeyE(g, m)
+            case Purity2.Pure(g)   => mapWithKeyL(g, m)
+            case Purity2.Impure(g) => mapWithKeyE(g, m)
         }
 
     ///
@@ -510,8 +510,8 @@ mod DelayMap {
     @Experimental @LazyWhenPure
     pub def unionWithKey(f: (k, v, v) -> v \ ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         match purityOf3(f) {
-            case Purity.Pure(g)   => unionWithKeyL(g, m1, m2)
-            case Purity.Impure(g) => unionWithKeyE(g, m1, m2)
+            case Purity3.Pure(g)   => unionWithKeyL(g, m1, m2)
+            case Purity3.Impure(g) => unionWithKeyE(g, m1, m2)
         }
 
     ///
@@ -708,8 +708,8 @@ mod DelayMap {
     @Experimental @LazyWhenPure
     pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
         match purityOf2(f) {
-            case Purity.Pure(g)   => updateWithKeyL(g, k, m)
-            case Purity.Impure(g) => updateWithKeyE(g, k, m)
+            case Purity2.Pure(g)   => updateWithKeyL(g, k, m)
+            case Purity2.Impure(g) => updateWithKeyE(g, k, m)
         }
 
     ///
@@ -843,13 +843,13 @@ mod DelayMap {
             RedBlackTree.sumWith((k, v) -> f(k, force v), t)
         };
         match purityOf2(f) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (k, v) -> g(k, force v);
                     RedBlackTree.parSumWith(threads() - 1, h, t)
                 else
                     sw()
-            case Purity.Impure(_) => sw()
+            case Purity2.Impure(_) => sw()
         }
 
     ///

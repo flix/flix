@@ -217,14 +217,14 @@ mod Map {
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Map(t) = m;
                     RedBlackTree.parMinimumBy(threads() - 1, h, t)
                 else
                     min()
-            case Purity.Impure(_) => min()
+            case Purity2.Impure(_) => min()
         }
 
     ///
@@ -247,14 +247,14 @@ mod Map {
     pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(vl, vr);
                     let Map(t) = m;
                     RedBlackTree.parMinimumBy(threads() - 1, h, t)
                 else
                     min()
-            case Purity.Impure(_) => min()
+            case Purity2.Impure(_) => min()
         }
 
     ///
@@ -277,14 +277,14 @@ mod Map {
     pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Map(t) = m;
                     RedBlackTree.parMaximumBy(threads() - 1, h, t)
                 else
                     max()
-            case Purity.Impure(_) => max()
+            case Purity2.Impure(_) => max()
         }
 
     ///
@@ -307,14 +307,14 @@ mod Map {
     pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: Map[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
         match purityOf2(cmp) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let h = (_, vl, _, vr) -> g(vl, vr);
                     let Map(t) = m;
                     RedBlackTree.parMaximumBy(threads() - 1, h, t)
                 else
                     max()
-            case Purity.Impure(_) => max()
+            case Purity2.Impure(_) => max()
         }
 
     ///
@@ -589,13 +589,13 @@ mod Map {
     pub def count(f: (k, v) -> Bool \ ef, m: Map[k, v]): Int32 \ ef =
         def c() = foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m);
         match purityOf2(f) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     let Map(t) = m;
                     RedBlackTree.parCount(threads() - 1, g, t)
                 else
                     c()
-            case Purity.Impure(_) => c()
+            case Purity2.Impure(_) => c()
         }
 
     ///
@@ -620,12 +620,12 @@ mod Map {
         let Map(t) = m;
         def sw() = RedBlackTree.sumWith(f, t);
         match purityOf2(f) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     RedBlackTree.parSumWith(threads() - 1, g, t)
                 else
                     sw()
-            case Purity.Impure(_) => sw()
+            case Purity2.Impure(_) => sw()
         }
 
     ///
@@ -640,12 +640,12 @@ mod Map {
         let Map(t) = m;
         def e() = RedBlackTree.exists(f, t);
         match purityOf2(f) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     RedBlackTree.parExists(threads() - 1, g, t)
                 else
                     e()
-            case Purity.Impure(_) => e()
+            case Purity2.Impure(_) => e()
         }
 
     ///
@@ -660,12 +660,12 @@ mod Map {
         let Map(t) = m;
         def fa() = RedBlackTree.forAll(f, t);
         match purityOf2(f) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(m))
                     RedBlackTree.parForAll(threads() - 1, g, t)
                 else
                     fa()
-            case Purity.Impure(_) => fa()
+            case Purity2.Impure(_) => fa()
         }
 
     ///

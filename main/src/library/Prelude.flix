@@ -170,6 +170,16 @@ pub enum Purity[a: Type, b: Type, ef: Eff] {
     case Impure(a -> b \ ef)
 }
 
+pub enum Purity2[a: Type, b: Type, c: Type, ef: Eff] {
+    case Pure(a -> b -> c)
+    case Impure(a -> b -> c \ ef)
+}
+
+pub enum Purity3[a: Type, b: Type, c: Type, d: Type, ef: Eff] {
+    case Pure(a -> b -> c -> d)
+    case Impure(a -> b -> c -> d \ ef)
+}
+
 ///
 /// Returns `Purity.Pure(g) if `f` has no effects.
 /// Returns `Purity.Impure(g)` otherwise.
@@ -187,9 +197,9 @@ pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
 /// The function `g` can then be used in a context that requires
 /// it to be pure.
 ///
-pub def purityOf2(f: a -> b -> c \ ef): Purity[(a, b), c, ef] = typematch f {
-    case g: (a, b) -> c \ Pure => Purity.Pure(match (x, y) -> g(x, y))
-    case _: _                  => Purity.Impure(match (x, y) -> f(x, y))
+pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] = typematch f {
+    case g: a -> b -> c \ Pure => Purity2.Pure(g)
+    case _: _                  => Purity2.Impure(f)
 }
 
 ///
@@ -198,7 +208,7 @@ pub def purityOf2(f: a -> b -> c \ ef): Purity[(a, b), c, ef] = typematch f {
 /// The function `g` can then be used in a context that requires
 /// it to be pure.
 ///
-pub def purityOf3(f: a -> b -> c -> d \ ef): Purity[(a, b, c), d, ef] = typematch f {
-    case g: (a, b, c) -> d \ Pure => Purity.Pure(match (x, y, z) -> g(x, y, z))
-    case _: _                     => Purity.Impure(match (x, y, z) -> f(x, y, z))
+pub def purityOf3(f: a -> b -> c -> d \ ef): Purity3[a, b, c, d, ef] = typematch f {
+    case g: a -> b -> c -> d \ Pure => Purity3.Pure(g)
+    case _: _                       => Purity3.Impure(f)
 }

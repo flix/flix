@@ -219,7 +219,7 @@ mod Set {
     pub def minimumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
         def min() = reduceLeft((x, y) -> if (cmp(x, y) == Comparison.LessThan) x else y, s);
         match purityOf2(cmp) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(s))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Set(t) = s;
@@ -227,7 +227,7 @@ mod Set {
                     Option.map(fst, o)
                 else
                     min()
-            case Purity.Impure(_) => min()
+            case Purity2.Impure(_) => min()
         }
 
     ///
@@ -250,7 +250,7 @@ mod Set {
     pub def maximumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
         def max() = reduceLeft((x, y) -> if (cmp(x, y) == Comparison.GreaterThan) x else y, s);
         match purityOf2(cmp) {
-            case Purity.Pure(g) =>
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(s))
                     let h = (kl, _, kr, _) -> g(kl, kr);
                     let Set(t) = s;
@@ -258,7 +258,7 @@ mod Set {
                     Option.map(fst, o)
                 else
                     max()
-            case Purity.Impure(_) => max()
+            case Purity2.Impure(_) => max()
         }
 
     ///
