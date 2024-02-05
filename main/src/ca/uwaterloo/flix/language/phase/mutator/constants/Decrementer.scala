@@ -1,4 +1,4 @@
-package ca.uwaterloo.flix.language.phase.mutator.numbers
+package ca.uwaterloo.flix.language.phase.mutator.constants
 
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr

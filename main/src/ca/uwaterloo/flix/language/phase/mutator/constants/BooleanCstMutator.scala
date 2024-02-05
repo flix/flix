@@ -1,10 +1,10 @@
-package ca.uwaterloo.flix.language.phase.mutator.boolean
+package ca.uwaterloo.flix.language.phase.mutator.constants
 
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
 import ca.uwaterloo.flix.language.phase.mutator.ExprMutator
 
-object BoolCstMutator extends ExprMutator {
+object BooleanCstMutator extends ExprMutator {
   override def mutateExpr(exp: Expr): Option[Expr] = exp match {
     case Expr.Cst(Constant.Bool(lit), tpe, loc) => Some(Expr.Cst(Constant.Bool(!lit), tpe, loc))
     case _ => None
