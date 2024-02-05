@@ -175,7 +175,7 @@ pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
     case _: _             => Purity.Impure(f)
 }
 
-pub def purityOf2(f: a -> b -> c \ ef): Purity[a -> b, c, ef] = typematch f {
-    case g: (a, b) -> c \ Pure => Purity.Pure(x -> y -> g(x, y))
-    case _: _                  => Purity.Impure(f)
+pub def purityOf2(f: a -> b -> c \ ef): Purity[(a, b), c, ef] = typematch f {
+    case g: (a, b) -> c \ Pure => Purity.Pure(match (x, y) -> g(x, y))
+    case _: _                  => Purity.Impure(match (x, y) -> f(x, y))
 }
