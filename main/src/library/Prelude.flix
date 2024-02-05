@@ -164,3 +164,13 @@ pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
         case _: _ => println(x)
     }
 }
+
+enum Purity[a: Type, b: Type, ef: Eff] {
+    case Pure(a -> b)
+    case Impure(a -> b \ ef)
+}
+
+def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
+    case g: a -> b \ Pure => Purity.Pure(g)
+    case _: _             => Purity.Impure(f)
+}
