@@ -450,8 +450,8 @@ mod DelayList {
     @Experimental @LazyWhenPure
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, l: DelayList[a]): DelayList[b] \ ef =
         match purityOf2(f) {
-            case Purity.Pure(g)   => mapWithIndexL(g, l)
-            case Purity.Impure(g) => mapWithIndexE(g, l)
+            case Purity.Pure(g)   => mapWithIndexL(x -> y -> g((x, y)), l)
+            case Purity.Impure(g) => mapWithIndexE(x -> y -> g((x, y)), l)
         }
 
     ///
