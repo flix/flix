@@ -560,4 +560,29 @@ mod Graph {
         a
     }
 
+
+    //////////////////////////////////////
+    // WIP Ford-Fulkerson               //
+    //////////////////////////////////////
+
+    type alias Constraint = Int32
+    type alias Flow = Int32
+
+    pub def maxFlow(g: m[(t, t, Constraint)]): Option[Flow] with Foldable[m], Order[t] =
+        let edges = inject g into Edge;
+        let res =
+            query edges, nodesWeighted(), fordFulkerson()
+            select x
+            from Flow(x);
+        Vector.maximum(res)
+
+    def nodesWeighted(): #{ Edge(t, t, Constraint), Node(t) | r } with Order[t] = #{
+        Node(x) :- Edge(x, _, _).
+        Node(x) :- Edge(_, x, _).
+    }
+
+    def fordFulkerson(): #{ Edge(t, t, Constraint), Node(t), Flow(Flow) | r } with Order[t] = #{
+
+    }
+
 }
