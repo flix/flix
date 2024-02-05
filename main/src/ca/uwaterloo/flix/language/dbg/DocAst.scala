@@ -357,9 +357,16 @@ object DocAst {
 
     case object Pure extends Eff
 
-    case object Univ extends Eff
+    /** Represents the union of IO and all regions. */
+    case object Impure extends Eff
+
+    /** Represents Impure and all algebraic effect. */
+    case object ControlImpure extends Eff
 
     case class AsIs(s: String) extends Eff
+
+    /** Represents the top effect. */
+    def Univ: Eff = AsIs("Univ")
 
   }
 

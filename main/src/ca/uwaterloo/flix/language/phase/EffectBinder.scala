@@ -395,20 +395,12 @@ object EffectBinder {
   private def bindBinders(binders: mutable.ArrayBuffer[Binder], exp: ReducedAst.Expr): ReducedAst.Expr = {
     binders.foldRight(exp) {
       case (LetBinder(sym, exp1, loc), acc) =>
-        ReducedAst.Expr.Let(sym, exp1, acc, acc.tpe, combine(acc.purity, exp1.purity), loc)
+        ReducedAst.Expr.Let(sym, exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
       case (LetRecBinder(varSym, index, defSym, exp1, loc), acc) =>
-        ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, acc, acc.tpe, combine(acc.purity, exp1.purity), loc)
+        ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
       case (NonBinder(exp1, loc), acc) =>
-        ReducedAst.Expr.Stmt(exp1, acc, acc.tpe, combine(acc.purity, exp1.purity), loc)
+        ReducedAst.Expr.Stmt(exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
     }
-  }
-
-  /**
-    * Returns [[Purity.Pure]] if and only if both arguments are [[Purity.Pure]].
-    */
-  private def combine(p1: Purity, p2: Purity): Purity = (p1, p2) match {
-    case (Purity.Pure, Purity.Pure) => Purity.Pure
-    case _ => Purity.Impure
   }
 
 }

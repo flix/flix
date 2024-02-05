@@ -64,7 +64,7 @@ object ClosureConv {
       //
       // let m = List.map; ...
       //
-      Expr.ApplyAtomic(AtomicOp.Closure(sym), List.empty, tpe, Purity.Pure, loc)
+      Expr.ApplyAtomic(AtomicOp.Closure(sym), List.empty, tpe, exp0.purity, loc)
 
     case Expr.Lambda(fparams, exp, tpe, loc) =>
       //

@@ -20,7 +20,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.Purity._
 import ca.uwaterloo.flix.language.ast._
+import ca.uwaterloo.flix.language.phase.unification.TypeNormalization
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.language.ast.Symbol
 
 import scala.annotation.tailrec
 
@@ -110,7 +112,7 @@ object Simplifier {
           val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_spawn", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, MonoType.Unit, loc)
           val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e1, lambdaTyp, loc)
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(lambdaExp, e2), t, Purity.Impure, loc)
+          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(lambdaExp, e2), t, purity, loc)
 
         case AtomicOp.Lazy =>
           // Wrap the expression in a closure: () -> tpe \ Pure
@@ -119,7 +121,7 @@ object Simplifier {
           val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_lazy", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, MonoType.Unit, loc)
           val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e, lambdaTyp, loc)
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Lazy, List(lambdaExp), t, Purity.Pure, loc)
+          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Lazy, List(lambdaExp), t, purity, loc)
 
         case AtomicOp.HoleError(_) =>
           // Simplify purity to impure, must be done after Monomorph
@@ -361,7 +363,7 @@ object Simplifier {
     case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
       val es = elms.map(pat2exp)
       val t = visitType(tpe)
-      val purity = combineAll(es.map(_.purity))
+      val purity = Purity.combine(es.map(_.purity))
       SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Tuple, es, t, purity, loc)
     case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat0.", pat0.loc)
   }
@@ -458,7 +460,7 @@ object Simplifier {
     val t = visitType(tpe)
 
     // TODO Intermediate solution (which is correct, but imprecise): Compute the purity of every match rule in rules
-    val jumpPurity = combineAll(rules.map(r => simplifyEffect(r.exp.eff)))
+    val jumpPurity = Purity.combine(rules.map(r => simplifyEffect(r.exp.eff)))
 
     // Create a branch for each rule.
     val branches = (ruleLabels zip rules) map {
@@ -486,7 +488,7 @@ object Simplifier {
     val entry = SimplifiedAst.Expr.JumpTo(ruleLabels.head, t, jumpPurity, loc)
 
     // The purity of the branch
-    val branchPurity = combineAll(branches.map { case (_, exp) => exp.purity })
+    val branchPurity = Purity.combine(branches.map { case (_, exp) => exp.purity })
 
     // Assemble all the branches together.
     val branch = SimplifiedAst.Expr.Branch(entry, branches.toMap + errorBranch, t, branchPurity, loc)
@@ -719,37 +721,30 @@ object Simplifier {
   }
 
   /**
+    * Empty < {IO, Algebraic} < IOAlgebraic < Top
+    *
+    * TODO: This doesn't work (see !((T - {A}) + {A}))
+    */
+  private sealed trait SymbolicSet
+
+  private object SymbolicSet {
+    case object Top extends SymbolicSet
+    case object IOAlgebraic extends SymbolicSet
+    case object IO extends SymbolicSet
+    case object Algebraic extends SymbolicSet
+    case object Empty extends SymbolicSet
+
+    def ofSym(sym: Symbol.EffectSym): SymbolicSet = sym match {
+      case Symbol.IO => IO
+      case _ => Algebraic
+    }
+  }
+
+  /**
     * Returns the purity (or impurity) of an expression.
     */
-  private def simplifyEffect(eff: Type): Purity = eff match {
-    case Type.Cst(TypeConstructor.Pure, _) => Purity.Pure
-    case _ => Purity.Impure
-  }
-
-  /**
-    * Combines purities `p1` and `p2`.
-    *
-    * A combined purity is only pure if both `p1` and `p2` are pure, otherwise it is always impure.
-    */
-  private def combine(p1: Purity, p2: Purity): Purity = (p1, p2) match {
-    case (Pure, Pure) => Pure
-    case _ => Impure
-  }
-
-  /**
-    * Combine `p1`, `p2` and `p3`.
-    *
-    * A combined purity is only pure if `p1`, `p2` and `p3` are pure, otherwise it is always impure.
-    */
-  private def combine(p1: Purity, p2: Purity, p3: Purity): Purity = combine(p1, combine(p2, p3))
-
-  /**
-    * Combine `purities`.
-    *
-    * A combined purity is only pure if every purity in `purities` are pure, otherwise it is always impure.
-    */
-  private def combineAll(purities: List[Purity]): Purity = purities.foldLeft[Purity](Pure) {
-    case (acc, purity) => combine(acc, purity)
+  private def simplifyEffect(eff: Type): Purity = {
+    ???
   }
 
   /**
