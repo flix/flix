@@ -623,7 +623,7 @@ mod RedBlackTree {
         match purityOf2(f) {
             case Purity.Pure(g) =>
                 if (useParallelEvaluation(t))
-                    parMapWithKey(threads() - 1, (x, y) -> g((x, y)), t)
+                    parMapWithKey(threads() - 1, g, t)
                 else
                     seqMapWithKey(f, t)
             case Purity.Impure(_) => seqMapWithKey(f, t)
