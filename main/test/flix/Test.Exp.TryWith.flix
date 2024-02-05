@@ -90,23 +90,114 @@ mod Test.Exp.TryWith {
         }
     }
 
-// TODO disabled until better type system is in
-//    @Test
-//    def testTryWith07(): Unit = {
-//        try {
-//            try {
-//                do Test.Exp.TryWith.Print.doIt();
-//                do Test.Exp.TryWith.Print2.doIt2()
-//            } with Print {
-//                def doIt(_cont) = ()
-//            }
-//        } with Print2 {
-//            def doIt2(_cont) = ()
-//        }
-//    }
+    @Test
+    def testTryWith07(): Unit = {
+        try {
+            do Test.Exp.TryWith.Print.doIt()
+        } with Print {
+            def doIt(_cont) = ()
+        } with Print {
+            def doIt(_cont) = ()
+        }
+    }
 
     @Test
     def testTryWith08(): Unit = {
+        try {
+            do Test.Exp.TryWith.Print.doIt()
+        } with Print {
+            def doIt(_cont) = {
+                try {
+                    do Test.Exp.TryWith.Print2.doIt2()
+                } with Print2 {
+                    def doIt2(_cont) = ()
+                } with Print2 {
+                    def doIt2(_cont) = ()
+                }
+            }
+        } with Print {
+            def doIt(_cont) = ()
+        }
+    }
+
+    @Test
+    def testTryWith09(): Unit = {
+        let f = () -> do Test.Exp.TryWith.Print.doIt();
+        try {
+            f()
+        } with Print {
+            def doIt(_cont) = ()
+        } with Print {
+            def doIt(_cont) = ()
+        }
+    }
+
+    @Test
+    def testTryWith10(): Unit = {
+        try {
+            do Test.Exp.TryWith.Greet.greet("Alice")
+        } with Greet {
+            def greet(_, _cont) = ()
+        } with Greet {
+            def greet(_, _cont) = ()
+        }
+    }
+
+    @Test
+    def testTryWith11(): Unit = {
+        try {
+            do Test.Exp.TryWith.Greet.greet("Duchess")
+        } with Greet {
+            def greet(name, _cont) = {
+                try {
+                    do Test.Exp.TryWith.Greet2.greet2(name)
+                } with Greet2 {
+                    def greet2(_, _cont) = ()
+                }
+            }
+        } with Print { // Irrelevant effect but here to test the syntax
+            def doIt(_) = ()
+        }
+    }
+
+    @Test
+    def testTryWith12(): Unit = {
+        def greetAll(names: List[String]) = match names {
+            case Nil => ()
+            case hd :: tl => {
+                do Test.Exp.TryWith.Greet.greet(hd);
+                greetAll(tl)
+            }
+        };
+
+        try {
+            greetAll("Cheshire Cat" :: "Queen of Hearts" :: "White Rabbit" :: "Dormouse" :: Nil)
+        } with Greet {
+            def greet(_, _cont) = ()
+        } with Greet {
+            def greet(_, _cont) = ()
+        }
+    }
+
+    // TODO disabled until better type system is in
+    /*
+
+    @Test
+    def testTryWith13(): Unit = {
+        try {
+            try {
+                do Test.Exp.TryWith.Print.doIt();
+                do Test.Exp.TryWith.Print2.doIt2()
+            } with Print {
+                def doIt(_cont) = ()
+            }
+        } with Print2 {
+            def doIt2(_cont) = ()
+        }
+    }
+
+    @Test
+    def testTryWith14(): Unit = {
         try {
             let _unit = try {
                 do Test.Exp.TryWith.Print.doIt()
@@ -142,7 +233,7 @@ mod Test.Exp.TryWith {
     }
 
     @Test
-    def testTryWith09(): Bool =
+    def testTryWith15(): Bool =
         let result = try {
             String.concat(do A.a(), do B.b())
         } with A {
@@ -153,7 +244,7 @@ mod Test.Exp.TryWith {
         Assert.eq("ab", result)
 
     @Test
-    def testTryWith10(): Bool =
+    def testTryWith16(): Bool =
         let result = try {
             String.concat(do A.a(), do B.b())
         } with B {
@@ -164,7 +255,7 @@ mod Test.Exp.TryWith {
         Assert.eq("ab", result)
 
     @Test
-    def testTryWith11(): Bool =
+    def testTryWith17(): Bool =
         let result = try {
             do C.c() + do D.d1() + do D.d2() + do E.e()
         } with C {
@@ -178,7 +269,7 @@ mod Test.Exp.TryWith {
         Assert.eq(4 * 42, result)
 
     @Test
-    def testTryWith12(): Bool =
+    def testTryWith18(): Bool =
         let result = try {
             do C.c() + do D.d1() + do D.d2() + do E.e()
         } with C {
@@ -192,7 +283,7 @@ mod Test.Exp.TryWith {
         Assert.eq(42, result)
 
     @Test
-    def testTryWith13(): Bool =
+    def testTryWith19(): Bool =
         let result = try {
             do C.c()
         } with C {
@@ -204,5 +295,6 @@ mod Test.Exp.TryWith {
             def e(k) = 42
         };
         Assert.eq(42, result)
+    */
 
 }
