@@ -565,24 +565,99 @@ mod Graph {
     // WIP Ford-Fulkerson               //
     //////////////////////////////////////
 
-    type alias Constraint = Int32
-    type alias Flow = Int32
+    use Path.Path;
 
-    pub def maxFlow(g: m[(t, t, Constraint)]): Option[Flow] with Foldable[m], Order[t] =
+    enum Path {
+        case Path(List[Int32])
+    }
+
+    instance Eq[Path] {
+        pub def eq(x: Path, y: Path): Bool =
+            let Path(xs) = x;
+            let Path(ys) = y;
+            List.length(xs) == List.length(ys)
+    }
+
+    instance Order[Path] {
+        pub def compare(x: Path, y: Path): Comparison =
+            let Path(xs) = x;
+            let Path(ys) = y;
+            if (List.length(xs) ==  List.length(ys))
+                Comparison.EqualTo
+            else if (List.length(xs) <= List.length(ys))
+                Comparison.GreaterThan
+            else
+                Comparison.LessThan
+    }
+
+    instance LowerBound[Path] {
+        // The longest list
+        pub def minValue(): Path = Path(List.range(1, 100))
+    }
+
+    instance PartialOrder[Path] {
+        pub def lessEqual(x: Path, y: Path): Bool =
+            let Path(xs) = x;
+            let Path(ys) = y;
+            List.length(xs) >= List.length(ys)
+    }
+
+    instance JoinLattice[Path] {
+        pub def leastUpperBound(x: Path, y: Path): Path =
+            let Path(xs) = x;
+            let Path(ys) = y;
+            if (List.length(xs) <= List.length(ys)) x else y
+    }
+
+    instance MeetLattice[Path] {
+        pub def greatestLowerBound(x: Path, y: Path): Path = ???
+    }
+
+
+    pub def init(y: Int32, x: Int32): Path =
+        Path(y :: x :: Nil)
+
+    pub def cons(z: Int32, p: Path): Path = match p {
+        case Path(xs) => Path(z :: xs)
+    }
+
+    pub def maxFlow(g: m[(Int32, Int32, Int32)]): Option[Int32] with Foldable[m] =
+        ???
+
+    def _path(src: { src = Int32 }, dst: { dst = Int32 }, g: m[(Int32, Int32)]): Path with Foldable[m] =
         let edges = inject g into Edge;
-        let res =
-            query edges, nodesWeighted(), fordFulkerson()
-            select x
-            from Flow(x);
-        Vector.maximum(res)
+        let rules = #{
+            Reach(x, y; init(y, x)) :- Edge(x, y).
+            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(y, z).
+        };
+        let s = src.src;
+        let t = dst.dst;
+        let result = query edges, rules select fn from Reach(s, t; fn);
+        Vector.get(0, result)
 
-    def nodesWeighted(): #{ Edge(t, t, Constraint), Node(t) | r } with Order[t] = #{
-        Node(x) :- Edge(x, _, _).
-        Node(x) :- Edge(_, x, _).
-    }
+    def pathMinCapacity(p: Path, g: m[(Int32, Int32, Int32)]): Int32 with Foldable[m] =
+        let Path(xs) = p;
+        let ps = inject xs into Path;
+        let edges = inject g into Edge;
+        let rules = #{
+            PathCapacity(u)   :- Edge(x, y, u), Path(x), Path(y).
+            NonMinCapacity(u) :- PathCapacity(u), PathCapacity(v), if v < u.
+            MinCapacity(u)    :- PathCapacity(u), not NonMinCapacity(u).
+        };
+        let result = query ps, edges, rules select u from MinCapacity(u);
+        Vector.get(0, result)
 
-    def fordFulkerson(): #{ Edge(t, t, Constraint), Node(t), Flow(Flow) | r } with Order[t] = #{
+    // Tests
+    @Test
+    def testPathMinCapacity01(): Bool =
+        let p = Path(5 :: 4 :: 3 :: 2 :: 1 :: Nil);
+        let g = Set#{(1, 2, 3), (1, 3, 4), (2, 3, 1), (3, 4, 5), (4, 5, 10)};
+        Assert.eq(1, pathMinCapacity(p, g))
 
-    }
+    @Test
+    def testPathMinCapacity02(): Bool =
+        let p = Path(5 :: 4 :: 3 :: 2 :: 1 :: Nil);
+        let g = Set#{(1, 2, 3), (1, 3, 4), (2, 3, 3), (3, 4, 5), (4, 5, 10), (6, 7, 1)};
+        Assert.eq(3, pathMinCapacity(p, g))
 
 }
