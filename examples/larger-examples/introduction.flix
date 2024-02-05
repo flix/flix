@@ -22,7 +22,7 @@ enum LocalVar({k = String, v = Constant})
 //
 // To define the constant propagation lattice, we begin by defining the
 // type of constants. We define an enum with three variants: bottom and
-// top elements, and a constructor Cst(i) for any integer i.
+// top elements, and a constructor Constant.Cst(i) for any integer i.
 //
 enum Constant {
       case Top,
@@ -41,10 +41,10 @@ instance LowerBound[Constant] {
 //
 instance Eq[Constant] {
     pub def eq(x: Constant, y: Constant): Bool = match (x, y) {
-        case (Top, Top) => true
-        case (Cst(a), Cst(b)) => a == b
-        case (Bot, Bot) => true
-        case _ => false
+        case (Constant.Top, Constant.Top)       => true
+        case (Constant.Cst(a), Constant.Cst(b)) => a == b
+        case (Constant.Bot, Constant.Bot)       => true
+        case _                                  => false
     }
 }
 
@@ -54,10 +54,10 @@ instance Eq[Constant] {
 //
 instance PartialOrder[Constant] {
     pub def lessEqual(e1: Constant, e2: Constant): Bool = match (e1, e2) {
-        case (Bot, _)           => true
-        case (Cst(n1), Cst(n2)) => n1 == n2
-        case (_, Top)           => true
-        case _                  => false
+        case (Constant.Bot, _)                    => true
+        case (Constant.Cst(n1), Constant.Cst(n2)) => n1 == n2
+        case (_, Constant.Top)                    => true
+        case _                                    => false
     }
 }
 
@@ -66,10 +66,10 @@ instance PartialOrder[Constant] {
 //
 instance JoinLattice[Constant] {
     pub def leastUpperBound(x: Constant, y: Constant): Constant = match (x, y) {
-        case (Bot, _)           => y
-        case (_, Bot)           => x
-        case (Cst(n1), Cst(n2)) => if (n1 == n2) x else Top
-        case _                  => Top
+        case (Constant.Bot, _)                    => y
+        case (_, Constant.Bot)                    => x
+        case (Constant.Cst(n1), Constant.Cst(n2)) => if (n1 == n2) x else Constant.Top
+        case _                                    => Constant.Top
     }
 }
 
@@ -78,24 +78,24 @@ instance JoinLattice[Constant] {
 //
 instance MeetLattice[Constant] {
     pub def greatestLowerBound(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-        case (Top, x)           => x
-        case (x, Top)           => x
-        case (Cst(n1), Cst(n2)) => if (n1 == n2) e1 else Bot
-        case _                  => Bot
+        case (Constant.Top, x)                    => x
+        case (x, Constant.Top)                    => x
+        case (Constant.Cst(n1), Constant.Cst(n2)) => if (n1 == n2) e1 else Constant.Bot
+        case _                                    => Constant.Bot
     }
 }
 
 instance Order[Constant] {
     pub def compare(x: Constant, y: Constant): Comparison = match (x, y) {
-        case (Bot, Bot)         => EqualTo
-        case (Bot, Cst(_))      => LessThan
-        case (Bot, Top)         => LessThan
-        case (Cst(_), Bot)      => GreaterThan
-        case (Cst(v1), Cst(v2)) => v1 <=> v2
-        case (Cst(_), Top)      => LessThan
-        case (Top, Bot)         => GreaterThan
-        case (Top, Cst(_))      => GreaterThan
-        case (Top, Top)         => EqualTo
+        case (Constant.Bot, Constant.Bot)         => Comparison.EqualTo
+        case (Constant.Bot, Constant.Cst(_))      => Comparison.LessThan
+        case (Constant.Bot, Constant.Top)         => Comparison.LessThan
+        case (Constant.Cst(_), Constant.Bot)      => Comparison.GreaterThan
+        case (Constant.Cst(v1), Constant.Cst(v2)) => v1 <=> v2
+        case (Constant.Cst(_), Constant.Top)      => Comparison.LessThan
+        case (Constant.Top, Constant.Bot)         => Comparison.GreaterThan
+        case (Constant.Top, Constant.Cst(_))      => Comparison.GreaterThan
+        case (Constant.Top, Constant.Top)         => Comparison.EqualTo
     }
 }
 
@@ -104,9 +104,9 @@ instance Order[Constant] {
 //
 instance ToString[Constant] {
     pub def toString(x: Constant): String = match x {
-        case Top    => "Top"
-        case Cst(n) => "Cst(${n})"
-        case Bot    => "Bot"
+        case Constant.Top    => "Constant.Top"
+        case Constant.Cst(n) => "Constant.Cst(${n})"
+        case Constant.Bot    => "Constant.Bot"
     }
 }
 
@@ -115,26 +115,26 @@ instance ToString[Constant] {
 // an element of the constant propagation lattice. Strictly speaking,
 // this is not necessary.
 //
-def alpha(i: Int32): Constant = Cst(i)
+def alpha(i: Int32): Constant = Constant.Cst(i)
 
 //
 // We must define the sum transfer function:
 //
 def sum(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-    case (Bot, _)           => Bot
-    case (_, Bot)           => Bot
-    case (Cst(n1), Cst(n2)) => Cst(n1 + n2)
-    case _                  => Top
+    case (Constant.Bot, _)                    => Constant.Bot
+    case (_, Constant.Bot)                    => Constant.Bot
+    case (Constant.Cst(n1), Constant.Cst(n2)) => Constant.Cst(n1 + n2)
+    case _                                    => Constant.Top
 }
 
 //
 // And the div transfer function:
 //
 def div(e1: Constant, e2: Constant): Constant = match (e1, e2) {
-    case (_, Bot)           => Bot
-    case (Bot, _)           => Bot
-    case (Cst(n1), Cst(n2)) => if (n2 == 0) Bot else Cst(n1 / n2)
-    case _                  => Top
+    case (_, Constant.Bot)                    => Constant.Bot
+    case (Constant.Bot, _)                    => Constant.Bot
+    case (Constant.Cst(n1), Constant.Cst(n2)) => if (n2 == 0) Constant.Bot else Constant.Cst(n1 / n2)
+    case _                                    => Constant.Top
 }
 
 // !! Notice the special case to avoid division-by-zero in the analysis itself !!
@@ -151,9 +151,9 @@ def div(e1: Constant, e2: Constant): Constant = match (e1, e2) {
 // Defining the filter function is straightforward:
 //
 def isMaybeZero(e: Constant): Bool = match e {
-    case Bot    => false
-    case Cst(n) => n == 0
-    case Top    => true
+    case Constant.Bot    => false
+    case Constant.Cst(n) => n == 0
+    case Constant.Top    => true
 }
 
 def main(): Unit \ IO =
@@ -216,9 +216,10 @@ def main(): Unit \ IO =
         AddStm("w", "x", "y"). // w = x + y
         DivStm("v", "w", "z"). // v = w / z
     };
-    let m = solve p;
-    Fixpoint.unsafePrint(m);
-    ()
+    let vars = query p select (a, b) from LocalVar(a; b);
+    let errs = query p select r from ArithmeticError(r);
+    println(vars);
+    println(errs)
 
 //
 // We can now run our program with Flix and inspect the output!
@@ -227,15 +228,15 @@ def main(): Unit \ IO =
 //
 
 // LocalVar
-// +---------+---------+
-// | k       | v       |
-// +---------+---------+
-// | List(x) | Cst(3)  |
-// | List(v) | Bot(()) |
-// | List(y) | Cst(7)  |
-// | List(w) | Cst(10) |
-// | List(z) | Cst(0)  |
-// +---------+---------+
+// +---------+------------------+
+// | k       | v                |
+// +---------+------------------+
+// | List(x) | Constant.Cst(3)  |
+// | List(v) | Constant.Bot(()) |
+// | List(y) | Constant.Cst(7)  |
+// | List(w) | Constant.Cst(10) |
+// | List(z) | Constant.Cst(0)  |
+// +---------+------------------+
 
 // ArithmeticError
 // +---+
