@@ -1331,6 +1331,18 @@ object ParsedAst {
       case class Functional(sp1: SourcePosition, idents: Seq[Name.Ident], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
 
       /**
+       * Spread Predicate.
+       *
+       * @param sp1      the position of the first character in the predicate.
+       * @param polarity the polarity of the predicate (positive/negative).
+       * @param fixity   the fixity of the predicate (loose/fixed).
+       * @param ident    the name of the predicate.
+       * @param exp      the expression to spread.
+       * @param sp2      the position of the last character in the predicate.
+       */
+      case class Spread(sp1: SourcePosition, polarity: Ast.Polarity, fixity: Ast.Fixity, ident: Name.Ident, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Predicate.Body
+
+      /**
         * Guard Predicate.
         *
         * @param sp1 the position of the first character in the predicate.

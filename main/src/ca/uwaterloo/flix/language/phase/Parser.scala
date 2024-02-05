@@ -1353,7 +1353,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def BodyPredicate: Rule1[ParsedAst.Predicate.Body] = rule {
-    Predicates.Body.Atom | Predicates.Body.Guard | Predicates.Body.Functional
+    Predicates.Body.Atom | Predicates.Body.Spread | Predicates.Body.Guard | Predicates.Body.Functional
   }
 
   object Predicates {
@@ -1379,6 +1379,20 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
         rule {
           SP ~ Polarity ~ Fixity ~ Names.Predicate ~ optWS ~ Predicates.PatternList ~ SP ~> ParsedAst.Predicate.Body.Atom
+        }
+      }
+
+      def Spread: Rule1[ParsedAst.Predicate.Body.Spread] = {
+        def Polarity: Rule1[Ast.Polarity] = rule {
+          (keyword("not") ~ WS ~ push(Ast.Polarity.Negative)) | push(Ast.Polarity.Positive)
+        }
+
+        def Fixity: Rule1[Ast.Fixity] = rule {
+          (keyword("fix") ~ WS ~ push(Ast.Fixity.Fixed)) | push(Ast.Fixity.Loose)
+        }
+
+        rule {
+          SP ~ Polarity ~ Fixity ~ Names.Predicate ~ optWS ~ "(" ~ optWS ~ atomic("...") ~ Expression ~ optWS ~ ")" ~ SP ~> ParsedAst.Predicate.Body.Spread
         }
       }
 

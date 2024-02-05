@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Denotation}
-import ca.uwaterloo.flix.language.ast.Type.getFlixType
+import ca.uwaterloo.flix.language.ast.Type.{getFlixType, mkRelation}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.inference.RestrictableChooseInference
@@ -1488,6 +1488,26 @@ object TypeInference {
           predicateType <- unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
           tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
         } yield (tconstrs, Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
+
+      case KindedAst.Predicate.Body.Spread(pred, den, polarity, fixity, exp, tvar, loc) =>
+        val freshTypeConstructorVar = Type.freshVar(Kind.Star ->: Kind.Star, loc)
+        val freshElmTypeVar = Type.freshVar(Kind.Star, loc)
+        val expectedType = Type.mkApply(freshTypeConstructorVar, List(freshElmTypeVar), loc)
+
+        // TODO: Introduce function and use in inject too.
+        // Require Order and Foldable instances.
+        val orderSym = PredefinedClasses.lookupClassSym("Order", root)
+        val foldableSym = PredefinedClasses.lookupClassSym("Foldable", root)
+        val order = Ast.TypeConstraint(Ast.TypeConstraint.Head(orderSym, loc), freshElmTypeVar, loc)
+        val foldable = Ast.TypeConstraint(Ast.TypeConstraint.Head(foldableSym, loc), freshTypeConstructorVar, loc)
+
+        val restRow = Type.freshVar(Kind.SchemaRow, loc)
+        for {
+          (constrs, tpe, eff) <- inferExp(exp, root, level)
+          _ <- expectTypeM(expectedType, tpe, loc)
+          predicateType <- unifyTypeM(tvar, mkRelation(List(freshElmTypeVar), loc), loc)
+          expEff <- unifyEffM(Type.Pure, eff, loc)
+        } yield (constrs ++ List(order, foldable), Type.mkSchemaRowExtend(pred, predicateType, restRow, loc))
 
       case KindedAst.Predicate.Body.Functional(outVars, exp, loc) =>
         val tupleType = Type.mkTuplish(outVars.map(_.tvar), loc)

@@ -293,6 +293,8 @@ object ResolvedAst {
 
       case class Atom(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, terms: List[Pattern], loc: SourceLocation) extends Predicate.Body
 
+      case class Spread(pred: Name.Pred, den: Denotation, polarity: Ast.Polarity, fixity: Ast.Fixity, exp: Expr, loc: SourceLocation) extends Predicate.Body
+
       case class Functional(outVars: List[Symbol.VarSym], exp: Expr, loc: SourceLocation) extends Predicate.Body
 
       case class Guard(exp: Expr, loc: SourceLocation) extends Predicate.Body

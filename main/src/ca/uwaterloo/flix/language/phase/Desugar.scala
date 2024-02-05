@@ -990,6 +990,10 @@ object Desugar {
       val ts = terms.map(visitPattern)
       DesugaredAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
 
+    case WeededAst.Predicate.Body.Spread(pred, den, polarity, fixity, exp, loc) =>
+      val e = visitExp(exp)
+      DesugaredAst.Predicate.Body.Spread(pred, den, polarity, fixity, e, loc)
+
     case WeededAst.Predicate.Body.Functional(idents, exp, loc) =>
       val e = visitExp(exp)
       DesugaredAst.Predicate.Body.Functional(idents, e, loc)

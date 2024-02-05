@@ -1933,6 +1933,12 @@ object Weeder {
           WeededAst.Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, ts ::: t :: Nil, loc)
       }
 
+    case ParsedAst.Predicate.Body.Spread(sp1, polarity, fixity, ident, exp, sp2) =>
+      val loc = mkSL(sp1, sp2)
+      mapN(visitExp(exp)) {
+        case e => WeededAst.Predicate.Body.Spread(Name.mkPred(ident), Denotation.Relational, polarity, fixity, e, loc)
+      }
+
     case ParsedAst.Predicate.Body.Functional(sp1, idents, exp, sp2) =>
       mapN(visitExp(exp)) {
         case e => WeededAst.Predicate.Body.Functional(idents.toList, e, mkSL(sp1, sp2))

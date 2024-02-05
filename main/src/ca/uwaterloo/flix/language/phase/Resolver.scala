@@ -1823,6 +1823,12 @@ object Resolver {
             ts => ResolvedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc)
           }
 
+        case NamedAst.Predicate.Body.Spread(pred, den, polarity, fixity, exp, loc) =>
+          val eVal = Expressions.resolve(exp, env, taenv, ns0, root)
+          mapN(eVal) {
+            case e => ResolvedAst.Predicate.Body.Spread(pred, den, polarity, fixity, e, loc)
+          }
+
         case NamedAst.Predicate.Body.Functional(idents, exp, loc) =>
           val outVars = idents.map {
             case ident => env(ident.name).collectFirst {
