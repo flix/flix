@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-mod FixpointAlt.Interpreter {
+mod Fixpoint.Interpreter {
 
     use Fixpoint.Ast.Ram.{RamStmt, RelOp, RamSym, RamTerm, BoolExp, RowVar, toDenotation}
     use Fixpoint.Ast.Shared.Denotation
