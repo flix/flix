@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation}
 import ca.uwaterloo.flix.language.ast.ParsedAst.TypeParams
 import ca.uwaterloo.flix.language.ast.WeededAst.Pattern
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.language.errors._
 import ca.uwaterloo.flix.util.Validation._
@@ -1335,43 +1334,28 @@ object Weeder {
         args => WeededAst.Expr.Do(op, args, loc)
       }
 
-    case ParsedAst.Expression.Try(sp1, exp, ParsedAst.CatchOrHandler.Catch(rules), sp2) =>
+    case ParsedAst.Expression.Try(sp1, exp, ParsedAst.HandlerList.CatchHandlerList(handlers0), sp2) =>
       val expVal = visitExp(exp)
-      val rulesVal = traverse(rules) {
-        case ParsedAst.CatchRule(ident, fqn, body) =>
-          mapN(visitExp(body)) {
-            case b => WeededAst.CatchRule(ident, fqn.toString, b)
-          }
+      val rulesVal = traverse(handlers0) {
+        case ParsedAst.TryHandler.Catch(rules) => traverse(rules) {
+          case ParsedAst.CatchRule(ident, fqn, body) =>
+            mapN(visitExp(body)) {
+              case b => WeededAst.CatchRule(ident, fqn.toString, b)
+            }
+        }
       }
 
       mapN(expVal, rulesVal) {
-        case (e, rs) => WeededAst.Expr.TryCatch(e, rs, mkSL(sp1, sp2))
+        case (e, rs) => WeededAst.Expr.TryCatch(e, rs.flatten, mkSL(sp1, sp2))
       }
 
     // not handling these rules yet
-    case ParsedAst.Expression.Try(sp1, exp0, ParsedAst.CatchOrHandler.Handler(eff, rules0), sp2) =>
-      val expVal = visitExp(exp0)
-      val rulesVal = traverse(rules0.getOrElse(Seq.empty)) {
-        case ParsedAst.HandlerRule(op, fparams0, body0) =>
-          // In this case, we want an extra resumption argument
-          // so both an empty list and a singleton list should be padded with unit
-          // [] --> [_unit]
-          // [x] --> [_unit, x]
-          // [x, ...] --> [x, ...]
-          val fparamsValPrefix =
-            if (fparams0.fparams.sizeIs == 1)
-              visitFormalParams(ParsedAst.FormalParamList(fparams0.sp1, Seq.empty, fparams0.sp2), Presence.Forbidden)
-            else
-              Validation.success(Nil)
-          val fparamsValSuffix = visitFormalParams(fparams0, Presence.Forbidden)
-          val bodyVal = visitExp(body0)
-          mapN(fparamsValPrefix, fparamsValSuffix, bodyVal) {
-            case (fparamsPrefix, fparamsSuffix, body) => WeededAst.HandlerRule(op, fparamsPrefix ++ fparamsSuffix, body)
-          }
-      }
+    case ParsedAst.Expression.Try(sp1, exp0, ParsedAst.HandlerList.WithHandlerList(handlers0), sp2) =>
       val loc = mkSL(sp1, sp2)
-      mapN(expVal, rulesVal) {
-        case (exp, rules) => WeededAst.Expr.TryWith(exp, eff, rules, loc)
+      val expVal = visitExp(exp0)
+      val handlerVal = traverse(handlers0)(visitWithHandler)
+      mapN(expVal, handlerVal) {
+        case (exp, handlers) => WeededAst.Expr.TryWith(exp, handlers, loc)
       }
 
     case ParsedAst.Expression.SelectChannel(sp1, rules, exp, sp2) =>
@@ -2647,6 +2631,37 @@ object Weeder {
       Validation.toSoftFailure(ident, ReservedName(ident, ident.loc))
     } else {
       Validation.success(ident)
+    }
+  }
+
+  /**
+    * Performs weeding on the [[ParsedAst.TryHandler.WithHandler]] `handler0`.
+    *
+    * For each handler rule we add an extra resumption argument
+    * so both an empty parameter list and a singleton parameter list should be padded with unit
+    *
+    * `[] --> [_unit]`
+    *
+    * `[x] --> [_unit, x]`
+    *
+    * `[x, ...] --> [x, ...]`
+    */
+  private def visitWithHandler(handler0: ParsedAst.TryHandler.WithHandler)(implicit flix: Flix): Validation[WeededAst.WithHandler, WeederError] = {
+    val handlerVals = traverse(handler0.rules) {
+      case ParsedAst.HandlerRule(op, fparams0, body0) =>
+        val fparamsValPrefix =
+          if (fparams0.fparams.sizeIs == 1)
+            visitFormalParams(ParsedAst.FormalParamList(fparams0.sp1, Seq.empty, fparams0.sp2), Presence.Forbidden)
+          else
+            Validation.success(Nil)
+        val fparamsValSuffix = visitFormalParams(fparams0, Presence.Forbidden)
+        val bodyVal = visitExp(body0)
+        mapN(fparamsValPrefix, fparamsValSuffix, bodyVal) {
+          case (fparamsPrefix, fparamsSuffix, body) => WeededAst.HandlerRule(op, fparamsPrefix ++ fparamsSuffix, body)
+        }
+    }
+    mapN(handlerVals) {
+      case hs => WeededAst.WithHandler(handler0.eff, hs)
     }
   }
 
