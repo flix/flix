@@ -154,16 +154,15 @@ mod DelayMap {
     @Experimental @ParallelWhenPure
     pub def count(f: (k, v) -> Bool \ ef, m: DelayMap[k, v]): Int32 \ ef =
         def c() = foldLeftWithKey((b, k, v) -> if (f(k, v)) b + 1 else b, 0, m);
-        typematch f {
-            case g: (k, v) -> Bool \ {} =>
+        match purityOf2(f) {
+            case Purity.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    let h = (k, v) -> g(k, force v);
+                    let h = (k, v) -> g((k, force v));
                     let DMap(t) = m;
                     RedBlackTree.parCount(threads() - 1, h, t)
                 else
                     c()
-            case _: (k, v) -> Bool \ ef => c()
-            case _: _  => unreachable!()
+            case Purity.Impure(_) => c()
         }
 
     ///
@@ -197,10 +196,10 @@ mod DelayMap {
     @Experimental @ParallelWhenPure
     pub def minimumKeyBy(cmp: (k, k) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
-        typematch cmp {
-            case g: (k, k) -> Comparison \ {} =>
+        match purityOf2(cmp) {
+            case Purity.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    let h = (kl, _, kr, _) -> g(kl, kr);
+                    let h = (kl, _, kr, _) -> g((kl, kr));
                     let DMap(t) = m;
                     let res = RedBlackTree.parMinimumBy(threads() - 1, h, t);
                     match res {
@@ -209,8 +208,7 @@ mod DelayMap {
                     }
                 else
                     min()
-            case _: (k, k) -> Comparison \ ef => min()
-            case _: _ => unreachable!()
+            case Purity.Impure(_) => min()
         }
     ///
     /// Optionally finds `k => v` where `v` is the smallest value.
@@ -231,10 +229,10 @@ mod DelayMap {
     @Experimental @ParallelWhenPure
     pub def minimumValueBy(cmp: (v, v) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def min() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.LessThan) (kl, vl) else (kr, vr), m);
-        typematch cmp {
-            case g: (v, v) -> Comparison \ {} =>
+        match purityOf2(cmp) {
+            case Purity.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    let h = (_, vl, _, vr) -> g(force vl, force vr);
+                    let h = (_, vl, _, vr) -> g((force vl, force vr));
                     let DMap(t) = m;
                     let res = RedBlackTree.parMinimumBy(threads() - 1, h, t);
                     match res {
@@ -243,8 +241,7 @@ mod DelayMap {
                     }
                 else
                     min()
-            case _: (v, v) -> Comparison \ ef => min()
-            case _: _ => unreachable!()
+            case Purity.Impure(_) => min()
         }
 
     ///
@@ -270,10 +267,10 @@ mod DelayMap {
     @Experimental @ParallelWhenPure
     pub def maximumKeyBy(cmp: (k, k) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(kl, kr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
-        typematch cmp {
-            case g: (k, k) -> Comparison \ {} =>
+        match purityOf2(cmp) {
+            case Purity.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    let h = (kl, _, kr, _) -> g(kl, kr);
+                    let h = (kl, _, kr, _) -> g((kl, kr));
                     let DMap(t) = m;
                     let res = RedBlackTree.parMaximumBy(threads() - 1, h, t);
                     match res {
@@ -282,8 +279,7 @@ mod DelayMap {
                     }
                 else
                     max()
-            case _: (k, k) -> Comparison \ ef => max()
-            case _: _ => unreachable!()
+            case Purity.Impure(_) => max()
         }
 
     ///
@@ -305,10 +301,10 @@ mod DelayMap {
     @Experimental @ParallelWhenPure
     pub def maximumValueBy(cmp: (v, v) -> Comparison \ ef, m: DelayMap[k, v]): Option[(k, v)] \ ef =
         def max() = reduceLeftWithKey((kl, vl, kr, vr) -> if (cmp(vl, vr) == Comparison.GreaterThan) (kl, vl) else (kr, vr), m);
-        typematch cmp {
-            case g: (v, v) -> Comparison \ {} =>
+        match purityOf2(cmp) {
+            case Purity.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    let h = (_, vl, _, vr) -> g(force vl, force vr);
+                    let h = (_, vl, _, vr) -> g((force vl, force vr));
                     let DMap(t) = m;
                     let res = RedBlackTree.parMaximumBy(threads() - 1, h, t);
                     match res {
@@ -317,8 +313,7 @@ mod DelayMap {
                     }
                 else
                     max()
-            case _: (v, v) -> Comparison \ ef => max()
-            case _: _ => unreachable!()
+            case Purity.Impure(_) => max()
         }
 
     ///
@@ -359,10 +354,9 @@ mod DelayMap {
     ///
     @Experimental @LazyWhenPure
     pub def insertWithKey(f: (k, v, v) -> v \ ef, k: k, v: v, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
-        typematch f {
-            case g: (k, v, v) -> v \ {} => insertWithKeyL(g, k, v, m)
-            case g: (k, v, v) -> v \ ef => insertWithKeyE(g, k, v, m)
-            case _: _                   => unreachable!()
+        match purityOf3(f) {
+            case Purity.Pure(g)   => insertWithKeyL((x, y, z) -> g((x, y, z)), k, v, m)
+            case Purity.Impure(g) => insertWithKeyE((x, y, z) -> g((x, y, z)), k, v, m)
         }
 
     ///
@@ -405,10 +399,9 @@ mod DelayMap {
     ///
     @Experimental @ParallelWhenPure @LazyWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef =
-        typematch f {
-            case g: (k, v1) -> v2 \ {} => mapWithKeyL(g, m)
-            case g: (k, v1) -> v2 \ ef => mapWithKeyE(g, m)
-            case _: _                  => unreachable!()
+        match purityOf2(f) {
+            case Purity.Pure(g)   => mapWithKeyL((x, y) -> g((x, y)), m)
+            case Purity.Impure(g) => mapWithKeyE((x, y) -> g((x, y)), m)
         }
 
     ///
@@ -516,10 +509,9 @@ mod DelayMap {
     ///
     @Experimental @LazyWhenPure
     pub def unionWithKey(f: (k, v, v) -> v \ ef, m1: DelayMap[k, v], m2: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
-        typematch f {
-            case g: (k, v, v) -> v \ {} => unionWithKeyL(g, m1, m2)
-            case g: (k, v, v) -> v \ ef => unionWithKeyE(g, m1, m2)
-            case _: _                   => unreachable!()
+        match purityOf3(f) {
+            case Purity.Pure(g)   => unionWithKeyL((x, y, z) -> g((x, y, z)), m1, m2)
+            case Purity.Impure(g) => unionWithKeyE((x, y, z) -> g((x, y, z)), m1, m2)
         }
 
     ///
@@ -715,10 +707,9 @@ mod DelayMap {
     ///
     @Experimental @LazyWhenPure
     pub def updateWithKey(f: (k, v) -> Option[v] \ ef, k: k, m: DelayMap[k, v]): DelayMap[k, v] \ ef with Order[k] =
-        typematch f {
-            case g: (k, v) -> Option[v] \ {} => updateWithKeyL(g, k, m)
-            case g: (k, v) -> Option[v] \ ef => updateWithKeyE(g, k, m)
-            case _: _                        => unreachable!()
+        match purityOf2(f) {
+            case Purity.Pure(g)   => updateWithKeyL((x, y) -> g((x, y)), k, m)
+            case Purity.Impure(g) => updateWithKeyE((x, y) -> g((x, y)), k, m)
         }
 
     ///
@@ -851,15 +842,14 @@ mod DelayMap {
             let _ = parallelForce(m);
             RedBlackTree.sumWith((k, v) -> f(k, force v), t)
         };
-        typematch f {
-            case g: (k, v) -> Int32 \ {} =>
+        match purityOf2(f) {
+            case Purity.Pure(g) =>
                 if (useParallelEvaluation(m))
-                    let h = (k, v) -> g(k, force v);
+                    let h = (k, v) -> g((k, force v));
                     RedBlackTree.parSumWith(threads() - 1, h, t)
                 else
                     sw()
-            case _: (k, v) -> Int32 \ ef => sw()
-            case _: _                    => unreachable!()
+            case Purity.Impure(_) => sw()
         }
 
     ///
