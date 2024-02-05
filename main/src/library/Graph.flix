@@ -621,43 +621,92 @@ mod Graph {
         case Path(xs) => Path(z :: xs)
     }
 
-    pub def maxFlow(g: m[(Int32, Int32, Int32)]): Option[Int32] with Foldable[m] =
-        ???
+    pub def done(p: Path): Bool = match p {
+        case Path(xs) => List.isEmpty(xs)
+    }
 
-    def _path(src: { src = Int32 }, dst: { dst = Int32 }, g: m[(Int32, Int32)]): Path with Foldable[m] =
+    type alias From = Int32
+    type alias To = Int32
+    type alias UpperCapacity = Int32
+    type alias Flow = Int32
+    type alias FlowNetwork = (From, To, UpperCapacity, Flow)
+
+    // TODO: Handle residual network, i.e., reversed edges with negative flow and allow finding paths in that combined with normal network.
+
+    pub def maxFlow(src: { src = From }, dst: { dst = To }, g: m[(From, To, UpperCapacity)]): Flow with Foldable[m] =
+        def fordFulkerson(flowNetwork) = {
+            let path = augmentingPath(src, dst, flowNetwork);
+            if (done(path))
+                getMaxFlow(dst.dst, flowNetwork)
+            else
+                let incr = pathMinCapacity(path, flowNetwork);
+                let updatedNetwork = increaseFlow(path, incr, flowNetwork);
+                fordFulkerson(updatedNetwork)
+        };
+        // Init with 0 flow
+        let flowNetwork = Foldable.toVector(g) |> Vector.map(match (x, y, z) -> (x, y, z, 0));
+        fordFulkerson(flowNetwork)
+
+    def getMaxFlow(dst: To, g: m[FlowNetwork]): Flow with Foldable[m] =
         let edges = inject g into Edge;
         let rules = #{
-            Reach(x, y; init(y, x)) :- Edge(x, y).
-            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(y, z).
+            Flow(f) :- Edge(_, dst, _, f).
+        };
+        let result = query edges, rules select f from Flow(f);
+        Vector.sum(result)
+
+    def augmentingPath(src: { src = From }, dst: { dst = To }, g: m[FlowNetwork]): Path with Foldable[m] =
+        let edges = inject g into Edge;
+        let rules = #{
+            Reach(x, y; init(y, x)) :- Edge(x, y, u, f), if (u - f) > 0.
+            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(y, z, u, f), if (u - f) > 0.
         };
         let s = src.src;
         let t = dst.dst;
         let result = query edges, rules select fn from Reach(s, t; fn);
         Vector.get(0, result)
 
-    def pathMinCapacity(p: Path, g: m[(Int32, Int32, Int32)]): Int32 with Foldable[m] =
+    def pathMinCapacity(p: Path, g: m[FlowNetwork]): Int32 with Foldable[m] =
         let Path(xs) = p;
         let ps = inject xs into Path;
         let edges = inject g into Edge;
         let rules = #{
-            PathCapacity(u)   :- Edge(x, y, u), Path(x), Path(y).
-            NonMinCapacity(u) :- PathCapacity(u), PathCapacity(v), if v < u.
-            MinCapacity(u)    :- PathCapacity(u), not NonMinCapacity(u).
+            PathCapacity(u - f)   :- Edge(x, y, u, f), Path(x), Path(y), if f <= u and f >= 0.
+            NonMinCapacity(u)     :- PathCapacity(u), PathCapacity(v), if v < u.
+            MinCapacity(u)        :- PathCapacity(u), not NonMinCapacity(u).
         };
         let result = query ps, edges, rules select u from MinCapacity(u);
         Vector.get(0, result)
 
+    def increaseFlow(p: Path, incr: Int32, g: m[FlowNetwork]): Vector[FlowNetwork] with Foldable[m] =
+        let Path(xs) = p;
+        let ps = inject xs into Path;
+        let edges = inject g into Edge;
+        let rules = #{
+            UpdatedEdge(x, y, u, f + incr) :- Edge(x, y, u, f), Path(x), Path(y), if (f + incr) <= u.
+        };
+        query ps, edges, rules select (x, y, u, f) from UpdatedEdge(x, y, u, f)
+
     // Tests
+    @Test
+    def testPath01(): Bool =
+        let s = 1;
+        let t = 5;
+        let g = Set#{ (1, 2, 1, 0), (2, 3, 1, 0), (3, 4, 1, 0), (3, 8, 1, 0), (4, 5, 1, 0), (3, 5, 1, 0) };
+        let Path(xs) = augmentingPath(src = s, dst = t, g);
+        Assert.eq(5 :: 3 :: 2 :: 1 :: Nil, xs)
+
     @Test
     def testPathMinCapacity01(): Bool =
         let p = Path(5 :: 4 :: 3 :: 2 :: 1 :: Nil);
-        let g = Set#{(1, 2, 3), (1, 3, 4), (2, 3, 1), (3, 4, 5), (4, 5, 10)};
+        let g = Set#{(1, 2, 3, 0), (1, 3, 4, 0), (2, 3, 1, 0), (3, 4, 5, 0), (4, 5, 10, 0)};
         Assert.eq(1, pathMinCapacity(p, g))
 
     @Test
     def testPathMinCapacity02(): Bool =
         let p = Path(5 :: 4 :: 3 :: 2 :: 1 :: Nil);
-        let g = Set#{(1, 2, 3), (1, 3, 4), (2, 3, 3), (3, 4, 5), (4, 5, 10), (6, 7, 1)};
+        let g = Set#{(1, 2, 3, 0), (1, 3, 4, 0), (2, 3, 3, 0), (3, 4, 5, 0), (4, 5, 10, 0), (6, 7, 1, 0)};
         Assert.eq(3, pathMinCapacity(p, g))
+
 
 }
