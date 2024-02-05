@@ -134,7 +134,7 @@ object ConstraintResolution {
     case KindedAst.Def(sym, KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc), exp) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
-      if (sym.toString == "Test.Exp.Record.Extend.testRecordExtend03") {
+      if (sym.toString == "Test.Dec.AssocEff.serveDessert") {
 //        startLogging()
       }
       log(sym)
@@ -399,7 +399,10 @@ object ConstraintResolution {
           // Case 1: Flexible var. It might be resolved later.
           case Type.Var(sym, _) if renv0.isFlexible(sym) =>
             Result.Ok((List(TypingConstraint.Class(clazz, t, loc)), progress))
-          // Case 2: Something rigid (const or rigid var). We can look this up immediately.
+          // Case 2: Assoc type. It might be resolved later.
+          case _: Type.AssocType =>
+            Result.Ok((List(TypingConstraint.Class(clazz, t, loc)), progress))
+          // Case 3: Something rigid (const or rigid var). We can look this up immediately.
           case _ =>
             // we mark t's tvars as rigid so we get the substitution in the right direction
             val renv = t.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
@@ -409,7 +412,7 @@ object ConstraintResolution {
               inst =>
                 Unification.unifyTypes(t, inst.tpe, renv).toOption.map {
                   case (subst, Nil) => inst.tconstrs.map(subst.apply)
-                  case (_, _) => throw InternalCompilerException("unexpected leftover constraints", SourceLocation.Unknown)
+                  case (_, cs) => throw InternalCompilerException(s"unexpected leftover constraints: $cs", SourceLocation.Unknown)
                 }
             }.nextOption() match {
               case None => Result.Err(UnificationError.NoMatchingInstance(Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), tpe0, loc)))
