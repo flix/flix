@@ -218,17 +218,16 @@ mod Set {
     @ParallelWhenPure
     pub def minimumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
         def min() = reduceLeft((x, y) -> if (cmp(x, y) == Comparison.LessThan) x else y, s);
-        typematch cmp {
-            case g: (a, a) -> Comparison \ {} =>
+        match purityOf2(cmp) {
+            case Purity.Pure(g) =>
                 if (useParallelEvaluation(s))
-                    let h = (kl, _, kr, _) -> g(kl, kr);
+                    let h = (kl, _, kr, _) -> g((kl, kr));
                     let Set(t) = s;
                     let o = RedBlackTree.parMinimumBy(threads() - 1, h, t);
                     Option.map(fst, o)
                 else
                     min()
-            case _: (a, a) -> Comparison \ ef => min()
-            case _: _ => unreachable!()
+            case Purity.Impure(_) => min()
         }
 
     ///
@@ -250,17 +249,16 @@ mod Set {
     @ParallelWhenPure
     pub def maximumBy(cmp: (a, a) -> Comparison \ ef, s: Set[a]): Option[a] \ ef =
         def max() = reduceLeft((x, y) -> if (cmp(x, y) == Comparison.GreaterThan) x else y, s);
-        typematch cmp {
-            case g: (a, a) -> Comparison \ {} =>
+        match purityOf2(cmp) {
+            case Purity.Pure(g) =>
                 if (useParallelEvaluation(s))
-                    let h = (kl, _, kr, _) -> g(kl, kr);
+                    let h = (kl, _, kr, _) -> g((kl, kr));
                     let Set(t) = s;
                     let o = RedBlackTree.parMaximumBy(threads() - 1, h, t);
                     Option.map(fst, o)
                 else
                     max()
-            case _: (a, a) -> Comparison \ ef => max()
-            case _: _ => unreachable!()
+            case Purity.Impure(_) => max()
         }
 
     ///
@@ -356,16 +354,15 @@ mod Set {
     ///
     @ParallelWhenPure
     pub def count(f: a -> Bool \ ef, s: Set[a]): Int32 \ ef =
-        typematch f {
-            case g: a -> Bool \ {} =>
+        match purityOf(f) {
+            case Purity.Pure(g) =>
                 if (useParallelEvaluation(s))
                     let h = (k, _) -> g(k);
                     let Set(t) = s;
                     RedBlackTree.parCount(threads() - 1, h, t)
                 else
                     foldLeft((b, k) -> if (f(k)) b + 1 else b, 0, s)
-            case g: a -> Bool \ ef => foldLeft((b, k) -> if (g(k)) b + 1 else b, 0, s)
-            case _: _  => unreachable!()
+            case Purity.Impure(g) => foldLeft((b, k) -> if (g(k)) b + 1 else b, 0, s)
         }
 
     ///
@@ -383,14 +380,13 @@ mod Set {
     pub def sumWith(f: a -> Int32 \ ef, s: Set[a]): Int32 \ ef =
         let Set(t) = s;
         def sw() = RedBlackTree.sumWith((k, _) -> f(k), t);
-        typematch f {
-            case g: a -> Int32 \ {} =>
+        match purityOf(f) {
+            case Purity.Pure(g) =>
                 if (useParallelEvaluation(s))
                     RedBlackTree.parSumWith(threads() - 1, (k, _) -> g(k), t)
                 else
                     sw()
-            case _: a -> Int32 \ ef => sw()
-            case _: _ => unreachable!()
+            case Purity.Impure(_) => sw()
         }
 
     ///
