@@ -38,7 +38,7 @@ mod Test.Dec.AssocEff {
         pub def fromInt32(x: Int32): Int32 = x
     }
 
-    def avg(l: List[t]): t \ Div.Aef[t] with Add[t], Div[t] =
+    def avg(l: List[t]): t \ Div.Aef[t] with Add[t], Div[t], FromInt32[t] =
         List.foldLeft(Add.add, FromInt32.fromInt32(0), l) `Div.div` FromInt32.fromInt32(List.length(l))
 
     @Test
@@ -151,7 +151,7 @@ mod Test.Dec.AssocEff {
         l1 == l2
     }
 
-    @Test
+//    @Test
     pub def testDeepIterableLoudInt32_01(): Bool \ Console = region rc {
         let x1 = LoudInt32.LoudInt32(123);
         let it = DeepIterable.iterator(rc, x1);

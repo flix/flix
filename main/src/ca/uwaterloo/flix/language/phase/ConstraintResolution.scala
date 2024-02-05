@@ -134,7 +134,7 @@ object ConstraintResolution {
     case KindedAst.Def(sym, KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc), exp) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
-      if (sym.toString == "Test.Dec.AssocEff.serveDessert") {
+      if (sym.toString == "Test.Dec.AssocEff.avg") {
 //        startLogging()
       }
       log(sym)
