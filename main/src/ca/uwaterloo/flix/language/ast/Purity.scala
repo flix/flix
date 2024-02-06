@@ -49,6 +49,11 @@ object Purity {
   case object ControlImpure extends Purity
 
   /**
+    * Returns true if `p` is a purity that can use algebraic effects
+    */
+  def canUseAlgebraicEffects(p: Purity): Boolean = p == ControlImpure
+
+  /**
     * Returns the max effect of `p1` and `p2` according to this ordering:
     * Pure < Impure < ControlImpure
     */
