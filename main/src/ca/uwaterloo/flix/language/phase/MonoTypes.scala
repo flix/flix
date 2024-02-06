@@ -19,7 +19,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.collection.MapOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -290,25 +289,37 @@ object MonoTypes {
   }
 
   /**
-    * Returns a type where 1) aliases are removed and 2) enums are non-parametric.
+    * Returns the given type where
+    * - aliases have been removed.
+    * - `Enum[a, b, c]` have been replaced by `Enum`.
+    *
+    * Assumes that the type has no
+    * - Associated types.
+    * - Variables.
     */
-  private def visitType(tpe: Type): Type = tpe match {
-    case Type.Cst(TypeConstructor.Enum(sym, _), loc) =>
-      // Remove type arguments from enums.
-      Type.Cst(TypeConstructor.Enum(sym, Kind.Star), loc)
-    case Type.Cst(tc, loc) =>
-      Type.Cst(tc, loc)
-    case Type.Apply(tpe1, tpe2, loc) =>
-      Type.Apply(visitType(tpe1), visitType(tpe2), loc)
-    case Type.Alias(_, _, tpe, _) =>
-      // Remove Alias types.
-      visitType(tpe)
-    case Type.Var(sym, loc) =>
-      // Assumed to have been removed earlier.
-      throw InternalCompilerException(s"Unexpected type var: '$sym'", loc)
-    case Type.AssocType(cst, _, _, loc) =>
-      // Assumed to have been removed earlier.
-      throw InternalCompilerException(s"Unexpected associated type: '${cst.sym}'", loc)
+  private def visitType(tpe: Type): Type = {
+    val tc = tpe.typeConstructor.getOrElse(throw InternalCompilerException(s"Could not find type constructor of '$tpe'", tpe.loc))
+    tc match {
+      case TypeConstructor.Enum(sym, _) =>
+        // Throw away type arguments and fix the kind.
+        // `Enum[a, b, c]` becomes `Enum`
+        Type.Cst(TypeConstructor.Enum(sym, Kind.Star), tpe.loc)
+      case _ => tpe match {
+        case Type.Cst(_, _) =>
+          tpe
+        case Type.Apply(tpe1, tpe2, loc) =>
+          Type.Apply(visitType(tpe1), visitType(tpe2), loc)
+        case Type.Alias(_, _, tpe, _) =>
+          // Remove the alias
+          visitType(tpe)
+        case Type.Var(_, _) =>
+          // Assumed to have been removed earlier.
+          throw InternalCompilerException(s"Unexpected type var: '$tpe'", tpe.loc)
+        case Type.AssocType(_, _, _, _) =>
+          // Assumed to have been removed earlier.
+          throw InternalCompilerException(s"Unexpected associated type: '$tpe'", tpe.loc)
+      }
+    }
   }
 
   /**

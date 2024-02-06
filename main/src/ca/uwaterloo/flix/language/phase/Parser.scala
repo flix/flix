@@ -1019,24 +1019,28 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
         keyword("case") ~ WS ~ Names.Variable ~ optWS ~ ":" ~ optWS ~ atomic("##") ~ Names.JavaName ~ WS ~ atomic("=>") ~ optWS ~ Expression ~> ParsedAst.CatchRule
       }
 
-      def CatchBody: Rule1[ParsedAst.CatchOrHandler] = rule {
-        keyword("catch") ~ optWS ~ "{" ~ optWS ~ oneOrMore(CatchRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.CatchOrHandler.Catch
+      def CatchBody: Rule1[ParsedAst.TryHandler.Catch] = rule {
+        keyword("catch") ~ optWS ~ "{" ~ optWS ~ oneOrMore(CatchRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.TryHandler.Catch
       }
 
-      def HandlerRule: Rule1[ParsedAst.HandlerRule] = rule {
+      def WithHandlerRule: Rule1[ParsedAst.HandlerRule] = rule {
         keyword("def") ~ WS ~ Names.Operation ~ FormalParamList ~ optWS ~ atomic("=") ~ optWS ~ Expression ~> ParsedAst.HandlerRule
       }
 
-      def HandlerBody: Rule1[ParsedAst.CatchOrHandler] = rule {
-        keyword("with") ~ optWS ~ Names.QualifiedEffect ~ optional(optWS ~ "{" ~ optWS ~ zeroOrMore(HandlerRule).separatedBy(CaseSeparator) ~ optWS ~ "}") ~> ParsedAst.CatchOrHandler.Handler
+      def WithHandlerBody: Rule1[ParsedAst.TryHandler.WithHandler] = rule {
+        keyword("with") ~ optWS ~ Names.QualifiedEffect ~ optWS ~ "{" ~ optWS ~ oneOrMore(WithHandlerRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.TryHandler.WithHandler
       }
 
-      def Body: Rule1[ParsedAst.CatchOrHandler] = rule {
-        CatchBody | HandlerBody
+      def CatchHandlerList: Rule1[ParsedAst.HandlerList.CatchHandlerList] = rule {
+        oneOrMore(CatchBody).separatedBy(optWS) ~> ParsedAst.HandlerList.CatchHandlerList
+      }
+
+      def WithHandlerList: Rule1[ParsedAst.HandlerList.WithHandlerList] = rule {
+        oneOrMore(WithHandlerBody).separatedBy(optWS) ~> ParsedAst.HandlerList.WithHandlerList
       }
 
       rule {
-        SP ~ keyword("try") ~ WS ~ Expression ~ optWS ~ Body ~ SP ~> ParsedAst.Expression.Try
+        SP ~ keyword("try") ~ WS ~ Expression ~ optWS ~ (CatchHandlerList | WithHandlerList) ~ SP ~> ParsedAst.Expression.Try
       }
     }
 
@@ -1194,8 +1198,8 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def UnaryLambda: Rule1[ParsedAst.Expression.Lambda] = rule {
-      SP ~ FormalParam ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ((sp1: SourcePosition, param: ParsedAst.FormalParam, body: ParsedAst.Expression, sp2: SourcePosition) =>
-        ParsedAst.Expression.Lambda(sp1, ParsedAst.FormalParamList(Seq(param)), body, sp2))
+      SP ~ FormalParam ~ SP ~ optWS ~ atomic("->") ~ optWS ~ Expression ~ SP ~> ((sp1: SourcePosition, param: ParsedAst.FormalParam, sp2: SourcePosition, body: ParsedAst.Expression, sp3: SourcePosition) =>
+        ParsedAst.Expression.Lambda(sp1, ParsedAst.FormalParamList(sp1, Seq(param), sp2), body, sp3))
     }
 
     def Lambda: Rule1[ParsedAst.Expression.Lambda] = rule {
@@ -1631,7 +1635,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
   }
 
   def FormalParamList: Rule1[ParsedAst.FormalParamList] = rule {
-    "(" ~ optWS ~ zeroOrMore(FormalParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~> ParsedAst.FormalParamList
+    SP ~ "(" ~ optWS ~ zeroOrMore(FormalParam).separatedBy(optWS ~ "," ~ optWS) ~ optWS ~ ")" ~ SP ~> ParsedAst.FormalParamList
   }
 
   def PredicateParam: Rule1[ParsedAst.PredicateParam] = rule {

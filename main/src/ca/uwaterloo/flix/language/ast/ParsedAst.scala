@@ -1040,12 +1040,12 @@ object ParsedAst {
     /**
       * Try Expression.
       *
-      * @param sp1            the position of the first character in the expression.
-      * @param exp            the guarded expression.
-      * @param catchOrHandler the handler (catch/with) of the try expression.
-      * @param sp2            the position of the last character in the expression.
+      * @param sp1      the position of the first character in the expression.
+      * @param exp      the guarded expression.
+      * @param handlers the list of catch- or with-blocks of the try expression.
+      * @param sp2      the position of the last character in the expression.
       */
-    case class Try(sp1: SourcePosition, exp: ParsedAst.Expression, catchOrHandler: CatchOrHandler, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Try(sp1: SourcePosition, exp: ParsedAst.Expression, handlers: HandlerList, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * SelectChannel Expression.
@@ -1774,9 +1774,11 @@ object ParsedAst {
   /**
     * Wrapper for a list of [[ParsedAst.FormalParam]].
     *
+    * @param sp1     the position of the opening parenthesis.
     * @param fparams the list of [[FormalParam]]s.
+    * @param sp2     the position of the closing parenthesis.
     */
-  case class FormalParamList(fparams: Seq[ParsedAst.FormalParam])
+  case class FormalParamList(sp1: SourcePosition, fparams: Seq[ParsedAst.FormalParam], sp2: SourcePosition)
 
   /**
     * A common super-type for predicate parameters.
@@ -1880,18 +1882,38 @@ object ParsedAst {
     */
   case class Annotation(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition)
 
-  /**
-    * An enum representing the handler of a `try` expression.
-    */
-  sealed trait CatchOrHandler
 
-  object CatchOrHandler {
+  /**
+    * A common super-type for lists of handlers.
+    */
+  sealed trait HandlerList
+
+  object HandlerList {
+
+    /**
+      * A wrapper for a list of [[TryHandler.Catch]]es. This ensures that only catch-handlers are in the list.
+      *
+      * @param handlers The list of [[TryHandler.Catch]]
+      */
+    case class CatchHandlerList(handlers: Seq[TryHandler.Catch]) extends HandlerList
+
+    /**
+      * A wrapper for a list of [[TryHandler.WithHandler]]es. This ensures that only with-handlers are in the list.
+      *
+      * @param handlers The list of [[TryHandler.WithHandler]]
+      */
+    case class WithHandlerList(handlers: Seq[TryHandler.WithHandler]) extends HandlerList
+
+  }
+
+  object TryHandler {
+
     /**
       * A `catch` block for handling Java exceptions.
       *
       * @param rules the catch rules.
       */
-    case class Catch(rules: Seq[ParsedAst.CatchRule]) extends CatchOrHandler
+    case class Catch(rules: Seq[ParsedAst.CatchRule])
 
     /**
       * A `with` block for handling Flix effects.
@@ -1899,7 +1921,8 @@ object ParsedAst {
       * @param eff   the effect to be handled.
       * @param rules the handler rules.
       */
-    case class Handler(eff: Name.QName, rules: Option[Seq[ParsedAst.HandlerRule]]) extends CatchOrHandler
+    case class WithHandler(eff: Name.QName, rules: Seq[ParsedAst.HandlerRule])
+
   }
 
   /**

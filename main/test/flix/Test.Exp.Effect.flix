@@ -17,11 +17,6 @@ mod Test.Exp.Effect {
     }
 
     // @test
-    pub def handleEff03(): Bool = {
-        try true with Empty
-    }
-
-    // @test
     pub def perform01(): Unit \ Fail = {
         do Test.Exp.Effect.Fail.fail(":(")
     }
@@ -105,8 +100,6 @@ mod Test.Exp.Effect {
     pub def enumWithEffect04(f: Do[ef - Fail]): Bool = ???
 
     pub def enumWithEffect05(f: Do[Console + (ef - Fail)]): Bool = ???
-
-    eff Empty
 
     eff Fail {
         pub def fail(x: String): Unit
