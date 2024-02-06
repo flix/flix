@@ -105,14 +105,26 @@ object Purity {
     */
   def min(p: List[Purity]): Purity = p.foldLeft(Pure: Purity)(min)
 
-  def fromType(tpe: Type, universe: Set[Symbol.EffectSym]): Purity = {
-    evaluateFormula(tpe, universe) match {
+  /**
+    * Returns the purity of the given effect `eff`. Assumes that the given type
+    * is a well-formed formula without variables, aliases, or associated types.
+    */
+  def fromType(eff: Type, universe: Set[Symbol.EffectSym]): Purity = {
+    evaluateFormula(eff, universe) match {
       case set if set.isEmpty => Purity.Pure
       case set if set.sizeIs == 1 && set.contains(Symbol.IO) => Purity.Impure
       case _ => Purity.ControlImpure
     }
   }
 
+  /**
+    * Returns the set of effects described by the formula `f`.
+    *
+    * Assumes that `f` only contains wellformed [[TypeConstructor.Union]],
+    * [[TypeConstructor.Intersection]], and [[TypeConstructor.Complement]] of
+    * [[TypeConstructor.Pure]], [[TypeConstructor.Univ]], and
+    * [[TypeConstructor.Effect]].
+    */
   private def evaluateFormula(f: Type, universe: Set[Symbol.EffectSym]): Set[Symbol.EffectSym] = f match {
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
       Set(sym)
