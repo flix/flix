@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.util.InternalCompilerException
+
 sealed trait Purity
 
 /**
@@ -98,54 +100,42 @@ object Purity {
     */
   def min(p: List[Purity]): Purity = p.foldLeft(Pure: Purity)(min)
 
-  sealed trait I
-
-  object I {
-    case object Top extends I
-    case class TopM(set: Set[Symbol.EffectSym]) extends I
-    case class S(set: Set[Symbol.EffectSym]) extends I
-
-    def union(i1: I, i2: I): I = (i1, i2) match {
-      case (Top, _) => Top
-      case (_, Top) => Top
-      case (S(s1), S(s2)) => S(s1.union(s2))
-      case (S(s1), TopM(s2)) =>
-        // s1 + (T - s2) = T - (s2 - s1)
-        TopM(s2.diff(s1))
-      case (TopM(s1), S(s2)) =>
-        // (T - s1) + s2 = T - (s1 - s2)
-        TopM(s1.diff(s2))
-      case (TopM(s1), TopM(s2)) =>
-        // (T - s1) + (T - s2) = T - (s1 & s2)
-        TopM(s1.intersect(s2))
-    }
-
-    def intersect(i1: I, i2: I): I = (i1, i2) match {
-      case (Top, other) => other
-      case (other, Top) => other
-      case (S(s1), S(s2)) => S(s1.intersect(s2))
-      case (S(s1), TopM(s2)) =>
-        // s1 & (T - s2) = s1 - ({} + !s2) =
-        TopM(s2.diff(s1))
-      case (TopM(s1), S(s2)) =>
-        // (T - s1) + s2 = T - (s1 - s2)
-        TopM(s1.diff(s2))
-      case (TopM(s1), TopM(s2)) =>
-        // (T - s1) + (T - s2) = T - (s1 & s2)
-        TopM(s1.intersect(s2))
+  def fromType(tpe: Type, universe: Set[Symbol.EffectSym]): Purity = {
+    evaluateFormula(tpe, universe) match {
+      case set if set.isEmpty => Purity.Pure
+      case set if set.sizeIs == 1 && set.contains(Symbol.IO) => Purity.Impure
+      case _ => Purity.ControlImpure
     }
   }
 
-  def fromType(tpe0: Type): I = tpe0 match {
-    case Type.Cst(TypeConstructor.Effect(sym), _) => I.S(Set(sym))
-    case Type.Cst(TypeConstructor.Pure, _) => I.S(Set.empty)
-    case Type.Cst(TypeConstructor.Univ, _) => I.Top
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => ???
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => ???
-    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe, _) => ???
-    case Type.Var(sym, loc) => ???
-    case Type.Alias(cst, args, tpe, loc) => ???
-    case Type.AssocType(cst, arg, kind, loc) => ???
+  private def evaluateFormula(f: Type, universe: Set[Symbol.EffectSym]): Set[Symbol.EffectSym] = f match {
+    case Type.Cst(TypeConstructor.Effect(sym), _) =>
+      Set(sym)
+    case Type.Cst(TypeConstructor.Pure, _) =>
+      Set.empty
+    case Type.Cst(TypeConstructor.Univ, _) =>
+      universe
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) =>
+      val t1 = evaluateFormula(tpe1, universe)
+      val t2 = evaluateFormula(tpe2, universe)
+      t1.union(t2)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) =>
+      val t1 = evaluateFormula(tpe1, universe)
+      val t2 = evaluateFormula(tpe2, universe)
+      t1.intersect(t2)
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe, _) =>
+      val t = evaluateFormula(tpe, universe)
+      universe.diff(t)
+    case Type.Cst(_, _) =>
+      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
+    case Type.Apply(_, _, _) =>
+      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
+    case Type.Var(_, _) =>
+      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
+    case Type.Alias(_, _, _, _) =>
+      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
+    case Type.AssocType(_, _, _, _) =>
+      throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
   }
 
 }
