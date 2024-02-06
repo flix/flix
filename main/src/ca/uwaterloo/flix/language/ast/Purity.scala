@@ -62,11 +62,11 @@ object Purity {
     * Pure < Impure < ControlImpure
     */
   def combine(p1: Purity, p2: Purity): Purity = (p1, p2) match {
-    case (Pure, Pure) => Pure
     case (ControlImpure, _) => ControlImpure
     case (_, ControlImpure) => ControlImpure
     case (Impure, _) => Impure
     case (_, Impure) => Impure
+    case (Pure, Pure) => Pure
   }
 
   /**
