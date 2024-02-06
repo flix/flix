@@ -106,6 +106,15 @@ object Purity {
     * [[TypeConstructor.Intersection]], and [[TypeConstructor.Complement]] of
     * [[TypeConstructor.Pure]], [[TypeConstructor.Univ]], and
     * [[TypeConstructor.Effect]].
+    *
+    * Assume that universe is {Print, IO, Crash, Console}. plus is union,
+    * ampersand is intersection, and exclamation mark is complement.
+    *
+    * Pure == {}
+    * Univ == {Print, IO, Crash, Console}
+    * Crash == {Crash}
+    * Print + IO == {Print, IO}
+    * Univ & (!Print) == {IO, Crash, Console}
     */
   private def evaluateFormula(f: Type, universe: Set[Symbol.EffectSym]): Set[Symbol.EffectSym] = f match {
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
