@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.errors.TypeError.HackError
 import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint
@@ -135,7 +135,7 @@ object ConstraintResolution {
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
       if (sym.toString == "Test.Dec.AssocEff.avg") {
-//        startLogging()
+        //        startLogging()
       }
       log(sym)
 
@@ -424,7 +424,7 @@ object ConstraintResolution {
                 } map {
                   case res =>
                     // MATT always made progress?
-//                    val prog = progress || res.exists { case (_, p) => p }
+                    //                    val prog = progress || res.exists { case (_, p) => p }
                     val cs = res.flatMap { case (c, _) => c }
                     (cs, true)
                 }
@@ -526,6 +526,25 @@ object ConstraintResolution {
           val constr = TypingConstraint.Purification(sym, eff1, eff2, level, prov, newConstrs, loc)
           ReductionResult(subst0, subst, oldConstrs, List(constr), progress)
       }
+    // TODO this is partially copied from the above; should try to make an abstraction
+    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested0, loc) =>
+      // First reduce nested constraints
+      reduceAll3(nested0, renv, cenv, eqEnv, subst0).map {
+        // Case 1: We have reduced everything below. Now reduce the purity constraint.
+        case ReductionResult(_oldSubst, subst1, oldConstrs, newConstrs, progress) if newConstrs.isEmpty =>
+          val e1 = subst1(eff1)
+          // purify the inner type
+          val e2Raw = subst1(eff2)
+          val e2 = purifyEff(sym, e2Raw)
+          val qvars = e2Raw.typeVars.map(_.sym).filter(_.level >= level)
+          val subst = qvars.foldLeft(subst1)(_.unbind(_))
+          val constr = TypingConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov, loc)
+          ReductionResult(subst0, subst, oldConstrs, List(constr), progress = true)
+        // Case 2: Constraints remain below. Maintain the purity constraint.
+        case ReductionResult(_oldSubst, subst, oldConstrs, newConstrs, progress) =>
+          val constr = TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, newConstrs, loc)
+          ReductionResult(subst0, subst, oldConstrs, List(constr), progress)
+      }
   }
 
   def fromUnificationResult(res: Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError]): Result[(Substitution, List[TypingConstraint]), UnificationError] = {
@@ -567,6 +586,26 @@ object ConstraintResolution {
 
   def toClassTypingConstraint(tconstr: Ast.TypeConstraint, loc: SourceLocation): TypingConstraint = tconstr match {
     case Ast.TypeConstraint(head, arg, _) => TypingConstraint.Class(head.sym, arg, loc)
+  }
+
+  /**
+    * Replaces every occurrence of the effect symbol `sym` with pure in `eff`.
+    *
+    * Note: Does not work for polymorphic effects.
+    */
+  private def purifyEff(sym: Symbol.EffectSym, eff: Type): Type = {
+    def visit(t: Type): Type = t match {
+      case Type.Var(_, _) => t
+      case Type.Cst(tc, _) => tc match {
+        case TypeConstructor.Effect(sym2) if sym == sym2 => Type.Pure
+        case _ => t
+      }
+      case Type.Apply(tpe1, tpe2, loc) => Type.Apply(visit(tpe1), visit(tpe2), loc)
+      case Type.Alias(cst, _, tpe, _) => visit(tpe)
+      case Type.AssocType(cst, arg, kind, loc) => Type.AssocType(cst, visit(arg), kind, loc)
+    }
+
+    visit(eff)
   }
 
 }

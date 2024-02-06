@@ -26,6 +26,7 @@ sealed trait TypingConstraint {
     case TypingConstraint.Equality(Type.Pure, tvar2: Type.Var, _, _) => (0, 0, 0)
     case TypingConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, _, _) if tvar1 != tvar2 => (0, 0, 0)
     case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested, loc) => (0, 0, 0)
+    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested, loc) => (0, 0, 0)
     case TypingConstraint.Equality(tpe1, tpe2, prov, loc) =>
       val tvars = (tpe1.typeVars ++ tpe2.typeVars)
       val effTvars = tvars.filter(_.kind == Kind.Eff)
@@ -37,18 +38,25 @@ sealed trait TypingConstraint {
     case TypingConstraint.Equality(tpe1, tpe2, prov, loc) => s"$tpe1 ~ $tpe2"
     case TypingConstraint.Class(sym, tpe, loc) => s"$sym[$tpe]"
     case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested, loc) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
+    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested, loc) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
   }
 
   def numVars: Int = this match {
     case TypingConstraint.Equality(tpe1, tpe2, prov, loc) => tpe1.typeVars.size + tpe2.typeVars.size
     case TypingConstraint.Class(sym, tpe, loc) => tpe.typeVars.size
     case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested, loc) => eff1.typeVars.size + eff2.typeVars.size
+    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested, loc) => eff1.typeVars.size + eff2.typeVars.size
   }
 
   private def toSubDot: String = this match {
     case TypingConstraint.Equality(tpe1, tpe2, prov, loc) => s"""$dotId [label = "$tpe1 ~ $tpe2"];"""
     case TypingConstraint.Class(sym, tpe, loc) => s"""$dotId [label = "$sym[$tpe]"];"""
     case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested, loc) =>
+      val header = s"""$dotId [label = "$eff1 ~ ($eff2)[$sym ↦ Pure]"];"""
+      val children = nested.map(_.toSubDot)
+      val edges = nested.map { child => s"$dotId -> ${child.dotId};" }
+      (header :: children ::: edges).mkString("\n")
+    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested, loc) =>
       val header = s"""$dotId [label = "$eff1 ~ ($eff2)[$sym ↦ Pure]"];"""
       val children = nested.map(_.toSubDot)
       val edges = nested.map { child => s"$dotId -> ${child.dotId};" }
@@ -68,6 +76,9 @@ object TypingConstraint {
 
   // eff1 ~ eff2[symˡᵉᵛᵉˡ ↦ Pure] ∧ nested
   case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, level: Level, prov: Provenance, nested: List[TypingConstraint], loc: SourceLocation) extends TypingConstraint
+
+  // eff1 ~ eff2[symˡᵉᵛᵉˡ ↦ Pure] ∧ nested
+  case class EffPurification(sym: Symbol.EffectSym, eff1: Type, eff2: Type, level: Level, prov: Provenance, nested: List[TypingConstraint], loc: SourceLocation) extends TypingConstraint
 
   def toDot(constrs: List[TypingConstraint]): String = {
     val contents = constrs.map(_.toSubDot)
