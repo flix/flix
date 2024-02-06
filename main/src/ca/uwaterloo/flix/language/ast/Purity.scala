@@ -28,28 +28,32 @@ sealed trait Purity
   * - Control-Impure expressions can do all the above but also use unhandled
   *   algebraic effects.
   *
-  * In terms of the set of expressions that is allowed under each effect the following holds:
+  * In terms of the set of expressions that is allowed under each effect the
+  * following holds:
   * `e_pure ⊆ e_impure ⊆ e_control-impure`.
   */
 object Purity {
 
   /**
-    * Represents a pure expression (i.e. an expression that cannot have side-effects).
+    * Represents a pure expression (i.e. an expression that cannot have
+    * side-effects).
     */
   case object Pure extends Purity
 
   /**
-    * Represents an impure expression (i.e. an expression that could potentially have side-effects).
+    * Represents an impure expression (i.e. an expression that could potentially
+    * have side-effects).
     */
   case object Impure extends Purity
 
   /**
-    * Represents a control-impure expression (i.e. an expression that could potentially use effects like `do Print.print()`).
+    * Represents a control-impure expression (i.e. an expression that could
+    * potentially use effects like `do Print.print()`).
     */
   case object ControlImpure extends Purity
 
   /**
-    * Returns true if `p` is a purity that can use algebraic effects
+    * Returns true if `p` is a purity that can use algebraic effects.
     */
   def canUseAlgebraicEffects(p: Purity): Boolean = p == ControlImpure
 
@@ -69,7 +73,9 @@ object Purity {
     * Returns the max effect of `p1`, `p2`, and `p3` according to this ordering:
     * Pure < Impure < ControlImpure
     */
-  def combine(p1: Purity, p2: Purity, p3: Purity): Purity = combine(combine(p1, p2), p3)
+  def combine(p1: Purity, p2: Purity, p3: Purity): Purity = {
+    combine(combine(p1, p2), p3)
+  }
 
   /**
     * Returns the max effect of `p` according to this ordering:
@@ -77,33 +83,9 @@ object Purity {
     *
     * Returns [[Pure]] if empty.
     */
-  def combine(p: List[Purity]): Purity = p.foldLeft(Pure: Purity)(combine)
-
-  /**
-    * Returns the min effect of `p1` and `p2` according to this ordering:
-    * Pure < Impure < ControlImpure
-    */
-  def min(p1: Purity, p2: Purity): Purity = (p1, p2) match {
-    case (Pure, _) => Pure
-    case (_, Pure) => Pure
-    case (Impure, _) => Impure
-    case (_, Impure) => Impure
-    case (_, _) => ControlImpure
+  def combine(p: List[Purity]): Purity = {
+    p.foldLeft(Pure: Purity)(combine)
   }
-
-  /**
-    * Returns the min effect of `p1`, `p2`, and `p3` according to this ordering:
-    * Pure < Impure < ControlImpure
-    */
-  def min(p1: Purity, p2: Purity, p3: Purity): Purity = min(min(p1, p2), p3)
-
-  /**
-    * Returns the min effect of `p` according to this ordering:
-    * Pure < Impure < ControlImpure
-    *
-    * Returns [[Pure]] if empty.
-    */
-  def min(p: List[Purity]): Purity = p.foldLeft(Pure: Purity)(min)
 
   /**
     * Returns the purity of the given effect `eff`. Assumes that the given type
