@@ -678,7 +678,7 @@ mod Graph {
 
     def increaseFlow(p: Path, incr: Int32, g: m[FlowNetwork]): List[FlowNetwork] with Foldable[m] =
         g
-        |> Foldable.filter(match (s, d, _, _) -> memberOf(s, p) and memberOf(d, p))
+        |> Foldable.filter(match (s, d, u, f) -> memberOf(s, p) and memberOf(d, p) and (f + incr) <= u)
         |> List.map(match (s, d, u, f) -> (s, d, u, f + incr))
 
     def memberOf(a: Int32, p: Path): Bool =
