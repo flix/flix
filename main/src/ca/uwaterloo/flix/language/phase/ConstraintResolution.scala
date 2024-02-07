@@ -467,7 +467,7 @@ object ConstraintResolution {
             case pair => log(pair); log(pair._1.level)
           }
           stopLogging()
-          return res.mapErr(HackError)
+          return res.mapErr(toTypeError(_, SourceLocation.Unknown))
       }
     }
     Result.Ok(ReductionResult(subst0, subst, Nil, curr, progress = true))
@@ -490,6 +490,25 @@ object ConstraintResolution {
     }
 
     tryReduce(sort(constrs))
+  }
+
+  def toTypeError(err: UnificationError, loc: SourceLocation)(implicit flix: Flix): TypeError = err match {
+    case UnificationError.MismatchedTypes(tpe1, tpe2) => TypeError.MismatchedTypes(tpe1, tpe2, tpe1, tpe2, RigidityEnv.empty, loc) // MATT renv and base types
+    case UnificationError.MismatchedBools(tpe1, tpe2) => TypeError.MismatchedBools(tpe1, tpe2, tpe1, tpe2, RigidityEnv.empty, loc) // MATT renv and base types
+    case UnificationError.MismatchedEffects(tpe1, tpe2) => TypeError.MismatchedEffects(tpe1, tpe2, tpe1, tpe2, RigidityEnv.empty, loc) // MATT renv and base types
+    case UnificationError.MismatchedCaseSets(tpe1, tpe2) => TypeError.MismatchedCaseSets(tpe1, tpe2, tpe1, tpe2, RigidityEnv.empty, loc) // MATT renv and base types
+    case UnificationError.RigidVar(tvar, tpe) => TypeError.MismatchedTypes(tvar, tpe, tvar, tpe, RigidityEnv.empty, loc) // MATT renv and base types
+    case UnificationError.OccursCheck(tvar, tpe) => TypeError.OccursCheck(tvar, tpe, tvar, tpe, RigidityEnv.empty, loc) // MATT renv and base types
+    case UnificationError.UndefinedLabel(label, labelType, recordType) => TypeError.UndefinedLabel(label, labelType, recordType, RigidityEnv.empty, loc) // MATT renv
+    case UnificationError.UndefinedPredicate(pred, predType, schemaType) => TypeError.UndefinedPred(pred, predType, schemaType, RigidityEnv.empty, loc) // MATT renv
+    case UnificationError.NonRecordType(nonRecordType) => TypeError.NonRecordType(nonRecordType, RigidityEnv.empty, loc) // MATT renv
+    case UnificationError.NonSchemaType(nonSchemaType) => TypeError.NonSchemaType(nonSchemaType, RigidityEnv.empty, loc) // MATT renv
+    case UnificationError.NoMatchingInstance(tconstr) => TypeError.MissingInstance(tconstr.head.sym, tconstr.arg, RigidityEnv.empty, loc) // MATT renv
+    case UnificationError.UnsupportedEquality(t1, t2) => ??? // TypeError.UnsupportedEquality(Ast.BroadEqualityConstraint(t1, t2), loc) // MATT impossible?
+    case UnificationError.IrreducibleAssocType(sym, t) => ??? // TypeError.IrreducibleAssocType(sym, t, loc) // MATT impossible?
+    case UnificationError.IterationLimit(n) => ???
+    case UnificationError.MismatchedArity(ts1, ts2) => ???
+    case UnificationError.MultipleMatchingInstances(tconstr) => ???
   }
 
   def sort(constrs: List[TypingConstraint]): List[TypingConstraint] =
