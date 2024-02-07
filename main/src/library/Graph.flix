@@ -658,7 +658,7 @@ mod Graph {
         let s = src.src;
         let t = dst.dst;
         let result = query edges, rules select fn from Reach(s, t; fn);
-        Vector.head(result)
+        Vector.head(result) |> Option.flatMap(match Path(xs) -> if (List.isEmpty(xs)) None else Some(Path(xs)))
 
     def pathMinCapacity(p: Path, g: m[FlowNetwork]): Int32 with Foldable[m] =
         let optMin = g |> Foldable.filter(match (s, d, _, _) -> memberOf(s, p) and memberOf(d, p))
