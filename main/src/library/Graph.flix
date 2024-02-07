@@ -634,17 +634,15 @@ mod Graph {
     // TODO: Handle residual network, i.e., reversed edges with negative flow and allow finding paths in that combined with normal network.
 
     pub def maxFlow(src: { src = From }, dst: { dst = To }, g: m[(From, To, UpperCapacity)]): Flow with Foldable[m] =
-        def fordFulkerson(flowNetwork) = {
-            let path = augmentingPath(src, dst, flowNetwork);
-            if (done(path))
-                getMaxFlow(dst.dst, flowNetwork)
-            else
+        def fordFulkerson(flowNetwork) = match augmentingPath(src, dst, flowNetwork) {
+            case None       => getMaxFlow(dst.dst, flowNetwork)
+            case Some(path) =>
                 let incr = pathMinCapacity(path, flowNetwork);
                 let updatedNetwork = increaseFlow(path, incr, flowNetwork);
                 fordFulkerson(updatedNetwork)
         };
         // Init with 0 flow
-        let flowNetwork = Foldable.toVector(g) |> Vector.map(match (x, y, z) -> (x, y, z, 0));
+        let flowNetwork = Foldable.toList(g) |> List.map(match (x, y, z) -> (x, y, z, 0));
         fordFulkerson(flowNetwork)
 
     def getMaxFlow(dst: To, g: m[FlowNetwork]): Flow with Foldable[m] =
@@ -655,7 +653,7 @@ mod Graph {
         let result = query edges, rules select f from Flow(f);
         Vector.sum(result)
 
-    def augmentingPath(src: { src = From }, dst: { dst = To }, g: m[FlowNetwork]): Path with Foldable[m] =
+    def augmentingPath(src: { src = From }, dst: { dst = To }, g: m[FlowNetwork]): Option[Path] with Foldable[m] =
         let edges = inject g into Edge;
         let rules = #{
             Reach(x, y; init(y, x)) :- Edge(x, y, u, f), if (u - f) > 0.
@@ -664,7 +662,7 @@ mod Graph {
         let s = src.src;
         let t = dst.dst;
         let result = query edges, rules select fn from Reach(s, t; fn);
-        Vector.get(0, result)
+        Vector.head(result)
 
     def pathMinCapacity(p: Path, g: m[FlowNetwork]): Int32 with Foldable[m] =
         let Path(xs) = p;
@@ -678,14 +676,14 @@ mod Graph {
         let result = query ps, edges, rules select u from MinCapacity(u);
         Vector.get(0, result)
 
-    def increaseFlow(p: Path, incr: Int32, g: m[FlowNetwork]): Vector[FlowNetwork] with Foldable[m] =
+    def increaseFlow(p: Path, incr: Int32, g: m[FlowNetwork]): List[FlowNetwork] with Foldable[m] =
+        g
+        |> Foldable.filter(match (s, d, _, _) -> memberOf(s, p) and memberOf(d, p))
+        |> List.map(match (s, d, u, f) -> (s, d, u, f + incr))
+
+    def memberOf(a: Int32, p: Path): Bool =
         let Path(xs) = p;
-        let ps = inject xs into Path;
-        let edges = inject g into Edge;
-        let rules = #{
-            UpdatedEdge(x, y, u, f + incr) :- Edge(x, y, u, f), Path(x), Path(y), if (f + incr) <= u.
-        };
-        query ps, edges, rules select (x, y, u, f) from UpdatedEdge(x, y, u, f)
+        List.memberOf(a, xs)
 
     // Tests
     @Test
@@ -693,7 +691,7 @@ mod Graph {
         let s = 1;
         let t = 5;
         let g = Set#{ (1, 2, 1, 0), (2, 3, 1, 0), (3, 4, 1, 0), (3, 8, 1, 0), (4, 5, 1, 0), (3, 5, 1, 0) };
-        let Path(xs) = augmentingPath(src = s, dst = t, g);
+        let Path(xs) = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
         Assert.eq(5 :: 3 :: 2 :: 1 :: Nil, xs)
 
     @Test
@@ -707,6 +705,5 @@ mod Graph {
         let p = Path(5 :: 4 :: 3 :: 2 :: 1 :: Nil);
         let g = Set#{(1, 2, 3, 0), (1, 3, 4, 0), (2, 3, 3, 0), (3, 4, 5, 0), (4, 5, 10, 0), (6, 7, 1, 0)};
         Assert.eq(3, pathMinCapacity(p, g))
-
 
 }
