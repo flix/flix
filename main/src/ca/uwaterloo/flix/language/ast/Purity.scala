@@ -41,4 +41,42 @@ object Purity {
     case Impure => true
   }
 
+  /**
+    * Returns the max purity of `p1` and `p2` according to this ordering:
+    * Pure < Impure
+    */
+  def combine(p1: Purity, p2: Purity): Purity = (p1, p2) match {
+    case (Pure, Pure) => Pure
+    case (Pure, Impure) => Impure
+    case (Impure, Pure) => Impure
+    case (Impure, Impure) => Impure
+  }
+
+  /**
+    * Returns the max purity of `p1`, `p2`, and `p3` according to this ordering:
+    * Pure < Impure
+    */
+  def combine(p1: Purity, p2: Purity, p3: Purity): Purity = {
+    combine(combine(p1, p2), p3)
+  }
+
+  /**
+    * Returns the max purity of `p` according to this ordering:
+    * Pure < Impure
+    *
+    * Returns [[Pure]] if empty.
+    */
+  def combine(p: List[Purity]): Purity = {
+    p.foldLeft(Pure: Purity)(combine)
+  }
+
+  /**
+    * Returns the purity of the given formula `eff`. Returns [[Pure]] for the
+    * effect constant [[TypeConstructor.Pure]] and [[Impure]] otherwise.
+    */
+  def fromType(eff: Type): Purity = eff match {
+    case Type.Cst(TypeConstructor.Pure, _) => Pure
+    case _ => Impure
+  }
+
 }
