@@ -673,16 +673,27 @@ mod Graph {
         g
         |> Foldable.toVector
         |> Vector.map(match (s, d, u, f) ->
-            if (memberOf(s, p) and memberOf(d, p))
+            if (isForwardEdge(src = s, dst = d, p))
                 (s, d, u, f + incr)
-            // TODO: Figure out how to decide if back-edge, then (s, d, u, f - incr)
+            else if (isBackEdge(src = s, dst = d, p))
+                (s, d, u, f - incr)
             else
                 (s, d, u, f)
         )
 
+    def isForwardEdge(src: { src = From }, dst: { dst = To }, p: Path): Bool =
+        memberOf(src.src, p) and memberOf(dst.dst, p) and indexOf(src.src, p) < indexOf(dst.dst, p)
+
+    def isBackEdge(src: { src = From }, dst: { dst = To }, p: Path): Bool =
+        memberOf(src.src, p) and memberOf(dst.dst, p) and indexOf(dst.dst, p) < indexOf(src.src, p)
+
     def memberOf(a: Int32, p: Path): Bool =
         let Path(xs) = p;
         List.memberOf(a, xs)
+
+    def indexOf(a: Int32, p: Path): Option[Int32] =
+        let Path(xs) = p;
+        List.indexOf(a, xs)
 
     // Tests
     @Test
