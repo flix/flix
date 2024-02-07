@@ -162,7 +162,7 @@ object ConstraintGeneration {
   }
 
   def analyze(constr: TypingConstraint): ConstraintAnalysis = constr match {
-    case TypingConstraint.Equality(tpe1: Type.Var, tpe2: Type.Var, prov, loc) => ConstraintAnalysis(
+    case TypingConstraint.Equality(tpe1: Type.Var, tpe2: Type.Var, prov) => ConstraintAnalysis(
       totalEq = 1,
       totalClass = 0,
       bothCst = 0,
@@ -171,7 +171,7 @@ object ConstraintGeneration {
       classCst = 0,
       classVar = 0
     )
-    case TypingConstraint.Equality(tpe1: Type.Cst, tpe2: Type.Cst, prov, loc) => ConstraintAnalysis(
+    case TypingConstraint.Equality(tpe1: Type.Cst, tpe2: Type.Cst, prov) => ConstraintAnalysis(
       totalEq = 1,
       totalClass = 0,
       bothCst = 1,
@@ -180,7 +180,7 @@ object ConstraintGeneration {
       classCst = 0,
       classVar = 0
     )
-    case TypingConstraint.Equality(tpe1, tpe2, prov, loc) => ConstraintAnalysis(
+    case TypingConstraint.Equality(tpe1, tpe2, prov) => ConstraintAnalysis(
       totalEq = 1,
       totalClass = 0,
       bothCst = 0,

@@ -151,8 +151,8 @@ object ConstraintResolution {
       val cenv = expandClassEnv(cenv0, tconstrs ++ tconstrs0)
       val eqEnv = expandEqualityEnv(eqEnv0, econstrs) // MATT need instance eq stuff
 
-      val tpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectLeft, loc)
-      val effConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectLeft, loc)
+      val tpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectLeft(loc))
+      val effConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectLeft(loc))
       val constrs = tpeConstr :: effConstr :: infConstrs
       resolve(constrs, renv, cenv, eqEnv, initialSubst).flatMap {
         case ReductionResult(_, subst, _, deferred, progress) =>
@@ -185,8 +185,8 @@ object ConstraintResolution {
       val cenv = expandClassEnv(cenv0, instConstrs ++ tconstrs)
       val eqEnv = expandEqualityEnv(eqEnv0, econstrs) // MATT consider econstrs from instance
 
-      val tpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectLeft, loc)
-      val effConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectLeft, loc)
+      val tpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectLeft(loc))
+      val effConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectLeft(loc))
       val constrs = tpeConstr :: effConstr :: infConstrs
       resolve(constrs, renv, cenv, eqEnv, initialSubst).map(_.newSubst).map(x => {
         stopLogging();
@@ -210,13 +210,13 @@ object ConstraintResolution {
       val cenv = expandClassEnv(cenv0, tconstrs ++ tconstrs0)
       val eqEnv = expandEqualityEnv(eqEnv0, econstrs) // MATT consider class econstrs
 
-      val tpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectLeft, loc)
-      val effConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectLeft, loc)
+      val tpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectLeft(loc))
+      val effConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectLeft(loc))
       val constrs = tpeConstr :: effConstr :: infConstrs
       resolve(constrs, renv, cenv, eqEnv, initialSubst).map(_.newSubst).toValidation // TODO check leftovers
   }
 
-  private def simplifyEquality(tpe1: Type, tpe2: Type, renv: RigidityEnv, loc: SourceLocation, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[EqualityResult, UnificationError] = (tpe1.kind, tpe2.kind) match {
+  private def simplifyEquality(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[EqualityResult, UnificationError] = (tpe1.kind, tpe2.kind) match {
     case (Kind.Eff, Kind.Eff) =>
       // first simplify the types to get rid of assocs if we can
       for {
@@ -230,7 +230,7 @@ object ConstraintResolution {
           if (res0._2.isEmpty) {
             EqualityResult.Subst(res0._1, Nil)
           } else if (p1 || p2) {
-            EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, Provenance.Match, loc)))
+            EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, prov)))
           } else {
             EqualityResult.NoProgress
           }
@@ -248,7 +248,7 @@ object ConstraintResolution {
           if (res0._2.isEmpty) {
             EqualityResult.Subst(res0._1, Nil)
           } else if (p1 || p2) {
-            EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, Provenance.Match, loc)))
+            EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, prov)))
           } else {
             EqualityResult.NoProgress
           }
@@ -263,7 +263,7 @@ object ConstraintResolution {
         res0 <- RecordUnification.unifyRows(t1, t2, renv)
         // If eff unification has any constrs in output, then we know it failed so the subst is empty
         // MATT throwing away prov
-        res = if (res0._2.isEmpty) EqualityResult.Subst(res0._1, Nil) else throw InternalCompilerException("can't handle complex record stuff", loc)
+        res = if (res0._2.isEmpty) EqualityResult.Subst(res0._1, Nil) else throw InternalCompilerException("can't handle complex record stuff", SourceLocation.Unknown)
       } yield res
 
     case (Kind.SchemaRow, Kind.SchemaRow) =>
@@ -282,11 +282,11 @@ object ConstraintResolution {
         res <- CaseSetUnification.unify(t1, t2, renv, sym1.universe, sym1)
       } yield EqualityResult.Subst(res, Nil)
 
-    case _ => simplifyEqualityStar(tpe1, tpe2, renv, loc, eqEnv)
+    case _ => simplifyEqualityStar(tpe1, tpe2, prov, renv, eqEnv)
   }
 
   // Θ ⊩ᵤ τ₁ = τ₂ ⤳ U; R
-  private def simplifyEqualityStar(tpe1: Type, tpe2: Type, renv: RigidityEnv, loc: SourceLocation, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[EqualityResult, UnificationError] = (tpe1, tpe2) match {
+  private def simplifyEqualityStar(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[EqualityResult, UnificationError] = (tpe1, tpe2) match {
     // varU
     case (x: Type.Var, t) if renv.isFlexible(x.sym) =>
       Result.Ok(EqualityResult.Subst(Substitution.singleton(x.sym, t), Nil)) // MATT throwing out prov
@@ -302,15 +302,15 @@ object ConstraintResolution {
     case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(EqualityResult.Constrs(Nil))
     case (x: Type.Var, y: Type.Var) if (x == y) => Result.Ok(EqualityResult.Constrs(Nil))
 
-    case (Type.Alias(_, _, tpe, _), _) => simplifyEquality(tpe, tpe2, renv, loc, eqEnv)
+    case (Type.Alias(_, _, tpe, _), _) => simplifyEquality(tpe, tpe2, Provenance.Parent(TypingConstraint.Equality(tpe1, tpe2, prov)), renv, eqEnv)
 
-    case (_, Type.Alias(_, _, tpe, _)) => simplifyEquality(tpe1, tpe, renv, loc, eqEnv)
+    case (_, Type.Alias(_, _, tpe, _)) => simplifyEquality(tpe1, tpe, Provenance.Parent(TypingConstraint.Equality(tpe1, tpe2, prov)), renv, eqEnv)
 
     // appU
     case (Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) =>
       for {
-        res1 <- simplifyEquality(t11, t21, renv, loc, eqEnv)
-        res2 <- simplifyEquality(res1.subst(t12), res1.subst(t22), renv, loc, eqEnv)
+        res1 <- simplifyEquality(t11, t21, Provenance.Parent(TypingConstraint.Equality(tpe1, tpe2, prov)), renv, eqEnv)
+        res2 <- simplifyEquality(res1.subst(t12), res1.subst(t22), Provenance.Parent(TypingConstraint.Equality(tpe1, tpe2, prov)), renv, eqEnv)
       } yield res2 @@ res1
 
     // reflU
@@ -323,7 +323,7 @@ object ConstraintResolution {
         (t1, progress) <- simplifyType(assoc, renv, eqEnv)
       } yield {
         if (progress) {
-          EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, Provenance.Match, loc)))
+          EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, Provenance.Parent(TypingConstraint.Equality(tpe1, tpe2, prov)))))
         } else {
           EqualityResult.NoProgress
         }
@@ -334,7 +334,7 @@ object ConstraintResolution {
         (t2, progress) <- simplifyType(assoc, renv, eqEnv)
       } yield {
         if (progress) {
-          EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, Provenance.Match, loc)))
+          EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, Provenance.Parent(TypingConstraint.Equality(tpe1, tpe2, prov)))))
         } else {
           EqualityResult.NoProgress
         }
@@ -515,10 +515,10 @@ object ConstraintResolution {
     constrs.sortBy(_.index)
 
   private def reduceOne3(constr0: TypingConstraint, renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, UnificationError] = constr0 match {
-    case TypingConstraint.Equality(tpe1, tpe2, prov, loc) =>
+    case TypingConstraint.Equality(tpe1, tpe2, prov) =>
       val t1 = TypeMinimization.minimizeType(subst0(tpe1))
       val t2 = TypeMinimization.minimizeType(subst0(tpe2))
-      simplifyEquality(t1, t2, renv, loc, eqEnv).map {
+      simplifyEquality(t1, t2, prov, renv, eqEnv).map {
         case EqualityResult.Subst(subst, constrs) => ReductionResult(subst0, subst @@ subst0, List(constr0), constrs, progress = true)
         case EqualityResult.Constrs(constrs) => ReductionResult(subst0, subst0, List(constr0), constrs, progress = true)
         case EqualityResult.NoProgress => ReductionResult(subst0, subst0, List(constr0), List(constr0), progress = false)
@@ -527,7 +527,7 @@ object ConstraintResolution {
       simplifyClass(sym, subst0(tpe), cenv, eqEnv, renv, loc).map {
         case (constrs, progress) => ReductionResult(subst0, subst0, List(constr0), constrs, progress)
       }
-    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested0, loc) =>
+    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested0) =>
       // First reduce nested constraints
       reduceAll3(nested0, renv, cenv, eqEnv, subst0).map {
         // Case 1: We have reduced everything below. Now reduce the purity constraint.
@@ -538,15 +538,15 @@ object ConstraintResolution {
           val e2 = Substitution.singleton(sym, Type.Pure)(e2Raw)
           val qvars = e2Raw.typeVars.map(_.sym).filter(_.level >= level)
           val subst = qvars.foldLeft(subst1)(_.unbind(_))
-          val constr = TypingConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov, loc)
+          val constr = TypingConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov)
           ReductionResult(subst0, subst, oldConstrs, List(constr), progress = true)
         // Case 2: Constraints remain below. Maintain the purity constraint.
         case ReductionResult(_oldSubst, subst, oldConstrs, newConstrs, progress) =>
-          val constr = TypingConstraint.Purification(sym, eff1, eff2, level, prov, newConstrs, loc)
+          val constr = TypingConstraint.Purification(sym, eff1, eff2, level, prov, newConstrs)
           ReductionResult(subst0, subst, oldConstrs, List(constr), progress)
       }
     // TODO this is partially copied from the above; should try to make an abstraction
-    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested0, loc) =>
+    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested0) =>
       // First reduce nested constraints
       reduceAll3(nested0, renv, cenv, eqEnv, subst0).map {
         // Case 1: We have reduced everything below. Now reduce the purity constraint.
@@ -557,25 +557,25 @@ object ConstraintResolution {
           val e2 = purifyEff(sym, e2Raw)
           val qvars = e2Raw.typeVars.map(_.sym).filter(_.level >= level)
           val subst = qvars.foldLeft(subst1)(_.unbind(_))
-          val constr = TypingConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov, loc)
+          val constr = TypingConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov)
           ReductionResult(subst0, subst, oldConstrs, List(constr), progress = true)
         // Case 2: Constraints remain below. Maintain the purity constraint.
         case ReductionResult(_oldSubst, subst, oldConstrs, newConstrs, progress) =>
-          val constr = TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, newConstrs, loc)
+          val constr = TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, newConstrs)
           ReductionResult(subst0, subst, oldConstrs, List(constr), progress)
       }
   }
 
-  def fromUnificationResult(res: Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError]): Result[(Substitution, List[TypingConstraint]), UnificationError] = {
-    res.map {
-      case (subst, constrs0) =>
-        val constrs = constrs0.map {
-          case Ast.BroadEqualityConstraint(tpe1, tpe2) =>
-            TypingConstraint.Equality(tpe1, tpe2, Provenance.Match, SourceLocation.Unknown) // MATT prov and loc
-        }
-        (subst, constrs)
-    }
-  }
+  //  def fromUnificationResult(res: Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError]): Result[(Substitution, List[TypingConstraint]), UnificationError] = {
+  //    res.map {
+  //      case (subst, constrs0) =>
+  //        val constrs = constrs0.map {
+  //          case Ast.BroadEqualityConstraint(tpe1, tpe2) =>
+  //            TypingConstraint.Equality(tpe1, tpe2, Provenance.Match) // MATT prov and loc
+  //        }
+  //        (subst, constrs)
+  //    }
+  //  }
 
   //  private def toUnificationReductionResult(unifResult: Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError], prov: Provenance, loc: SourceLocation): ReductionResult = unifResult match {
   //    // Case 1: Empty substitution. Just constraints here.
@@ -599,13 +599,13 @@ object ConstraintResolution {
   //      ReductionResult.Failure(errors.head) // TODO ASSOC-TYPES multiple errors?
   //  }
 
-  def toEqualityTypingConstraint(econstr: Ast.BroadEqualityConstraint, prov: Provenance, loc: SourceLocation): TypingConstraint = econstr match {
-    case Ast.BroadEqualityConstraint(tpe1, tpe2) => TypingConstraint.Equality(tpe1, tpe2, prov, loc)
-  }
-
-  def toClassTypingConstraint(tconstr: Ast.TypeConstraint, loc: SourceLocation): TypingConstraint = tconstr match {
-    case Ast.TypeConstraint(head, arg, _) => TypingConstraint.Class(head.sym, arg, loc)
-  }
+  //  def toEqualityTypingConstraint(econstr: Ast.BroadEqualityConstraint, prov: Provenance, loc: SourceLocation): TypingConstraint = econstr match {
+  //    case Ast.BroadEqualityConstraint(tpe1, tpe2) => TypingConstraint.Equality(tpe1, tpe2, prov, loc)
+  //  }
+  //
+  //  def toClassTypingConstraint(tconstr: Ast.TypeConstraint, loc: SourceLocation): TypingConstraint = tconstr match {
+  //    case Ast.TypeConstraint(head, arg, _) => TypingConstraint.Class(head.sym, arg, loc)
+  //  }
 
   /**
     * Replaces every occurrence of the effect symbol `sym` with pure in `eff`.

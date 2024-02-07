@@ -16,18 +16,19 @@
 package ca.uwaterloo.flix.language.phase.constraintgeneration
 
 import ca.uwaterloo.flix.language.ast.{Kind, Level, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 
 sealed trait TypingConstraint {
 
   lazy val index: (Int, Int, Int) = this match {
-    case TypingConstraint.Equality(tvar1: Type.Var, Type.Pure, _, _) => (0, 0, 0)
-    case TypingConstraint.Equality(Type.Pure, tvar2: Type.Var, _, _) => (0, 0, 0)
-    case TypingConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, _, _) if tvar1 != tvar2 => (0, 0, 0)
-    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested, loc) => (0, 0, 0)
-    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested, loc) => (0, 0, 0)
-    case TypingConstraint.Equality(tpe1, tpe2, prov, loc) =>
+    case TypingConstraint.Equality(tvar1: Type.Var, Type.Pure, _) => (0, 0, 0)
+    case TypingConstraint.Equality(Type.Pure, tvar2: Type.Var, _) => (0, 0, 0)
+    case TypingConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, _) if tvar1 != tvar2 => (0, 0, 0)
+    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) => (0, 0, 0)
+    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested) => (0, 0, 0)
+    case TypingConstraint.Equality(tpe1, tpe2, prov) =>
       val tvars = (tpe1.typeVars ++ tpe2.typeVars)
       val effTvars = tvars.filter(_.kind == Kind.Eff)
       (1, effTvars.size, tvars.size)
@@ -35,28 +36,28 @@ sealed trait TypingConstraint {
   }
 
   override def toString: String = this match {
-    case TypingConstraint.Equality(tpe1, tpe2, prov, loc) => s"$tpe1 ~ $tpe2"
+    case TypingConstraint.Equality(tpe1, tpe2, prov) => s"$tpe1 ~ $tpe2"
     case TypingConstraint.Class(sym, tpe, loc) => s"$sym[$tpe]"
-    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested, loc) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
-    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested, loc) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
+    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
+    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
   }
 
   def numVars: Int = this match {
-    case TypingConstraint.Equality(tpe1, tpe2, prov, loc) => tpe1.typeVars.size + tpe2.typeVars.size
-    case TypingConstraint.Class(sym, tpe, loc) => tpe.typeVars.size
-    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested, loc) => eff1.typeVars.size + eff2.typeVars.size
-    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested, loc) => eff1.typeVars.size + eff2.typeVars.size
+    case TypingConstraint.Equality(tpe1, tpe2, prov) => tpe1.typeVars.size + tpe2.typeVars.size
+    case TypingConstraint.Class(sym, tpe, lc) => tpe.typeVars.size
+    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) => eff1.typeVars.size + eff2.typeVars.size
+    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested) => eff1.typeVars.size + eff2.typeVars.size
   }
 
   private def toSubDot: String = this match {
-    case TypingConstraint.Equality(tpe1, tpe2, prov, loc) => s"""$dotId [label = "$tpe1 ~ $tpe2"];"""
+    case TypingConstraint.Equality(tpe1, tpe2, prov) => s"""$dotId [label = "$tpe1 ~ $tpe2"];"""
     case TypingConstraint.Class(sym, tpe, loc) => s"""$dotId [label = "$sym[$tpe]"];"""
-    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested, loc) =>
+    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) =>
       val header = s"""$dotId [label = "$eff1 ~ ($eff2)[$sym ↦ Pure]"];"""
       val children = nested.map(_.toSubDot)
       val edges = nested.map { child => s"$dotId -> ${child.dotId};" }
       (header :: children ::: edges).mkString("\n")
-    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested, loc) =>
+    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested) =>
       val header = s"""$dotId [label = "$eff1 ~ ($eff2)[$sym ↦ Pure]"];"""
       val children = nested.map(_.toSubDot)
       val edges = nested.map { child => s"$dotId -> ${child.dotId};" }
@@ -69,16 +70,16 @@ sealed trait TypingConstraint {
 object TypingConstraint {
 
   // tpe1 ~ tpe2
-  case class Equality(tpe1: Type, tpe2: Type, prov: Provenance, loc: SourceLocation) extends TypingConstraint
+  case class Equality(tpe1: Type, tpe2: Type, prov: Provenance) extends TypingConstraint
 
   // sym[tpe]
   case class Class(sym: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypingConstraint
 
   // eff1 ~ eff2[symˡᵉᵛᵉˡ ↦ Pure] ∧ nested
-  case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, level: Level, prov: Provenance, nested: List[TypingConstraint], loc: SourceLocation) extends TypingConstraint
+  case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, level: Level, prov: Provenance, nested: List[TypingConstraint]) extends TypingConstraint
 
   // eff1 ~ eff2[symˡᵉᵛᵉˡ ↦ Pure] ∧ nested
-  case class EffPurification(sym: Symbol.EffectSym, eff1: Type, eff2: Type, level: Level, prov: Provenance, nested: List[TypingConstraint], loc: SourceLocation) extends TypingConstraint
+  case class EffPurification(sym: Symbol.EffectSym, eff1: Type, eff2: Type, level: Level, prov: Provenance, nested: List[TypingConstraint]) extends TypingConstraint
 
   def toDot(constrs: List[TypingConstraint]): String = {
     val contents = constrs.map(_.toSubDot)
@@ -144,16 +145,21 @@ object TypingConstraint {
     /**
       * The constraint indicates that the left type is the expected type, while the right type is the actual type.
       */
-    object ExpectLeft extends Provenance
+    case class ExpectLeft(loc: SourceLocation) extends Provenance
 
     /**
       * The constraint indicates that the left type is the expected type of the `n`th argument to a function.
       */
-    case class ExpectLeftArgument(sym: Symbol, num: Int) extends Provenance
+    case class ExpectLeftArgument(sym: Symbol, num: Int, loc: SourceLocation) extends Provenance
 
     /**
       * The constraint indicates that the types must match.
       */
-    object Match extends Provenance
+    case class Match(loc: SourceLocation) extends Provenance
+
+    /**
+      * The constraint resulted from a parent constraint.
+      */
+    case class Parent(constr: TypingConstraint) extends Provenance
   }
 }
