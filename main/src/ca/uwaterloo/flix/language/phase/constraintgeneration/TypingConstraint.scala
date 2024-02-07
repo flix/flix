@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.language.phase.constraintgeneration
 
 import ca.uwaterloo.flix.language.ast.{Kind, Level, SourceLocation, Symbol, Type}
-import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 
@@ -65,21 +64,43 @@ sealed trait TypingConstraint {
   }
 
   private def dotId: Int = System.identityHashCode(this)
+
+  private def fullTpe1: Option[Type] = this match {
+    case TypingConstraint.Equality(tpe1, tpe2, prov) => prov.fullTpe1.orElse(Some(tpe1))
+    case TypingConstraint.Class(sym, tpe, loc) => None
+    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) => prov.fullTpe1.orElse(Some(eff1))
+    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested) => prov.fullTpe1.orElse(Some(eff1))
+  }
+
+  private def fullTpe2: Option[Type] = this match {
+    case TypingConstraint.Equality(tpe1, tpe2, prov) => prov.fullTpe2.orElse(Some(tpe2))
+    case TypingConstraint.Class(sym, tpe, loc) => None
+    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) => prov.fullTpe2.orElse(Some(eff2))
+    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested) => prov.fullTpe2.orElse(Some(eff2))
+  }
+
+  def loc: SourceLocation
 }
 
 object TypingConstraint {
 
   // tpe1 ~ tpe2
-  case class Equality(tpe1: Type, tpe2: Type, prov: Provenance) extends TypingConstraint
+  case class Equality(tpe1: Type, tpe2: Type, prov: Provenance) extends TypingConstraint {
+    def loc = prov.loc
+  }
 
   // sym[tpe]
   case class Class(sym: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypingConstraint
 
   // eff1 ~ eff2[symˡᵉᵛᵉˡ ↦ Pure] ∧ nested
-  case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, level: Level, prov: Provenance, nested: List[TypingConstraint]) extends TypingConstraint
+  case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, level: Level, prov: Provenance, nested: List[TypingConstraint]) extends TypingConstraint {
+    def loc = prov.loc
+  }
 
   // eff1 ~ eff2[symˡᵉᵛᵉˡ ↦ Pure] ∧ nested
-  case class EffPurification(sym: Symbol.EffectSym, eff1: Type, eff2: Type, level: Level, prov: Provenance, nested: List[TypingConstraint]) extends TypingConstraint
+  case class EffPurification(sym: Symbol.EffectSym, eff1: Type, eff2: Type, level: Level, prov: Provenance, nested: List[TypingConstraint]) extends TypingConstraint {
+    def loc = prov.loc
+  }
 
   def toDot(constrs: List[TypingConstraint]): String = {
     val contents = constrs.map(_.toSubDot)
@@ -138,7 +159,20 @@ object TypingConstraint {
 
   private def format(s: String): String = s.replace("\\", "\\\\")
 
-  sealed trait Provenance
+  sealed trait Provenance {
+
+    def loc: SourceLocation
+
+    def fullTpe1: Option[Type] = this match {
+      case Provenance.Parent(constr) => constr.fullTpe1
+      case _ => None
+    }
+
+    def fullTpe2: Option[Type] = this match {
+      case Provenance.Parent(constr) => constr.fullTpe2
+      case _ => None
+    }
+  }
 
   object Provenance {
 
@@ -160,6 +194,8 @@ object TypingConstraint {
     /**
       * The constraint resulted from a parent constraint.
       */
-    case class Parent(constr: TypingConstraint) extends Provenance
+    case class Parent(constr: TypingConstraint) extends Provenance {
+      def loc: SourceLocation = constr.loc
+    }
   }
 }

@@ -20,7 +20,7 @@ class TypingContext {
     * Generates constraints unifying the given types.
     */
   def unifyTypeM(tpe1: Type, tpe2: Type, loc: SourceLocation): Unit = {
-    constrs.append(TypingConstraint.Equality(tpe1, tpe2, Provenance.Match, loc))
+    constrs.append(TypingConstraint.Equality(tpe1, tpe2, Provenance.Match(loc)))
   }
 
   /**
@@ -42,8 +42,8 @@ class TypingContext {
     expectedTypes.zip(actualTypes).zip(actualLocs).zipWithIndex.foreach {
       case (((expectedType, actualType), loc), index) =>
         val argNum = index + 1
-        val prov = Provenance.ExpectLeftArgument(sym, argNum)
-        constrs.addOne(TypingConstraint.Equality(expectedType, actualType, prov, loc))
+        val prov = Provenance.ExpectLeftArgument(sym, argNum, loc)
+        constrs.addOne(TypingConstraint.Equality(expectedType, actualType, prov))
     }
   }
 
@@ -67,7 +67,7 @@ class TypingContext {
     * Generates constraints expecting the given types to unify.
     */
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation): Unit = {
-    constrs.append(TypingConstraint.Equality(expected, actual, Provenance.ExpectLeft, loc))
+    constrs.append(TypingConstraint.Equality(expected, actual, Provenance.ExpectLeft(loc)))
   }
 
   /**
@@ -142,7 +142,7 @@ class TypingContext {
   def exitRegionM(externalEff1: Type, internalEff2: Type, loc: SourceLocation): Unit = {
     val constr = region match {
       case None => throw InternalCompilerException("unexpected missing region", loc)
-      case Some(r) => TypingConstraint.Purification(r, externalEff1, internalEff2, level, Provenance.Match, constrs.toList, loc)
+      case Some(r) => TypingConstraint.Purification(r, externalEff1, internalEff2, level, Provenance.Match(loc), constrs.toList)
     }
 
     val (parReg, parConstrs) = nest.pop()

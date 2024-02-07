@@ -216,13 +216,13 @@ object ConstraintResolution {
       resolve(constrs, renv, cenv, eqEnv, initialSubst).map(_.newSubst).toValidation // TODO check leftovers
   }
 
-  private def simplifyEquality(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[EqualityResult, UnificationError] = (tpe1.kind, tpe2.kind) match {
+  private def simplifyEquality(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[EqualityResult, TypeError] = (tpe1.kind, tpe2.kind) match {
     case (Kind.Eff, Kind.Eff) =>
       // first simplify the types to get rid of assocs if we can
       for {
         (t1, p1) <- simplifyType(tpe1, renv, eqEnv)
         (t2, p2) <- simplifyType(tpe2, renv, eqEnv)
-        res0 <- EffUnification.unify(t1, t2, renv)
+        res0 <- EffUnification.unify(t1, t2, renv).mapErr(toTypeError(_, prov.fullTpe1.getOrElse(tpe1), prov.fullTpe2.getOrElse(tpe2), prov.loc))
         _ = if (t1.size > 1000) throw InternalCompilerException("blah", SourceLocation.Unknown)
         // MATT throwing away prov
         // If eff unification has any constrs in output, then we know it failed so the subst is empty
@@ -241,7 +241,7 @@ object ConstraintResolution {
       for {
         (t1, p1) <- simplifyType(tpe1, renv, eqEnv)
         (t2, p2) <- simplifyType(tpe2, renv, eqEnv)
-        res0 <- BoolUnification.unify(t1, t2, renv)
+        res0 <- BoolUnification.unify(t1, t2, renv).mapErr(toTypeError(_, prov.fullTpe1.getOrElse(tpe1), prov.fullTpe2.getOrElse(tpe2), prov.loc))
         // MATT throwing away prov
         // If bool unification has any constrs in output, then we know it failed so the subst is empty
         res =
@@ -260,7 +260,7 @@ object ConstraintResolution {
       for {
         (t1, p1) <- simplifyType(tpe1, renv, eqEnv)
         (t2, p2) <- simplifyType(tpe2, renv, eqEnv)
-        res0 <- RecordUnification.unifyRows(t1, t2, renv)
+        res0 <- RecordUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov.fullTpe1.getOrElse(tpe1), prov.fullTpe2.getOrElse(tpe2), prov.loc))
         // If eff unification has any constrs in output, then we know it failed so the subst is empty
         // MATT throwing away prov
         res = if (res0._2.isEmpty) EqualityResult.Subst(res0._1, Nil) else throw InternalCompilerException("can't handle complex record stuff", SourceLocation.Unknown)
@@ -271,7 +271,7 @@ object ConstraintResolution {
       for {
         (t1, p1) <- simplifyType(tpe1, renv, eqEnv)
         (t2, p2) <- simplifyType(tpe2, renv, eqEnv)
-        res <- SchemaUnification.unifyRows(t1, t2, renv)
+        res <- SchemaUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov.fullTpe1.getOrElse(tpe1), prov.fullTpe2.getOrElse(tpe2), prov.loc))
         // MATT throwing away prov
       } yield EqualityResult.Subst(res, Nil)
 
@@ -279,14 +279,14 @@ object ConstraintResolution {
       for {
         (t1, p1) <- simplifyType(tpe1, renv, eqEnv)
         (t2, p2) <- simplifyType(tpe2, renv, eqEnv)
-        res <- CaseSetUnification.unify(t1, t2, renv, sym1.universe, sym1)
+        res <- CaseSetUnification.unify(t1, t2, renv, sym1.universe, sym1).mapErr(toTypeError(_, prov.fullTpe1.getOrElse(tpe1), prov.fullTpe2.getOrElse(tpe2), prov.loc))
       } yield EqualityResult.Subst(res, Nil)
 
     case _ => simplifyEqualityStar(tpe1, tpe2, prov, renv, eqEnv)
   }
 
   // Θ ⊩ᵤ τ₁ = τ₂ ⤳ U; R
-  private def simplifyEqualityStar(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[EqualityResult, UnificationError] = (tpe1, tpe2) match {
+  private def simplifyEqualityStar(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[EqualityResult, TypeError] = (tpe1, tpe2) match {
     // varU
     case (x: Type.Var, t) if renv.isFlexible(x.sym) =>
       Result.Ok(EqualityResult.Subst(Substitution.singleton(x.sym, t), Nil)) // MATT throwing out prov
@@ -340,11 +340,11 @@ object ConstraintResolution {
         }
       }
 
-    case _ => Result.Err(UnificationError.MismatchedTypes(tpe1, tpe2))
+    case _ => Result.Err(TypeError.MismatchedTypes(tpe1, tpe2, prov.fullTpe1.getOrElse(tpe1), prov.fullTpe2.getOrElse(tpe1), RigidityEnv.empty, prov.loc)) // MATT renv
   }
 
   // Θ ⊩ τ ⤳ τ'
-  private def simplifyType(tpe: Type, renv0: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[(Type, Boolean), UnificationError] = tpe match {
+  private def simplifyType(tpe: Type, renv0: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
     // A var is already simple.
     case t: Type.Var => Result.Ok((t, false))
     // A constant is already simple
@@ -379,7 +379,7 @@ object ConstraintResolution {
                 // Or it might be part of the signature as an associated type.
                 case Type.Var(sym, loc) => Result.Ok((Type.AssocType(cst, t, kind, loc), p))
                 // Otherwise it's a problem.
-                case _ => Result.Err(UnificationError.IrreducibleAssocType(cst.sym, arg))
+                case baseTpe => Result.Err(TypeError.MissingInstance(cst.sym.clazz, baseTpe, renv, SourceLocation.Unknown)) // MATT must pipe in loc
               }
             // We could reduce! Simplify further if possible.
             case Some(t) => simplifyType(t, renv0, eqEnv).map { case (res, _) => (res, true) }
@@ -390,7 +390,7 @@ object ConstraintResolution {
 
   // Θ ⊩ₑ π ⤳ P
   // paper contains substitution R but it is only needed for equality
-  private def simplifyClass(clazz: Symbol.ClassSym, tpe0: Type, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], renv0: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[(List[TypingConstraint], Boolean), UnificationError] = {
+  private def simplifyClass(clazz: Symbol.ClassSym, tpe0: Type, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], renv0: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[(List[TypingConstraint], Boolean), TypeError] = {
     // redE
     simplifyType(tpe0, renv0, eqEnv).flatMap {
       case (t, progress) =>
@@ -415,7 +415,7 @@ object ConstraintResolution {
                   case (_, cs) => throw InternalCompilerException(s"unexpected leftover constraints: $cs", SourceLocation.Unknown)
                 }
             }.nextOption() match {
-              case None => Result.Err(UnificationError.NoMatchingInstance(Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), tpe0, loc)))
+              case None => Result.Err(TypeError.MissingInstance(clazz, tpe0, renv, loc)) // MATT loc??
               case Some(tconstrs) =>
                 // simplify all the implied constraints
                 Result.traverse(tconstrs) {
@@ -467,14 +467,14 @@ object ConstraintResolution {
             case pair => log(pair); log(pair._1.level)
           }
           stopLogging()
-          return res.mapErr(toTypeError(_, SourceLocation.Unknown))
+          return res
       }
     }
     Result.Ok(ReductionResult(subst0, subst, Nil, curr, progress = true))
   }
 
-  private def reduceAll3(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, UnificationError] = {
-    def tryReduce(cs: List[TypingConstraint]): Result[ReductionResult, UnificationError] = cs match {
+  private def reduceAll3(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, TypeError] = {
+    def tryReduce(cs: List[TypingConstraint]): Result[ReductionResult, TypeError] = cs match {
       case Nil => Result.Ok(ReductionResult(oldSubst = subst0, newSubst = subst0, oldConstrs = cs, newConstrs = cs, progress = false))
       case hd :: tl => reduceOne3(hd, renv, cenv, eqEnv, subst0).flatMap {
         // if we're just returning the same constraint, then have made no progress and we need to find something else to reduce
@@ -492,13 +492,13 @@ object ConstraintResolution {
     tryReduce(sort(constrs))
   }
 
-  def toTypeError(err: UnificationError, loc: SourceLocation)(implicit flix: Flix): TypeError = err match {
-    case UnificationError.MismatchedTypes(tpe1, tpe2) => TypeError.MismatchedTypes(tpe1, tpe2, tpe1, tpe2, RigidityEnv.empty, loc) // MATT renv and base types
-    case UnificationError.MismatchedBools(tpe1, tpe2) => TypeError.MismatchedBools(tpe1, tpe2, tpe1, tpe2, RigidityEnv.empty, loc) // MATT renv and base types
-    case UnificationError.MismatchedEffects(tpe1, tpe2) => TypeError.MismatchedEffects(tpe1, tpe2, tpe1, tpe2, RigidityEnv.empty, loc) // MATT renv and base types
-    case UnificationError.MismatchedCaseSets(tpe1, tpe2) => TypeError.MismatchedCaseSets(tpe1, tpe2, tpe1, tpe2, RigidityEnv.empty, loc) // MATT renv and base types
-    case UnificationError.RigidVar(tvar, tpe) => TypeError.MismatchedTypes(tvar, tpe, tvar, tpe, RigidityEnv.empty, loc) // MATT renv and base types
-    case UnificationError.OccursCheck(tvar, tpe) => TypeError.OccursCheck(tvar, tpe, tvar, tpe, RigidityEnv.empty, loc) // MATT renv and base types
+  def toTypeError(err: UnificationError, fullType1: Type, fullType2: Type, loc: SourceLocation)(implicit flix: Flix): TypeError = err match {
+    case UnificationError.MismatchedTypes(tpe1, tpe2) => TypeError.MismatchedTypes(tpe1, tpe2, fullType1, fullType2, RigidityEnv.empty, loc) // MATT renv and base types
+    case UnificationError.MismatchedBools(tpe1, tpe2) => TypeError.MismatchedBools(tpe1, tpe2, fullType1, fullType2, RigidityEnv.empty, loc) // MATT renv and base types
+    case UnificationError.MismatchedEffects(tpe1, tpe2) => TypeError.MismatchedEffects(tpe1, tpe2, fullType1, fullType2, RigidityEnv.empty, loc) // MATT renv and base types
+    case UnificationError.MismatchedCaseSets(tpe1, tpe2) => TypeError.MismatchedCaseSets(tpe1, tpe2, fullType1, fullType2, RigidityEnv.empty, loc) // MATT renv and base types
+    case UnificationError.RigidVar(tvar, tpe) => TypeError.MismatchedTypes(tvar, tpe, fullType1, fullType2, RigidityEnv.empty, loc) // MATT renv and base types
+    case UnificationError.OccursCheck(tvar, tpe) => TypeError.OccursCheck(tvar, tpe, fullType1, fullType2, RigidityEnv.empty, loc) // MATT renv and base types
     case UnificationError.UndefinedLabel(label, labelType, recordType) => TypeError.UndefinedLabel(label, labelType, recordType, RigidityEnv.empty, loc) // MATT renv
     case UnificationError.UndefinedPredicate(pred, predType, schemaType) => TypeError.UndefinedPred(pred, predType, schemaType, RigidityEnv.empty, loc) // MATT renv
     case UnificationError.NonRecordType(nonRecordType) => TypeError.NonRecordType(nonRecordType, RigidityEnv.empty, loc) // MATT renv
@@ -514,7 +514,7 @@ object ConstraintResolution {
   def sort(constrs: List[TypingConstraint]): List[TypingConstraint] =
     constrs.sortBy(_.index)
 
-  private def reduceOne3(constr0: TypingConstraint, renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, UnificationError] = constr0 match {
+  private def reduceOne3(constr0: TypingConstraint, renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, TypeError] = constr0 match {
     case TypingConstraint.Equality(tpe1, tpe2, prov) =>
       val t1 = TypeMinimization.minimizeType(subst0(tpe1))
       val t2 = TypeMinimization.minimizeType(subst0(tpe2))
