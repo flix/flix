@@ -155,6 +155,41 @@ object BackendType {
   }
 
   /**
+    * Converts the given [[MonoType]] into its [[BackendType]] representation.
+    *
+    * Note: Instead of using [[toBackendType]] and then [[BackendType.toErased]]
+    * use [[toErasedBackendType]].
+    */
+  def toBackendType(tpe0: MonoType): BackendType = {
+    import BackendObjType._
+    tpe0 match {
+      case MonoType.Unit => Unit.toTpe
+      case MonoType.Bool => Bool
+      case MonoType.Char => Char
+      case MonoType.Float32 => Float32
+      case MonoType.Float64 => Float64
+      case MonoType.BigDecimal => BigDecimal.toTpe
+      case MonoType.Int8 => Int8
+      case MonoType.Int16 => Int16
+      case MonoType.Int32 => Int32
+      case MonoType.Int64 => Int64
+      case MonoType.BigInt => BigInt.toTpe
+      case MonoType.String => String.toTpe
+      case MonoType.Regex => Regex.toTpe
+      case MonoType.Region => Region.toTpe
+      case MonoType.Array(tpe) => Array(toBackendType(tpe))
+      case MonoType.Lazy(tpe) => Lazy(toBackendType(tpe)).toTpe
+      case MonoType.Ref(tpe) => Ref(toBackendType(tpe)).toTpe
+      case MonoType.Tuple(elms) => Tuple(elms.map(toBackendType)).toTpe
+      case MonoType.Enum(_) => Tagged.toTpe
+      case MonoType.Arrow(args, result) => Arrow(args.map(toBackendType), toBackendType(result)).toTpe
+      case MonoType.RecordEmpty => RecordEmpty.toTpe
+      case MonoType.RecordExtend(_, value, _) => RecordExtend(toBackendType(value)).toTpe
+      case MonoType.Native(clazz) => Native(JvmName.ofClass(clazz)).toTpe
+    }
+  }
+
+  /**
     * Contains all the primitive types and `Reference(Native(JvmName.Object))`.
     */
   def erasedTypes: List[BackendType] =
