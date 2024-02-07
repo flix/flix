@@ -44,9 +44,11 @@ mod Test.Dec.AssocEff {
     @Test
     pub def testAvg(): Bool = avg(List#{1, 2, 3}) == 2
 
-    // MATT
-    pub def divAll(x: a, y: a, z: a): a with Div[a] = {
-        x `Div.div` y `Div.div` z
+    // MATT ???
+    pub def apply(f: a -> b, x: a): b = f(x)
+
+    pub def divSelf(x: a): a with Div[a] = {
+        apply(apply(Div.div, x), x)
     }
 
     //////////////

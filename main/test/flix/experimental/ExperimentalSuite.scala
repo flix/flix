@@ -29,6 +29,6 @@ import ca.uwaterloo.flix.util.{FlixSuite, Options}
 class ExperimentalSuite extends FlixSuite(incremental = true) {
   implicit val options: Options = Options.TestWithLibAll.copy(threads = 1)
 
-  mkTest("main/test/flix/experimental/Test.Dec.AssocType.flix")
+  mkTest("main/test/flix/experimental/Test.Dec.AssocType.flix") // MATT
   mkTest("main/test/flix/experimental/Test.Dec.AssocEff.flix")
 }

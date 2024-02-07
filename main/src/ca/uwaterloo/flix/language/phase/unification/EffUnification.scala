@@ -17,9 +17,8 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Ok, ToErr, ToOk}
-import ca.uwaterloo.flix.util.collection.MapOps
+import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import org.sosy_lab.pjbdd.api.DD
 
 import scala.collection.mutable
@@ -62,16 +61,16 @@ object EffUnification {
     //
     // Debug BU queries.
     //
-//    // Alpha rename variables.
-//    val alpha = ((tpe1.typeVars ++ tpe2.typeVars).toList.zipWithIndex).foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type.Var]) {
-//      case (macc, (tvar, idx)) =>
-//        val sym = new Symbol.KindedTypeVarSym(idx, Ast.VarText.Absent, tvar.kind, tvar.sym.isRegion, tvar.sym.level, tvar.loc)
-//        val newTvar = Type.Var(sym, tvar.loc)
-//        macc + (tvar.sym -> newTvar)
-//    }
-//    val subst = Substitution(alpha)
-//    val loc = if (tpe1.loc != SourceLocation.Unknown) tpe1.loc else tpe2.loc
-//    println(s"${loc.formatWithLine}: ${subst(tpe1)} =?= ${subst(tpe2)}")
+    //    // Alpha rename variables.
+    //    val alpha = ((tpe1.typeVars ++ tpe2.typeVars).toList.zipWithIndex).foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type.Var]) {
+    //      case (macc, (tvar, idx)) =>
+    //        val sym = new Symbol.KindedTypeVarSym(idx, Ast.VarText.Absent, tvar.kind, tvar.sym.isRegion, tvar.sym.level, tvar.loc)
+    //        val newTvar = Type.Var(sym, tvar.loc)
+    //        macc + (tvar.sym -> newTvar)
+    //    }
+    //    val subst = Substitution(alpha)
+    //    val loc = if (tpe1.loc != SourceLocation.Unknown) tpe1.loc else tpe2.loc
+    //    println(s"${loc.formatWithLine}: ${subst(tpe1)} =?= ${subst(tpe2)}")
 
     //
     // Optimize common unification queries.
@@ -145,32 +144,36 @@ object EffUnification {
         val renv = back.keys.foldLeft(renv0)(_.markRigid(_))
         val backSubst = back.map {
           case (sym, (assoc, tvar)) =>
-            val tpe = Type.AssocType(Ast.AssocTypeConstructor(assoc, SourceLocation.Unknown), Type.Var(tvar, SourceLocation.Unknown), sym.kind ,SourceLocation.Unknown)
+            val tpe = Type.AssocType(Ast.AssocTypeConstructor(assoc, SourceLocation.Unknown), Type.Var(tvar, SourceLocation.Unknown), sym.kind, SourceLocation.Unknown)
             sym -> tpe
         }
 
-      // Choose the SVE implementation based on the number of variables.
-      val numberOfVars = (t1.typeVars ++ t2.typeVars).size
-      val threshold = flix.options.xbddthreshold.getOrElse(DefaultThreshold)
+        // Choose the SVE implementation based on the number of variables.
+        val numberOfVars = (t1.typeVars ++ t2.typeVars).size
+        val threshold = flix.options.xbddthreshold.getOrElse(DefaultThreshold)
 
-      val substRes = if (numberOfVars < threshold) {
-        implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlg
-        implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
-        lookupOrSolve(t1, t2, renv)
-      } else {
-        implicit val alg: BoolAlg[DD] = new BddFormulaAlg
-        implicit val cache: UnificationCache[DD] = UnificationCache.GlobalBdd
-        lookupOrSolve(t1, t2, renv)
-      }
+        val substRes = if (numberOfVars < threshold) {
+          implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlg
+          implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
+          lookupOrSolve(t1, t2, renv)
+        } else {
+          implicit val alg: BoolAlg[DD] = new BddFormulaAlg
+          implicit val cache: UnificationCache[DD] = UnificationCache.GlobalBdd
+          lookupOrSolve(t1, t2, renv)
+        }
 
-      substRes.map {
-        case subst0 =>
-          // replace the temporary variables with the assoc types they represent
-          val subst1 = Substitution(backSubst) @@ subst0
-          // remove the temporary variables from the substitution
-          val subst = backSubst.keys.foldLeft(subst1)(_.unbind(_))
-          (subst, Nil)
-      }
+        substRes.map {
+          case subst0 =>
+            // replace the temporary variables with the assoc types they represent
+            val subst1 = Substitution(backSubst) @@ subst0
+            // remove the temporary variables from the substitution
+            val subst = backSubst.keys.foldLeft(subst1)(_.unbind(_))
+            (subst, Nil)
+        }.mapErr { // TODO ASSOC-TYPES clean
+          case UnificationError.MismatchedEffects(tpe1, tpe2) =>
+            UnificationError.MismatchedEffects(Substitution(backSubst)(tpe1), Substitution(backSubst)(tpe2))
+          case _ => throw InternalCompilerException("unexpected error", SourceLocation.Unknown)
+        }
     }
   }
 
@@ -184,6 +187,7 @@ object EffUnification {
   private def clearAssocs(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Option[(Type, Type, Map[Symbol.KindedTypeVarSym, (Symbol.AssocTypeSym, Symbol.KindedTypeVarSym)])] = {
     implicit val level = Level.Default
     val cache = mutable.HashMap.empty[(Symbol.AssocTypeSym, Symbol.KindedTypeVarSym), Symbol.KindedTypeVarSym]
+
     def visit(t0: Type): Option[Type] = t0 match {
       case t: Type.Var => Some(t)
       case t: Type.Cst => Some(t)
