@@ -716,4 +716,9 @@ mod Graph {
         let g = Set#{(1, 2, 3, 0), (1, 3, 4, 0), (2, 3, 3, 0), (3, 4, 5, 0), (4, 5, 10, 0), (6, 7, 1, 0)};
         Assert.eq(3, pathMinCapacity(p, g))
 
+    @Test
+    def testMaxFlow01(): Bool =
+        let g = Set#{ (0, 1, 10), (0, 3, 10), (1, 2, 4), (1, 3, 2), (1, 4, 8), (2, 5, 10), (3, 4, 9), (4, 2, 6), (4, 5, 10) };
+        Assert.eq(19, maxFlow(src = 0, dst = 5, g))
+
 }
