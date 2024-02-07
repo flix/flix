@@ -621,17 +621,11 @@ mod Graph {
         case Path(xs) => Path(z :: xs)
     }
 
-    pub def done(p: Path): Bool = match p {
-        case Path(xs) => List.isEmpty(xs)
-    }
-
     type alias From = Int32
     type alias To = Int32
     type alias UpperCapacity = Int32
     type alias Flow = Int32
     type alias FlowNetwork = (From, To, UpperCapacity, Flow)
-
-    // TODO: Handle residual network, i.e., reversed edges with negative flow and allow finding paths in that combined with normal network.
 
     pub def maxFlow(src: { src = From }, dst: { dst = To }, g: m[(From, To, UpperCapacity)]): Flow with Foldable[m] =
         def fordFulkerson(flowNetwork) = match augmentingPath(src, dst, flowNetwork) {
@@ -642,7 +636,7 @@ mod Graph {
                 fordFulkerson(updatedNetwork)
         };
         // Init with 0 flow
-        let flowNetwork = Foldable.toList(g) |> List.map(match (x, y, z) -> (x, y, z, 0));
+        let flowNetwork = Foldable.toVector(g) |> Vector.map(match (x, y, z) -> (x, y, z, 0));
         fordFulkerson(flowNetwork)
 
     def getMaxFlow(dst: To, g: m[FlowNetwork]): Flow with Foldable[m] =
@@ -656,8 +650,10 @@ mod Graph {
     def augmentingPath(src: { src = From }, dst: { dst = To }, g: m[FlowNetwork]): Option[Path] with Foldable[m] =
         let edges = inject g into Edge;
         let rules = #{
-            Reach(x, y; init(y, x)) :- Edge(x, y, u, f), if (u - f) > 0.
-            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(y, z, u, f), if (u - f) > 0.
+            Reach(x, y; init(y, x)) :- Edge(x, y, u, f),                 if (u - f) > 0. // Forward edge
+            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(y, z, u, f), if (u - f) > 0. // Forward edge
+            Reach(x, y; init(y, x)) :- Edge(y, x, u, f),                 if f > 0.       // Back edge
+            Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(z, y, u, f), if f > 0.       // Back edge
         };
         let s = src.src;
         let t = dst.dst;
@@ -665,21 +661,24 @@ mod Graph {
         Vector.head(result)
 
     def pathMinCapacity(p: Path, g: m[FlowNetwork]): Int32 with Foldable[m] =
-        let Path(xs) = p;
-        let ps = inject xs into Path;
-        let edges = inject g into Edge;
-        let rules = #{
-            PathCapacity(u - f)   :- Edge(x, y, u, f), Path(x), Path(y), if f <= u and f >= 0.
-            NonMinCapacity(u)     :- PathCapacity(u), PathCapacity(v), if v < u.
-            MinCapacity(u)        :- PathCapacity(u), not NonMinCapacity(u).
-        };
-        let result = query ps, edges, rules select u from MinCapacity(u);
-        Vector.get(0, result)
+        let optMin = g |> Foldable.filter(match (s, d, _, _) -> memberOf(s, p) and memberOf(d, p))
+            |> List.map(match (_, _, u, _) -> u)
+            |> List.minimum;
+        match optMin {
+            case Some(u) => u
+            case None    => unreachable!() // Handle this better somehow
+        }
 
-    def increaseFlow(p: Path, incr: Int32, g: m[FlowNetwork]): List[FlowNetwork] with Foldable[m] =
+    def increaseFlow(p: Path, incr: Int32, g: m[FlowNetwork]): Vector[FlowNetwork] with Foldable[m] =
         g
-        |> Foldable.filter(match (s, d, u, f) -> memberOf(s, p) and memberOf(d, p) and (f + incr) <= u)
-        |> List.map(match (s, d, u, f) -> (s, d, u, f + incr))
+        |> Foldable.toVector
+        |> Vector.map(match (s, d, u, f) ->
+            if (memberOf(s, p) and memberOf(d, p))
+                (s, d, u, f + incr)
+            // TODO: Figure out how to decide if back-edge, then (s, d, u, f - incr)
+            else
+                (s, d, u, f)
+        )
 
     def memberOf(a: Int32, p: Path): Bool =
         let Path(xs) = p;
