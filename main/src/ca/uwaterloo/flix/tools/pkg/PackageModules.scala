@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Paul Butcher
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.tools.pkg
 
-///
-/// A trait for types that can be closed.
-///
-pub trait Closeable[a] {
-    pub def close(x: a): Unit \ IO
+import ca.uwaterloo.flix.language.ast.Symbol
+
+sealed trait PackageModules {
+  def contains(sym: Symbol.ModuleSym): Boolean = this match {
+    case PackageModules.All => true
+    case PackageModules.Selected(included) => included.contains(sym)
+  }
+}
+
+object PackageModules {
+
+  case object All extends PackageModules
+
+  case class Selected(included: Set[Symbol.ModuleSym]) extends PackageModules
+
 }

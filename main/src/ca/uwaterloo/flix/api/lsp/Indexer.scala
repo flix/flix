@@ -133,13 +133,14 @@ object Indexer {
     * Returns a reverse index for the given type alias `alias0`.
     */
   private def visitTypeAlias(alias0: TypeAlias): Index = alias0 match {
-    case TypeAlias(_, _, _, tparams, tpe, _) =>
+    case TypeAlias(_, _, _, _, tparams, tpe, _) =>
       Index.all(
         Index.occurrenceOf(alias0),
         traverse(tparams)(visitTypeParam),
         visitType(tpe),
       )
   }
+
 
   /**
     * Returns a reverse index for the given associated type definition `assoc`.
@@ -241,9 +242,6 @@ object Indexer {
     case Expr.Scope(sym, _, exp, _, _, loc) =>
       val tpe = Type.mkRegion(sym.tvar, loc)
       Index.occurrenceOf(sym, tpe) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
-
-    case Expr.ScopeExit(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)

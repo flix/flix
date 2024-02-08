@@ -30,7 +30,7 @@ mod IOError {
     /// If `f` throws a Java `Exception`, `Err(e)` is returned
     /// where `e` is the error message.
     ///
-    pub def tryCatch(f: Unit -> a \ IO): Result[IOError, a] \ IO =
+    pub def tryCatch(f: Unit -> a \ ef): Result[IOError, a] \ ef =
         try {
             Ok(f())
         } catch {

@@ -620,14 +620,13 @@ mod RedBlackTree {
     ///
     @ParallelWhenPure
     pub def mapWithKey(f: (k, v1) -> v2 \ ef, t: RedBlackTree[k, v1]): RedBlackTree[k, v2] \ ef =
-        typematch f {
-            case g: (k, v1) -> v2 \ {} =>
+        match purityOf2(f) {
+            case Purity2.Pure(g) =>
                 if (useParallelEvaluation(t))
                     parMapWithKey(threads() - 1, g, t)
                 else
                     seqMapWithKey(f, t)
-            case g: (k, v1) -> v2 \ ef => seqMapWithKey(g, t)
-            case _: _ => unreachable!()
+            case Purity2.Impure(_) => seqMapWithKey(f, t)
         }
 
     ///

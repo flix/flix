@@ -89,8 +89,6 @@ object MonoDefs {
             case Some(tpe) => tpe.map(default)
             case None => default(t)
           }
-          // Erase concrete effects like Print.
-          case Type.Cst(TypeConstructor.Effect(_), _) => Type.EffUniv
           case Type.Cst(_, _) => t
           case Type.Apply(t1, t2, loc) =>
             val y = visit(t2)
@@ -374,7 +372,7 @@ object MonoDefs {
       val env1 = env0 + (sym -> freshSym)
       // forcedly mark the region variable as Impure inside the region
       val subst1 = StrictSubstitution(subst.s.unbind(regionVar.sym), subst.eqEnv)
-      val subst2 = subst1 + (regionVar.sym -> Type.Impure)
+      val subst2 = subst1 + (regionVar.sym -> Type.Univ)
       Expr.Scope(freshSym, regionVar, visitExp(exp, env1, subst2), subst(tpe), subst(eff), loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
@@ -428,7 +426,7 @@ object MonoDefs {
               val subst1 = caseSubst @@ subst.nonStrict
               // visit the body under the extended environment
               val body = visitExp(body0, env1, StrictSubstitution(subst1, root.eqEnv))
-              val eff = Type.mkUnion(exp.eff, body0.eff, loc.asSynthetic)
+              val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
               Some(Expr.Let(freshSym, Modifiers.Empty, e, body, StrictSubstitution(subst1, root.eqEnv).apply(tpe), subst1(eff), loc))
           }
       }.next() // We are safe to get next() because the last case will always match
@@ -678,9 +676,6 @@ object MonoDefs {
           Type.Pure
         case _ => tpe
       }
-
-    // Erase concrete effects like Print.
-    case Type.Cst(TypeConstructor.Effect(_), _) => Type.EffUniv
 
     case Type.Cst(_, _) => tpe
 
