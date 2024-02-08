@@ -52,7 +52,6 @@ object TypedAstOps {
     case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Region(_, _) => Set.empty
     case Expr.Scope(_, _, exp, _, _, _) => sigSymsOf(exp)
-    case Expr.ScopeExit(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expr.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Discard(exp, _, _) => sigSymsOf(exp)
@@ -171,9 +170,6 @@ object TypedAstOps {
 
     case Expr.Scope(sym, _, exp, _, _, _) =>
       freeVars(exp) - sym
-
-    case Expr.ScopeExit(exp1, exp2, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)

@@ -183,13 +183,6 @@ object TypeReconstruction {
       val eff = subst(pvar)
       TypedAst.Expr.Scope(sym, regionVar, e, tpe, eff, loc)
 
-    case KindedAst.Expr.ScopeExit(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      val tpe = Type.Unit
-      val eff = Type.IO
-      TypedAst.Expr.ScopeExit(e1, e2, tpe, eff, loc)
-
     case KindedAst.Expr.Match(matchExp, rules, loc) =>
       val e1 = visitExp(matchExp)
       val rs = rules map {

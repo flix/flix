@@ -534,11 +534,6 @@ object Desugar {
       val e = visitExp(exp)
       Expr.Scope(ident, e, loc)
 
-    case WeededAst.Expr.ScopeExit(exp1, exp2, loc) =>
-      val e1 = visitExp(exp1)
-      val e2 = visitExp(exp2)
-      Expr.ScopeExit(e1, e2, loc)
-
     case WeededAst.Expr.Match(exp, rules, loc) =>
       val e = visitExp(exp)
       val rs = rules.map(visitMatchRule)
@@ -689,10 +684,13 @@ object Desugar {
       val rs = rules.map(visitCatchRule)
       Expr.TryCatch(e, rs, loc)
 
-    case WeededAst.Expr.TryWith(exp, eff, rules, loc) =>
+    case WeededAst.Expr.TryWith(exp, handlers, loc) =>
       val e = visitExp(exp)
-      val rs = rules.map(visitHandlerRule)
-      Expr.TryWith(e, eff, rs, loc)
+      handlers.foldLeft(e) {
+        case (acc, handler) =>
+          val rs = handler.rules.map(visitHandlerRule)
+          Expr.TryWith(acc, handler.eff, rs, loc)
+      }
 
     case WeededAst.Expr.Do(op, exps, loc) =>
       val es = visitExps(exps)

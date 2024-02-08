@@ -106,8 +106,6 @@ object KindedAst {
 
     case class Scope(sym: Symbol.VarSym, regionVar: Type.Var, exp1: Expr, evar: Type.Var, loc: SourceLocation) extends Expr
 
-    case class ScopeExit(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
 
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], loc: SourceLocation) extends Expr

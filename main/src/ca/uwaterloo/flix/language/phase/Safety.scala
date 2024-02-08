@@ -179,9 +179,6 @@ object Safety {
       case Expr.Scope(_, _, exp, _, _, _) =>
         visit(exp)
 
-      case Expr.ScopeExit(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
-
       case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
         visit(exp1) ++ visit(exp2) ++ visit(exp3)
 
