@@ -342,7 +342,8 @@ object ConstraintResolution {
         }
       }
 
-    case _ => Result.Err(TypeError.MismatchedTypes(tpe1, tpe2, tpe1, tpe2, RigidityEnv.empty, prov.loc)) // MATT renv
+    case _ =>
+      Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
   }
 
   // Θ ⊩ τ ⤳ τ'
