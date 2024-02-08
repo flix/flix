@@ -65,20 +65,6 @@ sealed trait TypingConstraint {
 
   private def dotId: Int = System.identityHashCode(this)
 
-  private def fullTpe1: Option[Type] = this match {
-    case TypingConstraint.Equality(tpe1, tpe2, prov) => prov.fullTpe1.orElse(Some(tpe1))
-    case TypingConstraint.Class(sym, tpe, loc) => None
-    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) => prov.fullTpe1.orElse(Some(eff1))
-    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested) => prov.fullTpe1.orElse(Some(eff1))
-  }
-
-  private def fullTpe2: Option[Type] = this match {
-    case TypingConstraint.Equality(tpe1, tpe2, prov) => prov.fullTpe2.orElse(Some(tpe2))
-    case TypingConstraint.Class(sym, tpe, loc) => None
-    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) => prov.fullTpe2.orElse(Some(eff2))
-    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested) => prov.fullTpe2.orElse(Some(eff2))
-  }
-
   def loc: SourceLocation
 }
 
@@ -160,18 +146,7 @@ object TypingConstraint {
   private def format(s: String): String = s.replace("\\", "\\\\")
 
   sealed trait Provenance {
-
     def loc: SourceLocation
-
-    def fullTpe1: Option[Type] = this match {
-      case Provenance.Parent(constr) => constr.fullTpe1
-      case _ => None
-    }
-
-    def fullTpe2: Option[Type] = this match {
-      case Provenance.Parent(constr) => constr.fullTpe2
-      case _ => None
-    }
   }
 
   object Provenance {
@@ -179,23 +154,21 @@ object TypingConstraint {
     /**
       * The constraint indicates that the left type is the expected type, while the right type is the actual type.
       */
-    case class ExpectLeft(loc: SourceLocation) extends Provenance
+    case class ExpectType(expected: Type, actual: Type, loc: SourceLocation) extends Provenance
+
+    /**
+      * The constraint indicates that the left effect is the expected effect, while the right effect is the actual effect.
+      */
+    case class ExpectEffect(expected: Type, actual: Type, loc: SourceLocation) extends Provenance
 
     /**
       * The constraint indicates that the left type is the expected type of the `n`th argument to a function.
       */
-    case class ExpectLeftArgument(sym: Symbol, num: Int, loc: SourceLocation) extends Provenance
+    case class ExpectArgument(expected: Type, actual: Type, sym: Symbol, num: Int, loc: SourceLocation) extends Provenance
 
     /**
       * The constraint indicates that the types must match.
       */
-    case class Match(loc: SourceLocation) extends Provenance
-
-    /**
-      * The constraint resulted from a parent constraint.
-      */
-    case class Parent(constr: TypingConstraint) extends Provenance {
-      def loc: SourceLocation = constr.loc
-    }
+    case class Match(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Provenance
   }
 }
