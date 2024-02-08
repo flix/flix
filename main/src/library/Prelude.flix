@@ -1,5 +1,5 @@
 ///
-/// Static is a type alias for false and denotes the global lifetime.
+/// Static denotes the region of global lifetime.
 ///
 pub type alias Static = IO
 
