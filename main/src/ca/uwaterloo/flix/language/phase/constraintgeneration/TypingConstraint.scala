@@ -21,17 +21,19 @@ import ca.uwaterloo.flix.language.phase.unification.Substitution
 
 sealed trait TypingConstraint {
 
-  lazy val index: (Int, Int, Int) = this match {
-    case TypingConstraint.Equality(tvar1: Type.Var, Type.Pure, _) => (0, 0, 0)
-    case TypingConstraint.Equality(Type.Pure, tvar2: Type.Var, _) => (0, 0, 0)
-    case TypingConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, _) if tvar1 != tvar2 => (0, 0, 0)
-    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) => (0, 0, 0)
-    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested) => (0, 0, 0)
+  // TODO we get slightly better errors if we process Prov.Match first
+  // TODO not sure how this scales. We need a better solution.
+  lazy val index: (Int, Int, Int, Int) = this match {
+    case TypingConstraint.Equality(tvar1: Type.Var, Type.Pure, prov) => (0, prov.index, 0, 0)
+    case TypingConstraint.Equality(Type.Pure, tvar2: Type.Var, prov) => (0, prov.index, 0, 0)
+    case TypingConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, prov) if tvar1 != tvar2 => (0, prov.index, 0, 0)
+    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) => (0, prov.index, 0, 0)
+    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested) => (0, prov.index, 0, 0)
     case TypingConstraint.Equality(tpe1, tpe2, prov) =>
       val tvars = (tpe1.typeVars ++ tpe2.typeVars)
       val effTvars = tvars.filter(_.kind == Kind.Eff)
-      (1, effTvars.size, tvars.size)
-    case TypingConstraint.Class(sym, tpe, loc) => (2, 0, 0)
+      (1, prov.index, effTvars.size, tvars.size)
+    case TypingConstraint.Class(sym, tpe, loc) => (2, 0, 0, 0)
   }
 
   override def toString: String = this match {
@@ -147,6 +149,11 @@ object TypingConstraint {
 
   sealed trait Provenance {
     def loc: SourceLocation
+
+    def index: Int = this match {
+      case Provenance.Match(tpe1, tpe2, loc) => 0
+      case _ => 1
+    }
   }
 
   object Provenance {
