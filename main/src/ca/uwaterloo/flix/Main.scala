@@ -289,6 +289,20 @@ object Main {
               errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
+        
+        case Command.Mtest =>
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.mtest(flix)
+          }.toHardResult match {
+            case Result.Ok(_) =>
+              System.exit(0)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
 
 
         case Command.CompilerPerf =>
@@ -364,6 +378,8 @@ object Main {
 
     case object Test extends Command
 
+    case class Mtest(tester: File, testee: File) extends Command
+
     case object Repl extends Command
 
     case class Lsp(port: Int) extends Command
@@ -409,6 +425,14 @@ object Main {
       cmd("benchmark").action((_, c) => c.copy(command = Command.Benchmark)).text("  runs the benchmarks for the current project.")
 
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
+
+      cmd("mtest").action((_, c) => c.copy(command = Command.Test)).text("  runs the mutation tests given tester and testee files.")
+        .children(
+          arg[file]("Tester").action((tester, c) => c.copy(command = Command.Mtest(tester)))
+            .required(),
+          arg[file]("Testee").action((testee, c) => c.copy(command = Command.Mtest(testee)))
+            .required()
+        )
 
       cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
 
