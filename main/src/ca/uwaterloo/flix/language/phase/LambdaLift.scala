@@ -36,7 +36,6 @@ object LambdaLift {
     implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue())
 
     val defs = ParOps.parMapValues(root.defs)(visitDef)
-    val enums = ParOps.parMapValues(root.enums)(visitEnum)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
     // Add lifted defs from the shared context to the existing defs.
@@ -44,7 +43,7 @@ object LambdaLift {
       case (macc, (sym, defn)) => macc + (sym -> defn)
     }
 
-    LiftedAst.Root(newDefs, enums, effects, root.entryPoint, root.reachable, root.sources)
+    LiftedAst.Root(newDefs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
   private def visitDef(def0: SimplifiedAst.Def)(implicit ctx: SharedContext, flix: Flix): LiftedAst.Def = def0 match {
@@ -52,14 +51,6 @@ object LambdaLift {
       val fs = fparams.map(visitFormalParam)
       val e = visitExp(exp)(sym, ctx, flix)
       LiftedAst.Def(ann, mod, sym, Nil, fs, e, tpe, purity, loc)
-  }
-
-  private def visitEnum(enum0: SimplifiedAst.Enum): LiftedAst.Enum = enum0 match {
-    case SimplifiedAst.Enum(ann, mod, sym, cases, tpe, loc) =>
-      val cs = cases.map {
-        case (tag, SimplifiedAst.Case(caseSym, caseTpe, loc)) => tag -> LiftedAst.Case(caseSym, caseTpe, loc)
-      }
-      LiftedAst.Enum(ann, mod, sym, cs, tpe, loc)
   }
 
   private def visitEffect(effect: SimplifiedAst.Effect): LiftedAst.Effect = effect match {

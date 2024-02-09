@@ -50,9 +50,8 @@ object EffectBinder {
     */
   def run(root: LiftedAst.Root)(implicit flix: Flix): ReducedAst.Root = flix.phase("EffectBinder") {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
-    val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
-    ReducedAst.Root(newDefs, newEnums, newEffects, Set.empty, Nil, root.entryPoint, root.reachable, root.sources)
+    ReducedAst.Root(newDefs, newEffects, Set.empty, Nil, root.entryPoint, root.reachable, root.sources)
   }
 
   /**
@@ -73,6 +72,8 @@ object EffectBinder {
 
   private case class LetRecBinder(varSym: VarSym, index: Int, defSym: DefnSym, exp: ReducedAst.Expr, loc: SourceLocation) extends Binder
 
+  private case class NonBinder(exp: ReducedAst.Expr, loc: SourceLocation) extends Binder
+
   /**
     * Transforms the [[LiftedAst.Def]] such that effect operations will be run without an
     * operand stack.
@@ -87,17 +88,6 @@ object EffectBinder {
       // OBS lctx.pcPoints is mutated by visitExpr
       val pcPoints = lctx.pcPoints
       ReducedAst.Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, ReducedAst.UnboxedType(tpe), purity, loc)
-  }
-
-  private def visitEnum(e: LiftedAst.Enum): ReducedAst.Enum = e match {
-    case LiftedAst.Enum(ann, mod, sym, cases0, tpe, loc) =>
-      val cases = MapOps.mapValues(cases0)(visitCase)
-      ReducedAst.Enum(ann, mod, sym, cases, tpe, loc)
-  }
-
-  private def visitCase(c: LiftedAst.Case): ReducedAst.Case = c match {
-    case LiftedAst.Case(sym, tpe, loc) =>
-      ReducedAst.Case(sym, tpe, loc)
   }
 
   private def visitEffect(e: LiftedAst.Effect): ReducedAst.Effect = e match {
@@ -190,6 +180,13 @@ object EffectBinder {
       val e1 = visitExprInnerWithBinders(binders)(exp1)
       val e2 = visitExpr(exp2)
       val e = ReducedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
+      bindBinders(binders, e)
+
+    case LiftedAst.Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
+      val binders = mutable.ArrayBuffer.empty[Binder]
+      val e1 = visitExprInnerWithBinders(binders)(exp1)
+      val e2 = visitExpr(exp2)
+      val e = ReducedAst.Expr.Stmt(e1, e2, tpe, purity, loc)
       bindBinders(binders, e)
 
     case LiftedAst.Expr.Scope(sym, exp0, tpe, purity, loc) =>
@@ -295,6 +292,11 @@ object EffectBinder {
       binders.addOne(LetRecBinder(varSym, index, defSym, e1, loc))
       visitExprInnerWithBinders(binders)(exp2)
 
+    case LiftedAst.Expr.Stmt(exp1, exp2, _, _, loc) =>
+      val e1 = visitExprInnerWithBinders(binders)(exp1)
+      binders.addOne(NonBinder(e1, loc))
+      visitExprInnerWithBinders(binders)(exp2)
+
     case LiftedAst.Expr.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExpr(exp)
       ReducedAst.Expr.Scope(sym, e, tpe, purity, loc)
@@ -362,6 +364,9 @@ object EffectBinder {
       case ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, exp2, _, _, loc) =>
         binders.addOne(LetRecBinder(varSym, index, defSym, exp1, loc))
         bind(exp2)
+      case ReducedAst.Expr.Stmt(exp1, exp2, _, _, loc) =>
+        binders.addOne(NonBinder(exp1, loc))
+        bind(exp2)
       case ReducedAst.Expr.Scope(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.TryCatch(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.TryWith(_, _, _, _, _, _) => letBindExpr(binders)(e)
@@ -393,6 +398,8 @@ object EffectBinder {
         ReducedAst.Expr.Let(sym, exp1, acc, acc.tpe, combine(acc.purity, exp1.purity), loc)
       case (LetRecBinder(varSym, index, defSym, exp1, loc), acc) =>
         ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, acc, acc.tpe, combine(acc.purity, exp1.purity), loc)
+      case (NonBinder(exp1, loc), acc) =>
+        ReducedAst.Expr.Stmt(exp1, acc, acc.tpe, combine(acc.purity, exp1.purity), loc)
     }
   }
 

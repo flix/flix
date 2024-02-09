@@ -85,7 +85,7 @@ object ParsedAst {
       * @param econstrs   the equality constraints.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], econstrs: Seq[ParsedAst.EqualityConstraint], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Def(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: ParsedAst.FormalParamList, tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], econstrs: Seq[ParsedAst.EqualityConstraint], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Signature Declaration.
@@ -103,7 +103,7 @@ object ParsedAst {
       * @param exp        the optional expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration.LawOrSig
+    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: ParsedAst.FormalParamList, tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration.LawOrSig
 
     /**
       * Law Declaration.
@@ -118,7 +118,7 @@ object ParsedAst {
       * @param exp     the expression.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class Law(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparams: Seq[ParsedAst.FormalParam], tconstrs: Seq[ParsedAst.TypeConstraint], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
+    case class Law(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparams: ParsedAst.FormalParamList, tconstrs: Seq[ParsedAst.TypeConstraint], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Declaration with ParsedAst.Declaration.LawOrSig
 
     /**
       * Effect Operation Declaration.
@@ -134,7 +134,7 @@ object ParsedAst {
       * @param tconstrs   the type constraints.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Op(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], sp2: SourcePosition)
+    case class Op(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: ParsedAst.FormalParamList, tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], sp2: SourcePosition)
 
     /**
       * Enum Declaration.
@@ -178,7 +178,7 @@ object ParsedAst {
       * @param tpe     the type of the opaque type.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class TypeAlias(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
+    case class TypeAlias(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, tpe: ParsedAst.Type, sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Associated Type Signature Declaration.
@@ -625,7 +625,7 @@ object ParsedAst {
       * @param exp     the body expression.
       * @param sp2     the position of the last character in the expression.
       */
-    case class Lambda(sp1: SourcePosition, fparams: Seq[ParsedAst.FormalParam], exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Lambda(sp1: SourcePosition, fparams: ParsedAst.FormalParamList, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Lambda Match Expression.
@@ -710,7 +710,7 @@ object ParsedAst {
       * @param exp2    the body expression.
       * @param sp2     the position of the last character in the expression.
       */
-    case class LetRecDef(sp1: SourcePosition, ann: Seq[ParsedAst.Annotation], ident: Name.Ident, fparams: Seq[ParsedAst.FormalParam], typeAndEff: Option[(ParsedAst.Type, Option[ParsedAst.Type])], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+    case class LetRecDef(sp1: SourcePosition, ann: Seq[ParsedAst.Annotation], ident: Name.Ident, fparams: ParsedAst.FormalParamList, typeAndEff: Option[(ParsedAst.Type, Option[ParsedAst.Type])], exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * Let Import Expression.
@@ -1040,12 +1040,12 @@ object ParsedAst {
     /**
       * Try Expression.
       *
-      * @param sp1            the position of the first character in the expression.
-      * @param exp            the guarded expression.
-      * @param catchOrHandler the handler (catch/with) of the try expression.
-      * @param sp2            the position of the last character in the expression.
+      * @param sp1      the position of the first character in the expression.
+      * @param exp      the guarded expression.
+      * @param handlers the list of catch- or with-blocks of the try expression.
+      * @param sp2      the position of the last character in the expression.
       */
-    case class Try(sp1: SourcePosition, exp: ParsedAst.Expression, catchOrHandler: CatchOrHandler, sp2: SourcePosition) extends ParsedAst.Expression
+    case class Try(sp1: SourcePosition, exp: ParsedAst.Expression, handlers: HandlerList, sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
       * SelectChannel Expression.
@@ -1483,12 +1483,12 @@ object ParsedAst {
     case class Pure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
-      * The Impure type constructor.
+      * The Univ type constructor.
       *
       * @param sp1 the position of the first character in the type.
       * @param sp2 the position of the last character in the type.
       */
-    case class Impure(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
+    case class Univ(sp1: SourcePosition, sp2: SourcePosition) extends ParsedAst.Type
 
     /**
       * A type representing an effect set.
@@ -1772,6 +1772,15 @@ object ParsedAst {
   case class FormalParam(sp1: SourcePosition, mod: Seq[ParsedAst.Modifier], ident: Name.Ident, tpe: Option[ParsedAst.Type], sp2: SourcePosition)
 
   /**
+    * Wrapper for a list of [[ParsedAst.FormalParam]].
+    *
+    * @param sp1     the position of the opening parenthesis.
+    * @param fparams the list of [[FormalParam]]s.
+    * @param sp2     the position of the closing parenthesis.
+    */
+  case class FormalParamList(sp1: SourcePosition, fparams: Seq[ParsedAst.FormalParam], sp2: SourcePosition)
+
+  /**
     * A common super-type for predicate parameters.
     */
   sealed trait PredicateParam
@@ -1826,7 +1835,7 @@ object ParsedAst {
     * @param fparams the operation parameters.
     * @param exp     the body expression.
     */
-  case class HandlerRule(op: Name.Ident, fparams: Seq[FormalParam], exp: ParsedAst.Expression)
+  case class HandlerRule(op: Name.Ident, fparams: ParsedAst.FormalParamList, exp: ParsedAst.Expression)
 
   /**
     * A type match rule consists of a variable, a type, and a body expression.
@@ -1873,18 +1882,38 @@ object ParsedAst {
     */
   case class Annotation(sp1: SourcePosition, ident: Name.Ident, sp2: SourcePosition)
 
-  /**
-    * An enum representing the handler of a `try` expression.
-    */
-  sealed trait CatchOrHandler
 
-  object CatchOrHandler {
+  /**
+    * A common super-type for lists of handlers.
+    */
+  sealed trait HandlerList
+
+  object HandlerList {
+
+    /**
+      * A wrapper for a list of [[TryHandler.Catch]]es. This ensures that only catch-handlers are in the list.
+      *
+      * @param handlers The list of [[TryHandler.Catch]]
+      */
+    case class CatchHandlerList(handlers: Seq[TryHandler.Catch]) extends HandlerList
+
+    /**
+      * A wrapper for a list of [[TryHandler.WithHandler]]es. This ensures that only with-handlers are in the list.
+      *
+      * @param handlers The list of [[TryHandler.WithHandler]]
+      */
+    case class WithHandlerList(handlers: Seq[TryHandler.WithHandler]) extends HandlerList
+
+  }
+
+  object TryHandler {
+
     /**
       * A `catch` block for handling Java exceptions.
       *
       * @param rules the catch rules.
       */
-    case class Catch(rules: Seq[ParsedAst.CatchRule]) extends CatchOrHandler
+    case class Catch(rules: Seq[ParsedAst.CatchRule])
 
     /**
       * A `with` block for handling Flix effects.
@@ -1892,7 +1921,8 @@ object ParsedAst {
       * @param eff   the effect to be handled.
       * @param rules the handler rules.
       */
-    case class Handler(eff: Name.QName, rules: Option[Seq[ParsedAst.HandlerRule]]) extends CatchOrHandler
+    case class WithHandler(eff: Name.QName, rules: Seq[ParsedAst.HandlerRule])
+
   }
 
   /**
@@ -2035,7 +2065,7 @@ object ParsedAst {
     * @param tpe     the method return type.
     * @param sp2     the position of the last character in the method.
     */
-  case class JvmMethod(sp1: SourcePosition, ident: Name.Ident, fparams: Seq[ParsedAst.FormalParam], tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], exp: ParsedAst.Expression, sp2: SourcePosition)
+  case class JvmMethod(sp1: SourcePosition, ident: Name.Ident, fparams: ParsedAst.FormalParamList, tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], exp: ParsedAst.Expression, sp2: SourcePosition)
 
   /**
     * Record Operations.

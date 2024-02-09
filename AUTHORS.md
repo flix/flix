@@ -65,3 +65,4 @@ By adding your name to this document, you agree to release all your contribution
 - [Xavier deSouza](https://github.com/xdesou01)
 - [Herluf Baggesen](https://github.com/herluf-ba)
 - [Yukang Xie](https://github.com/bathtub-01)
+- [Lionel Mendes](https://github.com/LionelMeli) 

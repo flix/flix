@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Symbol
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.mkClassName
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.Branch._
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions._
@@ -41,6 +41,8 @@ sealed trait BackendObjType {
     case BackendObjType.Lazy(tpe) => JvmName(RootPackage, mkClassName("Lazy", tpe))
     case BackendObjType.Ref(tpe) => JvmName(RootPackage, mkClassName("Ref", tpe))
     case BackendObjType.Tuple(elms) => JvmName(RootPackage, mkClassName("Tuple", elms))
+    case BackendObjType.Tagged => JvmName(RootPackage, mkClassName("Tagged"))
+    case BackendObjType.Tag(tpe) => JvmName(RootPackage, mkClassName("Tag", tpe))
     case BackendObjType.Arrow(args, result) => JvmName(RootPackage, mkClassName(s"Fn${args.length}", args :+ result))
     case BackendObjType.RecordEmpty => JvmName(RootPackage, mkClassName(s"RecordEmpty"))
     case BackendObjType.RecordExtend(value) => JvmName(RootPackage, mkClassName("RecordExtend", value))
@@ -50,6 +52,7 @@ sealed trait BackendObjType {
     case BackendObjType.FlixError => JvmName(DevFlixRuntime, mkClassName("FlixError"))
     case BackendObjType.HoleError => JvmName(DevFlixRuntime, mkClassName("HoleError"))
     case BackendObjType.MatchError => JvmName(DevFlixRuntime, mkClassName("MatchError"))
+    case BackendObjType.UnhandledEffectError => JvmName(DevFlixRuntime, mkClassName("UnhandledEffectError"))
     case BackendObjType.Region => JvmName(DevFlixRuntime, mkClassName("Region"))
     case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, mkClassName("UncaughtExceptionHandler"))
     case BackendObjType.Main(_) => JvmName.Main
@@ -202,7 +205,7 @@ object BackendObjType {
           // get expression as thunk
           DUP() ~ GETFIELD(ExpField) ~ CHECKCAST(Thunk.jvmName) ~
           // this.value = thunk.unwind()
-          Result.unwindSuspensionFreeThunkToType(tpe) ~ PUTFIELD(ValueField) ~
+          Result.unwindSuspensionFreeThunkToType(tpe, "during call to Lazy.force", SourceLocation.Unknown) ~ PUTFIELD(ValueField) ~
           // this.exp = null
           thisLoad() ~ pushNull() ~ PUTFIELD(ExpField)
         ) ~
@@ -301,6 +304,66 @@ object BackendObjType {
 
   //case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType
 
+  case object Tagged extends BackendObjType with Generatable {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkAbstractClass(this.jvmName)
+
+      cm.mkConstructor(Constructor)
+
+      cm.mkField(NameField)
+
+      cm.closeClassMaker()
+    }
+
+    def NameField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "tag", String.toTpe)
+
+    def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
+
+    /** [...] -> [..., tagName] */
+    def mkTagName(sym: Symbol.CaseSym): InstructionSet = pushString(JvmOps.getTagName(sym))
+
+    /** [..., tagName1, tagName2] --> [..., tagName1 == tagName2] */
+    def eqTagName(): InstructionSet = {
+      // ACMP is okay since tag strings are loaded through ldc instructions
+      ifConditionElse(Condition.ACMPEQ)(pushBool(true))(pushBool(false))
+    }
+  }
+
+  case class Tag(tpe: BackendType) extends BackendObjType with Generatable {
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = Tagged.jvmName)
+
+      cm.mkConstructor(Constructor)
+      cm.mkField(ValueField)
+      cm.mkMethod(ToStringMethod)
+
+      cm.closeClassMaker()
+    }
+
+    def NameField: InstanceField = Tagged.NameField
+
+    def ValueField: InstanceField = InstanceField(this.jvmName, IsPublic, NotFinal, NotVolatile, "value", tpe)
+
+    def Constructor: ConstructorMethod = nullarySuperConstructor(Tagged.Constructor)
+
+    def ToStringMethod: InstanceMethod = JavaObject.ToStringMethod.implementation(this.jvmName, Some(_ => {
+      // new String[4] // referred to as `arr`
+      ICONST_4() ~ ANEWARRAY(String.jvmName) ~
+      // arr[0] = "Enum"
+      DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(NameField) ~ AASTORE() ~
+      // arr[1] = "("
+      DUP() ~ ICONST_1() ~ pushString("(") ~ AASTORE() ~
+      // arr[2] = this.value.toString()
+      DUP() ~ ICONST_2() ~ thisLoad() ~ GETFIELD(ValueField) ~ xToString(ValueField.tpe) ~ AASTORE() ~
+      // arr[3] = ")"
+      DUP() ~ ICONST_3() ~ pushString(")") ~ AASTORE() ~
+      // ["", arr]
+      pushString("") ~ SWAP() ~
+      INVOKESTATIC(String.JoinMethod) ~
+      xReturn(String.toTpe)
+    }))
+  }
+
   case class Arrow(args: List[BackendType], result: BackendType) extends BackendObjType with Generatable {
 
     /**
@@ -338,105 +401,105 @@ object BackendObjType {
           Some(_ =>
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ ARETURN()
           ))
         case ObjConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(JavaObject.toTpe)(VoidableType.Void),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ RETURN()
           ))
         case ObjPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(JavaObject.toTpe)(BackendType.Bool),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ALOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
           ))
         case IntFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Int32)(JavaObject.toTpe),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ ARETURN()
           ))
         case IntConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Int32)(VoidableType.Void),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ RETURN()
           ))
         case IntPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Int32)(BackendType.Bool),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
           ))
         case IntUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsInt",
           mkDescriptor(BackendType.Int32)(BackendType.Int32),
           Some(_ =>
             thisLoad() ~
               DUP() ~ ILOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Int32) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Int32, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
           ))
         case LongFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Int64)(JavaObject.toTpe),
           Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ ARETURN()
           ))
         case LongConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Int64)(VoidableType.Void),
           Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ RETURN()
           ))
         case LongPredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Int64)(BackendType.Bool),
           Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
           ))
         case LongUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsLong",
           mkDescriptor(BackendType.Int64)(BackendType.Int64),
           Some(_ =>
             thisLoad() ~
               DUP() ~ LLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Int64) ~ LRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Int64, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ LRETURN()
           ))
         case DoubleFunction => InstanceMethod(this.jvmName, IsPublic, IsFinal, "apply",
           mkDescriptor(BackendType.Float64)(JavaObject.toTpe),
           Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ ARETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ ARETURN()
           ))
         case DoubleConsumer => InstanceMethod(this.jvmName, IsPublic, IsFinal, "accept",
           mkDescriptor(BackendType.Float64)(VoidableType.Void),
           Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe) ~ RETURN()
+              Result.unwindSuspensionFreeThunkToType(JavaObject.toTpe, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ RETURN()
           ))
         case DoublePredicate => InstanceMethod(this.jvmName, IsPublic, IsFinal, "test",
           mkDescriptor(BackendType.Float64)(BackendType.Bool),
           Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Bool) ~ IRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Bool, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ IRETURN()
           ))
         case DoubleUnaryOperator => InstanceMethod(this.jvmName, IsPublic, IsFinal, "applyAsDouble",
           mkDescriptor(BackendType.Float64)(BackendType.Float64),
           Some(_ =>
             thisLoad() ~
               DUP() ~ DLOAD(1) ~ PUTFIELD(ArgField(0)) ~
-              Result.unwindSuspensionFreeThunkToType(BackendType.Float64) ~ DRETURN()
+              Result.unwindSuspensionFreeThunkToType(BackendType.Float64, s"in ${jvmName.toBinaryName}", SourceLocation.Unknown) ~ DRETURN()
           ))
 
       }
@@ -710,8 +773,6 @@ object BackendObjType {
       cm.mkField(EndLineField)
       cm.mkField(EndColField)
 
-      cm.mkMethod(EqualsMethod)
-      cm.mkMethod(HashCodeMethod)
       cm.mkMethod(ToStringMethod)
 
       cm.closeClassMaker()
@@ -755,59 +816,6 @@ object BackendObjType {
         // create the string
         INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ ARETURN()
     ))
-
-    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(_ =>
-      withName(1, JavaObject.toTpe) { otherObj =>
-        // check exact equality
-        thisLoad() ~
-          otherObj.load() ~
-          ifCondition(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
-          // check `other == null`
-          otherObj.load() ~
-          ifCondition(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
-          // the class equality
-          thisLoad() ~
-          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          otherObj.load() ~
-          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          ifCondition(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
-          // check individual fields
-          otherObj.load() ~
-          CHECKCAST(this.jvmName) ~
-          storeWithName(2, this.toTpe) { otherLoc =>
-            thisLoad() ~ GETFIELD(BeginLineField) ~
-              otherLoc.load() ~ GETFIELD(BeginLineField) ~
-              ifCondition(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
-              thisLoad() ~ GETFIELD(BeginColField) ~
-              otherLoc.load() ~ GETFIELD(BeginColField) ~
-              ifCondition(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
-              thisLoad() ~ GETFIELD(EndLineField) ~
-              otherLoc.load() ~ GETFIELD(EndLineField) ~
-              ifCondition(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
-              thisLoad() ~ GETFIELD(EndColField) ~
-              otherLoc.load() ~ GETFIELD(EndColField) ~
-              ifCondition(Condition.ICMPNE)(pushBool(false) ~ IRETURN()) ~
-              thisLoad() ~ GETFIELD(SourceField) ~
-              otherLoc.load() ~ GETFIELD(SourceField) ~
-              INVOKESTATIC(Objects.EqualsMethod) ~
-              IRETURN()
-          }
-      }
-    ))
-
-    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(_ =>
-      ICONST_5() ~ ANEWARRAY(JavaObject.jvmName) ~
-        DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(SourceField) ~ AASTORE() ~
-        DUP() ~ ICONST_1() ~ thisLoad() ~ GETFIELD(BeginLineField) ~ boxInt() ~ AASTORE() ~
-        DUP() ~ ICONST_2() ~ thisLoad() ~ GETFIELD(BeginColField) ~ boxInt() ~ AASTORE() ~
-        DUP() ~ ICONST_3() ~ thisLoad() ~ GETFIELD(EndLineField) ~ boxInt() ~ AASTORE() ~
-        DUP() ~ ICONST_4() ~ thisLoad() ~ GETFIELD(EndColField) ~ boxInt() ~ AASTORE() ~
-        INVOKESTATIC(Objects.HashMethod) ~
-        IRETURN()
-    ))
-
-    private def boxInt(): InstructionSet = INVOKESTATIC(JvmName.Integer, "valueOf",
-      mkDescriptor(BackendType.Int32)(JvmName.Integer.toTpe))
   }
 
   case object Global extends BackendObjType with Generatable {
@@ -910,13 +918,18 @@ object BackendObjType {
       val cm = ClassMaker.mkClass(this.jvmName, IsFinal, FlixError.jvmName)
 
       cm.mkConstructor(Constructor)
+      // These fields allow external equality checking.
       cm.mkField(HoleField)
       cm.mkField(LocationField)
-      cm.mkMethod(EqualsMethod)
-      cm.mkMethod(HashCodeMethod)
 
       cm.closeClassMaker()
     }
+
+    private def HoleField: InstanceField =
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "hole", String.toTpe)
+
+    private def LocationField: InstanceField =
+      InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic,
       List(String.toTpe, ReifiedSourceLocation.toTpe), Some(_ =>
@@ -939,55 +952,6 @@ object BackendObjType {
           }
         }
       ))
-
-    private def HoleField: InstanceField =
-      InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "hole", String.toTpe)
-
-    private def LocationField: InstanceField =
-      InstanceField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
-
-    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(_ =>
-      withName(1, JavaObject.toTpe) { other =>
-        // check exact equality
-        thisLoad() ~ other.load() ~
-          ifCondition(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
-          // check for null
-          other.load() ~
-          ifCondition(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
-          // check for class equality
-          thisLoad() ~
-          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          other.load() ~
-          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          ifCondition(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
-          // cast the other obj
-          other.load() ~ CHECKCAST(this.jvmName) ~
-          storeWithName(2, HoleError.toTpe) { otherHoleError =>
-            // compare the hole field
-            thisLoad() ~ GETFIELD(HoleField) ~
-              otherHoleError.load() ~ GETFIELD(HoleField) ~
-              INVOKESTATIC(Objects.EqualsMethod) ~
-              ifCondition(Condition.EQ)(pushBool(false) ~ IRETURN()) ~
-              // compare the location field
-              thisLoad() ~ GETFIELD(LocationField) ~
-              otherHoleError.load() ~ GETFIELD(LocationField) ~
-              INVOKESTATIC(Objects.EqualsMethod) ~
-              IRETURN()
-          }
-      }
-    ))
-
-    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(_ =>
-      ICONST_2() ~
-        ANEWARRAY(JavaObject.jvmName) ~
-        // store hole
-        DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(HoleField) ~ AASTORE() ~
-        // store location
-        DUP() ~ ICONST_1() ~ thisLoad() ~ GETFIELD(LocationField) ~ AASTORE() ~
-        // hash the array
-        INVOKESTATIC(Objects.HashMethod) ~
-        IRETURN()
-    ))
   }
 
   case object MatchError extends BackendObjType with Generatable {
@@ -996,14 +960,13 @@ object BackendObjType {
       val cm = ClassMaker.mkClass(MatchError.jvmName, IsFinal, superClass = FlixError.jvmName)
 
       cm.mkConstructor(Constructor)
-
+      // This field allows external equality checking.
       cm.mkField(LocationField)
-
-      cm.mkMethod(EqualsMethod)
-      cm.mkMethod(HashCodeMethod)
 
       cm.closeClassMaker()
     }
+
+    def LocationField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
 
     def Constructor: ConstructorMethod = ConstructorMethod(MatchError.jvmName, IsPublic, List(ReifiedSourceLocation.toTpe), Some(_ =>
       thisLoad() ~
@@ -1015,47 +978,58 @@ object BackendObjType {
         INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
         INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
         INVOKESPECIAL(FlixError.Constructor) ~
+        // save argument locally
         thisLoad() ~
         ALOAD(1) ~
-        PUTFIELD(MatchError.LocationField) ~
+        PUTFIELD(this.LocationField) ~
         RETURN()
     ))
+  }
+
+  case object UnhandledEffectError extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(this.jvmName, IsFinal, superClass = FlixError.jvmName)
+
+      cm.mkConstructor(Constructor)
+      // This field allows external equality checking.
+      cm.mkField(EffectNameField)
+      cm.mkField(LocationField)
+
+      cm.closeClassMaker()
+    }
+
+    def EffectNameField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "effectName", String.toTpe)
 
     def LocationField: InstanceField = InstanceField(this.jvmName, IsPublic, IsFinal, NotVolatile, "location", ReifiedSourceLocation.toTpe)
 
-    private def EqualsMethod: InstanceMethod = JavaObject.EqualsMethod.implementation(this.jvmName, Some(_ =>
-      withName(1, JavaObject.toTpe) { otherObj =>
-        // check exact equality
+    def Constructor: ConstructorMethod = ConstructorMethod(this.jvmName, IsPublic, List(Suspension.toTpe, String.toTpe, ReifiedSourceLocation.toTpe), Some(_ =>
+      withName(1, Suspension.toTpe)(suspension => withName(2, String.toTpe)(info => withName(3, ReifiedSourceLocation.toTpe)(loc => {
+        val appendString = INVOKEVIRTUAL(StringBuilder.AppendStringMethod)
         thisLoad() ~
-          otherObj.load() ~
-          ifCondition(Condition.ACMPEQ)(pushBool(true) ~ IRETURN()) ~
-          // check `other == null`
-          otherObj.load() ~
-          ifCondition(Condition.NULL)(pushBool(false) ~ IRETURN()) ~
-          // the class equality
-          thisLoad() ~
-          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          otherObj.load() ~
-          INVOKEVIRTUAL(JavaObject.GetClassMethod) ~
-          ifCondition(Condition.ACMPNE)(pushBool(false) ~ IRETURN()) ~
-          // check individual fields
-          ALOAD(1) ~ CHECKCAST(this.jvmName) ~
-          storeWithName(2, this.toTpe) { otherErr =>
-            thisLoad() ~ GETFIELD(LocationField) ~
-              otherErr.load() ~ GETFIELD(MatchError.LocationField) ~
-              INVOKESTATIC(Objects.EqualsMethod) ~
-              IRETURN()
-          }
-      }
+        NEW(StringBuilder.jvmName) ~
+        DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+        pushString("Unhandled effect '") ~ appendString ~
+        suspension.load() ~ GETFIELD(Suspension.EffSymField) ~ appendString ~
+        pushString("' (") ~ appendString ~
+        info.load() ~ appendString ~
+        pushString(") at ") ~ appendString ~
+        loc.load() ~ INVOKEVIRTUAL(JavaObject.ToStringMethod) ~ appendString ~
+        INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKESPECIAL(FlixError.Constructor) ~
+        // save arguments locally
+        thisLoad() ~
+        suspension.load() ~ GETFIELD(Suspension.EffSymField) ~
+        PUTFIELD(EffectNameField) ~
+        thisLoad() ~
+        loc.load() ~
+        PUTFIELD(LocationField) ~
+        RETURN()
+      })))
     ))
 
-    private def HashCodeMethod: InstanceMethod = JavaObject.HashcodeMethod.implementation(this.jvmName, Some(_ =>
-      ICONST_1() ~ ANEWARRAY(JavaObject.jvmName) ~
-        DUP() ~ ICONST_0() ~ thisLoad() ~ GETFIELD(LocationField) ~ AASTORE() ~
-        INVOKESTATIC(Objects.HashMethod) ~
-        IRETURN()
-    ))
   }
+
 
   case object Region extends BackendObjType with Generatable {
 
@@ -1238,7 +1212,7 @@ object BackendObjType {
         args.load() ~ INVOKESTATIC(Global.SetArgsMethod) ~
         NEW(defName) ~ DUP() ~ INVOKESPECIAL(defName, JvmName.ConstructorMethod, MethodDescriptor.NothingToVoid) ~
         DUP() ~ GETSTATIC(Unit.SingletonField) ~ PUTFIELD(InstanceField(defName, IsPublic, NotFinal, NotVolatile, "arg0", JavaObject.toTpe)) ~
-        Result.unwindSuspensionFreeThunk() ~
+        Result.unwindSuspensionFreeThunk(s"in ${this.jvmName.toBinaryName}", SourceLocation.Unknown) ~
         POP() ~ RETURN()
       )
     }))
@@ -1506,7 +1480,7 @@ object BackendObjType {
     def unwindThunkToValue(pc: Int, newFrame: InstructionSet, setPc: InstructionSet): InstructionSet = {
       unwindThunk() ~
       handleSuspension(pc, newFrame, setPc) ~
-      CHECKCAST(Value.jvmName)
+      CHECKCAST(Value.jvmName) // Cannot fail
     }
 
     /**
@@ -1515,8 +1489,11 @@ object BackendObjType {
       * [..., Result] --> [..., Value.value: tpe]
       * side effect: crashes on suspensions
       */
-    def unwindSuspensionFreeThunkToType(tpe: BackendType): InstructionSet = {
-      unwindThunk() ~ CHECKCAST(Value.jvmName) ~ GETFIELD(Value.fieldFromType(tpe))
+    def unwindSuspensionFreeThunkToType(tpe: BackendType, errorHint: String, loc: SourceLocation): InstructionSet = {
+      unwindThunk() ~
+      crashIfSuspension(errorHint, loc) ~
+      CHECKCAST(Value.jvmName) ~ // Cannot fail
+      GETFIELD(Value.fieldFromType(tpe))
     }
 
     /**
@@ -1525,8 +1502,27 @@ object BackendObjType {
       * [..., Result] --> [..., Value]
       * side effect: crashes on suspensions
       */
-    def unwindSuspensionFreeThunk(): InstructionSet = {
-      unwindThunk() ~ CHECKCAST(Value.jvmName)
+    def unwindSuspensionFreeThunk(errorHint: String, loc: SourceLocation): InstructionSet = {
+      unwindThunk() ~ crashIfSuspension(errorHint, loc) ~ CHECKCAST(Value.jvmName)
+    }
+
+    /**
+      * [..., Result] -> [..., Value|Thunk]
+      * side effect: if the result is a suspension, a [[UnhandledEffectError]] is thrown.
+      */
+    def crashIfSuspension(errorHint: String, loc: SourceLocation): InstructionSet = {
+      DUP() ~ INSTANCEOF(Suspension.jvmName) ~
+      ifCondition(Condition.NE)(
+        CHECKCAST(Suspension.jvmName) ~
+        NEW(UnhandledEffectError.jvmName) ~
+          // [.., suspension, UEE] -> [.., suspension, UEE, UEE, suspension]
+          DUP2() ~ SWAP() ~
+          pushString(errorHint) ~
+          cheat(mv => AsmOps.compileReifiedSourceLocation(mv, loc)) ~
+          // [.., suspension, UEE, UEE, suspension, info, rsl] -> [.., suspension, UEE]
+          INVOKESPECIAL(UnhandledEffectError.Constructor) ~
+          ATHROW()
+      )
     }
   }
 
@@ -1628,7 +1624,7 @@ object BackendObjType {
     def InvokeMethod: InterfaceMethod = InterfaceMethod(this.jvmName, "invoke", mkDescriptor()(Result.toTpe))
 
     def RunMethod: DefaultMethod = DefaultMethod(this.jvmName, IsPublic, NotFinal, "run", mkDescriptor()(VoidableType.Void), Some(_ =>
-      thisLoad() ~ Result.unwindThunk() ~ CHECKCAST(Value.jvmName) ~ POP() ~ RETURN()
+      thisLoad() ~ Result.unwindSuspensionFreeThunk(s"in ${JvmName.Runnable.toBinaryName}", SourceLocation.Unknown) ~ POP() ~ RETURN()
     ))
   }
 

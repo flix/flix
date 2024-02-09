@@ -98,6 +98,10 @@ object VarOffsets {
       val i2 = visitExp(exp1, i1)
       visitExp(exp2, i2)
 
+    case Expr.Stmt(exp1, exp2, _, _, _) =>
+      val i1 = visitExp(exp1, i0)
+      visitExp(exp2, i1)
+
     case Expr.Scope(sym, exp, _, _, _) =>
       val i1 = setStackOffset(sym, MonoType.Unit, i0)
       visitExp(exp, i1)
