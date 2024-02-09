@@ -64,7 +64,7 @@ object Purity {
     * Returns the max purity of `p1`, `p2`, and `p3` according to this ordering:
     * Pure < Impure
     */
-  def combine(p1: Purity, p2: Purity, p3: Purity): Purity = {
+  def combine3(p1: Purity, p2: Purity, p3: Purity): Purity = {
     combine(combine(p1, p2), p3)
   }
 
@@ -74,7 +74,7 @@ object Purity {
     *
     * Returns [[Pure]] if empty.
     */
-  def combine(p: List[Purity]): Purity = {
+  def combineAll(p: List[Purity]): Purity = {
     p.foldLeft(Pure: Purity)(combine)
   }
 

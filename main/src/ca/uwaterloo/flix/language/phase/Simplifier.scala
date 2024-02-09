@@ -361,7 +361,7 @@ object Simplifier {
     case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
       val es = elms.map(pat2exp)
       val t = visitType(tpe)
-      val purity = Purity.combine(es.map(_.purity))
+      val purity = Purity.combineAll(es.map(_.purity))
       SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Tuple, es, t, purity, loc)
     case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat0.", pat0.loc)
   }
@@ -458,7 +458,7 @@ object Simplifier {
     val t = visitType(tpe)
 
     // TODO Intermediate solution (which is correct, but imprecise): Compute the purity of every match rule in rules
-    val jumpPurity = Purity.combine(rules.map(r => simplifyEffect(r.exp.eff)))
+    val jumpPurity = Purity.combineAll(rules.map(r => simplifyEffect(r.exp.eff)))
 
     // Create a branch for each rule.
     val branches = (ruleLabels zip rules) map {
@@ -486,7 +486,7 @@ object Simplifier {
     val entry = SimplifiedAst.Expr.JumpTo(ruleLabels.head, t, jumpPurity, loc)
 
     // The purity of the branch
-    val branchPurity = Purity.combine(branches.map { case (_, exp) => exp.purity })
+    val branchPurity = Purity.combineAll(branches.map { case (_, exp) => exp.purity })
 
     // Assemble all the branches together.
     val branch = SimplifiedAst.Expr.Branch(entry, branches.toMap + errorBranch, t, branchPurity, loc)
@@ -550,7 +550,7 @@ object Simplifier {
         val exp = patternMatchList(ps, vs, guard, succ, fail)
         val t = visitType(lit.tpe)
         val cond = mkEqual(pat2exp(lit), SimplifiedAst.Expr.Var(v, t, lit.loc), lit.loc)
-        val purity = combine(cond.purity, exp.purity, fail.purity)
+        val purity = combine3(cond.purity, exp.purity, fail.purity)
         SimplifiedAst.Expr.IfThenElse(cond, exp, fail, succ.tpe, purity, lit.loc)
 
       /**
@@ -571,7 +571,7 @@ object Simplifier {
         val purity1 = inner.purity
         val untagExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Untag(sym), List(varExp), visitType(pat.tpe), purity1, loc)
         val consequent = SimplifiedAst.Expr.Let(freshVar, untagExp, inner, succ.tpe, purity1, loc)
-        val purity2 = combine(cond.purity, consequent.purity, fail.purity)
+        val purity2 = combine3(cond.purity, consequent.purity, fail.purity)
         SimplifiedAst.Expr.IfThenElse(cond, consequent, fail, succ.tpe, purity2, loc)
 
       /**
