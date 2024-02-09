@@ -66,3 +66,6 @@ By adding your name to this document, you agree to release all your contribution
 - [Herluf Baggesen](https://github.com/herluf-ba)
 - [Yukang Xie](https://github.com/bathtub-01)
 - [Lionel Mendes](https://github.com/LionelMeli) 
+- [Samuel Skovbakke](https://github.com/soulbreather)
+- [Lukas Schröder](https://github.com/luka-star)
+- [Alexander Sommer](https://github.com/sommerblommer)
