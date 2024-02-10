@@ -93,17 +93,60 @@ mod Console {
         console() |> Option.forEach(consoleFlush)
 
     ///
-    /// Returns `s` formatted as bold.
+    /// Helper to apply the font style to the string `s` related to the terminal color supports
     ///
-    pub def bold(s: a): String with ToString[a] =
+    def applyFontStyle(s: a , style: (String, String)): String with ToString[a] =
         let esc = escape();
+        let reset = reset();
         match colorSupport() {
             case ColorSupport.None      => ToString.toString(s)
             case ColorSupport.Ansi      =>
-                esc + "[1m" + ToString.toString(s) + esc + "[0m"
+                esc + fst(style) + ToString.toString(s) + esc + reset
             case ColorSupport.TrueColor =>
-                esc + "[38;2;1m" + ToString.toString(s) + esc + "[0m"
+                esc + snd(style) + ToString.toString(s) + esc + reset
         }
+
+    ///
+    /// Returns `s` formatted as bold.
+    ///
+    pub def bold(s: a): String with ToString[a] =
+        let bold = ("[1m","[38;2;1m");
+        applyFontStyle(s, bold)
+
+    ///
+    /// Returns `s` formatted as blink.
+    ///
+    pub def italic(s: a): String with ToString[a] =
+        let italic = ("[3m","[38;2;3m");
+        applyFontStyle(s, italic)
+
+    ///
+    /// Returns `s` formatted as underline.
+    ///
+    pub def underline(s: a): String with ToString[a] =
+        let underline = ("[4m","[38;2;4m");
+        applyFontStyle(s, underline)
+
+    ///
+    /// Returns `s` formatted as blink.
+    ///
+    pub def blink(s: a): String with ToString[a] =
+        let blink = ("[5m","[38;2;5m");
+        applyFontStyle(s, blink)
+
+    ///
+    /// Returns `s` formatted as reversed.
+    ///
+    pub def reversed(s: a): String with ToString[a] =
+        let reversed = ("[7m","[38;2;7m");
+        applyFontStyle(s, reversed)
+
+    ///
+    /// Returns `s` formatted as reversed.
+    ///
+    pub def invisible(s: a): String with ToString[a] =
+        let invisible = ("[8m","[38;2;8m");
+        applyFontStyle(s, invisible)
 
     ///
     /// Returns `s` formatted with color `hexCode`
@@ -538,6 +581,11 @@ mod Console {
     /// Returns the escape character as a string.
     ///
     def escape(): String = Char.toString('\u001b')
+
+    ///
+    /// Returns the reset control sequence as a string.
+    ///
+    pub def reset(): String = "[0m"
 
     ///
     /// An enum that represents the colors supported by a terminal.
