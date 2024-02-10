@@ -41,6 +41,16 @@ mod Eff.Logger {
 
     pub def trace(msg: a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Trace, () -> "${msg}")
 
+    pub def lazyFatal(f: Unit -> a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Fatal, () -> "${f()}")
+
+    pub def lazyWarn(f: Unit -> a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Warn, () -> "${f()}")
+
+    pub def lazyInfo(f: Unit -> a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Info, () -> "${f()}")
+
+    pub def lazyDebug(f: Unit -> a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Debug, () -> "${f()}")
+
+    pub def lazyTrace(f: Unit -> a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Trace, () -> "${f()}")
+
     pub def toListHandler(f: Unit -> a \ Logger ): (List[String], a) = region rc {
         let l = MutList.new(rc);
         let ans = try f() with Logger {
@@ -67,10 +77,6 @@ mod Eff.Logger {
             }
         }
 
-    pub def infoExample(): Int32 \ Logger = {
-        info("A1");
-        warn("A2");
-        1000
-    }
+
 
 }
