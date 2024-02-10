@@ -3,9 +3,9 @@
 Version 0.44.0:
 - Language: Reworked `IO` to be its own effect (thanks Matt!)
 - Library: Added `purityOf` to simplify reflection on purity (thanks Jakob!)
-- Compiler: Add support for `release` command (thanks Holger!)
-- Compiler: Add support for storing GITHUB_TOKEN in a file (thanks Holger!)
-- Compiler: Add support for storing GITHUB_TOKEN in the environment (thanks Holger!)
+- Compiler: Added support for the `release` command (thanks Holger!)
+- Compiler: Added support for storing GITHUB_TOKEN in a file (thanks Holger!)
+- Compiler: Added support for storing GITHUB_TOKEN in the environment (thanks Holger!)
 - Compiler: Simplified compilation of enums (thanks Jonathan!)
 - Compiler: Improved performance of backend (thanks Jonathan!)
 
@@ -473,11 +473,3 @@ Version 0.1:
 
 2016-06-08: 
 - Initial release.
-
-HEAD (in progress, not released):
-
-- Added `DelayList` and `DelayMap` (thanks Jakob!)
-- Inliner
-- Datalog abstraction
-- Restrictable variants
-- Associated types
