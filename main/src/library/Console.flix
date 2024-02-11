@@ -93,20 +93,6 @@ mod Console {
         console() |> Option.forEach(consoleFlush)
 
     ///
-    /// Helper to apply the font style to the string `s` related to the terminal color supports
-    ///
-    def applyFontStyle(s: a , style: (String, String)): String with ToString[a] =
-        let esc = escape();
-        let reset = reset();
-        match colorSupport() {
-            case ColorSupport.None      => ToString.toString(s)
-            case ColorSupport.Ansi      =>
-                esc + fst(style) + ToString.toString(s) + esc + reset
-            case ColorSupport.TrueColor =>
-                esc + snd(style) + ToString.toString(s) + esc + reset
-        }
-
-    ///
     /// Returns `s` formatted as bold.
     ///
     pub def bold(s: a): String with ToString[a] =
@@ -147,6 +133,20 @@ mod Console {
     pub def invisible(s: a): String with ToString[a] =
         let invisible = ("[8m","[38;2;8m");
         applyFontStyle(s, invisible)
+
+    ///
+    /// Helper to apply the font style to the string `s` related to the terminal color supports
+    ///
+    def applyFontStyle(s: a , style: (String, String)): String with ToString[a] =
+        let esc = escape();
+        let reset = reset();
+        match colorSupport() {
+            case ColorSupport.None      => ToString.toString(s)
+            case ColorSupport.Ansi      =>
+                esc + fst(style) + ToString.toString(s) + esc + reset
+            case ColorSupport.TrueColor =>
+                esc + snd(style) + ToString.toString(s) + esc + reset
+        }
 
     ///
     /// Returns `s` formatted with color `hexCode`
