@@ -171,6 +171,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case Command.Check => execBootstrap(bootstrap.check(flix))
       case Command.Doc => execBootstrap(bootstrap.doc(flix))
       case Command.Test => execBootstrap(bootstrap.test(flix))
+      case Command.Outdated => execBootstrap(bootstrap.outdated())
       case Command.Unknown(s) => execUnknown(s)
     }
   }
@@ -251,6 +252,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     w.println("  :check :c                   Checks the current project for errors.")
     w.println("  :doc :d                     Generates API documentation for the current project.")
     w.println("  :test :t                    Runs the tests for the current project.")
+    w.println("  :outdated                   Show dependencies which have newer versions available.")
     w.println("  :quit :q                    Terminates the Flix shell.")
     w.println("  :help :h :?                 Shows this helpful information.")
     w.println()
