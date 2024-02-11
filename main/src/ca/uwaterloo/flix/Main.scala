@@ -291,6 +291,9 @@ object Main {
           }
 
 
+        case Command.Outdated =>
+          // TODO: Implement `outdated`
+
         case Command.CompilerPerf =>
           CompilerPerf.run(options)
 
@@ -370,6 +373,8 @@ object Main {
 
     case object Release extends Command
 
+    case object Outdated extends Command
+
     case object CompilerPerf extends Command
   }
 
@@ -420,6 +425,9 @@ object Main {
 
       cmd("release").text("  release a new version to GitHub.")
         .action((_, c) => c.copy(command = Command.Release))
+
+      cmd("outdated").text("  show dependencies which have newer versions available.")
+        .action((_, c) => c.copy(command = Command.Outdated))
 
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
         opt[Unit]("frontend")
