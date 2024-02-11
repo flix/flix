@@ -290,9 +290,17 @@ object Main {
               System.exit(1)
           }
 
-
         case Command.Outdated =>
-          // TODO: Implement `outdated`
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+            bootstrap =>
+              bootstrap.outdated()(System.err)
+          }.toHardResult match {
+            case Result.Ok(_) =>
+              System.exit(0)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
 
         case Command.CompilerPerf =>
           CompilerPerf.run(options)

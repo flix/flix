@@ -18,8 +18,9 @@ package ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
@@ -696,6 +697,42 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
          |${formatter.underline(s"https://github.com/${githubRepo.owner}/${githubRepo.repo}/releases/tag/v${manifest.version}")}
          |""".stripMargin
     ))
+
+    Validation.success(())
+  }
+
+  /**
+    * Show dependencies which have newer versions available.
+    */
+  def outdated()(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+    val deps = optManifest.map(m => m.dependencies).getOrElse(Nil)
+    val flixDeps = deps.collect { case d: FlixDependency => d }
+
+    val packageCol = "package" :: flixDeps.map(d => s"${d.username}/${d.projectName}")
+    val currentCol = "current" :: flixDeps.map(d => d.version.toString)
+    val majorCol = "major" :: flixDeps.map(_ => "2.0.234")
+    val minorCol = "minor" :: flixDeps.map(_ => "")
+    val patchCol = "patch" :: flixDeps.map(_ => "1.2.0")
+
+    /**
+      * Takes a list of strings and right-pads them with spaces to all take up the same space.
+      */
+    def padToLongest(l: List[String]): List[String] = {
+      val longestLength = l.map(s => s.length).max
+      l.map(s => s.padTo(longestLength, ' '))
+    }
+
+    val packageColPad = padToLongest(packageCol)
+    val currentColPad = padToLongest(currentCol)
+    val majorColPad = padToLongest(majorCol)
+    val minorColPad = padToLongest(minorCol)
+    val patchColPad = padToLongest(patchCol)
+
+    out.println("")
+    for (row <- List(packageColPad, currentColPad, majorColPad, minorColPad, patchColPad).transpose) {
+      out.println(row.mkString(" | "))
+    }
+    out.println("")
 
     Validation.success(())
   }
