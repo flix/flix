@@ -704,15 +704,17 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Show dependencies which have newer versions available.
     */
-  def outdated()(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+  def outdated(flix: Flix)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+    implicit val formatter: Formatter = flix.getFormatter
+
     val deps = optManifest.map(m => m.dependencies).getOrElse(Nil)
     val flixDeps = deps.collect { case d: FlixDependency => d }
 
-    val packageCol = "package" :: flixDeps.map(d => s"${d.username}/${d.projectName}")
-    val currentCol = "current" :: flixDeps.map(d => d.version.toString)
-    val majorCol = "major" :: flixDeps.map(_ => "2.0.234")
-    val minorCol = "minor" :: flixDeps.map(_ => "")
-    val patchCol = "patch" :: flixDeps.map(_ => "1.2.0")
+    val packageCol = flixDeps.map(d => s"${d.username}/${d.projectName}")
+    val currentCol = flixDeps.map(d => d.version.toString)
+    val majorCol = flixDeps.map(_ => "2.0.234")
+    val minorCol = flixDeps.map(_ => "")
+    val patchCol = flixDeps.map(_ => "1.2.0")
 
     /**
       * Takes a list of strings and right-pads them with spaces to all take up the same space.
@@ -722,14 +724,21 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       l.map(s => s.padTo(longestLength, ' '))
     }
 
-    val packageColPad = padToLongest(packageCol)
-    val currentColPad = padToLongest(currentCol)
-    val majorColPad = padToLongest(majorCol)
-    val minorColPad = padToLongest(minorCol)
-    val patchColPad = padToLongest(patchCol)
+    val packageTitle :: packageColPad = padToLongest("package" :: packageCol)
+    val currentTitle :: currentColPad = padToLongest("current" :: currentCol)
+    val majorTitle :: majorColPad = padToLongest("major" :: majorCol)
+    val minorTitle :: minorColPad = padToLongest("minor" :: minorCol)
+    val patchTitle :: patchColPad = padToLongest("patch" :: patchCol)
+
+    val packageColFormat = packageColPad.map(formatter.blue)
+    val currentColFormat = currentColPad.map(formatter.cyan)
+    val majorColFormat = majorColPad.map(formatter.yellow)
+    val minorColFormat = minorColPad.map(formatter.yellow)
+    val patchColFormat = patchColPad.map(formatter.yellow)
 
     out.println("")
-    for (row <- List(packageColPad, currentColPad, majorColPad, minorColPad, patchColPad).transpose) {
+    out.println(List(packageTitle, currentTitle, majorTitle, minorTitle, patchTitle).mkString(" | "))
+    for (row <- List(packageColFormat, currentColFormat, majorColFormat, minorColFormat, patchColFormat).transpose) {
       out.println(row.mkString(" | "))
     }
     out.println("")

@@ -293,7 +293,9 @@ object Main {
         case Command.Outdated =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap =>
-              bootstrap.outdated()(System.err)
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.outdated(flix)(System.err)
           }.toHardResult match {
             case Result.Ok(_) =>
               System.exit(0)
