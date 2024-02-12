@@ -81,9 +81,9 @@ object Reducer {
       val es = exps.map(visitExpr)
       Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
-    case Expr.ApplySelfTail(sym, formals, exps, tpe, purity, loc) =>
+    case Expr.ApplySelfTail(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExpr)
-      Expr.ApplySelfTail(sym, formals, es, tpe, purity, loc)
+      Expr.ApplySelfTail(sym, es, tpe, purity, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExpr(exp1)
@@ -214,7 +214,7 @@ object Reducer {
 
       case Expr.ApplyDef(_, exps, _, tpe, _, _) => visitExps(exps) ++ Set(tpe)
 
-      case Expr.ApplySelfTail(_, _, exps, tpe, _, _) => visitExps(exps) ++ Set(tpe)
+      case Expr.ApplySelfTail(_, exps, tpe, _, _) => visitExps(exps) ++ Set(tpe)
 
       case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 

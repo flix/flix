@@ -252,7 +252,7 @@ object Verifier {
       check(expected = declared)(actual = actual, loc)
       tpe
 
-    case Expr.ApplySelfTail(sym, formals, actuals, tpe, _, loc) =>
+    case Expr.ApplySelfTail(sym, actuals, tpe, _, loc) =>
       val defn = root.defs(sym)
       val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
       val actual = MonoType.Arrow(actuals.map(visitExpr), tpe)
