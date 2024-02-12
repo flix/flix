@@ -801,7 +801,7 @@ mod Graph.FordFulkerson {
         let incr = pathMinCapacity(p, g); // is 9, see testPathMinCapacity03
         let g2 = g |> Set.map(x -> match x {
             case (0, 3, 10, 0) => (0, 3, 10, 9)
-            case (3, 4, 9 , 0) => (4, 5, 9 , 9)
+            case (3, 4, 9 , 0) => (3, 4, 9 , 9)
             case (4, 5, 10, 0) => (4, 5, 10, 9)
             case _             => x
         }) |> Foldable.toVector;
