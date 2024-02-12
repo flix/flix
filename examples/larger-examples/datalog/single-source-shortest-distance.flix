@@ -1,9 +1,21 @@
 mod ShortestDistance {
 
+    pub def shortestDist(src : { src = Source }, dst: { dst = Destination }, g: m[Graph]): Option[Distance] with Foldable[m] =
+        let edges = inject g into Edge;
+        let rules = #{
+            Reach(x, y, d)        :- Edge(x, y, d).
+            Reach(x, z, d1 + d2) :- Reach(x, y, d1), Edge(y, z, d2).
+        };
+        let s = src.src;
+        let t = dst.dst;
+        let result = query edges, rules select d from Reach(s, t, d);
+        Vector.head(result)
+
     // Type aliases for readability
     type alias Source = Int32
     type alias Destination = Int32
     type alias Distance = Int32
+    type alias Graph = (Source, Destination, Distance)
 
     //////////////////////////////////////////
     // Tests                                //
@@ -31,13 +43,13 @@ mod ShortestDistance {
     /// 3 -> 4, distance 5
     /// 4 -> 2, distance 3
     /// 2 -> 5, distance 1
-    /// 4 -> 5, distance 3
+    /// 4 -> 5, distance 10
     /// ```
     ///
     /// The shortest route is `0 -> 1 -> 4 -> 2 -> 5` with a total distance of `2 + 4 + 3 + 1 = 10`.
     ///
     pub def exampleGraph01(): Set[(Source, Destination, Distance)] =
-        Set#{ (0, 1, 2), (0, 3, 3), (1, 3, 10), (1, 2, 8), (1, 4, 4), (3, 4, 5), (4, 2, 3), (2, 5, 1), (4, 5, 3) }
+        Set#{ (0, 1, 2), (0, 3, 3), (1, 3, 10), (1, 2, 8), (1, 4, 4), (3, 4, 5), (4, 2, 3), (2, 5, 1), (4, 5, 10) }
 
     ///
     /// Returns the following graph:
@@ -136,5 +148,21 @@ mod ShortestDistance {
                 (6, 2, 5), (5, 6, 30), (8, 6, 5), (8, 9, 10), (3, 10, 5),
                 (6, 10, 20), (9, 10, 30)
             }
+
+    @Test
+    def testExampleGraphShortestDistance01(): Bool =
+        Assert.eq(Some(10), shortestDist(src = 0, dst = 5, exampleGraph01()))
+
+    @Test
+    def testExampleGraphShortestDistance02(): Bool =
+        Assert.eq(Some(3), shortestDist(src = 0, dst = 5, exampleGraph02()))
+
+    @Test
+    def testExampleGraphShortestDistance03(): Bool =
+        Assert.eq(Some(21), shortestDist(src = 0, dst = 3, exampleGraph03()))
+
+    @Test
+    def testExampleGraphShortestDistance04(): Bool =
+        Assert.eq(Some(3), shortestDist(src = 0, dst = 10, exampleGraph04()))
 
 }
