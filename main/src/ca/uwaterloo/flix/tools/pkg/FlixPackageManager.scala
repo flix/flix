@@ -163,7 +163,7 @@ object FlixPackageManager {
   /**
     * Finds the Flix dependencies in a Manifest.
     */
-  private def findFlixDependencies(manifest: Manifest): List[FlixDependency] = {
+  def findFlixDependencies(manifest: Manifest): List[FlixDependency] = {
     manifest.dependencies.collect { case dep: FlixDependency => dep }
   }
 

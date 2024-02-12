@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, g
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
+import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
@@ -707,14 +708,41 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def outdated(flix: Flix)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
     implicit val formatter: Formatter = flix.getFormatter
 
-    val deps = optManifest.map(m => m.dependencies).getOrElse(Nil)
-    val flixDeps = deps.collect { case d: FlixDependency => d }
+    val flixDeps = optManifest.map(findFlixDependencies).getOrElse(Nil)
+    val currentVersions = flixDeps.map(d => d.version)
+    val githubProjects = Result.traverse(flixDeps)(d => GitHub.parseProject(s"${d.username}/${d.projectName}")) match {
+      case Ok(l) => l
+      case Err(e) => return Validation.toHardFailure(BootstrapError.FlixPackageError(e))
+    }
+    val releases = Result.traverse(githubProjects)(p => GitHub.getReleases(p, flix.options.githubToken)) match {
+      case Ok(l) => l
+      case Err(e) => return Validation.toHardFailure(BootstrapError.FlixPackageError(e))
+    }
+    val versions = releases.map(rs => rs.map(r => r.version))
 
-    val packageCol = flixDeps.map(d => s"${d.username}/${d.projectName}")
-    val currentCol = flixDeps.map(d => d.version.toString)
-    val majorCol = flixDeps.map(_ => "2.0.234")
-    val minorCol = flixDeps.map(_ => "")
-    val patchCol = flixDeps.map(_ => "1.2.0")
+    val packageCol = githubProjects.map(d => d.toString)
+    val currentCol = currentVersions.map(v => v.toString)
+    val majorCol = (currentVersions zip versions).map {
+      case (currentVersion, versions) =>
+        versions.filter(v =>
+          v.major > currentVersion.major
+        ).maxOption.map(v => v.toString).getOrElse("")
+    }
+    val minorCol = (currentVersions zip versions).map {
+      case (currentVersion, versions) =>
+        versions.filter(v =>
+          v.major == currentVersion.major
+            && v.minor > currentVersion.minor
+        ).maxOption.map(v => v.toString).getOrElse("")
+    }
+    val patchCol = (currentVersions zip versions).map {
+      case (currentVersion, versions) =>
+        versions.filter(v =>
+          v.major == currentVersion.major
+            && v.minor == currentVersion.minor
+            && (v.patch zip currentVersion.patch).exists { case (vp, cvp) => vp > cvp }
+        ).maxOption.map(v => v.toString).getOrElse("")
+    }
 
     /**
       * Takes a list of strings and right-pads them with spaces to all take up the same space.
