@@ -171,7 +171,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case Command.Check => execBootstrap(bootstrap.check(flix))
       case Command.Doc => execBootstrap(bootstrap.doc(flix))
       case Command.Test => execBootstrap(bootstrap.test(flix))
-      case Command.Mtest => execBootstrap(bootstrap.mtest(flix))
+      case Command.Mtest => execBootstrap(bootstrap.mtest(flix, "aa", "bb"))
       case Command.Unknown(s) => execUnknown(s)
     }
   }

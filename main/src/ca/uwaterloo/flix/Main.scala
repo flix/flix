@@ -295,7 +295,7 @@ object Main {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
               flix.setOptions(options.copy(progress = false))
-              bootstrap.mtest(flix)
+              bootstrap.mtest(flix, tester, testee)
           }.toHardResult match {
             case Result.Ok(_) =>
               System.exit(0)
@@ -349,6 +349,7 @@ object Main {
                      xparser: Boolean = false,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
+                     mtests_temp: String =  "",
                      files: Seq[File] = Seq())
 
   /**
@@ -378,7 +379,7 @@ object Main {
 
     case object Test extends Command
 
-    case class Mtest(tester: File, testee: File) extends Command
+    case class Mtest(tester: String, testee: String) extends Command
 
     case object Repl extends Command
 
@@ -428,8 +429,10 @@ object Main {
 
       cmd("mtest").text("  runs mutation tests given tester and testee files.")
         .children(
-          arg[(File, File)]("tester, testee").action((tuple, c) => c.copy(command = Command.Mtest(tuple._1, tuple._2)))
-            .required() 
+          arg[String]("tester").action((tes, c) => c.copy(mtests_temp = tes))
+            .required(), 
+          arg[String]("testee").action((tes, c) => c.copy(command = Command.Mtest(c.mtests_temp, tes)))
+            .required()
         )
 
       cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
@@ -437,7 +440,7 @@ object Main {
       cmd("lsp").text("  starts the LSP server and listens on the given port.")
         .children(
           arg[Int]("port").action((port, c) => c.copy(command = Command.Lsp(port)))
-            .required()
+            .required(),
         )
 
       cmd("release").text("  release a new version to GitHub.")
