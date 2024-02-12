@@ -18,8 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.Purity
-import ca.uwaterloo.flix.language.ast.{Symbol, _}
+import ca.uwaterloo.flix.language.ast.{Purity, Symbol, _}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
@@ -33,14 +32,13 @@ object Simplifier {
   private implicit val DefaultLevel: Level = Level.Default
 
   def run(root: LoweredAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
-    implicit val universe: Set[Symbol.EffectSym] = root.effects.keys.toSet
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
     SimplifiedAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
-  private def visitDef(decl: LoweredAst.Def)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Def = decl match {
+  private def visitDef(decl: LoweredAst.Def)(implicit flix: Flix): SimplifiedAst.Def = decl match {
     case LoweredAst.Def(sym, spec, exp) =>
       val fs = spec.fparams.map(visitFormalParam)
       val e = visitExp(exp)
@@ -50,13 +48,13 @@ object Simplifier {
       SimplifiedAst.Def(spec.ann, spec.mod, sym, fs, e, retType, eff, sym.loc)
   }
 
-  private def visitEffect(decl: LoweredAst.Effect)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Effect = decl match {
+  private def visitEffect(decl: LoweredAst.Effect)(implicit flix: Flix): SimplifiedAst.Effect = decl match {
     case LoweredAst.Effect(_, ann, mod, sym, ops0, loc) =>
       val ops = ops0.map(visitEffOp)
       SimplifiedAst.Effect(ann, mod, sym, ops, loc)
   }
 
-  private def visitExp(exp0: LoweredAst.Expr)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Expr = exp0 match {
+  private def visitExp(exp0: LoweredAst.Expr)(implicit flix: Flix): SimplifiedAst.Expr = exp0 match {
     case LoweredAst.Expr.Var(sym, tpe, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Var(sym, t, loc)
@@ -343,7 +341,7 @@ object Simplifier {
     SimplifiedAst.FormalParam(p.sym, p.mod, t, p.loc)
   }
 
-  private def visitJvmMethod(method: LoweredAst.JvmMethod)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.JvmMethod = method match {
+  private def visitJvmMethod(method: LoweredAst.JvmMethod)(implicit flix: Flix): SimplifiedAst.JvmMethod = method match {
     case LoweredAst.JvmMethod(ident, fparams0, exp0, retTpe, eff, loc) =>
       val fparams = fparams0 map visitFormalParam
       val exp = visitExp(exp0)
@@ -413,7 +411,7 @@ object Simplifier {
   /**
     * Eliminates pattern matching by translations to labels and jumps.
     */
-  private def patternMatchWithLabels(exp0: LoweredAst.Expr, rules: List[LoweredAst.MatchRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Expr = {
+  private def patternMatchWithLabels(exp0: LoweredAst.Expr, rules: List[LoweredAst.MatchRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expr = {
     //
     // Given the code:
     //
@@ -506,7 +504,7 @@ object Simplifier {
     *
     * Evaluates `succ` on success and `fail` otherwise.
     */
-  private def patternMatchList(xs: List[LoweredAst.Pattern], ys: List[Symbol.VarSym], guard: LoweredAst.Expr, succ: SimplifiedAst.Expr, fail: SimplifiedAst.Expr)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Expr =
+  private def patternMatchList(xs: List[LoweredAst.Pattern], ys: List[Symbol.VarSym], guard: LoweredAst.Expr, succ: SimplifiedAst.Expr, fail: SimplifiedAst.Expr)(implicit flix: Flix): SimplifiedAst.Expr =
     ((xs, ys): @unchecked) match {
       /**
         * There are no more patterns and variables to match.
@@ -625,7 +623,7 @@ object Simplifier {
       case p => throw InternalCompilerException(s"Unsupported pattern '$p'.", xs.head.loc)
     }
 
-  private def visitEffOp(op: LoweredAst.Op)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Op = op match {
+  private def visitEffOp(op: LoweredAst.Op)(implicit flix: Flix): SimplifiedAst.Op = op match {
     case LoweredAst.Op(sym, LoweredAst.Spec(_, ann, mod, _, fparams0, _, retTpe0, eff0, _, loc)) =>
       val fparams = fparams0.map(visitFormalParam)
       val retTpe = visitType(retTpe0)
@@ -722,8 +720,8 @@ object Simplifier {
   /**
     * Returns the purity of an expression.
     */
-  private def simplifyEffect(eff: Type)(implicit universe: Set[Symbol.EffectSym]): Purity = {
-    Purity.fromType(eff, universe)
+  private def simplifyEffect(eff: Type): Purity = {
+    Purity.fromType(eff)
   }
 
   /**

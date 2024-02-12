@@ -35,15 +35,15 @@ sealed trait Purity
 object Purity {
 
   /**
-   * Represents a pure expression (i.e. an expression that cannot have
+    * Represents a pure expression (i.e. an expression that cannot have
     * side-effects).
-   */
+    */
   case object Pure extends Purity
 
   /**
-   * Represents an impure expression (i.e. an expression that could potentially
+    * Represents an impure expression (i.e. an expression that could potentially
     * have side-effects).
-   */
+    */
   case object Impure extends Purity
 
   /**
@@ -80,6 +80,7 @@ object Purity {
       case Impure => 1
       case ControlImpure => 2
     }
+
     Ordering.by(toInt).max(p1, p2)
   }
 
@@ -103,15 +104,16 @@ object Purity {
 
   /**
     * Returns the purity of the given formula `eff`. Returns [[Pure]] for the
-    * effect constant [[TypeConstructor.Pure]] and [[Impure]] otherwise.
+    * effect constant of [[TypeConstructor.Pure]], returns [[Impure]] for the
+    * effect constant of [[Symbol.IO]], and [[ControlImpure]] otherwise.
     *
     * Assumes that the given type is a well-formed formula without variables,
     * aliases, or associated types.
     */
-  def fromType(eff: Type, universe: Set[Symbol.EffectSym]): Purity = {
-    evaluateFormula(eff, universe) match {
+  def fromType(eff: Type): Purity = {
+    evaluateFormula(eff) match {
       case set if set.isEmpty => Purity.Pure
-      case set if set.sizeIs == 1 && set.contains(Symbol.IO) => Purity.Impure
+      case set if set.hasSize(1) && set.contains(Symbol.IO) => Purity.Impure
       case _ => Purity.ControlImpure
     }
   }
@@ -119,38 +121,37 @@ object Purity {
   /**
     * Returns the set of effects described by the formula `f`.
     *
-    * Assumes that `f` only contains wellformed [[TypeConstructor.Union]],
+    * Assumes that `f` only contains well-formed [[TypeConstructor.Union]],
     * [[TypeConstructor.Intersection]], and [[TypeConstructor.Complement]] of
     * [[TypeConstructor.Pure]], [[TypeConstructor.Univ]], and
     * [[TypeConstructor.Effect]].
     *
-    * Assume that universe is {Print, IO, Crash, Console}. plus is union,
-    * ampersand is intersection, and exclamation mark is complement.
+    * plus is union, ampersand is intersection, and exclamation mark is complement.
     *
     * Pure == {}
-    * Univ == {Print, IO, Crash, Console}
+    * Univ == Top
     * Crash == {Crash}
     * Print + IO == {Print, IO}
-    * Univ & (!Print) == {IO, Crash, Console}
+    * Univ & (!Print) == !Print
     */
-  private def evaluateFormula(f: Type, universe: Set[Symbol.EffectSym]): Set[Symbol.EffectSym] = f match {
+  private def evaluateFormula(f: Type): InfSet[Symbol.EffectSym] = f match {
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
-      Set(sym)
+      InfSet(sym)
     case Type.Cst(TypeConstructor.Pure, _) =>
-      Set.empty
+      InfSet.empty
     case Type.Cst(TypeConstructor.Univ, _) =>
-      universe
+      InfSet.top
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) =>
-      val t1 = evaluateFormula(tpe1, universe)
-      val t2 = evaluateFormula(tpe2, universe)
-      t1.union(t2)
+      val t1 = evaluateFormula(tpe1)
+      val t2 = evaluateFormula(tpe2)
+      InfSet.union(t1, t2)
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) =>
-      val t1 = evaluateFormula(tpe1, universe)
-      val t2 = evaluateFormula(tpe2, universe)
-      t1.intersect(t2)
+      val t1 = evaluateFormula(tpe1)
+      val t2 = evaluateFormula(tpe2)
+      InfSet.intersect(t1, t2)
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe, _) =>
-      val t = evaluateFormula(tpe, universe)
-      universe.diff(t)
+      val t = evaluateFormula(tpe)
+      InfSet.compl(t)
     case Type.Cst(_, _) =>
       throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
     case Type.Apply(_, _, _) =>
