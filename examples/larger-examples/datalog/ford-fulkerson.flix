@@ -15,7 +15,7 @@ pub def main(): Unit \ IO =
 
 mod FordFulkerson {
 
-    use Path.Path;
+    use Path.{Path, Bot};
 
     ///
     /// Returns the maximum flow from `src` to `dst` in the flow network `g`.
@@ -122,48 +122,52 @@ mod FordFulkerson {
 
     enum Path with ToString {
         case Path(List[Int32])
+        case Bot // Infinitely long path
     }
 
     instance Eq[Path] {
-        pub def eq(x: Path, y: Path): Bool =
-            let Path(xs) = x;
-            let Path(ys) = y;
-            List.length(xs) == List.length(ys)
+        pub def eq(x: Path, y: Path): Bool = match (x, y) {
+            case (Path(xs), Path(ys)) => List.length(xs) == List.length(ys)
+            case (Bot, _)             => false
+            case (_, Bot)             => false
+        }
     }
 
     instance Order[Path] {
-        pub def compare(x: Path, y: Path): Comparison =
-            let Path(xs) = x;
-            let Path(ys) = y;
-            if (List.length(xs) ==  List.length(ys))
-                Comparison.EqualTo
-            else if (List.length(xs) <= List.length(ys))
-                Comparison.GreaterThan
-            else
-                Comparison.LessThan
+        pub def compare(x: Path, y: Path): Comparison = match (x, y) {
+            case (Path(xs), Path(ys)) => List.length(xs) <=> List.length(ys)
+            case (Bot, _)             => Comparison.GreaterThan
+            case (_, Bot)             => Comparison.GreaterThan
+        }
     }
 
     instance LowerBound[Path] {
         // The longest list
-        pub def minValue(): Path = Path(List.range(1, 100))
+        pub def minValue(): Path = Bot
     }
 
     instance PartialOrder[Path] {
-        pub def lessEqual(x: Path, y: Path): Bool =
-            let Path(xs) = x;
-            let Path(ys) = y;
-            List.length(xs) >= List.length(ys)
+        pub def lessEqual(x: Path, y: Path): Bool = match (x, y) {
+            case (Path(xs), Path(ys)) => List.length(xs) >= List.length(ys)
+            case (Bot, _)             => false
+            case (_, Bot)             => false
+        }
     }
 
     instance JoinLattice[Path] {
-        pub def leastUpperBound(x: Path, y: Path): Path =
-            let Path(xs) = x;
-            let Path(ys) = y;
-            if (List.length(xs) <= List.length(ys)) x else y
+        pub def leastUpperBound(x: Path, y: Path): Path = match (x, y) {
+            case (Path(xs), Path(ys)) => if (List.length(xs) <= List.length(ys)) x else y
+            case (Bot, _)             => Bot
+            case (_, Bot)             => Bot
+        }
     }
 
     instance MeetLattice[Path] {
-        pub def greatestLowerBound(x: Path, y: Path): Path = ???
+        pub def greatestLowerBound(x: Path, y: Path): Path = match (x, y) {
+            case (Path(xs), Path(ys)) => if (List.length(xs) > List.length(ys)) x else y
+            case (Bot, _)             => Bot
+            case (_, Bot)             => Bot
+        }
     }
 
     ///
@@ -177,6 +181,7 @@ mod FordFulkerson {
     ///
     def cons(z: Int32, p: Path): Path = match p {
         case Path(xs) => Path(z :: xs)
+        case Bot      => Bot
     }
 
     ///
@@ -185,15 +190,17 @@ mod FordFulkerson {
     def toOption(p: Path): Option[Path] = match p {
         case Path(xs) if List.isEmpty(xs) => None
         case Path(xs)                     => Some(Path(xs))
+        case Bot                          => None
     }
 
     ///
     /// Returns the index of `a` in the `Path` `p`.
     /// Note that a `Path` is sorted in descending order.
     ///
-    def indexOf(a: Int32, p: Path): Option[Int32] =
-        let Path(xs) = p;
-        List.indexOf(a, xs)
+    def indexOf(a: Int32, p: Path): Option[Int32] = match p {
+        case Path(xs) => List.indexOf(a, xs)
+        case Bot      => None
+    }
 
     // Type aliases for readability
     type alias Source = Int32
@@ -339,16 +346,16 @@ mod FordFulkerson {
         let s = 1;
         let t = 5;
         let g = Set#{ (1, 2, 1, 0), (2, 3, 1, 0), (3, 4, 1, 0), (3, 8, 1, 0), (4, 5, 1, 0), (3, 5, 1, 0) };
-        let Path(xs) = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
-        Assert.eq(5 :: 3 :: 2 :: 1 :: Nil, xs)
+        let p = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        Assert.eq(Path(5 :: 3 :: 2 :: 1 :: Nil), p)
 
     @Test
     def testAugmentingPath02(): Bool =
         let s = 0;
         let t = 5;
         let g = exampleGraph01() |> Set.map(match (a, b, u) -> (a, b, u, 0));
-        let Path(xs) = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
-        Assert.eq(5 :: 4 :: 3 :: 0 :: Nil, xs) // Shortest path in reverse order
+        let p = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        Assert.eq(Path(5 :: 4 :: 3 :: 0 :: Nil), p) // Shortest path in reverse order
 
     @Test
     def testAugmentingPath03(): Bool =
@@ -360,8 +367,8 @@ mod FordFulkerson {
             case (4, 5, 10) => (4, 5, 10, 9)
             case (a, b, u)  => (a, b, u , 0)
         });
-        let Path(xs) = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
-        Assert.eq(5 :: 4 :: 1 :: 0 :: Nil, xs)
+        let p = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        Assert.eq(Path(5 :: 4 :: 1 :: 0 :: Nil), p)
 
     @Test
     def testAugmentingPath04(): Bool =
@@ -375,8 +382,8 @@ mod FordFulkerson {
             case (4, 5, 10) => (4, 5, 10, 10)
             case (a, b, u)  => (a, b, u , 0)
         });
-        let Path(xs) = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
-        Assert.eq(5 :: 2 :: 1 :: 0 :: Nil, xs)
+        let p = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        Assert.eq(Path(5 :: 2 :: 1 :: 0 :: Nil), p)
 
     @Test
     def testAugmentingPath05(): Bool =
@@ -392,16 +399,16 @@ mod FordFulkerson {
             case (4, 5, 10) => (4, 5, 10, 10)
             case (a, b, u)  => (a, b, u , 0)
         });
-        let Path(xs) = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
-        Assert.eq(5 :: 2 :: 4 :: 1 :: 0 :: Nil, xs)
+        let p = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        Assert.eq(Path(5 :: 2 :: 4 :: 1 :: 0 :: Nil), p)
 
     @Test
     def testAugmentingPath06(): Bool =
         let s = 0;
         let t = 5;
         let g = zeroFlow(exampleGraph02());
-        let Path(xs) = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
-        Assert.eq(5 :: 4 :: 3 :: 0 :: Nil, xs)
+        let p = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        Assert.eq(Path(5 :: 4 :: 3 :: 0 :: Nil), p)
 
     @Test
     def testAugmentingPath07(): Bool =
@@ -413,8 +420,8 @@ mod FordFulkerson {
             case (4, 5, 10, 0) => (4, 5, 10, 10)
             case _             => x
         });
-        let Path(xs) = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
-        Assert.eq(5 :: 2 :: 1 :: 0 :: Nil, xs)
+        let p = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        Assert.eq(Path(5 :: 2 :: 1 :: 0 :: Nil), p)
 
     @Test
     def testAugmentingPath08(): Bool =
@@ -640,4 +647,3 @@ mod FordFulkerson {
         Assert.eq(20, maxFlow(src = 0, dst = 10, exampleGraph04()))
 
 }
-
