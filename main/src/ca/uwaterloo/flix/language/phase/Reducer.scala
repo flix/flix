@@ -51,7 +51,6 @@ object Reducer {
 
   private def visitDef(d: Def)(implicit ctx: SharedContext): Def = d match {
     case Def(ann, mod, sym, cparams, fparams, lparams, pcPoints0, exp, tpe, originalTpe, purity, loc) =>
-      assert(pcPoints0 == -1)
       implicit val lctx: LocalContext = LocalContext.mk()
       assert(lparams.isEmpty, s"Unexpected def local params before Reducer: $lparams")
       val e = visitExpr(exp)
