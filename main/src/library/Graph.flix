@@ -695,14 +695,54 @@ mod Graph {
         let Path(xs) = p;
         List.indexOf(a, xs)
 
-    // Tests
+    //////////////////////////////////////////
+    // Tests                                //
+    //////////////////////////////////////////
+
+    ///
+    /// Returns the follwing graph:
+    ///
+    /// ```
+    ///      1---2
+    ///     /|\  |\
+    ///    0 | \ | 5
+    ///     \|  \|/
+    ///      3---4
+    /// ```
+    ///
+    /// The edges are directed as follows (ordered from left to right, top to bottom):
+    /// ```
+    /// 0 -> 1, capacity 10
+    /// 0 -> 3, capacity 10
+    /// 1 -> 3, capacity 2
+    /// 1 -> 2, capacity 4
+    /// 1 -> 4, capacity 8
+    /// 3 -> 4, capacity 9
+    /// 4 -> 2, capacity 6
+    /// 2 -> 5, capacity 10
+    /// 4 -> 5, capacity 10
+    /// ```
+    ///
+    /// The maximum flow is `19`.
+    ///
+    def g1(): Set[(From, To, UpperCapacity)] =
+        Set#{ (0, 1, 10), (0, 3, 10), (1, 3, 2), (1, 2, 4), (1, 4, 8), (3, 4, 9), (4, 2, 6), (2, 5, 10), (4, 5, 10) }
+
     @Test
-    def testPath01(): Bool =
+    def testAugmentingPath01(): Bool =
         let s = 1;
         let t = 5;
         let g = Set#{ (1, 2, 1, 0), (2, 3, 1, 0), (3, 4, 1, 0), (3, 8, 1, 0), (4, 5, 1, 0), (3, 5, 1, 0) };
         let Path(xs) = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
         Assert.eq(5 :: 3 :: 2 :: 1 :: Nil, xs)
+
+    @Test
+    def testAugmentingPath02(): Bool =
+        let s = 0;
+        let t = 5;
+        let g = g1() |> Set.map(match (a, b, u) -> (a, b, u, 0));
+        let Path(xs) = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        Assert.eq(5 :: 4 :: 3 :: 0 :: Nil, xs)
 
     @Test
     def testPathMinCapacity01(): Bool =
@@ -716,9 +756,7 @@ mod Graph {
         let g = Set#{(1, 2, 3, 0), (1, 3, 4, 0), (2, 3, 3, 0), (3, 4, 5, 0), (4, 5, 10, 0), (6, 7, 1, 0)};
         Assert.eq(3, pathMinCapacity(p, g))
 
-    @Test
-    def testMaxFlow01(): Bool =
-        let g = Set#{ (0, 1, 10), (0, 3, 10), (1, 2, 4), (1, 3, 2), (1, 4, 8), (2, 5, 10), (3, 4, 9), (4, 2, 6), (4, 5, 10) };
-        Assert.eq(19, maxFlow(src = 0, dst = 5, g))
+    def _testMaxFlow01(): Bool =
+        Assert.eq(19, maxFlow(src = 0, dst = 5, g1()))
 
 }
