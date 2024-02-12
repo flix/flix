@@ -1,17 +1,30 @@
 mod ShortestDistance {
 
-    pub def shortestDist(src : { src = Source }, dst: { dst = Destination }, g: m[Graph]): Option[Distance] with Foldable[m] =
-        let edges = inject g into Edge;
-        let rules = #{
-            Reach(x, y, d)        :- Edge(x, y, d).
-            Reach(x, z, d1 + d2) :- Reach(x, y, d1), Edge(y, z, d2).
-        };
-        let s = src.src;
-        let t = dst.dst;
-        let result = query edges, rules select d from Reach(s, t, d);
-        Vector.head(result)
+    use Down.Down;
 
-    // Type aliases for readability
+    ///
+    /// Returns the shortest distance from `src` to every other node in the
+    /// weighted directed graph `g`.
+    ///
+    pub def distancesFrom(src: t, g: m[(t, t, Int32)]): Map[t, Int32] with Foldable[m], Order[t] = {
+        let edges = inject g into Edge;
+        let dists = #{
+            Dist(src; Down.Down(0)).
+            Dist(y; d + Down.Down(w)) :- Dist(x; d), Edge(x, y, w).
+        };
+        let mapping = #{
+            Mapping(x, destructDown(d)) :- fix Dist(x; d).
+        };
+        let res = query edges, dists, mapping
+                  select (x, d)
+                  from Mapping(x, d);
+        res |> Vector.toMap
+    }
+
+    def destructDown(d: Down[a]): a =
+        let Down(a) = d;
+        a
+
     type alias Source = Int32
     type alias Destination = Int32
     type alias Distance = Int32
@@ -150,19 +163,19 @@ mod ShortestDistance {
             }
 
     @Test
-    def testExampleGraphShortestDistance01(): Bool =
-        Assert.eq(Some(10), shortestDist(src = 0, dst = 5, exampleGraph01()))
+    def testExampleGraphShortestDistances01(): Bool =
+        Assert.eq(Map#{0 => 0, 1 => 2, 2 => 9, 3 => 3, 4 => 6, 5 => 10}, distancesFrom(0, exampleGraph01()))
 
     @Test
-    def testExampleGraphShortestDistance02(): Bool =
-        Assert.eq(Some(3), shortestDist(src = 0, dst = 5, exampleGraph02()))
+    def testExampleGraphShortestDistances02(): Bool =
+        Assert.eq(Map#{0 => 0, 1 => 1, 2 => 2, 3 => 1, 4 => 2, 5 => 3}, distancesFrom(0, exampleGraph02()))
 
     @Test
-    def testExampleGraphShortestDistance03(): Bool =
-        Assert.eq(Some(21), shortestDist(src = 0, dst = 3, exampleGraph03()))
+    def testExampleGraphShortestDistances03(): Bool =
+        Assert.eq(Map#{0 => 0, 1 => 10, 2 => 11, 3 => 21}, distancesFrom(0, exampleGraph03()))
 
     @Test
-    def testExampleGraphShortestDistance04(): Bool =
-        Assert.eq(Some(3), shortestDist(src = 0, dst = 10, exampleGraph04()))
+    def testExampleGraphShortestDistances04(): Bool =
+        Assert.eq(Map#{0 => 0, 1 => 10, 2 => 25, 3 => 30, 4 => 10, 5 => 30, 6 => 20, 7 => 10, 8 => 15, 9 => 25, 10 => 35}, distancesFrom(0, exampleGraph04()))
 
 }
