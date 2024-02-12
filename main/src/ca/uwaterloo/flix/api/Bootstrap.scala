@@ -709,40 +709,55 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     implicit val formatter: Formatter = flix.getFormatter
 
     val flixDeps = optManifest.map(findFlixDependencies).getOrElse(Nil)
-    val currentVersions = flixDeps.map(d => d.version)
-    val githubProjects = Result.traverse(flixDeps)(d => GitHub.parseProject(s"${d.username}/${d.projectName}")) match {
-      case Ok(l) => l
-      case Err(e) => return Validation.toHardFailure(BootstrapError.FlixPackageError(e))
-    }
-    val releases = Result.traverse(githubProjects)(p => GitHub.getReleases(p, flix.options.githubToken)) match {
-      case Ok(l) => l
-      case Err(e) => return Validation.toHardFailure(BootstrapError.FlixPackageError(e))
-    }
-    val versions = releases.map(rs => rs.map(r => r.version))
 
-    val packageCol = githubProjects.map(d => d.toString)
-    val currentCol = currentVersions.map(v => v.toString)
-    val majorCol = (currentVersions zip versions).map {
-      case (currentVersion, versions) =>
-        versions.filter(v =>
-          v.major > currentVersion.major
-        ).maxOption.map(v => v.toString).getOrElse("")
+    val rows = flixDeps.flatMap { dep =>
+      val githubProject = GitHub.parseProject(s"${dep.username}/${dep.projectName}") match {
+        case Ok(l) => l
+        case Err(e) => return Validation.toHardFailure(BootstrapError.FlixPackageError(e))
+      }
+      val currentVersion = dep.version
+
+      val releases = GitHub.getReleases(githubProject, flix.options.githubToken) match {
+        case Ok(l) => l
+        case Err(e) => return Validation.toHardFailure(BootstrapError.FlixPackageError(e))
+      }
+      val availableVersions = releases.map(r => r.version)
+
+      val major = availableVersions.filter(v =>
+        v.major > currentVersion.major
+      ).maxOption
+      val minor = availableVersions.filter(v =>
+        v.major == currentVersion.major
+          && v.minor > currentVersion.minor
+      ).maxOption
+      val patch = availableVersions.filter(v =>
+        v.major == currentVersion.major
+          && v.minor == currentVersion.minor
+          && (v.patch zip currentVersion.patch).exists { case (vp, cvp) => vp > cvp }
+      ).maxOption
+
+      if (major.isEmpty && minor.isEmpty && patch.isEmpty)
+        None
+      else
+        Some(List(
+          githubProject.toString,
+          currentVersion.toString,
+          major.map(v => v.toString).getOrElse(""),
+          minor.map(v => v.toString).getOrElse(""),
+          patch.map(v => v.toString).getOrElse(""),
+        ))
     }
-    val minorCol = (currentVersions zip versions).map {
-      case (currentVersion, versions) =>
-        versions.filter(v =>
-          v.major == currentVersion.major
-            && v.minor > currentVersion.minor
-        ).maxOption.map(v => v.toString).getOrElse("")
+
+    if (rows.isEmpty) {
+      out.println(formatter.green(
+        s"""
+           |All dependencies are up to date
+           |""".stripMargin
+      ))
+      return Validation.success(())
     }
-    val patchCol = (currentVersions zip versions).map {
-      case (currentVersion, versions) =>
-        versions.filter(v =>
-          v.major == currentVersion.major
-            && v.minor == currentVersion.minor
-            && (v.patch zip currentVersion.patch).exists { case (vp, cvp) => vp > cvp }
-        ).maxOption.map(v => v.toString).getOrElse("")
-    }
+
+    val List(packageCol, currentCol, majorCol, minorCol, patchCol) = rows.transpose
 
     /**
       * Takes a list of strings and right-pads them with spaces to all take up the same space.
