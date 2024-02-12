@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
-import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
+import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, OccurrenceAst, Purity, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
@@ -329,19 +329,10 @@ object Inliner {
         val freshVar = Symbol.freshVarSym(sym)
         val env1 = env0 + (sym -> freshVar)
         val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env1)
-        val purity = combine(e1.purity, nextLet.purity)
+        val purity = Purity.combine(e1.purity, nextLet.purity)
         LiftedAst.Expr.Let(freshVar, e1, nextLet, exp0.tpe, purity, exp0.loc)
       case _ => substituteExp(exp0, env0)
     }
-  }
-
-  /**
-    * Combines purities `p1` and `p2`
-    * A combined purity is only pure if both `p1` and `p2` are pure, otherwise it is always impure.
-    */
-  def combine(p1: Purity, p2: Purity): Purity = (p1, p2) match {
-    case (Pure, Pure) => Pure
-    case _ => Impure
   }
 
   /**
@@ -559,7 +550,7 @@ object Inliner {
               val op = AtomicOp.Binary(SemanticOp.BoolOp.And)
               val es = List(outerCond, innerCond)
               val tpe = innerThen.tpe // equal to outerElse.tpe
-              val pur = combine(outerCond.purity, innerCond.purity)
+              val pur = Purity.combine(outerCond.purity, innerCond.purity)
               val andExp = LiftedAst.Expr.ApplyAtomic(op, es, MonoType.Bool, pur, loc)
               LiftedAst.Expr.IfThenElse(andExp, innerThen, outerElse, tpe, purity, loc)
             case _ => LiftedAst.Expr.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)

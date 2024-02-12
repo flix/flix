@@ -251,13 +251,13 @@ object EffectBinder {
       ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case LiftedAst.Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
-      if (ct == CallType.NonTailCall && purity != Purity.Pure) lctx.pcPoints += 1
+      if (ct == CallType.NonTailCall && Purity.isControlImpure(purity)) lctx.pcPoints += 1
       val e = visitExprWithBinders(binders)(exp)
       val es = exps.map(visitExprWithBinders(binders))
       ReducedAst.Expr.ApplyClo(e, es, ct, tpe, purity, loc)
 
     case LiftedAst.Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-      if (ct == CallType.NonTailCall && purity != Purity.Pure) lctx.pcPoints += 1
+      if (ct == CallType.NonTailCall && Purity.isControlImpure(purity)) lctx.pcPoints += 1
       val es = exps.map(visitExprWithBinders(binders))
       ReducedAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
@@ -395,20 +395,12 @@ object EffectBinder {
   private def bindBinders(binders: mutable.ArrayBuffer[Binder], exp: ReducedAst.Expr): ReducedAst.Expr = {
     binders.foldRight(exp) {
       case (LetBinder(sym, exp1, loc), acc) =>
-        ReducedAst.Expr.Let(sym, exp1, acc, acc.tpe, combine(acc.purity, exp1.purity), loc)
+        ReducedAst.Expr.Let(sym, exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
       case (LetRecBinder(varSym, index, defSym, exp1, loc), acc) =>
-        ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, acc, acc.tpe, combine(acc.purity, exp1.purity), loc)
+        ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
       case (NonBinder(exp1, loc), acc) =>
-        ReducedAst.Expr.Stmt(exp1, acc, acc.tpe, combine(acc.purity, exp1.purity), loc)
+        ReducedAst.Expr.Stmt(exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
     }
-  }
-
-  /**
-    * Returns [[Purity.Pure]] if and only if both arguments are [[Purity.Pure]].
-    */
-  private def combine(p1: Purity, p2: Purity): Purity = (p1, p2) match {
-    case (Purity.Pure, Purity.Pure) => Purity.Pure
-    case _ => Purity.Impure
   }
 
 }
