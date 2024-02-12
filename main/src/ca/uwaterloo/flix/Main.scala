@@ -290,7 +290,7 @@ object Main {
               System.exit(1)
           }
         
-        case Command.Mtest =>
+        case Command.Mtest(tester, testee) =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap =>
               val flix = new Flix().setFormatter(formatter)
@@ -426,12 +426,10 @@ object Main {
 
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
 
-      cmd("mtest").action((_, c) => c.copy(command = Command.Test)).text("  runs the mutation tests given tester and testee files.")
+      cmd("mtest").text("  runs mutation tests given tester and testee files.")
         .children(
-          arg[file]("Tester").action((tester, c) => c.copy(command = Command.Mtest(tester)))
-            .required(),
-          arg[file]("Testee").action((testee, c) => c.copy(command = Command.Mtest(testee)))
-            .required()
+          arg[(File, File)]("tester, testee").action((tuple, c) => c.copy(command = Command.Mtest(tuple._1, tuple._2)))
+            .required() 
         )
 
       cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
