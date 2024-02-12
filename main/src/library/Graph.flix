@@ -662,8 +662,8 @@ mod Graph.FordFulkerson {
         Vector.head(result) |> Option.flatMap(match Path(xs) -> if (List.isEmpty(xs)) None else Some(Path(xs)))
 
     def pathMinCapacity(p: Path, g: m[FlowNetwork]): Int32 with Foldable[m] =
-        let mem = p |> flip(memberOf);
-        let optMin = g |> Foldable.filter(match (s, d, _, _) -> mem(s) and mem(d))
+        let onPath = (s, d) -> isForwardEdge(src = s, dst = d, p) or isBackEdge(src = s, dst = d, p);
+        let optMin = g |> Foldable.filter(match (s, d, _, _) -> onPath(s, d))
             |> List.map(match (_, _, u, f) -> u - f)
             |> List.minimum;
         match optMin {
@@ -684,10 +684,20 @@ mod Graph.FordFulkerson {
         )
 
     def isForwardEdge(src: { src = From }, dst: { dst = To }, p: Path): Bool =
-        memberOf(src.src, p) and memberOf(dst.dst, p) and indexOf(src.src, p) > indexOf(dst.dst, p) // A path is sorted in reverse order
+        let member = memberOf(src.src, p) and memberOf(dst.dst, p);
+        let nextOnPath = match (indexOf(src.src, p), indexOf(dst.dst, p)) { // A path is sorted in reverse order
+            case (Some(si), Some(di)) if di + 1 == si => true
+            case _ => false
+        };
+        member and nextOnPath
 
     def isBackEdge(src: { src = From }, dst: { dst = To }, p: Path): Bool =
-        memberOf(src.src, p) and memberOf(dst.dst, p) and indexOf(dst.dst, p) > indexOf(src.src, p) // A path is sorted in reverse order
+        let member = memberOf(src.src, p) and memberOf(dst.dst, p);
+        let nextOnPath = match (indexOf(src.src, p), indexOf(dst.dst, p)) { // A path is sorted in reverse order
+            case (Some(si), Some(di)) if si + 1 == di => true
+            case _ => false
+        };
+        member and nextOnPath
 
     def memberOf(a: Int32, p: Path): Bool =
         let Path(xs) = p;
@@ -702,7 +712,7 @@ mod Graph.FordFulkerson {
     //////////////////////////////////////////
 
     ///
-    /// Returns the follwing graph:
+    /// Returns the following graph:
     ///
     /// ```
     ///      1---2
@@ -727,7 +737,7 @@ mod Graph.FordFulkerson {
     ///
     /// The maximum flow is `19`.
     ///
-    def g1(): Set[(From, To, UpperCapacity)] =
+    def exampleGraph01(): Set[(From, To, UpperCapacity)] =
         Set#{ (0, 1, 10), (0, 3, 10), (1, 3, 2), (1, 2, 4), (1, 4, 8), (3, 4, 9), (4, 2, 6), (2, 5, 10), (4, 5, 10) }
 
     @Test
@@ -742,7 +752,7 @@ mod Graph.FordFulkerson {
     def testAugmentingPath02(): Bool =
         let s = 0;
         let t = 5;
-        let g = g1() |> Set.map(match (a, b, u) -> (a, b, u, 0));
+        let g = exampleGraph01() |> Set.map(match (a, b, u) -> (a, b, u, 0));
         let Path(xs) = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
         Assert.eq(5 :: 4 :: 3 :: 0 :: Nil, xs) // Shortest path in reverse order
 
@@ -750,7 +760,7 @@ mod Graph.FordFulkerson {
     def testAugmentingPath03(): Bool =
         let s = 0;
         let t = 5;
-        let g = g1() |> Set.map(x -> match x {
+        let g = exampleGraph01() |> Set.map(x -> match x {
             case (0, 3, 10) => (0, 3, 10, 9)
             case (3, 4, 9)  => (3, 4, 9 , 9)
             case (4, 5, 10) => (4, 5, 10, 9)
@@ -758,6 +768,38 @@ mod Graph.FordFulkerson {
         });
         let Path(xs) = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
         Assert.eq(5 :: 4 :: 1 :: 0 :: Nil, xs)
+
+    @Test
+    def testAugmentingPath04(): Bool =
+        let s = 0;
+        let t = 5;
+        let g = exampleGraph01() |> Set.map(x -> match x {
+            case (0, 1, 10) => (0, 1, 10, 1)
+            case (0, 3, 10) => (0, 3, 10, 9)
+            case (1, 4, 8)  => (1, 4, 8 , 1)
+            case (3, 4, 9)  => (3, 4, 9 , 9)
+            case (4, 5, 10) => (4, 5, 10, 10)
+            case (a, b, u)  => (a, b, u , 0)
+        });
+        let Path(xs) = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        Assert.eq(5 :: 2 :: 1 :: 0 :: Nil, xs)
+
+    @Test
+    def testAugmentingPath05(): Bool =
+        let s = 0;
+        let t = 5;
+        let g = exampleGraph01() |> Set.map(x -> match x {
+            case (0, 1, 10) => (0, 1, 10, 5)
+            case (0, 3, 10) => (0, 3, 10, 9)
+            case (1, 4, 8)  => (1, 4, 8 , 1)
+            case (1, 2, 4)  => (1, 2, 4 , 4)
+            case (3, 4, 9)  => (3, 4, 9 , 9)
+            case (2, 5, 10) => (2, 5, 10, 4)
+            case (4, 5, 10) => (4, 5, 10, 10)
+            case (a, b, u)  => (a, b, u , 0)
+        });
+        let Path(xs) = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        Assert.eq(5 :: 2 :: 4 :: 1 :: 0 :: Nil, xs)
 
     @Test
     def testPathMinCapacity01(): Bool =
@@ -775,7 +817,7 @@ mod Graph.FordFulkerson {
     def testPathMinCapacity03(): Bool =
         let s = 0;
         let t = 5;
-        let g = g1() |> Set.map(match (a, b, u) -> (a, b, u, 0));
+        let g = exampleGraph01() |> Set.map(match (a, b, u) -> (a, b, u, 0));
         let p = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
         Assert.eq(9, pathMinCapacity(p, g)) // The path is picked as in testAugmentingPath02
 
@@ -783,7 +825,7 @@ mod Graph.FordFulkerson {
     def testPathMinCapacity04(): Bool =
         let s = 0;
         let t = 5;
-        let g = g1() |> Set.map(x -> match x {
+        let g = exampleGraph01() |> Set.map(x -> match x {
             case (0, 3, 10) => (0, 3, 10, 9)
             case (3, 4, 9)  => (3, 4, 9 , 9)
             case (4, 5, 10) => (4, 5, 10, 9)
@@ -793,23 +835,97 @@ mod Graph.FordFulkerson {
         Assert.eq(1, pathMinCapacity(p, g)) // The path is picked as in testAugmentingPath03
 
     @Test
+    def testPathMinCapacity05(): Bool =
+        let s = 0;
+        let t = 5;
+        let g = exampleGraph01() |> Set.map(x -> match x {
+            case (0, 1, 10) => (0, 1, 10, 1)
+            case (0, 3, 10) => (0, 3, 10, 9)
+            case (1, 4, 8)  => (1, 4, 8 , 1)
+            case (3, 4, 9)  => (3, 4, 9 , 9)
+            case (4, 5, 10) => (4, 5, 10, 10)
+            case (a, b, u)  => (a, b, u , 0)
+        });
+        let p = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        Assert.eq(4, pathMinCapacity(p, g)) // The path is picked as in testAugmentingPath04
+
+    @Test
+    def testPathMinCapacity06(): Bool =
+        let s = 0;
+        let t = 5;
+        let g = exampleGraph01() |> Set.map(x -> match x {
+            case (0, 1, 10) => (0, 1, 10, 5)
+            case (0, 3, 10) => (0, 3, 10, 9)
+            case (1, 4, 8)  => (1, 4, 8 , 1)
+            case (1, 2, 4)  => (1, 2, 4 , 4)
+            case (3, 4, 9)  => (3, 4, 9 , 9)
+            case (2, 5, 10) => (2, 5, 10, 4)
+            case (4, 5, 10) => (4, 5, 10, 10)
+            case (a, b, u)  => (a, b, u , 0)
+        });
+        let p = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        Assert.eq(5, pathMinCapacity(p, g)) // The path is picked as in testAugmentingPath05
+
+    @Test
     def testIncreaseFlow01(): Bool =
         let s = 0;
         let t = 5;
-        let g = g1() |> Set.map(match (a, b, u) -> (a, b, u, 0));
+        let g = exampleGraph01() |> Set.map(match (a, b, u) -> (a, b, u, 0));
         let p = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
-        let incr = pathMinCapacity(p, g); // is 9, see testPathMinCapacity03
-        let g2 = g |> Set.map(x -> match x {
+        let incr = pathMinCapacity(p, g); // Is 9, see testPathMinCapacity03
+        let g1 = g |> Set.map(x -> match x {
             case (0, 3, 10, 0) => (0, 3, 10, 9)
             case (3, 4, 9 , 0) => (3, 4, 9 , 9)
             case (4, 5, 10, 0) => (4, 5, 10, 9)
             case _             => x
         }) |> Foldable.toVector;
-        Assert.eq(g2, increaseFlow(p, incr, g))
+        Assert.eq(g1, increaseFlow(p, incr, g))
 
-    @Test @Skip
+    @Test
+    def testIncreaseFlow02(): Bool =
+        let s = 0;
+        let t = 5;
+        let g = exampleGraph01() |> Set.map(x -> match x {
+            case (0, 3, 10) => (0, 3, 10, 9)
+            case (3, 4, 9)  => (3, 4, 9 , 9)
+            case (4, 5, 10) => (4, 5, 10, 9)
+            case (a, b, u)  => (a, b, u , 0)
+        });
+        let p = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        let incr = pathMinCapacity(p, g); // Is 1, see testPathMinCapacity04
+        let g1 = g |> Set.map(x -> match x {
+            case (0, 1, 10, 0) => (0, 1, 10, 1)
+            case (1, 4, 8 , 0) => (1, 4, 8 , 1)
+            case (4, 5, 10, 9) => (4, 5, 10, 10)
+            case _             => x
+        }) |> Foldable.toVector;
+        Assert.eq(g1, increaseFlow(p, incr, g))
+
+    @Test
+    def testIncreaseFlow03(): Bool =
+        let s = 0;
+        let t = 5;
+        let g = exampleGraph01() |> Set.map(x -> match x {
+            case (0, 1, 10) => (0, 1, 10, 1)
+            case (0, 3, 10) => (0, 3, 10, 9)
+            case (1, 4, 8)  => (1, 4, 8 , 1)
+            case (3, 4, 9)  => (3, 4, 9 , 9)
+            case (4, 5, 10) => (4, 5, 10, 10)
+            case (a, b, u)  => (a, b, u , 0)
+        });
+        let p = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        let incr = pathMinCapacity(p, g); // Is 4, see testPathMinCapacity05
+        let g1 = g |> Set.map(x -> match x {
+            case (0, 1, 10, 1) => (0, 1, 10, 5)
+            case (1, 2, 4 , 0) => (1, 2, 4 , 4)
+            case (2, 5, 10, 0) => (2, 5, 10, 4)
+            case _             => x
+        }) |> Foldable.toVector;
+        Assert.eq(g1, increaseFlow(p, incr, g))
+
+    @Test
     def testMaxFlow01(): Bool =
-        Assert.eq(19, maxFlow(src = 0, dst = 5, g1()))
+        Assert.eq(19, maxFlow(src = 0, dst = 5, exampleGraph01()))
 
 }
 }
