@@ -79,6 +79,11 @@ object Command {
     * Runs the tests for the current project.
     */
   case object Test extends Command
+  
+  /**
+    * Runs the mutation tests given a tester and testee.
+    */
+  case object Mtest extends Command
 
   /**
     * Terminates the shell.
@@ -158,6 +163,9 @@ object Command {
 
     if (input == ":test" || input == ":t")
       return Command.Test
+
+    if (input == ":mtest" || input == ":mt")
+      return Command.Mtest
 
     if (input == ":quit" || input == ":q")
       return Command.Quit

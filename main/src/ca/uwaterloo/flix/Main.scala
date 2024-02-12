@@ -289,6 +289,20 @@ object Main {
               errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
+        
+        case Command.Mtest(tester, testee) =>
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.mtest(flix, tester, testee)
+          }.toHardResult match {
+            case Result.Ok(_) =>
+              System.exit(0)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
 
 
         case Command.CompilerPerf =>
@@ -335,6 +349,7 @@ object Main {
                      xparser: Boolean = false,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
+                     mtests_temp: String =  "",
                      files: Seq[File] = Seq())
 
   /**
@@ -363,6 +378,8 @@ object Main {
     case object Benchmark extends Command
 
     case object Test extends Command
+
+    case class Mtest(tester: String, testee: String) extends Command
 
     case object Repl extends Command
 
@@ -410,12 +427,20 @@ object Main {
 
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
 
+      cmd("mtest").text("  runs mutation tests given tester and testee files.")
+        .children(
+          arg[String]("tester").action((tes, c) => c.copy(mtests_temp = tes))
+            .required(), 
+          arg[String]("testee").action((tes, c) => c.copy(command = Command.Mtest(c.mtests_temp, tes)))
+            .required()
+        )
+
       cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
 
       cmd("lsp").text("  starts the LSP server and listens on the given port.")
         .children(
           arg[Int]("port").action((port, c) => c.copy(command = Command.Lsp(port)))
-            .required()
+            .required(),
         )
 
       cmd("release").text("  release a new version to GitHub.")
