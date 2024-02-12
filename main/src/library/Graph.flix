@@ -661,8 +661,9 @@ mod Graph {
         Vector.head(result) |> Option.flatMap(match Path(xs) -> if (List.isEmpty(xs)) None else Some(Path(xs)))
 
     def pathMinCapacity(p: Path, g: m[FlowNetwork]): Int32 with Foldable[m] =
-        let optMin = g |> Foldable.filter(match (s, d, _, _) -> memberOf(s, p) and memberOf(d, p))
-            |> List.map(match (_, _, u, _) -> u)
+        let mem = p |> flip(memberOf);
+        let optMin = g |> Foldable.filter(match (s, d, _, _) -> mem(s) and mem(d))
+            |> List.map(match (_, _, u, f) -> u - f)
             |> List.minimum;
         match optMin {
             case Some(u) => u
@@ -742,7 +743,20 @@ mod Graph {
         let t = 5;
         let g = g1() |> Set.map(match (a, b, u) -> (a, b, u, 0));
         let Path(xs) = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
-        Assert.eq(5 :: 4 :: 3 :: 0 :: Nil, xs)
+        Assert.eq(5 :: 4 :: 3 :: 0 :: Nil, xs) // Shortest path in reverse order
+
+    @Test
+    def testAugmentingPath03(): Bool =
+        let s = 0;
+        let t = 5;
+        let g = g1() |> Set.map(x -> match x {
+            case (0, 3, 10) => (0, 3, 10, 9)
+            case (3, 4, 9)  => (3, 4, 9 , 9)
+            case (4, 5, 10) => (4, 5, 10, 9)
+            case (a, b, u)  => (a, b, u , 0)
+        });
+        let Path(xs) = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        Assert.eq(5 :: 4 :: 1 :: 0 :: Nil, xs)
 
     @Test
     def testPathMinCapacity01(): Bool =
@@ -756,7 +770,20 @@ mod Graph {
         let g = Set#{(1, 2, 3, 0), (1, 3, 4, 0), (2, 3, 3, 0), (3, 4, 5, 0), (4, 5, 10, 0), (6, 7, 1, 0)};
         Assert.eq(3, pathMinCapacity(p, g))
 
-    @Test @Skip
+    @Test
+    def testPathMinCapacity03(): Bool =
+        let s = 0;
+        let t = 5;
+        let g = g1() |> Set.map(x -> match x {
+            case (0, 3, 10) => (0, 3, 10, 9)
+            case (3, 4, 9)  => (3, 4, 9 , 9)
+            case (4, 5, 10) => (4, 5, 10, 9)
+            case (a, b, u)  => (a, b, u , 0)
+        });
+        let p = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        Assert.eq(1, pathMinCapacity(p, g)) // The path is picked as in testAugmentingPath03
+
+    @Test
     def testMaxFlow01(): Bool =
         Assert.eq(19, maxFlow(src = 0, dst = 5, g1()))
 
