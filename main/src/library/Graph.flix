@@ -564,6 +564,7 @@ mod Graph {
     //////////////////////////////////////
     // WIP Ford-Fulkerson               //
     //////////////////////////////////////
+mod Graph.FordFulkerson {
 
     use Path.Path;
 
@@ -683,10 +684,10 @@ mod Graph {
         )
 
     def isForwardEdge(src: { src = From }, dst: { dst = To }, p: Path): Bool =
-        memberOf(src.src, p) and memberOf(dst.dst, p) and indexOf(src.src, p) < indexOf(dst.dst, p)
+        memberOf(src.src, p) and memberOf(dst.dst, p) and indexOf(src.src, p) > indexOf(dst.dst, p) // A path is sorted in reverse order
 
     def isBackEdge(src: { src = From }, dst: { dst = To }, p: Path): Bool =
-        memberOf(src.src, p) and memberOf(dst.dst, p) and indexOf(dst.dst, p) < indexOf(src.src, p)
+        memberOf(src.src, p) and memberOf(dst.dst, p) and indexOf(dst.dst, p) > indexOf(src.src, p) // A path is sorted in reverse order
 
     def memberOf(a: Int32, p: Path): Bool =
         let Path(xs) = p;
@@ -774,6 +775,14 @@ mod Graph {
     def testPathMinCapacity03(): Bool =
         let s = 0;
         let t = 5;
+        let g = g1() |> Set.map(match (a, b, u) -> (a, b, u, 0));
+        let p = augmentingPath(src = s, dst = t, g) |> Option.getWithDefault(Path(Nil));
+        Assert.eq(9, pathMinCapacity(p, g)) // The path is picked as in testAugmentingPath02
+
+    @Test
+    def testPathMinCapacity04(): Bool =
+        let s = 0;
+        let t = 5;
         let g = g1() |> Set.map(x -> match x {
             case (0, 3, 10) => (0, 3, 10, 9)
             case (3, 4, 9)  => (3, 4, 9 , 9)
@@ -787,4 +796,5 @@ mod Graph {
     def testMaxFlow01(): Bool =
         Assert.eq(19, maxFlow(src = 0, dst = 5, g1()))
 
+}
 }
