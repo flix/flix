@@ -74,12 +74,13 @@ object Purity {
     * Returns the max purity of `p1` and `p2` according to this ordering:
     * Pure < Impure < ControlImpure
     */
-  def combine(p1: Purity, p2: Purity): Purity = (p1, p2) match {
-    case (ControlImpure, _) => ControlImpure
-    case (_, ControlImpure) => ControlImpure
-    case (Impure, _) => Impure
-    case (_, Impure) => Impure
-    case (Pure, Pure) => Pure
+  def combine(p1: Purity, p2: Purity): Purity = {
+    def toInt(p: Purity): Int = p match {
+      case Pure => 0
+      case Impure => 1
+      case ControlImpure => 2
+    }
+    Ordering.by(toInt).max(p1, p2)
   }
 
   /**
