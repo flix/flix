@@ -779,7 +779,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val minorColFormat = minorColPad.map(formatter.yellow)
     val patchColFormat = patchColPad.map(formatter.yellow)
 
-    val colSeparator = " | "
+    val colSeparator = "    "
     out.println("")
     out.println(List(packageTitle, currentTitle, majorTitle, minorTitle, patchTitle).mkString(colSeparator))
     for (row <- List(packageColFormat, currentColFormat, majorColFormat, minorColFormat, patchColFormat).transpose) {
