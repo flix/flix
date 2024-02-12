@@ -35,15 +35,15 @@ sealed trait Purity
 object Purity {
 
   /**
-    * Represents a pure expression (i.e. an expression that cannot have
+   * Represents a pure expression (i.e. an expression that cannot have
     * side-effects).
-    */
+   */
   case object Pure extends Purity
 
   /**
-    * Represents an impure expression (i.e. an expression that could potentially
+   * Represents an impure expression (i.e. an expression that could potentially
     * have side-effects).
-    */
+   */
   case object Impure extends Purity
 
   /**
@@ -53,12 +53,25 @@ object Purity {
   case object ControlImpure extends Purity
 
   /**
-    * Returns true if `p` is a purity that can use algebraic effects.
+    * Returns true if `p` is is a purity that does not allows algebraic effects.
     */
-  def canUseAlgebraicEffects(p: Purity): Boolean = p == ControlImpure
+  def isControlPure(p: Purity): Boolean = p match {
+    case Pure => true
+    case Impure => true
+    case ControlImpure => false
+  }
 
   /**
-    * Returns the max effect of `p1` and `p2` according to this ordering:
+    * Returns true if `p` is is a purity that allows algebraic effects.
+    */
+  def isControlImpure(p: Purity): Boolean = p match {
+    case Pure => false
+    case Impure => false
+    case ControlImpure => true
+  }
+
+  /**
+    * Returns the max purity of `p1` and `p2` according to this ordering:
     * Pure < Impure < ControlImpure
     */
   def combine(p1: Purity, p2: Purity): Purity = (p1, p2) match {
@@ -70,26 +83,29 @@ object Purity {
   }
 
   /**
-    * Returns the max effect of `p1`, `p2`, and `p3` according to this ordering:
+    * Returns the max purity of `p1`, `p2`, and `p3` according to this ordering:
     * Pure < Impure < ControlImpure
     */
-  def combine(p1: Purity, p2: Purity, p3: Purity): Purity = {
+  def combine3(p1: Purity, p2: Purity, p3: Purity): Purity = {
     combine(combine(p1, p2), p3)
   }
 
   /**
-    * Returns the max effect of `p` according to this ordering:
+    * Returns the max purity of `p` according to this ordering:
     * Pure < Impure < ControlImpure
     *
     * Returns [[Pure]] if empty.
     */
-  def combine(p: List[Purity]): Purity = {
+  def combineAll(p: List[Purity]): Purity = {
     p.foldLeft(Pure: Purity)(combine)
   }
 
   /**
-    * Returns the purity of the given effect `eff`. Assumes that the given type
-    * is a well-formed formula without variables, aliases, or associated types.
+    * Returns the purity of the given formula `eff`. Returns [[Pure]] for the
+    * effect constant [[TypeConstructor.Pure]] and [[Impure]] otherwise.
+    *
+    * Assumes that the given type is a well-formed formula without variables,
+    * aliases, or associated types.
     */
   def fromType(eff: Type, universe: Set[Symbol.EffectSym]): Purity = {
     evaluateFormula(eff, universe) match {

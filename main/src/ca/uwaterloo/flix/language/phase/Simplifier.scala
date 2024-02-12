@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.Purity._
+import ca.uwaterloo.flix.language.ast.Purity
 import ca.uwaterloo.flix.language.ast.{Symbol, _}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -111,7 +111,7 @@ object Simplifier {
           val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_spawn", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, MonoType.Unit, loc)
           val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e1, lambdaTyp, loc)
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(lambdaExp, e2), t, purity, loc)
+          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Spawn, List(lambdaExp, e2), t, Purity.Impure, loc)
 
         case AtomicOp.Lazy =>
           // Wrap the expression in a closure: () -> tpe \ Pure
@@ -120,7 +120,7 @@ object Simplifier {
           val fp = SimplifiedAst.FormalParam(Symbol.freshVarSym("_lazy", BoundBy.FormalParam, loc), Ast.Modifiers.Empty, MonoType.Unit, loc)
           val lambdaExp = SimplifiedAst.Expr.Lambda(List(fp), e, lambdaTyp, loc)
           val t = visitType(tpe)
-          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Lazy, List(lambdaExp), t, purity, loc)
+          SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Lazy, List(lambdaExp), t, Purity.Pure, loc)
 
         case AtomicOp.HoleError(_) =>
           // Simplify purity to impure, must be done after Monomorph
@@ -362,7 +362,7 @@ object Simplifier {
     case LoweredAst.Pattern.Tuple(elms, tpe, loc) =>
       val es = elms.map(pat2exp)
       val t = visitType(tpe)
-      val purity = Purity.combine(es.map(_.purity))
+      val purity = Purity.combineAll(es.map(_.purity))
       SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Tuple, es, t, purity, loc)
     case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat0.", pat0.loc)
   }
@@ -387,7 +387,7 @@ object Simplifier {
         val objClass = Class.forName("java.lang.Object")
         val method = strClass.getMethod("equals", objClass)
         val op = AtomicOp.InvokeMethod(method)
-        return SimplifiedAst.Expr.ApplyAtomic(op, List(e1, e2), MonoType.Bool, combine(e1.purity, e2.purity), loc)
+        return SimplifiedAst.Expr.ApplyAtomic(op, List(e1, e2), MonoType.Bool, Purity.combine(e1.purity, e2.purity), loc)
 
       case _ => // fallthrough
     }
@@ -406,7 +406,7 @@ object Simplifier {
       case MonoType.Int64 => SemanticOp.Int64Op.Eq
       case t => throw InternalCompilerException(s"Unexpected type: '$t'.", e1.loc)
     }
-    val purity = combine(e1.purity, e2.purity)
+    val purity = Purity.combine(e1.purity, e2.purity)
     SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Binary(sop), List(e1, e2), MonoType.Bool, purity, loc)
   }
 
@@ -459,7 +459,7 @@ object Simplifier {
     val t = visitType(tpe)
 
     // TODO Intermediate solution (which is correct, but imprecise): Compute the purity of every match rule in rules
-    val jumpPurity = Purity.combine(rules.map(r => simplifyEffect(r.exp.eff)))
+    val jumpPurity = Purity.combineAll(rules.map(r => simplifyEffect(r.exp.eff)))
 
     // Create a branch for each rule.
     val branches = (ruleLabels zip rules) map {
@@ -487,13 +487,13 @@ object Simplifier {
     val entry = SimplifiedAst.Expr.JumpTo(ruleLabels.head, t, jumpPurity, loc)
 
     // The purity of the branch
-    val branchPurity = Purity.combine(branches.map { case (_, exp) => exp.purity })
+    val branchPurity = Purity.combineAll(branches.map { case (_, exp) => exp.purity })
 
     // Assemble all the branches together.
     val branch = SimplifiedAst.Expr.Branch(entry, branches.toMap + errorBranch, t, branchPurity, loc)
 
     // The purity of the match exp
-    val matchPurity = combine(matchExp.purity, branch.purity)
+    val matchPurity = Purity.combine(matchExp.purity, branch.purity)
 
     // Wrap the branches inside a let-binding for the match variable.
     SimplifiedAst.Expr.Let(matchVar, matchExp, branch, t, matchPurity, loc)
@@ -551,7 +551,7 @@ object Simplifier {
         val exp = patternMatchList(ps, vs, guard, succ, fail)
         val t = visitType(lit.tpe)
         val cond = mkEqual(pat2exp(lit), SimplifiedAst.Expr.Var(v, t, lit.loc), lit.loc)
-        val purity = combine(cond.purity, exp.purity, fail.purity)
+        val purity = Purity.combine3(cond.purity, exp.purity, fail.purity)
         SimplifiedAst.Expr.IfThenElse(cond, exp, fail, succ.tpe, purity, lit.loc)
 
       /**
@@ -566,13 +566,13 @@ object Simplifier {
         */
       case (LoweredAst.Pattern.Tag(Ast.CaseSymUse(sym, _), pat, tpe, loc) :: ps, v :: vs) =>
         val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
-        val cond = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Is(sym), List(varExp), MonoType.Bool, Pure, loc)
+        val cond = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Is(sym), List(varExp), MonoType.Bool, Purity.Pure, loc)
         val freshVar = Symbol.freshVarSym("innerTag" + Flix.Delimiter, BoundBy.Let, loc)
         val inner = patternMatchList(pat :: ps, freshVar :: vs, guard, succ, fail)
         val purity1 = inner.purity
         val untagExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Untag(sym), List(varExp), visitType(pat.tpe), purity1, loc)
         val consequent = SimplifiedAst.Expr.Let(freshVar, untagExp, inner, succ.tpe, purity1, loc)
-        val purity2 = combine(cond.purity, consequent.purity, fail.purity)
+        val purity2 = Purity.combine3(cond.purity, consequent.purity, fail.purity)
         SimplifiedAst.Expr.IfThenElse(cond, consequent, fail, succ.tpe, purity2, loc)
 
       /**
@@ -588,7 +588,7 @@ object Simplifier {
         elms.zip(freshVars).zipWithIndex.foldRight(zero) {
           case (((pat, name), idx), exp) =>
             val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
-            val indexExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Index(idx), List(varExp), visitType(pat.tpe), Pure, loc)
+            val indexExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.Index(idx), List(varExp), visitType(pat.tpe), Purity.Pure, loc)
             SimplifiedAst.Expr.Let(name, indexExp, exp, succ.tpe, exp.purity, loc)
         }
 
@@ -608,7 +608,7 @@ object Simplifier {
         // but we want to restrict the record / matchVar from left to right
         val (one, restrictedMatchVar) = pats.reverse.zip(freshVars.reverse).foldRight((zero, varExp): (SimplifiedAst.Expr, SimplifiedAst.Expr)) {
           case ((LoweredAst.Pattern.Record.RecordLabelPattern(label, _, pat, loc1), name), (exp, matchVarExp)) =>
-            val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(label), List(matchVarExp), visitType(pat.tpe), Pure, loc1)
+            val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(label), List(matchVarExp), visitType(pat.tpe), Purity.Pure, loc1)
             val restrictedMatchVarExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(label), List(matchVarExp), mkRecordRestrict(label, varExp.tpe), matchVarExp.purity, loc1)
             val labelLetBinding = SimplifiedAst.Expr.Let(name, recordSelectExp, exp, succ.tpe, exp.purity, loc1)
             (labelLetBinding, restrictedMatchVarExp)
@@ -720,7 +720,7 @@ object Simplifier {
   }
 
   /**
-    * Returns the purity (or impurity) of an expression.
+    * Returns the purity of an expression.
     */
   private def simplifyEffect(eff: Type)(implicit universe: Set[Symbol.EffectSym]): Purity = {
     Purity.fromType(eff, universe)
