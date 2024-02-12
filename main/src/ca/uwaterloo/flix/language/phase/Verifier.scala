@@ -28,6 +28,7 @@ object Verifier {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Verifier") {
     root.defs.values.foreach(d => visitDef(d)(root))
+    // todo add purity
     root
   }
 
@@ -76,8 +77,7 @@ object Verifier {
 
     case Expr.Var(sym, tpe1, loc) => env.get(sym) match {
       case None => throw InternalCompilerException(s"Unknown variable sym: '$sym'", loc)
-      case Some(tpe2) =>
-        checkEq(tpe1, tpe2, loc)
+      case Some(tpe2) => checkEq(tpe1, tpe2, loc)
     }
 
     case Expr.ApplyAtomic(op, exps, tpe, _, loc) =>
@@ -101,7 +101,7 @@ object Verifier {
             case _ => throw InternalCompilerException(s"Invalid unary operator: '$sop'", loc)
           }
           check(expected = opTpe)(actual = t, loc)
-          check(expected = tpe)(actual = opTpe, loc)
+          checkEq(tpe, opTpe, loc)
 
         case AtomicOp.Binary(sop) =>
           val List(t1, t2) = ts
@@ -220,7 +220,7 @@ object Verifier {
           }
           check(expected = argTpe1)(t1, loc)
           check(expected = argTpe2)(t2, loc)
-          check(expected = tpe)(actual = resTpe, loc)
+          checkEq(tpe, resTpe, loc)
 
         case AtomicOp.Is(sym) =>
           val List(t1) = ts
@@ -229,32 +229,65 @@ object Verifier {
 
         case AtomicOp.Tag(sym) =>
           val List(t1) = ts
+          // We do not know the case terms so t1 cannot be verified.
           check(expected = MonoType.Enum(sym.enumSym))(actual = tpe, loc)
 
         case AtomicOp.Untag(sym) =>
           val List(t1) = ts
           check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
+          // We do not know the case terms so tpe cannot be verified.
           tpe
 
-        case _ => tpe // TODO: VERIFIER: Add rest
+        case AtomicOp.ArrayLength => ???
+        case AtomicOp.ArrayLit => ???
+        case AtomicOp.ArrayLoad => ???
+        case AtomicOp.ArrayNew => ???
+        case AtomicOp.ArrayStore => ???
+        case AtomicOp.Assign => ???
+        case AtomicOp.Box => ???
+        case AtomicOp.Cast => ???
+        case AtomicOp.Closure(sym) => ???
+        case AtomicOp.Deref => ???
+        case AtomicOp.Force => ???
+        case AtomicOp.GetField(field) => ???
+        case AtomicOp.GetStaticField(_) => ???
+        case AtomicOp.HoleError(sym) => ???
+        case AtomicOp.Index(idx) => ???
+        case AtomicOp.InstanceOf(clazz) => ???
+        case AtomicOp.InvokeConstructor(constructor) => ???
+        case AtomicOp.InvokeMethod(method) => ???
+        case AtomicOp.InvokeStaticMethod(method) => ???
+        case AtomicOp.Lazy => ???
+        case AtomicOp.MatchError => ???
+        case AtomicOp.PutField(field) => ???
+        case AtomicOp.PutStaticField(field) => ???
+        case AtomicOp.RecordEmpty => ???
+        case AtomicOp.RecordExtend(label) => ???
+        case AtomicOp.RecordRestrict(label) => ???
+        case AtomicOp.RecordSelect(label) => ???
+        case AtomicOp.Ref => ???
+        case AtomicOp.Region => ???
+        case AtomicOp.Spawn => ???
+        case AtomicOp.Tuple => ???
+        case AtomicOp.Unbox => ???
       }
 
-    case Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
+    case Expr.ApplyClo(exp, exps, _, tpe, _, loc) =>
       val lamType1 = visitExpr(exp)
       val lamType2 = MonoType.Arrow(exps.map(visitExpr), tpe)
       checkEq(lamType1, lamType2, loc)
       tpe
 
-    case Expr.ApplyDef(sym, exps, ct, tpe, _, loc) =>
+    case Expr.ApplyDef(sym, exps, _, tpe, _, loc) =>
       val defn = root.defs(sym)
-      val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
+      val declared = defn.arrowType
       val actual = MonoType.Arrow(exps.map(visitExpr), tpe)
       check(expected = declared)(actual = actual, loc)
       tpe
 
     case Expr.ApplySelfTail(sym, formals, actuals, tpe, _, loc) =>
       val defn = root.defs(sym)
-      val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
+      val declared = defn.arrowType
       val actual = MonoType.Arrow(actuals.map(visitExpr), tpe)
       check(expected = declared)(actual = actual, loc)
       tpe
@@ -268,11 +301,13 @@ object Verifier {
       checkEq(tpe, elseType, loc)
 
     case Expr.Branch(exp, branches, tpe, _, loc) =>
+      val t = visitExpr(exp)
+      checkEq(tpe, t, loc)
       val lenv1 = branches.foldLeft(lenv) {
         case (acc, (label, _)) => acc + (label -> tpe)
       }
       branches.foreach {
-        case (label, body) =>
+        case (_, body) =>
           checkEq(tpe, visitExpr(body)(root, env, lenv1), loc)
       }
       tpe
@@ -299,22 +334,36 @@ object Verifier {
       checkEq(secondType, tpe, loc)
 
     case Expr.Scope(sym, exp, tpe, _, loc) =>
-      checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Region), lenv), loc)
+      val t = visitExpr(exp)(root, env + (sym -> MonoType.Region), lenv)
+      checkEq(tpe, t, loc)
 
     case Expr.TryCatch(exp, rules, tpe, _, loc) =>
-      for (CatchRule(sym, clazz, exp) <- rules) {
-        checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Native(clazz)), lenv), loc)
+      for (CatchRule(sym, clazz, ruleExp) <- rules) {
+        val t = visitExpr(ruleExp)(root, env + (sym -> MonoType.Native(clazz)), lenv)
+        checkEq(tpe, t, loc)
       }
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)
 
-    case Expr.TryWith(_, _, _, tpe, _, _) =>
-      // TODO: VERIFIER: Add support for TryWith.
-      tpe
+    case Expr.TryWith(exp, _, rules, tpe, _, loc) =>
+      val t = visitExpr(exp)
+      for (HandlerRule(_, fparams, exp) <- rules) {
+        val ruleT = visitExpr(exp)(root, env ++ fparams.map(fp => fp.sym -> fp.tpe), lenv)
+        checkEq(ruleT, tpe, loc)
+      }
+      checkEq(tpe, t, loc)
 
-    case Expr.Do(_, _, tpe, _, _) =>
-      // TODO: VERIFIER: Add support for Do.
-      tpe
+    case Expr.Do(op, exps, tpe, _, loc) =>
+      val effectOp = root.effects(op.sym.eff).ops.find(_.sym == op.sym) match {
+        case Some(v) => v
+        case None => throw InternalCompilerException(s"Unknown effect operation '${op.sym}'", loc)
+      }
+      // these doesnt have the continuation
+      val expectedArgs = effectOp.fparams.map(_.tpe)
+      val ts = exps.map(visitExpr)
+      // todo compare these
+
+      check(expected = effectOp.tpe)(actual = tpe, loc)
 
     case Expr.NewObject(name, clazz, tpe, methods, _, loc) =>
       // TODO: VERIFIER: Add support for NewObject.
