@@ -617,7 +617,7 @@ class Flix {
     cachedReducerAst = Reducer.run(cachedEraserAst)
     cachedVarOffsetsAst = VarOffsets.run(cachedReducerAst)
     Verifier.run(cachedVarOffsetsAst)
-    val result = JvmBackend.run(cachedVarOffsetsAst)
+    val result = JvmBackend.run(cachedEffectBinderAst)
 
     // Write formatted asts to disk based on options.
     AstPrinter.printAsts()

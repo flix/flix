@@ -16,9 +16,9 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Constant
+import ca.uwaterloo.flix.language.ast.Ast.{CallType, Constant}
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, ReducedAst, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Name, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -36,38 +36,39 @@ object Verifier {
     val env = (decl.cparams ++ decl.fparams).foldLeft(Map.empty[Symbol.VarSym, MonoType]) {
       case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
     }
-    try {
-      visitExpr(decl.expr)(root, env, Map.empty)
-    } catch {
-      case UnexpectedType(expected, found, loc) =>
-        println(s"Unexpected type near ${loc.format}")
-        println()
-        println(s"  expected = $expected")
-        println(s"  found    = $found")
-        println()
-
-      case MismatchedTypes(tpe1, tpe2, loc) =>
-        println(s"Mismatched types near ${loc.format}")
-        println()
-        println(s"  tpe1 = $tpe1")
-        println(s"  tpe2 = $tpe2")
-        println()
-
-      case MismatchedShape(tpe, expectation, loc) =>
-        println(s"Mismatched shape near ${loc.format}")
-        println()
-        println(s"  tpe    = $tpe")
-        println(s"  expected $expectation")
-        println()
-    }
+//    try {
+      val t = visitExpr(decl.expr)(root, env, Map.empty, decl.tpe)
+      check(expected = decl.tpe)(actual = t, decl.loc)
+//    } catch {
+//      case UnexpectedType(expected, found, loc) =>
+//        println(s"Unexpected type near ${loc.format}")
+//        println()
+//        println(s"  expected = $expected")
+//        println(s"  found    = $found")
+//        println()
+//
+//      case MismatchedTypes(tpe1, tpe2, loc) =>
+//        println(s"Mismatched types near ${loc.format}")
+//        println()
+//        println(s"  tpe1 = $tpe1")
+//        println(s"  tpe2 = $tpe2")
+//        println()
+//
+//      case MismatchedShape(tpe, expectation, loc) =>
+//        println(s"Mismatched shape near ${loc.format}")
+//        println()
+//        println(s"  tpe    = $tpe")
+//        println(s"  expected $expectation")
+//        println()
+//    }
   }
 
 
-  private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
+  private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType], bodyTpe: MonoType): MonoType = expr match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
       case Constant.Unit => check(expected = MonoType.Unit)(actual = tpe, loc)
-      case Constant.Null => tpe
+      case Constant.Null => assertNonPrimitive(tpe, loc)
       case Constant.Bool(_) => check(expected = MonoType.Bool)(actual = tpe, loc)
       case Constant.Char(_) => check(expected = MonoType.Char)(actual = tpe, loc)
       case Constant.Float32(_) => check(expected = MonoType.Float32)(actual = tpe, loc)
@@ -248,10 +249,11 @@ object Verifier {
         case AtomicOp.ArrayLength =>
           val List(t1) = ts
           check(expected = MonoType.Int32)(actual = tpe, loc)
-          checkWith(t1, { case arr: MonoType.Array => arr }, "Array", loc)
+          val MonoType.Array(elmType) = assertArray(t1, loc)
+          MonoType.Array(elmType)
 
         case AtomicOp.ArrayLit =>
-          val elmType = checkWith(tpe, { case MonoType.Array(inner) => inner }, "Array", loc)
+          val MonoType.Array(elmType) = assertArray(tpe, loc)
           for (t <- ts) {
             checkEq(t, elmType, loc)
           }
@@ -259,70 +261,169 @@ object Verifier {
 
         case AtomicOp.ArrayLoad =>
           val List(t1, t2) = ts
-          val elmType = checkWith(t1, { case MonoType.Array(inner) => inner }, "Array", loc)
+          val MonoType.Array(elmType) = assertArray(t1, loc)
           check(expected = MonoType.Int32)(actual = t2, loc)
           checkEq(elmType, tpe, loc)
 
         case AtomicOp.ArrayNew =>
           val List(t1, t2) = ts
-          val elmType = checkWith(tpe, { case MonoType.Array(inner) => inner }, "Array", loc)
+          val MonoType.Array(elmType) = assertArray(tpe, loc)
           checkEq(elmType, t1, loc)
           check(expected = MonoType.Int32)(actual = t2, loc)
           tpe
 
         case AtomicOp.ArrayStore =>
           val List(t1, t2, t3) = ts
-          val elmType = checkWith(t1, { case MonoType.Array(inner) => inner }, "Array", loc)
+          val MonoType.Array(elmType) = assertArray(t1, loc)
           check(expected = MonoType.Int32)(actual = t2, loc)
           checkEq(t3, elmType, loc)
           check(expected = MonoType.Unit)(actual = tpe, loc)
 
-        case AtomicOp.Assign => tpe
-        case AtomicOp.Box => tpe
-        case AtomicOp.Cast => tpe
-        case AtomicOp.Closure(sym) => tpe
-        case AtomicOp.Deref => tpe
-        case AtomicOp.Force => tpe
-        case AtomicOp.GetField(field) => tpe
-        case AtomicOp.GetStaticField(_) => tpe
-        case AtomicOp.HoleError(sym) => tpe
-        case AtomicOp.Index(idx) => tpe
-        case AtomicOp.InstanceOf(clazz) => tpe
-        case AtomicOp.InvokeConstructor(constructor) => tpe
-        case AtomicOp.InvokeMethod(method) => tpe
-        case AtomicOp.InvokeStaticMethod(method) => tpe
-        case AtomicOp.Lazy => tpe
-        case AtomicOp.MatchError => tpe
-        case AtomicOp.PutField(field) => tpe
-        case AtomicOp.PutStaticField(field) => tpe
-        case AtomicOp.RecordEmpty => tpe
-        case AtomicOp.RecordExtend(label) => tpe
-        case AtomicOp.RecordRestrict(label) => tpe
-        case AtomicOp.RecordSelect(label) => tpe
-        case AtomicOp.Ref => tpe
-        case AtomicOp.Region => tpe
-        case AtomicOp.Spawn => tpe
-        case AtomicOp.Tuple => tpe
-        case AtomicOp.Unbox => tpe
+        case AtomicOp.Assign =>
+          val List(t1, t2) = ts
+          val MonoType.Ref(elmType) = assertRef(t1, loc)
+          checkEq(elmType, t2, loc)
+          check(expected = MonoType.Unit)(actual = tpe, loc)
+
+        case AtomicOp.Box =>
+          val List(t) = ts
+          check(expected = MonoType.Object)(actual = tpe, loc)
+
+        case AtomicOp.Cast =>
+          val List(t) = ts
+          tpe
+
+        case AtomicOp.Closure(sym) =>
+          // todo
+          tpe
+
+        case AtomicOp.Deref =>
+          val List(t) = ts
+          val MonoType.Ref(elmType) = assertRef(t, loc)
+          checkEq(elmType, t, loc)
+
+        case AtomicOp.Force =>
+          val List(t) = ts
+          val MonoType.Lazy(elmType) = assertLazy(t, loc)
+          checkEq(elmType, tpe, loc)
+
+        case AtomicOp.GetField(field) =>
+          // todo
+          tpe
+
+        case AtomicOp.GetStaticField(field) =>
+          // todo
+          tpe
+
+        case AtomicOp.HoleError(sym) =>
+          tpe
+
+        case AtomicOp.Index(idx) =>
+          val List(t) = ts
+          val MonoType.Tuple(elms) = assertTuple(t, loc)
+          checkEq(tpe, elms(idx), loc)
+
+        case AtomicOp.InstanceOf(clazz) =>
+          // todo
+          tpe
+
+        case AtomicOp.InvokeConstructor(constructor) =>
+          // todo
+          tpe
+
+        case AtomicOp.InvokeMethod(method) =>
+          // todo
+          tpe
+
+        case AtomicOp.InvokeStaticMethod(method) =>
+          // todo
+          tpe
+
+        case AtomicOp.Lazy =>
+          val List(t) = ts
+          val MonoType.Lazy(elmType) = assertLazy(tpe, loc)
+          checkEq(t, elmType, loc)
+          tpe
+
+        case AtomicOp.MatchError =>
+          val List() = ts
+          tpe
+
+        case AtomicOp.PutField(field) =>
+          val List(t1, t2) = ts
+          //todo
+          tpe
+
+        case AtomicOp.PutStaticField(field) =>
+          val List(t) = ts
+          //todo
+          tpe
+
+        case AtomicOp.RecordEmpty =>
+          val List() = ts
+          check(expected = MonoType.RecordEmpty)(actual = tpe, loc)
+
+        case AtomicOp.RecordExtend(label) =>
+          val List(t1, t2) = ts
+          assertRecord(t2, loc)
+          val (labelType, restricted) = assertRecordLabel(tpe, label, loc)
+          checkEq(t2, restricted, loc)
+          checkEq(labelType, t1, loc)
+          tpe
+
+        case AtomicOp.RecordRestrict(label) =>
+          val List(t) = ts
+          val (_, restricted) = assertRecordLabel(t, label, loc)
+          checkEq(tpe, restricted, loc)
+
+        case AtomicOp.RecordSelect(label) =>
+          val List(t) = ts
+          val (labelType, _) = assertRecordLabel(t, label, loc)
+          checkEq(tpe, labelType, loc)
+
+        case AtomicOp.Ref =>
+          val List(t) = ts
+          val MonoType.Ref(elmType) = assertRef(tpe, loc)
+          checkEq(elmType, t, loc)
+          tpe
+
+        case AtomicOp.Region =>
+          check(expected = MonoType.Region)(actual = tpe, loc)
+
+        case AtomicOp.Spawn =>
+          // todo
+          tpe
+
+        case AtomicOp.Tuple =>
+          assertTuple(tpe, loc)
+          checkEq(MonoType.Tuple(ts), tpe, loc)
+
+        case AtomicOp.Unbox =>
+          val List(t) = ts
+          check(expected = MonoType.Object)(actual = t, loc)
+          tpe
       }
 
-    case Expr.ApplyClo(exp, exps, _, tpe, _, loc) =>
+    case Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
       val lamType1 = visitExpr(exp)
-      val lamType2 = MonoType.Arrow(exps.map(visitExpr), tpe)
+      val returnType = if (ct == CallType.TailCall) bodyTpe else tpe
+      val lamType2 = MonoType.Arrow(exps.map(visitExpr), returnType)
       checkEq(lamType1, lamType2, loc)
       tpe
 
-    case Expr.ApplyDef(sym, exps, _, tpe, _, loc) =>
+    case Expr.ApplyDef(sym, exps, ct, tpe, _, loc) =>
       val defn = root.defs(sym)
       val declared = defn.arrowType
-      val actual = MonoType.Arrow(exps.map(visitExpr), tpe)
+      val returnType = if (ct == CallType.TailCall) bodyTpe else tpe
+      val actual = MonoType.Arrow(exps.map(visitExpr), returnType)
       check(expected = declared)(actual = actual, loc)
       tpe
 
     case Expr.ApplySelfTail(sym, actuals, tpe, _, loc) =>
       val defn = root.defs(sym)
       val declared = defn.arrowType
-      val actual = MonoType.Arrow(actuals.map(visitExpr), tpe)
+      // tail expression ignore tpe and use bodyTpe
+      val actual = MonoType.Arrow(actuals.map(visitExpr), bodyTpe)
       check(expected = declared)(actual = actual, loc)
       tpe
 
@@ -338,10 +439,10 @@ object Verifier {
       val lenv1 = branches.foldLeft(lenv) {
         case (acc, (label, _)) => acc + (label -> tpe)
       }
-      val t = visitExpr(exp)(root, env, lenv1)
+      val t = visitExpr(exp)(root, env, lenv1, bodyTpe)
       branches.foreach {
         case (_, body) =>
-          checkEq(tpe, visitExpr(body)(root, env, lenv1), loc)
+          checkEq(tpe, visitExpr(body)(root, env, lenv1, bodyTpe), loc)
       }
       checkEq(tpe, t, loc)
 
@@ -352,13 +453,13 @@ object Verifier {
 
     case Expr.Let(sym, exp1, exp2, tpe, _, loc) =>
       val letBoundType = visitExpr(exp1)
-      val bodyType = visitExpr(exp2)(root, env + (sym -> letBoundType), lenv)
+      val bodyType = visitExpr(exp2)(root, env + (sym -> letBoundType), lenv, bodyTpe)
       checkEq(bodyType, tpe, loc)
 
     case Expr.LetRec(varSym, _, defSym, exp1, exp2, tpe, _, loc) =>
       val env1 = env + (varSym -> exp1.tpe)
-      val letBoundType = visitExpr(exp1)(root, env1, lenv)
-      val bodyType = visitExpr(exp2)(root, env1, lenv)
+      val letBoundType = visitExpr(exp1)(root, env1, lenv, bodyTpe)
+      val bodyType = visitExpr(exp2)(root, env1, lenv, bodyTpe)
       checkEq(bodyType, tpe, loc)
 
     case Expr.Stmt(exp1, exp2, tpe, _, loc) =>
@@ -367,12 +468,12 @@ object Verifier {
       checkEq(secondType, tpe, loc)
 
     case Expr.Scope(sym, exp, tpe, _, loc) =>
-      val t = visitExpr(exp)(root, env + (sym -> MonoType.Region), lenv)
+      val t = visitExpr(exp)(root, env + (sym -> MonoType.Region), lenv, bodyTpe)
       checkEq(tpe, t, loc)
 
     case Expr.TryCatch(exp, rules, tpe, _, loc) =>
       for (CatchRule(sym, clazz, ruleExp) <- rules) {
-        val t = visitExpr(ruleExp)(root, env + (sym -> MonoType.Native(clazz)), lenv)
+        val t = visitExpr(ruleExp)(root, env + (sym -> MonoType.Native(clazz)), lenv, bodyTpe)
         checkEq(tpe, t, loc)
       }
       val t = visitExpr(exp)
@@ -381,7 +482,7 @@ object Verifier {
     case Expr.TryWith(exp, _, rules, tpe, _, loc) =>
       val t = visitExpr(exp)
       for (HandlerRule(_, fparams, exp) <- rules) {
-        val ruleT = visitExpr(exp)(root, env ++ fparams.map(fp => fp.sym -> fp.tpe), lenv)
+        val ruleT = visitExpr(exp)(root, env ++ fparams.map(fp => fp.sym -> fp.tpe), lenv, bodyTpe)
         checkEq(ruleT, tpe, loc)
       }
       checkEq(tpe, t, loc)
@@ -391,15 +492,14 @@ object Verifier {
         case Some(v) => v
         case None => throw InternalCompilerException(s"Unknown effect operation '${op.sym}'", loc)
       }
-      // these doesnt have the continuation
-      val expectedArgs = effectOp.fparams.map(_.tpe)
-      val ts = exps.map(visitExpr)
-      // todo compare these
-
       check(expected = effectOp.tpe)(actual = tpe, loc)
+      val declaredType = MonoType.Arrow(effectOp.fparams.map(_.tpe), effectOp.tpe)
+      val foundType = MonoType.Arrow(exps.map(visitExpr), tpe)
+      check(expected = declaredType)(actual = foundType, loc)
+      tpe
 
     case Expr.NewObject(name, clazz, tpe, methods, _, loc) =>
-      // TODO: VERIFIER: Add support for NewObject.
+      // todo
       tpe
 
   }
@@ -424,26 +524,91 @@ object Verifier {
       throw MismatchedTypes(tpe1, tpe2, loc)
   }
 
-  private def checkWith(tpe: MonoType, check: PartialFunction[MonoType, MonoType], expectation: => String, loc: SourceLocation): MonoType = {
-    check.lift(tpe) match {
-      case Some(value) => value
-      case None => throw MismatchedShape(tpe, expectation, loc)
-    }
+  private def assertArray(tpe: MonoType, loc: SourceLocation): MonoType = tpe match {
+    case MonoType.Array(_) => tpe
+    case _ => throw MismatchedShape(tpe, "Array", loc)
   }
+
+  private def assertRef(tpe: MonoType, loc: SourceLocation): MonoType = tpe match {
+    case MonoType.Ref(_) => tpe
+    case _ => throw MismatchedShape(tpe, "Ref", loc)
+  }
+
+  private def assertLazy(tpe: MonoType, loc: SourceLocation): MonoType = tpe match {
+    case MonoType.Lazy(_) => tpe
+    case _ => throw MismatchedShape(tpe, "Lazy", loc)
+  }
+
+  private def assertTuple(tpe: MonoType, loc: SourceLocation): MonoType = tpe match {
+    case MonoType.Tuple(_) => tpe
+    case _ => throw MismatchedShape(tpe, "Tuple", loc)
+  }
+
+  private def assertRecord(tpe: MonoType, loc: SourceLocation): MonoType = tpe match {
+    case MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) => tpe
+    case _ => throw MismatchedShape(tpe, "RecordExtend or RecordEmpty", loc)
+  }
+
+  private def assertNonPrimitive(tpe: MonoType, loc: SourceLocation): MonoType = tpe match {
+    case MonoType.Bool | MonoType.Char | MonoType.Float32 | MonoType.Float64 |
+         MonoType.Int8 | MonoType.Int16 | MonoType.Int32 | MonoType.Int64 =>
+      throw MismatchedShape(tpe, "A non-primitive type", loc)
+    case _ => tpe
+  }
+
+
+  /**
+    * Returns (label type, restricted record). where the remaining fields are in the original order.
+    *
+    * e.g. `({x = Bool, y = Char, z = String}, y, _)` returns `(Char, {x = Bool, z = String})`.
+    */
+  private def assertRecordLabel(tpe: MonoType, label: Name.Label, loc: SourceLocation): (MonoType, MonoType) = {
+    val labelName = label.toString
+    def inner(tpe0: MonoType): (MonoType, MonoType) = tpe0 match {
+      case MonoType.RecordExtend(otherLabel, value, rest) if labelName == otherLabel => (value, rest)
+      case MonoType.RecordExtend(otherLabel, value, rest) =>
+        val (labelType, restricted) = inner(rest)
+        (labelType, MonoType.RecordExtend(otherLabel, value, restricted))
+      case _ => throw MismatchedShape(tpe, s"A record that contains $labelName", loc)
+    }
+    inner(tpe)
+  }
+
 
   /**
     * An exception raised because the `expected` type does not match the `found` type.
     */
-  private case class UnexpectedType(expected: MonoType, found: MonoType, loc: SourceLocation) extends RuntimeException
+  private case class UnexpectedType(expected: MonoType, found: MonoType, loc: SourceLocation) extends RuntimeException(
+    s"""Unexpected type near ${loc.format}
+      |
+      |  expected = $expected
+      |  found    = $found
+      |
+      |""".stripMargin
+  )
 
   /**
     * An exception raised because `tpe1` is not equal to `tpe2`.
     */
-  private case class MismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation) extends RuntimeException
+  private case class MismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation) extends RuntimeException(
+    s"""Mismatched types near ${loc.format}
+       |
+       |  tpe1 = $tpe1
+       |  tpe2 = $tpe2
+       |
+       |""".stripMargin
+  )
 
   /**
     * An exception raised because `tpe` is not of a specific shape.
     */
-  private case class MismatchedShape(tpe: MonoType, expectation: String, loc: SourceLocation) extends RuntimeException
+  private case class MismatchedShape(tpe: MonoType, expectation: String, loc: SourceLocation) extends RuntimeException(
+    s"""Mismatched shape near ${loc.format}
+       |
+       |  tpe    = $tpe
+       |  expected $expectation
+       |
+       |""".stripMargin
+  )
 
 }
