@@ -723,18 +723,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       }
       val availableVersions = releases.map(r => r.version)
 
-      val major = availableVersions.filter(v =>
-        v.major > currentVersion.major
-      ).maxOption
-      val minor = availableVersions.filter(v =>
-        v.major == currentVersion.major
-          && v.minor > currentVersion.minor
-      ).maxOption
-      val patch = availableVersions.filter(v =>
-        v.major == currentVersion.major
-          && v.minor == currentVersion.minor
-          && (v.patch zip currentVersion.patch).exists { case (vp, cvp) => vp > cvp }
-      ).maxOption
+      val major = currentVersion.majorUpdate(availableVersions)
+      val minor = currentVersion.minorUpdate(availableVersions)
+      val patch = currentVersion.patchUpdate(availableVersions)
 
       if (major.isEmpty && minor.isEmpty && patch.isEmpty)
         None

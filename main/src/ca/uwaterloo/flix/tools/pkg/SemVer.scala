@@ -43,5 +43,55 @@ case class SemVer(major: Int, minor: Int, patch: Option[Int], buildDot: Option[I
 
   }
 
+  /**
+    * Of the given `availableVersions`, get the newest version which is a major update, if one exists.
+    *
+    * Example:
+    *   - this = 1.2.0
+    *   - available versions = 1.2.0, 1.2.1, 1.3.0, 2.0.0
+    *   - -> 2.0.0
+    */
+  def majorUpdate(availableVersions: List[SemVer]): Option[SemVer] =
+    availableVersions.filter(v =>
+      v.major > major
+    ).maxOption
 
+  /**
+    * Of the given `availableVersions`, get the newest version which is a minor update, if one exists.
+    *
+    * Example:
+    *   - this = 1.2.0
+    *   - available versions = 1.2.0, 1.2.1, 1.3.0, 2.0.0
+    *   - -> 1.3.0
+    */
+  def minorUpdate(availableVersions: List[SemVer]): Option[SemVer] =
+    availableVersions.filter(v =>
+      v.major == major
+        && v.minor > minor
+    ).maxOption
+
+  /**
+    * Of the given `availableVersions`, get the newest version which is a patch update, if one exists.
+    *
+    * Example 1:
+    *   - this = 1.2.0
+    *   - available versions = 1.2.0, 1.2.1, 1.3.0, 2.0.0
+    *   - -> 1.2.1
+    *
+    * Example 2:
+    *   - this = 1.2
+    *   - available versions = 1.2, 1.2.1
+    *   - -> None
+    *
+    * Example 3:
+    *   - this = 1.2.0
+    *   - available versions = 1.2.0, 1.2
+    *   - -> None
+    */
+  def patchUpdate(availableVersions: List[SemVer]): Option[SemVer] =
+    availableVersions.filter(v =>
+      v.major == major
+        && v.minor == minor
+        && (v.patch zip patch).exists { case (vp, cvp) => vp > cvp }
+    ).maxOption
 }
