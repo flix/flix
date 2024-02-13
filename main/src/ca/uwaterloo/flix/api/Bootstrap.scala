@@ -730,42 +730,19 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     if (rows.isEmpty) {
       out.println(formatter.green(
-        s"""
-           |All dependencies are up to date
-           |""".stripMargin
+        """
+          |All dependencies are up to date
+          |""".stripMargin
       ))
-      return Validation.success(())
+    } else {
+      out.println("")
+      out.println(formatter.table(
+        List("package", "current", "major", "minor", "patch"),
+        List(formatter.blue, formatter.cyan, formatter.yellow, formatter.yellow, formatter.yellow),
+        rows
+      ))
+      out.println("")
     }
-
-    val List(packageCol, currentCol, majorCol, minorCol, patchCol) = rows.transpose
-
-    /**
-      * Takes a list of strings and right-pads them with spaces to all take up the same space.
-      */
-    def padToLongest(l: List[String]): List[String] = {
-      val longestLength = l.map(s => s.length).max
-      l.map(s => s.padTo(longestLength, ' '))
-    }
-
-    val packageTitle :: packageColPad = padToLongest("package" :: packageCol)
-    val currentTitle :: currentColPad = padToLongest("current" :: currentCol)
-    val majorTitle :: majorColPad = padToLongest("major" :: majorCol)
-    val minorTitle :: minorColPad = padToLongest("minor" :: minorCol)
-    val patchTitle :: patchColPad = padToLongest("patch" :: patchCol)
-
-    val packageColFormat = packageColPad.map(formatter.blue)
-    val currentColFormat = currentColPad.map(formatter.cyan)
-    val majorColFormat = majorColPad.map(formatter.yellow)
-    val minorColFormat = minorColPad.map(formatter.yellow)
-    val patchColFormat = patchColPad.map(formatter.yellow)
-
-    val colSeparator = "    "
-    out.println("")
-    out.println(List(packageTitle, currentTitle, majorTitle, minorTitle, patchTitle).mkString(colSeparator))
-    for (row <- List(packageColFormat, currentColFormat, majorColFormat, minorColFormat, patchColFormat).transpose) {
-      out.println(row.mkString(colSeparator))
-    }
-    out.println("")
 
     Validation.success(())
   }
