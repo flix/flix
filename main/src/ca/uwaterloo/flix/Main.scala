@@ -297,8 +297,12 @@ object Main {
               flix.setOptions(options.copy(progress = false))
               bootstrap.outdated(flix)(System.err)
           }.toHardResult match {
-            case Result.Ok(_) =>
+            case Result.Ok(false) =>
+              // Up to date
               System.exit(0)
+            case Result.Ok(true) =>
+              // Contains outdated dependencies
+              System.exit(1)
             case Result.Err(errors) =>
               errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
