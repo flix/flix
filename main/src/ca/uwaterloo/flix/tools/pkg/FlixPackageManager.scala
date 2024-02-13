@@ -48,25 +48,17 @@ object FlixPackageManager {
   /**
     * Finds the most relevant available updates for the given dependency.
     */
-  def findAvailableUpdates(dep: FlixDependency, apiKey: Option[String]): Result[AvailableUpdates, PackageError] = {
-    val githubProject = GitHub.parseProject(s"${dep.username}/${dep.projectName}") match {
-      case Ok(l) => l
-      case Err(e) => return Err(e)
-    }
+  def findAvailableUpdates(dep: FlixDependency, apiKey: Option[String]): Result[AvailableUpdates, PackageError] =
+    for (
+      githubProject <- GitHub.parseProject(s"${dep.username}/${dep.projectName}");
+      releases <- GitHub.getReleases(githubProject, apiKey);
+      availableVersions = releases.map(r => r.version);
 
-    val releases = GitHub.getReleases(githubProject, apiKey) match {
-      case Ok(l) => l
-      case Err(e) => return Err(e)
-    }
-    val availableVersions = releases.map(r => r.version)
-
-    val ver = dep.version
-    val major = ver.majorUpdate(availableVersions)
-    val minor = ver.minorUpdate(availableVersions)
-    val patch = ver.patchUpdate(availableVersions)
-
-    Ok(AvailableUpdates(major, minor, patch))
-  }
+      ver = dep.version;
+      major = ver.majorUpdate(availableVersions);
+      minor = ver.minorUpdate(availableVersions);
+      patch = ver.patchUpdate(availableVersions)
+    ) yield AvailableUpdates(major, minor, patch)
 
   /**
     * Installs all the Flix dependencies for a list of Manifests at the /lib folder
