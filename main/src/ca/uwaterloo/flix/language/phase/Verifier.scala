@@ -52,6 +52,13 @@ object Verifier {
         println(s"  tpe1 = $tpe1")
         println(s"  tpe2 = $tpe2")
         println()
+
+      case MismatchedShape(tpe, expectation, loc) =>
+        println(s"Mismatched shape near ${loc.format}")
+        println()
+        println(s"  tpe    = $tpe")
+        println(s"  expected $expectation")
+        println()
     }
   }
 
@@ -238,38 +245,65 @@ object Verifier {
           // We do not know the case terms so tpe cannot be verified.
           tpe
 
-        case AtomicOp.ArrayLength => ???
-        case AtomicOp.ArrayLit => ???
-        case AtomicOp.ArrayLoad => ???
-        case AtomicOp.ArrayNew => ???
-        case AtomicOp.ArrayStore => ???
-        case AtomicOp.Assign => ???
-        case AtomicOp.Box => ???
-        case AtomicOp.Cast => ???
-        case AtomicOp.Closure(sym) => ???
-        case AtomicOp.Deref => ???
-        case AtomicOp.Force => ???
-        case AtomicOp.GetField(field) => ???
-        case AtomicOp.GetStaticField(_) => ???
-        case AtomicOp.HoleError(sym) => ???
-        case AtomicOp.Index(idx) => ???
-        case AtomicOp.InstanceOf(clazz) => ???
-        case AtomicOp.InvokeConstructor(constructor) => ???
-        case AtomicOp.InvokeMethod(method) => ???
-        case AtomicOp.InvokeStaticMethod(method) => ???
-        case AtomicOp.Lazy => ???
-        case AtomicOp.MatchError => ???
-        case AtomicOp.PutField(field) => ???
-        case AtomicOp.PutStaticField(field) => ???
-        case AtomicOp.RecordEmpty => ???
-        case AtomicOp.RecordExtend(label) => ???
-        case AtomicOp.RecordRestrict(label) => ???
-        case AtomicOp.RecordSelect(label) => ???
-        case AtomicOp.Ref => ???
-        case AtomicOp.Region => ???
-        case AtomicOp.Spawn => ???
-        case AtomicOp.Tuple => ???
-        case AtomicOp.Unbox => ???
+        case AtomicOp.ArrayLength =>
+          val List(t1) = ts
+          check(expected = MonoType.Int32)(actual = tpe, loc)
+          checkWith(t1, { case arr: MonoType.Array => arr }, "Array", loc)
+
+        case AtomicOp.ArrayLit =>
+          val elmType = checkWith(tpe, { case MonoType.Array(inner) => inner }, "Array", loc)
+          for (t <- ts) {
+            checkEq(t, elmType, loc)
+          }
+          tpe
+
+        case AtomicOp.ArrayLoad =>
+          val List(t1, t2) = ts
+          val elmType = checkWith(t1, { case MonoType.Array(inner) => inner }, "Array", loc)
+          check(expected = MonoType.Int32)(actual = t2, loc)
+          checkEq(elmType, tpe, loc)
+
+        case AtomicOp.ArrayNew =>
+          val List(t1, t2) = ts
+          val elmType = checkWith(tpe, { case MonoType.Array(inner) => inner }, "Array", loc)
+          checkEq(elmType, t1, loc)
+          check(expected = MonoType.Int32)(actual = t2, loc)
+          tpe
+
+        case AtomicOp.ArrayStore =>
+          val List(t1, t2, t3) = ts
+          val elmType = checkWith(t1, { case MonoType.Array(inner) => inner }, "Array", loc)
+          check(expected = MonoType.Int32)(actual = t2, loc)
+          checkEq(t3, elmType, loc)
+          check(expected = MonoType.Unit)(actual = tpe, loc)
+
+        case AtomicOp.Assign => tpe
+        case AtomicOp.Box => tpe
+        case AtomicOp.Cast => tpe
+        case AtomicOp.Closure(sym) => tpe
+        case AtomicOp.Deref => tpe
+        case AtomicOp.Force => tpe
+        case AtomicOp.GetField(field) => tpe
+        case AtomicOp.GetStaticField(_) => tpe
+        case AtomicOp.HoleError(sym) => tpe
+        case AtomicOp.Index(idx) => tpe
+        case AtomicOp.InstanceOf(clazz) => tpe
+        case AtomicOp.InvokeConstructor(constructor) => tpe
+        case AtomicOp.InvokeMethod(method) => tpe
+        case AtomicOp.InvokeStaticMethod(method) => tpe
+        case AtomicOp.Lazy => tpe
+        case AtomicOp.MatchError => tpe
+        case AtomicOp.PutField(field) => tpe
+        case AtomicOp.PutStaticField(field) => tpe
+        case AtomicOp.RecordEmpty => tpe
+        case AtomicOp.RecordExtend(label) => tpe
+        case AtomicOp.RecordRestrict(label) => tpe
+        case AtomicOp.RecordSelect(label) => tpe
+        case AtomicOp.Ref => tpe
+        case AtomicOp.Region => tpe
+        case AtomicOp.Spawn => tpe
+        case AtomicOp.Tuple => tpe
+        case AtomicOp.Unbox => tpe
       }
 
     case Expr.ApplyClo(exp, exps, _, tpe, _, loc) =>
@@ -301,16 +335,15 @@ object Verifier {
       checkEq(tpe, elseType, loc)
 
     case Expr.Branch(exp, branches, tpe, _, loc) =>
-      val t = visitExpr(exp)
-      checkEq(tpe, t, loc)
       val lenv1 = branches.foldLeft(lenv) {
         case (acc, (label, _)) => acc + (label -> tpe)
       }
+      val t = visitExpr(exp)(root, env, lenv1)
       branches.foreach {
         case (_, body) =>
           checkEq(tpe, visitExpr(body)(root, env, lenv1), loc)
       }
-      tpe
+      checkEq(tpe, t, loc)
 
     case Expr.JumpTo(sym, tpe1, _, loc) => lenv.get(sym) match {
       case None => throw InternalCompilerException(s"Unknown label sym: '$sym'.", loc)
@@ -391,6 +424,13 @@ object Verifier {
       throw MismatchedTypes(tpe1, tpe2, loc)
   }
 
+  private def checkWith(tpe: MonoType, check: PartialFunction[MonoType, MonoType], expectation: => String, loc: SourceLocation): MonoType = {
+    check.lift(tpe) match {
+      case Some(value) => value
+      case None => throw MismatchedShape(tpe, expectation, loc)
+    }
+  }
+
   /**
     * An exception raised because the `expected` type does not match the `found` type.
     */
@@ -400,5 +440,10 @@ object Verifier {
     * An exception raised because `tpe1` is not equal to `tpe2`.
     */
   private case class MismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation) extends RuntimeException
+
+  /**
+    * An exception raised because `tpe` is not of a specific shape.
+    */
+  private case class MismatchedShape(tpe: MonoType, expectation: String, loc: SourceLocation) extends RuntimeException
 
 }
