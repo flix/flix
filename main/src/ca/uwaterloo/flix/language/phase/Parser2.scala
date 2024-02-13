@@ -80,7 +80,7 @@ object Parser2 {
     flix.phase("Parser2") {
       // The file that is the current focus of development
       val DEBUG_FOCUS = flix.options.lib match {
-        case LibLevel.Nix => "foo.flix"
+        case LibLevel.Nix => "main/foo.flix"
         case LibLevel.Min => ""
         case LibLevel.All => ""
       }
@@ -159,7 +159,7 @@ object Parser2 {
         "JoinLattice.flix",
         "Identity.flix",
         "FromString.flix",
-        "foo.flix",
+        "main/foo.flix",
         "Group.flix",
         "StringBuilder.flix",
         "Closeable.flix",
