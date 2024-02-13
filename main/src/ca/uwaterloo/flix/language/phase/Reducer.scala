@@ -16,7 +16,8 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.MonoType
+import ca.uwaterloo.flix.language.ast.Ast.CallType
+import ca.uwaterloo.flix.language.ast.{MonoType, Purity}
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.util.ParOps
 
@@ -49,11 +50,12 @@ object Reducer {
   }
 
   private def visitDef(d: Def)(implicit ctx: SharedContext): Def = d match {
-    case Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, originalTpe, purity, loc) =>
+    case Def(ann, mod, sym, cparams, fparams, lparams, pcPoints0, exp, tpe, originalTpe, purity, loc) =>
       implicit val lctx: LocalContext = LocalContext.mk()
       assert(lparams.isEmpty, s"Unexpected def local params before Reducer: $lparams")
       val e = visitExpr(exp)
       val ls = lctx.lparams.toList
+      val pcPoints = lctx.pcPoints
       Def(ann, mod, sym, cparams, fparams, ls, pcPoints, e, tpe, originalTpe, purity, loc)
   }
 
@@ -69,17 +71,19 @@ object Reducer {
       Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
+      if (ct == CallType.NonTailCall && Purity.isControlImpure(purity)) lctx.pcPoints += 1
       val e = visitExpr(exp)
       val es = exps.map(visitExpr)
       Expr.ApplyClo(e, es, ct, tpe, purity, loc)
 
     case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+      if (ct == CallType.NonTailCall && Purity.isControlImpure(purity)) lctx.pcPoints += 1
       val es = exps.map(visitExpr)
       Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
-    case Expr.ApplySelfTail(sym, formals, exps, tpe, purity, loc) =>
+    case Expr.ApplySelfTail(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExpr)
-      Expr.ApplySelfTail(sym, formals, es, tpe, purity, loc)
+      Expr.ApplySelfTail(sym, es, tpe, purity, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExpr(exp1)
@@ -130,6 +134,7 @@ object Reducer {
       Expr.TryCatch(e, rs, tpe, purity, loc)
 
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      lctx.pcPoints += 1
       val e = visitExpr(exp)
       val rs = rules.map {
         case HandlerRule(op, fparams, exp) =>
@@ -139,6 +144,7 @@ object Reducer {
       Expr.TryWith(e, effUse, rs, tpe, purity, loc)
 
     case Expr.Do(op, exps, tpe, purity, loc) =>
+      lctx.pcPoints += 1
       val es = exps.map(visitExpr)
       Expr.Do(op, es, tpe, purity, loc)
 
@@ -158,14 +164,14 @@ object Reducer {
     * Companion object for [[LocalContext]].
     */
   private object LocalContext {
-    def mk(): LocalContext = LocalContext(mutable.ArrayBuffer.empty)
+    def mk(): LocalContext = LocalContext(mutable.ArrayBuffer.empty, 0)
   }
 
   /**
     * A local non-shared context. Does not need to be thread-safe.
     * @param lparams the bound variales in the def.
     */
-  private case class LocalContext(lparams: mutable.ArrayBuffer[LocalParam])
+  private case class LocalContext(lparams: mutable.ArrayBuffer[LocalParam], var pcPoints: Int)
 
   /**
     * A context shared across threads.
@@ -208,7 +214,7 @@ object Reducer {
 
       case Expr.ApplyDef(_, exps, _, tpe, _, _) => visitExps(exps) ++ Set(tpe)
 
-      case Expr.ApplySelfTail(_, _, exps, tpe, _, _) => visitExps(exps) ++ Set(tpe)
+      case Expr.ApplySelfTail(_, exps, tpe, _, _) => visitExps(exps) ++ Set(tpe)
 
       case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 

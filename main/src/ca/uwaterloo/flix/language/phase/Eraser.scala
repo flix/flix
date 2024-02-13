@@ -137,8 +137,8 @@ object Eraser {
       val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)
       if (ct == CallType.TailCall) ad
       else castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
-    case ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
-      ApplySelfTail(sym, formals.map(visitParam), actuals.map(visitExp), visitType(tpe), purity, loc)
+    case ApplySelfTail(sym, actuals, tpe, purity, loc) =>
+      ApplySelfTail(sym, actuals.map(visitExp), visitType(tpe), purity, loc)
     case IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), visitType(tpe), purity, loc)
     case Branch(exp, branches, tpe, purity, loc) =>

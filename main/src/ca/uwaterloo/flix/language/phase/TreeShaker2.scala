@@ -79,7 +79,7 @@ object TreeShaker2 {
     case Expr.ApplyDef(sym, exps, _, _, _, _) =>
       Set(sym) ++ visitExps(exps)
 
-    case Expr.ApplySelfTail(sym, _, args, _, _, _) =>
+    case Expr.ApplySelfTail(sym, args, _, _, _) =>
       Set(sym) ++ visitExps(args)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
