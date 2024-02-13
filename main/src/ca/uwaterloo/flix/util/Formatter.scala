@@ -53,6 +53,15 @@ trait Formatter {
       leftline
   }
 
+  /**
+    * Create a table.
+    *
+    * @param colHeaders    The headers for each column.
+    * @param colFormatters The functions to format (e.g. color) the contents of the respective columns
+    *                      in the same order as the `colHeaders`. This is applied after the contents are padded.
+    *                      Must have the same length as `colHeaders`.
+    * @param rows          The list of the table's rows. Each row must have the same length as `colHeaders`.
+    */
   def table(colHeaders: List[String], colFormatters: List[String => String], rows: List[List[String]]): String = {
     val cols = rows.transpose
     val (headersPadded, colsPadded) = (colHeaders zip cols).map { case (header, col) =>
