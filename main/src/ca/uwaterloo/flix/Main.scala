@@ -433,10 +433,10 @@ object Main {
             .required()
         )
 
-      cmd("release").text("  release a new version to GitHub.")
+      cmd("release").text("  releases a new version to GitHub.")
         .action((_, c) => c.copy(command = Command.Release))
 
-      cmd("outdated").text("  show dependencies which have newer versions available.")
+      cmd("outdated").text("  shows dependencies which have newer versions available.")
         .action((_, c) => c.copy(command = Command.Outdated))
 
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
