@@ -711,31 +711,20 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val flixDeps = optManifest.map(findFlixDependencies).getOrElse(Nil)
 
     val rows = flixDeps.flatMap { dep =>
-      val githubProject = GitHub.parseProject(s"${dep.username}/${dep.projectName}") match {
-        case Ok(l) => l
+      val updates = FlixPackageManager.findAvailableUpdates(dep, flix.options.githubToken) match {
+        case Ok(u) => u
         case Err(e) => return Validation.toHardFailure(BootstrapError.FlixPackageError(e))
       }
-      val currentVersion = dep.version
 
-      val releases = GitHub.getReleases(githubProject, flix.options.githubToken) match {
-        case Ok(l) => l
-        case Err(e) => return Validation.toHardFailure(BootstrapError.FlixPackageError(e))
-      }
-      val availableVersions = releases.map(r => r.version)
-
-      val major = currentVersion.majorUpdate(availableVersions)
-      val minor = currentVersion.minorUpdate(availableVersions)
-      val patch = currentVersion.patchUpdate(availableVersions)
-
-      if (major.isEmpty && minor.isEmpty && patch.isEmpty)
+      if (updates.isEmpty)
         None
       else
         Some(List(
-          githubProject.toString,
-          currentVersion.toString,
-          major.map(v => v.toString).getOrElse(""),
-          minor.map(v => v.toString).getOrElse(""),
-          patch.map(v => v.toString).getOrElse(""),
+          s"${dep.username}/${dep.projectName}",
+          dep.version.toString,
+          updates.major.map(v => v.toString).getOrElse(""),
+          updates.minor.map(v => v.toString).getOrElse(""),
+          updates.patch.map(v => v.toString).getOrElse(""),
         ))
     }
 

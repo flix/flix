@@ -39,6 +39,36 @@ object FlixPackageManager {
   }
 
   /**
+    * Finds the Flix dependencies in a Manifest.
+    */
+  def findFlixDependencies(manifest: Manifest): List[FlixDependency] = {
+    manifest.dependencies.collect { case dep: FlixDependency => dep }
+  }
+
+  /**
+    * Finds the most relevant available updates for the given dependency.
+    */
+  def findAvailableUpdates(dep: FlixDependency, apiKey: Option[String]): Result[AvailableUpdates, PackageError] = {
+    val githubProject = GitHub.parseProject(s"${dep.username}/${dep.projectName}") match {
+      case Ok(l) => l
+      case Err(e) => return Err(e)
+    }
+
+    val releases = GitHub.getReleases(githubProject, apiKey) match {
+      case Ok(l) => l
+      case Err(e) => return Err(e)
+    }
+    val availableVersions = releases.map(r => r.version)
+
+    val ver = dep.version
+    val major = ver.majorUpdate(availableVersions)
+    val minor = ver.minorUpdate(availableVersions)
+    val patch = ver.patchUpdate(availableVersions)
+
+    Ok(AvailableUpdates(major, minor, patch))
+  }
+
+  /**
     * Installs all the Flix dependencies for a list of Manifests at the /lib folder
     * of `path` and returns a list of paths to all the dependencies.
     */
@@ -158,13 +188,6 @@ object FlixPackageManager {
       case Ok(t) => Ok(t)
       case Err(e) => Err(PackageError.ManifestParseError(e))
     }
-  }
-
-  /**
-    * Finds the Flix dependencies in a Manifest.
-    */
-  def findFlixDependencies(manifest: Manifest): List[FlixDependency] = {
-    manifest.dependencies.collect { case dep: FlixDependency => dep }
   }
 
 }
