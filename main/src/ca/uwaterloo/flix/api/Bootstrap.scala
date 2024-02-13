@@ -18,8 +18,10 @@ package ca.uwaterloo.flix.api
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
+import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
@@ -696,6 +698,51 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
          |${formatter.underline(s"https://github.com/${githubRepo.owner}/${githubRepo.repo}/releases/tag/v${manifest.version}")}
          |""".stripMargin
     ))
+
+    Validation.success(())
+  }
+
+  /**
+    * Show dependencies which have newer versions available.
+    */
+  def outdated(flix: Flix)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+    implicit val formatter: Formatter = flix.getFormatter
+
+    val flixDeps = optManifest.map(findFlixDependencies).getOrElse(Nil)
+
+    val rows = flixDeps.flatMap { dep =>
+      val updates = FlixPackageManager.findAvailableUpdates(dep, flix.options.githubToken) match {
+        case Ok(u) => u
+        case Err(e) => return Validation.toHardFailure(BootstrapError.FlixPackageError(e))
+      }
+
+      if (updates.isEmpty)
+        None
+      else
+        Some(List(
+          s"${dep.username}/${dep.projectName}",
+          dep.version.toString,
+          updates.major.map(v => v.toString).getOrElse(""),
+          updates.minor.map(v => v.toString).getOrElse(""),
+          updates.patch.map(v => v.toString).getOrElse(""),
+        ))
+    }
+
+    if (rows.isEmpty) {
+      out.println(formatter.green(
+        """
+          |All dependencies are up to date
+          |""".stripMargin
+      ))
+    } else {
+      out.println("")
+      out.println(formatter.table(
+        List("package", "current", "major", "minor", "patch"),
+        List(formatter.blue, formatter.cyan, formatter.yellow, formatter.yellow, formatter.yellow),
+        rows
+      ))
+      out.println("")
+    }
 
     Validation.success(())
   }
