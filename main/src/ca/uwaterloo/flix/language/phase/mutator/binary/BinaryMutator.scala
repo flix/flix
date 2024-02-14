@@ -7,7 +7,6 @@ import ca.uwaterloo.flix.language.phase.mutator.ExprMutator
 
 object BinaryMutator extends ExprMutator {
   private val binaryBoolOpMutators: Map[BoolOp, BoolOp] = Map(
-    // TODO: are these really good mutators for And, Or? Think about replacement
     BoolOp.And -> BoolOp.Or,
     BoolOp.Or -> BoolOp.And,
     BoolOp.Eq -> BoolOp.Neq,
@@ -120,14 +119,14 @@ object BinaryMutator extends ExprMutator {
     case Expr.Binary(sop: SemanticOp, exp1, exp2, tpe, eff, loc) =>
       sop match {
         // TODO: does it make sense to mutate CharOp, StringOp ?
-        case op: BoolOp => binaryBoolOpMutators.get(op).map(mutator => Expr.Binary(mutator, exp1, exp2, tpe, eff, loc))
+        case op: BoolOp => binaryBoolOpMutators.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
         case op: CharOp => ???
-        case op: Float32Op => binaryFloat32OpMutators.get(op).map(mutator => Expr.Binary(mutator, exp1, exp2, tpe, eff, loc))
-        case op: Float64Op => binaryFloat64OpMutators.get(op).map(mutator => Expr.Binary(mutator, exp1, exp2, tpe, eff, loc))
-        case op: Int8Op => binaryInt8OpMutators.get(op).map(mutator => Expr.Binary(mutator, exp1, exp2, tpe, eff, loc))
-        case op: Int16Op => binaryInt16OpMutators.get(op).map(mutator => Expr.Binary(mutator, exp1, exp2, tpe, eff, loc))
-        case op: Int32Op => binaryInt32OpMutators.get(op).map(mutator => Expr.Binary(mutator, exp1, exp2, tpe, eff, loc))
-        case op: Int64Op => binaryInt64OpMutators.get(op).map(mutator => Expr.Binary(mutator, exp1, exp2, tpe, eff, loc))
+        case op: Float32Op => binaryFloat32OpMutators.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
+        case op: Float64Op => binaryFloat64OpMutators.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
+        case op: Int8Op => binaryInt8OpMutators.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
+        case op: Int16Op => binaryInt16OpMutators.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
+        case op: Int32Op => binaryInt32OpMutators.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
+        case op: Int64Op => binaryInt64OpMutators.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
         case op: StringOp => ???
       }
   }
