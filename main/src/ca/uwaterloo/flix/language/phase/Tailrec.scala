@@ -90,7 +90,7 @@ object Tailrec {
           Expr.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc)
         } else {
           // Case 2: Self recursive call.
-          Expr.ApplySelfTail(sym, defn.cparams ++ defn.fparams, exps, tpe, purity, loc)
+          Expr.ApplySelfTail(sym, exps, tpe, purity, loc)
         }
 
       /*

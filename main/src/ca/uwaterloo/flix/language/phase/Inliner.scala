@@ -170,10 +170,9 @@ object Inliner {
         LiftedAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       val as = actuals.map(visitExp(_, subst0))
-      val fs = formals.map(visitFormalParam)
-      LiftedAst.Expr.ApplySelfTail(sym, fs, as, tpe, purity, loc)
+      LiftedAst.Expr.ApplySelfTail(sym, as, tpe, purity, loc)
 
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
@@ -359,7 +358,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.NonTailCall, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplySelfTail(sym, _, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, actuals, Ast.CallType.NonTailCall, tpe, purity, loc)
+    case OccurrenceAst.Expression.ApplySelfTail(sym, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, actuals, Ast.CallType.NonTailCall, tpe, purity, loc)
 
     case _ => exp0
   }
@@ -409,10 +408,9 @@ object Inliner {
       val es = exps.map(substituteExp(_, env0))
       LiftedAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       val as = actuals.map(substituteExp(_, env0))
-      val fs = formals.map(visitFormalParam)
-      LiftedAst.Expr.ApplySelfTail(sym, fs, as, tpe, purity, loc)
+      LiftedAst.Expr.ApplySelfTail(sym, as, tpe, purity, loc)
 
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
