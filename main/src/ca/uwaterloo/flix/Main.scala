@@ -290,18 +290,9 @@ object Main {
               System.exit(1)
           }
         
-        case Command.Mtest(tester, testee) =>
-          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
-            bootstrap =>
-              val flix = new Flix().setFormatter(formatter)
-              flix.setOptions(options.copy(progress = false))
-              bootstrap.mtest(flix, tester, testee)
-          }.toHardResult match {
-            case Result.Ok(_) =>
-              System.exit(0)
-            case Result.Err(errors) =>
-              errors.map(_.message(formatter)).foreach(println)
-              System.exit(1)
+        case Command.Mtest(tester, testee) => {
+            MutationTester.run(cmdOpts.files, options, tester, testee)
+
           }
 
 
