@@ -71,8 +71,7 @@ object Purity {
   }
 
   /**
-    * Returns true if p is a purity that allows side-effects (mutation or
-    * algebraic effects).
+    * Returns true if p is pure (has no side effects).
     */
   def isPure(p: Purity): Boolean = p match {
     case Pure => true
