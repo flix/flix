@@ -370,9 +370,9 @@ object MonoDefs {
     case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      // forcedly mark the region variable as Impure inside the region
+      // forcedly mark the region variable as IO inside the region
       val subst1 = StrictSubstitution(subst.s.unbind(regionVar.sym), subst.eqEnv)
-      val subst2 = subst1 + (regionVar.sym -> Type.Univ)
+      val subst2 = subst1 + (regionVar.sym -> Type.IO)
       Expr.Scope(freshSym, regionVar, visitExp(exp, env1, subst2), subst(tpe), subst(eff), loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
