@@ -191,15 +191,15 @@ object Inliner {
 
     case OccurrenceAst.Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
       if (isDead(occur)) {
-        if (Purity.hasSideeffects(exp1.purity)) {
+        if (Purity.isPure(exp1.purity)) {
           /// Case 1:
-          /// If `sym` is never used (it is `Dead`) so it is safe to make a Stmt.
-          LiftedAst.Expr.Stmt(visitExp(exp1, subst0), visitExp(exp2, subst0), tpe, purity, loc)
-        } else {
-          /// Case 2:
           /// If `sym` is never used (it is `Dead`)  and `exp1` is pure, so it has no side effects, then it is safe to remove `sym`
           /// Both code size and runtime are reduced
           visitExp(exp2, subst0)
+        } else {
+          /// Case 2:
+          /// If `sym` is never used (it is `Dead`) so it is safe to make a Stmt.
+          LiftedAst.Expr.Stmt(visitExp(exp1, subst0), visitExp(exp2, subst0), tpe, purity, loc)
         }
       } else {
         /// Case 3:
