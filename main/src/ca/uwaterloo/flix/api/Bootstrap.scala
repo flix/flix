@@ -704,8 +704,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
   /**
     * Show dependencies which have newer versions available.
+    *
+    * @return `true` if any outdated dependencies were found, `false` if everything is up to date.
     */
-  def outdated(flix: Flix)(implicit out: PrintStream): Validation[Unit, BootstrapError] = {
+  def outdated(flix: Flix)(implicit out: PrintStream): Validation[Boolean, BootstrapError] = {
     implicit val formatter: Formatter = flix.getFormatter
 
     val flixDeps = optManifest.map(findFlixDependencies).getOrElse(Nil)
@@ -734,6 +736,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
           |All dependencies are up to date
           |""".stripMargin
       ))
+      Validation.success(false)
     } else {
       out.println("")
       out.println(formatter.table(
@@ -742,8 +745,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         rows
       ))
       out.println("")
+      Validation.success(true)
     }
-
-    Validation.success(())
   }
 }
