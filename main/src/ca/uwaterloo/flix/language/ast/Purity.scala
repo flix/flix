@@ -71,6 +71,16 @@ object Purity {
   }
 
   /**
+    * Returns true if p is a purity that allows side-effects (mutation or
+    * algebraic effects).
+    */
+  def hasSideeffects(p: Purity): Boolean = p match {
+    case Pure => false
+    case Impure => true
+    case ControlImpure => true
+  }
+
+  /**
     * Returns the max purity of `p1` and `p2` according to this ordering:
     * Pure < Impure < ControlImpure
     */
