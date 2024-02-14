@@ -36,7 +36,7 @@ object MutationTester {
 
     def mutateExpr(e: TypedAst.Expr): TypedAst.Expr = {
         e match {
-            case Expr.Cst(cst, tpe, loc) => Expr.Cst(cst, tpe, loc)
+            case Expr.Cst(cst, tpe, loc) => Expr.Cst(mutateCst(cst), tpe, loc)
             case _ => null// do nothing
         }
     }
