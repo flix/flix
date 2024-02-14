@@ -708,6 +708,7 @@ object SemanticTokensProvider {
     case TypeConstructor.CaseIntersection(_) => false
     case TypeConstructor.CaseSet(_, _) => false
     case TypeConstructor.Error(_) => false
+    case TypeConstructor.AnyType => false
   }
 
   /**

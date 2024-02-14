@@ -56,6 +56,8 @@ object MonoType {
 
   case object Region extends MonoType
 
+  case object AnyType extends MonoType
+
   ///
   /// Compound Types.
   ///

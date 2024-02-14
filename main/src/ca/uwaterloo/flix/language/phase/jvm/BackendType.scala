@@ -173,7 +173,7 @@ object BackendType {
     case MonoType.Float32 => Float32
     case MonoType.Float64 => Float64
     case MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.String | MonoType.Regex |
-         MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
+         MonoType.AnyType | MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
          MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
          MonoType.Native(_) | MonoType.Region => BackendObjType.JavaObject.toTpe
   }
@@ -189,7 +189,7 @@ object BackendType {
     case MonoType.Float64 => Float64
     case MonoType.Native(clazz) if clazz == classOf[Object] => BackendObjType.JavaObject.toTpe
     case MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.String | MonoType.Regex |
-         MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
+         MonoType.AnyType | MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
          MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
          MonoType.Native(_) | MonoType.Region => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
   }
@@ -217,7 +217,7 @@ object BackendType {
     case MonoType.Native(clazz) => JvmName.ofClass(clazz).toTpe
     case MonoType.Unit | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
          MonoType.Arrow(_, _) | MonoType.RecordEmpty |
-         MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) =>
+         MonoType.RecordExtend(_, _, _) | MonoType.Region | MonoType.Enum(_) | MonoType.AnyType =>
       BackendObjType.JavaObject.toTpe
   }
 

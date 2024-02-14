@@ -199,6 +199,7 @@ object Eraser {
       case String => String
       case Regex => Regex
       case Region => Region
+      case AnyType => AnyType
       case Array(tpe) => Array(visitType(tpe))
       case Lazy(tpe) => Lazy(erase(tpe))
       case Ref(tpe) => Ref(erase(tpe))
@@ -222,9 +223,10 @@ object Eraser {
       case Int16 => Int16
       case Int32 => Int32
       case Int64 => Int64
-      case Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
-           Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) | Arrow(_, _) |
-           RecordEmpty | RecordExtend(_, _, _) | Native(_) => MonoType.Object
+      case Unit | BigDecimal | BigInt | String | Regex | Region | AnyType |
+           Array(_) | Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) |
+           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
+        MonoType.Object
     }
   }
 

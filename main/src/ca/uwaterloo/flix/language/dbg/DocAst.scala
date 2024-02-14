@@ -340,6 +340,8 @@ object DocAst {
 
     val Region: Type = AsIs("Region")
 
+    val AnyType: Type = AsIs("AnyType")
+
     def Array(t: Type): Type = App("Array", List(t))
 
     def Lazy(t: Type): Type = App("Lazy", List(t))

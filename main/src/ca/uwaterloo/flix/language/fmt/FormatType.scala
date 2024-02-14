@@ -206,6 +206,7 @@ object FormatType {
       case SimpleType.Tuple(_) => true
       case SimpleType.Union(_) => true
       case SimpleType.Error => true
+      case SimpleType.AnyType => true
     }
 
     /**
@@ -356,6 +357,8 @@ object FormatType {
         elms.map(visit(_, Mode.Type)).mkString("(", ", ", ")")
 
       case SimpleType.Error => "Error"
+
+      case SimpleType.AnyType => "AnyType"
 
     }
 

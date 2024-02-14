@@ -266,6 +266,8 @@ object SimpleType {
    */
    case object Error extends SimpleType
 
+  case object AnyType extends SimpleType
+
   /////////
   // Fields
   /////////
@@ -544,6 +546,8 @@ object SimpleType {
         case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
 
         case TypeConstructor.Error(_) => SimpleType.Error
+
+        case TypeConstructor.AnyType => SimpleType.AnyType
       }
     }
 

@@ -59,7 +59,7 @@ object JvmOps {
     case MonoType.String => JvmType.String
     case MonoType.Regex => JvmType.Regex
     case MonoType.Region => JvmType.Object
-
+    case MonoType.AnyType => JvmType.Object
     // Compound
     case MonoType.Array(_) => JvmType.Object
     case MonoType.Lazy(_) => JvmType.Object
@@ -70,8 +70,6 @@ object JvmOps {
     case MonoType.Enum(_) => JvmType.Object
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
-
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
 
 
@@ -91,9 +89,9 @@ object JvmOps {
       case Int16 => JvmType.PrimShort
       case Int32 => JvmType.PrimInt
       case Int64 => JvmType.PrimLong
-      case Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
-           Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) | RecordEmpty |
-           RecordExtend(_, _, _) | Native(_) => JvmType.Object
+      case Unit | BigDecimal | BigInt | String | Regex | Region | AnyType |
+           Array(_) |Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) |
+           RecordEmpty |RecordExtend(_, _, _) | Native(_) => JvmType.Object
     }
   }
 
@@ -114,9 +112,9 @@ object JvmOps {
       case Int32 => JvmType.PrimInt
       case Int64 => JvmType.PrimLong
       case Native(clazz) if clazz == classOf[Object] => JvmType.Object
-      case Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
-           Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) | RecordEmpty |
-           RecordExtend(_, _, _) | Native(_) =>
+      case Unit | BigDecimal | BigInt | String | Regex | Region | AnyType |
+           Array(_) | Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) |
+           RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
         throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     }
   }

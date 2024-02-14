@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.{Kinder, Lowering}
+import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, MonoDefs}
 
 import scala.collection.immutable.SortedSet
 
@@ -407,5 +407,10 @@ object TypeConstructor {
     * A type constructor which represents an erroneous type of the given `kind`.
     */
   case class Error(kind: Kind) extends TypeConstructor
+
+  @IntroducedBy(MonoDefs.getClass)
+  case object AnyType extends TypeConstructor {
+    override def kind: Kind = Kind.Star
+  }
 
 }
