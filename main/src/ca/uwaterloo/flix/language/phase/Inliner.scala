@@ -195,7 +195,7 @@ object Inliner {
       /// Both code size and runtime are reduced
       if (isDeadAndPure(occur, exp1.purity)) {
         visitExp(exp2, subst0)
-      } else if (isDeadAndImpure(occur, exp1.purity)) {
+      } else if (isDeadAndNotPure(occur, exp1.purity)) {
         /// Case 2:
         /// If `sym` is never used (it is `Dead`) and it is safe to inline then make a Stmt.
         LiftedAst.Expr.Stmt(visitExp(exp1, subst0), visitExp(exp2, subst0), tpe, purity, loc)
@@ -294,11 +294,10 @@ object Inliner {
   }
 
   /**
-    * Checks if `occur` is Dead and purity is `Impure`
+    * Checks if `occur` is Dead and purity is not `Pure`.
     */
-  private def isDeadAndImpure(occur: OccurrenceAst.Occur, purity: Purity): Boolean = (occur, purity) match {
-    case (Dead, Purity.Pure) => false
-    case (Dead, _) => true
+  private def isDeadAndNotPure(occur: OccurrenceAst.Occur, purity: Purity): Boolean = (occur, purity) match {
+    case (Dead, purity) if purity != Purity.Pure => true
     case _ => false
   }
 
