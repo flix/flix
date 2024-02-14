@@ -110,10 +110,10 @@ object Purity {
     * Assumes that the given type is a well-formed formula without variables,
     * aliases, or associated types.
     */
-  def fromType(eff: Type): Purity = {
+  def fromType(eff: Type)(implicit universe: Set[Symbol.EffectSym]): Purity = {
     evaluateFormula(eff) match {
       case set if set.isEmpty => Purity.Pure
-      case set if set.hasSize(1) && set.contains(Symbol.IO) => Purity.Impure
+      case set if set.sizeIs == 1 && set.contains(Symbol.IO) => Purity.Impure
       case _ => Purity.ControlImpure
     }
   }
@@ -134,24 +134,24 @@ object Purity {
     * Print + IO == {Print, IO}
     * Univ & (!Print) == !Print
     */
-  private def evaluateFormula(f: Type): InfSet[Symbol.EffectSym] = f match {
+  private def evaluateFormula(f: Type)(implicit universe: Set[Symbol.EffectSym]): Set[Symbol.EffectSym] = f match {
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
-      InfSet(sym)
+      Set(sym)
     case Type.Cst(TypeConstructor.Pure, _) =>
-      InfSet.empty
+      Set.empty
     case Type.Cst(TypeConstructor.Univ, _) =>
-      InfSet.top
+      universe
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) =>
       val t1 = evaluateFormula(tpe1)
       val t2 = evaluateFormula(tpe2)
-      InfSet.union(t1, t2)
+      t1.union(t2)
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) =>
       val t1 = evaluateFormula(tpe1)
       val t2 = evaluateFormula(tpe2)
-      InfSet.intersect(t1, t2)
+      t1.intersect(t2)
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe, _) =>
       val t = evaluateFormula(tpe)
-      InfSet.compl(t)
+      universe.diff(t)
     case Type.Cst(_, _) =>
       throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
     case Type.Apply(_, _, _) =>
