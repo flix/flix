@@ -36,31 +36,8 @@ object Verifier {
     val env = (decl.cparams ++ decl.fparams).foldLeft(Map.empty[Symbol.VarSym, MonoType]) {
       case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
     }
-//    try {
-      val t = visitExpr(decl.expr)(root, env, Map.empty, decl)
-      check(expected = decl.tpe)(actual = t, decl.loc)(decl)
-//    } catch {
-//      case UnexpectedType(expected, found, loc) =>
-//        println(s"Unexpected type near ${loc.format}")
-//        println()
-//        println(s"  expected = $expected")
-//        println(s"  found    = $found")
-//        println()
-//
-//      case MismatchedTypes(tpe1, tpe2, loc) =>
-//        println(s"Mismatched types near ${loc.format}")
-//        println()
-//        println(s"  tpe1 = $tpe1")
-//        println(s"  tpe2 = $tpe2")
-//        println()
-//
-//      case MismatchedShape(tpe, expectation, loc) =>
-//        println(s"Mismatched shape near ${loc.format}")
-//        println()
-//        println(s"  tpe    = $tpe")
-//        println(s"  expected $expectation")
-//        println()
-//    }
+    val t = visitExpr(decl.expr)(root, env, Map.empty, decl)
+    check(expected = decl.tpe)(actual = t, decl.loc)(decl)
   }
 
   private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType], defn: Def): MonoType = expr match {
