@@ -2122,6 +2122,7 @@ object Weeder2 {
         case TreeKind.Type.Tuple => visitTuple(inner)
         case TreeKind.Type.Native => visitNative(inner)
         case TreeKind.Type.Record => visitRecord(inner)
+        case TreeKind.Type.RecordRow => visitRecordRow(inner)
         case TreeKind.Type.Schema => visitSchema(inner)
         case TreeKind.Type.SchemaRow => visitSchemaRow(inner)
         case TreeKind.Type.Constant => visitConstant(inner)
@@ -2264,13 +2265,17 @@ object Weeder2 {
 
     private def visitRecord(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
       assert(tree.kind == TreeKind.Type.Record)
+      val row = visitRecordRow(tree)
+      mapN(row)(Type.Record(_, tree.loc))
+    }
+
+    private def visitRecordRow(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
       val maybeVar = tryPick(TreeKind.Type.RecordVariable, tree.children)
       val fields = pickAll(TreeKind.Type.RecordField, tree.children)
       mapN(traverseOpt(maybeVar)(visitVariable), traverse(fields)(visitRecordField)) {
         (maybeVar, fields) =>
           val variable = maybeVar.getOrElse(Type.RecordRowEmpty(tree.loc))
-          val row = fields.foldRight(variable) { case ((label, tpe), acc) => Type.RecordRowExtend(label, tpe, acc, tree.loc) }
-          Type.Record(row, tree.loc)
+          fields.foldRight(variable) { case ((label, tpe), acc) => Type.RecordRowExtend(label, tpe, acc, tree.loc) }
       }
     }
 

@@ -338,6 +338,8 @@ object UnstructuredTree {
 
       case object Record extends Type
 
+      case object RecordRow extends Type
+
       case object Derivations extends Type
 
       case object Constraints extends Type

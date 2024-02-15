@@ -2420,11 +2420,11 @@ object Parser2 {
     private def typeDelimited()(implicit s: State): Mark.Closed = {
       val mark = open()
       nth(0) match {
-        // TODO: RecordRow, CaseSet
+        // TODO: CaseSet
         case TokenKind.CurlyL => record()
         case TokenKind.HashCurlyL => schema()
-        case TokenKind.HashParenL => schema()
-        case TokenKind.ParenL => tuple()
+        case TokenKind.HashParenL => schemaRow()
+        case TokenKind.ParenL => tupleOrRecordRow()
         case TokenKind.NameUpperCase => name(NAME_TYPE, allowQualified = true)
         case TokenKind.NameJava => native()
         case TokenKind.NameLowerCase => variable()
@@ -2479,7 +2479,6 @@ object Parser2 {
       }
     }
 
-
     private def unary()(implicit s: State): Mark.Closed = {
       val mark = open()
       val op = nth(0)
@@ -2521,10 +2520,45 @@ object Parser2 {
     /**
      * tuple -> '(' (type (',' type)* )? ')'
      */
-    def tuple()(implicit s: State): Mark.Closed = {
+    def tupleOrRecordRow()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.ParenL))
+      // Record rows follow the rule '(' (name '=' type)* ('|' name)? )
+      // So the prefix is always "( name '='" or "'|'"
+      val next = nth(1)
+      val nextnext = nth(2)
+      val isRecordRow = next == TokenKind.Bar || next == TokenKind.NameLowerCase && nextnext == TokenKind.Equal
+
+      if (isRecordRow) {
+        recordRow()
+      } else {
+        // Parse a tuple type
+        val mark = open()
+        separated(() => ttype()).zeroOrMore()
+        close(mark, TreeKind.Type.Tuple)
+      }
+    }
+
+    def recordRow()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.ParenL))
       val mark = open()
-      separated(() => ttype()).zeroOrMore()
-      close(mark, TreeKind.Type.Tuple)
+      expect(TokenKind.ParenL)
+      while (!atAny(List(TokenKind.ParenR, TokenKind.Bar)) && !eof()) {
+        recordField()
+      }
+
+      if (at(TokenKind.Comma)) {
+        advanceWithError(Parse2Error.DevErr(currentSourceLocation(), "Trailing comma."))
+      }
+
+      if (at(TokenKind.Bar)) {
+        val mark = open()
+        expect(TokenKind.Bar)
+        name(NAME_VARIABLE)
+        close(mark, TreeKind.Type.RecordVariable)
+      }
+
+      expect(TokenKind.ParenR)
+      close(mark, TreeKind.Type.RecordRow)
     }
 
     /**
