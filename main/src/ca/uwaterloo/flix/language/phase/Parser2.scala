@@ -24,6 +24,8 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, LibLevel, ParOps, Validation}
 import org.parboiled2.ParserInput
 
+import scala.collection.mutable.ArrayBuffer
+
 // TODO: Add change set support
 
 /**
@@ -46,8 +48,8 @@ object Parser2 {
   private class State(val tokens: Array[Token], val src: Ast.Source) {
     var position: Int = 0
     var fuel: Int = 256
-    var events: Array[Event] = Array.empty
-    var errors: Array[Parse2Error] = Array.empty
+    var events: ArrayBuffer[Event] = ArrayBuffer.empty
+    var errors: ArrayBuffer[Parse2Error] = ArrayBuffer.empty
     // Compute a `ParserInput` when initializing a state for lexing a source.
     // This is necessary to display source code in error messages.
     // See `sourceLocationAtStart` for usage and `SourceLocation` for more information.
@@ -359,8 +361,8 @@ object Parser2 {
 
   private def buildTree()(implicit s: State): Tree = {
     val tokens = s.tokens.iterator.buffered
-    var stack: List[Tree] = List.empty
-    var locationStack: List[Token] = List.empty
+    var stack: ArrayBuffer[Tree] = ArrayBuffer.empty
+    var locationStack: ArrayBuffer[Token] = ArrayBuffer.empty
 
     // Pop the last event, which must be a Close,
     // to ensure that the stack is not empty when handling event below.
@@ -377,20 +379,20 @@ object Parser2 {
     for (event <- s.events) {
       event match {
         case Event.Open(kind) =>
-          locationStack = locationStack :+ tokens.head
-          stack = stack :+ Tree(kind, SourceLocation.Unknown, Array.empty)
+          locationStack.append(tokens.head)
+          stack.append(Tree(kind, SourceLocation.Unknown, Array.empty))
 
         case Event.Close =>
           val child = Child.Tree(stack.last)
           val openToken = locationStack.last
           stack.last.loc = if (stack.last.children.length == 0)
-          // If the subtree has no children, give it a zero length position just after the last token
+            // If the subtree has no children, give it a zero length position just after the last token
             SourceLocation.mk(
               lastAdvance.mkSourcePositionEnd(s.src, Some(s.parserInput)),
               lastAdvance.mkSourcePositionEnd(s.src, Some(s.parserInput))
             )
           else
-          // Otherwise the source location can span from the first to the last token in the sub tree
+            // Otherwise the source location can span from the first to the last token in the sub tree
             SourceLocation.mk(
               openToken.mkSourcePosition(s.src, Some(s.parserInput)),
               lastAdvance.mkSourcePositionEnd(s.src, Some(s.parserInput))
@@ -440,7 +442,9 @@ object Parser2 {
     }
     if (atComment) {
       val mark = Mark.Opened(s.events.length)
-      s.events = s.events :+ Event.Open(TreeKind.ErrorTree(Parse2Error.DevErr(currentSourceLocation(), "Unclosed parser mark")))
+      s.events.append(
+        Event.Open(TreeKind.ErrorTree(Parse2Error.DevErr(currentSourceLocation(), "Unclosed parser mark")))
+      )
       while (atAny(List(TokenKind.CommentLine, TokenKind.CommentBlock)) && !eof()) {
         advance()
       }
@@ -450,7 +454,9 @@ object Parser2 {
 
   private def open()(implicit s: State): Mark.Opened = {
     val mark = Mark.Opened(s.events.length)
-    s.events = s.events :+ Event.Open(TreeKind.ErrorTree(Parse2Error.DevErr(currentSourceLocation(), "Unclosed parser mark")))
+    s.events.append(
+      Event.Open(TreeKind.ErrorTree(Parse2Error.DevErr(currentSourceLocation(), "Unclosed parser mark")))
+    )
     // Consume any comments just before opening a new mark
     comments()
     mark
@@ -460,18 +466,21 @@ object Parser2 {
     s.events(mark.index) = Event.Open(kind)
     // Consume any comments just before closing a mark
     comments()
-    s.events = s.events :+ Event.Close
+    s.events.append(Event.Close)
     Mark.Closed(mark.index)
   }
 
   private def openBefore(before: Mark.Closed)(implicit s: State): Mark.Opened = {
     val mark = Mark.Opened(before.index)
-    s.events = s.events.patch(before.index, Array(Event.Open(TreeKind.ErrorTree(Parse2Error.DevErr(currentSourceLocation(), "Unclosed parser mark")))), 0)
+    s.events.insert(
+      before.index,
+      Event.Open(TreeKind.ErrorTree(Parse2Error.DevErr(currentSourceLocation(), "Unclosed parser mark")))
+    )
     mark
   }
 
   private def closeWithError(mark: Mark.Opened, error: Parse2Error)(implicit s: State): Mark.Closed = {
-    s.errors = s.errors :+ error
+    s.errors.append(error)
     close(mark, TreeKind.ErrorTree(error))
   }
 
@@ -480,7 +489,7 @@ object Parser2 {
       return
     }
     s.fuel = 256
-    s.events = s.events :+ Event.Advance
+    s.events.append(Event.Advance)
     s.position += 1
   }
 
