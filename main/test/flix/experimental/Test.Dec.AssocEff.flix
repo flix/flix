@@ -1,5 +1,9 @@
 mod Test.Dec.AssocEff {
 
+    eff Time {
+        pub def getTime(): String
+    }
+
     ////////////////
     // Arithmetic //
     ////////////////
@@ -172,5 +176,65 @@ mod Test.Dec.AssocEff {
         let it = DeepIterable.iterator(rc, l1);
         let l2 = Iterator.toList(it);
         l1 == l2
+    }
+
+
+    /////////////
+    // Logging //
+    /////////////
+
+    class Logger[a] {
+        type Aef: Eff
+        pub def log(s: String, x: a): Unit \ Logger.Aef[a]
+    }
+
+    enum ConsoleLogger {
+        case ConsoleLogger
+    }
+
+    instance Logger[ConsoleLogger] {
+        type Aef = Console
+        pub def log(s: String, _x: ConsoleLogger): Unit \ Console = {
+            do Console.println(s)
+        }
+    }
+
+    pub def testConsoleLogger(): Unit \ Console = {
+        let logger = ConsoleLogger.ConsoleLogger;
+        Logger.log("Hello, world!", logger)
+    }
+
+    enum PrintLogger {
+        case PrintLogger
+    }
+
+    instance Logger[PrintLogger] {
+        type Aef = IO
+        pub def log(s: String, _x: PrintLogger): Unit \ IO = {
+            println(s)
+        }
+    }
+
+    pub def testPrintLogger(): Unit \ IO = {
+        let logger = PrintLogger.PrintLogger;
+        Logger.log("Hello, world!", logger)
+    }
+
+
+    enum TimestampedConsoleLogger {
+        case TimestampedConsoleLogger
+    }
+
+    instance Logger[TimestampedConsoleLogger] {
+        type Aef = { Console, Time }
+        pub def log(s: String, _x: TimestampedConsoleLogger): Unit \ { Console, Time } = {
+            let timestamp = do Time.getTime();
+            do Console.println("${timestamp}: ${s}")
+        }
+    }
+
+    pub def testTimestampedConsoleLogger(): Unit \ { Console, Time } = {
+        let logger = TimestampedConsoleLogger.TimestampedConsoleLogger;
+        Logger.log("Hello, world!", logger)
     }
 }
