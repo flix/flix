@@ -25,7 +25,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, LibLevel, ParOps, Vali
 import org.parboiled2.ParserInput
 
 // TODO: Add change set support
-// TODO: "Fixpoint/Ram/RamTerm.flix", "Fixpoint/Ast/HeadTerm.flix" contain debug strings using `%{`
 
 /**
  * Errors reside both within the produced `Tree` but are also kept in an array in `state.errors`
@@ -86,7 +85,7 @@ object Parser2 {
       }
 
       val filesThatAreKnownToWork = List(
-        "Graph.flix",
+        "main/foo.flix",
         "Fixpoint/Ram/RamTerm.flix",
         "Fixpoint/Ast/HeadTerm.flix",
         "Fixpoint/Solver.flix",
@@ -159,7 +158,7 @@ object Parser2 {
         "JoinLattice.flix",
         "Identity.flix",
         "FromString.flix",
-        "main/foo.flix",
+        "Graph.flix",
         "Group.flix",
         "StringBuilder.flix",
         "Closeable.flix",
@@ -416,9 +415,8 @@ object Parser2 {
 
     // The stack should now contain a single Source tree,
     // and there should only be an <eof> token left.
-    // TODO: Add these back in
-    //    assert(stack.length == 1)
-    //    assert(tokens.next().kind == TokenKind.Eof)
+    assert(stack.length == 1)
+    assert(tokens.next().kind == TokenKind.Eof)
     stack.head
   }
 
@@ -631,17 +629,9 @@ object Parser2 {
 
   private def name(kinds: List[TokenKind], allowQualified: Boolean = false)(implicit s: State): Mark.Closed = {
     val mark = open()
-    // TODO: remove this
-    val isBadConstraintFollowedByDot = (s.src.name, s.tokens(s.position)) match {
-      case ("Graph.flix", Token(TokenKind.NameLowerCase, _, _, _, 283, 62, 283, 67)) => true
-      case ("Graph.flix", Token(TokenKind.NameLowerCase, _, _, _, 301, 62, 301, 67)) => true
-      case ("Graph.flix", Token(TokenKind.NameLowerCase, _, _, _, 418, 78, 418, 79)) => true
-      case ("Graph.flix", Token(TokenKind.NameLowerCase, _, _, _, 420, 58, 420, 61)) => true
-      case _ => false
-    }
     expectAny(kinds)
     val first = close(mark, TreeKind.Ident)
-    if (isBadConstraintFollowedByDot || !allowQualified) {
+    if (!allowQualified) {
       return first
     }
     while (at(TokenKind.Dot) && kinds.contains(nth(1)) && !eof()) {
@@ -1093,7 +1083,7 @@ object Parser2 {
      * expression -> TODO
      */
     def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false, allowQualified: Boolean = true)(implicit s: State): Mark.Closed = {
-      var lhs = exprDelimited(allowQualified)
+      var lhs = exprDelimited()
 
       // Handle record select
       if (at(TokenKind.Dot) && nth(1) == TokenKind.NameLowerCase) {
@@ -1267,10 +1257,10 @@ object Parser2 {
              | TokenKind.LiteralRegex => literal()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThin) unaryLambda() else name(NAME_VARIABLE)
         case TokenKind.KeywordStaticUppercase => static()
-        case TokenKind.NameLowerCase
-             | TokenKind.NameUpperCase
+        case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThin) unaryLambda() else name(NAME_DEFINITION)
+        case TokenKind.NameUpperCase
              | TokenKind.NameMath
-             | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThin) unaryLambda() else name(NAME_DEFINITION, allowQualified = true)
+             | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThin) unaryLambda() else name(NAME_DEFINITION, allowQualified)
         // TODO: These rules are only enabled in Graph.flix since the keywords are used elsewhere too
         case TokenKind.KeywordInject | TokenKind.KeywordProject if s.src.name == "Graph.flix" => fixpointProject()
         case TokenKind.KeywordQuery if s.src.name == "Graph.flix" => fixpointQuery()
@@ -1279,7 +1269,7 @@ object Parser2 {
         // TODO: std. lib. uses keywords as variable names. Only match the specific cases known here as matching all KEYWORDS_IN_STDLIB causes issues.
         case TokenKind.KeywordQuery
              | TokenKind.KeywordNew
-             | TokenKind.KeywordProject => name(NAME_DEFINITION ++ List(TokenKind.KeywordNew, TokenKind.KeywordQuery, TokenKind.KeywordProject), allowQualified)
+             | TokenKind.KeywordProject => name(NAME_DEFINITION, allowQualified)
         case TokenKind.Minus
              | TokenKind.KeywordNot
              | TokenKind.Plus
@@ -2669,7 +2659,7 @@ object Parser2 {
       }
       close(markArgs, TreeKind.Arguments)
       expect(TokenKind.Equal)
-      Expr.expression()
+      Expr.expression(allowQualified = false)
       close(mark, TreeKind.Predicate.Functional)
     }
 

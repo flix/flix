@@ -1152,14 +1152,14 @@ object Weeder2 {
                   case Constant.Float64(lit) => Some(Expr.Cst(Constant.Float64(-lit), loc))
                   case Constant.BigDecimal(lit) => Some(Expr.Cst(Constant.BigDecimal(lit.negate()), loc))
                   case Constant.Int8(lit) => try {
-                    val num = JByte.parseByte(s"-$lit") // TODO: radix?
+                    val num = JByte.parseByte(s"-$lit")
                     Some(Expr.Cst(Constant.Int8(num), loc))
                   } catch {
                     case _: NumberFormatException => Some(WeededAst.Expr.Error(MalformedInt(loc)))
                   }
                   case Constant.Int16(lit) =>
                     try {
-                      val num = JShort.parseShort(s"-$lit") // TODO: radix?
+                      val num = JShort.parseShort(s"-$lit")
                       Some(Expr.Cst(Constant.Int16(num), loc))
                     } catch {
                       case _: NumberFormatException => Some(WeededAst.Expr.Error(MalformedInt(loc)))
