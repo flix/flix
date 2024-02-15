@@ -2121,6 +2121,7 @@ object Weeder2 {
         case TreeKind.Type.Apply => visitApply(inner)
         case TreeKind.Type.Tuple => visitTuple(inner)
         case TreeKind.Type.Native => visitNative(inner)
+        case TreeKind.Type.CaseSet => visitCaseSet(inner)
         case TreeKind.Type.Record => visitRecord(inner)
         case TreeKind.Type.RecordRow => visitRecordRow(inner)
         case TreeKind.Type.Schema => visitSchema(inner)
@@ -2202,6 +2203,12 @@ object Weeder2 {
       assert(tree.kind == TreeKind.Type.Schema)
       val row = visitSchemaRow(tree)
       mapN(row)(Type.Schema(_, tree.loc))
+    }
+
+    private def visitCaseSet(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Type.CaseSet)
+      val cases = traverse(pickAll(TreeKind.QName, tree.children))(visitQName)
+      mapN(cases)(Type.CaseSet(_, tree.loc))
     }
 
     private def visitSchemaRow(parentTree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {

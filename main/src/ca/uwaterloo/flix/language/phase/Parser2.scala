@@ -2420,10 +2420,10 @@ object Parser2 {
     private def typeDelimited()(implicit s: State): Mark.Closed = {
       val mark = open()
       nth(0) match {
-        // TODO: CaseSet
         case TokenKind.CurlyL => record()
         case TokenKind.HashCurlyL => schema()
         case TokenKind.HashParenL => schemaRow()
+        case TokenKind.AngleL => caseSet()
         case TokenKind.ParenL => tupleOrRecordRow()
         case TokenKind.NameUpperCase => name(NAME_TYPE, allowQualified = true)
         case TokenKind.NameJava => native()
@@ -2443,6 +2443,15 @@ object Parser2 {
         case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected type, found $t"))
       }
       close(mark, TreeKind.Type.Type)
+    }
+
+    private def caseSet()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.AngleL))
+      val mark = open()
+      separated(() => name(NAME_DEFINITION, allowQualified = true))
+        .within(TokenKind.AngleL, TokenKind.AngleR)
+        .zeroOrMore()
+      close(mark, TreeKind.Type.CaseSet)
     }
 
     private def schema()(implicit s: State): Mark.Closed = {
