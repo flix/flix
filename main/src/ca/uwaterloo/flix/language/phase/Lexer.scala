@@ -341,6 +341,7 @@ object Lexer {
       case '#' => peek() match {
         case '#' => acceptJavaName()
         case '{' => advance(); TokenKind.HashCurlyL
+        case '(' => advance(); TokenKind.HashParenL
         case _ => TokenKind.Hash
       }
       case _ if isKeyword("///") => acceptDocComment()

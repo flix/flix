@@ -362,6 +362,8 @@ object UnstructuredTree {
 
       case object Schema extends Type
 
+      case object SchemaRow extends Type
+
       case object PredicateWithAlias extends Type
 
       case object PredicateWithTypes extends Type

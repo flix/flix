@@ -2420,9 +2420,10 @@ object Parser2 {
     private def typeDelimited()(implicit s: State): Mark.Closed = {
       val mark = open()
       nth(0) match {
-        // TODO: SchemaRow, RecordRow, CaseSet
+        // TODO: RecordRow, CaseSet
         case TokenKind.CurlyL => record()
         case TokenKind.HashCurlyL => schema()
+        case TokenKind.HashParenL => schema()
         case TokenKind.ParenL => tuple()
         case TokenKind.NameUpperCase => name(NAME_TYPE, allowQualified = true)
         case TokenKind.NameJava => native()
@@ -2451,6 +2452,15 @@ object Parser2 {
         .within(TokenKind.HashCurlyL, TokenKind.CurlyR)
         .zeroOrMore(followedBy = Some((TokenKind.Bar, () => name(NAME_VARIABLE))))
       close(mark, TreeKind.Type.Schema)
+    }
+
+    private def schemaRow()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.HashParenL))
+      val mark = open()
+      separated(schemaTerm)
+        .within(TokenKind.HashParenL, TokenKind.ParenR)
+        .zeroOrMore(followedBy = Some((TokenKind.Bar, () => name(NAME_VARIABLE))))
+      close(mark, TreeKind.Type.SchemaRow)
     }
 
     private def schemaTerm()(implicit s: State): Mark.Closed = {

@@ -2123,6 +2123,7 @@ object Weeder2 {
         case TreeKind.Type.Native => visitNative(inner)
         case TreeKind.Type.Record => visitRecord(inner)
         case TreeKind.Type.Schema => visitSchema(inner)
+        case TreeKind.Type.SchemaRow => visitSchemaRow(inner)
         case TreeKind.Type.Constant => visitConstant(inner)
         case TreeKind.QName => mapN(visitQName(inner))(Type.Ambiguous(_, inner.loc))
         case TreeKind.Ident => mapN(tokenToIdent(inner)) {
@@ -2196,8 +2197,13 @@ object Weeder2 {
       }
     }
 
-    private def visitSchema(parentTree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      assert(parentTree.kind == TreeKind.Type.Schema)
+    private def visitSchema(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Type.Schema)
+      val row = visitSchemaRow(tree)
+      mapN(row)(Type.Schema(_, tree.loc))
+    }
+
+    private def visitSchemaRow(parentTree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
       val maybeRest = tryPick(TreeKind.Ident, parentTree.children)
       flatMapN(
         traverseOpt(maybeRest)(tokenToIdent)
@@ -2207,7 +2213,7 @@ object Weeder2 {
           case Some(name) => WeededAst.Type.Var(name, name.loc)
         }
 
-        val row = Validation.foldRight(pickAllTrees(parentTree))(rest.toSuccess) {
+        Validation.foldRight(pickAllTrees(parentTree))(rest.toSuccess) {
           case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithAlias =>
             mapN(
               pickQName(parentTree),
@@ -2230,8 +2236,6 @@ object Weeder2 {
 
           case (_, acc) => acc.toSuccess
         }
-
-        mapN(row)(Type.Schema(_, parentTree.loc))
       }
     }
 
