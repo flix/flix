@@ -4,31 +4,54 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.{Ast, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
-import ca.uwaterloo.flix.util.Options
+import ca.uwaterloo.flix.util._
 
 import java.io.File
 
 object MutationTester {
     def run(files: Seq[File], options: Options, tester: String, testee: String): Unit = {
         val flix = new Flix
-        flix.addSourceCode("tester", tester)
+        flix.setOptions(options)
+        flix.addSourceCode("testee",
+            s"""
+            |def main(): Unit \\ IO =
+            |    println(Test.one())
+            |
+            |mod Test {
+            |    pub def one(): Int32 = 1
+            |}""".stripMargin)
+
+        flix.addSourceCode("tester",
+            s"""
+            |mod MainTest {
+            |    @test
+            |    def testConstant(): Bool =
+            |        Assert.eq(Test.one(), 1)
+            |}""".stripMargin)
         val root = flix.check().unsafeGet
-        val root1 = mutate(root)
+        val root1 = mutate(root, testee)
+        val res = flix.codeGen(root1).unsafeGet.getTests
+        println(res)
         /**
         val result = root1.map(r => flix.codeGen(r).unsafeGet)
         val tests = result.map(res => res.getTests)
         */
-        val res = flix.codeGen(root1).unsafeGet.getTests
-        println(res)
     }
 
-    def mutate(root: TypedAst.Root): TypedAst.Root = {
+    def mutate(root: TypedAst.Root, testee: String): TypedAst.Root = {
         val defs = root.defs
         //defs.toList.map(t => mutateExpr(t._2.exp))
+        val defSyms = root.modules.filter(pair => (pair._1.toString.equals(testee))).values.toList.flatten
+        println(defSyms)
         val newDefs = defs.map(d => (d._1,d._2) match {
             case (s, fun) =>
-                d._1 -> TypedAst.Def(fun.sym, fun.spec, mutateExpr(fun.exp))
+                if (defSyms.contains(s)) {
+                    println(d._2)
+                    val mut = TypedAst.Def(fun.sym, fun.spec, mutateExpr(fun.exp))
+                    println(mut)
+                    d._1 -> mut
 
+                } else d
             case _ => d
         })
         root.copy(defs = newDefs)
