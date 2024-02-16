@@ -940,7 +940,8 @@ object ConstraintGeneration {
         c.unifyTypeM(continuationEffect, Type.mkUnion(correctedBodyEff :: effs, loc), loc)
         c.unifyTypeM(tvar, tpe, loc)
         val resultTpe = tpe
-        val resultEff = continuationEffect
+//        val resultEff = continuationEffect
+        val resultEff = Type.freshVar(Kind.Eff, loc) // MATT evil hack
         (resultTpe, resultEff)
 
       case Expr.Do(op, args, tvar, loc) =>
