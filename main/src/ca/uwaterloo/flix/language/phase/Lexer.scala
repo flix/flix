@@ -397,7 +397,6 @@ object Lexer {
       case _ if isKeyword("enum") => TokenKind.KeywordEnum
       case _ if isKeyword("false") => TokenKind.KeywordFalse
       case _ if isKeyword("fix") => TokenKind.KeywordFix
-      case _ if isKeyword("for") => TokenKind.KeywordFor
       case _ if isKeyword("forA") => TokenKind.KeywordForA
       case _ if isKeyword("forall") => TokenKind.KeywordForall
       case _ if isKeyword("force") => TokenKind.KeywordForce

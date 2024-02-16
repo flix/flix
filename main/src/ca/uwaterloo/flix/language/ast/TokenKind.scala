@@ -151,8 +151,6 @@ object TokenKind {
 
   case object KeywordFix extends TokenKind
 
-  case object KeywordFor extends TokenKind
-
   case object KeywordForA extends TokenKind
 
   case object KeywordForall extends TokenKind
