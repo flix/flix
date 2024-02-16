@@ -11,7 +11,8 @@ object PurityPrinter {
     */
   def print(purity: Purity): Eff = purity match {
     case Purity.Pure => Eff.Pure
-    case Purity.Impure => Eff.Univ
+    case Purity.Impure => Eff.Impure
+    case Purity.ControlImpure => Eff.ControlImpure
   }
 
 }
