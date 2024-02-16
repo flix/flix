@@ -160,6 +160,7 @@ object FormatType {
       // delimited types
       case SimpleType.Hole => true
       case SimpleType.Void => true
+      case SimpleType.AnyType => true
       case SimpleType.Unit => true
       case SimpleType.Null => true
       case SimpleType.Bool => true
@@ -206,7 +207,6 @@ object FormatType {
       case SimpleType.Tuple(_) => true
       case SimpleType.Union(_) => true
       case SimpleType.Error => true
-      case SimpleType.AnyType => true
     }
 
     /**
@@ -226,6 +226,7 @@ object FormatType {
     def visit(tpe0: SimpleType, mode: Mode): String = tpe0 match {
       case SimpleType.Hole => "?"
       case SimpleType.Void => "Void"
+      case SimpleType.AnyType => "AnyType"
       case SimpleType.Unit => "Unit"
       case SimpleType.Null => "Null"
       case SimpleType.Bool => "Bool"
@@ -357,8 +358,6 @@ object FormatType {
         elms.map(visit(_, Mode.Type)).mkString("(", ", ", ")")
 
       case SimpleType.Error => "Error"
-
-      case SimpleType.AnyType => "AnyType"
 
     }
 

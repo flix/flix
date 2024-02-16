@@ -28,6 +28,8 @@ object MonoType {
   /// Primitive Types.
   ///
 
+  case object AnyType extends MonoType
+
   case object Unit extends MonoType
 
   case object Bool extends MonoType
@@ -55,8 +57,6 @@ object MonoType {
   case object Regex extends MonoType
 
   case object Region extends MonoType
-
-  case object AnyType extends MonoType
 
   ///
   /// Compound Types.

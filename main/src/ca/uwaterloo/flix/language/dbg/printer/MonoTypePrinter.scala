@@ -25,6 +25,7 @@ object MonoTypePrinter {
     * Returns the [[Type]] representation of `tpe`.
     */
   def print(tpe: MonoType): Type = tpe match {
+    case MonoType.AnyType => Type.AnyType
     case MonoType.Unit => Type.Unit
     case MonoType.Bool => Type.Bool
     case MonoType.Char => Type.Char
@@ -39,7 +40,6 @@ object MonoTypePrinter {
     case MonoType.String => Type.Str
     case MonoType.Regex => Type.Regex
     case MonoType.Region => Type.Region
-    case MonoType.AnyType => Type.AnyType
     case MonoType.Array(tpe) => Type.Array(print(tpe))
     case MonoType.Lazy(tpe) => Type.Lazy(print(tpe))
     case MonoType.Ref(tpe) => Type.Ref(print(tpe))

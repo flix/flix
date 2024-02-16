@@ -24,6 +24,14 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represent an unconstrained type after monomorphization.
+    */
+  @IntroducedBy(MonoDefs.getClass)
+  case object AnyType extends TypeConstructor {
+    override def kind: Kind = Kind.Star
+  }
+
+  /**
     * A type constructor that represent the Unit type.
     */
   case object Unit extends TypeConstructor {
@@ -407,10 +415,5 @@ object TypeConstructor {
     * A type constructor which represents an erroneous type of the given `kind`.
     */
   case class Error(kind: Kind) extends TypeConstructor
-
-  @IntroducedBy(MonoDefs.getClass)
-  case object AnyType extends TypeConstructor {
-    override def kind: Kind = Kind.Star
-  }
 
 }

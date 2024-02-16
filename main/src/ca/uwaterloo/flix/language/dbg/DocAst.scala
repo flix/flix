@@ -312,6 +312,8 @@ object DocAst {
     /** inserted string printed as-is (assumed not to require parenthesis) */
     case class Meta(s: String) extends Atom
 
+    val AnyType: Type = AsIs("AnyType")
+
     val Unknown: Type = Meta("unknown type")
 
     val Bool: Type = AsIs("Bool")
@@ -339,8 +341,6 @@ object DocAst {
     val Regex: Type = AsIs("Regex")
 
     val Region: Type = AsIs("Region")
-
-    val AnyType: Type = AsIs("AnyType")
 
     def Array(t: Type): Type = App("Array", List(t))
 

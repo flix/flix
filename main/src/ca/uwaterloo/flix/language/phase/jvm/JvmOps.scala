@@ -45,6 +45,7 @@ object JvmOps {
     */
   def getJvmType(tpe: MonoType): JvmType = tpe match {
     // Primitives
+    case MonoType.AnyType => JvmType.Object
     case MonoType.Unit => JvmType.Unit
     case MonoType.Bool => JvmType.PrimBool
     case MonoType.Char => JvmType.PrimChar
@@ -59,7 +60,6 @@ object JvmOps {
     case MonoType.String => JvmType.String
     case MonoType.Regex => JvmType.Regex
     case MonoType.Region => JvmType.Object
-    case MonoType.AnyType => JvmType.Object
     // Compound
     case MonoType.Array(_) => JvmType.Object
     case MonoType.Lazy(_) => JvmType.Object
@@ -89,7 +89,7 @@ object JvmOps {
       case Int16 => JvmType.PrimShort
       case Int32 => JvmType.PrimInt
       case Int64 => JvmType.PrimLong
-      case Unit | BigDecimal | BigInt | String | Regex | Region | AnyType |
+      case AnyType | Unit | BigDecimal | BigInt | String | Regex | Region |
            Array(_) |Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) |
            RecordEmpty |RecordExtend(_, _, _) | Native(_) => JvmType.Object
     }
@@ -112,7 +112,7 @@ object JvmOps {
       case Int32 => JvmType.PrimInt
       case Int64 => JvmType.PrimLong
       case Native(clazz) if clazz == classOf[Object] => JvmType.Object
-      case Unit | BigDecimal | BigInt | String | Regex | Region | AnyType |
+      case AnyType | Unit | BigDecimal | BigInt | String | Regex | Region |
            Array(_) | Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) |
            RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
         throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
