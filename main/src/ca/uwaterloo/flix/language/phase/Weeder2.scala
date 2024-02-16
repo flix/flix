@@ -686,6 +686,8 @@ object Weeder2 {
         case TreeKind.Expr.Ascribe => visitAscribe(tree)
         case TreeKind.Expr.Match => visitMatch(tree)
         case TreeKind.Expr.Do => visitDo(tree)
+        case TreeKind.Expr.Open => visitOpen(tree)
+        case TreeKind.Expr.OpenAs => visitOpenAs(tree)
         case TreeKind.Expr.ParYield => visitParYield(tree)
         case TreeKind.Expr.TypeMatch => visitTypeMatch(tree)
         case TreeKind.Expr.CheckedTypeCast => visitCheckedTypeCast(tree)
@@ -716,6 +718,16 @@ object Weeder2 {
         case TreeKind.QName => visitExprQname(tree)
         case kind => failWith(s"TODO: implement expression of kind '$kind'", tree.loc)
       }
+    }
+
+    private def visitOpen(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Open)
+      mapN(pickQName(tree))((name) => Expr.Open(name, tree.loc))
+    }
+
+    private def visitOpenAs(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.OpenAs)
+      mapN(pickQName(tree), pickExpression(tree))((name, expr) => Expr.OpenAs(name, expr, tree.loc))
     }
 
     private def visitDo(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {

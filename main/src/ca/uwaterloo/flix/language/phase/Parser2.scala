@@ -1231,6 +1231,8 @@ object Parser2 {
         case TokenKind.KeywordSpawn => spawn()
         case TokenKind.KeywordPar => parYield()
         case TokenKind.KeywordDo => exprDo()
+        case TokenKind.KeywordOpen => exprOpen()
+        case TokenKind.KeywordOpenAs => openAs()
         case TokenKind.LiteralStringInterpolationL
              | TokenKind.LiteralDebugStringL => interpolatedString()
         case TokenKind.KeywordTypeMatch => typematch()
@@ -1294,6 +1296,24 @@ object Parser2 {
       }
       close(mark, TreeKind.Expr.Expr)
     }
+
+    private def exprOpen()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordOpen))
+      val mark = open()
+      expect(TokenKind.KeywordOpen)
+      name(NAME_QNAME, allowQualified = true)
+      close(mark, TreeKind.Expr.Open)
+    }
+
+    private def openAs()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordOpenAs))
+      val mark = open()
+      expect(TokenKind.KeywordOpenAs)
+      name(NAME_QNAME, allowQualified = true)
+      expression()
+      close(mark, TreeKind.Expr.OpenAs)
+    }
+
     private def exprDo()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordDo))
       val mark = open()
