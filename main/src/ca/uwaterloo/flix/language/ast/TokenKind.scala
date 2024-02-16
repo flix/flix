@@ -131,8 +131,6 @@ object TokenKind {
 
   case object KeywordChoose extends TokenKind
 
-  case object KeywordClass extends TokenKind
-
   case object KeywordDebug extends TokenKind
 
   case object KeywordDef extends TokenKind
@@ -215,8 +213,6 @@ object TokenKind {
 
   case object KeywordPar extends TokenKind
 
-  case object KeywordProject extends TokenKind
-
   case object KeywordPub extends TokenKind
 
   case object KeywordPure extends TokenKind
@@ -228,8 +224,6 @@ object TokenKind {
   case object KeywordRegion extends TokenKind
 
   case object KeywordRestrictable extends TokenKind
-
-  case object KeywordResume extends TokenKind
 
   case object KeywordSealed extends TokenKind
 
