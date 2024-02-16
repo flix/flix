@@ -162,10 +162,13 @@ object ConstraintResolution {
       resolve(constrs, renv, cenv, eqEnv, initialSubst).flatMap {
         case ReductionResult(_, subst, _, deferred, progress) =>
           stopLogging()
-          if (deferred.nonEmpty) {
-            Result.Err(TypeError.SomeError("leftover constraints: " + deferred)) // MATT need to specialize this error!
-          } else {
-            Result.Ok(subst)
+          // TODO here we only consider the first error
+          deferred match {
+            case Nil => Result.Ok(subst)
+            case TypingConstraint.Equality(tpe1, tpe2, prov) :: _ => Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
+            case TypingConstraint.Class(sym, tpe, loc) :: _ => Err(TypeError.MissingInstance(sym, tpe, renv, loc))
+            case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) :: _ => throw InternalCompilerException("unexpected purificaiton error", loc)
+            case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested) :: _ => throw InternalCompilerException("blah delete me", loc)
           }
       }.toValidation
   }
