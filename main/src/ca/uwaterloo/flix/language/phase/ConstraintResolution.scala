@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 import java.nio.file.{Files, Path}
+import scala.annotation.tailrec
 
 object ConstraintResolution {
 
@@ -143,7 +144,7 @@ object ConstraintResolution {
 
 
       val initialSubst = fparams.foldLeft(Substitution.empty) {
-        case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, tpe)
+        case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(tpe)(Level.Top, flix))
       }
 
       // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
@@ -681,6 +682,31 @@ object ConstraintResolution {
     }
 
     visit(eff)
+  }
+
+  /**
+    * Opens schema types `#{A(Int32) | {}}` becomes `#{A(Int32) | r}` with a fresh
+    * `r`. This only happens for if the row type is the topmost type, i.e. this
+    * doesn't happen inside tuples or other such nesting.
+    */
+  private def openOuterSchema(tpe: Type)(implicit level: Level, flix: Flix): Type = {
+    @tailrec
+    def transformRow(tpe: Type, acc: Type => Type): Type = tpe match {
+      case Type.Cst(TypeConstructor.SchemaRowEmpty, loc) =>
+        acc(Type.freshVar(TypeConstructor.SchemaRowEmpty.kind, loc))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), loc1), tpe1, loc2), rest, loc3) =>
+        transformRow(rest, inner =>
+          // copy into acc, just replacing `rest` with `inner`
+          acc(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), loc1), tpe1, loc2), inner, loc3))
+        )
+      case other => acc(other)
+    }
+
+    tpe match {
+      case Type.Apply(Type.Cst(TypeConstructor.Schema, loc1), row, loc2) =>
+        Type.Apply(Type.Cst(TypeConstructor.Schema, loc1), transformRow(row, x => x), loc2)
+      case other => other
+    }
   }
 
 }
