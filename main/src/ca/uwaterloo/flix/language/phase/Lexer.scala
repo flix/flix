@@ -387,7 +387,6 @@ object Lexer {
       case _ if isKeyword("checked_cast") => TokenKind.KeywordCheckedCast
       case _ if isKeyword("checked_ecast") => TokenKind.KeywordCheckedECast
       case _ if isKeyword("choose") => TokenKind.KeywordChoose
-      case _ if isKeyword("class") => TokenKind.KeywordClass
       case _ if isKeyword("debug") => TokenKind.KeywordDebug
       case _ if isKeyword("def") => TokenKind.KeywordDef
       case _ if isKeyword("deref") => TokenKind.KeywordDeref
@@ -427,7 +426,6 @@ object Lexer {
       case _ if isKeyword("or") => TokenKind.KeywordOr
       case _ if isKeyword("override") => TokenKind.KeywordOverride
       case _ if isKeyword("par") => TokenKind.KeywordPar
-      case _ if isKeyword("project") => TokenKind.KeywordProject
       case _ if isKeyword("pub") => TokenKind.KeywordPub
       case _ if isKeyword("pure") => TokenKind.KeywordPure
       case _ if isKeyword("query") => TokenKind.KeywordQuery
