@@ -233,8 +233,8 @@ mod Graph {
     pub def distancesFrom(src: t, g: m[(t, Int32, t)]): Map[t, Int32] with Foldable[m], Order[t] = {
         let edges = inject g into Edge;
         let dists = #{
-            Dist(src; Down(0)).
-            Dist(y; d + Down(w)) :- Dist(x; d), Edge(x, w, y).
+            Dist(src; Down.Down(0)).
+            Dist(y; d + Down.Down(w)) :- Dist(x; d), Edge(x, w, y).
         };
         let res = query edges, dists select (x, coerce(d)) from Dist(x; d);
         res |> Vector.toMap
