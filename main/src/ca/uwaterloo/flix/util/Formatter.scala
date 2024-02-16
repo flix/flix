@@ -53,6 +53,36 @@ trait Formatter {
       leftline
   }
 
+  /**
+    * Create a table.
+    *
+    * @param colHeaders    The headers for each column.
+    * @param colFormatters The functions to format (e.g. color) the contents of the respective columns
+    *                      in the same order as the `colHeaders`. This is applied after the contents are padded.
+    *                      Must have the same length as `colHeaders`.
+    * @param rows          The list of the table's rows. Each row must have the same length as `colHeaders`.
+    */
+  def table(colHeaders: List[String], colFormatters: List[String => String], rows: List[List[String]]): String = {
+    val cols = rows.transpose
+    val (headersPadded, colsPadded) = (colHeaders zip cols).map { case (header, col) =>
+      val headerPadded :: colPadded = padToLongest(header :: col)
+      (headerPadded, colPadded)
+    }.unzip
+
+    // Formatting must happen after padding
+    val colsFormatted = (colsPadded zip colFormatters).map { case (c, f) => c.map(f) }
+    val rowsFormatted = colsFormatted.transpose
+
+    val sb = new mutable.StringBuilder
+    val colSeparator = "    "
+    sb.append(headersPadded.mkString(colSeparator))
+    for (row <- rowsFormatted) {
+      sb.append(System.lineSeparator())
+      sb.append(row.mkString(colSeparator))
+    }
+    sb.toString()
+  }
+
   def black(s: String): String
 
   def brightBlack(s: String): String
@@ -122,6 +152,14 @@ trait Formatter {
   def underline(s: String): String
 
   private def padLeft(width: Int, s: String): String = String.format("%" + width + "s", s)
+
+  /**
+    * Takes a list of strings and right-pads them with spaces to all take up the same space.
+    */
+  private def padToLongest(l: List[String]): List[String] = {
+    val longestLength = l.map(s => s.length).max
+    l.map(s => s.padTo(longestLength, ' '))
+  }
 }
 
 object Formatter {

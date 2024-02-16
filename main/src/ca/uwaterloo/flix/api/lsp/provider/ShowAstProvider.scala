@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix.IrFileExtension
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.util.Similarity
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
@@ -39,35 +40,8 @@ object ShowAstProvider {
       // We have to compile the program to obtain the relevant AST.
       flix.codeGen(r)
 
-      val phases = List("Parser", "Weeder", "Kinder", "Resolver", "TypedAst",
-        "Documentor", "Lowering", "TreeShaker1", "MonoDefs",
-        "MonoTypes", "Simplifier", "ClosureConv", "LambdaLift", "Tailrec",
-        "Optimizer", "TreeShaker2", "EffectBinder", "Eraser", "Reducer", "VarOffsets")
-
-      phase match {
-        case "Parser" => astObject(phase, "Work In Progress")
-        case "Weeder" => astObject(phase, "Work In Progress")
-        case "Kinder" => astObject(phase, "Work In Progress")
-        case "Resolver" => astObject(phase, "Work In Progress")
-        case "TypedAst" => astObject(phase, "Work In Progress")
-        case "Documentor" => astObject(phase, "Work In Progress")
-        case "Lowering" => astObject(phase, AstPrinter.formatLoweredAst(flix.getLoweringAst))
-        case "TreeShaker1" => astObject(phase, AstPrinter.formatLoweredAst(flix.getTreeShaker1Ast))
-        case "MonoDefs" => astObject(phase, AstPrinter.formatLoweredAst(flix.getMonoDefsAst))
-        case "MonoTypes" => astObject(phase, AstPrinter.formatLoweredAst(flix.getMonoTypesAst))
-        case "Simplifier" => astObject(phase, AstPrinter.formatSimplifiedAst(flix.getSimplifierAst))
-        case "ClosureConv" => astObject(phase, AstPrinter.formatSimplifiedAst(flix.getClosureConvAst))
-        case "LambdaLift" => astObject(phase, AstPrinter.formatLiftedAst(flix.getLambdaLiftAst))
-        case "Tailrec" => astObject(phase, AstPrinter.formatLiftedAst(flix.getTailrecAst))
-        case "Optimizer" => astObject(phase, AstPrinter.formatLiftedAst(flix.getOptimizerAst))
-        case "TreeShaker2" => astObject(phase, AstPrinter.formatLiftedAst(flix.getTreeShaker2Ast))
-        case "EffectBinder" => astObject(phase, AstPrinter.formatReducedAst(flix.getEffectBinderAst))
-        case "Eraser" => astObject(phase, AstPrinter.formatReducedAst(flix.getEraserAst))
-        case "Reducer" => astObject(phase, AstPrinter.formatReducedAst(flix.getReducerAst))
-        case "VarOffsets" => astObject(phase, AstPrinter.formatReducedAst(flix.getVarOffsetsAst))
-        case _ =>
-          astObject(phase, s"Unknown phase: '$phase'. Try one of these ${phases.map(s => s"'$s'").mkString(", ")}")
-      }
+      val closestPrettyPrinter = Similarity.closestMatch(phase, AstPrinter.allPhases())
+      astObject(phase, closestPrettyPrinter())
   }
 
   private def astObject(phase: String, text: String): JObject = {

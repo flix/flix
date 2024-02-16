@@ -122,10 +122,10 @@ mod Fixpoint.Solver {
         // Import a function that can create new ids.
         import static dev.flix.runtime.Global.newId(): Int64 \ IO;
 
-        /// Determine all the predicate symbols in `d`.
+        // Determine all the predicate symbols in `d`.
         let predSyms = predSymsOf(d);
 
-        /// Compute a substitition that assignes fresh names to all predicates except those in `preds`.
+        // Compute a substitition that assignes fresh names to all predicates except those in `preds`.
         def f(macc, predSym) = {
             if (List.memberOf(predSym, preds)) {
                 // Case 1: Do not rename. Do not extend the map.

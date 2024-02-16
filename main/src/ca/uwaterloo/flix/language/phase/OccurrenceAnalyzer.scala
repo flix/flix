@@ -169,14 +169,11 @@ object OccurrenceAnalyzer {
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.ApplyDef(sym, es, ct, tpe, purity, loc), o3.increaseSizeByOne())
 
-    case Expr.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
+    case Expr.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       val (as, o1) = visitExps(sym0, actuals)
-      val f = formals.map {
-        case LiftedAst.FormalParam(sym, mod, tpe, loc) => OccurrenceAst.FormalParam(sym, mod, tpe, loc)
-      }
       val o2 = OccurInfo(Map(sym -> Once), Map.empty, 0)
       val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.ApplySelfTail(sym, f, as, tpe, purity, loc), o3.increaseSizeByOne())
+      (OccurrenceAst.Expression.ApplySelfTail(sym, as, tpe, purity, loc), o3.increaseSizeByOne())
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
