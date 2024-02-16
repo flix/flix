@@ -168,7 +168,6 @@ object ConstraintResolution {
             case TypingConstraint.Equality(tpe1, tpe2, prov) :: _ => Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
             case TypingConstraint.Class(sym, tpe, loc) :: _ => Err(TypeError.MissingInstance(sym, tpe, renv, loc))
             case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) :: _ => throw InternalCompilerException("unexpected purificaiton error", loc)
-            case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested) :: _ => throw InternalCompilerException("blah delete me", loc)
           }
       }.toValidation
   }
@@ -660,25 +659,6 @@ object ConstraintResolution {
         // Case 2: Constraints remain below. Maintain the purity constraint.
         case ReductionResult(_oldSubst, subst, oldConstrs, newConstrs, progress) =>
           val constr = TypingConstraint.Purification(sym, eff1, eff2, level, prov, newConstrs)
-          ReductionResult(subst0, subst, oldConstrs, List(constr), progress)
-      }
-    // TODO this is partially copied from the above; should try to make an abstraction
-    case TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, nested0) =>
-      // First reduce nested constraints
-      reduceAll3(nested0, renv, cenv, eqEnv, subst0).map {
-        // Case 1: We have reduced everything below. Now reduce the purity constraint.
-        case ReductionResult(_oldSubst, subst1, oldConstrs, newConstrs, progress) if newConstrs.isEmpty =>
-          val e1 = subst1(eff1)
-          // purify the inner type
-          val e2Raw = subst1(eff2)
-          val e2 = purifyEff(sym, e2Raw)
-          val qvars = e2Raw.typeVars.map(_.sym).filter(_.level >= level)
-          val subst = qvars.foldLeft(subst1)(_.unbind(_))
-          val constr = TypingConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov)
-          ReductionResult(subst0, subst, oldConstrs, List(constr), progress = true)
-        // Case 2: Constraints remain below. Maintain the purity constraint.
-        case ReductionResult(_oldSubst, subst, oldConstrs, newConstrs, progress) =>
-          val constr = TypingConstraint.EffPurification(sym, eff1, eff2, level, prov, newConstrs)
           ReductionResult(subst0, subst, oldConstrs, List(constr), progress)
       }
   }
