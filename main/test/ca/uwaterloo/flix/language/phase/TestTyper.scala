@@ -302,6 +302,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   }
 
   test("NoMatchingInstance.06") {
+    // missing constraint on C[b]
     val input =
       """
         |class C[a] {

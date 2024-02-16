@@ -417,7 +417,7 @@ object ConstraintResolution {
           // Case 3: Something rigid (const or rigid var). We can look this up immediately.
           case _ =>
             // we mark t's tvars as rigid so we get the substitution in the right direction
-            val renv = t.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
+            val renv = t.typeVars.map(_.sym).foldLeft(renv0)(_.markRigid(_))
             val insts = classEnv(clazz).instances
             // find the first (and only) instance that matches
             insts.iterator.flatMap { // TODO ASSOC-TYPES generalize this pattern (also in monomorph)
