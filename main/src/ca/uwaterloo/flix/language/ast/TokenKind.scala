@@ -257,6 +257,8 @@ object TokenKind {
 
   case object KeywordUncheckedCast extends TokenKind
 
+  case object KeywordUniv extends TokenKind
+
   case object KeywordUse extends TokenKind
 
   case object KeywordWhere extends TokenKind
