@@ -284,7 +284,9 @@ object ConstraintResolution {
         res <- CaseSetUnification.unify(t1, t2, renv, sym1.universe, sym1).mapErr(toTypeError(_, prov))
       } yield EqualityResult.Subst(res, Nil)
 
-    case _ => simplifyEqualityStar(tpe1, tpe2, prov, renv, eqEnv)
+    case (k1, k2) if KindUnification.unifiesWith(k1, k2) => simplifyEqualityStar(tpe1, tpe2, prov, renv, eqEnv)
+
+    case _ => Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
   }
 
   // Θ ⊩ᵤ τ₁ = τ₂ ⤳ U; R
