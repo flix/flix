@@ -956,11 +956,22 @@ object ConstraintGeneration {
           eff
         }
 
+        // We special case the result type of the operation.
+        val operationType = operation.spec.tpe.typeConstructor match {
+          case Some(TypeConstructor.Void) =>
+            // The operation type is `Void`. Flix does not have subtyping, but here we want something close to it.
+            // Hence we treat `Void` as a fresh type variable.
+            // An alternative would be to allow empty pattern matches, but that is cumbersome.
+            Type.freshVar(Kind.Star, operation.spec.tpe.loc, false, Ast.VarText.Absent)
+          case _ => operation.spec.tpe
+        }
+
+        // MATT check full application
         val effs = (args zip operation.spec.fparams) map {
           case (arg, fparam) => visitArg(arg, fparam)
         }
 
-        c.unifyTypeM(operation.spec.tpe, tvar, loc)
+        c.unifyTypeM(operationType, tvar, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(effTpe :: operation.spec.eff :: effs, loc)
 
