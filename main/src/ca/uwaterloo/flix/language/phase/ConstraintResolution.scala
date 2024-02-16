@@ -234,8 +234,6 @@ object ConstraintResolution {
         (t1, p1) <- simplifyType(tpe1, renv, eqEnv, loc)
         (t2, p2) <- simplifyType(tpe2, renv, eqEnv, loc)
         res0 <- EffUnification.unify(t1, t2, renv).mapErr(toTypeError(_, prov))
-        _ = if (t1.size > 1000) throw InternalCompilerException("blah", SourceLocation.Unknown)
-        // MATT throwing away prov
         // If eff unification has any constrs in output, then we know it failed so the subst is empty
         res =
           if (res0._2.isEmpty) {
@@ -253,7 +251,6 @@ object ConstraintResolution {
         (t1, p1) <- simplifyType(tpe1, renv, eqEnv, loc)
         (t2, p2) <- simplifyType(tpe2, renv, eqEnv, loc)
         res0 <- BoolUnification.unify(t1, t2, renv).mapErr(toTypeError(_, prov))
-        // MATT throwing away prov
         // If bool unification has any constrs in output, then we know it failed so the subst is empty
         res =
           if (res0._2.isEmpty) {
@@ -273,7 +270,6 @@ object ConstraintResolution {
         (t2, p2) <- simplifyType(tpe2, renv, eqEnv, loc)
         res0 <- RecordUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
         // If eff unification has any constrs in output, then we know it failed so the subst is empty
-        // MATT throwing away prov
         res = if (res0._2.isEmpty) EqualityResult.Subst(res0._1, Nil) else throw InternalCompilerException("can't handle complex record stuff", SourceLocation.Unknown)
       } yield res
 
@@ -283,7 +279,6 @@ object ConstraintResolution {
         (t1, p1) <- simplifyType(tpe1, renv, eqEnv, loc)
         (t2, p2) <- simplifyType(tpe2, renv, eqEnv, loc)
         res <- SchemaUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
-        // MATT throwing away prov
       } yield EqualityResult.Subst(res, Nil)
 
     case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) => // MATT maybe need to compare sym1 and sym2
@@ -684,47 +679,6 @@ object ConstraintResolution {
           ReductionResult(subst0, subst, oldConstrs, List(constr), progress)
       }
   }
-
-  //  def fromUnificationResult(res: Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError]): Result[(Substitution, List[TypingConstraint]), UnificationError] = {
-  //    res.map {
-  //      case (subst, constrs0) =>
-  //        val constrs = constrs0.map {
-  //          case Ast.BroadEqualityConstraint(tpe1, tpe2) =>
-  //            TypingConstraint.Equality(tpe1, tpe2, Provenance.Match) // MATT prov and loc
-  //        }
-  //        (subst, constrs)
-  //    }
-  //  }
-
-  //  private def toUnificationReductionResult(unifResult: Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError], prov: Provenance, loc: SourceLocation): ReductionResult = unifResult match {
-  //    // Case 1: Empty substitution. Just constraints here.
-  //    case Result.Ok((subst, econstrs)) if subst == Substitution.empty =>
-  //      val constrs = econstrs.map(toEqualityTypingConstraint(_, prov, loc))
-  //      ReductionResult.NewConstraints(constrs)
-  //    // Case 2: Both substitution and constraints.
-  //    case Result.Ok((subst, econstrs)) =>
-  //      val constrs = econstrs.map(toEqualityTypingConstraint(_, prov, loc))
-  //      ReductionResult.NewSubstitution(subst, constrs)
-  //    case Result.Err(e) => ReductionResult.Failure(e)
-  //  }
-  //
-  //  private def toClassReductionResult(classResult: Validation[List[Ast.TypeConstraint], UnificationError], loc: SourceLocation): ReductionResult = classResult match {
-  //    case Validation.Success(tconstrs) =>
-  //      val constrs = tconstrs.map(toClassTypingConstraint(_, loc))
-  //      ReductionResult.NewConstraints(constrs)
-  //    case Validation.SoftFailure(t, errors) =>
-  //      ReductionResult.Failure(errors.head) // TODO ASSOC-TYPES multiple errors?
-  //    case Validation.Failure(errors) =>
-  //      ReductionResult.Failure(errors.head) // TODO ASSOC-TYPES multiple errors?
-  //  }
-
-  //  def toEqualityTypingConstraint(econstr: Ast.BroadEqualityConstraint, prov: Provenance, loc: SourceLocation): TypingConstraint = econstr match {
-  //    case Ast.BroadEqualityConstraint(tpe1, tpe2) => TypingConstraint.Equality(tpe1, tpe2, prov, loc)
-  //  }
-  //
-  //  def toClassTypingConstraint(tconstr: Ast.TypeConstraint, loc: SourceLocation): TypingConstraint = tconstr match {
-  //    case Ast.TypeConstraint(head, arg, _) => TypingConstraint.Class(head.sym, arg, loc)
-  //  }
 
   /**
     * Replaces every occurrence of the effect symbol `sym` with pure in `eff`.
