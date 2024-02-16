@@ -25,6 +25,7 @@ object MonoTypePrinter {
     * Returns the [[Type]] representation of `tpe`.
     */
   def print(tpe: MonoType): Type = tpe match {
+    case MonoType.AnyType => Type.AnyType
     case MonoType.Unit => Type.Unit
     case MonoType.Bool => Type.Bool
     case MonoType.Char => Type.Char
