@@ -364,9 +364,9 @@ object Lexer {
       case _ if isKeyword("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
       case _ if isKeyword("**") => TokenKind.StarStar
-      case _ if isKeyword("<-") => TokenKind.BackArrowThin
-      case _ if isKeyword("=>") => TokenKind.Arrow
-      case _ if isKeyword("->") => TokenKind.ArrowThin
+      case _ if isKeyword("<-") => TokenKind.ArrowThinL
+      case _ if isKeyword("->") => TokenKind.ArrowThinR
+      case _ if isKeyword("=>") => TokenKind.ArrowThickR
       case _ if isKeyword("<=") => TokenKind.AngleLEqual
       case _ if isKeyword(">=") => TokenKind.AngleREqual
       case _ if isKeyword("==") => TokenKind.EqualEqual
