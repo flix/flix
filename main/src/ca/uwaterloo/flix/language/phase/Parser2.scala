@@ -1219,7 +1219,7 @@ object Parser2 {
       val mark = open()
       // Handle clearly delimited expressions
       nth(0) match {
-        // TODO: do, resume, open, open_as, instanceof, without, fixpointLambda
+        // TODO: do, open, open_as, instanceof, without, fixpointLambda, restrictable choose
         case TokenKind.ParenL => parenOrTupleOrLambda()
         case TokenKind.CurlyL => blockOrRecord()
         case TokenKind.KeywordIf => ifThenElse()
@@ -1230,6 +1230,7 @@ object Parser2 {
         case TokenKind.KeywordLet => letMatch()
         case TokenKind.KeywordSpawn => spawn()
         case TokenKind.KeywordPar => parYield()
+        case TokenKind.KeywordDo => exprDo()
         case TokenKind.LiteralStringInterpolationL
              | TokenKind.LiteralDebugStringL => interpolatedString()
         case TokenKind.KeywordTypeMatch => typematch()
@@ -1293,7 +1294,14 @@ object Parser2 {
       }
       close(mark, TreeKind.Expr.Expr)
     }
-
+    private def exprDo()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordDo))
+      val mark = open()
+      expect(TokenKind.KeywordDo)
+      name(NAME_QNAME, allowQualified = true)
+      arguments()
+      close(mark, TreeKind.Expr.Do)
+    }
 
     private def fixpointProject()(implicit s: State): Mark.Closed = {
       assert(atAny(List(TokenKind.KeywordProject, TokenKind.KeywordInject)))

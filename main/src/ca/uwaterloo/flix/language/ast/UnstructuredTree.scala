@@ -263,6 +263,8 @@ object UnstructuredTree {
 
       case object Ref extends Expr
 
+      case object Do extends Expr
+
       case object ParYield extends Expr
 
       case object ParYieldFragment extends Expr
