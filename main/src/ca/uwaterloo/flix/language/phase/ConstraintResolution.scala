@@ -277,7 +277,7 @@ object ConstraintResolution {
         // MATT throwing away prov
       } yield EqualityResult.Subst(res, Nil)
 
-    case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) =>
+    case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) => // MATT maybe need to compare sym1 and sym2
       for {
         (t1, p1) <- simplifyType(tpe1, renv, eqEnv)
         (t2, p2) <- simplifyType(tpe2, renv, eqEnv)
