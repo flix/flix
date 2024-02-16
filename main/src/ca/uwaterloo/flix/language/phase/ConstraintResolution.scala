@@ -45,7 +45,7 @@ object ConstraintResolution {
     }
   }
 
-  private def recordGraph(s: String, number: Int): Unit = {
+  private def recordGraph(s: => String, number: Int): Unit = {
     if (record) {
       val path = Path.of(s"./personal/constraint-graphs/${number.toString.reverse.padTo(4, '0').reverse}.dot")
       Files.writeString(path, s)
