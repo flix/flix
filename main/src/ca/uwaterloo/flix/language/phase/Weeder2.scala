@@ -677,6 +677,7 @@ object Weeder2 {
         case TreeKind.Expr.Statement => visitStatement(tree)
         case TreeKind.Expr.Use => visitExprUse(tree)
         case TreeKind.Expr.Try => visitTry(tree)
+        case TreeKind.Expr.Without => visitWithout(tree)
         case TreeKind.Expr.FixpointQuery => visitFixpointQuery(tree)
         case TreeKind.Expr.FixpointConstraintSet => visitFixpointConstraintSet(tree)
         case TreeKind.Expr.FixpointSolve => visitFixpointSolve(tree)
@@ -720,9 +721,24 @@ object Weeder2 {
       }
     }
 
+    private def visitWithout(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Without)
+      val effectSet = pick(TreeKind.Type.EffectSet, tree.children)
+      val effects = flatMapN(effectSet)(effectSetTree => traverse(pickAll(TreeKind.QName, effectSetTree.children))(visitQName))
+      mapN(
+        pickExpression(tree),
+        effects
+      )((expr, effects) => {
+        val base = Expr.Without(expr, effects.head, tree.loc)
+        effects.tail.foldLeft(base) {
+          case (acc, eff) => Expr.Without(acc, eff, tree.loc.asSynthetic)
+        }
+      })
+    }
+
     private def visitOpen(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Open)
-      mapN(pickQName(tree))((name) => Expr.Open(name, tree.loc))
+      mapN(pickQName(tree))(Expr.Open(_, tree.loc))
     }
 
     private def visitOpenAs(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -2343,19 +2359,26 @@ object Weeder2 {
       }
     }
 
+    def pickEffect(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      flatMapN(pick(TreeKind.Type.EffectSet, tree.children))(visitEffect)
+    }
+
     def tryPickEffect(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {
       val maybeEffectSet = tryPick(TreeKind.Type.EffectSet, tree.children)
-      traverseOpt(maybeEffectSet)(setTree => {
-        val effects = traverse(pickAll(TreeKind.Type.Type, setTree.children))(visitType)
-        mapN(effects) {
-          // Default to Pure
-          case Nil => Type.Pure(setTree.loc)
-          // Otherwise reduce effects into a union type
-          case effects => effects.reduceLeft({
-            case (acc, tpe) => Type.Union(acc, tpe, setTree.loc)
-          }: (Type, Type) => Type)
-        }
-      })
+      traverseOpt(maybeEffectSet)(visitEffect)
+    }
+
+    def visitEffect(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Type.EffectSet)
+      val effects = traverse(pickAll(TreeKind.Type.Type, tree.children))(visitType)
+      mapN(effects) {
+        // Default to Pure
+        case Nil => Type.Pure(tree.loc)
+        // Otherwise reduce effects into a union type
+        case effects => effects.reduceLeft({
+          case (acc, tpe) => Type.Union(acc, tpe, tree.loc)
+        }: (Type, Type) => Type)
+      }
     }
 
     def pickArguments(tree: Tree)(implicit s: State): Validation[List[Type], CompilationMessage] = {

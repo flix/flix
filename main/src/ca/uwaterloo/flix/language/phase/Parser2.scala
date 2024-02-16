@@ -1138,6 +1138,23 @@ object Parser2 {
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
 
+      // Handle without expressions
+      if (eat(TokenKind.KeywordWithout)) {
+        if (at(TokenKind.CurlyL)) {
+          val mark = open()
+          separated(() => name(NAME_EFFECT, allowQualified = true))
+            .within(TokenKind.CurlyL, TokenKind.CurlyR)
+            .zeroOrMore()
+          close(mark, TreeKind.Type.EffectSet)
+        } else {
+          val mark = open()
+          name(NAME_EFFECT, allowQualified = true)
+          close(mark, TreeKind.Type.EffectSet)
+        }
+        lhs = close(openBefore(lhs), TreeKind.Expr.Without)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      }
+
       lhs
     }
 
@@ -2659,7 +2676,7 @@ object Parser2 {
       }
     }
 
-    private def effect()(implicit s: State): Mark.Closed = {
+    def effect()(implicit s: State): Mark.Closed = {
       val mark = open()
       nth(0) match {
         case TokenKind.NameUpperCase => name(NAME_EFFECT)
