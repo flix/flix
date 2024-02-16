@@ -269,6 +269,8 @@ object UnstructuredTree {
 
       case object OpenAs extends Expr
 
+      case object InstanceOf extends Expr
+
       case object ParYield extends Expr
 
       case object ParYieldFragment extends Expr

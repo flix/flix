@@ -1150,10 +1150,10 @@ object Parser2 {
       case object Binary extends OpKind
     }
 
-    // A precedence table for binary operators, lower is higher precedence.
+    // A precedence table for operators, lower is higher precedence.
     // Note that [[OpKind]] is necessary for the cases where the same token kind can be both unary and binary. IE. Plus or Minus
     private def PRECEDENCE: List[(OpKind, List[TokenKind])] = List(
-      (OpKind.Binary, List(TokenKind.ColonEqual)), // :=
+      (OpKind.Binary, List(TokenKind.ColonEqual, TokenKind.KeywordInstanceOf)), // :=, instanceof
       (OpKind.Binary, List(TokenKind.ColonColon, TokenKind.TripleColon)), // ::, :::
       (OpKind.Binary, List(TokenKind.KeywordOr)),
       (OpKind.Binary, List(TokenKind.KeywordAnd)),
@@ -1219,7 +1219,7 @@ object Parser2 {
       val mark = open()
       // Handle clearly delimited expressions
       nth(0) match {
-        // TODO: do, open, open_as, instanceof, without, fixpointLambda, restrictable choose
+        // TODO: without, fixpointLambda, restrictable choose
         case TokenKind.ParenL => parenOrTupleOrLambda()
         case TokenKind.CurlyL => blockOrRecord()
         case TokenKind.KeywordIf => ifThenElse()
@@ -1269,6 +1269,7 @@ object Parser2 {
              | TokenKind.LiteralRegex => literal()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThin) unaryLambda() else name(NAME_VARIABLE)
         case TokenKind.KeywordStaticUppercase => static()
+        case TokenKind.NameJava => name(NAME_JAVA, allowQualified = true)
         case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThin) unaryLambda() else name(NAME_DEFINITION)
         case TokenKind.NameUpperCase
              | TokenKind.NameMath
@@ -2554,9 +2555,6 @@ object Parser2 {
       close(mark, TreeKind.Type.Native)
     }
 
-    /**
-     * tuple -> '(' (type (',' type)* )? ')'
-     */
     def tupleOrRecordRow()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.ParenL))
       // Record rows follow the rule '(' (name '=' type)* ('|' name)? )
@@ -2564,15 +2562,18 @@ object Parser2 {
       val next = nth(1)
       val nextnext = nth(2)
       val isRecordRow = next == TokenKind.Bar || next == TokenKind.NameLowerCase && nextnext == TokenKind.Equal
-
       if (isRecordRow) {
         recordRow()
       } else {
-        // Parse a tuple type
-        val mark = open()
-        separated(() => ttype()).zeroOrMore()
-        close(mark, TreeKind.Type.Tuple)
+        tuple()
       }
+    }
+
+    def tuple()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.ParenL))
+      val mark = open()
+      separated(() => ttype()).zeroOrMore()
+      close(mark, TreeKind.Type.Tuple)
     }
 
     def recordRow()(implicit s: State): Mark.Closed = {

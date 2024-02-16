@@ -1353,9 +1353,9 @@ object Weeder2 {
 
     private def visitBinary(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Binary)
-      val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree.children))(visitExpression)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
       val op = pick(TreeKind.Operator, tree.children)
-      mapN(op, exprs) {
+      mapN(op, traverse(exprs)(visitExpression)) {
         case (op, e1 :: e2 :: Nil) =>
           val isInfix = op.children.head match {
             case Child.Token(token) => token.kind == TokenKind.InfixFunction
@@ -1393,6 +1393,13 @@ object Weeder2 {
             case ":=" => Expr.Assign(e1, e2, tree.loc)
             case "::" => Expr.FCons(e1, e2, tree.loc)
             case ":::" => Expr.FAppend(e1, e2, tree.loc)
+            case "instanceof" =>
+              val classname = mapN(pickQName(exprs(1)))(javaQnameToFqn)
+              classname match {
+                case Success(name) => Expr.InstanceOf(e1, name, tree.loc)
+                case _ => Expr.Error(Parse2Error.DevErr(tree.loc, s"Not a Java class"))
+              }
+
             // UNRECOGNIZED
             case id =>
               val ident = Name.Ident(tree.loc.sp1, id, tree.loc.sp2)
@@ -2481,7 +2488,7 @@ object Weeder2 {
   }
 
   private object JvmOp {
-    private def pickQNameIdents(tree: Tree)(implicit s: State): Validation[List[String], CompilationMessage] = {
+    def pickQNameIdents(tree: Tree)(implicit s: State): Validation[List[String], CompilationMessage] = {
       flatMapN(pick(TreeKind.QName, tree.children)) {
         qname => mapN(traverse(pickAll(TreeKind.Ident, qname.children))(t => text(t).toSuccess))(_.flatten)
       }
