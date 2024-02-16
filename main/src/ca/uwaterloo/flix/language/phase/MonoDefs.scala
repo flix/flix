@@ -72,7 +72,7 @@ object MonoDefs {
       case Kind.RecordRow => Type.RecordRowEmpty
       case Kind.SchemaRow => Type.SchemaRowEmpty
       case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
-      case _ => Type.Cst(TypeConstructor.AnyType, SourceLocation.Unknown)
+      case _ => Type.Cst(TypeConstructor.AnyType, tpe0.loc)
     }
 
     /**
