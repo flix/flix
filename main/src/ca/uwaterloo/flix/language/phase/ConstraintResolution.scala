@@ -146,8 +146,11 @@ object ConstraintResolution {
         case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, tpe)
       }
 
-      val renv = tparams.foldLeft(infRenv ++ renv0) {
-        case (acc, KindedAst.TypeParam(name, sym, loc)) => acc.markRigid(sym)
+      // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
+      val allTparams = tpe.typeVars ++ eff.typeVars ++ fparams.flatMap(_.tpe.typeVars)
+
+      val renv = allTparams.foldLeft(infRenv ++ renv0) {
+        case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
       }
 
       val cenv = expandClassEnv(cenv0, tconstrs ++ tconstrs0)
@@ -180,8 +183,11 @@ object ConstraintResolution {
         case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, tpe)
       }
 
-      val renv = tparams.foldLeft(infRenv) {
-        case (acc, KindedAst.TypeParam(name, sym, loc)) => acc.markRigid(sym)
+      // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
+      val allTparams = tpe.typeVars ++ eff.typeVars ++ fparams.flatMap(_.tpe.typeVars)
+
+      val renv = allTparams.foldLeft(infRenv) {
+        case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
       }
 
       val cenv = expandClassEnv(cenv0, instConstrs ++ tconstrs)
@@ -205,8 +211,11 @@ object ConstraintResolution {
         case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, tpe)
       }
 
-      val renv = tparams.foldLeft(infRenv ++ renv0) {
-        case (acc, KindedAst.TypeParam(name, sym, loc)) => acc.markRigid(sym)
+      // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
+      val allTparams = tpe.typeVars ++ eff.typeVars ++ fparams.flatMap(_.tpe.typeVars)
+
+      val renv = allTparams.foldLeft(infRenv ++ renv0) {
+        case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
       }
 
       val cenv = expandClassEnv(cenv0, tconstrs ++ tconstrs0)
