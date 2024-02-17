@@ -562,12 +562,12 @@ mod RedBlackTree {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison \ ef1, f: (k, v) -> Unit \ ef2, t: RedBlackTree[k, v]): Unit \ { ef1, ef2 } = match t {
+    pub def rangeQueryWith(p: k -> Comparison \ ef1, f: (k, v) -> Unit \ ef2, t: RedBlackTree[k, v]): Unit \ { ef1, ef2 } = match t {
         case Node(_, a, k, v, b) =>
             match p(k) {
-                case Comparison.LessThan    => queryWith(p, f, b)
-                case Comparison.EqualTo     => queryWith(p, f, a); f(k, v); queryWith(p, f, b)
-                case Comparison.GreaterThan => queryWith(p, f, a)
+                case Comparison.LessThan    => rangeQueryWith(p, f, b)
+                case Comparison.EqualTo     => rangeQueryWith(p, f, a); f(k, v); rangeQueryWith(p, f, b)
+                case Comparison.GreaterThan => rangeQueryWith(p, f, a)
             }
         case _ => ()
     }
@@ -577,10 +577,10 @@ mod RedBlackTree {
     ///
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison \ ef1, f: (k, v) -> a \ ef2, t: RedBlackTree[k, v]): List[a] \ { ef1, ef2 } = region rc {
+    pub def rangeQuery(p: k -> Comparison \ ef1, f: (k, v) -> a \ ef2, t: RedBlackTree[k, v]): List[a] \ { ef1, ef2 } = region rc {
         let buffer = MutList.new(rc);
         let g = k -> v -> MutList.push!(f(k, v), buffer);
-        queryWith(p, g, t);
+        rangeQueryWith(p, g, t);
         MutList.toList(buffer)
     }
 
