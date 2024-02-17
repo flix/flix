@@ -587,6 +587,10 @@ object Safety {
       // Combine the messages
       err1 ++ err2
 
+    case Predicate.Body.Spread(_, _, _, _, exp, _, _) =>
+      // A predicate spread does not bind any variables.
+      visitExp(exp, renv)
+
     case Predicate.Body.Functional(_, exp, loc) =>
       // check for non-positively in variables (free variables in exp).
       val inVars = freeVars(exp).keySet intersect quantVars

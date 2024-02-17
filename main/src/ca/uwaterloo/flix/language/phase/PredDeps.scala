@@ -350,6 +350,8 @@ object PredDeps {
         case (edges, body) => body match {
           case Body.Atom(bodyPred, _, p, f, _, _, bodyLoc) =>
             edges :+ LabelledEdge(headPred, p, f, labels, bodyPred, bodyLoc)
+          case Body.Spread(bodyPred, _, p, f, _, _, bodyLoc) =>
+            edges :+ LabelledEdge(headPred, p, f, labels, bodyPred, bodyLoc)
           case Body.Functional(_, _, _) => edges
           case Body.Guard(_, _) => edges
         }
