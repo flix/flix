@@ -625,6 +625,10 @@ object Safety {
         Set.empty
     }
 
+    case Predicate.Body.Spread(_, _, _, _, _, _, _) =>
+      // A predicate spread cannot contain variables, hence cannot bind any variables.
+      Set.empty
+
     case Predicate.Body.Functional(_, _, _) =>
       // A functional does not positively bind any variables. Not even its outVars.
       Set.empty

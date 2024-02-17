@@ -439,9 +439,9 @@ object TypedAstOps {
       terms.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, term) => acc ++ freeVars(term)
       }
+    case Body.Spread(_, _, _, _, exp, _, _) => freeVars(exp)
     case Body.Guard(exp, _) => freeVars(exp)
     case Body.Functional(_, exp, _) => freeVars(exp)
   }
-
 
 }
