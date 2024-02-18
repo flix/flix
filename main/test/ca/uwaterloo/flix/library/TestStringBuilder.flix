@@ -646,6 +646,26 @@ def length05(): Bool = region rc {
 }
 
 /////////////////////////////////////////////////////////////////////////////
+// setLength                                                                  //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def setLength!01(): Bool = region rc {
+    let sb = StringBuilder.empty(rc);
+    StringBuilder.append!("1234567890", sb);
+    StringBuilder.setLength!(4, sb);
+    Assert.eq("1234", StringBuilder.toString(sb))
+}
+
+@test
+def setLength!02(): Bool = region rc {
+    let sb = StringBuilder.empty(rc);
+    StringBuilder.append!("ABC", sb);
+    StringBuilder.setLength!(0, sb);
+    Assert.eq("", StringBuilder.toString(sb))
+}
+
+/////////////////////////////////////////////////////////////////////////////
 // toString                                                                //
 /////////////////////////////////////////////////////////////////////////////
 
