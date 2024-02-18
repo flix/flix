@@ -27,14 +27,6 @@ object LiftedAstPrinter {
     * Returns the [[DocAst.Program]] representation of `root`.
     */
   def print(root: LiftedAst.Root): DocAst.Program = {
-    val enums = root.enums.values.map {
-      case LiftedAst.Enum(ann, mod, sym, cases0, _, _) =>
-        val cases = cases0.values.map {
-          case LiftedAst.Case(sym, tpe, _) =>
-            DocAst.Case(sym, MonoTypePrinter.print(tpe))
-        }.toList
-        DocAst.Enum(ann, mod, sym, Nil, cases)
-    }.toList
     val defs = root.defs.values.map {
       case LiftedAst.Def(ann, mod, sym, cparams, fparams, exp, tpe, purity, _) =>
         DocAst.Def(
@@ -47,7 +39,7 @@ object LiftedAstPrinter {
           print(exp)
         )
     }.toList
-    DocAst.Program(enums, defs)
+    DocAst.Program(Nil, defs)
   }
 
   /**
@@ -59,12 +51,13 @@ object LiftedAstPrinter {
     case ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
     case ApplyClo(exp, exps, ct, _, _, _) => DocAst.Expression.ApplyClo(print(exp), exps.map(print), Some(ct))
     case ApplyDef(sym, args, ct, _, _, _) => DocAst.Expression.ApplyDef(sym, args.map(print), Some(ct))
-    case ApplySelfTail(sym, _, actuals, _, _, _) => DocAst.Expression.ApplySelfTail(sym, actuals.map(print))
+    case ApplySelfTail(sym, actuals, _, _, _) => DocAst.Expression.ApplySelfTail(sym, actuals.map(print))
     case IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
     case JumpTo(sym, _, _, _) => DocAst.Expression.JumpTo(sym)
     case Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Stmt(exp1, exp2, _, _, _) => DocAst.Expression.Stm(print(exp1), print(exp2))
     case Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
     case TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case LiftedAst.CatchRule(sym, clazz, rexp) => (sym, clazz, print(rexp))

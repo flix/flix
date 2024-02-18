@@ -99,7 +99,7 @@ mod Fixpoint.Solver {
             let pFacts = Vector.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
             Datalog(pFacts, Vector.empty())
         case Model(db) =>
-            Map.query(ramSym -> match ramSym {
+            Map.rangeQuery(ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case Comparison.EqualTo => Comparison.EqualTo
                     case cmp => cmp
@@ -122,10 +122,10 @@ mod Fixpoint.Solver {
         // Import a function that can create new ids.
         import static dev.flix.runtime.Global.newId(): Int64 \ IO;
 
-        /// Determine all the predicate symbols in `d`.
+        // Determine all the predicate symbols in `d`.
         let predSyms = predSymsOf(d);
 
-        /// Compute a substitition that assignes fresh names to all predicates except those in `preds`.
+        // Compute a substitition that assignes fresh names to all predicates except those in `preds`.
         def f(macc, predSym) = {
             if (List.memberOf(predSym, preds)) {
                 // Case 1: Do not rename. Do not extend the map.
@@ -726,7 +726,7 @@ mod Fixpoint.Solver {
                 }
                 case _ => Comparison.LessThan
             };
-            Map.queryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
+            Map.rangeQueryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
                     Map.forEach((tuple, _) -> MutList.push!(f(Vector.toList(tuple)), pFacts), rel)
                 case Denotation.Latticenal(_) =>

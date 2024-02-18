@@ -117,8 +117,6 @@ object WeededAst {
 
     case class Scope(ident: Name.Ident, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class ScopeExit(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
 
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], loc: SourceLocation) extends Expr
@@ -189,9 +187,9 @@ object WeededAst {
 
     case class Without(exp: Expr, eff: Name.QName, loc: SourceLocation) extends Expr
 
-    case class TryCatch(exp: Expr, rules: List[CatchRule], loc: SourceLocation) extends Expr
+    case class TryCatch(exp: Expr, handlers: List[CatchRule], loc: SourceLocation) extends Expr
 
-    case class TryWith(exp: Expr, eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
+    case class TryWith(exp: Expr, handler: List[WithHandler], loc: SourceLocation) extends Expr
 
     case class Do(op: Name.QName, exps: List[Expr], loc: SourceLocation) extends Expr
 
@@ -437,6 +435,8 @@ object WeededAst {
   case class CatchRule(ident: Name.Ident, className: String, exp: Expr)
 
   case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr)
+
+  case class WithHandler(eff: Name.QName, rules: List[HandlerRule])
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

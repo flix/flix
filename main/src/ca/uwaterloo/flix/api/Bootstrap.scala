@@ -19,8 +19,10 @@ import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, g
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
+import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, IncludedModules, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, PackageModules, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError, Dependency}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
@@ -148,6 +150,11 @@ object Bootstrap {
     * Returns the path to the build directory relative to the given path `p`.
     */
   private def getBuildDirectory(p: Path): Path = p.resolve("./build/").normalize()
+
+  /**
+    * Returns the directory of the output .class-files relative to the given path `p`.
+    */
+  private def getClassDirectory(p: Path): Path = getBuildDirectory(p).resolve("./class/")
 
   /**
     * Returns the path to the LICENSE file relative to the given path `p`.
@@ -531,8 +538,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       // Add all class files.
       // Here we sort entries by relative file name to apply https://reproducible-builds.org/
-      for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(Bootstrap.getBuildDirectory(projectPath))
-        .map { path => (path, Bootstrap.convertPathToRelativeFileName(Bootstrap.getBuildDirectory(projectPath), path)) }
+      for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(Bootstrap.getClassDirectory(projectPath))
+        .map { path => (path, Bootstrap.convertPathToRelativeFileName(Bootstrap.getClassDirectory(projectPath), path)) }
         .sortBy(_._2)) {
         Bootstrap.addToZip(zip, fileNameWithSlashes, buildFile)
       }
@@ -603,14 +610,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
-    val includedModules = optManifest match {
-      case None => IncludedModules.All
+    val packageModules = optManifest match {
+      case None => PackageModules.All
       case Some(manifest) => manifest.modules
     }
 
     Validation.mapN(flix.check()) {
       root =>
-        HtmlDocumentor.run(root, includedModules)(flix)
+        HtmlDocumentor.run(root, packageModules)(flix)
     }.toHardResult match {
       case Result.Ok(_) =>
         Validation.success(())
@@ -704,5 +711,52 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     ))
 
     Validation.success(())
+  }
+
+  /**
+    * Show dependencies which have newer versions available.
+    *
+    * @return `true` if any outdated dependencies were found, `false` if everything is up to date.
+    */
+  def outdated(flix: Flix)(implicit out: PrintStream): Validation[Boolean, BootstrapError] = {
+    implicit val formatter: Formatter = flix.getFormatter
+
+    val flixDeps = optManifest.map(findFlixDependencies).getOrElse(Nil)
+
+    val rows = flixDeps.flatMap { dep =>
+      val updates = FlixPackageManager.findAvailableUpdates(dep, flix.options.githubToken) match {
+        case Ok(u) => u
+        case Err(e) => return Validation.toHardFailure(BootstrapError.FlixPackageError(e))
+      }
+
+      if (updates.isEmpty)
+        None
+      else
+        Some(List(
+          s"${dep.username}/${dep.projectName}",
+          dep.version.toString,
+          updates.major.map(v => v.toString).getOrElse(""),
+          updates.minor.map(v => v.toString).getOrElse(""),
+          updates.patch.map(v => v.toString).getOrElse(""),
+        ))
+    }
+
+    if (rows.isEmpty) {
+      out.println(formatter.green(
+        """
+          |All dependencies are up to date
+          |""".stripMargin
+      ))
+      Validation.success(false)
+    } else {
+      out.println("")
+      out.println(formatter.table(
+        List("package", "current", "major", "minor", "patch"),
+        List(formatter.blue, formatter.cyan, formatter.yellow, formatter.yellow, formatter.yellow),
+        rows
+      ))
+      out.println("")
+      Validation.success(true)
+    }
   }
 }

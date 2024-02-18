@@ -88,7 +88,8 @@ object ManifestParser {
       githubProject <- Result.traverseOpt(repository)(r => toGithubProject(r, p));
 
       modules <- getOptionalArrayProperty("package.modules", parser, p);
-      includedModules <- toIncludedModules(modules, p);
+      moduleStrings <- Result.traverseOpt(modules)(m => convertTomlArrayToStringList(m, p));
+      packageModules <- toPackageModules(moduleStrings, p);
 
       flix <- getRequiredStringProperty("package.flix", parser, p);
       flixSemVer <- toFlixVer(flix, p);
@@ -113,7 +114,7 @@ object ManifestParser {
       jarDeps <- getOptionalTableProperty("jar-dependencies", parser, p);
       jarDepsList <- collectDependencies(jarDeps, flixDep = false, prodDep = false, jarDep = true, p)
 
-    ) yield Manifest(name, description, versionSemVer, githubProject, includedModules, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
+    ) yield Manifest(name, description, versionSemVer, githubProject, packageModules, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
   }
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
@@ -488,27 +489,18 @@ object ManifestParser {
   }
 
   /**
-    * Creates the `IncludedModules` object from `optArray`.
+    * Creates the `PackageModules` object from `optList`.
     */
-  private def toIncludedModules(optArray: Option[TomlArray], p: Path): Result[IncludedModules, ManifestError] = {
-    optArray match {
+  private def toPackageModules(optList: Option[List[String]], p: Path): Result[PackageModules, ManifestError] = {
+    optList match {
       case None =>
-        Ok(IncludedModules.All)
-      case Some(array) =>
-        var moduleSet = Set.empty[Symbol.ModuleSym]
-        for (i <- 0 until array.size()) {
-          try {
-            val string = array.getString(i)
-            val namespace = string.split('.').toList
-            val sym = Symbol.mkModuleSym(namespace)
-            moduleSet += sym
-          } catch {
-            case e: TomlInvalidTypeException =>
-              return Err(ManifestError.ManifestParseError(p, e.getMessage))
-          }
-        }
-        Ok(IncludedModules.Selected(moduleSet))
-
+        Ok(PackageModules.All)
+      case Some(list) =>
+        val moduleSet = list.map { string =>
+          val namespace = string.split('.').toList
+          Symbol.mkModuleSym(namespace)
+        }.toSet
+        Ok(PackageModules.Selected(moduleSet))
     }
   }
 

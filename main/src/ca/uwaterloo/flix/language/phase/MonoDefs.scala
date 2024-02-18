@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.LoweredAst._
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -72,7 +72,7 @@ object MonoDefs {
       case Kind.RecordRow => Type.RecordRowEmpty
       case Kind.SchemaRow => Type.SchemaRowEmpty
       case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
-      case _ => Type.Unit
+      case _ => Type.Cst(TypeConstructor.AnyType, tpe0.loc)
     }
 
     /**
@@ -89,8 +89,6 @@ object MonoDefs {
             case Some(tpe) => tpe.map(default)
             case None => default(t)
           }
-          // Erase concrete effects like Print.
-          case Type.Cst(TypeConstructor.Effect(_), _) => Type.EffUniv
           case Type.Cst(_, _) => t
           case Type.Apply(t1, t2, loc) =>
             val y = visit(t2)
@@ -372,9 +370,9 @@ object MonoDefs {
     case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      // forcedly mark the region variable as Impure inside the region
+      // forcedly mark the region variable as IO inside the region
       val subst1 = StrictSubstitution(subst.s.unbind(regionVar.sym), subst.eqEnv)
-      val subst2 = subst1 + (regionVar.sym -> Type.Impure)
+      val subst2 = subst1 + (regionVar.sym -> Type.IO)
       Expr.Scope(freshSym, regionVar, visitExp(exp, env1, subst2), subst(tpe), subst(eff), loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
@@ -428,7 +426,7 @@ object MonoDefs {
               val subst1 = caseSubst @@ subst.nonStrict
               // visit the body under the extended environment
               val body = visitExp(body0, env1, StrictSubstitution(subst1, root.eqEnv))
-              val eff = Type.mkUnion(exp.eff, body0.eff, loc.asSynthetic)
+              val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
               Some(Expr.Let(freshSym, Modifiers.Empty, e, body, StrictSubstitution(subst1, root.eqEnv).apply(tpe), subst1(eff), loc))
           }
       }.next() // We are safe to get next() because the last case will always match
@@ -678,9 +676,6 @@ object MonoDefs {
           Type.Pure
         case _ => tpe
       }
-
-    // Erase concrete effects like Print.
-    case Type.Cst(TypeConstructor.Effect(_), _) => Type.EffUniv
 
     case Type.Cst(_, _) => tpe
 

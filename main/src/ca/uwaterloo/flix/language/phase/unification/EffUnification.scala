@@ -100,20 +100,20 @@ object EffUnification {
         case (Type.Var(x, _), Type.Cst(tc, _)) if renv0.isFlexible(x) => tc match {
           case TypeConstructor.Pure =>
             return Ok((Substitution.singleton(x, Type.Pure), Nil)) // 9000 hits
-          case TypeConstructor.EffUniv =>
-            return Ok((Substitution.singleton(x, Type.EffUniv), Nil)) // 1000 hits
+          case TypeConstructor.Univ =>
+            return Ok((Substitution.singleton(x, Type.Univ), Nil)) // 1000 hits
           case _ => // nop
         }
 
         case (Type.Cst(tc, _), Type.Var(y, _)) if renv0.isFlexible(y) => tc match {
           case TypeConstructor.Pure =>
             return Ok((Substitution.singleton(y, Type.Pure), Nil)) // 7000 hits
-          case TypeConstructor.EffUniv =>
-            return Ok((Substitution.singleton(y, Type.EffUniv), Nil)) //  500 hits
+          case TypeConstructor.Univ =>
+            return Ok((Substitution.singleton(y, Type.Univ), Nil)) //  500 hits
           case _ => // nop
         }
 
-        case (Type.Cst(TypeConstructor.EffUniv, _), Type.Cst(TypeConstructor.EffUniv, _)) =>
+        case (Type.Cst(TypeConstructor.Univ, _), Type.Cst(TypeConstructor.Univ, _)) =>
           return Ok((Substitution.empty, Nil)) //  100 hits
 
         case (Type.Cst(TypeConstructor.Error(_), _), _) =>

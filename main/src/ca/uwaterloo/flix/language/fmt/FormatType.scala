@@ -160,6 +160,7 @@ object FormatType {
       // delimited types
       case SimpleType.Hole => true
       case SimpleType.Void => true
+      case SimpleType.AnyType => true
       case SimpleType.Unit => true
       case SimpleType.Null => true
       case SimpleType.Bool => true
@@ -182,8 +183,8 @@ object FormatType {
       case SimpleType.Lazy => true
       case SimpleType.True => true
       case SimpleType.False => true
-      case SimpleType.Empty => true
-      case SimpleType.All => true
+      case SimpleType.Pure => true
+      case SimpleType.Univ => true
       case SimpleType.Region => true
       case SimpleType.RecordConstructor(_) => true
       case SimpleType.Record(_) => true
@@ -225,6 +226,7 @@ object FormatType {
     def visit(tpe0: SimpleType, mode: Mode): String = tpe0 match {
       case SimpleType.Hole => "?"
       case SimpleType.Void => "Void"
+      case SimpleType.AnyType => "AnyType"
       case SimpleType.Unit => "Unit"
       case SimpleType.Null => "Null"
       case SimpleType.Bool => "Bool"
@@ -247,11 +249,11 @@ object FormatType {
       case SimpleType.Lazy => "Lazy"
       case SimpleType.False => "false"
       case SimpleType.True => "true"
-      case SimpleType.Empty => mode match {
+      case SimpleType.Pure => mode match {
         case Mode.Type => "Pure"
         case Mode.Purity => "{}"
       }
-      case SimpleType.All => "IO"
+      case SimpleType.Univ => "Univ"
       case SimpleType.Region => "Region"
       case SimpleType.Record(labels) =>
         val labelString = labels.map(visitRecordLabelType).mkString(", ")

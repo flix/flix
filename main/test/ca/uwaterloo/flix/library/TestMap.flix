@@ -1996,69 +1996,69 @@ def testInvert06(): Bool = Map.invert(Map#{1 => "a", 2 => "b", 3 => "a", 4 => "b
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def query01(): Bool =
-    Map.query(_ -> Comparison.EqualTo, Map#{}: Map[Unit, Unit]) == Nil
+def rangeQuery01(): Bool =
+    Map.rangeQuery(_ -> Comparison.EqualTo, Map#{}: Map[Unit, Unit]) == Nil
 
 @test
-def query02(): Bool =
-    Map.query(_ -> Comparison.EqualTo, Map#{1 => 101, 2 => 42}) == (1, 101) :: (2, 42) :: Nil
+def rangeQuery02(): Bool =
+    Map.rangeQuery(_ -> Comparison.EqualTo, Map#{1 => 101, 2 => 42}) == (1, 101) :: (2, 42) :: Nil
 
 @test
-def query03(): Bool =
-    Map.query(x -> if (x < 2) Comparison.LessThan else if (x > 2) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 1, 2 => 2, 3 => 3}) == (2, 2) :: Nil
+def rangeQuery03(): Bool =
+    Map.rangeQuery(x -> if (x < 2) Comparison.LessThan else if (x > 2) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 1, 2 => 2, 3 => 3}) == (2, 2) :: Nil
 
 @test
-def query04(): Bool =
-    Map.query(x -> if (x < 'b') Comparison.LessThan else if (x > 'c') Comparison.GreaterThan else Comparison.EqualTo, Map#{'a' => 0, 'b' => 1, 'c' => 2, 'd' => 3, 'e' => 4}) == ('b', 1) :: ('c', 2) :: Nil
+def rangeQuery04(): Bool =
+    Map.rangeQuery(x -> if (x < 'b') Comparison.LessThan else if (x > 'c') Comparison.GreaterThan else Comparison.EqualTo, Map#{'a' => 0, 'b' => 1, 'c' => 2, 'd' => 3, 'e' => 4}) == ('b', 1) :: ('c', 2) :: Nil
 
 @test
-def query05(): Bool =
+def rangeQuery05(): Bool =
     let m = Map.unfold(s -> if (s > 10) None else Some(s, s, s + 1), 5);
-    Map.query(x -> if (x < 5) Comparison.LessThan else if (x >= 10) Comparison.GreaterThan else Comparison.EqualTo, m) == List.map(x -> (x, x), List.range(5, 10))
+    Map.rangeQuery(x -> if (x < 5) Comparison.LessThan else if (x >= 10) Comparison.GreaterThan else Comparison.EqualTo, m) == List.map(x -> (x, x), List.range(5, 10))
 
 @test
-def query06(): Bool =
+def rangeQuery06(): Bool =
     let m = Map.unfold(s -> if (s > 75) None else Some(s, Some(s + 48), s + 1), 25);
-    Map.query(x -> if (x < 25) Comparison.LessThan else if (x >= 75) Comparison.GreaterThan else Comparison.EqualTo, m) == List.map(x -> (x, Some(x + 48)), List.range(25, 75))
+    Map.rangeQuery(x -> if (x < 25) Comparison.LessThan else if (x >= 75) Comparison.GreaterThan else Comparison.EqualTo, m) == List.map(x -> (x, Some(x + 48)), List.range(25, 75))
 
 @test
-def query07(): Bool =
-    Map.query(x -> if (x < 42) Comparison.LessThan else if (x > 42) Comparison.GreaterThan else Comparison.EqualTo, Map#{42 => true}) == (42, true) :: Nil
+def rangeQuery07(): Bool =
+    Map.rangeQuery(x -> if (x < 42) Comparison.LessThan else if (x > 42) Comparison.GreaterThan else Comparison.EqualTo, Map#{42 => true}) == (42, true) :: Nil
 
 @test
-def query08(): Bool =
-    Map.query(x -> if (x < 1) Comparison.LessThan else if (x > 1) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (1, 2) :: Nil
+def rangeQuery08(): Bool =
+    Map.rangeQuery(x -> if (x < 1) Comparison.LessThan else if (x > 1) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (1, 2) :: Nil
 
 @test
-def query09(): Bool =
-    Map.query(x -> if (x < 2) Comparison.LessThan else if (x > 3) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (2, 3) :: (3, 4) :: Nil
+def rangeQuery09(): Bool =
+    Map.rangeQuery(x -> if (x < 2) Comparison.LessThan else if (x > 3) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (2, 3) :: (3, 4) :: Nil
 
 @test
-def query10(): Bool =
-    Map.query(x -> if (x < 4) Comparison.LessThan else if (x > 4) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (4, 5) :: Nil
+def rangeQuery10(): Bool =
+    Map.rangeQuery(x -> if (x < 4) Comparison.LessThan else if (x > 4) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (4, 5) :: Nil
 
 @test
-def query11(): Bool =
+def rangeQuery11(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
-    Map.query(x -> if (fst(x) < 1) Comparison.LessThan else if (fst(x) > 1) Comparison.GreaterThan else Comparison.EqualTo, m) == ((1, 2), 0) :: ((1, 3), 1) :: Nil
+    Map.rangeQuery(x -> if (fst(x) < 1) Comparison.LessThan else if (fst(x) > 1) Comparison.GreaterThan else Comparison.EqualTo, m) == ((1, 2), 0) :: ((1, 3), 1) :: Nil
 
 @test
-def query12(): Bool =
+def rangeQuery12(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
-    Map.query(x -> if (fst(x) < 3) Comparison.LessThan else if (fst(x) > 3) Comparison.GreaterThan else Comparison.EqualTo, m) == ((3, 1), 5) :: Nil
+    Map.rangeQuery(x -> if (fst(x) < 3) Comparison.LessThan else if (fst(x) > 3) Comparison.GreaterThan else Comparison.EqualTo, m) == ((3, 1), 5) :: Nil
 
 @test
-def query13(): Bool =
+def rangeQuery13(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
-    Map.query(x -> if (fst(x) > 2) Comparison.GreaterThan else Comparison.EqualTo, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: Nil
+    Map.rangeQuery(x -> if (fst(x) > 2) Comparison.GreaterThan else Comparison.EqualTo, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: Nil
 
 @test
-def query14(): Bool =
+def rangeQuery14(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
-    Map.query(x -> if (fst(x) < 2) Comparison.LessThan else Comparison.EqualTo, m) == ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
+    Map.rangeQuery(x -> if (fst(x) < 2) Comparison.LessThan else Comparison.EqualTo, m) == ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
 
 @test
-def query15(): Bool =
+def rangeQuery15(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
     let f = x -> {
         let cmp = x <=> (2, 2);
@@ -2067,10 +2067,10 @@ def query15(): Bool =
         else
             Comparison.EqualTo
         };
-    Map.query(f, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: Nil
+    Map.rangeQuery(f, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: Nil
 
 @test
-def query16(): Bool =
+def rangeQuery16(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
     let f = x -> {
         let cmp = x <=> (2, 2);
@@ -2079,10 +2079,10 @@ def query16(): Bool =
         else
             Comparison.EqualTo
         };
-    Map.query(f, m) == ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
+    Map.rangeQuery(f, m) == ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
 
 @test
-def query17(): Bool =
+def rangeQuery17(): Bool =
     let m = Map#{(1, 2, 2) => 0, (1, 2, 3) => 1, (1, 2, 4) => 2, (2, 2, 4) => 3};
     let f = x -> {
         let cmp = x <=> (1, 2, 3);
@@ -2091,10 +2091,10 @@ def query17(): Bool =
         else
             Comparison.EqualTo
         };
-    Map.query(f, m) == ((1, 2, 3), 1) :: ((1, 2, 4), 2) :: ((2, 2, 4), 3) :: Nil
+    Map.rangeQuery(f, m) == ((1, 2, 3), 1) :: ((1, 2, 4), 2) :: ((2, 2, 4), 3) :: Nil
 
 @test
-def query18(): Bool =
+def rangeQuery18(): Bool =
     let m = Map#{(1, 2, 2) => 0, (1, 2, 3) => 1, (1, 2, 4) => 2, (2, 2, 4) => 3};
     let f = x -> {
         let cmp = x <=> (1, 2, 3);
@@ -2103,7 +2103,7 @@ def query18(): Bool =
         else
             Comparison.EqualTo
         };
-    Map.query(f, m) == ((1, 2, 2), 0) :: ((1, 2, 3), 1) :: Nil
+    Map.rangeQuery(f, m) == ((1, 2, 2), 0) :: ((1, 2, 3), 1) :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //

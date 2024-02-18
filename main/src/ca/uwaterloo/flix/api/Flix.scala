@@ -154,6 +154,9 @@ class Flix {
     // Comparison
     "Comparison.flix" -> LocalResource.get("/src/library/Comparison.flix"),
 
+    // Coerce
+    "Coerce.flix" -> LocalResource.get("/src/library/Coerce.flix"),
+
     // Operators
     "Neg.flix" -> LocalResource.get("/src/library/Neg.flix"),
     "Add.flix" -> LocalResource.get("/src/library/Add.flix"),
@@ -208,7 +211,6 @@ class Flix {
     "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
-    "Closeable.flix" -> LocalResource.get("/src/library/Closeable.flix"),
     "CodePoint.flix" -> LocalResource.get("/src/library/CodePoint.flix"),
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
     "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),
@@ -229,7 +231,6 @@ class Flix {
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
-    "Region.flix" -> LocalResource.get("/src/library/Region.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),

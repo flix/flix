@@ -73,7 +73,7 @@ object VarOffsets {
     case Expr.ApplyDef(_, args, _, _, _, _) =>
       visitExps(args, i0)
 
-    case Expr.ApplySelfTail(_, _, args, _, _, _) =>
+    case Expr.ApplySelfTail(_, args, _, _, _) =>
       visitExps(args, i0)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -97,6 +97,10 @@ object VarOffsets {
       val i1 = setStackOffset(varSym, exp1.tpe, i0)
       val i2 = visitExp(exp1, i1)
       visitExp(exp2, i2)
+
+    case Expr.Stmt(exp1, exp2, _, _, _) =>
+      val i1 = visitExp(exp1, i0)
+      visitExp(exp2, i1)
 
     case Expr.Scope(sym, exp, _, _, _) =>
       val i1 = setStackOffset(sym, MonoType.Unit, i0)

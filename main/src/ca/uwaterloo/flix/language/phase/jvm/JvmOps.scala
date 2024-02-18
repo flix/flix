@@ -45,6 +45,7 @@ object JvmOps {
     */
   def getJvmType(tpe: MonoType): JvmType = tpe match {
     // Primitives
+    case MonoType.AnyType => JvmType.Object
     case MonoType.Unit => JvmType.Unit
     case MonoType.Bool => JvmType.PrimBool
     case MonoType.Char => JvmType.PrimChar
@@ -59,7 +60,6 @@ object JvmOps {
     case MonoType.String => JvmType.String
     case MonoType.Regex => JvmType.Regex
     case MonoType.Region => JvmType.Object
-
     // Compound
     case MonoType.Array(_) => JvmType.Object
     case MonoType.Lazy(_) => JvmType.Object
@@ -70,8 +70,6 @@ object JvmOps {
     case MonoType.Enum(_) => JvmType.Object
     case MonoType.Arrow(_, _) => getFunctionInterfaceType(tpe)
     case MonoType.Native(clazz) => JvmType.Reference(JvmName.ofClass(clazz))
-
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe'.", SourceLocation.Unknown)
   }
 
 
@@ -91,9 +89,9 @@ object JvmOps {
       case Int16 => JvmType.PrimShort
       case Int32 => JvmType.PrimInt
       case Int64 => JvmType.PrimLong
-      case Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
-           Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) | RecordEmpty |
-           RecordExtend(_, _, _) | Native(_) => JvmType.Object
+      case AnyType | Unit | BigDecimal | BigInt | String | Regex | Region |
+           Array(_) |Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) |
+           RecordEmpty |RecordExtend(_, _, _) | Native(_) => JvmType.Object
     }
   }
 
@@ -114,9 +112,9 @@ object JvmOps {
       case Int32 => JvmType.PrimInt
       case Int64 => JvmType.PrimLong
       case Native(clazz) if clazz == classOf[Object] => JvmType.Object
-      case Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
-           Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) | RecordEmpty |
-           RecordExtend(_, _, _) | Native(_) =>
+      case AnyType | Unit | BigDecimal | BigInt | String | Regex | Region |
+           Array(_) | Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) |
+           RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
         throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     }
   }
@@ -190,22 +188,6 @@ object JvmOps {
   }
 
   /**
-    * Returns the tag class `Option$None` for the given tag.
-    *
-    * For example,
-    *
-    * None: Option$42   =>  Option$42$None
-    * Some: Option$52   =>  Option$52$Some
-    * Ok: Result$123    =>  Result$123$Ok
-    */
-  def getTagClassType(sym: Symbol.CaseSym): JvmType.Reference = {
-    // TODO: Magnus: Can we improve the representation w.r.t. unused type variables?
-    val name = JvmName.mkClassName(sym.enumSym.name, sym.name)
-    // The tag class resides in its namespace package.
-    JvmType.Reference(JvmName(sym.namespace, name))
-  }
-
-  /**
     * Returns the function definition class for the given symbol.
     *
     * For example:
@@ -276,6 +258,8 @@ object JvmOps {
     */
   def getDefMethodNameInNamespaceClass(sym: Symbol.DefnSym): String = "m_" + mangle(sym.name)
 
+  def getTagName(sym: Symbol.CaseSym): String = mangle(sym.name)
+
   /**
     * Returns stringified name of the given JvmType `tpe`.
     *
@@ -303,13 +287,6 @@ object JvmOps {
       case (ns, defs) =>
         NamespaceInfo(ns, defs)
     }.toSet
-  }
-
-  /**
-    * Returns true if the value of the given `tag` is the unit value.
-    */
-  def isUnitTag(tag: Case): Boolean = {
-    tag.tpe == MonoType.Unit
   }
 
   /**

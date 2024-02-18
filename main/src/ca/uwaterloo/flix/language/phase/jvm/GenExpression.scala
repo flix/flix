@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.SemanticOp._
 import ca.uwaterloo.flix.language.ast.{MonoType, _}
+import ca.uwaterloo.flix.language.phase.jvm.BackendObjType.JavaObject
 import ca.uwaterloo.flix.language.phase.jvm.BytecodeInstructions.InstructionSet
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.InternalCompilerException
@@ -541,65 +542,42 @@ object GenExpression {
         mv.visitInsn(ACONST_NULL)
         mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
 
-      case AtomicOp.ScopeExit =>
-        val List(exp1, exp2) = exps
-
-        // Compile the expression, putting a function implementing the Runnable interface on the stack
-        compileExpr(exp1)
-        mv.visitTypeInsn(CHECKCAST, JvmName.Runnable.toInternalName)
-
-        // Compile the expression representing the region
-        compileExpr(exp2)
-        mv.visitTypeInsn(CHECKCAST, BackendObjType.Region.jvmName.toInternalName)
-
-        // Call the Region's `runOnExit` method
-        mv.visitInsn(SWAP)
-        mv.visitMethodInsn(INVOKEVIRTUAL, BackendObjType.Region.jvmName.toInternalName, BackendObjType.Region.RunOnExitMethod.name, BackendObjType.Region.RunOnExitMethod.d.toDescriptor, false)
-
-        // Put a Unit value on the stack
-        mv.visitFieldInsn(GETSTATIC, BackendObjType.Unit.jvmName.toInternalName, BackendObjType.Unit.SingletonField.name, BackendObjType.Unit.jvmName.toDescriptor)
-
       case AtomicOp.Is(sym) =>
         val List(exp) = exps
-        // We get the JvmType of the class for tag
-        val classType = JvmOps.getTagClassType(sym)
-        // First we compile the `exp`
-        compileExpr(exp)
-        // We check if the enum is `instanceof` the class
-        mv.visitTypeInsn(INSTANCEOF, classType.name.toInternalName)
+        val taggedType = BackendObjType.Tagged
 
-      // Normal Tag
+        compileExpr(exp)
+        val ins = {
+          import BytecodeInstructions._
+          CHECKCAST(taggedType.jvmName) ~ GETFIELD(taggedType.NameField) ~
+            BackendObjType.Tagged.mkTagName(sym) ~ BackendObjType.Tagged.eqTagName()
+        }
+        ins(new BytecodeInstructions.F(mv))
+
       case AtomicOp.Tag(sym) =>
         val List(exp) = exps
-        // We get the JvmType of the class for tag
-        val classType = JvmOps.getTagClassType(sym)
-        // Find the tag
-        val tag = root.enums(sym.enumSym).cases(sym)
-        // Creating a new instance of the class
-        mv.visitTypeInsn(NEW, classType.name.toInternalName)
-        mv.visitInsn(DUP)
-        // Evaluating the single argument of the class constructor
-        compileExpr(exp)
-        // Descriptor of the constructor
-        val constructorDescriptor = AsmOps.getMethodDescriptor(List(JvmOps.getErasedJvmType(tag.tpe)), JvmType.Void)
-        // Calling the constructor of the class
-        mv.visitMethodInsn(INVOKESPECIAL, classType.name.toInternalName, "<init>", constructorDescriptor, false)
 
-      case AtomicOp.Untag(sym) =>
+        val tagType = BackendObjType.Tag(BackendType.toErasedBackendType(exp.tpe))
+
+        val ins = {
+          import BytecodeInstructions._
+          NEW(tagType.jvmName) ~ DUP() ~ INVOKESPECIAL(tagType.Constructor) ~
+            DUP() ~ BackendObjType.Tagged.mkTagName(sym) ~ PUTFIELD(tagType.NameField) ~
+            DUP() ~ cheat(mv => compileExpr(exp)(mv, ctx, root, flix)) ~ PUTFIELD(tagType.ValueField)
+        }
+        ins(new BytecodeInstructions.F(mv))
+
+      case AtomicOp.Untag(_) =>
         val List(exp) = exps
-        // We get the JvmType of the class for the tag
-        val classType = JvmOps.getTagClassType(sym)
-        // Find the tag
-        val tag = root.enums(sym.enumSym).cases(sym)
-        // Evaluate the exp
+        val tagType = BackendObjType.Tag(BackendType.toErasedBackendType(tpe))
+
         compileExpr(exp)
-        // Cast the exp to the type of the tag
-        mv.visitTypeInsn(CHECKCAST, classType.name.toInternalName)
-        // Descriptor of the method
-        val methodDescriptor = AsmOps.getMethodDescriptor(Nil, JvmOps.getErasedJvmType(tag.tpe))
-        // Invoke `getValue()` method to extract the field of the tag
-        mv.visitMethodInsn(INVOKEVIRTUAL, classType.name.toInternalName, "getValue", methodDescriptor, false)
-        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tag.tpe))
+        val ins = {
+          import BytecodeInstructions._
+          CHECKCAST(tagType.jvmName) ~ GETFIELD(tagType.ValueField)
+        }
+        ins(new BytecodeInstructions.F(mv))
+        AsmOps.castIfNotPrim(mv, JvmOps.getJvmType(tpe))
 
       case AtomicOp.Index(idx) =>
         val List(exp) = exps
@@ -636,10 +614,7 @@ object GenExpression {
       case AtomicOp.RecordSelect(field) =>
         val List(exp) = exps
 
-        val backendRecordExtendType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
         val interfaceType = BackendObjType.Record
-        val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
-        val recordInternalName = recordType.jvmName.toInternalName
 
         // Compile the expression exp (which should be a record), as we need to have on the stack a record in order to call
         // lookupField
@@ -652,7 +627,10 @@ object GenExpression {
         mv.visitMethodInsn(INVOKEINTERFACE, interfaceType.jvmName.toInternalName, "lookupField",
           MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(interfaceType.toTpe).toDescriptor, true)
 
-        // Cast to proper record extend class
+        // Now that the specific RecordExtend object is found, we cast it to its exact class
+        val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
+        val recordInternalName = recordType.jvmName.toInternalName
+
         mv.visitTypeInsn(CHECKCAST, recordInternalName)
 
         // Retrieve the value field  (To get the proper value)
@@ -664,9 +642,7 @@ object GenExpression {
         // We get the JvmType of the record interface
         val interfaceType = BackendObjType.Record
 
-        // Previous functions are already partial matches
-        val MonoType.RecordExtend(_, recordValueType, _) = tpe
-        val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(recordValueType))
+        val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(exp1.tpe))
         val classInternalName = recordType.jvmName.toInternalName
 
         // Instantiating a new object of tuple
@@ -683,12 +659,12 @@ object GenExpression {
         // Put the value of the field onto the stack, since it is an expression we first need to compile it.
         mv.visitInsn(DUP)
         compileExpr(exp1)
-        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.ValueField.name, JvmOps.getErasedJvmType(exp1.tpe).toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.ValueField.name, recordType.ValueField.tpe.toDescriptor)
 
         // Put the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
         mv.visitInsn(DUP)
         compileExpr(exp2)
-        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.RestField.name, interfaceType.toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.RestField.name, recordType.RestField.tpe.toDescriptor)
 
       case AtomicOp.RecordRestrict(field) =>
         val List(exp) = exps
@@ -1145,7 +1121,7 @@ object GenExpression {
           }
           // Calling unwind and unboxing
 
-          if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunk(loc)(new BytecodeInstructions.F(mv))
+          if (Purity.isControlPure(purity)) BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc)(new BytecodeInstructions.F(mv))
           else {
             val pcPoint = ctx.pcCounter(0) + 1
             val pcPointLabel = ctx.pcLabels(pcPoint)
@@ -1200,7 +1176,7 @@ object GenExpression {
         }
         // Calling unwind and unboxing
 
-        if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunk(loc)(new BytecodeInstructions.F(mv))
+        if (Purity.isControlPure(purity)) BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)(new BytecodeInstructions.F(mv))
         else {
           val pcPoint = ctx.pcCounter(0) + 1
           val pcPointLabel = ctx.pcLabels(pcPoint)
@@ -1217,7 +1193,7 @@ object GenExpression {
         }
     }
 
-    case Expr.ApplySelfTail(sym, _, exps, _, _, _) =>
+    case Expr.ApplySelfTail(sym, exps, _, _, _) =>
       // The function abstract class name
       val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
       // Evaluate each argument and put the result on the Fn class.
@@ -1300,6 +1276,11 @@ object GenExpression {
       mv.visitFieldInsn(PUTFIELD, cloType.name.toInternalName, s"clo$index", JvmOps.getErasedJvmType(exp1.tpe).toDescriptor)
       // Store the closure locally (maybe not needed?)
       mv.visitVarInsn(iStore, varSym.getStackOffset(ctx.localOffset))
+      compileExpr(exp2)
+
+    case Expr.Stmt(exp1, exp2, _, _, _) =>
+      compileExpr(exp1)
+      BytecodeInstructions.xPop(BackendType.toErasedBackendType(exp1.tpe))(new BytecodeInstructions.F(mv))
       compileExpr(exp2)
 
     case Expr.Scope(sym, exp, _, _, loc) =>

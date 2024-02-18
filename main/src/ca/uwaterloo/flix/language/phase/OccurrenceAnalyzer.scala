@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.{DefContext, Occur}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, LabelSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, OccurrenceAst, Symbol}
-import ca.uwaterloo.flix.util.{ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 /**
   * The occurrence analyzer collects information on variable and function usage and calculates the weight of the expressions
@@ -62,31 +62,11 @@ object OccurrenceAnalyzer {
   def run(root: LiftedAst.Root)(implicit flix: Flix): Validation[OccurrenceAst.Root, CompilationMessage] = flix.subphase("OccurrenceAnalyzer") {
 
     val defs = visitDefs(root.defs)
-    val enums = root.enums.map { case (k, v) => k -> visitEnum(v) }
     val effects = root.effects.map { case (k, v) => k -> visitEffect(v) }
 
-    // Reassemble the ast root.
-    val result = OccurrenceAst.Root(defs, enums, effects, root.entryPoint, root.reachable, root.sources)
+    val result = OccurrenceAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
 
     Validation.success(result)
-  }
-
-  /**
-    * Translates the given enum `enum0` to the OccurrenceAst.
-    */
-  private def visitEnum(enum0: LiftedAst.Enum): OccurrenceAst.Enum = {
-    val cases = enum0.cases.map {
-      case (k, v) =>
-        k -> visitCase(v)
-    }
-    OccurrenceAst.Enum(enum0.ann, enum0.mod, enum0.sym, cases, enum0.tpe, enum0.loc)
-  }
-
-  /**
-    * Translates the given case `case0` to the OccurrenceAst.
-    */
-  private def visitCase(case0: LiftedAst.Case): OccurrenceAst.Case = {
-    OccurrenceAst.Case(case0.sym, case0.tpe, case0.loc)
   }
 
   private def visitEffect(effect: LiftedAst.Effect): OccurrenceAst.Effect = effect match {
@@ -189,14 +169,11 @@ object OccurrenceAnalyzer {
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.ApplyDef(sym, es, ct, tpe, purity, loc), o3.increaseSizeByOne())
 
-    case Expr.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
+    case Expr.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       val (as, o1) = visitExps(sym0, actuals)
-      val f = formals.map {
-        case LiftedAst.FormalParam(sym, mod, tpe, loc) => OccurrenceAst.FormalParam(sym, mod, tpe, loc)
-      }
       val o2 = OccurInfo(Map(sym -> Once), Map.empty, 0)
       val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.ApplySelfTail(sym, f, as, tpe, purity, loc), o3.increaseSizeByOne())
+      (OccurrenceAst.Expression.ApplySelfTail(sym, as, tpe, purity, loc), o3.increaseSizeByOne())
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)
@@ -235,6 +212,12 @@ object OccurrenceAnalyzer {
       val (e2, o2) = visitExp(sym0, exp2)
       val o3 = combineAllSeq(o1, o2)
       (OccurrenceAst.Expression.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
+
+    case Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
+      val (e1, o1) = visitExp(sym0, exp1)
+      val (e2, o2) = visitExp(sym0, exp2)
+      val o3 = combineAllSeq(o1, o2)
+      (OccurrenceAst.Expression.Stmt(e1, e2, tpe, purity, loc), o3.increaseSizeByOne())
 
     case Expr.Scope(sym, exp, tpe, purity, loc) =>
       val (e, o) = visitExp(sym0, exp)

@@ -23,10 +23,9 @@ import java.lang.reflect.Method
 
 object ReducedAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Set.empty, List.empty, None, Set.empty, Map.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Set.empty, List.empty, None, Set.empty, Map.empty)
 
   case class Root(defs: Map[Symbol.DefnSym, Def],
-                  enums: Map[Symbol.EnumSym, Enum],
                   effects: Map[Symbol.EffectSym, Effect],
                   types: Set[MonoType],
                   anonClasses: List[AnonClass],
@@ -38,6 +37,9 @@ object ReducedAst {
 
   }
 
+  /**
+    * pcPoints is initialized by [[ca.uwaterloo.flix.language.phase.Reducer]].
+    */
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: MonoType, unboxedType: UnboxedType, purity: Purity, loc: SourceLocation) {
     var method: Method = _
     val arrowType: MonoType.Arrow = MonoType.Arrow(fparams.map(_.tpe), tpe)
@@ -45,8 +47,6 @@ object ReducedAst {
 
   /** Remember the unboxed return type for test function generation. */
   case class UnboxedType(tpe: MonoType)
-
-  case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, cases: Map[Symbol.CaseSym, Case], tpe: MonoType, loc: SourceLocation)
 
   case class Effect(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
@@ -76,7 +76,7 @@ object ReducedAst {
 
     case class ApplyDef(sym: Symbol.DefnSym, exps: List[Expr], ct: Ast.CallType, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
-    case class ApplySelfTail(sym: Symbol.DefnSym, formals: List[FormalParam], actuals: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+    case class ApplySelfTail(sym: Symbol.DefnSym, actuals: List[Expr], tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
@@ -87,6 +87,8 @@ object ReducedAst {
     case class Let(sym: Symbol.VarSym, exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class LetRec(varSym: Symbol.VarSym, index: Int, defSym: Symbol.DefnSym, exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
+
+    case class Stmt(exp1: Expr, exp2: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
     case class Scope(sym: Symbol.VarSym, exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation) extends Expr
 
@@ -101,8 +103,6 @@ object ReducedAst {
   }
 
   case class AnonClass(name: String, clazz: java.lang.Class[_], tpe: MonoType, methods: List[JvmMethod], loc: SourceLocation)
-
-  case class Case(sym: Symbol.CaseSym, tpe: MonoType, loc: SourceLocation)
 
   case class JvmMethod(ident: Name.Ident, fparams: List[FormalParam], exp: Expr, tpe: MonoType, purity: Purity, loc: SourceLocation)
 

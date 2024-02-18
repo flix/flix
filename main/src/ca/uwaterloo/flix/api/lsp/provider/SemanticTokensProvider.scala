@@ -347,8 +347,6 @@ object SemanticTokensProvider {
       val t = SemanticToken(SemanticTokenType.Variable, Nil, sym.loc)
       Iterator(t) ++ visitExp(exp)
 
-    case Expr.ScopeExit(exp1, exp2, _, _, _) => visitExp(exp1) ++ visitExp(exp2)
-
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
@@ -682,13 +680,14 @@ object SemanticTokensProvider {
     case TypeConstructor.Vector => true
     case TypeConstructor.Ref => true
     case TypeConstructor.Pure => true
-    case TypeConstructor.EffUniv => true
+    case TypeConstructor.Univ => true
     case TypeConstructor.True => true
     case TypeConstructor.False => true
     case TypeConstructor.Effect(_) => true
     case TypeConstructor.RegionToStar => true
 
     // invisible
+    case TypeConstructor.AnyType => false
     case TypeConstructor.Arrow(_) => false
     case TypeConstructor.RecordRowEmpty => false
     case TypeConstructor.RecordRowExtend(_) => false

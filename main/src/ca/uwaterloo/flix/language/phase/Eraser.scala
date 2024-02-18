@@ -6,7 +6,6 @@ import ca.uwaterloo.flix.language.ast.ReducedAst.Expr._
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.ParOps
-import ca.uwaterloo.flix.util.collection.MapOps
 
 /**
   * Erase types and introduce corresponding casting
@@ -36,9 +35,8 @@ object Eraser {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Eraser") {
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
-    val newEnums = ParOps.parMapValues(root.enums)(visitEnum)
     val newEffects = ParOps.parMapValues(root.effects)(visitEffect)
-    root.copy(defs = newDefs, enums = newEnums, effects = newEffects)
+    root.copy(defs = newDefs, effects = newEffects)
   }
 
   private def visitDef(defn: Def): Def = defn match {
@@ -92,7 +90,6 @@ object Eraser {
         case AtomicOp.Unary(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Binary(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Region => ApplyAtomic(op, es, t, purity, loc)
-        case AtomicOp.ScopeExit => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Is(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Tag(_) => ApplyAtomic(op, es, t, purity, loc)
         case AtomicOp.Untag(_) => ApplyAtomic(op, es, t, purity, loc)
@@ -140,8 +137,8 @@ object Eraser {
       val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)
       if (ct == CallType.TailCall) ad
       else castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
-    case ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
-      ApplySelfTail(sym, formals.map(visitParam), actuals.map(visitExp), visitType(tpe), purity, loc)
+    case ApplySelfTail(sym, actuals, tpe, purity, loc) =>
+      ApplySelfTail(sym, actuals.map(visitExp), visitType(tpe), purity, loc)
     case IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), visitType(tpe), purity, loc)
     case Branch(exp, branches, tpe, purity, loc) =>
@@ -152,6 +149,8 @@ object Eraser {
       Let(sym, visitExp(exp1), visitExp(exp2), visitType(tpe), purity, loc)
     case LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
       LetRec(varSym, index, defSym, visitExp(exp1), visitExp(exp2), visitType(tpe), purity, loc)
+    case Stmt(exp1, exp2, tpe, purity, loc) =>
+      Stmt(visitExp(exp1), visitExp(exp2), visitType(tpe), purity, loc)
     case Scope(sym, exp, tpe, purity, loc) =>
       Scope(sym, visitExp(exp), visitType(tpe), purity, loc)
     case TryCatch(exp, rules, tpe, purity, loc) =>
@@ -173,16 +172,6 @@ object Eraser {
     Expr.ApplyAtomic(AtomicOp.Unbox, List(exp), t, purity, loc.asSynthetic)
   }
 
-  private def visitEnum(e: Enum): Enum = e match {
-    case Enum(ann, mod, sym, cases, tpe, loc) =>
-      Enum(ann, mod, sym, MapOps.mapValues(cases)(visitCase), visitType(tpe), loc)
-  }
-
-  private def visitCase(c: Case): Case = c match {
-    case Case(sym, tpe, loc) =>
-      Case(sym, visitType(tpe), loc)
-  }
-
   private def visitEffect(eff: Effect): Effect = eff match {
     case Effect(ann, mod, sym, ops, loc) =>
       Effect(ann, mod, sym, ops.map(visitOp), loc)
@@ -196,6 +185,7 @@ object Eraser {
   private def visitType(tpe: MonoType): MonoType = {
     import MonoType._
     tpe match {
+      case AnyType => AnyType
       case Unit => Unit
       case Bool => Bool
       case Char => Char
@@ -233,9 +223,10 @@ object Eraser {
       case Int16 => Int16
       case Int32 => Int32
       case Int64 => Int64
-      case Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
-           Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) | Arrow(_, _) |
-           RecordEmpty | RecordExtend(_, _, _) | Native(_) => MonoType.Object
+      case AnyType | Unit | BigDecimal | BigInt | String | Regex | Region |
+           Array(_) | Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) |
+           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
+        MonoType.Object
     }
   }
 

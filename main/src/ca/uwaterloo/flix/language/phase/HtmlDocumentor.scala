@@ -1245,7 +1245,7 @@ object HtmlDocumentor {
   private def docEffectType(eff: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
     val simpleEff = SimpleType.fromWellKindedType(eff)(flix.getFormatOptions)
     simpleEff match {
-      case SimpleType.Empty => // No op
+      case SimpleType.Pure => // No op
       case _ =>
         sb.append(" \\ ")
         sb.append("<span class='effect'>")
