@@ -427,7 +427,18 @@ object HtmlDocumentor {
         )
     }
 
-    visitMod(mod).get
+    visitMod(mod)
+      .getOrElse(Module(
+        mod.sym,
+        None,
+        Nil,
+        Nil,
+        Nil,
+        Nil,
+        Nil,
+        Nil,
+        Nil,
+      ))
   }
 
   /**
