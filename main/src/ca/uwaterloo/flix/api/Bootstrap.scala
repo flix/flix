@@ -27,10 +27,10 @@ import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
 
-import java.io.{PrintStream, PrintWriter}
+import java.io.{File, PrintStream, PrintWriter}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
-import java.util.zip.{ZipEntry, ZipOutputStream}
+import java.util.zip.{ZipEntry, ZipInputStream, ZipOutputStream}
 import java.util.{Calendar, GregorianCalendar}
 import scala.collection.mutable
 import scala.io.StdIn.readLine
@@ -539,6 +539,86 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
         .sortBy(_._2)) {
         Bootstrap.addToZip(zip, fileNameWithSlashes, buildFile)
       }
+    } match {
+      case Success(()) => Validation.success(())
+      case Failure(e) => Validation.toHardFailure(BootstrapError.GeneralError(List(e.getMessage)))
+    }
+  }
+
+  /**
+    * Builds a fatjar package for the project.
+    * This function relies essentially on the same pattern as used in the buildJar function.
+    * It searches dependencies in the lib folder and includes everything in the generated jar file in addition.
+    *
+    * Note: As the buildJar does the same, this build doesn't erase previous jar-file if existing.
+    *       It doesn't do a cleanup and as such remaining previous libraries may remain.
+    */
+  def buildFatJar()(implicit formatter: Formatter): Validation[Unit, BootstrapError] = {
+    // The path to the jar file.
+    val jarFile = Bootstrap.getJarFile(projectPath)
+
+    // Create the artifact directory, if it does not exist.
+    Files.createDirectories(getArtifactDirectory(projectPath))
+
+    // Check whether it is safe to write to the file.
+    if (Files.exists(jarFile) && !Bootstrap.isJarFile(jarFile)) {
+      return Validation.toHardFailure(BootstrapError.FileError(s"The path '${formatter.red(jarFile.toString)}' exists and is not a jar-file. Refusing to overwrite."))
+    }
+
+    // Get the lib folder and check if it is safe to read.
+    val libFolder = Bootstrap.getLibraryDirectory(projectPath)
+    if (Files.exists(libFolder) && (!Files.isDirectory(libFolder) || !Files.isReadable(libFolder))) {
+      return Validation.toHardFailure(BootstrapError.FileError(s"The lib folder isn't a directory or isn't readable. Refusing to build fatjar-file."))
+    }
+
+    // First, we check all jar files inside the lib folder, recursively.
+    def searchFiles(file: File, endsWith: String) : Array[File] = {
+      val fileList = file.listFiles
+      val files = fileList.filter(f => (""".*""" + endsWith).r.findFirstIn(f.getName).isDefined)
+      files ++ fileList.filter(_.isDirectory).flatMap(searchFiles(_, endsWith))
+    }
+    // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
+    val jarDependencies = if (libFolder.toFile.exists()) searchFiles(libFolder.toFile, """\.jar$""") else Array[File]()
+
+    // Construct a new zip file, the built fatjar-file.
+    Using(new ZipOutputStream(Files.newOutputStream(jarFile))) { zipOut =>
+      // META-INF/MANIFEST.MF
+      val manifest =
+        """Manifest-Version: 1.0
+          |Main-Class: Main
+          |""".stripMargin
+
+      // Add manifest file.
+      Bootstrap.addToZip(zipOut, "META-INF/MANIFEST.MF", manifest.getBytes)
+
+      // Add class files of the project.
+      // Here we sort entries by relative file name to apply https://reproducible-builds.org/
+      for ((buildFile, fileNameWithSlashes) <- Bootstrap.getAllFiles(Bootstrap.getClassDirectory(projectPath))
+        .map { path => (path, Bootstrap.convertPathToRelativeFileName(Bootstrap.getClassDirectory(projectPath), path)) }
+        .sortBy(_._2)) {
+        Bootstrap.addToZip(zipOut, fileNameWithSlashes, buildFile)
+      }
+
+      // Add jar dependencies.
+      jarDependencies.foreach(dep => {
+        if (!Bootstrap.isJarFile(dep.toPath))
+          return Validation.toHardFailure(BootstrapError.FileError(s"The jar file '${dep.getName} seems corrupted. Refusing to build fatjar-file."))
+
+        // Extract the content of the classes to the jar file.
+        Using(new ZipInputStream(Files.newInputStream(dep.toPath))) {
+          zipIn =>
+            var entry = zipIn.getNextEntry
+            while (entry != null) {
+              // Get the class files except module-info and META-INF classes which are specific to each library.
+              if (entry.getName.endsWith(".class") && !entry.getName.equals("module-info.class") && !entry.getName.contains("META-INF/")) {
+                // Write extracted class file to zip.
+                val classContent = zipIn.readAllBytes()
+                Bootstrap.addToZip(zipOut, entry.getName, classContent)
+              }
+              entry = zipIn.getNextEntry
+            }
+        }
+      })
     } match {
       case Success(()) => Validation.success(())
       case Failure(e) => Validation.toHardFailure(BootstrapError.GeneralError(List(e.getMessage)))
