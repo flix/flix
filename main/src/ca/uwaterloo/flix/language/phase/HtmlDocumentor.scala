@@ -305,25 +305,31 @@ object HtmlDocumentor {
     */
   private def filterContents(mod: Module, packageModules: PackageModules): Module = mod match {
     case Module(sym, parent, uses, submodules, classes, effects, enums, typeAliases, defs) =>
-      val modIsIncluded = packageModules.contains(sym)
-      if (modIsIncluded) {
+      val included = packageModules.contains(sym)
+      if (included) {
         Module(
           sym,
           parent,
           uses,
-          submodules.map(m => filterContents(m, packageModules)),
-          classes.filter(c => c.decl.mod.isPublic && !c.decl.ann.isInternal).map(c => filterClass(c, packageModules)),
-          effects.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(e => filterEffect(e, packageModules)),
-          enums.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(e => filterEnum(e, packageModules)),
+          submodules.map(m => filterContents(m, PackageModules.All)),
+          classes.filter(c => c.decl.mod.isPublic && !c.decl.ann.isInternal).map(c => filterClass(c)),
+          effects.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(e => filterEffect(e)),
+          enums.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(e => filterEnum(e)),
           typeAliases.filter(t => t.mod.isPublic && !t.ann.isInternal),
           defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
         )
       } else {
+        // Keep the 'spine' of the tree if a module further down is included
+        val sm = submodules ++
+          classes.flatMap(c => c.companionMod) ++
+          effects.flatMap(e => e.companionMod) ++
+          enums.flatMap(e => e.companionMod)
+
         Module(
           sym,
           parent,
           Nil,
-          submodules.map(m => filterContents(m, packageModules)),
+          sm.map(m => filterContents(m, packageModules)),
           Nil,
           Nil,
           Nil,
@@ -337,7 +343,7 @@ object HtmlDocumentor {
     * Returns a `Class` corresponding to the given `clazz`,
     * but with all items that shouldn't appear in the documentation removed.
     */
-  private def filterClass(clazz: Class, packageModules: PackageModules): Class = clazz match {
+  private def filterClass(clazz: Class): Class = clazz match {
     case Class(TypedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, _, laws, loc), signatures, defs, instances, parent, companionMod) =>
       Class(
         TypedAst.Class(
@@ -356,7 +362,8 @@ object HtmlDocumentor {
         defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
         instances.filter(i => i.mod.isPublic && !i.ann.isInternal),
         parent,
-        companionMod.map(m => filterContents(m, packageModules))
+        // If this class is included, it means that all of its sub items should be included as well
+        companionMod.map(m => filterContents(m, PackageModules.All))
       )
   }
 
@@ -364,18 +371,26 @@ object HtmlDocumentor {
     * Returns an `Effect` corresponding to the given `eff`,
     * but with all items that shouldn't appear in the documentation removed.
     */
-  private def filterEffect(eff: Effect, packageModules: PackageModules): Effect = eff match {
+  private def filterEffect(eff: Effect): Effect = eff match {
     case Effect(eff, parent, companionMod) =>
-      Effect(eff, parent, companionMod.map(m => filterContents(m, packageModules)))
+      Effect(
+        eff,
+        parent,
+        // If this effect is included, it means that all of its sub items should be included as well
+        companionMod.map(m => filterContents(m, PackageModules.All)))
   }
 
   /**
     * Returns an `Enum` corresponding to the given `enm`,
     * but with all items that shouldn't appear in the documentation removed.
     */
-  private def filterEnum(enm: Enum, packageModules: PackageModules): Enum = enm match {
+  private def filterEnum(enm: Enum): Enum = enm match {
     case Enum(enm, parent, companionMod) =>
-      Enum(enm, parent, companionMod.map(m => filterContents(m, packageModules)))
+      Enum(
+        enm,
+        parent,
+        // If this enum is included, it means that all of its sub items should be included as well
+        companionMod.map(m => filterContents(m, PackageModules.All)))
   }
 
   /**
