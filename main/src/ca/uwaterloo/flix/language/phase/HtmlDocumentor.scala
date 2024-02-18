@@ -81,7 +81,7 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents the given `Module`, `mod`, writing the resulting HTML to disk.
+    * Documents the given `Module`, `mod`, and all of its contained items, writing the resulting HTML to disk.
     */
   private def visitMod(mod: Module)(implicit flix: Flix): Unit = {
     val out = documentModule(mod)
@@ -94,7 +94,7 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents the given `Class`, `clazz`, writing the resulting HTML to disk.
+    * Documents the given `Class`, `clazz`, and all of its contained items, writing the resulting HTML to disk.
     */
   private def visitClass(clazz: Class)(implicit flix: Flix): Unit = {
     val out = documentClass(clazz)
@@ -109,7 +109,7 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents the given `Effect`, `eff`, writing the resulting HTML to disk.
+    * Documents the given `Effect`, `eff`, and all of its contained items, writing the resulting HTML to disk.
     */
   private def visitEffect(eff: Effect)(implicit flix: Flix): Unit = {
     val out = documentEffect(eff)
@@ -124,7 +124,7 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents the given `Enum`, `enm`, writing the resulting HTML to disk.
+    * Documents the given `Enum`, `enm`, and all of its contained items, writing the resulting HTML to disk.
     */
   private def visitEnum(enm: Enum)(implicit flix: Flix): Unit = {
     val out = documentEnum(enm)
