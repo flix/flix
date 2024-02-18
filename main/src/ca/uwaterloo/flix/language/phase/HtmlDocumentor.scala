@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.{Flix, Version}
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
-import ca.uwaterloo.flix.tools.pkg.IncludedModules
+import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.LocalResource
 
 import java.io.IOException
@@ -72,58 +72,70 @@ object HtmlDocumentor {
     */
   val LibraryGitHub: String = "https://github.com/flix/flix/blob/master/main/src/library/"
 
-  def run(root: TypedAst.Root, includedModules: IncludedModules)(implicit flix: Flix): Unit = {
+  def run(root: TypedAst.Root, packageModules: PackageModules)(implicit flix: Flix): Unit = {
     val modulesRoot = splitModules(root)
-    val filteredModulesRoot = filterModules(modulesRoot, includedModules)
+    val filteredModulesRoot = filterModules(modulesRoot, packageModules)
 
-    def visitMod(mod: Module): Unit = {
-      val out = documentModule(mod)
-      writeDocFile(mod.fileName, out)
+    visitMod(filteredModulesRoot)
+    writeAssets()
+  }
 
+  /**
+    * Documents the given `Module`, `mod`, writing the resulting HTML to disk.
+    */
+  private def visitMod(mod: Module)(implicit flix: Flix): Unit = {
+    val out = documentModule(mod)
+    writeDocFile(mod.fileName, out)
+
+    mod.submodules.foreach(visitMod)
+    mod.classes.foreach(visitClass)
+    mod.effects.foreach(visitEffect)
+    mod.enums.foreach(visitEnum)
+  }
+
+  /**
+    * Documents the given `Class`, `clazz`, writing the resulting HTML to disk.
+    */
+  private def visitClass(clazz: Class)(implicit flix: Flix): Unit = {
+    val out = documentClass(clazz)
+    writeDocFile(clazz.fileName, out)
+
+    clazz.companionMod.foreach { mod =>
       mod.submodules.foreach(visitMod)
       mod.classes.foreach(visitClass)
       mod.effects.foreach(visitEffect)
       mod.enums.foreach(visitEnum)
     }
+  }
 
-    def visitClass(clazz: Class): Unit = {
-      val out = documentClass(clazz)
-      writeDocFile(clazz.fileName, out)
+  /**
+    * Documents the given `Effect`, `eff`, writing the resulting HTML to disk.
+    */
+  private def visitEffect(eff: Effect)(implicit flix: Flix): Unit = {
+    val out = documentEffect(eff)
+    writeDocFile(eff.fileName, out)
 
-      clazz.companionMod.foreach { mod =>
-        mod.submodules.foreach(visitMod)
-        mod.classes.foreach(visitClass)
-        mod.effects.foreach(visitEffect)
-        mod.enums.foreach(visitEnum)
-      }
+    eff.companionMod.foreach { mod =>
+      mod.submodules.foreach(visitMod)
+      mod.classes.foreach(visitClass)
+      mod.effects.foreach(visitEffect)
+      mod.enums.foreach(visitEnum)
     }
+  }
 
-    def visitEffect(eff: Effect): Unit = {
-      val out = documentEffect(eff)
-      writeDocFile(eff.fileName, out)
+  /**
+    * Documents the given `Enum`, `enm`, writing the resulting HTML to disk.
+    */
+  private def visitEnum(enm: Enum)(implicit flix: Flix): Unit = {
+    val out = documentEnum(enm)
+    writeDocFile(enm.fileName, out)
 
-      eff.companionMod.foreach { mod =>
-        mod.submodules.foreach(visitMod)
-        mod.classes.foreach(visitClass)
-        mod.effects.foreach(visitEffect)
-        mod.enums.foreach(visitEnum)
-      }
+    enm.companionMod.foreach { mod =>
+      mod.submodules.foreach(visitMod)
+      mod.classes.foreach(visitClass)
+      mod.effects.foreach(visitEffect)
+      mod.enums.foreach(visitEnum)
     }
-
-    def visitEnum(enm: Enum): Unit = {
-      val out = documentEnum(enm)
-      writeDocFile(enm.fileName, out)
-
-      enm.companionMod.foreach { mod =>
-        mod.submodules.foreach(visitMod)
-        mod.classes.foreach(visitClass)
-        mod.effects.foreach(visitEffect)
-        mod.enums.foreach(visitEnum)
-      }
-    }
-
-    visitMod(filteredModulesRoot)
-    writeAssets()
   }
 
   /**
@@ -283,26 +295,26 @@ object HtmlDocumentor {
   /**
     * Filter the module, `mod`, and its children, removing all items and empty modules, which shouldn't appear in the documentation.
     */
-  private def filterModules(mod: Module, includedModules: IncludedModules): Module = {
-    filterEmpty(filterContents(mod, includedModules))
+  private def filterModules(mod: Module, packageModules: PackageModules): Module = {
+    filterEmpty(filterContents(mod, packageModules))
   }
 
   /**
     * Returns a tree of modules corresponding to the given input,
     * but with all contained items that shouldn't appear in the documentation removed.
     */
-  private def filterContents(mod: Module, includedModules: IncludedModules): Module = mod match {
+  private def filterContents(mod: Module, packageModules: PackageModules): Module = mod match {
     case Module(sym, parent, uses, submodules, classes, effects, enums, typeAliases, defs) =>
-      val modIsIncluded = includedModules.contains(sym)
+      val modIsIncluded = packageModules.contains(sym)
       if (modIsIncluded) {
         Module(
           sym,
           parent,
           uses,
-          submodules.map(m => filterContents(m, includedModules)),
-          classes.filter(c => c.decl.mod.isPublic && !c.decl.ann.isInternal).map(c => filterClass(c, includedModules)),
-          effects.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(e => filterEffect(e, includedModules)),
-          enums.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(e => filterEnum(e, includedModules)),
+          submodules.map(m => filterContents(m, packageModules)),
+          classes.filter(c => c.decl.mod.isPublic && !c.decl.ann.isInternal).map(c => filterClass(c, packageModules)),
+          effects.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(e => filterEffect(e, packageModules)),
+          enums.filter(e => e.decl.mod.isPublic && !e.decl.ann.isInternal).map(e => filterEnum(e, packageModules)),
           typeAliases.filter(t => t.mod.isPublic && !t.ann.isInternal),
           defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
         )
@@ -311,7 +323,7 @@ object HtmlDocumentor {
           sym,
           parent,
           Nil,
-          submodules.map(m => filterContents(m, includedModules)),
+          submodules.map(m => filterContents(m, packageModules)),
           Nil,
           Nil,
           Nil,
@@ -325,7 +337,7 @@ object HtmlDocumentor {
     * Returns a `Class` corresponding to the given `clazz`,
     * but with all items that shouldn't appear in the documentation removed.
     */
-  private def filterClass(clazz: Class, includedModules: IncludedModules): Class = clazz match {
+  private def filterClass(clazz: Class, packageModules: PackageModules): Class = clazz match {
     case Class(TypedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, _, laws, loc), signatures, defs, instances, parent, companionMod) =>
       Class(
         TypedAst.Class(
@@ -344,7 +356,7 @@ object HtmlDocumentor {
         defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
         instances.filter(i => i.mod.isPublic && !i.ann.isInternal),
         parent,
-        companionMod.map(m => filterContents(m, includedModules))
+        companionMod.map(m => filterContents(m, packageModules))
       )
   }
 
@@ -352,18 +364,18 @@ object HtmlDocumentor {
     * Returns an `Effect` corresponding to the given `eff`,
     * but with all items that shouldn't appear in the documentation removed.
     */
-  private def filterEffect(eff: Effect, includedModules: IncludedModules): Effect = eff match {
+  private def filterEffect(eff: Effect, packageModules: PackageModules): Effect = eff match {
     case Effect(eff, parent, companionMod) =>
-      Effect(eff, parent, companionMod.map(m => filterContents(m, includedModules)))
+      Effect(eff, parent, companionMod.map(m => filterContents(m, packageModules)))
   }
 
   /**
     * Returns an `Enum` corresponding to the given `enm`,
     * but with all items that shouldn't appear in the documentation removed.
     */
-  private def filterEnum(enm: Enum, includedModules: IncludedModules): Enum = enm match {
+  private def filterEnum(enm: Enum, packageModules: PackageModules): Enum = enm match {
     case Enum(enm, parent, companionMod) =>
-      Enum(enm, parent, companionMod.map(m => filterContents(m, includedModules)))
+      Enum(enm, parent, companionMod.map(m => filterContents(m, packageModules)))
   }
 
   /**
