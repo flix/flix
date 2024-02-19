@@ -52,7 +52,7 @@ object EffUnification2 {
 
 
     var eqns: List[Equation] = Nil
-    var s: Substitution = Substitution.empty
+    var s: LocalSubstitution = LocalSubstitution.empty
 
     try {
       while (eqns.nonEmpty) {
@@ -61,12 +61,6 @@ object EffUnification2 {
         // Fail on conflict.
         // Find unit propagation and apply them one a time.
 
-        for (eqn <- eqns) {
-          classify(eqn) match {
-            case Classification.Trivial =>
-            case Classification.Ground =>
-          }
-        }
       }
 
       ??? // TODO
@@ -89,7 +83,28 @@ object EffUnification2 {
 
   private case class InternalFailure(x: Term, y: Term) extends RuntimeException
 
-  //private def unitPropagate()
+  // Saturates all unit clauses.
+  private def unitPropagate(eqns: List[Equation], subst0: LocalSubstitution): (List[Equation], LocalSubstitution) = {
+    var currentSubst = subst0
+
+    val (initialGround, initialNonGround) = eqns.partition(isGround)
+    var currentGround = initialGround
+    var currentNonGround = initialNonGround
+    while (currentGround.nonEmpty) {
+      currentSubst = extendSubstWithGround(currentGround, currentSubst) // TODO: rigidity
+      val (nextGround, nextNonGround) = currentNonGround.partition(isGround)
+      currentGround = nextGround
+      currentNonGround = nextNonGround
+    }
+
+    (currentNonGround, currentSubst)
+  }
+
+  // x = true, x = false, or mirrored. + x flexible
+  private def isGround(eq: Equation): Boolean = eq match {
+    case Equation(Term.Var(x), Term.True) => true // TODO: Rest
+    case _ => false
+  }
 
   private def extendSubstWithGround(eqns: List[Equation], subst: LocalSubstitution): LocalSubstitution = eqns match {
     case Nil => subst
@@ -109,20 +124,6 @@ object EffUnification2 {
   }
 
   private case class Equation(t1: Term, t2: Term)
-
-  private def classify(eqn: Equation): Classification = ???
-
-  private sealed trait Classification
-
-  private object Classification {
-    case object Trivial extends Classification
-
-    /**
-      * An equation of the form `x = true`, `x = false`, and their mirrored versions.
-      */
-    case object Ground extends Classification
-
-  }
 
   private def booleanUnification(t1: Term, t2: Term, renv: Set[Int])(implicit flix: Flix): Option[LocalSubstitution] = {
     // The boolean expression we want to show is false.
