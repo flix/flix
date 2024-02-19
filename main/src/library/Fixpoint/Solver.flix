@@ -719,7 +719,7 @@ mod Fixpoint.Solver {
         case Model(db) => region rc {
             use Fixpoint.Ast.Ram.toDenotation;
             let pFacts = MutList.new(rc);
-            let query = ramSym -> match ramSym {
+            let qquery = ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case Comparison.EqualTo => Comparison.EqualTo
                     case cmp => cmp
