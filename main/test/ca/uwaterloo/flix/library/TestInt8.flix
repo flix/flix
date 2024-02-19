@@ -128,22 +128,22 @@ mod TestInt8 {
     // rem                                                                     //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def rem01(): Bool = (12i8 `Int8.rem` 2i8) == 0i8
+    def rem01(): Bool = (12i8 `Int8.remainder` 2i8) == 0i8
 
     @test
-    def rem02(): Bool = (12i8 `Int8.rem` 5i8) == 2i8
+    def rem02(): Bool = (12i8 `Int8.remainder` 5i8) == 2i8
 
     @test
-    def rem03(): Bool = (-12i8 `Int8.rem` 5i8) == -2i8
+    def rem03(): Bool = (-12i8 `Int8.remainder` 5i8) == -2i8
 
     @test
-    def rem04(): Bool = (12i8 `Int8.rem` -5i8) == 2i8
+    def rem04(): Bool = (12i8 `Int8.remainder` -5i8) == 2i8
 
     @test
-    def rem05(): Bool = (-12i8 `Int8.rem` -5i8) == -2i8
+    def rem05(): Bool = (-12i8 `Int8.remainder` -5i8) == -2i8
 
     @test
-    def rem06(): Bool = (1i8 `Int8.rem` 0i8) == 0i8
+    def rem06(): Bool = (1i8 `Int8.remainder` 0i8) == 0i8
 
     /////////////////////////////////////////////////////////////////////////////
     // dist                                                                    //
