@@ -919,7 +919,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |     };
         |     let h = if (true) f else g;
         |
-        |     let cstOrNotOrVar = if (true) open Expr.Cst else if (true) open Expr.Not else open Expr.Var;
+        |     let cstOrNotOrVar = if (true) open_variant Expr.Cst else if (true) open_variant Expr.Not else open_variant Expr.Var;
         |
         |     h(cstOrNotOrVar)
         | }
