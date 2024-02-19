@@ -62,7 +62,7 @@ mod Fixpoint.Interpreter {
         case RelOp.Search(_, _, body)           => allocEnv(rc, depth + 1, body)
         case RelOp.Query(_, _, _, body)         => allocEnv(rc, depth + 1, body)
         case RelOp.Functional(_, _, _, body)    => allocEnv(rc, depth + 1, body)
-        case RelOp.Project(_)                   => (Array.repeat(rc, depth, Vector.empty()), Array.new(rc, depth))
+        case RelOp.Inject(_)                   => (Array.repeat(rc, depth, Vector.empty()), Array.new(rc, depth))
         case RelOp.If(_, then)                  => allocEnv(rc, depth, then)
     }
 
@@ -91,7 +91,7 @@ mod Fixpoint.Interpreter {
                     Array.put(t, i, tupleEnv);
                     evalOp(rc1, db, env, body)
                 }
-            case RelOp.Project(terms, ramSym) =>
+            case RelOp.Inject(terms, ramSym) =>
                 let rel = MutMap.getOrElsePut!(ramSym, MutMap.new(rc1), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>

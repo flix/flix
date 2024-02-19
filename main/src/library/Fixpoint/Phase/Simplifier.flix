@@ -28,7 +28,7 @@ mod Fixpoint.Phase.Simplifier {
     ///     search B$1 ∈ B do
     ///         search C$2 ∈ ΔC do
     ///             if (B$1[0] == C$2[0] ∧ (B$1[0]) ∉ A ∧ (B$1[0]) ∉ R) then
-    ///                 project (B$1[0]) into ΔR'
+    ///                 inject (B$1[0]) into ΔR'
     ///             end
     ///         end
     ///     end
@@ -50,12 +50,12 @@ mod Fixpoint.Phase.Simplifier {
                     //
                     // // Rewrite join loops that copy one relation into another into a `merge` statement.
                     // // search b ∈ B do
-                    // //   project (b[0], b[1]) into A
+                    // //   inject (b[0], b[1]) into A
                     // // end
                     // // ==>
                     // // merge B into A
                     // // If A and B have the same arity.
-                    // case RelOp.Search(varB, relB, RelOp.Project(tuple, relA)) =>
+                    // case RelOp.Search(varB, relB, RelOp.Inject(tuple, relA)) =>
                     //     use Fixpoint.Ram.arityOf;
                     //     let isCopy =
                     //         Vector.map(t -> match t {
@@ -136,7 +136,7 @@ mod Fixpoint.Phase.Simplifier {
             forM(
                 newBody <- simplifyOp(stratum, body)
             ) yield RelOp.Functional(rowVar, f, terms, newBody)
-        case RelOp.Project(_)    => Some(op)
+        case RelOp.Inject(_)    => Some(op)
     }
 
     ///

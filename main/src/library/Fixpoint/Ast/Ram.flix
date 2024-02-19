@@ -61,7 +61,7 @@ mod Fixpoint.Ast.Ram {
         case Search(RowVar, RamSym[v], RelOp[v])
         case Query(RowVar, RamSym[v], Vector[(Int32, RamTerm[v])], RelOp[v])
         case Functional(RowVar, Vector[v] -> Vector[Vector[v]], Vector[RamTerm[v]], RelOp[v])
-        case Project(Vector[RamTerm[v]], RamSym[v])
+        case Inject(Vector[RamTerm[v]], RamSym[v])
         case If(Vector[BoolExp[v]], RelOp[v])
     }
 
@@ -78,8 +78,8 @@ mod Fixpoint.Ast.Ram {
                     "query {${var} ∈ ${ramSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"
                 case RelOp.Functional(rowVar, _, terms, body) =>
                     "loop(${rowVar} <- f(${terms |> Vector.join(", ")})) do${nl}${String.indent(4, "${body}")}end"
-                case RelOp.Project(terms, ramSym) =>
-                    "project (${terms |> Vector.join(", ")}) into ${ramSym}"
+                case RelOp.Inject(terms, ramSym) =>
+                    "inject (${terms |> Vector.join(", ")}) into ${ramSym}"
                 case RelOp.If(test, then) =>
                     let tst = test |> Vector.join(" ∧ ");
                     "if(${tst}) then${nl}${String.indent(4, "${then}")}end"

@@ -11,7 +11,7 @@ mod Bench.Fixpoint {
 
     pub def benchmarks(): List[Benchmark] =
         (
-            benchmarkProjectInto() ::
+            benchmarkInjectInto() ::
             benchmarkSelect() ::
             benchmarkSolve() ::
             benchmarkCrossProduct2() ::
@@ -21,22 +21,22 @@ mod Bench.Fixpoint {
             Nil
         ) |> List.flatten
 
-    pub def benchmarkProjectInto(): List[Benchmark] =
+    pub def benchmarkInjectInto(): List[Benchmark] =
         let mkFacts = n -> List.range(1, n) |> List.map(x -> (x, x));
         let facts04 = mkFacts(2 ** 4);
         let facts08 = mkFacts(2 ** 8);
         let facts12 = mkFacts(2 ** 12);
         let facts16 = mkFacts(2 ** 16);
         let facts20 = mkFacts(2 ** 20);
-        defBenchmark("Project (Int, Int) into A (n = ${2 ** 04})", () -> { project facts04 into A }) ::
-        defBenchmark("Project (Int, Int) into A (n = ${2 ** 08})", () -> { project facts08 into A }) ::
-        defBenchmark("Project (Int, Int) into A (n = ${2 ** 12})", () -> { project facts12 into A }) ::
-        defBenchmark("Project (Int, Int) into A (n = ${2 ** 16})", () -> { project facts16 into A }) ::
-        defBenchmark("Project (Int, Int) into A (n = ${2 ** 20})", () -> { project facts20 into A }) ::
+        defBenchmark("Inject (Int, Int) into A (n = ${2 ** 04})", () -> { inject facts04 into A }) ::
+        defBenchmark("Inject (Int, Int) into A (n = ${2 ** 08})", () -> { inject facts08 into A }) ::
+        defBenchmark("Inject (Int, Int) into A (n = ${2 ** 12})", () -> { inject facts12 into A }) ::
+        defBenchmark("Inject (Int, Int) into A (n = ${2 ** 16})", () -> { inject facts16 into A }) ::
+        defBenchmark("Inject (Int, Int) into A (n = ${2 ** 20})", () -> { inject facts20 into A }) ::
         Nil
 
     pub def benchmarkSelect(): List[Benchmark] =
-        let mkFacts = n -> (project (List.range(1, n) |> List.map(x -> (x, x))) into A);
+        let mkFacts = n -> (inject (List.range(1, n) |> List.map(x -> (x, x))) into A);
         let facts04 = mkFacts(2 ** 4);
         let facts08 = mkFacts(2 ** 8);
         let facts12 = mkFacts(2 ** 12);
@@ -50,7 +50,7 @@ mod Bench.Fixpoint {
         Nil
 
     pub def benchmarkSolve(): List[Benchmark] =
-        let mkEdges = n -> project (List.range(1, n) |> List.map(x -> (x, x + 1))) into Edge;
+        let mkEdges = n -> inject (List.range(1, n) |> List.map(x -> (x, x + 1))) into Edge;
         let p = #{
             Path(x, y) :- Edge(x, y).
             Path(x, z) :- Path(x, y), Edge(y, z).
@@ -76,8 +76,8 @@ mod Bench.Fixpoint {
         Nil
 
     pub def benchmarkCrossProduct2(): List[Benchmark] =
-        let mkA = n -> project (List.range(1, n) |> List.map(x -> (0, x))) into A;
-        let mkB = n -> project (List.range(1, n) |> List.map(x -> (0, x))) into B;
+        let mkA = n -> inject (List.range(1, n) |> List.map(x -> (0, x))) into A;
+        let mkB = n -> inject (List.range(1, n) |> List.map(x -> (0, x))) into B;
         let p = #{
             Cross(x, y) :- A(0, x), B(0, y).
         };
@@ -100,9 +100,9 @@ mod Bench.Fixpoint {
         Nil
 
     pub def benchmarkCrossProduct3(): List[Benchmark] =
-        let mkA = n -> project (List.range(1, n) |> List.map(x -> (0, x))) into A;
-        let mkB = n -> project (List.range(1, n) |> List.map(x -> (0, x))) into B;
-        let mkC = n -> project (List.range(1, n) |> List.map(x -> (0, x))) into C;
+        let mkA = n -> inject (List.range(1, n) |> List.map(x -> (0, x))) into A;
+        let mkB = n -> inject (List.range(1, n) |> List.map(x -> (0, x))) into B;
+        let mkC = n -> inject (List.range(1, n) |> List.map(x -> (0, x))) into C;
         let p = #{
             Cross(x, y, z) :- A(0, x), B(0, y), C(0, z).
         };
@@ -117,8 +117,8 @@ mod Bench.Fixpoint {
         Nil
 
     pub def benchmarkSolveIntersect(): List[Benchmark] =
-        let mkA = n -> project (List.range(1, n) |> List.map(x -> (0, x))) into A;
-        let mkB = n -> project (List.range(n / 2, n + n / 2) |> List.map(x -> (0, x))) into B;
+        let mkA = n -> inject (List.range(1, n) |> List.map(x -> (0, x))) into A;
+        let mkB = n -> inject (List.range(n / 2, n + n / 2) |> List.map(x -> (0, x))) into B;
         let p = #{
             C(0, x) :- A(0, x), B(0, x).
         };

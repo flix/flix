@@ -31,8 +31,8 @@ mod Fixpoint.Phase.Compiler {
 
     ///
     /// Compile the given Datalog program `d` to RAM.
-    /// First compile all facts in `d` to project-statements.
-    /// For example, the fact `Path(1, 2).` becomes `project (1, 2) into Path`.
+    /// First compile all facts in `d` to inject-statements.
+    /// For example, the fact `Path(1, 2).` becomes `inject (1, 2) into Path`.
     /// Second compile all rules in `d` according to the given stratification `strat`.
     /// This means to compile all rules in stratum 0, then stratum 1 and so on.
     /// A rule belongs to the same stratum as its head predicate.
@@ -121,7 +121,7 @@ mod Fixpoint.Phase.Compiler {
     ///     search B$1 ∈ B do
     ///         search C$2 ∈ C do
     ///             if (B$1[0] == C$2[0] ∧ (B$1[0]) ∉ A) then
-    ///                 project (B$1[0]) into R
+    ///                 inject (B$1[0]) into R
     ///             end
     ///         end
     ///     end
@@ -132,9 +132,9 @@ mod Fixpoint.Phase.Compiler {
             let env = unifyVars(augBody);
             let ramTerms = Vector.map(compileHeadTerm(env), headTerms);
             let arity = Vector.length(ramTerms);
-            let projection = RelOp.Project(ramTerms, RamSym.Full(headSym, arity, headDen));
+            let injection = RelOp.Inject(ramTerms, RamSym.Full(headSym, arity, headDen));
             let join = compileBody(env, augBody);
-            let loopBody = RelOp.If(join, projection);
+            let loopBody = RelOp.If(join, injection);
             let insert =
                 Vector.foldRight(match (atom, rowVar) -> acc -> match atom {
                     case BodyAtom(bodySym, den, Polarity.Positive, _, terms) =>
@@ -166,14 +166,14 @@ mod Fixpoint.Phase.Compiler {
     ///     search B$1 ∈ ΔB do
     ///         search C$2 ∈ C do
     ///             if (B$1[0] == C$2[0] ∧ (B$1[0]) ∉ A ∧ (B$1[0]) ∉ R) then
-    ///                 project (B$1[0]) into ΔR'
+    ///                 inject (B$1[0]) into ΔR'
     ///             end
     ///         end
     ///     end
     ///     search B$1 ∈ B do
     ///         search C$2 ∈ ΔC do
     ///             if (B$1[0] == C$2[0] ∧ (B$1[0]) ∉ A ∧ (B$1[0]) ∉ R) then
-    ///                 project (B$1[0]) into ΔR'
+    ///                 inject (B$1[0]) into ΔR'
     ///             end
     ///         end
     ///     end
@@ -187,9 +187,9 @@ mod Fixpoint.Phase.Compiler {
             let env = unifyVars(augBody);
             let ramTerms = Vector.map(compileHeadTerm(env), headTerms);
             let arity = Vector.length(ramTerms);
-            let projection = RelOp.Project(ramTerms, RamSym.New(headSym, arity, headDen));
+            let injection = RelOp.Inject(ramTerms, RamSym.New(headSym, arity, headDen));
             let join = compileBody(env, augBody);
-            let loopBody = RelOp.If(Vector.append(Vector#{BoolExp.NotMemberOf(ramTerms, RamSym.Full(headSym, arity, headDen))}, join), projection);
+            let loopBody = RelOp.If(Vector.append(Vector#{BoolExp.NotMemberOf(ramTerms, RamSym.Full(headSym, arity, headDen))}, join), injection);
             let compile = delta -> { // `delta` designates the focused atom.
                 let insert =
                     Vector.foldRight(match (atom, rowVar) -> acc -> match atom {

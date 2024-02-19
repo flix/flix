@@ -16,7 +16,7 @@
 
 /// The purpose of this phase is to lower row variables in searches and queries to array indices.
 /// This implies substituting named references to row variables with indices
-/// in where clauses, range queries and project operations.
+/// in where clauses, range queries and inject operations.
 
 mod Fixpoint.Phase.VarsToIndices {
 
@@ -50,8 +50,8 @@ mod Fixpoint.Phase.VarsToIndices {
                 let newTerms = terms |> Vector.map(lowerTerm(rowVars));
                 let newBody = lowerOp(body, newVars, depth + 1);
                 RelOp.Functional(newVar, f, newTerms, newBody)
-            case RelOp.Project(terms, ramSym) =>
-                 RelOp.Project(Vector.map(lowerTerm(rowVars), terms), ramSym)
+            case RelOp.Inject(terms, ramSym) =>
+                 RelOp.Inject(Vector.map(lowerTerm(rowVars), terms), ramSym)
             case RelOp.If(test, then) =>
                  RelOp.If(Vector.map(lowerExp(rowVars), test), lowerOp(then, rowVars, depth))
         }

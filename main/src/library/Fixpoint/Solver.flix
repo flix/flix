@@ -91,7 +91,7 @@ mod Fixpoint.Solver {
     }
 
     ///
-    /// Project all facts in the given Datalog program `d` that has `p` in its head.
+    /// Inject all facts in the given Datalog program `d` that has `p` in its head.
     ///
     @Internal
     pub def project(p: PredSym, d: Datalog[v]): Datalog[v] with Order[v] = match d {

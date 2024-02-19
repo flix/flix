@@ -35,7 +35,7 @@ mod Fixpoint.Phase.IndexSelection {
     ///     search (y, z, w) ∈ R do
     ///         search u ∈ C do
     ///             if (x = y ∧ x = w ∧ z = u ∧ x ∉ A) then
-    ///                 project x into A
+    ///                 inject x into A
     /// After step 1 (hoisting):
     /// search x ∈ B do
     ///     if (x ∉ A) then
@@ -43,14 +43,14 @@ mod Fixpoint.Phase.IndexSelection {
     ///             if (x = y ∧ x = w) then
     ///                 search u ∈ C do
     ///                     if (z = u) then
-    ///                         project x into A
+    ///                         inject x into A
     /// After step 2 (query rewriting):
     /// search x ∈ B do
     ///     if (x ∉ A) then
     ///         query {(y, z, w) ∈ R | x = y} do
     ///             if (x = w) then
     ///                 query {u ∈ C | z = u} do
-    ///                     project x into A
+    ///                     inject x into A
     ///
     /// Note how the search `x = y` is optimized, but `x = w` is not.
     /// The index for R is defined by the attribute sequence Y < Z < W.
@@ -126,7 +126,7 @@ mod Fixpoint.Phase.IndexSelection {
                     (search, ground)
         case RelOp.Query(_) => (op, Vector.empty())
         case RelOp.Functional(_) => (op, Vector.empty())
-        case RelOp.Project(_) => (op, Vector.empty())
+        case RelOp.Inject(_) => (op, Vector.empty())
         case RelOp.If(test, then) =>
             let (innerOp, innerGround) = queryOp(then, freeVars);
             (innerOp, Vector.append(test, innerGround))

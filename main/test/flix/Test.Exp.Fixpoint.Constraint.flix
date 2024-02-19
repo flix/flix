@@ -83,8 +83,8 @@ mod Test.Exp.Fixpoint.Constraint {
         let p = #{ A(12). };
         let query1 = query p select () from B();
         let test1 = query1 == Vector#{};
-        let _test2 = solve p project C;
-        let query2 = query (solve p project D) select () from D();
+        let _test2 = solve p inject C;
+        let query2 = query (solve p inject D) select () from D();
         let test3 = query2 == Vector#{};
         test1 and test3
     }

@@ -46,7 +46,7 @@ pub def connectedComponentRep(g: Graph[node]): #{ ComponentRep(node, node) | r }
         // `rep` is the highest node of the component.
         ComponentRep(n, rep) :- Reachable(n, rep), not ReachUp(rep).
     };
-    solve nodes, edges, reachability project ComponentRep
+    solve nodes, edges, reachability inject ComponentRep
 
 /// Connects the undirected graph given by `nodes` and `edges`
 /// ny connecting the connected components of the graph.
@@ -61,7 +61,7 @@ pub def connectGraph(g: Graph[node]): #{ Edge(Set[node], Set[node]) | r } with O
         // full union is computed before producing Edge values.
         Edge(c1, c2) :- fix Component(_; c1), fix Component(_; c2), if c1 < c2.
     };
-    solve connectedComponentRep(g), missingEdges project Edge
+    solve connectedComponentRep(g), missingEdges inject Edge
 
 def main(): Unit \ IO =
     let graph = {
