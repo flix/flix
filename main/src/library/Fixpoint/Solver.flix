@@ -99,7 +99,7 @@ mod Fixpoint.Solver {
             let pFacts = Vector.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
             Datalog(pFacts, Vector.empty())
         case Model(db) =>
-            Map.query(ramSym -> match ramSym {
+            Map.rangeQuery(ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case Comparison.EqualTo => Comparison.EqualTo
                     case cmp => cmp
@@ -726,7 +726,7 @@ mod Fixpoint.Solver {
                 }
                 case _ => Comparison.LessThan
             };
-            Map.queryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
+            Map.rangeQueryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
                     Map.forEach((tuple, _) -> MutList.push!(f(Vector.toList(tuple)), pFacts), rel)
                 case Denotation.Latticenal(_) =>

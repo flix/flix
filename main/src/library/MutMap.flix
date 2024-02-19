@@ -590,16 +590,16 @@ mod MutMap {
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison \ ef, m: MutMap[k, v, r]): List[(k, v)] \ { ef, r } =
+    pub def rangeQuery(p: k -> Comparison \ ef, m: MutMap[k, v, r]): List[(k, v)] \ { ef, r } =
         let MutMap(_, mm) = m;
-        Map.query(p, deref mm)
+        Map.rangeQuery(p, deref mm)
 
     ///
     /// Applies `f` to all key-value pairs `(k, v)` in the mutable map `m` where `p(k)` returns `EqualTo`.
     ///
-    pub def queryWith(p: k -> Comparison \ ef1, f: (k, v) -> Unit \ ef2, m: MutMap[k, v, r]): Unit \ { ef1, ef2, r } =
+    pub def rangeQueryWith(p: k -> Comparison \ ef1, f: (k, v) -> Unit \ ef2, m: MutMap[k, v, r]): Unit \ { ef1, ef2, r } =
         let MutMap(_, mm) = m;
-        Map.queryWith(p, f, deref mm)
+        Map.rangeQueryWith(p, f, deref mm)
 
     ///
     /// Returns `true` if MutMaps `a` and `b` have the same elements, i.e. are structurally equal.
