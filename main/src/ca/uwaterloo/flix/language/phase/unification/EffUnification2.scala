@@ -17,7 +17,6 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Type}
-import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.collection.immutable.SortedSet
@@ -41,22 +40,28 @@ object EffUnification2 {
     var eqns: List[Equation] = Nil
     var s: Substitution = Substitution.empty
 
-    while (eqns.nonEmpty) {
+    try {
+      while (eqns.nonEmpty) {
 
-      // Discord trivial
-      // Fail on conflict.
-      // Find unit propagation and apply them one a time.
+        // Discord trivial
+        // Fail on conflict.
+        // Find unit propagation and apply them one a time.
 
-      for (eqn <- eqns) {
-        classify(eqn) match {
-          case Classification.Trivial =>
-          case Classification.Ground =>
+        for (eqn <- eqns) {
+          classify(eqn) match {
+            case Classification.Trivial =>
+            case Classification.Ground =>
+          }
         }
       }
-    }
+      ??? // TODO
 
-    ??? // TODO
+    } catch {
+      case ex: InternalFailure => Result.Err(UnificationError.MismatchedEffects(???, ???))
+    }
   }
+
+  private case class InternalFailure(eq: Equation) extends RuntimeException
 
   private def extendSubstWithGround(eqn: Equation, subst: Substitution): Substitution = eqn match {
     case Equation(Term.Var(x), t2) =>
@@ -66,7 +71,7 @@ object EffUnification2 {
 
   private case class Equation(t1: Term, t2: Term)
 
-  def classify(eqn: Equation): Classification = ???
+  private def classify(eqn: Equation): Classification = ???
 
   private sealed trait Classification
 
@@ -86,18 +91,18 @@ object EffUnification2 {
       case Term.True => SortedSet.empty
       case Term.False => SortedSet.empty
       case Term.Var(x) => SortedSet(x)
-      case Term.Not(f) => f.freeVars
-      case Term.And(ts) => ???
-      case Term.Or(ts) => ???
+      case Term.Not(t) => t.freeVars
+      case Term.And(ts) => ts.foldLeft(SortedSet.empty[Int])(_ ++ _.freeVars)
+      case Term.Or(ts) => ts.foldLeft(SortedSet.empty[Int])(_ ++ _.freeVars)
     }
 
     final def size: Int = this match {
       case Term.True => 0
       case Term.False => 0
       case Term.Var(_) => 0
-      case Term.Not(t) => t.size
-      case Term.And(ts) => ???
-      case Term.Or(ts) => ???
+      case Term.Not(t) => t.size + 1
+      case Term.And(ts) => ts.map(_.size).sum + (ts.length - 1)
+      case Term.Or(ts) => ts.map(_.size).sum + (ts.length - 1)
     }
 
     override def toString: String = this match {
@@ -105,11 +110,11 @@ object EffUnification2 {
       case Term.False => "false"
       case Term.Var(x) => s"x$x"
       case Term.Not(f) => f match {
-        case Term.Var(x) => s"!x$x"
-        case _ => s"!($f)"
+        case Term.Var(x) => s"¬x$x"
+        case _ => s"¬($f)"
       }
-      case Term.And(ts) => ???
-      case Term.Or(ts) => ???
+      case Term.And(ts) => s"(${ts.mkString(" ∧ ")})"
+      case Term.Or(ts) => s"(${ts.mkString(" ∨ ")})"
     }
 
   }
@@ -211,11 +216,11 @@ object EffUnification2 {
     }
   }
 
-  private object Substitution {
-    val empty: Substitution = Substitution(Map.empty)
+  private object LocalSubstitution {
+    val empty: LocalSubstitution = LocalSubstitution(Map.empty)
   }
 
-  private case class Substitution(m: Map[Int, Term]) {
+  private case class LocalSubstitution(m: Map[Int, Term]) {
     def apply(t: Term): Term = t match {
       case Term.True => Term.True
       case Term.False => Term.False
