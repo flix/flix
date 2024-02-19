@@ -34,8 +34,8 @@ mod Fixpoint.Solver {
     /// The stratification is computed automatically by the solver.
     ///
     @Internal
-    pub def solve(d: Datalog[v]): Datalog[v] with Order[v] =
-        Fixpoint.Phase.Stratifier.stratify(d) |> solveWithStratification(d)
+    pub def run(d: Datalog[v]): Datalog[v] with Order[v] =
+        Fixpoint.Phase.Stratifier.stratify(d) |> runWithStratification(d)
 
     ///
     /// Returns the minimal model of the given Datalog program `d`.
@@ -43,7 +43,7 @@ mod Fixpoint.Solver {
     /// A stratification of `d` is given by `stf`.
     ///
     @Internal
-    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
+    def runWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
         masked_cast(Fixpoint.Debugging.notifyPreSolve(d, stf));
         let compiler = cs ->
             Fixpoint.Phase.Compiler.compile(cs, stf) |>
