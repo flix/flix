@@ -93,7 +93,7 @@ mod Test.Java.Function {
         import java.util.stream.IntStream.filter(IntPredicate): IntStream \ IO;
         import java.util.stream.IntStream.sum(): Int32 \ IO;
         let stream0 = range(0, 9);
-        let stream1 = filter(stream0, i -> checked_ecast(i `Int32.rem` 2 == 0));
+        let stream1 = filter(stream0, i -> checked_ecast(i `Int32.remainder` 2 == 0));
         sum(stream1) == 20
     }
 
@@ -188,7 +188,7 @@ mod Test.Java.Function {
         import java.util.stream.DoubleStream.sum(): Float64 \ IO;
         let stream0 = of(Array#{0.0f64, 1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64, 7.0f64, 8.0f64} @ rc);
         let stream1 = filter(stream0, d -> checked_ecast(match Float64.tryToInt32(d) {
-            case Some(i) => i `Int32.rem` 2 == 0
+            case Some(i) => i `Int32.remainder` 2 == 0
             case None    => false
             }));
         let tot = sum(stream1);

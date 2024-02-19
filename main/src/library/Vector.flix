@@ -651,7 +651,7 @@ mod Vector {
         let len2 = len1 + len1 - 1;
         let f = ix -> match ix {
             case 0                         => get(0, v)
-            case n if Int32.rem(n, 2) != 0 => sep
+            case n if Int32.remainder(n, 2) != 0 => sep
             case n                         => {let i = n / 2; get(i, v)}
         };
         init(f, len2)

@@ -120,7 +120,7 @@ mod Int64 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int64): Int64 =
-        if (x < 0i64 and Int32.rem(dist.dist, size()) != 0)
+        if (x < 0i64 and Int32.remainder(dist.dist, size()) != 0)
             rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), (dist.dist - 1))
         else
             rightShift(x, dist.dist)

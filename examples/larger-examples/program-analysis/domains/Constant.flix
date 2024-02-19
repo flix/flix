@@ -151,7 +151,7 @@ mod Domain.Constant {
         match (e1, e2) {
             case (Constant.Bot, _)                    => Constant.Bot
             case (_, Constant.Bot)                    => Constant.Bot
-            case (Constant.Cst(n1), Constant.Cst(n2)) => Constant.Cst(n1 `Int32.rem` n2)
+            case (Constant.Cst(n1), Constant.Cst(n2)) => Constant.Cst(n1 `Int32.remainder` n2)
             case _                                    => Constant.Top
         }
 

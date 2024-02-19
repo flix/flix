@@ -146,40 +146,40 @@ mod TestInt32 {
     // rem                                                                     //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def rem01(): Bool = (1200000 `Int32.rem` 200000) == 0
+    def rem01(): Bool = (1200000 `Int32.remainder` 200000) == 0
 
     @test
-    def rem02(): Bool = (1200000 `Int32.rem` 500000) == 200000
+    def rem02(): Bool = (1200000 `Int32.remainder` 500000) == 200000
 
     @test
-    def rem03(): Bool = (-1200000 `Int32.rem` 500000) == -200000
+    def rem03(): Bool = (-1200000 `Int32.remainder` 500000) == -200000
 
     @test
-    def rem04(): Bool = (1200000 `Int32.rem` -500000) == 200000
+    def rem04(): Bool = (1200000 `Int32.remainder` -500000) == 200000
 
     @test
-    def rem05(): Bool = (-1200000 `Int32.rem` -500000) == -200000
+    def rem05(): Bool = (-1200000 `Int32.remainder` -500000) == -200000
 
     @test
-    def rem06(): Bool = (1200000i32 `Int32.rem` 200000i32) == 0i32
+    def rem06(): Bool = (1200000i32 `Int32.remainder` 200000i32) == 0i32
 
     @test
-    def rem07(): Bool = (1200000i32 `Int32.rem` 500000i32) == 200000i32
+    def rem07(): Bool = (1200000i32 `Int32.remainder` 500000i32) == 200000i32
 
     @test
-    def rem08(): Bool = (-1200000i32 `Int32.rem` 500000i32) == -200000i32
+    def rem08(): Bool = (-1200000i32 `Int32.remainder` 500000i32) == -200000i32
 
     @test
-    def rem09(): Bool = (1200000i32 `Int32.rem` -500000i32) == 200000i32
+    def rem09(): Bool = (1200000i32 `Int32.remainder` -500000i32) == 200000i32
 
     @test
-    def rem10(): Bool = (-1200000i32 `Int32.rem` -500000i32) == -200000i32
+    def rem10(): Bool = (-1200000i32 `Int32.remainder` -500000i32) == -200000i32
 
     @test
-    def rem11(): Bool = (1 `Int32.rem` 0) == 0
+    def rem11(): Bool = (1 `Int32.remainder` 0) == 0
 
     @test
-    def rem12(): Bool = (1i32 `Int32.rem` 0i32) == 0i32
+    def rem12(): Bool = (1i32 `Int32.remainder` 0i32) == 0i32
 
     /////////////////////////////////////////////////////////////////////////////
     // dist                                                                    //

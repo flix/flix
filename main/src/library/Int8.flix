@@ -121,7 +121,7 @@ mod Int8 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int8): Int8 =
-        if (x < 0i8 and Int32.rem(dist.dist, 32) != 0)
+        if (x < 0i8 and Int32.remainder(dist.dist, 32) != 0)
             rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), dist.dist - 1)
         else
             rightShift(x, dist.dist)
@@ -141,7 +141,7 @@ mod Int8 {
     /// binary representation of `x` right by `distance` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int8): Int8 =
-        let rem1 = dist.dist `Int32.rem` size();
+        let rem1 = dist.dist `Int32.remainder` size();
         let rot = if (rem1 >= 0) rem1 else rem1 + size();
         bitwiseOr(logicalRightShift(dist = rot, x), leftShift(x, size() - rot))
 
@@ -150,7 +150,7 @@ mod Int8 {
     /// binary representation of `x` left by `distance` bits.
     ///
     pub def rotateLeft(dist: {dist = Int32}, x: Int8): Int8 =
-        let rem1 = dist.dist `Int32.rem` size();
+        let rem1 = dist.dist `Int32.remainder` size();
         let rot = if (rem1 >= 0) rem1 else rem1 + size();
         bitwiseOr(logicalRightShift(dist = size() - rot, x), leftShift(x, rot))
 
