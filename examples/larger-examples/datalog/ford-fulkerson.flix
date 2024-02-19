@@ -70,7 +70,7 @@ mod FordFulkerson {
             Reach(x, z; cons(z, p)) :- Reach(x, y; p), Edge(z, u, f, y), if f > 0.       // Back edge
         };
         let result = query edges, rules select fn from Reach(src, dst; fn);
-        Vector.head(result) |> Option.flatMap(toOption)
+        Vector.head(result)
 
     ///
     /// Returns the most constraining capacity of `g` on the `Path` `p`.
@@ -126,9 +126,8 @@ mod FordFulkerson {
     instance Eq[Path[a]] {
         pub def eq(x: Path[a], y: Path[a]): Bool = match (x, y) {
             case (Bot, Bot)           => true
-            case (Bot, _)             => false
-            case (_, Bot)             => false
             case (Path(xs), Path(ys)) => List.length(xs) == List.length(ys)
+            case _                    => false
         }
     }
 
@@ -136,7 +135,7 @@ mod FordFulkerson {
         pub def compare(x: Path[a], y: Path[a]): Comparison = match (x, y) {
             case (Bot, Bot)           => Comparison.EqualTo
             case (Bot, _)             => Comparison.LessThan
-            case (_, Bot)             => Comparison.LessThan
+            case (_, Bot)             => Comparison.GreaterThan
             case (Path(xs), Path(ys)) => List.length(xs) <=> List.length(ys)
         }
     }
@@ -148,9 +147,9 @@ mod FordFulkerson {
 
     instance PartialOrder[Path[a]] {
         pub def lessEqual(x: Path[a], y: Path[a]): Bool = match (x, y) {
-            case (Bot, _)             => true
-            case (_, Bot)             => true
+            case (Bot, Bot)           => true
             case (Path(xs), Path(ys)) => List.length(xs) >= List.length(ys)
+            case _                    => false
         }
     }
 
@@ -182,15 +181,6 @@ mod FordFulkerson {
     pub def cons(z: a, p: Path[a]): Path[a] = match p {
         case Bot      => Bot
         case Path(xs) => Path(z :: xs)
-    }
-
-    ///
-    /// Returns `Some(p)` if `p` is a non-empty `Path`.
-    ///
-    pub def toOption(p: Path[a]): Option[Path[a]] = match p {
-        case Bot                          => None
-        case Path(xs) if List.isEmpty(xs) => None
-        case Path(xs)                     => Some(Path(xs))
     }
 
     ///
@@ -320,6 +310,7 @@ mod FordFulkerson {
     /// 5 -> 6 , capacity 30
     /// 8 -> 6 , capacity 5
     /// 8 -> 9 , capacity 10
+    /// 6 -> 9 , capacity 5
     /// 3 -> 10, capacity 5
     /// 6 -> 10, capacity 15
     /// 9 -> 10, capacity 10
@@ -328,10 +319,10 @@ mod FordFulkerson {
     /// The maximum flow is `20`.
     ///
     pub def exampleGraph04(): Set[(Int32, Int32, Int32)] =
-        Set#{ (0, 5, 1), (0, 5, 7), (0, 10, 4), (1, 10, 2), (2, 10, 3),
-              (2, 25, 5), (3, 5, 10), (4, 15, 1), (4, 20, 5), (5, 5, 7),
-              (5, 30, 6), (6, 15, 2), (6, 15, 10), (7, 10, 8), (8, 5, 6),
-              (8, 10, 9), (9, 10, 10)
+        Set#{ (0, 5 , 1), (0, 5 , 7 ), (0, 10, 4 ), (1, 10, 2 ), (2, 10, 3),
+              (2, 25, 5), (3, 5 , 10), (4, 15, 1 ), (4, 20, 5 ), (5, 5 , 7),
+              (5, 30, 6), (6, 5 , 9 ), (6, 15, 2 ), (6, 15, 10), (7, 10, 8),
+              (8, 5 , 6), (8, 10, 9 ), (9, 10, 10)
             }
 
     @Test
