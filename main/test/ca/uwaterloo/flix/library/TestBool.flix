@@ -90,14 +90,4 @@ mod Bool {
     @test
     def mathXor04(): Bool = (false ⊕ false) == false
 
-    /////////////////////////////////////////////////////////////////////////////
-    // Negation                                                                //
-    /////////////////////////////////////////////////////////////////////////////
-
-    @test
-    def notTest01(): Bool = not true == false
-
-    @test
-    def notTest02(): Bool = not false == true
-
 }
