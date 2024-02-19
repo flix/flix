@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.api
 
-import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
+import ca.uwaterloo.flix.api.Bootstrap.{getAllFilesWithExt, getArtifactDirectory, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
@@ -571,14 +571,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       return Validation.toHardFailure(BootstrapError.FileError(s"The lib folder isn't a directory or isn't readable. Refusing to build fatjar-file."))
     }
 
-    // First, we check all jar files inside the lib folder, recursively.
-    def searchFiles(file: File, endsWith: String) : Array[File] = {
-      val fileList = file.listFiles
-      val files = fileList.filter(f => (""".*""" + endsWith).r.findFirstIn(f.getName).isDefined)
-      files ++ fileList.filter(_.isDirectory).flatMap(searchFiles(_, endsWith))
-    }
+    // First, we get all jar files inside the lib folder.
     // If the lib folder doesn't exist, we suppose there is simply no dependency and trigger no error.
-    val jarDependencies = if (libFolder.toFile.exists()) searchFiles(libFolder.toFile, """\.jar$""") else Array[File]()
+    val jarDependencies = if (libFolder.toFile.exists()) Bootstrap.getAllFilesWithExt(libFolder, "jar") else List[Path]()
 
     // Construct a new zip file, the built fatjar-file.
     Using(new ZipOutputStream(Files.newOutputStream(jarFile))) { zipOut =>
@@ -601,11 +596,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
       // Add jar dependencies.
       jarDependencies.foreach(dep => {
-        if (!Bootstrap.isJarFile(dep.toPath))
-          return Validation.toHardFailure(BootstrapError.FileError(s"The jar file '${dep.getName} seems corrupted. Refusing to build fatjar-file."))
+        if (!Bootstrap.isJarFile(dep))
+          return Validation.toHardFailure(BootstrapError.FileError(s"The jar file '${dep.toFile.getName} seems corrupted. Refusing to build fatjar-file."))
 
         // Extract the content of the classes to the jar file.
-        Using(new ZipInputStream(Files.newInputStream(dep.toPath))) {
+        Using(new ZipInputStream(Files.newInputStream(dep))) {
           zipIn =>
             var entry = zipIn.getNextEntry
             while (entry != null) {
