@@ -38,8 +38,8 @@ object EffUnification2 {
 
     val allVars = mutable.Set.empty[Type.Var]
     for ((t1, t2) <- l) {
-      allVars += t1.typeVars
-      allVars += t2.typeVars
+      allVars ++= t1.typeVars
+      allVars ++= t2.typeVars
     }
 
     val forward = allVars.foldLeft(Map.empty[Type.Var, Int]) {
@@ -116,6 +116,58 @@ object EffUnification2 {
     case object Ground extends Classification
 
   }
+
+  private def booleanUnification(t1: Term, t2: Term, renv: Set[Int])(implicit flix: Flix): Option[LocalSubstitution] = {
+    // The boolean expression we want to show is false.
+    val query = Term.mkXor(t1, t2)
+
+    // Compute the variables in the query.
+    val typeVars = query.freeVars.toList
+
+    // Compute the flexible variables.
+    val flexibleTypeVars = typeVars.filterNot(renv.contains)
+
+    // Determine the order in which to eliminate the variables.
+    val freeVars = flexibleTypeVars
+
+    // Eliminate all variables.
+    try {
+      val subst = successiveVariableElimination(query, freeVars)
+
+      //    if (!subst.isEmpty) {
+      //      val s = subst.toString
+      //      val len = s.length
+      //      if (len > 50) {
+      //        println(s.substring(0, Math.min(len, 300)))
+      //        println()
+      //      }
+      //    }
+
+      Some(subst)
+    } catch {
+      case ex: BoolUnificationException => None
+    }
+  }
+
+  private def successiveVariableElimination(f: Term, flexvs: List[Int])(implicit flix: Flix): LocalSubstitution = flexvs match {
+    case Nil =>
+      // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
+      if (!satisfiable(f))
+        LocalSubstitution.empty
+      else
+        throw BoolUnificationException()
+
+    case x :: xs =>
+      val t0 = LocalSubstitution.singleton(x, Term.False)(f)
+      val t1 = LocalSubstitution.singleton(x, Term.True)(f)
+      val se = successiveVariableElimination(Term.mkAnd(t0, t1), xs)
+
+      val f1 = Term.mkOr(se(t0), Term.mkAnd(Term.Var(x), Term.mkNot(se(t1))))
+      val st = LocalSubstitution.singleton(x, f1)
+      st ++ se
+  }
+
+  private def satisfiable(t: Term): Boolean = ??? // TODO
 
   private sealed trait Term {
 
@@ -247,10 +299,16 @@ object EffUnification2 {
         case xs => And(xs)
       }
     }
+
+    final def mkXor(x: Term, y: Term): Term = ??? // TODO
+
   }
 
+  // TODO: Rename to BoolSubst
   private object LocalSubstitution {
     val empty: LocalSubstitution = LocalSubstitution(Map.empty)
+
+    def singleton(x: Int, t: Term): LocalSubstitution = empty.extended(x, t)
   }
 
   private case class LocalSubstitution(m: Map[Int, Term]) {
@@ -270,7 +328,19 @@ object EffUnification2 {
       case Equation(t1, t2) => Equation(apply(t1), apply(t2))
     }
 
-    def extended(k: Int, t: Term): LocalSubstitution = LocalSubstitution(m + (k -> t))
+    def extended(x: Int, t: Term): LocalSubstitution = LocalSubstitution(m + (x -> t))
+
+    def ++(that: LocalSubstitution): LocalSubstitution = {
+      if (this.m.isEmpty) {
+        that
+      } else if (that.m.isEmpty) {
+        this
+      } else {
+        LocalSubstitution(
+          this.m ++ that.m.filter(kv => !this.m.contains(kv._1))
+        )
+      }
+    }
   }
 
 }
