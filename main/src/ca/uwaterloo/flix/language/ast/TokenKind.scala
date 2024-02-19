@@ -29,6 +29,8 @@ sealed trait TokenKind
 object TokenKind {
   case object Ampersand extends TokenKind
 
+  case object AmpersandAmpersand extends TokenKind
+
   case object AngledEqual extends TokenKind
 
   case object AngledPlus extends TokenKind
@@ -45,13 +47,13 @@ object TokenKind {
 
   case object ArrayHash extends TokenKind
 
-  case object Arrow extends TokenKind
+  case object ArrowThickR extends TokenKind
 
-  case object ArrowThin extends TokenKind
+  case object ArrowThinL extends TokenKind
+
+  case object ArrowThinR extends TokenKind
 
   case object At extends TokenKind
-
-  case object BackArrowThin extends TokenKind
 
   case object Backslash extends TokenKind
 
@@ -75,6 +77,8 @@ object TokenKind {
 
   case object ColonEqual extends TokenKind
 
+  case object ColonMinus extends TokenKind
+
   case object Comma extends TokenKind
 
   case object CommentBlock extends TokenKind
@@ -91,11 +95,17 @@ object TokenKind {
 
   case object Dot extends TokenKind
 
+  case object DotCurlyL extends TokenKind
+
   case object Equal extends TokenKind
 
   case object EqualEqual extends TokenKind
 
   case object Hash extends TokenKind
+
+  case object HashCurlyL extends TokenKind
+
+  case object HashParenL extends TokenKind
 
   case object HoleAnonymous extends TokenKind
 
@@ -121,8 +131,6 @@ object TokenKind {
 
   case object KeywordChoose extends TokenKind
 
-  case object KeywordClass extends TokenKind
-
   case object KeywordDebug extends TokenKind
 
   case object KeywordDef extends TokenKind
@@ -143,8 +151,6 @@ object TokenKind {
 
   case object KeywordFix extends TokenKind
 
-  case object KeywordFor extends TokenKind
-
   case object KeywordForA extends TokenKind
 
   case object KeywordForall extends TokenKind
@@ -163,11 +169,15 @@ object TokenKind {
 
   case object KeywordImport extends TokenKind
 
+  case object KeywordImpure extends TokenKind
+
   case object KeywordInject extends TokenKind
 
   case object KeywordInline extends TokenKind
 
   case object KeywordInstance extends TokenKind
+
+  case object KeywordInstanceOf extends TokenKind
 
   case object KeywordInto extends TokenKind
 
@@ -201,8 +211,6 @@ object TokenKind {
 
   case object KeywordPar extends TokenKind
 
-  case object KeywordProject extends TokenKind
-
   case object KeywordPub extends TokenKind
 
   case object KeywordPure extends TokenKind
@@ -219,11 +227,17 @@ object TokenKind {
 
   case object KeywordSelect extends TokenKind
 
+  case object KeywordSet extends TokenKind
+
   case object KeywordSolve extends TokenKind
 
   case object KeywordSpawn extends TokenKind
 
   case object KeywordStatic extends TokenKind
+
+  case object KeywordStaticUppercase extends TokenKind
+
+  case object KeywordTrait extends TokenKind
 
   case object KeywordTrue extends TokenKind
 
@@ -247,6 +261,8 @@ object TokenKind {
 
   case object KeywordYield extends TokenKind
 
+  case object KeywordXor extends TokenKind
+
   case object ListHash extends TokenKind
 
   case object LiteralBigDecimal extends TokenKind
@@ -254,6 +270,10 @@ object TokenKind {
   case object LiteralBigInt extends TokenKind
 
   case object LiteralChar extends TokenKind
+
+  case object LiteralDebugStringL extends TokenKind
+
+  case object LiteralDebugStringR extends TokenKind
 
   case object LiteralFloat32 extends TokenKind
 
@@ -279,6 +299,8 @@ object TokenKind {
 
   case object Minus extends TokenKind
 
+  case object MinusMinus extends TokenKind
+
   case object NameGreek extends TokenKind
 
   case object NameJava extends TokenKind
@@ -295,6 +317,8 @@ object TokenKind {
 
   case object Plus extends TokenKind
 
+  case object PlusPlus extends TokenKind
+
   case object Semi extends TokenKind
 
   case object SetHash extends TokenKind
@@ -307,6 +331,8 @@ object TokenKind {
 
   case object Tilde extends TokenKind
 
+  case object TildeTilde extends TokenKind
+
   case object TripleAmpersand extends TokenKind
 
   case object TripleAngleL extends TokenKind
@@ -316,6 +342,8 @@ object TokenKind {
   case object TripleBar extends TokenKind
 
   case object TripleCaret extends TokenKind
+
+  case object TripleColon extends TokenKind
 
   case object TripleTilde extends TokenKind
 

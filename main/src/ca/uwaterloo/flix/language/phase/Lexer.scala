@@ -364,9 +364,9 @@ object Lexer {
       case _ if isKeyword("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
       case _ if isKeyword("**") => TokenKind.StarStar
-      case _ if isKeyword("<-") => TokenKind.BackArrowThin
-      case _ if isKeyword("=>") => TokenKind.Arrow
-      case _ if isKeyword("->") => TokenKind.ArrowThin
+      case _ if isKeyword("<-") => TokenKind.ArrowThinL
+      case _ if isKeyword("->") => TokenKind.ArrowThinR
+      case _ if isKeyword("=>") => TokenKind.ArrowThickR
       case _ if isKeyword("<=") => TokenKind.AngleLEqual
       case _ if isKeyword(">=") => TokenKind.AngleREqual
       case _ if isKeyword("==") => TokenKind.EqualEqual
@@ -387,7 +387,6 @@ object Lexer {
       case _ if isKeyword("checked_cast") => TokenKind.KeywordCheckedCast
       case _ if isKeyword("checked_ecast") => TokenKind.KeywordCheckedECast
       case _ if isKeyword("choose") => TokenKind.KeywordChoose
-      case _ if isKeyword("class") => TokenKind.KeywordClass
       case _ if isKeyword("debug") => TokenKind.KeywordDebug
       case _ if isKeyword("def") => TokenKind.KeywordDef
       case _ if isKeyword("deref") => TokenKind.KeywordDeref
@@ -398,7 +397,6 @@ object Lexer {
       case _ if isKeyword("enum") => TokenKind.KeywordEnum
       case _ if isKeyword("false") => TokenKind.KeywordFalse
       case _ if isKeyword("fix") => TokenKind.KeywordFix
-      case _ if isKeyword("for") => TokenKind.KeywordFor
       case _ if isKeyword("forA") => TokenKind.KeywordForA
       case _ if isKeyword("forall") => TokenKind.KeywordForall
       case _ if isKeyword("force") => TokenKind.KeywordForce
@@ -427,7 +425,6 @@ object Lexer {
       case _ if isKeyword("or") => TokenKind.KeywordOr
       case _ if isKeyword("override") => TokenKind.KeywordOverride
       case _ if isKeyword("par") => TokenKind.KeywordPar
-      case _ if isKeyword("project") => TokenKind.KeywordProject
       case _ if isKeyword("pub") => TokenKind.KeywordPub
       case _ if isKeyword("pure") => TokenKind.KeywordPure
       case _ if isKeyword("query") => TokenKind.KeywordQuery
