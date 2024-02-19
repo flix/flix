@@ -17,7 +17,7 @@ mod Test.Exp.Choose.Simple {
     }
 
     pub def testChoose03(): Bool = {
-        let cstOrVar = if (true) open Expr.Cst else open Expr.Var;
+        let cstOrVar = if (true) open_variant Expr.Cst else open_variant Expr.Var;
         choose cstOrVar {
             case Expr.Cst => true
             case Expr.Var => false
@@ -25,7 +25,7 @@ mod Test.Exp.Choose.Simple {
     }
 
     pub def testChoose04(): Bool = {
-        let cstOrVar = if (true) open Expr.Cst else open Expr.Var;
+        let cstOrVar = if (true) open_variant Expr.Cst else open_variant Expr.Var;
         choose cstOrVar {
             case Expr.Xor => false
             case Expr.Cst => true
@@ -59,16 +59,16 @@ mod Test.Exp.Choose.Simple {
         };
         let h = if (true) f else g;
 
-        let cstOrNot = if (true) open Expr.Cst else open Expr.Not;
+        let cstOrNot = if (true) open_variant Expr.Cst else open_variant Expr.Not;
         h(cstOrNot)
     }
 
 //     pub def testChoose07(): Bool = {
 //         let id = x -> choose x {
-//             case Expr.And    => open Expr.And
-//             case Expr.Cst    => open Expr.Cst
-//             case Expr.Not    => open Expr.Not
-//             case Expr.Or     => open Expr.Or
+//             case Expr.And    => open_variant Expr.And
+//             case Expr.Cst    => open_variant Expr.Cst
+//             case Expr.Not    => open_variant Expr.Not
+//             case Expr.Or     => open_variant Expr.Or
 //         };
 //         let _ = id(Expr.Cst);
 //         true
