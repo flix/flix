@@ -239,6 +239,8 @@ object Simplifier {
             // Java does not have a bottom type, so we map `Void` to `Object`.
             MonoType.Object
 
+          case TypeConstructor.AnyType => MonoType.AnyType
+
           case TypeConstructor.Unit => MonoType.Unit
 
           case TypeConstructor.Null => MonoType.Unit
