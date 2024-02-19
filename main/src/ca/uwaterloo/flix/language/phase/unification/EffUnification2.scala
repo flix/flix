@@ -76,7 +76,14 @@ object EffUnification2 {
     }
   }
 
-  private def toType(t: Term): Type = ???
+  private def toType(t0: Term, loc: SourceLocation)(implicit m: Bimap[Type.Var, Int]): Type = t0 match {
+    case Term.True => Type.Pure
+    case Term.False => Type.Univ
+    case Term.Var(x) => m.getBackward(x).get
+    case Term.Not(t) => Type.mkComplement(toType(t, loc), loc)
+    case Term.And(ts) => Type.mkIntersection(ts.map(toType(_, loc)), loc)
+    case Term.Or(ts) => Type.mkUnion(ts.map(toType(_, loc)), loc)
+  }
 
   private def fromType(t: Type): Term = ???
 
