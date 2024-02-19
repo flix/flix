@@ -39,30 +39,6 @@ mod BigInt {
         pow(x, n)
 
     ///
-    /// Returns the Euclidean modulo of `x` and `n`.
-    /// The result is always non-negative.
-    ///
-    pub def mod(x: BigInt, n: BigInt): BigInt =
-        import java.math.BigInteger.remainder(BigInt): BigInt \ {};
-        if (n == 0ii)
-            0ii
-        else
-            ((x `remainder` n) + n) `remainder` n
-
-    ///
-    /// Returns the remainder of `x / n`.
-    /// The result can be negative.
-    ///
-    /// See also `BigInt.mod`.
-    ///
-    pub def rem(x: BigInt, n: BigInt): BigInt =
-        import java.math.BigInteger.remainder(BigInt): BigInt \ {};
-        if (n == 0ii)
-            0ii
-        else
-            x `remainder` n
-
-    ///
     /// Returns the distance between `x` and `y`.
     ///
     pub def dist(x: BigInt, y: BigInt): BigInt = abs(x - y)

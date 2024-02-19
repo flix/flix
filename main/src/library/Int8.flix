@@ -60,28 +60,6 @@ mod Int8 {
     }
 
     ///
-    /// Returns the Euclidean modulo of `x` and `n`.
-    /// The result is always non-negative.
-    ///
-    pub def mod(x: Int8, n: Int8): Int8 =
-        if (n == 0i8)
-            0i8
-        else
-            $INT8_REM$($INT8_REM$(x, n) + n, n)
-
-    ///
-    /// Returns the remainder of `x / n`.
-    /// The result can be negative.
-    ///
-    /// See also `Int8.mod`.
-    ///
-    pub def rem(x: Int8, n: Int8): Int8 =
-        if (n == 0i8)
-            0i8
-        else
-            $INT8_REM$(x, n)
-
-    ///
     /// Returns the distance between `x` and `y`.
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
