@@ -132,7 +132,7 @@ mod Int32 {
     pub def bitCount(x: Int32): Int32 = {
         if      (x == 0)         0
         else if (x `remainder` 2 != 0) bitCount(logicalRightShift(dist = 1, x)) + 1
-        else                     bitCount(logicalRightShift(dist = 1, x))
+        else                           bitCount(logicalRightShift(dist = 1, x))
     }
 
     ///
