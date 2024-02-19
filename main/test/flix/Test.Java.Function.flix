@@ -138,7 +138,7 @@ mod Test.Java.Function {
         import java.util.stream.LongStream.filter(LongPredicate): LongStream \ IO;
         import java.util.stream.LongStream.sum(): Int64 \ IO;
         let stream0 = range(0i64, 9i64);
-        let stream1 = filter(stream0, i -> checked_ecast(i `Int64.rem` 2i64 == 0i64));
+        let stream1 = filter(stream0, i -> checked_ecast(i `Int64.remainder` 2i64 == 0i64));
         sum(stream1) == 20i64
     }
 
