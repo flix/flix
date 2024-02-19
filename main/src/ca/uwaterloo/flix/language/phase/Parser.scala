@@ -1172,11 +1172,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Open: Rule1[ParsedAst.Expression.Open] = rule {
-      SP ~ keyword("open") ~ optWS ~ Names.QName ~ SP ~> ParsedAst.Expression.Open
+      SP ~ keyword("open_variant") ~ optWS ~ Names.QName ~ SP ~> ParsedAst.Expression.Open
     }
 
     def OpenAs: Rule1[ParsedAst.Expression.OpenAs] = rule {
-      SP ~ keyword("open_as") ~ optWS ~ Names.QName ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.OpenAs
+      SP ~ keyword("open_variant_as") ~ optWS ~ Names.QName ~ WS ~ Expression ~ SP ~> ParsedAst.Expression.OpenAs
     }
 
     def HolyName: Rule1[ParsedAst.Expression.HolyName] = rule {
