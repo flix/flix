@@ -37,21 +37,46 @@ object EffUnification2 {
 
     // Case 2: We translate every (Type, Type) pair to a pair of Boolean effect formulas.
 
+    var eqns: List[Equation] = Nil
+    var s: Substitution = Substitution.empty
+
+    while(eqns.nonEmpty) {
+
+      // Discord trivial
+      // Fail on conflict.
+      // Find unit propagation and apply them one a time.
+
+      for (eqn <- eqns) {
+        classify(eqn) match {
+          case Classification.Trivial =>
+          case Classification.Ground =>
+        }
+      }
+    }
+
     ??? // TODO
+  }
+
+  private def extendSubstWithGround(eqn: Equation, subst: Substitution): Substitution = eqn match {
+    case Equation(Term.Var(x), t2) =>
+      // TODO: Lookup in subst, extend if not found. Otherwise throw.
+      ???
   }
 
   private case class Equation(t1: Term, t2: Term)
 
+  def classify(eqn: Equation): Classification = ???
+
   private sealed trait Classification
 
   private object Classification {
+    case object Trivial extends Classification
+
     /**
      * An equation of the form `x = true`, `x = false`, and their mirrored versions.
      */
-    case object Ground
+    case object Ground extends Classification
 
-
-    def classify(e: Equation): Classification = ???
   }
 
   private sealed trait Term {
@@ -90,17 +115,21 @@ object EffUnification2 {
 
   private object Term {
 
-    private case object True extends Term
+    case object True extends Term
 
-    private case object False extends Term
+    case object False extends Term
 
-    private case class Var(x: Int) extends Term
+    case class Var(x: Int) extends Term
 
-    private case class Not(t: Term) extends Term
+    case class Not(t: Term) extends Term
 
-    private case class And(ts: List[Term]) extends Term
+    case class And(ts: List[Term]) extends Term {
+      assert(ts.length >= 2)
+    }
 
-    private case class Or(ts: List[Term]) extends Term
+    case class Or(ts: List[Term]) extends Term {
+      assert(ts.length >= 2)
+    }
 
     final def mkNot(t: Term): Term = ???
 
