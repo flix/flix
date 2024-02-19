@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Type}
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -48,7 +48,7 @@ object EffUnification2 {
     val backward = allVars.foldLeft(Map.empty[Int, Type.Var]) {
       case (macc, tvar) => macc + (tvar.sym.id -> tvar)
     }
-    val m = Bimap(forward, backward)
+    val bimap = Bimap(forward, backward)
 
     var currentEqns: List[Equation] = ??? // TODO
     var currentSubst: LocalSubstitution = LocalSubstitution.empty
@@ -60,6 +60,8 @@ object EffUnification2 {
 
       // TODO: Bool unif the rest.
       ???
+
+      Result.Ok(currentSubst.toSubst(bimap))
 
     } catch {
       case ex: InternalFailure => Result.Err(UnificationError.MismatchedEffects(???, ???))
@@ -120,7 +122,6 @@ object EffUnification2 {
   }
 
   private case class Equation(t1: Term, t2: Term)
-
 
 
   private def booleanUnification(t1: Term, t2: Term, renv: Set[Int])(implicit flix: Flix): Option[LocalSubstitution] = {
@@ -306,7 +307,7 @@ object EffUnification2 {
       }
     }
 
-    final def mkXor(x: Term, y: Term): Term = ??? // TODO
+    final def mkXor(x: Term, y: Term): Term = mkOr(mkAnd(x, mkNot(y)), mkAnd(mkNot(x), y))
 
   }
 
@@ -346,6 +347,12 @@ object EffUnification2 {
           this.m ++ that.m.filter(kv => !this.m.contains(kv._1))
         )
       }
+    }
+
+    def toSubst(implicit bimap: Bimap[Type.Var, Int]): Substitution = {
+      Substitution(m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
+        case (macc, (k, v)) => macc + (bimap.getBackward(k).get.sym -> toType(v, SourceLocation.Unknown))
+      })
     }
   }
 
