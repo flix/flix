@@ -358,7 +358,7 @@ object Lexer {
         acceptAnnotation()
       } else {
         TokenKind.At
-      }å
+      }
       case _ if isKeyword("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
       case _ if isKeyword("++") => TokenKind.PlusPlus
@@ -402,7 +402,6 @@ object Lexer {
       case _ if isKeyword("force") => TokenKind.KeywordForce
       case _ if isKeyword("foreach") => TokenKind.KeywordForeach
       case _ if isKeyword("forM") => TokenKind.KeywordForM
-      case _ if isKeyword("for") => TokenKind.KeywordFor
       case _ if isKeyword("from") => TokenKind.KeywordFrom
       case _ if isKeyword("get") => TokenKind.KeywordGet
       case _ if isKeyword("if") => TokenKind.KeywordIf

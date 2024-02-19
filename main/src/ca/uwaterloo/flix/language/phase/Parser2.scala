@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.ast.UnstructuredTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ParsedAst, ReadAst, SourceKind, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.errors.Parse2Error
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, LibLevel, ParOps, Validation}
 import org.parboiled2.ParserInput
 
@@ -74,9 +75,8 @@ object Parser2 {
                      )(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
     if (flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
-      return Validation.Failure(LazyList.empty)
+      return Validation.HardFailure(Chain.empty)
     }
-
 
     flix.phase("Parser2") {
       // The file that is the current focus of development
@@ -86,148 +86,6 @@ object Parser2 {
         case LibLevel.All => ""
       }
 
-      val filesThatAreKnownToWork = List(
-        "main/foo.flix",
-        "Fixpoint/Ram/RamTerm.flix",
-        "Fixpoint/Ast/HeadTerm.flix",
-        "Fixpoint/Solver.flix",
-        "Fixpoint/Ast/Datalog.flix",
-        "Fixpoint/Ast/Constraint.flix",
-        "GetOpt.flix",
-        "Prelude.flix",
-        "Debug.flix",
-        "String.flix",
-        "Benchmark.flix",
-        "Files.flix",
-        "Console.flix",
-        "Adaptor.flix",
-        "MutDisjointSets.flix",
-        "Regex.flix",
-        "Environment.flix",
-        "RedBlackTree.flix",
-        "DelayMap.flix",
-        "List.flix",
-        "Nel.flix",
-        "Float64.flix",
-        "BigInt.flix",
-        "Fixpoint/IndexSelection.flix",
-        "Fixpoint/Simplifier.flix",
-        "Fixpoint/Interpreter.flix",
-        "Fixpoint/Simplifier.flix",
-        "Fixpoint/Compiler.flix",
-        "Fixpoint/Ram/RelOp.flix",
-        "Traversable.flix",
-        "Channel.flix",
-        "Fixpoint/Ast/BodyPredicate.flix",
-        "Bool.flix",
-        "Boxed.flix",
-        "Fixpoint/Ram/BoolExp.flix",
-        "DelayList.flix",
-        "MutSet.flix",
-        "File.flix",
-        "CodePoint.flix",
-        "Applicative.flix",
-        "SemiGroup.flix",
-        "System.flix",
-        "Fixpoint/VarsToIndices.flix",
-        "BigDecimal.flix",
-        "Functor.flix",
-        "Random.flix",
-        "MutQueue.flix",
-        "Concurrent/Condition.flix",
-        "Result.flix",
-        "Concurrent/ReentrantLock.flix",
-        "Int32.flix",
-        "Int64.flix",
-        "Int8.flix",
-        "Float32.flix",
-        "Int16.flix",
-        "IOError.flix",
-        "Region.flix",
-        "UnorderedFoldable.flix",
-        "Monoid.flix",
-        "Reducible.flix",
-        "Char.flix",
-        "Comparison.flix",
-        "Monad.flix",
-        "Fixpoint/Ast/Polarity.flix",
-        "Fixpoint/Stratifier.flix",
-        "Eq.flix",
-        "MutDeque.flix",
-        "CommutativeMonoid.flix",
-        "Concurrent/CyclicBarrier.flix",
-        "Iterator.flix",
-        "JoinLattice.flix",
-        "Identity.flix",
-        "FromString.flix",
-        "Graph.flix",
-        "Group.flix",
-        "StringBuilder.flix",
-        "Closeable.flix",
-        "Fixpoint/Ast/VarSym.flix",
-        "MeetLattice.flix",
-        "ToString.flix",
-        "Boxable.flix",
-        "Iterable.flix",
-        "MultiMap.flix",
-        "Witherable.flix",
-        "Reflect.flix",
-        "Time/Instant.flix",
-        "Fixpoint/PredSymsOf.flix",
-        "LowerBound.flix",
-        "Assert.flix",
-        "Fixpoint/Options.flix",
-        "Object.flix",
-        "CommutativeSemiGroup.flix",
-        "MonadZero.flix",
-        "Sub.flix",
-        "Collectable.flix",
-        "Fixpoint/Debugging.flix",
-        "Fixpoint/Ast/Denotation.flix",
-        "Mul.flix",
-        "Fixpoint/Ram/RamSym.flix",
-        "Down.flix",
-        "Concurrent/Channel.flix",
-        "Sendable.flix",
-        "Chain.flix",
-        "Foldable.flix",
-        "Filterable.flix",
-        "Hash.flix",
-        "Div.flix",
-        "Boxed.flix",
-        "Fixpoint/Ast/BodyTerm.flix",
-        "Time.flix",
-        "UpperBound.flix",
-        "Time/Epoch.flix",
-        "Order.flix",
-        "CommutativeGroup.flix",
-        "Fixpoint/Ram/RamStmt.flix",
-        "PartialOrder.flix",
-        "MonadZip.flix",
-        "Fixpoint/Shared/PredSym.flix",
-        "Ref.flix",
-        "Fixpoint/Ast/PrecedenceGraph.flix",
-        "Nec.flix",
-        "Fixpoint/Ast/Fixity.flix",
-        "Reader.flix",
-        "MutMap.flix",
-        "Fixpoint/Ast/HeadPredicate.flix",
-        "Validation.flix",
-        "Neg.flix",
-        "Fixpoint/SubstitutePredSym.flix",
-        "Map.flix",
-        "Add.flix",
-        "Thread.flix",
-        "Time/Duration.flix",
-        "Option.flix",
-        "Fixpoint/Ram/RowVar.flix",
-        "MutList.flix",
-        "ToJava.flix",
-        "Set.flix",
-        "Array.flix",
-        "Vector.flix"
-      )
-
       println("p\tw\tfile")
 
       // For each file: If the parse was successful run Weeder2 on it.
@@ -235,7 +93,7 @@ object Parser2 {
       val afterParser = Parser.run(afterReader, entryPoint, ParsedAst.empty, changeSet)
       val afterWeeder = flatMapN(afterParser)(parsedAst => Weeder.run(parsedAst, WeededAst.empty, changeSet))
 
-      def fallback(src: Ast.Source, errors: LazyList[CompilationMessage]): Validation[WeededAst.CompilationUnit, CompilationMessage] = {
+      def fallback(src: Ast.Source, errors: Chain[CompilationMessage]): Validation[WeededAst.CompilationUnit, CompilationMessage] = {
         if (DEBUG_FOCUS == src.name) {
           // If the current file is the debug focus, actually report the errors from the parser/weeder
           flatMapN(afterWeeder)(tree => SoftFailure(tree.units(src), errors))
@@ -246,96 +104,53 @@ object Parser2 {
       }
 
       def diffWeededAsts(src: Ast.Source, newAst: WeededAst.CompilationUnit): Boolean = {
+        // Unsafely get old WeededAst
+        val oldAst = afterWeeder.unsafeGet.units(src)
         // Print asts for closer inspection
-        val matches = mapN(afterWeeder)(t => {
-          val oldAst = t.units(src)
-          if (src.name == DEBUG_FOCUS) {
-            println("[[[ OLD PARSER ]]]")
-            println(formatWeededAst(oldAst))
-            println("[[[ NEW PARSER ]]]")
-            println(formatWeededAst(newAst))
-            println("[[[ END ]]]")
-          }
-          val hasSameStructure = formatWeededAst(oldAst, matchingWithOldParser = true) == formatWeededAst(newAst, matchingWithOldParser = true)
-          hasSameStructure
-        })
-
-        matches match {
-          case Success(isMatch) => isMatch
-          case _ => false
+        if (src.name == DEBUG_FOCUS) {
+          println("[[[ OLD PARSER ]]]")
+          println(formatWeededAst(oldAst))
+          println("[[[ NEW PARSER ]]]")
+          println(formatWeededAst(newAst))
+          println("[[[ END ]]]")
         }
+        formatWeededAst(oldAst, matchingWithOldParser = true) == formatWeededAst(newAst, matchingWithOldParser = true)
       }
 
       val results = ParOps.parMap(afterLexer) {
         case (src, tokens) =>
-          var outString = ""
-          val weededAst = parse(src, tokens) match {
-            case Success(t) =>
-              outString += s"${Console.GREEN}✔︎ ${Console.RESET}"
-              if (DEBUG_FOCUS == src.name) {
-                println(t.toDebugString())
-              }
-              Weeder2.weed(src, t) match {
-                case Success(t) =>
-                  val hasSameStructure = diffWeededAsts(src, t)
-                  if (hasSameStructure) {
-                    if (!filesThatAreKnownToWork.contains(src.name)) {
-                      outString += s"\t${Console.GREEN}✔︎!${Console.RESET}"
-                    } else {
-                      outString += s"\t${Console.GREEN}✔︎ ${Console.RESET}"
-                    }
-                  } else {
-                    outString += s"\t${Console.YELLOW}!=${Console.RESET}"
-                  }
-                  t.toSuccess
-                case SoftFailure(t, errors) =>
-                  if (filesThatAreKnownToWork.contains(src.name)) {
-                    outString += s"\t${Console.YELLOW}✘!${Console.RESET}"
-                  } else {
-                    outString += s"\t${Console.YELLOW}✘ ${Console.RESET}"
-                  }
-                  diffWeededAsts(src, t)
-                  fallback(src, errors)
-                case Failure(errors) =>
-                  if (filesThatAreKnownToWork.contains(src.name)) {
-                    outString += s"\t${Console.RED}✘!${Console.RESET}"
-                  } else {
-                    outString += s"\t${Console.RED}✘ ${Console.RESET}"
-                  }
-                  fallback(src, errors)
-              }
-            case SoftFailure(t, errors) =>
-              if (filesThatAreKnownToWork.contains(src.name)) {
-                outString += s"${Console.YELLOW}✘!${Console.RESET}\t-"
-              } else {
-                outString += s"${Console.YELLOW}✘ ${Console.RESET}\t-"
-              }
-              if (DEBUG_FOCUS == src.name) {
-                println(t.toDebugString())
-              }
-              fallback(src, errors)
-            case Failure(errors) =>
-              if (filesThatAreKnownToWork.contains(src.name)) {
-                outString += s"${Console.RED}✘!${Console.RESET}\t-"
-              } else {
-                outString += s"${Console.RED}✘ ${Console.RESET}\t-"
-              }
-              outString += s"${Console.RED}✘ ${Console.RESET}\t-"
-              fallback(src, errors)
-          }
-          outString += s"\t${src.name}"
-          println(outString)
+          val afterParser2 = parse(src, tokens)
+          val afterWeeder2 = flatMapN(afterParser2)(Weeder2.weed(src, _))
+
+          // Log debug information
+          val p = afterParser2.toSoftResult.toOption
+          val w = afterWeeder2.toSoftResult.toOption
+
+          val parserPart = if (p.isEmpty)
+            s"${Console.RED}✘ "
+            else if (p.exists(!_._2.isEmpty)) s"${Console.YELLOW}✘ "
+            else s"${Console.GREEN}✔︎ "
+          val weederPart = if (p.isEmpty)
+            "- "
+            else if (w.isEmpty) s"${Console.RED}✘ "
+            else if (!w.forall(t => diffWeededAsts(src, t._1))) s"${Console.YELLOW}!="
+            else s"${Console.GREEN}✔︎ "
+
+          println(s"$parserPart\t$weederPart\t${Console.RESET}${src.name}")
+
+          // Fallback on old pipeline if necessary
+          val weededAst = if (w.isEmpty) fallback(src, afterWeeder2.errors) else afterWeeder2
           mapN(weededAst)(src -> _)
       }
-
-      mapN(sequence(results))(_.toMap).map(m => WeededAst.Root(m, entryPoint, afterReader.names))
+      val resultMap = mapN(sequence(results))(_.toMap)
+      mapN(resultMap)(m => WeededAst.Root(m, entryPoint, afterReader.names))
     }
   }
 
   def run(root: Map[Ast.Source, Array[Token]])(implicit flix: Flix): Validation[Map[Ast.Source, Tree], CompilationMessage] = {
     if (flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
-      return Validation.Failure(LazyList.empty)
+      return Validation.HardFailure(Chain.empty)
     }
 
     flix.phase("Parser2") {
@@ -353,9 +168,9 @@ object Parser2 {
     source()
     val tree = buildTree()
     if (s.errors.length > 0) {
-      Validation.SoftFailure(tree, LazyList.from(s.errors))
+      Validation.SoftFailure(tree, Chain.from(s.errors))
     } else {
-      tree.toSuccess
+      Validation.success(tree)
     }
   }
 
@@ -564,6 +379,7 @@ object Parser2 {
                            val getItem: () => Mark.Closed,
                            val checkForItem: () => Boolean,
                            var separator: TokenKind,
+                           var optionalSeparator: Boolean,
                            var leftDelim: TokenKind,
                            var rightDelim: TokenKind
                          ) {
@@ -573,26 +389,26 @@ object Parser2 {
       this
     }
 
-    def by(separator: TokenKind): Separated = {
+    def by(separator: TokenKind, optional: Boolean = false): Separated = {
       this.separator = separator
+      this.optionalSeparator = optional
       this
     }
 
     def zeroOrMore(followedBy: Option[(TokenKind, () => Unit)] = None)(implicit s: State): Unit = {
+      def isAtEnd(): Boolean = at(rightDelim) || followedBy.exists { case (delim, _) => at(delim) }
+
       if (!at(leftDelim)) {
-        println(s.tokens.slice(s.position - 10, s.position).mkString("\n"))
+        println(s"${s.src.name} ${s.position}")
       }
       assert(at(leftDelim))
       expect(leftDelim)
-
-      def isAtEnd(): Boolean = at(rightDelim) || followedBy.exists { case (delim, _) => at(delim) }
-
       var continue = true
       while (continue && !isAtEnd() && !eof()) {
         if (checkForItem()) {
           getItem()
           if (!isAtEnd()) {
-            expect(separator)
+            if (optionalSeparator) eat(separator) else expect(separator)
           }
         } else {
           continue = false
@@ -613,13 +429,13 @@ object Parser2 {
   }
 
   private def separated(getItem: () => Mark.Closed, checkForItem: () => Boolean = () => true): Separated = {
-    new Separated(getItem, checkForItem, TokenKind.Comma, TokenKind.ParenL, TokenKind.ParenR)
+    new Separated(getItem, checkForItem, TokenKind.Comma, false, TokenKind.ParenL, TokenKind.ParenR)
   }
 
   // TODO: std. lib. defines functions named with keywords (IE. def mod(): Int32 = ...). These also pop up in expressions, because they are now passed around and called.
   // TODO: std. lib. has patterns matching keywords (IE. match query { ... }).
   // TODO: This should eventually be removed once a good solution has been agreed upon.
-  private val KEYWORDS_IN_STDLIB = List(TokenKind.KeywordMod, TokenKind.KeywordChoose, TokenKind.PlusPlus, TokenKind.KeywordOpen, TokenKind.KeywordAnd, TokenKind.KeywordOr, TokenKind.KeywordNot, TokenKind.KeywordFor, TokenKind.KeywordQuery, TokenKind.KeywordNew, TokenKind.KeywordSolve, TokenKind.KeywordProject, TokenKind.KeywordDebug)
+  private val KEYWORDS_IN_STDLIB = List(TokenKind.KeywordMod, TokenKind.KeywordChoose, TokenKind.PlusPlus, TokenKind.KeywordOpen, TokenKind.KeywordAnd, TokenKind.KeywordOr, TokenKind.KeywordNot, TokenKind.KeywordQuery, TokenKind.KeywordNew, TokenKind.KeywordSolve, TokenKind.KeywordDebug)
   private val KEYWORDS_USED_AS_TYPES_IN_STDLIB = List(TokenKind.KeywordStaticUppercase)
 
   private val NAME_DEFINITION = KEYWORDS_IN_STDLIB ++ List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
@@ -723,7 +539,7 @@ object Parser2 {
 
   private def aliasedName(names: List[TokenKind])(implicit s: State): Mark.Closed = {
     var lhs = name(names)
-    if (eat(TokenKind.Arrow)) {
+    if (eat(TokenKind.ArrowThickR)) {
       name(names)
       lhs = close(openBefore(lhs), TreeKind.UsesOrImports.Alias)
     }
@@ -744,7 +560,7 @@ object Parser2 {
       modifiers()
       nth(0) match {
         case TokenKind.KeywordDef => definition(mark)
-        case TokenKind.KeywordClass | TokenKind.KeywordTrait => typeClass(mark)
+        case TokenKind.KeywordTrait => typeClass(mark)
         case TokenKind.KeywordInstance => instance(mark)
         case TokenKind.KeywordType => typeAlias(mark)
         case TokenKind.KeywordEff => effect(mark)
@@ -925,7 +741,7 @@ object Parser2 {
      * typeClass -> docComment? annotations? name typeParameters '{' (signature | associatedType)* '}'
      */
     private def typeClass(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      expectAny(List(TokenKind.KeywordTrait, TokenKind.KeywordClass))
+      expect(TokenKind.KeywordTrait)
       name(NAME_DEFINITION)
       if (at(TokenKind.BracketL)) {
         Type.parameters()
@@ -1070,8 +886,9 @@ object Parser2 {
     def parameter()(implicit s: State): Mark.Closed = {
       val mark = open()
       name(NAME_PARAMETER)
-      expect(TokenKind.Colon)
-      Type.ttype()
+      if (eat(TokenKind.Colon)) {
+        Type.ttype()
+      }
       close(mark, TreeKind.Parameter)
     }
   }
@@ -1259,11 +1076,11 @@ object Parser2 {
         case TokenKind.KeywordCheckedECast => checkedEffectCast()
         case TokenKind.KeywordCheckedCast => checkedTypeCast()
         case TokenKind.KeywordForeach => foreach()
-        case TokenKind.KeywordForM | TokenKind.KeywordFor => forM()
+        case TokenKind.KeywordForM => forM()
         case TokenKind.KeywordForA => forA()
         case TokenKind.KeywordRef => reference()
         case TokenKind.KeywordNew => newObject()
-        case TokenKind.KeywordTry => tryCatch()
+        case TokenKind.KeywordTry => exprTry()
         case TokenKind.ListHash => listLiteral()
         case TokenKind.SetHash => setLiteral()
         case TokenKind.VectorHash => vectorLiteral()
@@ -1284,22 +1101,21 @@ object Parser2 {
              | TokenKind.KeywordFalse
              | TokenKind.KeywordNull
              | TokenKind.LiteralRegex => literal()
-        case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThin) unaryLambda() else name(NAME_VARIABLE)
+        case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambda() else name(NAME_VARIABLE)
         case TokenKind.KeywordStaticUppercase => static()
         case TokenKind.NameJava => name(NAME_JAVA, allowQualified = true)
-        case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThin) unaryLambda() else name(NAME_DEFINITION)
+        case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambda() else name(NAME_DEFINITION)
         case TokenKind.NameUpperCase
              | TokenKind.NameMath
-             | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThin) unaryLambda() else name(NAME_DEFINITION, allowQualified)
+             | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThinR) unaryLambda() else name(NAME_DEFINITION, allowQualified)
         // TODO: These rules are only enabled in Graph.flix since the keywords are used elsewhere too
-        case TokenKind.KeywordInject | TokenKind.KeywordProject if s.src.name == "Graph.flix" => fixpointProject()
+        case TokenKind.KeywordInject if s.src.name == "Graph.flix" => fixpointProject()
         case TokenKind.KeywordQuery if s.src.name == "Graph.flix" => fixpointQuery()
         case TokenKind.KeywordSolve if s.src.name == "Graph.flix" => fixpointSolve()
         case TokenKind.HashCurlyL => fixpointConstraintSet()
         // TODO: std. lib. uses keywords as variable names. Only match the specific cases known here as matching all KEYWORDS_IN_STDLIB causes issues.
         case TokenKind.KeywordQuery
-             | TokenKind.KeywordNew
-             | TokenKind.KeywordProject => name(NAME_DEFINITION, allowQualified)
+             | TokenKind.KeywordNew => name(NAME_DEFINITION, allowQualified)
         case TokenKind.Minus
              | TokenKind.KeywordNot
              | TokenKind.Plus
@@ -1342,9 +1158,9 @@ object Parser2 {
     }
 
     private def fixpointProject()(implicit s: State): Mark.Closed = {
-      assert(atAny(List(TokenKind.KeywordProject, TokenKind.KeywordInject)))
+      assert(at(TokenKind.KeywordInject))
       val mark = open()
-      expectAny(List(TokenKind.KeywordProject, TokenKind.KeywordInject))
+      expect(TokenKind.KeywordInject)
       expression()
       while (eat(TokenKind.Comma) && !eof()) {
         expression()
@@ -1365,12 +1181,13 @@ object Parser2 {
       while (eat(TokenKind.Comma) && !eof()) {
         expression()
       }
-      if (at(TokenKind.KeywordProject)) {
-        name(NAME_PREDICATE)
-        while (eat(TokenKind.Comma) && !eof()) {
-          name(NAME_PREDICATE)
-        }
-      }
+      // TODO: How to resolve this? Do we need keyword project afterall?
+      //      if (at(TokenKind.KeywordProject)) {
+      //        name(NAME_PREDICATE)
+      //        while (eat(TokenKind.Comma) && !eof()) {
+      //          name(NAME_PREDICATE)
+      //        }
+      //      }
       close(mark, TreeKind.Expr.FixpointSolve)
     }
 
@@ -1486,7 +1303,7 @@ object Parser2 {
     private def parYieldFragment()(implicit s: State): Mark.Closed = {
       val mark = open()
       Pattern.pattern()
-      expect(TokenKind.BackArrowThin)
+      expect(TokenKind.ArrowThinL)
       expression()
       close(mark, TreeKind.Expr.ParYieldFragment)
     }
@@ -1535,9 +1352,9 @@ object Parser2 {
     }
 
     private def forM()(implicit s: State): Mark.Closed = {
-      assert(atAny(List(TokenKind.KeywordForM, TokenKind.KeywordFor)))
+      assert(at(TokenKind.KeywordForM))
       val mark = open()
-      expectAny(List(TokenKind.KeywordForM, TokenKind.KeywordFor))
+      expect(TokenKind.KeywordForM)
       if (at(TokenKind.ParenL)) {
         forFragments()
       }
@@ -1574,23 +1391,27 @@ object Parser2 {
     private def generatorFragment()(implicit s: State): Unit = {
       val mark = open()
       Pattern.pattern()
-      if (eat(TokenKind.BackArrowThin)) {
+      if (eat(TokenKind.ArrowThinL)) {
         expression()
       }
       close(mark, TreeKind.Expr.Generator)
     }
 
-    private def tryCatch()(implicit s: State): Mark.Closed = {
+    private def exprTry()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordTry))
       val mark = open()
       expect(TokenKind.KeywordTry)
       expression()
       if (at(TokenKind.KeywordCatch)) {
-        catchBody()
+        while (at(TokenKind.KeywordCatch)) {
+          catchBody()
+        }
+      } else if (at(TokenKind.KeywordWith)) {
+        while (at(TokenKind.KeywordWith)) {
+          withBody()
+        }
       }
-      if (at(TokenKind.KeywordWith)) {
-        handlerBody()
-      }
+
       close(mark, TreeKind.Expr.Try)
     }
 
@@ -1598,28 +1419,11 @@ object Parser2 {
       assert(at(TokenKind.KeywordCatch))
       val mark = open()
       expect(TokenKind.KeywordCatch)
-      expect(TokenKind.CurlyL)
-      while (at(TokenKind.KeywordCase) && !eof()) {
-        catchRule()
-        eat(TokenKind.Comma)
-      }
-      expect(TokenKind.CurlyR)
-      close(mark, TreeKind.Expr.Catch)
-    }
-
-    private def handlerBody()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordWith))
-      val mark = open()
-      expect(TokenKind.KeywordWith)
-      name(NAME_EFFECT, allowQualified = true)
-      if (eat(TokenKind.CurlyL)) {
-        while (at(TokenKind.KeywordDef) && !eof()) {
-          tryHandlerRule()
-          eat(TokenKind.Comma)
-        }
-        expect(TokenKind.CurlyR)
-      }
-      close(mark, TreeKind.Expr.TryHandler)
+      separated(catchRule)
+        .by(TokenKind.Comma, optional = true)
+        .within(TokenKind.CurlyL, TokenKind.CurlyR)
+        .zeroOrMore()
+      close(mark, TreeKind.Expr.TryCatchBody)
     }
 
     private def catchRule()(implicit s: State): Mark.Closed = {
@@ -1630,22 +1434,34 @@ object Parser2 {
       if (eat(TokenKind.Colon)) {
         name(NAME_JAVA, allowQualified = true)
       }
-      if (eat(TokenKind.Arrow)) {
+      if (eat(TokenKind.ArrowThickR)) {
         expression()
       }
-      close(mark, TreeKind.Expr.CatchRule)
+      close(mark, TreeKind.Expr.TryCatchRule)
     }
 
-    private def tryHandlerRule()(implicit s: State): Mark.Closed = {
+    private def withBody()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordWith))
+      val mark = open()
+      expect(TokenKind.KeywordWith)
+      name(NAME_EFFECT, allowQualified = true)
+      separated(withRule)
+        .by(TokenKind.Comma, optional = true)
+        .within(TokenKind.CurlyL, TokenKind.CurlyR)
+        .zeroOrMore()
+      close(mark, TreeKind.Expr.TryWithBody)
+    }
+
+    private def withRule()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordDef))
       val mark = open()
       expect(TokenKind.KeywordDef)
-      name(List(TokenKind.UserDefinedOperator))
+      name(List(TokenKind.NameLowerCase))
       Decl.parameters()
       if (eat(TokenKind.Equal)) {
         expression()
       }
-      close(mark, TreeKind.Expr.TryHandlerRule)
+      close(mark, TreeKind.Expr.TryWithRule)
     }
 
     private def ifThenElse()(implicit s: State): Mark.Closed = {
@@ -1727,7 +1543,7 @@ object Parser2 {
     private def mapLiteralValue()(implicit s: State): Mark.Closed = {
       val mark = open()
       expression()
-      if (eat(TokenKind.Arrow)) {
+      if (eat(TokenKind.ArrowThickR)) {
         expression()
       }
       close(mark, TreeKind.Expr.KeyValue)
@@ -1753,7 +1569,7 @@ object Parser2 {
             // match expr { case ... }
             case TokenKind.KeywordCase => continue = false
             // match pattern -> expr
-            case TokenKind.ArrowThin if parenNestingLevel == 0 => isLambda = true; continue = false
+            case TokenKind.ArrowThinR if parenNestingLevel == 0 => isLambda = true; continue = false
             case TokenKind.ParenL => parenNestingLevel += 1; lookAhead += 1
             case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
             case _ => lookAhead += 1
@@ -1764,7 +1580,7 @@ object Parser2 {
 
       if (isLambda) {
         Pattern.pattern()
-        expect(TokenKind.ArrowThin)
+        expect(TokenKind.ArrowThinR)
         expression()
         close(mark, TreeKind.Expr.LambdaMatch)
       } else {
@@ -1789,7 +1605,7 @@ object Parser2 {
       if (eat(TokenKind.KeywordIf)) {
         expression()
       }
-      if (eat(TokenKind.Arrow)) {
+      if (eat(TokenKind.ArrowThickR)) {
         statement()
       }
       close(mark, TreeKind.Expr.MatchRule)
@@ -1885,7 +1701,7 @@ object Parser2 {
       if (eat(TokenKind.Colon)) {
         Type.ttype()
       }
-      if (eat(TokenKind.Arrow)) {
+      if (eat(TokenKind.ArrowThickR)) {
         statement()
       }
       close(mark, TreeKind.Expr.TypeMatchRule)
@@ -1982,7 +1798,7 @@ object Parser2 {
         // Detect unit tuple
         case (TokenKind.ParenL, TokenKind.ParenR) =>
           // Detect unit lambda: () -> expr
-          if (nth(2) == TokenKind.ArrowThin) {
+          if (nth(2) == TokenKind.ArrowThinR) {
             lambda()
           } else {
             val mark = open()
@@ -2004,7 +1820,7 @@ object Parser2 {
                 case _ =>
               }
             }
-            nth(lookAhead + 1) == TokenKind.ArrowThin
+            nth(lookAhead + 1) == TokenKind.ArrowThinR
           }
 
           if (isLambda) {
@@ -2037,7 +1853,7 @@ object Parser2 {
       name(NAME_PARAMETER)
       close(markParam, TreeKind.Parameter)
       close(markParams, TreeKind.Parameters)
-      expect(TokenKind.ArrowThin)
+      expect(TokenKind.ArrowThinR)
       expression()
       close(mark, TreeKind.Expr.Lambda)
     }
@@ -2056,7 +1872,7 @@ object Parser2 {
         .zeroOrMore()
 
       close(markParams, TreeKind.Parameters)
-      expect(TokenKind.ArrowThin)
+      expect(TokenKind.ArrowThinR)
       expression()
       close(mark, TreeKind.Expr.Lambda)
     }
@@ -2304,7 +2120,7 @@ object Parser2 {
      * ttype -> (typeDelimited arguments? | typeFunction) ( '\' effectSet )?
      */
     def ttype(left: TokenKind = TokenKind.Eof)(implicit s: State): Mark.Closed = {
-      var lhs = if (left == TokenKind.ArrowThin) typeAndEffect() else typeDelimited()
+      var lhs = if (left == TokenKind.ArrowThinR) typeAndEffect() else typeDelimited()
 
       // handle Type argument application
       if (at(TokenKind.BracketL)) {
@@ -2345,7 +2161,7 @@ object Parser2 {
     // A precedence table for binary operators in types, lower is higher precedence
     private def TYPE_OP_PRECEDENCE: List[List[TokenKind]] = List(
       // BINARY OPS
-      List(TokenKind.ArrowThin), // ->
+      List(TokenKind.ArrowThinR), // ->
       List(TokenKind.PlusPlus, TokenKind.MinusMinus), // ++, --
       List(TokenKind.AmpersandAmpersand), // &&
       List(TokenKind.Plus, TokenKind.Minus), // +, -
@@ -2665,25 +2481,15 @@ object Parser2 {
 
       if (at(TokenKind.CurlyL)) {
         val mark = open()
-        separated(effect)
+        separated(() => ttype())
           .within(TokenKind.CurlyL, TokenKind.CurlyR)
           .zeroOrMore()
         close(mark, TreeKind.Type.EffectSet)
       } else {
         val mark = open()
-        effect()
+        ttype()
         close(mark, TreeKind.Type.EffectSet)
       }
-    }
-
-    def effect()(implicit s: State): Mark.Closed = {
-      val mark = open()
-      nth(0) match {
-        case TokenKind.NameUpperCase => name(NAME_EFFECT)
-        case TokenKind.NameLowerCase => variable()
-        case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected effect, found $t"))
-      }
-      close(mark, TreeKind.Type.Type)
     }
 
     def kind()(implicit s: State): Mark.Closed = {
@@ -2695,7 +2501,7 @@ object Parser2 {
         name(NAME_KIND)
       }
 
-      if (eat(TokenKind.ArrowThin)) {
+      if (eat(TokenKind.ArrowThinR)) {
         kind()
       }
 

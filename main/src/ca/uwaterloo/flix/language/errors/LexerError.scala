@@ -89,27 +89,6 @@ object LexerError {
   }
 
   /**
-   * An error raised when an unexpected character, such as €, is encountered.
-   *
-   * @param loc The location of the double e number literal.
-   */
-  case class DoubleEInNumber(loc: SourceLocation) extends LexerError {
-    override def summary: String = s"Number has two scientific notation indicators."
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Number has two scientific notation indicators.
-         |
-         |${code(loc, "Second 'e' is here.")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * An error raised when block-comments are nested too deep.
     *
     * @param loc The location of the opening "${".

@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SemanticOp, SourceLoc
 import ca.uwaterloo.flix.language.errors.Parse2Error
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
 
@@ -61,7 +62,7 @@ object Weeder2 {
   def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], trees: Map[Ast.Source, Tree])(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
     if (flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
-      return Validation.Failure(LazyList.empty)
+      return Validation.HardFailure(Chain.empty)
     }
 
     flix.phase("Weeder2") {
@@ -70,7 +71,7 @@ object Weeder2 {
         case (src, tree) => mapN(weed(src, tree))(tree => src -> tree)
       }
 
-      mapN(sequence(results))(_.toMap).map(m => WeededAst.Root(m, entryPoint, readRoot.names))
+      mapN(mapN(sequence(results))(_.toMap))(m => WeededAst.Root(m, entryPoint, readRoot.names))
     }
   }
 
@@ -96,7 +97,7 @@ object Weeder2 {
           traverse(imports)(visitImport)
         )((uses, imports) => uses.flatten ++ imports.flatten)
       })
-      .getOrElse(List.empty.toSuccess)
+      .getOrElse(Validation.success(List.empty))
   }
 
   private def visitUse(tree: Tree)(implicit s: State): Validation[List[UseOrImport], CompilationMessage] = {
@@ -134,7 +135,7 @@ object Weeder2 {
     flatMapN(idents) {
       case ident :: alias :: _ =>
         val qname = Name.QName(tree.loc.sp1, namespace, ident, tree.loc.sp2)
-        UseOrImport.Use(qname, alias, tree.loc).toSuccess
+        Validation.success(UseOrImport.Use(qname, alias, tree.loc))
       // recover from missing alias by using ident
       case ident :: _ => softFailWith(UseOrImport.Use(Name.mkQName(ident), ident, ident.loc))
       case _ => failWith("Malformed alias", tree.loc)
@@ -173,7 +174,7 @@ object Weeder2 {
     flatMapN(idents) {
       case ident :: alias :: _ =>
         val jname = Name.JavaName(tree.loc.sp1, Seq(ident.name), tree.loc.sp2)
-        UseOrImport.Import(jname, alias, tree.loc).toSuccess
+        Validation.success(UseOrImport.Import(jname, alias, tree.loc))
       // recover from missing alias by using ident
       case ident :: _ => softFailWith(UseOrImport.Import(Name.JavaName(tree.loc.sp1, Seq(ident.name), tree.loc.sp2), ident, ident.loc))
       case _ => failWith("Malformed alias", tree.loc)
@@ -210,7 +211,7 @@ object Weeder2 {
             case Declaration.Class(_, _, _, _, _, _, _, _, _, loc) => loc
             case Declaration.Instance(_, _, _, _, _, _, _, _, loc) => loc
             case Declaration.Enum(_, _, _, _, _, _, _, loc) => loc
-            case Declaration.TypeAlias(_, _, _, _, _, loc) => loc
+            case Declaration.TypeAlias(_, _, _, _, _, _, loc) => loc
             case Declaration.Effect(_, _, _, _, _, loc) => loc
             case d => throw InternalCompilerException(s"TODO: handle $d", tree.loc)
           }
@@ -270,11 +271,12 @@ object Weeder2 {
       mapN(
         pickDocumentation(tree),
         pickModifiers(tree),
+        pickAnnotations(tree),
         pickNameIdent(tree),
         Types.pickParameters(tree),
         Types.pickType(tree)
       ) {
-        (doc, mods, ident, tparams, tpe) => Declaration.TypeAlias(doc, mods, ident, tparams, tpe, tree.loc)
+        (doc, mods, ann, ident, tparams, tpe) => Declaration.TypeAlias(doc, ann, mods, ident, tparams, tpe, tree.loc)
       }
     }
 
@@ -297,16 +299,16 @@ object Weeder2 {
             // Error: both singleton shorthand and cases provided
             case (Some(_), _ :: _) => Validation.toHardFailure(IllegalEnum(ident.loc))
             // Empty enum
-            case (None, Nil) => List.empty.toSuccess
+            case (None, Nil) => Validation.success(List.empty)
             // Singleton enum
             case (Some(t), Nil) =>
-              List(WeededAst.Case(ident, flattenEnumCaseType(t, ident.loc), ident.loc)).toSuccess
+              Validation.success(List(WeededAst.Case(ident, flattenEnumCaseType(t, ident.loc), ident.loc)))
             // Multiton enum
             case (None, cs) =>
               val errors = getDuplicates(cs, (c: Case) => c.ident.name).map(pair =>
                 DuplicateTag(ident.name, pair._1.ident, pair._1.loc, pair._2.loc)
               )
-              cases.toSuccess.withSoftFailures(errors)
+              Validation.success(cases).withSoftFailures(errors)
           }
           mapN(casesVal) {
             cases => Declaration.Enum(doc, ann, mods, ident, tparams, derivations, cases, tree.loc)
@@ -431,9 +433,9 @@ object Weeder2 {
         case (doc, mods, ident, typeArgs, tpe) =>
           val typeArg = typeArgs match {
             // Use instance type if type arguments were elided
-            case Nil => instType.toSuccess
+            case Nil => Validation.success(instType)
             // Single argument: use that
-            case head :: Nil => head.toSuccess
+            case head :: Nil => Validation.success(head)
             // Multiple type arguments: recover by arbitrarily picking the first one
             case types => Validation.toSoftFailure(types.head, NonUnaryAssocType(types.length, ident.loc))
           }
@@ -456,10 +458,10 @@ object Weeder2 {
           val kind = Types.tryPickKind(tree).getOrElse(defaultKind(ident))
           val tparam = tparams match {
             // Elided: Use class type parameter
-            case TypeParams.Elided => classTypeParam.toSuccess
+            case TypeParams.Elided => Validation.success(classTypeParam)
             // Single type parameter
-            case TypeParams.Unkinded(head :: Nil) => head.toSuccess
-            case TypeParams.Kinded(head :: Nil) => head.toSuccess
+            case TypeParams.Unkinded(head :: Nil) => Validation.success(head)
+            case TypeParams.Kinded(head :: Nil) => Validation.success(head)
             // Multiple type parameters. Soft fail by picking the first parameter
             case TypeParams.Unkinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
             case TypeParams.Kinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
@@ -500,7 +502,7 @@ object Weeder2 {
         .map(lines => if (lines.headOption.exists(_.isEmpty)) lines.tail else lines)
         .map(lines => if (lines.lastOption.exists(_.isEmpty)) lines.dropRight(1) else lines)
         .getOrElse(List.empty)
-      Ast.Doc(comments, loc).toSuccess
+      Validation.success(Ast.Doc(comments, loc))
     }
 
     def pickAnnotations(tree: Tree)(implicit s: State): Validation[Ast.Annotations, CompilationMessage] = {
@@ -517,7 +519,7 @@ object Weeder2 {
             })
             traverse(tokens)(visitAnnotation).withSoftFailures(errors)
           })
-        .getOrElse(List.empty.toSuccess)
+        .getOrElse(Validation.success(List.empty))
 
       mapN(annotations)(Ast.Annotations(_))
     }
@@ -526,25 +528,25 @@ object Weeder2 {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
       import Ast.Annotation._
       token.text match {
-        case "@benchmark" | "@Benchmark" => Benchmark(loc).toSuccess
-        case "@Deprecated" => Deprecated(loc).toSuccess
-        case "@Experimental" => Experimental(loc).toSuccess
-        case "@Internal" => Internal(loc).toSuccess
-        case "@Parallel" => Parallel(loc).toSuccess
-        case "@ParallelWhenPure" => ParallelWhenPure(loc).toSuccess
-        case "@Lazy" => Lazy(loc).toSuccess
-        case "@LazyWhenPure" => LazyWhenPure(loc).toSuccess
-        case "@MustUse" => MustUse(loc).toSuccess
-        case "@Skip" => Skip(loc).toSuccess
-        case "@Test" | "@test" => Test(loc).toSuccess
-        case "@TailRec" => TailRecursive(loc).toSuccess
+        case "@benchmark" | "@Benchmark" => Validation.success(Benchmark(loc))
+        case "@Deprecated" => Validation.success(Deprecated(loc))
+        case "@Experimental" => Validation.success(Experimental(loc))
+        case "@Internal" => Validation.success(Internal(loc))
+        case "@Parallel" => Validation.success(Parallel(loc))
+        case "@ParallelWhenPure" => Validation.success(ParallelWhenPure(loc))
+        case "@Lazy" => Validation.success(Lazy(loc))
+        case "@LazyWhenPure" => Validation.success(LazyWhenPure(loc))
+        case "@MustUse" => Validation.success(MustUse(loc))
+        case "@Skip" => Validation.success(Skip(loc))
+        case "@Test" | "@test" => Validation.success(Test(loc))
+        case "@TailRec" => Validation.success(TailRecursive(loc))
         case other => softFailWith(Ast.Annotation.Error(other.stripPrefix("@"), loc))
       }
     }
 
     private def pickConstraints(tree: Tree): Validation[List[EqualityConstraint], CompilationMessage] = {
       // TODO
-      List.empty.toSuccess
+      Validation.success(List.empty)
     }
 
     val ALL_MODIFIERS: Set[TokenKind] = Set(
@@ -556,7 +558,7 @@ object Weeder2 {
 
     def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false)(implicit s: State): Validation[Ast.Modifiers, CompilationMessage] = {
       tryPick(TreeKind.Modifiers, tree.children) match {
-        case None => Ast.Modifiers(List.empty).toSuccess
+        case None => Validation.success(Ast.Modifiers(List.empty))
         case Some(modTree) =>
           var errors: List[CompilationMessage] = List.empty
           val tokens = pickAllTokens(modTree)
@@ -575,19 +577,19 @@ object Weeder2 {
             DuplicateModifier(name, loc2, loc1)
           })
 
-          traverse(tokens)(visitModifier(_, allowed))
+          val mods = traverse(tokens)(visitModifier(_, allowed))
             .withSoftFailures(errors)
-            .map(Ast.Modifiers(_))
+          mapN(mods)(Ast.Modifiers(_))
       }
     }
 
     private def visitModifier(token: Token, allowed: Set[TokenKind])(implicit s: State): Validation[Ast.Modifier, CompilationMessage] = {
       val mod = token.kind match {
         // TODO: there is no Ast.Modifier for 'inline'
-        case TokenKind.KeywordSealed => Ast.Modifier.Sealed.toSuccess
-        case TokenKind.KeywordLawful => Ast.Modifier.Lawful.toSuccess
-        case TokenKind.KeywordPub => Ast.Modifier.Public.toSuccess
-        case TokenKind.KeywordOverride => Ast.Modifier.Override.toSuccess
+        case TokenKind.KeywordSealed => Validation.success(Ast.Modifier.Sealed)
+        case TokenKind.KeywordLawful => Validation.success(Ast.Modifier.Lawful)
+        case TokenKind.KeywordPub => Validation.success(Ast.Modifier.Public)
+        case TokenKind.KeywordOverride => Validation.success(Ast.Modifier.Override)
         // TODO: This could be a SoftFailure if we had Ast.Modifier.Error
         case kind => failWith(s"unsupported modifier $kind")
       }
@@ -611,7 +613,7 @@ object Weeder2 {
         t => {
           val params = pickAll(TreeKind.Parameter, t.children)
           if (params.isEmpty) {
-            unitFormalParameters(t.loc).toSuccess
+            Validation.success(unitFormalParameters(t.loc))
           } else {
             flatMapN(traverse(params)(visitParameter(_, presence))) {
               params =>
@@ -621,7 +623,7 @@ object Weeder2 {
                   .map(pair => DuplicateFormalParam(pair._1.ident.name, pair._1.loc, pair._2.loc))
 
                 // Check missing or illegal type ascription
-                params.toSuccess.withSoftFailures(errors)
+                Validation.success(params).withSoftFailures(errors)
             }
           }
         }
@@ -644,7 +646,7 @@ object Weeder2 {
             case (None, Presence.Required) => Validation.toHardFailure(MissingFormalParamAscription(ident.name, tree.loc))
             case (Some(_), Presence.Forbidden) => Validation.toHardFailure(IllegalFormalParamAscription(tree.loc))
             case (Some(typeTree), _) => mapN(Types.visitType(typeTree)) { tpe => FormalParam(ident, mods, Some(tpe), tree.loc) }
-            case (None, _) => FormalParam(ident, mods, None, tree.loc).toSuccess
+            case (None, _) => Validation.success(FormalParam(ident, mods, None, tree.loc))
           }
       }
     }
@@ -656,7 +658,7 @@ object Weeder2 {
       flatMapN(
         traverseOpt(maybeExpression)(visitExpression)
       ) {
-        case Some(expr) => expr.toSuccess
+        case Some(expr) => Validation.success(expr)
         case None => softFailWith(Expr.Error(Parse2Error.DevErr(tree.loc, "expected expression")))
       }
     }
@@ -766,12 +768,12 @@ object Weeder2 {
 
         case (exprs, idents) =>
           val init = Expr.FixpointConstraintSet(Nil, tree.loc)
-          exprs.zip(idents).foldRight(init: Expr) {
+          Validation.success(exprs.zip(idents).foldRight(init: Expr) {
             case ((exp, ident), acc) =>
               val pred = Name.mkPred(ident)
               val innerExp = Expr.FixpointInject(exp, pred, tree.loc)
               WeededAst.Expr.FixpointMerge(innerExp, acc, tree.loc)
-          }.toSuccess
+          })
       }
     }
 
@@ -865,6 +867,7 @@ object Weeder2 {
     private def forFragmentLoc(frag: ForFragment): SourceLocation = frag match {
       case ForFragment.Generator(_, _, loc) => loc
       case ForFragment.Guard(_, loc) => loc
+      case ForFragment.Let(_, _, loc) => loc
     }
 
     private def visitForeach(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -951,18 +954,18 @@ object Weeder2 {
             // Case 1: upper qualified name
             case Nil =>
               // NB: We only use the source location of the identifier itself.
-              Expr.Ambiguous(qname, qname.ident.loc).toSuccess
+              Validation.success(Expr.Ambiguous(qname, qname.ident.loc))
             // Case 1: basic qualified name
             case ident :: Nil =>
               // NB: We only use the source location of the identifier itself.
-              Expr.Ambiguous(qname, ident.loc).toSuccess
+              Validation.success(Expr.Ambiguous(qname, ident.loc))
             // Case 2: actually a record access
             case ident :: labels =>
               // NB: We only use the source location of the identifier itself.
               val base = Expr.Ambiguous(Name.mkQName(prefix.map(_.toString), ident.name, ident.sp1, ident.sp2), ident.loc)
-              labels.foldLeft(base: Expr) {
+              Validation.success(labels.foldLeft(base: Expr) {
                 case (acc, label) => Expr.RecordSelect(acc, Name.mkLabel(label), label.loc)
-              }.toSuccess
+              })
           }
       }
     }
@@ -975,42 +978,38 @@ object Weeder2 {
 
     private def visitTry(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Try)
-      val maybeCatch = tryPick(TreeKind.Expr.Catch, tree.children)
-      val maybeHandler = tryPick(TreeKind.Expr.TryHandler, tree.children)
+      val maybeCatch = pickAll(TreeKind.Expr.TryCatchBody, tree.children)
+      val maybeWith = pickAll(TreeKind.Expr.TryWithBody, tree.children)
       flatMapN(
         pickExpression(tree),
-        traverseOpt(maybeCatch)(visitCatch),
-        traverseOpt(maybeHandler)(visitTryHandler),
+        traverse(maybeCatch)(visitTryCatchBody),
+        traverse(maybeWith)(visitTryWithBody),
       ) {
-        // Case: try expr catch { rules... }
-        case (expr, Some(rules), None) => Expr.TryCatch(expr, rules, tree.loc).toSuccess
-        // Case: try expr with eff { handlers... }
-        case (expr, None, Some((eff, handlers))) => Expr.TryWith(expr, eff, handlers, tree.loc).toSuccess
-        // Bad case: try expr catch { rules... } with eff { handlers... }
-        case (expr, Some(rules), Some(_)) => Validation.SoftFailure(
-          Expr.TryCatch(expr, rules, tree.loc),
-          LazyList(Parse2Error.DevErr(tree.loc, s"Cannot use both `catch` and `with` on try-catch expression"))
-        )
         // Bad case: try expr
-        case (expr, None, None) => Validation.SoftFailure(
+        case (expr, Nil, Nil) => Validation.SoftFailure(
           Expr.TryCatch(expr, List.empty, tree.loc),
-          LazyList(Parse2Error.DevErr(tree.loc, s"Missing `catch` on try-catch expression"))
+          Chain(Parse2Error.DevErr(tree.loc, s"Missing `catch` on try-catch expression"))
         )
+        // Bad case: try expr catch { rules... } with eff { handlers... }
+        case (expr, _ :: _, _ :: _) => Validation.SoftFailure(
+          Expr.TryCatch(expr, List.empty, tree.loc),
+          Chain(Parse2Error.DevErr(tree.loc, s"Cannot use both `catch` and `with` on try-catch expression"))
+        )
+        // Case: try expr catch { rules... }
+        case (expr, catches, Nil) => Validation.success(Expr.TryCatch(expr, catches.flatten, tree.loc))
+        // Case: try expr with eff { handlers... }
+        case (expr, Nil, withs) => Validation.success(Expr.TryWith(expr, withs, tree.loc))
       }
     }
 
-    private def visitCatch(tree: Tree)(implicit s: State): Validation[List[CatchRule], CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Catch)
-      val rules = pickAll(TreeKind.Expr.CatchRule, tree.children)
-      traverse(rules)(visitCatchRule)
+    private def visitTryCatchBody(tree: Tree)(implicit s: State): Validation[List[CatchRule], CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.TryCatchBody)
+      val rules = pickAll(TreeKind.Expr.TryCatchRule, tree.children)
+      traverse(rules)(visitTryCatchRule)
     }
 
-    private def javaQnameToFqn(qname: Name.QName): String = {
-      (qname.namespace.idents.map(_.name.stripPrefix("##")) :+ qname.ident.name).mkString(".")
-    }
-
-    private def visitCatchRule(tree: Tree)(implicit s: State): Validation[CatchRule, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.CatchRule)
+    private def visitTryCatchRule(tree: Tree)(implicit s: State): Validation[CatchRule, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.TryCatchRule)
       mapN(
         pickNameIdent(tree),
         pickQName(tree),
@@ -1018,17 +1017,17 @@ object Weeder2 {
       )((ident, qname, expr) => CatchRule(ident, javaQnameToFqn(qname), expr))
     }
 
-    private def visitTryHandler(tree: Tree)(implicit s: State): Validation[(Name.QName, List[HandlerRule]), CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.TryHandler)
-      val rules = pickAll(TreeKind.Expr.TryHandler, tree.children)
+    private def visitTryWithBody(tree: Tree)(implicit s: State): Validation[WithHandler, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.TryWithBody)
+      val rules = pickAll(TreeKind.Expr.TryWithRule, tree.children)
       mapN(
         pickQName(tree), // This qname is an effect
-        traverse(rules)(visitTryHandlerRule)
-      )((eff, handlers) => (eff, handlers))
+        traverse(rules)(visitTryWithRule)
+      )((eff, handlers) => WithHandler(eff, handlers))
     }
 
-    private def visitTryHandlerRule(tree: Tree)(implicit s: State): Validation[HandlerRule, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.CatchRule)
+    private def visitTryWithRule(tree: Tree)(implicit s: State): Validation[HandlerRule, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.TryWithRule)
       mapN(
         pickNameIdent(tree),
         Decls.pickFormalParameters(tree),
@@ -1054,10 +1053,10 @@ object Weeder2 {
         pickExpression(tree),
         traverseOpt(scopeName)(visitScopeName)
       ) {
-        case (expr1, Some(expr2)) => Expr.Ref(expr1, expr2, tree.loc).toSuccess
+        case (expr1, Some(expr2)) => Validation.success(Expr.Ref(expr1, expr2, tree.loc))
         case (expr1, None) =>
           val err = Parse2Error.DevErr(tree.loc, "Missing scope in ref")
-          Validation.SoftFailure(Expr.Ref(expr1, Expr.Error(err), tree.loc), LazyList(err))
+          Validation.SoftFailure(Expr.Ref(expr1, Expr.Error(err), tree.loc), Chain(err))
       }
     }
 
@@ -1068,16 +1067,16 @@ object Weeder2 {
         pickExpression(tree),
         traverseOpt(scopeName)(visitScopeName)
       ) {
-        case (expr1, Some(expr2)) => Expr.Spawn(expr1, expr2, tree.loc).toSuccess
+        case (expr1, Some(expr2)) => Validation.success(Expr.Spawn(expr1, expr2, tree.loc))
         case (expr1, None) =>
           val err = Parse2Error.DevErr(tree.loc, "Missing scope in spawn")
-          Validation.SoftFailure(Expr.Spawn(expr1, Expr.Error(err), tree.loc), LazyList(err))
+          Validation.SoftFailure(Expr.Spawn(expr1, Expr.Error(err), tree.loc), Chain(err))
       }
     }
 
     private def visitStatic(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Static)
-      Expr.Region(AstType.mkRegion(AstType.EffUniv, tree.loc), tree.loc).toSuccess
+      Validation.success(Expr.Static(tree.loc))
     }
 
     private def visitScopeName(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -1128,10 +1127,10 @@ object Weeder2 {
         traverse(exprs)(visitExpression),
         traverseOpt(scopeName)(visitScopeName)
       ) {
-        case (exprs, Some(scope)) => Expr.ArrayLit(exprs, scope, tree.loc).toSuccess
+        case (exprs, Some(scope)) => Validation.success(Expr.ArrayLit(exprs, scope, tree.loc))
         case (exprs, None) =>
           val err = Parse2Error.DevErr(tree.loc, "Missing scope in array literal")
-          Validation.SoftFailure(Expr.ArrayLit(exprs, Expr.Error(err), tree.loc), LazyList(err))
+          Validation.SoftFailure(Expr.ArrayLit(exprs, Expr.Error(err), tree.loc), Chain(err))
       }
     }
 
@@ -1146,11 +1145,11 @@ object Weeder2 {
       val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
       flatMapN(traverse(exprs)(visitExpression)) {
         // case: k => v
-        case k :: v :: Nil => (k, v).toSuccess
+        case k :: v :: Nil => Validation.success((k, v))
         // case: k =>
         case k :: Nil =>
           val err = Parse2Error.DevErr(tree.loc, "Missing value in key-value pair")
-          Validation.SoftFailure((k, Expr.Error(err)), LazyList(err))
+          Validation.SoftFailure((k, Expr.Error(err)), Chain(err))
         case xs => throw InternalCompilerException(s"Malformed KeyValue pair, found ${xs.length} expressions", tree.loc)
       }
     }
@@ -1229,7 +1228,7 @@ object Weeder2 {
       }
 
       val exprs = flatMapN(pickExpression(tree)) {
-        case Expr.Stm(exp1, exp2, _) => (exp1, exp2).toSuccess
+        case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
         case e => softFailWith(e, Expr.Error(Parse2Error.DevErr(tree.loc, "A internal definition must be followed by an expression")))
       }
 
@@ -1260,7 +1259,7 @@ object Weeder2 {
         (patrn, tpe, expr) =>
           // get expr1 and expr2 from the nested statement within expr.
           val exprs = expr match {
-            case Expr.Stm(exp1, exp2, _) => (exp1, exp2).toSuccess
+            case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
             case e => softFailWith(
               e,
               Expr.Error(Parse2Error.DevErr(tree.loc, "A let-binding must be followed by an expression"))
@@ -1371,7 +1370,7 @@ object Weeder2 {
       assert(tree.kind == TreeKind.Expr.Binary)
       val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
       val op = pick(TreeKind.Operator, tree.children)
-      mapN(op, traverse(exprs)(visitExpression)) {
+      flatMapN(op, traverse(exprs)(visitExpression)) {
         case (op, e1 :: e2 :: Nil) =>
           val isInfix = op.children.head match {
             case Child.Token(token) => token.kind == TokenKind.InfixFunction
@@ -1381,7 +1380,7 @@ object Weeder2 {
           if (isInfix) {
             val infixName = text(op).head.stripPrefix("`").stripSuffix("`")
             val opExpr = Expr.Ambiguous(Name.mkQName(infixName, op.loc.sp1, op.loc.sp2), op.loc)
-            return Expr.Infix(e1, opExpr, e2, tree.loc).toSuccess
+            return Validation.success(Expr.Infix(e1, opExpr, e2, tree.loc))
           }
 
           def mkApply(name: String): Expr.Apply = Expr.Apply(
@@ -1391,35 +1390,32 @@ object Weeder2 {
 
           text(op).head match {
             // BUILTINS
-            case "+" => mkApply("Add.add")
-            case "-" => mkApply("Sub.sub")
-            case "*" => mkApply("Mul.mul")
-            case "/" => mkApply("Div.div")
-            case "<" => mkApply("Order.less")
-            case "<=" => mkApply("Order.lessEqual")
-            case ">" => mkApply("Order.greater")
-            case ">=" => mkApply("Order.greaterEqual")
-            case "==" => mkApply("Eq.eq")
-            case "!=" => mkApply("Eq.neq")
-            case "<=>" => mkApply("Order.compare")
+            case "+" => Validation.success(mkApply("Add.add"))
+            case "-" => Validation.success(mkApply("Sub.sub"))
+            case "*" => Validation.success(mkApply("Mul.mul"))
+            case "/" => Validation.success(mkApply("Div.div"))
+            case "<" => Validation.success(mkApply("Order.less"))
+            case "<=" =>Validation.success( mkApply("Order.lessEqual"))
+            case ">" => Validation.success(mkApply("Order.greater"))
+            case ">=" =>Validation.success( mkApply("Order.greaterEqual"))
+            case "==" => Validation.success(mkApply("Eq.eq"))
+            case "!=" => Validation.success(mkApply("Eq.neq"))
+            case "<=>" => Validation.success(mkApply("Order.compare"))
             // SEMANTIC OPS
-            case "and" => Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc)
-            case "or" => Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc)
+            case "and" => Validation.success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, tree.loc))
+            case "or" => Validation.success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, tree.loc))
             // SPECIAL
-            case ":=" => Expr.Assign(e1, e2, tree.loc)
-            case "::" => Expr.FCons(e1, e2, tree.loc)
-            case ":::" => Expr.FAppend(e1, e2, tree.loc)
+            case ":=" => Validation.success(Expr.Assign(e1, e2, tree.loc))
+            case "::" => Validation.success(Expr.FCons(e1, e2, tree.loc))
+            case ":::" => Validation.success(Expr.FAppend(e1, e2, tree.loc))
             case "instanceof" =>
               val classname = mapN(pickQName(exprs(1)))(javaQnameToFqn)
-              classname match {
-                case Success(name) => Expr.InstanceOf(e1, name, tree.loc)
-                case _ => Expr.Error(Parse2Error.DevErr(tree.loc, s"Not a Java class"))
-              }
+              mapN(classname)(Expr.InstanceOf(e1, _, tree.loc))
 
             // UNRECOGNIZED
             case id =>
               val ident = Name.Ident(tree.loc.sp1, id, tree.loc.sp2)
-              Expr.Apply(Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e1, e2), tree.loc)
+              Validation.success(Expr.Apply(Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e1, e2), tree.loc))
           }
 
         case (_, operands) => throw InternalCompilerException(s"Expr.Binary tree with ${operands.length} operands", tree.loc)
@@ -1444,11 +1440,11 @@ object Weeder2 {
           val lit0 = token.text.stripPrefix("\"").stripSuffix("\"").stripPrefix("}")
           val lit = if (isDebug) lit0.stripSuffix("%{") else lit0.stripSuffix("${")
           if (lit == "") {
-            acc.toSuccess
+            Validation.success(acc)
           } else {
             val unescapedLit = StringContext.processEscapes(lit)
             val cst = Expr.Cst(Ast.Constant.Str(unescapedLit), loc)
-            Expr.Binary(SemanticOp.StringOp.Concat, acc, cst, tree.loc.asSynthetic).toSuccess
+            Validation.success(Expr.Binary(SemanticOp.StringOp.Concat, acc, cst, tree.loc.asSynthetic))
           }
         // An expression part: Apply 'toString' to it and concat the result
         case (acc, Child.Tree(tree)) if tree.kind == TreeKind.Expr.Expr =>
@@ -1574,14 +1570,14 @@ object Weeder2 {
           // First expression must be a name
           e1 match {
             case Expr.Ambiguous(qname, loc) =>
-              Expr.RecordExtend(Name.mkLabel(qname.ident), e2, Expr.RecordEmpty(tree.loc), tree.loc).toSuccess
+              Validation.success(Expr.RecordExtend(Name.mkLabel(qname.ident), e2, Expr.RecordEmpty(tree.loc), tree.loc))
             case _ =>
               val err = Parse2Error.DevErr(tree.loc, s"NamedArgument does not have a name")
-              Validation.SoftFailure(Expr.Error(err), LazyList(err))
+              Validation.SoftFailure(Expr.Error(err), Chain(err))
           }
         case exprs =>
           val err = Parse2Error.DevErr(tree.loc, s"Found ${exprs.length} expressions under NamedArgument")
-          Validation.SoftFailure(WeededAst.Expr.Error(err), LazyList(err))
+          Validation.SoftFailure(WeededAst.Expr.Error(err), Chain(err))
       }
     }
 
@@ -1589,138 +1585,136 @@ object Weeder2 {
       val intrinsic = text(tree).head.stripPrefix("$").stripSuffix("$")
       val loc = tree.loc
       (intrinsic, args) match {
-        case ("BOOL_NOT", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.BoolOp.Not, e1, loc).toSuccess
-        case ("BOOL_AND", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.BoolOp.And, e1, e2, loc).toSuccess
-        case ("BOOL_OR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, loc).toSuccess
-        case ("BOOL_EQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.BoolOp.Eq, e1, e2, loc).toSuccess
-        case ("BOOL_NEQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.BoolOp.Neq, e1, e2, loc).toSuccess
+        case ("BOOL_NOT", e1 :: Nil) => Validation.success(Expr.Unary(SemanticOp.BoolOp.Not, e1, loc))
+        case ("BOOL_AND", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.BoolOp.And, e1, e2, loc))
+        case ("BOOL_OR", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.BoolOp.Or, e1, e2, loc))
+        case ("BOOL_EQ", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.BoolOp.Eq, e1, e2, loc))
+        case ("BOOL_NEQ", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.BoolOp.Neq, e1, e2, loc))
 
-        case ("CHAR_EQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.CharOp.Eq, e1, e2, loc).toSuccess
-        case ("CHAR_NEQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.CharOp.Neq, e1, e2, loc).toSuccess
-        case ("CHAR_LT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.CharOp.Lt, e1, e2, loc).toSuccess
-        case ("CHAR_LE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.CharOp.Le, e1, e2, loc).toSuccess
-        case ("CHAR_GT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.CharOp.Gt, e1, e2, loc).toSuccess
-        case ("CHAR_GE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.CharOp.Ge, e1, e2, loc).toSuccess
+        case ("CHAR_EQ", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.CharOp.Eq, e1, e2, loc))
+        case ("CHAR_NEQ", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.CharOp.Neq, e1, e2, loc))
+        case ("CHAR_LT", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.CharOp.Lt, e1, e2, loc))
+        case ("CHAR_LE", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.CharOp.Le, e1, e2, loc))
+        case ("CHAR_GT", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.CharOp.Gt, e1, e2, loc))
+        case ("CHAR_GE", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.CharOp.Ge, e1, e2, loc))
 
-        case ("FLOAT32_NEG", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Float32Op.Neg, e1, loc).toSuccess
-        case ("FLOAT32_ADD", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Add, e1, e2, loc).toSuccess
-        case ("FLOAT32_SUB", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Sub, e1, e2, loc).toSuccess
-        case ("FLOAT32_MUL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Mul, e1, e2, loc).toSuccess
-        case ("FLOAT32_DIV", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Div, e1, e2, loc).toSuccess
-        case ("FLOAT32_EXP", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Exp, e1, e2, loc).toSuccess
-        case ("FLOAT32_EQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Eq, e1, e2, loc).toSuccess
-        case ("FLOAT32_NEQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Neq, e1, e2, loc).toSuccess
-        case ("FLOAT32_LT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Lt, e1, e2, loc).toSuccess
-        case ("FLOAT32_LE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Le, e1, e2, loc).toSuccess
-        case ("FLOAT32_GT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Gt, e1, e2, loc).toSuccess
-        case ("FLOAT32_GE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float32Op.Ge, e1, e2, loc).toSuccess
+        case ("FLOAT32_NEG", e1 :: Nil) => Validation.success(Expr.Unary(SemanticOp.Float32Op.Neg, e1, loc))
+        case ("FLOAT32_ADD", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float32Op.Add, e1, e2, loc))
+        case ("FLOAT32_SUB", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float32Op.Sub, e1, e2, loc))
+        case ("FLOAT32_MUL", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float32Op.Mul, e1, e2, loc))
+        case ("FLOAT32_DIV", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float32Op.Div, e1, e2, loc))
+        case ("FLOAT32_EXP", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float32Op.Exp, e1, e2, loc))
+        case ("FLOAT32_EQ", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float32Op.Eq, e1, e2, loc))
+        case ("FLOAT32_NEQ", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float32Op.Neq, e1, e2, loc))
+        case ("FLOAT32_LT", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float32Op.Lt, e1, e2, loc))
+        case ("FLOAT32_LE", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float32Op.Le, e1, e2, loc))
+        case ("FLOAT32_GT", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float32Op.Gt, e1, e2, loc))
+        case ("FLOAT32_GE", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float32Op.Ge, e1, e2, loc))
 
-        case ("FLOAT64_NEG", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Float64Op.Neg, e1, loc).toSuccess
-        case ("FLOAT64_ADD", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Add, e1, e2, loc).toSuccess
-        case ("FLOAT64_SUB", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Sub, e1, e2, loc).toSuccess
-        case ("FLOAT64_MUL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Mul, e1, e2, loc).toSuccess
-        case ("FLOAT64_DIV", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Div, e1, e2, loc).toSuccess
-        case ("FLOAT64_EXP", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Exp, e1, e2, loc).toSuccess
-        case ("FLOAT64_EQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Eq, e1, e2, loc).toSuccess
-        case ("FLOAT64_NEQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Neq, e1, e2, loc).toSuccess
-        case ("FLOAT64_LT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Lt, e1, e2, loc).toSuccess
-        case ("FLOAT64_LE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Le, e1, e2, loc).toSuccess
-        case ("FLOAT64_GT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Gt, e1, e2, loc).toSuccess
-        case ("FLOAT64_GE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Float64Op.Ge, e1, e2, loc).toSuccess
+        case ("FLOAT64_NEG", e1 :: Nil) => Validation.success(Expr.Unary(SemanticOp.Float64Op.Neg, e1, loc))
+        case ("FLOAT64_ADD", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float64Op.Add, e1, e2, loc))
+        case ("FLOAT64_SUB", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float64Op.Sub, e1, e2, loc))
+        case ("FLOAT64_MUL", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float64Op.Mul, e1, e2, loc))
+        case ("FLOAT64_DIV", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float64Op.Div, e1, e2, loc))
+        case ("FLOAT64_EXP", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float64Op.Exp, e1, e2, loc))
+        case ("FLOAT64_EQ", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float64Op.Eq, e1, e2, loc))
+        case ("FLOAT64_NEQ", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float64Op.Neq, e1, e2, loc))
+        case ("FLOAT64_LT", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float64Op.Lt, e1, e2, loc))
+        case ("FLOAT64_LE", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float64Op.Le, e1, e2, loc))
+        case ("FLOAT64_GT", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float64Op.Gt, e1, e2, loc))
+        case ("FLOAT64_GE", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Float64Op.Ge, e1, e2, loc))
 
-        case ("INT8_NEG", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Int8Op.Neg, e1, loc).toSuccess
-        case ("INT8_NOT", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Int8Op.Not, e1, loc).toSuccess
-        case ("INT8_ADD", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Add, e1, e2, loc).toSuccess
-        case ("INT8_SUB", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Sub, e1, e2, loc).toSuccess
-        case ("INT8_MUL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Mul, e1, e2, loc).toSuccess
-        case ("INT8_DIV", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Div, e1, e2, loc).toSuccess
-        case ("INT8_REM", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Rem, e1, e2, loc).toSuccess
-        case ("INT8_EXP", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Exp, e1, e2, loc).toSuccess
-        case ("INT8_AND", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.And, e1, e2, loc).toSuccess
-        case ("INT8_OR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Or, e1, e2, loc).toSuccess
-        case ("INT8_XOR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Xor, e1, e2, loc).toSuccess
-        case ("INT8_SHL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Shl, e1, e2, loc).toSuccess
-        case ("INT8_SHR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Shr, e1, e2, loc).toSuccess
-        case ("INT8_EQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Eq, e1, e2, loc).toSuccess
-        case ("INT8_NEQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Neq, e1, e2, loc).toSuccess
-        case ("INT8_LT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Lt, e1, e2, loc).toSuccess
-        case ("INT8_LE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Le, e1, e2, loc).toSuccess
-        case ("INT8_GT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Gt, e1, e2, loc).toSuccess
-        case ("INT8_GE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int8Op.Ge, e1, e2, loc).toSuccess
+        case ("INT8_NEG", e1 :: Nil) => Validation.success(Expr.Unary(SemanticOp.Int8Op.Neg, e1, loc))
+        case ("INT8_NOT", e1 :: Nil) => Validation.success(Expr.Unary(SemanticOp.Int8Op.Not, e1, loc))
+        case ("INT8_ADD", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.Add, e1, e2, loc))
+        case ("INT8_SUB", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.Sub, e1, e2, loc))
+        case ("INT8_MUL", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.Mul, e1, e2, loc))
+        case ("INT8_DIV", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.Div, e1, e2, loc))
+        case ("INT8_REM", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.Rem, e1, e2, loc))
+        case ("INT8_EXP", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.Exp, e1, e2, loc))
+        case ("INT8_AND", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.And, e1, e2, loc))
+        case ("INT8_OR", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.Or, e1, e2, loc))
+        case ("INT8_XOR", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.Xor, e1, e2, loc))
+        case ("INT8_SHL", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.Shl, e1, e2, loc))
+        case ("INT8_SHR", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.Shr, e1, e2, loc))
+        case ("INT8_EQ", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.Eq, e1, e2, loc))
+        case ("INT8_NEQ", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.Neq, e1, e2, loc))
+        case ("INT8_LT", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.Lt, e1, e2, loc))
+        case ("INT8_LE", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.Le, e1, e2, loc))
+        case ("INT8_GT", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.Gt, e1, e2, loc))
+        case ("INT8_GE", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int8Op.Ge, e1, e2, loc))
 
-        case ("INT16_NEG", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Int16Op.Neg, e1, loc).toSuccess
-        case ("INT16_NOT", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Int16Op.Not, e1, loc).toSuccess
-        case ("INT16_ADD", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Add, e1, e2, loc).toSuccess
-        case ("INT16_SUB", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Sub, e1, e2, loc).toSuccess
-        case ("INT16_MUL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Mul, e1, e2, loc).toSuccess
-        case ("INT16_DIV", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Div, e1, e2, loc).toSuccess
-        case ("INT16_REM", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Rem, e1, e2, loc).toSuccess
-        case ("INT16_EXP", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Exp, e1, e2, loc).toSuccess
-        case ("INT16_AND", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.And, e1, e2, loc).toSuccess
-        case ("INT16_OR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Or, e1, e2, loc).toSuccess
-        case ("INT16_XOR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Xor, e1, e2, loc).toSuccess
-        case ("INT16_SHL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Shl, e1, e2, loc).toSuccess
-        case ("INT16_SHR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Shr, e1, e2, loc).toSuccess
-        case ("INT16_EQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Eq, e1, e2, loc).toSuccess
-        case ("INT16_NEQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Neq, e1, e2, loc).toSuccess
-        case ("INT16_LT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Lt, e1, e2, loc).toSuccess
-        case ("INT16_LE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Le, e1, e2, loc).toSuccess
-        case ("INT16_GT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Gt, e1, e2, loc).toSuccess
-        case ("INT16_GE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int16Op.Ge, e1, e2, loc).toSuccess
+        case ("INT16_NEG", e1 :: Nil) => Validation.success(Expr.Unary(SemanticOp.Int16Op.Neg, e1, loc))
+        case ("INT16_NOT", e1 :: Nil) => Validation.success(Expr.Unary(SemanticOp.Int16Op.Not, e1, loc))
+        case ("INT16_ADD", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.Add, e1, e2, loc))
+        case ("INT16_SUB", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.Sub, e1, e2, loc))
+        case ("INT16_MUL", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.Mul, e1, e2, loc))
+        case ("INT16_DIV", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.Div, e1, e2, loc))
+        case ("INT16_REM", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.Rem, e1, e2, loc))
+        case ("INT16_EXP", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.Exp, e1, e2, loc))
+        case ("INT16_AND", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.And, e1, e2, loc))
+        case ("INT16_OR", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.Or, e1, e2, loc))
+        case ("INT16_XOR", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.Xor, e1, e2, loc))
+        case ("INT16_SHL", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.Shl, e1, e2, loc))
+        case ("INT16_SHR", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.Shr, e1, e2, loc))
+        case ("INT16_EQ", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.Eq, e1, e2, loc))
+        case ("INT16_NEQ", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.Neq, e1, e2, loc))
+        case ("INT16_LT", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.Lt, e1, e2, loc))
+        case ("INT16_LE", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.Le, e1, e2, loc))
+        case ("INT16_GT", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.Gt, e1, e2, loc))
+        case ("INT16_GE", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int16Op.Ge, e1, e2, loc))
 
-        case ("INT32_NEG", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Int32Op.Neg, e1, loc).toSuccess
-        case ("INT32_NOT", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Int32Op.Not, e1, loc).toSuccess
-        case ("INT32_ADD", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Add, e1, e2, loc).toSuccess
-        case ("INT32_SUB", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Sub, e1, e2, loc).toSuccess
-        case ("INT32_MUL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Mul, e1, e2, loc).toSuccess
-        case ("INT32_DIV", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Div, e1, e2, loc).toSuccess
-        case ("INT32_REM", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Rem, e1, e2, loc).toSuccess
-        case ("INT32_EXP", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Exp, e1, e2, loc).toSuccess
-        case ("INT32_AND", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.And, e1, e2, loc).toSuccess
-        case ("INT32_OR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Or, e1, e2, loc).toSuccess
-        case ("INT32_XOR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Xor, e1, e2, loc).toSuccess
-        case ("INT32_SHL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Shl, e1, e2, loc).toSuccess
-        case ("INT32_SHR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Shr, e1, e2, loc).toSuccess
-        case ("INT32_EQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Eq, e1, e2, loc).toSuccess
-        case ("INT32_NEQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Neq, e1, e2, loc).toSuccess
-        case ("INT32_LT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Lt, e1, e2, loc).toSuccess
-        case ("INT32_LE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Le, e1, e2, loc).toSuccess
-        case ("INT32_GT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Gt, e1, e2, loc).toSuccess
-        case ("INT32_GE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int32Op.Ge, e1, e2, loc).toSuccess
+        case ("INT32_NEG", e1 :: Nil) => Validation.success(Expr.Unary(SemanticOp.Int32Op.Neg, e1, loc))
+        case ("INT32_NOT", e1 :: Nil) => Validation.success(Expr.Unary(SemanticOp.Int32Op.Not, e1, loc))
+        case ("INT32_ADD", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.Add, e1, e2, loc))
+        case ("INT32_SUB", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.Sub, e1, e2, loc))
+        case ("INT32_MUL", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.Mul, e1, e2, loc))
+        case ("INT32_DIV", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.Div, e1, e2, loc))
+        case ("INT32_REM", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.Rem, e1, e2, loc))
+        case ("INT32_EXP", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.Exp, e1, e2, loc))
+        case ("INT32_AND", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.And, e1, e2, loc))
+        case ("INT32_OR", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.Or, e1, e2, loc))
+        case ("INT32_XOR", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.Xor, e1, e2, loc))
+        case ("INT32_SHL", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.Shl, e1, e2, loc))
+        case ("INT32_SHR", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.Shr, e1, e2, loc))
+        case ("INT32_EQ", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.Eq, e1, e2, loc))
+        case ("INT32_NEQ", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.Neq, e1, e2, loc))
+        case ("INT32_LT", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.Lt, e1, e2, loc))
+        case ("INT32_LE", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.Le, e1, e2, loc))
+        case ("INT32_GT", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.Gt, e1, e2, loc))
+        case ("INT32_GE", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int32Op.Ge, e1, e2, loc))
 
-        case ("INT64_NEG", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Int64Op.Neg, e1, loc).toSuccess
-        case ("INT64_NOT", e1 :: Nil) => WeededAst.Expr.Unary(SemanticOp.Int64Op.Not, e1, loc).toSuccess
-        case ("INT64_ADD", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Add, e1, e2, loc).toSuccess
-        case ("INT64_SUB", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Sub, e1, e2, loc).toSuccess
-        case ("INT64_MUL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Mul, e1, e2, loc).toSuccess
-        case ("INT64_DIV", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Div, e1, e2, loc).toSuccess
-        case ("INT64_REM", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Rem, e1, e2, loc).toSuccess
-        case ("INT64_EXP", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Exp, e1, e2, loc).toSuccess
-        case ("INT64_AND", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.And, e1, e2, loc).toSuccess
-        case ("INT64_OR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Or, e1, e2, loc).toSuccess
-        case ("INT64_XOR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Xor, e1, e2, loc).toSuccess
-        case ("INT64_SHL", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Shl, e1, e2, loc).toSuccess
-        case ("INT64_SHR", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Shr, e1, e2, loc).toSuccess
-        case ("INT64_EQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Eq, e1, e2, loc).toSuccess
-        case ("INT64_NEQ", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Neq, e1, e2, loc).toSuccess
-        case ("INT64_LT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Lt, e1, e2, loc).toSuccess
-        case ("INT64_LE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Le, e1, e2, loc).toSuccess
-        case ("INT64_GT", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Gt, e1, e2, loc).toSuccess
-        case ("INT64_GE", e1 :: e2 :: Nil) => WeededAst.Expr.Binary(SemanticOp.Int64Op.Ge, e1, e2, loc).toSuccess
+        case ("INT64_NEG", e1 :: Nil) => Validation.success(Expr.Unary(SemanticOp.Int64Op.Neg, e1, loc))
+        case ("INT64_NOT", e1 :: Nil) => Validation.success(Expr.Unary(SemanticOp.Int64Op.Not, e1, loc))
+        case ("INT64_ADD", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Add, e1, e2, loc))
+        case ("INT64_SUB", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Sub, e1, e2, loc))
+        case ("INT64_MUL", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Mul, e1, e2, loc))
+        case ("INT64_DIV", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Div, e1, e2, loc))
+        case ("INT64_REM", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Rem, e1, e2, loc))
+        case ("INT64_EXP", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Exp, e1, e2, loc))
+        case ("INT64_AND", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.And, e1, e2, loc))
+        case ("INT64_OR", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Or, e1, e2, loc))
+        case ("INT64_XOR", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Xor, e1, e2, loc))
+        case ("INT64_SHL", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Shl, e1, e2, loc))
+        case ("INT64_SHR", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Shr, e1, e2, loc))
+        case ("INT64_EQ", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Eq, e1, e2, loc))
+        case ("INT64_NEQ", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Neq, e1, e2, loc))
+        case ("INT64_LT", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Lt, e1, e2, loc))
+        case ("INT64_LE", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Le, e1, e2, loc))
+        case ("INT64_GT", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Gt, e1, e2, loc))
+        case ("INT64_GE", e1 :: e2 :: Nil) =>Validation.success( Expr.Binary(SemanticOp.Int64Op.Ge, e1, e2, loc))
 
-        case ("CHANNEL_GET", e1 :: Nil) => WeededAst.Expr.GetChannel(e1, loc).toSuccess
-        case ("CHANNEL_PUT", e1 :: e2 :: Nil) => WeededAst.Expr.PutChannel(e1, e2, loc).toSuccess
-        case ("CHANNEL_NEW", e1 :: e2 :: Nil) => WeededAst.Expr.NewChannel(e1, e2, loc).toSuccess
+        case ("CHANNEL_GET", e1 :: Nil) => Validation.success(Expr.GetChannel(e1, loc))
+        case ("CHANNEL_PUT", e1 :: e2 :: Nil) => Validation.success(Expr.PutChannel(e1, e2, loc))
+        case ("CHANNEL_NEW", e1 :: e2 :: Nil) => Validation.success(Expr.NewChannel(e1, e2, loc))
 
-        case ("ARRAY_NEW", e1 :: e2 :: e3 :: Nil) => WeededAst.Expr.ArrayNew(e1, e2, e3, loc).toSuccess
-        case ("ARRAY_LENGTH", e1 :: Nil) => WeededAst.Expr.ArrayLength(e1, loc).toSuccess
-        case ("ARRAY_LOAD", e1 :: e2 :: Nil) => WeededAst.Expr.ArrayLoad(e1, e2, loc).toSuccess
-        case ("ARRAY_STORE", e1 :: e2 :: e3 :: Nil) => WeededAst.Expr.ArrayStore(e1, e2, e3, loc).toSuccess
+        case ("ARRAY_NEW", e1 :: e2 :: e3 :: Nil) => Validation.success(Expr.ArrayNew(e1, e2, e3, loc))
+        case ("ARRAY_LENGTH", e1 :: Nil) => Validation.success(Expr.ArrayLength(e1, loc))
+        case ("ARRAY_LOAD", e1 :: e2 :: Nil) => Validation.success(Expr.ArrayLoad(e1, e2, loc))
+        case ("ARRAY_STORE", e1 :: e2 :: e3 :: Nil) => Validation.success(Expr.ArrayStore(e1, e2, e3, loc))
 
-        case ("VECTOR_GET", e1 :: e2 :: Nil) => WeededAst.Expr.VectorLoad(e1, e2, loc).toSuccess
-        case ("VECTOR_LENGTH", e1 :: Nil) => WeededAst.Expr.VectorLength(e1, loc).toSuccess
-
-        case ("SCOPE_EXIT", e1 :: e2 :: Nil) => WeededAst.Expr.ScopeExit(e1, e2, loc).toSuccess
+        case ("VECTOR_GET", e1 :: e2 :: Nil) => Validation.success(Expr.VectorLoad(e1, e2, loc))
+        case ("VECTOR_LENGTH", e1 :: Nil) => Validation.success(Expr.VectorLength(e1, loc))
 
         case _ =>
           val err = UndefinedIntrinsic(loc)
@@ -1735,9 +1729,9 @@ object Weeder2 {
 
       tree.children(0) match {
         case Child.Token(token) => token.kind match {
-          case TokenKind.KeywordNull => Expr.Cst(Ast.Constant.Null, token.mkSourceLocation(s.src, Some(s.parserInput))).toSuccess
-          case TokenKind.KeywordTrue => Expr.Cst(Ast.Constant.Bool(true), token.mkSourceLocation(s.src, Some(s.parserInput))).toSuccess
-          case TokenKind.KeywordFalse => Expr.Cst(Ast.Constant.Bool(false), token.mkSourceLocation(s.src, Some(s.parserInput))).toSuccess
+          case TokenKind.KeywordNull => Validation.success(Expr.Cst(Ast.Constant.Null, token.mkSourceLocation(s.src, Some(s.parserInput))))
+          case TokenKind.KeywordTrue => Validation.success(Expr.Cst(Ast.Constant.Bool(true), token.mkSourceLocation(s.src, Some(s.parserInput))))
+          case TokenKind.KeywordFalse => Validation.success(Expr.Cst(Ast.Constant.Bool(false), token.mkSourceLocation(s.src, Some(s.parserInput))))
           case TokenKind.LiteralString => Constants.toStringCst(token)
           case TokenKind.LiteralChar => Constants.toChar(token)
           case TokenKind.LiteralInt8 => Constants.toInt8(token)
@@ -1801,7 +1795,7 @@ object Weeder2 {
       flatMapN(pickNameIdent(tree))(
         ident => {
           if (ident.name == "_")
-            Pattern.Wild(tree.loc).toSuccess
+            Validation.success(Pattern.Wild(tree.loc))
           else {
             seen.get(ident.name) match {
               case Some(other) => Validation.toSoftFailure(
@@ -1810,7 +1804,7 @@ object Weeder2 {
               )
               case None =>
                 seen += (ident.name -> ident)
-                Pattern.Var(ident, tree.loc).toSuccess
+                Validation.success(Pattern.Var(ident, tree.loc))
             }
           }
         }
@@ -1843,7 +1837,7 @@ object Weeder2 {
             Validation.toSoftFailure(WeededAst.Pattern.Error(tree.loc), IllegalNullPattern(tree.loc))
           case Constant.Regex(_) =>
             Validation.toSoftFailure(WeededAst.Pattern.Error(tree.loc), IllegalRegexPattern(tree.loc))
-          case c => Pattern.Cst(c, tree.loc).toSuccess
+          case c => Validation.success(Pattern.Cst(c, tree.loc))
         }
         case e => throw InternalCompilerException(s"Malformed Pattern.Literal. Expected literal but found $e", e.loc)
       }
@@ -1868,11 +1862,11 @@ object Weeder2 {
         traverseOpt(maybePattern)(visitPattern(_, seen))
       ) {
         // Pattern { ... }
-        case (fs, None) => Pattern.Record(fs, Pattern.RecordEmpty(tree.loc.asSynthetic), tree.loc).toSuccess
+        case (fs, None) => Validation.success(Pattern.Record(fs, Pattern.RecordEmpty(tree.loc.asSynthetic), tree.loc))
         // Pattern { x, ... | r }
-        case (x :: xs, Some(Pattern.Var(v, l))) => Pattern.Record(x :: xs, Pattern.Var(v, l), tree.loc).toSuccess
+        case (x :: xs, Some(Pattern.Var(v, l))) => Validation.success(Pattern.Record(x :: xs, Pattern.Var(v, l), tree.loc))
         // Pattern { x, ... | _ }
-        case (x :: xs, Some(Pattern.Wild(l))) => Pattern.Record(x :: xs, Pattern.Wild(l), tree.loc).toSuccess
+        case (x :: xs, Some(Pattern.Wild(l))) => Validation.success(Pattern.Record(x :: xs, Pattern.Wild(l), tree.loc))
         // Illegal pattern: { | r}
         case (Nil, Some(r)) => Validation.toSoftFailure(r, EmptyRecordExtensionPattern(r.loc))
         // Illegal pattern: { x, ... | (1, 2, 3) }
@@ -1888,12 +1882,12 @@ object Weeder2 {
           seen.get(ident.name) match {
             case None =>
               seen += (ident.name -> ident)
-              Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), None, tree.loc).toSuccess
+              Validation.success(Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), None, tree.loc))
             case Some(other) =>
               val pat = Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), None, tree.loc)
               Validation.toSoftFailure(pat, NonLinearPattern(ident.name, other.loc, ident.loc))
           }
-        case (ident, pat) => Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), pat, tree.loc).toSuccess
+        case (ident, pat) => Validation.success(Pattern.Record.RecordLabelPattern(Name.mkLabel(ident), pat, tree.loc))
       }
     }
 
@@ -1910,7 +1904,7 @@ object Weeder2 {
     private def tryParseFloat(token: Token, after: (String, SourceLocation) => Expr)(implicit s: State): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
       try {
-        after(stripUnderscores(token.text), loc).toSuccess
+        Validation.success(after(stripUnderscores(token.text), loc))
       } catch {
         case _: NumberFormatException =>
           val err = MalformedFloat(loc)
@@ -1921,7 +1915,7 @@ object Weeder2 {
     private def tryParseInt(token: Token, after: (String, SourceLocation) => Expr)(implicit s: State): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
       try {
-        after(stripUnderscores(token.text), loc).toSuccess
+        Validation.success(after(stripUnderscores(token.text), loc))
       } catch {
         case _: NumberFormatException =>
           val err = MalformedInt(loc)
@@ -2014,7 +2008,7 @@ object Weeder2 {
         val lit = token.text.stripPrefix("regex\"").stripSuffix("\"")
         val unescapedLit = StringContext.processEscapes(lit)
         val pattern = JPattern.compile(unescapedLit)
-        Expr.Cst(Ast.Constant.Regex(pattern), loc).toSuccess
+        Validation.success(Expr.Cst(Ast.Constant.Regex(pattern), loc))
       } catch {
         case ex: PatternSyntaxException =>
           val err = MalformedRegex(token.text, ex.getMessage, loc)
@@ -2029,14 +2023,14 @@ object Weeder2 {
         // Translate hex code
         try {
           val c = Integer.parseInt(lit.stripPrefix("\\u"), 16).toChar
-          Expr.Cst(Ast.Constant.Char(c), loc).toSuccess
+          Validation.success(Expr.Cst(Ast.Constant.Char(c), loc))
         } catch {
           case _: NumberFormatException =>
             val err = MalformedUnicodeEscapeSequence(token.text, loc)
             Validation.toSoftFailure(Expr.Error(err), err)
         }
       } else {
-        Expr.Cst(Ast.Constant.Char(lit.head), loc).toSuccess
+        Validation.success(Expr.Cst(Ast.Constant.Char(lit.head), loc))
       }
 
     }
@@ -2045,7 +2039,7 @@ object Weeder2 {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
       val lit = token.text.stripPrefix("\"").stripSuffix("\"")
       val unescapedLit = StringContext.processEscapes(lit)
-      Expr.Cst(Ast.Constant.Str(unescapedLit), loc).toSuccess
+      Validation.success(Expr.Cst(Ast.Constant.Str(unescapedLit), loc))
     }
   }
 
@@ -2100,10 +2094,10 @@ object Weeder2 {
                 case (Ast.Polarity.Negative, Ast.Fixity.Fixed) => Some(IllegalFixedAtom(tree.loc))
                 case _ => None
               }
-              Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, pats, tree.loc)
-                .toSuccess
+              Validation.success( Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, pats, tree.loc)
+            )
                 .withSoftFailures(errors)
-            case (pats, Some(term)) => Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, pats ::: term :: Nil, tree.loc).toSuccess
+            case (pats, Some(term)) => Validation.success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, pats ::: term :: Nil, tree.loc))
           }
         })
     }
@@ -2199,25 +2193,25 @@ object Weeder2 {
               initParams.foldRight(base)((acc, tpe) => Type.Arrow(List(acc), None, tpe, l))
             })
             // REGULAR TYPE OPERATORS
-            case "+" => Type.Union(t1, t2, tree.loc).toSuccess
-            case "-" => Type.Intersection(t1, Type.Complement(t2, tree.loc.asSynthetic), tree.loc).toSuccess
-            case "++" => Type.CaseUnion(t1, t2, tree.loc).toSuccess
-            case "&&" => Type.CaseIntersection(t1, t2, tree.loc).toSuccess
-            case "--" => Type.CaseIntersection(t1, Type.Complement(t2, tree.loc.asSynthetic), tree.loc).toSuccess
-            case "&" => Type.Intersection(t1, t2, tree.loc).toSuccess
-            case "xor" => Type.Or(
+            case "+" => Validation.success(Type.Union(t1, t2, tree.loc))
+            case "-" => Validation.success(Type.Intersection(t1, Type.Complement(t2, tree.loc.asSynthetic), tree.loc))
+            case "++" => Validation.success(Type.CaseUnion(t1, t2, tree.loc))
+            case "&&" => Validation.success(Type.CaseIntersection(t1, t2, tree.loc))
+            case "--" => Validation.success(Type.CaseIntersection(t1, Type.Complement(t2, tree.loc.asSynthetic), tree.loc))
+            case "&" => Validation.success(Type.Intersection(t1, t2, tree.loc))
+            case "xor" => Validation.success(Type.Or(
               Type.And(t1, Type.Not(t2, tree.loc), tree.loc),
               Type.And(Type.Not(t1, tree.loc), t2, tree.loc),
               tree.loc
-            ).toSuccess
-            case "and" => Type.And(t1, t2, tree.loc).toSuccess
-            case "or" => Type.Or(t1, t2, tree.loc).toSuccess
+            ))
+            case "and" => Validation.success(Type.And(t1, t2, tree.loc))
+            case "or" => Validation.success(Type.Or(t1, t2, tree.loc))
             // UNRECOGNIZED
             // TODO: Use Type.Error here
             case op => failWith(s"Unrecognized type operator '$op' ", tree.loc)
           }
 
-        case (_, operands) => throw InternalCompilerException(s"Type.Binary tree with ${operands.length} operands", tree.loc)
+        case (op, operands) => throw InternalCompilerException(s"Type.Binary tree with ${operands.length} operands\n ${text(op).head}\n\t${operands.mkString("\n\t")}\n${tree.toDebugString()}", tree.loc)
       }
     }
 
@@ -2228,9 +2222,9 @@ object Weeder2 {
       flatMapN(op, types) {
         case (op, t :: Nil) =>
           text(op).head match {
-            case "~" => Type.Complement(t, tree.loc).toSuccess
-            case "~~" => Type.CaseComplement(t, tree.loc).toSuccess
-            case "not" => Type.Not(t, tree.loc).toSuccess
+            case "~" => Validation.success(Type.Complement(t, tree.loc))
+            case "~~" => Validation.success(Type.CaseComplement(t, tree.loc))
+            case "not" => Validation.success(Type.Not(t, tree.loc))
             // UNRECOGNIZED
             // TODO: Use Type.Error here
             case op => failWith(s"Unrecognized type operator '$op' ", tree.loc)
@@ -2262,7 +2256,7 @@ object Weeder2 {
           case Some(name) => WeededAst.Type.Var(name, name.loc)
         }
 
-        Validation.foldRight(pickAllTrees(parentTree))(rest.toSuccess) {
+        Validation.foldRight(pickAllTrees(parentTree))(Validation.success(rest)) {
           case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithAlias =>
             mapN(
               pickQName(parentTree),
@@ -2283,7 +2277,7 @@ object Weeder2 {
               case (qname, tps, Some(t)) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Latticenal, tps :+ t, acc, tree.loc)
             }
 
-          case (_, acc) => acc.toSuccess
+          case (_, acc) => Validation.success(acc)
         }
       }
     }
@@ -2292,11 +2286,11 @@ object Weeder2 {
       assert(tree.kind == TreeKind.Type.Constant)
 
       text(tree).head match {
-        case "false" => Type.False(tree.loc).toSuccess
-        case "true" => Type.True(tree.loc).toSuccess
-        case "Pure" => Type.Pure(tree.loc).toSuccess
+        case "false" => Validation.success(Type.False(tree.loc))
+        case "true" => Validation.success(Type.True(tree.loc))
+        case "Pure" => Validation.success(Type.Pure(tree.loc))
         // TODO EFF-MIGRATION create dedicated Impure type
-        case "Impure" => Type.Complement(Type.Pure(tree.loc), tree.loc).toSuccess
+        case "Impure" => Validation.success(Type.Complement(Type.Pure(tree.loc), tree.loc))
         case other => throw InternalCompilerException(s"'$other' used as Type.Constant", tree.loc)
       }
     }
@@ -2337,7 +2331,7 @@ object Weeder2 {
       text(tree) match {
         case head :: rest =>
           val fqn = (List(head.stripPrefix("##")) ++ rest).mkString("")
-          Type.Native(fqn, tree.loc).toSuccess
+          Validation.success(Type.Native(fqn, tree.loc))
         case Nil => throw InternalCompilerException("Parser passed empty Type.Native", tree.loc)
       }
     }
@@ -2384,7 +2378,7 @@ object Weeder2 {
     def pickArguments(tree: Tree)(implicit s: State): Validation[List[Type], CompilationMessage] = {
       tryPick(TreeKind.Type.Arguments, tree.children)
         .map(argTree => traverse(pickAll(TreeKind.Argument, argTree.children))(pickType))
-        .getOrElse(List.empty.toSuccess)
+        .getOrElse(Validation.success(List.empty))
     }
 
     def pickDerivations(tree: Tree)(implicit s: State): Validation[Derivations, CompilationMessage] = {
@@ -2392,14 +2386,14 @@ object Weeder2 {
       val loc = maybeDerivations.map(_.loc).getOrElse(SourceLocation.Unknown)
       val derivations = maybeDerivations
         .map(tree => traverse(pickAll(TreeKind.QName, tree.children))(visitQName))
-        .getOrElse(List.empty.toSuccess)
+        .getOrElse(Validation.success(List.empty))
 
       mapN(derivations)(Derivations(_, loc))
     }
 
     def pickParameters(tree: Tree)(implicit s: State): Validation[TypeParams, CompilationMessage] = {
       tryPick(TreeKind.TypeParameters, tree.children) match {
-        case None => TypeParams.Elided.toSuccess
+        case None => Validation.success(TypeParams.Elided)
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree.children)
           flatMapN(traverse(parameters)(visitParameter)) {
@@ -2408,9 +2402,9 @@ object Weeder2 {
               val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
               (kinded, unkinded) match {
                 // Only unkinded type parameters
-                case (Nil, _ :: _) => TypeParams.Unkinded(unkinded).toSuccess
+                case (Nil, _ :: _) => Validation.success(TypeParams.Unkinded(unkinded))
                 // Only kinded type parameters
-                case (_ :: _, Nil) => TypeParams.Kinded(kinded).toSuccess
+                case (_ :: _, Nil) => Validation.success(TypeParams.Kinded(kinded))
                 // Some kinded and some unkinded type parameters. We recover by kinding the unkinded ones as Ambiguous.
                 case (_ :: _, _ :: _) =>
                   val syntheticallyKinded = tparams.map {
@@ -2427,7 +2421,7 @@ object Weeder2 {
 
     def pickKindedParameters(tree: Tree)(implicit s: State): Validation[KindedTypeParams, CompilationMessage] = {
       tryPick(TreeKind.TypeParameters, tree.children) match {
-        case None => TypeParams.Elided.toSuccess
+        case None => Validation.success(TypeParams.Elided)
         case Some(tparamsTree) =>
           val parameters = pickAll(TreeKind.Parameter, tparamsTree.children)
           flatMapN(traverse(parameters)(visitParameter)) {
@@ -2436,7 +2430,7 @@ object Weeder2 {
               val unkinded = tparams.collect { case t: TypeParam.Unkinded => t }
               (kinded, unkinded) match {
                 // Only kinded type parameters
-                case (_ :: _, Nil) => TypeParams.Kinded(kinded).toSuccess
+                case (_ :: _, Nil) => Validation.success(TypeParams.Kinded(kinded))
                 // Some kinded and some unkinded type parameters. We recover by kinding the unkinded ones as Ambiguous.
                 case (_, _ :: _) =>
                   val errors = unkinded.map {
@@ -2478,7 +2472,7 @@ object Weeder2 {
         .map(withClauseTree => {
           val constraints = pickAll(TreeKind.Type.Constraint, withClauseTree.children)
           traverse(constraints)(visitConstraint)
-        }).getOrElse(List.empty.toSuccess)
+        }).getOrElse(Validation.success(List.empty))
     }
 
     private def visitConstraint(tree: Tree)(implicit s: State): Validation[TypeConstraint, CompilationMessage] = {
@@ -2494,12 +2488,7 @@ object Weeder2 {
     def tryPickKind(tree: Tree)(implicit s: State): Option[Kind] = {
       tryPick(TreeKind.Kind, tree.children).flatMap(
         kindTree => {
-          val ident = pickNameIdent(kindTree) match {
-            case Success(t) => Some(t)
-            case SoftFailure(t, _) => Some(t) // TODO: This should maybe result in None instead
-            case Failure(_) => None
-          }
-
+          val ident = pickNameIdent(kindTree).toHardResult.toOption
           ident.map(ident => {
             val k = Kind.Ambiguous(Name.mkQName(ident), ident.loc)
             tryPickKind(kindTree)
@@ -2513,7 +2502,7 @@ object Weeder2 {
   private object JvmOp {
     def pickQNameIdents(tree: Tree)(implicit s: State): Validation[List[String], CompilationMessage] = {
       flatMapN(pick(TreeKind.QName, tree.children)) {
-        qname => mapN(traverse(pickAll(TreeKind.Ident, qname.children))(t => text(t).toSuccess))(_.flatten)
+        qname => mapN(traverse(pickAll(TreeKind.Ident, qname.children))(t => Validation.success(text(t))))(_.flatten)
       }
     }
 
@@ -2623,24 +2612,28 @@ object Weeder2 {
   ////////// HELPERS //////////////////
   private def tokenToIdent(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
     tree.children.headOption match {
-      case Some(Child.Token(token)) => Name.Ident(
+      case Some(Child.Token(token)) => Validation.success(Name.Ident(
         token.mkSourcePosition(s.src, Some(s.parserInput)),
         token.text,
         token.mkSourcePositionEnd(s.src, Some(s.parserInput))
-      ).toSuccess
+      ))
       case _ => failWith(s"expected first child of '${tree.kind}' to be Child.Token")
     }
   }
 
   private def tokenToJavaName(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
     tree.children.headOption match {
-      case Some(Child.Token(token)) => Name.Ident(
+      case Some(Child.Token(token)) => Validation.success(Name.Ident(
         token.mkSourcePosition(s.src, Some(s.parserInput)),
         token.text,
         token.mkSourcePositionEnd(s.src, Some(s.parserInput))
-      ).toSuccess
+      ))
       case _ => failWith(s"expected first child of '${tree.kind}' to be Child.Token")
     }
+  }
+
+  private def javaQnameToFqn(qname: Name.QName): String = {
+    (qname.namespace.idents.map(_.name.stripPrefix("##")) :+ qname.ident.name).mkString(".")
   }
 
   /**
@@ -2702,7 +2695,7 @@ object Weeder2 {
   // A helper that picks out the first tree of a specific kind from a list of children
   private def pick(kind: TreeKind, children: Array[Child]): Validation[Tree, CompilationMessage] = {
     tryPick(kind, children)
-      .map(_.toSuccess)
+      .map(Validation.success(_))
       .getOrElse(failWith(s"expected to find at least one '$kind'"))
   }
 
@@ -2738,11 +2731,11 @@ object Weeder2 {
   }
 
   private def failWith[T](message: String, loc: SourceLocation = SourceLocation.Unknown): Validation[T, CompilationMessage] = {
-    Validation.Failure(LazyList(Parse2Error.DevErr(loc, message)))
+    Validation.HardFailure(Chain(Parse2Error.DevErr(loc, message)))
   }
 
   private def softFailWith[T](result: T): Validation[T, CompilationMessage] = {
-    Validation.SoftFailure(result, LazyList())
+    Validation.SoftFailure(result, Chain())
   }
 
   /**

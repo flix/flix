@@ -191,13 +191,13 @@ object UnstructuredTree {
 
       case object Try extends Expr
 
-      case object TryHandler extends Expr
+      case object TryCatchBody extends Expr
 
-      case object TryHandlerRule extends Expr
+      case object TryCatchRule extends Expr
 
-      case object Catch extends Expr
+      case object TryWithBody extends Expr
 
-      case object CatchRule extends Expr
+      case object TryWithRule extends Expr
 
       case object Foreach extends Expr
 
