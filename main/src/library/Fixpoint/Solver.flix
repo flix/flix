@@ -141,15 +141,7 @@ mod Fixpoint.Solver {
         let s = Set.foldLeft(f, Map.empty(), predSyms);
 
         // Apply the computed substitution to the Datalog program `d`.
-        let r = substitute(d, s);
-
-        // Debugging
-        // println(s);
-        // println(d);
-        // println(r)
-
-        // Return the result.
-        r
+        substitute(d, s)
     }
 
     ///
