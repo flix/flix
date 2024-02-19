@@ -53,7 +53,7 @@ mod BigInt {
     /// Returns the remainder of `x / n`.
     /// The result can be negative.
     ///
-    /// See also `BigInt.mod`.
+    /// See also `BigInt.modulo`.
     ///
     pub def remainder(x: BigInt, n: BigInt): BigInt =
         import java.math.BigInteger.remainder(BigInt): BigInt \ {};

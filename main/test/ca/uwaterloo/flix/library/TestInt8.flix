@@ -107,22 +107,22 @@ mod TestInt8 {
     // mod                                                                     //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def mod01(): Bool = (12i8 `Int8.mod` 2i8) == 0i8
+    def mod01(): Bool = (12i8 `Int8.modulo` 2i8) == 0i8
 
     @test
-    def mod02(): Bool = (12i8 `Int8.mod` 5i8) == 2i8
+    def mod02(): Bool = (12i8 `Int8.modulo` 5i8) == 2i8
 
     @test
-    def mod03(): Bool = (-12i8 `Int8.mod` 5i8) == 3i8
+    def mod03(): Bool = (-12i8 `Int8.modulo` 5i8) == 3i8
 
     @test
-    def mod04(): Bool = (12i8 `Int8.mod` -5i8) == -3i8
+    def mod04(): Bool = (12i8 `Int8.modulo` -5i8) == -3i8
 
     @test
-    def mod05(): Bool = (-12i8 `Int8.mod` -5i8) == -2i8
+    def mod05(): Bool = (-12i8 `Int8.modulo` -5i8) == -2i8
 
     @test
-    def mod06(): Bool = (1i8 `Int8.mod` 0i8) == 0i8
+    def mod06(): Bool = (1i8 `Int8.modulo` 0i8) == 0i8
 
     /////////////////////////////////////////////////////////////////////////////
     // rem                                                                     //

@@ -73,7 +73,7 @@ mod Int8 {
     /// Returns the remainder of `x / n`.
     /// The result can be negative.
     ///
-    /// See also `Int8.mod`.
+    /// See also `Int8.modulo`.
     ///
     pub def remainder(x: Int8, n: Int8): Int8 =
         if (n == 0i8)

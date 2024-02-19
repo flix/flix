@@ -73,7 +73,7 @@ mod Int64 {
     /// Returns the remainder of `x / n`.
     /// The result can be negative.
     ///
-    /// See also `Int64.mod`.
+    /// See also `Int64.modulo`.
     ///
     pub def remainder(x: Int64, n: Int64): Int64 =
         if (n == 0i64)

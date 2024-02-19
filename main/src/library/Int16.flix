@@ -73,7 +73,7 @@ mod Int16 {
     /// Returns the remainder of `x / n`.
     /// The result can be negative.
     ///
-    /// See also `Int16.mod`.
+    /// See also `Int16.modulo`.
     ///
     pub def remainder(x: Int16, n: Int16): Int16 =
         if (n == 0i16)

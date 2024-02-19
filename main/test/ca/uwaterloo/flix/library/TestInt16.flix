@@ -107,22 +107,22 @@ mod TestInt16 {
     // mod                                                                     //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def mod01(): Bool = (12000i16 `Int16.mod` 2000i16) == 0i16
+    def mod01(): Bool = (12000i16 `Int16.modulo` 2000i16) == 0i16
 
     @test
-    def mod02(): Bool = (12000i16 `Int16.mod` 5000i16) == 2000i16
+    def mod02(): Bool = (12000i16 `Int16.modulo` 5000i16) == 2000i16
 
     @test
-    def mod03(): Bool = (-12000i16 `Int16.mod` 5000i16) == 3000i16
+    def mod03(): Bool = (-12000i16 `Int16.modulo` 5000i16) == 3000i16
 
     @test
-    def mod04(): Bool = (12000i16 `Int16.mod` -5000i16) == -3000i16
+    def mod04(): Bool = (12000i16 `Int16.modulo` -5000i16) == -3000i16
 
     @test
-    def mod05(): Bool = (-12000i16 `Int16.mod` -5000i16) == -2000i16
+    def mod05(): Bool = (-12000i16 `Int16.modulo` -5000i16) == -2000i16
 
     @test
-    def mod06(): Bool = (1i16 `Int16.mod` 0i16) == 0i16
+    def mod06(): Bool = (1i16 `Int16.modulo` 0i16) == 0i16
 
     /////////////////////////////////////////////////////////////////////////////
     // rem                                                                     //
