@@ -31,7 +31,7 @@ object EffUnification2 {
     * Note: A type in `l` must not contain any associated effects.
     */
   def unifyAll(l: List[(Type, Type)], renv0: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-    // Case 1: If the list is empty we can return immediately.
+    // If the list is empty we can return immediately.
     if (l.isEmpty) {
       return Result.Ok(Substitution.empty)
     }
@@ -50,7 +50,9 @@ object EffUnification2 {
     }
     implicit val bimap: Bimap[Type.Var, Int] = Bimap(forward, backward)
 
-    var currentEqns: List[Equation] = ??? // TODO
+    var currentEqns: List[Equation] = l.map {
+      case (tpe1, tpe2) => Equation(fromType(tpe1), fromType(tpe2))
+    }
     var currentSubst: LocalSubstitution = LocalSubstitution.empty
 
     try {
