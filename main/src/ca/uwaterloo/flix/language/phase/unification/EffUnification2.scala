@@ -21,14 +21,15 @@ import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.collection.immutable.SortedSet
+import scala.collection.mutable
 
 object EffUnification2 {
 
   /**
-   * Returns the most general unifier of the all the pairwise unification problems in `l`.
-   *
-   * Note: A type in `l` must not contain any associated effects.
-   */
+    * Returns the most general unifier of the all the pairwise unification problems in `l`.
+    *
+    * Note: A type in `l` must not contain any associated effects.
+    */
   def unifyAll(l: List[(Type, Type)], renv0: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // Case 1: If the list is empty we can return immediately.
     if (l.isEmpty) {
@@ -40,7 +41,7 @@ object EffUnification2 {
     var eqns: List[Equation] = Nil
     var s: Substitution = Substitution.empty
 
-    while(eqns.nonEmpty) {
+    while (eqns.nonEmpty) {
 
       // Discord trivial
       // Fail on conflict.
@@ -73,8 +74,8 @@ object EffUnification2 {
     case object Trivial extends Classification
 
     /**
-     * An equation of the form `x = true`, `x = false`, and their mirrored versions.
-     */
+      * An equation of the form `x = true`, `x = false`, and their mirrored versions.
+      */
     case object Ground extends Classification
 
   }
@@ -131,18 +132,100 @@ object EffUnification2 {
       assert(ts.length >= 2)
     }
 
-    final def mkNot(t: Term): Term = ???
+    final def mkNot(t: Term): Term = t match {
+      case True => False
+      case False => True
+      case Not(t) => t
+    }
 
-    final def substitute(f: Term, m: Bimap[Int, Int]): Term = f match {
-      case True => True
-      case False => False
-      case Var(x) => m.getForward(x) match {
-        case None => throw InternalCompilerException(s"Unexpected unbound variable: 'x$x'.", SourceLocation.Unknown)
-        case Some(y) => Var(y)
+    final def mkAnd(x: Term, y: Term): Term = (x, y) match {
+      case (False, _) => False
+      case (_, False) => False
+      case (True, _) => y
+      case (_, True) => y
+      case _ => mkAnd(List(x, y))
+    }
+
+    final def mkOr(x: Term, y: Term): Term = (x, y) match {
+      case (True, _) => True
+      case (_, True) => True
+      case (False, _) => y
+      case (_, False) => x
+      case _ => mkOr(List(x, y))
+    }
+
+    final def mkAnd(ts: List[Term]): Term = {
+      val varTerms = mutable.Set.empty[Term]
+      val nonVarTerms = mutable.ListBuffer.empty[Term]
+      for (t <- ts) {
+        t match {
+          case True => // nop
+          case False => return False
+          case x@Term.Var(_) => varTerms += x
+          case And(ts0) =>
+            for (t0 <- ts0) {
+              t0 match {
+                case True => // nop
+                case False => return False
+                case x@Term.Var(_) => varTerms += x
+                case _ => nonVarTerms += t
+              }
+            }
+          case _ => nonVarTerms += t
+        }
       }
-      case Not(t) => mkNot(substitute(t, m))
-      case And(ts) => ???
-      case Or(ts) => ???
+
+      varTerms.toList ++ nonVarTerms.toList match {
+        case Nil => True
+        case x :: Nil => x
+        case xs => And(xs)
+      }
+    }
+
+    final def mkOr(ts: List[Term]): Term = {
+      val varTerms = mutable.Set.empty[Term]
+      val nonVarTerms = mutable.ListBuffer.empty[Term]
+      for (t <- ts) {
+        t match {
+          case True => return False
+          case False => // nop
+          case x@Term.Var(_) => varTerms += x
+          case Or(ts0) =>
+            for (t0 <- ts0) {
+              t0 match {
+                case True => return True
+                case False => // nop
+                case x@Term.Var(_) => varTerms += x
+                case _ => nonVarTerms += t
+              }
+            }
+          case _ => nonVarTerms += t
+        }
+      }
+
+      varTerms.toList ++ nonVarTerms.toList match {
+        case Nil => False
+        case x :: Nil => x
+        case xs => And(xs)
+      }
+    }
+  }
+
+  private object Substitution {
+    val empty: Substitution = Substitution(Map.empty)
+  }
+
+  private case class Substitution(m: Map[Int, Term]) {
+    def apply(t: Term): Term = t match {
+      case Term.True => Term.True
+      case Term.False => Term.False
+      case Term.Var(x) => m.get(x) match {
+        case None => Term.Var(x)
+        case Some(t0) => t0
+      }
+      case Term.Not(t) => Term.mkNot(this.apply(t))
+      case Term.And(ts) => Term.mkAnd(ts.map(this.apply))
+      case Term.Or(ts) => Term.mkOr(ts.map(this.apply))
     }
   }
 
