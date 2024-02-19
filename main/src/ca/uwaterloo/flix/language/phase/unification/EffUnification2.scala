@@ -50,20 +50,16 @@ object EffUnification2 {
     }
     val m = Bimap(forward, backward)
 
-
-    var eqns: List[Equation] = Nil
-    var s: LocalSubstitution = LocalSubstitution.empty
+    var currentEqns: List[Equation] = ??? // TODO
+    var currentSubst: LocalSubstitution = LocalSubstitution.empty
 
     try {
-      while (eqns.nonEmpty) {
+      val (nextEqns, nextSubst) = unitPropagate(currentEqns, currentSubst)
+      currentSubst = nextSubst
+      currentEqns = nextEqns
 
-        // Discord trivial
-        // Fail on conflict.
-        // Find unit propagation and apply them one a time.
-
-      }
-
-      ??? // TODO
+      // TODO: Bool unif the rest.
+      ???
 
     } catch {
       case ex: InternalFailure => Result.Err(UnificationError.MismatchedEffects(???, ???))
@@ -124,6 +120,8 @@ object EffUnification2 {
   }
 
   private case class Equation(t1: Term, t2: Term)
+
+
 
   private def booleanUnification(t1: Term, t2: Term, renv: Set[Int])(implicit flix: Flix): Option[LocalSubstitution] = {
     // The boolean expression we want to show is false.
