@@ -101,15 +101,6 @@ mod ShortestPath {
         case Path(xs) => Path(z :: xs)
     }
 
-    ///
-    /// Returns the index of `a` in the `Path` `p`.
-    /// Note that a `Path` is sorted in descending order.
-    ///
-    pub def indexOf(x: a, p: Path[a]): Option[Int32] with Eq[a] = match p {
-        case Bot      => None
-        case Path(xs) => List.indexOf(x, xs)
-    }
-
     //////////////////////////////////////////
     // Tests                                //
     //////////////////////////////////////////
