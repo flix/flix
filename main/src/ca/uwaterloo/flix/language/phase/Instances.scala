@@ -101,6 +101,11 @@ object Instances {
       case _: Type.Cst => Nil
       case _: Type.Var => List(InstanceError.ComplexInstance(tpe, clazz.sym, clazz.loc))
       case _: Type.Apply =>
+        // ensure that the head is a concrete type
+        val headErrs = tpe.typeConstructor match {
+          case None => List(InstanceError.ComplexInstance(tpe, clazz.sym, clazz.loc))
+          case Some(_) => Nil
+        }
         val (_, errs0) = tpe.typeArguments.foldLeft((List.empty[Type.Var], List.empty[InstanceError])) {
           // Case 1: Type variable
           case ((seen, errs), tvar: Type.Var) =>
@@ -113,7 +118,8 @@ object Instances {
           // Case 2: Non-variable. Error.
           case ((seen, errs), _) => (seen, InstanceError.ComplexInstance(tpe, clazz.sym, clazz.loc) :: errs)
         }
-        errs0
+        headErrs ::: errs0
+
       case Type.Alias(alias, _, _, _) => List(InstanceError.IllegalTypeAliasInstance(alias.sym, clazz.sym, clazz.loc))
       case Type.AssocType(assoc, _, _, loc) => List(InstanceError.IllegalAssocTypeInstance(assoc.sym, clazz.sym, loc))
     }
