@@ -60,6 +60,28 @@ mod Int64 {
     }
 
     ///
+    /// Returns the Euclidean modulo of `x` and `n`.
+    /// The result is always non-negative.
+    ///
+    pub def mod(x: Int64, n: Int64): Int64 =
+        if (n == 0i64)
+            0i64
+        else
+            $INT64_REM$($INT64_REM$(x, n) + n, n)
+
+    ///
+    /// Returns the remainder of `x / n`.
+    /// The result can be negative.
+    ///
+    /// See also `Int64.mod`.
+    ///
+    pub def rem(x: Int64, n: Int64): Int64 =
+        if (n == 0i64)
+            0i64
+        else
+            $INT64_REM$(x, n)
+
+    ///
     /// Returns the distance between `x` and `y`.
     /// If this distance exceeds maxValue(), -1 is returned.
     ///

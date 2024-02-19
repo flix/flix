@@ -60,6 +60,28 @@ mod Int16 {
     }
 
     ///
+    /// Returns the Euclidean modulo of `x` and `n`.
+    /// The result is always non-negative.
+    ///
+    pub def mod(x: Int16, n: Int16): Int16 =
+        if (n == 0i16)
+            0i16
+        else
+            $INT16_REM$($INT16_REM$(x, n) + n, n)
+
+    ///
+    /// Returns the remainder of `x / n`.
+    /// The result can be negative.
+    ///
+    /// See also `Int16.mod`.
+    ///
+    pub def rem(x: Int16, n: Int16): Int16 =
+        if (n == 0i16)
+            0i16
+        else
+            $INT16_REM$(x, n)
+
+    ///
     /// Returns the distance between `x` and `y`.
     /// If this distance exceeds maxValue(), -1 is returned.
     ///
