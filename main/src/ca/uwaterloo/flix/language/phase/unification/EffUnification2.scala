@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Type}
+import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.collection.immutable.SortedSet
@@ -35,7 +36,20 @@ object EffUnification2 {
       return Result.Ok(Substitution.empty)
     }
 
-    // Case 2: We translate every (Type, Type) pair to a pair of Boolean effect formulas.
+    val allVars = mutable.Set.empty[Type.Var]
+    for ((t1, t2) <- l) {
+      allVars += t1.typeVars
+      allVars += t2.typeVars
+    }
+
+    val forward = allVars.foldLeft(Map.empty[Type.Var, Int]) {
+      case (macc, tvar) => macc + (tvar -> tvar.sym.id)
+    }
+    val backward = allVars.foldLeft(Map.empty[Int, Type.Var]) {
+      case (macc, tvar) => macc + (tvar.sym.id -> tvar)
+    }
+    val m = Bimap(forward, backward)
+
 
     var eqns: List[Equation] = Nil
     var s: Substitution = Substitution.empty
@@ -54,6 +68,7 @@ object EffUnification2 {
           }
         }
       }
+
       ??? // TODO
 
     } catch {
@@ -61,10 +76,13 @@ object EffUnification2 {
     }
   }
 
+  private def toType(t: Term): Type = ???
+
+  private def fromType(t: Type): Term = ???
 
   private case class InternalFailure(x: Term, y: Term) extends RuntimeException
 
-
+  //private def unitPropagate()
 
   private def extendSubstWithGround(eqns: List[Equation], subst: LocalSubstitution): LocalSubstitution = eqns match {
     case Nil => subst
