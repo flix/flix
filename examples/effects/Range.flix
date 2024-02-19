@@ -10,6 +10,8 @@
 /// - Handling the effect at the call site
 /// - Using the continuation to transfer control back to the callee
 ///
+/// Inspired by the Iterator benchmark from Effekt Lang
+///
 pub def main(): Unit \ IO =
     let sum = EffectExamples.Range.sumTo(42);
     println("The sum from 0..42 is: ${sum}")
