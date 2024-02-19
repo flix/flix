@@ -61,12 +61,26 @@ object EffUnification2 {
     }
   }
 
-  private case class InternalFailure(eq: Equation) extends RuntimeException
 
-  private def extendSubstWithGround(eqn: Equation, subst: Substitution): Substitution = eqn match {
-    case Equation(Term.Var(x), t2) =>
-      // TODO: Lookup in subst, extend if not found. Otherwise throw.
-      ???
+  private case class InternalFailure(x: Term, y: Term) extends RuntimeException
+
+
+
+  private def extendSubstWithGround(eqns: List[Equation], subst: LocalSubstitution): LocalSubstitution = eqns match {
+    case Nil => subst
+    case x :: xs => extendSubstWithGround(xs, extendSubstWithSingleGround(x, subst))
+  }
+
+  private def extendSubstWithSingleGround(eq: Equation, subst: LocalSubstitution): LocalSubstitution = eq match {
+    case Equation(Term.Var(x), t0) => subst.m.get(x) match {
+      case None => subst.extended(x, t0)
+      case Some(t1) => if (t0 == t1) subst else throw InternalFailure(t0, t1)
+    }
+    case Equation(t0, Term.Var(x)) => subst.m.get(x) match {
+      case None => subst.extended(x, t0)
+      case Some(t1) => if (t0 == t1) subst else throw InternalFailure(t0, t1)
+    }
+    case _ => throw InternalCompilerException(s"Unexpected equation: '$eq'.", SourceLocation.Unknown)
   }
 
   private case class Equation(t1: Term, t2: Term)
@@ -141,6 +155,7 @@ object EffUnification2 {
       case True => False
       case False => True
       case Not(t) => t
+      case _ => Not(t)
     }
 
     final def mkAnd(x: Term, y: Term): Term = (x, y) match {
@@ -232,6 +247,12 @@ object EffUnification2 {
       case Term.And(ts) => Term.mkAnd(ts.map(this.apply))
       case Term.Or(ts) => Term.mkOr(ts.map(this.apply))
     }
+
+    def apply(eq: Equation): Equation = eq match {
+      case Equation(t1, t2) => Equation(apply(t1), apply(t2))
+    }
+
+    def extended(k: Int, t: Term): LocalSubstitution = LocalSubstitution(m + (k -> t))
   }
 
 }
