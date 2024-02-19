@@ -131,7 +131,7 @@ mod Int64 {
     ///
     pub def bitCount(x: Int64): Int32 = {
         if      (x == 0i64)            0
-        else if (x `rem` 2i64 != 0i64) bitCount(logicalRightShift(dist = 1, x)) + 1
+        else if (x `remainder` 2i64 != 0i64) bitCount(logicalRightShift(dist = 1, x)) + 1
         else                           bitCount(logicalRightShift(dist = 1, x))
     }
 
@@ -247,7 +247,7 @@ mod Int64 {
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit).
     ///
     pub def getBit(pos: {pos = Int32}, x: Int64): Int32 =
-        if (rightShift(x, pos.pos) `rem` 2i64 == 0i64) 0 else 1
+        if (rightShift(x, pos.pos) `remainder` 2i64 == 0i64) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `position` set (to 1).

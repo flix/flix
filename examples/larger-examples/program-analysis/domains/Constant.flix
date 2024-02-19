@@ -145,7 +145,7 @@ mod Domain.Constant {
     ///
     /// Over-approximates integer `modulus`.
     ///
-//    #safe2((x, y) -> x `rem` y)
+//    #safe2((x, y) -> x `remainder` y)
 //    #strict2 #monotone2
     pub def modulo(e1: Constant, e2: Constant): Constant =
         match (e1, e2) {
