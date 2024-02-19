@@ -726,7 +726,7 @@ mod Fixpoint.Solver {
                 }
                 case _ => Comparison.LessThan
             };
-            Map.rangeQueryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
+            Map.rangeQueryWith(qquery, ramSym -> rel -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
                     Map.forEach((tuple, _) -> MutList.push!(f(Vector.toList(tuple)), pFacts), rel)
                 case Denotation.Latticenal(_) =>
