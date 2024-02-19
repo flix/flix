@@ -593,7 +593,7 @@ mod Vector {
     ///
     def rotateLeftHelper(n: Int32, v: Vector[a]): Vector[a] =
         let len = length(v);
-        let f = ix -> {let readIx = Int32.mod(ix + n, len); get(readIx, v)};
+        let f = ix -> {let readIx = Int32.modulo(ix + n, len); get(readIx, v)};
         init(f, len)
 
 
@@ -618,7 +618,7 @@ mod Vector {
     ///
     def rotateRightHelper(n: Int32, v: Vector[a]): Vector[a] =
         let len = length(v);
-        let f = ix -> {let readIx = Int32.mod(ix - n, len); get(readIx, v)};
+        let f = ix -> {let readIx = Int32.modulo(ix - n, len); get(readIx, v)};
         init(f, len)
 
     ///

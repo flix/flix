@@ -73,7 +73,7 @@ mod Int32 {
     /// Returns the remainder of `x / n`.
     /// The result can be negative.
     ///
-    /// See also `Int32.mod`.
+    /// See also `Int32.modulo`.
     ///
     pub def remainder(x: Int32, n: Int32): Int32 =
         if (n == 0i32)

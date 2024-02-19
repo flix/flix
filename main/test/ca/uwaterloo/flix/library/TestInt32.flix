@@ -107,40 +107,40 @@ mod TestInt32 {
     // mod                                                                     //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def mod01(): Bool = (1200000 `Int32.mod` 200000) == 0
+    def mod01(): Bool = (1200000 `Int32.modulo` 200000) == 0
 
     @test
-    def mod02(): Bool = (1200000 `Int32.mod` 500000) == 200000
+    def mod02(): Bool = (1200000 `Int32.modulo` 500000) == 200000
 
     @test
-    def mod03(): Bool = (-1200000 `Int32.mod` 500000) == 300000
+    def mod03(): Bool = (-1200000 `Int32.modulo` 500000) == 300000
 
     @test
-    def mod04(): Bool = (1200000 `Int32.mod` -500000) == -300000
+    def mod04(): Bool = (1200000 `Int32.modulo` -500000) == -300000
 
     @test
-    def mod05(): Bool = (-1200000 `Int32.mod` -500000) == -200000
+    def mod05(): Bool = (-1200000 `Int32.modulo` -500000) == -200000
 
     @test
-    def mod06(): Bool = (1200000i32 `Int32.mod` 200000i32) == 0i32
+    def mod06(): Bool = (1200000i32 `Int32.modulo` 200000i32) == 0i32
 
     @test
-    def mod07(): Bool = (1200000i32 `Int32.mod` 500000i32) == 200000i32
+    def mod07(): Bool = (1200000i32 `Int32.modulo` 500000i32) == 200000i32
 
     @test
-    def mod08(): Bool = (-1200000i32 `Int32.mod` 500000i32) == 300000i32
+    def mod08(): Bool = (-1200000i32 `Int32.modulo` 500000i32) == 300000i32
 
     @test
-    def mod09(): Bool = (1200000i32 `Int32.mod` -500000i32) == -300000i32
+    def mod09(): Bool = (1200000i32 `Int32.modulo` -500000i32) == -300000i32
 
     @test
-    def mod10(): Bool = (-1200000i32 `Int32.mod` -500000i32) == -200000i32
+    def mod10(): Bool = (-1200000i32 `Int32.modulo` -500000i32) == -200000i32
 
     @test
-    def mod11(): Bool = (1 `Int32.mod` 0) == 0
+    def mod11(): Bool = (1 `Int32.modulo` 0) == 0
 
     @test
-    def mod12(): Bool = (1i32 `Int32.mod` 0i32) == 0i32
+    def mod12(): Bool = (1i32 `Int32.modulo` 0i32) == 0i32
 
     /////////////////////////////////////////////////////////////////////////////
     // rem                                                                     //
