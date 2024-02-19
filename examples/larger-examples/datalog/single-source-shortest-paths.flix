@@ -87,7 +87,6 @@ mod ShortestPath {
 
     }
 
-
     ///
     /// Returns a `Path` from `x` to `y`.
     ///
