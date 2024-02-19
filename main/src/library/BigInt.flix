@@ -42,7 +42,7 @@ mod BigInt {
     /// Returns the Euclidean modulo of `x` and `n`.
     /// The result is always non-negative.
     ///
-    pub def mod(x: BigInt, n: BigInt): BigInt =
+    pub def modulo(x: BigInt, n: BigInt): BigInt =
         import java.math.BigInteger.remainder(BigInt): BigInt \ {};
         if (n == 0ii)
             0ii
@@ -55,7 +55,7 @@ mod BigInt {
     ///
     /// See also `BigInt.mod`.
     ///
-    pub def rem(x: BigInt, n: BigInt): BigInt =
+    pub def remainder(x: BigInt, n: BigInt): BigInt =
         import java.math.BigInteger.remainder(BigInt): BigInt \ {};
         if (n == 0ii)
             0ii

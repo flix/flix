@@ -63,7 +63,7 @@ mod Int32 {
     /// Returns the Euclidean modulo of `x` and `n`.
     /// The result is always non-negative.
     ///
-    pub def mod(x: Int32, n: Int32): Int32 =
+    pub def modulo(x: Int32, n: Int32): Int32 =
         if (n == 0i32)
             0i32
         else
@@ -75,7 +75,7 @@ mod Int32 {
     ///
     /// See also `Int32.mod`.
     ///
-    pub def rem(x: Int32, n: Int32): Int32 =
+    pub def remainder(x: Int32, n: Int32): Int32 =
         if (n == 0i32)
             0i32
         else

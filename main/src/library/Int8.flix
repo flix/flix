@@ -63,7 +63,7 @@ mod Int8 {
     /// Returns the Euclidean modulo of `x` and `n`.
     /// The result is always non-negative.
     ///
-    pub def mod(x: Int8, n: Int8): Int8 =
+    pub def modulo(x: Int8, n: Int8): Int8 =
         if (n == 0i8)
             0i8
         else
@@ -75,7 +75,7 @@ mod Int8 {
     ///
     /// See also `Int8.mod`.
     ///
-    pub def rem(x: Int8, n: Int8): Int8 =
+    pub def remainder(x: Int8, n: Int8): Int8 =
         if (n == 0i8)
             0i8
         else
