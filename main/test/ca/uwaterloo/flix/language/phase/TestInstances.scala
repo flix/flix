@@ -175,6 +175,17 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.ComplexInstance](result)
   }
 
+  test("Test.ComplexInstanceType.08") {
+    val input =
+      """
+        |class C[a]
+        |
+        |instance C[m[a]]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[InstanceError.ComplexInstance](result)
+  }
+
   test("Test.DuplicateTypeParameter.01") {
     val input =
       """
