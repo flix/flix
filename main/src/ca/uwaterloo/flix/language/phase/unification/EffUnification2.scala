@@ -48,7 +48,7 @@ object EffUnification2 {
     val backward = allVars.foldLeft(Map.empty[Int, Type.Var]) {
       case (macc, tvar) => macc + (tvar.sym.id -> tvar)
     }
-    val bimap = Bimap(forward, backward)
+    implicit val bimap: Bimap[Type.Var, Int] = Bimap(forward, backward)
 
     var currentEqns: List[Equation] = ??? // TODO
     var currentSubst: LocalSubstitution = LocalSubstitution.empty
@@ -58,13 +58,15 @@ object EffUnification2 {
       currentSubst = nextSubst
       currentEqns = nextEqns
 
-      // TODO: Bool unif the rest.
-      ???
+      val restSubst = boolUnify(currentEqns, Set.empty)
+      val resultSubst = currentSubst @@ restSubst
 
-      Result.Ok(currentSubst.toSubst(bimap))
-
+      Result.Ok(resultSubst.toSubst(bimap))
     } catch {
-      case ex: InternalFailure => Result.Err(UnificationError.MismatchedEffects(???, ???))
+      case InternalFailure(t1, t2) =>
+        val tpe1 = toType(t1, SourceLocation.Unknown)
+        val tpe2 = toType(t2, SourceLocation.Unknown)
+        Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
     }
   }
 
@@ -123,8 +125,15 @@ object EffUnification2 {
 
   private case class Equation(t1: Term, t2: Term)
 
+  private def boolUnify(l: List[Equation], renv: Set[Int])(implicit flix: Flix): LocalSubstitution = l match {
+    case Nil => LocalSubstitution.empty
+    case Equation(t1, t2) :: xs =>
+      val subst = booleanUnification(t1, t2, renv)
+      val subst1 = boolUnify(xs.map(eq => subst.apply(eq)), renv)
+      subst @@ subst1 // TODO: order?
+  }
 
-  private def booleanUnification(t1: Term, t2: Term, renv: Set[Int])(implicit flix: Flix): Option[LocalSubstitution] = {
+  private def booleanUnification(t1: Term, t2: Term, renv: Set[Int])(implicit flix: Flix): LocalSubstitution = {
     // The boolean expression we want to show is false.
     val query = Term.mkXor(t1, t2)
 
@@ -138,22 +147,18 @@ object EffUnification2 {
     val freeVars = flexibleTypeVars
 
     // Eliminate all variables.
-    try {
-      val subst = successiveVariableElimination(query, freeVars)
+    val subst = successiveVariableElimination(query, freeVars)
 
-      //    if (!subst.isEmpty) {
-      //      val s = subst.toString
-      //      val len = s.length
-      //      if (len > 50) {
-      //        println(s.substring(0, Math.min(len, 300)))
-      //        println()
-      //      }
-      //    }
+    //    if (!subst.isEmpty) {
+    //      val s = subst.toString
+    //      val len = s.length
+    //      if (len > 50) {
+    //        println(s.substring(0, Math.min(len, 300)))
+    //        println()
+    //      }
+    //    }
 
-      Some(subst)
-    } catch {
-      case ex: BoolUnificationException => None
-    }
+    subst
   }
 
   private def successiveVariableElimination(f: Term, flexvs: List[Int])(implicit flix: Flix): LocalSubstitution = flexvs match {
@@ -348,6 +353,8 @@ object EffUnification2 {
         )
       }
     }
+
+    def @@(that: LocalSubstitution): LocalSubstitution = ???
 
     def toSubst(implicit bimap: Bimap[Type.Var, Int]): Substitution = {
       Substitution(m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
