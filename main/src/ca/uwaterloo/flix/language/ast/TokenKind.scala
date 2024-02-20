@@ -201,9 +201,9 @@ object TokenKind {
 
   case object KeywordNull extends TokenKind
 
-  case object KeywordOpen extends TokenKind
+  case object KeywordOpenVariant extends TokenKind
 
-  case object KeywordOpenAs extends TokenKind
+  case object KeywordOpenVariantAs extends TokenKind
 
   case object KeywordOr extends TokenKind
 

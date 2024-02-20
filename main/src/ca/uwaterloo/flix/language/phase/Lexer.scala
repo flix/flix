@@ -423,8 +423,8 @@ object Lexer {
       case _ if isKeyword("new") => TokenKind.KeywordNew
       case _ if isKeyword("not") => TokenKind.KeywordNot
       case _ if isKeyword("null") => TokenKind.KeywordNull
-      case _ if isKeyword("open") => TokenKind.KeywordOpen
-      case _ if isKeyword("open_as") => TokenKind.KeywordOpenAs
+      case _ if isKeyword("open_variant") => TokenKind.KeywordOpenVariant
+      case _ if isKeyword("open_variant_as") => TokenKind.KeywordOpenVariantAs
       case _ if isKeyword("or") => TokenKind.KeywordOr
       case _ if isKeyword("override") => TokenKind.KeywordOverride
       case _ if isKeyword("par") => TokenKind.KeywordPar

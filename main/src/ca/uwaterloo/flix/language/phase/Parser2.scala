@@ -441,7 +441,7 @@ object Parser2 {
   // TODO: std. lib. defines functions named with keywords (IE. def mod(): Int32 = ...). These also pop up in expressions, because they are now passed around and called.
   // TODO: std. lib. has patterns matching keywords (IE. match query { ... }).
   // TODO: This should eventually be removed once a good solution has been agreed upon.
-  private val KEYWORDS_IN_STDLIB = List(TokenKind.KeywordMod, TokenKind.KeywordChoose, TokenKind.PlusPlus, TokenKind.KeywordOpen, TokenKind.KeywordAnd, TokenKind.KeywordOr, TokenKind.KeywordNot, TokenKind.KeywordQuery, TokenKind.KeywordNew, TokenKind.KeywordSolve, TokenKind.KeywordDebug)
+  private val KEYWORDS_IN_STDLIB = List(TokenKind.KeywordMod, TokenKind.KeywordChoose, TokenKind.PlusPlus, TokenKind.KeywordAnd, TokenKind.KeywordOr, TokenKind.KeywordNot, TokenKind.KeywordQuery, TokenKind.KeywordNew, TokenKind.KeywordSolve, TokenKind.KeywordDebug)
   private val KEYWORDS_USED_AS_TYPES_IN_STDLIB = List(TokenKind.KeywordStaticUppercase)
 
   private val NAME_DEFINITION = KEYWORDS_IN_STDLIB ++ List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
@@ -1072,8 +1072,8 @@ object Parser2 {
         case TokenKind.KeywordSpawn => spawn()
         case TokenKind.KeywordPar => parYield()
         case TokenKind.KeywordDo => exprDo()
-        case TokenKind.KeywordOpen => exprOpen()
-        case TokenKind.KeywordOpenAs => openAs()
+        case TokenKind.KeywordOpenVariant => exprOpen()
+        case TokenKind.KeywordOpenVariantAs => openAs()
         case TokenKind.LiteralStringInterpolationL
              | TokenKind.LiteralDebugStringL => interpolatedString()
         case TokenKind.KeywordTypeMatch => typematch()
@@ -1139,17 +1139,17 @@ object Parser2 {
     }
 
     private def exprOpen()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordOpen))
+      assert(at(TokenKind.KeywordOpenVariant))
       val mark = open()
-      expect(TokenKind.KeywordOpen)
+      expect(TokenKind.KeywordOpenVariant)
       name(NAME_QNAME, allowQualified = true)
       close(mark, TreeKind.Expr.Open)
     }
 
     private def openAs()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordOpenAs))
+      assert(at(TokenKind.KeywordOpenVariantAs))
       val mark = open()
-      expect(TokenKind.KeywordOpenAs)
+      expect(TokenKind.KeywordOpenVariantAs)
       name(NAME_QNAME, allowQualified = true)
       expression()
       close(mark, TreeKind.Expr.OpenAs)
