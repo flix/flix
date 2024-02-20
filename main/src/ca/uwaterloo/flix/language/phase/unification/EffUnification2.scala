@@ -26,10 +26,10 @@ import scala.collection.mutable
 object EffUnification2 {
 
   /**
-    * Returns the most general unifier of the all the pairwise unification problems in `l`.
-    *
-    * Note: A type in `l` must not contain any associated effects.
-    */
+   * Returns the most general unifier of the all the pairwise unification problems in `l`.
+   *
+   * Note: A type in `l` must not contain any associated effects.
+   */
   def unifyAll(l: List[(Type, Type)], renv0: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // If the list is empty we can return immediately.
     if (l.isEmpty) {
@@ -53,6 +53,20 @@ object EffUnification2 {
     var currentEqns: List[Equation] = l.map {
       case (tpe1, tpe2) => Equation(fromType(tpe1), fromType(tpe2))
     }
+
+    solveAll(currentEqns, renv0) match {
+      case Result.Ok(subst) =>
+        Result.Ok(subst.toSubst)
+
+      case Result.Err(ex) =>
+        val tpe1 = toType(ex.x, SourceLocation.Unknown)
+        val tpe2 = toType(ex.y, SourceLocation.Unknown)
+        Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
+    }
+  }
+
+  private def solveAll(l: List[Equation], renv0: RigidityEnv)(implicit flix: Flix): Result[LocalSubstitution, InternalFailure] = {
+    var currentEqns = l
     var currentSubst: LocalSubstitution = LocalSubstitution.empty
 
     try {
@@ -63,12 +77,9 @@ object EffUnification2 {
       val restSubst = boolUnify(currentEqns, Set.empty)
       val resultSubst = currentSubst @@ restSubst
 
-      Result.Ok(resultSubst.toSubst(bimap))
+      Result.Ok(resultSubst)
     } catch {
-      case InternalFailure(t1, t2) =>
-        val tpe1 = toType(t1, SourceLocation.Unknown)
-        val tpe2 = toType(t2, SourceLocation.Unknown)
-        Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
+      case ex: InternalFailure => Result.Err(ex)
     }
   }
 
@@ -84,6 +95,7 @@ object EffUnification2 {
   private def fromType(t: Type): Term = ???
 
   private case class InternalFailure(x: Term, y: Term) extends RuntimeException
+
 
   // Saturates all unit clauses.
   private def unitPropagate(eqns: List[Equation], subst0: LocalSubstitution): (List[Equation], LocalSubstitution) = {
@@ -369,10 +381,21 @@ object EffUnification2 {
 
   private def prettyPrint(l: List[Equation]): String = {
     val sb = new StringBuilder()
-    for (Equation(t1, t2) <- l.sortBy(_.size)) {
+    for (Equation(t1, t2) <- l) {
       sb.append(t1.toString)
       sb.append(" ~ ")
       sb.append(t2.toString)
+      sb.append("\n")
+    }
+    sb.toString()
+  }
+
+  private def prettyPrint(s: LocalSubstitution): String = {
+    val sb = new StringBuilder()
+    for ((x, t) <- s.m) {
+      sb.append(x)
+      sb.append(" -> ")
+      sb.append(t)
       sb.append("\n")
     }
     sb.toString()
@@ -424,10 +447,15 @@ object EffUnification2 {
     Var(92761) -> Var(92759),
     Var(92763) -> mkAnd(List(Var(135858), Var(92755), Var(92761))),
     Var(92765) -> mkAnd(List(Var(135855), Var(92763)))
-  ).map({ case (x, y) => Equation(x, y)})
+  ).map({ case (x, y) => Equation(x, y) })
 
   def main(args: Array[String]): Unit = {
+    implicit val flix: Flix = new Flix()
+
     println(prettyPrint(example01()))
+    println()
+    println("-- Solving --")
+    println(prettyPrint(solveAll(example01(), RigidityEnv.empty).get))
   }
 
 
