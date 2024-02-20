@@ -61,7 +61,7 @@ object ParOps {
       val i = idx // Ensure proper scope of i.
       flix.threadPool.execute(() => {
         try {
-        out(i) = f(elm)
+          out(i) = f(elm)
         } catch {
           case ex: Throwable =>
             ex.printStackTrace()
