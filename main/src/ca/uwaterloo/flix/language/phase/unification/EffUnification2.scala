@@ -79,8 +79,8 @@ object EffUnification2 {
       println(format(currentSubst))
 
       println("-- Result of BU -- ")
-      val restSubst = boolUnify(currentEqns, Set.empty)
-      val resultSubst = currentSubst @@ restSubst
+      val restSubst = boolUnifyAll(currentEqns, Set.empty)
+      val resultSubst = currentSubst ++ restSubst
       println(format(resultSubst))
 
       Result.Ok(resultSubst)
@@ -148,15 +148,15 @@ object EffUnification2 {
     def size: Int = t1.size + t2.size
   }
 
-  private def boolUnify(l: List[Equation], renv: Set[Int])(implicit flix: Flix): LocalSubstitution = l match {
+  private def boolUnifyAll(l: List[Equation], renv: Set[Int])(implicit flix: Flix): LocalSubstitution = l match {
     case Nil => LocalSubstitution.empty
     case Equation(t1, t2) :: xs =>
-      val subst = boolUnify(t1, t2, renv)
-      val subst1 = boolUnify(subst(xs), renv)
+      val subst = boolUnifyOne(t1, t2, renv)
+      val subst1 = boolUnifyAll(subst(xs), renv)
       subst @@ subst1 // TODO: order?
   }
 
-  private def boolUnify(t1: Term, t2: Term, renv: Set[Int])(implicit flix: Flix): LocalSubstitution = {
+  private def boolUnifyOne(t1: Term, t2: Term, renv: Set[Int])(implicit flix: Flix): LocalSubstitution = {
     // The boolean expression we want to show is false.
     val query = Term.mkXor(t1, t2)
 
@@ -184,17 +184,17 @@ object EffUnification2 {
     subst
   }
 
-  private def successiveVariableElimination(f: Term, flexvs: List[Int])(implicit flix: Flix): LocalSubstitution = flexvs match {
+  private def successiveVariableElimination(t: Term, flexvs: List[Int])(implicit flix: Flix): LocalSubstitution = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      if (!satisfiable(f))
+      if (!satisfiable(t))
         LocalSubstitution.empty
       else
         throw BoolUnificationException()
 
     case x :: xs =>
-      val t0 = LocalSubstitution.singleton(x, Term.False)(f)
-      val t1 = LocalSubstitution.singleton(x, Term.True)(f)
+      val t0 = LocalSubstitution.singleton(x, Term.False)(t)
+      val t1 = LocalSubstitution.singleton(x, Term.True)(t)
       val se = successiveVariableElimination(Term.mkAnd(t0, t1), xs)
 
       val f1 = Term.mkOr(se(t0), Term.mkAnd(Term.Var(x), Term.mkNot(se(t1))))
@@ -335,7 +335,7 @@ object EffUnification2 {
       val nonVarTerms = mutable.ListBuffer.empty[Term]
       for (t <- ts) {
         t match {
-          case True => return False
+          case True => return True
           case False => // nop
           case x@Term.Var(_) => varTerms += x
           case Or(ts0) =>
@@ -354,7 +354,7 @@ object EffUnification2 {
       varTerms.toList ++ nonVarTerms.toList match {
         case Nil => False
         case x :: Nil => x
-        case xs => And(xs)
+        case xs => Or(xs)
       }
     }
 
