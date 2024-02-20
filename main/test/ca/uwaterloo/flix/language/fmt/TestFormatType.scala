@@ -24,8 +24,6 @@ class TestFormatType extends AnyFunSuite with TestUtils {
 
   private val loc = SourceLocation.Unknown
   private val standardFormat = FormatOptions(
-    ignorePur = false,
-    ignoreEff = false,
     FormatOptions.VarName.NameBased
   )
 
