@@ -506,9 +506,9 @@ class Flix {
   }
 
   /**
-    * Converts a list of compiler error messages to a list of printable messages.
-    * Decides whether or not to append the explanation.
-    */
+   * Converts a list of compiler error messages to a list of printable messages.
+   * Decides whether or not to append the explanation.
+   */
   def mkMessages(errors: Chain[CompilationMessage]): List[String] = {
     if (options.explain)
       errors.toSeq.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
@@ -542,15 +542,15 @@ class Flix {
     val result = for {
       afterReader <- Reader.run(getInputs)
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
-
+      
       // Debugging pipeline
-            afterParser2 <- Parser2.runWithFallback(afterReader, afterLexer, entryPoint, changeSet)
-            afterDesugar = Desugar.run(afterParser2, cachedDesugarAst, changeSet)
+      afterParser2 <- Parser2.runWithFallback(afterReader, afterLexer, entryPoint, changeSet)
+      afterDesugar = Desugar.run(afterParser2, cachedDesugarAst, changeSet)
 
       // TODO: Use these instead
-//      afterParser2 <- Parser2.run(afterLexer)
-//      afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2)
-//      afterDesugar = Desugar.run(afterWeeder2, cachedDesugarAst, changeSet)
+      //      afterParser2 <- Parser2.run(afterLexer)
+      //      afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2)
+      //      afterDesugar = Desugar.run(afterWeeder2, cachedDesugarAst, changeSet)
 
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
@@ -568,6 +568,8 @@ class Flix {
       // Update caches for incremental compilation.
       if (options.incremental) {
         this.cachedLexerTokens = afterLexer
+        this.cachedParserAst = afterParser
+        this.cachedWeederAst = afterWeeder
         this.cachedDesugarAst = afterDesugar
         this.cachedKinderAst = afterKinder
         this.cachedResolverAst = afterResolver
