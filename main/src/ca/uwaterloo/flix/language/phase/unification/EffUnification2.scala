@@ -123,7 +123,9 @@ object EffUnification2 {
 
   // x = true, x = false, or mirrored. + x flexible
   private def isGround(eq: Equation): Boolean = eq match {
-    case Equation(Term.Var(x), Term.True) => true // TODO: Rest
+    case Equation(Term.Var(x), Term.True) => true
+    case Equation(Term.True, Term.Var(x)) => true
+    // TODO: Rest
     case _ => false
   }
 
