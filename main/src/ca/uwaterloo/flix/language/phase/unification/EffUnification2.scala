@@ -86,6 +86,11 @@ object EffUnification2 {
       println(format(currentEqns))
       println(format(currentSubst))
 
+      println("-- Result of Occurrence Analysis and Propagation -- ")
+      val occur = occurrenceInfo(currentEqns) // TODO: Introduce type, but also check in Subst.
+      println(occur)
+
+
       println("-- Result of BU -- ")
       val restSubst = boolUnifyAll(currentEqns, Set.empty)
       val resultSubst = currentSubst ++ restSubst
@@ -176,6 +181,19 @@ object EffUnification2 {
 
   private case class Equation(t1: Term, t2: Term) {
     def size: Int = t1.size + t2.size
+  }
+
+  // TODO: Actually count occurrences.. Note that freeVars uses a set.
+  private def occurrenceInfo(l: List[EffUnification2.Equation]): Map[Int, Int] = {
+    val m = mutable.Map.empty[Int, Int]
+    for (Equation(t1, t2) <- l) {
+      val fvs = t1.freeVars ++ t2.freeVars
+      for (x <- fvs) {
+        val newCount = m.getOrElse(x, 0) + 1
+        m += (x -> newCount)
+      }
+    }
+    m.toMap
   }
 
   private def boolUnifyAll(l: List[Equation], renv: Set[Int])(implicit flix: Flix): LocalSubstitution = l match {
