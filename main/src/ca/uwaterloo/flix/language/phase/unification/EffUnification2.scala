@@ -279,27 +279,27 @@ object EffUnification2 {
       assert(ts.length >= 2)
     }
 
-    final def mkNot(t: Term): Term = t match {
+    final def mkNot(t0: Term): Term = t0 match {
       case True => False
       case False => True
       case Not(t) => t
-      case _ => Not(t)
+      case _ => Not(t0)
     }
 
-    final def mkAnd(x: Term, y: Term): Term = (x, y) match {
+    final def mkAnd(t1: Term, t2: Term): Term = (t1, t2) match {
       case (False, _) => False
       case (_, False) => False
-      case (True, _) => y
-      case (_, True) => y
-      case _ => mkAnd(List(x, y))
+      case (True, _) => t2
+      case (_, True) => t1
+      case _ => mkAnd(List(t1, t2))
     }
 
-    final def mkOr(x: Term, y: Term): Term = (x, y) match {
+    final def mkOr(t1: Term, t2: Term): Term = (t1, t2) match {
       case (True, _) => True
       case (_, True) => True
-      case (False, _) => y
-      case (_, False) => x
-      case _ => mkOr(List(x, y))
+      case (False, _) => t2
+      case (_, False) => t1
+      case _ => mkOr(List(t1, t2))
     }
 
     final def mkAnd(ts: List[Term]): Term = {
