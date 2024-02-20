@@ -169,11 +169,11 @@ object TokenKind {
 
   case object KeywordImport extends TokenKind
 
+  case object KeywordImpure extends TokenKind
+
   case object KeywordInject extends TokenKind
 
   case object KeywordInline extends TokenKind
-
-  case object KeywordImpure extends TokenKind
 
   case object KeywordInstance extends TokenKind
 
