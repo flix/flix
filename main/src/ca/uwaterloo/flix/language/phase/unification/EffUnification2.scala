@@ -71,8 +71,11 @@ object EffUnification2 {
 
     try {
       val (nextEqns, nextSubst) = unitPropagate(currentEqns, currentSubst)
-      currentSubst = nextSubst
       currentEqns = nextEqns
+      currentSubst = nextSubst
+
+      println(format(nextEqns))
+      println(format(currentSubst))
 
       val restSubst = boolUnify(currentEqns, Set.empty)
       val resultSubst = currentSubst @@ restSubst
@@ -106,7 +109,8 @@ object EffUnification2 {
     var currentNonGround = initialNonGround
     while (currentGround.nonEmpty) {
       currentSubst = extendSubstWithGround(currentGround, currentSubst) // TODO: rigidity
-      val (nextGround, nextNonGround) = currentNonGround.partition(isGround)
+      val updatedNonGround = currentSubst(currentNonGround)
+      val (nextGround, nextNonGround) = updatedNonGround.partition(isGround)
       currentGround = nextGround
       currentNonGround = nextNonGround
     }
@@ -356,6 +360,8 @@ object EffUnification2 {
       case Equation(t1, t2) => Equation(apply(t1), apply(t2))
     }
 
+    def apply(l: List[Equation]): List[Equation] = l.map(apply)
+
     def extended(x: Int, t: Term): LocalSubstitution = LocalSubstitution(m + (x -> t))
 
     def ++(that: LocalSubstitution): LocalSubstitution = {
@@ -379,7 +385,7 @@ object EffUnification2 {
     }
   }
 
-  private def prettyPrint(l: List[Equation]): String = {
+  private def format(l: List[Equation]): String = {
     val sb = new StringBuilder()
     for (Equation(t1, t2) <- l) {
       sb.append(t1.toString)
@@ -390,9 +396,9 @@ object EffUnification2 {
     sb.toString()
   }
 
-  private def prettyPrint(s: LocalSubstitution): String = {
+  private def format(s: LocalSubstitution): String = {
     val sb = new StringBuilder()
-    for ((x, t) <- s.m) {
+    for ((x, t) <- s.m.toList.sortBy(_._1)) {
       sb.append(x)
       sb.append(" -> ")
       sb.append(t)
@@ -452,10 +458,7 @@ object EffUnification2 {
   def main(args: Array[String]): Unit = {
     implicit val flix: Flix = new Flix()
 
-    println(prettyPrint(example01()))
-    println()
-    println("-- Solving --")
-    println(prettyPrint(solveAll(example01(), RigidityEnv.empty).get))
+    println(format(solveAll(example01(), RigidityEnv.empty).get))
   }
 
 
