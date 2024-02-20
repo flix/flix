@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 object EffUnification2 {
 
@@ -70,12 +71,19 @@ object EffUnification2 {
     var currentSubst: LocalSubstitution = LocalSubstitution.empty
 
     try {
+      println("-- Result of Unit Propagation -- ")
       val (nextEqns, nextSubst) = unitPropagate(currentEqns, currentSubst)
       currentEqns = nextEqns
       currentSubst = nextSubst
+      println(format(currentEqns))
+      println(format(currentSubst))
 
-      println("-- Result of Unit Propagation -- ")
-      println(format(nextEqns))
+
+      println("-- Result of Var Propagation -- ")
+      val (nextEqns1, nextSubst1) = varPropagate(currentEqns, currentSubst)
+      currentEqns = nextEqns1
+      currentSubst = nextSubst1
+      println(format(currentEqns))
       println(format(currentSubst))
 
       println("-- Result of BU -- ")
@@ -144,6 +152,26 @@ object EffUnification2 {
       case Some(t1) => if (t0 == t1) subst else throw InternalFailure(t0, t1)
     }
     case _ => throw InternalCompilerException(s"Unexpected equation: '$eq'.", SourceLocation.Unknown)
+  }
+
+
+  private def varPropagate(l: List[Equation], subst0: LocalSubstitution): (List[Equation], LocalSubstitution) = {
+    // TODO: Fixpoint or disjoint sets needed?
+
+    // TODO: Could start from empty subst and then use ++ later.
+
+    var currentSubst = subst0
+    var rest = ListBuffer.empty[Equation]
+
+    for (eqn <- l) {
+      eqn match {
+        case Equation(Term.Var(x), Term.Var(y)) =>
+          currentSubst = currentSubst.extended(x, Term.Var(y))
+        case _ => rest += eqn
+      }
+    }
+
+    (currentSubst(rest.toList), currentSubst)
   }
 
   private case class Equation(t1: Term, t2: Term) {
@@ -225,8 +253,8 @@ object EffUnification2 {
     case Term.False => false
     case Term.Var(x) => trueVars.contains(x)
     case Term.Not(t) => !evaluate(t, trueVars)
-    case Term.Or(ts) => ts.foldLeft(false) {case (bacc, term) => bacc || evaluate(term, trueVars)}
-    case Term.And(ts) => ts.foldLeft(true) {case (bacc, term) => bacc && evaluate(term, trueVars)}
+    case Term.Or(ts) => ts.foldLeft(false) { case (bacc, term) => bacc || evaluate(term, trueVars) }
+    case Term.And(ts) => ts.foldLeft(true) { case (bacc, term) => bacc && evaluate(term, trueVars) }
   }
 
   private sealed trait Term {
