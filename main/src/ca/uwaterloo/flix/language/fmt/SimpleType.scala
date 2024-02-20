@@ -339,7 +339,7 @@ object SimpleType {
               List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
 
             // Case 2: Pure function.
-            case eff :: tpes if eff == Pure || fmt.ignorePur =>
+            case eff :: tpes if eff == Pure =>
               // NB: safe to reduce because arity is always at least 2
               tpes.padTo(arity, Hole).reduceRight(PureArrow)
 
