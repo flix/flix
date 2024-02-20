@@ -199,7 +199,30 @@ object EffUnification2 {
       st ++ se
   }
 
-  private def satisfiable(t: Term): Boolean = ??? // TODO
+  private def satisfiable(t: Term): Boolean = t match {
+    case Term.True => true
+    case Term.Var(_) => true
+    case Term.False => false
+    case _ => evaluateAll(t, t.freeVars.toList, List.empty)
+  }
+
+  private def evaluateAll(f: Term, l: List[Int], env: List[Int]): Boolean = l match {
+    case Nil =>
+      // All variables are bound. Compute the truth value.
+      evaluate(f, env)
+    case x :: xs =>
+      // Recurse on two cases: x = false and x = true.
+      evaluateAll(f, xs, env) || evaluateAll(f, xs, x :: env)
+  }
+
+  private def evaluate(t: Term, trueVars: List[Int]): Boolean = t match {
+    case Term.True => true
+    case Term.False => false
+    case Term.Var(x) => trueVars.contains(x)
+    case Term.Not(t) => !evaluate(t, trueVars)
+    case Term.Or(ts) => ts.foldLeft(false) {case (bacc, term) => bacc || evaluate(term, trueVars)}
+    case Term.And(ts) => ts.foldLeft(true) {case (bacc, term) => bacc && evaluate(term, trueVars)}
+  }
 
   private sealed trait Term {
 
