@@ -107,79 +107,79 @@ mod TestInt32 {
     // mod                                                                     //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def mod01(): Bool = (1200000 `Int32.modulo` 200000) == 0
+    def modulo01(): Bool = (1200000 `Int32.modulo` 200000) == 0
 
     @test
-    def mod02(): Bool = (1200000 `Int32.modulo` 500000) == 200000
+    def modulo02(): Bool = (1200000 `Int32.modulo` 500000) == 200000
 
     @test
-    def mod03(): Bool = (-1200000 `Int32.modulo` 500000) == 300000
+    def modulo03(): Bool = (-1200000 `Int32.modulo` 500000) == 300000
 
     @test
-    def mod04(): Bool = (1200000 `Int32.modulo` -500000) == -300000
+    def modulo04(): Bool = (1200000 `Int32.modulo` -500000) == -300000
 
     @test
-    def mod05(): Bool = (-1200000 `Int32.modulo` -500000) == -200000
+    def modulo05(): Bool = (-1200000 `Int32.modulo` -500000) == -200000
 
     @test
-    def mod06(): Bool = (1200000i32 `Int32.modulo` 200000i32) == 0i32
+    def modulo06(): Bool = (1200000i32 `Int32.modulo` 200000i32) == 0i32
 
     @test
-    def mod07(): Bool = (1200000i32 `Int32.modulo` 500000i32) == 200000i32
+    def modulo07(): Bool = (1200000i32 `Int32.modulo` 500000i32) == 200000i32
 
     @test
-    def mod08(): Bool = (-1200000i32 `Int32.modulo` 500000i32) == 300000i32
+    def modulo08(): Bool = (-1200000i32 `Int32.modulo` 500000i32) == 300000i32
 
     @test
-    def mod09(): Bool = (1200000i32 `Int32.modulo` -500000i32) == -300000i32
+    def modulo09(): Bool = (1200000i32 `Int32.modulo` -500000i32) == -300000i32
 
     @test
-    def mod10(): Bool = (-1200000i32 `Int32.modulo` -500000i32) == -200000i32
+    def modulo10(): Bool = (-1200000i32 `Int32.modulo` -500000i32) == -200000i32
 
     @test
-    def mod11(): Bool = (1 `Int32.modulo` 0) == 0
+    def modulo11(): Bool = (1 `Int32.modulo` 0) == 0
 
     @test
-    def mod12(): Bool = (1i32 `Int32.modulo` 0i32) == 0i32
+    def modulo12(): Bool = (1i32 `Int32.modulo` 0i32) == 0i32
 
     /////////////////////////////////////////////////////////////////////////////
     // rem                                                                     //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def rem01(): Bool = (1200000 `Int32.remainder` 200000) == 0
+    def remainder01(): Bool = (1200000 `Int32.remainder` 200000) == 0
 
     @test
-    def rem02(): Bool = (1200000 `Int32.remainder` 500000) == 200000
+    def remainder02(): Bool = (1200000 `Int32.remainder` 500000) == 200000
 
     @test
-    def rem03(): Bool = (-1200000 `Int32.remainder` 500000) == -200000
+    def remainder03(): Bool = (-1200000 `Int32.remainder` 500000) == -200000
 
     @test
-    def rem04(): Bool = (1200000 `Int32.remainder` -500000) == 200000
+    def remainder04(): Bool = (1200000 `Int32.remainder` -500000) == 200000
 
     @test
-    def rem05(): Bool = (-1200000 `Int32.remainder` -500000) == -200000
+    def remainder05(): Bool = (-1200000 `Int32.remainder` -500000) == -200000
 
     @test
-    def rem06(): Bool = (1200000i32 `Int32.remainder` 200000i32) == 0i32
+    def remainder06(): Bool = (1200000i32 `Int32.remainder` 200000i32) == 0i32
 
     @test
-    def rem07(): Bool = (1200000i32 `Int32.remainder` 500000i32) == 200000i32
+    def remainder07(): Bool = (1200000i32 `Int32.remainder` 500000i32) == 200000i32
 
     @test
-    def rem08(): Bool = (-1200000i32 `Int32.remainder` 500000i32) == -200000i32
+    def remainder08(): Bool = (-1200000i32 `Int32.remainder` 500000i32) == -200000i32
 
     @test
-    def rem09(): Bool = (1200000i32 `Int32.remainder` -500000i32) == 200000i32
+    def remainder09(): Bool = (1200000i32 `Int32.remainder` -500000i32) == 200000i32
 
     @test
-    def rem10(): Bool = (-1200000i32 `Int32.remainder` -500000i32) == -200000i32
+    def remainder10(): Bool = (-1200000i32 `Int32.remainder` -500000i32) == -200000i32
 
     @test
-    def rem11(): Bool = (1 `Int32.remainder` 0) == 0
+    def remainder11(): Bool = (1 `Int32.remainder` 0) == 0
 
     @test
-    def rem12(): Bool = (1i32 `Int32.remainder` 0i32) == 0i32
+    def remainder12(): Bool = (1i32 `Int32.remainder` 0i32) == 0i32
 
     /////////////////////////////////////////////////////////////////////////////
     // dist                                                                    //
