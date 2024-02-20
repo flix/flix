@@ -581,9 +581,9 @@ object Validation {
    * FlatMaps over t1, t2, t3, t4, t5, t6, t7 and t8.
    */
   def flatMapN[T1, T2, T3, T4, T5, T6, T7, T8, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
-                                             t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
-                                             t7: Validation[T7, E], t8: Validation[T8, E])
-                                             (f: (T1, T2, T3, T4, T5, T6, T7, T8) => Validation[U, E]): Validation[U, E] =
+                                                     t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
+                                                     t7: Validation[T7, E], t8: Validation[T8, E])
+                                                    (f: (T1, T2, T3, T4, T5, T6, T7, T8) => Validation[U, E]): Validation[U, E] =
     flatten(ap(mapN(t1, t2, t3, t4, t5, t6, t7)(curry(f)))(t8))
 
   /**
