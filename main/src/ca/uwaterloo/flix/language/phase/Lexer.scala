@@ -407,6 +407,7 @@ object Lexer {
       case _ if isKeyword("get") => TokenKind.KeywordGet
       case _ if isKeyword("if") => TokenKind.KeywordIf
       case _ if isKeyword("import") => TokenKind.KeywordImport
+      case _ if isKeyword("Impure") => TokenKind.KeywordImpure
       case _ if isKeyword("inject") => TokenKind.KeywordInject
       case _ if isKeyword("inline") => TokenKind.KeywordInline
       case _ if isKeyword("instanceof") => TokenKind.KeywordInstanceOf
@@ -428,6 +429,7 @@ object Lexer {
       case _ if isKeyword("override") => TokenKind.KeywordOverride
       case _ if isKeyword("par") => TokenKind.KeywordPar
       case _ if isKeyword("pub") => TokenKind.KeywordPub
+      case _ if isKeyword("Pure") => TokenKind.KeywordPure
       case _ if isKeyword("query") => TokenKind.KeywordQuery
       case _ if isKeyword("ref") => TokenKind.KeywordRef
       case _ if isKeyword("region") => TokenKind.KeywordRegion

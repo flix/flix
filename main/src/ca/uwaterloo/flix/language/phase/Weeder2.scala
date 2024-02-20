@@ -2170,17 +2170,7 @@ object Weeder2 {
     }
 
     private def visitName(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      mapN(visitQName(tree))(
-        qname => {
-          if (qname.ident.name == "Pure") {
-            // TODO: Pure is treated as a constant, but it seems like it shouldn't.
-            // Impure is not a constant for instance. For now replicate what the old weeder does
-            Type.Pure(tree.loc)
-          } else {
-            Type.Ambiguous(qname, tree.loc)
-          }
-        }
-      )
+      mapN(visitQName(tree))(Type.Ambiguous(_, tree.loc))
     }
 
     private def visitBinary(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {

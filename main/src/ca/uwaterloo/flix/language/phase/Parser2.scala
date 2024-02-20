@@ -455,7 +455,8 @@ object Parser2 {
   private val NAME_KIND = List(TokenKind.NameUpperCase)
   private val NAME_EFFECT = List(TokenKind.NameUpperCase)
   private val NAME_MODULE = List(TokenKind.NameUpperCase)
-  private val NAME_TAG = List(TokenKind.NameUpperCase)
+  // TODO: Pure and Impure are used in enums as tags in Prelude.flix. Should we allow this?
+  private val NAME_TAG = List(TokenKind.NameUpperCase, TokenKind.KeywordPure, TokenKind.KeywordImpure)
   private val NAME_PREDICATE = List(TokenKind.NameUpperCase)
 
   private def name(kinds: List[TokenKind], allowQualified: Boolean = false)(implicit s: State): Mark.Closed = {
@@ -2299,7 +2300,9 @@ object Parser2 {
         case TokenKind.NameMath
              | TokenKind.NameGreek
              | TokenKind.Underscore => name(NAME_VARIABLE)
-        case TokenKind.KeywordFalse
+        case TokenKind.KeywordImpure
+             | TokenKind.KeywordPure
+             | TokenKind.KeywordFalse
              | TokenKind.KeywordTrue => constant()
         case TokenKind.KeywordNot
              | TokenKind.Tilde
@@ -2366,7 +2369,7 @@ object Parser2 {
 
     private def constant()(implicit s: State): Mark.Closed = {
       val mark = open()
-      expectAny(List(TokenKind.KeywordFalse, TokenKind.KeywordTrue))
+      expectAny(List(TokenKind.KeywordImpure, TokenKind.KeywordPure, TokenKind.KeywordFalse, TokenKind.KeywordTrue))
       close(mark, TreeKind.Type.Constant)
     }
 
