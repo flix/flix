@@ -600,12 +600,12 @@ object Weeder2 {
       }
     }
 
-    private def unitFormalParameters(loc: SourceLocation): List[FormalParam] = List(FormalParam(
+    def unitFormalParameter(loc: SourceLocation): FormalParam = FormalParam(
       Name.Ident(SourcePosition.Unknown, "_unit", SourcePosition.Unknown),
       Ast.Modifiers(List.empty),
       Some(Type.Unit(loc)),
       loc
-    ))
+    )
 
     def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit s: State): Validation[List[FormalParam], CompilationMessage] = {
       val paramTree = tryPick(TreeKind.Parameters, tree.children)
@@ -613,7 +613,7 @@ object Weeder2 {
         t => {
           val params = pickAll(TreeKind.Parameter, t.children)
           if (params.isEmpty) {
-            Validation.success(unitFormalParameters(t.loc))
+            Validation.success(List(unitFormalParameter(t.loc)))
           } else {
             flatMapN(traverse(params)(visitParameter(_, presence))) {
               params =>
@@ -629,7 +629,7 @@ object Weeder2 {
         }
       ).getOrElse(
         // Soft fail by pretending there were no arguments
-        softFailWith(unitFormalParameters(SourceLocation.Unknown))
+        softFailWith(List(unitFormalParameter(SourceLocation.Unknown)))
       )
     }
 
@@ -683,7 +683,7 @@ object Weeder2 {
         case TreeKind.Expr.FixpointQuery => visitFixpointQuery(tree)
         case TreeKind.Expr.FixpointConstraintSet => visitFixpointConstraintSet(tree)
         case TreeKind.Expr.FixpointSolve => visitFixpointSolve(tree)
-        case TreeKind.Expr.FixpointProject => visitFixpointProject(tree)
+        case TreeKind.Expr.FixpointInject => visitFixpointInject(tree)
         case TreeKind.Expr.NewObject => visitNewObject(tree)
         case TreeKind.Expr.LetRecDef => visitLetRecDef(tree)
         case TreeKind.Expr.Ascribe => visitAscribe(tree)
@@ -753,8 +753,8 @@ object Weeder2 {
       mapN(pickQName(tree), pickArguments(tree))((op, args) => Expr.Do(op, args, tree.loc))
     }
 
-    private def visitFixpointProject(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.FixpointProject)
+    private def visitFixpointInject(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.FixpointInject)
       val expressions = pickAll(TreeKind.Expr.Expr, tree.children)
       val idents = pickAll(TreeKind.Ident, tree.children)
       flatMapN(
@@ -766,14 +766,7 @@ object Weeder2 {
           val err = MismatchedArity(exprs.length, idents.length, tree.loc)
           Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
 
-        case (exprs, idents) =>
-          val init = Expr.FixpointConstraintSet(Nil, tree.loc)
-          Validation.success(exprs.zip(idents).foldRight(init: Expr) {
-            case ((exp, ident), acc) =>
-              val pred = Name.mkPred(ident)
-              val innerExp = Expr.FixpointInject(exp, pred, tree.loc)
-              WeededAst.Expr.FixpointMerge(innerExp, acc, tree.loc)
-          })
+        case (exprs, idents) => Validation.success(Expr.FixpointInjectInto(exprs, idents, tree.loc))
       }
     }
 
@@ -1030,9 +1023,14 @@ object Weeder2 {
       assert(tree.kind == TreeKind.Expr.TryWithRule)
       mapN(
         pickNameIdent(tree),
-        Decls.pickFormalParameters(tree),
+        Decls.pickFormalParameters(tree, Presence.Forbidden),
         pickExpression(tree)
-      )((ident, fparams, expr) => HandlerRule(ident, fparams, expr))
+      )((ident, fparams, expr) => {
+        // Add extra resumption argument as a synthetic unit parameter when there is exatly one parameter.
+        val hasSingleNonUnitParam = fparams.sizeIs == 1 && fparams.exists(_.ident.name != "_unit")
+        val syntheticUnitParam = if (hasSingleNonUnitParam) List(Decls.unitFormalParameter(tree.loc.asSynthetic)) else List.empty
+        HandlerRule(ident, syntheticUnitParam ++ fparams, expr)
+      })
     }
 
     private def visitRecordSelect(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -1395,9 +1393,9 @@ object Weeder2 {
             case "*" => Validation.success(mkApply("Mul.mul"))
             case "/" => Validation.success(mkApply("Div.div"))
             case "<" => Validation.success(mkApply("Order.less"))
-            case "<=" =>Validation.success( mkApply("Order.lessEqual"))
+            case "<=" => Validation.success(mkApply("Order.lessEqual"))
             case ">" => Validation.success(mkApply("Order.greater"))
-            case ">=" =>Validation.success( mkApply("Order.greaterEqual"))
+            case ">=" => Validation.success(mkApply("Order.greaterEqual"))
             case "==" => Validation.success(mkApply("Eq.eq"))
             case "!=" => Validation.success(mkApply("Eq.neq"))
             case "<=>" => Validation.success(mkApply("Order.compare"))
@@ -1702,7 +1700,7 @@ object Weeder2 {
         case ("INT64_LT", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Lt, e1, e2, loc))
         case ("INT64_LE", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Le, e1, e2, loc))
         case ("INT64_GT", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Gt, e1, e2, loc))
-        case ("INT64_GE", e1 :: e2 :: Nil) =>Validation.success( Expr.Binary(SemanticOp.Int64Op.Ge, e1, e2, loc))
+        case ("INT64_GE", e1 :: e2 :: Nil) => Validation.success(Expr.Binary(SemanticOp.Int64Op.Ge, e1, e2, loc))
 
         case ("CHANNEL_GET", e1 :: Nil) => Validation.success(Expr.GetChannel(e1, loc))
         case ("CHANNEL_PUT", e1 :: e2 :: Nil) => Validation.success(Expr.PutChannel(e1, e2, loc))
@@ -2094,8 +2092,8 @@ object Weeder2 {
                 case (Ast.Polarity.Negative, Ast.Fixity.Fixed) => Some(IllegalFixedAtom(tree.loc))
                 case _ => None
               }
-              Validation.success( Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, pats, tree.loc)
-            )
+              Validation.success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Relational, polarity, fixity, pats, tree.loc)
+                )
                 .withSoftFailures(errors)
             case (pats, Some(term)) => Validation.success(Predicate.Body.Atom(Name.mkPred(ident), Denotation.Latticenal, polarity, fixity, pats ::: term :: Nil, tree.loc))
           }
@@ -2162,13 +2160,27 @@ object Weeder2 {
         case TreeKind.Type.Schema => visitSchema(inner)
         case TreeKind.Type.SchemaRow => visitSchemaRow(inner)
         case TreeKind.Type.Constant => visitConstant(inner)
-        case TreeKind.QName => mapN(visitQName(inner))(Type.Ambiguous(_, inner.loc))
+        case TreeKind.QName => visitName(inner)
         case TreeKind.Ident => mapN(tokenToIdent(inner)) {
           case ident if ident.isWild => Type.Var(ident, tree.loc)
           case ident => Type.Ambiguous(Name.mkQName(ident), inner.loc)
         }
         case kind => failWith(s"TODO: implement type of kind '$kind'", tree.loc)
       }
+    }
+
+    private def visitName(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      mapN(visitQName(tree))(
+        qname => {
+          if (qname.ident.name == "Pure") {
+            // TODO: Pure is treated as a constant, but it seems like it shouldn't.
+            // Impure is not a constant for instance. For now replicate what the old weeder does
+            Type.Pure(tree.loc)
+          } else {
+            Type.Ambiguous(qname, tree.loc)
+          }
+        }
+      )
     }
 
     private def visitBinary(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {

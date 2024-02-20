@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package ca.uwaterloo.flix.language.ast
+
 import ca.uwaterloo.flix.language.errors.Parse2Error
 
 object UnstructuredTree {
@@ -311,7 +312,7 @@ object UnstructuredTree {
 
       case object FixpointConstraint extends Expr
 
-      case object FixpointProject extends Expr
+      case object FixpointInject extends Expr
 
       case object FixpointSolve extends Expr
 

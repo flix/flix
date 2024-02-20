@@ -331,7 +331,8 @@ object Lexer {
         if (p.isLetterOrDigit) acceptName(p.isUpper)
         else TokenKind.Underscore
       case '~' => if (peek() == '~') {
-        advance(); TokenKind.TildeTilde
+        advance();
+        TokenKind.TildeTilde
       } else TokenKind.Tilde
       case '\\' => TokenKind.Backslash
       case '$' if peek().isUpper => acceptBuiltIn()
@@ -347,7 +348,7 @@ object Lexer {
       case _ if isKeyword("///") => acceptDocComment()
       case _ if isKeyword("/*") => acceptBlockComment()
       case '/' => if (peek() == '/') acceptLineComment() else TokenKind.Slash
-      case ':' =>  (peek(), peekPeek()) match {
+      case ':' => (peek(), peekPeek()) match {
         case (':', Some(':')) => advance(); advance(); TokenKind.TripleColon
         case (':', _) => advance(); TokenKind.ColonColon
         case ('=', _) => advance(); TokenKind.ColonEqual
@@ -406,7 +407,6 @@ object Lexer {
       case _ if isKeyword("get") => TokenKind.KeywordGet
       case _ if isKeyword("if") => TokenKind.KeywordIf
       case _ if isKeyword("import") => TokenKind.KeywordImport
-      case _ if isKeyword("Impure") => TokenKind.KeywordImpure
       case _ if isKeyword("inject") => TokenKind.KeywordInject
       case _ if isKeyword("inline") => TokenKind.KeywordInline
       case _ if isKeyword("instanceof") => TokenKind.KeywordInstanceOf
@@ -428,7 +428,6 @@ object Lexer {
       case _ if isKeyword("override") => TokenKind.KeywordOverride
       case _ if isKeyword("par") => TokenKind.KeywordPar
       case _ if isKeyword("pub") => TokenKind.KeywordPub
-      case _ if isKeyword("Pure") => TokenKind.KeywordPure
       case _ if isKeyword("query") => TokenKind.KeywordQuery
       case _ if isKeyword("ref") => TokenKind.KeywordRef
       case _ if isKeyword("region") => TokenKind.KeywordRegion
@@ -490,6 +489,7 @@ object Lexer {
     }
 
     def isSep(c: Char) = c.isWhitespace || VALID_SEPARATORS.contains(c)
+
     s.src.data.lift(s.current.offset - 2).forall(isSep) && s.src.data.lift(s.current.offset + keyword.length - 1).forall(isSep)
   }
 

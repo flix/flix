@@ -169,8 +169,6 @@ object TokenKind {
 
   case object KeywordImport extends TokenKind
 
-  case object KeywordImpure extends TokenKind
-
   case object KeywordInject extends TokenKind
 
   case object KeywordInline extends TokenKind
@@ -212,8 +210,6 @@ object TokenKind {
   case object KeywordPar extends TokenKind
 
   case object KeywordPub extends TokenKind
-
-  case object KeywordPure extends TokenKind
 
   case object KeywordQuery extends TokenKind
 

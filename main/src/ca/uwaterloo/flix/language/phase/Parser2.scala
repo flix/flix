@@ -86,8 +86,6 @@ object Parser2 {
         case LibLevel.All => ""
       }
 
-      println("p\tw\tfile")
-
       // For each file: If the parse was successful run Weeder2 on it.
       // If either the parse or the weed was bad pluck the WeededAst from the previous pipeline and use that.
       val afterParser = Parser.run(afterReader, entryPoint, ParsedAst.empty, changeSet)
@@ -106,14 +104,6 @@ object Parser2 {
       def diffWeededAsts(src: Ast.Source, newAst: WeededAst.CompilationUnit): Boolean = {
         // Unsafely get old WeededAst
         val oldAst = afterWeeder.unsafeGet.units(src)
-        // Print asts for closer inspection
-        if (src.name == DEBUG_FOCUS) {
-          println("[[[ OLD PARSER ]]]")
-          println(formatWeededAst(oldAst))
-          println("[[[ NEW PARSER ]]]")
-          println(formatWeededAst(newAst))
-          println("[[[ END ]]]")
-        }
         formatWeededAst(oldAst, matchingWithOldParser = true) == formatWeededAst(newAst, matchingWithOldParser = true)
       }
 
@@ -122,21 +112,37 @@ object Parser2 {
           val afterParser2 = parse(src, tokens)
           val afterWeeder2 = flatMapN(afterParser2)(Weeder2.weed(src, _))
 
-          // Log debug information
           val p = afterParser2.toSoftResult.toOption
           val w = afterWeeder2.toSoftResult.toOption
 
-          val parserPart = if (p.isEmpty)
-            s"${Console.RED}✘ "
+          // Log syntax tree if available
+          if (src.name == DEBUG_FOCUS && p.isDefined) {
+            val (tree, _) = p.get
+            println(tree.toDebugString())
+          }
+          // Log weeded asts if available
+          if (src.name == DEBUG_FOCUS && w.isDefined) {
+            val (newAst, _) = w.get
+            val oldAst = afterWeeder.unsafeGet.units(src) // Assume old weeder succeeded
+            println("[[[ OLD PARSER ]]]")
+            println(formatWeededAst(oldAst))
+            println("[[[ NEW PARSER ]]]")
+            println(formatWeededAst(newAst))
+            println("[[[ END ]]]")
+          }
+          // Log status if there were failures
+          val weededAstsMatch = w.forall(t => diffWeededAsts(src, t._1))
+          // We are all good if the parser and weeder had no errors and the weeded asts match
+          val allGood = p.exists(_._2.isEmpty) && w.exists(_._2.isEmpty) && weededAstsMatch
+          if (!allGood) {
+            val parserPart = if (p.isEmpty) s"${Console.RED}✘ "
             else if (p.exists(!_._2.isEmpty)) s"${Console.YELLOW}✘ "
             else s"${Console.GREEN}✔︎ "
-          val weederPart = if (p.isEmpty)
-            "- "
-            else if (w.isEmpty) s"${Console.RED}✘ "
-            else if (!w.forall(t => diffWeededAsts(src, t._1))) s"${Console.YELLOW}!="
-            else s"${Console.GREEN}✔︎ "
-
-          println(s"$parserPart\t$weederPart\t${Console.RESET}${src.name}")
+            val weederPart = if (p.isEmpty) "- "
+            else if (!weededAstsMatch) s"${Console.YELLOW}!="
+            else s"${Console.RED}✘ "
+            println(s"$parserPart\t$weederPart\t${Console.RESET}${src.name}")
+          }
 
           // Fallback on old pipeline if necessary
           val weededAst = if (w.isEmpty) fallback(src, afterWeeder2.errors) else afterWeeder2
@@ -1109,7 +1115,7 @@ object Parser2 {
              | TokenKind.NameMath
              | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThinR) unaryLambda() else name(NAME_DEFINITION, allowQualified)
         // TODO: These rules are only enabled in Graph.flix since the keywords are used elsewhere too
-        case TokenKind.KeywordInject if s.src.name == "Graph.flix" => fixpointProject()
+        case TokenKind.KeywordInject if s.src.name == "Graph.flix" => fixpointInject()
         case TokenKind.KeywordQuery if s.src.name == "Graph.flix" => fixpointQuery()
         case TokenKind.KeywordSolve if s.src.name == "Graph.flix" => fixpointSolve()
         case TokenKind.HashCurlyL => fixpointConstraintSet()
@@ -1157,7 +1163,7 @@ object Parser2 {
       close(mark, TreeKind.Expr.Do)
     }
 
-    private def fixpointProject()(implicit s: State): Mark.Closed = {
+    private def fixpointInject()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordInject))
       val mark = open()
       expect(TokenKind.KeywordInject)
@@ -1170,7 +1176,7 @@ object Parser2 {
       while (eat(TokenKind.Comma) && !eof()) {
         name(NAME_PREDICATE)
       }
-      close(mark, TreeKind.Expr.FixpointProject)
+      close(mark, TreeKind.Expr.FixpointInject)
     }
 
     private def fixpointSolve()(implicit s: State): Mark.Closed = {
@@ -2293,9 +2299,7 @@ object Parser2 {
         case TokenKind.NameMath
              | TokenKind.NameGreek
              | TokenKind.Underscore => name(NAME_VARIABLE)
-        case TokenKind.KeywordPure
-             | TokenKind.KeywordImpure
-             | TokenKind.KeywordFalse
+        case TokenKind.KeywordFalse
              | TokenKind.KeywordTrue => constant()
         case TokenKind.KeywordNot
              | TokenKind.Tilde
@@ -2362,7 +2366,7 @@ object Parser2 {
 
     private def constant()(implicit s: State): Mark.Closed = {
       val mark = open()
-      expectAny(List(TokenKind.KeywordPure, TokenKind.KeywordImpure, TokenKind.KeywordFalse, TokenKind.KeywordTrue))
+      expectAny(List(TokenKind.KeywordFalse, TokenKind.KeywordTrue))
       close(mark, TreeKind.Type.Constant)
     }
 
