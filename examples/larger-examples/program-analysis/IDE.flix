@@ -272,7 +272,7 @@ mod ConstantProp {
                 case (MicroFunction.NonBot(a1, b1, c1), MicroFunction.NonBot(a2, b2, c2)) =>
                     if (a1 == a2 and b1 == b2)
                         MicroFunction.NonBot(a1, b1, lub(c1, c2))
-                    else if((a2-a1) != 0 and 0 == (b1 - b2) `Int32.rem` (a2 - a1))
+                    else if((a2-a1) != 0 and 0 == (b1 - b2) `Int32.remainder` (a2 - a1))
                         // Divisible.
                         MicroFunction.NonBot(a1, b2, lub(Const.Cst(a1 * (b1 - b2) / (a2 - a1) + b1), lub(c1, c2)))
                     else
@@ -364,7 +364,7 @@ def main(): Unit \ IO =
     let endNodes =
         ("main","emain") ::
         ("p","ep") :: Nil;
-    
+
     def procedureParameters(p) = match p {
         case "p" => "a"
         case _ => ?unreachable
@@ -388,15 +388,15 @@ def main(): Unit \ IO =
         case "n8" => IR.Assign("a", 1, "a", 2)
         case "n9" => IR.Assign("x", -2, "a", 5)
         case "ep" => IR.Nop
-    
+
         case _ => ?unreachable
     };
 
     def eshIntra(n, d) = match instruction(n) {
-        case IR.MainEntry(vars) => 
+        case IR.MainEntry(vars) =>
             if (d == "zero") Vector.map(v -> (v, ConstantProp.MicroFunction.Bot), vars)
             else Vector#{}
-        case IR.Assign(v1, c1, v2, c2) => 
+        case IR.Assign(v1, c1, v2, c2) =>
           let kill = if (d == v1) Vector#{} else Vector#{(d, ConstantProp.id())};
           let microfn = ConstantProp.MicroFunction.NonBot(c1, c2, ConstantProp.Const.Bot);
           let gen = if (d == v2) Vector#{(v1, microfn)} else Vector#{};
