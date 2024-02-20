@@ -63,7 +63,7 @@ mod Int32 {
     /// Returns the Euclidean modulo of `x` and `n`.
     /// The result is always non-negative.
     ///
-    pub def mod(x: Int32, n: Int32): Int32 =
+    pub def modulo(x: Int32, n: Int32): Int32 =
         if (n == 0i32)
             0i32
         else
@@ -73,9 +73,9 @@ mod Int32 {
     /// Returns the remainder of `x / n`.
     /// The result can be negative.
     ///
-    /// See also `Int32.mod`.
+    /// See also `Int32.modulo`.
     ///
-    pub def rem(x: Int32, n: Int32): Int32 =
+    pub def remainder(x: Int32, n: Int32): Int32 =
         if (n == 0i32)
             0i32
         else
@@ -120,7 +120,7 @@ mod Int32 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int32): Int32 =
-        if (x < 0 and rem(dist.dist, size()) != 0)
+        if (x < 0 and remainder(dist.dist, size()) != 0)
             rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), dist.dist - 1)
         else
             rightShift(x, dist.dist)
@@ -131,8 +131,8 @@ mod Int32 {
     ///
     pub def bitCount(x: Int32): Int32 = {
         if      (x == 0)         0
-        else if (x `rem` 2 != 0) bitCount(logicalRightShift(dist = 1, x)) + 1
-        else                     bitCount(logicalRightShift(dist = 1, x))
+        else if (x `remainder` 2 != 0) bitCount(logicalRightShift(dist = 1, x)) + 1
+        else                           bitCount(logicalRightShift(dist = 1, x))
     }
 
     ///
@@ -247,7 +247,7 @@ mod Int32 {
     /// The bits of x have positions: 0 (rightmost bit) - 31 (leftmost bit)
     ///
     pub def getBit(pos: {pos = Int32}, x: Int32): Int32 =
-        if (rightShift(x, pos.pos) `rem` 2 == 0) 0 else 1
+        if (rightShift(x, pos.pos) `remainder` 2 == 0) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `pos` set (to 1).

@@ -850,47 +850,47 @@ mod TestDelayMap {
     @test
     def update01(): Bool =
         let m = Map.toDelayMap(Map#{});
-        DelayMap.update(v -> if (v `Int32.rem` 2 != 0) Some(2 * v) else None, 1, m) |> DelayMap.toMap == Map#{}
+        DelayMap.update(v -> if (v `Int32.remainder` 2 != 0) Some(2 * v) else None, 1, m) |> DelayMap.toMap == Map#{}
 
     @test
     def update02(): Bool =
         let m = Map.toDelayMap(Map#{1 => 3});
-        DelayMap.update(v -> if (v `Int32.rem` 2 != 0) Some(2 * v) else None, 1, m) |> DelayMap.toMap == Map#{1 => 6}
+        DelayMap.update(v -> if (v `Int32.remainder` 2 != 0) Some(2 * v) else None, 1, m) |> DelayMap.toMap == Map#{1 => 6}
 
     @test
     def update03(): Bool =
         let m = Map.toDelayMap(Map#{1 => 4});
-        DelayMap.update(v -> if (v `Int32.rem` 2 != 0) Some(2 * v) else None, 1, m) |> DelayMap.toMap == Map#{1 => 4}
+        DelayMap.update(v -> if (v `Int32.remainder` 2 != 0) Some(2 * v) else None, 1, m) |> DelayMap.toMap == Map#{1 => 4}
 
     @test
     def update04(): Bool =
         let m = Map.toDelayMap(Map#{1 => 4});
-        DelayMap.update(v -> if (v `Int32.rem` 2 != 0) Some(2 * v) else None, 2, m) |> DelayMap.toMap == Map#{1 => 4}
+        DelayMap.update(v -> if (v `Int32.remainder` 2 != 0) Some(2 * v) else None, 2, m) |> DelayMap.toMap == Map#{1 => 4}
 
     @test
     def update05(): Bool =
         let m = Map.toDelayMap(Map#{1 => -14, 5 => -2});
-        DelayMap.update(v -> if (v `Int32.rem` 2 != 0) Some(2 * v) else None, 1, m) |> DelayMap.toMap == Map#{1 => -14, 5 => -2}
+        DelayMap.update(v -> if (v `Int32.remainder` 2 != 0) Some(2 * v) else None, 1, m) |> DelayMap.toMap == Map#{1 => -14, 5 => -2}
 
     @test
     def update06(): Bool =
         let m = Map.toDelayMap(Map#{1 => -13, 5 => -2});
-        DelayMap.update(v -> if (v `Int32.rem` 2 != 0) Some(2 * v) else None, 1, m) |> DelayMap.toMap == Map#{1 => -26, 5 => -2}
+        DelayMap.update(v -> if (v `Int32.remainder` 2 != 0) Some(2 * v) else None, 1, m) |> DelayMap.toMap == Map#{1 => -26, 5 => -2}
 
     @test
     def update07(): Bool =
         let m = Map.toDelayMap(Map#{1 => 4, 5 => -2});
-        DelayMap.update(v -> if (v `Int32.rem` 2 != 0) Some(2 * v) else None, 5, m) |> DelayMap.toMap == Map#{1 => 4, 5 => -2}
+        DelayMap.update(v -> if (v `Int32.remainder` 2 != 0) Some(2 * v) else None, 5, m) |> DelayMap.toMap == Map#{1 => 4, 5 => -2}
 
     @test
     def update08(): Bool =
         let m = Map.toDelayMap(Map#{1 => 4, 5 => -1});
-        DelayMap.update(v -> if (v `Int32.rem` 2 != 0) Some(2 * v) else None, 5, m) |> DelayMap.toMap == Map#{1 => 4, 5 => -2}
+        DelayMap.update(v -> if (v `Int32.remainder` 2 != 0) Some(2 * v) else None, 5, m) |> DelayMap.toMap == Map#{1 => 4, 5 => -2}
 
     @test
     def update09(): Bool =
         let m = Map.toDelayMap(Map#{1 => 4, 5 => -2});
-        DelayMap.update(v -> if (v `Int32.rem` 2 != 0) Some(2 * v) else None, 4, m) |> DelayMap.toMap == Map#{1 => 4, 5 => -2}
+        DelayMap.update(v -> if (v `Int32.remainder` 2 != 0) Some(2 * v) else None, 4, m) |> DelayMap.toMap == Map#{1 => 4, 5 => -2}
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -900,55 +900,55 @@ mod TestDelayMap {
     @test
     def updateWithKeyPure01(): Bool =
         let m = Map.toDelayMap(Map#{});
-        DelayMap.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None, 1, m) |>
+        DelayMap.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None, 1, m) |>
             DelayMap.toMap == Map#{}
 
     @test
     def updateWithKeyPure02(): Bool =
         let m = Map.toDelayMap(Map#{1 => 3});
-        DelayMap.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None, 1, m) |>
+        DelayMap.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None, 1, m) |>
             DelayMap.toMap == Map#{1 => 7}
 
     @test
     def updateWithKeyPure03(): Bool =
         let m = Map.toDelayMap(Map#{1 => 4});
-        DelayMap.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None, 1, m) |>
+        DelayMap.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None, 1, m) |>
             DelayMap.toMap == Map#{1 => 4}
 
     @test
     def updateWithKeyPure04(): Bool =
         let m = Map.toDelayMap(Map#{1 => 4});
-        DelayMap.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None, 2, m) |>
+        DelayMap.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None, 2, m) |>
             DelayMap.toMap == Map#{1 => 4}
 
     @test
     def updateWithKeyPure05(): Bool =
         let m = Map.toDelayMap(Map#{1 => -14, 5 => -2});
-        DelayMap.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None, 1, m) |>
+        DelayMap.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None, 1, m) |>
             DelayMap.toMap == Map#{1 => -14, 5 => -2}
 
     @test
     def updateWithKeyPure06(): Bool =
         let m = Map.toDelayMap(Map#{1 => -13, 5 => -2});
-        DelayMap.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None, 1, m) |>
+        DelayMap.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None, 1, m) |>
             DelayMap.toMap == Map#{1 => -25, 5 => -2}
 
     @test
     def updateWithKeyPure07(): Bool =
         let m = Map.toDelayMap(Map#{1 => 4, 5 => -2});
-        DelayMap.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None, 5, m) |>
+        DelayMap.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None, 5, m) |>
             DelayMap.toMap == Map#{1 => 4, 5 => -2}
 
     @test
     def updateWithKeyPure08(): Bool =
         let m = Map.toDelayMap(Map#{1 => 4, 5 => -1});
-        DelayMap.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None, 5, m) |>
+        DelayMap.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None, 5, m) |>
             DelayMap.toMap == Map#{1 => 4, 5 => 3}
 
     @test
     def updateWithKeyPure09(): Bool =
         let m = Map.toDelayMap(Map#{1 => 4, 5 => -2});
-        DelayMap.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None, 4, m) |>
+        DelayMap.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None, 4, m) |>
             DelayMap.toMap == Map#{1 => 4, 5 => -2}
 
 
@@ -959,55 +959,55 @@ mod TestDelayMap {
     @test
     def updateWithKeyImpure01(): Bool \ IO =
         let m = Map.toDelayMap(Map#{});
-        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 1, m) |>
+        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 1, m) |>
             DelayMap.toMap == Map#{}
 
     @test
     def updateWithKeyImpure02(): Bool \ IO =
         let m = Map.toDelayMap(Map#{1 => 3});
-        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 1, m) |>
+        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 1, m) |>
             DelayMap.toMap == Map#{1 => 7}
 
     @test
     def updateWithKeyImpure03(): Bool \ IO =
         let m = Map.toDelayMap(Map#{1 => 4});
-        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 1, m) |>
+        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 1, m) |>
             DelayMap.toMap == Map#{1 => 4}
 
     @test
     def updateWithKeyImpure04(): Bool \ IO =
         let m = Map.toDelayMap(Map#{1 => 4});
-        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 2, m) |>
+        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 2, m) |>
             DelayMap.toMap == Map#{1 => 4}
 
     @test
     def updateWithKeyImpure05(): Bool \ IO =
         let m = Map.toDelayMap(Map#{1 => -14, 5 => -2});
-        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 1, m) |>
+        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 1, m) |>
             DelayMap.toMap == Map#{1 => -14, 5 => -2}
 
     @test
     def updateWithKeyImpure06(): Bool \ IO =
         let m = Map.toDelayMap(Map#{1 => -13, 5 => -2});
-        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 1, m) |>
+        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 1, m) |>
             DelayMap.toMap == Map#{1 => -25, 5 => -2}
 
     @test
     def updateWithKeyImpure07(): Bool \ IO =
         let m = Map.toDelayMap(Map#{1 => 4, 5 => -2});
-        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 5, m) |>
+        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 5, m) |>
             DelayMap.toMap == Map#{1 => 4, 5 => -2}
 
     @test
     def updateWithKeyImpure08(): Bool \ IO =
         let m = Map.toDelayMap(Map#{1 => 4, 5 => -1});
-        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 5, m) |>
+        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 5, m) |>
             DelayMap.toMap == Map#{1 => 4, 5 => 3}
 
     @test
     def updateWithKeyImpure09(): Bool \ IO =
         let m = Map.toDelayMap(Map#{1 => 4, 5 => -2});
-        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.rem` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 4, m) |>
+        DelayMap.updateWithKey((k, v) -> unchecked_cast(if (v `Int32.remainder` 2 != 0) Some(k + 2 * v) else None as _ \ IO), 4, m) |>
             DelayMap.toMap == Map#{1 => 4, 5 => -2}
 
 
