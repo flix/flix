@@ -18,7 +18,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
-import ca.uwaterloo.flix.language.ast.{Ast, Token, SyntaxTree}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, SyntaxTree, Token}
+import ca.uwaterloo.flix.language.errors.Parser2Error
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
@@ -32,7 +33,7 @@ object Parser2 {
 
   private def parse(ts: Array[Token]): Validation[SyntaxTree.Tree, CompilationMessage] = {
     // TODO: PARSER2
-    Validation.success(SyntaxTree.Tree(TreeKind.ErrorTree, Array.empty))
+    Validation.success(SyntaxTree.Tree(TreeKind.Source, SourceLocation.Unknown, Array.empty))
   }
 
 }
