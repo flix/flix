@@ -1391,7 +1391,8 @@ object Resolver {
                       flatMapN(opVal, fparamsVal) {
                         case (o, fp) =>
                           val env = env0 ++ mkFormalParamEnv(fp)
-                          val arityVal = checkOpArity(o, fp.length, ident.loc)
+                          // ignore the continuation for checking arity
+                          val arityVal = checkOpArity(o, fp.length - 1, ident.loc)
                           val bodyVal = visitExp(body, env)
                           mapN(arityVal, bodyVal) {
                             case (_, b) =>
