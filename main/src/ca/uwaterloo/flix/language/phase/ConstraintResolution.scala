@@ -625,7 +625,6 @@ object ConstraintResolution {
     case (UnificationError.UnsupportedEquality(t1, t2), _) => ??? // TypeError.UnsupportedEquality(Ast.BroadEqualityConstraint(t1, t2), loc) // MATT impossible?
     case (UnificationError.IrreducibleAssocType(sym, t), _) => ??? // TypeError.IrreducibleAssocType(sym, t, loc) // MATT impossible?
     case (UnificationError.IterationLimit(n), _) => ???
-    case (UnificationError.MultipleMatchingInstances(tconstr), _) => ???
   }
 
   def sort(constrs: List[TypingConstraint]): List[TypingConstraint] =

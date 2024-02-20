@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.unification.Substitution
-import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import scala.collection.immutable.SortedSet
@@ -40,13 +40,13 @@ object Regions {
     // TODO: Instances
 
     errs match {
-      case Nil => ().toSuccess
-      case es => Validation.SoftFailure((), LazyList.from(es))
+      case Nil => Validation.success(())
+      case es => Validation.SoftFailure((), Chain.from(es))
     }
   }
 
   private def visitDef(def0: Def)(implicit flix: Flix): List[TypeError] =
-    visitExp(def0.impl.exp)(Nil, flix)
+    visitExp(def0.exp)(Nil, flix)
 
   private def visitExp(exp0: Expr)(implicit scope: List[Type.Var], flix: Flix): List[TypeError] = exp0 match {
     case Expr.Cst(_, _, _) => Nil
@@ -82,7 +82,7 @@ object Regions {
     case Expr.Let(_, _, exp1, exp2, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
-    case Expr.LetRec(_, _, exp1, exp2, tpe, _, loc) =>
+    case Expr.LetRec(_, _, _, exp1, exp2, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
     case Expr.Region(_, _) =>
@@ -90,9 +90,6 @@ object Regions {
 
     case Expr.Scope(_, regionVar, exp, tpe, _, loc) =>
       visitExp(exp)(regionVar :: scope, flix) ++ checkType(tpe, loc)
-
-    case Expr.ScopeExit(exp1, exp2, tpe, _, loc) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ checkType(tpe, loc)
@@ -115,13 +112,6 @@ object Regions {
         case TypeMatchRule(_, _, body) => visitExp(body)
       }
       matchErrors ++ rulesErrors ++ checkType(tpe, loc)
-
-    case Expr.RelationalChoose(exps, rules, tpe, _, loc) =>
-      val expsErrors = exps.flatMap(visitExp)
-      val rulesErrors = rules.flatMap {
-        case RelationalChooseRule(pat, exp) => visitExp(exp)
-      }
-      expsErrors ++ rulesErrors ++ checkType(tpe, loc)
 
     case Expr.RestrictableChoose(_, exp, rules, tpe, _, loc) =>
       val expErrors = visitExp(exp)
@@ -217,9 +207,6 @@ object Regions {
     case Expr.Do(_, exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
-    case Expr.Resume(exp, tpe, loc) =>
-      visitExp(exp) ++ checkType(tpe, loc)
-
     case Expr.InvokeConstructor(_, exps, tpe, _, loc) =>
       exps.flatMap(visitExp) ++ checkType(tpe, loc)
 
@@ -275,16 +262,16 @@ object Regions {
     case Expr.Force(exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expr.FixpointConstraintSet(cs0, _, tpe, loc) =>
+    case Expr.FixpointConstraintSet(cs0, tpe, loc) =>
       Nil // TODO
 
-    case Expr.FixpointLambda(_, exp, _, tpe, _, loc) =>
+    case Expr.FixpointLambda(_, exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
-    case Expr.FixpointMerge(exp1, exp2, _, tpe, _, loc) =>
+    case Expr.FixpointMerge(exp1, exp2, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ checkType(tpe, loc)
 
-    case Expr.FixpointSolve(exp, _, tpe, _, loc) =>
+    case Expr.FixpointSolve(exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
 
     case Expr.FixpointFilter(_, exp, tpe, _, loc) =>
@@ -343,7 +330,7 @@ object Regions {
     */
   def essentialToBool(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
     // t0 = tpe[tvar -> False]
-    val t0 = Substitution.singleton(tvar.sym, Type.EffUniv).apply(tpe)
+    val t0 = Substitution.singleton(tvar.sym, Type.Univ).apply(tpe)
 
     // t1 = tpe[tvar -> True]
     val t1 = Substitution.singleton(tvar.sym, Type.Pure).apply(tpe)
@@ -377,7 +364,7 @@ object Regions {
       */
     def eval(tpe: Type, trueVars: SortedSet[Type.Var]): Boolean = tpe match {
       case Type.Pure => true
-      case Type.EffUniv => false
+      case Type.Univ => false
       case Type.Apply(Type.Complement, x, _) => eval(x, trueVars)
       case Type.Apply(Type.Apply(Type.Union, x1, _), x2, _) => eval(x1, trueVars) && eval(x2, trueVars)
       case Type.Apply(Type.Apply(Type.Intersection, x1, _), x2, _) => eval(x1, trueVars) || eval(x2, trueVars)
