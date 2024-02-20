@@ -17,22 +17,22 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.UnstructuredTree.TreeKind
-import ca.uwaterloo.flix.language.ast.{Ast, Token, UnstructuredTree}
+import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
+import ca.uwaterloo.flix.language.ast.{Ast, Token, SyntaxTree}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 object Parser2 {
 
-  def run(root: Map[Ast.Source, Array[Token]])(implicit flix: Flix): Validation[Map[Ast.Source, UnstructuredTree.Tree], CompilationMessage] =
+  def run(root: Map[Ast.Source, Array[Token]])(implicit flix: Flix): Validation[Map[Ast.Source, SyntaxTree.Tree], CompilationMessage] =
     flix.phase("Parser2") {
       // Parse each source file in parallel.
       ParOps.parTraverseValues(root)(parse)
     }
 
-  private def parse(ts: Array[Token]): Validation[UnstructuredTree.Tree, CompilationMessage] = {
+  private def parse(ts: Array[Token]): Validation[SyntaxTree.Tree, CompilationMessage] = {
     // TODO: PARSER2
-    Validation.success(UnstructuredTree.Tree(TreeKind.ErrorTree, Array.empty))
+    Validation.success(SyntaxTree.Tree(TreeKind.ErrorTree, Array.empty))
   }
 
 }
