@@ -661,4 +661,17 @@ object SemanticOp {
 
   }
 
+  sealed trait ObjectOp extends SemanticOp
+
+  /**
+    * Object Operators.
+    */
+  object ObjectOp {
+
+    /**
+      * Reference equality.
+      */
+    case object Eq extends ObjectOp
+  }
+
 }

@@ -533,6 +533,15 @@ object TypeInference {
             resultEff = Type.mkUnion(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
+        case SemanticOp.ObjectOp.Eq =>
+          for {
+            (constrs1, tpe1, eff1) <- visitExp(exp1)
+            (constrs2, tpe2, eff2) <- visitExp(exp2)
+            _ <- unifyTypeM(tpe1, tpe2, exp2.loc)
+            resultTyp <- unifyTypeM(tvar, Type.Bool, loc)
+            resultEff = Type.mkUnion(eff1, eff2, loc)
+          } yield (constrs1 ++ constrs2, resultTyp, resultEff)
+
         case _ => throw InternalCompilerException(s"Unexpected binary operator: '$sop'.", loc)
       }
 

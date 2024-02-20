@@ -788,6 +788,8 @@ object Weeder {
           case ("INT64_GT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Gt, e1, e2, loc))
           case ("INT64_GE", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.Int64Op.Ge, e1, e2, loc))
 
+          case ("OBJECT_EQ", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Binary(SemanticOp.ObjectOp.Eq, e1, e2, loc))
+
           case ("CHANNEL_GET", e1 :: Nil) => Validation.success(WeededAst.Expr.GetChannel(e1, loc))
           case ("CHANNEL_PUT", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.PutChannel(e1, e2, loc))
           case ("CHANNEL_NEW", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.NewChannel(e1, e2, loc))

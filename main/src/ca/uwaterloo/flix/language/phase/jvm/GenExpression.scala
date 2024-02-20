@@ -533,6 +533,8 @@ object GenExpression {
             compileExpr(exp2)
             mv.visitInsn(LREM)
 
+          case ObjectOp.Eq => visitComparison1(exp1, exp2, IF_ACMPNE)
+
           case _ => InternalCompilerException(s"Unexpected semantic operator: $sop.", exp1.loc)
 
         }

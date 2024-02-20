@@ -1,5 +1,5 @@
 mod TestReflect {
-    use Reflect.default
+    use Reflect.{default, areIdentical}
 
     @test
     def testDefaultUnit(): Bool = (default(): Unit) == ()
@@ -36,4 +36,23 @@ mod TestReflect {
 
     @test
     def testDefaultList(): Bool = Object.isNull(default(): List[String])
+
+    @test
+    def testIdenticalBool01(): Bool = areIdentical(true, true)
+
+    @test
+    def testIdenticalBool02(): Bool = not areIdentical(true, false)
+
+    @test
+    def testIdenticalRef01(): Bool \ IO = {
+        let r = ref 123 @ Static;
+        areIdentical(r, r)
+    }
+
+    @test
+    def testIdenticalRef02(): Bool \ IO = {
+        let r1 = ref 123 @ Static;
+        let r2 = ref 123 @ Static;
+        not areIdentical(r1, r2)
+    }
 }

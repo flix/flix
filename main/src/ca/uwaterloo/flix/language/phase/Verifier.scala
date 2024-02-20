@@ -216,6 +216,8 @@ object Verifier {
 
             case SemanticOp.StringOp.Concat => (MonoType.String, MonoType.String, MonoType.String)
 
+            case SemanticOp.ObjectOp.Eq => (t1, t1, MonoType.Bool)
+
             case _ => throw InternalCompilerException(s"Invalid binary operator: '$sop'", loc)
           }
           check(expected = argTpe1)(t1, loc)

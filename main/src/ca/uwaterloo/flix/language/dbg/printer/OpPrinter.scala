@@ -69,7 +69,8 @@ object OpPrinter {
          Int8Op.Eq |
          Int16Op.Eq |
          Int32Op.Eq |
-         Int64Op.Eq => eq
+         Int64Op.Eq |
+         ObjectOp.Eq => eq
     case BoolOp.Neq |
          CharOp.Neq |
          Float32Op.Neq |
