@@ -74,11 +74,14 @@ object EffUnification2 {
       currentEqns = nextEqns
       currentSubst = nextSubst
 
+      println("-- Result of Unit Propagation -- ")
       println(format(nextEqns))
       println(format(currentSubst))
 
+      println("-- Result of BU -- ")
       val restSubst = boolUnify(currentEqns, Set.empty)
       val resultSubst = currentSubst @@ restSubst
+      println(format(resultSubst))
 
       Result.Ok(resultSubst)
     } catch {
@@ -148,12 +151,12 @@ object EffUnification2 {
   private def boolUnify(l: List[Equation], renv: Set[Int])(implicit flix: Flix): LocalSubstitution = l match {
     case Nil => LocalSubstitution.empty
     case Equation(t1, t2) :: xs =>
-      val subst = booleanUnification(t1, t2, renv)
-      val subst1 = boolUnify(xs.map(eq => subst.apply(eq)), renv)
+      val subst = boolUnify(t1, t2, renv)
+      val subst1 = boolUnify(subst(xs), renv)
       subst @@ subst1 // TODO: order?
   }
 
-  private def booleanUnification(t1: Term, t2: Term, renv: Set[Int])(implicit flix: Flix): LocalSubstitution = {
+  private def boolUnify(t1: Term, t2: Term, renv: Set[Int])(implicit flix: Flix): LocalSubstitution = {
     // The boolean expression we want to show is false.
     val query = Term.mkXor(t1, t2)
 
@@ -399,7 +402,34 @@ object EffUnification2 {
       }
     }
 
-    def @@(that: LocalSubstitution): LocalSubstitution = ???
+    def @@(that: LocalSubstitution): LocalSubstitution = {
+      // Case 1: Return `that` if `this` is empty.
+      if (this.m.isEmpty) {
+        return that
+      }
+
+      // Case 2: Return `this` if `that` is empty.
+      if (that.m.isEmpty) {
+        return this
+      }
+
+      // Case 3: Merge the two substitutions.
+      val result = mutable.Map.empty[Int, Term]
+
+      // Add all bindings in `that`. (Applying the current substitution).
+      for ((x, t) <- that.m) {
+        result.update(x, this.apply(t))
+      }
+
+      // Add all bindings in `this` that are not in `that`.
+      for ((x, t) <- this.m) {
+        if (!that.m.contains(x)) {
+          result.update(x, t)
+        }
+      }
+
+      LocalSubstitution(result.toMap)
+    }
 
     def toSubst(implicit bimap: Bimap[Type.Var, Int]): Substitution = {
       Substitution(m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
@@ -481,7 +511,7 @@ object EffUnification2 {
   def main(args: Array[String]): Unit = {
     implicit val flix: Flix = new Flix()
 
-    println(format(solveAll(example01(), RigidityEnv.empty).get))
+    solveAll(example01(), RigidityEnv.empty)
   }
 
 
