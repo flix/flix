@@ -73,7 +73,7 @@ object EffUnification2 {
   }
 
   private def toType(t0: Term, loc: SourceLocation)(implicit m: Bimap[Type.Var, Int]): Type = t0 match {
-    case Term.True => Type.Pure
+    case Term.True => Type.True
     case Term.False => Type.Univ
     case Term.Var(x) => m.getBackward(x).get
     case Term.Not(t) => Type.mkComplement(toType(t, loc), loc)
@@ -125,7 +125,9 @@ object EffUnification2 {
     case _ => throw InternalCompilerException(s"Unexpected equation: '$eq'.", SourceLocation.Unknown)
   }
 
-  private case class Equation(t1: Term, t2: Term)
+  private case class Equation(t1: Term, t2: Term) {
+    def size: Int = t1.size + t2.size
+  }
 
   private def boolUnify(l: List[Equation], renv: Set[Int])(implicit flix: Flix): LocalSubstitution = l match {
     case Nil => LocalSubstitution.empty
@@ -364,5 +366,69 @@ object EffUnification2 {
       })
     }
   }
+
+  private def prettyPrint(l: List[Equation]): String = {
+    val sb = new StringBuilder()
+    for (Equation(t1, t2) <- l.sortBy(_.size)) {
+      sb.append(t1.toString)
+      sb.append(" ~ ")
+      sb.append(t2.toString)
+      sb.append("\n")
+    }
+    sb.toString()
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  /// Debugging                                                             ///
+  /////////////////////////////////////////////////////////////////////////////
+
+  import Term._
+
+  //  True ~ True
+  //  e92719 ~ True
+  //  e92722 ~ True
+  //  e92725 ~ True
+  //  e92728 ~ True
+  //  e92730 ~ e92719 + e92722 + e92725 + e92728
+  //  e92735 ~ True
+  //  e92737 ~ e92735
+  //  e92739 ~ e135864 + e92737
+  //  e92743 ~ True
+  //  e92745 ~ e92743
+  //  e92747 ~ e135862 + e92739 + e92745
+  //  e92751 ~ True
+  //  e92753 ~ e92751
+  //  e92755 ~ e135860 + e92747 + e92753
+  //  e92759 ~ True
+  //  e92761 ~ e92759
+  //  e92763 ~ e135858 + e92755 + e92761
+  //  e92765 ~ e135855 + e92763
+  private def example01(): List[Equation] = List(
+    True -> True,
+    Var(92719) -> True,
+    Var(92722) -> True,
+    Var(92722) -> True,
+    Var(92725) -> True,
+    Var(92728) -> True,
+    Var(92730) -> mkAnd(List(Var(92719), Var(92722), Var(92725), Var(92728))),
+    Var(92735) -> True,
+    Var(92737) -> Var(92735),
+    Var(92739) -> mkAnd(List(Var(135864), Var(92737))),
+    Var(92743) -> True,
+    Var(92745) -> Var(92743),
+    Var(92747) -> mkAnd(List(Var(135862), Var(92739), Var(92745))),
+    Var(92751) -> True,
+    Var(92753) -> Var(92751),
+    Var(92755) -> mkAnd(List(Var(135860), Var(92747), Var(92753))),
+    Var(92759) -> True,
+    Var(92761) -> Var(92759),
+    Var(92763) -> mkAnd(List(Var(135858), Var(92755), Var(92761))),
+    Var(92765) -> mkAnd(List(Var(135855), Var(92763)))
+  ).map({ case (x, y) => Equation(x, y)})
+
+  def main(args: Array[String]): Unit = {
+    println(prettyPrint(example01()))
+  }
+
 
 }
