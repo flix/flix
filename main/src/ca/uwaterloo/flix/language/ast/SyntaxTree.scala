@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.errors.Parse2Error
+import ca.uwaterloo.flix.language.errors.Parser2Error
 
 
 /**
@@ -84,9 +84,9 @@ object SyntaxTree {
    */
   object TreeKind {
     /**
-     * A special error kind wrapping a [[Parse2Error]].
+     * A special error kind wrapping a [[Parser2Error]].
      */
-    case class ErrorTree(error: Parse2Error) extends TreeKind
+    case class ErrorTree(error: Parser2Error) extends TreeKind
 
     case object Annotations extends TreeKind
 
