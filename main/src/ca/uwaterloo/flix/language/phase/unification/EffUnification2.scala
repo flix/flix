@@ -81,7 +81,7 @@ object EffUnification2 {
       println(formatSubst(currentSubst))
     }
 
-    def solve()(implicit flix: Flix): Result[LocalSubstitution, InternalFailure] = {
+    def solve()(implicit flix: Flix): Result[LocalSubstitution, ConflictException] = {
       println("-".repeat(80))
       println("--- Input")
       println("-".repeat(80))
@@ -94,7 +94,7 @@ object EffUnification2 {
         println("    (resolves all equations of the form: x = c where x is a var and c is const.)")
         println("-".repeat(80))
         val (nextEqns, nextSubst) = unitPropagate(currentEqns, currentSubst)
-        currentEqns = nextEqns
+        currentEqns = checkAndSimplify(nextEqns)
         currentSubst = nextSubst
         printEquations()
         printSubstitution()
@@ -141,13 +141,13 @@ object EffUnification2 {
         println()
         Result.Ok(resultSubst)
       } catch {
-        case ex: InternalFailure => Result.Err(ex)
+        case ex: ConflictException => Result.Err(ex)
       }
     }
 
   }
 
-  private def solveAll(l: List[Equation], renv0: RigidityEnv)(implicit flix: Flix): Result[LocalSubstitution, InternalFailure] = {
+  private def solveAll(l: List[Equation], renv0: RigidityEnv)(implicit flix: Flix): Result[LocalSubstitution, ConflictException] = {
     // TODO: Introduce small solver class.
     new Solver(l).solve()
   }
@@ -163,8 +163,34 @@ object EffUnification2 {
 
   private def fromType(t: Type): Term = ???
 
-  private case class InternalFailure(x: Term, y: Term) extends RuntimeException
+  private case class ConflictException(x: Term, y: Term) extends RuntimeException
 
+  /**
+    * Checks for conflicts and removes any trivial equations.
+    *
+    * A conflict is an unsolvable equation such as:
+    *
+    * - true = false
+    * - false = true
+    * - true = r17 where r17 is rigid
+    *
+    * A trivial equation is one of:
+    *
+    * -  true = true
+    * - false = false
+    * -   r17 = r17
+    */
+  private def checkAndSimplify(l: List[Equation]): List[Equation] = l match {
+    case Nil => Nil
+    case e :: es => e match {
+      case Equation(Term.True, Term.True) => checkAndSimplify(es)
+      case Equation(Term.False, Term.False) => checkAndSimplify(es)
+      case Equation(Term.True, Term.False) => throw ConflictException(Term.True, Term.False)
+      case Equation(Term.False, Term.True) => throw ConflictException(Term.False, Term.True)
+      // TODO: Rigid
+      case _ => e :: checkAndSimplify(es)
+    }
+  }
 
   // Saturates all unit clauses.
   private def unitPropagate(eqns: List[Equation], subst0: LocalSubstitution): (List[Equation], LocalSubstitution) = {
@@ -200,11 +226,11 @@ object EffUnification2 {
   private def extendSubstWithSingleGround(eq: Equation, subst: LocalSubstitution): LocalSubstitution = eq match {
     case Equation(Term.Var(x), t0) => subst.m.get(x) match {
       case None => subst.extended(x, t0)
-      case Some(t1) => if (t0 == t1) subst else throw InternalFailure(t0, t1)
+      case Some(t1) => if (t0 == t1) subst else throw ConflictException(t0, t1)
     }
     case Equation(t0, Term.Var(x)) => subst.m.get(x) match {
       case None => subst.extended(x, t0)
-      case Some(t1) => if (t0 == t1) subst else throw InternalFailure(t0, t1)
+      case Some(t1) => if (t0 == t1) subst else throw ConflictException(t0, t1)
     }
     case _ => throw InternalCompilerException(s"Unexpected equation: '$eq'.", SourceLocation.Unknown)
   }
