@@ -70,41 +70,63 @@ object EffUnification2 {
     var currentEqns = l
     var currentSubst: LocalSubstitution = LocalSubstitution.empty
 
+    println("-".repeat(80))
+    println("--- Input")
+    println("-".repeat(80))
+    println(s"Equations (${currentEqns.size}):")
+    println(format(currentEqns))
+    println()
+
     try {
-      println("-- Result of Unit Propagation -- ")
+      println("-".repeat(80))
+      println("--- Phase 1: Unit Propagation ---")
+      println("    (resolves all equations of the form: x = c where x is a var and c is const.)")
+      println("-".repeat(80))
       val (nextEqns, nextSubst) = unitPropagate(currentEqns, currentSubst)
       currentEqns = nextEqns
       currentSubst = nextSubst
+      println(s"Equations (${currentEqns.size}):")
       println(format(currentEqns))
-      println(format(currentSubst))
+      println(s"Substitution (${currentSubst.m.size}):")
+      println(formatSubst(currentSubst))
+      println()
+      if (currentEqns.isEmpty) {
+        return Result.Ok(currentSubst)
+      }
+      println()
 
-
-      println("-- Result of Var Propagation -- ")
+      println("-".repeat(80))
+      println("--- Phase 2: Variable Propagation ---")
+      println("    (resolves all equations of the form: x = y where x and y are vars.)")
+      println("-".repeat(80))
       val (nextEqns1, nextSubst1) = varPropagate(currentEqns, currentSubst)
       currentEqns = nextEqns1
       currentSubst = nextSubst1
+      println(s"Equations (${currentEqns.size}):")
       println(format(currentEqns))
-      println(format(currentSubst))
+      println(s"Substitution (${currentSubst.m.size}):")
+      println(formatSubst(currentSubst))
+      println()
 
       println("-- Result of Occurrence Analysis and Propagation -- ")
       val occur = occurrenceInfo(currentEqns) // TODO: Introduce type, but also check in Subst.
       println(occur)
-      println()
       println()
 
       println("-- Result of Trivial Assignment -- ")
       val (nextEqns2, nextSubst2) = trivialAssignment(currentEqns, currentSubst)
       currentEqns = nextEqns2
       currentSubst = nextSubst2
+      println(s"Equations (${currentEqns.size}):")
       println(format(currentEqns))
-      println(format(currentSubst))
-      println()
+      println(s"Substitution (${currentSubst.m.size}):")
+      println(formatSubst(currentSubst))
       println()
 
       println("-- Result of BU -- ")
       val restSubst = boolUnifyAll(currentEqns, Set.empty)
       val resultSubst = currentSubst ++ restSubst
-      println(format(resultSubst))
+      println(formatSubst(resultSubst))
 
       Result.Ok(resultSubst)
     } catch {
@@ -516,9 +538,10 @@ object EffUnification2 {
     }
   }
 
-  private def format(l: List[Equation]): String = {
+  private def format(l: List[Equation], indent: Int = 4): String = {
     val sb = new StringBuilder()
     for (Equation(t1, t2) <- l) {
+      sb.append(" ".repeat(indent))
       sb.append(t1.toString)
       sb.append(" ~ ")
       sb.append(t2.toString)
@@ -527,10 +550,11 @@ object EffUnification2 {
     sb.toString()
   }
 
-  private def format(s: LocalSubstitution): String = {
+  private def formatSubst(s: LocalSubstitution, indent: Int = 4): String = {
     val sb = new StringBuilder()
     // We sort the bindings by (size, name).
     for ((x, t) <- s.m.toList.sortBy(kv => (kv._2.size, kv._1))) {
+      sb.append(" ".repeat(indent))
       sb.append(x)
       sb.append(" -> ")
       sb.append(t)
