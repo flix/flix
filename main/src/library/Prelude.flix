@@ -96,6 +96,11 @@ pub def ||>(x: (a, b), f: a -> (b -> c \ ef)): c \ ef = f(fst(x), snd(x))
 pub def !>( x: a, f: a -> Unit \ ef): a \ ef = f(x); x
 
 ///
+/// Coerces the given value `x`.
+///
+pub def coerce(x: t[a]): a with Coerce[t] = Coerce.coerce(x)
+
+///
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
 pub def println(x: a): Unit \ IO with ToString[a] =

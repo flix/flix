@@ -154,6 +154,9 @@ class Flix {
     // Comparison
     "Comparison.flix" -> LocalResource.get("/src/library/Comparison.flix"),
 
+    // Coerce
+    "Coerce.flix" -> LocalResource.get("/src/library/Coerce.flix"),
+
     // Operators
     "Neg.flix" -> LocalResource.get("/src/library/Neg.flix"),
     "Add.flix" -> LocalResource.get("/src/library/Add.flix"),
@@ -482,8 +485,6 @@ class Flix {
     */
   def getFormatOptions: FormatOptions = {
     FormatOptions(
-      ignorePur = false,
-      ignoreEff = false,
       varNames = FormatOptions.VarName.NameBased // TODO add cli option
     )
   }

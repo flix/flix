@@ -1193,7 +1193,7 @@ object GenExpression {
         }
     }
 
-    case Expr.ApplySelfTail(sym, _, exps, _, _, _) =>
+    case Expr.ApplySelfTail(sym, exps, _, _, _) =>
       // The function abstract class name
       val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
       // Evaluate each argument and put the result on the Fn class.

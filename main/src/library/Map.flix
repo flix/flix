@@ -861,16 +861,16 @@ mod Map {
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison \ ef, m: Map[k, v]): List[(k, v)] \ ef =
+    pub def rangeQuery(p: k -> Comparison \ ef, m: Map[k, v]): List[(k, v)] \ ef =
         let Map(t) = m;
-        RedBlackTree.query(p, (k, v) -> (k, v), t)
+        RedBlackTree.rangeQuery(p, (k, v) -> (k, v), t)
 
     ///
     /// Applies `f` to all key-value pairs `(k, v)` from the map `m` where `p(k)` returns `EqualTo`.
     ///
-    pub def queryWith(p: k -> Comparison \ ef1, f: (k, v) -> Unit \ ef2, m: Map[k, v]): Unit \ { ef1, ef2 } =
+    pub def rangeQueryWith(p: k -> Comparison \ ef1, f: (k, v) -> Unit \ ef2, m: Map[k, v]): Unit \ { ef1, ef2 } =
         let Map(t) = m;
-        RedBlackTree.queryWith(p, f, t)
+        RedBlackTree.rangeQueryWith(p, f, t)
 
     ///
     /// Returns an iterator over all key-value pairs in `m`.

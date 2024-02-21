@@ -187,7 +187,7 @@ mod GetOpt {
             let (os, xs, us, es)    = getOpt1Helper(ordering, optDescrs, rest);
             match (opt, ordering) {
                 case (OptionKind.Opt(o),       _)                           => (o :: os, xs, us, es)
-                case (OptionKind.UnreqOpt(u),  _)                           => (os, xs, u :: us, es)        /// u is added to
+                case (OptionKind.UnreqOpt(u),  _)                           => (os, xs, u :: us, es)        // u is added to
                 case (OptionKind.NonOpt(x),    ArgOrder.RequireOrder)       => (Nil, x :: rest, Nil, Nil)
                 case (OptionKind.NonOpt(x),    ArgOrder.Permute)            => (os, x :: xs, us, es)
                 case (OptionKind.NonOpt(x),    ArgOrder.ReturnInOrder(f))   => (f(x) :: os, xs, us, es)
@@ -300,9 +300,9 @@ mod GetOpt {
     ///
     def findOptionByName(optname: String, optDescrs: List[OptionDescr[a]]): Result[GetOptionFailure[a], OptionDescr[a]] =
         let getWith     = p -> List.filterMap(o -> { let xs = o.optionNames; if (List.exists(p(optname), xs)) Some(o) else None}, optDescrs);
-        /// Exact match of `optname` ...
+        // Exact match of `optname` ...
         let exact       = getWith((x,y) -> x == y): List[OptionDescr[a]];
-        /// Otherwise use `optname` as a prefix...
+        // Otherwise use `optname` as a prefix...
         let options     = if (List.isEmpty(exact)) getWith((sub, s1) -> String.startsWith({prefix = sub}, s1)) else exact;
         match options {
             case optd :: Nil    => Ok(optd)
@@ -318,7 +318,7 @@ mod GetOpt {
     /// It returns `Err(Ambiguous(xs))` if `xc` identifies more than one option descriptor.
     ///
     def findOptionById(xc: Char, optDescrs: List[OptionDescr[a]]): Result[GetOptionFailure[a], OptionDescr[a]] =
-        /// This finds 0, 1, or more results. "more" is a failure (ambiguous), 0 is ignored, 1 is success.
+        // This finds 0, 1, or more results. "more" is a failure (ambiguous), 0 is ignored, 1 is success.
         let options = List.filterMap(o -> { let ss = o.optionIds; if (List.exists(s -> s == xc, ss)) Some(o) else None}, optDescrs);
         match options {
             case optd :: Nil    => Ok(optd)

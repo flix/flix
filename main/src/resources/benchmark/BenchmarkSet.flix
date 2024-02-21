@@ -82,7 +82,7 @@ mod BenchmarkSet {
     ///
     @benchmark
     pub def benchmark12(): Bool =
-        Set.size(Set.filter(x -> Int32.rem(x, 2) == 0, Set.range(0, 24))) == 12
+        Set.size(Set.filter(x -> Int32.remainder(x, 2) == 0, Set.range(0, 24))) == 12
 
     ///
     /// create a set of `Int32` and find the first element that satisfies a predicate, searching left to right.
@@ -152,7 +152,7 @@ mod BenchmarkSet {
     ///
     @benchmark
     pub def benchmark22(): Bool =
-        Set.size(fst(Set.partition(x -> Int32.rem(x, 2) == 0, Set.range(0, 24)))) == 12
+        Set.size(fst(Set.partition(x -> Int32.remainder(x, 2) == 0, Set.range(0, 24)))) == 12
 
     ///
     /// create a set of `Int32` and compute its sum via reduceLeft.

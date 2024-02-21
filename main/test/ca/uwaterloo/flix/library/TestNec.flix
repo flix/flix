@@ -840,25 +840,25 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def filterMap01(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, singleton(1)) == Nil
+    def filterMap01(): Bool = Nec.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, singleton(1)) == Nil
 
     @test
-    def filterMap02(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, singleton(2)) == 1 :: Nil
+    def filterMap02(): Bool = Nec.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, singleton(2)) == 1 :: Nil
 
     @test
-    def filterMap03(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(1, 3)) == Nil
+    def filterMap03(): Bool = Nec.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf2(1, 3)) == Nil
 
     @test
-    def filterMap04(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(1, 4)) == 2 :: Nil
+    def filterMap04(): Bool = Nec.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf2(1, 4)) == 2 :: Nil
 
     @test
-    def filterMap05(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(6, -1)) == 3 :: Nil
+    def filterMap05(): Bool = Nec.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf2(6, -1)) == 3 :: Nil
 
     @test
-    def filterMap07(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(8, 6)) == 4 :: 3 :: Nil
+    def filterMap07(): Bool = Nec.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf2(8, 6)) == 4 :: 3 :: Nil
 
     @test
-    def filterMap08(): Bool = Nec.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf7(0, 1, 2, 3, 4, 5, 10)) ==
+    def filterMap08(): Bool = Nec.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf7(0, 1, 2, 3, 4, 5, 10)) ==
                             0 :: 1 :: 2 :: 5 :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
@@ -866,25 +866,25 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def findMap01(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, singleton(1)) == None
+    def findMap01(): Bool = Nec.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, singleton(1)) == None
 
     @test
-    def findMap02(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, singleton(2)) == Some(1)
+    def findMap02(): Bool = Nec.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, singleton(2)) == Some(1)
 
     @test
-    def findMap03(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(1, 3)) == None
+    def findMap03(): Bool = Nec.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf2(1, 3)) == None
 
     @test
-    def findMap04(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(1, 4)) == Some(2)
+    def findMap04(): Bool = Nec.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf2(1, 4)) == Some(2)
 
     @test
-    def findMap05(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(6, -1)) == Some(3)
+    def findMap05(): Bool = Nec.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf2(6, -1)) == Some(3)
 
     @test
-    def findMap06(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf2(8, 6)) == Some(4)
+    def findMap06(): Bool = Nec.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf2(8, 6)) == Some(4)
 
     @test
-    def findMap07(): Bool = Nec.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, necOf7(0, 1, 2, 3, 4, 5, 10)) == Some(0)
+    def findMap07(): Bool = Nec.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, necOf7(0, 1, 2, 3, 4, 5, 10)) == Some(0)
 
     /////////////////////////////////////////////////////////////////////////////
     // zip                                                                     //

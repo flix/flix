@@ -77,7 +77,7 @@ mod Reachable.Functional {
 
 mod Reachable.Logic {
     pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Foldable[f], Order[n] =
-        let edgeFacts = project edges into Edge;
+        let edgeFacts = inject edges into Edge;
         // origin is reachable and this set is expanded by the edge facts
         let reachable = #{
             Reachable(origin).

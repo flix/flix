@@ -290,6 +290,23 @@ object Main {
               System.exit(1)
           }
 
+        case Command.Outdated =>
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.outdated(flix)(System.err)
+          }.toHardResult match {
+            case Result.Ok(false) =>
+              // Up to date
+              System.exit(0)
+            case Result.Ok(true) =>
+              // Contains outdated dependencies
+              System.exit(1)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
 
         case Command.CompilerPerf =>
           CompilerPerf.run(options)
@@ -370,6 +387,8 @@ object Main {
 
     case object Release extends Command
 
+    case object Outdated extends Command
+
     case object CompilerPerf extends Command
   }
 
@@ -418,8 +437,11 @@ object Main {
             .required()
         )
 
-      cmd("release").text("  release a new version to GitHub.")
+      cmd("release").text("  releases a new version to GitHub.")
         .action((_, c) => c.copy(command = Command.Release))
+
+      cmd("outdated").text("  shows dependencies which have newer versions available.")
+        .action((_, c) => c.copy(command = Command.Outdated))
 
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
         opt[Unit]("frontend")
