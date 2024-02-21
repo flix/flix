@@ -82,7 +82,7 @@ mod Bench.Fusion {
         defBenchmark("List.filterLength", () -> {
             l |>
             Array.toList |>
-            List.filter(x -> x `Int32.rem` 2 == 0) |>
+            List.filter(x -> x `Int32.remainder` 2 == 0) |>
             List.length
         })
 
@@ -90,7 +90,7 @@ mod Bench.Fusion {
         defBenchmark("DelayList.filterLength", () -> {
             l |>
             Array.toDelayList |>
-            DelayList.filter(x -> x `Int32.rem` 2 == 0) |>
+            DelayList.filter(x -> x `Int32.remainder` 2 == 0) |>
             DelayList.length
         })
 
@@ -101,7 +101,7 @@ mod Bench.Fusion {
         defBenchmark("List.filterMapLength", () -> {
             l |>
             Array.toList |>
-            List.filter(x -> x `Int32.rem` 2 == 0) |>
+            List.filter(x -> x `Int32.remainder` 2 == 0) |>
             List.map(x -> x * x) |>
             List.length
         })
@@ -110,7 +110,7 @@ mod Bench.Fusion {
         defBenchmark("DelayList.filterMapLength", () -> {
             l |>
             Array.toDelayList |>
-            DelayList.filter(x -> x `Int32.rem` 2 == 0) |>
+            DelayList.filter(x -> x `Int32.remainder` 2 == 0) |>
             DelayList.map(x -> x * x) |>
             DelayList.length
         })
@@ -139,7 +139,7 @@ mod Bench.Fusion {
         defBenchmark("List.filterSum", () -> {
             l |>
             Array.toList |>
-            List.filter(x -> x `Int32.rem` 2 == 0) |>
+            List.filter(x -> x `Int32.remainder` 2 == 0) |>
             List.sum
         })
 
@@ -147,7 +147,7 @@ mod Bench.Fusion {
         defBenchmark("DelayList.filterSum", () -> {
             l |>
             Array.toDelayList |>
-            DelayList.filter(x -> x `Int32.rem` 2 == 0) |>
+            DelayList.filter(x -> x `Int32.remainder` 2 == 0) |>
             DelayList.sum
         })
 
@@ -158,7 +158,7 @@ mod Bench.Fusion {
         defBenchmark("List.filterMapSum", () -> {
             l |>
             Array.toList |>
-            List.filter(x -> x `Int32.rem` 2 == 0) |>
+            List.filter(x -> x `Int32.remainder` 2 == 0) |>
             List.map(x -> x * x) |>
             List.sum
         })
@@ -167,7 +167,7 @@ mod Bench.Fusion {
         defBenchmark("DelayList.filterMapSum", () -> {
             l |>
             Array.toDelayList |>
-            DelayList.filter(x -> x `Int32.rem` 2 == 0) |>
+            DelayList.filter(x -> x `Int32.remainder` 2 == 0) |>
             DelayList.map(x -> x * x) |>
             DelayList.sum
         })

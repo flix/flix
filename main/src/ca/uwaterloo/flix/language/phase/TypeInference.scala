@@ -28,7 +28,6 @@ import ca.uwaterloo.flix.language.phase.unification.Unification._
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.Validation.{mapN, traverse, traverseValues}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
 
@@ -910,16 +909,12 @@ object TypeInference {
         val continuationEffect = Type.freshVar(Kind.Eff, loc)
 
         def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam]): InferMonad[Unit] = {
-          if (expected.length != actual.length) {
-            InferMonad.errPoint(TypeError.MismatchedOpArity(op, expected = expected.length, actual = actual.length, loc))
-          } else {
-            traverseM(expected zip actual) {
-              case (ex, ac) =>
-                for {
-                  _ <- expectTypeM(expected = ex.tpe, actual = ac.tpe, ac.loc)
-                } yield ()
-            }.map(_ => ())
-          }
+          traverseM(expected zip actual) {
+            case (ex, ac) =>
+              for {
+                _ <- expectTypeM(expected = ex.tpe, actual = ac.tpe, ac.loc)
+              } yield ()
+          }.map(_ => ())
         }
 
         def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = rule match {
@@ -980,19 +975,15 @@ object TypeInference {
           case _ => operation.spec.tpe
         }
 
-        if (operation.spec.fparams.length != args.length) {
-          InferMonad.errPoint(TypeError.MismatchedOpArity(op.sym, expected = operation.spec.fparams.length, actual = args.length, loc))
-        } else {
-          val argM = (args zip operation.spec.fparams) map {
-            case (arg, fparam) => visitArg(arg, fparam)
-          }
-          for {
-            (tconstrss, _, effs) <- seqM(argM).map(_.unzip3)
-            resultTconstrs = tconstrss.flatten
-            resultTpe <- unifyTypeM(tvar, operationType, loc)
-            resultEff = Type.mkUnion(effTpe :: operation.spec.eff :: effs, loc)
-          } yield (resultTconstrs, resultTpe, resultEff)
+        val argM = (args zip operation.spec.fparams) map {
+          case (arg, fparam) => visitArg(arg, fparam)
         }
+        for {
+          (tconstrss, _, effs) <- seqM(argM).map(_.unzip3)
+          resultTconstrs = tconstrss.flatten
+          resultTpe <- unifyTypeM(tvar, operationType, loc)
+          resultEff = Type.mkUnion(effTpe :: operation.spec.eff :: effs, loc)
+        } yield (resultTconstrs, resultTpe, resultEff)
 
       case KindedAst.Expr.InvokeConstructor(constructor, args, loc) =>
         val classType = getFlixType(constructor.getDeclaringClass)

@@ -1,5 +1,5 @@
 mod StateExample {
-    
+
     eff State {
         pub def get(): Int32
         pub def put(value: Int32): Unit
@@ -14,7 +14,7 @@ mod StateExample {
             def loop(k: Int32) = {
                 if (k == 1)
                     k
-                else if (Int32.mod(k, 2) == 0) {
+                else if (Int32.modulo(k, 2) == 0) {
                     do State.put(do State.get() + 1);
                     loop(k/2)
                 } else {
@@ -30,7 +30,7 @@ mod StateExample {
             def put(value, k) = {
                 n := value;
                 k()
-            } 
+            }
         }
     }
 }
