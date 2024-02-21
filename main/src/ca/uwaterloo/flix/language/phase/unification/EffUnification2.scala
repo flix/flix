@@ -27,10 +27,10 @@ import scala.collection.mutable.ListBuffer
 object EffUnification2 {
 
   /**
-   * Returns the most general unifier of the all the pairwise unification problems in `l`.
-   *
-   * Note: A type in `l` must not contain any associated effects.
-   */
+    * Returns the most general unifier of the all the pairwise unification problems in `l`.
+    *
+    * Note: A type in `l` must not contain any associated effects.
+    */
   def unifyAll(l: List[(Type, Type)], renv0: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // If the list is empty we can return immediately.
     if (l.isEmpty) {
@@ -66,81 +66,90 @@ object EffUnification2 {
     }
   }
 
+  private class Solver(l: List[Equation]) {
+
+    private var currentEqns = l
+    private var currentSubst: LocalSubstitution = LocalSubstitution.empty
+
+    private def printEquations(): Unit = {
+      println(s"Equations (${currentEqns.size}):")
+      println(format(currentEqns))
+    }
+
+    private def printSubstitution(): Unit = {
+      println(s"Substitution (${currentSubst.m.size}):")
+      println(formatSubst(currentSubst))
+    }
+
+    def solve()(implicit flix: Flix): Result[LocalSubstitution, InternalFailure] = {
+      println("-".repeat(80))
+      println("--- Input")
+      println("-".repeat(80))
+      printEquations()
+      println()
+
+      try {
+        println("-".repeat(80))
+        println("--- Phase 1: Unit Propagation ---")
+        println("    (resolves all equations of the form: x = c where x is a var and c is const.)")
+        println("-".repeat(80))
+        val (nextEqns, nextSubst) = unitPropagate(currentEqns, currentSubst)
+        currentEqns = nextEqns
+        currentSubst = nextSubst
+        printEquations()
+        printSubstitution()
+        println()
+        if (currentEqns.isEmpty) {
+          return Result.Ok(currentSubst)
+        }
+        println()
+
+        println("-".repeat(80))
+        println("--- Phase 2: Variable Propagation ---")
+        println("    (resolves all equations of the form: x = y where x and y are vars.)")
+        println("-".repeat(80))
+        val (nextEqns1, nextSubst1) = varPropagate(currentEqns, currentSubst)
+        currentEqns = nextEqns1
+        currentSubst = nextSubst1
+        printEquations()
+        printSubstitution()
+        println()
+
+        println("-- Result of Occurrence Analysis and Propagation -- ")
+        val occur = occurrenceInfo(currentEqns) // TODO: Introduce type, but also check in Subst.
+        println(occur)
+        println()
+
+        println("-".repeat(80))
+        println("--- Phase 3: Trivial Assignment ---")
+        println("    (resolves all equations of the form: x = t where x is free in t.)")
+        println("-".repeat(80))
+        val (nextEqns2, nextSubst2) = trivialAssignment(currentEqns, currentSubst)
+        currentEqns = nextEqns2
+        currentSubst = nextSubst2
+        printEquations()
+        printSubstitution()
+        println()
+
+        println("-".repeat(80))
+        println("--- Phase 4: Boolean Unification ---")
+        println("    (resolves all remaining equations using SVE.)")
+        println("-".repeat(80))
+        val restSubst = boolUnifyAll(currentEqns, Set.empty)
+        val resultSubst = currentSubst ++ restSubst
+        printSubstitution()
+        println()
+        Result.Ok(resultSubst)
+      } catch {
+        case ex: InternalFailure => Result.Err(ex)
+      }
+    }
+
+  }
+
   private def solveAll(l: List[Equation], renv0: RigidityEnv)(implicit flix: Flix): Result[LocalSubstitution, InternalFailure] = {
     // TODO: Introduce small solver class.
-
-    var currentEqns = l
-    var currentSubst: LocalSubstitution = LocalSubstitution.empty
-
-    println("-".repeat(80))
-    println("--- Input")
-    println("-".repeat(80))
-    println(s"Equations (${currentEqns.size}):")
-    println(format(currentEqns))
-    println()
-
-    try {
-      println("-".repeat(80))
-      println("--- Phase 1: Unit Propagation ---")
-      println("    (resolves all equations of the form: x = c where x is a var and c is const.)")
-      println("-".repeat(80))
-      val (nextEqns, nextSubst) = unitPropagate(currentEqns, currentSubst)
-      currentEqns = nextEqns
-      currentSubst = nextSubst
-      println(s"Equations (${currentEqns.size}):")
-      println(format(currentEqns))
-      println(s"Substitution (${currentSubst.m.size}):")
-      println(formatSubst(currentSubst))
-      println()
-      if (currentEqns.isEmpty) {
-        return Result.Ok(currentSubst)
-      }
-      println()
-
-      println("-".repeat(80))
-      println("--- Phase 2: Variable Propagation ---")
-      println("    (resolves all equations of the form: x = y where x and y are vars.)")
-      println("-".repeat(80))
-      val (nextEqns1, nextSubst1) = varPropagate(currentEqns, currentSubst)
-      currentEqns = nextEqns1
-      currentSubst = nextSubst1
-      println(s"Equations (${currentEqns.size}):")
-      println(format(currentEqns))
-      println(s"Substitution (${currentSubst.m.size}):")
-      println(formatSubst(currentSubst))
-      println()
-
-      println("-- Result of Occurrence Analysis and Propagation -- ")
-      val occur = occurrenceInfo(currentEqns) // TODO: Introduce type, but also check in Subst.
-      println(occur)
-      println()
-
-      println("-".repeat(80))
-      println("--- Phase 3: Trivial Assignment ---")
-      println("    (resolves all equations of the form: x = t where x is free in t.)")
-      println("-".repeat(80))
-      val (nextEqns2, nextSubst2) = trivialAssignment(currentEqns, currentSubst)
-      currentEqns = nextEqns2
-      currentSubst = nextSubst2
-      println(s"Equations (${currentEqns.size}):")
-      println(format(currentEqns))
-      println(s"Substitution (${currentSubst.m.size}):")
-      println(formatSubst(currentSubst))
-      println()
-
-      println("-".repeat(80))
-      println("--- Phase 4: Boolean Unification ---")
-      println("    (resolves all remaining equations using SVE.)")
-      println("-".repeat(80))
-      val restSubst = boolUnifyAll(currentEqns, Set.empty)
-      val resultSubst = currentSubst ++ restSubst
-      println(s"Substitution (${currentSubst.m.size}):")
-      println(formatSubst(currentSubst))
-      println()
-      Result.Ok(resultSubst)
-    } catch {
-      case ex: InternalFailure => Result.Err(ex)
-    }
+    new Solver(l).solve()
   }
 
   private def toType(t0: Term, loc: SourceLocation)(implicit m: Bimap[Type.Var, Int]): Type = t0 match {
