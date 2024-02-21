@@ -89,7 +89,17 @@ object EffUnification2 {
       println("-- Result of Occurrence Analysis and Propagation -- ")
       val occur = occurrenceInfo(currentEqns) // TODO: Introduce type, but also check in Subst.
       println(occur)
+      println()
+      println()
 
+      println("-- Result of Trivial Assignment -- ")
+      val (nextEqns2, nextSubst2) = trivialAssignment(currentEqns, currentSubst)
+      currentEqns = nextEqns2
+      currentSubst = nextSubst2
+      println(format(currentEqns))
+      println(format(currentSubst))
+      println()
+      println()
 
       println("-- Result of BU -- ")
       val restSubst = boolUnifyAll(currentEqns, Set.empty)
@@ -172,6 +182,24 @@ object EffUnification2 {
       eqn match {
         case Equation(Term.Var(x), Term.Var(y)) =>
           currentSubst = currentSubst.extended(x, Term.Var(y))
+        case _ => rest += eqn
+      }
+    }
+
+    (currentSubst(rest.toList), currentSubst)
+  }
+
+  // Deals with x92747 ~ (x135862 ∧ x135864)
+  // where LHS is var and is free on RHS
+  private def trivialAssignment(l: List[Equation], subst0: LocalSubstitution): (List[Equation], LocalSubstitution) = {
+    var currentSubst = subst0
+    var rest = ListBuffer.empty[Equation]
+
+    for (eqn <- l) {
+      eqn match {
+        case Equation(Term.Var(x), rhs) if !rhs.freeVars.contains(x) =>
+          val updatedRhs = currentSubst(rhs)
+          currentSubst = currentSubst.extended(x, updatedRhs)
         case _ => rest += eqn
       }
     }
@@ -289,7 +317,7 @@ object EffUnification2 {
     final def size: Int = this match {
       case Term.True => 0
       case Term.False => 0
-      case Term.Var(_) => 0
+      case Term.Var(_) => 1
       case Term.Not(t) => t.size + 1
       case Term.And(ts) => ts.map(_.size).sum + (ts.length - 1)
       case Term.Or(ts) => ts.map(_.size).sum + (ts.length - 1)
@@ -439,6 +467,8 @@ object EffUnification2 {
     def extended(x: Int, t: Term): LocalSubstitution = LocalSubstitution(m + (x -> t))
 
     def ++(that: LocalSubstitution): LocalSubstitution = {
+      assert(this.m.keySet.intersect(that.m.keySet).isEmpty)
+
       if (this.m.isEmpty) {
         that
       } else if (that.m.isEmpty) {
@@ -499,7 +529,8 @@ object EffUnification2 {
 
   private def format(s: LocalSubstitution): String = {
     val sb = new StringBuilder()
-    for ((x, t) <- s.m.toList.sortBy(_._1)) {
+    // We sort the bindings by (size, name).
+    for ((x, t) <- s.m.toList.sortBy(kv => (kv._2.size, kv._1))) {
       sb.append(x)
       sb.append(" -> ")
       sb.append(t)
