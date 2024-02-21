@@ -462,10 +462,6 @@ object Type {
     * A type expression that a represents a type application tpe1[tpe2].
     */
   case class Apply(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Type {
-    if (tpe1.size > 1000 || tpe2.size > 1000) {
-      throw InternalCompilerException("bad", loc)
-    }
-
     /**
       * Returns the kind of `this` type.
       *
