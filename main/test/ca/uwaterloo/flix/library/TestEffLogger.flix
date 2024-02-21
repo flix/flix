@@ -17,18 +17,30 @@ mod TestEffLogger {
 
     use Eff.Logger
 
-    pub def infoExample(): Int32 \ Logger = {
+
+    @Test
+    pub def orderGreater01(): Bool =
+        Eff.Logger.Severity.Fatal > Eff.Logger.Severity.Trace
+
+    @Test
+    pub def orderGreater02(): Bool =
+        Eff.Logger.Severity.Info > Eff.Logger.Severity.Debug
+
+
+    pub def sampleInfoWarn(): Int32 \ Logger = {
         Eff.Logger.info("A1");
         Eff.Logger.warn("A2");
         1000
     }
 
     @Test
-    pub def testTEMP01(): (List[String],Int32) =
-        Eff.Logger.toListHandler(() -> infoExample())
+    pub def toListHandler01(): Bool =
+        let (ss, ans) = Eff.Logger.toListHandler(() -> sampleInfoWarn());
+        ans == 1000 and ss == List#{"[Info] - A1", "[Warn] - A2"}
 
     @Test
-    pub def testTEMP02(): Int32 \ IO =
-        Eff.Logger.ioHandlerWithSeverity(Eff.Logger.Severity.Debug, () -> infoExample())
+    pub def ioHandlerWithSeverity01(): Bool \ IO =
+        let ans = Eff.Logger.ioHandlerWithSeverity(Eff.Logger.Severity.Debug, () -> sampleInfoWarn());
+        ans == 1000
 
 }
