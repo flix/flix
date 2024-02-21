@@ -136,7 +136,7 @@ object EffUnification2 {
         println("    (resolves all remaining equations using SVE.)")
         println("-".repeat(80))
         val restSubst = boolUnifyAll(currentEqns, Set.empty)
-        val resultSubst = currentSubst ++ restSubst
+        val resultSubst = currentSubst @@ restSubst
         printSubstitution()
         println()
         Result.Ok(resultSubst)
@@ -711,8 +711,8 @@ object EffUnification2 {
 
   def main(args: Array[String]): Unit = {
     implicit val flix: Flix = new Flix()
-
-    solveAll(example01(), RigidityEnv.empty)
+    //solveAll(example01(), RigidityEnv.empty)
+    solveAll(example02(), RigidityEnv.empty)
   }
 
 
