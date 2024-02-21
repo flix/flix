@@ -43,4 +43,9 @@ mod TestEffLogger {
         let ans = Eff.Logger.ioHandlerWithSeverity(Eff.Logger.Severity.Debug, () -> sampleInfoWarn());
         ans == 1000
 
+    @Test
+    pub def ioHandlerWithSeverity02(): Bool \ IO =
+        let ans = Eff.Logger.ioHandlerWithSeverity(Eff.Logger.Severity.Warn, () -> sampleInfoWarn());
+        ans == 1000
+
 }
