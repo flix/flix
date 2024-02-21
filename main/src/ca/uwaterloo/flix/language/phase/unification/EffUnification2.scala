@@ -371,6 +371,8 @@ object EffUnification2 {
 
   private sealed trait Term {
 
+    def ++(that: Term): Term = Term.mkAnd(this, that)
+
     final def freeVars: SortedSet[Int] = this match {
       case Term.True => SortedSet.empty
       case Term.False => SortedSet.empty
@@ -653,6 +655,58 @@ object EffUnification2 {
     Var(92761) -> Var(92759),
     Var(92763) -> mkAnd(List(Var(135858), Var(92755), Var(92761))),
     Var(92765) -> mkAnd(List(Var(135855), Var(92763)))
+  ).map({ case (x, y) => Equation(x, y) })
+
+  private def example02(): List[Equation] = List(
+    True -> (Var(100987) ++ Var(101022) ++ Var(101116)),
+    Var(100987) -> (Var(100990) ++ Var(100997) ++ Var(101007) ++ Var(101019)),
+    Var(100990) -> Var(108420),
+    Var(100994) -> True,
+    Var(100996) -> (Var(108422) ++ Var(108423)),
+    Var(100997) -> Var(101006),
+    Var(101001) -> Var(108430),
+    Var(101004) -> Var(108432),
+    Var(101006) -> (Var(108427) ++ Var(108426) ++ Var(108428) ++ Var(101004)),
+    Var(101007) -> Var(101016),
+    Var(101011) -> Var(108439),
+    Var(101014) -> Var(108441),
+    Var(101016) -> (Var(108436) ++ Var(108435) ++ Var(108437) ++ Var(101014)),
+    Var(101019) -> Var(108443),
+    Var(101022) -> (Var(101025) ++ Var(101109) ++ Var(101112)),
+    Var(101025) -> Var(108444),
+    Var(101029) -> True,
+    Var(101036) -> Var(108463),
+    Var(101039) -> True,
+    Var(101041) -> Var(108461),
+    Var(101043) -> (Var(108458) ++ Var(101041)),
+    Var(101046) -> True,
+    Var(101048) -> Var(108467),
+    Var(101050) -> (Var(108455) ++ Var(101043) ++ Var(101048)),
+    Var(101054) -> True,
+    Var(101059) -> True,
+    Var(101063) -> (Var(108469) ++ Var(101054) ++ Var(101059)),
+    Var(101065) -> Var(108453),
+    Var(101073) -> Var(108484),
+    Var(101076) -> True,
+    Var(101078) -> Var(108482),
+    Var(101080) -> (Var(108479) ++ Var(101078)),
+    Var(101083) -> True,
+    Var(101085) -> Var(108488),
+    Var(101087) -> (Var(108476) ++ Var(101080) ++ Var(101085)),
+    Var(101091) -> True,
+    Var(101096) -> True,
+    Var(101101) -> True,
+    Var(101105) -> (Var(108490) ++ Var(101091) ++ Var(101096) ++ Var(101101)),
+    Var(101107) -> Var(108474),
+    Var(101109) -> Var(108447),
+    Var(101112) -> Var(108494),
+    Var(101116) -> (Var(101119) ++ Var(101125) ++ Var(101131) ++ Var(101134)),
+    Var(101119) -> Var(108495),
+    Var(101123) -> True,
+    Var(101125) -> (Var(108496) ++ Var(101123)),
+    Var(101129) -> True,
+    Var(101131) -> (Var(108498) ++ Var(101129)),
+    Var(101134) -> Var(108500)
   ).map({ case (x, y) => Equation(x, y) })
 
   def main(args: Array[String]): Unit = {
