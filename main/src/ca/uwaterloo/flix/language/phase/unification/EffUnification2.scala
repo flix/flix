@@ -67,6 +67,8 @@ object EffUnification2 {
   }
 
   private def solveAll(l: List[Equation], renv0: RigidityEnv)(implicit flix: Flix): Result[LocalSubstitution, InternalFailure] = {
+    // TODO: Introduce small solver class.
+
     var currentEqns = l
     var currentSubst: LocalSubstitution = LocalSubstitution.empty
 
@@ -113,7 +115,10 @@ object EffUnification2 {
       println(occur)
       println()
 
-      println("-- Result of Trivial Assignment -- ")
+      println("-".repeat(80))
+      println("--- Phase 3: Trivial Assignment ---")
+      println("    (resolves all equations of the form: x = t where x is free in t.)")
+      println("-".repeat(80))
       val (nextEqns2, nextSubst2) = trivialAssignment(currentEqns, currentSubst)
       currentEqns = nextEqns2
       currentSubst = nextSubst2
@@ -123,11 +128,15 @@ object EffUnification2 {
       println(formatSubst(currentSubst))
       println()
 
-      println("-- Result of BU -- ")
+      println("-".repeat(80))
+      println("--- Phase 4: Boolean Unification ---")
+      println("    (resolves all remaining equations using SVE.)")
+      println("-".repeat(80))
       val restSubst = boolUnifyAll(currentEqns, Set.empty)
       val resultSubst = currentSubst ++ restSubst
-      println(formatSubst(resultSubst))
-
+      println(s"Substitution (${currentSubst.m.size}):")
+      println(formatSubst(currentSubst))
+      println()
       Result.Ok(resultSubst)
     } catch {
       case ex: InternalFailure => Result.Err(ex)
