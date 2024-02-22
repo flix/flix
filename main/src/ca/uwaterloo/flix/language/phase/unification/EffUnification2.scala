@@ -40,10 +40,10 @@ import scala.collection.mutable.ListBuffer
 /// - We represent a conjunction with n >= 2 terms.
 ///   - We group the terms into three: a set of constants, a set of variables, and a list of the rest.
 ///   - We flatten conjunctions at least one level per call to `mkAnd`.
-/// - We apply the same idea for negation and disjunction.
+///   - We apply the same idea for negation and disjunction.
 /// - We normalize the representation of an equation t1 ~ t2.
-///   - We try to have a single variable on the left.
-///   - We try to have ground terms on the right.
+///   - We try to move single variables to the lhs.
+///   - We try to move ground terms to the RHS.
 ///
 
 ///
@@ -106,36 +106,53 @@ object EffUnification2 {
       println(formatSubst(currentSubst))
     }
 
-    def solve()(implicit flix: Flix): Result[LocalSubstitution, ConflictException] = {
+    private def phase0(): Unit = {
       println("-".repeat(80))
       println("--- Input")
       println("-".repeat(80))
       printEquations()
       println()
+    }
 
+    private def phase1(): Unit = {
+      println("-".repeat(80))
+      println("--- Phase 1: Unit Propagation")
+      println("    (resolves all equations of the form: x = c where x is a var and c is const)")
+      println("-".repeat(80))
+      val (nextEqns, nextSubst) = propagateUnit(currentEqns, currentSubst)
+      currentEqns = checkAndSimplify(nextEqns)
+      currentSubst = nextSubst
+      printEquations()
+      printSubstitution()
+      println()
+    }
+
+    private def phase2(): Unit = {
+      println("-".repeat(80))
+      println("--- Phase 2: Variable Propagation")
+      println("    (resolves all equations of the form: x = y where x and y are vars)")
+      println("-".repeat(80))
+      val (nextEqns1, nextSubst1) = propagateVars(currentEqns, currentSubst)
+      currentEqns = checkAndSimplify(nextEqns1)
+      currentSubst = nextSubst1
+      printEquations()
+      printSubstitution()
+      println()
+    }
+
+    def solve()(implicit flix: Flix): Result[LocalSubstitution, ConflictException] = {
       try {
-        println("-".repeat(80))
-        println("--- Phase 1: Unit Propagation ---")
-        println("    (resolves all equations of the form: x = c where x is a var and c is const.)")
-        println("-".repeat(80))
-        val (nextEqns, nextSubst) = fixUnitPropagate(currentEqns, currentSubst)
-        currentEqns = checkAndSimplify(nextEqns)
-        currentSubst = nextSubst
-        printEquations()
-        printSubstitution()
-        println()
-        if (currentEqns.isEmpty) {
-          return Result.Ok(currentSubst)
-        }
-        println()
+        phase0()
+        phase1()
+        phase2()
 
         println("-".repeat(80))
-        println("--- Phase 2: Variable Propagation ---")
-        println("    (resolves all equations of the form: x = y where x and y are vars.)")
+        println("--- Phase 3: Variable Assignment")
+        println("    (resolves all equations of the form: x = t where x is free in t)")
         println("-".repeat(80))
-        val (nextEqns1, nextSubst1) = varPropagate(currentEqns, currentSubst)
-        currentEqns = nextEqns1
-        currentSubst = nextSubst1
+        val (nextEqns2, nextSubst2) = varAssignment(currentEqns, currentSubst)
+        currentEqns = checkAndSimplify(nextEqns2)
+        currentSubst = nextSubst2
         printEquations()
         printSubstitution()
         println()
@@ -146,18 +163,7 @@ object EffUnification2 {
         println()
 
         println("-".repeat(80))
-        println("--- Phase 3: Trivial Assignment ---")
-        println("    (resolves all equations of the form: x = t where x is free in t.)")
-        println("-".repeat(80))
-        val (nextEqns2, nextSubst2) = trivialAssignment(currentEqns, currentSubst)
-        currentEqns = nextEqns2
-        currentSubst = nextSubst2
-        printEquations()
-        printSubstitution()
-        println()
-
-        println("-".repeat(80))
-        println("--- Phase 4: Boolean Unification ---")
+        println("--- Phase 4: Boolean Unification")
         println("    (resolves all remaining equations using SVE.)")
         println("-".repeat(80))
         val restSubst = boolUnifyAll(currentEqns, Set.empty)
@@ -233,7 +239,7 @@ object EffUnification2 {
 
 
   // Saturates all unit clauses.
-  private def fixUnitPropagate(l: List[Equation], s: LocalSubstitution): (List[Equation], LocalSubstitution) = {
+  private def propagateUnit(l: List[Equation], s: LocalSubstitution): (List[Equation], LocalSubstitution) = {
     var currentEqns = l
     var currentSubst = s
 
@@ -271,7 +277,7 @@ object EffUnification2 {
   }
 
 
-  private def varPropagate(l: List[Equation], subst0: LocalSubstitution): (List[Equation], LocalSubstitution) = {
+  private def propagateVars(l: List[Equation], subst0: LocalSubstitution): (List[Equation], LocalSubstitution) = {
     // TODO: Fixpoint or disjoint sets needed?
 
     // TODO: Could start from empty subst and then use ++ later.
@@ -292,7 +298,7 @@ object EffUnification2 {
 
   // Deals with x92747 ~ (x135862 ∧ x135864)
   // where LHS is var and is free on RHS
-  private def trivialAssignment(l: List[Equation], subst0: LocalSubstitution): (List[Equation], LocalSubstitution) = {
+  private def varAssignment(l: List[Equation], subst0: LocalSubstitution): (List[Equation], LocalSubstitution) = {
     var currentSubst = subst0
     var rest = ListBuffer.empty[Equation]
 
@@ -416,7 +422,6 @@ object EffUnification2 {
 
   private sealed trait Term {
 
-    def ++(that: Term): Term = Term.mkAnd(this, that)
 
     def &(that: Term): Term = Term.mkAnd(this, that)
 
@@ -856,27 +861,27 @@ object EffUnification2 {
   //Array.init -- refactored Aef. -- hits BU!
   private def example07(): List[Equation] = List(
     (Var(22316) & Var(22315)) ~ (Var(55489) & Var(55491) & Var(55493) & Var(55496) & Var(55511)),
-    (Var(55489)) ~ (True),
-    (Var(55491)) ~ (Var(112706)),
-    (Var(55493)) ~ (Var(112709)),
-    (Var(55496)) ~ (Var(112710)),
-    (Var(55499)) ~ (True),
-    (Var(55502)) ~ (Var(112716)),
-    (Var(55504)) ~ (Var(112714) & Var(55502)),
-    (Var(55507)) ~ (Var(0)),
-    (Var(55509)) ~ (Var(112718) & Var(55507)),
-    (Var(55511)) ~ (Var(112721))
+    Var(55489) ~ True,
+    Var(55491) ~ Var(112706),
+    Var(55493) ~ Var(112709),
+    Var(55496) ~ Var(112710),
+    Var(55499) ~ True,
+    Var(55502) ~ Var(112716),
+    Var(55504) ~ (Var(112714) & Var(55502)),
+    Var(55507) ~ Var(0),
+    Var(55509) ~ (Var(112718) & Var(55507)),
+    Var(55511) ~ Var(112721)
   )
 
   // Array.dropRight -- dropped aef
   private def example08(): List[Equation] = List(
     (Var(21890) & Var(21888)) ~ (Var(56456) & Var(56459) & Var(56461) & Var(56464) & Var(56467) & Var(56470)),
-    (Var(56456)) ~ (True),
-    (Var(56459)) ~ (True),
-    (Var(56461)) ~ (Var(113299)),
-    (Var(56464)) ~ (True),
-    (Var(56467)) ~ (Var(0)),
-    (Var(56470)) ~ (Var(113305) & Var(113303))
+    Var(56456) ~ True,
+    Var(56459) ~ True,
+    Var(56461) ~ Var(113299),
+    Var(56464) ~ True,
+    Var(56467) ~ Var(0),
+    Var(56470) ~ (Var(113305) & Var(113303))
   )
 
   def main(args: Array[String]): Unit = {
@@ -886,9 +891,9 @@ object EffUnification2 {
     //solveAll(example03(), RigidityEnv.empty)
     //solveAll(example04(), RigidityEnv.empty)
     //solveAll(example05(), RigidityEnv.empty)
-    //solveAll(example06(), RigidityEnv.empty)
+    solveAll(example06(), RigidityEnv.empty)
     //solveAll(example07(), RigidityEnv.empty)
-    solveAll(example08(), RigidityEnv.empty)
+    //solveAll(example08(), RigidityEnv.empty)
   }
 
 
