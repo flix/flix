@@ -37,25 +37,7 @@ object SyntaxTree {
    * @param loc      The location that the node spans in the source file.
    * @param children The children of the node.
    */
-  case class Tree(kind: TreeKind, var loc: SourceLocation, var children: Array[Child]) {
-    /**
-     * Utility function that computes a textual representation of a [[SyntaxTree.Tree]].
-     * Meant for debugging use.
-     */
-    def toDebugString(nesting: Int = 1): String = {
-      val kindName = kind.debug_name match {
-        case Some(name) => s"$name.$kind"
-        case None => s"$kind"
-      }
-
-      s"$kindName (${loc.beginLine}, ${loc.beginCol}) -> (${loc.endLine}, ${loc.endCol}) ${
-        children.map {
-          case Child.Token(token) => s"\n${"  " * nesting}'${token.text}'"
-          case Child.Tree(tree) => s"\n${"  " * nesting}${tree.toDebugString(nesting + 1)}"
-        }.mkString("")
-      }"
-    }
-  }
+  case class Tree(kind: TreeKind, var loc: SourceLocation, var children: Array[Child])
 
   sealed trait Child
 
@@ -79,9 +61,7 @@ object SyntaxTree {
   /**
    * A common super-type for [[TreeKind]]s
    */
-  sealed trait TreeKind {
-    def debug_name: Option[String] = None
-  }
+  sealed trait TreeKind
 
   /**
    * Different kinds of syntax nodes in a [[SyntaxTree]].
@@ -130,9 +110,7 @@ object SyntaxTree {
     //////////////////////////////////////////////////////////////////////////////////////////
     /// DECLARATIONS /////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////
-    sealed trait Decl extends TreeKind {
-      override def debug_name: Option[String] = Some("Decl")
-    }
+    sealed trait Decl extends TreeKind
 
     object Decl {
       case object AssociatedTypeDef extends Decl
@@ -165,9 +143,7 @@ object SyntaxTree {
     //////////////////////////////////////////////////////////////////////////////////////////
     /// EXPRESSIONS //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////
-    sealed trait Expr extends TreeKind {
-      override def debug_name: Option[String] = Some("Expr")
-    }
+    sealed trait Expr extends TreeKind
 
     object Expr {
 
@@ -175,12 +151,12 @@ object SyntaxTree {
        * A marker kind used to wrap nested expressions.
        * For instance on a binary expression "1 + 2" you would do
        * Expr
-       *   Binary
-       *     Expr
-       *       LiteralNumber
-       *     Operator
-       *     Expr
-       *        LiteralNumber
+       * Binary
+       * Expr
+       * LiteralNumber
+       * Operator
+       * Expr
+       * LiteralNumber
        */
       case object Expr extends Expr
 
@@ -337,20 +313,18 @@ object SyntaxTree {
     //////////////////////////////////////////////////////////////////////////////////////////
     /// TYPES ////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////
-    sealed trait Type extends TreeKind {
-      override def debug_name: Option[String] = Some("Type")
-    }
+    sealed trait Type extends TreeKind
 
     object Type {
       /**
        * A marker kind used to wrap nested types.
        * For instance on a tuple type "(Int32, Bool)" you would do
        * Type
-       *   Tuple
-       *     Type
-       *       Ident
-       *     Type
-       *       Ident
+       * Tuple
+       * Type
+       * Ident
+       * Type
+       * Ident
        */
       case object Type extends Type
 
@@ -407,20 +381,18 @@ object SyntaxTree {
     //////////////////////////////////////////////////////////////////////////////////////////
     /// PATTERNS /////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////
-    sealed trait Pattern extends TreeKind {
-      override def debug_name: Option[String] = Some("Pattern")
-    }
+    sealed trait Pattern extends TreeKind
 
     object Pattern {
       /**
        * A marker kind used to wrap nested patterns.
        * For instance on cons pattern "0 :: xs" you would do
        * Pattern
-       *   FCons
-       *     Pattern
-       *       Literal
-       *     Pattern
-       *       Ident
+       * FCons
+       * Pattern
+       * Literal
+       * Pattern
+       * Ident
        */
       case object Pattern extends Pattern
 
@@ -444,9 +416,7 @@ object SyntaxTree {
     //////////////////////////////////////////////////////////////////////////////////////////
     /// PREDICATES ///////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////
-    sealed trait Predicate extends TreeKind {
-      override def debug_name: Option[String] = Some("Predicate")
-    }
+    sealed trait Predicate extends TreeKind
 
     object Predicate {
 
@@ -471,9 +441,7 @@ object SyntaxTree {
     //////////////////////////////////////////////////////////////////////////////////////////
     /// JVM_OP ///////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////
-    sealed trait JvmOp extends TreeKind {
-      override def debug_name: Option[String] = Some("JvmOp")
-    }
+    sealed trait JvmOp extends TreeKind
 
     object JvmOp {
 
@@ -502,9 +470,7 @@ object SyntaxTree {
     //////////////////////////////////////////////////////////////////////////////////////////
     /// IMPORTS //////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////
-    sealed trait UsesOrImports extends TreeKind {
-      override def debug_name: Option[String] = Some("UsesOrImports")
-    }
+    sealed trait UsesOrImports extends TreeKind
 
     object UsesOrImports {
       case object Alias extends UsesOrImports
