@@ -301,7 +301,7 @@ object MonoDefs {
         case LoweredAst.FormalParam(sym, mod, tpe, src, loc) =>
           MonoAst.FormalParam(sym, mod, subst(tpe), src, loc)
       }
-      MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, retTpe, eff, loc)
+      MonoAst.Spec(doc, ann, mod, fparams, declaredScheme.base, subst(retTpe), subst(eff), loc)
   }
 
   /**
