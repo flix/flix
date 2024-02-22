@@ -137,8 +137,8 @@ object Eraser {
       val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)
       if (ct == CallType.TailCall) ad
       else castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
-    case ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
-      ApplySelfTail(sym, formals.map(visitParam), actuals.map(visitExp), visitType(tpe), purity, loc)
+    case ApplySelfTail(sym, actuals, tpe, purity, loc) =>
+      ApplySelfTail(sym, actuals.map(visitExp), visitType(tpe), purity, loc)
     case IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       IfThenElse(visitExp(exp1), visitExp(exp2), visitExp(exp3), visitType(tpe), purity, loc)
     case Branch(exp, branches, tpe, purity, loc) =>
@@ -185,6 +185,7 @@ object Eraser {
   private def visitType(tpe: MonoType): MonoType = {
     import MonoType._
     tpe match {
+      case AnyType => AnyType
       case Unit => Unit
       case Bool => Bool
       case Char => Char
@@ -222,9 +223,10 @@ object Eraser {
       case Int16 => Int16
       case Int32 => Int32
       case Int64 => Int64
-      case Unit | BigDecimal | BigInt | String | Regex | Region | Array(_) |
-           Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) | Arrow(_, _) |
-           RecordEmpty | RecordExtend(_, _, _) | Native(_) => MonoType.Object
+      case AnyType | Unit | BigDecimal | BigInt | String | Regex | Region |
+           Array(_) | Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) |
+           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
+        MonoType.Object
     }
   }
 

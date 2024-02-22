@@ -158,7 +158,7 @@ mod Test.Def.ChooseStar.Simple {
     }
 
     pub def testChooseStar10(): Bool = {
-        let cstOrVar = if (true) open Expr.Cst else open Expr.Var;
+        let cstOrVar = if (true) open_variant Expr.Cst else open_variant Expr.Var;
         let thing = helper10(cstOrVar);
         choose thing {case Expr.Cst => true}
     }
@@ -171,7 +171,7 @@ mod Test.Def.ChooseStar.Simple {
 //    }
 //
 //    pub def testChooseStar11(): Bool = {
-//        let cstOrVar = if (true) open Expr.Cst else open Expr.Var;
+//        let cstOrVar = if (true) open_variant Expr.Cst else open_variant Expr.Var;
 //        let thing = helper11(cstOrVar);
 //        choose thing {
 //            case Expr.Xor => true
@@ -214,7 +214,7 @@ mod Test.Def.ChooseStar.Simple {
 //
 //    pub def testChooseStar13(): Bool = {
 //        let h = if (true) helper13_1 else helper13_2;
-//        let cstOrNot = if (true) open Expr.Cst else open Expr.Not;
+//        let cstOrNot = if (true) open_variant Expr.Cst else open_variant Expr.Not;
 //        choose h(cstOrNot) {case Expr.Cst => true}
 //    }
 //

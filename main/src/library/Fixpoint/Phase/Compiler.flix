@@ -90,15 +90,15 @@ mod Fixpoint.Phase.Compiler {
         }, idb);
         List.forEach(compileRuleIncr(loopBody), stratum);
         Map.forEach(predSym -> match (arity, den) -> {
-            let new = RamSym.New(predSym, arity, den);
+            let newr = RamSym.New(predSym, arity, den);
             let full = RamSym.Full(predSym, arity, den);
-            let mergeNew = RamStmt.Merge(new, full);
+            let mergeNew = RamStmt.Merge(newr, full);
             MutList.push!(mergeNew, loopBody)
         }, idb);
         Map.forEach(predSym -> match (arity, den) -> {
             let delta = RamSym.Delta(predSym, arity, den);
-            let new = RamSym.New(predSym, arity, den);
-            let assign = RamStmt.Assign(delta, new);
+            let newr = RamSym.New(predSym, arity, den);
+            let assign = RamStmt.Assign(delta, newr);
             MutList.push!(assign, loopBody)
         }, idb);
         let loopTest =

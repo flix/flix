@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ca.uwaterloo.flix.tools.pkg
 
-package ca.uwaterloo.flix.api
+case class AvailableUpdates(major: Option[SemVer], minor: Option[SemVer], patch: Option[SemVer]) {
 
-object Version {
   /**
-    * Represents the current version of Flix.
+    * Returns `true` if no updates are available.
     */
-  val CurrentVersion: Version = Version(major = 0, minor = 44, revision = 0)
-}
+  def isEmpty: Boolean =
+    major.isEmpty && minor.isEmpty && patch.isEmpty
 
-/**
-  * A case class to represent versions.
-  */
-case class Version(major: Int, minor: Int, revision: Int) {
-  override val toString: String = s"$major.$minor.$revision"
 }

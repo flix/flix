@@ -28,6 +28,8 @@ object MonoType {
   /// Primitive Types.
   ///
 
+  case object AnyType extends MonoType
+
   case object Unit extends MonoType
 
   case object Bool extends MonoType

@@ -1121,7 +1121,7 @@ object GenExpression {
           }
           // Calling unwind and unboxing
 
-          if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc)(new BytecodeInstructions.F(mv))
+          if (Purity.isControlPure(purity)) BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc)(new BytecodeInstructions.F(mv))
           else {
             val pcPoint = ctx.pcCounter(0) + 1
             val pcPointLabel = ctx.pcLabels(pcPoint)
@@ -1176,7 +1176,7 @@ object GenExpression {
         }
         // Calling unwind and unboxing
 
-        if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)(new BytecodeInstructions.F(mv))
+        if (Purity.isControlPure(purity)) BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)(new BytecodeInstructions.F(mv))
         else {
           val pcPoint = ctx.pcCounter(0) + 1
           val pcPointLabel = ctx.pcLabels(pcPoint)
@@ -1193,7 +1193,7 @@ object GenExpression {
         }
     }
 
-    case Expr.ApplySelfTail(sym, _, exps, _, _, _) =>
+    case Expr.ApplySelfTail(sym, exps, _, _, _) =>
       // The function abstract class name
       val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
       // Evaluate each argument and put the result on the Fn class.

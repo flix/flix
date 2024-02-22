@@ -46,7 +46,7 @@ mod Seq {
         println("a: ${a}");
 
         // We can flatMap an Option to a List.
-        let b = option |> flatMap(x -> open Seq.Cons(x, Seq.Nil));
+        let b = option |> flatMap(x -> open_variant Seq.Cons(x, Seq.Nil));
         println("b: ${b}");
 
         // We can flatMap a NonEmptyList to a NonEmptyList
@@ -110,8 +110,8 @@ mod Seq {
     ///
     pub def append(l1: Seq[s1][a], l2: Seq[s2][a]): Seq[s2 ++ <Seq.Cons>][a] = choose* l1 {
         case Seq.Nil            => l2
-        case Seq.One(x)         => open Seq.Cons(x, l2)
-        case Seq.Cons(x, xs)    => open Seq.Cons(x, append(xs, l2))
+        case Seq.One(x)         => open_variant Seq.Cons(x, l2)
+        case Seq.Cons(x, xs)    => open_variant Seq.Cons(x, append(xs, l2))
     }
 
     ///
@@ -160,8 +160,8 @@ mod Seq {
     ///
     pub def indexOf(a: a, l: Seq[s][a]): SOption[Int32] with Eq[a] = choose* l {
         case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => if (x == a) open Seq.One(0) else open Seq.Nil
-        case Seq.Cons(x, xs)    => if (x == a) open Seq.One(0) else indexOf(a, xs) |> map(y -> y + 1)
+        case Seq.One(x)         => if (x == a) open_variant Seq.One(0) else open_variant Seq.Nil
+        case Seq.Cons(x, xs)    => if (x == a) open_variant Seq.One(0) else indexOf(a, xs) |> map(y -> y + 1)
     }
 
     ///
@@ -174,20 +174,20 @@ mod Seq {
     ///
     pub def findLeft(f: a -> Bool \ ef, l: Seq[s][a]): SOption[a] \ ef = choose* l {
         case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => if (f(x)) open Seq.One(x) else open Seq.Nil
-        case Seq.Cons(x, xs)    => if (f(x)) open Seq.One(x) else findLeft(f, xs)
+        case Seq.One(x)         => if (f(x)) open_variant Seq.One(x) else open_variant Seq.Nil
+        case Seq.Cons(x, xs)    => if (f(x)) open_variant Seq.One(x) else findLeft(f, xs)
     }
 
     ///
     /// Optionally returns the first element of `l` that satisfies the predicate `f` when searching from right to left.
     ///
     pub def findRight(f: a -> Bool \ ef, l: Seq[s][a]): SOption[a] \ ef =
-        findRightHelper(f, l, () -> open Seq.Nil)
+        findRightHelper(f, l, () -> open_variant Seq.Nil)
 
     def findRightHelper(f: a -> Bool \ ef1, l: Seq[s][a], k: Unit -> SOption[a] \ ef2): SOption[a] \ {ef1, ef2} = choose* l {
         case Seq.Nil            => k()
-        case Seq.One(x)         => if (f(x)) open Seq.One(x) else k()
-        case Seq.Cons(x, xs)    => findRightHelper(f, xs, () -> if (f(x)) open Seq.One(x) else k())
+        case Seq.One(x)         => if (f(x)) open_variant Seq.One(x) else k()
+        case Seq.Cons(x, xs)    => findRightHelper(f, xs, () -> if (f(x)) open_variant Seq.One(x) else k())
     }
 
     ///
@@ -197,9 +197,9 @@ mod Seq {
     ///
     pub def range(b: Int32, e: Int32): SList[Int32] =
         if (b > e) {
-            open Seq.Nil
+            open_variant Seq.Nil
         } else {
-            open Seq.Cons(b, range(b + 1, e))
+            open_variant Seq.Cons(b, range(b + 1, e))
         }
 
     ///
@@ -209,9 +209,9 @@ mod Seq {
     ///
     pub def repeat(n: Int32, a: a): SList[a] =
         if (n <= 0) {
-            open Seq.Nil
+            open_variant Seq.Nil
         } else {
-            open Seq.Cons(a, repeat(n - 1, a))
+            open_variant Seq.Cons(a, repeat(n - 1, a))
         }
 
     // ///
@@ -226,8 +226,8 @@ mod Seq {
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, l: Seq[s][a]): SNel[b] \ ef = choose* l {
         case Seq.Nil            => Seq.One(s)
-        case Seq.One(x)         => open Seq.Cons(s, Seq.One(f(s, x)))
-        case Seq.Cons(x, xs)    => open Seq.Cons(s, scanLeft(f, f(s, x), xs))
+        case Seq.One(x)         => open_variant Seq.Cons(s, Seq.One(f(s, x)))
+        case Seq.Cons(x, xs)    => open_variant Seq.Cons(s, scanLeft(f, f(s, x), xs))
     }
 
     // ///
@@ -237,10 +237,10 @@ mod Seq {
     // ///
     pub def scanRight(f: (a, b) -> b \ ef, s: b, l: Seq[s][a]): SNel[b] \ ef = choose* l {
         case Seq.Nil            => Seq.One(s)
-        case Seq.One(x)         => open Seq.Cons(f(x, s), Seq.One(s))
+        case Seq.One(x)         => open_variant Seq.Cons(f(x, s), Seq.One(s))
         case Seq.Cons(x, xs)    =>
             let r = scanRight(f, s, xs);
-            open Seq.Cons(f(x, head(r)), r)
+            open_variant Seq.Cons(f(x, head(r)), r)
     }
 
     ///
@@ -251,7 +251,7 @@ mod Seq {
     pub def map(f: a -> b \ ef, l: Seq[s][a]): Seq[s][b] \ ef = choose* l {
         case Seq.Nil            => Seq.Nil
         case Seq.One(x)         => Seq.One(f(x))
-        case Seq.Cons(x, xs)    => open Seq.Cons(f(x), map(f, xs))
+        case Seq.Cons(x, xs)    => open_variant Seq.Cons(f(x), map(f, xs))
     }
 
     ///
@@ -288,8 +288,8 @@ mod Seq {
 
     def revAppend(l1: Seq[s1][a], l2: Seq[s2][a]): Seq[s2 ++ <Seq.Cons>][a] = choose* l1 {
         case Seq.Nil            => l2
-        case Seq.One(x)         => open Seq.Cons(x, l2)
-        case Seq.Cons(x, xs)    => revAppend(xs, open Seq.Cons(x, l2))
+        case Seq.One(x)         => open_variant Seq.Cons(x, l2)
+        case Seq.Cons(x, xs)    => revAppend(xs, open_variant Seq.Cons(x, l2))
     }
 
     ///
@@ -300,7 +300,7 @@ mod Seq {
     pub def update(i: Int32, a: a, l: Seq[s][a]): Seq[s][a] = choose* l {
         case Seq.Nil            => Seq.Nil
         case Seq.One(x)         => if (i == 0) Seq.One(a) else Seq.One(x)
-        case Seq.Cons(x, xs)    => if (i == 0) open Seq.Cons(a, xs) else open Seq.Cons(x, update(i - 1, a, xs))
+        case Seq.Cons(x, xs)    => if (i == 0) open_variant Seq.Cons(a, xs) else open_variant Seq.Cons(x, update(i - 1, a, xs))
     }
 
     ///
@@ -314,13 +314,13 @@ mod Seq {
     pub def intersperse(a: a, l: Seq[s][a]): Seq[s ++ <Seq.Cons>][a] = choose* l {
         case Seq.Nil            => Seq.Nil
         case Seq.One(x)         => Seq.One(x)
-        case Seq.Cons(x, xs)    => open Seq.Cons(x, presperse(a, xs))
+        case Seq.Cons(x, xs)    => open_variant Seq.Cons(x, presperse(a, xs))
     }
 
     def presperse(a: a, l: Seq[s][a]): Seq[s ++ <Seq.Cons>][a] = choose* l {
         case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => open Seq.Cons(a, Seq.One(x))
-        case Seq.Cons(x, xs)    => open Seq.Cons(a, open Seq.Cons(x, presperse(a, xs)))
+        case Seq.One(x)         => open_variant Seq.Cons(a, Seq.One(x))
+        case Seq.Cons(x, xs)    => open_variant Seq.Cons(a, open_variant Seq.Cons(x, presperse(a, xs)))
     }
 
     ///
@@ -483,8 +483,8 @@ mod Seq {
     ///
     pub def filter(f: a -> Bool \ ef, l: Seq[s][a]): Seq[s ++ <Seq.Nil>][a] \ ef = choose* l {
         case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => if (f(x)) open Seq.One(x) else open Seq.Nil
-        case Seq.Cons(x, xs)    => if (f(x)) open Seq.Cons(x, filter(f, xs)) else open_as Seq filter(f, xs)
+        case Seq.One(x)         => if (f(x)) open_variant Seq.One(x) else open_variant Seq.Nil
+        case Seq.Cons(x, xs)    => if (f(x)) open_variant Seq.Cons(x, filter(f, xs)) else open_variant_as Seq filter(f, xs)
     }
 
     ///
@@ -513,7 +513,7 @@ mod Seq {
     ///
     pub def drop(n: Int32, l: Seq[s][a]): Seq[s ++ <Seq.Nil>][a] = {
         if (n <= 0) {
-            open_as Seq l
+            open_variant_as Seq l
         } else {
             choose* l {
                 case Seq.Nil            => Seq.Nil
@@ -528,8 +528,8 @@ mod Seq {
     ///
     pub def dropWhile(f: a -> Bool \ ef, l: Seq[s][a]): Seq[s ++ <Seq.Nil>][a] \ ef = choose* l {
         case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => if (f(x)) open Seq.Nil else open Seq.One(x)
-        case Seq.Cons(x, xs)    => if (f(x)) open_as Seq dropWhile(f, xs) else open Seq.Cons(x, open_as Seq xs)
+        case Seq.One(x)         => if (f(x)) open_variant Seq.Nil else open_variant Seq.One(x)
+        case Seq.Cons(x, xs)    => if (f(x)) open_variant_as Seq dropWhile(f, xs) else open_variant Seq.Cons(x, open_variant_as Seq xs)
     }
 
     ///
@@ -540,12 +540,12 @@ mod Seq {
     ///
     pub def take(n: Int32, l: Seq[s][a]): Seq[s ++ <Seq.Nil>][a] = {
         if (n <= 0) {
-            open Seq.Nil
+            open_variant Seq.Nil
         } else {
             choose* l {
                 case Seq.Nil            => Seq.Nil
                 case Seq.One(x)         => Seq.One(x)
-                case Seq.Cons(x, xs)    => open Seq.Cons(x, take(n - 1, xs))
+                case Seq.Cons(x, xs)    => open_variant Seq.Cons(x, take(n - 1, xs))
             }
         }
     }
@@ -555,8 +555,8 @@ mod Seq {
     ///
     pub def takeWhile(f: a -> Bool \ ef, l: Seq[s][a]): Seq[s ++ <Seq.Nil>][a] \ ef = choose* l {
         case Seq.Nil            => Seq.Nil
-        case Seq.One(x)         => if (f(x)) open Seq.One(x) else open Seq.Nil
-        case Seq.Cons(x, xs)    => if (f(x)) open Seq.Cons(x, takeWhile(f, xs)) else open_as Seq takeWhile(f, xs)
+        case Seq.One(x)         => if (f(x)) open_variant Seq.One(x) else open_variant Seq.Nil
+        case Seq.Cons(x, xs)    => if (f(x)) open_variant Seq.Cons(x, takeWhile(f, xs)) else open_variant_as Seq takeWhile(f, xs)
     }
 
     ///
@@ -589,7 +589,7 @@ mod Seq {
             choose* l2 {
                 case Seq.Nil            => Seq.Nil
                 case Seq.One(y)         => Seq.One((x, y))
-                case Seq.Cons(y, ys)    => open Seq.Cons((x, y), zip(xs, ys))
+                case Seq.Cons(y, ys)    => open_variant Seq.Cons((x, y), zip(xs, ys))
             }
     }
 
@@ -612,7 +612,7 @@ mod Seq {
     def zipWithIndexHelper(i: Int32, l: Seq[s][a]): Seq[s][(Int32, a)] = choose* l {
         case Seq.Nil            => Seq.Nil
         case Seq.One(x)         => Seq.One((i, x))
-        case Seq.Cons(x, xs)    => open Seq.Cons((i, x), zipWithIndexHelper(i + 1, xs))
+        case Seq.Cons(x, xs)    => open_variant Seq.Cons((i, x), zipWithIndexHelper(i + 1, xs))
     }
 
     ///
@@ -813,9 +813,9 @@ mod Seq {
     }
 
     def insert(x: a, l: Seq[s][a]): Seq[s ++ <Seq.Cons>][a] with Order[a] = choose* l {
-        case Seq.Nil            => open Seq.Cons(x, Seq.Nil)
-        case Seq.One(y)         => if (x <= y) open Seq.Cons(x, Seq.One(y)) else open Seq.Cons(y, Seq.One(x))
-        case Seq.Cons(y, ys)    => if (x <= y) open Seq.Cons(x, open Seq.Cons(y, ys)) else open Seq.Cons(y, insert(x, ys))
+        case Seq.Nil            => open_variant Seq.Cons(x, Seq.Nil)
+        case Seq.One(y)         => if (x <= y) open_variant Seq.Cons(x, Seq.One(y)) else open_variant Seq.Cons(y, Seq.One(x))
+        case Seq.Cons(y, ys)    => if (x <= y) open_variant Seq.Cons(x, open_variant Seq.Cons(y, ys)) else open_variant Seq.Cons(y, insert(x, ys))
     }
 
     ///
@@ -834,11 +834,11 @@ mod Seq {
     /// Returns an iterator over `l`.
     ///
     pub def iterator(rc: Region[r], xs: Seq[s][a]): Iterator[a, r, r] \ r =
-        let ls = ref open_as Seq xs @ rc;
+        let ls = ref open_variant_as Seq xs @ rc;
         let next = () -> {
             choose (deref ls) {
                 case Seq.Nil            => None
-                case Seq.One(x)         => ls := open Seq.Nil; Some(x)
+                case Seq.One(x)         => ls := open_variant Seq.Nil; Some(x)
                 case Seq.Cons(x, rs)    => ls := rs; Some(x)
             }
         };

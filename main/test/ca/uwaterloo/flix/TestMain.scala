@@ -51,6 +51,12 @@ class TestMain extends AnyFunSuite {
     assert(opts.command == Main.Command.Release)
   }
 
+  test("outdated") {
+    val args = Array("outdated")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Outdated)
+  }
+
   test("doc") {
     val args = Array("doc")
     val opts = Main.parseCmdOpts(args).get

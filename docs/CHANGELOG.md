@@ -1,5 +1,14 @@
 # Changelog
 
+Version 0.44.0:
+- Language: Reworked `IO` to be its own effect (thanks Matt!)
+- Library: Added `purityOf` to simplify reflection on purity (thanks Jakob!)
+- Compiler: Added support for the `release` command (thanks Holger!)
+- Compiler: Added support for storing GITHUB_TOKEN in a file (thanks Holger!)
+- Compiler: Added support for storing GITHUB_TOKEN in the environment (thanks Holger!)
+- Compiler: Simplified compilation of enums (thanks Jonathan!)
+- Compiler: Improved performance of backend (thanks Jonathan!)
+
 Version 0.43.0:
 - Language: Flix now targets Java 21 bytecode (thanks Magnus!)
 - Language: Flix now uses `VirtualThread`s by default (thanks Magnus!) 
@@ -464,11 +473,3 @@ Version 0.1:
 
 2016-06-08: 
 - Initial release.
-
-HEAD (in progress, not released):
-
-- Added `DelayList` and `DelayMap` (thanks Jakob!)
-- Inliner
-- Datalog abstraction
-- Restrictable variants
-- Associated types

@@ -98,6 +98,9 @@ mod IDE {
                 EshCallStart(call, d2, target, d3, nonbottom2),
                 StartNode(target, start).
 
+            // Phase I line [6] from paper
+            JumpFn(ide.zero, n, ide.zero; ide.id) :- StartNode(main, n).
+
             // compute summary
             SummaryFn(call, d4, d5; compose(compose(cs, se), er)) :-
                 CallGraph(call, target),
@@ -107,22 +110,19 @@ mod IDE {
                 JumpFn(d1, end, d2; se),
                 let (d5, er) = eshEndReturn1(target, d2, call).
 
+            // Phase II line [13] from paper
+            ResultProc(proc, dp; apply(cs,v)) :-
+                Results(call, d; v),
+                EshCallStart(call, d, proc, dp, cs).
+
+            // Phase II line [2] from paper
+            ResultProc(ide.main, ide.zero; UpperBound.maxValue()).
+
             // tabulate result
             Results(n, d; apply(fn, vp)) :-
                 ResultProc(proc, dp; vp),
                 InProc(proc, n),
                 JumpFn(dp, n, d; fn).
-
-            // TODO: Ondrej: Add comment.
-            ResultProc(proc, dp; apply(cs,v)) :-
-                Results(call, d; v),
-                EshCallStart(call, d, proc, dp, cs).
-
-            // TODO: Ondrej: Add comment.
-            ResultProc(ide.main, ide.zero; UpperBound.maxValue()).
-
-            // TODO: Ondrej: Add comment.
-            JumpFn(ide.zero, n, ide.zero; ide.id) :- StartNode(main, n).
 
         };
 
@@ -239,6 +239,9 @@ mod ConstantProp {
     ///
     pub enum MicroFunction with Eq, Order, ToString {
         case Bot,
+
+        // from paper: f = \l. a*l+b meet c; f(Top) = Top
+        // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
         case NonBot(Int32, Int32, ConstantProp.Const)
     }
 
@@ -269,7 +272,7 @@ mod ConstantProp {
                 case (MicroFunction.NonBot(a1, b1, c1), MicroFunction.NonBot(a2, b2, c2)) =>
                     if (a1 == a2 and b1 == b2)
                         MicroFunction.NonBot(a1, b1, lub(c1, c2))
-                    else if((a2-a1) != 0 and 0 == (b1 - b2) `Int32.rem` (a2 - a1))
+                    else if((a2-a1) != 0 and 0 == (b1 - b2) `Int32.remainder` (a2 - a1))
                         // Divisible.
                         MicroFunction.NonBot(a1, b2, lub(Const.Cst(a1 * (b1 - b2) / (a2 - a1) + b1), lub(c1, c2)))
                     else
@@ -313,12 +316,17 @@ mod ConstantProp {
         case MicroFunction.NonBot(a, b, c) => match l {
             case Const.Bot => Const.Bot
             case _         =>
-                // TODO: Ondrej corporate this somewhere:
-                // from paper: f = \l. a*l+b meet c; f(Top) = Top
-                // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
                 JoinLattice.leastUpperBound(sum(mul(l, lift(a)), lift(b)),c)
         }
     }
+}
+
+pub enum IR with Eq {
+    case MainEntry(Vector[String]), // main entry point of program
+    case Nop,
+    case CallConst(String, Int32), // pass constant int as arg
+    case CallVar(String, String),  // pass variable as arg
+    case Assign(String, Int32, String, Int32) // v1 := c1 * v2 + c2
 }
 
 ///
@@ -344,6 +352,7 @@ def main(): Unit \ IO =
         ("n8","n9") ::
         ("n9","ep") :: Nil;
 
+    // TODO: Build call graph from CallConst and CallVar instructions
     let callGraph =
         ("n1","p") ::
         ("n6","p") :: Nil;
@@ -356,38 +365,64 @@ def main(): Unit \ IO =
         ("main","emain") ::
         ("p","ep") :: Nil;
 
-    def eshIntra(n, d) = match (n, d) {
-        case ("smain","zero") => Vector#{("x", ConstantProp.MicroFunction.Bot)}
-        case ("n2","x") => Vector#{("x", ConstantProp.id())}
-        case ("n3","x") => Vector#{("x", ConstantProp.id())}
+    def procedureParameters(p) = match p {
+        case "p" => "a"
+        case _ => ?unreachable
+    };
 
-        case ("sp","a") => Vector#{("a", ConstantProp.id())}
-        case ("sp","x") => Vector#{("x", ConstantProp.id())}
-        case ("n4","a") => Vector#{("a", ConstantProp.id())}
-        case ("n4","x") => Vector#{("x", ConstantProp.id())}
-        case ("n5","a") => Vector#{("a", ConstantProp.MicroFunction.NonBot(1,-2, ConstantProp.Const.Bot))}
-        case ("n5","x") => Vector#{("x", ConstantProp.id())}
-        case ("n6","a") => Vector#{("a", ConstantProp.id())}
-        case ("n7","a") => Vector#{("a", ConstantProp.id())}
-        case ("n7","x") => Vector#{("x", ConstantProp.id())}
-        case ("n8","a") => Vector#{("a", ConstantProp.MicroFunction.NonBot(1,2, ConstantProp.Const.Bot))}
-        case ("n8","x") => Vector#{("x", ConstantProp.id())}
-        case ("n9","a") => Vector#{("a", ConstantProp.id()), ("x", ConstantProp.MicroFunction.NonBot(-2,5, ConstantProp.Const.Bot))}
+    let globalVars = Set#{"x"};
+    def isGlobalVar(v) = Set.memberOf(v, globalVars);
 
+    def instruction(n) = match n {
+        case "smain" => IR.MainEntry(Vector#{"x"})
+        case "n1" => IR.CallConst("p", 7)
+        case "n2" => IR.Nop
+        case "n3" => IR.Nop
+        case "emain" => IR.Nop
+
+        case "sp" => IR.Nop
+        case "n4" => IR.Nop
+        case "n5" => IR.Assign("a", 1, "a", -2)
+        case "n6" => IR.CallVar("p", "a")
+        case "n7" => IR.Nop
+        case "n8" => IR.Assign("a", 1, "a", 2)
+        case "n9" => IR.Assign("x", -2, "a", 5)
+        case "ep" => IR.Nop
+
+        case _ => ?unreachable
+    };
+
+    def eshIntra(n, d) = match instruction(n) {
+        case IR.MainEntry(vars) =>
+            if (d == "zero") Vector.map(v -> (v, ConstantProp.MicroFunction.Bot), vars)
+            else Vector#{}
+        case IR.Assign(v1, c1, v2, c2) =>
+          let kill = if (d == v1) Vector#{} else Vector#{(d, ConstantProp.id())};
+          let microfn = ConstantProp.MicroFunction.NonBot(c1, c2, ConstantProp.Const.Bot);
+          let gen = if (d == v2) Vector#{(v1, microfn)} else Vector#{};
+          Vector.append(kill, gen)
+        case IR.CallConst(_, _) if isGlobalVar(d) => Vector#{}
+        case IR.CallVar(_, _) if isGlobalVar(d) => Vector#{}
+        case _ => Vector#{(d, ConstantProp.id())}
+    };
+
+    def eshCallStart(n, d, p) = match instruction(n) {
+        case IR.CallConst(proc, arg) if (proc == p) =>
+          let parm = procedureParameters(proc);
+          if (d == "zero") Vector#{(parm,ConstantProp.MicroFunction.NonBot(0,arg,ConstantProp.Const.Bot))}
+          else if (d == parm) Vector#{}
+          else Vector#{(d, ConstantProp.id())}
+        case IR.CallVar(proc, arg) if (proc == p) =>
+          let parm = procedureParameters(proc);
+          if (d == arg) Vector#{(parm,ConstantProp.id())}
+          else if (d == parm) Vector#{}
+          else Vector#{(d, ConstantProp.id())}
         case _ => Vector#{}
     };
 
-    def eshCallStart(n, d, p) = match (n, d, p) {
-        case ("n1", "zero", "p")    => Vector#{("a",ConstantProp.MicroFunction.NonBot(0,7,ConstantProp.Const.Bot))}
-        case ("n1","x","p")         => Vector#{("x",ConstantProp.id())}
-        case ("n6","a","p")         => Vector#{("a",ConstantProp.id())}
-        case ("n6","x","p")         => Vector#{("x",ConstantProp.id())}
-        case _ => Vector#{}
-    };
-
-    def eshEndReturn(p, d, n) = match (p, d, n) {
-        case ("p", "x", "n1") => Vector#{("x", ConstantProp.id())}
-        case ("p", "x", "n6") => Vector#{("x", ConstantProp.id())}
+    def eshEndReturn(p, d, n) = match instruction(n) {
+        case IR.CallConst(proc,_) if p == proc and isGlobalVar(d) => Vector#{(d, ConstantProp.id())}
+        case IR.CallVar(proc,_) if p == proc and isGlobalVar(d) => Vector#{(d, ConstantProp.id())}
         case _ => Vector#{}
     };
 
