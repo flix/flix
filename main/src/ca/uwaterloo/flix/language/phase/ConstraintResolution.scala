@@ -414,6 +414,19 @@ object ConstraintResolution {
     var subst = subst0
     var count = 0
     var prog = true
+
+    // first solve the unifyAllable constraints
+    // first pull out all simple Boolean constraints and put them through unifyAll
+    val (simple, complex) = extractSimpleBooleanConstaints(curr, renv)
+    val simple1 = simple.map { case (t1, t2) => (subst(t1), subst(t2)) }
+    EffUnification2.unifyAll(simple1, renv) match {
+      case Result.Ok(newSubst) =>
+        subst = newSubst @@ subst
+        curr = complex
+      case Err(e) => return Result.Err(HackError(e)) // MATT no prov info here...
+    }
+
+
     while (prog) {
       if (count >= MaxIterations) {
         return Result.Err(HackError(UnificationError.IterationLimit(MaxIterations)))
@@ -459,6 +472,29 @@ object ConstraintResolution {
     }
 
     tryReduce(sort(constrs))
+  }
+
+  def extractSimpleBooleanConstaints(constrs: List[TypingConstraint], renv: RigidityEnv): (List[(Type, Type)], List[TypingConstraint]) = {
+    @tailrec
+    def loop(cs: List[TypingConstraint], simpleAcc: List[(Type, Type)], complexAcc: List[TypingConstraint]): (List[(Type, Type)], List[TypingConstraint]) = cs match {
+      case Nil => (simpleAcc.reverse, complexAcc.reverse)
+      case hd :: tl => getSimpleBooleanConstraint(hd, renv) match {
+        case None => loop(tl, simpleAcc, hd :: complexAcc)
+        case Some(simple) => loop(tl, simple :: simpleAcc, complexAcc)
+      }
+    }
+
+    loop(constrs, Nil, Nil)
+  }
+
+  def getSimpleBooleanConstraint(constr: TypingConstraint, renv: RigidityEnv): Option[(Type, Type)] = constr match {
+    case TypingConstraint.Equality(tpe1, tpe2, prov) if
+      tpe1.kind == Kind.Eff && tpe2.kind == Kind.Eff &&
+        !hasAssocType(tpe1) && !hasAssocType(tpe2) &&
+        !tpe1.typeVars.map(_.sym).exists(renv.isRigid) &&
+        !tpe2.typeVars.map(_.sym).exists(renv.isRigid) =>
+      Some((tpe1, tpe2))
+    case _ => None
   }
 
   /**
