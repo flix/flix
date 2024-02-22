@@ -160,13 +160,13 @@ object SyntaxTree {
        */
       case object Expr extends Expr
 
+      case object Apply extends Expr
+
       case object Ascribe extends Expr
 
       case object Binary extends Expr
 
       case object Block extends Expr
-
-      case object Call extends Expr
 
       case object CheckedEffectCast extends Expr
 
@@ -178,7 +178,7 @@ object SyntaxTree {
 
       case object FixpointConstraintSet extends Expr
 
-      case object FixpointFrom extends Expr
+      case object FixpointFromFragment extends Expr
 
       case object FixpointInject extends Expr
 
@@ -214,8 +214,6 @@ object SyntaxTree {
 
       case object JvmMethod extends Expr
 
-      case object KeyValue extends Expr
-
       case object Lambda extends Expr
 
       case object LambdaMatch extends Expr
@@ -234,9 +232,11 @@ object SyntaxTree {
 
       case object LiteralMap extends Expr
 
+      case object LiteralMapKeyValueFragment extends Expr
+
       case object LiteralRecord extends Expr
 
-      case object LiteralRecordField extends Expr
+      case object LiteralRecordFieldFragment extends Expr
 
       case object LiteralSet extends Expr
 
@@ -244,13 +244,13 @@ object SyntaxTree {
 
       case object Match extends Expr
 
-      case object MatchRule extends Expr
+      case object MatchRuleFragment extends Expr
 
       case object NewObject extends Expr
 
-      case object Open extends Expr
+      case object OpenVariant extends Expr
 
-      case object OpenAs extends Expr
+      case object OpenVariantAs extends Expr
 
       case object Paren extends Expr
 
@@ -284,19 +284,19 @@ object SyntaxTree {
 
       case object Try extends Expr
 
-      case object TryCatchBody extends Expr
+      case object TryCatchBodyFragment extends Expr
 
-      case object TryCatchRule extends Expr
+      case object TryCatchRuleFragment extends Expr
 
-      case object TryWithBody extends Expr
+      case object TryWithBodyFragment extends Expr
 
-      case object TryWithRule extends Expr
+      case object TryWithRuleFragment extends Expr
 
       case object Tuple extends Expr
 
       case object TypeMatch extends Expr
 
-      case object TypeMatchRule extends Expr
+      case object TypeMatchRuleFragment extends Expr
 
       case object Unary extends Expr
 
@@ -360,7 +360,7 @@ object SyntaxTree {
 
       case object Record extends Type
 
-      case object RecordField extends Type
+      case object RecordFieldFragment extends Type
 
       case object RecordRow extends Type
 
@@ -402,7 +402,7 @@ object SyntaxTree {
 
       case object Record extends Pattern
 
-      case object RecordField extends Pattern
+      case object RecordFieldFragment extends Pattern
 
       case object Tag extends Pattern
 
