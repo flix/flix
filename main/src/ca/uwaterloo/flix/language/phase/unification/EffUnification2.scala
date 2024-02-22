@@ -145,10 +145,11 @@ object EffUnification2 {
         println("    (resolves all remaining equations using SVE.)")
         println("-".repeat(80))
         val restSubst = boolUnifyAll(currentEqns, Set.empty)
-        val resultSubst = currentSubst @@ restSubst
+        currentEqns = Nil
+        currentSubst = currentSubst @@ restSubst
         printSubstitution()
         println()
-        Result.Ok(resultSubst)
+        Result.Ok(currentSubst)
       } catch {
         case ex: ConflictException => Result.Err(ex)
       }
