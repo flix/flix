@@ -93,7 +93,7 @@ object EffUnification2 {
         println("--- Phase 1: Unit Propagation ---")
         println("    (resolves all equations of the form: x = c where x is a var and c is const.)")
         println("-".repeat(80))
-        val (nextEqns, nextSubst) = unitPropagate(currentEqns, currentSubst)
+        val (nextEqns, nextSubst) = fixUnitPropagate(currentEqns, currentSubst)
         currentEqns = checkAndSimplify(nextEqns)
         currentSubst = nextSubst
         printEquations()
@@ -192,47 +192,49 @@ object EffUnification2 {
     }
   }
 
+
   // Saturates all unit clauses.
-  private def unitPropagate(eqns: List[Equation], subst0: LocalSubstitution): (List[Equation], LocalSubstitution) = {
-    var currentSubst = subst0
+  private def fixUnitPropagate(l: List[Equation], s: LocalSubstitution): (List[Equation], LocalSubstitution) = {
+    var currentEqns = l
+    var currentSubst = s
 
-    val (initialGround, initialNonGround) = eqns.partition(isGround)
-    var currentGround = initialGround
-    var currentNonGround = initialNonGround
-    while (currentGround.nonEmpty) {
-      currentSubst = extendSubstWithGround(currentGround, currentSubst) // TODO: rigidity
-      val updatedNonGround = currentSubst(currentNonGround)
-      val (nextGround, nextNonGround) = updatedNonGround.partition(isGround)
-      currentGround = nextGround
-      currentNonGround = nextNonGround
+    var changed = true
+    while (changed) {
+      changed = false
+
+      val remainder = ListBuffer.empty[Equation]
+      for (e <- currentEqns) {
+        e match {
+          // Case 1.1: x =?= true
+          case Equation(Term.Var(x), Term.True) =>
+            currentSubst = currentSubst.extended(x, Term.True)
+            changed = true
+
+            // TODO: Add mkEq with normalize, use everywhere.
+
+          // Case 1.2: true =?= x
+          case Equation(Term.True, Term.Var(x)) =>
+            currentSubst = currentSubst.extended(x, Term.True)
+            changed = true
+
+          // Case 2.1: true = x /\ y /\ z ...
+          case Equation(Term.Var(x), Term.And(ts)) if ts.forall(_.isVar) =>
+            val rhsVars = ts.foldLeft(SortedSet.empty[Int]){case (acc, t) => acc ++ t.freeVars }
+
+
+          // TODO: Propagate false?
+
+          case _ =>
+            remainder += e
+        }
+      }
+      // Invariant: We apply the current substitution to all remaining equations.
+      currentEqns = currentSubst(remainder.toList)
     }
 
-    (currentNonGround, currentSubst)
-  }
-
-  // x = true, x = false, or mirrored. + x flexible
-  private def isGround(eq: Equation): Boolean = eq match {
-    case Equation(Term.Var(x), Term.True) => true
-    case Equation(Term.True, Term.Var(x)) => true
-    // TODO: Rest
-    case _ => false
-  }
-
-  private def extendSubstWithGround(eqns: List[Equation], subst: LocalSubstitution): LocalSubstitution = eqns match {
-    case Nil => subst
-    case x :: xs => extendSubstWithGround(xs, extendSubstWithSingleGround(x, subst))
-  }
-
-  private def extendSubstWithSingleGround(eq: Equation, subst: LocalSubstitution): LocalSubstitution = eq match {
-    case Equation(Term.Var(x), t0) => subst.m.get(x) match {
-      case None => subst.extended(x, t0)
-      case Some(t1) => if (t0 == t1) subst else throw ConflictException(t0, t1)
-    }
-    case Equation(t0, Term.Var(x)) => subst.m.get(x) match {
-      case None => subst.extended(x, t0)
-      case Some(t1) => if (t0 == t1) subst else throw ConflictException(t0, t1)
-    }
-    case _ => throw InternalCompilerException(s"Unexpected equation: '$eq'.", SourceLocation.Unknown)
+    // Fixpoint complete. We return the remaining equations and the current substitution.
+    // We do not have to apply the current substitution because that was already done in the last iteration.
+    (currentEqns, currentSubst)
   }
 
 
@@ -372,6 +374,14 @@ object EffUnification2 {
   private sealed trait Term {
 
     def ++(that: Term): Term = Term.mkAnd(this, that)
+
+    /**
+      * Returns  `true` if `this` term is a variable.
+      */
+    final def isVar: Boolean = this match {
+      case Term.Var(x) => true
+      case _ => false
+    }
 
     final def freeVars: SortedSet[Int] = this match {
       case Term.True => SortedSet.empty
@@ -615,25 +625,6 @@ object EffUnification2 {
 
   import Term._
 
-  //  True ~ True
-  //  e92719 ~ True
-  //  e92722 ~ True
-  //  e92725 ~ True
-  //  e92728 ~ True
-  //  e92730 ~ e92719 + e92722 + e92725 + e92728
-  //  e92735 ~ True
-  //  e92737 ~ e92735
-  //  e92739 ~ e135864 + e92737
-  //  e92743 ~ True
-  //  e92745 ~ e92743
-  //  e92747 ~ e135862 + e92739 + e92745
-  //  e92751 ~ True
-  //  e92753 ~ e92751
-  //  e92755 ~ e135860 + e92747 + e92753
-  //  e92759 ~ True
-  //  e92761 ~ e92759
-  //  e92763 ~ e135858 + e92755 + e92761
-  //  e92765 ~ e135855 + e92763
   private def example01(): List[Equation] = List(
     True -> True,
     Var(92719) -> True,
