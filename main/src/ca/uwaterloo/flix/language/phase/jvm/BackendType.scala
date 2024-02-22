@@ -161,31 +161,30 @@ object BackendType {
     * use [[toErasedBackendType]].
     */
   def toBackendType(tpe0: MonoType): BackendType = {
-    import BackendObjType._
     tpe0 match {
-      case MonoType.Unit => Unit.toTpe
+      case MonoType.Unit => BackendObjType.Unit.toTpe
       case MonoType.Bool => Bool
       case MonoType.Char => Char
       case MonoType.Float32 => Float32
       case MonoType.Float64 => Float64
-      case MonoType.BigDecimal => BigDecimal.toTpe
+      case MonoType.BigDecimal => BackendObjType.BigDecimal.toTpe
       case MonoType.Int8 => Int8
       case MonoType.Int16 => Int16
       case MonoType.Int32 => Int32
       case MonoType.Int64 => Int64
-      case MonoType.BigInt => BigInt.toTpe
-      case MonoType.String => String.toTpe
-      case MonoType.Regex => Regex.toTpe
-      case MonoType.Region => Region.toTpe
+      case MonoType.BigInt => BackendObjType.BigInt.toTpe
+      case MonoType.String => BackendObjType.String.toTpe
+      case MonoType.Regex => BackendObjType.Regex.toTpe
+      case MonoType.Region => BackendObjType.Region.toTpe
       case MonoType.Array(tpe) => Array(toBackendType(tpe))
-      case MonoType.Lazy(tpe) => Lazy(toBackendType(tpe)).toTpe
-      case MonoType.Ref(tpe) => Ref(toBackendType(tpe)).toTpe
-      case MonoType.Tuple(elms) => Tuple(elms.map(toBackendType)).toTpe
-      case MonoType.Enum(_) => Tagged.toTpe
-      case MonoType.Arrow(args, result) => Arrow(args.map(toBackendType), toBackendType(result)).toTpe
-      case MonoType.RecordEmpty => RecordEmpty.toTpe
-      case MonoType.RecordExtend(_, value, _) => RecordExtend(toBackendType(value)).toTpe
-      case MonoType.Native(clazz) => Native(JvmName.ofClass(clazz)).toTpe
+      case MonoType.Lazy(tpe) => BackendObjType.Lazy(toBackendType(tpe)).toTpe
+      case MonoType.Ref(tpe) => BackendObjType.Ref(toBackendType(tpe)).toTpe
+      case MonoType.Tuple(elms) => BackendObjType.Tuple(elms.map(toBackendType)).toTpe
+      case MonoType.Enum(_) => BackendObjType.Tagged.toTpe
+      case MonoType.Arrow(args, result) => BackendObjType.Arrow(args.map(toBackendType), toBackendType(result)).toTpe
+      case MonoType.RecordEmpty => BackendObjType.RecordEmpty.toTpe
+      case MonoType.RecordExtend(_, value, _) => BackendObjType.RecordExtend(toBackendType(value)).toTpe
+      case MonoType.Native(clazz) => BackendObjType.Native(JvmName.ofClass(clazz)).toTpe
     }
   }
 
