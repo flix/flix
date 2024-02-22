@@ -162,6 +162,7 @@ object BackendType {
     */
   def toBackendType(tpe0: MonoType): BackendType = {
     tpe0 match {
+      case MonoType.AnyType => BackendObjType.JavaObject.toTpe
       case MonoType.Unit => BackendObjType.Unit.toTpe
       case MonoType.Bool => Bool
       case MonoType.Char => Char
