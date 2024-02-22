@@ -489,12 +489,26 @@ object ConstraintResolution {
 
   def getSimpleBooleanConstraint(constr: TypingConstraint, renv: RigidityEnv): Option[(Type, Type)] = constr match {
     case TypingConstraint.Equality(tpe1, tpe2, prov) if
-      tpe1.kind == Kind.Eff && tpe2.kind == Kind.Eff &&
-        !hasAssocType(tpe1) && !hasAssocType(tpe2) &&
-        !tpe1.typeVars.map(_.sym).exists(renv.isRigid) &&
-        !tpe2.typeVars.map(_.sym).exists(renv.isRigid) =>
+      isSimpleEffectType(tpe1, renv) && isSimpleEffectType(tpe2, renv) =>
       Some((tpe1, tpe2))
     case _ => None
+  }
+
+  def isSimpleEffectType(tpe: Type, renv: RigidityEnv): Boolean = {
+    def visit(t: Type): Boolean = t match {
+      case Type.Var(sym, loc) => renv.isFlexible(sym)
+
+      case Type.Pure => true
+      case Type.Univ => true
+      case Type.Cst(TypeConstructor.Effect(_), _) => false
+      case Type.Cst(_, _) => true
+
+      case Type.Apply(tpe1, tpe2, loc) => visit(tpe1) && visit(tpe2)
+      case Type.Alias(cst, args, tpe, loc) => false
+      case Type.AssocType(cst, arg, kind, loc) => false
+    }
+
+    tpe.kind == Kind.Eff && visit(tpe)
   }
 
   /**
