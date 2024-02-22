@@ -312,7 +312,7 @@ object Inliner {
   }
 
   /**
-    * Checks if `sym` is dead and  `exp` is pure.
+    * Checks if `occur` is dead and  `exp` is pure.
     */
   private def isDeadAndPure(occur: OccurrenceAst.Occur, exp: LiftedAst.Expr): Boolean = (occur, exp.purity) match {
     case (Dead, Pure) => true
