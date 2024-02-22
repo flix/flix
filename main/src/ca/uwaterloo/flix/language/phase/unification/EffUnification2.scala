@@ -379,6 +379,10 @@ object EffUnification2 {
 
     def ++(that: Term): Term = Term.mkAnd(this, that)
 
+    def &(that: Term): Term = Term.mkAnd(this, that)
+
+    def ~(that: Term): Equation = Equation(this, that)
+
     /**
       * Returns  `true` if `this` term is a variable.
       */
@@ -704,10 +708,47 @@ object EffUnification2 {
     Var(101134) -> Var(108500)
   ).map({ case (x, y) => Equation(x, y) })
 
+  // Concurrent.Channel.selectHelper
+  // TODO: Note: io -> Var0
+  private def example03(): List[Equation] = List(
+    Var(0) ~ (Var(85999) & Var(86002) & Var(86045) & Var(86052) & Var(86063) & Var(86069) & Var(86072) & Var(86075) & Var(86078) & Var(86094)),
+    (Var(85997)) ~ Var(0),
+    (Var(85999)) ~ (Var(131629)),
+    (Var(86002)) ~ Var(0),
+    (Var(86008)) ~ (Var(131642)),
+    (Var(86020)) ~ (Var(131646)),
+    (Var(86022)) ~ (Var(86020)),
+    (Var(86024)) ~ (Var(131640)),
+    (Var(86026)) ~ (Var(131637) & Var(86024)),
+    (Var(86029)) ~ (Var(131650)),
+    (Var(86033)) ~ (Var(131648)),
+    (Var(86035)) ~ (Var(131634) & Var(86026) & Var(86033)),
+    (Var(86038)) ~ (Var(131654)),
+    (Var(86041)) ~ (True),
+    (Var(86043)) ~ (Var(131652)),
+    (Var(86045)) ~ (Var(131631) & Var(86035) & Var(86043)),
+    (Var(86052)) ~ (True),
+    (Var(86057)) ~ Var(0),
+    (Var(86059)) ~ (Var(131668)),
+    (Var(86061)) ~ (Var(131666) & Var(86059)),
+    (Var(86063)) ~ (Var(131664) & Var(86061)),
+    (Var(86067)) ~ Var(0),
+    (Var(86069)) ~ (Var(131670)),
+    (Var(86072)) ~ Var(0),
+    (Var(86075)) ~ Var(0),
+    (Var(86078)) ~ Var(0),
+    (Var(86084)) ~ (True),
+    (Var(86087)) ~ (Var(131680)),
+    (Var(86090)) ~ Var(0),
+    (Var(86092)) ~ (Var(131678)),
+    (Var(86094)) ~ (Var(131672) & Var(86084) & Var(86092))
+  )
+
   def main(args: Array[String]): Unit = {
     implicit val flix: Flix = new Flix()
     //solveAll(example01(), RigidityEnv.empty)
-    solveAll(example02(), RigidityEnv.empty)
+    //solveAll(example02(), RigidityEnv.empty)
+    solveAll(example03(), RigidityEnv.empty)
   }
 
 
