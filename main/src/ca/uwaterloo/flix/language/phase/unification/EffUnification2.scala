@@ -851,6 +851,17 @@ object EffUnification2 {
     (Var(55511)) ~ (Var(112721))
   )
 
+  // Array.dropRight -- dropped aef
+  private def example08(): List[Equation] = List(
+    (Var(21890) & Var(21888)) ~ (Var(56456) & Var(56459) & Var(56461) & Var(56464) & Var(56467) & Var(56470)),
+    (Var(56456)) ~ (True),
+    (Var(56459)) ~ (True),
+    (Var(56461)) ~ (Var(113299)),
+    (Var(56464)) ~ (True),
+    (Var(56467)) ~ (Var(0)),
+    (Var(56470)) ~ (Var(113305) & Var(113303))
+  )
+
   def main(args: Array[String]): Unit = {
     implicit val flix: Flix = new Flix()
     //solveAll(example01(), RigidityEnv.empty)
@@ -859,7 +870,8 @@ object EffUnification2 {
     //solveAll(example04(), RigidityEnv.empty)
     //solveAll(example05(), RigidityEnv.empty)
     //solveAll(example06(), RigidityEnv.empty)
-    solveAll(example07(), RigidityEnv.empty)
+    //solveAll(example07(), RigidityEnv.empty)
+    solveAll(example08(), RigidityEnv.empty)
   }
 
 
