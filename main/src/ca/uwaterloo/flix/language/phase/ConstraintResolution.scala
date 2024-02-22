@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Type.hasAssocType
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.errors.TypeError.HackError
@@ -486,11 +487,11 @@ object ConstraintResolution {
   }
 
   private def reduceAll3(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, TypeError] = {
-    def tryReduce(cs: List[TypingConstraint]): Result[ReductionResult, TypeError] = cs match {
-      case Nil => Result.Ok(ReductionResult(oldSubst = subst0, newSubst = subst0, oldConstrs = cs, newConstrs = cs, progress = false))
-      case hd :: tl => reduceOne3(hd, renv, cenv, eqEnv, subst0).flatMap {
+    def tryReduce(cs: List[TypingConstraint], subst: Substitution): Result[ReductionResult, TypeError] = cs match {
+      case Nil => Result.Ok(ReductionResult(oldSubst = subst, newSubst = subst, oldConstrs = cs, newConstrs = cs, progress = false))
+      case hd :: tl => reduceOne3(hd, renv, cenv, eqEnv, subst).flatMap {
         // if we're just returning the same constraint, then have made no progress and we need to find something else to reduce
-        case res if !res.progress => tryReduce(tl).map {
+        case res if !res.progress => tryReduce(tl, subst).map {
           // Case 1: progress made. send the head to the end
           case res if res.progress => res.copy(newConstrs = res.newConstrs :+ hd)
           // Case 2: no progress. Keep the order
@@ -501,7 +502,38 @@ object ConstraintResolution {
       }
     }
 
-    tryReduce(sort(constrs))
+    // first pull out all simple Boolean constraints and put them through unifyAll
+    val (simple, complex) = extractSimpleBooleanConstaints(constrs, renv)
+    for {
+      subst <- EffUnification2.unifyAll(simple, renv)
+      res <- tryReduce(complex, subst)
+    } yield ()
+
+        tryReduce(sort(constrs))
+    }
+  }
+
+  def extractSimpleBooleanConstaints(constrs: List[TypingConstraint], renv: RigidityEnv): (List[(Type, Type)], List[TypingConstraint]) = {
+    @tailrec
+    def loop(cs: List[TypingConstraint], simpleAcc: List[(Type, Type)], complexAcc: List[TypingConstraint]): (List[(Type, Type)], List[TypingConstraint]) = cs match {
+      case Nil => (simpleAcc.reverse, complexAcc.reverse)
+      case hd :: tl => getSimpleBooleanConstraint(hd, renv) match {
+        case None => loop(tl, simpleAcc, hd :: complexAcc)
+        case Some(simple) => loop(tl, simple :: simpleAcc, complexAcc)
+      }
+    }
+
+    loop(constrs, Nil, Nil)
+  }
+
+  def getSimpleBooleanConstraint(constr: TypingConstraint, renv: RigidityEnv): Option[(Type, Type)] = constr match {
+    case TypingConstraint.Equality(tpe1, tpe2, prov) if
+      tpe1.kind == Kind.Eff && tpe2.kind == Kind.Eff &&
+        !hasAssocType(tpe1) && !hasAssocType(tpe2) &&
+        !tpe1.typeVars.map(_.sym).exists(renv.isRigid) &&
+        !tpe2.typeVars.map(_.sym).exists(renv.isRigid) =>
+      Some((tpe1, tpe2))
+    case _ => None
   }
 
   /**
