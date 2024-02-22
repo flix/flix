@@ -49,12 +49,12 @@ object SyntaxTree {
     /**
      * A [[SyntaxTree]] child holding a [[Token]].
      */
-    case class Token(token: ca.uwaterloo.flix.language.ast.Token) extends Child
+    case class NodeToken(token: Token) extends Child
 
     /**
      * A [[SyntaxTree]] child holding a nested [[SyntaxTree.Tree]]
      */
-    case class Tree(tree: SyntaxTree.Tree) extends Child
+    case class NodeTree(tree: SyntaxTree.Tree) extends Child
   }
 
 

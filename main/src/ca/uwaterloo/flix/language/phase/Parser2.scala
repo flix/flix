@@ -44,8 +44,8 @@ object Parser2 {
   def syntaxTreeToDebugString(tree: SyntaxTree.Tree, nesting: Int = 1): String = {
     s"${tree.kind} (${tree.loc.beginLine}, ${tree.loc.beginCol}) -> (${tree.loc.endLine}, ${tree.loc.endCol}) ${
       tree.children.map {
-        case SyntaxTree.Child.Token(token) => s"\n${"  " * nesting}'${token.text}'"
-        case SyntaxTree.Child.Tree(tree) => s"\n${"  " * nesting}${syntaxTreeToDebugString(tree, nesting + 1)}"
+        case SyntaxTree.Child.NodeToken(token) => s"\n${"  " * nesting}'${token.text}'"
+        case SyntaxTree.Child.NodeTree(tree) => s"\n${"  " * nesting}${syntaxTreeToDebugString(tree, nesting + 1)}"
       }.mkString("")
     }"
   }
