@@ -744,11 +744,32 @@ object EffUnification2 {
     (Var(86094)) ~ (Var(131672) & Var(86084) & Var(86092))
   )
 
+  //MutDeque.sameElements
+  private def example04(): List[Equation] = List(
+    (Var(876) & Var(877)) ~ (Var(90798)),
+    (Var(90798)) ~ (Var(90801) & Var(90804) & Var(90807) & Var(90820) & Var(90823) & Var(90832) & Var(90841) & Var(90844)),
+    (Var(90801)) ~ (Var(134687)),
+    (Var(90804)) ~ (Var(134689)),
+    (Var(90807)) ~ (True),
+    (Var(90820)) ~ (Var(134695)),
+    (Var(90823)) ~ (Var(134697)),
+    (Var(90826)) ~ (Var(134703)),
+    (Var(90828)) ~ (Var(134705)),
+    (Var(90830)) ~ (Var(134707)),
+    (Var(90832)) ~ (Var(134701) & Var(134699) & Var(90826) & Var(90828) & Var(90830)),
+    (Var(90835)) ~ (Var(134712)),
+    (Var(90837)) ~ (Var(134714)),
+    (Var(90839)) ~ (Var(134716)),
+    (Var(90841)) ~ (Var(134710) & Var(134708) & Var(90835) & Var(90837) & Var(90839)),
+    (Var(90844)) ~ (Var(134718) & Var(134719))
+  )
+
   def main(args: Array[String]): Unit = {
     implicit val flix: Flix = new Flix()
     //solveAll(example01(), RigidityEnv.empty)
     //solveAll(example02(), RigidityEnv.empty)
-    solveAll(example03(), RigidityEnv.empty)
+    //solveAll(example03(), RigidityEnv.empty)
+    solveAll(example04(), RigidityEnv.empty)
   }
 
 
