@@ -45,6 +45,10 @@ import scala.collection.mutable.ListBuffer
 ///   - We try to have a single variable on the left.
 ///   - We try to have ground terms on the right.
 ///
+
+///
+/// TODO: Explore change of basis.
+///
 object EffUnification2 {
 
   /**
