@@ -150,8 +150,6 @@ object Parser2 {
             else if (!weededAstsMatch) s"${Console.YELLOW}!="
             else s"${Console.RED}✘ "
             println(s"$parserPart\t$weederPart\t${Console.RESET}${src.name}")
-          } else if (src.name.contains("Test")) {
-            println(s"${Console.GREEN}✔\uFE0E  ${Console.GREEN}✔\uFE0E  ${src.name}")
           }
 
           // Fallback on old pipeline if necessary
@@ -336,7 +334,6 @@ object Parser2 {
 
   private def nth(lookahead: Int)(implicit s: State): TokenKind = {
     if (s.fuel == 0) {
-      println(s.tokens.slice(s.position - 10, s.position).mkString("\n"))
       throw InternalCompilerException(s"[${s.src.name}] Parser is stuck", currentSourceLocation())
     }
 
@@ -414,9 +411,6 @@ object Parser2 {
     def zeroOrMore(followedBy: Option[(TokenKind, () => Unit)] = None)(implicit s: State): Unit = {
       def isAtEnd(): Boolean = at(rightDelim) || followedBy.exists { case (delim, _) => at(delim) }
 
-      if (!at(leftDelim)) {
-        println(s"${s.src.name} ${s.position}")
-      }
       assert(at(leftDelim))
       expect(leftDelim)
       var continue = true
@@ -1126,9 +1120,9 @@ object Parser2 {
              | TokenKind.NameMath
              | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThinR) unaryLambda() else name(NAME_DEFINITION, allowQualified)
         // TODO: These rules are only enabled in Graph.flix since the keywords are used elsewhere too
-        case TokenKind.KeywordInject if s.src.name == "Graph.flix" => fixpointInject()
-        case TokenKind.KeywordQuery if s.src.name == "Graph.flix" => fixpointQuery()
-        case TokenKind.KeywordSolve if s.src.name == "Graph.flix" => fixpointSolve()
+        case TokenKind.KeywordInject if s.src.name == "main/foo.flix" => fixpointInject()
+        case TokenKind.KeywordQuery if s.src.name == "main/foo.flix" => fixpointQuery()
+        case TokenKind.KeywordSolve if s.src.name == "main/foo.flix" => fixpointSolve()
         case TokenKind.HashCurlyL => fixpointConstraintSet()
         // TODO: std. lib. uses keywords as variable names. Only match the specific cases known here as matching all KEYWORDS_IN_STDLIB causes issues.
         case TokenKind.KeywordQuery
@@ -2465,10 +2459,8 @@ object Parser2 {
       }
 
       if (at(TokenKind.Bar)) {
-        val mark = open()
         expect(TokenKind.Bar)
-        name(NAME_VARIABLE)
-        close(mark, TreeKind.Type.RecordVariable)
+        variable()
       }
 
       expect(TokenKind.CurlyR)
@@ -2535,6 +2527,7 @@ object Parser2 {
     }
 
     private def termList()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.ParenL))
       val mark = open()
       separated(() => Expr.expression())
         .zeroOrMore(followedBy = Some((TokenKind.Semi, () => {
@@ -2579,16 +2572,14 @@ object Parser2 {
       assert(at(TokenKind.KeywordLet))
       val mark = open()
       expect(TokenKind.KeywordLet)
-      val markArgs = open()
       nth(0) match {
-        case TokenKind.ParenL => name(NAME_VARIABLE)
+        case TokenKind.ParenL => separated(() => name(NAME_VARIABLE)).zeroOrMore()
         case TokenKind.NameLowerCase
              | TokenKind.NameMath
              | TokenKind.NameGreek
-             | TokenKind.Underscore => separated(() => name(NAME_VARIABLE)).zeroOrMore()
+             | TokenKind.Underscore => name(NAME_VARIABLE)
         case k => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected ${TokenKind.ParenL} or name but found $k"))
       }
-      close(markArgs, TreeKind.Arguments)
       expect(TokenKind.Equal)
       Expr.expression(allowQualified = false)
       close(mark, TreeKind.Predicate.Functional)

@@ -2314,7 +2314,7 @@ object Weeder2 {
     }
 
     private def visitRecordRow(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      val maybeVar = tryPick(TreeKind.Type.RecordVariable, tree.children)
+      val maybeVar = tryPick(TreeKind.Type.Variable, tree.children)
       val fields = pickAll(TreeKind.Type.RecordField, tree.children)
       mapN(traverseOpt(maybeVar)(visitVariable), traverse(fields)(visitRecordField)) {
         (maybeVar, fields) =>
@@ -2339,6 +2339,10 @@ object Weeder2 {
     }
 
     private def visitVariable(tree: Tree)(implicit s: State): Validation[Type.Var, CompilationMessage] = {
+      if (tree.kind != TreeKind.Type.Variable) {
+        println(s"${s.src.name} ${tree.loc} ${tree.toDebugString()}")
+      }
+
       assert(tree.kind == TreeKind.Type.Variable)
       mapN(tokenToIdent(tree)) { ident => Type.Var(ident, tree.loc) }
     }
