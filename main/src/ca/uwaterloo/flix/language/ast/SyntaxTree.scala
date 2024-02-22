@@ -213,9 +213,11 @@ object SyntaxTree {
 
       case object ForMonadic extends Expr
 
-      case object Generator extends Expr
+      case object ForFragmentGenerator extends Expr
 
-      case object Guard extends Expr
+      case object ForFragmentGuard extends Expr
+
+      case object ForFragmentLet extends Expr
 
       case object Hole extends Expr
 

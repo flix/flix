@@ -91,16 +91,6 @@ object Parser2 {
       val afterParser = Parser.run(afterReader, entryPoint, ParsedAst.empty, changeSet)
       val afterWeeder = flatMapN(afterParser)(parsedAst => Weeder.run(parsedAst, WeededAst.empty, changeSet))
 
-      def fallback(src: Ast.Source, errors: Chain[CompilationMessage]): Validation[WeededAst.CompilationUnit, CompilationMessage] = {
-        if (DEBUG_FOCUS == src.name) {
-          // If the current file is the debug focus, actually report the errors from the parser/weeder
-          flatMapN(afterWeeder)(tree => SoftFailure(tree.units(src), errors))
-        } else {
-          // Otherwise silently fallback on the old CompilationUnit.
-          mapN(afterWeeder)(_.units(src))
-        }
-      }
-
       def diffWeededAsts(src: Ast.Source, newAst: WeededAst.CompilationUnit): Boolean = {
         // Unsafely get old WeededAst
         val oldAst = afterWeeder.unsafeGet.units(src)
@@ -153,7 +143,7 @@ object Parser2 {
           }
 
           // Fallback on old pipeline if necessary
-          val weededAst = if (w.isEmpty) fallback(src, afterWeeder2.errors) else afterWeeder2
+          val weededAst = if (w.isEmpty) mapN(afterWeeder)(_.units(src)) else afterWeeder2
           mapN(weededAst)(src -> _)
       }
       val resultMap = mapN(sequence(results))(_.toMap)
@@ -1192,6 +1182,7 @@ object Parser2 {
       while (eat(TokenKind.Comma) && !eof()) {
         expression()
       }
+
       // TODO: How to resolve this? Do we need keyword project afterall?
       //      if (at(TokenKind.KeywordProject)) {
       //        name(NAME_PREDICATE)
@@ -1351,7 +1342,13 @@ object Parser2 {
       expect(TokenKind.KeywordForA)
       if (eat(TokenKind.ParenL)) {
         while (!at(TokenKind.ParenR) && !eof()) {
-          generatorFragment()
+          // Applicative can only have generator fragments
+          // so parse that inline rather than calling forFragments
+          val fragMark = open()
+          Pattern.pattern()
+          expect(TokenKind.ArrowThinL)
+          expression()
+          close(fragMark, TreeKind.Expr.ForFragmentGenerator)
           expect(TokenKind.Semi)
         }
         expect(TokenKind.ParenR)
@@ -1382,7 +1379,7 @@ object Parser2 {
         if (at(TokenKind.KeywordIf)) {
           guardFragment()
         } else {
-          generatorFragment()
+          generatorOrLetFragment()
         }
         if (!at(TokenKind.ParenR)) {
           expect(TokenKind.Semi)
@@ -1396,16 +1393,16 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordIf)
       expression()
-      close(mark, TreeKind.Expr.Guard)
+      close(mark, TreeKind.Expr.ForFragmentGuard)
     }
 
-    private def generatorFragment()(implicit s: State): Unit = {
+    private def generatorOrLetFragment()(implicit s: State): Unit = {
       val mark = open()
       Pattern.pattern()
-      if (eat(TokenKind.ArrowThinL)) {
-        expression()
-      }
-      close(mark, TreeKind.Expr.Generator)
+      val isGenerator = eat(TokenKind.ArrowThinL)
+      if (!isGenerator)  { expect(TokenKind.Equal) }
+      expression()
+      close(mark, if (isGenerator) { TreeKind.Expr.ForFragmentGenerator } else { TreeKind.Expr.ForFragmentLet})
     }
 
     private def exprTry()(implicit s: State): Mark.Closed = {
