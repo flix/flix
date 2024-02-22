@@ -31,7 +31,19 @@ import scala.collection.mutable.ListBuffer
 ///
 /// A Fast Boolean Unification Solver based on the following ideas:
 ///
-/// - TODO
+/// - We work on all the equations as one whole system.
+/// - We progress in the following order:
+///   1. We propagate ground terms in a fixpoint.
+///   2. We propagate variables in a fixpoint.
+///   3. We perform trivial assignments where the left-hand variables does not occur in the RHS.
+///   4. We do full-blown Boolean unification with SVE.
+/// - We represent a conjunction with n >= 2 terms.
+///   - We group the terms into three: a set of constants, a set of variables, and a list of the rest.
+///   - We flatten conjunctions at least one level per call to `mkAnd`.
+/// - We apply the same idea for negation and disjunction.
+/// - We normalize the representation of an equation t1 ~ t2.
+///   - We try to have a single variable on the left.
+///   - We try to have ground terms on the right.
 ///
 object EffUnification2 {
 
