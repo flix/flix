@@ -161,7 +161,7 @@ object EffUnification2 {
     case Term.Or(ts) => Type.mkUnion(ts.map(toType(_, loc)), loc)
   }
 
-  def fromType(t: Type, env: Bimap[Type.Var, Int]): Term = Type.eraseTopAliases(t) match {
+  private def fromType(t: Type, env: Bimap[Type.Var, Int]): Term = Type.eraseTopAliases(t) match {
     case t: Type.Var => env.getForward(t) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$t'.", t.loc)
       case Some(x) => Term.Var(x)
@@ -446,6 +446,7 @@ object EffUnification2 {
 
     case class Not(t: Term) extends Term
 
+    // TODO: We should group csts, vars, and other.
     case class And(ts: List[Term]) extends Term {
       assert(ts.length >= 2)
     }
@@ -777,12 +778,44 @@ object EffUnification2 {
     (Var(90844)) ~ (Var(134718) & Var(134719))
   )
 
+  // Fixpoint.Ast.Datalog.predSymsOf$29898
+  private def example05(): List[Equation] = List(
+    (True) ~ (Var(97799) & Var(97816) & Var(97819) & Var(97847) & Var(97859)),
+    (Var(97787)) ~ (Var(107197)),
+    (Var(97790)) ~ (True),
+    (Var(97792)) ~ (Var(107195)),
+    (Var(97794)) ~ (Var(107192) & Var(97792)),
+    (Var(97797)) ~ (True),
+    (Var(97799)) ~ (Var(107189) & Var(97794)),
+    (Var(97804)) ~ (Var(107211)),
+    (Var(97807)) ~ (True),
+    (Var(97809)) ~ (Var(107209)),
+    (Var(97811)) ~ (Var(107206) & Var(97809)),
+    (Var(97814)) ~ (True),
+    (Var(97816)) ~ (Var(107203) & Var(97811)),
+    (Var(97819)) ~ (True),
+    (Var(97827)) ~ (True),
+    (Var(97830)) ~ (True),
+    (Var(97832)) ~ (Var(107224) & Var(97827)),
+    (Var(97835)) ~ (Var(107232)),
+    (Var(97838)) ~ (True),
+    (Var(97840)) ~ (Var(107230)),
+    (Var(97842)) ~ (Var(107221) & Var(97832) & Var(97840)),
+    (Var(97845)) ~ (True),
+    (Var(97847)) ~ (Var(107218) & Var(97842)),
+    (Var(97854)) ~ (True),
+    (Var(97857)) ~ (True),
+    (Var(97859)) ~ (Var(97854) & Var(97857))
+  )
+
+
   def main(args: Array[String]): Unit = {
     implicit val flix: Flix = new Flix()
     //solveAll(example01(), RigidityEnv.empty)
     //solveAll(example02(), RigidityEnv.empty)
     //solveAll(example03(), RigidityEnv.empty)
-    solveAll(example04(), RigidityEnv.empty)
+    //solveAll(example04(), RigidityEnv.empty)
+    solveAll(example05(), RigidityEnv.empty)
   }
 
 
