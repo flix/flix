@@ -73,17 +73,17 @@ object SyntaxTree {
      */
     case class ErrorTree(error: Parser2Error) extends TreeKind
 
-    case object Annotations extends TreeKind
+    case object AnnotationList extends TreeKind
 
     case object Argument extends TreeKind
 
     case object ArgumentNamed extends TreeKind
 
-    case object Arguments extends TreeKind
+    case object ArgumentList extends TreeKind
 
     case object Case extends TreeKind
 
-    case object Comments extends TreeKind
+    case object CommentList extends TreeKind
 
     case object Doc extends TreeKind
 
@@ -91,13 +91,13 @@ object SyntaxTree {
 
     case object Kind extends TreeKind
 
-    case object Modifiers extends TreeKind
+    case object ModifierList extends TreeKind
 
     case object Operator extends TreeKind
 
     case object Parameter extends TreeKind
 
-    case object Parameters extends TreeKind
+    case object ParameterList extends TreeKind
 
     case object QName extends TreeKind
 
@@ -105,7 +105,7 @@ object SyntaxTree {
 
     case object TypeParameter extends TreeKind
 
-    case object TypeParameters extends TreeKind
+    case object TypeParameterList extends TreeKind
 
     //////////////////////////////////////////////////////////////////////////////////////////
     /// DECLARATIONS /////////////////////////////////////////////////////////////////////////
@@ -332,7 +332,7 @@ object SyntaxTree {
 
       case object Argument extends Type
 
-      case object Arguments extends Type
+      case object ArgumentList extends Type
 
       case object Ascribe extends Type
 
@@ -344,9 +344,9 @@ object SyntaxTree {
 
       case object Constraint extends Type
 
-      case object Constraints extends Type
+      case object ConstraintList extends Type
 
-      case object Derivations extends Type
+      case object DerivationList extends Type
 
       case object EffectSet extends Type
 
@@ -483,7 +483,7 @@ object SyntaxTree {
 
       case object UseMany extends UsesOrImports
 
-      case object UsesOrImports extends UsesOrImports
+      case object UseOrImportList extends UsesOrImports
     }
   }
 }
