@@ -458,6 +458,19 @@ object ConstraintResolution {
     var subst = subst0
     var count = 0
     var prog = true
+
+    // first solve the unifyAllable constraints
+    // first pull out all simple Boolean constraints and put them through unifyAll
+    val (simple, complex) = extractSimpleBooleanConstaints(curr, renv)
+    val simple1 = simple.map { case (t1, t2) => (subst(t1), subst(t2)) }
+    EffUnification2.unifyAll(simple1, renv) match {
+      case Result.Ok(newSubst) =>
+        subst = newSubst @@ subst
+        curr = complex
+      case Err(e) => return Result.Err(HackError(e)) // MATT no prov info here...
+    }
+
+
     while (prog) {
       if (count >= MaxIterations) {
         return Result.Err(HackError(UnificationError.IterationLimit(MaxIterations)))
@@ -487,11 +500,11 @@ object ConstraintResolution {
   }
 
   private def reduceAll3(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, TypeError] = {
-    def tryReduce(cs: List[TypingConstraint], subst: Substitution): Result[ReductionResult, TypeError] = cs match {
-      case Nil => Result.Ok(ReductionResult(oldSubst = subst, newSubst = subst, oldConstrs = cs, newConstrs = cs, progress = false))
-      case hd :: tl => reduceOne3(hd, renv, cenv, eqEnv, subst).flatMap {
+    def tryReduce(cs: List[TypingConstraint]): Result[ReductionResult, TypeError] = cs match {
+      case Nil => Result.Ok(ReductionResult(oldSubst = subst0, newSubst = subst0, oldConstrs = cs, newConstrs = cs, progress = false))
+      case hd :: tl => reduceOne3(hd, renv, cenv, eqEnv, subst0).flatMap {
         // if we're just returning the same constraint, then have made no progress and we need to find something else to reduce
-        case res if !res.progress => tryReduce(tl, subst).map {
+        case res if !res.progress => tryReduce(tl).map {
           // Case 1: progress made. send the head to the end
           case res if res.progress => res.copy(newConstrs = res.newConstrs :+ hd)
           // Case 2: no progress. Keep the order
@@ -502,15 +515,7 @@ object ConstraintResolution {
       }
     }
 
-    // first pull out all simple Boolean constraints and put them through unifyAll
-    val (simple, complex) = extractSimpleBooleanConstaints(constrs, renv)
-    for {
-      subst <- EffUnification2.unifyAll(simple, renv)
-      res <- tryReduce(complex, subst)
-    } yield ()
-
-        tryReduce(sort(constrs))
-    }
+    tryReduce(sort(constrs))
   }
 
   def extractSimpleBooleanConstaints(constrs: List[TypingConstraint], renv: RigidityEnv): (List[(Type, Type)], List[TypingConstraint]) = {
@@ -558,26 +563,26 @@ object ConstraintResolution {
     * - mismatched types
     *   - check for over/under applied
     *   - else return as is
-    * - mismatched bools -> mismatched bools
-    * - mismatched effects
+    *     - mismatched bools -> mismatched bools
+    *     - mismatched effects
     *   - check for mismatched arrow effects
     *   - else return as is
-    * - mismatched case sets -> mismatched case sets
-    * - mismatched arity -> mismatched arity
-    * - rigid var -> mismatched types
-    * - occurs check -> occurs check
-    * - undefined label -> undefined label
-    * - non-record type -> non-record type
-    * - undefined predicate -> undefined predicate
-    * - non-schema type -> non-schema type
-    * - no matching instance
+    *     - mismatched case sets -> mismatched case sets
+    *     - mismatched arity -> mismatched arity
+    *     - rigid var -> mismatched types
+    *     - occurs check -> occurs check
+    *     - undefined label -> undefined label
+    *     - non-record type -> non-record type
+    *     - undefined predicate -> undefined predicate
+    *     - non-schema type -> non-schema type
+    *     - no matching instance
     *   - check for specific instance
     *     - toString
     *     - eq
     *     - ord
     *     - hash
     *     - ?
-    * - (other cases should be impossible on this branch)
+    *       - (other cases should be impossible on this branch)
     */
   def toTypeError(err0: UnificationError, prov: Provenance)(implicit flix: Flix): TypeError = (err0, prov) match {
     case (err, Provenance.ExpectType(expected, actual, loc)) =>
