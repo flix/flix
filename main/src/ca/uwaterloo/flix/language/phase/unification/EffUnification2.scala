@@ -836,14 +836,30 @@ object EffUnification2 {
     Var(52683) ~ Var(110971)
   )
 
+  //Array.init -- refactored Aef. -- hits BU!
+  private def example07(): List[Equation] = List(
+    (Var(22316) & Var(22315)) ~ (Var(55489) & Var(55491) & Var(55493) & Var(55496) & Var(55511)),
+    (Var(55489)) ~ (True),
+    (Var(55491)) ~ (Var(112706)),
+    (Var(55493)) ~ (Var(112709)),
+    (Var(55496)) ~ (Var(112710)),
+    (Var(55499)) ~ (True),
+    (Var(55502)) ~ (Var(112716)),
+    (Var(55504)) ~ (Var(112714) & Var(55502)),
+    (Var(55507)) ~ (Var(0)),
+    (Var(55509)) ~ (Var(112718) & Var(55507)),
+    (Var(55511)) ~ (Var(112721))
+  )
+
   def main(args: Array[String]): Unit = {
     implicit val flix: Flix = new Flix()
     //solveAll(example01(), RigidityEnv.empty)
-    solveAll(example02(), RigidityEnv.empty)
+    //solveAll(example02(), RigidityEnv.empty)
     //solveAll(example03(), RigidityEnv.empty)
     //solveAll(example04(), RigidityEnv.empty)
     //solveAll(example05(), RigidityEnv.empty)
     //solveAll(example06(), RigidityEnv.empty)
+    solveAll(example07(), RigidityEnv.empty)
   }
 
 
