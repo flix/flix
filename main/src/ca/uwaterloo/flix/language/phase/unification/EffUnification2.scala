@@ -52,7 +52,7 @@ object EffUnification2 {
     implicit val bimap: Bimap[Type.Var, Int] = Bimap(forward, backward)
 
     var currentEqns: List[Equation] = l.map {
-      case (tpe1, tpe2) => Equation(fromType(tpe1), fromType(tpe2))
+      case (tpe1, tpe2) => Equation.mk(fromType(tpe1), fromType(tpe2))
     }
 
     solveAll(currentEqns, renv0) match {
@@ -205,24 +205,18 @@ object EffUnification2 {
       val remainder = ListBuffer.empty[Equation]
       for (e <- currentEqns) {
         e match {
-          // Case 1.1: x =?= true
+          // Case 1: x =?= true
           case Equation(Term.Var(x), Term.True) =>
             currentSubst = currentSubst.extended(x, Term.True)
             changed = true
 
-            // TODO: Add mkEq with normalize, use everywhere.
-
-          // Case 1.2: true =?= x
-          case Equation(Term.True, Term.Var(x)) =>
-            currentSubst = currentSubst.extended(x, Term.True)
-            changed = true
-
-          // Case 2.1: true = x /\ y /\ z ...
-          case Equation(Term.Var(x), Term.And(ts)) if ts.forall(_.isVar) =>
-            val rhsVars = ts.foldLeft(SortedSet.empty[Int]){case (acc, t) => acc ++ t.freeVars }
-
-
-          // TODO: Propagate false?
+          // Case 2.1: x /\ y /\ z /\... = true
+          case Equation(Term.And(ts), Term.True) if ts.forall(_.isVar) =>
+            val lhsVars = ts.map(_.asInstanceOf[Term.Var])
+            for (Term.Var(x) <- lhsVars) {
+              currentSubst = currentSubst.extended(x, Term.True)
+              changed = true
+            }
 
           case _ =>
             remainder += e
@@ -273,6 +267,16 @@ object EffUnification2 {
     }
 
     (currentSubst(rest.toList), currentSubst)
+  }
+
+  private object Equation {
+    // Normalize: Move vars left and true/false/constants right.
+    def mk(t1: Term, t2: Term): Equation = (t1, t2) match {
+      case (_, _: Term.Var) => Equation(t2, t1)
+      case (Term.True, _) => Equation(t2, Term.True)
+      case (Term.False, _) => Equation(t2, Term.False)
+      case _ => Equation(t1, t2)
+    }
   }
 
   private case class Equation(t1: Term, t2: Term) {
@@ -537,7 +541,7 @@ object EffUnification2 {
     }
 
     def apply(eq: Equation): Equation = eq match {
-      case Equation(t1, t2) => Equation(apply(t1), apply(t2))
+      case Equation(t1, t2) => Equation.mk(apply(t1), apply(t2))
     }
 
     def apply(l: List[Equation]): List[Equation] = l.map(apply)
