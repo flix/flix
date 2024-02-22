@@ -130,6 +130,13 @@ object Parser2 {
             println(formatWeededAst(newAst))
             println("[[[ END ]]]")
           }
+
+          // Print syntax tree if available
+          if (src.name == DEBUG_FOCUS && p.isDefined) {
+            val (tree, _) = p.get
+            println(tree.toDebugString())
+          }
+
           // Log status if there were failures
           val weededAstsMatch = w.forall(t => diffWeededAsts(src, t._1))
           // We are all good if the parser and weeder had no errors and the weeded asts match
@@ -138,10 +145,13 @@ object Parser2 {
             val parserPart = if (p.isEmpty) s"${Console.RED}✘ "
             else if (p.exists(!_._2.isEmpty)) s"${Console.YELLOW}✘ "
             else s"${Console.GREEN}✔︎ "
+
             val weederPart = if (p.isEmpty) "- "
             else if (!weededAstsMatch) s"${Console.YELLOW}!="
             else s"${Console.RED}✘ "
             println(s"$parserPart\t$weederPart\t${Console.RESET}${src.name}")
+          } else if (src.name.contains("Test")) {
+            println(s"${Console.GREEN}✔\uFE0E  ${Console.GREEN}✔\uFE0E  ${src.name}")
           }
 
           // Fallback on old pipeline if necessary
@@ -532,12 +542,12 @@ object Parser2 {
     val mark = open()
     expect(TokenKind.KeywordImport)
     name(NAME_JAVA, allowQualified = true)
-
     // handle import many case
     if (at(TokenKind.DotCurlyL)) {
       val mark = open()
       separated(() => aliasedName(NAME_JAVA))
         .within(TokenKind.DotCurlyL, TokenKind.CurlyR)
+        .zeroOrMore()
       close(mark, TreeKind.UsesOrImports.ImportMany)
     }
 

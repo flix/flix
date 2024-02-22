@@ -119,7 +119,7 @@ object Weeder2 {
     assert(tree.kind == TreeKind.UsesOrImports.UseMany)
     val identUses = traverse(pickAll(TreeKind.Ident, tree.children))(visitUseIdent(_, namespace))
     val aliasedUses = traverse(pickAll(TreeKind.UsesOrImports.Alias, tree.children))(tree => visitUseAlias(tree, namespace))
-    mapN(identUses, aliasedUses)((identUses, aliasedUses) => identUses ++ aliasedUses)
+    mapN(identUses, aliasedUses)((identUses, aliasedUses) => (identUses ++ aliasedUses).sortBy(_.loc))
   }
 
   private def visitUseIdent(tree: Tree, namespace: Name.NName)(implicit s: State): Validation[UseOrImport.Use, CompilationMessage] = {
@@ -157,15 +157,15 @@ object Weeder2 {
   }
 
   private def visitImportMany(tree: Tree, namespace: Seq[String])(implicit s: State): Validation[List[UseOrImport.Import], CompilationMessage] = {
-    assert(tree.kind == TreeKind.UsesOrImports.UseMany)
-    val identImports = traverse(pickAll(TreeKind.Ident, tree.children))(visitImportIdent)
+    assert(tree.kind == TreeKind.UsesOrImports.ImportMany)
+    val identImports = traverse(pickAll(TreeKind.Ident, tree.children))(visitImportIdent(_, namespace))
     val aliasedImports = traverse(pickAll(TreeKind.UsesOrImports.Alias, tree.children))(tree => visitImportAlias(tree, namespace))
-    mapN(identImports, aliasedImports)((identImports, aliasedImports) => identImports ++ aliasedImports)
+    mapN(identImports, aliasedImports)((identImports, aliasedImports) => (identImports ++ aliasedImports).sortBy(_.loc))
   }
 
-  private def visitImportIdent(tree: Tree)(implicit s: State): Validation[UseOrImport.Import, CompilationMessage] = {
+  private def visitImportIdent(tree: Tree, namespace: Seq[String])(implicit s: State): Validation[UseOrImport.Import, CompilationMessage] = {
     mapN(tokenToJavaName(tree)) {
-      ident => UseOrImport.Import(Name.JavaName(tree.loc.sp1, Seq(ident.name), tree.loc.sp2), ident, ident.loc)
+      ident => UseOrImport.Import(Name.JavaName(tree.loc.sp1, namespace ++ Seq(ident.name), tree.loc.sp2), ident, ident.loc)
     }
   }
 
@@ -173,7 +173,7 @@ object Weeder2 {
     val idents = traverse(pickAll(TreeKind.Ident, tree.children))(tokenToIdent)
     flatMapN(idents) {
       case ident :: alias :: _ =>
-        val jname = Name.JavaName(tree.loc.sp1, Seq(ident.name), tree.loc.sp2)
+        val jname = Name.JavaName(tree.loc.sp1, namespace ++ Seq(ident.name), tree.loc.sp2)
         Validation.success(UseOrImport.Import(jname, alias, tree.loc))
       // recover from missing alias by using ident
       case ident :: _ => softFailWith(UseOrImport.Import(Name.JavaName(tree.loc.sp1, Seq(ident.name), tree.loc.sp2), ident, ident.loc))
@@ -1029,7 +1029,7 @@ object Weeder2 {
         // Add extra resumption argument as a synthetic unit parameter when there is exatly one parameter.
         val hasSingleNonUnitParam = fparams.sizeIs == 1 && fparams.exists(_.ident.name != "_unit")
         val syntheticUnitParam = if (hasSingleNonUnitParam) List(Decls.unitFormalParameter(tree.loc.asSynthetic)) else List.empty
-        HandlerRule(ident, syntheticUnitParam ++ fparams, expr)
+        HandlerRule(ident, (syntheticUnitParam ++ fparams).sortBy(_.loc), expr)
       })
     }
 
@@ -1554,7 +1554,7 @@ object Weeder2 {
             // Add synthetic unit arguments if there are none
             case Nil => List(Expr.Cst(Ast.Constant.Unit, tree.loc))
             // TODO: sort by SourceLocation is only used for comparison with Weeder
-            case args => args.sortWith((a, b) => a.loc < b.loc)
+            case args => args.sortBy(_.loc)
           })
       }
     }
