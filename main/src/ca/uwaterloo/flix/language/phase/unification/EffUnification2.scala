@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -52,7 +52,7 @@ object EffUnification2 {
     implicit val bimap: Bimap[Type.Var, Int] = Bimap(forward, backward)
 
     var currentEqns: List[Equation] = l.map {
-      case (tpe1, tpe2) => Equation.mk(fromType(tpe1), fromType(tpe2))
+      case (tpe1, tpe2) => Equation.mk(fromType(tpe1, bimap), fromType(tpe2, bimap))
     }
 
     solveAll(currentEqns, renv0) match {
@@ -161,7 +161,20 @@ object EffUnification2 {
     case Term.Or(ts) => Type.mkUnion(ts.map(toType(_, loc)), loc)
   }
 
-  private def fromType(t: Type): Term = ???
+  def fromType(t: Type, env: Bimap[Type.Var, Int]): Term = Type.eraseTopAliases(t) match {
+    case t: Type.Var => env.getForward(t) match {
+      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$t'.", t.loc)
+      case Some(x) => Term.Var(x)
+    }
+    case Type.Cst(TypeConstructor.Effect(sym), _) => throw InternalCompilerException("Not yet", t.loc) // TODO
+    case Type.Pure => Term.True
+    case Type.Univ => Term.False
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Term.mkNot(fromType(tpe1, env))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Term.mkAnd(fromType(tpe1, env), fromType(tpe2, env))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Term.mkOr(fromType(tpe1, env), fromType(tpe2, env))
+    case Type.Cst(TypeConstructor.Error(_), _) => Term.True
+    case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
+  }
 
   private case class ConflictException(x: Term, y: Term) extends RuntimeException
 
