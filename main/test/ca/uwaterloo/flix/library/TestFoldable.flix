@@ -92,19 +92,19 @@ mod TestFoldable {
 
     @test
     def findLeft01(): Bool =
-        Foldable.findLeft(x -> x `Int32.rem` 2 == 0, Nil: List[Int32]) == None
+        Foldable.findLeft(x -> x `Int32.remainder` 2 == 0, Nil: List[Int32]) == None
 
     @test
     def findLeft02(): Bool =
-        Foldable.findLeft(x -> x `Int32.rem` 2 == 0, 1 :: Nil) == None
+        Foldable.findLeft(x -> x `Int32.remainder` 2 == 0, 1 :: Nil) == None
 
     @test
     def findLeft03(): Bool =
-        Foldable.findLeft(x -> x `Int32.rem` 2 == 0, 1 :: 2 :: Nil) == Some(2)
+        Foldable.findLeft(x -> x `Int32.remainder` 2 == 0, 1 :: 2 :: Nil) == Some(2)
 
     @test
     def findLeft04(): Bool =
-        Foldable.findLeft(x -> x `Int32.rem` 2 == 0, 1 :: 2 :: 3 :: 4 :: Nil) == Some(2)
+        Foldable.findLeft(x -> x `Int32.remainder` 2 == 0, 1 :: 2 :: 3 :: 4 :: Nil) == Some(2)
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //

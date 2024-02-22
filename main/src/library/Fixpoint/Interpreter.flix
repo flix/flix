@@ -77,7 +77,7 @@ mod Fixpoint.Interpreter {
                 }, MutMap.getWithDefault(ramSym, MutMap.new(rc1), db))
             case RelOp.Query(RowVar.Index(i), ramSym, query, body) =>
                 let (tupleEnv, latEnv) = env;
-                MutMap.queryWith(evalQuery(env, Vector.toList(query)), t -> l -> {
+                MutMap.rangeQueryWith(evalQuery(env, Vector.toList(query)), t -> l -> {
                     Array.put(t, i, tupleEnv);
                     Array.put(l, i, latEnv);
                     evalOp(rc1, db, env, body)

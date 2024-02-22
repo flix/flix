@@ -632,36 +632,6 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError.RegionVarEscapes](result)
   }
 
-  test("Test.InvalidOpParamCount.Do.01") {
-    val input =
-      """
-        |eff E {
-        |    pub def op(x: String): Unit
-        |}
-        |
-        |def foo(): Unit \ E = do E.op("hello", "world")
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedOpArity](result)
-  }
-
-  test("Test.InvalidOpParamCount.Handler.01") {
-    val input =
-      """
-        |eff E {
-        |    pub def op(x: String): Unit
-        |}
-        |
-        |def foo(): Unit = {
-        |    try checked_ecast(()) with E {
-        |        def op(x, y, cont) = ()
-        |    }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[TypeError.MismatchedOpArity](result)
-  }
-
   test("Test.UnexpectedType.OpParam.01") {
     val input =
       """
@@ -919,7 +889,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |     };
         |     let h = if (true) f else g;
         |
-        |     let cstOrNotOrVar = if (true) open Expr.Cst else if (true) open Expr.Not else open Expr.Var;
+        |     let cstOrNotOrVar = if (true) open_variant Expr.Cst else if (true) open_variant Expr.Not else open_variant Expr.Var;
         |
         |     h(cstOrNotOrVar)
         | }

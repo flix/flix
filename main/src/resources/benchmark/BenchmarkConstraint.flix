@@ -10,7 +10,8 @@ mod BenchmarkConstraint {
             acc <+> #{ DirectedEdge(s, d). }
         };
         let facts = List.range(1, 20) |> List.foldLeft(fold, #{});
-        query facts select true from DirectedEdge(1, 2) |> Vector.isEmpty |> Bool.not
+        let result = query facts select true from DirectedEdge(1, 2) |> Vector.isEmpty;
+        not result
 
     ///
     /// create a set of facts and compute the symmetric facts.
@@ -25,7 +26,8 @@ mod BenchmarkConstraint {
         let rules = #{
             DirectedEdge(y, x) :- DirectedEdge(x, y).
         };
-        query facts <+> rules select true from DirectedEdge(1, 2) |> Vector.isEmpty |> Bool.not
+        let result = query facts <+> rules select true from DirectedEdge(1, 2) |> Vector.isEmpty;
+        not result
 
     ///
     /// create a set of facts and compute the transitive closure.
@@ -41,6 +43,7 @@ mod BenchmarkConstraint {
             DirectedPath(x, y) :- DirectedEdge(x, y).
             DirectedPath(x, z) :- DirectedPath(x, y), DirectedEdge(y, z).
         };
-        query facts <+> rules select true from DirectedPath(1, 20) |> Vector.isEmpty |> Bool.not
+        let result = query facts <+> rules select true from DirectedPath(1, 20) |> Vector.isEmpty;
+        not result
 
 }
