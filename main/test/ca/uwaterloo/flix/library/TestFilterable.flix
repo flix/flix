@@ -18,7 +18,7 @@ mod TestFilterable {
 
     use Filterable.{filter, filterMap}
 
-    def isOdd(i: Int32): Bool = not (i `Int32.rem` 2 == 0)
+    def isOdd(i: Int32): Bool = not (i `Int32.remainder` 2 == 0)
 
     def oddPlus10(i: Int32): Option[Int32] = if (isOdd(i)) Some(i + 10) else None
 

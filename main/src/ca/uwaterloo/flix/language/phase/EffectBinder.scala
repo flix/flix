@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, CallType}
+import ca.uwaterloo.flix.language.ast.Ast.BoundBy
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Level, LiftedAst, Purity, ReducedAst, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression
@@ -54,18 +54,6 @@ object EffectBinder {
     ReducedAst.Root(newDefs, newEffects, Set.empty, Nil, root.entryPoint, root.reachable, root.sources)
   }
 
-  /**
-    * A local non-shared context. Does not need to be thread-safe.
-    */
-  private case class LocalContext(var pcPoints: Int)
-
-  /**
-    * Companion object for [[LocalContext]].
-    */
-  private object LocalContext {
-    def mk(): LocalContext = LocalContext(0)
-  }
-
   private sealed trait Binder
 
   private case class LetBinder(sym: VarSym, exp: ReducedAst.Expr, loc: SourceLocation) extends Binder
@@ -80,14 +68,11 @@ object EffectBinder {
     */
   private def visitDef(defn: LiftedAst.Def)(implicit flix: Flix): ReducedAst.Def = defn match {
     case LiftedAst.Def(ann, mod, sym, cparams0, fparams0, exp0, tpe, purity, loc) =>
-      implicit val lctx: LocalContext = LocalContext.mk()
       val cparams = cparams0.map(visitParam)
       val fparams = fparams0.map(visitParam)
       val lparams = Nil
       val exp = visitExpr(exp0)
-      // OBS lctx.pcPoints is mutated by visitExpr
-      val pcPoints = lctx.pcPoints
-      ReducedAst.Def(ann, mod, sym, cparams, fparams, lparams, pcPoints, exp, tpe, ReducedAst.UnboxedType(tpe), purity, loc)
+      ReducedAst.Def(ann, mod, sym, cparams, fparams, lparams, -1, exp, tpe, ReducedAst.UnboxedType(tpe), purity, loc)
   }
 
   private def visitEffect(e: LiftedAst.Effect): ReducedAst.Effect = e match {
@@ -107,7 +92,7 @@ object EffectBinder {
       ReducedAst.FormalParam(sym, mod, tpe, loc)
   }
 
-  private def visitJvmMethod(method: LiftedAst.JvmMethod)(implicit lctx: LocalContext, flix: Flix): ReducedAst.JvmMethod = method match {
+  private def visitJvmMethod(method: LiftedAst.JvmMethod)(implicit flix: Flix): ReducedAst.JvmMethod = method match {
     case LiftedAst.JvmMethod(ident, fparams0, clo0, retTpe, purity, loc) =>
       // JvmMethods are generated as their own functions so let-binding do not
       // span across
@@ -118,11 +103,9 @@ object EffectBinder {
 
   /**
     * Transforms the [[LiftedAst.Expr]] such that effect operations will be run without an
-    * operand stack - binding necessary expressions in the returned [[ReducedA.Expr]].
-    *
-    * Updates [[LocalContext.pcPoints]] only for expressions not given to [[visitExprInnerWithBinders]].
+    * operand stack - binding necessary expressions in the returned [[ReducedAst.Expr]].
     */
-  private def visitExpr(exp: LiftedAst.Expr)(implicit lctx: LocalContext, flix: Flix): ReducedAst.Expr = exp match {
+  private def visitExpr(exp: LiftedAst.Expr)(implicit flix: Flix): ReducedAst.Expr = exp match {
     case LiftedAst.Expr.Cst(_, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
@@ -148,7 +131,7 @@ object EffectBinder {
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
-    case LiftedAst.Expr.ApplySelfTail(_, _, _, _, _, _) =>
+    case LiftedAst.Expr.ApplySelfTail(_, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
@@ -201,7 +184,6 @@ object EffectBinder {
       ReducedAst.Expr.TryCatch(e, rules1, tpe, purity, loc)
 
     case LiftedAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-      lctx.pcPoints += 1 // added here since visitInner will not see this try-with
       val e = visitExpr(exp)
       val rules1 = rules.map {
         case LiftedAst.HandlerRule(op, fparams0, exp0) =>
@@ -229,10 +211,8 @@ object EffectBinder {
     *
     * Necessary bindings are added to binders, where the first binder is the
     * outermost one.
-    *
-    * Updates [[LocalContext.pcPoints]] as required.
     */
-  private def visitExprInnerWithBinders(binders: mutable.ArrayBuffer[Binder])(exp: LiftedAst.Expr)(implicit lctx: LocalContext, flix: Flix): ReducedAst.Expr = exp match {
+  private def visitExprInnerWithBinders(binders: mutable.ArrayBuffer[Binder])(exp: LiftedAst.Expr)(implicit flix: Flix): ReducedAst.Expr = exp match {
     case LiftedAst.Expr.Cst(cst, tpe, loc) =>
       ReducedAst.Expr.Cst(cst, tpe, loc)
 
@@ -251,20 +231,17 @@ object EffectBinder {
       ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
     case LiftedAst.Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
-      if (ct == CallType.NonTailCall && purity != Purity.Pure) lctx.pcPoints += 1
       val e = visitExprWithBinders(binders)(exp)
       val es = exps.map(visitExprWithBinders(binders))
       ReducedAst.Expr.ApplyClo(e, es, ct, tpe, purity, loc)
 
     case LiftedAst.Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-      if (ct == CallType.NonTailCall && purity != Purity.Pure) lctx.pcPoints += 1
       val es = exps.map(visitExprWithBinders(binders))
       ReducedAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
-    case LiftedAst.Expr.ApplySelfTail(sym, formals0, actuals0, tpe, purity, loc) =>
-      val formals = formals0.map(visitParam)
+    case LiftedAst.Expr.ApplySelfTail(sym, actuals0, tpe, purity, loc) =>
       val actuals = actuals0.map(visitExprWithBinders(binders))
-      ReducedAst.Expr.ApplySelfTail(sym, formals, actuals, tpe, purity, loc)
+      ReducedAst.Expr.ApplySelfTail(sym, actuals, tpe, purity, loc)
 
     case LiftedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExprInnerWithBinders(binders)(exp1)
@@ -312,7 +289,6 @@ object EffectBinder {
       ReducedAst.Expr.TryCatch(e, rules, tpe, purity, loc)
 
     case LiftedAst.Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-      lctx.pcPoints += 1
       val e = visitExpr(exp)
       val rs = rules.map {
         case LiftedAst.HandlerRule(op, fparams0, exp0) =>
@@ -323,7 +299,6 @@ object EffectBinder {
       ReducedAst.Expr.TryWith(e, effUse, rs, tpe, purity, loc)
 
     case LiftedAst.Expr.Do(op, exps, tpe, purity, loc) =>
-      lctx.pcPoints += 1
       val es = exps.map(visitExprWithBinders(binders))
       ReducedAst.Expr.Do(op, es, tpe, purity, loc)
 
@@ -340,7 +315,7 @@ object EffectBinder {
     * Necessary bindings are added to binders, where the first binder is the
     * outermost one.
     */
-  private def visitExprWithBinders(binders: mutable.ArrayBuffer[Binder])(exp: LiftedAst.Expr)(implicit lctx: LocalContext, flix: Flix): ReducedAst.Expr = {
+  private def visitExprWithBinders(binders: mutable.ArrayBuffer[Binder])(exp: LiftedAst.Expr)(implicit flix: Flix): ReducedAst.Expr = {
     /**
       * Let-binds the given expression, unless its a variable or constant.
       * If the given argument is a binder, then the structure is flattened.
@@ -355,7 +330,7 @@ object EffectBinder {
       // non-trivial expressions
       case ReducedAst.Expr.ApplyClo(_, _, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.ApplyDef(_, _, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.ApplySelfTail(_, _, _, _, _, _) => letBindExpr(binders)(e)
+      case ReducedAst.Expr.ApplySelfTail(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.IfThenElse(_, _, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.Branch(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.Let(sym, exp1, exp2, _, _, loc) =>
@@ -395,20 +370,12 @@ object EffectBinder {
   private def bindBinders(binders: mutable.ArrayBuffer[Binder], exp: ReducedAst.Expr): ReducedAst.Expr = {
     binders.foldRight(exp) {
       case (LetBinder(sym, exp1, loc), acc) =>
-        ReducedAst.Expr.Let(sym, exp1, acc, acc.tpe, combine(acc.purity, exp1.purity), loc)
+        ReducedAst.Expr.Let(sym, exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
       case (LetRecBinder(varSym, index, defSym, exp1, loc), acc) =>
-        ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, acc, acc.tpe, combine(acc.purity, exp1.purity), loc)
+        ReducedAst.Expr.LetRec(varSym, index, defSym, exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
       case (NonBinder(exp1, loc), acc) =>
-        ReducedAst.Expr.Stmt(exp1, acc, acc.tpe, combine(acc.purity, exp1.purity), loc)
+        ReducedAst.Expr.Stmt(exp1, acc, acc.tpe, Purity.combine(acc.purity, exp1.purity), loc)
     }
-  }
-
-  /**
-    * Returns [[Purity.Pure]] if and only if both arguments are [[Purity.Pure]].
-    */
-  private def combine(p1: Purity, p2: Purity): Purity = (p1, p2) match {
-    case (Purity.Pure, Purity.Pure) => Purity.Pure
-    case _ => Purity.Impure
   }
 
 }

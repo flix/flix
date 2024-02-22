@@ -277,7 +277,7 @@ mod TestMutList {
 
     @test
     def count03(): Bool = region rc {
-        MutList.count(x -> x `Int32.rem` 2 == 0, MutList.range(rc, 0, 10)) == 5
+        MutList.count(x -> x `Int32.remainder` 2 == 0, MutList.range(rc, 0, 10)) == 5
     }
 
     @test
@@ -469,7 +469,7 @@ mod TestMutList {
 
     @test
     def findLeft04(): Bool = region rc {
-        MutList.findLeft(x -> x `Int32.rem` 2 == 1, MutList.range(rc, 3, 11)) == Some(3)
+        MutList.findLeft(x -> x `Int32.remainder` 2 == 1, MutList.range(rc, 3, 11)) == Some(3)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -488,7 +488,7 @@ mod TestMutList {
 
     @test
     def findRight03(): Bool = region rc {
-        MutList.findRight(x -> x `Int32.rem` 2 == 0, MutList.range(rc, 3, 4)) == None
+        MutList.findRight(x -> x `Int32.remainder` 2 == 0, MutList.range(rc, 3, 4)) == None
     }
 
     @test
@@ -1185,7 +1185,7 @@ mod TestMutList {
     @test
     def retain!01(): Bool = region rc {
         let l1 = MutList.range(rc, 0, 10);
-        MutList.retain!(x -> x `Int32.rem` 2 == 0, l1);
+        MutList.retain!(x -> x `Int32.remainder` 2 == 0, l1);
         let l2 = MutList.new(rc);
         let xs = 0 :: 2 :: 4 :: 6 :: 8 :: Nil;
         List.forEach(x -> MutList.push!(x, l2), xs);
@@ -1195,7 +1195,7 @@ mod TestMutList {
     @test
     def retain!02(): Bool = region rc {
         let l1 = MutList.range(rc, 0, 10);
-        MutList.retain!(x -> x `Int32.rem` 2 == 1, l1);
+        MutList.retain!(x -> x `Int32.remainder` 2 == 1, l1);
         let l2 = MutList.new(rc);
         let xs = 1 :: 3 :: 5 :: 7 :: 9 :: Nil;
         List.forEach(x -> MutList.push!(x, l2), xs);
@@ -1526,7 +1526,7 @@ mod TestMutList {
     def forEach02(): Bool = region rc {
         let v = MutList.range(rc, 0, 5);
         let sb = StringBuilder.new(rc);
-        let f = x -> if (x `Int32.rem` 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let f = x -> if (x `Int32.remainder` 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.forEach(f, v);
         StringBuilder.toString(sb) == "TFTFT"
     }
@@ -1558,7 +1558,7 @@ mod TestMutList {
     def forEachWithIndex01(): Bool = region rc {
         let v1 = MutList.range(rc, 0, 100);
         let v2 = MutList.new(rc);
-        MutList.forEachWithIndex((i, x) -> if (x `Int32.rem` 2 == 0 and i < 10) MutList.push!(x, v2) else (), v1);
+        MutList.forEachWithIndex((i, x) -> if (x `Int32.remainder` 2 == 0 and i < 10) MutList.push!(x, v2) else (), v1);
         let l = MutList.new(rc);
         let xs = 0 :: 2 :: 4 :: 6 :: 8 :: Nil;
         List.forEach(x -> MutList.push!(x, l), xs);
@@ -1569,7 +1569,7 @@ mod TestMutList {
     def forEachWithIndex02(): Bool = region rc {
         let v = MutList.range(rc, 1, 4);
         let sb = StringBuilder.new(rc);
-        let f = (i, x) -> if (x `Int32.rem` 2 == 1 and i == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let f = (i, x) -> if (x `Int32.remainder` 2 == 1 and i == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.forEachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFF"
     }
@@ -1578,7 +1578,7 @@ mod TestMutList {
     def forEachWithIndex03(): Bool = region rc {
         let v = MutList.range(rc, 0, 5);
         let sb = StringBuilder.new(rc);
-        let f = (_, x) -> if (x `Int32.rem` 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
+        let f = (_, x) -> if (x `Int32.remainder` 2 == 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         MutList.forEachWithIndex(f, v);
         StringBuilder.toString(sb) == "TFTFT"
     }
@@ -1660,7 +1660,7 @@ mod TestMutList {
     @test
     def minimumBy05(): Bool = region rc {
         let v = MutList.range(rc, 9, 19);
-        let cmp = (x, y) -> if (x < y and x `Int32.rem` 2 == 0) Comparison.LessThan else Comparison.GreaterThan;
+        let cmp = (x, y) -> if (x < y and x `Int32.remainder` 2 == 0) Comparison.LessThan else Comparison.GreaterThan;
         MutList.minimumBy(cmp, v) == Some(10)
     }
 
@@ -1694,7 +1694,7 @@ mod TestMutList {
     @test
     def maximumBy05(): Bool = region rc {
         let v = MutList.range(rc, 9, 19);
-        let cmp = (x, y) -> if (x > y and x `Int32.rem` 2 == 0) Comparison.GreaterThan else Comparison.LessThan;
+        let cmp = (x, y) -> if (x > y and x `Int32.remainder` 2 == 0) Comparison.GreaterThan else Comparison.LessThan;
         MutList.maximumBy(cmp, v) == Some(18)
     }
 

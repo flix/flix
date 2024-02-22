@@ -22,12 +22,11 @@ import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChooseP
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType._
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
-import ca.uwaterloo.flix.language.errors.ResolutionError
+import ca.uwaterloo.flix.language.errors.{Recoverable, ResolutionError}
 import ca.uwaterloo.flix.language.errors.ResolutionError._
-import ca.uwaterloo.flix.language.errors.Recoverable
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
-import ca.uwaterloo.flix.util.{Graph, InternalCompilerException, ParOps, Result, Similarity, Validation}
+import ca.uwaterloo.flix.util._
 
 import java.lang.reflect.{Constructor, Field, Method, Modifier}
 import scala.annotation.tailrec
@@ -1392,9 +1391,11 @@ object Resolver {
                       flatMapN(opVal, fparamsVal) {
                         case (o, fp) =>
                           val env = env0 ++ mkFormalParamEnv(fp)
+                          // ignore the continuation for checking arity
+                          val arityVal = checkOpArity(o, fp.length - 1, ident.loc)
                           val bodyVal = visitExp(body, env)
-                          mapN(bodyVal) {
-                            case b =>
+                          mapN(arityVal, bodyVal) {
+                            case (_, b) =>
                               val opUse = Ast.OpSymUse(o.sym, ident.loc)
                               ResolvedAst.HandlerRule(opUse, fp, b)
                           }
@@ -1410,10 +1411,13 @@ object Resolver {
         case NamedAst.Expr.Do(op, exps, loc) =>
           val opVal = lookupOp(op, env0, ns0, root)
           val expsVal = traverse(exps)(visitExp(_, env0))
-          mapN(opVal, expsVal) {
+          flatMapN(opVal, expsVal) {
             case (o, es) =>
-              val opUse = Ast.OpSymUse(o.sym, op.loc)
-              ResolvedAst.Expr.Do(opUse, es, loc)
+              mapN(checkOpArity(o, exps.length, loc)) {
+                case _ =>
+                  val opUse = Ast.OpSymUse(o.sym, op.loc)
+                  ResolvedAst.Expr.Do(opUse, es, loc)
+              }
           }
 
         case NamedAst.Expr.InvokeConstructor(className, args, sig, loc) =>
@@ -3325,6 +3329,7 @@ object Resolver {
         case TypeConstructor.CaseUnion(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Error(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
 
+        case TypeConstructor.AnyType => throw InternalCompilerException(s"unexpected type: $tc", tpe.loc)
         case t: TypeConstructor.Arrow => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.Enum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
         case t: TypeConstructor.RestrictableEnum => throw InternalCompilerException(s"unexpected type: $t", tpe.loc)
@@ -3626,6 +3631,17 @@ object Resolver {
     case "java.util.function.DoublePredicate" => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkBool(loc), loc)
     case "java.util.function.DoubleUnaryOperator" => UnkindedType.mkIoArrow(UnkindedType.mkFloat64(loc), UnkindedType.mkFloat64(loc), loc)
     case _ => UnkindedType.Cst(TypeConstructor.Native(clazz), loc)
+  }
+
+  /**
+    * Checks that the operator's arity matches the number of arguments given.
+    */
+  private def checkOpArity(op: Declaration.Op, numArgs: Int, loc: SourceLocation): Validation[Unit, ResolutionError] = {
+    if (op.spec.fparams.length == numArgs) {
+      Validation.success(())
+    } else {
+      Validation.toSoftFailure((), ResolutionError.MismatchedOpArity(op.sym, op.spec.fparams.length, numArgs, loc))
+    }
   }
 
   /**

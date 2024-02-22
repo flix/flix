@@ -614,10 +614,7 @@ object GenExpression {
       case AtomicOp.RecordSelect(field) =>
         val List(exp) = exps
 
-        val backendRecordExtendType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
         val interfaceType = BackendObjType.Record
-        val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
-        val recordInternalName = recordType.jvmName.toInternalName
 
         // Compile the expression exp (which should be a record), as we need to have on the stack a record in order to call
         // lookupField
@@ -630,7 +627,10 @@ object GenExpression {
         mv.visitMethodInsn(INVOKEINTERFACE, interfaceType.jvmName.toInternalName, "lookupField",
           MethodDescriptor.mkDescriptor(BackendObjType.String.toTpe)(interfaceType.toTpe).toDescriptor, true)
 
-        // Cast to proper record extend class
+        // Now that the specific RecordExtend object is found, we cast it to its exact class
+        val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(tpe))
+        val recordInternalName = recordType.jvmName.toInternalName
+
         mv.visitTypeInsn(CHECKCAST, recordInternalName)
 
         // Retrieve the value field  (To get the proper value)
@@ -642,9 +642,7 @@ object GenExpression {
         // We get the JvmType of the record interface
         val interfaceType = BackendObjType.Record
 
-        // Previous functions are already partial matches
-        val MonoType.RecordExtend(_, recordValueType, _) = tpe
-        val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(recordValueType))
+        val recordType = BackendObjType.RecordExtend(BackendType.toErasedBackendType(exp1.tpe))
         val classInternalName = recordType.jvmName.toInternalName
 
         // Instantiating a new object of tuple
@@ -661,12 +659,12 @@ object GenExpression {
         // Put the value of the field onto the stack, since it is an expression we first need to compile it.
         mv.visitInsn(DUP)
         compileExpr(exp1)
-        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.ValueField.name, JvmOps.getErasedJvmType(exp1.tpe).toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.ValueField.name, recordType.ValueField.tpe.toDescriptor)
 
         // Put the value of the rest of the record onto the stack, since it's an expression we need to compile it first.
         mv.visitInsn(DUP)
         compileExpr(exp2)
-        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.RestField.name, interfaceType.toDescriptor)
+        mv.visitFieldInsn(PUTFIELD, classInternalName, recordType.RestField.name, recordType.RestField.tpe.toDescriptor)
 
       case AtomicOp.RecordRestrict(field) =>
         val List(exp) = exps
@@ -1123,7 +1121,7 @@ object GenExpression {
           }
           // Calling unwind and unboxing
 
-          if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc)(new BytecodeInstructions.F(mv))
+          if (Purity.isControlPure(purity)) BackendObjType.Result.unwindSuspensionFreeThunk("in pure closure call", loc)(new BytecodeInstructions.F(mv))
           else {
             val pcPoint = ctx.pcCounter(0) + 1
             val pcPointLabel = ctx.pcLabels(pcPoint)
@@ -1178,7 +1176,7 @@ object GenExpression {
         }
         // Calling unwind and unboxing
 
-        if (purity == Purity.Pure) BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)(new BytecodeInstructions.F(mv))
+        if (Purity.isControlPure(purity)) BackendObjType.Result.unwindSuspensionFreeThunk("in pure function call", loc)(new BytecodeInstructions.F(mv))
         else {
           val pcPoint = ctx.pcCounter(0) + 1
           val pcPointLabel = ctx.pcLabels(pcPoint)
@@ -1195,7 +1193,7 @@ object GenExpression {
         }
     }
 
-    case Expr.ApplySelfTail(sym, _, exps, _, _, _) =>
+    case Expr.ApplySelfTail(sym, exps, _, _, _) =>
       // The function abstract class name
       val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
       // Evaluate each argument and put the result on the Fn class.
