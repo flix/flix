@@ -117,7 +117,7 @@ object TypeReconstruction {
     case KindedAst.Expr.Cst(Ast.Constant.Null, loc) =>
       TypedAst.Expr.Cst(Ast.Constant.Null, Type.Null, loc)
 
-    case KindedAst.Expr.Cst(cst, loc) => TypedAst.Expr.Cst(cst, constantType(cst), loc)
+    case KindedAst.Expr.Cst(cst, loc) => TypedAst.Expr.Cst(cst, Type.constantType(cst), loc)
 
     case KindedAst.Expr.Apply(exp, exps, tvar, pvar, loc) =>
       val e = visitExp(exp)
@@ -668,25 +668,5 @@ object TypeReconstruction {
       val e = visitExp(exp)
       TypedAst.Predicate.Body.Guard(e, loc)
 
-  }
-
-  /**
-    * Returns the type of the given constant.
-    */
-  private def constantType(cst: Ast.Constant): Type = cst match {
-    case Constant.Unit => Type.Unit
-    case Constant.Null => Type.Null
-    case Constant.Bool(_) => Type.Bool
-    case Constant.Char(_) => Type.Char
-    case Constant.Float32(_) => Type.Float32
-    case Constant.Float64(_) => Type.Float64
-    case Constant.BigDecimal(_) => Type.BigDecimal
-    case Constant.Int8(_) => Type.Int8
-    case Constant.Int16(_) => Type.Int16
-    case Constant.Int32(_) => Type.Int32
-    case Constant.Int64(_) => Type.Int64
-    case Constant.BigInt(_) => Type.BigInt
-    case Constant.Str(_) => Type.Str
-    case Constant.Regex(_) => Type.Regex
   }
 }
