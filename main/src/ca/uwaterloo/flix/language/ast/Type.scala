@@ -84,7 +84,7 @@ sealed trait Type {
   }
 
   /**
-    * Gets all the associated types in the given type.
+    * Returns all the associated types in the given type.
     */
   def assocs: Set[Type.AssocType] = this match {
     case t: Type.AssocType => Set(t)
