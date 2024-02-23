@@ -116,9 +116,9 @@ object Parser2 {
             val (newAst, _) = w.get
             val oldAst = afterWeeder.unsafeGet.units(src) // Assume old weeder succeeded
             println("[[[ OLD PARSER ]]]")
-            println(formatWeededAst(oldAst))
+            println(formatWeededAst(oldAst, matchingWithOldParser = true))
             println("[[[ NEW PARSER ]]]")
-            println(formatWeededAst(newAst))
+            println(formatWeededAst(newAst, matchingWithOldParser = true))
             println("[[[ END ]]]")
           }
 
@@ -1121,14 +1121,10 @@ object Parser2 {
         case TokenKind.NameUpperCase
              | TokenKind.NameMath
              | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThinR) unaryLambda() else name(NAME_DEFINITION, allowQualified)
-        // TODO: These rules are only enabled in Graph.flix since the keywords are used elsewhere too
-        case TokenKind.KeywordInject if s.src.name == "main/foo.flix" => fixpointInject()
-        case TokenKind.KeywordQuery if s.src.name == "main/foo.flix" => fixpointQuery()
-        case TokenKind.KeywordSolve if s.src.name == "main/foo.flix" => fixpointSolve()
+        case TokenKind.KeywordInject => fixpointInject()
+        case TokenKind.KeywordQuery => fixpointQuery()
+        case TokenKind.KeywordSolve => fixpointSolve()
         case TokenKind.HashCurlyL => fixpointConstraintSet()
-        // TODO: std. lib. uses keywords as variable names. Only match the specific cases known here as matching all KEYWORDS_IN_STDLIB causes issues.
-        case TokenKind.KeywordQuery
-             | TokenKind.KeywordNew => name(NAME_DEFINITION, allowQualified)
         case TokenKind.Minus
              | TokenKind.KeywordNot
              | TokenKind.Plus
