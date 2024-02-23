@@ -1468,6 +1468,7 @@ object Weeder2 {
             case ":=" => Validation.success(Expr.Assign(e1, e2, tree.loc))
             case "::" => Validation.success(Expr.FCons(e1, e2, tree.loc))
             case ":::" => Validation.success(Expr.FAppend(e1, e2, tree.loc))
+            case "<+>" => Validation.success(Expr.FixpointMerge(e1, e2, tree.loc))
             case "instanceof" =>
               val classname = mapN(pickQName(exprs(1)))(javaQnameToFqn)
               mapN(classname)(Expr.InstanceOf(e1, _, tree.loc))
