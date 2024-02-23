@@ -256,6 +256,8 @@ object MonoDefs {
     ParOps.parMap(nonParametricDefns) {
       case (sym, defn) =>
         // We use an empty substitution because the defs are non-parametric.
+        // its important that non-parametric functions keep their symbol to not
+        // invalidate the set of reachable functions.
         mkFreshDefn(sym, defn, empty)
     }
 
@@ -286,7 +288,7 @@ object MonoDefs {
       ctx.toMap,
       effects,
       root.entryPoint,
-      root.reachable, // does this make sense?
+      root.reachable,
       root.sources
     )
   }
