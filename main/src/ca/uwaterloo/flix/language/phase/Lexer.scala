@@ -346,8 +346,11 @@ object Lexer {
         case _ => TokenKind.Hash
       }
       case _ if isKeyword("///") => acceptDocComment()
-      case _ if isKeyword("/*") => acceptBlockComment()
-      case '/' => if (peek() == '/') acceptLineComment() else TokenKind.Slash
+      case '/' => peek() match {
+        case '/' => acceptLineComment()
+        case '*' => acceptBlockComment()
+        case _ => TokenKind.Slash
+      }
       case ':' => (peek(), peekPeek()) match {
         case (':', Some(':')) => advance(); advance(); TokenKind.TripleColon
         case (':', _) => advance(); TokenKind.ColonColon
