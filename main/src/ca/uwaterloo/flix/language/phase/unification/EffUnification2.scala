@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 
@@ -67,7 +67,6 @@ object EffUnification2 {
       allVars ++= t1.typeVars
       allVars ++= t2.typeVars
     }
-
     val forward = allVars.foldLeft(Map.empty[Type.Var, Int]) {
       case (macc, tvar) => macc + (tvar -> tvar.sym.id)
     }
@@ -76,11 +75,11 @@ object EffUnification2 {
     }
     implicit val bimap: Bimap[Type.Var, Int] = Bimap(forward, backward)
 
-    var currentEqns: List[Equation] = l.map {
-      case (tpe1, tpe2) => Equation.mk(fromType(tpe1, bimap), fromType(tpe2, bimap))
+    val equations: List[Equation] = l.map {
+      case (tpe1, tpe2) => Equation.mk(fromType(tpe1, bimap, renv0), fromType(tpe2, bimap, renv0))
     }
 
-    solveAll(currentEqns, renv0) match {
+    solveAll(equations) match {
       case Result.Ok(subst) =>
         Result.Ok(subst.toSubst)
 
@@ -179,31 +178,35 @@ object EffUnification2 {
 
   }
 
-  private def solveAll(l: List[Equation], renv0: RigidityEnv)(implicit flix: Flix): Result[LocalSubstitution, ConflictException] = {
+  private def solveAll(l: List[Equation])(implicit flix: Flix): Result[LocalSubstitution, ConflictException] = {
     // TODO: Introduce small solver class.
     new Solver(l).solve()
   }
 
   private def toType(t0: Term, loc: SourceLocation)(implicit m: Bimap[Type.Var, Int]): Type = t0 match {
-    case Term.True => Type.True
+    case Term.True => Type.Pure
     case Term.False => Type.Univ
+    case Term.Cst(c) => m.getBackward(c).get
     case Term.Var(x) => m.getBackward(x).get
     case Term.Not(t) => Type.mkComplement(toType(t, loc), loc)
     case Term.And(ts) => Type.mkIntersection(ts.map(toType(_, loc)), loc)
     case Term.Or(ts) => Type.mkUnion(ts.map(toType(_, loc)), loc)
   }
 
-  private def fromType(t: Type, env: Bimap[Type.Var, Int]): Term = Type.eraseTopAliases(t) match {
+  private def fromType(t: Type, env: Bimap[Type.Var, Int], renv: RigidityEnv): Term = Type.eraseTopAliases(t) match {
     case t: Type.Var => env.getForward(t) match {
       case None => throw InternalCompilerException(s"Unexpected unbound variable: '$t'.", t.loc)
-      case Some(x) => Term.Var(x)
+      case Some(x) => renv.get(t.sym) match {
+        case Rigidity.Flexible => Term.Var(x)
+        case Rigidity.Rigid => Term.Cst(x)
+      }
     }
     case Type.Cst(TypeConstructor.Effect(sym), _) => throw InternalCompilerException("Not yet", t.loc) // TODO
     case Type.Pure => Term.True
     case Type.Univ => Term.False
-    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Term.mkNot(fromType(tpe1, env))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Term.mkAnd(fromType(tpe1, env), fromType(tpe2, env))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Term.mkOr(fromType(tpe1, env), fromType(tpe2, env))
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Term.mkNot(fromType(tpe1, env, renv))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Term.mkAnd(fromType(tpe1, env, renv), fromType(tpe2, env, renv))
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Term.mkOr(fromType(tpe1, env, renv), fromType(tpe2, env, renv))
     case Type.Cst(TypeConstructor.Error(_), _) => Term.True
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
   }
@@ -414,6 +417,7 @@ object EffUnification2 {
   private def evaluate(t: Term, trueVars: List[Int]): Boolean = t match {
     case Term.True => true
     case Term.False => false
+    case Term.Cst(_) => false
     case Term.Var(x) => trueVars.contains(x)
     case Term.Not(t) => !evaluate(t, trueVars)
     case Term.Or(ts) => ts.foldLeft(false) { case (bacc, term) => bacc || evaluate(term, trueVars) }
@@ -431,13 +435,14 @@ object EffUnification2 {
       * Returns  `true` if `this` term is a variable.
       */
     final def isVar: Boolean = this match {
-      case Term.Var(x) => true
+      case Term.Var(_) => true
       case _ => false
     }
 
     final def freeVars: SortedSet[Int] = this match {
       case Term.True => SortedSet.empty
       case Term.False => SortedSet.empty
+      case Term.Cst(_) => SortedSet.empty
       case Term.Var(x) => SortedSet(x)
       case Term.Not(t) => t.freeVars
       case Term.And(ts) => ts.foldLeft(SortedSet.empty[Int])(_ ++ _.freeVars)
@@ -447,6 +452,7 @@ object EffUnification2 {
     final def size: Int = this match {
       case Term.True => 0
       case Term.False => 0
+      case Term.Cst(_) => 0
       case Term.Var(_) => 1
       case Term.Not(t) => t.size + 1
       case Term.And(ts) => ts.map(_.size).sum + (ts.length - 1)
@@ -456,6 +462,7 @@ object EffUnification2 {
     override def toString: String = this match {
       case Term.True => "true"
       case Term.False => "false"
+      case Term.Cst(c) => s"c$c"
       case Term.Var(x) => s"x$x"
       case Term.Not(f) => f match {
         case Term.Var(x) => s"¬x$x"
@@ -472,6 +479,8 @@ object EffUnification2 {
     case object True extends Term
 
     case object False extends Term
+
+    case class Cst(c: Int) extends Term
 
     case class Var(x: Int) extends Term
 
@@ -510,6 +519,7 @@ object EffUnification2 {
     }
 
     final def mkAnd(ts: List[Term]): Term = {
+      // TODO: Group cst and vars.
       val varTerms = mutable.Set.empty[Term]
       val nonVarTerms = mutable.ListBuffer.empty[Term]
       for (t <- ts) {
@@ -580,6 +590,7 @@ object EffUnification2 {
     def apply(t: Term): Term = t match {
       case Term.True => Term.True
       case Term.False => Term.False
+      case Term.Cst(c) => Term.Cst(c)
       case Term.Var(x) => m.get(x) match {
         case None => Term.Var(x)
         case Some(t0) => t0
