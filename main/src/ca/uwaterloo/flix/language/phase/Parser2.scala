@@ -138,7 +138,11 @@ object Parser2 {
           }
 
           // Fallback on old pipeline if necessary
-          val weededAst = if (w.isEmpty) mapN(afterWeeder)(_.units(src)) else afterWeeder2
+          val weededAst = if (w.isEmpty)
+            mapN(afterWeeder)(_.units(src)).withSoftFailures(afterWeeder2.errors.toSeq)
+          else
+            afterWeeder2
+
           mapN(weededAst)(src -> _)
       }
       val resultMap = mapN(sequence(results))(_.toMap)
@@ -294,8 +298,7 @@ object Parser2 {
   }
 
   private def closeWithError(mark: Mark.Opened, error: Parse2Error)(implicit s: State): Mark.Closed = {
-    // TODO: Add this back in
-//    s.errors.append(error)
+    s.errors.append(error)
     close(mark, TreeKind.ErrorTree(error))
   }
 
@@ -683,23 +686,35 @@ object Parser2 {
       }
       // enum body
       if (eat(TokenKind.CurlyL)) {
-        while (atAny(List(TokenKind.CommentDoc, TokenKind.KeywordCase)) && !eof()) {
-          val mark = open()
-          docComment()
-          expect(TokenKind.KeywordCase)
-          name(NAME_TAG)
-          if (at(TokenKind.ParenL)) {
-            val mark = open()
-            Type.tuple()
-            close(mark, TreeKind.Type.Type)
-          }
-          eat(TokenKind.Comma)
-          close(mark, TreeKind.Case)
-        }
+        enumCases()
         expect(TokenKind.CurlyR)
       }
       close(mark, if (isRestrictable) TreeKind.Decl.RestrictableEnum else TreeKind.Decl.Enum)
     }
+
+    private def enumCases()(implicit s: State): Unit = {
+      docComment()
+      assert(at(TokenKind.KeywordCase))
+      while(!eof() && atAny(List(TokenKind.KeywordCase, TokenKind.Comma))) {
+        val mark = open()
+        if (at(TokenKind.KeywordCase)) {
+          docComment() // Doc comments can only occur above a case keyword
+          expect(TokenKind.KeywordCase)
+        } else {
+          expect(TokenKind.Comma)
+          // Handle comma followed by case keyword
+          eat(TokenKind.KeywordCase)
+        }
+        name(NAME_TAG)
+        if (at(TokenKind.ParenL)) {
+          val mark = open()
+          Type.tuple()
+          close(mark, TreeKind.Type.Type)
+        }
+        close(mark, TreeKind.Case)
+      }
+    }
+
 
     /**
      * instance -> docComment? annotations? modifiers? 'instance' qname typeParams '{' associatedTypeDef* definition*'}'
@@ -928,6 +943,13 @@ object Parser2 {
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
 
+      // Handle type ascriptions
+      if (!leftIsUnary && eat(TokenKind.Colon)) {
+        Type.ttype()
+        lhs = close(openBefore(lhs), TreeKind.Expr.Ascribe)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      }
+
       // Handle binary operators
       var continue = true
       while (continue) {
@@ -943,13 +965,6 @@ object Parser2 {
         } else {
           continue = false
         }
-      }
-
-      // Handle type ascriptions
-      if (eat(TokenKind.Colon)) {
-        Type.ttype()
-        lhs = close(openBefore(lhs), TreeKind.Expr.Ascribe)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
 
       // Handle without expressions
@@ -1047,6 +1062,7 @@ object Parser2 {
     }
 
     private def exprDelimited(allowQualified: Boolean = true)(implicit s: State): Mark.Closed = {
+
       val mark = open()
       // Handle clearly delimited expressions
       nth(0) match {
@@ -1970,7 +1986,15 @@ object Parser2 {
         expectAny(List(TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde, TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDiscard, TokenKind.KeywordDeref))
         close(markOp, TreeKind.Operator)
         expression(left = op, leftIsUnary = true)
-        close(mark, TreeKind.Expr.Unary)
+        var lhs = close(mark, TreeKind.Expr.Unary)
+        // handle ascription after a unary
+        if (eat(TokenKind.Colon)) {
+          lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          Type.ttype()
+          close(openBefore(lhs), TreeKind.Expr.Ascribe)
+        } else {
+          lhs
+        }
       }
     }
 

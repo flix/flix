@@ -1316,16 +1316,17 @@ object Weeder2 {
         Types.tryPickType(tree),
         pickExpression(tree)
       ) {
-        (patrn, tpe, expr) =>
+        (pattern, tpe, expr) =>
           // get expr1 and expr2 from the nested statement within expr.
           val exprs = expr match {
             case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
-            case e => softFailWith(
+            case e =>
+              softFailWith(
               e,
               Expr.Error(Parse2Error.DevErr(tree.loc, "A let-binding must be followed by an expression"))
             )
           }
-          mapN(exprs)(exprs => Expr.LetMatch(patrn, Ast.Modifiers.Empty, tpe, exprs._1, exprs._2, tree.loc))
+          mapN(exprs)(exprs => Expr.LetMatch(pattern, Ast.Modifiers.Empty, tpe, exprs._1, exprs._2, tree.loc))
       }
     }
 
