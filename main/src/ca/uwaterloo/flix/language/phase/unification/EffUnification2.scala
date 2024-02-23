@@ -89,7 +89,6 @@ object EffUnification2 {
   }
 
 
-
   /**
     * Returns the list of pairwise unification problems `l` as a list of equations.
     */
@@ -316,18 +315,31 @@ object EffUnification2 {
   // where LHS is var and is free on RHS
   private def varAssignment(l: List[Equation], subst0: LocalSubstitution): (List[Equation], LocalSubstitution) = {
     var currentSubst = subst0
-    var rest = ListBuffer.empty[Equation]
+    var currentEqns = l
+    var rest: List[Equation] = Nil
 
-    for (eqn <- l) {
+    while (currentEqns != Nil) {
+      val eqn = currentEqns.head
+      currentEqns = currentEqns.tail
+
       eqn match {
         case Equation(Term.Var(x), rhs) if !rhs.freeVars.contains(x) =>
-          val updatedRhs = currentSubst(rhs)
-          currentSubst = currentSubst.extended(x, updatedRhs)
-        case _ => rest += eqn
+          // Update the remaining equations with the new binding.
+          // This is required for correctness.
+          // We use a singleton subst. to avoid idempotence issues.
+          val singleton = LocalSubstitution.singleton(x, rhs)
+
+          currentSubst = currentSubst @@ singleton
+
+          // Update the remaining eqns and the remainder.
+          currentEqns = singleton(currentEqns)
+          rest = singleton(rest)
+
+        case _ => rest = eqn :: rest
       }
     }
 
-    (currentSubst(rest.toList), currentSubst)
+    (rest.reverse, currentSubst)
   }
 
   private object Equation {
@@ -533,27 +545,30 @@ object EffUnification2 {
 
     final def mkAnd(ts: List[Term]): Term = {
       // TODO: Group cst and vars.
-      val varTerms = mutable.Set.empty[Term]
+      val cstTerms = mutable.Set.empty[Term.Cst]
+      val varTerms = mutable.Set.empty[Term.Var]
       val nonVarTerms = mutable.ListBuffer.empty[Term]
       for (t <- ts) {
         t match {
           case True => // nop
           case False => return False
+          case x@Term.Cst(_) => cstTerms += x
           case x@Term.Var(_) => varTerms += x
           case And(ts0) =>
             for (t0 <- ts0) {
               t0 match {
                 case True => // nop
                 case False => return False
+                case x@Term.Cst(_) => cstTerms += x
                 case x@Term.Var(_) => varTerms += x
-                case _ => nonVarTerms += t
+                case _ => nonVarTerms += t0
               }
             }
           case _ => nonVarTerms += t
         }
       }
 
-      varTerms.toList ++ nonVarTerms.toList match {
+      cstTerms.toList ++ varTerms.toList ++ nonVarTerms.toList match {
         case Nil => True
         case x :: Nil => x
         case xs => And(xs)
@@ -574,7 +589,7 @@ object EffUnification2 {
                 case True => return True
                 case False => // nop
                 case x@Term.Var(_) => varTerms += x
-                case _ => nonVarTerms += t
+                case _ => nonVarTerms += t0
               }
             }
           case _ => nonVarTerms += t
@@ -908,6 +923,16 @@ object EffUnification2 {
     Var(56470) ~ (Var(113305) & Var(113303))
   )
 
+  // Iterator.toArray
+  private def example09(): List[Equation] = List(
+    (((Cst(1500)) & (Cst(1501))) & (Cst(1498))) ~ (Var(78914)),
+    (Var(78914)) ~ ((Var(78917)) & ((Var(78923)) & (Var(78926)))),
+    (Var(78917)) ~ (Var(127244)),
+    (Var(78921)) ~ (Var(127251)),
+    (Var(78923)) ~ (((Var(127248)) & (Var(127247))) & (Var(127249))),
+    (Var(78926)) ~ ((Var(127254)) & (Var(127252)))
+  )
+
   def main(args: Array[String]): Unit = {
     implicit val flix: Flix = new Flix()
     //solveAll(example01())
@@ -915,9 +940,10 @@ object EffUnification2 {
     //solveAll(example03())
     //solveAll(example04())
     //solveAll(example05())
-    solveAll(example06())
+    //solveAll(example06())
     //solveAll(example07())
     //solveAll(example08())
+    solveAll(example09())
   }
 
 
