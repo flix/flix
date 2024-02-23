@@ -50,7 +50,9 @@ sealed trait Type {
     */
   lazy val typeVars: SortedSet[Type.Var] = this match {
     case x: Type.Var => SortedSet(x)
+   
     case Type.Cst(tc, _) => SortedSet.empty
+   
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Alias(_, args, _, _) => args.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
     case Type.AssocType(_, arg, _, _) => arg.typeVars // TODO ASSOC-TYPES throw error?
@@ -62,8 +64,8 @@ sealed trait Type {
   def effects: SortedSet[Symbol.EffectSym] = this match {
     case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(sym)
 
-    case _: Type.Cst => SortedSet.empty
     case _: Type.Var => SortedSet.empty
+    case _: Type.Cst => SortedSet.empty
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.effects ++ tpe2.effects
     case Type.Alias(_, _, tpe, _) => tpe.effects
@@ -75,13 +77,26 @@ sealed trait Type {
     */
   def cases: SortedSet[Symbol.RestrictableCaseSym] = this match {
     case Type.Cst(TypeConstructor.CaseSet(syms, _), _) => syms
-
-    case _: Type.Cst => SortedSet.empty
+   
     case _: Type.Var => SortedSet.empty
+    case _: Type.Cst => SortedSet.empty
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.cases ++ tpe2.cases
     case Type.Alias(_, _, tpe, _) => tpe.cases
     case Type.AssocType(_, arg, _, _) => arg.cases // TODO ASSOC-TYPES throw error?
+  }
+
+  /**
+    * Returns all the associated types in the given type.
+    */
+  def assocs: Set[Type.AssocType] = this match {
+    case t: Type.AssocType => Set(t)
+
+    case _: Type.Var => Set.empty
+    case _: Type.Cst => Set.empty
+
+    case Type.Apply(tpe1, tpe2, _) => tpe1.assocs ++ tpe2.assocs
+    case Type.Alias(_, _, tpe, _) => tpe.assocs
   }
 
   /**
