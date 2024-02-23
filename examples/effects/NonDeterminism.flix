@@ -78,9 +78,10 @@ mod EffectExamples.NonDeterminism {
 
     pub def backtrack(f: Unit -> a \ Decision + Failure): a =
         try {
-            f()
-        } with Failure {
-            def fail(_) = k(true)
+            try { f() }
+            with Failure {
+                def fail(_k) = ???
+            }
         } with Decision {
             def decide(k) = k(false)
         }
@@ -114,9 +115,9 @@ mod EffectExamples.NonDeterminism {
     pub def testSqrt02(): Bool =
         Assert.eq(Some(3), sqrt(9))
 
-    @Test
-    pub def testPythagorean01(): Bool =
-        let res = backtrack(() -> pythagorean(5, 15));
-        Assert.eq(10, res)
+   @Test
+   pub def testPythagorean01(): Bool =
+       let res = backtrack(() -> pythagorean(5, 15));
+       Assert.eq((5, 15, 10), res)
 
 }
