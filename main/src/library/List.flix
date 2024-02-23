@@ -424,7 +424,7 @@ mod List {
         if (len == 0)
             l
         else {
-            let rem1 = n `Int32.rem` len;
+            let rem1 = n `Int32.remainder` len;
             let rotate = if (rem1 < 0) rem1 + len else rem1;
             drop(rotate, l) ::: take(rotate, l)
         }

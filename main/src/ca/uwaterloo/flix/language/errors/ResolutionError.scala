@@ -1043,6 +1043,37 @@ object ResolutionError {
   }
 
   /**
+    * An error indicating the number of effect operation arguments does not match the expected number.
+    *
+    * @param op       the effect operation symbol.
+    * @param expected the expected number of arguments.
+    * @param actual   the actual number of arguments.
+    * @param loc      the location where the error occurred.
+    */
+  case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends ResolutionError with Recoverable {
+    override def summary: String = s"Expected $expected parameter(s) but found $actual."
+
+    /**
+      * Returns the formatted error message.
+      */
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |
+         |The operation $op expects $expected parameter(s),
+         |but $actual are provided here.
+         |
+         |${code(loc, s"expected $expected parameter(s) but found $actual")}
+         |""".stripMargin
+    }
+
+    /**
+      * Returns a formatted string with helpful suggestions.
+      */
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * Removes all access modifiers from the given string `s`.
     */
   private def stripAccessModifier(s: String): String =

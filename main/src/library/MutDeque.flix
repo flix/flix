@@ -191,7 +191,7 @@ mod MutDeque {
             let a1 = deref a;
             let f1 = deref f;
             let x = Array.get(f1, a1);
-            f := (f1 + 1) `Int32.mod` capacity(d);
+            f := (f1 + 1) `Int32.modulo` capacity(d);
             compress!(d);
             Some(x)
         }
@@ -206,7 +206,7 @@ mod MutDeque {
         else { // Update index such that back points to a valid element `x`, get element, optionally compress array, return `Some(x)`.
             let MutDeque(_, a, _, b) = d;
             let a1 = deref a;
-            let b1 = (deref b - 1) `Int32.mod` capacity(d);
+            let b1 = (deref b - 1) `Int32.modulo` capacity(d);
             let x = Array.get(b1, a1);
             b := b1;
             compress!(d);
@@ -219,7 +219,7 @@ mod MutDeque {
     pub def pushFront(x: a, d: MutDeque[a, r]): Unit \ r =
         let MutDeque(_, a, f, _) = d;
         let a1 = deref a;
-        let f1 = (deref f - 1) `Int32.mod` capacity(d); // Update index such that it points to an empty index. This will never overlap with the back index.
+        let f1 = (deref f - 1) `Int32.modulo` capacity(d); // Update index such that it points to an empty index. This will never overlap with the back index.
         Array.put(x, f1, a1);                           // Store `x` in the array.
         f := f1;                                        // Update the front index reference.
         expand!(d)                                      // Optionally expand `d`.
@@ -232,7 +232,7 @@ mod MutDeque {
         let a1 = deref a;
         let b1 = deref b;
         Array.put(x, b1, a1);                  // Store `x` in the array.
-        b := (b1 + 1) `Int32.mod` capacity(d); // Update back index reference to point to next empty index.
+        b := (b1 + 1) `Int32.modulo` capacity(d); // Update back index reference to point to next empty index.
         expand!(d)                             // Optionally expand `d`.
 
     ///
