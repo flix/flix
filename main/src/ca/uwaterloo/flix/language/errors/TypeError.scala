@@ -684,6 +684,32 @@ object TypeError {
   }
 
   /**
+    * Unification equation was too complex to solve.
+    *
+    * @param tpe1 the lhs of the unification equation.
+    * @param tpe2 the rhs of the unification equation.
+    * @param loc  the location where the error occurred.
+    */
+  case class TooComplex(tpe1: Type, tpe2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Type inference too complex."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> ${red("Type inference failed due to too complex unification problems")}'.
+         |
+         |Try to break your function into smaller functions.
+         |
+         |Type One: ${formatType(tpe1, Some(renv))}
+         |Type Two: ${formatType(tpe2, Some(renv))}
+         |
+         |${code(loc, "too complex constraints")}
+         |
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Undefined label error.
     *
     * @param label      the name of the missing label.
