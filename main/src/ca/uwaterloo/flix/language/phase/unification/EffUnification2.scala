@@ -933,6 +933,25 @@ object EffUnification2 {
     (Var(78926)) ~ ((Var(127254)) & (Var(127252)))
   )
 
+  // Files.append
+  private def example10(): List[Equation] = List(
+    (Cst(1794221043)) ~ (((Var(55040)) & ((Var(55042)) & ((Var(55046)) & ((Var(55050)) & ((Var(55058)) & ((Var(55060)) & ((Var(55062)) & ((Var(55066)) & (Var(55075)))))))))) & (Var(55078))),
+    (Var(55078)) ~ (Var(112431)),
+    (Var(55040)) ~ (Cst(1794221043)),
+    (Var(55042)) ~ (Var(112433)),
+    (Var(55044)) ~ (Var(112437)),
+    (Var(55046)) ~ ((Var(112435)) & (Var(55044))),
+    (Var(55048)) ~ (True),
+    (Var(55050)) ~ ((Var(112439)) & (Var(55048))),
+    (Var(55052)) ~ (Var(112443)),
+    (Var(55055)) ~ (True),
+    (Var(55058)) ~ ((Var(112441)) & ((Var(55052)) & (Var(55055)))),
+    (Var(55060)) ~ (Var(112446)),
+    (Var(55062)) ~ (Var(112448)),
+    (Var(55066)) ~ (True),
+    (Var(55075)) ~ (Var(112453))
+  )
+
   def main(args: Array[String]): Unit = {
     implicit val flix: Flix = new Flix()
     //solveAll(example01())
@@ -943,7 +962,8 @@ object EffUnification2 {
     //solveAll(example06())
     //solveAll(example07())
     //solveAll(example08())
-    solveAll(example09())
+    //solveAll(example09()) // hard
+    solveAll(example10()) // very hard
   }
 
 
