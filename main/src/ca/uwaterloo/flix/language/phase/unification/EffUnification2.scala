@@ -266,7 +266,12 @@ object EffUnification2 {
             currentSubst = currentSubst.extended(x, Term.True)
             changed = true
 
-          // Case 2.1: x /\ y /\ z /\... = true
+          // Case 2: x =?= c
+          case Equation(Term.Var(x), Term.Cst(c)) =>
+            currentSubst = currentSubst.extended(x, Term.Cst(c))
+            changed = true
+
+          // Case 3: x /\ y /\ z /\... = true
           case Equation(Term.And(ts), Term.True) if ts.forall(_.isVar) =>
             val lhsVars = ts.map(_.asInstanceOf[Term.Var])
             for (Term.Var(x) <- lhsVars) {
