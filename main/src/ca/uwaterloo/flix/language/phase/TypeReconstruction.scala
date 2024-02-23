@@ -617,7 +617,7 @@ object TypeReconstruction {
   private def visitPattern(pat0: KindedAst.Pattern)(implicit root: KindedAst.Root, subst: Substitution): TypedAst.Pattern = pat0 match {
     case KindedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wild(subst(tvar), loc)
     case KindedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym, subst(tvar), loc)
-    case KindedAst.Pattern.Cst(cst, loc) => TypedAst.Pattern.Cst(cst, constantType(cst), loc)
+    case KindedAst.Pattern.Cst(cst, loc) => TypedAst.Pattern.Cst(cst, Type.constantType(cst), loc)
 
     case KindedAst.Pattern.Tag(sym, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, visitPattern(pat), subst(tvar), loc)
 
