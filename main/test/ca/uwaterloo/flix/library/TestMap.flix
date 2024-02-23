@@ -329,61 +329,61 @@ def adjustWithKey06(): Bool = Map.adjustWithKey((k, v) -> k+v, 4, Map#{1 => 4, 5
 // update                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def update01(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 1, Map#{}) == Map#{}
+def update01(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 1, Map#{}) == Map#{}
 
 @test
-def update02(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 1, Map#{1 => 3}) == Map#{1 => 6}
+def update02(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 1, Map#{1 => 3}) == Map#{1 => 6}
 
 @test
-def update03(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 1, Map#{1 => 4}) == Map#{1 => 4}
+def update03(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 1, Map#{1 => 4}) == Map#{1 => 4}
 
 @test
-def update04(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 2, Map#{1 => 4}) == Map#{1 => 4}
+def update04(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 2, Map#{1 => 4}) == Map#{1 => 4}
 
 @test
-def update05(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 1, Map#{1 => -14, 5 => -2}) == Map#{1 => -14, 5 => -2}
+def update05(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 1, Map#{1 => -14, 5 => -2}) == Map#{1 => -14, 5 => -2}
 
 @test
-def update06(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 1, Map#{1 => -13, 5 => -2}) == Map#{1 => -26, 5 => -2}
+def update06(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 1, Map#{1 => -13, 5 => -2}) == Map#{1 => -26, 5 => -2}
 
 @test
-def update07(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 5, Map#{1 => 4, 5 => -2}) == Map#{1 => 4, 5 => -2}
+def update07(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 5, Map#{1 => 4, 5 => -2}) == Map#{1 => 4, 5 => -2}
 
 @test
-def update08(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 5, Map#{1 => 4, 5 => -1}) == Map#{1 => 4, 5 => -2}
+def update08(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 5, Map#{1 => 4, 5 => -1}) == Map#{1 => 4, 5 => -2}
 
 @test
-def update09(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 4, Map#{1 => 4, 5 => -2}) == Map#{1 => 4, 5 => -2}
+def update09(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 4, Map#{1 => 4, 5 => -2}) == Map#{1 => 4, 5 => -2}
 
 /////////////////////////////////////////////////////////////////////////////
 // updateWithKey                                                           //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def updateWithKey01(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 1, Map#{}) == Map#{}
+def updateWithKey01(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 1, Map#{}) == Map#{}
 
 @test
-def updateWithKey02(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 1, Map#{1 => 3}) == Map#{1 => 7}
+def updateWithKey02(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 1, Map#{1 => 3}) == Map#{1 => 7}
 
 @test
-def updateWithKey03(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 1, Map#{1 => 4}) == Map#{1 => 4}
+def updateWithKey03(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 1, Map#{1 => 4}) == Map#{1 => 4}
 
 @test
-def updateWithKey04(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 2, Map#{1 => 4}) == Map#{1 => 4}
+def updateWithKey04(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 2, Map#{1 => 4}) == Map#{1 => 4}
 
 @test
-def updateWithKey05(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 1, Map#{1 => -14, 5 => -2}) == Map#{1 => -14, 5 => -2}
+def updateWithKey05(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 1, Map#{1 => -14, 5 => -2}) == Map#{1 => -14, 5 => -2}
 
 @test
-def updateWithKey06(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 1, Map#{1 => -13, 5 => -2}) == Map#{1 => -25, 5 => -2}
+def updateWithKey06(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 1, Map#{1 => -13, 5 => -2}) == Map#{1 => -25, 5 => -2}
 
 @test
-def updateWithKey07(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 5, Map#{1 => 4, 5 => -2}) == Map#{1 => 4, 5 => -2}
+def updateWithKey07(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 5, Map#{1 => 4, 5 => -2}) == Map#{1 => 4, 5 => -2}
 
 @test
-def updateWithKey08(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 5, Map#{1 => 4, 5 => -1}) == Map#{1 => 4, 5 => 3}
+def updateWithKey08(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 5, Map#{1 => 4, 5 => -1}) == Map#{1 => 4, 5 => 3}
 
 @test
-def updateWithKey09(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 4, Map#{1 => 4, 5 => -2}) == Map#{1 => 4, 5 => -2}
+def updateWithKey09(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 4, Map#{1 => 4, 5 => -2}) == Map#{1 => 4, 5 => -2}
 
 /////////////////////////////////////////////////////////////////////////////
 // remove                                                                  //
@@ -608,25 +608,25 @@ def findRight07(): Bool = Map.findRight((k, v) -> k == v, Map#{1 => 1, 2 => 2}) 
 // filter                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def filter01(): Bool = Map.filter(v -> v `Int32.rem` 2 == 0, Map#{}: Map[Unit, _]) == Map#{}
+def filter01(): Bool = Map.filter(v -> v `Int32.remainder` 2 == 0, Map#{}: Map[Unit, _]) == Map#{}
 
 @test
-def filter02(): Bool = Map.filter(v -> v `Int32.rem` 2 == 0, Map#{1 => 2}) == Map#{1 => 2}
+def filter02(): Bool = Map.filter(v -> v `Int32.remainder` 2 == 0, Map#{1 => 2}) == Map#{1 => 2}
 
 @test
-def filter03(): Bool = Map.filter(v -> v `Int32.rem` 2 == 0, Map#{1 => 3}) == Map#{}
+def filter03(): Bool = Map.filter(v -> v `Int32.remainder` 2 == 0, Map#{1 => 3}) == Map#{}
 
 @test
-def filter04(): Bool = Map.filter(v -> v `Int32.rem` 2 == 0, Map#{1 => 8, 2 => 4}) == Map#{1 => 8, 2 => 4}
+def filter04(): Bool = Map.filter(v -> v `Int32.remainder` 2 == 0, Map#{1 => 8, 2 => 4}) == Map#{1 => 8, 2 => 4}
 
 @test
-def filter05(): Bool = Map.filter(v -> v `Int32.rem` 2 == 0, Map#{1 => 7, 2 => 4}) == Map#{2 => 4}
+def filter05(): Bool = Map.filter(v -> v `Int32.remainder` 2 == 0, Map#{1 => 7, 2 => 4}) == Map#{2 => 4}
 
 @test
-def filter06(): Bool = Map.filter(v -> v `Int32.rem` 2 == 0, Map#{1 => 8, 2 => 3}) == Map#{1 => 8}
+def filter06(): Bool = Map.filter(v -> v `Int32.remainder` 2 == 0, Map#{1 => 8, 2 => 3}) == Map#{1 => 8}
 
 @test
-def filter07(): Bool = Map.filter(v -> v `Int32.rem` 2 == 0, Map#{1 => -1, 2 => -3}) == Map#{}
+def filter07(): Bool = Map.filter(v -> v `Int32.remainder` 2 == 0, Map#{1 => -1, 2 => -3}) == Map#{}
 
 /////////////////////////////////////////////////////////////////////////////
 // filterWithKey                                                           //
