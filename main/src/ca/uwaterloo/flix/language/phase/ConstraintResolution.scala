@@ -465,8 +465,9 @@ object ConstraintResolution {
     val simple1 = simple.map { case (t1, t2) => (subst(t1), subst(t2)) }
     EffUnification2.unifyAll(simple1, renv) match {
       case Result.Ok(newSubst) =>
-        subst = newSubst @@ subst
-        curr = complex
+//        subst = newSubst @@ subst
+//        curr = complex
+        // MATT doing nothing
       case Err(e) => return Result.Err(HackError(e)) // MATT no prov info here...
     }
 
