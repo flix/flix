@@ -159,8 +159,8 @@ mod TestDelayMap {
     def count08(): Bool = region rc {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
-        let a = MutList.new(rc);
-        discard DelayMap.count((k, _) -> { let b = MutList.new(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); true }, m);
+        let a = MutList.new_(rc);
+        discard DelayMap.count((k, _) -> { let b = MutList.new_(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); true }, m);
         MutList.toList(a) == range
     }
 
@@ -1698,7 +1698,7 @@ mod TestDelayMap {
         let m: DelayMap[Int32, Int32] = Map#{} |> Map.toDelayMap;
         let d1 = DelayMap.toMutDeque(rc, m);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.new_(rc);
 
         d1 `MutDeque.sameElements` d2
     }
@@ -1708,7 +1708,7 @@ mod TestDelayMap {
         let m = Map#{1 => 2} |> Map.toDelayMap;
         let d1 = DelayMap.toMutDeque(rc, m);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.new_(rc);
         MutDeque.pushBack((1, 2), d2);
 
         d1 `MutDeque.sameElements` d2
@@ -1719,7 +1719,7 @@ mod TestDelayMap {
         let m = Map#{1 => 2, 3 => 4, 5 => 6} |> Map.toDelayMap;
         let d1 = DelayMap.toMutDeque(rc, m);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.new_(rc);
         MutDeque.pushBack((3, 4), d2);
         MutDeque.pushBack((5, 6), d2);
         MutDeque.pushFront((1, 2), d2);
@@ -1732,7 +1732,7 @@ mod TestDelayMap {
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'} |> Map.toDelayMap;
         let d1 = DelayMap.toMutDeque(rc, m);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.new_(rc);
         MutDeque.pushFront((3, 'c'), d2);
         MutDeque.pushFront((2, 'b'), d2);
         MutDeque.pushFront((1, 'a'), d2);
@@ -1856,8 +1856,8 @@ mod TestDelayMap {
     def sumWith07(): Bool = region rc {
         let range = List.range(0, 2000);
         let m = List.zip(range, range) |> List.toMap |> Map.toDelayMap;
-        let a = MutList.new(rc);
-        discard DelayMap.sumWith((k, _) -> { let b = MutList.new(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 0 }, m);
+        let a = MutList.new_(rc);
+        discard DelayMap.sumWith((k, _) -> { let b = MutList.new_(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 0 }, m);
         MutList.toList(a) == range
     }
 

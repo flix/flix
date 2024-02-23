@@ -298,14 +298,14 @@ mod TestIterator {
     @test
     def toMutDeque01(): Bool = region rc {
         let iter = Iterator.empty(rc): Iterator[Int32, rc, rc];
-        let d = MutDeque.new(rc): MutDeque[Int32, _];
+        let d = MutDeque.new_(rc): MutDeque[Int32, _];
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }
 
     @test
     def toMutDeque02(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: Nil);
-        let d = MutDeque.new(rc);
+        let d = MutDeque.new_(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), 1 :: Nil);
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }
@@ -313,7 +313,7 @@ mod TestIterator {
     @test
     def toMutDeque03(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: Nil);
-        let d = MutDeque.new(rc);
+        let d = MutDeque.new_(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: Nil);
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }
@@ -321,7 +321,7 @@ mod TestIterator {
     @test
     def toMutDeque04(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: 3 :: Nil);
-        let d = MutDeque.new(rc);
+        let d = MutDeque.new_(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }
@@ -588,49 +588,49 @@ mod TestIterator {
     @test
     def replace01(): Bool = region rc {
         List.iterator(rc, Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == Nil
+            Iterator.replace(from_ = 3, to = 4) |> Iterator.toList == Nil
     }
 
     @test
     def replace02(): Bool = region rc {
         List.iterator(rc, 1 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: Nil
+            Iterator.replace(from_ = 3, to = 4) |> Iterator.toList == 1 :: Nil
     }
 
     @test
     def replace03(): Bool = region rc {
         List.iterator(rc, 3 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: Nil
+            Iterator.replace(from_ = 3, to = 4) |> Iterator.toList == 4 :: Nil
     }
 
     @test
     def replace04(): Bool = region rc {
         List.iterator(rc, 4 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: Nil
+            Iterator.replace(from_ = 3, to = 4) |> Iterator.toList == 4 :: Nil
     }
 
     @test
     def replace05(): Bool = region rc {
         List.iterator(rc, 1 :: 2 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: 2 :: Nil
+            Iterator.replace(from_ = 3, to = 4) |> Iterator.toList == 1 :: 2 :: Nil
     }
 
     @test
     def replace06(): Bool = region rc {
         List.iterator(rc, 1 :: 3 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: 4 :: Nil
+            Iterator.replace(from_ = 3, to = 4) |> Iterator.toList == 1 :: 4 :: Nil
     }
 
     @test
     def replace07(): Bool = region rc {
         List.iterator(rc, 3 :: 4 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: 4 :: Nil
+            Iterator.replace(from_ = 3, to = 4) |> Iterator.toList == 4 :: 4 :: Nil
     }
 
     @test
     def replace08(): Bool = region rc {
         List.iterator(rc, 3 :: 3 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: 4 :: Nil
+            Iterator.replace(from_ = 3, to = 4) |> Iterator.toList == 4 :: 4 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////

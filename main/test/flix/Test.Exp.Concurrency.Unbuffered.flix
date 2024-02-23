@@ -102,7 +102,7 @@ mod Test.Exp.Concurrency.Unbuffered {
     def testUnbufferedChannelPutGet15(): Bool \ IO = region rc {
         let (tx, rx) = Channel.unbuffered(rc);
         spawn Channel.unsafeSend(Array#{1, 2, 3} @ rc, tx) @ rc;
-        2 == Array.get(1, Channel.recv(rx))
+        2 == Array.get_(1, Channel.recv(rx))
     }
 
     @test

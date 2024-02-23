@@ -177,15 +177,15 @@ mod TestVector {
 
     @test
     def slice01(): Bool =
-        Vector.slice(start = 0, end = 1, Vector#{1, 2, 3}) |> Vector.get(0) == 1
+        Vector.slice(start = 0, end = 1, Vector#{1, 2, 3}) |> Vector.get_(0) == 1
 
     @test
     def slice02(): Bool =
-        Vector.slice(start = 1, end = 2, Vector#{1, 2, 3}) |> Vector.get(0) == 2
+        Vector.slice(start = 1, end = 2, Vector#{1, 2, 3}) |> Vector.get_(0) == 2
 
     @test
     def slice03(): Bool =
-        Vector.slice(start = 2, end = 3, Vector#{1, 2, 3}) |> Vector.get(0) == 3
+        Vector.slice(start = 2, end = 3, Vector#{1, 2, 3}) |> Vector.get_(0) == 3
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
@@ -230,14 +230,14 @@ mod TestVector {
     @test
     def toMutDeque01(): Bool = region rc {
         let v = Vector#{}: Vector[Int32];
-        let d = MutDeque.new(rc): MutDeque[Int32, _];
+        let d = MutDeque.new_(rc): MutDeque[Int32, _];
         Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
     }
 
     @test
     def toMutDeque02(): Bool = region rc {
         let v = Vector#{1};
-        let d = MutDeque.new(rc);
+        let d = MutDeque.new_(rc);
         MutDeque.pushBack(1, d);
         Vector.toMutDeque(rc, v) `MutDeque.sameElements` d
     }
@@ -245,7 +245,7 @@ mod TestVector {
     @test
     def toMutDeque03(): Bool = region rc {
         let v = Vector#{1, 2, 3};
-        let d = MutDeque.new(rc);
+        let d = MutDeque.new_(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -255,7 +255,7 @@ mod TestVector {
     @test
     def toMutDeque04(): Bool = region rc {
         let v = Vector#{1, 2, 3, 4, 5};
-        let d = MutDeque.new(rc);
+        let d = MutDeque.new_(rc);
         MutDeque.pushBack(3, d);
         MutDeque.pushBack(4, d);
         MutDeque.pushBack(5, d);
@@ -267,7 +267,7 @@ mod TestVector {
     @test
     def toMutDeque05(): Bool = region rc {
         let v = Vector#{'a', 'b', 'c'};
-        let d = MutDeque.new(rc);
+        let d = MutDeque.new_(rc);
         MutDeque.pushFront('c', d);
         MutDeque.pushFront('b', d);
         MutDeque.pushFront('a', d);
@@ -1246,42 +1246,42 @@ mod TestVector {
 
     @test
     def replace01(): Bool =
-        let v = Vector.replace(from = 3, to = 4, (Vector#{}: Vector[Int32]));
+        let v = Vector.replace(from_ = 3, to = 4, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def replace02(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{1});
+        let v = Vector.replace(from_ = 3, to = 4, Vector#{1});
         v == Vector#{1}
 
     @test
     def replace03(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{3});
+        let v = Vector.replace(from_ = 3, to = 4, Vector#{3});
         v == Vector#{4}
 
     @test
     def replace04(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{4});
+        let v = Vector.replace(from_ = 3, to = 4, Vector#{4});
         v == Vector#{4}
 
     @test
     def replace05(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{1, 2});
+        let v = Vector.replace(from_ = 3, to = 4, Vector#{1, 2});
         v == Vector#{1, 2}
 
     @test
     def replace06(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{1, 3});
+        let v = Vector.replace(from_ = 3, to = 4, Vector#{1, 3});
         v == Vector#{1, 4}
 
     @test
     def replace07(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{3, 4});
+        let v = Vector.replace(from_ = 3, to = 4, Vector#{3, 4});
         v == Vector#{4, 4}
 
     @test
     def replace08(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{3, 3});
+        let v = Vector.replace(from_ = 3, to = 4, Vector#{3, 3});
         v == Vector#{4, 4}
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3535,7 +3535,7 @@ mod TestVector {
     @test
     def forEach01(): Bool = region rc {
         let v = Vector#{}: Vector[Int32];
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEach(fn, v);
         StringBuilder.toString(sb) == ""
@@ -3544,7 +3544,7 @@ mod TestVector {
     @test
     def forEach02(): Bool = region rc {
         let v = Vector#{0};
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEach(fn, v);
         StringBuilder.toString(sb) == "F"
@@ -3553,7 +3553,7 @@ mod TestVector {
     @test
     def forEach03(): Bool = region rc {
         let v = Vector#{1};
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEach(fn, v);
         StringBuilder.toString(sb) == "T"
@@ -3562,7 +3562,7 @@ mod TestVector {
     @test
     def forEach04(): Bool = region rc {
         let v = Vector#{0, 1};
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEach(fn, v);
         StringBuilder.toString(sb) == "FT"
@@ -3575,7 +3575,7 @@ mod TestVector {
     @test
     def forEachWithIndex01(): Bool = region rc {
         let v = (Vector#{}): Vector[Float32];
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == ""
@@ -3584,7 +3584,7 @@ mod TestVector {
     @test
     def forEachWithIndex02(): Bool = region rc {
         let v = Vector#{0.0f32};
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "F"
@@ -3593,7 +3593,7 @@ mod TestVector {
     @test
     def forEachWithIndex03(): Bool = region rc {
         let v = Vector#{0.0f32, 0.1f32};
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "FT"
@@ -3602,7 +3602,7 @@ mod TestVector {
     @test
     def forEachWithIndex04(): Bool = region rc {
         let v = Vector#{0.0f32, 0.1f32, 0.2f32};
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "FTT"
@@ -3611,7 +3611,7 @@ mod TestVector {
     @test
     def forEachWithIndex05(): Bool = region rc {
         let v = Vector#{0.0f32, 0.1f32, 0.2f32, 0.3f32};
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Vector.forEachWithIndex(fn, v);
         StringBuilder.toString(sb) == "FTTT"
@@ -4209,19 +4209,19 @@ mod TestVector {
 
     @test
     def toMutList01(): Bool = region rc {
-        MutList.sameElements(Vector.toMutList(rc, Vector#{}: Vector[Int32]), MutList.new(rc))
+        MutList.sameElements(Vector.toMutList(rc, Vector#{}: Vector[Int32]), MutList.new_(rc))
     }
 
     @test
     def toMutList02(): Bool = region rc {
-        let l = MutList.new(rc);
+        let l = MutList.new_(rc);
         MutList.push!(1, l);
         MutList.sameElements(Vector.toMutList(rc, Vector#{1}), l)
     }
 
     @test
     def toMutList03(): Bool = region rc {
-        let l = MutList.new(rc);
+        let l = MutList.new_(rc);
         MutList.push!(1, l);
         MutList.push!(2, l);
         MutList.push!(3, l);
@@ -4258,25 +4258,25 @@ mod TestVector {
     @test
     def shuffle01(): Bool \ IO =
         let v = Vector#{}: Vector[Int32];
-        let v1 = Vector.shuffle(Random.new(), v);
+        let v1 = Vector.shuffle(Random.new_(), v);
         Vector.length(v1) == 0 and Vector.toSet(v1) == Set#{}
 
     @test
     def shuffle02(): Bool \ IO =
         let v = Vector#{0};
-        let v1 = Vector.shuffle(Random.new(), v);
+        let v1 = Vector.shuffle(Random.new_(), v);
         Vector.length(v1) == 1 and Vector.toSet(v1) == Set#{0}
 
     @test
     def shuffle03(): Bool \ IO =
         let v = Vector#{0, 1, 2, 3};
-        let v1 = Vector.shuffle(Random.new(), v);
+        let v1 = Vector.shuffle(Random.new_(), v);
         Vector.length(v1) == 4 and Vector.toSet(v1) == Set#{0, 1, 2, 3}
 
     @test
     def shuffle04(): Bool \ IO =
         let v = Vector#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-        let v1 = Vector.shuffle(Random.new(), v);
+        let v1 = Vector.shuffle(Random.new_(), v);
         Vector.length(v1) == 10 and Vector.toSet(v1) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 }

@@ -731,7 +731,7 @@ mod TestDelayList {
     @test
     def forEach01(): Bool = region rc {
         let l = ENil;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == ""
@@ -740,7 +740,7 @@ mod TestDelayList {
     @test
     def forEach02(): Bool = region rc {
         let l = LList(lazy ENil);
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == ""
@@ -749,7 +749,7 @@ mod TestDelayList {
     @test
     def forEach03(): Bool = region rc {
         let l = LCons(1, lazy LList(lazy ENil));
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "T"
@@ -758,7 +758,7 @@ mod TestDelayList {
     @test
     def forEach04(): Bool = region rc {
         let l = LCons(-1, lazy LList(lazy ENil));
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "F"
@@ -767,7 +767,7 @@ mod TestDelayList {
     @test
     def forEach05(): Bool = region rc {
         let l = ECons(1, LCons(-1, lazy ENil));
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEach(fn, l);
         StringBuilder.toString(sb) == "TF"
@@ -780,7 +780,7 @@ mod TestDelayList {
     @test
     def forEachWithIndex01(): Bool = region rc {
         let l = ENil;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == ""
@@ -789,7 +789,7 @@ mod TestDelayList {
     @test
     def forEachWithIndex02(): Bool = region rc {
         let l = LList(lazy ENil);
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == ""
@@ -798,7 +798,7 @@ mod TestDelayList {
     @test
     def forEachWithIndex03(): Bool = region rc {
         let l = LCons(1, lazy LList(lazy ENil));
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "F"
@@ -807,7 +807,7 @@ mod TestDelayList {
     @test
     def forEachWithIndex04(): Bool = region rc {
         let l = LCons(-1, lazy LList(lazy ENil));
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "F"
@@ -816,7 +816,7 @@ mod TestDelayList {
     @test
     def forEachWithIndex05(): Bool = region rc {
         let l = ECons(1, LCons(-1, lazy ENil));
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let fn = (i, _) -> if (i > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         DelayList.forEachWithIndex(fn, l);
         StringBuilder.toString(sb) == "FT"
@@ -905,7 +905,7 @@ mod TestDelayList {
     	let l = ENil: DelayList[Int32];
         let d1 = DelayList.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.new_(rc);
 
         d1 `MutDeque.sameElements` d2
 
@@ -916,7 +916,7 @@ mod TestDelayList {
     	let l = LList(lazy ENil): DelayList[Int32];
         let d1 = DelayList.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.new_(rc);
 
         d1 `MutDeque.sameElements` d2
 
@@ -927,7 +927,7 @@ mod TestDelayList {
     	let l = LList(lazy LCons(1, lazy LList(lazy ECons(2, ECons(3, LList(lazy ENil))))));
         let d1 = DelayList.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.new_(rc);
         MutDeque.pushBack(1, d2);
         MutDeque.pushBack(2, d2);
         MutDeque.pushBack(3, d2);
@@ -1254,39 +1254,39 @@ mod TestDelayList {
 
     @test
     def from01(): Bool =
-        DelayList.from(-1) |> DelayList.take(0) == ENil
+        DelayList.from_(-1) |> DelayList.take(0) == ENil
 
     @test
     def from02(): Bool =
-        DelayList.from(0) |> DelayList.take(0) == ENil
+        DelayList.from_(0) |> DelayList.take(0) == ENil
 
     @test
     def from04(): Bool =
-        DelayList.from(100) |> DelayList.take(-1) == ENil
+        DelayList.from_(100) |> DelayList.take(-1) == ENil
 
     @test
     def from05(): Bool =
-    	DelayList.from(-1) |> DelayList.take(1) == ECons(-1, ENil)
+    	DelayList.from_(-1) |> DelayList.take(1) == ECons(-1, ENil)
 
     @test
     def from06(): Bool =
-    	DelayList.from(5) |> DelayList.take(1) == ECons(5, ENil)
+    	DelayList.from_(5) |> DelayList.take(1) == ECons(5, ENil)
 
     @test
     def from07(): Bool =
-    	DelayList.from(1) |> DelayList.take(3) == ECons(1, ECons(2, ECons(3, ENil)))
+    	DelayList.from_(1) |> DelayList.take(3) == ECons(1, ECons(2, ECons(3, ENil)))
 
     @test
     def from08(): Bool =
-    	DelayList.from(-1000) |> DelayList.take(1000) == DelayList.range(-1000, 0)
+    	DelayList.from_(-1000) |> DelayList.take(1000) == DelayList.range(-1000, 0)
 
     @test
     def from09(): Bool =
-    	DelayList.from(-1000) |> DelayList.take(2000) == DelayList.range(-1000, 1000)
+    	DelayList.from_(-1000) |> DelayList.take(2000) == DelayList.range(-1000, 1000)
 
     @test
     def from10(): Bool =
-    	DelayList.from(0) |> DelayList.take(2000) == DelayList.range(0, 2000)
+    	DelayList.from_(0) |> DelayList.take(2000) == DelayList.range(0, 2000)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1859,35 +1859,35 @@ mod TestDelayList {
 
     @test
     def replace01(): Bool =
-        DelayList.replace(from = 3, to = 4, ENil) == ENil
+        DelayList.replace(from_ = 3, to = 4, ENil) == ENil
 
     @test
     def replace02(): Bool =
-        DelayList.replace(from = 3, to = 4, ECons(1, ENil)) == ECons(1, ENil)
+        DelayList.replace(from_ = 3, to = 4, ECons(1, ENil)) == ECons(1, ENil)
 
     @test
     def replace03(): Bool =
-        DelayList.replace(from = 3, to = 4, ECons(3, ENil)) == ECons(4, ENil)
+        DelayList.replace(from_ = 3, to = 4, ECons(3, ENil)) == ECons(4, ENil)
 
     @test
     def replace04(): Bool =
-        DelayList.replace(from = 3, to = 4, ECons(4, ECons(4, ECons(4, ENil)))) == ECons(4, ECons(4, ECons(4, ENil)))
+        DelayList.replace(from_ = 3, to = 4, ECons(4, ECons(4, ECons(4, ENil)))) == ECons(4, ECons(4, ECons(4, ENil)))
 
     @test
     def replace05(): Bool =
-        DelayList.replace(from = 3, to = 4, ECons(2, ECons(2, ECons(2, ENil)))) == ECons(2, ECons(2, ECons(2, ENil)))
+        DelayList.replace(from_ = 3, to = 4, ECons(2, ECons(2, ECons(2, ENil)))) == ECons(2, ECons(2, ECons(2, ENil)))
 
     @test
     def replace06(): Bool =
-        DelayList.replace(from = 3, to = 4, ECons(2, ECons(3, ECons(2, ENil)))) == ECons(2, ECons(4, ECons(2, ENil)))
+        DelayList.replace(from_ = 3, to = 4, ECons(2, ECons(3, ECons(2, ENil)))) == ECons(2, ECons(4, ECons(2, ENil)))
 
     @test
     def replace07(): Bool =
-        DelayList.replace(from = 0, to = 1, ECons(0, ECons(0, ECons(0, ENil)))) == ECons(1, ECons(1, ECons(1, ENil)))
+        DelayList.replace(from_ = 0, to = 1, ECons(0, ECons(0, ECons(0, ENil)))) == ECons(1, ECons(1, ECons(1, ENil)))
 
     @test
     def replace08(): Bool =
-        DelayList.replace(from = 3, to = 4, LList(lazy ECons(3, LList(lazy LCons(3, lazy LList(lazy LCons(3, lazy LList(lazy ENil)))))))) == ECons(4, ECons(4, ECons(4, ENil)))
+        DelayList.replace(from_ = 3, to = 4, LList(lazy ECons(3, LList(lazy LCons(3, lazy LList(lazy LCons(3, lazy LList(lazy ENil)))))))) == ECons(4, ECons(4, ECons(4, ENil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3032,28 +3032,28 @@ mod TestDelayList {
     @test
     def shuffle01(): Bool \ IO =
         let l1: List[Int32] = Nil;
-        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
+        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new_());
 
         DelayList.length(l2) == 0 and DelayList.toSet(l2) == Set#{}
 
     @test
     def shuffle02(): Bool \ IO =
         let l1 = 1 :: Nil;
-        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
+        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new_());
 
         DelayList.length(l2) == 1 and DelayList.toSet(l2) == Set#{1}
 
     @test
     def shuffle03(): Bool \ IO =
         let l1 = 1 :: 2 :: 3 :: Nil;
-        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
+        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new_());
 
         DelayList.length(l2) == 3 and DelayList.toSet(l2) == Set#{1, 2, 3}
 
     @test
     def shuffle04(): Bool \ IO =
         let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
+        let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new_());
 
         DelayList.length(l2) == 10 and DelayList.toSet(l2) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 

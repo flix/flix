@@ -19,7 +19,7 @@
 
     use Concurrent.Channel.Mpmc
     use Concurrent.Channel.unsafeGetAndUnlock
-    use Concurrent.Channel.get
+    use Concurrent.Channel.get_
     use Concurrent.Channel.mpmcAdmin
     use Concurrent.Channel.newChannel
     use Concurrent.Channel.put
@@ -35,19 +35,19 @@
     def testGetPut01(): Bool \ IO =
         let c = newChannel(1);
         put(true, c);
-        get(c)
+        get_(c)
 
     @test
     def testGetPut02(): Bool \ IO =
         let c = newChannel(1);
         put(123, c);
-        get(c) == 123
+        get_(c) == 123
 
     @test
     def testGetPut03(): Bool \ IO =
         let c = newChannel(1);
         put("Hello World!", c);
-        get(c) == "Hello World!"
+        get_(c) == "Hello World!"
 
     @test
     def testSelect01(): Bool \ IO =
