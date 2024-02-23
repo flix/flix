@@ -696,7 +696,7 @@ object TypeError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> ${red("Type inference failed due to too complex unification problems")}'.
+         |>> ${red("Type inference failed due to too complex unification.")}'.
          |
          |Try to break your function into smaller functions.
          |
