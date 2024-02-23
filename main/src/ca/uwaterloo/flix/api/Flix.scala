@@ -748,8 +748,6 @@ class Flix {
     */
   def getFormatOptions: FormatOptions = {
     FormatOptions(
-      ignorePur = false,
-      ignoreEff = false,
       varNames = FormatOptions.VarName.NameBased // TODO add cli option
     )
   }
@@ -821,6 +819,7 @@ class Flix {
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
       afterDeriver <- Deriver.run(afterKinder)
       afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet)
+      _ <- Regions.run(afterTyper)
       afterEntryPoint <- EntryPoint.run(afterTyper)
       _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
       afterPredDeps <- PredDeps.run(afterEntryPoint)

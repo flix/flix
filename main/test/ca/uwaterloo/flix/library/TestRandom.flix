@@ -1,25 +1,25 @@
 @test
-def testChoose01(): Option[Int32] \ IO =
+def testOneOf01(): Option[Int32] \ IO =
     region rc {
         let rnd = Random.new();
         let arr = Array.repeat(rc, 10, 42i32);
-        Random.choose(rnd, arr)
+        Random.oneOf(rnd, arr)
     }
 
 @test
-def testChoose02(): Option[String] \ IO =
+def testOneOf02(): Option[String] \ IO =
     region rc {
         let rnd = Random.new();
         let arr = Array.repeat(rc, 10, "Hello World");
-        Random.choose(rnd, arr)
+        Random.oneOf(rnd, arr)
     }
 
 @test
-def testChoose03(): Option[Result[Int32, Int32]] \ IO =
+def testOneOf03(): Option[Result[Int32, Int32]] \ IO =
     region rc {
         let rnd = Random.new();
         let arr = Array#{Ok(123), Ok(456), Err(789)} @ rc;
-        Random.choose(rnd, arr)
+        Random.oneOf(rnd, arr)
     }
 
 @test
