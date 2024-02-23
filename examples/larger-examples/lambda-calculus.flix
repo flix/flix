@@ -117,7 +117,7 @@ def substitute(e0: Expression, x: Int32, r0: Expression): Expression = match e0 
 def alpha(e0: Expression, m: Map[Int32, Int32]): Expression = match e0 {
     case Expression.Var(x) =>
         // Check if we need to rename the variable.
-        match Map.get(x, m) {
+        match Map.get_(x, m) {
             case None    => Expression.Var(x)
             case Some(y) => Expression.Var(y)
         }
