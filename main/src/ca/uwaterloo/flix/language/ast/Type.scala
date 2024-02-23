@@ -84,6 +84,19 @@ sealed trait Type {
   }
 
   /**
+    * Gets all the associated types in the given type.
+    */
+  def assocs: Set[Type.AssocType] = this match {
+    case t: Type.AssocType => Set(t)
+
+    case _: Type.Cst => Set.empty
+    case _: Type.Var => Set.empty
+
+    case Type.Apply(tpe1, tpe2, _) => tpe1.assocs ++ tpe2.assocs
+    case Type.Alias(_, _, tpe, _) => tpe.assocs
+  }
+
+  /**
     * Optionally returns the type constructor of `this` type.
     *
     * Return `None` if the type constructor is a variable.
