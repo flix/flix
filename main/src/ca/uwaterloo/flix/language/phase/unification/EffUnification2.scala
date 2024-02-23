@@ -89,7 +89,6 @@ object EffUnification2 {
   }
 
 
-
   /**
     * Returns the list of pairwise unification problems `l` as a list of equations.
     */
@@ -316,20 +315,31 @@ object EffUnification2 {
   // where LHS is var and is free on RHS
   private def varAssignment(l: List[Equation], subst0: LocalSubstitution): (List[Equation], LocalSubstitution) = {
     var currentSubst = subst0
-    var rest = ListBuffer.empty[Equation]
+    var currentEqns = l
+    var rest: List[Equation] = Nil
 
-    for (eqn <- l) {
+    while (currentEqns != Nil) {
+      val eqn = currentEqns.head
+      currentEqns = currentEqns.tail
+
       eqn match {
         case Equation(Term.Var(x), rhs) if !rhs.freeVars.contains(x) =>
-          val updatedRhs = currentSubst(rhs)
-          currentSubst = currentSubst.extended(x, updatedRhs) // TODO: BUG???: Must apply subst before continuing?
-        // We could have x = abc
-        // x = uuv, so then we must apply prev. subst to x.
-        case _ => rest += eqn
+          // Update the remaining equations with the new binding.
+          // This is required for correctness.
+          // We use a singleton subst. to avoid idempotence issues.
+          val singleton = LocalSubstitution.singleton(x, rhs)
+
+          currentSubst = currentSubst @@ singleton
+
+          // Update the remaining eqns and the remainder.
+          currentEqns = singleton(currentEqns)
+          rest = singleton(rest)
+
+        case _ => rest = eqn :: rest
       }
     }
 
-    (currentSubst(rest.toList), currentSubst)
+    (rest.reverse, currentSubst)
   }
 
   private object Equation {
