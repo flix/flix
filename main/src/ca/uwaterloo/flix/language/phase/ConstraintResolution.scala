@@ -496,7 +496,7 @@ object ConstraintResolution {
 
   def isSimpleEffectType(tpe: Type, renv: RigidityEnv): Boolean = {
     def visit(t: Type): Boolean = t match {
-      case Type.Var(sym, loc) => renv.isFlexible(sym)
+      case Type.Var(sym, loc) => true
 
       case Type.Pure => true
       case Type.Univ => true
