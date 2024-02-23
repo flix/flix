@@ -84,8 +84,8 @@ mod Result {
     ///
     /// Returns `Ok(to)` if `r` is `Ok(from)`. Otherwise returns `r`.
     ///
-    pub def replace(from: {from = t}, to: {to = t}, r: Result[e, t]): Result[e, t] with Eq[t] = match r {
-        case Ok(v)  => Ok(if (v == from.from) to.to else v)
+    pub def replace(from_: {from_ = t}, to: {to = t}, r: Result[e, t]): Result[e, t] with Eq[t] = match r {
+        case Ok(v)  => Ok(if (v == from_.from_) to.to else v)
         case Err(_) => r
     }
 

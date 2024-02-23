@@ -123,7 +123,7 @@ instance Reducible[Nec] {
 
 instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         StringBuilder.appendString!("Nec#{", sb);
         Nec.forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -426,8 +426,8 @@ mod Nec {
     ///
     /// Returns `l` with every occurrence of `from` replaced by `to`.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, l: Nec[a]): Nec[a] with Eq[a] =
-        map(e -> if (e == from.from) to.to else e, l)
+    pub def replace(from_: {from_ = a}, to: {to = a}, l: Nec[a]): Nec[a] with Eq[a] =
+        map(e -> if (e == from_.from_) to.to else e, l)
 
     ///
     /// Returns all permutations of `c` in lexicographical order by element indices in `c`.
@@ -752,7 +752,7 @@ mod Nec {
     /// Returns `c` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], c: Nec[a]): MutDeque[a, r] \ r  =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.new_(rc);
         forEach(x -> MutDeque.pushBack(x, d), c);
         d
 
@@ -798,7 +798,7 @@ mod Nec {
     /// Returns the Nec `c` as a vector.
     ///
     pub def toVector(c: Nec[a]): Vector[a] = region rc {
-        let arr = Array.new(rc, length(c));
+        let arr = Array.new_(rc, length(c));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), c);
         Array.toVector(arr)
     }
@@ -837,12 +837,12 @@ mod Nec {
     /// Helper for the `sort` functions.
     ///
     def fromArray(arr: Array[a, r]): Option[Nec[a]] \ r =
-        def loop(ix, end, acc) = if (ix >= end) acc else {let x = Array.get(ix, arr); loop(ix+1, end, snoc(acc, x))};
+        def loop(ix, end, acc) = if (ix >= end) acc else {let x = Array.get_(ix, arr); loop(ix+1, end, snoc(acc, x))};
         let len = Array.length(arr);
         if (len < 1)
             None
         else {
-            let acc = singleton(Array.get(0, arr));
+            let acc = singleton(Array.get_(0, arr));
             loop(1, len, acc) |> Some
         }
 

@@ -40,7 +40,7 @@ mod Fixpoint.Phase.Compiler {
     @Internal
     pub def compile(d: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] = match d {
         case Datalog(facts, rules) => region rc {
-            let stmts = MutList.new(rc);
+            let stmts = MutList.new_(rc);
             Vector.forEach(compileRule(stmts), facts);
             Vector.foldRight(rule -> match rule {
                 case Constraint(HeadAtom(p, _, _), _) =>
@@ -76,7 +76,7 @@ mod Fixpoint.Phase.Compiler {
             let arity = Vector.length(terms);
             Map.insert(pred, (arity, den))
         }, Map#{}, stratum);
-        let loopBody = MutList.new(rc);
+        let loopBody = MutList.new_(rc);
         List.forEach(compileRule(stmts), stratum);
         Map.forEach(predSym -> match (arity, den) -> {
             let full = RamSym.Full(predSym, arity, den);
@@ -141,7 +141,7 @@ mod Fixpoint.Phase.Compiler {
                         let arity1 = Vector.length(terms);
                         RelOp.Search(rowVar, RamSym.Full(bodySym, arity1, den), acc)
                     case Functional(_, f, freeVars) =>
-                        let terms = Vector.map(v -> unwrap(Map.get(v, env)), freeVars);
+                        let terms = Vector.map(v -> unwrap(Map.get_(v, env)), freeVars);
                         RelOp.Functional(rowVar, f, terms, acc)
                     case _ => acc
                 }, loopBody, augBody) |>
@@ -202,7 +202,7 @@ mod Fixpoint.Phase.Compiler {
                             };
                             RelOp.Search(rowVar, ramSym, acc)
                         case Functional(_, f, freeVars) =>
-                            let terms = Vector.map(v -> unwrap(Map.get(v, env)), freeVars);
+                            let terms = Vector.map(v -> unwrap(Map.get_(v, env)), freeVars);
                             RelOp.Functional(rowVar, f, terms, acc)
                         case _ => acc
                     }, loopBody, augBody) |>
@@ -227,33 +227,33 @@ mod Fixpoint.Phase.Compiler {
     /// Substitute Datalog head term `term` for a RAM term according to the given substitution `env`.
     ///
     def compileHeadTerm(env: Map[VarSym, RamTerm[v]], term: HeadTerm[v]): RamTerm[v] = match term {
-        case HeadTerm.Var(var) => unwrap(Map.get(var, env))
+        case HeadTerm.Var(var) => unwrap(Map.get_(var, env))
         case HeadTerm.Lit(v) => RamTerm.Lit(v)
         case HeadTerm.App0(f) => RamTerm.App0(f)
         case HeadTerm.App1(f, v) =>
-            let t = unwrap(Map.get(v, env));
+            let t = unwrap(Map.get_(v, env));
             RamTerm.App1(f, t)
         case HeadTerm.App2(f, v1, v2) =>
-            let t1 = unwrap(Map.get(v1, env));
-            let t2 = unwrap(Map.get(v2, env));
+            let t1 = unwrap(Map.get_(v1, env));
+            let t2 = unwrap(Map.get_(v2, env));
             RamTerm.App2(f, t1, t2)
         case HeadTerm.App3(f, v1, v2, v3) =>
-            let t1 = unwrap(Map.get(v1, env));
-            let t2 = unwrap(Map.get(v2, env));
-            let t3 = unwrap(Map.get(v3, env));
+            let t1 = unwrap(Map.get_(v1, env));
+            let t2 = unwrap(Map.get_(v2, env));
+            let t3 = unwrap(Map.get_(v3, env));
             RamTerm.App3(f, t1, t2, t3)
         case HeadTerm.App4(f, v1, v2, v3, v4) =>
-            let t1 = unwrap(Map.get(v1, env));
-            let t2 = unwrap(Map.get(v2, env));
-            let t3 = unwrap(Map.get(v3, env));
-            let t4 = unwrap(Map.get(v4, env));
+            let t1 = unwrap(Map.get_(v1, env));
+            let t2 = unwrap(Map.get_(v2, env));
+            let t3 = unwrap(Map.get_(v3, env));
+            let t4 = unwrap(Map.get_(v4, env));
             RamTerm.App4(f, t1, t2, t3, t4)
         case HeadTerm.App5(f, v1, v2, v3, v4, v5) =>
-            let t1 = unwrap(Map.get(v1, env));
-            let t2 = unwrap(Map.get(v2, env));
-            let t3 = unwrap(Map.get(v3, env));
-            let t4 = unwrap(Map.get(v4, env));
-            let t5 = unwrap(Map.get(v5, env));
+            let t1 = unwrap(Map.get_(v1, env));
+            let t2 = unwrap(Map.get_(v2, env));
+            let t3 = unwrap(Map.get_(v3, env));
+            let t4 = unwrap(Map.get_(v4, env));
+            let t5 = unwrap(Map.get_(v5, env));
             RamTerm.App5(f, t1, t2, t3, t4, t5)
     }
 
@@ -328,7 +328,7 @@ mod Fixpoint.Phase.Compiler {
         Vector.flatMap(match (atom, rowVar) ->
             let compileBodyTerm = j -> term -> match term {
                 case BodyTerm.Wild      => RamTerm.RowLoad(rowVar, j)
-                case BodyTerm.Var(var)  => unwrap(Map.get(var, env))
+                case BodyTerm.Var(var)  => unwrap(Map.get_(var, env))
                 case BodyTerm.Lit(v)    => RamTerm.Lit(v)
             };
             match atom {
@@ -350,29 +350,29 @@ mod Fixpoint.Phase.Compiler {
                 case Guard0(f) =>
                     Vector#{BoolExp.Guard0(f)}
                 case Guard1(f, v) =>
-                    let t = unwrap(Map.get(v, env));
+                    let t = unwrap(Map.get_(v, env));
                     Vector#{BoolExp.Guard1(f, t)}
                 case Guard2(f, v1, v2) =>
-                    let t1 = unwrap(Map.get(v1, env));
-                    let t2 = unwrap(Map.get(v2, env));
+                    let t1 = unwrap(Map.get_(v1, env));
+                    let t2 = unwrap(Map.get_(v2, env));
                     Vector#{BoolExp.Guard2(f, t1, t2)}
                 case Guard3(f, v1, v2, v3) =>
-                    let t1 = unwrap(Map.get(v1, env));
-                    let t2 = unwrap(Map.get(v2, env));
-                    let t3 = unwrap(Map.get(v3, env));
+                    let t1 = unwrap(Map.get_(v1, env));
+                    let t2 = unwrap(Map.get_(v2, env));
+                    let t3 = unwrap(Map.get_(v3, env));
                     Vector#{BoolExp.Guard3(f, t1, t2, t3)}
                 case Guard4(f, v1, v2, v3, v4) =>
-                    let t1 = unwrap(Map.get(v1, env));
-                    let t2 = unwrap(Map.get(v2, env));
-                    let t3 = unwrap(Map.get(v3, env));
-                    let t4 = unwrap(Map.get(v4, env));
+                    let t1 = unwrap(Map.get_(v1, env));
+                    let t2 = unwrap(Map.get_(v2, env));
+                    let t3 = unwrap(Map.get_(v3, env));
+                    let t4 = unwrap(Map.get_(v4, env));
                     Vector#{BoolExp.Guard4(f, t1, t2, t3, t4)}
                 case Guard5(f, v1, v2, v3, v4, v5) =>
-                    let t1 = unwrap(Map.get(v1, env));
-                    let t2 = unwrap(Map.get(v2, env));
-                    let t3 = unwrap(Map.get(v3, env));
-                    let t4 = unwrap(Map.get(v4, env));
-                    let t5 = unwrap(Map.get(v5, env));
+                    let t1 = unwrap(Map.get_(v1, env));
+                    let t2 = unwrap(Map.get_(v2, env));
+                    let t3 = unwrap(Map.get_(v3, env));
+                    let t4 = unwrap(Map.get_(v4, env));
+                    let t5 = unwrap(Map.get_(v5, env));
                     Vector#{BoolExp.Guard5(f, t1, t2, t3, t4, t5)}
             }, body)
 

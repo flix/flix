@@ -189,6 +189,8 @@ object SyntaxTree {
 
       case object Do extends Expr
 
+      case object Debug extends Expr
+
       case object FixpointConstraint extends Expr
 
       case object FixpointConstraintSet extends Expr

@@ -79,7 +79,7 @@ mod MultiMap {
     /// Returns a string representation of `m`.
     ///
     pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         let MultiMap(m1) = m;
         StringBuilder.appendString!("MultiMap#{", sb);
         Map.forEachWithIndex((i, k, v) -> {
@@ -114,9 +114,9 @@ mod MultiMap {
     ///
     /// Otherwise returns `Nil`.
     ///
-    pub def get(k: k, m: MultiMap[k, v]): Set[v] with Order[k] =
+    pub def get_(k: k, m: MultiMap[k, v]): Set[v] with Order[k] =
         let MultiMap(t) = m;
-        Map.get(k, t) |> Option.getWithDefault(Set.empty())
+        Map.get_(k, t) |> Option.getWithDefault(Set.empty())
 
     ///
     /// Returns `true` if and only if `m` contains the key `k`.
@@ -202,7 +202,7 @@ mod MultiMap {
     ///
     pub def removeWithValue(k: k, v: v, m: MultiMap[k, v]): MultiMap[k, v] with Order[k], Order[v] =
         let MultiMap(m1) = m;
-        match Map.get(k, m1) {
+        match Map.get_(k, m1) {
             case None                               => m
             case Some(s) if not Set.memberOf(v, s)  => m
             case Some(s) if s == Set#{v}            => remove(k, m)
@@ -460,7 +460,7 @@ mod MultiMap {
     pub def intersection(m1: MultiMap[k, v], m2: MultiMap[k, v]): MultiMap[k, v] with Order[k], Order[v] =
         let MultiMap(mm1) = m1;
         let MultiMap(mm2) = m2;
-        let step = (acc, k, s) -> match Map.get(k, mm2) {
+        let step = (acc, k, s) -> match Map.get_(k, mm2) {
             case None => acc
             case Some(s1) => match Set.intersection(s, s1) {
                 case s2 if Set.isEmpty(s2) => acc

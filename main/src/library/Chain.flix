@@ -97,7 +97,7 @@ instance Witherable[Chain]
 
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         StringBuilder.appendString!("Chain#{", sb);
         Chain.forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -753,7 +753,7 @@ mod Chain {
     /// Returns `c` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], c: Chain[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.new_(rc);
         forEach(x -> MutDeque.pushBack(x, d), c);
         d
 
@@ -785,7 +785,7 @@ mod Chain {
     pub def toArray(rc: Region[r], c: Chain[a]): Array[a, r] \ r = match head(c) {
         case None    => Array#{} @ rc
         case Some(_) =>
-            let arr = Array.new(rc, length(c));
+            let arr = Array.new_(rc, length(c));
             forEach(match (i, b) -> Array.put(b, i, arr), zipWithIndex(c));
             arr
         }
@@ -794,7 +794,7 @@ mod Chain {
     /// Returns the chain `c` as a vector.
     ///
     pub def toVector(c: Chain[a]): Vector[a] = region rc {
-        let arr = Array.new(rc, length(c));
+        let arr = Array.new_(rc, length(c));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), c);
         Array.toVector(arr)
     }

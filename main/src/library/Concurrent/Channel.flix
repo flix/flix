@@ -148,11 +148,11 @@ mod Concurrent.Channel {
                 unBuffered,
                 if (unBuffered) 1 else bufferSize,
                 size,
-                MutList.new(Static),
+                MutList.new_(Static),
                 newCyclicBarrier(2),
                 newCondition(reentrantLock)
             ),
-            MutDeque.new(Static)
+            MutDeque.new_(Static)
         )
 
     ///

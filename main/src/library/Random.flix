@@ -9,7 +9,7 @@ mod Random {
     ///
     /// Returns a fresh random number generator.
     ///
-    pub def new(): Random \ IO =
+    pub def new_(): Random \ IO =
         import new java.util.Random(): ##java.util.Random \ IO as newRandom;
         Random(newRandom())
 
@@ -31,7 +31,7 @@ mod Random {
         } else {
             let m = Array.length(a);
             let i = nextNatWithMax(r, m);
-            Some(Array.get(i, a))
+            Some(Array.get_(i, a))
         }
 
     ///

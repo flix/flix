@@ -431,20 +431,15 @@ object Parser2 {
     new Separated(getItem, checkForItem, TokenKind.Comma, false, TokenKind.ParenL, TokenKind.ParenR)
   }
 
-  // TODO: std. lib. defines functions named with keywords (IE. def mod(): Int32 = ...). These also pop up in expressions, because they are now passed around and called.
-  // TODO: std. lib. has patterns matching keywords (IE. match query { ... }).
-  // TODO: This should eventually be removed once a good solution has been agreed upon.
-  private val KEYWORDS_IN_STDLIB = List(TokenKind.KeywordMod, TokenKind.KeywordChoose, TokenKind.PlusPlus, TokenKind.KeywordAnd, TokenKind.KeywordOr, TokenKind.KeywordNot, TokenKind.KeywordQuery, TokenKind.KeywordNew, TokenKind.KeywordSolve, TokenKind.KeywordDebug)
-  private val KEYWORDS_USED_AS_TYPES_IN_STDLIB = List(TokenKind.KeywordStaticUppercase)
-
-  private val NAME_DEFINITION = KEYWORDS_IN_STDLIB ++ List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
+  private val NAME_DEFINITION = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
   private val NAME_PARAMETER = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
-  private val NAME_VARIABLE = KEYWORDS_IN_STDLIB ++ List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
+  private val NAME_VARIABLE = List(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
   private val NAME_JAVA = List(TokenKind.NameJava, TokenKind.NameLowerCase, TokenKind.NameUpperCase)
   private val NAME_QNAME = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
   private val NAME_USE = List(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
   private val NAME_FIELD = List(TokenKind.NameLowerCase)
-  private val NAME_TYPE = KEYWORDS_USED_AS_TYPES_IN_STDLIB ++ List(TokenKind.NameUpperCase)
+  // TODO: Static is used as a type in Prelude.flix. Should we allow this?
+  private val NAME_TYPE = List(TokenKind.NameUpperCase, TokenKind.KeywordStaticUppercase)
   private val NAME_KIND = List(TokenKind.NameUpperCase)
   private val NAME_EFFECT = List(TokenKind.NameUpperCase)
   private val NAME_MODULE = List(TokenKind.NameUpperCase)
@@ -627,7 +622,13 @@ object Parser2 {
      */
     private def definition(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       expect(TokenKind.KeywordDef)
-      name(NAME_DEFINITION)
+      // TODO: Remove this special handling. Something goes very wrong when I do!
+      if (s.src.name == "Concurrent/Channel.flix") {
+        name(NAME_DEFINITION ++ List(TokenKind.KeywordGet))
+      } else {
+        name(NAME_DEFINITION)
+      }
+
       if (at(TokenKind.BracketL)) {
         Type.parameters()
       }
@@ -693,16 +694,15 @@ object Parser2 {
     }
 
     private def enumCases()(implicit s: State): Unit = {
-      docComment()
-      assert(at(TokenKind.KeywordCase))
-      while(!eof() && atAny(List(TokenKind.KeywordCase, TokenKind.Comma))) {
+      while (!eof() && atAny(List(TokenKind.CommentDoc, TokenKind.KeywordCase, TokenKind.Comma))) {
         val mark = open()
+        docComment()
         if (at(TokenKind.KeywordCase)) {
-          docComment() // Doc comments can only occur above a case keyword
           expect(TokenKind.KeywordCase)
         } else {
           expect(TokenKind.Comma)
           // Handle comma followed by case keyword
+          docComment()
           eat(TokenKind.KeywordCase)
         }
         name(NAME_TAG)
@@ -1014,7 +1014,7 @@ object Parser2 {
       (OpKind.Binary, List(TokenKind.AngledPlus)), // <+>
       (OpKind.Unary, List(TokenKind.KeywordDiscard)), // discard
       (OpKind.Binary, List(TokenKind.InfixFunction)), // `my_function`
-      (OpKind.Binary, List(TokenKind.UserDefinedOperator, TokenKind.NameMath, TokenKind.PlusPlus)), // +=+, TODO: PlusPlus is a user defined op, but is also used as type case union
+      (OpKind.Binary, List(TokenKind.UserDefinedOperator, TokenKind.NameMath)), // +=+ user defined op like '+=+' or '++'
       (OpKind.Unary, List(TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDeref)), // lazy, force, deref
       (OpKind.Unary, List(TokenKind.Plus, TokenKind.Minus, TokenKind.TripleTilde)), // +, -, ~~~
       (OpKind.Unary, List(TokenKind.KeywordNot))
@@ -1066,7 +1066,6 @@ object Parser2 {
       val mark = open()
       // Handle clearly delimited expressions
       nth(0) match {
-        // TODO: without, fixpointLambda, restrictable choose
         case TokenKind.ParenL => parenOrTupleOrLambda()
         case TokenKind.CurlyL => blockOrRecord()
         case TokenKind.KeywordIf => ifThenElse()
@@ -1094,6 +1093,9 @@ object Parser2 {
         case TokenKind.KeywordRef => reference()
         case TokenKind.KeywordNew => newObject()
         case TokenKind.KeywordTry => exprTry()
+        case TokenKind.KeywordDebug
+             | TokenKind.KeywordDebugBang
+             | TokenKind.KeywordDebugBangBang => debug()
         case TokenKind.ListHash => listLiteral()
         case TokenKind.SetHash => setLiteral()
         case TokenKind.VectorHash => vectorLiteral()
@@ -1138,6 +1140,16 @@ object Parser2 {
         case t => advanceWithError(Parse2Error.DevErr(currentSourceLocation(), s"Expected expression, found $t"))
       }
       close(mark, TreeKind.Expr.Expr)
+    }
+
+    private def debug()(implicit s: State): Mark.Closed = {
+      assert(atAny(List(TokenKind.KeywordDebug, TokenKind.KeywordDebugBang, TokenKind.KeywordDebugBangBang)))
+      val mark = open()
+      expectAny(List(TokenKind.KeywordDebug, TokenKind.KeywordDebugBang, TokenKind.KeywordDebugBangBang))
+      expect(TokenKind.ParenL)
+      expression()
+      expect(TokenKind.ParenR)
+      close(mark, TreeKind.Expr.Debug)
     }
 
     private def exprOpen()(implicit s: State): Mark.Closed = {
@@ -1218,6 +1230,9 @@ object Parser2 {
     }
 
     private def fixpointQuerySelect()(implicit s: State): Mark.Closed = {
+      if (!at(TokenKind.KeywordSelect)) {
+        println(s"${currentSourceLocation()}")
+      }
       assert(at(TokenKind.KeywordSelect))
       val mark = open()
       expect(TokenKind.KeywordSelect)
@@ -1408,9 +1423,15 @@ object Parser2 {
       val mark = open()
       Pattern.pattern()
       val isGenerator = eat(TokenKind.ArrowThinL)
-      if (!isGenerator)  { expect(TokenKind.Equal) }
+      if (!isGenerator) {
+        expect(TokenKind.Equal)
+      }
       expression()
-      close(mark, if (isGenerator) { TreeKind.Expr.ForFragmentGenerator } else { TreeKind.Expr.ForFragmentLet})
+      close(mark, if (isGenerator) {
+        TreeKind.Expr.ForFragmentGenerator
+      } else {
+        TreeKind.Expr.ForFragmentLet
+      })
     }
 
     private def exprTry()(implicit s: State): Mark.Closed = {
@@ -1967,30 +1988,20 @@ object Parser2 {
     }
 
     private def unary()(implicit s: State): Mark.Closed = {
-      if (s.src.name == "BigInt.flix" && at(TokenKind.KeywordNot) && nth(1) == TokenKind.ParenL) {
-        // TODO: std. lib uses a call to a function named 'not' in 'BigInt.flix'. That needs special handling here.
-        val markCall = open()
-        val markExprInner = open()
-        name(List(TokenKind.KeywordNot))
-        close(markExprInner, TreeKind.Expr.Expr)
-        arguments()
-        close(markCall, TreeKind.Expr.Call)
+      val mark = open()
+      val op = nth(0)
+      val markOp = open()
+      expectAny(List(TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde, TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDiscard, TokenKind.KeywordDeref))
+      close(markOp, TreeKind.Operator)
+      expression(left = op, leftIsUnary = true)
+      var lhs = close(mark, TreeKind.Expr.Unary)
+      // handle ascription after a unary
+      if (eat(TokenKind.Colon)) {
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+        Type.ttype()
+        close(openBefore(lhs), TreeKind.Expr.Ascribe)
       } else {
-        val mark = open()
-        val op = nth(0)
-        val markOp = open()
-        expectAny(List(TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde, TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDiscard, TokenKind.KeywordDeref))
-        close(markOp, TreeKind.Operator)
-        expression(left = op, leftIsUnary = true)
-        var lhs = close(mark, TreeKind.Expr.Unary)
-        // handle ascription after a unary
-        if (eat(TokenKind.Colon)) {
-          lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-          Type.ttype()
-          close(openBefore(lhs), TreeKind.Expr.Ascribe)
-        } else {
-          lhs
-        }
+        lhs
       }
     }
 
@@ -2041,12 +2052,6 @@ object Parser2 {
              | TokenKind.NameMath
              | TokenKind.Underscore
              | TokenKind.KeywordQuery => variable()
-        // TODO: std.lib uses keywords as variable names.
-        case t if KEYWORDS_IN_STDLIB.contains(t) =>
-          val mark = open()
-          name(KEYWORDS_IN_STDLIB)
-          close(mark, TreeKind.Pattern.Variable)
-
         case TokenKind.LiteralString
              | TokenKind.LiteralChar
              | TokenKind.LiteralFloat32
@@ -2186,7 +2191,9 @@ object Parser2 {
     private def TYPE_OP_PRECEDENCE: List[List[TokenKind]] = List(
       // BINARY OPS
       List(TokenKind.ArrowThinR), // ->
-      List(TokenKind.PlusPlus, TokenKind.MinusMinus), // ++, --
+      // NB. UserDefinedOperator only really means '++' here. This is checked in the weeder
+      // But since '++' is used as a custom operator in Semigroup.combine it needs to be a user operator.
+      List(TokenKind.UserDefinedOperator, TokenKind.MinusMinus),
       List(TokenKind.AmpersandAmpersand), // &&
       List(TokenKind.Plus, TokenKind.Minus), // +, -
       List(TokenKind.Ampersand), // &

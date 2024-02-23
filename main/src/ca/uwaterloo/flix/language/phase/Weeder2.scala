@@ -726,6 +726,7 @@ object Weeder2 {
         case TreeKind.Expr.Literal => visitLiteral(tree)
         case TreeKind.Expr.Tuple => visitTuple(tree)
         case TreeKind.Expr.Call => visitCall(tree)
+        case TreeKind.Expr.Debug => visitDebug(tree)
         case TreeKind.Expr.LetImport => visitLetImport(tree)
         case TreeKind.Expr.Binary => visitBinary(tree)
         case TreeKind.Expr.Unary => visitUnary(tree)
@@ -776,6 +777,20 @@ object Weeder2 {
         case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
         case TreeKind.QName => visitExprQname(tree)
         case kind => failWith(s"TODO: implement expression of kind '$kind'", tree.loc)
+      }
+    }
+
+    private def visitDebug(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Debug)
+      mapN(pickDebugKind(tree), pickExpression(tree))((kind, expr) => Expr.Debug(expr, kind, tree.loc))
+    }
+
+    private def pickDebugKind(tree: Tree)(implicit s: State): Validation[DebugKind, CompilationMessage] = {
+      tree.children.headOption match {
+        case Some(Child.Token(t)) if t.kind == TokenKind.KeywordDebug => Validation.success(DebugKind.Debug)
+        case Some(Child.Token(t)) if t.kind == TokenKind.KeywordDebugBang => Validation.success(DebugKind.DebugWithLoc)
+        case Some(Child.Token(t)) if t.kind == TokenKind.KeywordDebugBangBang => Validation.success(DebugKind.DebugWithLocAndSrc)
+        case _ => failWith(s"Malformed debug expression, could not find debug kind", tree.loc)
       }
     }
 

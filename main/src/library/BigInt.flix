@@ -141,8 +141,8 @@ mod BigInt {
     /// Returns the bitwise NOT of `x`.
     ///
     pub def bitwiseNot(x: BigInt): BigInt =
-        import java.math.BigInteger.not(): BigInt \ {};
-        not(x)
+        import java.math.BigInteger.not(): BigInt \ {} as bigNot;
+        bigNot(x)
 
     ///
     /// Returns the bitwise OR of `x` and `y`.

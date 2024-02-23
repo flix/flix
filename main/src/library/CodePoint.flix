@@ -253,7 +253,7 @@ mod CodePoint {
     pub def toChars(cp: Int32): Option[Vector[Char]] = try {
         region rc {
             import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
-            let arr = Array.new(rc, 2);
+            let arr = Array.new_(rc, 2);
             let size = toChars(cp, arr, 0);
             Array.toVector(arr) |> Vector.takeLeft(size) |> Some
         }
@@ -268,7 +268,7 @@ mod CodePoint {
     pub def toBmpChar(cp: Int32): Option[Char] = try {
         region rc {
             import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
-            let arr = Array.new(rc, 2);
+            let arr = Array.new_(rc, 2);
             let i = toChars(cp, arr, 0);
             if (i == 1)
                 Array.nth(0, arr)
@@ -286,10 +286,10 @@ mod CodePoint {
     pub def toSupplementaryChars(cp: Int32): Option[(Char, Char)] = try {
         region rc {
             import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
-            let arr = Array.new(rc, 2);
+            let arr = Array.new_(rc, 2);
             let i = toChars(cp, arr, 0);
             if (i == 2)
-                Some(Array.get(0, arr), Array.get(1, arr))
+                Some(Array.get_(0, arr), Array.get_(1, arr))
             else
                 None
         }

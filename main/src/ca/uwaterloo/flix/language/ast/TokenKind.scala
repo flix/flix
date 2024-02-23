@@ -133,6 +133,10 @@ object TokenKind {
 
   case object KeywordDebug extends TokenKind
 
+  case object KeywordDebugBang extends TokenKind
+
+  case object KeywordDebugBangBang extends TokenKind
+
   case object KeywordDef extends TokenKind
 
   case object KeywordDeref extends TokenKind
@@ -316,8 +320,6 @@ object TokenKind {
   case object ParenR extends TokenKind
 
   case object Plus extends TokenKind
-
-  case object PlusPlus extends TokenKind
 
   case object Semi extends TokenKind
 

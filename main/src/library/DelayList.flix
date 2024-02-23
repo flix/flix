@@ -132,7 +132,7 @@ mod DelayList {
     ///
     @Experimental
     pub def toString(l: DelayList[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         StringBuilder.appendString!("DelayList(", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)
@@ -386,7 +386,7 @@ mod DelayList {
     /// Returns an infinite sequence of integers starting from and including `n`.
     ///
     @Experimental @Lazy
-    pub def from(n: Int32): DelayList[Int32] =
+    pub def from_(n: Int32): DelayList[Int32] =
         def loop(i) = LCons(i, lazy loop(i + 1));
         LList(lazy loop(n))
 
@@ -576,8 +576,8 @@ mod DelayList {
     /// Does not force the tail of `l`.
     ///
     @Experimental @Lazy
-    pub def replace(from: {from = a}, to: {to = a}, l: DelayList[a]): DelayList[a] with Eq[a] =
-        map(e -> if (from.from == e) to.to else e, l)
+    pub def replace(from_: {from_ = a}, to: {to = a}, l: DelayList[a]): DelayList[a] with Eq[a] =
+        map(e -> if (from_.from_ == e) to.to else e, l)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
@@ -1167,7 +1167,7 @@ mod DelayList {
     ///
     @Experimental
     pub def toArray(rc: Region[r], l: DelayList[a]): Array[a, r] \ r =
-        let a = Array.new(rc, length(l));
+        let a = Array.new_(rc, length(l));
         forEach(match (i, y) -> Array.put(y, i, a), zipWithIndex(l));
         a
 
@@ -1178,7 +1178,7 @@ mod DelayList {
     ///
     @Experimental
     pub def toVector(l: DelayList[a]): Vector[a] = region rc {
-        let arr = Array.new(rc, length(l));
+        let arr = Array.new_(rc, length(l));
         forEach(match (i, x) -> Array.put(x, i, arr), zipWithIndex(l));
         Array.toVector(arr)
     }
@@ -1235,7 +1235,7 @@ mod DelayList {
     /// Returns `l` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], l: DelayList[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.new_(rc);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 

@@ -247,7 +247,7 @@ pub trait Reducible[t: Type -> Type] {
     /// Returns `t` as an array.
     ///
     pub def toArray(rc: Region[r], t: t[a]): Array[a, r] \ r =
-        let v = MutList.new(rc);
+        let v = MutList.new_(rc);
         Reducible.foldLeft((_, a) -> MutList.push!(a, v), (), t);
         MutList.toArray(rc, v)
 
@@ -255,7 +255,7 @@ pub trait Reducible[t: Type -> Type] {
     /// Returns `t` as a vector.
     ///
     pub def toVector(t: t[a]): Vector[a] = region rc {
-        let l = MutList.new(rc);
+        let l = MutList.new_(rc);
         Reducible.foldLeft((_, a) -> MutList.push!(a, l), (), t);
         MutList.toVector(l)
     }

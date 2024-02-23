@@ -204,18 +204,18 @@ mod Regex {
     ///
     /// Returns string `s` with every match of the Regex `from` replaced by the string `to`.
     ///
-    pub def replace(from: {from = Regex}, to: {to = String}, s: String): String = region rc {
+    pub def replace(from_: {from_ = Regex}, to: {to = String}, s: String): String = region rc {
         import java.util.regex.Matcher.replaceAll(String): String \ rc;
-        let Matcher(m1) = newMatcher(rc, from.from, s);
+        let Matcher(m1) = newMatcher(rc, from_.from_, s);
         replaceAll(m1, to.to)
     }
 
     ///
     /// Returns string `s` with the first match of the regular expression `from` replaced by the string `to`.
     ///
-    pub def replaceFirst(from: {from = Regex}, to: {to = String}, s: String): String = region rc {
+    pub def replaceFirst(from_: {from_ = Regex}, to: {to = String}, s: String): String = region rc {
         import java.util.regex.Matcher.replaceFirst(String): String \ rc;
-        let Matcher(m1) = newMatcher(rc, from.from, s);
+        let Matcher(m1) = newMatcher(rc, from_.from_, s);
         replaceFirst(m1, to.to)
     }
 

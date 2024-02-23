@@ -365,7 +365,6 @@ object Lexer {
       }
       case _ if isKeyword("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
-      case _ if isKeyword("++") => TokenKind.PlusPlus
       case _ if isKeyword("--") => TokenKind.MinusMinus
       case _ if isKeyword("**") => TokenKind.StarStar
       case _ if isKeyword("<-") => TokenKind.ArrowThinL
@@ -392,6 +391,8 @@ object Lexer {
       case _ if isKeyword("checked_ecast") => TokenKind.KeywordCheckedECast
       case _ if isKeyword("choose") => TokenKind.KeywordChoose
       case _ if isKeyword("debug") => TokenKind.KeywordDebug
+      case _ if isKeyword("debug!") => TokenKind.KeywordDebugBang
+      case _ if isKeyword("debug!!") => TokenKind.KeywordDebugBangBang
       case _ if isKeyword("def") => TokenKind.KeywordDef
       case _ if isKeyword("deref") => TokenKind.KeywordDeref
       case _ if isKeyword("discard") => TokenKind.KeywordDiscard
@@ -482,18 +483,10 @@ object Lexer {
    * Check that the potential keyword is sufficiently separated, taking care not to go out-of-bounds.
    * A keyword is separated if it is surrounded by whitespace, parenthesis, brackets or curlies.
    * Note that __comparison includes current__.
-   * TODO: Some keywords are used as a definition name in the standard library. IE: `new(params..)`.
-   * TODO: Figure out how to support this without special handling.
    */
   private def isSeparated(keyword: String)(implicit s: State): Boolean = {
-    val VALID_SEPARATORS = if (List("from", "new", "get", "query").contains(keyword)) {
-      List('[', ']', '}', ',', ';')
-    } else {
-      List('(', ')', '[', ']', '{', '}', ',', ';')
-    }
-
+    val VALID_SEPARATORS =  List('(', ')', '[', ']', '{', '}', ',', ';')
     def isSep(c: Char) = c.isWhitespace || VALID_SEPARATORS.contains(c)
-
     s.src.data.lift(s.current.offset - 2).forall(isSep) && s.src.data.lift(s.current.offset + keyword.length - 1).forall(isSep)
   }
 

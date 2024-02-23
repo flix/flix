@@ -19,13 +19,13 @@ mod Ref {
     ///
     /// Returns a new reference to `x` in the region `rc`.
     ///
-    pub def new(rc: Region[r], x: a): Ref[a, r] \ r =
+    pub def new_(rc: Region[r], x: a): Ref[a, r] \ r =
         ref x @ rc
 
     ///
     /// Returns the element referenced by `rf`.
     ///
-    pub def get(rf: Ref[a, r]): a \ r =
+    pub def get_(rf: Ref[a, r]): a \ r =
         deref rf
 
     ///
@@ -40,6 +40,6 @@ mod Ref {
     /// I.e. if `rf` references `x` then `rf` is updated to reference `f(x)`.
     ///
     pub def transform(f: a -> a \ ef, rf: Ref[a, r]): Unit \ { r, ef } =
-        rf := f(Ref.get(rf))
+        rf := f(Ref.get_(rf))
 
 }

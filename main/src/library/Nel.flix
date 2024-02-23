@@ -127,7 +127,7 @@ mod Nel {
     ///
     pub def toString(l: Nel[a]): String with ToString[a] = region rc {
         let Nel(x, xs) = l;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         StringBuilder.appendString!("Nel(${x}, ", sb);
 
         let list = List.toString(xs);
@@ -311,8 +311,8 @@ mod Nel {
     ///
     /// Returns `l` with every occurrence of `from` replaced by `to`.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, l: Nel[a]): Nel[a] with Eq[a] =
-        map(e -> if (e == from.from) to.to else e, l)
+    pub def replace(from_: {from_ = a}, to: {to = a}, l: Nel[a]): Nel[a] with Eq[a] =
+        map(e -> if (e == from_.from_) to.to else e, l)
 
     ///
     /// Returns all permutations of `l` in lexicographical order by element indices in `l`.
@@ -558,7 +558,7 @@ mod Nel {
     /// Returns `l` as a vector.
     ///
     pub def toVector(l: Nel[a]): Vector[a] = region rc {
-        let arr = Array.new(rc, length(l));
+        let arr = Array.new_(rc, length(l));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), l);
         Array.toVector(arr)
     }
@@ -567,7 +567,7 @@ mod Nel {
     /// Returns `l` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], l: Nel[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.new_(rc);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 

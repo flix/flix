@@ -116,7 +116,7 @@ mod Map {
     /// Returns a string representation of the given map `m`.
     ///
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.new_(rc);
         StringBuilder.appendString!("Map#{", sb);
         forEachWithIndex((i, k, v) -> {
             if (i < 1)
@@ -179,16 +179,16 @@ mod Map {
     ///
     /// Otherwise returns `None`.
     ///
-    pub def get(k: k, m: Map[k, v]): Option[v] with Order[k] =
+    pub def get_(k: k, m: Map[k, v]): Option[v] with Order[k] =
         let Map(t) = m;
-        RedBlackTree.get(k, t)
+        RedBlackTree.get_(k, t)
 
     ///
     /// Returns `v` if `k => v` is in `m`.
     ///
     /// Otherwise, returns `d`.
     ///
-    pub def getWithDefault(k: k, d: v, m: Map[k, v]): v with Order[k] = Option.getWithDefault(d, get(k, m))
+    pub def getWithDefault(k: k, d: v, m: Map[k, v]): v with Order[k] = Option.getWithDefault(d, get_(k, m))
 
     ///
     /// Returns `true` if and only if `m` contains the key `k`.
@@ -390,7 +390,7 @@ mod Map {
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2`.
     ///
-    pub def isSubmapOf(m1: Map[k, v], m2: Map[k, v]): Bool with Order[k], Eq[v] = forAll((k, v) -> get(k, m2) == Some(v), m1)
+    pub def isSubmapOf(m1: Map[k, v], m2: Map[k, v]): Bool with Order[k], Eq[v] = forAll((k, v) -> get_(k, m2) == Some(v), m1)
 
     ///
     /// Returns `true` if and only if all mappings in `m1` occur in `m2` and `m1 != m2`.
@@ -712,7 +712,7 @@ mod Map {
     /// Returns the intersection of `m1` and `m2` where key collisions are resolved with the merge function `f`, taking both the key and values.
     ///
     pub def intersectionWithKey(f: (k, v1, v2) -> v3 \ ef, m1: Map[k, v1], m2: Map[k, v2]): Map[k, v3] \ ef with Order[k] =
-        filterMapWithKey((k, v1) -> Option.map(v2 -> f(k, v1, v2), get(k, m2)), m1)
+        filterMapWithKey((k, v1) -> Option.map(v2 -> f(k, v1, v2), get_(k, m2)), m1)
 
     ///
     /// Returns the difference of `m1` and `m2`, i.e. `m1 - m2`.
@@ -742,7 +742,7 @@ mod Map {
     pub def differenceWithKey(f: (k, v, v) -> Option[v] \ ef, m1: Map[k, v], m2: Map[k, v]): Map[k, v] \ ef with Order[k] =
         let diff = filterWithKey((k, _) -> not memberOf(k, m2), m1);
         let g = (k, v, acc) -> if (memberOf(k, m1))
-                                match get(k, m1) {
+                                match get_(k, m1) {
                                     case Some(v1) => match f(k, v1, v) {
                                         case None => acc
                                         case Some(w) => insert(k, w, acc)
@@ -802,7 +802,7 @@ mod Map {
     /// Returns `m` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.new_(rc);
         forEach((k, v) -> MutDeque.pushBack((k, v), d), m);
         d
 

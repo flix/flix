@@ -182,9 +182,9 @@ mod Option {
     ///
     /// Returns `Some(to)` if `o` is `Some(from)`. Otherwise returns `o`.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, o: Option[a]): Option[a] with Eq[a] = match o {
+    pub def replace(from_: {from_ = a}, to: {to = a}, o: Option[a]): Option[a] with Eq[a] = match o {
         case None    => o
-        case Some(v) => Some(if (v == from.from) to.to else v)
+        case Some(v) => Some(if (v == from_.from_) to.to else v)
     }
 
     ///

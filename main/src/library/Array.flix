@@ -23,7 +23,7 @@ mod Array {
         let len = Int32.min(Array.length(a), Array.length(b));
         def loop(i) = {
             if (i < len) {
-                let cmp = get(i, a) <=> get(i, b);
+                let cmp = get_(i, a) <=> get_(i, b);
                 if (cmp == Comparison.EqualTo)
                     loop(i + 1)
                 else
@@ -42,7 +42,7 @@ mod Array {
     /// Returns a string representation of the given array `a`.
     ///
     pub def toString(a: Array[a, r]): String \ r with ToString[a] = region rc2 {
-        let sb = StringBuilder.new(rc2);
+        let sb = StringBuilder.new_(rc2);
         let first = ref true @ rc2;
 
         StringBuilder.appendString!("Array#{", sb);
@@ -60,13 +60,13 @@ mod Array {
     ///
     /// Returns a new uninitialized array of length `l` in the region `r`.
     ///
-    pub def new(rc: Region[r], l: Int32): Array[a, r] \ r =
+    pub def new_(rc: Region[r], l: Int32): Array[a, r] \ r =
         $ARRAY_NEW$(rc, Reflect.default(), l)
 
     ///
     /// Retrieves the value at position `i` in the array `a`.
     ///
-    pub def get(i: Int32, a: Array[a, r]): a \ r =
+    pub def get_(i: Int32, a: Array[a, r]): a \ r =
         $ARRAY_LOAD$(a, i)
 
     ///
@@ -80,7 +80,7 @@ mod Array {
     ///
     pub def nth(i: Int32, a: Array[a, r]): Option[a] \ r =
         if (0 <= i and i < length(a))
-            Some(get(i, a))
+            Some(get_(i, a))
         else
             None
 
@@ -108,7 +108,7 @@ mod Array {
             if (i == 0) {
                 acc
             } else {
-                let x = get(i - 1, a);
+                let x = get_(i - 1, a);
                 loop(i - 1, x :: acc)
             }
         };
@@ -124,7 +124,7 @@ mod Array {
             if (i == 0) {
                 acc
             } else {
-                let x = get(i - 1, arr);
+                let x = get_(i - 1, arr);
                 loop(i - 1, Nel.cons(x, acc))
             }
         };
@@ -132,7 +132,7 @@ mod Array {
             None
         } else {
             let i = length(arr) - 1;
-            Some(loop(i, Nel.singleton(get(i, arr))))
+            Some(loop(i, Nel.singleton(get_(i, arr))))
         }
 
     ///
@@ -143,7 +143,7 @@ mod Array {
             if (i < 0)
                 acc
             else
-                loop(i - 1, DelayList.ECons(get(i, a), acc))
+                loop(i - 1, DelayList.ECons(get_(i, a), acc))
         };
         loop(length(a) - 1, DelayList.ENil)
 
@@ -155,7 +155,7 @@ mod Array {
             if (i == 0) {
                 acc
             } else {
-                let x = get(i - 1, arr);
+                let x = get_(i - 1, arr);
                 loop(i - 1, Chain.cons(x, acc))
             }
         };
@@ -171,7 +171,7 @@ mod Array {
             if (i == 0) {
                 acc
             } else {
-                let x = get(i - 1, arr);
+                let x = get_(i - 1, arr);
                 loop(i - 1, Nec.cons(x, acc))
             }
         };
@@ -179,14 +179,14 @@ mod Array {
             None
         } else {
             let i = length(arr) - 1;
-            Some(loop(i, Nec.singleton(get(i, arr))))
+            Some(loop(i, Nec.singleton(get_(i, arr))))
         }
 
     ///
     /// Returns `a` as a MutDeque.
     ///
     pub def toMutDeque(rc1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { r2, r1 }  =
-        let d = MutDeque.new(rc1);
+        let d = MutDeque.new_(rc1);
         forEach(x -> MutDeque.pushBack(x, d), a);
         d
 
@@ -204,7 +204,7 @@ mod Array {
     /// Returns `None` if `a` is empty.
     ///
     pub def head(a: Array[a, r]): Option[a] \ r =
-        if (length(a) > 0) Some(get(0, a)) else None
+        if (length(a) > 0) Some(get_(0, a)) else None
 
     ///
     /// Returns `Some(x)` if `x` is the last element of `a`.
@@ -213,7 +213,7 @@ mod Array {
     ///
     pub def last(a: Array[a, r]): Option[a] \ r =
         let len = length(a);
-        if (len > 0) Some(get(len - 1, a)) else None
+        if (len > 0) Some(get_(len - 1, a)) else None
 
     ///
     /// Return a new array, appending the elements `b` to elements of `a`.
@@ -281,7 +281,7 @@ mod Array {
         def loop(i) = {
             if (i >= length(arr))
                 -1
-            else if (get(i, arr) == a)
+            else if (get_(i, arr) == a)
                 i
             else
                 loop(i + 1)
@@ -297,7 +297,7 @@ mod Array {
         def loop(i) = {
             if (i < 0)
                 -1
-            else if (get(i, arr) == a)
+            else if (get_(i, arr) == a)
                 i
             else
                 loop(i - 1)
@@ -323,7 +323,7 @@ mod Array {
     pub def findLeft(f: a -> Bool \ ef, arr: Array[a, r]): Option[a] \ { ef, r } =
         match findIndexOfLeft(f, arr) {
             case None    => None
-            case Some(i) => Some(get(i, arr))
+            case Some(i) => Some(get_(i, arr))
         }
 
     ///
@@ -332,7 +332,7 @@ mod Array {
     pub def findRight(f: a -> Bool \ ef, arr: Array[a, r]): Option[a] \ { ef, r } =
         match findIndexOfRight(x -> f(x), arr) {
             case None    => None
-            case Some(i) => Some(get(i, arr))
+            case Some(i) => Some(get_(i, arr))
         }
 
     ///
@@ -377,7 +377,7 @@ mod Array {
             if (i >= len)
                 ()
             else {
-                let s1 = f(acc, get(i - 1, arr));
+                let s1 = f(acc, get_(i - 1, arr));
                 Array.put(s1, i, b);
                 loop(i + 1, s1)
             }
@@ -397,7 +397,7 @@ mod Array {
             if (i < 0)
                 ()
             else {
-                let s1 = f(get(i, a), acc);
+                let s1 = f(get_(i, a), acc);
                 Array.put(s1, i, b);
                 loop(i - 1, s1)
             }
@@ -412,7 +412,7 @@ mod Array {
     ///
     pub def map(rc1: Region[r1], f: a -> b \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
         let len = length(a);
-        init(rc1, i -> f(get(i, a)), len)
+        init(rc1, i -> f(get_(i, a)), len)
 
     ///
     /// Apply `f` to every element in array `arr`. Array `arr` is mutated.
@@ -423,7 +423,7 @@ mod Array {
             if (i >= len)
                 ()
             else {
-                Array.put(f(get(i, arr)), i, arr);
+                Array.put(f(get_(i, arr)), i, arr);
                 loop(i + 1)
             }
         };
@@ -436,7 +436,7 @@ mod Array {
     ///
     pub def mapWithIndex(rc1: Region[r1], f: (Int32, a) -> b \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
         let len = length(a);
-        init(rc1, i -> f(i, get(i, a)), len)
+        init(rc1, i -> f(i, get_(i, a)), len)
 
     ///
     /// Apply `f` to every element in array `a` along with that element's index. Array `a` is mutated.
@@ -447,7 +447,7 @@ mod Array {
             if (i >= len)
                 ()
             else {
-                Array.put(f(i, get(i, arr)), i, arr);
+                Array.put(f(i, get_(i, arr)), i, arr);
                 loop(i + 1)
             }
         };
@@ -458,7 +458,7 @@ mod Array {
     ///
     pub def flatMap(rc1: Region[r1], f: a -> Array[b, r1] \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
         let len = length(a);
-        init(rc1, i -> f(get(i, a)), len) |> flatten(rc1)
+        init(rc1, i -> f(get_(i, a)), len) |> flatten(rc1)
 
     ///
     /// Returns the reverse of `a`.
@@ -466,7 +466,7 @@ mod Array {
     pub def reverse(rc1: Region[r1], a: Array[a, r]): Array[a, r1] \ { r, r1 } =
         let len = length(a);
         let end = len - 1;
-        init(rc1, i -> get(end - i, a), len)
+        init(rc1, i -> get_(end - i, a), len)
 
     ///
     /// Reverse the array `arr`, mutating it in place.
@@ -478,8 +478,8 @@ mod Array {
             if (i >= halflen)
                 ()
             else {
-                let x = get(i, arr);
-                let y = get(j, arr);
+                let x = get_(i, arr);
+                let y = get_(j, arr);
                 put(y, i, arr);
                 put(x, j, arr);
                 loop(i + 1, j - 1)
@@ -509,7 +509,7 @@ mod Array {
     ///
     def rotateLeftHelper(rc2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
         let len = length(arr);
-        let f = i -> { let i1 = n + i; get(i1 `Int32.remainder` len, arr) };
+        let f = i -> { let i1 = n + i; get_(i1 `Int32.remainder` len, arr) };
         init(rc2, f, len)
 
     ///
@@ -535,7 +535,7 @@ mod Array {
         let len = length(a);
         let n1 = n `Int32.remainder` len;
         let start = len - n1;
-        let f = i -> { let i1 = start + i; get(i1 `Int32.remainder` len, a)};
+        let f = i -> { let i1 = start + i; get_(i1 `Int32.remainder` len, a)};
         init(rc2, f, len)
 
     ///
@@ -545,20 +545,20 @@ mod Array {
     ///
     pub def update(rc1: Region[r1], i: Int32, x: a, a: Array[a, r]): Array[a, r1] \ { r, r1 } =
         let len = length(a);
-        let f = ix -> if (ix == i) x else get(ix, a);
+        let f = ix -> if (ix == i) x else get_(ix, a);
         init(rc1, f, len)
 
     ///
     /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
     ///
-    pub def replace(rc1: Region[r1], from: {from = a}, to: {to = a}, a: Array[a, r]): Array[a, r1] \ { r, r1 } with Eq[a] =
-        map(rc1, e -> if (e == from.from) to.to else e, a)
+    pub def replace(rc1: Region[r1], from_: {from_ = a}, to: {to = a}, a: Array[a, r]): Array[a, r1] \ { r, r1 } with Eq[a] =
+        map(rc1, e -> if (e == from_.from_) to.to else e, a)
 
     ///
     /// Replace every occurrence of `from` by `to` in the array `a`, mutating it in place.
     ///
-    pub def replace!(from: {from = a}, to: {to = a}, a: Array[a, r]): Unit \ r with Eq[a] =
-        transform!(e -> if (e == from.from) to.to else e, a)
+    pub def replace!(from_: {from_ = a}, to: {to = a}, a: Array[a, r]): Unit \ r with Eq[a] =
+        transform!(e -> if (e == from_.from_) to.to else e, a)
 
     ///
     /// Returns `b` with the `n` elements starting at index `i` replaced with the elements of `a`.
@@ -658,7 +658,7 @@ mod Array {
             if (i >= len)
                 None
             else
-                match head(get(i, arrs)) {
+                match head(get_(i, arrs)) {
                     case Some(x) => Some(x)
                     case None    => loop(i + 1)
                 }
@@ -675,12 +675,12 @@ mod Array {
         if (ilen == 0)
             Array#{} @ rc3
         else {
-            let jlen = length(get(0, a));
+            let jlen = length(get_(0, a));
             if (jlen == 0 or uniformHelper(a, jlen))
                 // Non-transposing nested copy
-                init(rc3, i -> copyOfRange(rc3, 0, length(get(i, a)), get(i, a)), ilen)
+                init(rc3, i -> copyOfRange(rc3, 0, length(get_(i, a)), get_(i, a)), ilen)
             else
-                init(rc3, i -> init(rc3, j -> a |> get(j) |> get(i), ilen), jlen)
+                init(rc3, i -> init(rc3, j -> a |> get_(j) |> get_(i), ilen), jlen)
         }
 
     ///
@@ -700,7 +700,7 @@ mod Array {
             def loop(i) = {
                 if (i >= len1)
                     true
-                else if (get(i, a1) != get(i, a2))
+                else if (get_(i, a1) != get_(i, a2))
                     false
                 else
                     loop(i + 1)
@@ -728,7 +728,7 @@ mod Array {
     def isInfixOfSearch(a1: Array[a, r1], a2: Array[a, r2], len1: Int32, len2: Int32, j: Int32): Bool \ { r1, r2 } with Eq[a] =
         if (j >= len2)
             false
-        else if (get(0, a1) == get(j, a2))
+        else if (get_(0, a1) == get_(j, a2))
             isInfixOfCheck(a1, a2, len1, len2, 1, j+1)
         else
             isInfixOfSearch(a1, a2, len1, len2, j+1)
@@ -743,7 +743,7 @@ mod Array {
         else if (j >= len2)
             // a2 exhausted, a1 still trying to match, so failure
             false
-        else if (get(i, a1) == get(j, a2))
+        else if (get_(i, a1) == get_(j, a2))
             isInfixOfCheck(a1, a2, len1, len2, i+1, j+1)
         else
             isInfixOfSearch(a1, a2, len1, len2, j+1)
@@ -760,7 +760,7 @@ mod Array {
             def loop(i, j) = {
                 if (i < 0)
                     true
-                else if (get(i, a1) != get(j, a2))
+                else if (get_(i, a1) != get_(j, a2))
                     false
                 else
                     loop(i - 1, j - 1)
@@ -783,7 +783,7 @@ mod Array {
             if (i >= len)
                 acc
             else
-                loop(i + 1, f(acc, get(i, arr)))
+                loop(i + 1, f(acc, get_(i, arr)))
         };
         loop(0, s)
 
@@ -797,7 +797,7 @@ mod Array {
             if (i < 0)
                 acc
             else
-                loop(i - 1, f(get(i, arr), acc))
+                loop(i - 1, f(get_(i, arr), acc))
         };
         loop(length(arr) - 1, s)
 
@@ -812,7 +812,7 @@ mod Array {
             if (i == length(arr))
                 z
             else
-                f(get(i, arr), _ -> loop(i + 1))
+                f(get_(i, arr), _ -> loop(i + 1))
         };
         loop(0)
 
@@ -833,12 +833,12 @@ mod Array {
             if (i >= len)
                 acc
             else
-                loop(i + 1, f(acc, get(i, a)))
+                loop(i + 1, f(acc, get_(i, a)))
         };
         if (len == 0)
             None
         else
-            Some(loop(1, get(0, a)))
+            Some(loop(1, get_(0, a)))
 
     ///
     /// Applies `f` to all elements in `arr` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
@@ -851,12 +851,12 @@ mod Array {
             if (i < 0)
                 acc
             else
-                loop(i - 1, f(get(i, arr), acc))
+                loop(i - 1, f(get_(i, arr), acc))
         };
         if (len == 0)
             None
         else
-            Some(loop(len - 2, get(len - 1, arr)))
+            Some(loop(len - 2, get_(len - 1, arr)))
 
     ///
     /// Returns the number of elements in `a` that satisfy the predicate `f`.
@@ -900,7 +900,7 @@ mod Array {
         def loop(i) = {
             if (i >= len)
                 false
-            else if (f(get(i, arr)))
+            else if (f(get_(i, arr)))
                 true
             else
                 loop(i + 1)
@@ -917,7 +917,7 @@ mod Array {
         def loop(i) = {
             if (i >= len)
                 true
-            else if (f(get(i, arr)))
+            else if (f(get_(i, arr)))
                 loop(i + 1)
             else
                 false
@@ -932,12 +932,12 @@ mod Array {
         if (len < 1) {
             Array#{} @ rc1
         } else {
-            let out = new(rc1, len);
+            let out = new_(rc1, len);
             def loop(i, j) = {
                 if (i >= len)
                     j
                 else {
-                    let x = get(i, arr);
+                    let x = get_(i, arr);
                     if (f(x)) {
                         Array.put(x, j, out);
                         loop(i + 1, j + 1)
@@ -1149,7 +1149,7 @@ mod Array {
     ///
     pub def zip(rc3: Region[r3], a: Array[a, r1], b: Array[b, r2]): Array[(a, b), r3] \ { r1, r2, r3 } =
         let len = Int32.min(length(a), length(b));
-        init(rc3, i -> (get(i, a), get(i, b)), len)
+        init(rc3, i -> (get_(i, a), get_(i, b)), len)
 
     ///
     /// Returns an array where the element at index `i` is `f(x, y)` where
@@ -1159,7 +1159,7 @@ mod Array {
     ///
     pub def zipWith(rc3: Region[r3], f: (a, b) -> c \ ef, a: Array[a, r1], b: Array[b, r2]): Array[c, r3] \ { ef, r1, r2, r3 } =
         let len = Int32.min(length(a), length(b));
-        init(rc3, i -> f(get(i, a), get(i, b)), len)
+        init(rc3, i -> f(get_(i, a), get_(i, b)), len)
 
     ///
     /// Returns a pair of arrays, the first containing all first components in `a`
@@ -1170,12 +1170,12 @@ mod Array {
         if (len <= 0)
             (Array#{} @ rc1, Array#{} @ rc2)
         else {
-            let (x, y) = get(0, a);
+            let (x, y) = get_(0, a);
             let arr = repeat(rc1, len, x);
             let brr = repeat(rc2, len, y);
             def loop(i) = {
                 if (i < len) {
-                    let (l, r) = get(i, a);
+                    let (l, r) = get_(i, a);
                     Array.put(l, i, arr);
                     Array.put(r, i, brr);
                     loop(i + 1)
@@ -1203,7 +1203,7 @@ mod Array {
             if (i >= lena or i >= lenb)
                 acc
             else
-                loop(i + 1, f(acc, get(i, a), get(i, b)))
+                loop(i + 1, f(acc, get_(i, a), get_(i, b)))
         };
         loop(0, c)
 
@@ -1216,7 +1216,7 @@ mod Array {
             if (i < 0 or j < 0)
                 acc
             else
-                loop(i - 1, j - 1, f(get(i, a), get(j, b), acc))
+                loop(i - 1, j - 1, f(get_(i, a), get_(j, b), acc))
         };
         let starta = length(a) - 1;
         let startb = length(b) - 1;
@@ -1241,7 +1241,7 @@ mod Array {
             if (i >= len)
                 None
             else
-                let x = f(get(i, a));
+                let x = f(get_(i, a));
                 match x {
                     case Some(v) => Some(v)
                     case None    => loop(i + 1)
@@ -1291,7 +1291,7 @@ mod Array {
             def loop(i) = {
                 if (i >= len)
                     -1
-                else if (f(get(i, a)))
+                else if (f(get_(i, a)))
                     i
                 else
                     loop(i + 1)
@@ -1309,7 +1309,7 @@ mod Array {
         def loop(i) = {
             if (i < 0)
                 -1
-            else if (f(get(i, a)))
+            else if (f(get_(i, a)))
                 i
             else
                 loop(i - 1)
@@ -1322,12 +1322,12 @@ mod Array {
     ///
     pub def findIndices(rc2: Region[r2], f: a -> Bool \ ef, a: Array[a, r1]): Array[Int32, r2] \ { ef, r1, r2 } =
         let len = length(a);
-        let l = MutList.new(rc2);
+        let l = MutList.new_(rc2);
         def loop(i) = {
             if (i >= len)
                 ()
             else {
-                if (f(get(i, a))) MutList.push!(i, l) else ();
+                if (f(get_(i, a))) MutList.push!(i, l) else ();
                 loop(i + 1)
             }
         };
@@ -1363,7 +1363,7 @@ mod Array {
         def loop(i) = {
             if (i >= alen)
                 true
-            else if (get(i, a) != get(i, b))
+            else if (get_(i, a) != get_(i, b))
                 false
             else
                 loop(i + 1)
@@ -1379,7 +1379,7 @@ mod Array {
     /// Modifying `a` while using an iterator has undefined behavior and is dangerous.
     ///
     pub def iterator(rc: Region[r1], a: Array[a, r2]): Iterator[a, r1 + r2, r1] \ r1 =
-        Iterator.range(rc, 0, length(a)) |> Iterator.map(i -> Array.get(i, a))
+        Iterator.range(rc, 0, length(a)) |> Iterator.map(i -> Array.get_(i, a))
 
     ///
     /// Returns an iterator over `a` zipped with the indices of the elements.
@@ -1398,7 +1398,7 @@ mod Array {
             if (i >= len)
                 ()
             else {
-                f(get(i, a));
+                f(get_(i, a));
                 loop(i + 1)
             }
         };
@@ -1413,7 +1413,7 @@ mod Array {
             if (i >= len)
                 ()
             else {
-                f(i, get(i, a));
+                f(i, get_(i, a));
                 loop(i + 1)
             }
         };
@@ -1424,7 +1424,7 @@ mod Array {
     ///
     pub def updateSequence(rc3: Region[r3], i: Int32, sub: Array[a, r1], a: Array[a, r2]): Array[a, r3] \ { r1, r2, r3 } =
         let end = i + length(sub);
-        let f = ix -> if (ix >= i and ix < end) get(ix - i, sub) else get(ix, a);
+        let f = ix -> if (ix >= i and ix < end) get_(ix - i, sub) else get_(ix, a);
         let len = length(a);
         init(rc3, f, len)
 
@@ -1435,7 +1435,7 @@ mod Array {
         let end = i + length(sub);
         let f = { (ix, _) ->
             if (ix >= i and ix < end)
-                Array.put(get(ix - i, sub), ix, a)
+                Array.put(get_(ix - i, sub), ix, a)
             else
                 ()
         };
@@ -1455,7 +1455,7 @@ mod Array {
     pub def joinWith(f: a -> String \ ef, sep: String, a: Array[a, r]): String \ { ef, r } = region rc1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new(rc1);
+        let sb = StringBuilder.new_(rc1);
         forEach(x -> { append!(f(x), sb); append!(sep, sb) }, a);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
@@ -1553,8 +1553,8 @@ mod Array {
     /// Precondition: `i` and `j` are within bounds.
     ///
     pub def swap!(i: Int32, j: Int32, a: Array[a, r]): Unit \ r =
-        let x = get(i, a);
-        let y = get(j, a);
+        let x = get_(i, a);
+        let y = get_(j, a);
         Array.put(y, i, a);
         Array.put(x, j, a)
 
@@ -1562,9 +1562,9 @@ mod Array {
     /// Partition step of the Quicksort algorithm.
     ///
     def quicksortPartition(cmp: (a,a) -> Comparison, a: Array[a, r], lo: Int32, hi: Int32): Int32 \ r =
-        let pivot = get(hi, a);
+        let pivot = get_(hi, a);
         let i = forWithAccum(lo, hi, lo, (j,ix) ->
-            if (cmp(get(j, a), pivot) == Comparison.LessThan) {
+            if (cmp(get_(j, a), pivot) == Comparison.LessThan) {
                 swap!(ix, j, a);
                 ix+1
             } else

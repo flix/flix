@@ -39,9 +39,9 @@ mod Adaptor {
     ///
     pub def fromOptional(_: Proxy[a], o: ##java.util.Optional): Option[a] =
         import java.util.Optional.isPresent(): Bool \ {};
-        import java.util.Optional.get(): ##java.lang.Object \ {};
+        import java.util.Optional.get(): ##java.lang.Object \ {} as optionalGet;
         if (isPresent(o)) {
-            let o1 = get(o);
+            let o1 = optionalGet(o);
             Some(unchecked_cast(o1 as a))
         } else
             None

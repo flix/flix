@@ -25,7 +25,7 @@ mod Fixpoint.Interpreter {
 
     @Internal
     pub def interpret(rc: Region[r], stmt: RamStmt[v]): Database[v, r] \ r with Order[v] =
-        interpretWithDatabase(rc, MutMap.new(rc), stmt)
+        interpretWithDatabase(rc, MutMap.new_(rc), stmt)
 
     @Internal
     pub def interpretWithDatabase(rc: Region[r], db: Database[v, r], stmt: RamStmt[v]): Database[v, r] \ r with Order[v] =
@@ -37,15 +37,15 @@ mod Fixpoint.Interpreter {
         match stmt {
             case RamStmt.Insert(relOp) => evalOp(rc, db, allocEnv(rc, 0, relOp), relOp)
             case RamStmt.Merge(srcSym, dstSym) =>
-                let dst = MutMap.getOrElsePut!(dstSym, MutMap.new(rc), db);
+                let dst = MutMap.getOrElsePut!(dstSym, MutMap.new_(rc), db);
                 match toDenotation(srcSym) {
                     case Denotation.Relational =>
-                        MutMap.merge!(MutMap.getWithDefault(srcSym, MutMap.new(rc), db), dst)
+                        MutMap.merge!(MutMap.getWithDefault(srcSym, MutMap.new_(rc), db), dst)
                     case Denotation.Latticenal(_, _, lub, _) =>
-                        MutMap.mergeWith!(lub, MutMap.getWithDefault(srcSym, MutMap.new(rc), db), dst)
+                        MutMap.mergeWith!(lub, MutMap.getWithDefault(srcSym, MutMap.new_(rc), db), dst)
                 }
             case RamStmt.Assign(lhs, rhs) =>
-                MutMap.put!(lhs, MutMap.getWithDefault(rhs, MutMap.new(rc), db), db)
+                MutMap.put!(lhs, MutMap.getWithDefault(rhs, MutMap.new_(rc), db), db)
             case RamStmt.Purge(ramSym) => MutMap.remove!(ramSym, db)
             case RamStmt.Seq(stmts) => Vector.forEach(evalStmt(rc, db), stmts)
             case RamStmt.Until(test, body) =>
@@ -62,7 +62,7 @@ mod Fixpoint.Interpreter {
         case RelOp.Search(_, _, body)           => allocEnv(rc, depth + 1, body)
         case RelOp.Query(_, _, _, body)         => allocEnv(rc, depth + 1, body)
         case RelOp.Functional(_, _, _, body)    => allocEnv(rc, depth + 1, body)
-        case RelOp.Project(_)                   => (Array.repeat(rc, depth, Vector.empty()), Array.new(rc, depth))
+        case RelOp.Project(_)                   => (Array.repeat(rc, depth, Vector.empty()), Array.new_(rc, depth))
         case RelOp.If(_, then)                  => allocEnv(rc, depth, then)
     }
 
@@ -74,14 +74,14 @@ mod Fixpoint.Interpreter {
                     Array.put(t, i, tupleEnv);
                     Array.put(l, i, latEnv);
                     evalOp(rc1, db, env, body)
-                }, MutMap.getWithDefault(ramSym, MutMap.new(rc1), db))
-            case RelOp.Query(RowVar.Index(i), ramSym, query, body) =>
+                }, MutMap.getWithDefault(ramSym, MutMap.new_(rc1), db))
+            case RelOp.Query(RowVar.Index(i), ramSym, query_, body) =>
                 let (tupleEnv, latEnv) = env;
-                MutMap.rangeQueryWith(evalQuery(env, Vector.toList(query)), t -> l -> {
+                MutMap.rangeQueryWith(evalQuery(env, Vector.toList(query_)), t -> l -> {
                     Array.put(t, i, tupleEnv);
                     Array.put(l, i, latEnv);
                     evalOp(rc1, db, env, body)
-                }, MutMap.getWithDefault(ramSym, MutMap.new(rc1), db))
+                }, MutMap.getWithDefault(ramSym, MutMap.new_(rc1), db))
             case RelOp.Functional(RowVar.Index(i), f, terms, body) =>
                 let args = terms |> Vector.map(evalTerm(env));
                 let result = f(args): Vector[Vector[v]];
@@ -92,7 +92,7 @@ mod Fixpoint.Interpreter {
                     evalOp(rc1, db, env, body)
                 }
             case RelOp.Project(terms, ramSym) =>
-                let rel = MutMap.getOrElsePut!(ramSym, MutMap.new(rc1), db);
+                let rel = MutMap.getOrElsePut!(ramSym, MutMap.new_(rc1), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
                         let tuple = Vector.map(evalTerm(env), terms);
@@ -118,10 +118,10 @@ mod Fixpoint.Interpreter {
             case _ => ()
         }
 
-    def evalQuery(env: SearchEnv[v, r], query: List[(Int32, RamTerm[v])], tuple: Vector[v]): Comparison \ r with Order[v] =
-        match query {
+    def evalQuery(env: SearchEnv[v, r], query_: List[(Int32, RamTerm[v])], tuple: Vector[v]): Comparison \ r with Order[v] =
+        match query_ {
             case Nil => Comparison.EqualTo
-            case (j, t) :: tl => match Vector.get(j, tuple) <=> evalTerm(env, t) {
+            case (j, t) :: tl => match Vector.get_(j, tuple) <=> evalTerm(env, t) {
                 case Comparison.EqualTo => evalQuery(env, tl, tuple)
                 case cmp => cmp
             }
@@ -130,9 +130,9 @@ mod Fixpoint.Interpreter {
     def evalBoolExp(rc1: Region[r1], db: Database[v, r1], env: SearchEnv[v, r2], es: Vector[BoolExp[v]]): Bool \ { r1, r2 } with Order[v] =
         Vector.forAll(exp -> match exp {
             case BoolExp.Empty(ramSym) =>
-                MutMap.isEmpty(MutMap.getWithDefault(ramSym, MutMap.new(rc1), db))
+                MutMap.isEmpty(MutMap.getWithDefault(ramSym, MutMap.new_(rc1), db))
             case BoolExp.NotMemberOf(terms, ramSym) =>
-                let rel = MutMap.getWithDefault(ramSym, MutMap.new(rc1), db);
+                let rel = MutMap.getWithDefault(ramSym, MutMap.new_(rc1), db);
                 match toDenotation(ramSym) {
                     case Denotation.Relational =>
                         let tuple = Vector.map(evalTerm(env), terms);
@@ -185,10 +185,10 @@ mod Fixpoint.Interpreter {
         case RamTerm.Lit(v) => v
         case RamTerm.RowLoad(RowVar.Index(i), index) =>
             let (tupleEnv, _) = env;
-            Vector.get(index, Array.get(i, tupleEnv))
+            Vector.get_(index, Array.get_(i, tupleEnv))
         case RamTerm.LoadLatVar(RowVar.Index(i)) =>
             let (_, latEnv) = env;
-            Array.get(i, latEnv)
+            Array.get_(i, latEnv)
         case RamTerm.Meet(cap, lhs, rhs) =>
             evalTerm(env, lhs) `cap` evalTerm(env, rhs)
         case RamTerm.App0(f) =>
