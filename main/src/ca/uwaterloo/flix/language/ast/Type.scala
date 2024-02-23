@@ -17,6 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -1041,6 +1042,26 @@ object Type {
     else {
       Type.mkNative(c, SourceLocation.Unknown)
     }
+  }
+
+  /**
+    * Returns the type of the given constant.
+    */
+  def constantType(cst: Ast.Constant): Type = cst match {
+    case Constant.Unit => Type.Unit
+    case Constant.Null => Type.Null
+    case Constant.Bool(_) => Type.Bool
+    case Constant.Char(_) => Type.Char
+    case Constant.Float32(_) => Type.Float32
+    case Constant.Float64(_) => Type.Float64
+    case Constant.BigDecimal(_) => Type.BigDecimal
+    case Constant.Int8(_) => Type.Int8
+    case Constant.Int16(_) => Type.Int16
+    case Constant.Int32(_) => Type.Int32
+    case Constant.Int64(_) => Type.Int64
+    case Constant.BigInt(_) => Type.BigInt
+    case Constant.Str(_) => Type.Str
+    case Constant.Regex(_) => Type.Regex
   }
 
 }
