@@ -322,7 +322,9 @@ object EffUnification2 {
       eqn match {
         case Equation(Term.Var(x), rhs) if !rhs.freeVars.contains(x) =>
           val updatedRhs = currentSubst(rhs)
-          currentSubst = currentSubst.extended(x, updatedRhs)
+          currentSubst = currentSubst.extended(x, updatedRhs) // TODO: BUG???: Must apply subst before continuing?
+        // We could have x = abc
+        // x = uuv, so then we must apply prev. subst to x.
         case _ => rest += eqn
       }
     }
