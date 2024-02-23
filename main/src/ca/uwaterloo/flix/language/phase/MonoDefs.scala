@@ -294,8 +294,8 @@ object MonoDefs {
   }
 
   /**
-    * converts the given effect op spec. Assumes that the spec has no variables,
-    * so the subst can be empty.
+    * Converts the given effect op spec. Effect operations are monomorphic -
+    * they have no variables - so the substitution can be empty.
     */
   private def visitEffectOpSpec(spec: LoweredAst.Spec, subst: StrictSubstitution): MonoAst.Spec = spec match {
     case LoweredAst.Spec(doc, ann, mod, _, fparams0, declaredScheme, retTpe, eff, _, loc) =>
