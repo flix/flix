@@ -920,6 +920,7 @@ object EffUnification2 {
     Var(56470) ~ (Var(113305) & Var(113303))
   )
 
+  // Iterator.toArray
   private def example09(): List[Equation] = List(
     (((Cst(1500)) & (Cst(1501))) & (Cst(1498))) ~ (Var(78914)),
     (Var(78914)) ~ ((Var(78917)) & ((Var(78923)) & (Var(78926)))),
