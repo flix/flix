@@ -84,7 +84,7 @@ object Namer {
     case decl: DesugaredAst.Declaration.Namespace => visitNamespace(decl, ns0)
     case decl: DesugaredAst.Declaration.Class => visitClass(decl, ns0)
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
-    case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonInstance)
+    case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
     case decl: DesugaredAst.Declaration.Enum => visitEnum(decl, ns0)
     case decl: DesugaredAst.Declaration.RestrictableEnum => visitRestrictableEnum(decl, ns0)
     case decl: DesugaredAst.Declaration.TypeAlias => visitTypeAlias(decl, ns0)
@@ -430,7 +430,7 @@ object Namer {
       val superClassesVal = traverse(superClasses0)(visitTypeConstraint(_, ns0))
       val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, sym, ns0)) // TODO switch param order to match visitSig
       val sigsVal = traverse(signatures)(visitSig(_, ns0, sym))
-      val lawsVal = traverse(laws0)(visitDef(_, ns0, DefKind.NonInstance))
+      val lawsVal = traverse(laws0)(visitDef(_, ns0, DefKind.Member))
 
       mapN(superClassesVal, assocsVal, sigsVal, lawsVal) {
         case (superClasses, assocs, sigs, laws) =>
@@ -450,7 +450,7 @@ object Namer {
       val assocsVal = traverse(assocs0)(visitAssocTypeDef(_, ns0))
       flatMapN(tpeVal, tconstrsVal, assocsVal) {
         case (tpe, tconstrs, assocs) =>
-          val defsVal = traverse(defs0)(visitDef(_, ns0, DefKind.Instance))
+          val defsVal = traverse(defs0)(visitDef(_, ns0, DefKind.Member))
           mapN(defsVal) {
             defs => NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, assocs, defs, ns0.parts, loc)
           }
@@ -540,8 +540,8 @@ object Namer {
               // Give the def an id only if it is an instance def.
               // This distinguishes instance defs that could share a namespace.
               val id = defKind match {
-                case DefKind.Instance => Some(flix.genSym.freshId())
-                case DefKind.NonInstance => None
+                case DefKind.Member => Some(flix.genSym.freshId())
+                case DefKind.NonMember => None
               }
               val sym = Symbol.mkDefnSym(ns0, ident, id)
               val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc)
@@ -1588,13 +1588,13 @@ object Namer {
 
   private object DefKind {
     /**
-      * A def that is a member of an instance.
+      * A def that is a member of an instance or class.
       */
-    case object Instance extends DefKind
+    case object Member extends DefKind
 
     /**
-      * A def that is not a member of an instance.
+      * A def that is not a member of an instance or class.
       */
-    case object NonInstance extends DefKind
+    case object NonMember extends DefKind
   }
 }
