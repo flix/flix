@@ -546,7 +546,7 @@ object EffUnification2 {
                 case True => // nop
                 case False => return False
                 case x@Term.Var(_) => varTerms += x
-                case _ => nonVarTerms += t
+                case _ => nonVarTerms += t0
               }
             }
           case _ => nonVarTerms += t
@@ -574,7 +574,7 @@ object EffUnification2 {
                 case True => return True
                 case False => // nop
                 case x@Term.Var(_) => varTerms += x
-                case _ => nonVarTerms += t
+                case _ => nonVarTerms += t0
               }
             }
           case _ => nonVarTerms += t
