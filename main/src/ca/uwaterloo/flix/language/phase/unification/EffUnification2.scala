@@ -75,9 +75,7 @@ object EffUnification2 {
     }
     implicit val bimap: Bimap[Type.Var, Int] = Bimap(forward, backward)
 
-    val equations: List[Equation] = l.map {
-      case (tpe1, tpe2) => Equation.mk(fromType(tpe1, bimap, renv0), fromType(tpe2, bimap, renv0))
-    }
+    val equations: List[Equation] = mkEquations(l, renv0)
 
     solveAll(equations) match {
       case Result.Ok(subst) =>
@@ -89,6 +87,16 @@ object EffUnification2 {
         Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
     }
   }
+
+
+
+  /**
+    * Returns the list of pairwise unification problems `l` as a list of equations.
+    */
+  private def mkEquations(l: List[(Type, Type)], renv0: RigidityEnv)(implicit bimap: Bimap[Type.Var, Int]): List[Equation] =
+    l.map {
+      case (tpe1, tpe2) => Equation.mk(fromType(tpe1, bimap, renv0), fromType(tpe2, bimap, renv0))
+    }
 
   private class Solver(l: List[Equation]) {
 
@@ -897,14 +905,14 @@ object EffUnification2 {
 
   def main(args: Array[String]): Unit = {
     implicit val flix: Flix = new Flix()
-    //solveAll(example01(), RigidityEnv.empty)
-    //solveAll(example02(), RigidityEnv.empty)
-    //solveAll(example03(), RigidityEnv.empty)
-    //solveAll(example04(), RigidityEnv.empty)
-    //solveAll(example05(), RigidityEnv.empty)
-    solveAll(example06(), RigidityEnv.empty)
-    //solveAll(example07(), RigidityEnv.empty)
-    //solveAll(example08(), RigidityEnv.empty)
+    //solveAll(example01())
+    //solveAll(example02())
+    //solveAll(example03())
+    //solveAll(example04())
+    //solveAll(example05())
+    solveAll(example06())
+    //solveAll(example07())
+    //solveAll(example08())
   }
 
 
