@@ -60,7 +60,7 @@ object TypePrinter {
 
   /** Returns the type as a simple string */
   private def typeToString(tpe: Type): String = {
-    FormatType.formatTypeWithOptions(tpe, FormatOptions(ignorePur = true, ignoreEff = true, FormatOptions.VarName.NameBased))
+    FormatType.formatTypeWithOptions(tpe, FormatOptions(FormatOptions.VarName.NameBased))
   }
 
 }

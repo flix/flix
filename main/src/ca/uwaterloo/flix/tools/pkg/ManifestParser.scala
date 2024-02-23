@@ -501,7 +501,6 @@ object ManifestParser {
           Symbol.mkModuleSym(namespace)
         }.toSet
         Ok(PackageModules.Selected(moduleSet))
-
     }
   }
 

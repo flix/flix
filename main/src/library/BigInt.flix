@@ -42,7 +42,7 @@ mod BigInt {
     /// Returns the Euclidean modulo of `x` and `n`.
     /// The result is always non-negative.
     ///
-    pub def mod(x: BigInt, n: BigInt): BigInt =
+    pub def modulo(x: BigInt, n: BigInt): BigInt =
         import java.math.BigInteger.remainder(BigInt): BigInt \ {};
         if (n == 0ii)
             0ii
@@ -53,9 +53,9 @@ mod BigInt {
     /// Returns the remainder of `x / n`.
     /// The result can be negative.
     ///
-    /// See also `BigInt.mod`.
+    /// See also `BigInt.modulo`.
     ///
-    pub def rem(x: BigInt, n: BigInt): BigInt =
+    pub def remainder(x: BigInt, n: BigInt): BigInt =
         import java.math.BigInteger.remainder(BigInt): BigInt \ {};
         if (n == 0ii)
             0ii
@@ -87,12 +87,12 @@ mod BigInt {
     /// The bits of x have positions: 0 (rightmost bit), 1, 2, ...
     ///
     pub def getBit(x: BigInt, position: Int32): Int32 =
-        if (rightShift(x, position) `rem` 2ii == 0ii) 0 else 1
+        if (rightShift(x, position) `remainder` 2ii == 0ii) 0 else 1
 
     ///
     /// Returns the greatest common non-negative divisor of `x` and `y`.
     ///
-    pub def gcd(x: BigInt, y: BigInt): BigInt = if (y == 0ii) abs(x) else gcd(y, x `rem` y)
+    pub def gcd(x: BigInt, y: BigInt): BigInt = if (y == 0ii) abs(x) else gcd(y, x `remainder` y)
 
     ///
     /// Returns `x` with the bit at position `position` set (to 1).
