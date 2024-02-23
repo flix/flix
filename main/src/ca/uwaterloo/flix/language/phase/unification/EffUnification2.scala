@@ -545,18 +545,21 @@ object EffUnification2 {
 
     final def mkAnd(ts: List[Term]): Term = {
       // TODO: Group cst and vars.
-      val varTerms = mutable.Set.empty[Term]
+      val cstTerms = mutable.Set.empty[Term.Cst]
+      val varTerms = mutable.Set.empty[Term.Var]
       val nonVarTerms = mutable.ListBuffer.empty[Term]
       for (t <- ts) {
         t match {
           case True => // nop
           case False => return False
+          case x@Term.Cst(_) => cstTerms += x
           case x@Term.Var(_) => varTerms += x
           case And(ts0) =>
             for (t0 <- ts0) {
               t0 match {
                 case True => // nop
                 case False => return False
+                case x@Term.Cst(_) => cstTerms += x
                 case x@Term.Var(_) => varTerms += x
                 case _ => nonVarTerms += t0
               }
@@ -565,7 +568,7 @@ object EffUnification2 {
         }
       }
 
-      varTerms.toList ++ nonVarTerms.toList match {
+      cstTerms.toList ++ varTerms.toList ++ nonVarTerms.toList match {
         case Nil => True
         case x :: Nil => x
         case xs => And(xs)
