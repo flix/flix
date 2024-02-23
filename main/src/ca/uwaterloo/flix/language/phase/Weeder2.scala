@@ -189,20 +189,21 @@ object Weeder2 {
       val classes = pickAll(TreeKind.Decl.Class, tree.children)
       val instances = pickAll(TreeKind.Decl.Instance, tree.children)
       val enums = pickAll(TreeKind.Decl.Enum, tree.children)
+      val restrictabeEnums = pickAll(TreeKind.Decl.RestrictableEnum, tree.children)
       val typeAliases = pickAll(TreeKind.Decl.TypeAlias, tree.children)
       val effects = pickAll(TreeKind.Decl.Effect, tree.children)
-      // TODO: Restrictable enums
       mapN(
         traverse(modules)(visitModule),
         traverse(definitions)(visitDefinition),
         traverse(classes)(visitTypeClass),
         traverse(instances)(visitInstance),
         traverse(enums)(visitEnum),
+        traverse(restrictabeEnums)(visitRestrictableEnum),
         traverse(typeAliases)(visitTypeAlias),
         traverse(effects)(visitEffect)
       ) {
-        case (modules, definitions, classes, instances, enums, typeAliases, effects) =>
-          val all: List[Declaration] = definitions ++ classes ++ modules ++ enums ++ instances ++ typeAliases ++ effects
+        case (modules, definitions, classes, instances, enums, rEnums, typeAliases, effects) =>
+          val all: List[Declaration] = definitions ++ classes ++ modules ++ enums ++ rEnums ++ instances ++ typeAliases ++ effects
 
           // TODO: We need to sort these by source position for comparison with old parser. Can be removed for production
           def getLoc(d: Declaration): SourceLocation = d match {
@@ -211,6 +212,7 @@ object Weeder2 {
             case Declaration.Class(_, _, _, _, _, _, _, _, _, loc) => loc
             case Declaration.Instance(_, _, _, _, _, _, _, _, loc) => loc
             case Declaration.Enum(_, _, _, _, _, _, _, loc) => loc
+            case Declaration.RestrictableEnum(_, _, _, _, _, _, _, _, loc) => loc
             case Declaration.TypeAlias(_, _, _, _, _, _, loc) => loc
             case Declaration.Effect(_, _, _, _, _, loc) => loc
             case d => throw InternalCompilerException(s"TODO: handle $d", tree.loc)
@@ -311,7 +313,7 @@ object Weeder2 {
               Validation.success(cases).withSoftFailures(errors)
           }
           mapN(casesVal) {
-            cases => Declaration.Enum(doc, ann, mods, ident, tparams, derivations, cases, tree.loc)
+            cases => Declaration.Enum(doc, ann, mods, ident, tparams, derivations, cases.sortBy(_.loc), tree.loc)
           }
       }
     }
@@ -338,6 +340,60 @@ object Weeder2 {
         case Type.Tuple(t :: Nil, _) => t
         // Multiple types in case -> do nothing
         case tpe => tpe
+      }
+    }
+
+    private def visitRestrictableEnum(tree: Tree)(implicit s: State): Validation[Declaration.RestrictableEnum, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Decl.RestrictableEnum)
+      val shorthandTuple = tryPick(TreeKind.Type.Type, tree.children)
+      val restrictionParam = flatMapN(pick(TreeKind.Parameter, tree.children))(Types.visitParameter)
+      val cases = pickAll(TreeKind.Case, tree.children)
+      flatMapN(
+        pickDocumentation(tree),
+        pickAnnotations(tree),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub)),
+        pickNameIdent(tree),
+        restrictionParam,
+        Types.pickDerivations(tree),
+        Types.pickParameters(tree),
+        traverseOpt(shorthandTuple)(Types.visitType),
+        traverse(cases)(visitRestrictableEnumCase)
+      ) {
+        (doc, ann, mods, ident, rParam, derivations, tparams, tpe, cases) =>
+          val casesVal = (tpe, cases) match {
+            // Error: both singleton shorthand and cases provided
+            case (Some(_), _ :: _) => Validation.toHardFailure(IllegalEnum(ident.loc))
+            // Empty enum
+            case (None, Nil) => Validation.success(List.empty)
+            // Singleton enum
+            case (Some(t), Nil) =>
+              Validation.success(List(WeededAst.RestrictableCase(ident, flattenEnumCaseType(t, ident.loc), ident.loc)))
+            // Multiton enum
+            case (None, cs) =>
+              val errors = getDuplicates(cs, (c: RestrictableCase) => c.ident.name).map(pair =>
+                DuplicateTag(ident.name, pair._1.ident, pair._1.loc, pair._2.loc)
+              )
+              Validation.success(cases).withSoftFailures(errors)
+          }
+          mapN(casesVal) {
+            cases => Declaration.RestrictableEnum(doc, ann, mods, ident, rParam, tparams, derivations, cases.sortBy(_.loc), tree.loc)
+          }
+      }
+    }
+
+    private def visitRestrictableEnumCase(tree: Tree)(implicit s: State): Validation[RestrictableCase, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Case)
+      val maybeType = tryPick(TreeKind.Type.Type, tree.children)
+      mapN(
+        pickNameIdent(tree),
+        traverseOpt(maybeType)(Types.visitType),
+        // TODO: Doc comments on enum cases. It is not available on [[Case]] yet.
+      ) {
+        (ident, maybeType) =>
+          val tpe = maybeType
+            .map(flattenEnumCaseType(_, tree.loc))
+            .getOrElse(Type.Unit(ident.loc))
+          RestrictableCase(ident, tpe, tree.loc)
       }
     }
 
@@ -2308,8 +2364,8 @@ object Weeder2 {
         case "true" => Validation.success(Type.True(tree.loc))
         case "Pure" => Validation.success(Type.Pure(tree.loc))
         // TODO EFF-MIGRATION create dedicated Impure type
-        case "Impure" => Validation.success(Type.Complement(Type.Pure(tree.loc), tree.loc))
-        case other => throw InternalCompilerException(s"'$other' used as Type.Constant", tree.loc)
+        case "Univ" => Validation.success(Type.Complement(Type.Pure(tree.loc), tree.loc))
+        case other => throw InternalCompilerException(s"'$other' used as Type.Constant ${tree.loc}", tree.loc)
       }
     }
 
@@ -2474,7 +2530,7 @@ object Weeder2 {
       }
     }
 
-    private def visitParameter(tree: Tree)(implicit s: State): Validation[TypeParam, CompilationMessage] = {
+    def visitParameter(tree: Tree)(implicit s: State): Validation[TypeParam, CompilationMessage] = {
       assert(tree.kind == TreeKind.Parameter)
       mapN(pickNameIdent(tree)) {
         ident =>

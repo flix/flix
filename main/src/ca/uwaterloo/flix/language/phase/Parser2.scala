@@ -100,16 +100,17 @@ object Parser2 {
       val results = ParOps.parMap(afterLexer) {
         case (src, tokens) =>
           val afterParser2 = parse(src, tokens)
-          val afterWeeder2 = flatMapN(afterParser2)(Weeder2.weed(src, _))
-
           val p = afterParser2.toSoftResult.toOption
-          val w = afterWeeder2.toSoftResult.toOption
 
-          // Log syntax tree if available
+          // Print syntax tree if available
           if (src.name == DEBUG_FOCUS && p.isDefined) {
             val (tree, _) = p.get
             println(tree.toDebugString())
           }
+
+          val afterWeeder2 = flatMapN(afterParser2)(Weeder2.weed(src, _))
+          val w = afterWeeder2.toSoftResult.toOption
+
           // Log weeded asts if available
           if (src.name == DEBUG_FOCUS && w.isDefined) {
             val (newAst, _) = w.get
@@ -119,12 +120,6 @@ object Parser2 {
             println("[[[ NEW PARSER ]]]")
             println(formatWeededAst(newAst))
             println("[[[ END ]]]")
-          }
-
-          // Print syntax tree if available
-          if (src.name == DEBUG_FOCUS && p.isDefined) {
-            val (tree, _) = p.get
-            println(tree.toDebugString())
           }
 
           // Log status if there were failures
@@ -299,7 +294,8 @@ object Parser2 {
   }
 
   private def closeWithError(mark: Mark.Opened, error: Parse2Error)(implicit s: State): Mark.Closed = {
-    s.errors.append(error)
+    // TODO: Add this back in
+//    s.errors.append(error)
     close(mark, TreeKind.ErrorTree(error))
   }
 
@@ -2301,7 +2297,7 @@ object Parser2 {
         case TokenKind.NameMath
              | TokenKind.NameGreek
              | TokenKind.Underscore => name(NAME_VARIABLE)
-        case TokenKind.KeywordImpure
+        case TokenKind.KeywordUniv
              | TokenKind.KeywordPure
              | TokenKind.KeywordFalse
              | TokenKind.KeywordTrue => constant()
@@ -2370,7 +2366,7 @@ object Parser2 {
 
     private def constant()(implicit s: State): Mark.Closed = {
       val mark = open()
-      expectAny(List(TokenKind.KeywordImpure, TokenKind.KeywordPure, TokenKind.KeywordFalse, TokenKind.KeywordTrue))
+      expectAny(List(TokenKind.KeywordUniv, TokenKind.KeywordPure, TokenKind.KeywordFalse, TokenKind.KeywordTrue))
       close(mark, TreeKind.Type.Constant)
     }
 
