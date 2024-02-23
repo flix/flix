@@ -418,7 +418,7 @@ object EffUnification2 {
       val t1 = LocalSubstitution.singleton(x, Term.True)(t)
       val se = successiveVariableElimination(Term.mkAnd(t0, t1), xs)
 
-      val f1 = Term.mkOr(se(t0), Term.mkAnd(Term.Var(x), Term.mkNot(se(t1))))
+      val f1 = minimize(Term.mkOr(se(t0), Term.mkAnd(Term.Var(x), Term.mkNot(se(t1)))))
       val st = LocalSubstitution.singleton(x, f1)
       st ++ se
   }
@@ -447,6 +447,34 @@ object EffUnification2 {
     case Term.Not(t) => !evaluate(t, trueVars)
     case Term.Or(ts) => ts.foldLeft(false) { case (bacc, term) => bacc || evaluate(term, trueVars) }
     case Term.And(ts) => ts.foldLeft(true) { case (bacc, term) => bacc && evaluate(term, trueVars) }
+  }
+
+  private def minimize(t0: Term): Term = {
+    val fvs = t0.freeVars
+    fromFormula(BoolFormulaTable.minimizeFormula(toFormula(t0)))(fvs)
+  }
+
+  private def toFormula(t0: Term): BoolFormula = t0 match {
+    case Term.True => BoolFormula.True
+    case Term.False => BoolFormula.False
+    case Term.Cst(c) => BoolFormula.Var(c)
+    case Term.Var(x) => BoolFormula.Var(x)
+    case Term.Not(t) => BoolFormula.Not(toFormula(t))
+    case Term.And(ts) => ts.foldRight(BoolFormula.True: BoolFormula) {
+      case (t, acc) => BoolFormula.And(toFormula(t), acc)
+    }
+    case Term.Or(ts) => ts.foldRight(BoolFormula.False: BoolFormula) {
+      case (t, acc) => BoolFormula.Or(toFormula(t), acc)
+    }
+  }
+
+  private def fromFormula(f0: BoolFormula)(implicit vars: SortedSet[Int]): Term = f0 match {
+    case BoolFormula.True => Term.True
+    case BoolFormula.False => Term.False
+    case BoolFormula.Var(x) => if (vars.contains(x)) Term.Var(x) else Term.Cst(x)
+    case BoolFormula.Not(f) => Term.mkNot(fromFormula(f))
+    case BoolFormula.And(f1, f2) => Term.mkAnd(fromFormula(f1), fromFormula(f2))
+    case BoolFormula.Or(f1, f2) => Term.mkOr(fromFormula(f1), fromFormula(f2))
   }
 
   private sealed trait Term {
@@ -703,7 +731,7 @@ object EffUnification2 {
     // We sort the bindings by (size, name).
     for ((x, t) <- s.m.toList.sortBy(kv => (kv._2.size, kv._1))) {
       sb.append(" ".repeat(indent))
-      sb.append(x)
+      sb.append(s"x$x")
       sb.append(" -> ")
       sb.append(t)
       sb.append("\n")
