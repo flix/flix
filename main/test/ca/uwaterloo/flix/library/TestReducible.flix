@@ -34,19 +34,19 @@ mod TestReducible {
 
     @test
     def reduceLeft04(): Bool =
-        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(100, Nil)) == 100
+        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, Nil)) == 100
 
     @test
     def reduceLeft05(): Bool =
-        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(100, 1 :: Nil)) == 198
+        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, 1 :: Nil)) == 198
 
     @test
     def reduceLeft06(): Bool =
-        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(100, 1 :: 2 :: Nil)) == 196
+        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, 1 :: 2 :: Nil)) == 196
 
     @test
     def reduceLeft07(): Bool =
-        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(100, 1 :: 2 :: 3 :: Nil)) == 386
+        Reducible.reduceLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, 1 :: 2 :: 3 :: Nil)) == 386
 
     @test
     def reduceLeft08(): Bool = region rc {
@@ -81,19 +81,19 @@ mod TestReducible {
 
     @test
     def reduceRight04(): Bool =
-        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(100, Nil)) == 100
+        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(100, Nil)) == 100
 
     @test
     def reduceRight05(): Bool =
-        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(1, 100 :: Nil)) == 198
+        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(1, 100 :: Nil)) == 198
 
     @test
     def reduceRight06(): Bool =
-        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(1, 2 :: 100 :: Nil)) == 194
+        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(1, 2 :: 100 :: Nil)) == 194
 
     @test
     def reduceRight07(): Bool =
-        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), Nel.Nel(1, 2 :: 3 :: 100 :: Nil)) == 382
+        Reducible.reduceRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), Nel.Nel(1, 2 :: 3 :: 100 :: Nil)) == 382
 
     @test
     def reduceRight08(): Bool = region rc {
@@ -162,15 +162,15 @@ mod TestReducible {
 
     @test
     def foldLeft04(): Bool =
-        Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
+        Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
 
     @test
     def foldLeft05(): Bool =
-        Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 196
+        Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 196
 
     @test
     def foldLeft06(): Bool =
-        Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 386
+        Reducible.foldLeft((acc, a) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 386
 
     @test
     def foldLeft07(): Bool = region rc {
@@ -197,15 +197,15 @@ mod TestReducible {
 
     @test
     def foldRight04(): Bool =
-        Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
+        Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
 
     @test
     def foldRight05(): Bool =
-        Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 194
+        Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 194
 
     @test
     def foldRight06(): Bool =
-        Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 382
+        Reducible.foldRight((a, acc) -> (acc - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 382
 
     @test
     def foldRight07(): Bool = region rc {
@@ -232,15 +232,15 @@ mod TestReducible {
 
     @test
     def foldRightWithCont04(): Bool =
-        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
+        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, Nil)) == 198
 
     @test
     def foldRightWithCont05(): Bool =
-        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 194
+        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: Nil)) == 194
 
     @test
     def foldRightWithCont06(): Bool =
-        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.rem` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 382
+        Reducible.foldRightWithCont((a, k) -> (k() - a) * ((a `Int32.remainder` 2) + 1), 100, Nel.Nel(1, 2 :: 3 :: Nil)) == 382
 
     @test
     def foldRightWithCont07(): Bool = region rc {

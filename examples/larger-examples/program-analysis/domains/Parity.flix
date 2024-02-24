@@ -64,7 +64,7 @@ mod Domain.Parity {
     ///
     /// Abstracts a concrete integer into the Parity domain.
     ///
-    pub def alpha(i: Int32): Parity = if (i `Int32.rem` 2 != 0) Parity.Odd else Parity.Even
+    pub def alpha(i: Int32): Parity = if (i `Int32.remainder` 2 != 0) Parity.Odd else Parity.Even
 
     ///
     /// Over-approximates integer `increment`.
