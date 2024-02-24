@@ -164,15 +164,15 @@ object BackendType {
     tpe0 match {
       case MonoType.AnyType => BackendObjType.JavaObject.toTpe
       case MonoType.Unit => BackendObjType.Unit.toTpe
-      case MonoType.Bool => Bool
-      case MonoType.Char => Char
-      case MonoType.Float32 => Float32
-      case MonoType.Float64 => Float64
+      case MonoType.Bool => BackendType.Bool
+      case MonoType.Char => BackendType.Char
+      case MonoType.Float32 => BackendType.Float32
+      case MonoType.Float64 => BackendType.Float64
       case MonoType.BigDecimal => BackendObjType.BigDecimal.toTpe
-      case MonoType.Int8 => Int8
-      case MonoType.Int16 => Int16
-      case MonoType.Int32 => Int32
-      case MonoType.Int64 => Int64
+      case MonoType.Int8 => BackendType.Int8
+      case MonoType.Int16 => BackendType.Int16
+      case MonoType.Int32 => BackendType.Int32
+      case MonoType.Int64 => BackendType.Int64
       case MonoType.BigInt => BackendObjType.BigInt.toTpe
       case MonoType.String => BackendObjType.String.toTpe
       case MonoType.Regex => BackendObjType.Regex.toTpe
@@ -192,21 +192,30 @@ object BackendType {
   /**
     * Contains all the primitive types and `Reference(Native(JvmName.Object))`.
     */
-  def erasedTypes: List[BackendType] =
-    Bool :: Char :: Float32 :: Float64 :: Int8 :: Int16 :: Int32 :: Int64 :: BackendObjType.JavaObject.toTpe :: Nil
+  def erasedTypes: List[BackendType] = List(
+    BackendType.Bool,
+    BackendType.Char,
+    BackendType.Float32,
+    BackendType.Float64,
+    BackendType.Int8,
+    BackendType.Int16,
+    BackendType.Int32,
+    BackendType.Int64,
+    BackendObjType.JavaObject.toTpe,
+  )
 
   /**
     * Computes the erased `BackendType` based on the given `MonoType`.
     */
   def toErasedBackendType(tpe: MonoType): BackendType = tpe match {
-    case MonoType.Bool => Bool
-    case MonoType.Char => Char
-    case MonoType.Int8 => Int8
-    case MonoType.Int16 => Int16
-    case MonoType.Int32 => Int32
-    case MonoType.Int64 => Int64
-    case MonoType.Float32 => Float32
-    case MonoType.Float64 => Float64
+    case MonoType.Bool => BackendType.Bool
+    case MonoType.Char => BackendType.Char
+    case MonoType.Int8 => BackendType.Int8
+    case MonoType.Int16 => BackendType.Int16
+    case MonoType.Int32 => BackendType.Int32
+    case MonoType.Int64 => BackendType.Int64
+    case MonoType.Float32 => BackendType.Float32
+    case MonoType.Float64 => BackendType.Float64
     case MonoType.AnyType | MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.String |
          MonoType.Regex | MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
          MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
@@ -214,16 +223,16 @@ object BackendType {
   }
 
   def asErasedBackendType(tpe: MonoType): BackendType = tpe match {
-    case MonoType.Bool => Bool
-    case MonoType.Char => Char
-    case MonoType.Int8 => Int8
-    case MonoType.Int16 => Int16
-    case MonoType.Int32 => Int32
-    case MonoType.Int64 => Int64
-    case MonoType.Float32 => Float32
-    case MonoType.Float64 => Float64
+    case MonoType.Bool => BackendType.Bool
+    case MonoType.Char => BackendType.Char
+    case MonoType.Int8 => BackendType.Int8
+    case MonoType.Int16 => BackendType.Int16
+    case MonoType.Int32 => BackendType.Int32
+    case MonoType.Int64 => BackendType.Int64
+    case MonoType.Float32 => BackendType.Float32
+    case MonoType.Float64 => BackendType.Float64
     case MonoType.Native(clazz) if clazz == classOf[Object] => BackendObjType.JavaObject.toTpe
-    case MonoType.AnyType |MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.String |
+    case MonoType.AnyType | MonoType.Unit | MonoType.BigDecimal | MonoType.BigInt | MonoType.String |
          MonoType.Regex | MonoType.Array(_) | MonoType.Lazy(_) | MonoType.Ref(_) | MonoType.Tuple(_) |
          MonoType.Enum(_) | MonoType.Arrow(_, _) | MonoType.RecordEmpty | MonoType.RecordExtend(_, _, _) |
          MonoType.Native(_) | MonoType.Region => throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
@@ -236,15 +245,15 @@ object BackendType {
     * Additionally, [[MonoType.Native]] is <b>not</b> erased.
     */
   def toFlixErasedBackendType(tpe: MonoType): BackendType = tpe match {
-    case MonoType.Bool => Bool
-    case MonoType.Char => Char
-    case MonoType.Int8 => Int8
-    case MonoType.Int16 => Int16
-    case MonoType.Int32 => Int32
-    case MonoType.Int64 => Int64
-    case MonoType.Float32 => Float32
-    case MonoType.Float64 => Float64
-    case MonoType.Array(t) => Array(toFlixErasedBackendType(t))
+    case MonoType.Bool => BackendType.Bool
+    case MonoType.Char => BackendType.Char
+    case MonoType.Int8 => BackendType.Int8
+    case MonoType.Int16 => BackendType.Int16
+    case MonoType.Int32 => BackendType.Int32
+    case MonoType.Int64 => BackendType.Int64
+    case MonoType.Float32 => BackendType.Float32
+    case MonoType.Float64 => BackendType.Float64
+    case MonoType.Array(t) => BackendType.Array(toFlixErasedBackendType(t))
     case MonoType.BigDecimal => BackendObjType.BigDecimal.toTpe
     case MonoType.BigInt => BackendObjType.BigInt.toTpe
     case MonoType.String => BackendObjType.String.toTpe
