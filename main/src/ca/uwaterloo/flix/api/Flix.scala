@@ -101,8 +101,8 @@ class Flix {
     */
   private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
   private var cachedTreeShaker1Ast: LoweredAst.Root = LoweredAst.empty
-  private var cachedMonoDefsAst: LoweredAst.Root = LoweredAst.empty
-  private var cachedMonoTypesAst: LoweredAst.Root = LoweredAst.empty
+  private var cachedMonoDefsAst: MonoAst.Root = MonoAst.empty
+  private var cachedMonoTypesAst: MonoAst.Root = MonoAst.empty
   private var cachedSimplifierAst: SimplifiedAst.Root = SimplifiedAst.empty
   private var cachedClosureConvAst: SimplifiedAst.Root = SimplifiedAst.empty
   private var cachedLambdaLiftAst: LiftedAst.Root = LiftedAst.empty
@@ -118,9 +118,9 @@ class Flix {
 
   def getTreeShaker1Ast: LoweredAst.Root = cachedTreeShaker1Ast
 
-  def getMonoDefsAst: LoweredAst.Root = cachedMonoDefsAst
+  def getMonoDefsAst: MonoAst.Root = cachedMonoDefsAst
 
-  def getMonoTypesAst: LoweredAst.Root = cachedMonoTypesAst
+  def getMonoTypesAst: MonoAst.Root = cachedMonoTypesAst
 
   def getSimplifierAst: SimplifiedAst.Root = cachedSimplifierAst
 
