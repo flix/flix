@@ -22,10 +22,11 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, PackageModules, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError, Dependency}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
+import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
 
 import java.io.{File, PrintStream, PrintWriter}
@@ -501,8 +502,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     reconfigureFlix(flix)
 
     flix.compile().toHardResult match {
-      case Result.Ok(r) => Validation.success(r)
-      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+      case Result.Ok(r: CompilationResult) =>
+        Validation.success(r)
+      case Result.Err(errors: Chain[CompilationMessage]) =>
+        Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 
@@ -682,12 +685,19 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
 
+    val packageModules = optManifest match {
+      case None => PackageModules.All
+      case Some(manifest) => manifest.modules
+    }
+
     Validation.mapN(flix.check()) {
       root =>
-        HtmlDocumentor.run(root)(flix)
+        HtmlDocumentor.run(root, packageModules)(flix)
     }.toHardResult match {
-      case Result.Ok(_) => Validation.success(())
-      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+      case Result.Ok(_) =>
+        Validation.success(())
+      case Result.Err(errors: Chain[CompilationMessage]) =>
+        Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 

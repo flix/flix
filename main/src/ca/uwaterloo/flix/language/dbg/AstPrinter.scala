@@ -81,8 +81,8 @@ object AstPrinter {
     val backend = List(
       Some(("Lowering", () => formatLoweredAst(flix.getLoweringAst))),
       Some(("TreeShaker1", () => formatLoweredAst(flix.getTreeShaker1Ast))),
-      Some(("MonoDefs", () => formatLoweredAst(flix.getMonoDefsAst))),
-      Some(("MonoTypes", () => formatLoweredAst(flix.getMonoTypesAst))),
+      wipPhase("MonoDefs"),
+      wipPhase("MonoTypes"),
       Some(("Simplifier", () => formatSimplifiedAst(flix.getSimplifierAst))),
       Some(("ClosureConv", () => formatSimplifiedAst(flix.getClosureConvAst))),
       Some(("LambdaLift", () => formatLiftedAst(flix.getLambdaLiftAst))),
