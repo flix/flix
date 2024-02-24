@@ -416,9 +416,9 @@ object EffUnification2 {
     case x :: xs =>
       val t0 = LocalSubstitution.singleton(x, Term.False)(t)
       val t1 = LocalSubstitution.singleton(x, Term.True)(t)
-      val se = successiveVariableElimination(Term.mkAnd(t0, t1), xs)
+      val se = successiveVariableElimination(propagateAnd(Term.mkAnd(t0, t1)), xs)
 
-      val f1 = minimize(Term.mkOr(se(t0), Term.mkAnd(Term.Var(x), Term.mkNot(se(t1)))))
+      val f1 = propagateAnd(Term.mkOr(se(t0), Term.mkAnd(Term.Var(x), Term.mkNot(se(t1)))))
       val st = LocalSubstitution.singleton(x, f1)
       st ++ se
   }
@@ -447,6 +447,43 @@ object EffUnification2 {
     case Term.Not(t) => !evaluate(t, trueVars)
     case Term.Or(ts) => ts.foldLeft(false) { case (bacc, term) => bacc || evaluate(term, trueVars) }
     case Term.And(ts) => ts.foldLeft(true) { case (bacc, term) => bacc && evaluate(term, trueVars) }
+  }
+
+
+  private def propagateAnd(t0: Term): Term = {
+    def visit(t0: Term, trueCsts: SortedSet[Int], trueVars: SortedSet[Int]): Term = t0 match {
+      case Term.True => Term.True
+      case Term.False => Term.False
+      case Term.Cst(c) => if (trueCsts.contains(c)) Term.True else Term.Cst(c)
+      case Term.Var(x) => if (trueVars.contains(x)) Term.True else Term.Var(x)
+      case Term.Not(t) => Term.mkNot(visit(t, trueCsts, trueVars))
+      case Term.And(ts) =>
+        val termCsts = ts.collect {
+          case t: Term.Cst => t.c
+        }.toSet
+        val termVars = ts.collect {
+          case t: Term.Var => t.x
+        }.toSet
+        val currentCsts = trueCsts ++ termCsts
+        val currentVars = trueVars ++ termVars
+
+        val rest = ts.collect {
+          case t: Term.Not => visit(t, currentCsts, currentVars)
+          case t: Term.And => visit(t, currentCsts, currentVars)
+          case t: Term.Or => visit(t, currentCsts, currentVars)
+        }
+
+        // Compute the constants and variables that do not already hold.
+        val csts = termCsts -- trueCsts
+        val vars = termVars -- trueVars
+
+        Term.mkAnd(csts.toList.map(Term.Cst) ++ vars.toList.map(Term.Var) ++ rest)
+
+      case Term.Or(ts) => Term.mkOr(ts.map(visit(_, trueCsts, trueVars)))
+    }
+
+
+    visit(t0, SortedSet.empty, SortedSet.empty)
   }
 
   private def minimize(t0: Term): Term = {
@@ -990,8 +1027,8 @@ object EffUnification2 {
     //solveAll(example06())
     //solveAll(example07())
     //solveAll(example08())
-    //solveAll(example09()) // hard
-    solveAll(example10()) // very hard
+    solveAll(example09()) // hard
+    //solveAll(example10()) // very hard
   }
 
 
