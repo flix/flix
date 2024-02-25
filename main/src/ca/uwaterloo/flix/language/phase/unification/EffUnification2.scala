@@ -764,13 +764,25 @@ object EffUnification2 {
       * The variable `x` must not already be bound in the substitution.
       */
     def extended(x: Int, t: Term): BoolSubstitution = {
-      assert(!m.contains(x)) // ensure that x is not already bound.
+      if (m.contains(x)) {
+        throw InternalCompilerException(s"Substitution already contains a binding for: $x.", SourceLocation.Unknown)
+      }
+
       BoolSubstitution(m + (x -> t))
     }
 
-
+    /**
+      * Merges `this` substitution with `that` substitution.
+      *
+      * The returned substitution has all bindings from `this` and `that` substitution.
+      *
+      * The domains of the two substitutions must not overlap.
+      */
     def ++(that: BoolSubstitution): BoolSubstitution = {
-      assert(this.m.keySet.intersect(that.m.keySet).isEmpty)
+      val intersection = this.m.keySet.intersect(that.m.keySet)
+      if (intersection.nonEmpty) {
+        throw InternalCompilerException(s"Substitutions are not disjoint on: '${intersection.mkString(",")}'.", SourceLocation.Unknown)
+      }
 
       if (this.m.isEmpty) {
         that
