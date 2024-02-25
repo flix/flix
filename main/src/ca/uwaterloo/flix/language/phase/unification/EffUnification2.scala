@@ -100,7 +100,7 @@ object EffUnification2 {
   private class Solver(l: List[Equation]) {
 
     private var currentEqns = l
-    private var currentSubst: LocalSubstitution = LocalSubstitution.empty
+    private var currentSubst: BoolSubstitution = BoolSubstitution.empty
 
     private def printEquations(): Unit = {
       println(s"Equations (${currentEqns.size}):")
@@ -146,7 +146,7 @@ object EffUnification2 {
       println()
     }
 
-    def solve()(implicit flix: Flix): Result[LocalSubstitution, ConflictException] = {
+    def solve()(implicit flix: Flix): Result[BoolSubstitution, ConflictException] = {
       try {
         phase0()
         phase1()
@@ -185,7 +185,7 @@ object EffUnification2 {
 
   }
 
-  private def solveAll(l: List[Equation])(implicit flix: Flix): Result[LocalSubstitution, ConflictException] = {
+  private def solveAll(l: List[Equation])(implicit flix: Flix): Result[BoolSubstitution, ConflictException] = {
     // TODO: Introduce small solver class.
     new Solver(l).solve()
   }
@@ -251,7 +251,7 @@ object EffUnification2 {
 
 
   // Saturates all unit clauses.
-  private def propagateUnit(l: List[Equation], s: LocalSubstitution): (List[Equation], LocalSubstitution) = {
+  private def propagateUnit(l: List[Equation], s: BoolSubstitution): (List[Equation], BoolSubstitution) = {
     var currentEqns = l
     var currentSubst = s
 
@@ -293,7 +293,7 @@ object EffUnification2 {
   }
 
 
-  private def propagateVars(l: List[Equation], subst0: LocalSubstitution): (List[Equation], LocalSubstitution) = {
+  private def propagateVars(l: List[Equation], subst0: BoolSubstitution): (List[Equation], BoolSubstitution) = {
     // TODO: Fixpoint or disjoint sets needed?
 
     // TODO: Could start from empty subst and then use ++ later.
@@ -314,7 +314,7 @@ object EffUnification2 {
 
   // Deals with x92747 ~ (x135862 ∧ x135864)
   // where LHS is var and is free on RHS
-  private def varAssignment(l: List[Equation], subst0: LocalSubstitution): (List[Equation], LocalSubstitution) = {
+  private def varAssignment(l: List[Equation], subst0: BoolSubstitution): (List[Equation], BoolSubstitution) = {
     var currentSubst = subst0
     var currentEqns = l
     var rest: List[Equation] = Nil
@@ -328,7 +328,7 @@ object EffUnification2 {
           // Update the remaining equations with the new binding.
           // This is required for correctness.
           // We use a singleton subst. to avoid idempotence issues.
-          val singleton = LocalSubstitution.singleton(x, rhs)
+          val singleton = BoolSubstitution.singleton(x, rhs)
 
           currentSubst = currentSubst @@ singleton
 
@@ -370,15 +370,15 @@ object EffUnification2 {
     m.toMap
   }
 
-  private def boolUnifyAll(l: List[Equation], renv: Set[Int])(implicit flix: Flix): LocalSubstitution = l match {
-    case Nil => LocalSubstitution.empty
+  private def boolUnifyAll(l: List[Equation], renv: Set[Int])(implicit flix: Flix): BoolSubstitution = l match {
+    case Nil => BoolSubstitution.empty
     case Equation(t1, t2) :: xs =>
       val subst = boolUnifyOne(t1, t2, renv)
       val subst1 = boolUnifyAll(subst(xs), renv)
       subst @@ subst1 // TODO: order?
   }
 
-  private def boolUnifyOne(t1: Term, t2: Term, renv: Set[Int])(implicit flix: Flix): LocalSubstitution = {
+  private def boolUnifyOne(t1: Term, t2: Term, renv: Set[Int])(implicit flix: Flix): BoolSubstitution = {
     // The boolean expression we want to show is false.
     val query = Term.mkXor(t1, t2)
 
@@ -406,21 +406,21 @@ object EffUnification2 {
     subst
   }
 
-  private def successiveVariableElimination(t: Term, flexvs: List[Int])(implicit flix: Flix): LocalSubstitution = flexvs match {
+  private def successiveVariableElimination(t: Term, flexvs: List[Int])(implicit flix: Flix): BoolSubstitution = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       if (!satisfiable(t))
-        LocalSubstitution.empty
+        BoolSubstitution.empty
       else
         throw BoolUnificationException()
 
     case x :: xs =>
-      val t0 = LocalSubstitution.singleton(x, Term.False)(t)
-      val t1 = LocalSubstitution.singleton(x, Term.True)(t)
+      val t0 = BoolSubstitution.singleton(x, Term.False)(t)
+      val t1 = BoolSubstitution.singleton(x, Term.True)(t)
       val se = successiveVariableElimination(propagateAnd(Term.mkAnd(t0, t1)), xs)
 
       val f1 = propagateAnd(Term.mkOr(se(t0), Term.mkAnd(Term.Var(x), Term.mkNot(se(t1)))))
-      val st = LocalSubstitution.singleton(x, f1)
+      val st = BoolSubstitution.singleton(x, f1)
       st ++ se
   }
 
@@ -680,13 +680,24 @@ object EffUnification2 {
   }
 
   // TODO: Rename to BoolSubst
-  private object LocalSubstitution {
-    val empty: LocalSubstitution = LocalSubstitution(Map.empty)
+  private object BoolSubstitution {
+    val empty: BoolSubstitution = BoolSubstitution(Map.empty)
 
-    def singleton(x: Int, t: Term): LocalSubstitution = empty.extended(x, t)
+    def singleton(x: Int, t: Term): BoolSubstitution = empty.extended(x, t)
   }
 
-  private case class LocalSubstitution(m: Map[Int, Term]) {
+  /**
+    * Represents a substitution from Boolean variables (represented as integers) to Boolean terms.
+    *
+    * A substitution is a partial map from variables to terms. Every substitution induces a total function
+    * `s: Term -> Term` that replaces every occurrence in the input term, which occurs in the domain of the
+    * substitution, with its corresponding term from the co-domain.
+    *
+    * Note: constants and variables are a separate syntactic category. A substitution will never replace any constants.
+    */
+  private case class BoolSubstitution(m: Map[Int, Term]) {
+
+    // TODO: DOC
     def apply(t: Term): Term = t match {
       case Term.True => Term.True
       case Term.False => Term.False
@@ -702,15 +713,29 @@ object EffUnification2 {
       case Term.Or(ts) => Term.mkOr(ts.map(this.apply))
     }
 
-    def apply(eq: Equation): Equation = eq match {
+    /**
+      * Applies `this` substitution to the given equation `e`.
+      *
+      * Intuitively, applies `this` to the lhs and rhs of `e` and reconstructs the equation.
+      *
+      * Applying the substitution and reconstructing the equation may "flip" the lhs and rhs. For example:
+      *
+      * If `s = [x -> y]` and `e = true ~ x and y` then `s(e) = y ~ true` which has flipped lhs and rhs.
+      */
+    def apply(e: Equation): Equation = e match {
       case Equation(t1, t2) => Equation.mk(apply(t1), apply(t2))
     }
 
+    /**
+      * Applies `this` substitution to the given list of equations `l`.
+      */
     def apply(l: List[Equation]): List[Equation] = l.map(apply)
 
-    def extended(x: Int, t: Term): LocalSubstitution = LocalSubstitution(m + (x -> t))
 
-    def ++(that: LocalSubstitution): LocalSubstitution = {
+
+    def extended(x: Int, t: Term): BoolSubstitution = BoolSubstitution(m + (x -> t))
+
+    def ++(that: BoolSubstitution): BoolSubstitution = {
       assert(this.m.keySet.intersect(that.m.keySet).isEmpty)
 
       if (this.m.isEmpty) {
@@ -718,13 +743,13 @@ object EffUnification2 {
       } else if (that.m.isEmpty) {
         this
       } else {
-        LocalSubstitution(
+        BoolSubstitution(
           this.m ++ that.m.filter(kv => !this.m.contains(kv._1))
         )
       }
     }
 
-    def @@(that: LocalSubstitution): LocalSubstitution = {
+    def @@(that: BoolSubstitution): BoolSubstitution = {
       // Case 1: Return `that` if `this` is empty.
       if (this.m.isEmpty) {
         return that
@@ -750,7 +775,7 @@ object EffUnification2 {
         }
       }
 
-      LocalSubstitution(result.toMap)
+      BoolSubstitution(result.toMap)
     }
 
     def toSubst(implicit bimap: Bimap[Type.Var, Int]): Substitution = {
@@ -772,7 +797,7 @@ object EffUnification2 {
     sb.toString()
   }
 
-  private def formatSubst(s: LocalSubstitution, indent: Int = 4): String = {
+  private def formatSubst(s: BoolSubstitution, indent: Int = 4): String = {
     val sb = new StringBuilder()
     // We sort the bindings by (size, name).
     for ((x, t) <- s.m.toList.sortBy(kv => (kv._2.size, kv._1))) {
