@@ -532,25 +532,38 @@ object EffUnification2 {
       */
     final def ~(that: Term): Equation = Equation.mk(this, that)
 
-
-
+    /**
+      * Returns all variables that occur in `this` term.
+      */
     final def freeVars: SortedSet[Int] = this match {
       case Term.True => SortedSet.empty
       case Term.False => SortedSet.empty
       case Term.Cst(_) => SortedSet.empty
       case Term.Var(x) => SortedSet(x)
       case Term.Not(t) => t.freeVars
-      case Term.And(_, vars, rest) => rest.foldLeft(SortedSet.empty[Int])(_ ++ _.freeVars) ++ vars.map(_.x)
+
+      case Term.And(_, vars, rest) => SortedSet.empty[Int] ++ vars.map(_.x) ++ rest.flatMap(_.freeVars)
+
       case Term.Or(ts) => ts.foldLeft(SortedSet.empty[Int])(_ ++ _.freeVars)
     }
 
+    /**
+      * Returns the size of `this` term.
+      *
+      * The size is the number of constants, variables, and connectives in the term.
+      *
+      * For example, `size(x /\ y) = 3` and `size(x /\ not y) = 4`.
+      */
     final def size: Int = this match {
       case Term.True => 0
       case Term.False => 0
-      case Term.Cst(_) => 0
+      case Term.Cst(_) => 1
       case Term.Var(_) => 1
       case Term.Not(t) => t.size + 1
-      case Term.And(csts, vars, rest) => (csts.size + vars.size + rest.map(_.size).sum) - 1
+      case Term.And(csts, vars, rest) =>
+        // We need a connective for each constant, variable, and term minus one.
+        // We then add the size of all the sub-terms in `rest`.
+        ((csts.size + vars.size + rest.size) - 1) + rest.map(_.size).sum
       case Term.Or(ts) => ts.map(_.size).sum + (ts.length - 1)
     }
 
