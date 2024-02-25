@@ -72,7 +72,7 @@ object EffUnification2 {
   /**
     * Translates the given unification equation on types `p` into a unification equation on terms.
     */
-  private def toEquation(p: (Type, Type))(implicit renv: RigidityEnv, bimap: Bimap[Type.Var, Int]): Equation = {
+  private def toEquation(p: (Type, Type))(implicit renv: RigidityEnv, m: Bimap[Type.Var, Int]): Equation = {
     val (tpe1, tpe2) = p
     Equation.mk(toTerm(tpe1), toTerm(tpe2))
   }
@@ -80,15 +80,15 @@ object EffUnification2 {
   /**
     * Returns the given type `t` as term.
     *
-    * The bimap is used to map type variables to term variables.
+    * Uses the given bimap `m` to map type variables to term variables.
     *
-    * The rigidity environment is used to map rigid type variables to constants and flexible type variables to term variables.
+    * The rigidity environment `renv` is used to map rigid type variables to constants and flexible type variables to term variables.
     */
-  private def toTerm(t: Type)(implicit renv: RigidityEnv, bimap: Bimap[Type.Var, Int]): Term = Type.eraseTopAliases(t) match {
+  private def toTerm(t: Type)(implicit renv: RigidityEnv, m: Bimap[Type.Var, Int]): Term = Type.eraseTopAliases(t) match {
     case Type.Pure => Term.True
     case Type.Univ => Term.False
 
-    case t: Type.Var => bimap.getForward(t) match {
+    case t: Type.Var => m.getForward(t) match {
       case None => throw InternalCompilerException(s"Unexpected unbound type variable: '$t'.", t.loc)
       case Some(x) => renv.get(t.sym) match {
         case Rigidity.Flexible => Term.Var(x) // A flexible variable is a real variable.
@@ -110,17 +110,26 @@ object EffUnification2 {
   /**
     * Returns a Boolean substitution as a regular type substitution.
     */
-  private def fromBoolSubst(s: FastBoolUnification.BoolSubstitution)(implicit bimap: Bimap[Type.Var, Int]): Substitution = {
+  private def fromBoolSubst(s: FastBoolUnification.BoolSubstitution)(implicit m: Bimap[Type.Var, Int]): Substitution = {
     Substitution(s.m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
-      case (macc, (k, v)) => macc + (bimap.getBackward(k).get.sym -> fromTerm(v, SourceLocation.Unknown))
+      case (macc, (k, v)) => macc + (m.getBackward(k).get.sym -> fromTerm(v, SourceLocation.Unknown))
     })
   }
 
+  /**
+    * Returns the given term `t` as a type.
+    *
+    * Uses the given bimap `m` to map term variables to type variables.
+    * Uses the given source location `loc` as the source location for all sub-terms.
+    *
+    * Both constants and variables are mapped back to type variables. The rigidity environment, in the type world,
+    * distinguishes their rigidity or flexibility.
+    */
   private def fromTerm(t: Term, loc: SourceLocation)(implicit m: Bimap[Type.Var, Int]): Type = t match {
     case Term.True => Type.Pure
     case Term.False => Type.Univ
-    case Term.Cst(c) => m.getBackward(c).get
-    case Term.Var(x) => m.getBackward(x).get
+    case Term.Cst(c) => m.getBackward(c).get // Safe: We never introduce new variables.
+    case Term.Var(x) => m.getBackward(x).get // Safe: We never introduce new variables.
     case Term.Not(t) => Type.mkComplement(fromTerm(t, loc), loc)
     case Term.And(csts, vars, rest) =>
       val ts = csts.toList.map(fromTerm(_, loc)) ++ vars.toList.map(fromTerm(_, loc)) ++ rest.map(fromTerm(_, loc))
