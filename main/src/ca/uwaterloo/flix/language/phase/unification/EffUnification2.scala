@@ -784,15 +784,7 @@ object EffUnification2 {
         throw InternalCompilerException(s"Substitutions are not disjoint on: '${intersection.mkString(",")}'.", SourceLocation.Unknown)
       }
 
-      if (this.m.isEmpty) {
-        that
-      } else if (that.m.isEmpty) {
-        this
-      } else {
-        BoolSubstitution(
-          this.m ++ that.m.filter(kv => !this.m.contains(kv._1))
-        )
-      }
+      BoolSubstitution(this.m ++ that.m)
     }
 
     def @@(that: BoolSubstitution): BoolSubstitution = {
