@@ -109,7 +109,7 @@ object EffUnification2 {
 
     private def printSubstitution(): Unit = {
       println(s"Substitution (${currentSubst.size}):")
-      println(formatSubst(currentSubst))
+      println(currentSubst.toString)
     }
 
     private def phase0(): Unit = {
@@ -821,6 +821,21 @@ object EffUnification2 {
         case (macc, (k, v)) => macc + (bimap.getBackward(k).get.sym -> toType(v, SourceLocation.Unknown))
       })
     }
+
+    override def toString(): String = {
+      val indent = 4
+
+      val sb = new StringBuilder()
+      // We sort the bindings by (size, name).
+      for ((x, t) <- m.toList.sortBy(kv => (kv._2.size, kv._1))) {
+        sb.append(" ".repeat(indent))
+        sb.append(s"x$x")
+        sb.append(" -> ")
+        sb.append(t)
+        sb.append("\n")
+      }
+      sb.toString()
+    }
   }
 
   private def format(l: List[Equation], indent: Int = 4): String = {
@@ -835,21 +850,9 @@ object EffUnification2 {
     sb.toString()
   }
 
-  private def formatSubst(s: BoolSubstitution, indent: Int = 4): String = {
-    val sb = new StringBuilder()
-    // We sort the bindings by (size, name).
-    for ((x, t) <- s.m.toList.sortBy(kv => (kv._2.size, kv._1))) {
-      sb.append(" ".repeat(indent))
-      sb.append(s"x$x")
-      sb.append(" -> ")
-      sb.append(t)
-      sb.append("\n")
-    }
-    sb.toString()
-  }
 
   /////////////////////////////////////////////////////////////////////////////
-  /// Debugging                                                             ///
+  /// Testing                                                               ///
   /////////////////////////////////////////////////////////////////////////////
 
   import Term._
