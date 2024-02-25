@@ -36,6 +36,81 @@ mod Eff.Logger {
     }
 
     ///
+    /// Report a message.
+    ///
+    /// `Trace` is the lowest severity level for a log message (level 1 of 5).
+    ///
+    pub def trace(msg: a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Trace, () -> "${msg}")
+
+    ///
+    /// Report a debug message.
+    ///
+    /// `Debug` is a low severity level for a log message (level 2 of 5).
+    ///
+    pub def debug(msg: a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Debug, () -> "${msg}")
+
+    ///
+    /// Report an info message.
+    ///
+    /// `Info` is a medium severity level for a log message (level 3 of 5).
+    ///
+    pub def info(msg: a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Info, () -> "${msg}")
+
+    ///
+    /// Report a warning message.
+    ///
+    /// `Warn` is a high severity level for a log message (level 4 of 5).
+    ///
+    pub def warn(msg: a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Warn, () -> "${msg}")
+
+    ///
+    /// Report a fatal situation.
+    ///
+    /// `Fatal` is the highest severity level for a log message (level 5 of 5).
+    ///
+    pub def fatal(msg: a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Fatal, () -> "${msg}")
+
+    ///
+    /// Lazy version of `trace` - the log message is a thunk that gets
+    /// evaluated when the handler demands it.
+    ///
+    /// `Trace` is the lowest severity level for a log message (level 1 of 5).
+    ///
+    pub def lazyTrace(f: Unit -> a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Trace, () -> "${f()}")
+
+    ///
+    /// Lazy version of `debug` - the log message is a thunk that gets evaluated
+    /// when the handler demands it.
+    ///
+    /// `Debug` is a low severity level for a log message (level 2 of 5).
+    ///
+    pub def lazyDebug(f: Unit -> a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Debug, () -> "${f()}")
+
+    ///
+    /// Lazy version of `info` - the log message is a thunk that gets
+    /// evaluated when the handler demands it.
+    ///
+    /// `Info` is a medium severity level for a log message (level 3 of 5).
+    ///
+    pub def lazyInfo(f: Unit -> a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Info, () -> "${f()}")
+
+    ///
+    /// Lazy version of `warn` - the log message is a thunk that gets
+    /// evaluated when the handler demands it.
+    ///
+    /// `Warn` is a high severity level for a log message (level 4 of 5).
+    ///
+    pub def lazyWarn(f: Unit -> a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Warn, () -> "${f()}")
+
+    ///
+    /// Lazy version of `fatal` - the log message is a thunk that gets evaluated when the handler demands it.
+    ///
+    /// `Fatal` is the highest severity level for a log message (level 5 of 5).
+    ///
+    pub def lazyFatal(f: Unit -> a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Fatal, () -> "${f()}")
+
+
+    ///
     /// A simple, pure handler for `Logger`.
     ///
     /// Run the Logger and collect the log messages in a list.
@@ -76,82 +151,5 @@ mod Eff.Logger {
                 else k()
             }
         }
-
-    ///
-    /// Report a fatal situation.
-    ///
-    /// `Fatal` is the highest severity level for a log message (level 5 of 5).
-    ///
-    pub def fatal(msg: a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Fatal, () -> "${msg}")
-
-    ///
-    /// Report a warning message.
-    ///
-    /// `Warn` is a high severity level for a log message (level 4 of 5).
-    ///
-    pub def warn(msg: a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Warn, () -> "${msg}")
-
-    ///
-    /// Report an info message.
-    ///
-    /// `Info` is a medium severity level for a log message (level 3 of 5).
-    ///
-    pub def info(msg: a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Info, () -> "${msg}")
-
-    ///
-    /// Report a debug message.
-    ///
-    /// `Debug` is a low severity level for a log message (level 2 of 5).
-    ///
-    pub def debug(msg: a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Debug, () -> "${msg}")
-
-    ///
-    /// Report a message.
-    ///
-    /// `Trace` is the lowest severity level for a log message (level 1 of 5).
-    ///
-    pub def trace(msg: a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Trace, () -> "${msg}")
-
-    ///
-    /// Lazy version of `fatal` - the log message is a thunk that gets evaluated when the handler demands it.
-    ///
-    /// `Fatal` is the highest severity level for a log message (level 5 of 5).
-    ///
-    pub def lazyFatal(f: Unit -> a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Fatal, () -> "${f()}")
-
-    ///
-    /// Lazy version of `warn` - the log message is a thunk that gets
-    /// evaluated when the handler demands it.
-    ///
-    /// `Warn` is a high severity level for a log message (level 4 of 5).
-    ///
-    pub def lazyWarn(f: Unit -> a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Warn, () -> "${f()}")
-
-    ///
-    /// Lazy version of `info` - the log message is a thunk that gets
-    /// evaluated when the handler demands it.
-    ///
-    /// `Info` is a medium severity level for a log message (level 3 of 5).
-    ///
-    pub def lazyInfo(f: Unit -> a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Info, () -> "${f()}")
-
-    ///
-    /// Lazy version of `debug` - the log message is a thunk that gets evaluated
-    /// when the handler demands it.
-    ///
-    /// `Debug` is a low severity level for a log message (level 2 of 5).
-    ///
-    pub def lazyDebug(f: Unit -> a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Debug, () -> "${f()}")
-
-    ///
-    /// Lazy version of `trace` - the log message is a thunk that gets
-    /// evaluated when the handler demands it.
-    ///
-    /// `Trace` is the lowest severity level for a log message (level 1 of 5).
-    ///
-    pub def lazyTrace(f: Unit -> a): Unit \ Logger with ToString[a] = do Eff.Logger.log(Severity.Trace, () -> "${f()}")
-
-
-
 
 }
