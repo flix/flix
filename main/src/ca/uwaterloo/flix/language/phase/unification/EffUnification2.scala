@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.collection.Bimap
-import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
+import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
@@ -50,6 +50,8 @@ import scala.collection.mutable.ListBuffer
 /// TODO: Explore change of basis.
 ///
 object EffUnification2 {
+
+  private val formatter: Formatter = Formatter.AnsiTerminalFormatter
 
   /**
     * Returns the most general unifier of the all the pairwise unification problems in `l`.
@@ -545,9 +547,9 @@ object EffUnification2 {
       * Returns a human-readable representation of `this` term.
       */
     override def toString: String = this match {
-      case Term.True => "true"
-      case Term.False => "false"
-      case Term.Cst(c) => s"c$c"
+      case Term.True => formatter.red("true")
+      case Term.False => formatter.red("false")
+      case Term.Cst(c) => formatter.blue(s"c$c")
       case Term.Var(x) => s"x$x"
       case Term.Not(f) => f match {
         case Term.Var(x) => s"¬x$x"
