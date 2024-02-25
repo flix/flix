@@ -108,7 +108,7 @@ object EffUnification2 {
     }
 
     private def printSubstitution(): Unit = {
-      println(s"Substitution (${currentSubst.m.size}):")
+      println(s"Substitution (${currentSubst.size}):")
       println(formatSubst(currentSubst))
     }
 
@@ -679,10 +679,18 @@ object EffUnification2 {
 
   }
 
-  // TODO: Rename to BoolSubst
+  /**
+    * Companion object of [[BoolSubstitution]].
+    */
   private object BoolSubstitution {
+    /**
+      * The empty substitution.
+      */
     val empty: BoolSubstitution = BoolSubstitution(Map.empty)
 
+    /**
+      * Returns a singleton substitution where the variable `x` is bound to the term `t`.
+      */
     def singleton(x: Int, t: Term): BoolSubstitution = empty.extended(x, t)
   }
 
@@ -693,24 +701,38 @@ object EffUnification2 {
     * `s: Term -> Term` that replaces every occurrence in the input term, which occurs in the domain of the
     * substitution, with its corresponding term from the co-domain.
     *
+    * We will often write a substitution as `[x -> t1, y -> t2]` and so forth. We write that `x -> t1` is a binding.
+    *
     * Note: constants and variables are a separate syntactic category. A substitution will never replace any constants.
     */
   private case class BoolSubstitution(m: Map[Int, Term]) {
 
-    // TODO: DOC
+    /**
+      * Applies `this` substitution to the given term `t`.
+      *
+      * We must use the smart constructors from [[Term]] to ensure that the constructed term is normalized.
+      */
     def apply(t: Term): Term = t match {
       case Term.True => Term.True
       case Term.False => Term.False
       case Term.Cst(c) => Term.Cst(c)
+
       case Term.Var(x) => m.get(x) match {
-        case None => Term.Var(x)
-        case Some(t0) => t0
+        case None => Term.Var(x) // Case 1: The substitution has a binding for `x`. Return the bound term.
+        case Some(t0) => t0 // Case 2: The substitution has no binding for `x`. Return the original term.
       }
-      case Term.Not(t) => Term.mkNot(this.apply(t))
+
+      case Term.Not(t0) => Term.mkNot(apply(t0))
+
       case Term.And(csts, vars, rest) =>
-        val ts = csts.toList ++ vars.toList ++ rest
-        Term.mkAnd(ts.map(this.apply)) // TODO: More efficient
-      case Term.Or(ts) => Term.mkOr(ts.map(this.apply))
+        // A conjunction is a sequence of: constants, variables, and terms. We know that the constants are unchanged by
+        // the substitution. We know that some variables may become constants, variables, or terms. Since we do not want
+        // to duplicate functionality from [[Term.mkAnd]], we simply apply the substitution to the variables and terms,
+        // and put everything in one list. We then let [[Term.mkAnd]] reclassify all the sub-terms.
+        val ts = csts.toList ++ vars.toList.map(apply) ++ rest.map(apply)
+        Term.mkAnd(ts)
+
+      case Term.Or(ts) => Term.mkOr(ts.map(apply))
     }
 
     /**
@@ -731,9 +753,21 @@ object EffUnification2 {
       */
     def apply(l: List[Equation]): List[Equation] = l.map(apply)
 
+    /**
+      * Returns the number of bindings in `this` substitution.
+      */
+    def size: Int = m.size
 
+    /**
+      * Extends `this` substitution with a new binding from the variable `x` to the term `t`.
+      *
+      * The variable `x` must not already be bound in the substitution.
+      */
+    def extended(x: Int, t: Term): BoolSubstitution = {
+      assert(!m.contains(x)) // ensure that x is not already bound.
+      BoolSubstitution(m + (x -> t))
+    }
 
-    def extended(x: Int, t: Term): BoolSubstitution = BoolSubstitution(m + (x -> t))
 
     def ++(that: BoolSubstitution): BoolSubstitution = {
       assert(this.m.keySet.intersect(that.m.keySet).isEmpty)
@@ -1024,31 +1058,31 @@ object EffUnification2 {
 
   // Iterator.toArray
   private def example09(): List[Equation] = List(
-    (((Cst(1500)) & (Cst(1501))) & (Cst(1498))) ~ (Var(78914)),
-    (Var(78914)) ~ ((Var(78917)) & ((Var(78923)) & (Var(78926)))),
-    (Var(78917)) ~ (Var(127244)),
-    (Var(78921)) ~ (Var(127251)),
-    (Var(78923)) ~ (((Var(127248)) & (Var(127247))) & (Var(127249))),
-    (Var(78926)) ~ ((Var(127254)) & (Var(127252)))
+    ((Cst(1500) & Cst(1501)) & Cst(1498)) ~ Var(78914),
+    Var(78914) ~ (Var(78917) & (Var(78923) & Var(78926))),
+    Var(78917) ~ Var(127244),
+    Var(78921) ~ Var(127251),
+    Var(78923) ~ ((Var(127248) & Var(127247)) & Var(127249)),
+    Var(78926) ~ (Var(127254) & Var(127252))
   )
 
   // Files.append
   private def example10(): List[Equation] = List(
-    (Cst(1794221043)) ~ (((Var(55040)) & ((Var(55042)) & ((Var(55046)) & ((Var(55050)) & ((Var(55058)) & ((Var(55060)) & ((Var(55062)) & ((Var(55066)) & (Var(55075)))))))))) & (Var(55078))),
-    (Var(55078)) ~ (Var(112431)),
-    (Var(55040)) ~ (Cst(1794221043)),
-    (Var(55042)) ~ (Var(112433)),
-    (Var(55044)) ~ (Var(112437)),
-    (Var(55046)) ~ ((Var(112435)) & (Var(55044))),
-    (Var(55048)) ~ (True),
-    (Var(55050)) ~ ((Var(112439)) & (Var(55048))),
-    (Var(55052)) ~ (Var(112443)),
-    (Var(55055)) ~ (True),
-    (Var(55058)) ~ ((Var(112441)) & ((Var(55052)) & (Var(55055)))),
-    (Var(55060)) ~ (Var(112446)),
-    (Var(55062)) ~ (Var(112448)),
-    (Var(55066)) ~ (True),
-    (Var(55075)) ~ (Var(112453))
+    Cst(1794221043) ~ ((Var(55040) & (Var(55042) & (Var(55046) & (Var(55050) & (Var(55058) & (Var(55060) & (Var(55062) & (Var(55066) & Var(55075))))))))) & Var(55078)),
+    Var(55078) ~ Var(112431),
+    Var(55040) ~ Cst(1794221043),
+    Var(55042) ~ Var(112433),
+    Var(55044) ~ Var(112437),
+    Var(55046) ~ (Var(112435) & Var(55044)),
+    Var(55048) ~ True,
+    Var(55050) ~ (Var(112439) & Var(55048)),
+    Var(55052) ~ Var(112443),
+    Var(55055) ~ True,
+    Var(55058) ~ (Var(112441) & (Var(55052) & Var(55055))),
+    Var(55060) ~ Var(112446),
+    Var(55062) ~ Var(112448),
+    Var(55066) ~ True,
+    Var(55075) ~ Var(112453)
   )
 
   def main(args: Array[String]): Unit = {
