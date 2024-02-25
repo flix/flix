@@ -196,7 +196,9 @@ object EffUnification2 {
     case Term.Cst(c) => m.getBackward(c).get
     case Term.Var(x) => m.getBackward(x).get
     case Term.Not(t) => Type.mkComplement(toType(t, loc), loc)
-    case Term.And(ts) => Type.mkIntersection(ts.map(toType(_, loc)), loc)
+    case Term.And(csts, vars, rest) =>
+      val ts = csts.toList.map(toType(_, loc)) ++ vars.toList.map(toType(_, loc)) ++ rest.map(toType(_, loc))
+      Type.mkIntersection(ts, loc)
     case Term.Or(ts) => Type.mkUnion(ts.map(toType(_, loc)), loc)
   }
 
@@ -271,9 +273,8 @@ object EffUnification2 {
             changed = true
 
           // Case 3: x /\ y /\ z /\... = true
-          case Equation(Term.And(ts), Term.True) if ts.forall(_.isVar) =>
-            val lhsVars = ts.map(_.asInstanceOf[Term.Var])
-            for (Term.Var(x) <- lhsVars) {
+          case Equation(Term.And(csts, vars, rest), Term.True) if csts.isEmpty && rest.isEmpty =>
+            for (Term.Var(x) <- vars) {
               currentSubst = currentSubst.extended(x, Term.True)
               changed = true
             }
@@ -446,7 +447,13 @@ object EffUnification2 {
     case Term.Var(x) => trueVars.contains(x)
     case Term.Not(t) => !evaluate(t, trueVars)
     case Term.Or(ts) => ts.foldLeft(false) { case (bacc, term) => bacc || evaluate(term, trueVars) }
-    case Term.And(ts) => ts.foldLeft(true) { case (bacc, term) => bacc && evaluate(term, trueVars) }
+    case Term.And(csts, vars, rest) =>
+      if (csts.nonEmpty) {
+        false
+      } else {
+        vars.forall(v => trueVars.contains(v)) && rest.foldLeft(true) { case (bacc, term) => bacc && evaluate(term, trueVars) }
+      }
+
   }
 
 
@@ -457,17 +464,15 @@ object EffUnification2 {
       case Term.Cst(c) => if (trueCsts.contains(c)) Term.True else Term.Cst(c)
       case Term.Var(x) => if (trueVars.contains(x)) Term.True else Term.Var(x)
       case Term.Not(t) => Term.mkNot(visit(t, trueCsts, trueVars))
-      case Term.And(ts) =>
-        val termCsts = ts.collect {
-          case t: Term.Cst => t.c
-        }.toSet
-        val termVars = ts.collect {
-          case t: Term.Var => t.x
-        }.toSet
+      case Term.And(csts0, vars0, rest0) =>
+        val termCsts = csts0.map(_.c)
+        val termVars = vars0.map(_.x)
         val currentCsts = trueCsts ++ termCsts
         val currentVars = trueVars ++ termVars
 
-        val rest = ts.collect {
+        val rest = rest0.collect {
+          case t: Term.Cst => ???
+          case t: Term.Var => ???
           case t: Term.Not => visit(t, currentCsts, currentVars)
           case t: Term.And => visit(t, currentCsts, currentVars)
           case t: Term.Or => visit(t, currentCsts, currentVars)
@@ -497,9 +502,7 @@ object EffUnification2 {
     case Term.Cst(c) => BoolFormula.Var(c)
     case Term.Var(x) => BoolFormula.Var(x)
     case Term.Not(t) => BoolFormula.Not(toFormula(t))
-    case Term.And(ts) => ts.foldRight(BoolFormula.True: BoolFormula) {
-      case (t, acc) => BoolFormula.And(toFormula(t), acc)
-    }
+    case Term.And(csts, vars, rest) => ??? /// TODO
     case Term.Or(ts) => ts.foldRight(BoolFormula.False: BoolFormula) {
       case (t, acc) => BoolFormula.Or(toFormula(t), acc)
     }
@@ -535,7 +538,7 @@ object EffUnification2 {
       case Term.Cst(_) => SortedSet.empty
       case Term.Var(x) => SortedSet(x)
       case Term.Not(t) => t.freeVars
-      case Term.And(ts) => ts.foldLeft(SortedSet.empty[Int])(_ ++ _.freeVars)
+      case Term.And(_, vars, rest) => rest.foldLeft(SortedSet.empty[Int])(_ ++ _.freeVars) ++ vars.map(_.x)
       case Term.Or(ts) => ts.foldLeft(SortedSet.empty[Int])(_ ++ _.freeVars)
     }
 
@@ -545,7 +548,7 @@ object EffUnification2 {
       case Term.Cst(_) => 0
       case Term.Var(_) => 1
       case Term.Not(t) => t.size + 1
-      case Term.And(ts) => ts.map(_.size).sum + (ts.length - 1)
+      case Term.And(csts, vars, rest) => (csts.size + vars.size + rest.map(_.size).sum) - 1
       case Term.Or(ts) => ts.map(_.size).sum + (ts.length - 1)
     }
 
@@ -558,7 +561,7 @@ object EffUnification2 {
         case Term.Var(x) => s"¬x$x"
         case _ => s"¬($f)"
       }
-      case Term.And(ts) => s"(${ts.mkString(" ∧ ")})"
+      case Term.And(csts, vars, rest) => s"(${(csts.toList ++ vars.toList ++ rest).mkString(" ∧ ")})" // TODO: Better?
       case Term.Or(ts) => s"(${ts.mkString(" ∨ ")})"
     }
 
@@ -576,9 +579,9 @@ object EffUnification2 {
 
     case class Not(t: Term) extends Term
 
-    // TODO: We should group csts, vars, and other.
-    case class And(ts: List[Term]) extends Term {
-      assert(ts.length >= 2)
+    case class And(csts: Set[Term.Cst], vars: Set[Term.Var], rest: List[Term]) extends Term { // TODO: SortedSets?
+      assert(!rest.exists(_.isInstanceOf[Term.Cst]))
+      assert(!rest.exists(_.isInstanceOf[Term.Var]))
     }
 
     case class Or(ts: List[Term]) extends Term {
@@ -612,31 +615,35 @@ object EffUnification2 {
       // TODO: Group cst and vars.
       val cstTerms = mutable.Set.empty[Term.Cst]
       val varTerms = mutable.Set.empty[Term.Var]
-      val nonVarTerms = mutable.ListBuffer.empty[Term]
+      val restTerms = mutable.ListBuffer.empty[Term]
       for (t <- ts) {
         t match {
           case True => // nop
           case False => return False
           case x@Term.Cst(_) => cstTerms += x
           case x@Term.Var(_) => varTerms += x
-          case And(ts0) =>
-            for (t0 <- ts0) {
+          case And(csts0, vars0, rest0) =>
+            cstTerms ++= csts0
+            varTerms ++= vars0
+            for (t0 <- rest0) {
               t0 match {
                 case True => // nop
                 case False => return False
                 case x@Term.Cst(_) => cstTerms += x
                 case x@Term.Var(_) => varTerms += x
-                case _ => nonVarTerms += t0
+                case _ => restTerms += t0
               }
             }
-          case _ => nonVarTerms += t
+          case _ => restTerms += t
         }
       }
 
-      cstTerms.toList ++ varTerms.toList ++ nonVarTerms.toList match {
-        case Nil => True
-        case x :: Nil => x
-        case xs => And(xs)
+      (cstTerms.toList, varTerms.toList, restTerms.toList) match { // TODO: Smarter?
+        case (Nil, Nil, Nil) => Term.True
+        case (List(t), Nil, Nil) => t
+        case (Nil, List(t), Nil) => t
+        case (Nil, Nil, List(t)) => t
+        case _ => And(cstTerms.toSet, varTerms.toSet, restTerms.toList)
       }
     }
 
@@ -689,7 +696,9 @@ object EffUnification2 {
         case Some(t0) => t0
       }
       case Term.Not(t) => Term.mkNot(this.apply(t))
-      case Term.And(ts) => Term.mkAnd(ts.map(this.apply))
+      case Term.And(csts, vars, rest) =>
+        val ts = csts.toList ++ vars.toList ++ rest
+        Term.mkAnd(ts.map(this.apply)) // TODO: More efficient
       case Term.Or(ts) => Term.mkOr(ts.map(this.apply))
     }
 
