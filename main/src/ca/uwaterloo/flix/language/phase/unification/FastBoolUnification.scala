@@ -16,8 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.util.collection.Bimap
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 
 import scala.collection.immutable.SortedSet
@@ -53,51 +52,10 @@ object FastBoolUnification {
 
   private val formatter: Formatter = Formatter.AnsiTerminalFormatter
 
-  /**
-    * Returns the most general unifier of the all the pairwise unification problems in `l`.
-    *
-    * Note: A type in `l` must not contain any associated effects.
-    */
-  def unifyAll(l: List[(Type, Type)], renv0: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-    // If the list is empty we can return immediately.
-    if (l.isEmpty) {
-      return Result.Ok(Substitution.empty)
-    }
-
-    val allVars = mutable.Set.empty[Type.Var]
-    for ((t1, t2) <- l) {
-      allVars ++= t1.typeVars
-      allVars ++= t2.typeVars
-    }
-    val forward = allVars.foldLeft(Map.empty[Type.Var, Int]) {
-      case (macc, tvar) => macc + (tvar -> tvar.sym.id)
-    }
-    val backward = allVars.foldLeft(Map.empty[Int, Type.Var]) {
-      case (macc, tvar) => macc + (tvar.sym.id -> tvar)
-    }
-    implicit val bimap: Bimap[Type.Var, Int] = Bimap(forward, backward)
-
-    val equations: List[Equation] = mkEquations(l, renv0)
-
-    solveAll(equations) match {
-      case Result.Ok(subst) =>
-        Result.Ok(subst.toSubst)
-
-      case Result.Err(ex) =>
-        val tpe1 = toType(ex.x, SourceLocation.Unknown)
-        val tpe2 = toType(ex.y, SourceLocation.Unknown)
-        Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
-    }
+  def solveAll(l: List[Equation])(implicit flix: Flix): Result[BoolSubstitution, ConflictException] = {
+    // TODO: Introduce small solver class.
+    new Solver(l).solve()
   }
-
-
-  /**
-    * Returns the list of pairwise unification problems `l` as a list of equations.
-    */
-  private def mkEquations(l: List[(Type, Type)], renv0: RigidityEnv)(implicit bimap: Bimap[Type.Var, Int]): List[Equation] =
-    l.map {
-      case (tpe1, tpe2) => Equation.mk(fromType(tpe1, bimap, renv0), fromType(tpe2, bimap, renv0))
-    }
 
   private class Solver(l: List[Equation]) {
 
@@ -187,42 +145,6 @@ object FastBoolUnification {
 
   }
 
-  private def solveAll(l: List[Equation])(implicit flix: Flix): Result[BoolSubstitution, ConflictException] = {
-    // TODO: Introduce small solver class.
-    new Solver(l).solve()
-  }
-
-  private def toType(t0: Term, loc: SourceLocation)(implicit m: Bimap[Type.Var, Int]): Type = t0 match {
-    case Term.True => Type.Pure
-    case Term.False => Type.Univ
-    case Term.Cst(c) => m.getBackward(c).get
-    case Term.Var(x) => m.getBackward(x).get
-    case Term.Not(t) => Type.mkComplement(toType(t, loc), loc)
-    case Term.And(csts, vars, rest) =>
-      val ts = csts.toList.map(toType(_, loc)) ++ vars.toList.map(toType(_, loc)) ++ rest.map(toType(_, loc))
-      Type.mkIntersection(ts, loc)
-    case Term.Or(ts) => Type.mkUnion(ts.map(toType(_, loc)), loc)
-  }
-
-  private def fromType(t: Type, env: Bimap[Type.Var, Int], renv: RigidityEnv): Term = Type.eraseTopAliases(t) match {
-    case t: Type.Var => env.getForward(t) match {
-      case None => throw InternalCompilerException(s"Unexpected unbound variable: '$t'.", t.loc)
-      case Some(x) => renv.get(t.sym) match {
-        case Rigidity.Flexible => Term.Var(x)
-        case Rigidity.Rigid => Term.Cst(x)
-      }
-    }
-    case Type.Cst(TypeConstructor.Effect(sym), _) => throw InternalCompilerException("Not yet", t.loc) // TODO
-    case Type.Pure => Term.True
-    case Type.Univ => Term.False
-    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Term.mkNot(fromType(tpe1, env, renv))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Term.mkAnd(fromType(tpe1, env, renv), fromType(tpe2, env, renv))
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Term.mkOr(fromType(tpe1, env, renv), fromType(tpe2, env, renv))
-    case Type.Cst(TypeConstructor.Error(_), _) => Term.True
-    case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
-  }
-
-  private case class ConflictException(x: Term, y: Term) extends RuntimeException
 
   /**
     * Checks for conflicts and removes any trivial equations.
@@ -345,7 +267,7 @@ object FastBoolUnification {
     (rest.reverse, currentSubst)
   }
 
-  private object Equation {
+  object Equation {
     // Normalize: Move vars left and true/false/constants right.
     def mk(t1: Term, t2: Term): Equation = (t1, t2) match {
       case (_, _: Term.Var) => Equation(t2, t1)
@@ -355,7 +277,7 @@ object FastBoolUnification {
     }
   }
 
-  private case class Equation(t1: Term, t2: Term) {
+  case class Equation(t1: Term, t2: Term) {
     def size: Int = t1.size + t2.size
   }
 
@@ -496,7 +418,7 @@ object FastBoolUnification {
   /**
     * A common super-type for Boolean terms.
     */
-  private sealed trait Term {
+  sealed trait Term {
 
     /**
       * Syntactic sugar for [[Term.mkAnd]].
@@ -561,7 +483,7 @@ object FastBoolUnification {
 
   }
 
-  private object Term {
+  object Term {
 
     case object True extends Term
 
@@ -676,7 +598,7 @@ object FastBoolUnification {
   /**
     * Companion object of [[BoolSubstitution]].
     */
-  private object BoolSubstitution {
+  object BoolSubstitution {
     /**
       * The empty substitution.
       */
@@ -699,7 +621,7 @@ object FastBoolUnification {
     *
     * Note: constants and variables are a separate syntactic category. A substitution will never replace any constants.
     */
-  private case class BoolSubstitution(m: Map[Int, Term]) {
+  case class BoolSubstitution(m: Map[Int, Term]) {
 
     /**
       * Applies `this` substitution to the given term `t`.
@@ -809,12 +731,6 @@ object FastBoolUnification {
       BoolSubstitution(result.toMap)
     }
 
-    def toSubst(implicit bimap: Bimap[Type.Var, Int]): Substitution = {
-      Substitution(m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
-        case (macc, (k, v)) => macc + (bimap.getBackward(k).get.sym -> toType(v, SourceLocation.Unknown))
-      })
-    }
-
     override def toString: String = {
       val indent = 4
 
@@ -842,6 +758,12 @@ object FastBoolUnification {
     }
     sb.toString()
   }
+
+
+  /**
+    * Represents a Boolean unification failure between the two terms: `x` and `y`.
+    */
+  case class ConflictException(x: Term, y: Term) extends RuntimeException
 
 
   /////////////////////////////////////////////////////////////////////////////
