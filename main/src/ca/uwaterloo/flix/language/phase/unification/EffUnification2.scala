@@ -567,6 +567,9 @@ object EffUnification2 {
       case Term.Or(ts) => ts.map(_.size).sum + (ts.length - 1)
     }
 
+    /**
+      * Returns a human-readable representation of `this` term.
+      */
     override def toString: String = this match {
       case Term.True => "true"
       case Term.False => "false"
@@ -576,7 +579,7 @@ object EffUnification2 {
         case Term.Var(x) => s"¬x$x"
         case _ => s"¬($f)"
       }
-      case Term.And(csts, vars, rest) => s"(${(csts.toList ++ vars.toList ++ rest).mkString(" ∧ ")})" // TODO: Better?
+      case Term.And(csts, vars, rest) => s"(${(csts.toList ++ vars.toList ++ rest).mkString(" ∧ ")})"
       case Term.Or(ts) => s"(${ts.mkString(" ∨ ")})"
     }
 
