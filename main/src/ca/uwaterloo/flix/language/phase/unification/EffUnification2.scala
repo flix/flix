@@ -779,14 +779,13 @@ object EffUnification2 {
     /**
       * Extends `this` substitution with a new binding from the variable `x` to the term `t`.
       *
-      * The variable `x` must not already be bound in the substitution.
+      * If the variable `x` already occurs in `this` substitution then it must be bound to the same term as `t`.
       */
-    def extended(x: Int, t: Term): BoolSubstitution = {
-      if (m.contains(x)) {
-        throw InternalCompilerException(s"Substitution already contains a binding for: $x.", SourceLocation.Unknown)
-      }
-
-      BoolSubstitution(m + (x -> t))
+    def extended(x: Int, t: Term): BoolSubstitution = m.get(x) match {
+      case None => BoolSubstitution(m + (x -> t))
+      case Some(t1) =>
+        // Note: If t == t1 we can just return the same substitution.
+        if (t == t1) this else throw ConflictException(t, t1)
     }
 
     /**
@@ -1112,16 +1111,16 @@ object EffUnification2 {
 
   def main(args: Array[String]): Unit = {
     implicit val flix: Flix = new Flix()
-    //solveAll(example01())
-    //solveAll(example02())
-    //solveAll(example03())
-    //solveAll(example04())
-    //solveAll(example05())
-    //solveAll(example06())
-    //solveAll(example07())
-    //solveAll(example08())
+    solveAll(example01())
+    solveAll(example02())
+    solveAll(example03())
+    solveAll(example04())
+    solveAll(example05())
+    solveAll(example06())
+    solveAll(example07())
+    solveAll(example08())
     solveAll(example09()) // hard
-    //solveAll(example10()) // very hard
+    solveAll(example10()) // very hard
   }
 
 
