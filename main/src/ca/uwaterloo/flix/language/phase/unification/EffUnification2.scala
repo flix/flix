@@ -517,20 +517,22 @@ object EffUnification2 {
     case BoolFormula.Or(f1, f2) => Term.mkOr(fromFormula(f1), fromFormula(f2))
   }
 
+  /**
+    * A common super-type for Boolean terms.
+    */
   private sealed trait Term {
 
-
-    def &(that: Term): Term = Term.mkAnd(this, that)
-
-    def ~(that: Term): Equation = Equation(this, that)
+    /**
+      * Syntactic sugar for [[Term.mkAnd]].
+      */
+    final def &(that: Term): Term = Term.mkAnd(this, that)
 
     /**
-      * Returns  `true` if `this` term is a variable.
+      * Syntactic sugar for [[Equation.mk]]
       */
-    final def isVar: Boolean = this match {
-      case Term.Var(_) => true
-      case _ => false
-    }
+    final def ~(that: Term): Equation = Equation.mk(this, that)
+
+
 
     final def freeVars: SortedSet[Int] = this match {
       case Term.True => SortedSet.empty
@@ -822,7 +824,7 @@ object EffUnification2 {
       })
     }
 
-    override def toString(): String = {
+    override def toString: String = {
       val indent = 4
 
       val sb = new StringBuilder()
