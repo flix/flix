@@ -49,7 +49,7 @@ import scala.collection.mutable.ListBuffer
 ///
 /// TODO: Explore change of basis.
 ///
-object EffUnification2 {
+object FastBoolUnification {
 
   private val formatter: Formatter = Formatter.AnsiTerminalFormatter
 
@@ -360,7 +360,7 @@ object EffUnification2 {
   }
 
   // TODO: Actually count occurrences.. Note that freeVars uses a set.
-  private def occurrenceInfo(l: List[EffUnification2.Equation]): Map[Int, Int] = {
+  private def occurrenceInfo(l: List[FastBoolUnification.Equation]): Map[Int, Int] = {
     val m = mutable.Map.empty[Int, Int]
     for (Equation(t1, t2) <- l) {
       val fvs = t1.freeVars ++ t2.freeVars
