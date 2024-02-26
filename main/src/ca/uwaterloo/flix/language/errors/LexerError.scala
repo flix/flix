@@ -24,6 +24,7 @@ sealed trait LexerError extends CompilationMessage {
 }
 
 object LexerError {
+
   /**
     * An error raised when block-comments are nested too deep.
     *
@@ -68,10 +69,10 @@ object LexerError {
   }
 
   /**
-   * An error raised when more than one `e` (used for scientific notation) is found in a number.
-   *
-   * @param loc The location of the double e number literal.
-   */
+    * An error raised when more than one `e` (used for scientific notation) is found in a number.
+    *
+    * @param loc The location of the double e number literal.
+    */
   case class DoubleEInNumber(loc: SourceLocation) extends LexerError {
     override def summary: String = s"Number has two scientific notation indicators."
 
