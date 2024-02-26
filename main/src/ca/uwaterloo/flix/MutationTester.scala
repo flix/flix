@@ -1,3 +1,18 @@
+/*
+ * Copyright 2015-2016 Magnus Madsen
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.api.Flix
@@ -28,6 +43,10 @@ object MutationTester {
             |mod Test {
             |    pub def one(): Int32 = 1
             |    pub def ite(b: Bool): Int32 = if(b) 1 else 2
+            |    pub def m(i: Int32): Int32 = match i {
+            |       case 1 => 100
+            |       case _ => 0
+            |    }
             |}""".stripMargin)
 
         flix.addSourceCode("tester",
@@ -39,10 +58,13 @@ object MutationTester {
             |    @test
             |    def testIte(): Bool =
             |       Assert.eq(1, Test.ite(true))
+            |    @test
+            |    def testMatch(): Bool =
+            |       Assert.eq(100, Test.m(1))
             |}""".stripMargin)
         val root = flix.check().unsafeGet
         val start = System.nanoTime()
-        val root1 = mutate(root, testee)
+        val root1 = mutateRoot(root, testee)
         val end = System.nanoTime() - start
         println("time to generate mutations: " + end.toString)
         runMutations(flix, root, root1)
@@ -52,7 +74,7 @@ object MutationTester {
         */
     }
 
-    def runMutations(flix: Flix, root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[TypedAst.Def])]): Unit = {
+    private def runMutations(flix: Flix, root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[TypedAst.Def])]): Unit = {
         val totalStartTime = System.nanoTime()
         var timeTemp = 0.0
         var survivorCount = 0
@@ -87,42 +109,61 @@ object MutationTester {
         println("average time to test a mutant: " + timeTemp/mutantCounter)
         println("total time to test all mutants: " + totalEndTime.toFloat / 1000000000)
     }
-    def mutate(root: TypedAst.Root, testee: String): List[(Symbol.DefnSym, List[TypedAst.Def])] = {
+    private def mutateRoot(root: TypedAst.Root, testee: String): List[(Symbol.DefnSym, List[TypedAst.Def])] = {
         val defs = root.defs
         val defSyms = root.modules.filter(pair => (pair._1.toString.equals(testee))).values.toList.flatten
         println(defSyms)
-        val mutatedDefs: List[Option[(Symbol.DefnSym, List[TypedAst.Def])]] = defs.toList.map(d => (d._1,d._2) match {
+        mutateDefs(defs, defSyms).flatten
+    }
+
+
+    private def mutateDefs(defs: Map[Symbol.DefnSym, TypedAst.Def], defSyms: List[Symbol]) = {
+        defs.toList.map(d => (d._1, d._2) match {
             case (s, fun) =>
                 if (defSyms.contains(s)) {
                     val mutExps = mutateExpr(fun.exp)
-                    val mutDefs = mutExps.map(mexp => TypedAst.Def(fun.sym, fun.spec, mexp))
+                    val mutDefs = mutExps.map(mexp => fun.copy(exp = mexp))
                     Some(d._1 -> mutDefs)
                 } else None
             case _ => None
         })
-        mutatedDefs.flatten
     }
 
-
-    def mutateExpr(e: TypedAst.Expr): List[TypedAst.Expr] = {
+    private def mutateExpr(e: TypedAst.Expr): List[TypedAst.Expr] =
         e match {
-            case Expr.Cst(cst, tpe, loc) => Expr.Cst(mutateCst(cst), tpe, loc) :: Nil
+            case Expr.Cst(cst, tpe, loc) =>
+                mutateCst(cst).map(m => Expr.Cst(m, tpe, loc))
             case Expr.Binary(sop, exp1, exp2, typ, eff, loc) =>
                 val mut1 = Expr.Binary(mutateSop(sop), exp1, exp2, typ, eff, loc)
                 val mut2 = mutateExpr(exp1).map(m => Expr.Binary(sop, m, exp2, typ, eff, loc))
                 val mut3 = mutateExpr(exp2).map(m => Expr.Binary(sop, exp1, m, typ, eff, loc))
                 mut1::mut2:::mut3
-            case Expr.IfThenElse(exp1, exp2, exp3,typ, eff, loc) =>
-                val mut1 = mutateExpr(exp1).map(m => Expr.IfThenElse(m, exp2, exp3, typ, eff, loc))
-                val mut2 = mutateExpr(exp2).map(m => Expr.IfThenElse(exp1, m, exp3, typ, eff, loc))
-                val mut3 = mutateExpr(exp3).map(m => Expr.IfThenElse(exp1, exp2, m, typ, eff, loc))
+            case original@Expr.IfThenElse(exp1, exp2, exp3,_, _, _) =>
+                val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+                val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+                val mut3 = mutateExpr(exp3).map(m => original.copy(exp3 = m))
                 mut1:::mut2:::mut3
             // var doesn't contain a subtree, and we don't mutate them so we don't need to return them
             case Expr.Var(_, _, _) => Nil
+            case original@Expr.Match(_, rules, _, _, _) =>
+                rules.map(r => mutateMatchrule(r)).map(m => original.copy(rules = m))
+
+            case e => List(e)
+        }
+
+
+    private def mutateMatchrule(mr: TypedAst.MatchRule): List[TypedAst.MatchRule] = {
+        val mutExps = mutateExpr(mr.exp).map(m => mr.copy(exp = m))
+        mutatePattern(mr.pat).foldLeft(mutExps)((acc, m) => mr.copy(pat = m)::acc)
+
+    }
+    private def mutatePattern(pattern: TypedAst.Pattern): List[TypedAst.Pattern] = {
+        pattern match {
+            case original@TypedAst.Pattern.Cst(cst, _, _) => mutateCst(cst).map(m => original.copy(m))
             case e => List(e)
         }
     }
-    def mutateSop(sop: SemanticOp): SemanticOp = {
+    private def mutateSop(sop: SemanticOp): SemanticOp = {
         sop match {
             case op: SemanticOp.BoolOp => op match {
                 case BoolOp.Not => BoolOp.Not
@@ -256,22 +297,22 @@ object MutationTester {
             }
         }
     }
-    def mutateCst(cst: Ast.Constant): Ast.Constant = {
+    private def mutateCst(cst: Ast.Constant): List[Ast.Constant] = {
         cst match {
-            case Constant.Unit => Constant.Unit
-            case Constant.Null => Constant.Null
-            case Constant.Bool(lit) => Constant.Bool(!lit)
-            case Constant.Char(lit) => Constant.Char((lit^Char.MaxValue).toChar)
-            case Constant.Float32(lit) => Constant.Float32(lit + 1)
-            case Constant.Float64(lit) => Constant.Float64(lit + 1)
-            case Constant.BigDecimal(lit) => Constant.BigDecimal(lit.add(java.math.BigDecimal.ONE))
-            case Constant.Int8(lit) => Constant.Int8(lit.+(1).toByte)
-            case Constant.Int16(lit) => Constant.Int16(lit.+(1).toShort)
-            case Constant.Int32(lit) => Constant.Int32(lit + 1)
-            case Constant.Int64(lit) => Constant.Int64(lit + 1)
-            case Constant.BigInt(lit) => Constant.BigInt(lit.add(lit))
-            case Constant.Str(lit) => Constant.Str(lit + "\b")
-            case Constant.Regex(lit) => Constant.Regex(java.util.regex.Pattern.compile("a"))
+            case Constant.Unit => Constant.Unit :: Nil
+            case Constant.Null => Constant.Null :: Nil
+            case Constant.Bool(lit) => Constant.Bool(!lit) :: Nil
+            case Constant.Char(lit) => Constant.Char((lit^Char.MaxValue).toChar) :: Nil
+            case Constant.Float32(lit) => Constant.Float32(lit + 1) :: Nil
+            case Constant.Float64(lit) => Constant.Float64(lit + 1) :: Nil
+            case Constant.BigDecimal(lit) => Constant.BigDecimal(lit.add(java.math.BigDecimal.ONE)) :: Nil
+            case Constant.Int8(lit) => Constant.Int8(lit.+(1).toByte) :: Nil
+            case Constant.Int16(lit) => Constant.Int16(lit.+(1).toShort) :: Nil
+            case Constant.Int32(lit) => Constant.Int32(lit + 1) :: Nil
+            case Constant.Int64(lit) => Constant.Int64(lit + 1) :: Nil
+            case Constant.BigInt(lit) => Constant.BigInt(lit.add(lit)) :: Nil
+            case Constant.Str(lit) => Constant.Str(lit + "\b") :: Nil
+            case Constant.Regex(lit) => Constant.Regex(java.util.regex.Pattern.compile("a")) :: Nil
         }
     }
 
