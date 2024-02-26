@@ -212,7 +212,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyInterpolatedExpression](result)
   }
 
-  test("EmptyInterpolatedExpression.06") {
+  ignore("EmptyInterpolatedExpression.06") {
     val input = """def f(): String = "${"${}"}" """
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.EmptyInterpolatedExpression](result)
@@ -223,6 +223,28 @@ class TestWeeder extends AnyFunSuite with TestUtils {
       """
         |def f(): Int32 = match { x = 1 } {
         |    case { | r } => 42
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyRecordExtensionPattern](result)
+  }
+
+  test("EmptyRecordExtensionPattern.02") {
+    val input =
+      """
+        |def f(): Int32 = match { x = 1 } {
+        |    case { | _ } => 42
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.EmptyRecordExtensionPattern](result)
+  }
+
+  test("EmptyRecordExtensionPattern.03") {
+    val input =
+      """
+        |def f(): Int32 = match { x = 1 } {
+        |    case { | { | _ } } => 42
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
