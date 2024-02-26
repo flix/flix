@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.LoweredAst.{Expr, Pattern}
+import ca.uwaterloo.flix.language.ast.MonoAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
@@ -31,7 +31,7 @@ object MonoTypes {
   /**
     * Performs monomorphization of enums on the given AST `root` and removes alias types.
     */
-  def run(root: LoweredAst.Root)(implicit flix: Flix): LoweredAst.Root = flix.phase("MonoTypes") {
+  def run(root: MonoAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("MonoTypes") {
     // Assumptions:
     // - All typeclass information have been transformed into defs - this
     //   phase only looks at types and expressions in defs.
@@ -43,35 +43,35 @@ object MonoTypes {
     //   - econstrs
 
     val defs = ParOps.parMapValues(root.defs)(visitDef)
-    root.copy(defs = defs, enums = Map.empty)
+    root.copy(defs = defs)
   }
 
   /**
-    * Returns a [[LoweredAst.Def]] with specialized enums and without aliases in its types.
+    * Returns a [[MonoAst.Def]] with specialized enums and without aliases in its types.
     */
-  private def visitDef(defn: LoweredAst.Def): LoweredAst.Def = defn match {
-    case LoweredAst.Def(sym, spec, exp) =>
+  private def visitDef(defn: MonoAst.Def): MonoAst.Def = defn match {
+    case MonoAst.Def(sym, spec, exp) =>
       val s = visitSpec(spec)
       val e = visitExp(exp)
-      LoweredAst.Def(sym, s, e)
+      MonoAst.Def(sym, s, e)
   }
 
   /**
-    * Returns a [[LoweredAst.Spec]] with specialized enums and without aliases in its types.
+    * Returns a [[MonoAst.Spec]] with specialized enums and without aliases in its types.
     */
-  private def visitSpec(spec: LoweredAst.Spec): LoweredAst.Spec = spec match {
-    case LoweredAst.Spec(doc, ann, mod, tparams, fparams, declaredScheme, retTpe, eff, tconstrs, loc) =>
+  private def visitSpec(spec: MonoAst.Spec): MonoAst.Spec = spec match {
+    case MonoAst.Spec(doc, ann, mod, fparams, functionType, retTpe, eff, loc) =>
       val fs = fparams.map(visitFormalParam)
-      val ds = visitScheme(declaredScheme)
+      val ft = visitType(functionType)
       val rt = visitType(retTpe)
       val p = visitType(eff)
-      LoweredAst.Spec(doc, ann, mod, tparams, fs, ds, rt, p, tconstrs, loc)
+      MonoAst.Spec(doc, ann, mod, fs, ft, rt, p, loc)
   }
 
   /**
     * Returns an expression with specialized enums and without aliases in its types
     */
-  private def visitExp(exp: LoweredAst.Expr): LoweredAst.Expr = exp match {
+  private def visitExp(exp: MonoAst.Expr): MonoAst.Expr = exp match {
     case Expr.Cst(cst, tpe, loc) =>
       val t = visitType(tpe)
       Expr.Cst(cst, t, loc)
@@ -153,11 +153,11 @@ object MonoTypes {
     case Expr.Match(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {
-        case LoweredAst.MatchRule(pat, guard, exp) =>
+        case MonoAst.MatchRule(pat, guard, exp) =>
           val p = visitPat(pat)
           val g = guard.map(visitExp)
           val e = visitExp(exp)
-          LoweredAst.MatchRule(p, g, e)
+          MonoAst.MatchRule(p, g, e)
       }
       val t = visitType(tpe)
       val p = visitType(eff)
@@ -166,10 +166,10 @@ object MonoTypes {
     case Expr.TypeMatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {
-        case LoweredAst.TypeMatchRule(sym, tpe, exp) =>
+        case MonoAst.TypeMatchRule(sym, tpe, exp) =>
           val t = visitType(tpe)
           val re = visitExp(exp)
-          LoweredAst.TypeMatchRule(sym, t, re)
+          MonoAst.TypeMatchRule(sym, t, re)
       }
       val t = visitType(tpe)
       val p = visitType(eff)
@@ -209,9 +209,9 @@ object MonoTypes {
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {
-        case LoweredAst.CatchRule(sym, clazz, exp) =>
+        case MonoAst.CatchRule(sym, clazz, exp) =>
           val re = visitExp(exp)
-          LoweredAst.CatchRule(sym, clazz, re)
+          MonoAst.CatchRule(sym, clazz, re)
       }
       val t = visitType(tpe)
       val p = visitType(eff)
@@ -220,10 +220,10 @@ object MonoTypes {
     case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) =>
       val e = visitExp(exp)
       val rs = rules.map {
-        case LoweredAst.HandlerRule(op, fparams, exp) =>
+        case MonoAst.HandlerRule(op, fparams, exp) =>
           val fs = fparams.map(visitFormalParam)
           val he = visitExp(exp)
-          LoweredAst.HandlerRule(op, fs, he)
+          MonoAst.HandlerRule(op, fs, he)
       }
       val t = visitType(tpe)
       val p = visitType(eff)
@@ -239,12 +239,12 @@ object MonoTypes {
       val t = visitType(tpe)
       val p = visitType(eff)
       val ms = methods.map {
-        case LoweredAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
+        case MonoAst.JvmMethod(ident, fparams, exp, retTpe, eff, loc) =>
           val fs = fparams.map(visitFormalParam)
           val me = visitExp(exp)
           val mt = visitType(retTpe)
           val mp = visitType(eff)
-          LoweredAst.JvmMethod(ident, fs, me, mt, mp, loc)
+          MonoAst.JvmMethod(ident, fs, me, mt, mp, loc)
       }
       Expr.NewObject(name, clazz, t, p, ms, loc)
   }
@@ -252,7 +252,7 @@ object MonoTypes {
   /**
     * Returns a pattern with specialized enums in its type and no aliases.
     */
-  private def visitPat(pat: LoweredAst.Pattern): LoweredAst.Pattern = pat match {
+  private def visitPat(pat: MonoAst.Pattern): MonoAst.Pattern = pat match {
     case Pattern.Wild(tpe, loc) =>
       val t = visitType(tpe)
       Pattern.Wild(t, loc)
@@ -325,21 +325,10 @@ object MonoTypes {
   /**
     * Returns a formal param with specialized enums in its type and no aliases.
     */
-  private def visitFormalParam(p: LoweredAst.FormalParam): LoweredAst.FormalParam = p match {
-    case LoweredAst.FormalParam(sym, mod, tpe, src, loc) =>
+  private def visitFormalParam(p: MonoAst.FormalParam): MonoAst.FormalParam = p match {
+    case MonoAst.FormalParam(sym, mod, tpe, src, loc) =>
       val t = visitType(tpe)
-      LoweredAst.FormalParam(sym, mod, t, src, loc)
-  }
-
-  /**
-    * Returns a scheme with specialized enums in its base and no aliases.
-    */
-  private def visitScheme(sc: Scheme): Scheme = sc match {
-    case Scheme(quantifiers, tconstrs, econstrs, base) =>
-      // Since the types are expected to be without variables,
-      // all fields except base should be "unused"/empty
-      val b = visitType(base)
-      Scheme(quantifiers, tconstrs, econstrs, b)
+      MonoAst.FormalParam(sym, mod, t, src, loc)
   }
 
 }

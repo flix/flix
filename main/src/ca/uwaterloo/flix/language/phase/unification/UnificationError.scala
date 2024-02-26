@@ -136,4 +136,12 @@ object UnificationError {
     */
   case class IrreducibleAssocType(sym: Symbol.AssocTypeSym, t: Type) extends UnificationError
 
+  /**
+    * A unification error resulting from a unification equation that is too complex to solve.
+    *
+    * @param tpe1 the lhs of the unification equation that is too complex.
+    * @param tpe2 the rhs of the unification equation that is too complex.
+    */
+  case class TooComplex(tpe1: Type, tpe2: Type) extends UnificationError
+
 }
