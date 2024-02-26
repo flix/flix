@@ -62,14 +62,17 @@ object FastBoolUnification {
     private var currentEqns = l
     private var currentSubst: BoolSubstitution = BoolSubstitution.empty
 
-    private def printEquations(): Unit = {
-      println(s"Equations (${currentEqns.size}):")
-      println(format(currentEqns))
-    }
-
-    private def printSubstitution(): Unit = {
-      println(s"Substitution (${currentSubst.size}):")
-      println(currentSubst.toString)
+    def solve()(implicit flix: Flix): Result[BoolSubstitution, ConflictException] = {
+      try {
+        phase0()
+        phase1()
+        phase2()
+        phase3()
+        phase4()
+        Result.Ok(currentSubst)
+      } catch {
+        case ex: ConflictException => Result.Err(ex)
+      }
     }
 
     private def phase0(): Unit = {
@@ -106,41 +109,39 @@ object FastBoolUnification {
       println()
     }
 
-    def solve()(implicit flix: Flix): Result[BoolSubstitution, ConflictException] = {
-      try {
-        phase0()
-        phase1()
-        phase2()
+    private def phase3(): Unit = {
+      println("-".repeat(80))
+      println("--- Phase 3: Variable Assignment")
+      println("    (resolves all equations of the form: x = t where x is free in t)")
+      println("-".repeat(80))
+      val (nextEqns2, nextSubst2) = varAssignment(currentEqns, currentSubst)
+      currentEqns = checkAndSimplify(nextEqns2)
+      currentSubst = nextSubst2
+      printEquations()
+      printSubstitution()
+      println()
+    }
 
-        println("-".repeat(80))
-        println("--- Phase 3: Variable Assignment")
-        println("    (resolves all equations of the form: x = t where x is free in t)")
-        println("-".repeat(80))
-        val (nextEqns2, nextSubst2) = varAssignment(currentEqns, currentSubst)
-        currentEqns = checkAndSimplify(nextEqns2)
-        currentSubst = nextSubst2
-        printEquations()
-        printSubstitution()
-        println()
+    private def phase4()(implicit flix: Flix): Unit = {
+      println("-".repeat(80))
+      println("--- Phase 4: Boolean Unification")
+      println("    (resolves all remaining equations using SVE.)")
+      println("-".repeat(80))
+      val restSubst = boolUnifyAll(currentEqns, Set.empty)
+      currentEqns = Nil
+      currentSubst = currentSubst @@ restSubst
+      printSubstitution()
+      println()
+    }
 
-        println("-- Result of Occurrence Analysis and Propagation -- ")
-        val occur = occurrenceInfo(currentEqns) // TODO: Introduce type, but also check in Subst.
-        println(occur)
-        println()
+    private def printEquations(): Unit = {
+      println(s"Equations (${currentEqns.size}):")
+      println(format(currentEqns))
+    }
 
-        println("-".repeat(80))
-        println("--- Phase 4: Boolean Unification")
-        println("    (resolves all remaining equations using SVE.)")
-        println("-".repeat(80))
-        val restSubst = boolUnifyAll(currentEqns, Set.empty)
-        currentEqns = Nil
-        currentSubst = currentSubst @@ restSubst
-        printSubstitution()
-        println()
-        Result.Ok(currentSubst)
-      } catch {
-        case ex: ConflictException => Result.Err(ex)
-      }
+    private def printSubstitution(): Unit = {
+      println(s"Substitution (${currentSubst.size}):")
+      println(currentSubst.toString)
     }
 
   }
@@ -281,19 +282,6 @@ object FastBoolUnification {
     def size: Int = t1.size + t2.size
   }
 
-  // TODO: Actually count occurrences.. Note that freeVars uses a set.
-  private def occurrenceInfo(l: List[FastBoolUnification.Equation]): Map[Int, Int] = {
-    val m = mutable.Map.empty[Int, Int]
-    for (Equation(t1, t2) <- l) {
-      val fvs = t1.freeVars ++ t2.freeVars
-      for (x <- fvs) {
-        val newCount = m.getOrElse(x, 0) + 1
-        m += (x -> newCount)
-      }
-    }
-    m.toMap
-  }
-
   private def boolUnifyAll(l: List[Equation], renv: Set[Int])(implicit flix: Flix): BoolSubstitution = l match {
     case Nil => BoolSubstitution.empty
     case Equation(t1, t2) :: xs =>
@@ -349,14 +337,14 @@ object FastBoolUnification {
   }
 
   /**
-   * Returns `true` if the given term `t` is satisfiable, i.e. if there is an assignment to its free variables that
-   * makes the whole term evaluate to true.
-   *
-   * Note that a constant can never be satisfied because we do not know if it is true or false.
-   *
-   * A smarter implementation would use a full-blown SAT solver, but since this function is rarely called and typically
-   * called with a small term, we use a very naive implementation.
-   */
+    * Returns `true` if the given term `t` is satisfiable, i.e. if there is an assignment to its free variables that
+    * makes the whole term evaluate to true.
+    *
+    * Note that a constant can never be satisfied because we do not know if it is true or false.
+    *
+    * A smarter implementation would use a full-blown SAT solver, but since this function is rarely called and typically
+    * called with a small term, we use a very naive implementation.
+    */
   private def satisfiable(t: Term): Boolean = t match {
     case Term.True => true // A true term is already satisfied.
     case Term.Var(_) => true // A variable is trivially satisfiable.
@@ -365,10 +353,10 @@ object FastBoolUnification {
   }
 
   /**
-   * Evaluates the given term `t` under all valuations of the free variables `fvs` where `trueVars` are assumed to be true.
-   *
-   * For each variable `x`, the function recursively explores both when `x` is true and when `x` is false.
-   */
+    * Evaluates the given term `t` under all valuations of the free variables `fvs` where `trueVars` are assumed to be true.
+    *
+    * For each variable `x`, the function recursively explores both when `x` is true and when `x` is false.
+    */
   private def evaluateAll(t: Term, fvs: List[Int], trueVars: SortedSet[Int]): Boolean = fvs match {
     case Nil =>
       // All variables are bound. Compute the truth value.
@@ -379,8 +367,8 @@ object FastBoolUnification {
   }
 
   /**
-   * Returns `true` if the given term `t` evaluates to true when all variables in `trueVars` are true and all other variables are false.
-   */
+    * Returns `true` if the given term `t` evaluates to true when all variables in `trueVars` are true and all other variables are false.
+    */
   private def evaluate(t: Term, trueVars: SortedSet[Int]): Boolean = t match {
     case Term.True => true
     case Term.False => false
@@ -427,7 +415,7 @@ object FastBoolUnification {
             throw InternalCompilerException("Unexpected constant", SourceLocation.Unknown)
           case _: Term.Var =>
             // Cannot happen because the invariant of [[Term.mkAnd]] ensures there are no variables in `rest`.
-          throw InternalCompilerException("Unexpected variable", SourceLocation.Unknown)
+            throw InternalCompilerException("Unexpected variable", SourceLocation.Unknown)
         }
 
         // Compute the constants and variables that do not already hold.
