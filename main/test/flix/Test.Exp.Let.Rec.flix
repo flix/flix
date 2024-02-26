@@ -1,4 +1,3 @@
-def main(): Bool = Test.Exp.LetRec.testLetRecNested01()
 mod Test.Exp.LetRec {
 
     ///
@@ -63,7 +62,7 @@ mod Test.Exp.LetRec {
     /// Nested Let Recs.
     ///
     @test
-    pub def testLetRecNested01(): Bool =
+    def testLetRecNested01(): Bool =
         def outer(n) = {
             def inner(m) = if (m == 0) 0 else inner(m - 1);
             inner(n)
