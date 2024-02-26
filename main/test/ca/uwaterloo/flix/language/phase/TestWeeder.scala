@@ -1521,6 +1521,17 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MissingTypeParamKind](result)
   }
 
+  test("MissingTypeParamKind.03") {
+    val input =
+      """
+        |instance A[a: Type] {
+        |    pub def f[a](x: a): Int32 = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MissingTypeParamKind](result)
+  }
+
   test("NonLinearPattern.01") {
     val input =
       """def f(): Bool = match (21, 42) {
