@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.unification.FastBoolUnification.{Equation, Term, solveAll}
+import ca.uwaterloo.flix.language.phase.unification.FastBoolUnification.{Equation, Term}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -28,7 +28,7 @@ object EffUnification2 {
   /**
     * Returns the most general unifier of the pairwise unification equations in `l`.
     */
-  def unifyAll(l: List[(Type, Type)], renv: RigidityEnv)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unifyAll(l: List[(Type, Type)], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // Compute a bi-directional from type variables to ints.
     implicit val bimap: Bimap[Type.Var, Int] = mkBidirectionalVarMap(l)
 
@@ -36,12 +36,12 @@ object EffUnification2 {
     val equations = l.map(toEquation(_)(renv, bimap))
 
     // Compute the most-general unifier of all the term equations.
-    solveAll(equations) match {
+    FastBoolUnification.solveAll(equations) match {
       case Result.Ok(subst) => Result.Ok(fromBoolSubst(subst))
 
-      case Result.Err(ex) =>
-        val tpe1 = fromTerm(ex.x, SourceLocation.Unknown) // TODO: Add more precise source locations.
-        val tpe2 = fromTerm(ex.y, SourceLocation.Unknown) // TODO: Add more precise source locations.
+      case Result.Err(ex) => // TODO: Use loc from ex.
+        val tpe1 = fromTerm(ex.x, loc)
+        val tpe2 = fromTerm(ex.y, loc)
         Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
     }
   }
@@ -96,13 +96,9 @@ object EffUnification2 {
       }
     }
 
-    case Type.Cst(TypeConstructor.Effect(sym), _) => throw InternalCompilerException("Not yet", t.loc) // TODO: What should be done here?
-
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => Term.mkNot(toTerm(tpe1))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) => Term.mkAnd(toTerm(tpe1), toTerm(tpe2))
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), tpe1, _), tpe2, _) => Term.mkOr(toTerm(tpe1), toTerm(tpe2))
-
-    case Type.Cst(TypeConstructor.Error(_), _) => Term.True // TODO: What?
 
     case _ => throw InternalCompilerException(s"Unexpected type: '$t'.", t.loc)
   }

@@ -24,7 +24,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 ///
-/// Type Inference with Boolean Unification Done Right
+/// Fast Type Inference with Systems of Boolean Unification Equations
 ///
 /// Work smarter, not harder -- Proverb
 ///
@@ -44,9 +44,9 @@ import scala.collection.mutable.ListBuffer
 ///   - We try to move single variables to the lhs.
 ///   - We try to move ground terms to the RHS.
 ///
-
 ///
-/// TODO: Explore change of basis.
+/// Future Ideas:
+/// - Explore change of basis.
 ///
 object FastBoolUnification {
 
@@ -348,36 +348,59 @@ object FastBoolUnification {
       st ++ se
   }
 
+  /**
+   * Returns `true` if the given term `t` is satisfiable, i.e. if there is an assignment to its free variables that
+   * makes the whole term evaluate to true.
+   *
+   * Note that a constant can never be satisfied because we do not know if it is true or false.
+   *
+   * A smarter implementation would use a full-blown SAT solver, but since this function is rarely called and typically
+   * called with a small term, we use a very naive implementation.
+   */
   private def satisfiable(t: Term): Boolean = t match {
-    case Term.True => true
-    case Term.Var(_) => true
-    case Term.False => false
-    case _ => evaluateAll(t, t.freeVars.toList, List.empty)
+    case Term.True => true // A true term is already satisfied.
+    case Term.Var(_) => true // A variable is trivially satisfiable.
+    case Term.False => false // A false term can never be satisfied.
+    case _ => evaluateAll(t, t.freeVars.toList, SortedSet.empty) // Evaluate t on all its valuations.
   }
 
-  private def evaluateAll(f: Term, l: List[Int], env: List[Int]): Boolean = l match {
+  /**
+   * Evaluates the given term `t` under all valuations of the free variables `fvs` where `trueVars` are assumed to be true.
+   *
+   * For each variable `x`, the function recursively explores both when `x` is true and when `x` is false.
+   */
+  private def evaluateAll(t: Term, fvs: List[Int], trueVars: SortedSet[Int]): Boolean = fvs match {
     case Nil =>
       // All variables are bound. Compute the truth value.
-      evaluate(f, env)
+      evaluate(t, trueVars)
     case x :: xs =>
-      // Recurse on two cases: x = false and x = true.
-      evaluateAll(f, xs, env) || evaluateAll(f, xs, x :: env)
+      // Recurse on two cases: x = true and x = false.
+      evaluateAll(t, xs, trueVars + x) || evaluateAll(t, xs, trueVars)
   }
 
-  private def evaluate(t: Term, trueVars: List[Int]): Boolean = t match {
+  /**
+   * Returns `true` if the given term `t` evaluates to true when all variables in `trueVars` are true and all other variables are false.
+   */
+  private def evaluate(t: Term, trueVars: SortedSet[Int]): Boolean = t match {
     case Term.True => true
     case Term.False => false
     case Term.Cst(_) => false
     case Term.Var(x) => trueVars.contains(x)
     case Term.Not(t) => !evaluate(t, trueVars)
-    case Term.Or(ts) => ts.foldLeft(false) { case (bacc, term) => bacc || evaluate(term, trueVars) }
+
     case Term.And(csts, vars, rest) =>
       if (csts.nonEmpty) {
+        // Case 1: If there is a constant then the term may be unsatisfiable.
         false
       } else {
-        vars.forall(v => trueVars.contains(v)) && rest.foldLeft(true) { case (bacc, term) => bacc && evaluate(term, trueVars) }
+        // Case 2: We know that csts is empty.
+        // We must ensure that all variables are true and that all sub-terms evaluate to true.
+        val allVarsTrue = vars.forall(v => trueVars.contains(v.x))
+        val allRestTrue = rest.foldLeft(true) { case (bacc, t0) => bacc && evaluate(t0, trueVars) }
+        allVarsTrue && allRestTrue
       }
 
+    case Term.Or(ts) => ts.foldLeft(false) { case (bacc, term) => bacc || evaluate(term, trueVars) }
   }
 
 
@@ -763,7 +786,7 @@ object FastBoolUnification {
   /**
     * Represents a Boolean unification failure between the two terms: `x` and `y`.
     */
-  case class ConflictException(x: Term, y: Term) extends RuntimeException
+  case class ConflictException(x: Term, y: Term) extends RuntimeException // TODO: Add loc
 
 
   /////////////////////////////////////////////////////////////////////////////
