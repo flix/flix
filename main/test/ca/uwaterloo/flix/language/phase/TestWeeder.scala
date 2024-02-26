@@ -1802,4 +1802,19 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.UnqualifiedUse](result)
   }
+
+  test("UnqualifiedUse.03") {
+    val input =
+      """
+        |def f(): String = {
+        |  def g() = {
+        |      use g;
+        |      ???
+        |  };
+        |  ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UnqualifiedUse](result)
+  }
 }
