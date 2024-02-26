@@ -310,6 +310,17 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectTypeParams](result)
   }
 
+  test("IllegalEffectTypeParams.03") {
+    val input =
+      """
+        |eff MyEffect[a] {
+        |    def op[b](x: a, y: b): Unit
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectTypeParams](result)
+  }
+
   test("IllegalEffectfulOperation.01") {
     val input =
       """
