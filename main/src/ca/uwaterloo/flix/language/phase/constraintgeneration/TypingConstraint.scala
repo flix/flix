@@ -18,8 +18,15 @@ package ca.uwaterloo.flix.language.phase.constraintgeneration
 import ca.uwaterloo.flix.language.ast.{Kind, Level, SourceLocation, Symbol, Type}
 
 
+/**
+  * A constraint generated via type inference.
+  */
 sealed trait TypingConstraint {
 
+  /**
+    * The index indicates the order in which constraints will be evaluated.
+    * A constraint with a lower index is reduced first if possible.
+    */
   lazy val index: (Int, Int, Int) = this match {
     case TypingConstraint.Equality(_: Type.Var, Type.Pure, _) => (0, 0, 0)
     case TypingConstraint.Equality(Type.Pure, _: Type.Var, _) => (0, 0, 0)
@@ -49,15 +56,37 @@ sealed trait TypingConstraint {
 
 object TypingConstraint {
 
-  // tpe1 ~ tpe2
+  /**
+    * A constraint indicating the equivalence of two types.
+    * {{{
+    *   tpe1 ~ tpe2
+    * }}}
+    */
   case class Equality(tpe1: Type, tpe2: Type, prov: Provenance) extends TypingConstraint {
     def loc = prov.loc
   }
 
-  // sym[tpe]
+  /**
+    * A constraint indicating that the given type is a member of the given class.
+    * {{{
+    *   sym[tpe]
+    * }}}
+    */
   case class Class(sym: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypingConstraint
 
-  // eff1 ~ eff2[symˡᵉᵛᵉˡ ↦ Pure] ∧ nested
+  /**
+    * A constraint indicating that:
+    * - `eff1` is equivalent to `eff2` when the region `sym` is purified in `eff2`, and
+    * - the nested constraints all hold
+    *
+    * This constraint arises when exiting a region.
+    * All nested constraints must be resolved before determining the equality of `eff1` and `eff2`,
+    * because the nested constraints influence `eff2`.
+    *
+    * {{{
+    *   eff1 ~ eff2[sym ↦ Pure] ∧ nested
+    * }}}
+    */
   case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, level: Level, prov: Provenance, nested: List[TypingConstraint]) extends TypingConstraint {
     def loc = prov.loc
   }
