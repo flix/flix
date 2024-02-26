@@ -388,6 +388,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
+  test("IllegalEnum.03") {
+    val input =
+      """
+        |enum E(a) { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEnum](result)
+  }
+
   test("IllegalEqualityConstraint.01") {
     val input =
       """
