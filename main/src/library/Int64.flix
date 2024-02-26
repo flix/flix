@@ -63,7 +63,7 @@ mod Int64 {
     /// Returns the Euclidean modulo of `x` and `n`.
     /// The result is always non-negative.
     ///
-    pub def mod(x: Int64, n: Int64): Int64 =
+    pub def modulo(x: Int64, n: Int64): Int64 =
         if (n == 0i64)
             0i64
         else
@@ -73,9 +73,9 @@ mod Int64 {
     /// Returns the remainder of `x / n`.
     /// The result can be negative.
     ///
-    /// See also `Int64.mod`.
+    /// See also `Int64.modulo`.
     ///
-    pub def rem(x: Int64, n: Int64): Int64 =
+    pub def remainder(x: Int64, n: Int64): Int64 =
         if (n == 0i64)
             0i64
         else
@@ -120,7 +120,7 @@ mod Int64 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int64): Int64 =
-        if (x < 0i64 and Int32.rem(dist.dist, size()) != 0)
+        if (x < 0i64 and Int32.remainder(dist.dist, size()) != 0)
             rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), (dist.dist - 1))
         else
             rightShift(x, dist.dist)
@@ -131,7 +131,7 @@ mod Int64 {
     ///
     pub def bitCount(x: Int64): Int32 = {
         if      (x == 0i64)            0
-        else if (x `rem` 2i64 != 0i64) bitCount(logicalRightShift(dist = 1, x)) + 1
+        else if (x `remainder` 2i64 != 0i64) bitCount(logicalRightShift(dist = 1, x)) + 1
         else                           bitCount(logicalRightShift(dist = 1, x))
     }
 
@@ -247,7 +247,7 @@ mod Int64 {
     /// The bits of x have positions: 0 (rightmost bit) - 63 (leftmost bit).
     ///
     pub def getBit(pos: {pos = Int32}, x: Int64): Int32 =
-        if (rightShift(x, pos.pos) `rem` 2i64 == 0i64) 0 else 1
+        if (rightShift(x, pos.pos) `remainder` 2i64 == 0i64) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `position` set (to 1).

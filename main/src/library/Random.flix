@@ -25,7 +25,7 @@ mod Random {
     ///
     /// Returns `None` if the given array `a` is empty.
     ///
-    pub def choose(r: Random, a: Array[a, r]): Option[a] \ { IO, r } =
+    pub def oneOf(r: Random, a: Array[a, r]): Option[a] \ { IO, r } =
         if (Array.length(a) == 0) {
             None
         } else {
