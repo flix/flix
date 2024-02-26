@@ -65,8 +65,6 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.DoubleDottedNumber](result)
   }
 
-  // DoubleEInNumber
-
   test("LexerError.StringInterpolationTooDeep.01") {
     val input = """ "${"${"${"${"${"${"${"${"${"${"${"${"${"${"${${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}}"}"}"}"}"}"}"}"}"}"}"}"}"}"}" """
     val result = compile(input, Options.TestWithLibNix)
