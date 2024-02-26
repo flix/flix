@@ -69,6 +69,27 @@ object LexerError {
   }
 
   /**
+    * An error raised when more than one `e` (used for scientific notation) is found in a number.
+    *
+    * @param loc The location of the double e number literal.
+    */
+  case class DoubleEInNumber(loc: SourceLocation) extends LexerError with Unrecoverable {
+    override def summary: String = s"Number has two scientific notation indicators."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Number has two scientific notation indicators.
+         |
+         |${code(loc, "Second 'e' is here.")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised when block-comments are nested too deep.
     *
     * @param loc The location of the opening "${".
