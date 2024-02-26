@@ -88,13 +88,21 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.UnexpectedChar.02") {
-    val input = "⟹"
+    val input = "⟂"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnexpectedChar](result)
   }
 
   test("LexerError.UnexpectedChar.03") {
-    val input = "⟂"
+    // Unicode hex U+2189, just below valid math unicode char
+    val input = "↉"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnexpectedChar](result)
+  }
+
+  test("LexerError.UnexpectedChar.04") {
+    // Unicode hex U+2300, just above valid math unicode char
+    val input = "⌀"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnexpectedChar](result)
   }
