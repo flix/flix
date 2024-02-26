@@ -180,7 +180,11 @@ object FastBoolUnification {
       case (Term.True, Term.False) => throw ConflictException(t1, t2)
       case (Term.False, Term.True) => throw ConflictException(t1, t2)
       case (Term.Cst(c1), Term.Cst(c2)) if c1 != c2 => throw ConflictException(t1, t2)
-      // TODO
+      // Note: two different variables are of course solvable!
+      case (Term.Cst(_), Term.True) => throw ConflictException(t1, t2)
+      case (Term.Cst(_), Term.False) => throw ConflictException(t1, t2)
+      case (Term.True, Term.Cst(_)) => throw ConflictException(t1, t2)
+      case (Term.False, Term.Cst(_)) => throw ConflictException(t1, t2)
 
       // Non-trivial and non-conflicted equation: keep it.
       case _ => Equation(t1, t2) :: simplify(es)
