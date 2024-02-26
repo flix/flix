@@ -144,11 +144,8 @@ object Lexer {
     val errors = s.tokens.collect {
       case Token(TokenKind.Err(err), _, _, _, _, _, _, _) => err
     }
-    if (errors.isEmpty) {
-      Validation.success(s.tokens.toArray)
-    } else {
-      Validation.SoftFailure(s.tokens.toArray, Chain.from(errors))
-    }
+
+    Validation.toSuccessOrSoftFailure(s.tokens.toArray, errors)
   }
 
   /**
