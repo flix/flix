@@ -670,6 +670,30 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalFormalParamAscription](result)
   }
 
+  test("IllegalFormalParamAscription.02") {
+    val input =
+      """
+        |def f(): String =
+        |    try ??? with Fail {
+        |        def fail(x: a) = "hello"
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalFormalParamAscription](result)
+  }
+
+  test("IllegalFormalParamAscription.03") {
+    val input =
+      """
+        |def f(): String =
+        |    try ??? with Fail {
+        |        def fail(_: Int32) = "hello"
+        |    }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalFormalParamAscription](result)
+  }
+
   test("IllegalModifier.01") {
     val input =
       """
