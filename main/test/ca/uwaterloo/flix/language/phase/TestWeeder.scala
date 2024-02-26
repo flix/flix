@@ -343,6 +343,31 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectfulOperation](result)
   }
 
+  test("IllegalEffectfulOperation.03") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit \ ef
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectfulOperation](result)
+  }
+
+  test("IllegalEffectfulOperation.04") {
+    val input =
+      """
+        |eff A {
+        |    pub def op(): Unit
+        |}
+        |eff E {
+        |    def op(): Unit \ A
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectfulOperation](result)
+  }
+
   test("IllegalEnum.01") {
     val input =
       """
