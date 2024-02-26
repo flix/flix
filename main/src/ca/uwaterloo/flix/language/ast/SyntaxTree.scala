@@ -86,6 +86,8 @@ object SyntaxTree {
 
     case object CommentList extends TreeKind
 
+    case object DerivationList extends Type
+
     case object Doc extends TreeKind
 
     case object Ident extends TreeKind
@@ -346,8 +348,6 @@ object SyntaxTree {
       case object Constraint extends Type
 
       case object ConstraintList extends Type
-
-      case object DerivationList extends Type
 
       case object EffectSet extends Type
 
