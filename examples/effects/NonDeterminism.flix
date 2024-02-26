@@ -37,7 +37,6 @@ mod EffectExamples.NonDeterminism {
             def decide(k) = k(true) ++ k(false)
         }
 
-
     pub def chooseInt(m: Int32, n: Int32): Int32 \ Failure + Decision =
         if (m > n)
             do Failure.fail()
@@ -88,6 +87,11 @@ mod EffectExamples.NonDeterminism {
                 }
         }
 
+    pub def chooseOne(l: List[a]): a \ Decision + Failure = match l {
+        case Nil     => do Failure.fail()
+        case x :: xs => if (decide()) x else chooseOne(xs)
+    }
+
     @Test
     pub def testChooseTrue01(): Bool =
         let x = chooseTrue(() -> if (decide()) 10 else 20);
@@ -119,7 +123,22 @@ mod EffectExamples.NonDeterminism {
 
    @Test
    pub def testPythagorean01(): Bool =
-       let res = try { backtrack(() -> pythagorean(5, 15)) } with Failure { def fail(_) = ??? };
-       Assert.eq((5, 15, 10), res)
+       let res =
+            try {
+                backtrack(() -> pythagorean(5, 15))
+            } with Failure {
+                def fail(_) = (-1, -1, -1)
+            };
+       Assert.eq((9, 12, 15), res)
+
+   @Test
+   pub def testPythagorean02(): Bool =
+       let res = chooseAll(() -> pythagorean(3, 4));
+       Assert.eq((3, 4, 5) :: Nil, res)
+
+   @Test
+   pub def testPythagorean03(): Bool =
+       let res = chooseAll(() -> pythagorean(5, 15));
+       Assert.eq((5, 12, 13) :: (6, 8, 10) :: (8, 15, 17) :: (9, 12, 15) :: Nil, res)
 
 }
