@@ -1236,6 +1236,24 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedIdentifier](result)
   }
 
+  test("MalformedIdentifier.02") {
+    val input =
+      """
+        |import java.util.{Locale$Builder}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedIdentifier](result)
+  }
+
+  test("MalformedIdentifier.03") {
+    val input =
+      """
+        |import java.util.{LocaleBuilder, Locale$Builder}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedIdentifier](result)
+  }
+
   test("MalformedInt16.01") {
     val input = "def f(): Int16 = -100000i16"
     val result = compile(input, Options.TestWithLibNix)
