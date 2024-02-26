@@ -1145,6 +1145,28 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalUse](result)
   }
 
+  test("IllegalUse.Alias.03") {
+    val input =
+      """
+        |mod N {
+        |    use M.{E => e}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUse](result)
+  }
+
+  test("IllegalUse.Alias.04") {
+    val input =
+      """
+        |mod B {
+        |    use M.{e => A}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUse](result)
+  }
+
   test("MalformedChar.Char.01") {
     val input =
       """
