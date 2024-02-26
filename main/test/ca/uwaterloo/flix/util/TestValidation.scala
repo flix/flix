@@ -295,7 +295,7 @@ class TestValidation extends AnyFunSuite {
         }
       }
     }
-    assertResult(Validation.toSoftFailure("OOFOOF", Seq(DummyRecoverable(1), DummyRecoverable(1))))(result)
+    assertResult(Validation.toSuccessOrSoftFailure("OOFOOF", Seq(DummyRecoverable(1), DummyRecoverable(1))))(result)
   }
 
   test("flatMap04") {
@@ -356,19 +356,19 @@ class TestValidation extends AnyFunSuite {
     val result = traverse(List(1, 2, 3)) {
       case x => if (x % 2 == 1) Validation.toSoftFailure(x, DummyRecoverable(-1)) else Validation.toSoftFailure(-1, DummyRecoverable(x))
     }
-    assertResult(Validation.toSoftFailure(List(1, -1, 3), Chain(-1, 2, -1)))(result)
+    assertResult(Validation.toSuccessOrSoftFailure(List(1, -1, 3), Seq(DummyRecoverable(-1), DummyRecoverable(2), DummyRecoverable(-1))))(result)
   }
 
   test("traverse05") {
     val result = traverse(List(1, 2, 3)) {
       case x => if (x % 2 == 1) Validation.success(x) else Validation.toSoftFailure(-1, DummyRecoverable(x))
     }
-    assertResult(Validation.toSoftFailure(List(1, -1, 3), Chain(2)))(result)
+    assertResult(Validation.toSuccessOrSoftFailure(List(1, -1, 3), Seq(DummyRecoverable(2))))(result)
   }
 
   test("traverse06") {
     val result = traverse(List(1, 2, 3, 4, 5)) {
-      case x => if (x % 2 == 1) Validation.toSoftFailure(x, Chain(-x)) else HardFailure(Chain(x))
+      case x => if (x % 2 == 1) Validation.toSoftFailure(x, DummyRecoverable(-x)) else HardFailure(Chain(DummyRecoverable(x)))
     }
     assertResult(HardFailure(Chain(-1, 2, -3, 4, -5)))(result)
   }
