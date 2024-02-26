@@ -88,7 +88,13 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.UnexpectedChar.02") {
-    val input = "€"
+    val input = "⟹"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnexpectedChar](result)
+  }
+
+  test("LexerError.UnexpectedChar.03") {
+    val input = "⟂"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnexpectedChar](result)
   }
