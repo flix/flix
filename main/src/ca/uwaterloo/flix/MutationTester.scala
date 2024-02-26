@@ -104,17 +104,20 @@ object MutationTester {
                         case _: Throwable => false
                     }
                 )
-                timeTemp += (System.nanoTime() - start).toFloat / 1000000000
+                timeTemp += (System.nanoTime() - start).toFloat / 1_000_000_000
                 if (testResults) {
                     survivorCount += 1
-                    println("mutation in " + mDef.sym.toString + " survived")
+                    val sym = mDef.sym.toString
+                    println(s"mutation in $sym survived")
                 }
             })
         })
         val totalEndTime = System.nanoTime() - totalStartTime
-        println("there where " + survivorCount.toString + " surviving mutations, out of " + mutantCounter.toString + " mutations")
-        println("average time to test a mutant: " + timeTemp/mutantCounter)
-        println("total time to test all mutants: " + totalEndTime.toFloat / 1000000000)
+        println(s"there where $survivorCount surviving mutations, out of $mutantCounter mutations")
+        val average = timeTemp/mutantCounter
+        println(s"average time to test a mutant:  $average sec")
+        val time = totalEndTime.toFloat/1_000_000_000
+        println(s"total time to test all mutants: $time sec")
     }
     private def mutateRoot(root: TypedAst.Root, testee: String): List[(Symbol.DefnSym, List[TypedAst.Def])] = {
         val defs = root.defs
@@ -325,28 +328,15 @@ object MutationTester {
                 case _ => Int32Op.Eq :: Int32Op.Neq :: Int32Op.Lt :: Int32Op.Le :: Int32Op.Gt :: Int32Op.Ge :: Nil
             }
             case op: SemanticOp.Int64Op => op match {
-                case Int64Op.Neg =>Int64Op.Neg
-                case Int64Op.Not =>Int64Op.Not
-                case Int64Op.Add =>Int64Op.Sub
-                case Int64Op.Sub =>Int64Op.Add
-                case Int64Op.Mul =>Int64Op.Div
-                case Int64Op.Div =>Int64Op.Mul
-                case Int64Op.Rem =>Int64Op.Div
-                case Int64Op.Exp =>Int64Op.Mul
-                case Int64Op.And =>Int64Op.Or
-                case Int64Op.Or => Int64Op.And
-                case Int64Op.Xor =>Int64Op.Or
-                case Int64Op.Shl =>Int64Op.Shr
-                case Int64Op.Shr =>Int64Op.Shl
-                case Int64Op.Eq => Int64Op.Neq
-                case Int64Op.Neq =>Int64Op.Eq
-                case Int64Op.Lt => Int64Op.Le
-                case Int64Op.Le => Int64Op.Lt
-                case Int64Op.Gt => Int64Op.Ge
-                case Int64Op.Ge => Int64Op.Gt
+                case Int64Op.Neg => Int64Op.Neg :: Nil
+                case Int64Op.Not => Int64Op.Not :: Nil
+                case Int64Op.Add | Int64Op.Sub | Int64Op.Shl | Int64Op.Shr | Int64Op.Mul | Int64Op.Div | Int64Op.Rem | Int64Op.Exp  =>
+                    Int64Op.Add :: Int64Op.Sub :: Int64Op.Mul :: Int64Op.Shl :: Int64Op.Shr :: Int64Op.Div :: Int64Op.Rem :: Int64Op.Exp :: Nil
+                case Int64Op.And | Int64Op.Or | Int64Op.Xor => Int64Op.And :: Int64Op.Or :: Int64Op.Xor :: Nil
+                case _ => Int64Op.Eq :: Int64Op.Neq :: Int64Op.Lt :: Int64Op.Le :: Int64Op.Gt :: Int64Op.Ge :: Nil
             }
             case op: SemanticOp.StringOp => op match {
-                case StringOp.Concat => StringOp.Concat
+                case StringOp.Concat => StringOp.Concat :: Nil
             }
         }
         helper(sop).filter(e => e != sop)
@@ -366,7 +356,7 @@ object MutationTester {
             case Constant.Int64(lit) => Constant.Int64(lit + 1) :: Nil
             case Constant.BigInt(lit) => Constant.BigInt(lit.add(lit)) :: Nil
             case Constant.Str(lit) => Constant.Str(lit + "\b") :: Nil
-            case Constant.Regex(lit) => Constant.Regex(java.util.regex.Pattern.compile("a")) :: Nil
+            case Constant.Regex(_) => Constant.Regex(java.util.regex.Pattern.compile("a")) :: Nil
         }
     }
 
