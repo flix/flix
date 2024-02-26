@@ -15,7 +15,6 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 
@@ -50,11 +49,14 @@ import scala.collection.mutable.ListBuffer
 ///
 object FastBoolUnification {
 
+  /**
+    * Internal formatter. Only used for debugging.
+    */
   private val formatter: Formatter = Formatter.AnsiTerminalFormatter
 
-  def solveAll(l: List[Equation])(implicit flix: Flix): Result[BoolSubstitution, ConflictException] = {
-    // TODO: Introduce small solver class.
-    new Solver(l).solve()
+  def solveAll(l: List[Equation]): Result[BoolSubstitution, ConflictException] = {
+    val solver = new Solver(l)
+    solver.solve()
   }
 
   private class Solver(l: List[Equation]) {
@@ -62,7 +64,7 @@ object FastBoolUnification {
     private var currentEqns = l
     private var currentSubst: BoolSubstitution = BoolSubstitution.empty
 
-    def solve()(implicit flix: Flix): Result[BoolSubstitution, ConflictException] = {
+    def solve(): Result[BoolSubstitution, ConflictException] = {
       try {
         phase0()
         phase1()
@@ -122,7 +124,7 @@ object FastBoolUnification {
       println()
     }
 
-    private def phase4()(implicit flix: Flix): Unit = {
+    private def phase4(): Unit = {
       println("-".repeat(80))
       println("--- Phase 4: Boolean Unification")
       println("    (resolves all remaining equations using SVE.)")
@@ -282,7 +284,7 @@ object FastBoolUnification {
     def size: Int = t1.size + t2.size
   }
 
-  private def boolUnifyAll(l: List[Equation], renv: Set[Int])(implicit flix: Flix): BoolSubstitution = l match {
+  private def boolUnifyAll(l: List[Equation], renv: Set[Int]): BoolSubstitution = l match {
     case Nil => BoolSubstitution.empty
     case Equation(t1, t2) :: xs =>
       val subst = boolUnifyOne(t1, t2, renv)
@@ -290,7 +292,7 @@ object FastBoolUnification {
       subst @@ subst1 // TODO: order?
   }
 
-  private def boolUnifyOne(t1: Term, t2: Term, renv: Set[Int])(implicit flix: Flix): BoolSubstitution = {
+  private def boolUnifyOne(t1: Term, t2: Term, renv: Set[Int]): BoolSubstitution = {
     // The boolean expression we want to show is false.
     val query = Term.mkXor(t1, t2)
 
@@ -318,7 +320,7 @@ object FastBoolUnification {
     subst
   }
 
-  private def successiveVariableElimination(t: Term, flexvs: List[Int])(implicit flix: Flix): BoolSubstitution = flexvs match {
+  private def successiveVariableElimination(t: Term, flexvs: List[Int]): BoolSubstitution = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
       if (!satisfiable(t))
@@ -1102,7 +1104,6 @@ object FastBoolUnification {
   )
 
   def main(args: Array[String]): Unit = {
-    implicit val flix: Flix = new Flix()
     solveAll(FixpointInterpreter_evalTerm()).get
     //solveAll(Array_copyOfRange()).get
     //solveAll(FixpointAstDatalog_toString299997()).get
