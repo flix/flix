@@ -419,7 +419,7 @@ object ConstraintResolution {
     // first pull out all simple Boolean constraints and put them through unifyAll
     val (simple, complex) = extractSimpleBooleanConstaints(curr, renv)
     val simple1 = simple.map { case (t1, t2) => (subst(t1), subst(t2)) }
-    EffUnification2.unifyAll(simple1, renv) match {
+    EffUnification2.unifyAll(simple1, renv, SourceLocation.Unknown) match {
       case Result.Ok(newSubst) =>
         subst = newSubst @@ subst
         curr = complex
