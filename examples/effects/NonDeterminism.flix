@@ -92,6 +92,21 @@ mod EffectExamples.NonDeterminism {
         case x :: xs => if (decide()) x else chooseOne(xs)
     }
 
+    pub def safe(pos1: (Int32, Int32), pos2: (Int32, Int32)): Bool = match (pos1, pos2) {
+        case ((x1, y1), (x2, y2)) => x1 != x2 and y1 != y2 and Int32.abs(x1 - x2) != Int32.abs(y1 - y2)
+    }
+
+    pub def available(x: Int32, qs: List[(Int32, Int32)]): List[Int32] =
+        List.range(1, 9) |> List.filter(y -> List.forAll(safe((x, y)), qs))
+
+    pub def place(x: Int32, qs: List[(Int32, Int32)]): List[(Int32, Int32)] \ Decision + Failure =
+        if (x == 9)
+            qs
+        else
+            let y = chooseOne(available(x, qs));
+            place(x + 1, (x, y) :: qs)
+
+
     @Test
     pub def testChooseTrue01(): Bool =
         let x = chooseTrue(() -> if (decide()) 10 else 20);
@@ -140,5 +155,15 @@ mod EffectExamples.NonDeterminism {
    pub def testPythagorean03(): Bool =
        let res = chooseAll(() -> pythagorean(5, 15));
        Assert.eq((5, 12, 13) :: (6, 8, 10) :: (8, 15, 17) :: (9, 12, 15) :: Nil, res)
+
+    @Test
+    pub def testEightQueens01(): Bool =
+        let res =
+            try {
+                backtrack(() -> place(1, Nil))
+            } with Failure {
+                def fail(_) = Nil
+            };
+        Assert.eq((8, 5) :: (7, 7) :: (6, 2) :: (5, 6) :: (4, 3) :: (3, 1) :: (2, 4) :: (1, 8) :: Nil, res)
 
 }
