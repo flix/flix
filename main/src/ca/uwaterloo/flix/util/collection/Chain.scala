@@ -134,6 +134,10 @@ sealed trait Chain[+A] {
     case that: Chain[_] => this.toList == that.toList
     case _ => false
   }
+
+  final override def toString: String = {
+    s"Chain(${this.mkString(", ")})"
+  }
 }
 
 object Chain {
