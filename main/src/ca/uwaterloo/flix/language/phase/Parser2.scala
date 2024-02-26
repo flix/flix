@@ -33,7 +33,7 @@ object Parser2 {
 
   private def parse(ts: Array[Token]): Validation[SyntaxTree.Tree, CompilationMessage] = {
     // TODO: PARSER2
-    Validation.success(SyntaxTree.Tree(TreeKind.Source, SourceLocation.Unknown, Array.empty))
+    Validation.success(SyntaxTree.Tree(TreeKind.Root, Array.empty, SourceLocation.Unknown))
   }
 
 
