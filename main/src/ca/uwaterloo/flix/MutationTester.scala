@@ -291,25 +291,12 @@ object MutationTester {
                 case _ => Float64Op.Eq :: Float64Op.Neq :: Float64Op.Lt :: Float64Op.Le :: Float64Op.Gt :: Float64Op.Ge :: Nil
             }
             case op: SemanticOp.Int8Op => op match {
-                case Int8Op.Neg =>Int8Op.Neg
-                case Int8Op.Not =>Int8Op.Not
-                case Int8Op.Add =>Int8Op.Sub
-                case Int8Op.Sub =>Int8Op.Add
-                case Int8Op.Mul =>Int8Op.Div
-                case Int8Op.Div =>Int8Op.Mul
-                case Int8Op.Rem =>Int8Op.Div
-                case Int8Op.Exp =>Int8Op.Mul
-                case Int8Op.And =>Int8Op.Or
-                case Int8Op.Or => Int8Op.And
-                case Int8Op.Xor =>Int8Op.Or
-                case Int8Op.Shl =>Int8Op.Shr
-                case Int8Op.Shr =>Int8Op.Shl
-                case Int8Op.Eq => Int8Op.Neq
-                case Int8Op.Neq =>Int8Op.Eq
-                case Int8Op.Lt => Int8Op.Le
-                case Int8Op.Le => Int8Op.Lt
-                case Int8Op.Gt => Int8Op.Ge
-                case Int8Op.Ge => Int8Op.Gt
+                case Int8Op.Neg => Int8Op.Neg :: Nil
+                case Int8Op.Not => Int8Op.Not :: Nil
+                case Int8Op.Add | Int8Op.Div | Int8Op.Sub | Int8Op.Mul | Int8Op.Rem | Int8Op.Exp | Int8Op.Shl | Int8Op.Shr =>
+                    Int8Op.Add :: Int8Op.Div :: Int8Op.Sub :: Int8Op.Mul :: Int8Op.Rem :: Int8Op.Exp :: Int8Op.Shl :: Int8Op.Shr ::Nil
+                case Int8Op.And | Int8Op.Or | Int8Op.Xor => Int8Op.And :: Int8Op.Or :: Int8Op.Xor :: Nil
+                case _ => Int8Op.Eq :: Int8Op.Neq :: Int8Op.Lt :: Int8Op.Le :: Int8Op.Gt :: Int8Op.Ge :: Nil
             }
             case op: SemanticOp.Int16Op => op match {
                 case Int16Op.Neg => Int16Op.Neg :: Nil
