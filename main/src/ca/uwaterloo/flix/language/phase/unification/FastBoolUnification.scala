@@ -1153,8 +1153,15 @@ object FastBoolUnification {
     Var(55075) ~ Var(112453)
   )
 
+  private def Iterator_next(): List[Equation] = List(
+    ((Cst(1435)) & (Cst(1436))) ~ (Var(55261)),
+    (Var(55251)) ~ (Var(112576)),
+    (Var(55257)) ~ (Var(112582)),
+    (Var(55261)) ~ (Var(112585))
+  )
+
   def main(args: Array[String]): Unit = {
-    solveAll(FixpointInterpreter_evalTerm()).get
+    //solveAll(FixpointInterpreter_evalTerm()).get
     //solveAll(Array_copyOfRange()).get
     //solveAll(FixpointAstDatalog_toString299997()).get
     //solveAll(Nec_zipWithA()).get
@@ -1164,6 +1171,7 @@ object FastBoolUnification {
     //solveAll(FixpointAstDatalog_predSymsOf29898()).get
     //solveAll(Iterator_toArray()).get
     //solveAll(Files_append()).get
+    solveAll(Iterator_next()).get
   }
 
 }
