@@ -26,9 +26,9 @@ object AtomicOp {
 
   case class Closure(sym: Symbol.DefnSym) extends AtomicOp
 
-  case class Unary(sop: SemanticOp) extends AtomicOp
+  case class Unary(sop: SemanticOp.UnaryOp) extends AtomicOp
 
-  case class Binary(sop: SemanticOp) extends AtomicOp
+  case class Binary(sop: SemanticOp.BinaryOp) extends AtomicOp
 
   case object Region extends AtomicOp
 

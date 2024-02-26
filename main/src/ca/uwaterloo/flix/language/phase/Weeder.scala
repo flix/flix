@@ -845,11 +845,12 @@ object Weeder {
 
     case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
-      mapN(visitExp(exp)) {
+      flatMapN(visitExp(exp)) {
         case e => visitUnaryOperator(op) match {
-          case OperatorResult.BuiltIn(name) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(name, name.loc), List(e), loc)
-          case OperatorResult.Operator(o) => WeededAst.Expr.Unary(o, e, loc)
-          case OperatorResult.Unrecognized(ident) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e), loc)
+          case OperatorResult.BuiltIn(name) => Validation.success(WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(name, name.loc), List(e), loc))
+          case OperatorResult.UnaryOperator(o) => Validation.success(WeededAst.Expr.Unary(o, e, loc))
+          case OperatorResult.BinaryOperator(_) => throw InternalCompilerException("", loc) // TODO: Unrecoverable hard failure
+          case OperatorResult.Unrecognized(ident) => Validation.success(WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e), loc))
         }
       }
 
@@ -859,7 +860,8 @@ object Weeder {
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => visitBinaryOperator(op) match {
           case OperatorResult.BuiltIn(name) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(name, name.loc), List(e1, e2), loc)
-          case OperatorResult.Operator(o) => WeededAst.Expr.Binary(o, e1, e2, loc)
+          case OperatorResult.UnaryOperator(_) => throw InternalCompilerException("", loc) // TODO: Unrecoverable hard failure
+          case OperatorResult.BinaryOperator(o) => WeededAst.Expr.Binary(o, e1, e2, loc)
           case OperatorResult.Unrecognized(ident) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e1, e2), loc)
         }
       }
@@ -1542,9 +1544,15 @@ object Weeder {
     case class BuiltIn(name: Name.QName) extends OperatorResult
 
     /**
-      * The operator represents a semantic operator.
+      * The operator represents a unary semantic operator.
       */
-    case class Operator(op: SemanticOp) extends OperatorResult
+    case class UnaryOperator(op: SemanticOp.UnaryOp) extends OperatorResult
+
+    /**
+      *
+      * The operator represents a binary semantic operator.
+      */
+    case class BinaryOperator(op: SemanticOp.BinaryOp) extends OperatorResult
 
     /**
       * The operator is unrecognized: it must have been defined elsewhere.
@@ -1558,7 +1566,7 @@ object Weeder {
   private def visitUnaryOperator(o: ParsedAst.Operator)(implicit flix: Flix): OperatorResult = o match {
     case ParsedAst.Operator(sp1, op, sp2) =>
       op match {
-        case "not" => OperatorResult.Operator(SemanticOp.BoolOp.Not)
+        case "not" => OperatorResult.UnaryOperator(SemanticOp.BoolOp.Not)
         case "-" => OperatorResult.BuiltIn(Name.mkQName("Neg.neg", sp1, sp2))
         case _ => OperatorResult.Unrecognized(Name.Ident(sp1, op, sp2))
       }
@@ -1581,8 +1589,8 @@ object Weeder {
         case "==" => OperatorResult.BuiltIn(Name.mkQName("Eq.eq", sp1, sp2))
         case "!=" => OperatorResult.BuiltIn(Name.mkQName("Eq.neq", sp1, sp2))
         case "<=>" => OperatorResult.BuiltIn(Name.mkQName("Order.compare", sp1, sp2))
-        case "and" => OperatorResult.Operator(SemanticOp.BoolOp.And)
-        case "or" => OperatorResult.Operator(SemanticOp.BoolOp.Or)
+        case "and" => OperatorResult.BinaryOperator(SemanticOp.BoolOp.And)
+        case "or" => OperatorResult.BinaryOperator(SemanticOp.BoolOp.Or)
         case _ => OperatorResult.Unrecognized(Name.Ident(sp1, op, sp2))
       }
   }
