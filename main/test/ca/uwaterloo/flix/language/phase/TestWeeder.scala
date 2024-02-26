@@ -964,6 +964,29 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalNullPattern](result)
   }
 
+  test("IllegalNullPattern.02") {
+    val input =
+      s"""
+         |def f(): Int32 = match null {
+         |    case _    => 456
+         |    case null => 123
+         |}
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalNullPattern](result)
+  }
+
+  test("IllegalNullPattern.03") {
+    val input =
+      s"""
+         |def f(): Int32 = match 0 {
+         |    case null => 123
+         |}
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalNullPattern](result)
+  }
+
   test("IllegalPrivateDeclaration.01") {
     val input =
       """
