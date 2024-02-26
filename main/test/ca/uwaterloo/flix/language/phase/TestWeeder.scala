@@ -277,6 +277,19 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalAnnotation](result)
   }
 
+  test("IllegalAnnotation.03") {
+    val input =
+      """
+        |def f(): Int32 = {
+        | @Skip @Tailrec
+        | def g(i) = if (i <= 0) 0 else g(i - 1);
+        | g(10)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalAnnotation](result)
+  }
+
   test("IllegalEffectTypeParams.01") {
     val input =
       """
