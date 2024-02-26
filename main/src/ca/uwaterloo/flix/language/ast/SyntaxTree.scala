@@ -18,15 +18,16 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.errors.Parser2Error
 
 /**
- * A Concrete syntax tree representing the textual content of a source file.
- * Note the difference compared to an __abstract__ syntax tree,
- * which aims to represent the semantic meaning of a program rather than the text itself.
+ * Represents the source code of a compilation unit.
  *
- * The tree is built of nodes that hold a [[TreeKind]] and zero or more children.
- * Each child is either a [[Token]] or another node.
- * [[SyntaxTree]] is intentionally kept very flexible in definition, so it can encode faulty syntax.
- * Beware that this means that it gives few guarantees.
- * There is no guarantee on the amount or presence of children of a certain kind for instance.
+ * A [[SyntaxTree]] is unstructured: it allows much more flexibility than later
+ * abstract syntax trees. This flexibility is used to capture source code that may
+ * contain faulty syntax. The tree has nodes that hold a [[TreeKind]] and zero or
+ * more children. Each child is either a [[TokenChild]] or a [[TreeChild]].
+ *
+ * Note that [[SyntaxTree]] offers few guarantees. In particular:
+ *     - There is no guarantee that a specific node is present or absent as a child.
+ *     - There is no guarantee that a specific node has a specific number of children.
  */
 object SyntaxTree {
 
@@ -37,24 +38,23 @@ object SyntaxTree {
    * @param loc      The location that the node spans in the source file.
    * @param children The children of the node.
    */
-  case class Tree(kind: TreeKind, var loc: SourceLocation, var children: Array[Child])
+  case class Tree(kind: TreeKind, children: Array[Child], loc: SourceLocation)
 
   sealed trait Child
 
   /**
    * A child in a [[SyntaxTree]].
-   * It holds a [[Token]] or another [[SyntaxTree.Tree]].
    */
   object Child {
     /**
      * A [[SyntaxTree]] child holding a [[Token]].
      */
-    case class NodeToken(token: Token) extends Child
+    case class TokenChild(token: Token) extends Child
 
     /**
      * A [[SyntaxTree]] child holding a nested [[SyntaxTree.Tree]]
      */
-    case class NodeTree(tree: SyntaxTree.Tree) extends Child
+    case class TreeChild(tree: Tree) extends Child
   }
 
 
@@ -65,6 +65,7 @@ object SyntaxTree {
 
   /**
    * Different kinds of syntax nodes in a [[SyntaxTree]].
+   *
    * The only error kind that holds data is the special [[TreeKind.ErrorTree]].
    */
   object TreeKind {
@@ -101,14 +102,14 @@ object SyntaxTree {
 
     case object QName extends TreeKind
 
-    case object Source extends TreeKind
+    case object Root extends TreeKind
 
     case object TypeParameter extends TreeKind
 
     case object TypeParameterList extends TreeKind
 
     //////////////////////////////////////////////////////////////////////////////////////////
-    /// DECLARATIONS /////////////////////////////////////////////////////////////////////////
+    /// DECLARATIONS                                                                        //
     //////////////////////////////////////////////////////////////////////////////////////////
     sealed trait Decl extends TreeKind
 
@@ -131,7 +132,7 @@ object SyntaxTree {
 
       case object Module extends Decl
 
-      case object Operation extends Decl
+      case object Op extends Decl
 
       case object RestrictableEnum extends Decl
 
@@ -141,7 +142,7 @@ object SyntaxTree {
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
-    /// EXPRESSIONS //////////////////////////////////////////////////////////////////////////
+    /// EXPRESSIONS                                                                         //
     //////////////////////////////////////////////////////////////////////////////////////////
     sealed trait Expr extends TreeKind
 
@@ -149,15 +150,15 @@ object SyntaxTree {
 
       /**
        * A marker kind used to wrap nested expressions.
-       * For instance on a binary expression "1 + 2" you would do
-       * Expr
-       * Binary
-       * Expr
-       * LiteralNumber
-       * Operator
-       * Expr
-       * LiteralNumber
        */
+      // For instance on a binary expression "1 + 2" you would do
+      // Expr
+      //   Binary
+      //     Expr
+      //       LiteralNumber
+      //   Operator
+      //     Expr
+      //       LiteralNumber
       case object Expr extends Expr
 
       case object Apply extends Expr
@@ -311,21 +312,21 @@ object SyntaxTree {
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
-    /// TYPES ////////////////////////////////////////////////////////////////////////////////
+    /// TYPES                                                                               //
     //////////////////////////////////////////////////////////////////////////////////////////
     sealed trait Type extends TreeKind
 
     object Type {
       /**
        * A marker kind used to wrap nested types.
-       * For instance on a tuple type "(Int32, Bool)" you would do
-       * Type
-       * Tuple
-       * Type
-       * Ident
-       * Type
-       * Ident
        */
+      // For instance on a tuple type "(Int32, Bool)" you would do
+      // Type
+      //   Tuple
+      //     Type
+      //       Ident
+      //     Type
+      //       Ident
       case object Type extends Type
 
       case object Apply extends Type
@@ -379,21 +380,21 @@ object SyntaxTree {
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
-    /// PATTERNS /////////////////////////////////////////////////////////////////////////////
+    /// PATTERNS                                                                            //
     //////////////////////////////////////////////////////////////////////////////////////////
     sealed trait Pattern extends TreeKind
 
     object Pattern {
       /**
        * A marker kind used to wrap nested patterns.
-       * For instance on cons pattern "0 :: xs" you would do
-       * Pattern
-       * FCons
-       * Pattern
-       * Literal
-       * Pattern
-       * Ident
        */
+       // For instance on cons pattern "0 :: xs" you would do
+       // Pattern
+       //   FCons
+       //     Pattern
+       //       Literal
+       //     Pattern
+       //       Ident
       case object Pattern extends Pattern
 
       case object FCons extends Pattern
@@ -410,11 +411,10 @@ object SyntaxTree {
 
       case object Variable extends Pattern
 
-
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
-    /// PREDICATES ///////////////////////////////////////////////////////////////////////////
+    /// PREDICATES                                                                          //
     //////////////////////////////////////////////////////////////////////////////////////////
     sealed trait Predicate extends TreeKind
 
@@ -439,7 +439,7 @@ object SyntaxTree {
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
-    /// JVM_OP ///////////////////////////////////////////////////////////////////////////////
+    /// JVM_OP                                                                              //
     //////////////////////////////////////////////////////////////////////////////////////////
     sealed trait JvmOp extends TreeKind
 
@@ -457,7 +457,7 @@ object SyntaxTree {
 
       case object PutField extends JvmOp
 
-      case object Signature extends JvmOp
+      case object Sig extends JvmOp
 
       case object StaticGetField extends JvmOp
 
@@ -468,7 +468,7 @@ object SyntaxTree {
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
-    /// IMPORTS //////////////////////////////////////////////////////////////////////////////
+    /// IMPORTS                                                                             //
     //////////////////////////////////////////////////////////////////////////////////////////
     sealed trait UsesOrImports extends TreeKind
 
