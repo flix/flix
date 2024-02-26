@@ -973,6 +973,7 @@ object Weeder2 {
       case ForFragment.Guard(_, loc) => loc
       case ForFragment.Let(_, _, loc) => loc
     }
+
     private def pickForFragments(tree: Tree)(implicit s: State): Validation[List[ForFragment], CompilationMessage] = {
       val guards = pickAll(TreeKind.Expr.ForFragmentGuard, tree.children)
       val generators = pickAll(TreeKind.Expr.ForFragmentGenerator, tree.children)
@@ -1235,53 +1236,45 @@ object Weeder2 {
       mapN(pickNameIdent(tree), block)((ident, block) => Expr.Scope(ident, block, tree.loc))
     }
 
+    private def tryPickNumberLiteralToken(tree: Tree)(implicit s: State): Option[Token] = {
+      assert(tree.kind == TreeKind.Expr.Expr)
+      val NumberLiteralKinds = List(TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
+      val maybeTree = tryPick(TreeKind.Expr.Literal, tree.children)
+      maybeTree.flatMap(_.children(0) match {
+        case Child.Token(t) if NumberLiteralKinds.contains(t.kind) => Some(t)
+        case _ => None
+      })
+    }
+
     private def visitUnary(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Unary)
-      mapN(
-        pick(TreeKind.Operator, tree.children),
-        pickExpression(tree)
-      )(
-        (opTree, expr) => {
+      flatMapN(pick(TreeKind.Operator, tree.children), pick(TreeKind.Expr.Expr, tree.children))(
+        (opTree, exprTree) => {
           val op = text(opTree).head
           val sp1 = tree.loc.sp1
           val sp2 = tree.loc.sp2
-          op match {
-            case "discard" => Expr.Discard(expr, tree.loc)
-            case "lazy" => Expr.Lazy(expr, tree.loc)
-            case "force" => Expr.Force(expr, tree.loc)
-            case "deref" => Expr.Deref(expr, tree.loc)
-            case "not" => Expr.Unary(SemanticOp.BoolOp.Not, expr, tree.loc)
-            case "+" => expr
-            case "-" =>
-              // Map unary minus into a constant if it is used on a number literal
-              val maybeCst: Option[Expr] = expr match {
-                case Expr.Cst(cst, loc) => cst match {
-                  case Constant.Float32(lit) => Some(Expr.Cst(Constant.Float32(-lit), loc))
-                  case Constant.Float64(lit) => Some(Expr.Cst(Constant.Float64(-lit), loc))
-                  case Constant.BigDecimal(lit) => Some(Expr.Cst(Constant.BigDecimal(lit.negate()), loc))
-                  case Constant.Int8(lit) => try {
-                    val num = JByte.parseByte(s"-$lit")
-                    Some(Expr.Cst(Constant.Int8(num), loc))
-                  } catch {
-                    case _: NumberFormatException => Some(WeededAst.Expr.Error(MalformedInt(loc)))
-                  }
-                  case Constant.Int16(lit) =>
-                    try {
-                      val num = JShort.parseShort(s"-$lit")
-                      Some(Expr.Cst(Constant.Int16(num), loc))
-                    } catch {
-                      case _: NumberFormatException => Some(WeededAst.Expr.Error(MalformedInt(loc)))
-                    }
-                  case Constant.Int32(lit) => Some(Expr.Cst(Constant.Int32(-lit), loc))
-                  case Constant.Int64(lit) => Some(Expr.Cst(Constant.Int64(-lit), loc))
-                  case Constant.BigInt(lit) => Some(Expr.Cst(Constant.BigInt(lit.negate()), loc))
-                  case _ => None
-                }
-                case _ => None
-              }
-              maybeCst.getOrElse(Expr.Apply(Expr.Ambiguous(Name.mkQName("Neg.neg", sp1, sp2), opTree.loc), List(expr), tree.loc))
 
-            case op => Expr.Apply(Expr.Ambiguous(Name.mkQName(op, sp1, sp2), opTree.loc), List(expr), tree.loc)
+          val literalToken = tryPickNumberLiteralToken(exprTree)
+          literalToken match {
+            // fold unary minus into a constant
+            case Some(lit) if op == "-" =>
+              // Construct a synthetic literal tree with the unary minus and visit that like any other literal expression
+              // The token should include one more character to the left (the '-'). This is okay since unary minus must hug the literal.
+              val syntheticToken = Token(lit.kind, lit.src, lit.start - 1, lit.end, lit.beginLine, lit.beginCol, lit.endLine, lit.endCol)
+              val syntheticLiteral = Tree(TreeKind.Expr.Literal, exprTree.loc.asSynthetic, Array(Child.Token(syntheticToken)))
+              visitLiteral(syntheticLiteral)
+            case _ => mapN(visitExpression(exprTree))(expr => {
+              op match {
+                case "discard" => Expr.Discard(expr, tree.loc)
+                case "lazy" => Expr.Lazy(expr, tree.loc)
+                case "force" => Expr.Force(expr, tree.loc)
+                case "deref" => Expr.Deref(expr, tree.loc)
+                case "not" => Expr.Unary(SemanticOp.BoolOp.Not, expr, tree.loc)
+                case "-" => Expr.Apply(Expr.Ambiguous(Name.mkQName("Neg.neg", sp1, sp2), opTree.loc), List(expr), tree.loc)
+                case "+" => expr
+                case op => Expr.Apply(Expr.Ambiguous(Name.mkQName(op, sp1, sp2), opTree.loc), List(expr), tree.loc)
+              }
+            })
           }
         }
       )
@@ -1337,9 +1330,9 @@ object Weeder2 {
             case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
             case e =>
               softFailWith(
-              e,
-              Expr.Error(Parse2Error.DevErr(tree.loc, "A let-binding must be followed by an expression"))
-            )
+                e,
+                Expr.Error(Parse2Error.DevErr(tree.loc, "A let-binding must be followed by an expression"))
+              )
           }
           mapN(exprs)(exprs => Expr.LetMatch(pattern, Ast.Modifiers.Empty, tpe, exprs._1, exprs._2, tree.loc))
       }
@@ -1971,17 +1964,10 @@ object Weeder2 {
   }
 
   private object Constants {
-    /**
-     * Removes underscores from the given string of digits.
-     */
-    private def stripUnderscores(digits: String): String = {
-      digits.filterNot(_ == '_')
-    }
-
     private def tryParseFloat(token: Token, after: (String, SourceLocation) => Expr)(implicit s: State): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
       try {
-        Validation.success(after(stripUnderscores(token.text), loc))
+        Validation.success(after(token.text.filterNot(_ == '_'), loc))
       } catch {
         case _: NumberFormatException =>
           val err = MalformedFloat(loc)
@@ -1989,10 +1975,12 @@ object Weeder2 {
       }
     }
 
-    private def tryParseInt(token: Token, after: (String, SourceLocation) => Expr)(implicit s: State): Validation[Expr, CompilationMessage] = {
+    private def tryParseInt(token: Token, suffix: String, after: (Int, String, SourceLocation) => Expr)(implicit s: State): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
       try {
-        Validation.success(after(stripUnderscores(token.text), loc))
+        val radix = if (token.text.contains("0x")) 16 else 10
+        val digits = token.text.replaceFirst("0x", "").stripSuffix(suffix).filterNot(_ == '_')
+        Validation.success(after(radix, digits, loc))
       } catch {
         case _: NumberFormatException =>
           val err = MalformedInt(loc)
@@ -2025,56 +2013,43 @@ object Weeder2 {
      * Attempts to parse the given tree to a int8.
      */
     def toInt8(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
-      tryParseInt(token, (text, loc) => {
-        val radix = if (text.contains("0x")) 16 else 10
-        val digits = text.replaceFirst("0x", "").stripSuffix("i8")
-        val int = JByte.parseByte(digits, radix)
-        Expr.Cst(Ast.Constant.Int8(int), loc)
-      })
+      tryParseInt(token, "i8", (radix, digits, loc) =>
+        Expr.Cst(Ast.Constant.Int8(JByte.parseByte(digits, radix)), loc)
+      )
 
     /**
      * Attempts to parse the given tree to a int16.
      */
-    def toInt16(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
-      tryParseInt(token, (text, loc) => {
-        val radix = if (text.contains("0x")) 16 else 10
-        val digits = text.replaceFirst("0x", "").stripSuffix("i16")
-        val int = JShort.parseShort(digits, radix)
-        Expr.Cst(Ast.Constant.Int16(int), loc)
-      })
+    def toInt16(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      tryParseInt(token, "i16", (radix, digits, loc) =>
+        Expr.Cst(Ast.Constant.Int16(JShort.parseShort(digits, radix)), loc)
+      )
+    }
 
     /**
      * Attempts to parse the given tree to a int32.
      */
     def toInt32(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
-      tryParseInt(token, (text, loc) => {
-        val radix = if (text.contains("0x")) 16 else 10
-        val digits = text.replaceFirst("0x", "").stripSuffix("i32")
-        val int = JInt.parseInt(digits, radix)
-        Expr.Cst(Ast.Constant.Int32(int), loc)
-      })
+      tryParseInt(token, "i32", (radix, digits, loc) =>
+        Expr.Cst(Ast.Constant.Int32(JInt.parseInt(digits, radix)), loc)
+      )
 
     /**
      * Attempts to parse the given tree to a int64.
      */
-    def toInt64(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
-      tryParseInt(token, (text, loc) => {
-        val radix = if (text.contains("0x")) 16 else 10
-        val digits = text.replaceFirst("0x", "").stripSuffix("i64")
-        val int = JLong.parseLong(digits, radix)
-        Expr.Cst(Ast.Constant.Int64(int), loc)
-      })
+    def toInt64(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      tryParseInt(token, "i64", (radix, digits, loc) =>
+        Expr.Cst(Ast.Constant.Int64(JLong.parseLong(digits, radix)), loc)
+      )
+    }
 
     /**
      * Attempts to parse the given tree to a int64.
      */
     def toBigInt(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
-      tryParseInt(token, (text, loc) => {
-        val radix = if (text.contains("0x")) 16 else 10
-        val digits = text.replaceFirst("0x", "").stripSuffix("ii")
-        val int = new java.math.BigInteger(digits, radix)
-        Expr.Cst(Ast.Constant.BigInt(int), loc)
-      })
+      tryParseInt(token, "ii", (radix, digits, loc) =>
+        Expr.Cst(Ast.Constant.BigInt(new java.math.BigInteger(digits, radix)), loc)
+      )
 
     /**
      * Attempts to compile the given regular expression into a Pattern.

@@ -63,6 +63,11 @@ object Lexer {
   )
 
   /**
+   * Since Flix support hex decimals, a 'digit' can also be some select characters.
+   */
+  private val DIGITS = List('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f')
+
+  /**
    * The internal state of the lexer as it tokenizes a single source.
    * At any point execution `start` represents the start of the token currently being considered.
    * Likewise `end` represents the end of the token currently being considered,
@@ -465,6 +470,8 @@ object Lexer {
       case _ if isKeyword("regex\"") => acceptRegex()
       case _ if isMathNameChar(c) => acceptMathName()
       case _ if isGreekNameChar(c) => acceptGreekName()
+      case c if c.isLetter => acceptName(c.isUpper)
+      case c if DIGITS.contains(c) => acceptNumber()
       // User defined operators.
       case _ if ValidUserOpTokens.contains(c) =>
         val p = peek()
@@ -473,8 +480,6 @@ object Lexer {
         } else {
           ValidUserOpTokens.apply(c)
         }
-      case c if c.isLetter => acceptName(c.isUpper)
-      case c if c.isDigit => acceptNumber()
       case c => TokenKind.Err(LexerError.UnexpectedChar(c.toString, sourceLocationAtStart()))
     }
   }
@@ -872,7 +877,7 @@ object Lexer {
         case c if c.isDigit || c == '_' => advance()
 
         // If handling a hex number consume hex digits too
-        case 'a' | 'b' | 'c' | 'd' | 'e' | 'f' if isHex => advance()
+        case 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' if isHex => advance()
 
         // 'e' mark scientific notation if not handling a hex number
         case 'e' =>

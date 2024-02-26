@@ -407,7 +407,7 @@ class Flix {
     "Test.Exp.IfThenElse.flix" -> LocalResource.get("/test/flix/Test.Exp.IfThenElse.flix"),
 //    "Test.Exp.Infix.flix" -> LocalResource.get("/test/flix/Test.Exp.Infix.flix"),
     "Test.Exp.Instanceof.flix" -> LocalResource.get("/test/flix/Test.Exp.Instanceof.flix"),
-//    "Test.Exp.Int16.flix" -> LocalResource.get("/test/flix/Test.Exp.Int16.flix"),
+    "Test.Exp.Int16.flix" -> LocalResource.get("/test/flix/Test.Exp.Int16.flix"),
 //    "Test.Exp.Int32.flix" -> LocalResource.get("/test/flix/Test.Exp.Int32.flix"),
 //    "Test.Exp.Int64.flix" -> LocalResource.get("/test/flix/Test.Exp.Int64.flix"),
 //    "Test.Exp.Int8.flix" -> LocalResource.get("/test/flix/Test.Exp.Int8.flix"),
