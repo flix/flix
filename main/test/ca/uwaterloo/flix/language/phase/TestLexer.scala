@@ -228,6 +228,12 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.UnterminatedRegex](result)
   }
 
+  test("LexerError.UnterminatedRegex.03") {
+    val input = """ regex" regex\" """
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedRegex](result)
+  }
+
   test("LexerError.UnterminatedString.01") {
     val input = """ "This is unterminated """
     val result = compile(input, Options.TestWithLibNix)
@@ -247,6 +253,12 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.UnterminatedString.04") {
+    val input = """ regex" regex"" """
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedString](result)
+  }
+
+  test("LexerError.UnterminatedString.05") {
     // Actually not related to the error but asserts that the error
     // is not a false positive
     val input = """ def f(): String = "This is terminated" """
