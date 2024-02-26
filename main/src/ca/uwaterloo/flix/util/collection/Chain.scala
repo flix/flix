@@ -23,15 +23,6 @@ import scala.annotation.tailrec
 sealed trait Chain[+A] {
 
   /**
-    * Returns an iterator over the chain, from left to right.
-    */
-  final def iterator: Iterator[A] = this match {
-    case Chain.Empty => Iterator.empty
-    case Chain.Link(l, r) => l.iterator ++ r.iterator
-    case Chain.Proxy(xs) => xs.iterator
-  }
-
-  /**
     * Concatenates `this` chain and `that` chain.
     */
   final def ++[B >: A](that: Chain[B]): Chain[B] = {
