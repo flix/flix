@@ -32,31 +32,31 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateAnnotation](result)
   }
 
-  test("DuplicateFormal.01") {
+  test("DuplicateFormalParam.01") {
     val input = "def f(x: Int32, x: Int32): Int32 = 42"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
-  test("DuplicateFormal.02") {
+  test("DuplicateFormalParam.02") {
     val input = "def f(x: Int32, y: Int32, x: Int32): Int32 = 42"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
-  test("DuplicateFormal.03") {
+  test("DuplicateFormalParam.03") {
     val input = "def f(x: Bool, x: Int32, x: Str): Int32 = 42"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
-  test("DuplicateFormal.04") {
+  test("DuplicateFormalParam.04") {
     val input = "def f(): (Int32, Int32) -> Int32 = (x, x) -> x"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
   }
 
-  test("DuplicateFormal.05") {
+  test("DuplicateFormalParam.05") {
     val input = "def f(): (Int32, Int32, Int32) -> Int32 = (x, y, x) -> x"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.DuplicateFormalParam](result)
