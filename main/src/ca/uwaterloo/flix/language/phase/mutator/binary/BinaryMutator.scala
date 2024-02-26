@@ -129,5 +129,6 @@ object BinaryMutator extends ExprMutator {
         case op: Int64Op => binaryInt64OpMutators.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
         case op: StringOp => ???
       }
+    case _ => None
   }
 }
