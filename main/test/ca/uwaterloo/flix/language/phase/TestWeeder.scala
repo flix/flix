@@ -987,6 +987,17 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalNullPattern](result)
   }
 
+  test("IllegalNullPattern.04") {
+    val input =
+      s"""
+         |def f(): Int32 = match 0 {
+         |    case { null | null } => 123
+         |}
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalNullPattern](result)
+  }
+
   test("IllegalPrivateDeclaration.01") {
     val input =
       """
@@ -1026,6 +1037,50 @@ class TestWeeder extends AnyFunSuite with TestUtils {
       """
         |def f(): Int32 = match { x = 1 } {
         |    case { x | (1, 2, 3) } => 42
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalRecordExtensionPattern](result)
+  }
+
+  test("IllegalRecordExtensionPattern.02") {
+    val input =
+      """
+        |def f(): Int32 = match { x = 1 } {
+        |    case { x | { y | r } } => 42
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalRecordExtensionPattern](result)
+  }
+
+  test("IllegalRecordExtensionPattern.03") {
+    val input =
+      """
+        |def f(): Int32 = match { x = 1 } {
+        |    case { x | { r = 1 } } => 42
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalRecordExtensionPattern](result)
+  }
+
+  test("IllegalRecordExtensionPattern.04") {
+    val input =
+      """
+        |def f(): Int32 = match { x = 1 } {
+        |    case { x | null } => 42
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalRecordExtensionPattern](result)
+  }
+
+  test("IllegalRecordExtensionPattern.05") {
+    val input =
+      """
+        |def f(): Int32 = match { x = 1 } {
+        |    case { x = { x = 2 | { } } } => 42
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
