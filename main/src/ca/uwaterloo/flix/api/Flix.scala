@@ -38,44 +38,44 @@ import scala.language.implicitConversions
 
 object Flix {
   /**
-    * The reserved Flix delimiter.
-    */
+   * The reserved Flix delimiter.
+   */
   val Delimiter: String = "$"
 
   /**
-    * The file extension for intermediate representation files.
-    */
+   * The file extension for intermediate representation files.
+   */
   val IrFileExtension = "flixir"
 
   /**
-    * The maximum width of the intermediate representation files.
-    */
+   * The maximum width of the intermediate representation files.
+   */
   val IrFileWidth = 80
 
   /**
-    * The number of spaces per indentation in the intermediate representation files.
-    */
+   * The number of spaces per indentation in the intermediate representation files.
+   */
   val IrFileIndentation = 4
 }
 
 /**
-  * Main programmatic interface for Flix.
-  */
+ * Main programmatic interface for Flix.
+ */
 class Flix {
 
   /**
-    * A sequence of inputs to be parsed into Flix ASTs.
-    */
+   * A sequence of inputs to be parsed into Flix ASTs.
+   */
   private val inputs = mutable.Map.empty[String, Input]
 
   /**
-    * The set of sources changed since last compilation.
-    */
+   * The set of sources changed since last compilation.
+   */
   private var changeSet: ChangeSet = ChangeSet.Everything
 
   /**
-    * A cache of ASTs for incremental compilation.
-    */
+   * A cache of ASTs for incremental compilation.
+   */
   private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
   private var cachedParserAst: ParsedAst.Root = ParsedAst.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
@@ -97,8 +97,8 @@ class Flix {
   def getTyperAst: TypedAst.Root = cachedTyperAst
 
   /**
-    * A cache of ASTs for debugging.
-    */
+   * A cache of ASTs for debugging.
+   */
   private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
   private var cachedTreeShaker1Ast: LoweredAst.Root = LoweredAst.empty
   private var cachedMonoDefsAst: MonoAst.Root = MonoAst.empty
@@ -143,10 +143,10 @@ class Flix {
   def getVarOffsetsAst: ReducedAst.Root = cachedVarOffsetsAst
 
   /**
-    * A sequence of internal inputs to be parsed into Flix ASTs.
-    *
-    * The core library *must* be present for any program to compile.
-    */
+   * A sequence of internal inputs to be parsed into Flix ASTs.
+   *
+   * The core library *must* be present for any program to compile.
+   */
   private val coreLibrary = List(
     // Prelude
     "Prelude.flix" -> LocalResource.get("/src/library/Prelude.flix"),
@@ -197,10 +197,10 @@ class Flix {
   )
 
   /**
-    * A sequence of internal inputs to be parsed into Flix ASTs.
-    *
-    * The standard library is not required to be present for at least some programs to compile.
-    */
+   * A sequence of internal inputs to be parsed into Flix ASTs.
+   *
+   * The standard library is not required to be present for at least some programs to compile.
+   */
   private val standardLibrary = List(
     "Array.flix" -> LocalResource.get("/src/library/Array.flix"),
     "Assert.flix" -> LocalResource.get("/src/library/Assert.flix"),
@@ -314,22 +314,16 @@ class Flix {
 
     //////////////// TODO: REMOVE ALL THESE INCLUDES
     //////////////// ADD TEST FILES ALSO TO TEST PARSER
-//    "Test.Assoc.Eff.Contravariance.flix" -> LocalResource.get("/test/flix/Test.Assoc.Eff.Contravariance.flix"),
     "Test.Assoc.Eff.Covariance.flix" -> LocalResource.get("/test/flix/Test.Assoc.Eff.Covariance.flix"),
     "Test.Assoc.Type.flix" -> LocalResource.get("/test/flix/Test.Assoc.Type.flix"),
     "Test.Currying.flix" -> LocalResource.get("/test/flix/Test.Currying.flix"),
-//    "Test.Dec.Class.flix" -> LocalResource.get("/test/flix/Test.Dec.Class.flix"),
     "Test.Dec.Effect.flix" -> LocalResource.get("/test/flix/Test.Dec.Effect.flix"),
     "Test.Dec.Enum.Singleton.flix" -> LocalResource.get("/test/flix/Test.Dec.Enum.Singleton.flix"),
     "Test.Dec.Enum.flix" -> LocalResource.get("/test/flix/Test.Dec.Enum.flix"),
     "Test.Dec.Mod.flix" -> LocalResource.get("/test/flix/Test.Dec.Mod.flix"),
-//    "Test.Dec.RestrictableTag.flix" -> LocalResource.get("/test/flix/Test.Dec.RestrictableTag.flix"),
     "Test.Dec.TopLevel.flix" -> LocalResource.get("/test/flix/Test.Dec.TopLevel.flix"),
     "Test.Dec.Trait.flix" -> LocalResource.get("/test/flix/Test.Dec.Trait.flix"),
     "Test.Dec.TypeAlias.flix" -> LocalResource.get("/test/flix/Test.Dec.TypeAlias.flix"),
-//    "Test.Def.ChooseStar.Simple.flix" -> LocalResource.get("/test/flix/Test.Def.ChooseStar.Simple.flix"),
-//    "Test.Def.Generalization.flix" -> LocalResource.get("/test/flix/Test.Def.Generalization.flix"),
-//    "Test.Def.Op.flix" -> LocalResource.get("/test/flix/Test.Def.Op.flix"),
     "Test.Derives.Eq.flix" -> LocalResource.get("/test/flix/Test.Derives.Eq.flix"),
     "Test.Derives.Hash.flix" -> LocalResource.get("/test/flix/Test.Derives.Hash.flix"),
     "Test.Derives.Order.flix" -> LocalResource.get("/test/flix/Test.Derives.Order.flix"),
@@ -354,7 +348,6 @@ class Flix {
     "Test.Equality.Tag.flix" -> LocalResource.get("/test/flix/Test.Equality.Tag.flix"),
     "Test.Equality.Tuple.flix" -> LocalResource.get("/test/flix/Test.Equality.Tuple.flix"),
     "Test.Equality.Unit.flix" -> LocalResource.get("/test/flix/Test.Equality.Unit.flix"),
-//    "Test.Exp.ApplicativeFor.flix" -> LocalResource.get("/test/flix/Test.Exp.ApplicativeFor.flix"),
     "Test.Exp.Apply.Named.flix" -> LocalResource.get("/test/flix/Test.Exp.Apply.Named.flix"),
     "Test.Exp.Apply.Tail.flix" -> LocalResource.get("/test/flix/Test.Exp.Apply.Tail.flix"),
     "Test.Exp.ArrayLength.flix" -> LocalResource.get("/test/flix/Test.Exp.ArrayLength.flix"),
@@ -362,37 +355,22 @@ class Flix {
     "Test.Exp.ArrayLoad.flix" -> LocalResource.get("/test/flix/Test.Exp.ArrayLoad.flix"),
     "Test.Exp.ArrayNew.flix" -> LocalResource.get("/test/flix/Test.Exp.ArrayNew.flix"),
     "Test.Exp.ArrayStore.flix" -> LocalResource.get("/test/flix/Test.Exp.ArrayStore.flix"),
-//    "Test.Exp.Ascribe.flix" -> LocalResource.get("/test/flix/Test.Exp.Ascribe.flix"),
     "Test.Exp.BigDecimal.flix" -> LocalResource.get("/test/flix/Test.Exp.BigDecimal.flix"),
     "Test.Exp.BigInt.flix" -> LocalResource.get("/test/flix/Test.Exp.BigInt.flix"),
-//    "Test.Exp.Binary.Arithmetic.flix" -> LocalResource.get("/test/flix/Test.Exp.Binary.Arithmetic.flix"),
     "Test.Exp.Binary.Bitwise.flix" -> LocalResource.get("/test/flix/Test.Exp.Binary.Bitwise.flix"),
-//    "Test.Exp.Binary.Comparison.flix" -> LocalResource.get("/test/flix/Test.Exp.Binary.Comparison.flix"),
     "Test.Exp.Binary.Logic.flix" -> LocalResource.get("/test/flix/Test.Exp.Binary.Logic.flix"),
     "Test.Exp.Binary.Spaceship.flix" -> LocalResource.get("/test/flix/Test.Exp.Binary.Spaceship.flix"),
     "Test.Exp.Block.flix" -> LocalResource.get("/test/flix/Test.Exp.Block.flix"),
-//    "Test.Exp.Char.flix" -> LocalResource.get("/test/flix/Test.Exp.Char.flix"),
     "Test.Exp.CheckedEffectCast.flix" -> LocalResource.get("/test/flix/Test.Exp.CheckedEffectCast.flix"),
     "Test.Exp.CheckedTypeCast.flix" -> LocalResource.get("/test/flix/Test.Exp.CheckedTypeCast.flix"),
-//    "Test.Exp.Choose.Polymorphic.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.Polymorphic.flix"),
-//    "Test.Exp.Choose.Recursive.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.Recursive.flix"),
-//    "Test.Exp.Choose.Simple.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.Simple.flix"),
-//    "Test.Exp.Choose.SimpleTerms.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.SimpleTerms.flix"),
-//    "Test.Exp.ChooseStar.Polymorphic.flix" -> LocalResource.get("/test/flix/Test.Exp.ChooseStar.Polymorphic.flix"),
     "Test.Exp.ChooseStar.Recursive.flix" -> LocalResource.get("/test/flix/Test.Exp.ChooseStar.Recursive.flix"),
-//    "Test.Exp.ChooseStar.Simple.flix" -> LocalResource.get("/test/flix/Test.Exp.ChooseStar.Simple.flix"),
     "Test.Exp.ChooseStar.SimpleTerms.flix" -> LocalResource.get("/test/flix/Test.Exp.ChooseStar.SimpleTerms.flix"),
     "Test.Exp.Concurrency.Buffered.flix" -> LocalResource.get("/test/flix/Test.Exp.Concurrency.Buffered.flix"),
-//    "Test.Exp.Concurrency.Select.flix" -> LocalResource.get("/test/flix/Test.Exp.Concurrency.Select.flix"),
     "Test.Exp.Concurrency.Spawn.flix" -> LocalResource.get("/test/flix/Test.Exp.Concurrency.Spawn.flix"),
     "Test.Exp.Concurrency.Unbuffered.flix" -> LocalResource.get("/test/flix/Test.Exp.Concurrency.Unbuffered.flix"),
     "Test.Exp.Discard.flix" -> LocalResource.get("/test/flix/Test.Exp.Discard.flix"),
     "Test.Exp.Effect.2.flix" -> LocalResource.get("/test/flix/Test.Exp.Effect.2.flix"),
-//    "Test.Exp.Effect.flix" -> LocalResource.get("/test/flix/Test.Exp.Effect.flix"),
     "Test.Exp.Fixpoint.Compose.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Compose.flix"),
-//    "Test.Exp.Fixpoint.Constraint.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
-//    "Test.Exp.Fixpoint.Lambda.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Lambda.flix"),
-//    "Test.Exp.Fixpoint.Project.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Project.flix"),
     "Test.Exp.Fixpoint.Query.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Query.flix"),
     "Test.Exp.Fixpoint.Solve.Lattice.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Solve.Lattice.flix"),
     "Test.Exp.Fixpoint.Solve.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Solve.flix"),
@@ -400,38 +378,19 @@ class Flix {
     "Test.Exp.Float32.flix" -> LocalResource.get("/test/flix/Test.Exp.Float32.flix"),
     "Test.Exp.Float64.flix" -> LocalResource.get("/test/flix/Test.Exp.Float64.flix"),
     "Test.Exp.ForEach.flix" -> LocalResource.get("/test/flix/Test.Exp.ForEach.flix"),
-//    "Test.Exp.ForEachYield.flix" -> LocalResource.get("/test/flix/Test.Exp.ForEachYield.flix"),
     "Test.Exp.Force.flix" -> LocalResource.get("/test/flix/Test.Exp.Force.flix"),
-//    "Test.Exp.Hole.flix" -> LocalResource.get("/test/flix/Test.Exp.Hole.flix"),
-//    "Test.Exp.HoleWithExp.flix" -> LocalResource.get("/test/flix/Test.Exp.HoleWithExp.flix"),
     "Test.Exp.IfThenElse.flix" -> LocalResource.get("/test/flix/Test.Exp.IfThenElse.flix"),
-//    "Test.Exp.Infix.flix" -> LocalResource.get("/test/flix/Test.Exp.Infix.flix"),
     "Test.Exp.Instanceof.flix" -> LocalResource.get("/test/flix/Test.Exp.Instanceof.flix"),
     "Test.Exp.Int16.flix" -> LocalResource.get("/test/flix/Test.Exp.Int16.flix"),
     "Test.Exp.Int32.flix" -> LocalResource.get("/test/flix/Test.Exp.Int32.flix"),
     "Test.Exp.Int64.flix" -> LocalResource.get("/test/flix/Test.Exp.Int64.flix"),
     "Test.Exp.Int8.flix" -> LocalResource.get("/test/flix/Test.Exp.Int8.flix"),
     "Test.Exp.Interpolation.flix" -> LocalResource.get("/test/flix/Test.Exp.Interpolation.flix"),
-//    "Test.Exp.Jvm.GetField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetField.flix"),
-//    "Test.Exp.Jvm.GetFieldDoubleNestedClass.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetFieldDoubleNestedClass.flix"),
-//    "Test.Exp.Jvm.GetFieldStaticInnerClass.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetFieldStaticInnerClass.flix"),
-//    "Test.Exp.Jvm.GetStaticField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetStaticField.flix"),
-//    "Test.Exp.Jvm.GetStaticFieldStaticInnerClass.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetStaticFieldStaticInnerClass.flix"),
-//    "Test.Exp.Jvm.InvokeConstructor.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.InvokeConstructor.flix"),
-//    "Test.Exp.Jvm.InvokeMethod.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.InvokeMethod.flix"),
-//    "Test.Exp.Jvm.InvokeStaticMethod.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix"),
-//    "Test.Exp.Jvm.NewObject.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.NewObject.flix"),
-//    "Test.Exp.Jvm.PutField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.PutField.flix"),
-//    "Test.Exp.Jvm.PutStaticField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.PutStaticField.flix"),
-//    "Test.Exp.Jvm.TryCatch.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.TryCatch.flix"),
-//    "Test.Exp.Lambda.Match.flix" -> LocalResource.get("/test/flix/Test.Exp.Lambda.Match.flix"),
     "Test.Exp.Lazy.flix" -> LocalResource.get("/test/flix/Test.Exp.Lazy.flix"),
     "Test.Exp.Let.Match.flix" -> LocalResource.get("/test/flix/Test.Exp.Let.Match.flix"),
     "Test.Exp.Let.Rec.flix" -> LocalResource.get("/test/flix/Test.Exp.Let.Rec.flix"),
     "Test.Exp.Let.flix" -> LocalResource.get("/test/flix/Test.Exp.Let.flix"),
-//    "Test.Exp.List.flix" -> LocalResource.get("/test/flix/Test.Exp.List.flix"),
     "Test.Exp.Match.Bool.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Bool.flix"),
-//    "Test.Exp.Match.Char.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Char.flix"),
     "Test.Exp.Match.Float32.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Float32.flix"),
     "Test.Exp.Match.Float64.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Float64.flix"),
     "Test.Exp.Match.Guard.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Guard.flix"),
@@ -440,38 +399,20 @@ class Flix {
     "Test.Exp.Match.Int64.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Int64.flix"),
     "Test.Exp.Match.Int8.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Int8.flix"),
     "Test.Exp.Match.List.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.List.flix"),
-//    "Test.Exp.Match.Record.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Record.flix"),
     "Test.Exp.Match.String.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.String.flix"),
     "Test.Exp.Match.Tag.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Tag.flix"),
     "Test.Exp.Match.Unit.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Unit.flix"),
     "Test.Exp.Match.Wild.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Wild.flix"),
-//    "Test.Exp.MonadicFor.flix" -> LocalResource.get("/test/flix/Test.Exp.MonadicFor.flix"),
-//    "Test.Exp.New.flix" -> LocalResource.get("/test/flix/Test.Exp.New.flix"),
     "Test.Exp.Null.flix" -> LocalResource.get("/test/flix/Test.Exp.Null.flix"),
     "Test.Exp.ParYield.flix" -> LocalResource.get("/test/flix/Test.Exp.ParYield.flix"),
-//    "Test.Exp.Record.Extend.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Extend.flix"),
-//    "Test.Exp.Record.Literal.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Literal.flix"),
-//    "Test.Exp.Record.Multiple.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Multiple.flix"),
-//    "Test.Exp.Record.Polymorphism.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Polymorphism.flix"),
-//    "Test.Exp.Record.Restrict.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Restrict.flix"),
-//    "Test.Exp.Record.Select.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Select.flix"),
-//    "Test.Exp.Record.Update.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Update.flix"),
     "Test.Exp.Ref.Assign.flix" -> LocalResource.get("/test/flix/Test.Exp.Ref.Assign.flix"),
-//    "Test.Exp.Ref.Deref.flix" -> LocalResource.get("/test/flix/Test.Exp.Ref.Deref.flix"),
     "Test.Exp.Ref.Precedence.flix" -> LocalResource.get("/test/flix/Test.Exp.Ref.Precedence.flix"),
     "Test.Exp.Ref.Ref.flix" -> LocalResource.get("/test/flix/Test.Exp.Ref.Ref.flix"),
-//    "Test.Exp.Regex.flix" -> LocalResource.get("/test/flix/Test.Exp.Regex.flix"),
     "Test.Exp.Regions.flix" -> LocalResource.get("/test/flix/Test.Exp.Regions.flix"),
     "Test.Exp.Scope.flix" -> LocalResource.get("/test/flix/Test.Exp.Scope.flix"),
     "Test.Exp.Stm.flix" -> LocalResource.get("/test/flix/Test.Exp.Stm.flix"),
-//    "Test.Exp.String.flix" -> LocalResource.get("/test/flix/Test.Exp.String.flix"),
     "Test.Exp.Tag.Lambda.flix" -> LocalResource.get("/test/flix/Test.Exp.Tag.Lambda.flix"),
-//    "Test.Exp.Tag.flix" -> LocalResource.get("/test/flix/Test.Exp.Tag.flix"),
     "Test.Exp.TryWith.flix" -> LocalResource.get("/test/flix/Test.Exp.TryWith.flix"),
-//    "Test.Exp.Tuple.flix" -> LocalResource.get("/test/flix/Test.Exp.Tuple.flix"),
-//    "Test.Exp.TypeMatch.flix" -> LocalResource.get("/test/flix/Test.Exp.TypeMatch.flix"),
-//    "Test.Exp.Unary.Arithmetic.flix" -> LocalResource.get("/test/flix/Test.Exp.Unary.Arithmetic.flix"),
-//    "Test.Exp.Unary.Bitwise.flix" -> LocalResource.get("/test/flix/Test.Exp.Unary.Bitwise.flix"),
     "Test.Exp.Unary.Logic.flix" -> LocalResource.get("/test/flix/Test.Exp.Unary.Logic.flix"),
     "Test.Exp.UncheckedEffectCast.flix" -> LocalResource.get("/test/flix/Test.Exp.UncheckedEffectCast.flix"),
     "Test.Exp.UncheckedMaskingCast.flix" -> LocalResource.get("/test/flix/Test.Exp.UncheckedMaskingCast.flix"),
@@ -541,19 +482,13 @@ class Flix {
     "Test.Handler.ZeroShot.String.flix" -> LocalResource.get("/test/flix/Test.Handler.ZeroShot.String.flix"),
     "Test.Handler.ZeroShot.Unit.flix" -> LocalResource.get("/test/flix/Test.Handler.ZeroShot.Unit.flix"),
     "Test.Import.flix" -> LocalResource.get("/test/flix/Test.Import.flix"),
-//    "Test.Integ.Class.Schema.flix" -> LocalResource.get("/test/flix/Test.Integ.Class.Schema.flix"),
     "Test.Integ.Enum.TypeAlias.flix" -> LocalResource.get("/test/flix/Test.Integ.Enum.TypeAlias.flix"),
     "Test.Integ.Fixpoint.TypeAlias.flix" -> LocalResource.get("/test/flix/Test.Integ.Fixpoint.TypeAlias.flix"),
     "Test.Integ.Trait.Schema.flix" -> LocalResource.get("/test/flix/Test.Integ.Trait.Schema.flix"),
-//    "Test.Java.Function.flix" -> LocalResource.get("/test/flix/Test.Java.Function.flix"),
-//    "Test.Kind.Class.flix" -> LocalResource.get("/test/flix/Test.Kind.Class.flix"),
     "Test.Kind.Def.flix" -> LocalResource.get("/test/flix/Test.Kind.Def.flix"),
-//    "Test.Kind.Enum.flix" -> LocalResource.get("/test/flix/Test.Kind.Enum.flix"),
     "Test.Kind.Instance.flix" -> LocalResource.get("/test/flix/Test.Kind.Instance.flix"),
-//    "Test.Kind.Trait.flix" -> LocalResource.get("/test/flix/Test.Kind.Trait.flix"),
     "Test.Kind.TypeAlias.flix" -> LocalResource.get("/test/flix/Test.Kind.TypeAlias.flix"),
     "Test.Predicate.Functional.flix" -> LocalResource.get("/test/flix/Test.Predicate.Functional.flix"),
-//    "Test.Predicate.Guard.flix" -> LocalResource.get("/test/flix/Test.Predicate.Guard.flix"),
     "Test.Predicate.Nullary.flix" -> LocalResource.get("/test/flix/Test.Predicate.Nullary.flix"),
     "Test.Stratification.flix" -> LocalResource.get("/test/flix/Test.Stratification.flix"),
     "Test.Term.Apply.flix" -> LocalResource.get("/test/flix/Test.Term.Apply.flix"),
@@ -561,70 +496,147 @@ class Flix {
     "Test.Term.Lit.Option.flix" -> LocalResource.get("/test/flix/Test.Term.Lit.Option.flix"),
     "Test.Term.Lit.Result.flix" -> LocalResource.get("/test/flix/Test.Term.Lit.Result.flix"),
     "Test.Term.Lit.Set.flix" -> LocalResource.get("/test/flix/Test.Term.Lit.Set.flix"),
-//    "Test.Term.Lit.flix" -> LocalResource.get("/test/flix/Test.Term.Lit.flix"),
     "Test.Term.Var.CapturedVar.flix" -> LocalResource.get("/test/flix/Test.Term.Var.CapturedVar.flix"),
     "Test.Term.Var.QuantVar.flix" -> LocalResource.get("/test/flix/Test.Term.Var.QuantVar.flix"),
     "Test.Term.Var.WildVar.flix" -> LocalResource.get("/test/flix/Test.Term.Var.WildVar.flix"),
     "Test.Test.flix" -> LocalResource.get("/test/flix/Test.Test.flix"),
     "Test.Type.Bool.flix" -> LocalResource.get("/test/flix/Test.Type.Bool.flix"),
     "Test.Type.Void.flix" -> LocalResource.get("/test/flix/Test.Type.Void.flix"),
-//    "Test.Unused.Def.flix" -> LocalResource.get("/test/flix/Test.Unused.Def.flix"),
     "Test.Unused.Tag.flix" -> LocalResource.get("/test/flix/Test.Unused.Tag.flix"),
-//    "Test.Unused.Var.flix" -> LocalResource.get("/test/flix/Test.Unused.Var.flix"),
-//    "Test.Use.Def.flix" -> LocalResource.get("/test/flix/Test.Use.Def.flix"),
-//    "Test.Use.Sig.flix" -> LocalResource.get("/test/flix/Test.Use.Sig.flix"),
-//    "Test.Use.Tag.flix" -> LocalResource.get("/test/flix/Test.Use.Tag.flix"),
     "Test.Use.Type.flix" -> LocalResource.get("/test/flix/Test.Use.Type.flix"),
+
+    //    "Test.Kind.Trait.flix" -> LocalResource.get("/test/flix/Test.Kind.Trait.flix"),
+    //    "Test.Kind.Enum.flix" -> LocalResource.get("/test/flix/Test.Kind.Enum.flix"),
+
+    //    "Test.Predicate.Guard.flix" -> LocalResource.get("/test/flix/Test.Predicate.Guard.flix"),
+
+    //    "Test.Java.Function.flix" -> LocalResource.get("/test/flix/Test.Java.Function.flix"),
+
+    //    "Test.Unused.Def.flix" -> LocalResource.get("/test/flix/Test.Unused.Def.flix"),
+    //    "Test.Unused.Var.flix" -> LocalResource.get("/test/flix/Test.Unused.Var.flix"),
+
+    //    "Test.Use.Def.flix" -> LocalResource.get("/test/flix/Test.Use.Def.flix"),
+    //    "Test.Use.Sig.flix" -> LocalResource.get("/test/flix/Test.Use.Sig.flix"),
+    //    "Test.Use.Tag.flix" -> LocalResource.get("/test/flix/Test.Use.Tag.flix"),
+
+    //    "Test.Assoc.Eff.Contravariance.flix" -> LocalResource.get("/test/flix/Test.Assoc.Eff.Contravariance.flix"),
+
+    //    "Test.Dec.RestrictableTag.flix" -> LocalResource.get("/test/flix/Test.Dec.RestrictableTag.flix"),
+
+    //    "Test.Def.ChooseStar.Simple.flix" -> LocalResource.get("/test/flix/Test.Def.ChooseStar.Simple.flix"),
+    //    "Test.Def.Generalization.flix" -> LocalResource.get("/test/flix/Test.Def.Generalization.flix"),
+    //    "Test.Def.Op.flix" -> LocalResource.get("/test/flix/Test.Def.Op.flix"),
+
+    //    "Test.Exp.Effect.flix" -> LocalResource.get("/test/flix/Test.Exp.Effect.flix"),
+    //    "Test.Exp.Fixpoint.Lambda.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Lambda.flix"),
+    //    "Test.Exp.Match.Char.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Char.flix"),
+    //    "Test.Exp.Char.flix" -> LocalResource.get("/test/flix/Test.Exp.Char.flix"),
+    //    "Test.Exp.Binary.Comparison.flix" -> LocalResource.get("/test/flix/Test.Exp.Binary.Comparison.flix"),
+    //    "Test.Exp.Binary.Arithmetic.flix" -> LocalResource.get("/test/flix/Test.Exp.Binary.Arithmetic.flix"),
+    //    "Test.Exp.Ascribe.flix" -> LocalResource.get("/test/flix/Test.Exp.Ascribe.flix"),
+
+    //    "Test.Exp.Choose.Polymorphic.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.Polymorphic.flix"),
+    //    "Test.Exp.Choose.Recursive.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.Recursive.flix"),
+    //    "Test.Exp.Choose.Simple.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.Simple.flix"),
+    //    "Test.Exp.Choose.SimpleTerms.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.SimpleTerms.flix"),
+    //    "Test.Exp.ChooseStar.Polymorphic.flix" -> LocalResource.get("/test/flix/Test.Exp.ChooseStar.Polymorphic.flix"),
+    //    "Test.Exp.ChooseStar.Simple.flix" -> LocalResource.get("/test/flix/Test.Exp.ChooseStar.Simple.flix"),
+
+    //    "Test.Exp.Concurrency.Select.flix" -> LocalResource.get("/test/flix/Test.Exp.Concurrency.Select.flix"),
+    //    "Test.Exp.ForEachYield.flix" -> LocalResource.get("/test/flix/Test.Exp.ForEachYield.flix"),
+    //    "Test.Exp.Hole.flix" -> LocalResource.get("/test/flix/Test.Exp.Hole.flix"),
+    //    "Test.Exp.HoleWithExp.flix" -> LocalResource.get("/test/flix/Test.Exp.HoleWithExp.flix"),
+    //    "Test.Exp.Infix.flix" -> LocalResource.get("/test/flix/Test.Exp.Infix.flix"),
+    //    "Test.Exp.Lambda.Match.flix" -> LocalResource.get("/test/flix/Test.Exp.Lambda.Match.flix"),
+    //    "Test.Exp.List.flix" -> LocalResource.get("/test/flix/Test.Exp.List.flix"),
+    //    "Test.Exp.ApplicativeFor.flix" -> LocalResource.get("/test/flix/Test.Exp.ApplicativeFor.flix"),
+    //    "Test.Exp.Tag.flix" -> LocalResource.get("/test/flix/Test.Exp.Tag.flix"),
+    //    "Test.Exp.String.flix" -> LocalResource.get("/test/flix/Test.Exp.String.flix"),
+    //    "Test.Exp.Regex.flix" -> LocalResource.get("/test/flix/Test.Exp.Regex.flix"),
+    //    "Test.Exp.Tuple.flix" -> LocalResource.get("/test/flix/Test.Exp.Tuple.flix"),
+    //    "Test.Exp.TypeMatch.flix" -> LocalResource.get("/test/flix/Test.Exp.TypeMatch.flix"),
+    //    "Test.Exp.Unary.Arithmetic.flix" -> LocalResource.get("/test/flix/Test.Exp.Unary.Arithmetic.flix"),
+    //    "Test.Exp.Unary.Bitwise.flix" -> LocalResource.get("/test/flix/Test.Exp.Unary.Bitwise.flix"),
+    //    "Test.Exp.MonadicFor.flix" -> LocalResource.get("/test/flix/Test.Exp.MonadicFor.flix"),
+    //    "Test.Exp.New.flix" -> LocalResource.get("/test/flix/Test.Exp.New.flix"),
+
+    //    "Test.Exp.Match.Record.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Record.flix"),
+    //    "Test.Exp.Record.Extend.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Extend.flix"),
+    //    "Test.Exp.Record.Literal.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Literal.flix"),
+    //    "Test.Exp.Record.Multiple.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Multiple.flix"),
+    //    "Test.Exp.Record.Polymorphism.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Polymorphism.flix"),
+    //    "Test.Exp.Record.Restrict.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Restrict.flix"),
+    //    "Test.Exp.Record.Select.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Select.flix"),
+    //    "Test.Exp.Record.Update.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Update.flix"),
+    //    "Test.Exp.Ref.Deref.flix" -> LocalResource.get("/test/flix/Test.Exp.Ref.Deref.flix"),
+
+    //    "Test.Exp.Jvm.GetField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetField.flix"),
+    //    "Test.Exp.Jvm.GetFieldDoubleNestedClass.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetFieldDoubleNestedClass.flix"),
+    //    "Test.Exp.Jvm.GetFieldStaticInnerClass.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetFieldStaticInnerClass.flix"),
+    //    "Test.Exp.Jvm.GetStaticField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetStaticField.flix"),
+    //    "Test.Exp.Jvm.GetStaticFieldStaticInnerClass.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetStaticFieldStaticInnerClass.flix"),
+    //    "Test.Exp.Jvm.InvokeConstructor.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.InvokeConstructor.flix"),
+    //    "Test.Exp.Jvm.InvokeMethod.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.InvokeMethod.flix"),
+    //    "Test.Exp.Jvm.InvokeStaticMethod.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix"),
+    //    "Test.Exp.Jvm.NewObject.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.NewObject.flix"),
+    //    "Test.Exp.Jvm.PutField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.PutField.flix"),
+    //    "Test.Exp.Jvm.PutStaticField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.PutStaticField.flix"),
+    //    "Test.Exp.Jvm.TryCatch.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.TryCatch.flix"),
+
+    // TODO: KEYWORD PROJECT
+    //    "Test.Term.Lit.flix" -> LocalResource.get("/test/flix/Test.Term.Lit.flix"),
+    //    "Test.Exp.Fixpoint.Constraint.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
+    //    "Test.Exp.Fixpoint.Project.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Project.flix"),
   )
 
   /**
-    * A map to track the time spent in each phase and sub-phase.
-    */
+   * A map to track the time spent in each phase and sub-phase.
+   */
   var phaseTimers: ListBuffer[PhaseTime] = ListBuffer.empty
 
   /**
-    * The current phase we are in. Initially null.
-    */
+   * The current phase we are in. Initially null.
+   */
   private var currentPhase: PhaseTime = _
 
   /**
-    * The progress bar.
-    */
+   * The progress bar.
+   */
   private val progressBar: ProgressBar = new ProgressBar
 
   /**
-    * The default assumed charset.
-    */
+   * The default assumed charset.
+   */
   val defaultCharset: Charset = Charset.forName("UTF-8")
 
   /**
-    * The current Flix options.
-    */
+   * The current Flix options.
+   */
   var options: Options = Options.Default
 
   /**
-    * The thread pool executor service for `this` Flix instance.
-    */
+   * The thread pool executor service for `this` Flix instance.
+   */
   var threadPool: java.util.concurrent.ForkJoinPool = _
 
   /**
-    * The symbol generator associated with this Flix instance.
-    */
+   * The symbol generator associated with this Flix instance.
+   */
   val genSym = new GenSym()
 
   /**
-    * The default output formatter.
-    */
+   * The default output formatter.
+   */
   private var formatter: Formatter = NoFormatter
 
   /**
-    * A class loader for loading external JARs.
-    */
+   * A class loader for loading external JARs.
+   */
   val jarLoader = new ExternalJarLoader
 
   /**
-    * Adds the given string `text` with the given `name`.
-    */
+   * Adds the given string `text` with the given `name`.
+   */
   def addSourceCode(name: String, text: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
@@ -635,8 +647,8 @@ class Flix {
   }
 
   /**
-    * Removes the source code with the given `name`.
-    */
+   * Removes the source code with the given `name`.
+   */
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
@@ -645,8 +657,8 @@ class Flix {
   }
 
   /**
-    * Adds the given path `p` as Flix source file.
-    */
+   * Adds the given path `p` as Flix source file.
+   */
   def addFlix(p: Path): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
@@ -664,8 +676,8 @@ class Flix {
   }
 
   /**
-    * Adds the given path `p` as a Flix package file.
-    */
+   * Adds the given path `p` as a Flix package file.
+   */
   def addPkg(p: Path): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
@@ -683,8 +695,8 @@ class Flix {
   }
 
   /**
-    * Removes the given path `p` as a Flix source file.
-    */
+   * Removes the given path `p` as a Flix source file.
+   */
   def remFlix(p: Path): Flix = {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
@@ -694,8 +706,8 @@ class Flix {
   }
 
   /**
-    * Adds the JAR file at path `p` to the class loader.
-    */
+   * Adds the JAR file at path `p` to the class loader.
+   */
   def addJar(p: Path): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
@@ -711,8 +723,8 @@ class Flix {
   }
 
   /**
-    * Adds the given `input` under the given `name`.
-    */
+   * Adds the given `input` under the given `name`.
+   */
   private def addInput(name: String, input: Input): Unit = inputs.get(name) match {
     case None =>
       inputs += name -> input
@@ -722,10 +734,10 @@ class Flix {
   }
 
   /**
-    * Removes the given `input` under the given `name`.
-    *
-    * Note: Removing an input means to replace it by the empty string.
-    */
+   * Removes the given `input` under the given `name`.
+   *
+   * Note: Removing an input means to replace it by the empty string.
+   */
   private def remInput(name: String, input: Input): Unit = inputs.get(name) match {
     case None => // nop
     case Some(_) =>
@@ -734,8 +746,8 @@ class Flix {
   }
 
   /**
-    * Sets the options used for this Flix instance.
-    */
+   * Sets the options used for this Flix instance.
+   */
   def setOptions(opts: Options): Flix = {
     if (opts == null)
       throw new IllegalArgumentException("'opts' must be non-null.")
@@ -744,8 +756,8 @@ class Flix {
   }
 
   /**
-    * Returns the format options associated with this Flix instance.
-    */
+   * Returns the format options associated with this Flix instance.
+   */
   def getFormatOptions: FormatOptions = {
     FormatOptions(
       varNames = FormatOptions.VarName.NameBased // TODO add cli option
@@ -753,13 +765,13 @@ class Flix {
   }
 
   /**
-    * Returns the current formatter instance.
-    */
+   * Returns the current formatter instance.
+   */
   def getFormatter: Formatter = this.formatter
 
   /**
-    * Sets the output formatter used for this Flix instance.
-    */
+   * Sets the output formatter used for this Flix instance.
+   */
   def setFormatter(formatter: Formatter): Flix = {
     if (formatter == null)
       throw new IllegalArgumentException("'formatter' must be non-null.")
@@ -768,9 +780,9 @@ class Flix {
   }
 
   /**
-    * Converts a list of compiler error messages to a list of printable messages.
-    * Decides whether or not to append the explanation.
-    */
+   * Converts a list of compiler error messages to a list of printable messages.
+   * Decides whether or not to append the explanation.
+   */
   def mkMessages(errors: Chain[CompilationMessage]): List[String] = {
     if (options.explain)
       errors.toSeq.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
@@ -779,8 +791,8 @@ class Flix {
   }
 
   /**
-    * Compiles the Flix program and returns a typed ast.
-    */
+   * Compiles the Flix program and returns a typed ast.
+   */
   def check(): Validation[TypedAst.Root, CompilationMessage] = try {
     import Validation.Implicit.AsMonad
 
@@ -863,8 +875,8 @@ class Flix {
   }
 
   /**
-    * Compiles the given typed ast to an executable ast.
-    */
+   * Compiles the given typed ast to an executable ast.
+   */
   def codeGen(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
     // Mark this object as implicit.
     implicit val flix: Flix = this
@@ -910,16 +922,16 @@ class Flix {
   }
 
   /**
-    * Compiles the given typed ast to an executable ast.
-    */
+   * Compiles the given typed ast to an executable ast.
+   */
   def compile(): Validation[CompilationResult, CompilationMessage] = {
     val result = check().toHardFailure
     Validation.flatMapN(result)(codeGen)
   }
 
   /**
-    * Enters the phase with the given name.
-    */
+   * Enters the phase with the given name.
+   */
   def phase[A](phase: String)(f: => A): A = {
     // Initialize the phase time object.
     currentPhase = PhaseTime(phase, 0, Nil)
@@ -944,8 +956,8 @@ class Flix {
   }
 
   /**
-    * Enters the sub-phase with the given name.
-    */
+   * Enters the sub-phase with the given name.
+   */
   def subphase[A](subphase: String)(f: => A): A = {
     // Measure the execution time.
     val t = System.nanoTime()
@@ -961,15 +973,15 @@ class Flix {
   }
 
   /**
-    * Returns the total compilation time in nanoseconds.
-    */
+   * Returns the total compilation time in nanoseconds.
+   */
   def getTotalTime: Long = phaseTimers.foldLeft(0L) {
     case (acc, phase) => acc + phase.time
   }
 
   /**
-    * A callback to indicate that work has started on the given subtask.
-    */
+   * A callback to indicate that work has started on the given subtask.
+   */
   def subtask(subtask: String, sample: Boolean = false): Unit = {
     if (options.progress) {
       progressBar.observe(currentPhase.phase, subtask, sample)
@@ -977,8 +989,8 @@ class Flix {
   }
 
   /**
-    * Returns a list of inputs constructed from the strings and paths passed to Flix.
-    */
+   * Returns a list of inputs constructed from the strings and paths passed to Flix.
+   */
   private def getInputs: List[Input] = {
     val lib = options.lib match {
       case LibLevel.Nix => Nil
@@ -989,22 +1001,22 @@ class Flix {
   }
 
   /**
-    * Returns the inputs for the given list of (path, text) pairs.
-    */
+   * Returns the inputs for the given list of (path, text) pairs.
+   */
   private def getLibraryInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
     case (xs, (name, text)) => Input.Text(name, text, stable = true) :: xs
   }
 
   /**
-    * Initializes the fork-join thread pool.
-    */
+   * Initializes the fork-join thread pool.
+   */
   private def initForkJoinPool(): Unit = {
     threadPool = new ForkJoinPool(options.threads)
   }
 
   /**
-    * Shuts down the fork-join thread pools.
-    */
+   * Shuts down the fork-join thread pools.
+   */
   private def shutdownForkJoinPool(): Unit = {
     threadPool.shutdown()
   }

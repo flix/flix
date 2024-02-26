@@ -739,7 +739,7 @@ object Weeder2 {
         case TreeKind.Expr.Without => visitWithout(tree)
         case TreeKind.Expr.FixpointQuery => visitFixpointQuery(tree)
         case TreeKind.Expr.FixpointConstraintSet => visitFixpointConstraintSet(tree)
-        case TreeKind.Expr.FixpointSolve => visitFixpointSolve(tree)
+        case TreeKind.Expr.FixpointSolveWithProject => visitFixpointSolve(tree)
         case TreeKind.Expr.FixpointInject => visitFixpointInject(tree)
         case TreeKind.Expr.NewObject => visitNewObject(tree)
         case TreeKind.Expr.LetRecDef => visitLetRecDef(tree)
@@ -842,7 +842,7 @@ object Weeder2 {
     }
 
     private def visitFixpointSolve(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.FixpointSolve)
+      assert(tree.kind == TreeKind.Expr.FixpointSolveWithProject)
       val expressions = pickAll(TreeKind.Expr.Expr, tree.children)
       val idents = pickAll(TreeKind.Ident, tree.children)
       mapN(

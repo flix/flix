@@ -1203,14 +1203,14 @@ object Parser2 {
         expression()
       }
 
-      // TODO: How to resolve this? Do we need keyword project afterall?
-      //      if (at(TokenKind.KeywordProject)) {
-      //        name(NAME_PREDICATE)
-      //        while (eat(TokenKind.Comma) && !eof()) {
-      //          name(NAME_PREDICATE)
-      //        }
-      //      }
-      close(mark, TreeKind.Expr.FixpointSolve)
+      // TODO: Do we need project?
+//      if (eat(TokenKind.KeywordProject)) {
+//        name(NAME_PREDICATE)
+//        while (eat(TokenKind.Comma) && !eof()) {
+//          name(NAME_PREDICATE)
+//        }
+//      }
+      close(mark, TreeKind.Expr.FixpointSolveWithProject)
     }
 
     private def fixpointQuery()(implicit s: State): Mark.Closed = {
