@@ -415,6 +415,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEqualityConstraint](result)
   }
 
+  test("IllegalEqualityConstraint.03") {
+    val input =
+      """
+        |def f(): String where Int32 ~ Int64 = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEqualityConstraint](result)
+  }
+
   test("IllegalEscapeSequence.01") {
     val input = s"""pub def foo(): String = "\\$$ {""""
     val result = compile(input, Options.TestWithLibNix)
