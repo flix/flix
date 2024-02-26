@@ -1762,6 +1762,24 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.UndefinedIntrinsic](result)
   }
 
+  test("UndefinedIntrinsic.02") {
+    val input =
+      """
+        |def f(): Unit = $BOOLNOT$()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UndefinedIntrinsic](result)
+  }
+
+  test("UndefinedIntrinsic.03") {
+    val input =
+      """
+        |def f(): Unit = $ARRAY_NEW$($ARRAYNEW$())
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UndefinedIntrinsic](result)
+  }
+
   test("UnqualifiedUse.01") {
     val input =
       """
