@@ -404,25 +404,30 @@ object FastBoolUnification {
   }
 
 
-  private def propagateAnd(t0: Term): Term = {
-    def visit(t0: Term, trueCsts: SortedSet[Int], trueVars: SortedSet[Int]): Term = t0 match {
+  private def propagateAnd(t: Term): Term = {
+    def visit(t: Term, trueCsts: SortedSet[Int], trueVars: SortedSet[Int]): Term = t match {
       case Term.True => Term.True
       case Term.False => Term.False
       case Term.Cst(c) => if (trueCsts.contains(c)) Term.True else Term.Cst(c)
       case Term.Var(x) => if (trueVars.contains(x)) Term.True else Term.Var(x)
-      case Term.Not(t) => Term.mkNot(visit(t, trueCsts, trueVars))
+      case Term.Not(t0) => Term.mkNot(visit(t0, trueCsts, trueVars))
       case Term.And(csts0, vars0, rest0) =>
+        // Compute the constants and variables that _must_ hold for the whole conjunction to hold.
         val termCsts = csts0.map(_.c)
         val termVars = vars0.map(_.x)
         val currentCsts = trueCsts ++ termCsts
         val currentVars = trueVars ++ termVars
 
         val rest = rest0.collect {
-          case t: Term.Cst => ???
-          case t: Term.Var => ???
           case t: Term.Not => visit(t, currentCsts, currentVars)
           case t: Term.And => visit(t, currentCsts, currentVars)
           case t: Term.Or => visit(t, currentCsts, currentVars)
+          case _: Term.Cst =>
+            // Cannot happen because the invariant of [[Term.mkAnd]] ensures there are no constants in `rest`.
+            throw InternalCompilerException("Unexpected constant", SourceLocation.Unknown)
+          case _: Term.Var =>
+            // Cannot happen because the invariant of [[Term.mkAnd]] ensures there are no variables in `rest`.
+          throw InternalCompilerException("Unexpected variable", SourceLocation.Unknown)
         }
 
         // Compute the constants and variables that do not already hold.
@@ -434,8 +439,7 @@ object FastBoolUnification {
       case Term.Or(ts) => Term.mkOr(ts.map(visit(_, trueCsts, trueVars)))
     }
 
-
-    visit(t0, SortedSet.empty, SortedSet.empty)
+    visit(t, SortedSet.empty, SortedSet.empty)
   }
 
   /**
