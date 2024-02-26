@@ -264,7 +264,7 @@ class TestValidation extends AnyFunSuite {
   }
 
   test("flatMap01") {
-    val val1 = flatMapN(Validation.stoSoftFailure("foo", DummyRecoverable)) {
+    val val1 = flatMapN(Validation.toSoftFailure("foo", DummyRecoverable(1))) {
       case x => Validation.success(x.toUpperCase)
     }
     val val2 = flatMapN(val1) {
@@ -273,7 +273,7 @@ class TestValidation extends AnyFunSuite {
     val result = flatMapN(val2) {
       case z => Validation.success(z + z)
     }
-    assertResult(Validation.toSoftFailure("OOFOOF", DummyRecoverable))(result)
+    assertResult(Validation.toSoftFailure("OOFOOF", DummyRecoverable(1)))(result)
   }
 
   test("flatMap02") {
