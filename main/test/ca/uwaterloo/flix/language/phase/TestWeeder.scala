@@ -104,16 +104,36 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyInterpolatedExpression](result)
   }
 
-  test("HalfInterpolationEscape.01") {
+  test("EmptyInterpolatedExpression.02") {
     val input = "def f(): String = \"${}\""
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.EmptyInterpolatedExpression](result)
   }
 
-  test("HalfInterpolationEscape.02") {
-    val input = s"""pub def foo(): String = "\\$$ {""""
+  test("IllegalAnnotation.01") {
+    val input =
+      """
+        |def f(): Int32 = {
+        | @Test
+        | def g(i) = if (i <= 0) 0 else g(i - 1);
+        | g(10)
+        |}
+        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalEscapeSequence](result)
+    expectError[WeederError.IllegalAnnotation](result)
+  }
+
+  test("IllegalAnnotation.02") {
+    val input =
+      """
+        |def f(): Int32 = {
+        | @benchmark @Tailrec
+        | def g(i) = if (i <= 0) 0 else g(i - 1);
+        | g(10)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalAnnotation](result)
   }
 
   test("IllegalEffectTypeParams.01") {
@@ -136,7 +156,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectTypeParams](result)
   }
 
-  test("IllegalEmptyForFragment.01") {
+  test("EmptyForFragment.01") {
     val input =
       """
         |def f(): List[Int32] = foreach () 1
@@ -145,7 +165,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyForFragment](result)
   }
 
-  test("IllegalEmptyForFragment.02") {
+  test("EmptyForFragment.02") {
     val input =
       """
         |def f(): List[Int32] = foreach () yield 1
@@ -154,7 +174,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyForFragment](result)
   }
 
-  test("IllegalEmptyForFragment.03") {
+  test("EmptyForFragment.03") {
     val input =
       """
         |def f(): List[Int32] = forM () yield 1
@@ -163,7 +183,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyForFragment](result)
   }
 
-  test("IllegalEmptyForFragment.04") {
+  test("EmptyForFragment.04") {
     val input =
       """
         |def f(): List[Int32] = forA () yield 1
@@ -172,7 +192,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyForFragment](result)
   }
 
-  test("IllegalEmptyForFragment.05") {
+  test("EmptyForFragment.05") {
     val input =
       """
         |def f(): Chain[String] = for () yield "a"
@@ -229,6 +249,28 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[WeederError.IllegalFixedAtom](result)
+  }
+
+  test("IllegalForAFragment.01") {
+    val input =
+      """
+        |def f(): List[Int32] =
+        | forA (x = 11) yield x
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalForAFragment](result)
+  }
+
+  test("IllegalForAFragment.02") {
+    val input =
+      """
+        |def f(ys: List[Int32]): List[Int32] =
+        | forA (x = 2; y <- ys) yield y
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalForAFragment](result)
   }
 
   test("IllegalForFragment.01") {
@@ -363,28 +405,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForFragment](result)
   }
 
-  test("IllegalForFragment.13") {
-    val input =
-      """
-        |def f(): List[Int32] =
-        | forA (x = 11) yield x
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalForAFragment](result)
-  }
-
-  test("IllegalForFragment.14") {
-    val input =
-      """
-        |def f(ys: List[Int32]): List[Int32] =
-        | forA (x = 2; y <- ys) yield y
-        |
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalForAFragment](result)
-  }
-
   test("IllegalFormalParamAscription.01") {
     val input =
       """
@@ -395,89 +415,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalFormalParamAscription](result)
-  }
-
-  test("IllegalInnerFunctionAnnotation.01") {
-    val input =
-      """
-        |def f(): Int32 = {
-        | @Test
-        | def g(i) = if (i <= 0) 0 else g(i - 1);
-        | g(10)
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalAnnotation](result)
-  }
-
-  test("IllegalInnerFunctionAnnotation.02") {
-    val input =
-      """
-        |def f(): Int32 = {
-        | @benchmark @Tailrec
-        | def g(i) = if (i <= 0) 0 else g(i - 1);
-        | g(10)
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalAnnotation](result)
-  }
-
-  test("IllegalInt16.01") {
-    val input = "def f(): Int16 = -100000i16"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MalformedInt](result)
-  }
-
-  test("IllegalInt16.02") {
-    val input = "def f(): Int16 = 100000i16"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MalformedInt](result)
-  }
-
-  test("IllegalInt32.01") {
-    val input = "def f(): Int32 = -10000000000i32"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MalformedInt](result)
-  }
-
-  test("IllegalInt32.02") {
-    val input = "def f(): Int32 = 10000000000i32"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MalformedInt](result)
-  }
-
-  test("IllegalInt64.01") {
-    val input = "def f(): Int64 = -100000000000000000000i64"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MalformedInt](result)
-  }
-
-  test("IllegalInt64.02") {
-    val input = "def f(): Int64 = 100000000000000000000i64"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MalformedInt](result)
-  }
-
-  test("IllegalInt8.01") {
-    val input = "def f(): Int8 = -1000i8"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MalformedInt](result)
-  }
-
-  test("IllegalInt8.02") {
-    val input = "def f(): Int8 = 1000i8"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.MalformedInt](result)
-  }
-
-  test("IllegalIntrinsic.01") {
-    val input =
-      """
-        |def f(): Unit = $NOT_A_VALID_INTRINSIC$()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.UndefinedIntrinsic](result)
   }
 
   test("IllegalModifier.01") {
@@ -750,7 +687,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalNullPattern](result)
   }
 
-  test("IllegalOperationEffect.01") {
+  test("IllegalEffectfulOperation.01") {
     val input =
       """
         |eff E {
@@ -761,7 +698,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectfulOperation](result)
   }
 
-  test("IllegalOperationEffect.02") {
+  test("IllegalEffectfulOperation.02") {
     val input =
       """
         |eff E {
@@ -805,7 +742,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalRecordExtensionPattern](result)
   }
 
-  test("IllegalRecordPattern.01") {
+  test("EmptyRecordExtensionPattern.01") {
     val input =
       """
         |def f(): Int32 = match { x = 1 } {
@@ -834,7 +771,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalTypeConstraintParameter](result)
   }
 
-  test("IllegalUseAlias.01") {
+  test("IllegalUse.Alias.01") {
     val input =
       """
         |mod M {
@@ -849,7 +786,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalUse](result)
   }
 
-  test("IllegalUseAlias.02") {
+  test("IllegalUse.Alias.02") {
     val input =
       """
         |mod M {
@@ -865,7 +802,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalUse](result)
   }
 
-  test("InconsistentTypeParameters.01") {
+  test("MismatchedTypeParameters.01") {
     val input =
       """
         |enum E[a, b: Bool] {
@@ -876,7 +813,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MismatchedTypeParameters](result)
   }
 
-  test("InconsistentTypeParameters.02") {
+  test("MismatchedTypeParameters.02") {
     val input =
       """
         |type alias T[a, b: Bool] = Int32
@@ -885,7 +822,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MismatchedTypeParameters](result)
   }
 
-  test("InconsistentTypeParameters.03") {
+  test("MismatchedTypeParameters.03") {
     val input =
       """
         |enum T[a, b: Bool](Int32)
@@ -894,7 +831,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MismatchedTypeParameters](result)
   }
 
-  test("InvalidEscapeSequence.Char.01") {
+  test("IllegalEscapeSequence.Char.01") {
     val input =
       """
         |def f(): Char = '\Q'
@@ -903,7 +840,13 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEscapeSequence](result)
   }
 
-  test("InvalidEscapeSequence.Interpolation.01") {
+  test("IllegalEscapeSequence.02") {
+    val input = s"""pub def foo(): String = "\\$$ {""""
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEscapeSequence](result)
+  }
+
+  test("IllegalEscapeSequence.Interpolation.01") {
     val input =
       """
         |def f(): String = '${25}\Q'
@@ -912,7 +855,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEscapeSequence](result)
   }
 
-  test("InvalidEscapeSequence.Patten.Char.01") {
+  test("IllegalEscapeSequence.Patten.Char.01") {
     val input =
       """
         |def f(x: Char): Bool = match x {
@@ -924,7 +867,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEscapeSequence](result)
   }
 
-  test("InvalidEscapeSequence.Patten.String.01") {
+  test("IllegalEscapeSequence.Patten.String.01") {
     val input =
       """
         |def f(x: String): Bool = match x {
@@ -936,7 +879,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEscapeSequence](result)
   }
 
-  test("InvalidEscapeSequence.String.01") {
+  test("IllegalEscapeSequence.String.01") {
     val input =
       """
         |def f(): String = "\Q"
@@ -945,7 +888,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEscapeSequence](result)
   }
 
-  test("InvalidRegularExpression.01") {
+  test("MalformedRegex.01") {
     val input =
       """
         |def f(): Regex = regex"[a-*"
@@ -954,7 +897,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedRegex](result)
   }
 
-  test("InvalidRegularExpression.02") {
+  test("MalformedRegex.02") {
     val input =
       """
         |def f(): Regex = regex"a{}"
@@ -963,7 +906,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedRegex](result)
   }
 
-  test("InvalidRegularExpression.03") {
+  test("MalformedRegex.03") {
     val input =
       """
         |def f(): Regex = regex"a{-1}"
@@ -972,7 +915,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedRegex](result)
   }
 
-  test("InvalidRegularExpression.04") {
+  test("MalformedRegex.04") {
     val input =
       """
         |def f(): Regex = regex"\\p{InvalidGroupName}*"
@@ -988,6 +931,54 @@ class TestWeeder extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedIdentifier](result)
+  }
+
+  test("MalformedInt16.01") {
+    val input = "def f(): Int16 = -100000i16"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedInt](result)
+  }
+
+  test("MalformedInt16.02") {
+    val input = "def f(): Int16 = 100000i16"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedInt](result)
+  }
+
+  test("MalformedInt32.01") {
+    val input = "def f(): Int32 = -10000000000i32"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedInt](result)
+  }
+
+  test("MalformedInt32.02") {
+    val input = "def f(): Int32 = 10000000000i32"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedInt](result)
+  }
+
+  test("MalformedInt64.01") {
+    val input = "def f(): Int64 = -100000000000000000000i64"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedInt](result)
+  }
+
+  test("MalformedInt64.02") {
+    val input = "def f(): Int64 = 100000000000000000000i64"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedInt](result)
+  }
+
+  test("MalformedInt8.01") {
+    val input = "def f(): Int8 = -1000i8"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedInt](result)
+  }
+
+  test("MalformedInt8.02") {
+    val input = "def f(): Int8 = 1000i8"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MalformedInt](result)
   }
 
   test("MalformedUnicodeEscapeSequence.Char.01") {
@@ -1353,6 +1344,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
       """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.UndefinedAnnotation](result)
+  }
+
+  test("UndefinedIntrinsic.01") {
+    val input =
+      """
+        |def f(): Unit = $NOT_A_VALID_INTRINSIC$()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UndefinedIntrinsic](result)
   }
 
   test("UnqualifiedUse.01") {
