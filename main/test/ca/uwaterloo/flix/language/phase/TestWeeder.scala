@@ -1744,6 +1744,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.UndefinedAnnotation](result)
   }
 
+  test("UndefinedAnnotation.03") {
+    val input =
+      """@Tests
+        |def foo(x: Int32): Int32 = 42
+      """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.UndefinedAnnotation](result)
+  }
+
   test("UndefinedIntrinsic.01") {
     val input =
       """
