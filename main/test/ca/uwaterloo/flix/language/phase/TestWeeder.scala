@@ -515,6 +515,17 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForAFragment](result)
   }
 
+  test("IllegalForAFragment.03") {
+    val input =
+      """
+        |def f(ys: List[Int32]): List[Int32] =
+        | forA (y <- ys; if y > 2) yield y
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalForAFragment](result)
+  }
+
   test("IllegalForFragment.01") {
     val input =
       """
