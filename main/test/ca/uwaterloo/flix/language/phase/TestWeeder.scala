@@ -111,6 +111,32 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateTag](result)
   }
 
+  test("DuplicateTag.03") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Blu,
+        |  case Red
+        |  case Blu
+        |}
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateTag](result)
+  }
+
+  test("DuplicateTag.04") {
+    val input =
+      """enum Color {
+        |  case Red,
+        |  case Blu,
+        |  case Blu,
+        |  case Ylw
+        |}
+    """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.DuplicateTag](result)
+  }
+
   test("EmptyForFragment.01") {
     val input =
       """
