@@ -761,6 +761,7 @@ object Weeder2 {
         case TreeKind.Expr.ForMonadic => visitForMonadic(tree)
         case TreeKind.Expr.ForApplicative => visitForApplicative(tree)
         case TreeKind.Expr.Hole => visitHole(tree)
+        case TreeKind.Expr.HoleVariable => visitHoleVariable(tree)
         case TreeKind.Expr.Scope => visitScope(tree)
         case TreeKind.Expr.Lambda => visitLambda(tree)
         case TreeKind.Expr.LambdaMatch => visitLambdaMatch(tree)
@@ -1572,6 +1573,16 @@ object Weeder2 {
         ident =>
           val strippedIdent = ident.map(id => Name.Ident(id.sp1, id.name.stripPrefix("?"), id.sp2))
           Expr.Hole(strippedIdent, tree.loc)
+      }
+    }
+
+    private def visitHoleVariable(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.HoleVariable)
+      mapN(pickNameIdent(tree)) {
+        ident =>
+          val id = Name.Ident(ident.sp1, ident.name.stripSuffix("?"), ident.sp2)
+          val expr = Expr.Ambiguous(Name.mkQName(id), id.loc)
+          Expr.HoleWithExp(expr, tree.loc)
       }
     }
 
@@ -2686,7 +2697,7 @@ object Weeder2 {
         token.text,
         token.mkSourcePositionEnd(s.src, Some(s.parserInput))
       ))
-      case _ => failWith(s"expected first child of '${tree.kind}' to be Child.Token")
+      case _ => failWith(s"expected first child of '${tree.kind}' to be Child.Token", tree.loc)
     }
   }
 
@@ -2697,7 +2708,7 @@ object Weeder2 {
         token.text,
         token.mkSourcePositionEnd(s.src, Some(s.parserInput))
       ))
-      case _ => failWith(s"expected first child of '${tree.kind}' to be Child.Token")
+      case _ => failWith(s"expected first child of '${tree.kind}' to be Child.Token", tree.loc)
     }
   }
 

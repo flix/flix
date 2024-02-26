@@ -368,7 +368,7 @@ object Lexer {
       } else {
         TokenKind.At
       }
-      case _ if isKeyword("???") => TokenKind.HoleAnonymous
+      case _ if isMatch("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
       case _ if isKeyword("--") => TokenKind.MinusMinus
       case _ if isKeyword("**") => TokenKind.StarStar
@@ -497,6 +497,7 @@ object Lexer {
 
   /**
    * Checks whether the following substring matches a keyword. Note that __comparison includes current__.
+   * Also note that this will advance the current position past the keyword if there is a match.
    */
   private def isMatch(keyword: String)(implicit s: State): Boolean = {
     // Check if the keyword can appear before eof.
@@ -516,6 +517,12 @@ object Lexer {
       }
     }
 
+    if (matches) {
+      for (_ <- 1 until keyword.length) {
+        advance()
+      }
+    }
+
     matches
   }
 
@@ -526,14 +533,8 @@ object Lexer {
    * Note that __comparison includes current__.
    * Also note that this will advance the current position past the keyword if there is a match.
    */
-  private def isKeyword(keyword: String, mustBeSeparated: Boolean = true)(implicit s: State): Boolean = {
-    val matches = isMatch(keyword) && (!mustBeSeparated || isSeparated(keyword))
-    if (matches) {
-      for (_ <- 1 until keyword.length) {
-        advance()
-      }
-    }
-    matches
+  private def isKeyword(keyword: String)(implicit s: State): Boolean = {
+    isSeparated(keyword) && isMatch(keyword)
   }
 
   /**
@@ -680,7 +681,7 @@ object Lexer {
    */
   private def acceptNamedHole()(implicit s: State): TokenKind = {
     while (!eof()) {
-      if (!peek().isLetter) {
+      if (!peek().isLetter && !peek().isDigit) {
         return TokenKind.HoleNamed
       }
       advance()
@@ -897,14 +898,14 @@ object Lexer {
 
         // If this is reached an explicit number type might occur next
         case _ => return advance() match {
-          case _ if isKeyword("f32", mustBeSeparated = false) => TokenKind.LiteralFloat32
-          case _ if isKeyword("f64", mustBeSeparated = false) => TokenKind.LiteralFloat64
-          case _ if isKeyword("i8", mustBeSeparated = false) => TokenKind.LiteralInt8
-          case _ if isKeyword("i16", mustBeSeparated = false) => TokenKind.LiteralInt16
-          case _ if isKeyword("i32", mustBeSeparated = false) => TokenKind.LiteralInt32
-          case _ if isKeyword("i64", mustBeSeparated = false) => TokenKind.LiteralInt64
-          case _ if isKeyword("ii", mustBeSeparated = false) => TokenKind.LiteralBigInt
-          case _ if isKeyword("ff", mustBeSeparated = false) => TokenKind.LiteralBigDecimal
+          case _ if isMatch("f32") => TokenKind.LiteralFloat32
+          case _ if isMatch("f64") => TokenKind.LiteralFloat64
+          case _ if isMatch("i8") => TokenKind.LiteralInt8
+          case _ if isMatch("i16") => TokenKind.LiteralInt16
+          case _ if isMatch("i32") => TokenKind.LiteralInt32
+          case _ if isMatch("i64") => TokenKind.LiteralInt64
+          case _ if isMatch("ii") => TokenKind.LiteralBigInt
+          case _ if isMatch("ff") => TokenKind.LiteralBigDecimal
           case _ =>
             retreat()
             if (isDecimal) {

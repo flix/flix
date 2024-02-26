@@ -504,8 +504,10 @@ class Flix {
     "Test.Type.Void.flix" -> LocalResource.get("/test/flix/Test.Type.Void.flix"),
     "Test.Unused.Tag.flix" -> LocalResource.get("/test/flix/Test.Unused.Tag.flix"),
     "Test.Use.Type.flix" -> LocalResource.get("/test/flix/Test.Use.Type.flix"),
+    "Test.Kind.Trait.flix" -> LocalResource.get("/test/flix/Test.Kind.Trait.flix"),
+    "Test.Exp.Hole.flix" -> LocalResource.get("/test/flix/Test.Exp.Hole.flix"),
+    "Test.Exp.HoleWithExp.flix" -> LocalResource.get("/test/flix/Test.Exp.HoleWithExp.flix"),
 
-    //    "Test.Kind.Trait.flix" -> LocalResource.get("/test/flix/Test.Kind.Trait.flix"),
     //    "Test.Kind.Enum.flix" -> LocalResource.get("/test/flix/Test.Kind.Enum.flix"),
 
     //    "Test.Predicate.Guard.flix" -> LocalResource.get("/test/flix/Test.Predicate.Guard.flix"),
@@ -527,7 +529,6 @@ class Flix {
     //    "Test.Def.Generalization.flix" -> LocalResource.get("/test/flix/Test.Def.Generalization.flix"),
     //    "Test.Def.Op.flix" -> LocalResource.get("/test/flix/Test.Def.Op.flix"),
 
-    //    "Test.Exp.Effect.flix" -> LocalResource.get("/test/flix/Test.Exp.Effect.flix"),
     //    "Test.Exp.Fixpoint.Lambda.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Lambda.flix"),
     //    "Test.Exp.Match.Char.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Char.flix"),
     //    "Test.Exp.Char.flix" -> LocalResource.get("/test/flix/Test.Exp.Char.flix"),
@@ -544,8 +545,6 @@ class Flix {
 
     //    "Test.Exp.Concurrency.Select.flix" -> LocalResource.get("/test/flix/Test.Exp.Concurrency.Select.flix"),
     //    "Test.Exp.ForEachYield.flix" -> LocalResource.get("/test/flix/Test.Exp.ForEachYield.flix"),
-    //    "Test.Exp.Hole.flix" -> LocalResource.get("/test/flix/Test.Exp.Hole.flix"),
-    //    "Test.Exp.HoleWithExp.flix" -> LocalResource.get("/test/flix/Test.Exp.HoleWithExp.flix"),
     //    "Test.Exp.Infix.flix" -> LocalResource.get("/test/flix/Test.Exp.Infix.flix"),
     //    "Test.Exp.Lambda.Match.flix" -> LocalResource.get("/test/flix/Test.Exp.Lambda.Match.flix"),
     //    "Test.Exp.List.flix" -> LocalResource.get("/test/flix/Test.Exp.List.flix"),
@@ -582,6 +581,11 @@ class Flix {
     //    "Test.Exp.Jvm.PutField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.PutField.flix"),
     //    "Test.Exp.Jvm.PutStaticField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.PutStaticField.flix"),
     //    "Test.Exp.Jvm.TryCatch.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.TryCatch.flix"),
+
+
+    // TODO: Effect set semantics?  pub def enumWithEffect02(f: Do[{ef}]): Bool = ??? <- ef is an effect here?
+//    "Test.Exp.Effect.flix" -> LocalResource.get("/test/flix/Test.Exp.Effect.flix"),
+
 
     // TODO: KEYWORD PROJECT
     //    "Test.Term.Lit.flix" -> LocalResource.get("/test/flix/Test.Term.Lit.flix"),

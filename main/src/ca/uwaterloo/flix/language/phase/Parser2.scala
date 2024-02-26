@@ -1135,6 +1135,7 @@ object Parser2 {
              | TokenKind.KeywordForce
              | TokenKind.KeywordDiscard
              | TokenKind.KeywordDeref => unary()
+        case TokenKind.HoleVariable => holeVariable()
         case TokenKind.HoleNamed
              | TokenKind.HoleAnonymous => hole()
         case t => advanceWithError(Parser2Error.DevErr(currentSourceLocation(), s"Expected expression, found $t"))
@@ -2027,6 +2028,13 @@ object Parser2 {
       expect(TokenKind.Semi)
       statement()
       close(mark, TreeKind.Expr.LetImport)
+    }
+
+    private def holeVariable()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.HoleVariable))
+      val mark = open()
+      name(List(TokenKind.HoleVariable))
+      close(mark, TreeKind.Expr.HoleVariable)
     }
 
     private def hole()(implicit s: State): Mark.Closed = {
