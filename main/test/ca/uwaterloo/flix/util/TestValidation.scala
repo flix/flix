@@ -218,7 +218,7 @@ class TestValidation extends AnyFunSuite {
         }
       }
     }
-    assertResult(Validation.toSoftFailure("OOFOOF", DummyRecoverable(1)))(result)
+    assertResult(Validation.toSuccessOrSoftFailure("OOFOOF", Seq(DummyRecoverable(1), DummyRecoverable(1))))(result)
   }
 
   test("flatMapN05") {
