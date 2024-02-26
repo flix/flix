@@ -29,19 +29,16 @@ sealed trait Symbol
 object Symbol {
 
   /**
+    * The symbol for the IO effect.
+    */
+  val IO: EffectSym = mkEffectSym(Name.RootNS, Ident(SourcePosition.Unknown, "IO", SourcePosition.Unknown))
+
+  /**
     * Returns a fresh def symbol based on the given symbol.
     */
   def freshDefnSym(sym: DefnSym)(implicit flix: Flix): DefnSym = {
     val id = Some(flix.genSym.freshId())
     new DefnSym(id, sym.namespace, sym.text, sym.loc)
-  }
-
-  /**
-    * Returns a fresh enum symbol based on the given symbol.
-    */
-  def freshEnumSym(sym: EnumSym)(implicit flix: Flix): EnumSym = {
-    val id = Some(flix.genSym.freshId())
-    new EnumSym(id, sym.namespace, sym.text, sym.loc)
   }
 
   /**
@@ -62,29 +59,29 @@ object Symbol {
   /**
     * Returns a fresh variable symbol for the given identifier.
     */
-  def freshVarSym(ident: Name.Ident, boundBy: BoundBy)(implicit flix: Flix): VarSym = {
+  def freshVarSym(ident: Name.Ident, boundBy: BoundBy)(implicit level: Level, flix: Flix): VarSym = {
     new VarSym(flix.genSym.freshId(), ident.name, Type.freshVar(Kind.Star, ident.loc), boundBy, ident.loc)
   }
 
   /**
     * Returns a fresh variable symbol with the given text.
     */
-  def freshVarSym(text: String, boundBy: BoundBy, loc: SourceLocation)(implicit flix: Flix): VarSym = {
+  def freshVarSym(text: String, boundBy: BoundBy, loc: SourceLocation)(implicit level: Level, flix: Flix): VarSym = {
     new VarSym(flix.genSym.freshId(), text, Type.freshVar(Kind.Star, loc), boundBy, loc)
   }
 
   /**
     * Returns a fresh type variable symbol with the given text.
     */
-  def freshKindedTypeVarSym(text: Ast.VarText, kind: Kind, isRegion: Boolean, loc: SourceLocation)(implicit flix: Flix): KindedTypeVarSym = {
-    new KindedTypeVarSym(flix.genSym.freshId(), text, kind, isRegion, loc)
+  def freshKindedTypeVarSym(text: Ast.VarText, kind: Kind, isRegion: Boolean, loc: SourceLocation)(implicit level: Level, flix: Flix): KindedTypeVarSym = {
+    new KindedTypeVarSym(flix.genSym.freshId(), text, kind, isRegion, level, loc)
   }
 
   /**
     * Returns a fresh type variable symbol with the given text.
     */
-  def freshUnkindedTypeVarSym(text: Ast.VarText, isRegion: Boolean, loc: SourceLocation)(implicit flix: Flix): UnkindedTypeVarSym = {
-    new UnkindedTypeVarSym(flix.genSym.freshId(), text, isRegion: Boolean, loc)
+  def freshUnkindedTypeVarSym(text: Ast.VarText, isRegion: Boolean, loc: SourceLocation)(implicit level: Level, flix: Flix): UnkindedTypeVarSym = {
+    new UnkindedTypeVarSym(flix.genSym.freshId(), text, isRegion: Boolean, level, loc)
   }
 
   /**
@@ -109,6 +106,13 @@ object Symbol {
   }
 
   /**
+    * Returns the definition symbol for the given name `ident` in the given namespace `ns`.
+    */
+  def mkDefnSym(ns: NName, ident: Ident, id: Option[Int]): DefnSym = {
+    new DefnSym(id, ns.parts, ident.name, ident.loc)
+  }
+
+  /**
     * Returns the definition symbol for the given fully qualified name.
     */
   def mkDefnSym(fqn: String): DefnSym = split(fqn) match {
@@ -117,10 +121,18 @@ object Symbol {
   }
 
   /**
+    * Returns the definition symbol for the given fully qualified name and ID.
+    */
+  def mkDefnSym(fqn: String, id: Option[Int]): DefnSym = split(fqn) match {
+    case None => new DefnSym(id, Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new DefnSym(id, ns, name, SourceLocation.Unknown)
+  }
+
+  /**
     * Returns the enum symbol for the given name `ident` in the given namespace `ns`.
     */
   def mkEnumSym(ns: NName, ident: Ident): EnumSym = {
-    new EnumSym(None, ns.parts, ident.name, ident.loc)
+    new EnumSym(ns.parts, ident.name, ident.loc)
   }
 
   /**
@@ -134,8 +146,8 @@ object Symbol {
     * Returns the enum symbol for the given fully qualified name.
     */
   def mkEnumSym(fqn: String): EnumSym = split(fqn) match {
-    case None => new EnumSym(None, Nil, fqn, SourceLocation.Unknown)
-    case Some((ns, name)) => new EnumSym(None, ns, name, SourceLocation.Unknown)
+    case None => new EnumSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new EnumSym(ns, name, SourceLocation.Unknown)
   }
 
   /**
@@ -254,11 +266,14 @@ object Symbol {
     /**
       * Returns the stack offset of `this` variable symbol.
       *
+      * The local offset should be the number of jvm arguments for static
+      * methods and one higher than that for instance methods.
+      *
       * Throws [[InternalCompilerException]] if the stack offset has not been set.
       */
-    def getStackOffset: Int = stackOffset match {
+    def getStackOffset(localOffset: Int): Int = stackOffset match {
       case None => throw InternalCompilerException(s"Unknown offset for variable symbol $toString.", loc)
-      case Some(offset) => offset
+      case Some(offset) => offset + localOffset
     }
 
     /**
@@ -297,7 +312,7 @@ object Symbol {
   /**
     * Kinded type variable symbol.
     */
-  final class KindedTypeVarSym(val id: Int, val text: Ast.VarText, val kind: Kind, val isRegion: Boolean, val loc: SourceLocation) extends Symbol with Ordered[KindedTypeVarSym] with Locatable with Sourceable {
+  final class KindedTypeVarSym(val id: Int, val text: Ast.VarText, val kind: Kind, val isRegion: Boolean, var level: Level, val loc: SourceLocation) extends Symbol with Ordered[KindedTypeVarSym] with Locatable with Sourceable {
 
     /**
       * Returns `true` if `this` variable is non-synthetic.
@@ -307,14 +322,14 @@ object Symbol {
     /**
       * Returns the same symbol with the given kind.
       */
-    def withKind(newKind: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, newKind, isRegion, loc)
+    def withKind(newKind: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, newKind, isRegion, level, loc)
 
     /**
       * Returns the same symbol without a kind.
       */
-    def withoutKind: UnkindedTypeVarSym = new UnkindedTypeVarSym(id, text, isRegion, loc)
+    def withoutKind: UnkindedTypeVarSym = new UnkindedTypeVarSym(id, text, isRegion, level, loc)
 
-    def withText(newText: Ast.VarText): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, isRegion, loc)
+    def withText(newText: Ast.VarText): KindedTypeVarSym = new KindedTypeVarSym(id, newText, kind, isRegion, level, loc)
 
     override def compare(that: KindedTypeVarSym): Int = that.id - this.id
 
@@ -348,12 +363,12 @@ object Symbol {
   /**
     * Unkinded type variable symbol.
     */
-  final class UnkindedTypeVarSym(val id: Int, val text: Ast.VarText, val isRegion: Boolean, val loc: SourceLocation) extends Symbol with Ordered[UnkindedTypeVarSym] with Locatable with Sourceable {
+  final class UnkindedTypeVarSym(val id: Int, val text: Ast.VarText, val isRegion: Boolean, var level: Level, val loc: SourceLocation) extends Symbol with Ordered[UnkindedTypeVarSym] with Locatable with Sourceable {
 
     /**
       * Ascribes this UnkindedTypeVarSym with the given kind.
       */
-    def withKind(k: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, k, isRegion, loc)
+    def withKind(k: Kind): KindedTypeVarSym = new KindedTypeVarSym(id, text, k, isRegion, level, loc)
 
     override def compare(that: UnkindedTypeVarSym): Int = that.id - this.id
 
@@ -411,28 +426,25 @@ object Symbol {
   /**
     * Enum Symbol.
     */
-  final class EnumSym(val id: Option[Int], val namespace: List[String], val text: String, val loc: SourceLocation) extends Symbol {
+  final class EnumSym(val namespace: List[String], val text: String, val loc: SourceLocation) extends Symbol {
 
     /**
       * Returns the name of `this` symbol.
       */
-    def name: String = id match {
-      case None => text
-      case Some(i) => text + Flix.Delimiter + i
-    }
+    def name: String = text
 
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: EnumSym => this.id == that.id && this.namespace == that.namespace && this.text == that.text
+      case that: EnumSym => this.namespace == that.namespace && this.text == that.text
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = 5 * id.hashCode() + 7 * namespace.hashCode() + 11 * text.hashCode()
+    override val hashCode: Int = 5 * namespace.hashCode() + 7 * text.hashCode()
 
     /**
       * Human readable representation.

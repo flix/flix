@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.SimplifiedAst._
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, MonoType, Purity, SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Level, MonoType, Purity, SourceLocation, Symbol}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
@@ -30,9 +30,7 @@ object ClosureConv {
     * Performs closure conversion on the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("ClosureConv") {
-    val newDefs = root.defs.map {
-      case (sym, decl) => sym -> visitDef(decl)
-    }
+    val newDefs = ParOps.parMapValues(root.defs)(visitDef)
 
     root.copy(defs = newDefs)
   }
@@ -129,21 +127,22 @@ object ClosureConv {
       Expr.TryCatch(e, rs, tpe, purity, loc)
 
     case Expr.TryWith(exp, effUse, rules, tpe, purity, loc) =>
-      val e = visitExp(exp)
+      // Lift the body and all the rule expressions
+      val expLoc = exp.loc.asSynthetic
+      val freshSym = Symbol.freshVarSym("_closureConv", Ast.BoundBy.FormalParam, expLoc)(Level.Default, flix)
+      val fp = FormalParam(freshSym, Ast.Modifiers.Empty, MonoType.Unit, expLoc)
+      val e = mkLambdaClosure(List(fp), exp, MonoType.Arrow(List(MonoType.Unit), tpe), expLoc)
       val rs = rules map {
         case HandlerRule(opUse, fparams, body) =>
-          val b = visitExp(body)
-          HandlerRule(opUse, fparams, b)
+          val cloType = MonoType.Arrow(fparams.map(_.tpe), body.tpe)
+          val clo = mkLambdaClosure(fparams, body, cloType, opUse.loc)
+          HandlerRule(opUse, fparams, clo)
       }
       Expr.TryWith(e, effUse, rs, tpe, purity, loc)
 
     case Expr.Do(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp)
       Expr.Do(op, es, tpe, purity, loc)
-
-    case Expr.Resume(exp, tpe, loc) =>
-      val e = visitExp(exp)
-      Expr.Resume(e, tpe, loc)
 
     case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0 map {
@@ -163,6 +162,8 @@ object ClosureConv {
 
   /**
     * Returns a LambdaClosure under the given formal parameters fparams for the body expression exp where the overall lambda has type tpe.
+    *
+    * `exp` is visited inside this function and should not be visited before.
     */
   private def mkLambdaClosure(fparams: List[FormalParam], exp: Expr, tpe: MonoType, loc: SourceLocation)(implicit flix: Flix): Expr.LambdaClosure = {
     // Step 1: Compute the free variables in the lambda expression.
@@ -246,8 +247,6 @@ object ClosureConv {
 
     case Expr.Do(_, exps, _, _, _) => freeVarsExps(exps)
 
-    case Expr.Resume(exp, _, _) => freeVars(exp)
-
     case Expr.NewObject(_, _, _, _, methods, _) =>
       methods.foldLeft(SortedSet.empty[FreeVar]) {
         case (acc, JvmMethod(_, fparams, exp, _, _, _)) =>
@@ -301,7 +300,7 @@ object ClosureConv {
       case Expr.Def(_, _, _) => e
 
       case Expr.Lambda(fparams, exp, tpe, loc) =>
-        val fs = fparams.map(fparam => visitFormalParam(fparam, subst))
+        val fs = fparams.map(visitFormalParam)
         val e = visitExp(exp)
         Expr.Lambda(fs, e, tpe, loc)
 
@@ -374,7 +373,7 @@ object ClosureConv {
         val e = visitExp(exp)
         val rs = rules map {
           case HandlerRule(sym, fparams, body) =>
-            val fs = fparams.map(visitFormalParam(_, subst))
+            val fs = fparams.map(visitFormalParam)
             val b = visitExp(body)
             HandlerRule(sym, fs, b)
         }
@@ -384,39 +383,27 @@ object ClosureConv {
         val es = exps.map(visitExp)
         Expr.Do(op, es, tpe, purity, loc)
 
-      case Expr.Resume(exp, tpe, loc) =>
-        val e = visitExp(exp)
-        Expr.Resume(e, tpe, loc)
-
       case Expr.NewObject(name, clazz, tpe, purity, methods0, loc) =>
-        val methods = methods0.map(visitJvmMethod(_, subst))
+        val methods = methods0.map(visitJvmMethod)
         Expr.NewObject(name, clazz, tpe, purity, methods, loc)
 
     }
 
+    def visitFormalParam(fparam: FormalParam): FormalParam = fparam match {
+      case FormalParam(sym, mod, tpe, loc) =>
+        subst.get(sym) match {
+          case None => FormalParam(sym, mod, tpe, loc)
+          case Some(newSym) => FormalParam(newSym, mod, tpe, loc)
+        }
+    }
+
+    def visitJvmMethod(method: JvmMethod)(implicit flix: Flix): JvmMethod = method match {
+      case JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
+        val fparams = fparams0.map(visitFormalParam)
+        JvmMethod(ident, fparams, applySubst(exp, subst), retTpe, purity, loc)
+    }
+
     visitExp(e0)
-  }
-
-  /**
-    * Applies the given substitution map `subst` to the given formal parameters `fs`.
-    */
-  // TODO: Move into the above replace function and rename to visitFormalParam
-  private def visitFormalParam(fparam: FormalParam, subst: Map[Symbol.VarSym, Symbol.VarSym]): FormalParam = fparam match {
-    case FormalParam(sym, mod, tpe, loc) =>
-      subst.get(sym) match {
-        case None => FormalParam(sym, mod, tpe, loc)
-        case Some(newSym) => FormalParam(newSym, mod, tpe, loc)
-      }
-  }
-
-  /**
-    * Applies the given substitution map `subst` to the given JvmMethod `method`.
-    */
-  // TODO: Move into the above replace function and rename to visitJvmMethod.
-  private def visitJvmMethod(method: JvmMethod, subst: Map[Symbol.VarSym, Symbol.VarSym])(implicit flix: Flix): JvmMethod = method match {
-    case JvmMethod(ident, fparams0, exp, retTpe, purity, loc) =>
-      val fparams = fparams0.map(visitFormalParam(_, subst))
-      JvmMethod(ident, fparams, applySubst(exp, subst), retTpe, purity, loc)
   }
 
 }

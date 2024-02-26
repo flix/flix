@@ -20,7 +20,7 @@ mod Test.Exp.TryWith {
         try {
             do Test.Exp.TryWith.Print.doIt()
         } with Print {
-            def doIt() = ()
+            def doIt(_cont) = ()
         }
     }
 
@@ -29,11 +29,11 @@ mod Test.Exp.TryWith {
         try {
             do Test.Exp.TryWith.Print.doIt()
         } with Print {
-            def doIt() = {
+            def doIt(_cont) = {
                 try {
                     do Test.Exp.TryWith.Print2.doIt2()
                 } with Print2 {
-                    def doIt2() = ()
+                    def doIt2(_cont) = ()
                 }
             }
         }
@@ -45,7 +45,7 @@ mod Test.Exp.TryWith {
         try {
             letsDoIt()
         } with Print {
-            def doIt() = ()
+            def doIt(_cont) = ()
         }
     }
 
@@ -54,7 +54,7 @@ mod Test.Exp.TryWith {
         try {
             do Test.Exp.TryWith.Greet.greet("Alice")
         } with Greet {
-            def greet(_) = ()
+            def greet(_, _cont) = ()
         }
     }
 
@@ -63,11 +63,11 @@ mod Test.Exp.TryWith {
         try {
             do Test.Exp.TryWith.Greet.greet("Duchess")
         } with Greet {
-            def greet(name) = {
+            def greet(name, _cont) = {
                 try {
                     do Test.Exp.TryWith.Greet2.greet2(name)
                 } with Greet2 {
-                    def greet2(_) = ()
+                    def greet2(_, _cont) = ()
                 }
             }
         }
@@ -86,35 +86,96 @@ mod Test.Exp.TryWith {
         try {
             greetAll("Cheshire Cat" :: "Queen of Hearts" :: "White Rabbit" :: "Dormouse" :: Nil)
         } with Greet {
-            def greet(_) = ()
+            def greet(_, _cont) = ()
         }
     }
 
     @Test
     def testTryWith07(): Unit = {
         try {
-            try {
-                do Test.Exp.TryWith.Print.doIt();
-                do Test.Exp.TryWith.Print2.doIt2()
-            } with Print {
-                def doIt() = ()
-            }
-        } with Print2 {
-            def doIt2() = ()
+            do Test.Exp.TryWith.Print.doIt()
+        } with Print {
+            def doIt(_cont) = ()
+        } with Print {
+            def doIt(_cont) = ()
         }
     }
 
     @Test
     def testTryWith08(): Unit = {
         try {
-            try {
-                do Test.Exp.TryWith.Print.doIt()
-            } with Print {
-                def doIt() = ()
-            };
-            do Test.Exp.TryWith.Print2.doIt2()
-        } with Print2 {
-            def doIt2() = ()
+            do Test.Exp.TryWith.Print.doIt()
+        } with Print {
+            def doIt(_cont) = {
+                try {
+                    do Test.Exp.TryWith.Print2.doIt2()
+                } with Print2 {
+                    def doIt2(_cont) = ()
+                } with Print2 {
+                    def doIt2(_cont) = ()
+                }
+            }
+        } with Print {
+            def doIt(_cont) = ()
+        }
+    }
+
+    @Test
+    def testTryWith09(): Unit = {
+        let f = () -> do Test.Exp.TryWith.Print.doIt();
+        try {
+            f()
+        } with Print {
+            def doIt(_cont) = ()
+        } with Print {
+            def doIt(_cont) = ()
+        }
+    }
+
+    @Test
+    def testTryWith10(): Unit = {
+        try {
+            do Test.Exp.TryWith.Greet.greet("Alice")
+        } with Greet {
+            def greet(_, _cont) = ()
+        } with Greet {
+            def greet(_, _cont) = ()
+        }
+    }
+
+    @Test
+    def testTryWith11(): Unit = {
+        try {
+            do Test.Exp.TryWith.Greet.greet("Duchess")
+        } with Greet {
+            def greet(name, _cont) = {
+                try {
+                    do Test.Exp.TryWith.Greet2.greet2(name)
+                } with Greet2 {
+                    def greet2(_, _cont) = ()
+                }
+            }
+        } with Print { // Irrelevant effect but here to test the syntax
+            def doIt(_) = ()
+        }
+    }
+
+    @Test
+    def testTryWith12(): Unit = {
+        def greetAll(names: List[String]) = match names {
+            case Nil => ()
+            case hd :: tl => {
+                do Test.Exp.TryWith.Greet.greet(hd);
+                greetAll(tl)
+            }
+        };
+
+        try {
+            greetAll("Cheshire Cat" :: "Queen of Hearts" :: "White Rabbit" :: "Dormouse" :: Nil)
+        } with Greet {
+            def greet(_, _cont) = ()
+        } with Greet {
+            def greet(_, _cont) = ()
         }
     }
 }

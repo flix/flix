@@ -16,6 +16,8 @@
 
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.util.collection.Chain
+
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 
@@ -25,7 +27,7 @@ import scala.collection.mutable.ArrayBuffer
   * @tparam T the type of the value.
   * @tparam E the type of the error.
   */
-sealed trait Result[+T, E] {
+sealed trait Result[+T, +E] {
 
   /**
     * Retrieves the value from `this` result.
@@ -46,9 +48,17 @@ sealed trait Result[+T, E] {
   }
 
   /**
+    * If `this` is a [[Result.Err]] the given function `f` is applied to the contained error.
+    */
+  final def mapErr[F](f: E => F): Result[T, F] = this match {
+    case Result.Ok(t) => Result.Ok(t)
+    case Result.Err(e) => Result.Err(f(e))
+  }
+
+  /**
     * Applies the given function `f` to the value of `this`.
     */
-  final def flatMap[B](f: T => Result[B, E]): Result[B, E] = this match {
+  final def flatMap[R >: E, B](f: T => Result[B, R]): Result[B, R] = this match {
     case Result.Ok(t) => f(t)
     case Result.Err(e) => Result.Err(e)
   }
@@ -57,8 +67,8 @@ sealed trait Result[+T, E] {
     * Returns `this` result as a [[Validation]].
     */
   final def toValidation: Validation[T, E] = this match {
-    case Result.Ok(t) => Validation.Success(t)
-    case Result.Err(e) => Validation.Failure(LazyList(e))
+    case Result.Ok(t) => Validation.success(t)
+    case Result.Err(e) => Validation.HardFailure(Chain(e))
   }
 
   /**
@@ -127,6 +137,17 @@ object Result {
     }
 
     Ok(res.toList)
+  }
+
+  /**
+    * Traverses `o` applying the function `f` to the value, if it exists.
+    */
+  def traverseOpt[T, S, E](o: Option[T])(f: T => Result[S, E]): Result[Option[S], E] = o match {
+    case None => Ok(None)
+    case Some(x) => f(x) match {
+      case Ok(t) => Ok(Some(t))
+      case Err(e) => Err(e)
+    }
   }
 
   /**

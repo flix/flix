@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for types that form a semigroup.
+/// A trait for types that form a semigroup.
 ///
-pub class SemiGroup[a] {
+pub trait SemiGroup[a] {
     ///
     /// An associative binary operation on `a`.
     ///

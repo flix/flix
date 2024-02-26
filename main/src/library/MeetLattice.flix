@@ -17,11 +17,11 @@
 use Bool.{==>}
 
 ///
-/// A type class for meet semi lattices.
+/// A trait for meet semi lattices.
 /// A Meet Lattice is pair of functions (⊑, ⊓) where ⊑ is a partial order and ⊓ satisfy two properties:
 /// lower-bound and greatest-lower-bound.
 ///
-pub lawful class MeetLattice[a] with PartialOrder[a] {
+pub lawful trait MeetLattice[a] with PartialOrder[a] {
 
     ///
     /// Returns the greatest lower bound of `x` and `y`.

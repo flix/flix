@@ -31,48 +31,48 @@ object PackageError {
   case class VersionDoesNotExist(version: SemVer, project: Project) extends PackageError {
     override def message(f: Formatter): String =
       s"""
-         | Version ${f.bold(version.toString)} does not exist for project ${f.bold(project.toString)}
+         |Version ${f.bold(version.toString)} does not exist for project ${f.bold(project.toString)}
          |""".stripMargin
   }
 
   case class InvalidProjectName(projectString: String) extends PackageError {
     override def message(f: Formatter): String =
       s"""
-         | A GitHub project should be formatted like so: 'owner/repository'.
-         | Instead found: ${f.red(projectString)}.
+         |A GitHub project should be formatted like so: 'owner/repository'.
+         |Instead found: ${f.red(projectString)}.
          |""".stripMargin
   }
 
   case class NoReleasesFound(project: Project) extends PackageError {
     override def message(f: Formatter): String =
       s"""
-         | No releases found for project ${f.bold(project.toString)}.
+         |No releases found for project ${f.bold(project.toString)}.
          |""".stripMargin
   }
 
   case class ProjectNotFound(url: URL, project: Project) extends PackageError {
     override def message(f: Formatter): String =
       s"""
-         | An I/O error occurred while trying to read the following url:
-         | ${f.cyan(url.toString)}
-         | Project: ${f.bold(project.toString)}
+         |An I/O error occurred while trying to read the following url:
+         |${f.cyan(url.toString)}
+         |Project: ${f.bold(project.toString)}
          |""".stripMargin
   }
 
   case class JsonError(json: String, project: Project) extends PackageError {
     override def message(f: Formatter): String =
       s"""
-         | An error occurred while trying to parse the following as JSON:
-         | ${f.cyan(json)}
-         | Project: ${f.bold(project.toString)}
+         |An error occurred while trying to parse the following as JSON:
+         |${f.cyan(json)}
+         |Project: ${f.bold(project.toString)}
          |""".stripMargin
   }
 
   case class DownloadError(asset: Asset, message: Option[String]) extends PackageError {
     override def message(f: Formatter): String =
       s"""
-         | A download error occurred while downloading ${f.bold(asset.name)}
-         | ${
+         |A download error occurred while downloading ${f.bold(asset.name)}
+         |${
          message match {
            case Some(e) => e
            case None => ""
@@ -83,8 +83,8 @@ object PackageError {
   case class DownloadErrorJar(url: String, fileName: String, message: Option[String]) extends PackageError {
     override def message(f: Formatter): String =
       s"""
-         | A download error occurred while downloading ${f.bold(fileName)} from $url
-         | ${
+         |A download error occurred while downloading ${f.bold(fileName)} from $url
+         |${
         message match {
           case Some(e) => e
           case None => ""
@@ -96,23 +96,23 @@ object PackageError {
   case class CoursierError(errorMsg: String) extends PackageError {
     override def message(f: Formatter): String =
       s"""
-         | An error occurred with Coursier:
-         | $errorMsg
+         |An error occurred with Coursier:
+         |$errorMsg
          |""".stripMargin
   }
 
   case class NoSuchFile(project: String, extension: String) extends PackageError {
     override def message(f: Formatter): String =
       s"""
-         | There are no files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
+         |There are no files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
          |""".stripMargin
   }
 
   case class TooManyFiles(project: String, extension: String) extends PackageError {
     override def message(f: Formatter): String =
       s"""
-         | There are too many files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
-         | There should only be one $extension file in each project.
+         |There are too many files in project '${f.bold(project)}' with extension '${f.bold(s".$extension")}'.
+         |There should only be one $extension file in each project.
          |""".stripMargin
   }
 

@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 import org.sosy_lab.pjbdd.api.{Builders, Creator, DD}
@@ -132,13 +132,14 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     */
   private def createTypeFromBDDAux(dd: DD, tpe: Type, env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
     if (dd.isLeaf) {
-      return if (dd.isTrue) tpe else Type.EffUniv
+      return if (dd.isTrue) tpe else Type.Univ
     }
 
     val currentVar = dd.getVariable
     val typeVar = env.getBackward(currentVar) match {
       case Some(BoolFormula.VarOrEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
       case Some(BoolFormula.VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
+      case Some(BoolFormula.VarOrEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), arg, Kind.Eff, SourceLocation.Unknown)
       case None => throw InternalCompilerException(s"unexpected unknown ID: $currentVar", SourceLocation.Unknown)
     }
 
@@ -148,9 +149,9 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     val highRes = createTypeFromBDDAux(dd.getHigh, highType, env)
 
     (lowRes, highRes) match {
-      case (Type.EffUniv, Type.EffUniv) => Type.EffUniv
-      case (Type.EffUniv, _) => highRes
-      case (_, Type.EffUniv) => lowRes
+      case (Type.Univ, Type.Univ) => Type.Univ
+      case (Type.Univ, _) => highRes
+      case (_, Type.Univ) => lowRes
       case (t1, _) => Type.mkApply(Type.Intersection, List(lowRes, highRes), t1.loc)
     }
   }
@@ -164,7 +165,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
       if (f.isTrue) {
         return Type.Pure
       } else {
-        return Type.EffUniv
+        return Type.Univ
       }
     }
     if (isVar(f)) {
@@ -172,6 +173,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
       val tpe = env.getBackward(id) match {
         case Some(BoolFormula.VarOrEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
         case Some(BoolFormula.VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
+        case Some(BoolFormula.VarOrEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), arg, Kind.Eff, SourceLocation.Unknown)
         case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
       }
       return tpe

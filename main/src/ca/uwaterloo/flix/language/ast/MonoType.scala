@@ -28,6 +28,8 @@ object MonoType {
   /// Primitive Types.
   ///
 
+  case object AnyType extends MonoType
+
   case object Unit extends MonoType
 
   case object Bool extends MonoType
@@ -74,12 +76,10 @@ object MonoType {
 
   case object RecordEmpty extends MonoType
 
-  case class RecordExtend(field: String, value: MonoType, rest: MonoType) extends MonoType
-
-  case object SchemaEmpty extends MonoType
-
-  case class SchemaExtend(name: String, tpe: MonoType, rest: MonoType) extends MonoType
+  case class RecordExtend(label: String, value: MonoType, rest: MonoType) extends MonoType
 
   case class Native(clazz: Class[_]) extends MonoType
+
+  val Object: MonoType = Native(classOf[java.lang.Object])
 
 }

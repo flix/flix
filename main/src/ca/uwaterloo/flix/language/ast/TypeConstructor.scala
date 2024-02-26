@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{EliminatedBy, IntroducedBy}
-import ca.uwaterloo.flix.language.phase.{Kinder, Lowering}
+import ca.uwaterloo.flix.language.phase.{Kinder, Lowering, MonoDefs}
 
 import scala.collection.immutable.SortedSet
 
@@ -13,6 +13,23 @@ sealed trait TypeConstructor {
 }
 
 object TypeConstructor {
+
+  /**
+    * A type constructor that represent the Void type.
+    *
+    * The `Void` type is uninhabited and should not be confused which Java's `void` which is `Unit` in Flix.
+    */
+  case object Void extends TypeConstructor {
+    def kind: Kind = Kind.Star
+  }
+
+  /**
+    * A type constructor that represent an unconstrained type after monomorphization.
+    */
+  @IntroducedBy(MonoDefs.getClass)
+  case object AnyType extends TypeConstructor {
+    override def kind: Kind = Kind.Star
+  }
 
   /**
     * A type constructor that represent the Unit type.
@@ -130,9 +147,9 @@ object TypeConstructor {
   /**
     * A type constructor that represents the type of extended record rows.
     */
-  case class RecordRowExtend(field: Name.Field) extends TypeConstructor {
+  case class RecordRowExtend(label: Name.Label) extends TypeConstructor {
     /**
-      * The shape of an extended record is { field :: type | rest }
+      * The shape of an extended record is { label = type | rest }
       */
     def kind: Kind = Kind.Star ->: Kind.RecordRow ->: Kind.RecordRow
   }
@@ -324,7 +341,7 @@ object TypeConstructor {
   /**
     * A type constructor that represents the universal effect set.
     */
-  case object EffUniv extends TypeConstructor {
+  case object Univ extends TypeConstructor {
     def kind: Kind = Kind.Eff
   }
 
@@ -393,5 +410,10 @@ object TypeConstructor {
       */
     def kind: Kind = Kind.Eff ->: Kind.Star
   }
+
+  /**
+    * A type constructor which represents an erroneous type of the given `kind`.
+    */
+  case class Error(kind: Kind) extends TypeConstructor
 
 }

@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for types that can be converted to strings.
+/// A trait for types that can be converted to strings.
 ///
-pub class ToString[a] {
+pub trait ToString[a] {
     ///
     /// Returns a string representation of the given x.
     ///

@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.Formatter
   * @param ctx the syntactic context.
   * @param loc the source location.
   */
-case class ParseError(msg: String, ctx: SyntacticContext, loc: SourceLocation) extends CompilationMessage {
+case class ParseError(msg: String, ctx: SyntacticContext, loc: SourceLocation) extends CompilationMessage with Unrecoverable {
   val kind = "Parse Error"
 
   def summary: String = msg
@@ -41,9 +41,4 @@ case class ParseError(msg: String, ctx: SyntacticContext, loc: SourceLocation) e
        |Syntactic Context: $ctx.
        |""".stripMargin
   }
-
-  /**
-    * Returns a formatted string with helpful suggestions.
-    */
-  def explain(formatter: Formatter): Option[String] = None
 }

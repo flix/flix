@@ -24,7 +24,7 @@ sealed trait DocAst
 
 object DocAst {
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, parameters: List[Expression.Ascription], resType: Type, body: Expression)
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, parameters: List[Expression.Ascription], resType: Type, effect: Eff, body: Expression)
 
   case class Enum(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], cases: List[Case])
 
@@ -67,9 +67,9 @@ object DocAst {
 
     case object RecordEmpty extends Atom
 
-    case class RecordExtend(field: Name.Field, value: Expression, rest: Expression) extends RecordOp
+    case class RecordExtend(label: Name.Label, value: Expression, rest: Expression) extends RecordOp
 
-    case class RecordRestrict(field: Name.Field, value: Expression) extends RecordOp
+    case class RecordRestrict(label: Name.Label, value: Expression) extends RecordOp
 
     case class Keyword(word: String, d: Expression) extends Composite
 
@@ -132,7 +132,7 @@ object DocAst {
 
     /** e.g. `x_2` */
     def VarWithOffset(sym: Symbol.VarSym): Expression =
-      AsIs(sym.toString + "_" + sym.getStackOffset.toString)
+      AsIs(sym.toString + "_" + sym.getStackOffset(0).toString)
 
     def Hole(sym: Symbol.HoleSym): Expression =
       AsIs("?" + sym.toString)
@@ -199,12 +199,6 @@ object DocAst {
     def Force(d: Expression): Expression =
       Keyword("force", d)
 
-    def Box(d: Expression): Expression =
-      Keyword("box", d)
-
-    def Unbox(d: Expression): Expression =
-      Keyword("unbox", d)
-
     def Index(idx: Int, d: Expression): Expression =
       Dot(d, AsIs(s"_$idx"))
 
@@ -219,12 +213,14 @@ object DocAst {
     def Spawn(d1: Expression, d2: Expression): Expression =
       InRegion(Keyword("spawn", d1), d2)
 
-    def ScopeExit(d1: Expression, d2: Expression): Expression = {
-      DoubleKeyword("add_exit_function", d1, "to", Left(d2))
-    }
-
     def Cast(d: Expression, tpe: Type): Expression =
-      DoubleKeyword("unsafe_cast", d, "as", Right(tpe))
+      DoubleKeyword("cast", d, "as", Right(tpe))
+
+    def Unbox(d: Expression, tpe: Type): Expression =
+      DoubleKeyword("unbox", d, "as", Right(tpe))
+
+    def Box(d: Expression): Expression =
+      Keyword("box", d)
 
     def Without(d: Expression, sym: Symbol.EffectSym): Expression =
       Binary(d, "without", AsIs(sym.toString))
@@ -243,9 +239,6 @@ object DocAst {
 
     def Do(sym: Symbol.OpSym, ds: List[Expression]): Expression =
       Keyword("do", App(AsIs(sym.toString), ds))
-
-    def Resume(d: Expression): Expression =
-      App(AsIs("resume"), List(d))
 
     def JavaInvokeMethod(m: Method, d: Expression, ds: List[Expression]): Expression =
       App(DoubleDot(d, AsIs(m.getName)), ds)
@@ -274,8 +267,8 @@ object DocAst {
     def JumpTo(sym: Symbol.LabelSym): Expression =
       Keyword("goto", AsIs(sym.toString))
 
-    def RecordSelect(field: Name.Field, d: Expression): Expression =
-      Dot(d, AsIs(field.name))
+    def RecordSelect(label: Name.Label, d: Expression): Expression =
+      Dot(d, AsIs(label.name))
 
     def Regex(p: java.util.regex.Pattern): Expression =
       App(AsIs("Regex"), List(AsIs(s""""${p.toString}"""")))
@@ -308,7 +301,7 @@ object DocAst {
 
     case object RecordEmpty extends Atom
 
-    case class RecordExtend(field: String, value: Type, rest: Type) extends Atom
+    case class RecordExtend(label: String, value: Type, rest: Type) extends Atom
 
     case object SchemaEmpty extends Atom
 
@@ -318,6 +311,8 @@ object DocAst {
 
     /** inserted string printed as-is (assumed not to require parenthesis) */
     case class Meta(s: String) extends Atom
+
+    val AnyType: Type = AsIs("AnyType")
 
     val Unknown: Type = Meta("unknown type")
 
@@ -356,6 +351,25 @@ object DocAst {
     def Enum(sym: Symbol.EnumSym, args: List[Type]): Type = App(sym.toString, args)
 
     def Var(id: Int): Type = AsIs(s"var$id")
+  }
+
+  sealed trait Eff
+
+  object Eff {
+
+    case object Pure extends Eff
+
+    /** Represents the union of IO and all regions. */
+    case object Impure extends Eff
+
+    /** Represents Impure and all algebraic effect. */
+    case object ControlImpure extends Eff
+
+    case class AsIs(s: String) extends Eff
+
+    /** Represents the top effect. */
+    def Univ: Eff = AsIs("Univ")
+
   }
 
 }

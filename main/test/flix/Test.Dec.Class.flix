@@ -1,3 +1,5 @@
+// TODO this module is replicated by `Test.Dec.Trait.flix` for the `trait` keyword.
+// Remove this module at the end of the transition period from `class` to `trait`.
 mod Test.Dec.Class {
     mod Test01 {
 

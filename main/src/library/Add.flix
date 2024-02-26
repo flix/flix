@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for addition.
+/// A trait for addition.
 ///
-pub class Add[a] {
+pub trait Add[a] {
     ///
     /// Returns the sum of `x` and `y`.
     ///

@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg.printer
 
-import ca.uwaterloo.flix.language.ast.ReducedAst.{Expr, Stmt}
+import ca.uwaterloo.flix.language.ast.ReducedAst.Expr
 import ca.uwaterloo.flix.language.ast.{ReducedAst, Symbol}
 import ca.uwaterloo.flix.language.dbg.DocAst
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -27,26 +27,19 @@ object ReducedAstPrinter {
     * Returns the [[DocAst.Program]] representation of `root`.
     */
   def print(root: ReducedAst.Root): DocAst.Program = {
-    val enums = root.enums.values.map {
-      case ReducedAst.Enum(ann, mod, sym, cases0, _, _) =>
-        val cases = cases0.values.map {
-          case ReducedAst.Case(sym, tpe, _) =>
-            DocAst.Case(sym, MonoTypePrinter.print(tpe))
-        }.toList
-        DocAst.Enum(ann, mod, sym, Nil, cases)
-    }.toList
     val defs = root.defs.values.map {
-      case ReducedAst.Def(ann, mod, sym, cparams, fparams, stmt, tpe, _, _) =>
+      case ReducedAst.Def(ann, mod, sym, cparams, fparams, _, _, stmt, tpe, _, purity, _) =>
         DocAst.Def(
           ann,
           mod,
           sym,
           (cparams ++ fparams).map(printFormalParam),
           MonoTypePrinter.print(tpe),
+          PurityPrinter.print(purity),
           print(stmt)
         )
     }.toList
-    DocAst.Program(enums, defs)
+    DocAst.Program(Nil, defs)
   }
 
   /**
@@ -58,24 +51,23 @@ object ReducedAstPrinter {
     case Expr.ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
     case Expr.ApplyClo(exp, exps, ct, _, _, _) => DocAst.Expression.ApplyClo(print(exp), exps.map(print), Some(ct))
     case Expr.ApplyDef(sym, exps, ct, _, _, _) => DocAst.Expression.ApplyDef(sym, exps.map(print), Some(ct))
-    case Expr.ApplySelfTail(sym, _, actuals, _, _, _) => DocAst.Expression.ApplySelfTail(sym, actuals.map(print))
+    case Expr.ApplySelfTail(sym, actuals, _, _, _) => DocAst.Expression.ApplySelfTail(sym, actuals.map(print))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
     case Expr.JumpTo(sym, _, _, _) => DocAst.Expression.JumpTo(sym)
     case Expr.Let(sym, exp1, exp2, _, _, _) => DocAst.Expression.Let(printVarSym(sym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
     case Expr.LetRec(varSym, _, _, exp1, exp2, _, _, _) => DocAst.Expression.LetRec(printVarSym(varSym), Some(MonoTypePrinter.print(exp1.tpe)), print(exp1), print(exp2))
+    case Expr.Stmt(exp1, exp2, _, _, _) => DocAst.Expression.Stm(print(exp1), print(exp2))
     case Expr.Scope(sym, exp, _, _, _) => DocAst.Expression.Scope(printVarSym(sym), print(exp))
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case ReducedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
     })
-    case Expr.NewObject(name, clazz, tpe, _, methods, exps, _) => DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.zip(exps).map(printJvmMethod))
-  }
-
-  /**
-    * Returns the [[DocAst.Expression]] representation of `stmt`.
-    */
-  def print(stmt: ReducedAst.Stmt): DocAst.Expression = stmt match {
-    case Stmt.Ret(expr, _, _) => DocAst.Expression.Ret(print(expr))
+    case Expr.TryWith(exp, effUse, rules, _, _, _) => DocAst.Expression.TryWith(print(exp), effUse.sym, rules.map {
+      case ReducedAst.HandlerRule(op, fparams, exp) =>
+        (op.sym, fparams.map(printFormalParam), print(exp))
+    })
+    case Expr.Do(op, exps, _, _, _) => DocAst.Expression.Do(op.sym, exps.map(print))
+    case Expr.NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map(printJvmMethod))
   }
 
   /**
@@ -95,7 +87,8 @@ object ReducedAstPrinter {
   /**
     * Returns the [[DocAst.JvmMethod]] representation of `method`.
     */
-  private def printJvmMethod(method: (ReducedAst.JvmMethod, ReducedAst.Expr)): DocAst.JvmMethod = method match {
-    case (m, clo) => DocAst.JvmMethod(m.ident, m.fparams map printFormalParam, print(clo), MonoTypePrinter.print(m.tpe))
+  private def printJvmMethod(method: ReducedAst.JvmMethod): DocAst.JvmMethod = method match {
+    case ReducedAst.JvmMethod(ident, fparams, exp, tpe, _, _) =>
+      DocAst.JvmMethod(ident, fparams map printFormalParam, print(exp), MonoTypePrinter.print(tpe))
   }
 }

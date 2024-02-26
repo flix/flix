@@ -31,9 +31,23 @@ object EffUnification {
   /**
     * Returns the most general unifier of the two given Boolean formulas `tpe1` and `tpe2`.
     */
-  def unify(tpe10: Type, tpe20: Type, renv0: RigidityEnv, lenv: LevelEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
-    val tpe1 = lenv.purify(tpe10)
-    val tpe2 = lenv.purify(tpe20)
+  def unify(tpe1: Type, tpe2: Type, renv0: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
+
+    // TODO: Levels
+    // We cannot enforce that all variables should belong to the same level.
+    // Consider the equation X^1 and Y^1 ~ Z^0 or W^2 with levels indicated by superscripts.
+    // The minimum level is 0, so we could set the level of X, Y, Z, and W to 0, but this is incorrect.
+    // The reason is that there is the following unifier:
+    //
+    // w -> (w ∨ ¬z) ∧ (z ∨ (x ∧ y))
+    // x ->	x ∨ z
+    // y -> y ∨ z
+    // z -> z
+    //
+    // which satisfies the levels!
+    //
+    // It is not yet clear how to enforce this, hence we unsoundly do not
+    //
 
     //
     // NOTE: ALWAYS UNSOUND. USE ONLY FOR EXPERIMENTS.
@@ -43,22 +57,22 @@ object EffUnification {
     }
 
     //
+    // Debug BU queries.
+    //
+//    // Alpha rename variables.
+//    val alpha = ((tpe1.typeVars ++ tpe2.typeVars).toList.zipWithIndex).foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type.Var]) {
+//      case (macc, (tvar, idx)) =>
+//        val sym = new Symbol.KindedTypeVarSym(idx, Ast.VarText.Absent, tvar.kind, tvar.sym.isRegion, tvar.sym.level, tvar.loc)
+//        val newTvar = Type.Var(sym, tvar.loc)
+//        macc + (tvar.sym -> newTvar)
+//    }
+//    val subst = Substitution(alpha)
+//    val loc = if (tpe1.loc != SourceLocation.Unknown) tpe1.loc else tpe2.loc
+//    println(s"${loc.formatWithLine}: ${subst(tpe1)} =?= ${subst(tpe2)}")
+
+    //
     // Optimize common unification queries.
     //
-    if (flix.options.xprintboolunif) {
-      val loc = if (tpe1.loc != SourceLocation.Unknown) tpe1.loc else tpe2.loc
-
-      // Alpha rename variables.
-      val alpha = ((tpe1.typeVars ++ tpe2.typeVars).toList.zipWithIndex).foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type.Var]) {
-        case (macc, (tvar, idx)) =>
-          val sym = new Symbol.KindedTypeVarSym(idx, Ast.VarText.Absent, tvar.kind, tvar.sym.isRegion, tvar.loc)
-          val newTvar = Type.Var(sym, tvar.loc)
-          macc + (tvar.sym -> newTvar)
-      }
-      val subst = Substitution(alpha)
-      println(s"${loc.formatWithLine}: ${subst(tpe1)} =?= ${subst(tpe2)}")
-    }
-
     if (!flix.options.xnoboolspecialcases) {
 
       // Case 1: Unification of identical formulas.
@@ -86,21 +100,27 @@ object EffUnification {
         case (Type.Var(x, _), Type.Cst(tc, _)) if renv0.isFlexible(x) => tc match {
           case TypeConstructor.Pure =>
             return Ok((Substitution.singleton(x, Type.Pure), Nil)) // 9000 hits
-          case TypeConstructor.EffUniv =>
-            return Ok((Substitution.singleton(x, Type.EffUniv), Nil)) // 1000 hits
+          case TypeConstructor.Univ =>
+            return Ok((Substitution.singleton(x, Type.Univ), Nil)) // 1000 hits
           case _ => // nop
         }
 
         case (Type.Cst(tc, _), Type.Var(y, _)) if renv0.isFlexible(y) => tc match {
           case TypeConstructor.Pure =>
             return Ok((Substitution.singleton(y, Type.Pure), Nil)) // 7000 hits
-          case TypeConstructor.EffUniv =>
-            return Ok((Substitution.singleton(y, Type.EffUniv), Nil)) //  500 hits
+          case TypeConstructor.Univ =>
+            return Ok((Substitution.singleton(y, Type.Univ), Nil)) //  500 hits
           case _ => // nop
         }
 
-        case (Type.Cst(TypeConstructor.EffUniv, _), Type.Cst(TypeConstructor.EffUniv, _)) =>
+        case (Type.Cst(TypeConstructor.Univ, _), Type.Cst(TypeConstructor.Univ, _)) =>
           return Ok((Substitution.empty, Nil)) //  100 hits
+
+        case (Type.Cst(TypeConstructor.Error(_), _), _) =>
+          return Ok((Substitution.empty, Nil))
+
+        case (_, Type.Cst(TypeConstructor.Error(_), _)) =>
+          return Ok((Substitution.empty, Nil))
 
         case _ => // nop
       }
@@ -116,11 +136,7 @@ object EffUnification {
     val numberOfVars = (tpe1.typeVars ++ tpe2.typeVars).size
     val threshold = flix.options.xbddthreshold.getOrElse(DefaultThreshold)
 
-    val substRes = if (flix.options.xboolclassic) {
-      implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlgClassic
-      implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
-      lookupOrSolve(tpe1, tpe2, renv0)
-    } else if (numberOfVars < threshold) {
+    val substRes = if (numberOfVars < threshold) {
       implicit val alg: BoolAlg[BoolFormula] = new BoolFormulaAlg
       implicit val cache: UnificationCache[BoolFormula] = UnificationCache.GlobalBool
       lookupOrSolve(tpe1, tpe2, renv0)

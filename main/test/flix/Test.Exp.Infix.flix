@@ -25,7 +25,7 @@ mod Test.Exp.Infix {
         pub def mul(x: Int32, y: Int32): Int32 = x * y
     }
 
-    class Divisible[a] {
+    trait Divisible[a] {
         pub def div(x: a, y: a): a
     }
 

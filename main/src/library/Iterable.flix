@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for immutable data structures that can be iterated.
+/// A trait for immutable data structures that can be iterated.
 ///
-pub class Iterable[t: Type -> Type] {
+pub trait Iterable[t: Type -> Type] {
 
     ///
     /// Returns an iterator over `t`.

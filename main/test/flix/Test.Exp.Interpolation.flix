@@ -221,7 +221,7 @@ mod Test.Exp.Interpolation {
 
 }
 
-///pub class ToString[a] {
+///pub trait ToString[a] {
 ///    pub def toString(x: a): String
 ///}
 ///

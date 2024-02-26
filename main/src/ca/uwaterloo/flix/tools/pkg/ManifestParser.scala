@@ -16,12 +16,14 @@
 package ca.uwaterloo.flix.tools.pkg
 
 import ca.uwaterloo.flix.tools.pkg.Dependency.{FlixDependency, JarDependency, MavenDependency}
+import ca.uwaterloo.flix.tools.pkg.github.GitHub
 import ca.uwaterloo.flix.util.Result
 import ca.uwaterloo.flix.util.Result.{Err, Ok, ToOk, traverse}
+import ca.uwaterloo.flix.language.ast.Symbol
 import org.tomlj.{Toml, TomlArray, TomlInvalidTypeException, TomlParseResult, TomlTable}
 
 import java.io.{IOException, StringReader}
-import java.net.{MalformedURLException, URI, URL}
+import java.net.{URI, URL}
 import java.nio.file.Path
 import scala.collection.mutable
 import scala.jdk.CollectionConverters.SetHasAsScala
@@ -82,6 +84,13 @@ object ManifestParser {
       version <- getRequiredStringProperty("package.version", parser, p);
       versionSemVer <- toFlixVer(version, p);
 
+      repository <- getOptionalStringProperty("package.repository", parser, p);
+      githubProject <- Result.traverseOpt(repository)(r => toGithubProject(r, p));
+
+      modules <- getOptionalArrayProperty("package.modules", parser, p);
+      moduleStrings <- Result.traverseOpt(modules)(m => convertTomlArrayToStringList(m, p));
+      packageModules <- toPackageModules(moduleStrings, p);
+
       flix <- getRequiredStringProperty("package.flix", parser, p);
       flixSemVer <- toFlixVer(flix, p);
 
@@ -105,7 +114,7 @@ object ManifestParser {
       jarDeps <- getOptionalTableProperty("jar-dependencies", parser, p);
       jarDepsList <- collectDependencies(jarDeps, flixDep = false, prodDep = false, jarDep = true, p)
 
-    ) yield Manifest(name, description, versionSemVer, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
+    ) yield Manifest(name, description, versionSemVer, githubProject, packageModules, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
   }
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
@@ -119,7 +128,7 @@ object ManifestParser {
 
     val dottedKeys = parser.dottedKeySet().asScala.toSet
     val packageKeys = dottedKeys.filter(s => s.startsWith("package."))
-    val allowedPackageKeys = Set("package.name", "package.description", "package.version", "package.flix", "package.authors", "package.license")
+    val allowedPackageKeys = Set("package.name", "package.description", "package.version", "package.repository", "package.modules", "package.flix", "package.authors", "package.license")
     val illegalPackageKeys = packageKeys.diff(allowedPackageKeys)
     if (illegalPackageKeys.nonEmpty) {
       return Err(ManifestError.IllegalPackageKeyFound(p, illegalPackageKeys.head))
@@ -179,6 +188,20 @@ object ManifestParser {
   }
 
   /**
+    * Parses an Array which might be at `propString`
+    * and returns the Array as an Option.
+    */
+  private def getOptionalArrayProperty(propString: String, parser: TomlParseResult, p: Path): Result[Option[TomlArray], ManifestError] = {
+    try {
+      val array = parser.getArray(propString)
+      Ok(Option(array))
+    } catch {
+      case e: IllegalArgumentException => Ok(None)
+      case e: TomlInvalidTypeException => Err(ManifestError.RequiredPropertyHasWrongType(p, propString, "Array", e.getMessage))
+    }
+  }
+
+  /**
     * Parses a Table which should be at `propString`
     * and returns the Table or an error if the result
     * cannot be found.
@@ -207,6 +230,20 @@ object ManifestParser {
       }
     } catch {
       case e: NumberFormatException => Err(ManifestError.VersionNumberWrong(p, s, e.getMessage))
+    }
+  }
+
+  /**
+    * Converts a String `s` to a reference to a GitHub project.
+    * Returns an error if the string is not in the correct format.
+    * The only allowed format is "github:<username>/<repository>".
+    */
+  private def toGithubProject(s: String, p: Path): Result[GitHub.Project, ManifestError] = {
+    s.split(':') match {
+      case Array("github", repo) =>
+        GitHub.parseProject(repo)
+          .mapErr(_ => ManifestError.RepositoryFormatError(p, s))
+      case _ => Err(ManifestError.RepositoryFormatError(p, s))
     }
   }
 
@@ -449,6 +486,22 @@ object ManifestParser {
       }
     }
     Ok(stringSet.toList)
+  }
+
+  /**
+    * Creates the `PackageModules` object from `optList`.
+    */
+  private def toPackageModules(optList: Option[List[String]], p: Path): Result[PackageModules, ManifestError] = {
+    optList match {
+      case None =>
+        Ok(PackageModules.All)
+      case Some(list) =>
+        val moduleSet = list.map { string =>
+          val namespace = string.split('.').toList
+          Symbol.mkModuleSym(namespace)
+        }.toSet
+        Ok(PackageModules.Selected(moduleSet))
+    }
   }
 
   /**

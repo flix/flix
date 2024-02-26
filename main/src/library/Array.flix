@@ -509,7 +509,7 @@ mod Array {
     ///
     def rotateLeftHelper(rc2: Region[r2], n: Int32, arr: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
         let len = length(arr);
-        let f = i -> { let i1 = n + i; get(i1 `Int32.rem` len, arr) };
+        let f = i -> { let i1 = n + i; get(i1 `Int32.remainder` len, arr) };
         init(rc2, f, len)
 
     ///
@@ -533,9 +533,9 @@ mod Array {
     ///
     def rotateRightHelper(rc2: Region[r2], n: Int32, a: Array[a, r1]): Array[a, r2] \ { r1, r2 } =
         let len = length(a);
-        let n1 = n `Int32.rem` len;
+        let n1 = n `Int32.remainder` len;
         let start = len - n1;
-        let f = i -> { let i1 = start + i; get(i1 `Int32.rem` len, a)};
+        let f = i -> { let i1 = start + i; get(i1 `Int32.remainder` len, a)};
         init(rc2, f, len)
 
     ///
@@ -1648,7 +1648,7 @@ mod Array {
     ///
     /// Shuffles `a` using the Fisher–Yates shuffle.
     ///
-    pub def shuffle(rnd: Random, a: Array[a, r]): Unit \ {r, NonDet} =
+    pub def shuffle(rnd: Random, a: Array[a, r]): Unit \ {r, IO} =
         let len = Array.length(a);
         def loop(i) = {
             if (i > 0) {

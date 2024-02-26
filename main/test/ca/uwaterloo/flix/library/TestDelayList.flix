@@ -616,23 +616,23 @@ mod TestDelayList {
 
     @test
     def foldLeft01(): Bool =
-    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, ENil) == 100
+    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, ENil) == 100
 
     @test
     def foldLeft02(): Bool =
-    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, LList(lazy ENil)) == 100
+    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, LList(lazy ENil)) == 100
 
     @test
     def foldLeft03(): Bool =
-    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, LCons(1, lazy ENil)) == 198
+    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, LCons(1, lazy ENil)) == 198
 
     @test
     def foldLeft04(): Bool =
-    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil))))) == 196
+    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, LList(lazy LCons(1, lazy ECons(2, LList(lazy ENil))))) == 196
 
     @test
     def foldLeft05(): Bool =
-    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == 386
+    	DelayList.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, LCons(1, lazy LCons(2, lazy LList(lazy LCons(3, lazy ENil))))) == 386
 
     @test
     def foldLeft06(): Bool =
@@ -645,23 +645,23 @@ mod TestDelayList {
 
     @test
     def foldRight01(): Bool =
-    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, ENil) == 100
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, ENil) == 100
 
     @test
     def foldRight02(): Bool =
-    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, LList(lazy ENil)) == 100
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, LList(lazy ENil)) == 100
 
     @test
     def foldRight03(): Bool =
-    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
 
     @test
     def foldRight04(): Bool =
-    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
 
     @test
     def foldRight05(): Bool =
-    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
+    	DelayList.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
 
     @test
     def foldRight06(): Bool =
@@ -673,23 +673,23 @@ mod TestDelayList {
 
     @test
     def foldRightWithCont01(): Bool =
-    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, ENil) == 100
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, ENil) == 100
 
     @test
     def foldRightWithCont02(): Bool =
-    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, LList(lazy ENil)) == 100
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, LList(lazy ENil)) == 100
 
     @test
     def foldRightWithCont03(): Bool =
-    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, LCons(1, lazy LList(lazy ENil))) == 198
 
     @test
     def foldRightWithCont04(): Bool =
-    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, ECons(1, LCons(2, lazy ENil))) == 194
 
     @test
     def foldRightWithCont05(): Bool =
-    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
+    	DelayList.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, LCons(1, lazy ECons(2, LCons(3, lazy LList(lazy ENil))))) == 382
 
     @test
     def foldRightWithCont06(): Bool =
@@ -2479,39 +2479,39 @@ mod TestDelayList {
 
     @test
     def findMap01(): Bool =
-        DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ENil) == None
+        DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ENil) == None
 
     @test
     def findMap02(): Bool =
-        DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(1, ENil)) == None
+        DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ENil)) == None
 
     @test
     def findMap03(): Bool =
-        DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(2, ENil)) == Some(1)
+        DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(2, ENil)) == Some(1)
 
 	@test
 	def findMap04(): Bool =
-		DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(1, ECons(3, ENil))) == None
+		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ECons(3, ENil))) == None
 
 	@test
 	def findMap05(): Bool =
-		DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(1, ECons(4, ENil))) == Some(2)
+		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ECons(4, ENil))) == Some(2)
 
 	@test
 	def findMap06(): Bool =
-		DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(6, ECons(-1, ENil))) == Some(3)
+		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(6, ECons(-1, ENil))) == Some(3)
 
 	@test
 	def findMap07(): Bool =
-		DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))) == Some(4)
+		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))) == Some(4)
 
     @test
 	def findMap08(): Bool =
-		DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == Some(0)
+		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == Some(0)
 
     @test
 	def findMap09(): Bool =
-		DelayList.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None,
+		DelayList.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None,
 		    LList(lazy LCons(-1, lazy LList(lazy LCons(1, lazy
 		    LList(lazy LCons(9, lazy LList(lazy LCons(3, lazy
 		    LList(lazy LCons(5, lazy LList(lazy LCons(5, lazy
@@ -2524,39 +2524,39 @@ mod TestDelayList {
 
     @test
     def filterMapPure01(): Bool =
-        DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ENil) == ENil
+        DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ENil) == ENil
 
     @test
     def filterMapPure02(): Bool =
-        DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(1, ENil)) == ENil
+        DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ENil)) == ENil
 
     @test
     def filterMapPure03(): Bool =
-        DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(2, ENil)) == ECons(1, ENil)
+        DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(2, ENil)) == ECons(1, ENil)
 
 	@test
 	def filterMapPure04(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(1, ECons(3, ENil))) == ENil
+		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ECons(3, ENil))) == ENil
 
 	@test
 	def filterMapPure05(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(1, ECons(4, ENil))) == ECons(2, ENil)
+		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(1, ECons(4, ENil))) == ECons(2, ENil)
 
 	@test
 	def filterMapPure06(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(6, ECons(-1, ENil))) == ECons(3, ENil)
+		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(6, ECons(-1, ENil))) == ECons(3, ENil)
 
 	@test
 	def filterMapPure07(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))) == ECons(4, ECons(3, ENil))
+		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(8, ECons(6, ENil))) == ECons(4, ECons(3, ENil))
 
     @test
 	def filterMapPure08(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None, ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
 
     @test
 	def filterMapPure09(): Bool =
-		DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None,
+		DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None,
 		    LList(lazy LCons(0, lazy LList(lazy
 		    LCons(1, lazy LList(lazy LCons(2, lazy
 		    LList(lazy LCons(3, lazy LList(lazy
@@ -2570,39 +2570,39 @@ mod TestDelayList {
 
     @test
     def filterMapImpure01(): Bool \ IO =
-        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ENil) == ENil
+        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ENil) == ENil
 
     @test
     def filterMapImpure02(): Bool \ IO =
-        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ENil)) == ENil
+        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ENil)) == ENil
 
     @test
     def filterMapImpure03(): Bool \ IO =
-        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(2, ENil)) == ECons(1, ENil)
+        DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(2, ENil)) == ECons(1, ENil)
 
 	@test
 	def filterMapImpure04(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ECons(3, ENil))) == ENil
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ECons(3, ENil))) == ENil
 
 	@test
 	def filterMapImpure05(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ECons(4, ENil))) == ECons(2, ENil)
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(1, ECons(4, ENil))) == ECons(2, ENil)
 
 	@test
 	def filterMapImpure06(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(6, ECons(-1, ENil))) == ECons(3, ENil)
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(6, ECons(-1, ENil))) == ECons(3, ENil)
 
 	@test
 	def filterMapImpure07(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(8, ECons(6, ENil))) == ECons(4, ECons(3, ENil))
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(8, ECons(6, ENil))) == ECons(4, ECons(3, ENil))
 
     @test
 	def filterMapImpure08(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO), ECons(0, ECons(1, ECons(2, ECons(3, ECons(4, ECons(5, ECons(10, ENil)))))))) == ECons(0, ECons(1, ECons(2, ECons(5, ENil))))
 
     @test
 	def filterMapImpure09(): Bool \ IO =
-		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO),
+		DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO),
 		    LList(lazy LCons(0, lazy LList(lazy
 		    LCons(1, lazy LList(lazy LCons(2, lazy
 		    LList(lazy LCons(3, lazy LList(lazy
@@ -2617,25 +2617,25 @@ mod TestDelayList {
     @test
     def filterMapFilterMap01(): Bool =
         ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
-            DelayList.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i / 2) else None) |>
+            DelayList.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i / 2) else None) |>
             DelayList.filterMap(i -> if (i > 1)                Some(i * 3) else None) == ECons(6, ECons(9, ENil))
 
     @test
     def filterMapFilterMap02(): Bool \ IO =
         ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
-            DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO)) |>
+            DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO)) |>
             DelayList.filterMap(i ->             if (i > 1)                Some(i * 3) else None) == ECons(6, ECons(9, ENil))
 
     @test
     def filterMapFilterMap03(): Bool \ IO =
         ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
-            DelayList.filterMap(i ->             if (i `Int32.rem` 2 == 0) Some(i / 2) else None) |>
+            DelayList.filterMap(i ->             if (i `Int32.remainder` 2 == 0) Some(i / 2) else None) |>
             DelayList.filterMap(i -> unchecked_cast(if (i > 1)                Some(i * 3) else None as _ \ IO)) == ECons(6, ECons(9, ENil))
 
     @test
     def filterMapFilterMap04(): Bool \ IO =
         ECons(2, ECons(4, ECons(6, ECons(7, ENil)))) |>
-            DelayList.filterMap(i -> unchecked_cast(if (i `Int32.rem` 2 == 0) Some(i / 2) else None as _ \ IO)) |>
+            DelayList.filterMap(i -> unchecked_cast(if (i `Int32.remainder` 2 == 0) Some(i / 2) else None as _ \ IO)) |>
             DelayList.filterMap(i -> unchecked_cast(if (i > 1)                Some(i * 3) else None as _ \ IO)) == ECons(6, ECons(9, ENil))
 
 
@@ -3030,28 +3030,28 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ NonDet =
+    def shuffle01(): Bool \ IO =
         let l1: List[Int32] = Nil;
         let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
 
         DelayList.length(l2) == 0 and DelayList.toSet(l2) == Set#{}
 
     @test
-    def shuffle02(): Bool \ NonDet =
+    def shuffle02(): Bool \ IO =
         let l1 = 1 :: Nil;
         let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
 
         DelayList.length(l2) == 1 and DelayList.toSet(l2) == Set#{1}
 
     @test
-    def shuffle03(): Bool \ NonDet =
+    def shuffle03(): Bool \ IO =
         let l1 = 1 :: 2 :: 3 :: Nil;
         let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
 
         DelayList.length(l2) == 3 and DelayList.toSet(l2) == Set#{1, 2, 3}
 
     @test
-    def shuffle04(): Bool \ NonDet =
+    def shuffle04(): Bool \ IO =
         let l1 = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
         let l2 = List.toDelayList(l1) |> DelayList.shuffle(Random.new());
 

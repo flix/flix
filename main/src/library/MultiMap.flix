@@ -21,7 +21,7 @@
 /// A MultiMap is a Map that allows multiple values for a key.
 /// Multiple values are stored in a Set so duplicates are not allowed.
 ///
-/// The key and value types must implement the Eq and Order type classes.
+/// The key and value types must implement the Eq and Order traits.
 ///
 pub enum MultiMap[k, v] with Sendable {
     case MultiMap(Map[k, Set[v]])
@@ -526,7 +526,7 @@ mod MultiMap {
         let MultiMap(m1) = m;
         Map.toMutDeque(rc, m1)
 
-    // No traversable functions due to Order constraint that's outside the `Traversable` class.
+    // No traversable functions due to Order constraint that is outside the `Traversable` trait.
 
     ///
     /// Applies `f` to every `(key, value)` of MultiMap `m`.

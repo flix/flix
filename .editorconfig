@@ -14,7 +14,7 @@ insert_final_newline = true
 tab_width = 4
 trim_trailing_whitespace = true
 
-[**.{scala, sc}]
+[**.{scala,sc}]
 tab_width = 2
 trim_trailing_whitespace = true
 

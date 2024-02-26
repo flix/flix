@@ -138,7 +138,9 @@ object Ast {
   /**
     * A common super type for AST nodes that represent annotations.
     */
-  trait Annotation
+  trait Annotation {
+    def loc: SourceLocation
+  }
 
   object Annotation {
 
@@ -179,7 +181,6 @@ object Ast {
     case class Internal(loc: SourceLocation) extends Annotation {
       override def toString: String = "@Internal"
     }
-
 
     /**
       * An annotation that marks a function definition as using parallel evaluation.
@@ -240,12 +241,33 @@ object Ast {
     /**
       * An AST node that represents a `@Test` annotation.
       *
-      * A function marked with `test` is evaluated as part of the test framework.
+      * A function marked with `Test` is evaluated as part of the test framework.
       *
       * @param loc the source location of the annotation.
       */
     case class Test(loc: SourceLocation) extends Annotation {
       override def toString: String = "@Test"
+    }
+
+    /**
+     * An AST node that represents a `@TailRec` annotation.
+     *
+     * A function marked with `@TailRec` is guaranteed to be tail recursive by the compiler.
+     *
+     * @param loc the source location of the annotation.
+     */
+    case class TailRecursive(loc: SourceLocation) extends Annotation {
+      override def toString: String = "@Tailrec"
+    }
+
+    /**
+     * An AST node that represents an undefined (i.e. erroneous) annotation.
+     *
+     * @param name the name of the annotation.
+     * @param loc the source location of the annotation.
+     */
+    case class Error(name: String, loc: SourceLocation) extends Annotation {
+      override def toString: String = "@" + name
     }
 
   }
@@ -349,6 +371,11 @@ object Ast {
       dropWhile(_.trim.isEmpty).
       map(_.trim).
       mkString("\n")
+
+    /**
+      * Returns a string representation that hides the internals.
+      */
+    override def toString: String = "Doc(...)"
   }
 
   /**
@@ -395,6 +422,11 @@ object Ast {
       * Returns `true` if these modifiers contain the synthetic modifier.
       */
     def isSynthetic: Boolean = mod contains Modifier.Synthetic
+
+    /**
+      * Returns a string representation that hides the internals.
+      */
+    override def toString: String = "Modifiers(...)"
 
   }
 
@@ -501,13 +533,6 @@ object Ast {
     */
   case class Label(pred: Name.Pred, den: Denotation, arity: Int, terms: List[Type])
 
-  object LabelledGraph {
-    /**
-      * The empty labelled graph.
-      */
-    val empty: LabelledGraph = LabelledGraph(Vector.empty)
-  }
-
   /**
     * Represents a labelled graph; the dependency graph with additional labels
     * on the edges allowing more accurate filtering. The rule `A :- not B, C` would
@@ -518,17 +543,24 @@ object Ast {
     * we can also rule out `B -x> A`. The labelled edges would be `B -[C]-x> A`
     * and `C -[B]-> A`.
     */
-  case class LabelledGraph(edges: Vector[LabelledEdge]) {
+  object LabelledPrecedenceGraph {
+    /**
+      * The empty labelled graph.
+      */
+    val empty: LabelledPrecedenceGraph = LabelledPrecedenceGraph(Vector.empty)
+  }
+
+  case class LabelledPrecedenceGraph(edges: Vector[LabelledEdge]) {
     /**
       * Returns a labelled graph with all labelled edges in `this` and `that` labelled graph.
       */
-    def +(that: LabelledGraph): LabelledGraph = {
-      if (this eq LabelledGraph.empty)
+    def +(that: LabelledPrecedenceGraph): LabelledPrecedenceGraph = {
+      if (this eq LabelledPrecedenceGraph.empty)
         that
-      else if (that eq LabelledGraph.empty)
+      else if (that eq LabelledPrecedenceGraph.empty)
         this
       else
-        LabelledGraph(this.edges ++ that.edges)
+        LabelledPrecedenceGraph(this.edges ++ that.edges)
     }
 
     /**
@@ -538,10 +570,10 @@ object Ast {
       * A rule like `A(ta) :- B(tb), not C(tc).` is represented by `edge(A, pos, {la, lb, lc}, B)` etc.
       * and is only included in the output if `syms` contains all of `la.pred, lb.pred, lc.pred` and `labelEq(syms(A), la)` etc.
       */
-    def restrict(syms: Map[Name.Pred, Label], labelEq: (Label, Label) => Boolean): LabelledGraph = {
+    def restrict(syms: Map[Name.Pred, Label], labelEq: (Label, Label) => Boolean): LabelledPrecedenceGraph = {
       def include(l: Label): Boolean = syms.get(l.pred).exists(l2 => labelEq(l, l2))
 
-      LabelledGraph(edges.filter {
+      LabelledPrecedenceGraph(edges.filter {
         case LabelledEdge(_, _, _, labels, _, _) => labels.forall(include)
       })
     }
@@ -558,11 +590,6 @@ object Ast {
     * Represents a stratification that maps every predicate symbol to its stratum.
     */
   case class Stratification(m: Map[Name.Pred, Int])
-
-  /**
-    * A hole context consists of a hole symbol and its type together with the local environment.
-    */
-  case class HoleContext(sym: Symbol.HoleSym, tpe: Type, env: Map[Symbol.VarSym, Type])
 
   /**
     * Represents that the annotated element is introduced by the class `clazz`.

@@ -16,12 +16,13 @@
 
 mod Fixpoint {
 
-    use Fixpoint.Shared.PredSym
+    use Fixpoint.Ast.Shared.PredSym
 
     ///
-    /// A type class for types that contain predicate symbols.
+    /// A trait for types that contain predicate symbols.
     ///
-    pub class PredSymsOf[t] {
+    @Internal
+    pub trait PredSymsOf[t] {
         pub def predSymsOf(x: t): Set[PredSym]
     }
 }

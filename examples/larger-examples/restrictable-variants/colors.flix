@@ -8,23 +8,23 @@ mod Colors {
 
     // To run this function press the floating "Run" button right below these
     // three lines. This can be done for any function that is `pub` and does not
-    // take arguments. (It doesnt not appear until the code is sucessfully compiled)
+    // take arguments. (It doesnt not appear until the code is successfully compiled)
     pub def main(): Unit \ IO = {
         // create the color red
         let red = Color.Red;
         println("this is red: ${red}");
 
         // create the color green with an open type
-        let green = open Color.Green;
+        let green = open_variant Color.Green;
         println("this is green: ${green}");
 
         // for the non-general functions we need to open red again
-        println("Is red warm? ${isWarm(open_as Color red)}, ${isWarmAlternative(open_as Color red)}, and ${isWarmGeneral(red)}");
+        println("Is red warm? ${isWarm(open_variant_as Color red)}, ${isWarmAlternative(open_variant_as Color red)}, and ${isWarmGeneral(red)}");
 
         // to compare the two types, we need to open the type of red
         // (green is recreated to avoid propagating typing backwards but it
         // can be reused.)
-        println("Are these two colors equal? ${(open_as Color red) == (open Color.Green)}");
+        println("Are these two colors equal? ${(open_variant_as Color red) == (open_variant Color.Green)}");
 
         // lets look at the inferred type of isWarm
         let _isWarmLocal = c -> choose c {
@@ -93,7 +93,7 @@ mod Colors {
 
 }
 
-// Type Class Instances
+// Trait Instances
 
 instance ToString[Colors.Color[i]] {
     pub def toString(x: Colors.Color[i]): String = choose x {

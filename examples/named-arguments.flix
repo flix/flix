@@ -23,7 +23,7 @@ pub def hasSecretCode(l: List[Int32]): Bool = {
     l |> contains(sublist = 1 :: 2 :: 3 :: 4 :: Nil)
 }
 
-// We can also use named arguments in enums, where fields are otherwise unnamed.
+// We can also use named arguments in enums, where labels are otherwise unnamed.
 
 ///
 /// Represents a Flixball player.

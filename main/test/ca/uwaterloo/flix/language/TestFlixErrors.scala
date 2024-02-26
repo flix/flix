@@ -17,16 +17,17 @@
 package ca.uwaterloo.flix.language
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.language.phase.jvm.BackendObjType
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.util.{Options, Validation}
+import ca.uwaterloo.flix.util.{Options, Result, Validation}
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestFlixErrors extends AnyFunSuite with TestUtils {
 
   def expectRuntimeError(v: Validation[CompilationResult, CompilationMessage], name: String): Unit = {
     expectSuccess(v)
-    v match {
-      case Validation.Success(t) => t.getMain match {
+    v.toHardResult match {
+      case Result.Ok(t) => t.getMain match {
         case Some(main) => try {
           main.apply(Array.empty)
           fail("No runtime error thrown")
@@ -37,20 +38,20 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
         }
         case None => fail("Could not find main")
       }
-      case _failure => fail("Impossible")
+      case Result.Err(_) => fail("Impossible")
     }
   }
 
   test("HoleError.01") {
     val input = "def main(): Unit = ???"
     val result = compile(input, Options.TestWithLibMin)
-    expectRuntimeError(result, "HoleError")
+    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
   }
 
   test("HoleError.02") {
     val input = "def main(): Unit = ?namedHole"
     val result = compile(input, Options.TestWithLibMin)
-    expectRuntimeError(result, "HoleError")
+    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
   }
 
   test("SpawnedThreadError.01") {
@@ -62,7 +63,7 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
         |}
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
-    expectRuntimeError(result, "HoleError")
+    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
   }
 
   test("SpawnedThreadError.02") {
@@ -76,7 +77,7 @@ class TestFlixErrors extends AnyFunSuite with TestUtils {
          |}
       """.stripMargin
     val result = compile(input, Options.DefaultTest)
-    expectRuntimeError(result, "HoleError")
+    expectRuntimeError(result, BackendObjType.HoleError.jvmName.name)
   }
 
   test("SpawnedThreadError.03") {

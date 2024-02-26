@@ -29,6 +29,7 @@ object TypedAstOps {
       val patVal = binds(pat)
       patsVal ++ patVal
     case Pattern.RecordEmpty(_, _) => Map.empty
+    case Pattern.Error(_, _) => Map.empty
   }
 
   /**
@@ -48,16 +49,14 @@ object TypedAstOps {
     case Expr.Unary(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.Binary(_, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Let(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.LetRec(_, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Region(_, _) => Set.empty
     case Expr.Scope(_, _, exp, _, _, _) => sigSymsOf(exp)
-    case Expr.ScopeExit(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2) ++ sigSymsOf(exp3)
     case Expr.Stm(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
     case Expr.Discard(exp, _, _) => sigSymsOf(exp)
     case Expr.Match(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp) ++ rule.guard.toList.flatMap(sigSymsOf))
     case Expr.TypeMatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
-    case Expr.RelationalChoose(exps, rules, _, _, _) => exps.flatMap(sigSymsOf).toSet ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.Tag(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.RestrictableTag(_, exp, _, _, _) => sigSymsOf(exp)
@@ -86,7 +85,6 @@ object TypedAstOps {
     case Expr.TryCatch(exp, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.TryWith(exp, _, rules, _, _, _) => sigSymsOf(exp) ++ rules.flatMap(rule => sigSymsOf(rule.exp))
     case Expr.Do(_, exps, _, _, _) => exps.flatMap(sigSymsOf).toSet
-    case Expr.Resume(exp, _, _) => sigSymsOf(exp)
     case Expr.InvokeConstructor(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
     case Expr.InvokeMethod(_, exp, args, _, _, _) => sigSymsOf(exp) ++ args.flatMap(sigSymsOf)
     case Expr.InvokeStaticMethod(_, args, _, _, _) => args.flatMap(sigSymsOf).toSet
@@ -103,10 +101,10 @@ object TypedAstOps {
     case Expr.ParYield(frags, exp, _, _, _) => sigSymsOf(exp) ++ frags.flatMap(f => sigSymsOf(f.exp))
     case Expr.Lazy(exp, _, _) => sigSymsOf(exp)
     case Expr.Force(exp, _, _, _) => sigSymsOf(exp)
-    case Expr.FixpointConstraintSet(_, _, _, _) => Set.empty
-    case Expr.FixpointLambda(_, exp, _, _, _, _) => sigSymsOf(exp)
-    case Expr.FixpointMerge(exp1, exp2, _, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
-    case Expr.FixpointSolve(exp, _, _, _, _) => sigSymsOf(exp)
+    case Expr.FixpointConstraintSet(_, _, _) => Set.empty
+    case Expr.FixpointLambda(_, exp, _, _, _) => sigSymsOf(exp)
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) => sigSymsOf(exp1) ++ sigSymsOf(exp2)
+    case Expr.FixpointSolve(exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointFilter(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointInject(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointProject(_, exp, _, _, _) => sigSymsOf(exp)
@@ -164,7 +162,7 @@ object TypedAstOps {
     case Expr.Let(sym, _, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - sym
 
-    case Expr.LetRec(sym, _, exp1, exp2, _, _, _) =>
+    case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
       (freeVars(exp1) ++ freeVars(exp2)) - sym
 
     case Expr.Region(_, _) =>
@@ -172,9 +170,6 @@ object TypedAstOps {
 
     case Expr.Scope(sym, _, exp, _, _, _) =>
       freeVars(exp) - sym
-
-    case Expr.ScopeExit(exp1, exp2, _, _, _) =>
-      freeVars(exp1) ++ freeVars(exp2)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2) ++ freeVars(exp3)
@@ -195,15 +190,6 @@ object TypedAstOps {
       rules.foldLeft(freeVars(exp)) {
         case (acc, TypeMatchRule(sym, _, exp)) => acc ++ (freeVars(exp) - sym)
       }
-
-    case Expr.RelationalChoose(exps, rules, _, _, _) =>
-      val es = exps.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, exp) => acc ++ freeVars(exp)
-      }
-      val rs = rules.foldLeft(Map.empty[Symbol.VarSym, Type]) {
-        case (acc, RelationalChooseRule(pats, exp)) => acc ++ (freeVars(exp) -- pats.flatMap(freeVars))
-      }
-      es ++ rs
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       val e = freeVars(exp)
@@ -302,9 +288,6 @@ object TypedAstOps {
     case Expr.Do(_, exps, _, _, _) =>
       exps.flatMap(freeVars).toMap
 
-    case Expr.Resume(exp, _, _) =>
-      freeVars(exp)
-
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       args.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, exp) => acc ++ freeVars(exp)
@@ -367,18 +350,18 @@ object TypedAstOps {
     case Expr.Force(exp, _, _, _) =>
       freeVars(exp)
 
-    case Expr.FixpointConstraintSet(cs, _, _, _) =>
+    case Expr.FixpointConstraintSet(cs, _, _) =>
       cs.foldLeft(Map.empty[Symbol.VarSym, Type]) {
         case (acc, c) => acc ++ freeVars(c)
       }
 
-    case Expr.FixpointLambda(_, exp, _, _, _, _) =>
+    case Expr.FixpointLambda(_, exp, _, _, _) =>
       freeVars(exp)
 
-    case Expr.FixpointMerge(exp1, exp2, _, _, _, _) =>
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       freeVars(exp1) ++ freeVars(exp2)
 
-    case Expr.FixpointSolve(exp, _, _, _, _) =>
+    case Expr.FixpointSolve(exp, _, _, _) =>
       freeVars(exp)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>
@@ -415,15 +398,7 @@ object TypedAstOps {
       patsVal ++ patVal
 
     case Pattern.RecordEmpty(_, _) => Map.empty
-  }
-
-  /**
-    * Returns the free variables in the given pattern `pat0`.
-    */
-  private def freeVars(pat0: RelationalChoosePattern): Set[Symbol.VarSym] = pat0 match {
-    case RelationalChoosePattern.Wild(_) => Set.empty
-    case RelationalChoosePattern.Absent(_) => Set.empty
-    case RelationalChoosePattern.Present(sym, _, _) => Set(sym)
+    case Pattern.Error(_, _) => Map.empty
   }
 
   /**

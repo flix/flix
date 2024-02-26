@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.Main.{CmdOpts, Command}
 import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.runtime.shell.Shell
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.collection.Chain
 
 import java.nio.file.Path
 
@@ -28,47 +28,47 @@ import java.nio.file.Path
   */
 object SimpleRunner {
 
-  def run(cwd: Path, cmdOpts: CmdOpts, options: Options): Validation[Unit, Int] = {
+  def run(cwd: Path, cmdOpts: CmdOpts, options: Options): Result[Unit, Int] = {
 
     // check if the --Xbenchmark-code-size flag was passed.
     if (cmdOpts.xbenchmarkCodeSize) {
-      BenchmarkCompiler.benchmarkCodeSize(options)
+      BenchmarkCompilerOld.benchmarkCodeSize(options)
       System.exit(0)
     }
 
     // check if the --Xbenchmark-incremental flag was passed.
     if (cmdOpts.xbenchmarkIncremental) {
-      BenchmarkCompiler.benchmarkIncremental(options)
+      BenchmarkCompilerOld.benchmarkIncremental(options)
       System.exit(0)
     }
 
     // check if the --Xbenchmark-phases flag was passed.
     if (cmdOpts.xbenchmarkPhases) {
-      BenchmarkCompiler.benchmarkPhases(options)
+      BenchmarkCompilerOld.benchmarkPhases(options)
       System.exit(0)
     }
 
     // check if the --Xbenchmark-frontend flag was passed.
     if (cmdOpts.xbenchmarkFrontend) {
-      BenchmarkCompiler.benchmarkThroughput(options, frontend = true)
+      BenchmarkCompilerOld.benchmarkThroughput(options, frontend = true)
       System.exit(0)
     }
 
     // check if the --Xbenchmark-throughput flag was passed.
     if (cmdOpts.xbenchmarkThroughput) {
-      BenchmarkCompiler.benchmarkThroughput(options, frontend = false)
+      BenchmarkCompilerOld.benchmarkThroughput(options, frontend = false)
       System.exit(0)
     }
 
     // check if we should start a REPL
     if (cmdOpts.command == Command.None && cmdOpts.files.isEmpty) {
-      Bootstrap.bootstrap(cwd, options.githubKey)(System.out) match {
-        case Validation.Success(bootstrap) =>
+      Bootstrap.bootstrap(cwd, options.githubToken)(Formatter.getDefault, System.out).toHardResult match {
+        case Result.Ok(bootstrap) =>
           val shell = new Shell(bootstrap, options)
           shell.loop()
           System.exit(0)
-        case failure =>
-          failure.errors.map(_.message(Formatter.getDefault)).foreach(println)
+        case Result.Err(errors) =>
+          errors.map(_.message(Formatter.getDefault)).foreach(println)
           System.exit(1)
       }
     }
@@ -92,8 +92,8 @@ object SimpleRunner {
 
     // evaluate main.
     val timer = new Timer(flix.compile())
-    timer.getResult match {
-      case Validation.Success(compilationResult) =>
+    timer.getResult.toHardResult match {
+      case Result.Ok(compilationResult) =>
 
         compilationResult.getMain match {
           case None => // nop
@@ -109,14 +109,13 @@ object SimpleRunner {
             // Exit.
             System.exit(0)
         }
-        ().toSuccess
+        Result.Ok(())
 
-      case failure =>
-        flix.mkMessages(failure.errors.sortBy(_.source.name))
-          .foreach(println)
+      case Result.Err(errors) =>
+        flix.mkMessages(Chain.from(errors.toSeq.sortBy(_.source.name))).foreach(println)
         println()
-        println(s"Compilation failed with ${failure.errors.length} error(s).")
-        1.toFailure
+        println(s"Compilation failed with ${errors.length} error(s).")
+        Result.Err(1)
     }
   }
 }

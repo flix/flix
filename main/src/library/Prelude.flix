@@ -1,12 +1,7 @@
 ///
-/// Static is a type alias for false and denotes the global lifetime.
+/// Static denotes the region of global lifetime.
 ///
-pub type alias Static = Impure
-
-///
-/// The empty type.
-///
-pub enum Void
+pub type alias Static = IO
 
 ///
 /// An enum that holds type information where a witness is not available.
@@ -24,18 +19,14 @@ pub enum Proxy[_] {
 pub eff IO
 
 ///
-/// The Non-Deterministic Effect.
+/// The pure identity function.
 ///
-/// The `NonDet` effect represents "functions" that behave like relations,
-/// i.e. they have no side-effects, and given the same input their output
-//// there is a fixed set of output.
-///
-pub eff NonDet
+pub def identity(x: a): a = x
 
 ///
-/// The identity function.
+/// The identity function, automatically casting to the required effect.
 ///
-pub def identity(x: a): a \ ef = checked_ecast(x)
+pub def eidentity(x: a): a \ ef = checked_ecast(x)
 
 ///
 /// The constant function.
@@ -105,6 +96,11 @@ pub def ||>(x: (a, b), f: a -> (b -> c \ ef)): c \ ef = f(fst(x), snd(x))
 pub def !>( x: a, f: a -> Unit \ ef): a \ ef = f(x); x
 
 ///
+/// Coerces the given value `x`.
+///
+pub def coerce(x: t[a]): a with Coerce[t] = Coerce.coerce(x)
+
+///
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
 pub def println(x: a): Unit \ IO with ToString[a] =
@@ -172,4 +168,52 @@ pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
         case _: Unit => ()
         case _: _ => println(x)
     }
+}
+
+pub enum Purity[a: Type, b: Type, ef: Eff] {
+    case Pure(a -> b)
+    case Impure(a -> b \ ef)
+}
+
+pub enum Purity2[a: Type, b: Type, c: Type, ef: Eff] {
+    case Pure(a -> b -> c)
+    case Impure(a -> b -> c \ ef)
+}
+
+pub enum Purity3[a: Type, b: Type, c: Type, d: Type, ef: Eff] {
+    case Pure(a -> b -> c -> d)
+    case Impure(a -> b -> c -> d \ ef)
+}
+
+///
+/// Returns `Purity.Pure(g) if `f` has no effects.
+/// Returns `Purity.Impure(g)` otherwise.
+/// The function `g` can then be used in a context that requires
+/// it to be pure.
+///
+pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
+    case g: a -> b \ Pure => Purity.Pure(g)
+    case _: _             => Purity.Impure(f)
+}
+
+///
+/// Returns `Purity2.Pure(g) if `f` has no effects.
+/// Returns `Purity2.Impure(g)` otherwise.
+/// The function `g` can then be used in a context that requires
+/// it to be pure.
+///
+pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] = typematch f {
+    case g: a -> b -> c \ Pure => Purity2.Pure(g)
+    case _: _                  => Purity2.Impure(f)
+}
+
+///
+/// Returns `Purity3.Pure(g) if `f` has no effects.
+/// Returns `Purity3.Impure(g)` otherwise.
+/// The function `g` can then be used in a context that requires
+/// it to be pure.
+///
+pub def purityOf3(f: a -> b -> c -> d \ ef): Purity3[a, b, c, d, ef] = typematch f {
+    case g: a -> b -> c -> d \ Pure => Purity3.Pure(g)
+    case _: _                       => Purity3.Impure(f)
 }

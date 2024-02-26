@@ -15,12 +15,12 @@
  */
 
 ///
-/// A type class for applicatives that support monadic bind (`flatMap`), i.e., allow to apply a function
+/// A trait for applicatives that support monadic bind (`flatMap`), i.e., allow to apply a function
 /// that takes a normal value and produces a monadic value to a monadic value. That is, the bind mechanism
 /// supports extraction of monadic values, or, viewed differently, allows to combine (flatten) nested
 /// monadic values (`flapMap` can be understood as a `Functor.map` followed by a `flatten`).
 ///
-pub lawful class Monad[m : Type -> Type] with Applicative[m] {
+pub lawful trait Monad[m : Type -> Type] with Applicative[m] {
 
     ///
     /// Apply function `f` to the monadic value `x`, resulting in a combined monadic value.

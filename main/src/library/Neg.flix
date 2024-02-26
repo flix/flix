@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for negation.
+/// A trait for negation.
 ///
-pub class Neg[a] {
+pub trait Neg[a] {
     ///
     /// Returns -`x`.
     ///

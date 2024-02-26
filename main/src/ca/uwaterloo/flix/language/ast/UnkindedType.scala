@@ -45,6 +45,7 @@ sealed trait UnkindedType {
     case UnkindedType.Ascribe(tpe, kind, loc) => UnkindedType.Ascribe(tpe.map(f), kind, loc)
     case UnkindedType.Alias(cst, args, tpe, loc) => UnkindedType.Alias(cst, args.map(_.map(f)), tpe.map(f), loc)
     case UnkindedType.AssocType(cst, arg, loc) => UnkindedType.AssocType(cst, arg.map(f), loc)
+    case t: UnkindedType.Error => t
   }
 
   /**
@@ -94,6 +95,8 @@ sealed trait UnkindedType {
     case UnkindedType.Alias(_, _, tpe, _) => tpe.definiteTypeVars
     // For associated types we cannot yet reduce, so we are conservative and say none.
     case UnkindedType.AssocType(_, _, _) => SortedSet.empty
+
+    case UnkindedType.Error(_) => SortedSet.empty
   }
 }
 
@@ -284,9 +287,21 @@ object UnkindedType {
   }
 
   /**
+    * A fully resolved error type.
+    */
+  case class Error(loc: SourceLocation) extends UnkindedType {
+    override def equals(that: Any): Boolean = that match {
+      case Error(_) => true
+      case _ => false
+    }
+
+    override def hashCode(): Int = 17
+  }
+
+  /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): UnkindedType.Var = {
+  def freshVar(loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit level: Level, flix: Flix): UnkindedType.Var = {
     val sym = Symbol.freshUnkindedTypeVarSym(text, isRegion, loc)
     UnkindedType.Var(sym, loc)
   }
@@ -344,8 +359,8 @@ object UnkindedType {
   /**
     * Constructs the type a -> b \ IO
     */
-  def mkImpureArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
-    val eff = Some(UnkindedType.Cst(TypeConstructor.EffUniv, loc))
+  def mkIoArrow(a: UnkindedType, b: UnkindedType, loc: SourceLocation): UnkindedType = {
+    val eff = Some(UnkindedType.Cst(TypeConstructor.Effect(Symbol.IO), loc))
     mkApply(UnkindedType.Arrow(eff, 2, loc), List(a, b), loc)
   }
 
@@ -362,8 +377,8 @@ object UnkindedType {
   /**
     * Constructs a RecordExtend type.
     */
-  def mkRecordRowExtend(field: Name.Field, tpe: UnkindedType, rest: UnkindedType, loc: SourceLocation): UnkindedType = {
-    mkApply(UnkindedType.Cst(TypeConstructor.RecordRowExtend(field), loc), List(tpe, rest), loc)
+  def mkRecordRowExtend(label: Name.Label, tpe: UnkindedType, rest: UnkindedType, loc: SourceLocation): UnkindedType = {
+    mkApply(UnkindedType.Cst(TypeConstructor.RecordRowExtend(label), loc), List(tpe, rest), loc)
   }
 
   /**
@@ -504,6 +519,7 @@ object UnkindedType {
     case Ascribe(tpe, kind, loc) => Ascribe(eraseAliases(tpe), kind, loc)
     case Alias(_, _, tpe, _) => eraseAliases(tpe)
     case AssocType(cst, arg, loc) => AssocType(cst, eraseAliases(arg), loc) // TODO ASSOC-TYPES check that this is valid
+    case tpe: UnkindedType.Error => tpe
     case UnappliedAlias(_, loc) => throw InternalCompilerException("unexpected unapplied alias", loc)
     case UnappliedAssocType(_, loc) => throw InternalCompilerException("unexpected unapplied associated type", loc)
   }
@@ -559,7 +575,7 @@ object UnkindedType {
       val elmType = getFlixType(comp)
       UnkindedType.mkApply(
         UnkindedType.Cst(TypeConstructor.Array, SourceLocation.Unknown),
-        List(elmType, UnkindedType.Cst(TypeConstructor.EffUniv, SourceLocation.Unknown)),
+        List(elmType, UnkindedType.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)),
         SourceLocation.Unknown
       )
     }

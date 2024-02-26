@@ -63,7 +63,7 @@ mod Int16 {
     /// Returns the Euclidean modulo of `x` and `n`.
     /// The result is always non-negative.
     ///
-    pub def mod(x: Int16, n: Int16): Int16 =
+    pub def modulo(x: Int16, n: Int16): Int16 =
         if (n == 0i16)
             0i16
         else
@@ -73,9 +73,9 @@ mod Int16 {
     /// Returns the remainder of `x / n`.
     /// The result can be negative.
     ///
-    /// See also `Int16.mod`.
+    /// See also `Int16.modulo`.
     ///
-    pub def rem(x: Int16, n: Int16): Int16 =
+    pub def remainder(x: Int16, n: Int16): Int16 =
         if (n == 0i16)
             0i16
         else
@@ -120,7 +120,7 @@ mod Int16 {
     /// A zero is shifted into the leftmost position regardless of sign extension.
     ///
     pub def logicalRightShift(dist: {dist = Int32}, x: Int16): Int16 =
-        if (x < 0i16 and Int32.rem(dist.dist, 32) != 0)
+        if (x < 0i16 and Int32.remainder(dist.dist, 32) != 0)
             rightShift(bitwiseAnd(rightShift(x, 1), maxValue()), dist.dist - 1)
         else
             rightShift(x, dist.dist)
@@ -131,7 +131,7 @@ mod Int16 {
     ///
     pub def bitCount(x: Int16): Int32 = {
         if      (x == 0i16)            0
-        else if (x `rem` 2i16 != 0i16) bitCount(logicalRightShift(dist = 1, x)) + 1
+        else if (x `remainder` 2i16 != 0i16) bitCount(logicalRightShift(dist = 1, x)) + 1
         else                           bitCount(logicalRightShift(dist = 1, x))
     }
 
@@ -140,7 +140,7 @@ mod Int16 {
     /// binary representation of `x` right by `distance` bits.
     ///
     pub def rotateRight(dist: {dist = Int32}, x: Int16): Int16 =
-        let rem1 = dist.dist `Int32.rem` size();
+        let rem1 = dist.dist `Int32.remainder` size();
         let rot = if (rem1 >= 0) rem1 else rem1 + size();
         bitwiseOr(logicalRightShift(dist = rot, x), leftShift(x, size() - rot))
 
@@ -149,7 +149,7 @@ mod Int16 {
     /// binary representation of `x` left by `distance` bits.
     ///
     pub def rotateLeft(dist: {dist = Int32}, x: Int16): Int16 =
-        let rem1 = dist.dist `Int32.rem` size();
+        let rem1 = dist.dist `Int32.remainder` size();
         let rot = if (rem1 >= 0) rem1 else rem1 + size();
         bitwiseOr(logicalRightShift(dist = size() - rot, x), leftShift(x, rot))
 
@@ -251,7 +251,7 @@ mod Int16 {
     /// The bits of x have positions: 0 (rightmost bit) - 15 (leftmost bit)
     ///
     pub def getBit(pos: {pos = Int32}, x: Int16): Int32 =
-        if (rightShift(x, pos.pos) `rem` 2i16 == 0i16) 0 else 1
+        if (rightShift(x, pos.pos) `remainder` 2i16 == 0i16) 0 else 1
 
     ///
     /// Returns `x` with the bit at position `pos` set (to 1).

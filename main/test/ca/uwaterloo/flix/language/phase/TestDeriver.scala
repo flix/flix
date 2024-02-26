@@ -22,10 +22,12 @@ import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestDeriver extends AnyFunSuite with TestUtils {
+
   test("DerivationError.EmptyEnum.Eq") {
     val compiled = compile("enum E with Eq", Options.TestWithLibMin)
     expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
   }
+
   test("DerivationError.EmptyEnum.Order") {
     val compiled = compile("enum E with Eq, Order", Options.TestWithLibMin)
     expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
@@ -35,9 +37,24 @@ class TestDeriver extends AnyFunSuite with TestUtils {
     val compiled = compile("enum E with ToString", Options.TestWithLibMin)
     expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
   }
+
   test("DerivationError.EmptyEnum.Hash") {
     val compiled = compile("enum E with Hash", Options.TestWithLibMin)
     expectError[DerivationError.IllegalDerivationForEmptyEnum](compiled)
   }
+
+  test("IllegalDerivation.01") {
+    val input =
+      """
+        |class C[a]
+        |
+        |enum E with C {
+        |    case E
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[DerivationError.IllegalDerivation](result)
+  }
+
 }
 

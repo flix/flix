@@ -1,3 +1,5 @@
+// TODO this module is replicated by `Test.Integ.Trait.Schema.flix` for the `trait` keyword.
+// Remove this module at the end of the transition period from `class` to `trait`.
 mod Test.Integ.Class.Schema {
     class C[a] {
         pub def f(_x: a): #{ R(Int32, Bool) } = #{

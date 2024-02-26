@@ -131,7 +131,7 @@ mod TestDebug {
     }
 
     @test
-    def testEnumStringify01(): Bool = stringify(Card.Card(Suit.Hearts, Rank.N(5)))  == "Card(Hearts, N(5))"
+    def testEnumStringify01(): Bool = stringify(Card.Card(Suit.Hearts, Rank.N(5)))  == "Card((Hearts(()), N(5)))"
 
 
     pub enum Poly[a, b] {
@@ -142,7 +142,7 @@ mod TestDebug {
     }
 
     @test
-    def testPolyStringify01(): Bool = stringify(Poly.NoneOfThem) == "NoneOfThem"
+    def testPolyStringify01(): Bool = stringify(Poly.NoneOfThem) == "NoneOfThem(())"
 
     @test
     def testPolyStringify02(): Bool = stringify(Poly.This(123)) == "This(123)"
@@ -151,10 +151,10 @@ mod TestDebug {
     def testPolyStringify03(): Bool = stringify(Poly.That("Hello World!")) == "That(Hello World!)"
 
     @test
-    def testPolyStringify04(): Bool = stringify(Poly.Both(123, "Hello World!")) == "Both(123, Hello World!)"
+    def testPolyStringify04(): Bool = stringify(Poly.Both(123, "Hello World!")) == "Both((123, Hello World!))"
 
     @test
-    def testRecordStringify01(): Bool = stringify({field = (1, 2)}) == "{field = (1, 2)}"
+    def testRecordStringify01(): Bool = stringify({label = (1, 2)}) == "{label = (1, 2)}"
 
     @test
     def testRecordStringify02(): Bool = {
@@ -172,7 +172,7 @@ mod TestDebug {
     def testFunctionStringify01(): Bool = {
         def f(x: Int32): Int32 = x;
         let s = stringify(f);
-        s == "Int32 -> Int32"
+        s == "Int32 -> Obj"
     }
 
     def toIntFunction(x: a, g: a -> Int32): Int32 = g(x)
@@ -180,7 +180,7 @@ mod TestDebug {
     @test
     def testFunctionStringify02(): Bool = {
         let s = stringify(toIntFunction(true));
-        s == "Obj -> Int32"
+        s == "Obj -> Obj"
     }
 
     def thunkFunction(x: a): String -> a = _ -> x
@@ -188,7 +188,7 @@ mod TestDebug {
     @test
     def testFunctionStringify03(): Bool = {
         let s = stringify((thunkFunction(42), thunkFunction('a')));
-        s == "(Obj -> Int32, Obj -> Char)"
+        s == "(Obj -> Obj, Obj -> Obj)"
     }
 
      @test
@@ -229,7 +229,7 @@ mod TestDebug {
 
     @test
     def testNullStringify07(): Bool = {
-        let s = stringify({field = unchecked_cast(null as String)});
-        s == "{field = null}"
+        let s = stringify({label = unchecked_cast(null as String)});
+        s == "{label = null}"
     }
 }

@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, EqualityEnvironment, Substitution, Unification, UnificationError}
-import ca.uwaterloo.flix.util.Validation.{ToSuccess, flatMapN, mapN}
+import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
@@ -43,7 +43,7 @@ object Scheme {
   /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
     */
-  def instantiate(sc: Scheme, loc: SourceLocation)(implicit flix: Flix): (List[Ast.TypeConstraint], Type) = {
+  def instantiate(sc: Scheme, loc: SourceLocation)(implicit level: Level, flix: Flix): (List[Ast.TypeConstraint], Type) = {
     // Compute the base type.
     val baseType = sc.base
 
@@ -101,9 +101,9 @@ object Scheme {
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
   def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
-    checkLessThanEqual(sc1, sc2, classEnv, eqEnv) match {
-      case Validation.Success(_) => true
-      case _failure => false
+    checkLessThanEqual(sc1, sc2, classEnv, eqEnv).toHardResult match {
+      case Result.Ok(_) => true
+      case Result.Err(_) => false
     }
   }
 
@@ -116,7 +116,7 @@ object Scheme {
     /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
     ///
     if (sc1 == sc2) {
-      return Substitution.empty.toSuccess
+      return Validation.success(Substitution.empty)
     }
 
     //
@@ -132,7 +132,7 @@ object Scheme {
     val renv = renv1 ++ renv2
 
     // Attempt to unify the two instantiated types.
-    flatMapN(Unification.unifyTypes(sc1.base, sc2.base, renv, LevelEnv.Top).toValidation) {
+    flatMapN(Unification.unifyTypes(sc1.base, sc2.base, renv).toValidation) {
       case (subst, econstrs) => // TODO ASSOC-TYPES consider econstrs
         val newTconstrs1Val = ClassEnvironment.reduce(sc1.tconstrs.map(subst.apply), classEnv)
         val newTconstrs2Val = ClassEnvironment.reduce(sc2.tconstrs.map(subst.apply), classEnv)
@@ -144,7 +144,7 @@ object Scheme {
                 val newEconstrs2 = sc2.econstrs.map(subst.apply).map(EqualityEnvironment.narrow) // TODO ASSOC-TYPES reduce, unsafe narrowing here
                 // ensure the eqenv entails the constraints and build up the substitution
                 val substVal = Validation.fold(newEconstrs1, Substitution.empty) {
-                  case (subst, econstr) => EqualityEnvironment.entail(newEconstrs2, subst(econstr), renv, eqEnv).map(_ @@ subst)
+                  case (subst, econstr) => mapN(EqualityEnvironment.entail(newEconstrs2, subst(econstr), renv, eqEnv))(_ @@ subst)
                 }
                 mapN(substVal) {
                   // combine the econstr substitution with the base type substitution

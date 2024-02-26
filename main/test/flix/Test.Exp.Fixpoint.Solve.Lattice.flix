@@ -175,4 +175,26 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
         let ans = query m select t from LocalVar("r"; t);
         Vector.length(ans) == 1 and Vector.head(ans) == Some(Constant.Cst(39+12))
 
+    @Test
+    def testRelationToLattice01(): Bool =
+        let pr = #{
+            Foo("a", 1).
+            Foo("b", 2).
+            Bar(n; v) :- Foo(n, v).
+        };
+        let result = query pr select (x, y) from Bar(x; y);
+        Assert.eq(Vector#{("a", 1), ("b", 2)}, result)
+
+    @Test
+    def testRelationToLattice02(): Bool =
+        let pr = #{
+            Foo("a", 1).
+            Foo("a", 2).
+            Foo("b", 2).
+            Foo("b", 4).
+            Bar(n; v) :- Foo(n, v).
+        };
+        let result = query pr select (x, y) from Bar(x; y);
+        Assert.eq(Vector#{("a", 2), ("b", 4)}, result)
+
 }

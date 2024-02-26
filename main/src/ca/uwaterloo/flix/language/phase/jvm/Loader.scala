@@ -22,13 +22,6 @@ object Loader {
     //
     val loadedClasses = BytecodeLoader.loadAll(classes)
 
-    //
-    // Print the number of loaded classes, if debugging and verbosity is enabled.
-    //
-    if (flix.options.debug) {
-      Console.println(s"Loaded: ${loadedClasses.size} classes.")
-    }
-
     flix.subphase("LoadMethods") {
       //
       // Computes a map from classes and method names to method objects.
@@ -41,15 +34,12 @@ object Loader {
       //
       // Decorate each defn in the ast with its method object unless its a closure.
       //
-      for ((sym, defn) <- root.defs if defn.cparams.isEmpty) {
-        // Retrieve the namespace info of sym.
-        val nsInfo = JvmOps.getNamespace(sym)
-
-        // Retrieve the JVM name associated with the namespace.
-        val nsJvmName = JvmOps.getNamespaceClassType(nsInfo).name
+      for ((sym, defn) <- root.defs if root.reachable.contains(sym)) {
+        // Retrieve the namespace name
+        val nsName = JvmOps.getNamespaceName(sym)
 
         // Retrieve the reflective class object.
-        val nsClass = loadedClasses.getOrElse(nsJvmName, throw InternalCompilerException(s"Unknown namespace: '$nsJvmName'.", sym.loc))
+        val nsClass = loadedClasses.getOrElse(nsName, throw InternalCompilerException(s"Unknown namespace: '$nsName'.", sym.loc))
 
         // Retrieve the method name of the symbol.
         val methodName = JvmOps.getDefMethodNameInNamespaceClass(sym)
@@ -67,11 +57,12 @@ object Loader {
         defn.method = method
       }
 
-      if (shouldMainExist) {
-        val mainName = JvmOps.getMainClassType().name
-        val mainClass = loadedClasses.getOrElse(mainName, throw InternalCompilerException(s"Class not found: '${mainName.toInternalName}'.", SourceLocation.Unknown))
-        val mainMethods = allMethods.getOrElse(mainClass, throw InternalCompilerException(s"methods for '${mainName.toInternalName}' not found.", SourceLocation.Unknown))
-        val mainMethod = mainMethods.getOrElse("main", throw InternalCompilerException(s"Cannot find 'main' method of '${mainName.toInternalName}'", SourceLocation.Unknown))
+      if (root.getMain.isDefined) {
+        val mainName = JvmName.Main
+        val mainInternalName = mainName.toInternalName
+        val mainClass = loadedClasses.getOrElse(mainName, throw InternalCompilerException(s"Class not found: '$mainInternalName'.", SourceLocation.Unknown))
+        val mainMethods = allMethods.getOrElse(mainClass, throw InternalCompilerException(s"methods for '$mainInternalName' not found.", SourceLocation.Unknown))
+        val mainMethod = mainMethods.getOrElse("main", throw InternalCompilerException(s"Cannot find 'main' method of '$mainInternalName'", SourceLocation.Unknown))
 
         // This is a specialized version of the link function in JvmBackend
         def mainFunction(args: Array[String]): Unit = {
@@ -89,11 +80,6 @@ object Loader {
         Some(mainFunction)
       } else None
     }
-  }
-
-  private def shouldMainExist(implicit root: Root): Boolean = {
-    // These two lookups match the condition that genMainClass has for generation.
-    root.entryPoint.flatMap(root.defs.get).isDefined
   }
 
   /**

@@ -17,9 +17,9 @@
 use Bool.{==>, <==>}
 
 ///
-/// A type class for equality and inequality.
+/// A trait for equality and inequality.
 ///
-pub lawful class Eq[a] {
+pub lawful trait Eq[a] {
 
     ///
     /// Returns `true` if and only if `x` is equal to `y`.

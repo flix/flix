@@ -17,14 +17,11 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.ReducedAst.Root
-import ca.uwaterloo.flix.language.ast.{MonoType, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.JvmName.MethodDescriptor
 import ca.uwaterloo.flix.util.{InternalCompilerException, JvmTarget}
 import org.objectweb.asm.Opcodes._
-import org.objectweb.asm.{ClassWriter, Label, MethodVisitor}
-
-import scala.annotation.tailrec
+import org.objectweb.asm.{ClassWriter, MethodVisitor}
 
 object AsmOps {
 
@@ -32,10 +29,7 @@ object AsmOps {
     * Returns the target JVM version.
     */
   def JavaVersion(implicit flix: Flix): Int = flix.options.target match {
-    case JvmTarget.Version16 => V1_6
-    case JvmTarget.Version17 => V1_7
-    case JvmTarget.Version18 => V1_8
-    case JvmTarget.Version19 => throw InternalCompilerException(s"Unsupported Java version: '1.9'.", SourceLocation.Unknown)
+    case JvmTarget.Version21 => V21
   }
 
   /**
@@ -122,22 +116,6 @@ object AsmOps {
   }
 
   /**
-    * Returns the array store instruction for arrays of the given JvmType tpe
-    */
-  def getArrayStoreInstruction(tpe: BackendType): Int = tpe match {
-    case BackendType.Bool => BASTORE
-    case BackendType.Char => CASTORE
-    case BackendType.Int8 => BASTORE
-    case BackendType.Int16 => SASTORE
-    case BackendType.Int32 => IASTORE
-    case BackendType.Int64 => LASTORE
-    case BackendType.Float32 => FASTORE
-    case BackendType.Float64 => DASTORE
-    case BackendType.Reference(_) => AASTORE
-    case BackendType.Array(_) => AASTORE
-  }
-
-  /**
     * Returns the CheckCast type for the value of the type specified by `tpe`
     */
   def getArrayType(tpe: JvmType): String = tpe match {
@@ -152,22 +130,6 @@ object AsmOps {
     case JvmType.PrimDouble => "[D"
     case JvmType.String => "[Ljava/lang/String;"
     case JvmType.Reference(_) => "[Ljava/lang/Object;"
-  }
-
-  /**
-    * Returns the Array fill type for the value of the type specified by `tpe`
-    */
-  def getArrayFillType(tpe: BackendType): String = tpe match {
-    case BackendType.Bool => "([ZZ)V"
-    case BackendType.Char => "([CC)V"
-    case BackendType.Int8 => "([BB)V"
-    case BackendType.Int16 => "([SS)V"
-    case BackendType.Int32 => "([II)V"
-    case BackendType.Int64 => "([JJ)V"
-    case BackendType.Float32 => "([FF)V"
-    case BackendType.Float64 => "([DD)V"
-    case BackendType.Reference(_) => "([Ljava/lang/Object;Ljava/lang/Object;)V"
-    case BackendType.Array(_) => "([Ljava/lang/Object;Ljava/lang/Object;)V"
   }
 
   /**
@@ -295,7 +257,7 @@ object AsmOps {
     * return this.value;
     * }
     */
-  def compileGetBoxedTagValueMethod(visitor: ClassWriter, classType: JvmType.Reference, valueType: JvmType)(implicit root: Root, flix: Flix): Unit = {
+  def compileGetBoxedTagValueMethod(visitor: ClassWriter, classType: JvmType.Reference, valueType: JvmType): Unit = {
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL, "getBoxedTagValue", AsmOps.getMethodDescriptor(Nil, JvmType.Object), null, null)
 
     method.visitCode()
@@ -305,33 +267,6 @@ object AsmOps {
     method.visitInsn(ARETURN)
     method.visitMaxs(1, 1)
     method.visitEnd()
-  }
-
-  /**
-    * Generates code to throw a MatchError.
-    */
-  def compileThrowFlixError(mv: MethodVisitor, className: JvmName, loc: SourceLocation): Unit = {
-    compileReifiedSourceLocation(mv, loc)
-    mv.visitTypeInsn(NEW, className.toInternalName)
-    mv.visitInsn(DUP2)
-    mv.visitInsn(SWAP)
-    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
-    mv.visitInsn(ATHROW)
-  }
-
-  /**
-    * Generates code to throw a MatchError.
-    */
-  def compileThrowHoleError(mv: MethodVisitor, hole: String, loc: SourceLocation): Unit = {
-    compileReifiedSourceLocation(mv, loc)
-    val className = BackendObjType.HoleError.jvmName
-    mv.visitTypeInsn(NEW, className.toInternalName)
-    mv.visitInsn(DUP2)
-    mv.visitInsn(SWAP)
-    mv.visitLdcInsn(hole)
-    mv.visitInsn(SWAP)
-    mv.visitMethodInsn(INVOKESPECIAL, className.toInternalName, "<init>", s"(${BackendObjType.String.toDescriptor}${BackendObjType.ReifiedSourceLocation.toDescriptor})${JvmType.Void.toDescriptor}", false)
-    mv.visitInsn(ATHROW)
   }
 
   /**
@@ -379,7 +314,7 @@ object AsmOps {
   /**
     * Emits code that puts the function object of the def symbol `def` on top of the stack.
     */
-  def compileDefSymbol(sym: Symbol.DefnSym, mv: MethodVisitor)(implicit root: Root, flix: Flix): Unit = {
+  def compileDefSymbol(sym: Symbol.DefnSym, mv: MethodVisitor): Unit = {
     // JvmType of Def
     val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
 
@@ -465,6 +400,46 @@ object AsmOps {
       case JvmType.Reference(_) =>
         method.visitVarInsn(ALOAD, 0)
         method.visitFieldInsn(GETFIELD, classType.name.toInternalName, fieldName, fieldType.toDescriptor)
+    }
+  }
+
+
+  /**
+    * This method box a field with name `name` with type `tpe` on the class `className`
+    * If the field is a primitive then it is boxed using the appropriate java type, if it is not a primitive
+    * then we just return the field
+    *
+    * @param method    MethodVisitor used to emit the code to a method
+    * @param fieldType type of the field to be boxed
+    * @param className class that the field is defined on
+    * @param fieldName name of the field to be boxed
+    */
+  def boxField(method: MethodVisitor, fieldType: BackendType, className: JvmName, fieldName: String): Unit = {
+
+    /**
+      * This method will box the primitive on top of the stack
+      */
+    def box(boxedObjectInternalName: String, signature: String): Unit = {
+      method.visitTypeInsn(NEW, boxedObjectInternalName)
+      method.visitInsn(DUP)
+      method.visitVarInsn(ALOAD, 0)
+      method.visitFieldInsn(GETFIELD, className.toInternalName, fieldName, fieldType.toDescriptor)
+      method.visitMethodInsn(INVOKESPECIAL, boxedObjectInternalName, "<init>", signature, false)
+    }
+
+    // based on the type of the field, we pick the appropriate class that boxes the primitive
+    fieldType match {
+      case BackendType.Bool => box(JvmName.Boolean.toInternalName, getMethodDescriptor(List(JvmType.PrimBool), JvmType.Void))
+      case BackendType.Char => box(JvmName.Character.toInternalName, getMethodDescriptor(List(JvmType.PrimChar), JvmType.Void))
+      case BackendType.Int8 => box(JvmName.Byte.toInternalName, getMethodDescriptor(List(JvmType.PrimByte), JvmType.Void))
+      case BackendType.Int16 => box(JvmName.Short.toInternalName, getMethodDescriptor(List(JvmType.PrimShort), JvmType.Void))
+      case BackendType.Int32 => box(JvmName.Integer.toInternalName, getMethodDescriptor(List(JvmType.PrimInt), JvmType.Void))
+      case BackendType.Int64 => box(JvmName.Long.toInternalName, getMethodDescriptor(List(JvmType.PrimLong), JvmType.Void))
+      case BackendType.Float32 => box(JvmName.Float.toInternalName, getMethodDescriptor(List(JvmType.PrimFloat), JvmType.Void))
+      case BackendType.Float64 => box(JvmName.Double.toInternalName, getMethodDescriptor(List(JvmType.PrimDouble), JvmType.Void))
+      case BackendType.Reference(_) | BackendType.Array(_) =>
+        method.visitVarInsn(ALOAD, 0)
+        method.visitFieldInsn(GETFIELD, className.toInternalName, fieldName, fieldType.toDescriptor)
     }
   }
 }

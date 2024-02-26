@@ -20,57 +20,59 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.OccurrenceAst.Occur._
-import ca.uwaterloo.flix.language.ast.OccurrenceAst.Root
-import ca.uwaterloo.flix.language.ast.Purity.{Impure, Pure}
+import ca.uwaterloo.flix.language.ast.Purity.Pure
 import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, OccurrenceAst, Purity, SemanticOp, SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 /**
   * The inliner replaces closures and functions by their code to improve performance.
   */
 object Inliner {
 
-  sealed trait Expression
+  sealed trait Expr
 
-  object Expression {
-    case class LiftedExp(exp: LiftedAst.Expr) extends Expression
+  object Expr {
+    case class LiftedExp(exp: LiftedAst.Expr) extends Expr
 
-    case class OccurrenceExp(exp: OccurrenceAst.Expression) extends Expression
+    case class OccurrenceExp(exp: OccurrenceAst.Expression) extends Expr
   }
 
   /**
-    * Candidates for inlining are functions with fewer than `InlineThreshold` expressions
+    * A function below the soft threshold is typically inlined.
     */
-  private val InlineThreshold = 8
+  private val SoftInlineThreshold: Int = 4
+
+  /**
+    * A function above the hard threshold is never inlined.
+    */
+  private val HardInlineThreshold: Int = 8
+
+  /**
+    * Returns `true` if `def0` should be inlined.
+    */
+  private def canInlineDef(def0: OccurrenceAst.Def): Boolean = {
+    val mayInline = def0.context.occur != DontInline && !def0.context.isSelfRecursive
+    val belowSoft = def0.context.size < SoftInlineThreshold
+    val belowHard = def0.context.size < HardInlineThreshold
+    val shouldInline = belowSoft || (def0.context.isDirectCall && belowHard) || (def0.context.occur == Once && belowHard)
+    mayInline && shouldInline
+  }
 
   /**
     * Performs inlining on the given AST `root`.
     */
   def run(root: OccurrenceAst.Root)(implicit flix: Flix): Validation[LiftedAst.Root, CompilationMessage] = flix.subphase("Inliner") {
-    // Visit every definition in the program.
-    val defs = root.defs.map {
-      case (sym, defn) => sym -> visitDef(defn)(flix, root)
-    }
+    val defs = ParOps.parMapValues(root.defs)(d => visitDef(d)(flix, root))
+    val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
-    // Visit every enum in the program.
-    val enums = root.enums.map {
-      case (sym, enum) => sym -> visitEnum(enum)
-    }
-
-    // TODO RESTR-VARS add restrictable enums
-
-    // Reassemble the ast root.
-    val result = LiftedAst.Root(defs, enums, root.entryPoint, root.sources)
-
-    result.toSuccess
+    Validation.success(LiftedAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources))
   }
 
   /**
     * Performs expression inlining on the given definition `def0`.
     * Converts definition from OccurrenceAst to LiftedAst.
     */
-  private def visitDef(def0: OccurrenceAst.Def)(implicit flix: Flix, root: Root): LiftedAst.Def = {
+  private def visitDef(def0: OccurrenceAst.Def)(implicit flix: Flix, root: OccurrenceAst.Root): LiftedAst.Def = {
     val convertedExp = visitExp(def0.exp, Map.empty)(root, flix)
     val cparams = def0.cparams.map {
       case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
@@ -78,25 +80,26 @@ object Inliner {
     val fparams = def0.fparams.map {
       case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
     }
-    LiftedAst.Def(def0.ann, def0.mod, def0.sym, cparams, fparams, convertedExp, def0.tpe,  convertedExp.purity, def0.loc)
+    LiftedAst.Def(def0.ann, def0.mod, def0.sym, cparams, fparams, convertedExp, def0.tpe, convertedExp.purity, def0.loc)
   }
 
-  /**
-    * Converts enum from OccurrenceAst to LiftedAst
-    */
-  private def visitEnum(enum0: OccurrenceAst.Enum): LiftedAst.Enum = {
-    val cases = enum0.cases.map {
-      case (sym, caze) =>
-        sym -> LiftedAst.Case(sym, caze.tpe, caze.loc)
-    }
-    LiftedAst.Enum(enum0.ann, enum0.mod, enum0.sym, cases, enum0.tpe, enum0.loc)
+  private def visitEffect(effect: OccurrenceAst.Effect): LiftedAst.Effect = effect match {
+    case OccurrenceAst.Effect(ann, mod, sym, ops0, loc) =>
+      val ops = ops0.map(visitEffectOp)
+      LiftedAst.Effect(ann, mod, sym, ops, loc)
+  }
+
+  private def visitEffectOp(op: OccurrenceAst.Op): LiftedAst.Op = op match {
+    case OccurrenceAst.Op(sym, ann, mod, fparams0, tpe, purity, loc) =>
+      val fparams = fparams0.map(visitFormalParam)
+      LiftedAst.Op(sym, ann, mod, fparams, tpe, purity, loc)
   }
 
   /**
     * Performs inlining operations on the expression `exp0` of Monotype OccurrenceAst.Expression.
     * Returns an expression of Monotype Expression
     */
-  private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Expression])(implicit root: Root, flix: Flix): LiftedAst.Expr = exp0 match {
+  private def visitExp(exp0: OccurrenceAst.Expression, subst0: Map[Symbol.VarSym, Expr])(implicit root: OccurrenceAst.Root, flix: Flix): LiftedAst.Expr = exp0 match {
     case OccurrenceAst.Expression.Constant(cst, tpe, loc) => LiftedAst.Expr.Cst(cst, tpe, loc)
 
     case OccurrenceAst.Expression.Var(sym, tpe, loc) =>
@@ -109,17 +112,15 @@ object Inliner {
         case Some(e1) =>
           e1 match {
             // If `e1` is a `LiftedExp` then `e1` has already been visited
-            case Expression.LiftedExp(exp) => exp
+            case Expr.LiftedExp(exp) => exp
             // If `e1` is a `OccurrenceExp` then `e1` has not been visited. Visit `e1`
-            case Expression.OccurrenceExp(exp) => visitExp(exp, subst0)
+            case Expr.OccurrenceExp(exp) => visitExp(exp, subst0)
           }
       }
 
     case OccurrenceAst.Expression.ApplyAtomic(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp(_, subst0))
       op match {
-        case AtomicOp.Is(sym) if isSingleCaseEnum(sym, es) => LiftedAst.Expr.Cst(Ast.Constant.Bool(true), MonoType.Bool, loc)
-
         case AtomicOp.Untag(_) =>
           val List(e) = es
           // Inline expressions of the form Untag(Tag(e)) => e
@@ -169,10 +170,9 @@ object Inliner {
         LiftedAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       val as = actuals.map(visitExp(_, subst0))
-      val fs = formals.map(visitFormalParam)
-      LiftedAst.Expr.ApplySelfTail(sym, fs, as, tpe, purity, loc)
+      LiftedAst.Expr.ApplySelfTail(sym, as, tpe, purity, loc)
 
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
@@ -190,32 +190,38 @@ object Inliner {
     case OccurrenceAst.Expression.JumpTo(sym, tpe, purity, loc) => LiftedAst.Expr.JumpTo(sym, tpe, purity, loc)
 
     case OccurrenceAst.Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
-      /// Case 1:
-      /// If `sym` is never used (it is `Dead`)  and `exp1` is pure, so it has no side effects, then it is safe to remove `sym`
-      /// Both code size and runtime are reduced
-      if (isDeadAndPure(occur, exp1.purity)) {
-        visitExp(exp2, subst0)
+      if (isDead(occur)) {
+        if (Purity.isPure(exp1.purity)) {
+          /// Case 1:
+          /// If `sym` is never used (it is `Dead`)  and `exp1` is pure, so it has no side effects, then it is safe to remove `sym`
+          /// Both code size and runtime are reduced
+          visitExp(exp2, subst0)
+        } else {
+          /// Case 2:
+          /// If `sym` is never used (it is `Dead`) so it is safe to make a Stmt.
+          LiftedAst.Expr.Stmt(visitExp(exp1, subst0), visitExp(exp2, subst0), tpe, purity, loc)
+        }
       } else {
-        /// Case 2:
+        /// Case 3:
         /// If `exp1` occurs once and it is pure, then it is safe to inline.
         /// There is a small decrease in code size and runtime.
         val wantToPreInline = isUsedOnceAndPure(occur, exp1.purity)
         if (wantToPreInline) {
-          val subst1 = subst0 + (sym -> Expression.OccurrenceExp(exp1))
+          val subst1 = subst0 + (sym -> Expr.OccurrenceExp(exp1))
           visitExp(exp2, subst1)
         } else {
           val e1 = visitExp(exp1, subst0)
-          /// Case 3:
+          /// Case 4:
           /// If `e1` is trivial and pure, then it is safe to inline.
           // Code size and runtime are not impacted, because only trivial expressions are inlined
           val wantToPostInline = isTrivialAndPure(e1, exp1.purity) && occur != DontInline
           if (wantToPostInline) {
             /// If `e1` is to be inlined:
             /// Add map `sym` to `e1` and return `e2` without constructing the let expression.
-            val subst1 = subst0 + (sym -> Expression.LiftedExp(e1))
+            val subst1 = subst0 + (sym -> Expr.LiftedExp(e1))
             visitExp(exp2, subst1)
           } else {
-            /// Case 4:
+            /// Case 5:
             /// If none of the previous cases pass, `sym` is not inlined. Return a let expression with the visited expressions
             /// Code size and runtime are not impacted
             val e2 = visitExp(exp2, subst0)
@@ -229,6 +235,18 @@ object Inliner {
       val e2 = visitExp(exp2, subst0)
       LiftedAst.Expr.LetRec(varSym, index, defSym, e1, e2, tpe, purity, loc)
 
+    case OccurrenceAst.Expression.Stmt(exp1, exp2, tpe, purity, loc) =>
+      /// Case 1:
+      /// If `exp1` is pure, so it has no side effects, then it is safe to remove
+      /// Both code size and runtime are reduced
+      if (exp1.purity == Purity.Pure) {
+        visitExp(exp2, subst0)
+      } else {
+        val e1 = visitExp(exp1, subst0)
+        val e2 = visitExp(exp2, subst0)
+        LiftedAst.Expr.Stmt(e1, e2, tpe, purity, loc)
+      }
+
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       LiftedAst.Expr.Scope(sym, e, tpe, purity, loc)
@@ -241,6 +259,20 @@ object Inliner {
           LiftedAst.CatchRule(sym, clazz, e)
       }
       LiftedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      val e = visitExp(exp, subst0)
+      val rs = rules.map {
+        case OccurrenceAst.HandlerRule(op, fparams, exp) =>
+          val fps = fparams.map(visitFormalParam)
+          val e = visitExp(exp, subst0)
+          LiftedAst.HandlerRule(op, fps, e)
+      }
+      LiftedAst.Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.Do(op, exps, tpe, purity, loc) =>
+      val es = exps.map(visitExp(_, subst0))
+      LiftedAst.Expr.Do(op, es, tpe, purity, loc)
 
     case OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map {
@@ -256,25 +288,10 @@ object Inliner {
   }
 
   /**
-    * A def can be inlined if
-    * Its body consist of a single non self call or
-    * Its body has a codesize below the inline threshold and its not being inlined into itself or
-    * It only occurs once in the entire program and
-    * It does not contain a reference to itself
+    * Checks if `occur` is Dead.
     */
-  private def canInlineDef(def0: OccurrenceAst.Def): Boolean = {
-    val mayInline = def0.context.occur != DontInline && !def0.context.isSelfRecursive
-    val isBelowInlineThreshold = def0.context.size < InlineThreshold
-    val occursOnce = def0.context.occur == Once
-    val canInline = def0.context.isDirectCall || isBelowInlineThreshold || occursOnce
-    mayInline && canInline
-  }
-
-  /**
-    * Checks if `occur` is Dead and purity is `Pure`
-    */
-  private def isDeadAndPure(occur: OccurrenceAst.Occur, purity: Purity): Boolean = (occur, purity) match {
-    case (Dead, Purity.Pure) => true
+  private def isDead(occur: OccurrenceAst.Occur): Boolean = occur match {
+    case Dead => true
     case _ => false
   }
 
@@ -299,25 +316,16 @@ object Inliner {
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     * Substitute variables in `exp0` via the filled substitution map `env0`
     */
-  private def bindFormals(exp0: OccurrenceAst.Expression, symbols: List[Symbol.VarSym], args: List[LiftedAst.Expr], env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: Root, flix: Flix): LiftedAst.Expr = {
+  private def bindFormals(exp0: OccurrenceAst.Expression, symbols: List[Symbol.VarSym], args: List[LiftedAst.Expr], env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst.Root, flix: Flix): LiftedAst.Expr = {
     (symbols, args) match {
       case (sym :: nextSymbols, e1 :: nextExpressions) =>
         val freshVar = Symbol.freshVarSym(sym)
         val env1 = env0 + (sym -> freshVar)
         val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env1)
-        val purity = combine(e1.purity, nextLet.purity)
+        val purity = Purity.combine(e1.purity, nextLet.purity)
         LiftedAst.Expr.Let(freshVar, e1, nextLet, exp0.tpe, purity, exp0.loc)
       case _ => substituteExp(exp0, env0)
     }
-  }
-
-  /**
-    * Combines purities `p1` and `p2`
-    * A combined purity is only pure if both `p1` and `p2` are pure, otherwise it is always impure.
-    */
-  def combine(p1: Purity, p2: Purity): Purity = (p1, p2) match {
-    case (Pure, Pure) => Pure
-    case _ => Impure
   }
 
   /**
@@ -343,7 +351,7 @@ object Inliner {
 
     case OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.NonTailCall, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplySelfTail(sym, _, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, actuals, Ast.CallType.NonTailCall, tpe, purity, loc)
+    case OccurrenceAst.Expression.ApplySelfTail(sym, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, actuals, Ast.CallType.NonTailCall, tpe, purity, loc)
 
     case _ => exp0
   }
@@ -365,7 +373,7 @@ object Inliner {
   /**
     * Substitute variables in `exp0` for new fresh variables in `env0`
     */
-  private def substituteExp(exp0: OccurrenceAst.Expression, env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: Root, flix: Flix): LiftedAst.Expr = exp0 match {
+  private def substituteExp(exp0: OccurrenceAst.Expression, env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst.Root, flix: Flix): LiftedAst.Expr = exp0 match {
     case OccurrenceAst.Expression.Constant(cst, tpe, loc) => LiftedAst.Expr.Cst(cst, tpe, loc)
 
     case OccurrenceAst.Expression.Var(sym, tpe, loc) => LiftedAst.Expr.Var(env0.getOrElse(sym, sym), tpe, loc)
@@ -393,10 +401,9 @@ object Inliner {
       val es = exps.map(substituteExp(_, env0))
       LiftedAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplySelfTail(sym, formals, actuals, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       val as = actuals.map(substituteExp(_, env0))
-      val fs = formals.map(visitFormalParam)
-      LiftedAst.Expr.ApplySelfTail(sym, fs, as, tpe, purity, loc)
+      LiftedAst.Expr.ApplySelfTail(sym, as, tpe, purity, loc)
 
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
@@ -427,6 +434,11 @@ object Inliner {
       val e2 = substituteExp(exp2, env1)
       LiftedAst.Expr.LetRec(freshVar, index, defSym, e1, e2, tpe, purity, loc)
 
+    case OccurrenceAst.Expression.Stmt(exp1, exp2, tpe, purity, loc) =>
+      val e1 = substituteExp(exp1, env0)
+      val e2 = substituteExp(exp2, env0)
+      LiftedAst.Expr.Stmt(e1, e2, tpe, purity, loc)
+
     case OccurrenceAst.Expression.Scope(sym, exp, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       LiftedAst.Expr.Scope(sym, e, tpe, purity, loc)
@@ -441,6 +453,20 @@ object Inliner {
           LiftedAst.CatchRule(freshVar, clazz, e)
       }
       LiftedAst.Expr.TryCatch(e, rs, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.TryWith(exp, effUse, rules, tpe, purity, loc) =>
+      val e = substituteExp(exp, env0)
+      val rs = rules.map {
+        case OccurrenceAst.HandlerRule(op, fparams, exp) =>
+          val fps = fparams.map(visitFormalParam)
+          val e = substituteExp(exp, env0)
+          LiftedAst.HandlerRule(op, fps, e)
+      }
+      LiftedAst.Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+
+    case OccurrenceAst.Expression.Do(op, exps, tpe, purity, loc) =>
+      val es = exps.map(substituteExp(_, env0))
+      LiftedAst.Expr.Do(op, es, tpe, purity, loc)
 
     case OccurrenceAst.Expression.NewObject(name, clazz, tpe, purity, methods0, loc) =>
       val methods = methods0.map {
@@ -515,9 +541,9 @@ object Inliner {
             case (LiftedAst.Expr.JumpTo(sym1, _, _, _), LiftedAst.Expr.JumpTo(sym2, _, _, _)) if sym1 == sym2 =>
               val op = AtomicOp.Binary(SemanticOp.BoolOp.And)
               val es = List(outerCond, innerCond)
-              val tpe = outerCond.tpe
-              val pur = combine(outerCond.purity, innerCond.purity)
-              val andExp = LiftedAst.Expr.ApplyAtomic(op, es, tpe, pur, loc)
+              val tpe = innerThen.tpe // equal to outerElse.tpe
+              val pur = Purity.combine(outerCond.purity, innerCond.purity)
+              val andExp = LiftedAst.Expr.ApplyAtomic(op, es, MonoType.Bool, pur, loc)
               LiftedAst.Expr.IfThenElse(andExp, innerThen, outerElse, tpe, purity, loc)
             case _ => LiftedAst.Expr.IfThenElse(outerCond, outerThen, outerElse, tpe, purity, loc)
           }
@@ -525,15 +551,4 @@ object Inliner {
       }
   }
 
-  /**
-    * Helper function for dealing with [[AtomicOp]].
-    * Returns `true` if `sym` is an enum with one case and `exps` is pure.
-    */
-  private def isSingleCaseEnum(sym: Symbol.CaseSym, exps: List[LiftedAst.Expr])(implicit root: Root, flix: Flix): Boolean =
-    exps match {
-      case e :: Nil =>
-        val enum0 = root.enums(sym.enumSym)
-        enum0.cases.size == 1 && e.purity == Pure
-      case _ => false
-    }
 }

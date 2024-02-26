@@ -17,12 +17,12 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
-import ca.uwaterloo.flix.language.phase.Monomorph
+import ca.uwaterloo.flix.language.phase.MonoDefs
 import ca.uwaterloo.flix.util.collection.ListMap
 
 object LoweredAst {
 
-  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, Map.empty, ListMap.empty)
+  val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty, Map.empty, ListMap.empty)
 
   case class Root(classes: Map[Symbol.ClassSym, Class],
                   instances: Map[Symbol.ClassSym, List[Instance]],
@@ -32,6 +32,7 @@ object LoweredAst {
                   effects: Map[Symbol.EffectSym, Effect],
                   typeAliases: Map[Symbol.TypeAliasSym, TypeAlias],
                   entryPoint: Option[Symbol.DefnSym],
+                  reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
                   classEnv: Map[Symbol.ClassSym, Ast.ClassContext],
                   eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])
@@ -40,13 +41,11 @@ object LoweredAst {
 
   case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 
-  case class Sig(sym: Symbol.SigSym, spec: Spec, impl: Option[Impl])
+  case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr])
 
-  case class Def(sym: Symbol.DefnSym, spec: Spec, impl: Impl)
+  case class Def(sym: Symbol.DefnSym, spec: Spec, exp: Expr)
 
   case class Spec(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, tparams: List[TypeParam], fparams: List[FormalParam], declaredScheme: Scheme, retTpe: Type, eff: Type, tconstrs: List[Ast.TypeConstraint], loc: SourceLocation)
-
-  case class Impl(exp: Expr, inferredScheme: Scheme)
 
   case class Enum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EnumSym, tparams: List[TypeParam], derives: Ast.Derivations, cases: Map[Symbol.CaseSym, Case], tpe: Type, loc: SourceLocation)
 
@@ -84,7 +83,7 @@ object LoweredAst {
       def eff: Type = Type.Pure
     }
 
-    @EliminatedBy(Monomorph.getClass)
+    @EliminatedBy(MonoDefs.getClass)
     case class Sig(sym: Symbol.SigSym, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
     }
@@ -115,8 +114,6 @@ object LoweredAst {
 
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class RelationalChoose(exps: List[Expr], rules: List[RelationalChooseRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
     case class VectorLit(exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class VectorLoad(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
@@ -136,10 +133,6 @@ object LoweredAst {
     case class TryWith(exp: Expr, effUse: Ast.EffectSymUse, rules: List[HandlerRule], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Do(op: Ast.OpSymUse, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
-
-    case class Resume(exp: Expr, tpe: Type, loc: SourceLocation) extends Expr {
-      def eff: Type = Type.Pure
-    }
 
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, eff: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
@@ -163,27 +156,13 @@ object LoweredAst {
 
     case class Tuple(elms: List[Pattern], tpe: Type, loc: SourceLocation) extends Pattern
 
-    case class Record(pats: List[Pattern.Record.RecordFieldPattern], pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
+    case class Record(pats: List[Pattern.Record.RecordLabelPattern], pat: Pattern, tpe: Type, loc: SourceLocation) extends Pattern
 
     case class RecordEmpty(tpe: Type, loc: SourceLocation) extends Pattern
 
     object Record {
-      case class RecordFieldPattern(field: Name.Field, tpe: Type, pat: Pattern, loc: SourceLocation)
+      case class RecordLabelPattern(label: Name.Label, tpe: Type, pat: Pattern, loc: SourceLocation)
     }
-  }
-
-  sealed trait RelationalChoosePattern {
-    def loc: SourceLocation
-  }
-
-  object RelationalChoosePattern {
-
-    case class Wild(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Absent(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Present(sym: Symbol.VarSym, tpe: Type, loc: SourceLocation) extends RelationalChoosePattern
-
   }
 
   sealed trait Predicate {
@@ -245,8 +224,6 @@ object LoweredAst {
   case class CatchRule(sym: Symbol.VarSym, clazz: java.lang.Class[_], exp: Expr)
 
   case class HandlerRule(op: Ast.OpSymUse, fparams: List[FormalParam], exp: Expr)
-
-  case class RelationalChooseRule(pat: List[RelationalChoosePattern], exp: Expr)
 
   case class MatchRule(pat: Pattern, guard: Option[Expr], exp: Expr)
 

@@ -14,4 +14,4 @@ enum Ot(Bool)
 
 type alias Ta = Bool
 
-class C0[a]
+trait T0[a]

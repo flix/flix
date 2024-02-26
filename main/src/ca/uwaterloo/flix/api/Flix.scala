@@ -27,11 +27,14 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
+import ca.uwaterloo.flix.util.collection.Chain
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
+import java.util.concurrent.ForkJoinPool
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.language.implicitConversions
 
 object Flix {
   /**
@@ -73,46 +76,71 @@ class Flix {
   /**
     * A cache of ASTs for incremental compilation.
     */
+  private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
   private var cachedParserAst: ParsedAst.Root = ParsedAst.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
+  private var cachedDesugarAst: DesugaredAst.Root = DesugaredAst.empty
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
   private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.empty
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
 
   def getParserAst: ParsedAst.Root = cachedParserAst
+
   def getWeederAst: WeededAst.Root = cachedWeederAst
+
+  def getDesugarAst: DesugaredAst.Root = cachedDesugarAst
+
   def getKinderAst: KindedAst.Root = cachedKinderAst
+
   def getResolverAst: ResolvedAst.Root = cachedResolverAst
+
   def getTyperAst: TypedAst.Root = cachedTyperAst
 
   /**
     * A cache of ASTs for debugging.
     */
   private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
-  private var cachedEarlyTreeShakerAst: LoweredAst.Root = LoweredAst.empty
-  private var cachedMonomorphAst: LoweredAst.Root = LoweredAst.empty
-  private var cachedMonomorphEnumsAst: LoweredAst.Root = LoweredAst.empty
+  private var cachedTreeShaker1Ast: LoweredAst.Root = LoweredAst.empty
+  private var cachedMonoDefsAst: MonoAst.Root = MonoAst.empty
+  private var cachedMonoTypesAst: MonoAst.Root = MonoAst.empty
   private var cachedSimplifierAst: SimplifiedAst.Root = SimplifiedAst.empty
   private var cachedClosureConvAst: SimplifiedAst.Root = SimplifiedAst.empty
   private var cachedLambdaLiftAst: LiftedAst.Root = LiftedAst.empty
   private var cachedTailrecAst: LiftedAst.Root = LiftedAst.empty
   private var cachedOptimizerAst: LiftedAst.Root = LiftedAst.empty
-  private var cachedLateTreeShakerAst: LiftedAst.Root = LiftedAst.empty
+  private var cachedTreeShaker2Ast: LiftedAst.Root = LiftedAst.empty
+  private var cachedEffectBinderAst: ReducedAst.Root = ReducedAst.empty
+  private var cachedEraserAst: ReducedAst.Root = ReducedAst.empty
   private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
-  private var cachedVarNumberingAst: ReducedAst.Root = ReducedAst.empty
+  private var cachedVarOffsetsAst: ReducedAst.Root = ReducedAst.empty
 
   def getLoweringAst: LoweredAst.Root = cachedLoweringAst
-  def getEarlyTreeShakerAst: LoweredAst.Root = cachedEarlyTreeShakerAst
-  def getMonomorphAst: LoweredAst.Root = cachedMonomorphAst
-  def getMonomorphEnumsAst: LoweredAst.Root = cachedMonomorphEnumsAst
+
+  def getTreeShaker1Ast: LoweredAst.Root = cachedTreeShaker1Ast
+
+  def getMonoDefsAst: MonoAst.Root = cachedMonoDefsAst
+
+  def getMonoTypesAst: MonoAst.Root = cachedMonoTypesAst
+
   def getSimplifierAst: SimplifiedAst.Root = cachedSimplifierAst
+
   def getClosureConvAst: SimplifiedAst.Root = cachedClosureConvAst
+
   def getLambdaLiftAst: LiftedAst.Root = cachedLambdaLiftAst
+
   def getTailrecAst: LiftedAst.Root = cachedTailrecAst
+
   def getOptimizerAst: LiftedAst.Root = cachedOptimizerAst
-  def getLateTreeShakerAst: LiftedAst.Root = cachedLateTreeShakerAst
+
+  def getTreeShaker2Ast: LiftedAst.Root = cachedTreeShaker2Ast
+
+  def getEffectBinderAst: ReducedAst.Root = cachedEffectBinderAst
+
+  def getEraserAst: ReducedAst.Root = cachedEraserAst
+
   def getReducerAst: ReducedAst.Root = cachedReducerAst
-  def getVarNumberingAst: ReducedAst.Root = cachedVarNumberingAst
+
+  def getVarOffsetsAst: ReducedAst.Root = cachedVarOffsetsAst
 
   /**
     * A sequence of internal inputs to be parsed into Flix ASTs.
@@ -125,6 +153,9 @@ class Flix {
 
     // Comparison
     "Comparison.flix" -> LocalResource.get("/src/library/Comparison.flix"),
+
+    // Coerce
+    "Coerce.flix" -> LocalResource.get("/src/library/Coerce.flix"),
 
     // Operators
     "Neg.flix" -> LocalResource.get("/src/library/Neg.flix"),
@@ -180,8 +211,6 @@ class Flix {
     "Boxed.flix" -> LocalResource.get("/src/library/Boxed.flix"),
     "Chain.flix" -> LocalResource.get("/src/library/Chain.flix"),
     "Char.flix" -> LocalResource.get("/src/library/Char.flix"),
-    "Choice.flix" -> LocalResource.get("/src/library/Choice.flix"),
-    "Closeable.flix" -> LocalResource.get("/src/library/Closeable.flix"),
     "CodePoint.flix" -> LocalResource.get("/src/library/CodePoint.flix"),
     "Console.flix" -> LocalResource.get("/src/library/Console.flix"),
     "DelayList.flix" -> LocalResource.get("/src/library/DelayList.flix"),
@@ -202,15 +231,15 @@ class Flix {
     "Object.flix" -> LocalResource.get("/src/library/Object.flix"),
     "Option.flix" -> LocalResource.get("/src/library/Option.flix"),
     "Random.flix" -> LocalResource.get("/src/library/Random.flix"),
-    "Region.flix" -> LocalResource.get("/src/library/Region.flix"),
     "Result.flix" -> LocalResource.get("/src/library/Result.flix"),
     "Set.flix" -> LocalResource.get("/src/library/Set.flix"),
     "String.flix" -> LocalResource.get("/src/library/String.flix"),
     "System.flix" -> LocalResource.get("/src/library/System.flix"),
     "MultiMap.flix" -> LocalResource.get("/src/library/MultiMap.flix"),
 
-    "MutPriorityQueue.flix" -> LocalResource.get("/src/library/MutPriorityQueue.flix"),
+    "MutQueue.flix" -> LocalResource.get("/src/library/MutQueue.flix"),
     "MutDeque.flix" -> LocalResource.get("/src/library/MutDeque.flix"),
+    "MutDisjointSets.flix" -> LocalResource.get("/src/library/MutDisjointSets.flix"),
     "MutList.flix" -> LocalResource.get("/src/library/MutList.flix"),
     "MutSet.flix" -> LocalResource.get("/src/library/MutSet.flix"),
     "MutMap.flix" -> LocalResource.get("/src/library/MutMap.flix"),
@@ -218,6 +247,7 @@ class Flix {
     "Files.flix" -> LocalResource.get("/src/library/Files.flix"),
     "IOError.flix" -> LocalResource.get("/src/library/IOError.flix"),
     "Reader.flix" -> LocalResource.get("/src/library/Reader.flix"),
+    "File.flix" -> LocalResource.get("/src/library/File.flix"),
 
     "Environment.flix" -> LocalResource.get("/src/library/Environment.flix"),
 
@@ -257,38 +287,24 @@ class Flix {
     "Time/Epoch.flix" -> LocalResource.get("/src/library/Time/Epoch.flix"),
     "Time/Instant.flix" -> LocalResource.get("/src/library/Time/Instant.flix"),
 
-    "Fixpoint/Compiler.flix" -> LocalResource.get("/src/library/Fixpoint/Compiler.flix"),
+    "Fixpoint/Phase/Stratifier.flix" -> LocalResource.get("/src/library/Fixpoint/Phase/Stratifier.flix"),
+    "Fixpoint/Phase/Compiler.flix" -> LocalResource.get("/src/library/Fixpoint/Phase/Compiler.flix"),
+    "Fixpoint/Phase/Simplifier.flix" -> LocalResource.get("/src/library/Fixpoint/Phase/Simplifier.flix"),
+    "Fixpoint/Phase/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint/Phase/IndexSelection.flix"),
+    "Fixpoint/Phase/VarsToIndices.flix" -> LocalResource.get("/src/library/Fixpoint/Phase/VarsToIndices.flix"),
     "Fixpoint/Debugging.flix" -> LocalResource.get("/src/library/Fixpoint/Debugging.flix"),
-    "Fixpoint/IndexSelection.flix" -> LocalResource.get("/src/library/Fixpoint/IndexSelection.flix"),
     "Fixpoint/Interpreter.flix" -> LocalResource.get("/src/library/Fixpoint/Interpreter.flix"),
     "Fixpoint/Options.flix" -> LocalResource.get("/src/library/Fixpoint/Options.flix"),
     "Fixpoint/PredSymsOf.flix" -> LocalResource.get("/src/library/Fixpoint/PredSymsOf.flix"),
-    "Fixpoint/Simplifier.flix" -> LocalResource.get("/src/library/Fixpoint/Simplifier.flix"),
     "Fixpoint/Solver.flix" -> LocalResource.get("/src/library/Fixpoint/Solver.flix"),
-    "Fixpoint/Stratifier.flix" -> LocalResource.get("/src/library/Fixpoint/Stratifier.flix"),
     "Fixpoint/SubstitutePredSym.flix" -> LocalResource.get("/src/library/Fixpoint/SubstitutePredSym.flix"),
-    "Fixpoint/VarsToIndices.flix" -> LocalResource.get("/src/library/Fixpoint/VarsToIndices.flix"),
 
-    "Fixpoint/Ast/BodyPredicate.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/BodyPredicate.flix"),
-    "Fixpoint/Ast/BodyTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/BodyTerm.flix"),
-    "Fixpoint/Ast/Constraint.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Constraint.flix"),
     "Fixpoint/Ast/Datalog.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Datalog.flix"),
-    "Fixpoint/Ast/Denotation.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Denotation.flix"),
-    "Fixpoint/Ast/Fixity.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Fixity.flix"),
-    "Fixpoint/Ast/HeadPredicate.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/HeadPredicate.flix"),
-    "Fixpoint/Ast/HeadTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/HeadTerm.flix"),
-    "Fixpoint/Ast/Polarity.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Polarity.flix"),
+    "Fixpoint/Ast/Shared.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Shared.flix"),
     "Fixpoint/Ast/PrecedenceGraph.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/PrecedenceGraph.flix"),
-    "Fixpoint/Ast/VarSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/VarSym.flix"),
+    "Fixpoint/Ast/Ram.flix" -> LocalResource.get("/src/library/Fixpoint/Ast/Ram.flix"),
 
-    "Fixpoint/Ram/BoolExp.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/BoolExp.flix"),
-    "Fixpoint/Ram/RamStmt.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RamStmt.flix"),
-    "Fixpoint/Ram/RamSym.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RamSym.flix"),
-    "Fixpoint/Ram/RamTerm.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RamTerm.flix"),
-    "Fixpoint/Ram/RelOp.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RelOp.flix"),
-    "Fixpoint/Ram/RowVar.flix" -> LocalResource.get("/src/library/Fixpoint/Ram/RowVar.flix"),
-
-    "Fixpoint/Shared/PredSym.flix" -> LocalResource.get("/src/library/Fixpoint/Shared/PredSym.flix"),
+    "Eff/Random.flix" -> LocalResource.get("/src/library/Eff/Random.flix"),
 
     "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
@@ -323,14 +339,9 @@ class Flix {
   var options: Options = Options.Default
 
   /**
-    * The fork join pool for `this` Flix instance.
+    * The thread pool executor service for `this` Flix instance.
     */
-  private var forkJoinPool: java.util.concurrent.ForkJoinPool = _
-
-  /**
-    * The fork join task support for `this` Flix instance.
-    */
-  var forkJoinTaskSupport: scala.collection.parallel.ForkJoinTaskSupport = _
+  var threadPool: java.util.concurrent.ForkJoinPool = _
 
   /**
     * The symbol generator associated with this Flix instance.
@@ -473,8 +484,6 @@ class Flix {
     */
   def getFormatOptions: FormatOptions = {
     FormatOptions(
-      ignorePur = options.xnobooleffects,
-      ignoreEff = options.xnoseteffects,
       varNames = FormatOptions.VarName.NameBased // TODO add cli option
     )
   }
@@ -498,11 +507,11 @@ class Flix {
     * Converts a list of compiler error messages to a list of printable messages.
     * Decides whether or not to append the explanation.
     */
-  def mkMessages(errors: Seq[CompilationMessage]): List[String] = {
+  def mkMessages(errors: Chain[CompilationMessage]): List[String] = {
     if (options.explain)
-      errors.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
+      errors.toSeq.sortBy(_.loc).map(cm => cm.message(formatter) + cm.explain(formatter).getOrElse("")).toList
     else
-      errors.sortBy(_.loc).map(cm => cm.message(formatter)).toList
+      errors.toSeq.sortBy(_.loc).map(cm => cm.message(formatter)).toList
   }
 
   /**
@@ -514,8 +523,8 @@ class Flix {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
-    // Initialize fork join pool.
-    initForkJoin()
+    // Initialize fork-join thread pool.
+    initForkJoinPool()
 
     // Reset the phase information.
     phaseTimers = ListBuffer.empty
@@ -523,30 +532,37 @@ class Flix {
     // The default entry point
     val entryPoint = flix.options.entryPoint
 
-    // The compiler pipeline.
+    implicit class MappableValidation[A, B](v: Validation[A, B]) {
+      implicit def map[C](f: A => C): Validation[C, B] = Validation.mapN(v)(f)
+    }
+
+    /** Remember to update [[AstPrinter]] about the list of phases. */
     val result = for {
       afterReader <- Reader.run(getInputs)
-      afterLexer <- Lexer.run(afterReader)
+      afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
-      afterNamer <- Namer.run(afterWeeder)
+      afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
+      afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
       afterDeriver <- Deriver.run(afterKinder)
       afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet)
+      _ <- Regions.run(afterTyper)
       afterEntryPoint <- EntryPoint.run(afterTyper)
-      afterStatistics <- Statistics.run(afterEntryPoint)
-      _ <- Instances.run(afterStatistics, cachedTyperAst, changeSet)
-      afterStratifier <- Stratifier.run(afterStatistics)
-      _ <- Regions.run(afterStratifier)
-      afterPatMatch <- PatternExhaustiveness.run(afterStratifier)
+      _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+      afterPredDeps <- PredDeps.run(afterEntryPoint)
+      afterStratifier <- Stratifier.run(afterPredDeps)
+      afterPatMatch <- PatMatch.run(afterStratifier)
       afterRedundancy <- Redundancy.run(afterPatMatch)
       afterSafety <- Safety.run(afterRedundancy)
     } yield {
       // Update caches for incremental compilation.
       if (options.incremental) {
+        this.cachedLexerTokens = afterLexer
         this.cachedParserAst = afterParser
         this.cachedWeederAst = afterWeeder
+        this.cachedDesugarAst = afterDesugar
         this.cachedKinderAst = afterKinder
         this.cachedResolverAst = afterResolver
         this.cachedTyperAst = afterTyper
@@ -558,8 +574,8 @@ class Flix {
     // (Possible duplicate files in codeGen will just be empty and overwritten there)
     AstPrinter.printAsts()
 
-    // Shutdown fork join pool.
-    shutdownForkJoin()
+    // Shutdown fork-join thread pool.
+    shutdownForkJoinPool()
 
     // Reset the progress bar.
     progressBar.complete()
@@ -584,40 +600,42 @@ class Flix {
     // Mark this object as implicit.
     implicit val flix: Flix = this
 
-    // Initialize fork join pool.
-    initForkJoin()
+    // Initialize fork-join thread pool.
+    initForkJoinPool()
 
+    /** Remember to update [[AstPrinter]] about the list of phases. */
     cachedLoweringAst = Lowering.run(typedAst)
-    cachedEarlyTreeShakerAst = EarlyTreeShaker.run(cachedLoweringAst)
-    cachedMonomorphAst = Monomorph.run(cachedEarlyTreeShakerAst)
-    cachedMonomorphEnumsAst = MonomorphEnums.run(cachedMonomorphAst)
-    cachedSimplifierAst = Simplifier.run(cachedMonomorphEnumsAst)
+    cachedTreeShaker1Ast = TreeShaker1.run(cachedLoweringAst)
+    cachedMonoDefsAst = MonoDefs.run(cachedTreeShaker1Ast)
+    cachedMonoTypesAst = MonoTypes.run(cachedMonoDefsAst)
+    cachedSimplifierAst = Simplifier.run(cachedMonoTypesAst)
     cachedClosureConvAst = ClosureConv.run(cachedSimplifierAst)
     cachedLambdaLiftAst = LambdaLift.run(cachedClosureConvAst)
     cachedTailrecAst = Tailrec.run(cachedLambdaLiftAst)
     cachedOptimizerAst = Optimizer.run(cachedTailrecAst)
-    cachedLateTreeShakerAst = LateTreeShaker.run(cachedOptimizerAst)
-    cachedReducerAst = Reducer.run(cachedLateTreeShakerAst)
-    cachedVarNumberingAst = VarNumbering.run(cachedReducerAst)
-    val afterJvmBackend = JvmBackend.run(cachedVarNumberingAst)
-    val result = Finish.run(afterJvmBackend)
+    cachedTreeShaker2Ast = TreeShaker2.run(cachedOptimizerAst)
+    cachedEffectBinderAst = EffectBinder.run(cachedTreeShaker2Ast)
+    cachedEraserAst = Eraser.run(cachedEffectBinderAst)
+    cachedReducerAst = Reducer.run(cachedEraserAst)
+    cachedVarOffsetsAst = VarOffsets.run(cachedReducerAst)
+    val result = JvmBackend.run(cachedVarOffsetsAst)
 
     // Write formatted asts to disk based on options.
     AstPrinter.printAsts()
 
-    // Shutdown fork join pool.
-    shutdownForkJoin()
+    // Shutdown fork-join thread pool.
+    shutdownForkJoinPool()
 
     // Reset the progress bar.
     progressBar.complete()
 
     // Return the result.
-    result
+    Validation.success(result)
   } catch {
     case ex: InternalCompilerException =>
       CrashHandler.handleCrash(ex)(this)
       throw ex
-    case ex: java.lang.VerifyError =>
+    case ex: Throwable =>
       CrashHandler.handleCrash(ex)(this)
       throw ex
   }
@@ -651,25 +669,6 @@ class Flix {
 
     // And add it to the list of executed phases.
     phaseTimers += currentPhase
-
-    // Print performance information if in verbose mode.
-    if (options.debug) {
-      // Print information about the phase.
-      val d = new Duration(e)
-      val emojiPart = formatter.blue("✓ ")
-      val phasePart = formatter.blue(f"$phase%-40s")
-      val timePart = f"${d.fmtMilliSeconds}%8s"
-      Console.println(emojiPart + phasePart + timePart)
-
-      // Print information about each subphase.
-      for ((subphase, e) <- currentPhase.subphases.reverse) {
-        val d = new Duration(e)
-        val emojiPart = "    "
-        val phasePart = formatter.magenta(f"$subphase%-37s")
-        val timePart = f"(${d.fmtMilliSeconds}%8s)"
-        Console.println(emojiPart + phasePart + timePart)
-      }
-    }
 
     // Return the result computed by the phase.
     r
@@ -728,18 +727,17 @@ class Flix {
   }
 
   /**
-    * Initializes the fork join pools.
+    * Initializes the fork-join thread pool.
     */
-  private def initForkJoin(): Unit = {
-    forkJoinPool = new java.util.concurrent.ForkJoinPool(options.threads)
-    forkJoinTaskSupport = new scala.collection.parallel.ForkJoinTaskSupport(forkJoinPool)
+  private def initForkJoinPool(): Unit = {
+    threadPool = new ForkJoinPool(options.threads)
   }
 
   /**
-    * Shuts down the fork join pools.
+    * Shuts down the fork-join thread pools.
     */
-  private def shutdownForkJoin(): Unit = {
-    forkJoinPool.shutdown()
+  private def shutdownForkJoinPool(): Unit = {
+    threadPool.shutdown()
   }
 
 }

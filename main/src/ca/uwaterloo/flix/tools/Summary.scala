@@ -60,7 +60,7 @@ object Summary {
       print(Separator)
       print(padL("Pure", ColWidth))
       print(Separator)
-      print(padL("Impure", ColWidth))
+      print(padL("Univ", ColWidth))
       print(Separator)
       print(padL("Polymorphic", ColWidth))
       println(EndOfLine)
@@ -68,7 +68,7 @@ object Summary {
       var totalLines = 0
       var totalFunctions = 0
       var totalPureFunctions = 0
-      var totalImpureFunctions = 0
+      var totalUnivFunctions = 0
       var totalEffPolymorphicFunctions = 0
 
       for ((source, loc) <- root.sources.toList.sortBy(_._1.name)) {
@@ -80,13 +80,13 @@ object Summary {
         val numberOfLines = loc.endLine
         val numberOfFunctions = defs.size
         val numberOfPureFunctions = defs.count(isPure)
-        val numberOfImpureFunctions = defs.count(isImpure)
+        val numberOfUnivFunctions = defs.count(isUniv)
         val numberOfEffectPolymorphicFunctions = defs.count(isEffectPolymorphic)
 
         totalLines = totalLines + numberOfLines
         totalFunctions = totalFunctions + numberOfFunctions
         totalPureFunctions = totalPureFunctions + numberOfPureFunctions
-        totalImpureFunctions = totalImpureFunctions + numberOfImpureFunctions
+        totalUnivFunctions = totalUnivFunctions + numberOfUnivFunctions
         totalEffPolymorphicFunctions = totalEffPolymorphicFunctions + numberOfEffectPolymorphicFunctions
 
         if (include(module, numberOfLines)) {
@@ -98,7 +98,7 @@ object Summary {
           print(Separator)
           print(padL(format(numberOfPureFunctions), ColWidth))
           print(Separator)
-          print(padL(format(numberOfImpureFunctions), ColWidth))
+          print(padL(format(numberOfUnivFunctions), ColWidth))
           print(Separator)
           print(padL(format(numberOfEffectPolymorphicFunctions), ColWidth))
           println(EndOfLine)
@@ -114,7 +114,7 @@ object Summary {
       print(Separator)
       print(padL(format(totalPureFunctions), ColWidth))
       print(Separator)
-      print(padL(format(totalImpureFunctions), ColWidth))
+      print(padL(format(totalUnivFunctions), ColWidth))
       print(Separator)
       print(padL(format(totalEffPolymorphicFunctions), ColWidth))
       println(EndOfLine)
@@ -136,8 +136,8 @@ object Summary {
   private def getClassFunctions(source: Ast.Source, root: Root): Iterable[Spec] =
     root.classes.collect {
       case (sym, clazz) if sym.loc.source == source =>
-        clazz.signatures.collect {
-          case sig if sig.impl.nonEmpty => sig.spec
+        clazz.sigs.collect {
+          case sig if sig.exp.nonEmpty => sig.spec
         }
     }.flatten
 
@@ -160,14 +160,14 @@ object Summary {
   private def isPure(spec: Spec): Boolean = spec.eff == Type.Pure
 
   /**
-    * Returns `true` if the given `spec` is impure.
+    * Returns `true` if the given `spec` has the top effect.
     */
-  private def isImpure(spec: Spec): Boolean = spec.eff == Type.Impure
+  private def isUniv(spec: Spec): Boolean = spec.eff == Type.Univ
 
   /**
     * Returns `true` if the given `spec` is effect polymorphic (neither pure or impure).
     */
-  private def isEffectPolymorphic(spec: Spec): Boolean = !isPure(spec) && !isImpure(spec)
+  private def isEffectPolymorphic(spec: Spec): Boolean = !isPure(spec) && !isUniv(spec)
 
   /**
     * Right-pads the given string `s` to length `l`.

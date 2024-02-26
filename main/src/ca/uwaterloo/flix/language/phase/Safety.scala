@@ -1,15 +1,15 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
+import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps._
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.SafetyError
 import ca.uwaterloo.flix.language.errors.SafetyError._
-import ca.uwaterloo.flix.util.Validation
+import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import java.math.BigInteger
 import scala.annotation.tailrec
@@ -28,89 +28,114 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Safety") {
+  def run(root: Root)(implicit flix: Flix): Validation[Root, SafetyError] = flix.phase("Safety") {
     //
     // Collect all errors.
     //
-    val errors = visitDefs(root) ++ visitSendable(root)
+    val classSigErrs = ParOps.parMap(root.classes.values.flatMap(_.sigs))(visitSig).flatten
+    val defErrs = ParOps.parMap(root.defs.values)(visitDef).flatten
+    val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef).flatten
+    val sigErrs = ParOps.parMap(root.sigs.values)(visitSig).flatten
+    val entryPointErrs = ParOps.parMap(root.reachable)(visitEntryPoint(_)(root)).flatten
+    val errors = classSigErrs ++ defErrs ++ instanceDefErrs ++ sigErrs ++ entryPointErrs ++ visitSendable(root)
 
     //
     // Check if any errors were found.
     //
-    if (errors.isEmpty)
-      Validation.Success(root)
-    else
-      Validation.SoftFailure(root, errors.to(LazyList))
+    Validation.toSuccessOrSoftFailure(root, errors)
   }
 
   /**
     * Checks that no type parameters for types that implement `Sendable` of kind `Region`
     */
-  private def visitSendable(root: Root)(implicit flix: Flix): List[CompilationMessage] = {
-
+  private def visitSendable(root: Root): List[SafetyError] = {
     val sendableClass = new Symbol.ClassSym(Nil, "Sendable", SourceLocation.Unknown)
 
     root.instances.getOrElse(sendableClass, Nil) flatMap {
       case Instance(_, _, _, _, tpe, _, _, _, _, loc) =>
         if (tpe.typeArguments.exists(_.kind == Kind.Eff))
-          List(SafetyError.SendableError(tpe, loc))
+          List(SafetyError.IllegalSendableInstance(tpe, loc))
         else
           Nil
     }
   }
 
   /**
-    * Performs safety and well-formedness checks all defs in the given AST `root`.
+    * Performs safety and well-formedness checks on the given signature `sig`.
     */
-  private def visitDefs(root: Root)(implicit flix: Flix): List[CompilationMessage] = {
-    root.defs.flatMap {
-      case (_, defn) => visitDef(defn, root)
-    }.toList
+  private def visitSig(sig: Sig)(implicit flix: Flix): List[SafetyError] = {
+    val renv = sig.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
+      case (acc, e) => acc.markRigid(e)
+    }
+    sig.exp match {
+      case Some(exp) => visitExp(exp, renv)
+      case None => Nil
+    }
   }
 
   /**
     * Performs safety and well-formedness checks on the given definition `def0`.
     */
-  private def visitDef(def0: Def, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+  private def visitDef(def0: Def)(implicit flix: Flix): List[SafetyError] = {
     val renv = def0.spec.tparams.map(_.sym).foldLeft(RigidityEnv.empty) {
       case (acc, e) => acc.markRigid(e)
     }
-    visitTestEntryPoint(def0) ::: visitExp(def0.impl.exp, renv, root)
+    visitExp(def0.exp, renv)
   }
 
   /**
-    * Checks that if `def0` is a test entry point that it is well-behaved.
+    * Checks that every every reachable function entry point has a valid signature.
+    *
+    * A signature is valid if there is a single argument of type `Unit` and if it is pure or has the IO effect.
     */
-  private def visitTestEntryPoint(def0: Def): List[CompilationMessage] = {
-    if (def0.spec.ann.isTest) {
-      def isUnitType(fparam: FormalParam): Boolean = fparam.tpe.typeConstructor.contains(TypeConstructor.Unit)
-
-      val hasUnitParameter = def0.spec.fparams match {
-        case fparam :: Nil => isUnitType(fparam)
-        case _ => false
-      }
-
-      if (!hasUnitParameter) {
-        val err = SafetyError.IllegalTestParameters(def0.sym.loc)
-        List(err)
-      } else {
+  private def visitEntryPoint(sym: Symbol.DefnSym)(implicit root: Root): List[SafetyError] = {
+    if (!root.reachable.contains(sym)) {
+      // The function is not an entry point. No restrictions.
+      Nil
+    } else {
+      val defn = root.defs(sym)
+      if (hasUnitParameter(defn) && isPureOrIO(defn)) {
         Nil
+      } else {
+        SafetyError.IllegalEntryPointSignature(defn.sym.loc) :: Nil
       }
     }
+  }
 
-    else Nil
+  /**
+    * Returns `true` if the given `defn` has a single `Unit` parameter.
+    */
+  private def hasUnitParameter(defn: Def): Boolean = {
+    defn.spec.fparams match {
+      case fparam :: Nil =>
+        // Case 1: A single parameter. Must be Unit.
+        fparam.tpe.typeConstructor.contains(TypeConstructor.Unit)
+      case _ =>
+        // Case 2: Multiple parameters.
+        false
+    }
+  }
 
+  /**
+    * Returns `true` if the given `defn` is pure or has the IO effect.
+    */
+  private def isPureOrIO(defn: Def): Boolean = {
+    defn.spec.eff match {
+      case Type.Pure => true
+      case Type.IO => true
+      case _ => false
+    }
   }
 
   /**
     * Performs safety and well-formedness checks on the given expression `exp0`.
     */
-  private def visitExp(e0: Expr, renv: RigidityEnv, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+  private def visitExp(e0: Expr, renv: RigidityEnv)(implicit flix: Flix): List[SafetyError] = {
 
     /**
       * Local visitor.
       */
-    def visit(exp0: Expr): List[CompilationMessage] = exp0 match {
+    def visit(exp0: Expr): List[SafetyError] = exp0 match {
       case Expr.Cst(_, _, _) => Nil
 
       case Expr.Var(_, _, _) => Nil
@@ -145,7 +170,7 @@ object Safety {
       case Expr.Let(_, _, exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
+      case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
       case Expr.Region(_, _) =>
@@ -153,9 +178,6 @@ object Safety {
 
       case Expr.Scope(_, _, exp, _, _, _) =>
         visit(exp)
-
-      case Expr.ScopeExit(exp1, exp2, _, _, _) =>
-        visit(exp1) ++ visit(exp2)
 
       case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
         visit(exp1) ++ visit(exp2) ++ visit(exp3)
@@ -175,15 +197,11 @@ object Safety {
         val missingDefault = rules.last match {
           case TypeMatchRule(_, tpe, _) => tpe match {
             case Type.Var(sym, _) if renv.isFlexible(sym) => Nil
-            case _ => List(SafetyError.MissingDefaultMatchTypeCase(exp.loc))
+            case _ => List(SafetyError.MissingDefaultTypeMatchCase(exp.loc))
           }
         }
         visit(exp) ++ missingDefault ++
           rules.flatMap { case TypeMatchRule(_, _, e) => visit(e) }
-
-      case Expr.RelationalChoose(exps, rules, _, _, _) =>
-        exps.flatMap(visit) ++
-          rules.flatMap { case RelationalChooseRule(_, exp) => visit(exp) }
 
       case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
         visit(exp) ++
@@ -259,8 +277,7 @@ object Safety {
           case CheckedCastType.EffectCast =>
             val from = Type.eraseAliases(exp.eff)
             val to = Type.eraseAliases(eff)
-            val errors = verifyCheckedEffectCast(from, to, renv, loc)
-            visit(exp) ++ errors
+            visit(exp)
         }
 
       case e@Expr.UncheckedCast(exp, _, _, _, _, _) =>
@@ -283,9 +300,6 @@ object Safety {
 
       case Expr.Do(_, exps, _, _, _) =>
         exps.flatMap(visit)
-
-      case Expr.Resume(exp, _, _) =>
-        visit(exp)
 
       case Expr.InvokeConstructor(_, args, _, _, _) =>
         args.flatMap(visit)
@@ -342,16 +356,16 @@ object Safety {
       case Expr.Force(exp, _, _, _) =>
         visit(exp)
 
-      case Expr.FixpointConstraintSet(cs, _, _, _) =>
-        cs.flatMap(checkConstraint(_, renv, root))
+      case Expr.FixpointConstraintSet(cs, _, _) =>
+        cs.flatMap(checkConstraint(_, renv))
 
-      case Expr.FixpointLambda(_, exp, _, _, _, _) =>
+      case Expr.FixpointLambda(_, exp, _, _, _) =>
         visit(exp)
 
-      case Expr.FixpointMerge(exp1, exp2, _, _, _, _) =>
+      case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
         visit(exp1) ++ visit(exp2)
 
-      case Expr.FixpointSolve(exp, _, _, _, _) =>
+      case Expr.FixpointSolve(exp, _, _, _) =>
         visit(exp)
 
       case Expr.FixpointFilter(_, exp, _, _, _) =>
@@ -388,55 +402,47 @@ object Safety {
 
       // Allow casting one Java type to another if there is a sub-type relationship.
       case (Type.Cst(TypeConstructor.Native(left), _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(left)) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(left)) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Similar, but for String.
       case (Type.Cst(TypeConstructor.Str, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[String])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(classOf[String])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Similar, but for Regex.
       case (Type.Cst(TypeConstructor.Regex, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[java.util.regex.Pattern])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(classOf[java.util.regex.Pattern])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Similar, but for BigInt.
       case (Type.Cst(TypeConstructor.BigInt, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[BigInteger])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(classOf[BigInteger])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Similar, but for BigDecimal.
       case (Type.Cst(TypeConstructor.BigDecimal, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[java.math.BigDecimal])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(classOf[java.math.BigDecimal])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Similar, but for Arrays.
       case (Type.Cst(TypeConstructor.Array, _), Type.Cst(TypeConstructor.Native(right), _)) =>
-        if (right.isAssignableFrom(classOf[Array[Object]])) Nil else IllegalCheckedTypeCast(from, to, loc) :: Nil
+        if (right.isAssignableFrom(classOf[Array[Object]])) Nil else IllegalCheckedCast(from, to, loc) :: Nil
 
       // Disallow casting a type variable.
       case (src@Type.Var(_, _), _) =>
-        IllegalCastFromVar(src, to, loc) :: Nil
+        IllegalCheckedCastFromVar(src, to, loc) :: Nil
 
       // Disallow casting a type variable (symmetric case)
       case (_, dst@Type.Var(_, _)) =>
-        IllegalCastToVar(from, dst, loc) :: Nil
+        IllegalCheckedCastToVar(from, dst, loc) :: Nil
 
       // Disallow casting a Java type to any other type.
       case (Type.Cst(TypeConstructor.Native(clazz), _), _) =>
-        IllegalCastToNonJava(clazz, to, loc) :: Nil
+        IllegalCheckedCastToNonJava(clazz, to, loc) :: Nil
 
       // Disallow casting a Java type to any other type (symmetric case).
       case (_, Type.Cst(TypeConstructor.Native(clazz), _)) =>
-        IllegalCastFromNonJava(from, clazz, loc) :: Nil
+        IllegalCheckedCastFromNonJava(from, clazz, loc) :: Nil
 
       // Disallow all other casts.
-      case _ => IllegalCheckedTypeCast(from, to, loc) :: Nil
+      case _ => IllegalCheckedCast(from, to, loc) :: Nil
     }
-  }
-
-  /**
-    * Checks if the given effect cast is legal.
-    */
-  private def verifyCheckedEffectCast(from: Type, to: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = {
-    // Effect casts are -- by construction in the Typer -- safe.
-    Nil
   }
 
   /**
@@ -445,7 +451,7 @@ object Safety {
     * - No primitive type can be cast to a reference type and vice-versa.
     * - No Bool type can be cast to a non-Bool type  and vice-versa.
     */
-  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit flix: Flix): List[SafetyError.ImpossibleCast] = {
+  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit flix: Flix): List[SafetyError.ImpossibleUncheckedCast] = {
     val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType
     val tpe2 = cast.declaredType.map(Type.eraseAliases).map(_.baseType)
 
@@ -467,19 +473,19 @@ object Safety {
 
       // Disallow casting a Boolean to another primitive type.
       case (Type.Bool, Some(t2)) if primitives.filter(_ != Type.Bool).contains(t2) =>
-        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+        ImpossibleUncheckedCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
       // Disallow casting a Boolean to another primitive type (symmetric case).
       case (t1, Some(Type.Bool)) if primitives.filter(_ != Type.Bool).contains(t1) =>
-        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+        ImpossibleUncheckedCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
       // Disallowing casting a non-primitive type to a primitive type.
       case (t1, Some(t2)) if primitives.contains(t1) && !primitives.contains(t2) =>
-        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+        ImpossibleUncheckedCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
       // Disallowing casting a non-primitive type to a primitive type (symmetric case).
       case (t1, Some(t2)) if primitives.contains(t2) && !primitives.contains(t1) =>
-        ImpossibleCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
+        ImpossibleUncheckedCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
       case _ => Nil
     }
@@ -488,7 +494,7 @@ object Safety {
   /**
     * Performs safety and well-formedness checks on the given constraint `c0`.
     */
-  private def checkConstraint(c0: Constraint, renv: RigidityEnv, root: Root)(implicit flix: Flix): List[CompilationMessage] = {
+  private def checkConstraint(c0: Constraint, renv: RigidityEnv)(implicit flix: Flix): List[SafetyError] = {
     //
     // Compute the set of positively defined variable symbols in the constraint.
     //
@@ -520,7 +526,7 @@ object Safety {
     // Check that all negative atoms only use positively defined variable symbols
     // and that lattice variables are not used in relational position.
     //
-    val err1 = c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars, latVars, renv, root))
+    val err1 = c0.body.flatMap(checkBodyPredicate(_, posVars, quantVars, latVars, renv))
 
     //
     // Check that the free relational variables in the head atom are not lattice variables.
@@ -538,13 +544,13 @@ object Safety {
   /**
     * Performs safety check on the pattern of an atom body.
     */
-  private def checkBodyPattern(p0: Predicate.Body): List[CompilationMessage] = p0 match {
+  private def checkBodyPattern(p0: Predicate.Body): List[SafetyError] = p0 match {
     case Predicate.Body.Atom(_, _, _, _, terms, _, loc) =>
       terms.foldLeft[List[SafetyError]](Nil)((acc, term) => term match {
         case Pattern.Var(_, _, _) => acc
         case Pattern.Wild(_, _) => acc
         case Pattern.Cst(_, _, _) => acc
-        case _ => UnexpectedPatternInBodyAtom(loc) :: acc
+        case _ => IllegalPatternInBodyAtom(loc) :: acc
       })
     case _ => Nil
   }
@@ -553,7 +559,7 @@ object Safety {
     * Performs safety and well-formedness checks on the given body predicate `p0`
     * with the given positively defined variable symbols `posVars`.
     */
-  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym], renv: RigidityEnv, root: Root)(implicit flix: Flix): List[CompilationMessage] = p0 match {
+  private def checkBodyPredicate(p0: Predicate.Body, posVars: Set[Symbol.VarSym], quantVars: Set[Symbol.VarSym], latVars: Set[Symbol.VarSym], renv: RigidityEnv)(implicit flix: Flix): List[SafetyError] = p0 match {
     case Predicate.Body.Atom(_, den, polarity, _, terms, _, loc) =>
       // check for non-positively bound negative variables.
       val err1 = polarity match {
@@ -575,20 +581,20 @@ object Safety {
         case Denotation.Latticenal => terms.dropRight(1)
       }
       val err2 = relTerms.flatMap(freeVarsOf).filter(latVars.contains).map(
-        s => IllegalRelationalUseOfLatticeVariable(s, loc)
+        s => IllegalRelationalUseOfLatticeVar(s, loc)
       )
 
       // Combine the messages
       err1 ++ err2
 
-    case Predicate.Body.Functional(outVars, exp, loc) =>
+    case Predicate.Body.Functional(_, exp, loc) =>
       // check for non-positively in variables (free variables in exp).
       val inVars = freeVars(exp).keySet intersect quantVars
       val err1 = ((inVars -- posVars) map (makeIllegalNonPositivelyBoundVariableError(_, loc))).toList
 
-      err1 ::: visitExp(exp, renv, root)
+      err1 ::: visitExp(exp, renv)
 
-    case Predicate.Body.Guard(exp, _) => visitExp(exp, renv, root)
+    case Predicate.Body.Guard(exp, _) => visitExp(exp, renv)
 
   }
 
@@ -598,7 +604,7 @@ object Safety {
     * @param loc the location of the atom containing the terms.
     */
   private def makeIllegalNonPositivelyBoundVariableError(sym: Symbol.VarSym, loc: SourceLocation): SafetyError =
-    if (sym.isWild) IllegalNegativelyBoundWildVariable(sym, loc) else IllegalNonPositivelyBoundVariable(sym, loc)
+    if (sym.isWild) IllegalNegativelyBoundWildVar(sym, loc) else IllegalNonPositivelyBoundVar(sym, loc)
 
   /**
     * Returns all the positively defined variable symbols in the given constraint `c0`.
@@ -664,7 +670,7 @@ object Safety {
   /**
     * Checks for `IllegalRelationalUseOfLatticeVariable` in the given `head` predicate.
     */
-  private def checkHeadPredicate(head: Predicate.Head, latVars: Set[Symbol.VarSym]): List[CompilationMessage] = head match {
+  private def checkHeadPredicate(head: Predicate.Head, latVars: Set[Symbol.VarSym]): List[SafetyError] = head match {
     case Predicate.Head.Atom(_, Denotation.Latticenal, terms, _, loc) =>
       // Check the relational terms ("the keys").
       checkTerms(terms.dropRight(1), latVars, loc)
@@ -677,14 +683,14 @@ object Safety {
     * Checks that the free variables of the terms does not contain any of the variables in `latVars`.
     * If they do contain a lattice variable then a `IllegalRelationalUseOfLatticeVariable` is created.
     */
-  private def checkTerms(terms: List[Expr], latVars: Set[Symbol.VarSym], loc: SourceLocation): List[CompilationMessage] = {
+  private def checkTerms(terms: List[Expr], latVars: Set[Symbol.VarSym], loc: SourceLocation): List[SafetyError] = {
     // Compute the free variables in all terms.
     val allVars = terms.foldLeft(Set.empty[Symbol.VarSym])({
       case (acc, term) => acc ++ freeVars(term).keys
     })
 
     // Compute the lattice variables that are illegally used in the terms.
-    allVars.intersect(latVars).toList.map(sym => IllegalRelationalUseOfLatticeVariable(sym, loc))
+    allVars.intersect(latVars).toList.map(sym => IllegalRelationalUseOfLatticeVar(sym, loc))
   }
 
   /**
@@ -692,7 +698,7 @@ object Safety {
     *
     * @param loc the location of the atom containing the terms.
     */
-  private def visitPats(terms: List[Pattern], loc: SourceLocation): List[CompilationMessage] = {
+  private def visitPats(terms: List[Pattern], loc: SourceLocation): List[SafetyError] = {
     terms.flatMap(visitPat(_, loc))
   }
 
@@ -702,27 +708,28 @@ object Safety {
     * @param loc the location of the atom containing the term.
     */
   @tailrec
-  private def visitPat(term: Pattern, loc: SourceLocation): List[CompilationMessage] = term match {
-    case Pattern.Wild(_, _) => List(IllegalNegativelyBoundWildcard(loc))
+  private def visitPat(term: Pattern, loc: SourceLocation): List[SafetyError] = term match {
+    case Pattern.Wild(_, _) => List(IllegalNegativelyBoundWildCard(loc))
     case Pattern.Var(_, _, _) => Nil
     case Pattern.Cst(_, _, _) => Nil
     case Pattern.Tag(_, pat, _, _) => visitPat(pat, loc)
     case Pattern.Tuple(elms, _, _) => visitPats(elms, loc)
     case Pattern.Record(pats, pat, _, _) => visitRecordPattern(pats, pat, loc)
     case Pattern.RecordEmpty(_, _) => Nil
+    case Pattern.Error(_, _) => Nil
   }
 
   /**
     * Helper function for [[visitPat]].
     */
-  private def visitRecordPattern(pats: List[Pattern.Record.RecordFieldPattern], pat: Pattern, loc: SourceLocation): List[CompilationMessage] = {
+  private def visitRecordPattern(pats: List[Pattern.Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation): List[SafetyError] = {
     visitPats(pats.map(_.pat), loc) ++ visitPat(pat, loc)
   }
 
   /**
     * Ensures that `methods` fully implement `clazz`
     */
-  private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[CompilationMessage] = {
+  private def checkObjectImplementation(clazz: java.lang.Class[_], tpe: Type, methods: List[JvmMethod], loc: SourceLocation): List[SafetyError] = {
     //
     // Check that `clazz` doesn't have a non-default constructor
     //
@@ -734,14 +741,14 @@ object Safety {
       if (hasNonPrivateZeroArgConstructor(clazz))
         List.empty
       else
-        List(MissingPublicZeroArgConstructor(clazz, loc))
+        List(NewObjectMissingPublicZeroArgConstructor(clazz, loc))
     }
 
     //
     // Check that `clazz` is public
     //
     val visibilityErrors = if (!isPublicClass(clazz))
-      List(NonPublicClass(clazz, loc))
+      List(NewObjectNonPublicClass(clazz, loc))
     else
       List.empty
 
@@ -755,8 +762,8 @@ object Safety {
         val thisType = Type.eraseAliases(fparam.tpe)
         thisType match {
           case `tpe` => None
-          case Type.Unit => Some(MissingThis(clazz, ident.name, methodLoc))
-          case _ => Some(IllegalThisType(clazz, fparam.tpe, ident.name, methodLoc))
+          case Type.Unit => Some(NewObjectMissingThisArg(clazz, ident.name, methodLoc))
+          case _ => Some(NewObjectIllegalThisType(clazz, fparam.tpe, ident.name, methodLoc))
         }
     }
 
@@ -772,13 +779,13 @@ object Safety {
     // Check that there are no unimplemented methods.
     //
     val unimplemented = mustImplement diff implemented
-    val unimplementedErrors = unimplemented.map(m => UnimplementedMethod(clazz, javaMethods(m), loc))
+    val unimplementedErrors = unimplemented.map(m => NewObjectMissingMethod(clazz, javaMethods(m), loc))
 
     //
     // Check that there are no methods that aren't in the interface
     //
     val extra = implemented diff canImplement
-    val extraErrors = extra.map(m => ExtraMethod(clazz, m.name, flixMethods(m).loc))
+    val extraErrors = extra.map(m => NewObjectUnreachableMethod(clazz, m.name, flixMethods(m).loc))
 
     constructorErrors ++ visibilityErrors ++ thisErrors ++ unimplementedErrors ++ extraErrors
   }

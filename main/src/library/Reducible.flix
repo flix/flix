@@ -15,11 +15,11 @@
  */
 
 ///
-/// A type class for types that can be reduced to a summary value.
+/// A trait for types that can be reduced to a summary value.
 ///
 /// `Reducible` is like a non-empty `Foldable` and may only be implemented on non-empty data structures.
 ///
-pub class Reducible[t: Type -> Type] {
+pub trait Reducible[t: Type -> Type] {
 
     ///
     /// Left-associative reduction of a structure.

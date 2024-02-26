@@ -329,61 +329,61 @@ def adjustWithKey06(): Bool = Map.adjustWithKey((k, v) -> k+v, 4, Map#{1 => 4, 5
 // update                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def update01(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 1, Map#{}) == Map#{}
+def update01(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 1, Map#{}) == Map#{}
 
 @test
-def update02(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 1, Map#{1 => 3}) == Map#{1 => 6}
+def update02(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 1, Map#{1 => 3}) == Map#{1 => 6}
 
 @test
-def update03(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 1, Map#{1 => 4}) == Map#{1 => 4}
+def update03(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 1, Map#{1 => 4}) == Map#{1 => 4}
 
 @test
-def update04(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 2, Map#{1 => 4}) == Map#{1 => 4}
+def update04(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 2, Map#{1 => 4}) == Map#{1 => 4}
 
 @test
-def update05(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 1, Map#{1 => -14, 5 => -2}) == Map#{1 => -14, 5 => -2}
+def update05(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 1, Map#{1 => -14, 5 => -2}) == Map#{1 => -14, 5 => -2}
 
 @test
-def update06(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 1, Map#{1 => -13, 5 => -2}) == Map#{1 => -26, 5 => -2}
+def update06(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 1, Map#{1 => -13, 5 => -2}) == Map#{1 => -26, 5 => -2}
 
 @test
-def update07(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 5, Map#{1 => 4, 5 => -2}) == Map#{1 => 4, 5 => -2}
+def update07(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 5, Map#{1 => 4, 5 => -2}) == Map#{1 => 4, 5 => -2}
 
 @test
-def update08(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 5, Map#{1 => 4, 5 => -1}) == Map#{1 => 4, 5 => -2}
+def update08(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 5, Map#{1 => 4, 5 => -1}) == Map#{1 => 4, 5 => -2}
 
 @test
-def update09(): Bool = Map.update(v -> if (v `Int32.rem` 2 != 0) Some(2*v) else None, 4, Map#{1 => 4, 5 => -2}) == Map#{1 => 4, 5 => -2}
+def update09(): Bool = Map.update(v -> if (v `Int32.remainder` 2 != 0) Some(2*v) else None, 4, Map#{1 => 4, 5 => -2}) == Map#{1 => 4, 5 => -2}
 
 /////////////////////////////////////////////////////////////////////////////
 // updateWithKey                                                           //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def updateWithKey01(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 1, Map#{}) == Map#{}
+def updateWithKey01(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 1, Map#{}) == Map#{}
 
 @test
-def updateWithKey02(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 1, Map#{1 => 3}) == Map#{1 => 7}
+def updateWithKey02(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 1, Map#{1 => 3}) == Map#{1 => 7}
 
 @test
-def updateWithKey03(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 1, Map#{1 => 4}) == Map#{1 => 4}
+def updateWithKey03(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 1, Map#{1 => 4}) == Map#{1 => 4}
 
 @test
-def updateWithKey04(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 2, Map#{1 => 4}) == Map#{1 => 4}
+def updateWithKey04(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 2, Map#{1 => 4}) == Map#{1 => 4}
 
 @test
-def updateWithKey05(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 1, Map#{1 => -14, 5 => -2}) == Map#{1 => -14, 5 => -2}
+def updateWithKey05(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 1, Map#{1 => -14, 5 => -2}) == Map#{1 => -14, 5 => -2}
 
 @test
-def updateWithKey06(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 1, Map#{1 => -13, 5 => -2}) == Map#{1 => -25, 5 => -2}
+def updateWithKey06(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 1, Map#{1 => -13, 5 => -2}) == Map#{1 => -25, 5 => -2}
 
 @test
-def updateWithKey07(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 5, Map#{1 => 4, 5 => -2}) == Map#{1 => 4, 5 => -2}
+def updateWithKey07(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 5, Map#{1 => 4, 5 => -2}) == Map#{1 => 4, 5 => -2}
 
 @test
-def updateWithKey08(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 5, Map#{1 => 4, 5 => -1}) == Map#{1 => 4, 5 => 3}
+def updateWithKey08(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 5, Map#{1 => 4, 5 => -1}) == Map#{1 => 4, 5 => 3}
 
 @test
-def updateWithKey09(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.rem` 2 != 0) Some(k+2*v) else None, 4, Map#{1 => 4, 5 => -2}) == Map#{1 => 4, 5 => -2}
+def updateWithKey09(): Bool = Map.updateWithKey((k, v) -> if (v `Int32.remainder` 2 != 0) Some(k+2*v) else None, 4, Map#{1 => 4, 5 => -2}) == Map#{1 => 4, 5 => -2}
 
 /////////////////////////////////////////////////////////////////////////////
 // remove                                                                  //
@@ -608,25 +608,25 @@ def findRight07(): Bool = Map.findRight((k, v) -> k == v, Map#{1 => 1, 2 => 2}) 
 // filter                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def filter01(): Bool = Map.filter(v -> v `Int32.rem` 2 == 0, Map#{}: Map[Unit, _]) == Map#{}
+def filter01(): Bool = Map.filter(v -> v `Int32.remainder` 2 == 0, Map#{}: Map[Unit, _]) == Map#{}
 
 @test
-def filter02(): Bool = Map.filter(v -> v `Int32.rem` 2 == 0, Map#{1 => 2}) == Map#{1 => 2}
+def filter02(): Bool = Map.filter(v -> v `Int32.remainder` 2 == 0, Map#{1 => 2}) == Map#{1 => 2}
 
 @test
-def filter03(): Bool = Map.filter(v -> v `Int32.rem` 2 == 0, Map#{1 => 3}) == Map#{}
+def filter03(): Bool = Map.filter(v -> v `Int32.remainder` 2 == 0, Map#{1 => 3}) == Map#{}
 
 @test
-def filter04(): Bool = Map.filter(v -> v `Int32.rem` 2 == 0, Map#{1 => 8, 2 => 4}) == Map#{1 => 8, 2 => 4}
+def filter04(): Bool = Map.filter(v -> v `Int32.remainder` 2 == 0, Map#{1 => 8, 2 => 4}) == Map#{1 => 8, 2 => 4}
 
 @test
-def filter05(): Bool = Map.filter(v -> v `Int32.rem` 2 == 0, Map#{1 => 7, 2 => 4}) == Map#{2 => 4}
+def filter05(): Bool = Map.filter(v -> v `Int32.remainder` 2 == 0, Map#{1 => 7, 2 => 4}) == Map#{2 => 4}
 
 @test
-def filter06(): Bool = Map.filter(v -> v `Int32.rem` 2 == 0, Map#{1 => 8, 2 => 3}) == Map#{1 => 8}
+def filter06(): Bool = Map.filter(v -> v `Int32.remainder` 2 == 0, Map#{1 => 8, 2 => 3}) == Map#{1 => 8}
 
 @test
-def filter07(): Bool = Map.filter(v -> v `Int32.rem` 2 == 0, Map#{1 => -1, 2 => -3}) == Map#{}
+def filter07(): Bool = Map.filter(v -> v `Int32.remainder` 2 == 0, Map#{1 => -1, 2 => -3}) == Map#{}
 
 /////////////////////////////////////////////////////////////////////////////
 // filterWithKey                                                           //
@@ -1996,69 +1996,69 @@ def testInvert06(): Bool = Map.invert(Map#{1 => "a", 2 => "b", 3 => "a", 4 => "b
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def query01(): Bool =
-    Map.query(_ -> Comparison.EqualTo, Map#{}: Map[Unit, Unit]) == Nil
+def rangeQuery01(): Bool =
+    Map.rangeQuery(_ -> Comparison.EqualTo, Map#{}: Map[Unit, Unit]) == Nil
 
 @test
-def query02(): Bool =
-    Map.query(_ -> Comparison.EqualTo, Map#{1 => 101, 2 => 42}) == (1, 101) :: (2, 42) :: Nil
+def rangeQuery02(): Bool =
+    Map.rangeQuery(_ -> Comparison.EqualTo, Map#{1 => 101, 2 => 42}) == (1, 101) :: (2, 42) :: Nil
 
 @test
-def query03(): Bool =
-    Map.query(x -> if (x < 2) Comparison.LessThan else if (x > 2) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 1, 2 => 2, 3 => 3}) == (2, 2) :: Nil
+def rangeQuery03(): Bool =
+    Map.rangeQuery(x -> if (x < 2) Comparison.LessThan else if (x > 2) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 1, 2 => 2, 3 => 3}) == (2, 2) :: Nil
 
 @test
-def query04(): Bool =
-    Map.query(x -> if (x < 'b') Comparison.LessThan else if (x > 'c') Comparison.GreaterThan else Comparison.EqualTo, Map#{'a' => 0, 'b' => 1, 'c' => 2, 'd' => 3, 'e' => 4}) == ('b', 1) :: ('c', 2) :: Nil
+def rangeQuery04(): Bool =
+    Map.rangeQuery(x -> if (x < 'b') Comparison.LessThan else if (x > 'c') Comparison.GreaterThan else Comparison.EqualTo, Map#{'a' => 0, 'b' => 1, 'c' => 2, 'd' => 3, 'e' => 4}) == ('b', 1) :: ('c', 2) :: Nil
 
 @test
-def query05(): Bool =
+def rangeQuery05(): Bool =
     let m = Map.unfold(s -> if (s > 10) None else Some(s, s, s + 1), 5);
-    Map.query(x -> if (x < 5) Comparison.LessThan else if (x >= 10) Comparison.GreaterThan else Comparison.EqualTo, m) == List.map(x -> (x, x), List.range(5, 10))
+    Map.rangeQuery(x -> if (x < 5) Comparison.LessThan else if (x >= 10) Comparison.GreaterThan else Comparison.EqualTo, m) == List.map(x -> (x, x), List.range(5, 10))
 
 @test
-def query06(): Bool =
+def rangeQuery06(): Bool =
     let m = Map.unfold(s -> if (s > 75) None else Some(s, Some(s + 48), s + 1), 25);
-    Map.query(x -> if (x < 25) Comparison.LessThan else if (x >= 75) Comparison.GreaterThan else Comparison.EqualTo, m) == List.map(x -> (x, Some(x + 48)), List.range(25, 75))
+    Map.rangeQuery(x -> if (x < 25) Comparison.LessThan else if (x >= 75) Comparison.GreaterThan else Comparison.EqualTo, m) == List.map(x -> (x, Some(x + 48)), List.range(25, 75))
 
 @test
-def query07(): Bool =
-    Map.query(x -> if (x < 42) Comparison.LessThan else if (x > 42) Comparison.GreaterThan else Comparison.EqualTo, Map#{42 => true}) == (42, true) :: Nil
+def rangeQuery07(): Bool =
+    Map.rangeQuery(x -> if (x < 42) Comparison.LessThan else if (x > 42) Comparison.GreaterThan else Comparison.EqualTo, Map#{42 => true}) == (42, true) :: Nil
 
 @test
-def query08(): Bool =
-    Map.query(x -> if (x < 1) Comparison.LessThan else if (x > 1) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (1, 2) :: Nil
+def rangeQuery08(): Bool =
+    Map.rangeQuery(x -> if (x < 1) Comparison.LessThan else if (x > 1) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (1, 2) :: Nil
 
 @test
-def query09(): Bool =
-    Map.query(x -> if (x < 2) Comparison.LessThan else if (x > 3) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (2, 3) :: (3, 4) :: Nil
+def rangeQuery09(): Bool =
+    Map.rangeQuery(x -> if (x < 2) Comparison.LessThan else if (x > 3) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (2, 3) :: (3, 4) :: Nil
 
 @test
-def query10(): Bool =
-    Map.query(x -> if (x < 4) Comparison.LessThan else if (x > 4) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (4, 5) :: Nil
+def rangeQuery10(): Bool =
+    Map.rangeQuery(x -> if (x < 4) Comparison.LessThan else if (x > 4) Comparison.GreaterThan else Comparison.EqualTo, Map#{1 => 2, 2 => 3, 3 => 4, 4 => 5}) == (4, 5) :: Nil
 
 @test
-def query11(): Bool =
+def rangeQuery11(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
-    Map.query(x -> if (fst(x) < 1) Comparison.LessThan else if (fst(x) > 1) Comparison.GreaterThan else Comparison.EqualTo, m) == ((1, 2), 0) :: ((1, 3), 1) :: Nil
+    Map.rangeQuery(x -> if (fst(x) < 1) Comparison.LessThan else if (fst(x) > 1) Comparison.GreaterThan else Comparison.EqualTo, m) == ((1, 2), 0) :: ((1, 3), 1) :: Nil
 
 @test
-def query12(): Bool =
+def rangeQuery12(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
-    Map.query(x -> if (fst(x) < 3) Comparison.LessThan else if (fst(x) > 3) Comparison.GreaterThan else Comparison.EqualTo, m) == ((3, 1), 5) :: Nil
+    Map.rangeQuery(x -> if (fst(x) < 3) Comparison.LessThan else if (fst(x) > 3) Comparison.GreaterThan else Comparison.EqualTo, m) == ((3, 1), 5) :: Nil
 
 @test
-def query13(): Bool =
+def rangeQuery13(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
-    Map.query(x -> if (fst(x) > 2) Comparison.GreaterThan else Comparison.EqualTo, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: Nil
+    Map.rangeQuery(x -> if (fst(x) > 2) Comparison.GreaterThan else Comparison.EqualTo, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: Nil
 
 @test
-def query14(): Bool =
+def rangeQuery14(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
-    Map.query(x -> if (fst(x) < 2) Comparison.LessThan else Comparison.EqualTo, m) == ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
+    Map.rangeQuery(x -> if (fst(x) < 2) Comparison.LessThan else Comparison.EqualTo, m) == ((2, 1), 2) :: ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
 
 @test
-def query15(): Bool =
+def rangeQuery15(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
     let f = x -> {
         let cmp = x <=> (2, 2);
@@ -2067,10 +2067,10 @@ def query15(): Bool =
         else
             Comparison.EqualTo
         };
-    Map.query(f, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: Nil
+    Map.rangeQuery(f, m) == ((1, 2), 0) :: ((1, 3), 1) :: ((2, 1), 2) :: ((2, 2), 3) :: Nil
 
 @test
-def query16(): Bool =
+def rangeQuery16(): Bool =
     let m = Map#{(1, 2) => 0, (1, 3) => 1, (2, 1) => 2, (2, 2) => 3, (2, 3) => 4, (3, 1) => 5};
     let f = x -> {
         let cmp = x <=> (2, 2);
@@ -2079,10 +2079,10 @@ def query16(): Bool =
         else
             Comparison.EqualTo
         };
-    Map.query(f, m) == ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
+    Map.rangeQuery(f, m) == ((2, 2), 3) :: ((2, 3), 4) :: ((3, 1), 5) :: Nil
 
 @test
-def query17(): Bool =
+def rangeQuery17(): Bool =
     let m = Map#{(1, 2, 2) => 0, (1, 2, 3) => 1, (1, 2, 4) => 2, (2, 2, 4) => 3};
     let f = x -> {
         let cmp = x <=> (1, 2, 3);
@@ -2091,10 +2091,10 @@ def query17(): Bool =
         else
             Comparison.EqualTo
         };
-    Map.query(f, m) == ((1, 2, 3), 1) :: ((1, 2, 4), 2) :: ((2, 2, 4), 3) :: Nil
+    Map.rangeQuery(f, m) == ((1, 2, 3), 1) :: ((1, 2, 4), 2) :: ((2, 2, 4), 3) :: Nil
 
 @test
-def query18(): Bool =
+def rangeQuery18(): Bool =
     let m = Map#{(1, 2, 2) => 0, (1, 2, 3) => 1, (1, 2, 4) => 2, (2, 2, 4) => 3};
     let f = x -> {
         let cmp = x <=> (1, 2, 3);
@@ -2103,7 +2103,7 @@ def query18(): Bool =
         else
             Comparison.EqualTo
         };
-    Map.query(f, m) == ((1, 2, 2), 0) :: ((1, 2, 3), 1) :: Nil
+    Map.rangeQuery(f, m) == ((1, 2, 2), 0) :: ((1, 2, 3), 1) :: Nil
 
     /////////////////////////////////////////////////////////////////////////////
     // toString                                                                //

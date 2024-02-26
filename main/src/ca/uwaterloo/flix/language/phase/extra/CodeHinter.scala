@@ -71,7 +71,7 @@ object CodeHinter {
     * Computes code quality hints for the given definition `def0`.
     */
   private def visitDef(def0: TypedAst.Def)(implicit root: Root, flix: Flix): List[CodeHint] = {
-    visitExp(def0.impl.exp)
+    visitExp(def0.exp)
   }
 
   /**
@@ -119,7 +119,7 @@ object CodeHinter {
     case Expr.Let(_, _, exp1, exp2, _, eff, loc) =>
       checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
+    case Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Region(_, _) => Nil
@@ -127,13 +127,10 @@ object CodeHinter {
     case Expr.Scope(_, _, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.ScopeExit(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2)
-
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
 
-    case Expr.Stm(exp1, exp2, _, eff,  loc) =>
+    case Expr.Stm(exp1, exp2, _, eff, loc) =>
       checkEffect(eff, loc) ++ visitExp(exp1) ++ visitExp(exp2)
 
     case Expr.Discard(exp, _, _) =>
@@ -147,11 +144,6 @@ object CodeHinter {
     case Expr.TypeMatch(matchExp, rules, _, _, _) =>
       visitExp(matchExp) ++ rules.flatMap {
         case TypeMatchRule(_, _, exp) => visitExp(exp)
-      }
-
-    case Expr.RelationalChoose(exps, rules, _, _, _) =>
-      visitExps(exps) ++ rules.flatMap {
-        case RelationalChooseRule(_, exp) => visitExp(exp)
       }
 
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
@@ -243,9 +235,6 @@ object CodeHinter {
     case Expr.Do(_, exps, _, _, _) =>
       exps.flatMap(visitExp)
 
-    case Expr.Resume(exp, _, _) =>
-      visitExp(exp)
-
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args)
 
@@ -300,16 +289,16 @@ object CodeHinter {
     case Expr.Force(exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.FixpointConstraintSet(cs, _, _, _) =>
+    case Expr.FixpointConstraintSet(cs, _, _) =>
       cs.flatMap(visitConstraint)
 
-    case Expr.FixpointLambda(_, exp, _, _, _, _) =>
+    case Expr.FixpointLambda(_, exp, _, _, _) =>
       visitExp(exp)
 
-    case Expr.FixpointMerge(exp1, exp2, _, _, _, _) =>
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2)
 
-    case Expr.FixpointSolve(exp, _, _, _, _) =>
+    case Expr.FixpointSolve(exp, _, _, _) =>
       visitExp(exp)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>

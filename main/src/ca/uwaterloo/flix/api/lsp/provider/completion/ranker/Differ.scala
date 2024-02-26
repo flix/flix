@@ -74,7 +74,7 @@ object Differ {
     * @return       true if the def has been modified, false otherwise.
     */
   private def isDefModified(oldDef: TypedAst.Def, newDef: TypedAst.Def): Boolean = {
-    isSourceLikelyChanged(oldDef.impl.exp.loc, newDef.impl.exp.loc)
+    isSourceLikelyChanged(oldDef.exp.loc, newDef.exp.loc)
   }
 
   /**

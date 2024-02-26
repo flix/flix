@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation}
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -30,16 +30,11 @@ sealed trait NameError extends CompilationMessage {
 object NameError {
 
   /**
-    * A common super-type for type related [[NameError]]s
-    */
-  sealed trait TypeNameError extends NameError
-
-  /**
-    * An error raised to indicate that the given def `name` is defined multiple times.
+    * An error raised to indicate that the given `name` is defined multiple time.
     *
     * @param name the name.
-    * @param loc1 the location of the first definition.
-    * @param loc2 the location of the second definition.
+    * @param loc1 the location of the first name.
+    * @param loc2 the location of the second name.
     */
   case class DuplicateLowerName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
     def summary: String = s"Duplicate definition of '$name'."
@@ -55,14 +50,14 @@ object NameError {
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      """Flix does not support function overloading, i.e. you cannot define two functions
-        |with the same name, even if their formal parameters differ.
+    override def explain(formatter: Formatter): Option[String] = Some({
+      """Flix does not support overloading. For example, you cannot define two
+        |functions with the same name, even if their formal parameters differ.
         |
         |If you want two functions to share the same name you have to either:
         |
         |    (a) put each function into its own namespace, or
-        |    (b) introduce a type class and implement two instances.
+        |    (b) introduce a trait and implement two instances.
         |""".stripMargin
     })
 
@@ -70,27 +65,25 @@ object NameError {
   }
 
   /**
-    * An error raised to indicate that the given uppercase `name` is defined multiple times.
+    * An error raised to indicate that the given `name` is defined multiple time.
     *
     * @param name the name.
-    * @param loc1 the location of the first definition.
-    * @param loc2 the location of the second definition.
+    * @param loc1 the location of the first name.
+    * @param loc2 the location of the second name.
     */
   case class DuplicateUpperName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
-    def summary: String = s"Duplicate declaration '$name'."
+    def summary: String = s"Duplicate definition of '$name'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Duplicate declaration '${red(name)}'.
+         |>> Duplicate definition of '${red(name)}'.
          |
-         |${code(loc1, "the first occurrence was here.")}
+         |${code(loc1, "the first definition was here.")}
          |
-         |${code(loc2, "the second occurrence was here.")}
+         |${code(loc2, "the second definition was here.")}
          |""".stripMargin
     }
-
-    def explain(formatter: Formatter): Option[String] = None
 
     def loc: SourceLocation = loc1
 
@@ -102,21 +95,25 @@ object NameError {
     * @param name the name of the type variable.
     * @param loc  the location of the suspicious type variable.
     */
-  case class SuspiciousTypeVarName(name: String, loc: SourceLocation) extends TypeNameError {
+  case class SuspiciousTypeVarName(name: String, loc: SourceLocation) extends NameError with Recoverable {
     def summary: String = s"Suspicious type variable '$name'. Did you mean: '${name.capitalize}'?"
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
+         |
          |>> Suspicious type variable '${red(name)}'. Did you mean: '${cyan(name.capitalize)}'?
          |
-         |${code(loc, "Suspicious type variable.")}
+         |${code(loc, "suspicious type variable.")}
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some({
-      """Flix uses lowercase variables. The provided type variable looks suspiciously
-        |like the name of a built-in type. Perhaps you meant to use the built-in type?
+    override def explain(formatter: Formatter): Option[String] = Some({
+      """Flix uses lowercase variable names.
+        |
+        |The type variable looks suspiciously like the name of a built-in type.
+        |
+        |Perhaps you meant to use the built-in type?
         |
         |For example, `Int32` is a built-in type whereas `int32` is a type variable.
         |""".stripMargin

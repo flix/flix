@@ -33,29 +33,29 @@ mod Test.Exp.Match.Record {
     }
 
     @test
-    def testRecordFieldValue01(): Bool = match { a = 1 } {
+    def testRecordLabelValue01(): Bool = match { a = 1 } {
         case { a } => a == 1
     }
 
     @test
-    def testRecordFieldValue02(): Bool = match { a = 1 } {
+    def testRecordLabelValue02(): Bool = match { a = 1 } {
         case { a = b } => b == 1
     }
 
     @test
-    def testRecordFieldValue03(): Bool = match { a = 1 } {
+    def testRecordLabelValue03(): Bool = match { a = 1 } {
         case { a = 1 } => true
         case { a = _ } => false
     }
 
     @test
-    def testRecordFieldValue04(): Bool = match { a = 1, b = 2 } {
+    def testRecordLabelValue04(): Bool = match { a = 1, b = 2 } {
         case { a = 1, b = 2 } => true
         case { a = _, b = _ } => false
     }
 
     @test
-    def testRecordFieldValue05(): Bool = match { a = 1, b = 2 } {
+    def testRecordLabelValue05(): Bool = match { a = 1, b = 2 } {
         case { a = 1, b = 2 | _ } => true
         case { a = _, b = _ | _ } => false
     }
@@ -178,7 +178,7 @@ mod Test.Exp.Match.Record {
     }
 
     @test
-    def testDuplicateFieldsExhaustiveness01(): Bool = match { a = A.A, a = A.B } {
+    def testDuplicateLabelsExhaustiveness01(): Bool = match { a = A.A, a = A.B } {
         case { a = A.A, a = A.A } => false
         case { a = A.A, a = A.B } => true
         case { a = A.B, a = A.A } => false
@@ -186,7 +186,7 @@ mod Test.Exp.Match.Record {
     }
 
     @test
-    def testDuplicateFieldsExhaustiveness02(): Bool = match { a = A.B, a = A.B } {
+    def testDuplicateLabelsExhaustiveness02(): Bool = match { a = A.B, a = A.B } {
         case { a = A.A, a = A.A } => false
         case { a = A.A, a = A.B } => false
         case { a = A.B, a = A.A } => false
@@ -194,7 +194,7 @@ mod Test.Exp.Match.Record {
     }
 
     @test
-    def testDuplicateFieldsExhaustiveness03(): Bool = match { a = A.B, a = A.A } {
+    def testDuplicateLabelsExhaustiveness03(): Bool = match { a = A.B, a = A.A } {
         case { a = A.A, a = A.A } => false
         case { a = A.A, a = A.B } => false
         case { a = A.B, a = A.A } => true
@@ -202,13 +202,13 @@ mod Test.Exp.Match.Record {
     }
 
     @test
-    def testDuplicateFieldsExhaustiveness04(): Bool = match { a = A.B, a = A.A } {
+    def testDuplicateLabelsExhaustiveness04(): Bool = match { a = A.B, a = A.A } {
         case { a = A.A | _ } => false
         case { a = A.B | _ } => true
     }
 
     @test
-    def testDuplicateFieldsExhaustiveness05(): Bool = match { a = A.B, a = A.A } {
+    def testDuplicateLabelsExhaustiveness05(): Bool = match { a = A.B, a = A.A } {
         case { a = A.A, a = _ } => false
         case { a = A.B, a = _ } => true
     }
@@ -218,17 +218,17 @@ mod Test.Exp.Match.Record {
         case { a = { a = { } | _ } | _ } => true
     }
     @test
-    def testExtensionFields01(): Bool = match { a = true, b = true } {
+    def testExtensionLabels01(): Bool = match { a = true, b = true } {
         case { a | r } => a and r.b
     }
 
     @test
-    def testDuplicateFields01(): Bool = match { a = false, a = true } {
+    def testDuplicateLabels01(): Bool = match { a = false, a = true } {
         case { a = x, a = y } => (not x) and y
     }
 
     @test
-    def testDuplicateFields02(): Bool = match { a = true, a = 42 } {
+    def testDuplicateLabels02(): Bool = match { a = true, a = 42 } {
         case { a = x, a = y } => x and y == 42
     }
 
@@ -253,12 +253,12 @@ mod Test.Exp.Match.Record {
     }
 
     @test
-    def testDuplicateFieldsWithExtensionFields01(): Bool = match { a = false, a = true, a = 42 } {
+    def testDuplicateLabelsWithExtensionLabels01(): Bool = match { a = false, a = true, a = 42 } {
         case { a = x, a = y | r } => ((not x) and y) and r.a == 42
     }
 
     @test
-    def testDuplicateFieldsWithExtensionFields02(): Bool = match { a = false, a = true, a = 42, a = 3 } {
+    def testDuplicateLabelsWithExtensionLabels02(): Bool = match { a = false, a = true, a = 42, a = 3 } {
         case { a = x, a = y | r } => ((not x) and y) and r.a == 42
     }
 

@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol, Type}
+import ca.uwaterloo.flix.language.errors.Unrecoverable
 
 /**
   * A common super-type for unification errors.
@@ -81,13 +82,13 @@ object UnificationError {
   case class OccursCheck(tvar: Type.Var, tpe: Type) extends UnificationError
 
   /**
-    * An unification error due the field `fieldName` of type `fieldType` missing from the type `recordType`.
+    * An unification error due the label `labelName` of type `labelType` missing from the type `recordType`.
     *
-    * @param field      the name of the missing field.
-    * @param fieldType  the type of the missing field.
-    * @param recordType the record type where the field is missing.
+    * @param label      the name of the missing label.
+    * @param labelType  the type of the missing label.
+    * @param recordType the record type where the label is missing.
     */
-  case class UndefinedField(field: Name.Field, fieldType: Type, recordType: Type) extends UnificationError
+  case class UndefinedLabel(label: Name.Label, labelType: Type, recordType: Type) extends UnificationError
 
   /**
     * An unification error due the predicate `pred` of type `predType` missing from the type `schemaType`.
@@ -117,14 +118,7 @@ object UnificationError {
     *
     * @param tconstr the type constraint.
     */
-  case class NoMatchingInstance(tconstr: Ast.TypeConstraint) extends UnificationError
-
-  /**
-    * A unification error resulting from multiple matching instances.
-    *
-    * @param tconstr the type constraint.
-    */
-  case class MultipleMatchingInstances(tconstr: Ast.TypeConstraint) extends UnificationError
+  case class NoMatchingInstance(tconstr: Ast.TypeConstraint) extends UnificationError with Unrecoverable
 
   /**
     * A unification error resulting from an equality constraint that is not supported by the context.
@@ -141,5 +135,13 @@ object UnificationError {
     * @param t   the type
     */
   case class IrreducibleAssocType(sym: Symbol.AssocTypeSym, t: Type) extends UnificationError
+
+  /**
+    * A unification error resulting from a unification equation that is too complex to solve.
+    *
+    * @param tpe1 the lhs of the unification equation that is too complex.
+    * @param tpe2 the rhs of the unification equation that is too complex.
+    */
+  case class TooComplex(tpe1: Type, tpe2: Type) extends UnificationError
 
 }

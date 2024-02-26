@@ -12,16 +12,15 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.scala-lang:scala-library:2.13.11!!'
-    implementation 'org.scala-lang:scala-reflect:2.13.11!!'
+    implementation 'org.scala-lang:scala-library:2.13.12!!'
+    implementation 'org.scala-lang:scala-reflect:2.13.12!!'
 
     implementation('org.java-websocket:Java-WebSocket:1.5.3')
-    implementation('org.jline:jline:3.22.0')
+    implementation('org.jline:jline:3.25.0')
     implementation('org.json4s:json4s-native_2.13:3.6.12')
-    implementation('org.ow2.asm:asm:9.2')
+    implementation('org.ow2.asm:asm:9.6')
     implementation('org.parboiled:parboiled_2.13:2.4.1')
     implementation('org.scalactic:scalactic_2.13:3.2.15')
-    implementation("org.scala-lang.modules:scala-parallel-collections_2.13:0.2.0")
     implementation('com.github.rjeschke:txtmark:0.13')
     implementation('com.github.scopt:scopt_2.13:4.1.0')
     implementation('com.google.guava:guava:31.1-jre')
@@ -48,8 +47,8 @@ tasks.withType(ScalaCompile) {
             "-Ypatmat-exhaust-depth", "400",
             "-release", "11"
     ]
-    compileScala.sourceCompatibility = 11
-    compileScala.targetCompatibility = 11
+    compileScala.sourceCompatibility = 21
+    compileScala.targetCompatibility = 21
 }
 
 sourceSets {
@@ -90,7 +89,7 @@ jar {
 
 task testAll(dependsOn: ['testClasses'], type: JavaExec) {
     mainClass = 'org.scalatest.tools.Runner'
-    args = ['-s', 'ca.uwaterloo.flix.TestAll', '-o']
+    args = ['-P', '-s', 'ca.uwaterloo.flix.TestAll', '-o']
     classpath = sourceSets.test.runtimeClasspath
     standardInput = System.in
 }

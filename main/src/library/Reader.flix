@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for types which are resources that can be accessed as bytes.
+/// A trait for types which are resources that can be accessed as bytes.
 ///
-class Reader[t] {
+trait Reader[t] {
     ///
     /// Reads `k` bytes from the underlying resource and writes them into `b`.
     ///

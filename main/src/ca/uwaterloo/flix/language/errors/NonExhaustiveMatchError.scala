@@ -17,13 +17,13 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{SourceLocation, TypedAst}
+import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 
 /**
   * An error raised to indicate a non-exhaustive pattern match expression.
   */
-case class NonExhaustiveMatchError(pat: String, loc: SourceLocation) extends CompilationMessage {
+case class NonExhaustiveMatchError(pat: String, loc: SourceLocation) extends CompilationMessage with Recoverable {
   val kind = "Pattern Match"
 
   def summary: String = s"Non-exhaustive match. Missing case: '$pat'."
@@ -37,7 +37,7 @@ case class NonExhaustiveMatchError(pat: String, loc: SourceLocation) extends Com
        |""".stripMargin
   }
 
-  def explain(formatter: Formatter): Option[String] = Some({
+  override def explain(formatter: Formatter): Option[String] = Some({
     s"""Flix requires every pattern match expression to be exhaustive, i.e. to cover all
        |possible cases. A wild card pattern, written with an underscore, can be used to
        |handle all other cases. For example:

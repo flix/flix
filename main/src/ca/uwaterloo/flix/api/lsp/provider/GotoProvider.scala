@@ -78,7 +78,7 @@ object GotoProvider {
           case Entity.Enum(_) => mkNotFound(uri, pos)
           case Entity.TypeAlias(_) => mkNotFound(uri, pos)
           case Entity.AssocType(_) => mkNotFound(uri, pos)
-          case Entity.Field(_) => mkNotFound(uri, pos)
+          case Entity.Label(_) => mkNotFound(uri, pos)
           case Entity.FormalParam(_) => mkNotFound(uri, pos)
           case Entity.LocalVar(_, _) => mkNotFound(uri, pos)
           case Entity.Op(_) => mkNotFound(uri, pos)

@@ -15,9 +15,9 @@
  */
 
 ///
-/// A class representing collections that can be produced from an Iterator.
+/// A trait representing collections that can be produced from an Iterator.
 ///
-pub class Collectable[m: Type -> Type] {
+pub trait Collectable[m: Type -> Type] {
 
     ///
     /// Run an Iterator collecting the results.

@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for division.
+/// A trait for division.
 ///
-pub class Div[a] {
+pub trait Div[a] {
     ///
     /// Returns `x` divided by `y`.
     ///

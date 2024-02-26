@@ -1,5 +1,46 @@
 # Changelog
 
+Version 0.44.0:
+- Language: Reworked `IO` to be its own effect (thanks Matt!)
+- Library: Added `purityOf` to simplify reflection on purity (thanks Jakob!)
+- Compiler: Added support for the `release` command (thanks Holger!)
+- Compiler: Added support for storing GITHUB_TOKEN in a file (thanks Holger!)
+- Compiler: Added support for storing GITHUB_TOKEN in the environment (thanks Holger!)
+- Compiler: Simplified compilation of enums (thanks Jonathan!)
+- Compiler: Improved performance of backend (thanks Jonathan!)
+
+Version 0.43.0:
+- Language: Flix now targets Java 21 bytecode (thanks Magnus!)
+- Language: Flix now uses `VirtualThread`s by default (thanks Magnus!) 
+- Compiler: Flix now requires Java 21 (thanks Magnus!)
+- Compiler: All `InstanceError`s are now recoverable (thanks Magnus!)
+- Compiler: All `RedundancyError`s are now recoverable (thanks Magnus!)
+- Compiler: All `SafetyErrors`s are now recoverable (thanks Magnus!)
+- Compiler: All `TypeError`s are now recoverable (thanks Matt!)
+- Compiler: Most `ResolutionError`s are now recoverable (thanks Magnus!)
+- Compiler: Most `WeederError`s are now recoverable (thanks Magnus!)
+
+Version 0.42.0:
+- Compiler: Use parallel evaluation in `ClosureConv` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `Deriver` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `Inliner` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `LambdaLift` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `MonoDefs` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `MonoTypes` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `Namer` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `PatMatch` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `Reducer` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `Resolver` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `Safety` (thanks Magnus!)
+- Compiler: Use parallel evaluation in `TailRec` (thanks Magnus!)
+
+Version 0.41.0:
+- Library: Added `Adaptor` module (thanks Stephen!)
+- Library: Added `Reader` module (thanks Stephen!)
+- Compiler: Reworked type inference for regions and letrec (thanks Magnus, Matt!)
+- Compiler: Major improvements to the HTML API documentation tool (thanks Holger!)
+- Compiler: Added new experimental lexer (thanks Herluf!)
+
 Version 0.40.0:
 
 - Language: Added support for pattern matching on records (thanks Jakob!)
@@ -432,16 +473,3 @@ Version 0.1:
 
 2016-06-08: 
 - Initial release.
-
-
-HEAD (in progress, not released):
-
-- Added a new file API (thanks Nina!)
-- Added `DelayList` and `DelayMap` (thanks Jakob!)
-- Added automatic parallelization of certain `Set` and `Map` operations (thanks Jakob!)
-- Library: Added `Adaptor` module and `ToJava` class for working with Java collections (thanks Stephen!)
-- Improved stratification algorithm (thanks Jonathan!)
-- Inliner
-- Datalog abstraction
-- Restrictable variants
-- Associated types

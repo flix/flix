@@ -36,7 +36,7 @@ object Verifier {
       case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
     }
     try {
-      visitStmt(decl.stmt)(root, env, Map.empty)
+      visitExpr(decl.expr)(root, env, Map.empty)
     } catch {
       case UnexpectedType(expected, found, loc) =>
         println(s"Unexpected type near ${loc.format}")
@@ -222,30 +222,20 @@ object Verifier {
           check(expected = argTpe2)(t2, loc)
           check(expected = tpe)(actual = resTpe, loc)
 
+        case AtomicOp.Is(sym) =>
+          val List(t1) = ts
+          check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
+          check(expected = MonoType.Bool)(actual = tpe, loc)
+
         case AtomicOp.Tag(sym) =>
-          root.enums.get(sym.enumSym) match {
-            case None => throw InternalCompilerException(s"Unknown enum sym: '$sym'", loc)
-            case Some(e) => e.cases.get(sym) match {
-              case None => throw InternalCompilerException(s"Unknown enum case sym: '$sym' of '${e.sym}'", loc)
-              case Some(caze) =>
-                val List(t) = ts
-                check(expected = caze.tpe)(t, loc)
-                check(expected = e.tpe)(tpe, loc)
-                tpe
-            }
-          }
+          val List(t1) = ts
+          check(expected = MonoType.Enum(sym.enumSym))(actual = tpe, loc)
+
         case AtomicOp.Untag(sym) =>
-          root.enums.get(sym.enumSym) match {
-            case None => throw InternalCompilerException(s"Unknown enum sym: '$sym'", loc)
-            case Some(e) => e.cases.get(sym) match {
-              case None => throw InternalCompilerException(s"Unknown enum case sym: '$sym' of '${e.sym}'", loc)
-              case Some(caze) =>
-                val List(t) = ts
-                check(expected = e.tpe)(t, loc)
-                check(expected = caze.tpe)(tpe, loc)
-                tpe
-            }
-          }
+          val List(t1) = ts
+          check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
+          tpe
+
         case _ => tpe // TODO: VERIFIER: Add rest
       }
 
@@ -262,7 +252,7 @@ object Verifier {
       check(expected = declared)(actual = actual, loc)
       tpe
 
-    case Expr.ApplySelfTail(sym, formals, actuals, tpe, _, loc) =>
+    case Expr.ApplySelfTail(sym, actuals, tpe, _, loc) =>
       val defn = root.defs(sym)
       val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
       val actual = MonoType.Arrow(actuals.map(visitExpr), tpe)
@@ -303,6 +293,11 @@ object Verifier {
       val bodyType = visitExpr(exp2)(root, env1, lenv)
       checkEq(bodyType, tpe, loc)
 
+    case Expr.Stmt(exp1, exp2, tpe, _, loc) =>
+      val firstType = visitExpr(exp1)
+      val secondType = visitExpr(exp2)
+      checkEq(secondType, tpe, loc)
+
     case Expr.Scope(sym, exp, tpe, _, loc) =>
       checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Region), lenv), loc)
 
@@ -313,15 +308,18 @@ object Verifier {
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)
 
-    case Expr.NewObject(name, clazz, tpe, methods, _, _, loc) =>
+    case Expr.TryWith(_, _, _, tpe, _, _) =>
+      // TODO: VERIFIER: Add support for TryWith.
+      tpe
+
+    case Expr.Do(_, _, tpe, _, _) =>
+      // TODO: VERIFIER: Add support for Do.
+      tpe
+
+    case Expr.NewObject(name, clazz, tpe, methods, _, loc) =>
       // TODO: VERIFIER: Add support for NewObject.
       tpe
 
-  }
-
-  private def visitStmt(stmt: ReducedAst.Stmt)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = stmt match {
-    case Stmt.Ret(expr, tpe, loc) =>
-      visitExpr(expr)
   }
 
   /**

@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for types that can be mapped over.
+/// A trait for types that can be mapped over.
 ///
-pub lawful class Functor[m : Type -> Type] {
+pub lawful trait Functor[m : Type -> Type] {
     ///
     /// Applies the function `f` to `x` preserving its structure.
     ///

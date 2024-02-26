@@ -17,17 +17,15 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast._
-import ca.uwaterloo.flix.language.ast.Type.eraseAliases
-import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.StratificationError
+import ca.uwaterloo.flix.language.phase.PredDeps.termTypesAndDenotation
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.ListMap
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 import scala.annotation.tailrec
 
@@ -47,64 +45,71 @@ object Stratifier {
   /**
     * Returns a stratified version of the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Validation[Root, CompilationMessage] = flix.phase("Stratifier") {
-    // Compute an over-approximation of the dependency graph for all constraints in the program.
-    val g = flix.subphase("Compute Global Dependency Graph") {
-      val defs = root.defs.values.toList
-      val instanceDefs = root.instances.values.flatten.flatMap(_.defs)
-      ParOps.parAgg(defs ++ instanceDefs, LabelledGraph.empty)({
-        case (acc, d) => acc + labelledGraphOfDef(d)
-      }, _ + _)
-    }
+  def run(root: Root)(implicit flix: Flix): Validation[Root, StratificationError] = flix.phase("Stratifier") {
+    implicit val g: LabelledPrecedenceGraph = root.precedenceGraph
+    implicit val r: Root = root
 
     // Compute the stratification at every datalog expression in the ast.
-    val newDefs = flix.subphase("Stratify Defs") {
-      val result = ParOps.parMap(root.defs)(kv => visitDef(kv._2)(root, g, flix).map(d => kv._1 -> d))
-      Validation.sequence(result)
-    }
-    val newInstances = flix.subphase("Stratify Instance Defs") {
-      val result = ParOps.parMap(root.instances) {
-        case (sym, is) =>
-          val x = traverse(is)(i => visitInstance(i)(root, g, flix))
-          x.map(d => sym -> d)
-      }
-      Validation.sequence(result)
-    }
+    val newDefs = ParOps.parTraverseValues(root.defs)(visitDef(_))
+    val newInstances = ParOps.parTraverseValues(root.instances)(traverse(_)(visitInstance(_)))
+    val newClasses = ParOps.parTraverseValues(root.classes)(visitClass(_))
 
-    mapN(newDefs, newInstances) {
-      case (ds, is) => root.copy(defs = ds.toMap, instances = is.toMap)
+    mapN(newDefs, newInstances, newClasses) {
+      case (ds, is, cs) => root.copy(defs = ds, instances = is, classes = cs)
     }
   }
 
   /**
+    * Performs Stratification of the given class `c0`.
+    */
+  private def visitClass(c0: TypedAst.Class)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Class, StratificationError] = {
+    val newLaws = traverse(c0.laws)(visitDef(_))
+    val newSigs = traverse(c0.sigs)(visitSig(_))
+    mapN(newLaws, newSigs) {
+      case (nl, ns) => c0.copy(laws = nl, sigs = ns)
+    }
+  }
+
+  /**
+    * Performs Stratification of the given sig `s0`.
+    */
+  private def visitSig(s0: TypedAst.Sig)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Sig, StratificationError] = {
+    val newExp = traverseOpt(s0.exp)(visitExp(_))
+    mapN(newExp) {
+      case ne => s0.copy(exp = ne)
+    }
+  }
+
+
+  /**
     * Performs Stratification of the given instance `i0`.
     */
-  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[TypedAst.Instance, CompilationMessage] =
-    traverse(i0.defs)(d => visitDef(d)).map(ds => i0.copy(defs = ds))
+  private def visitInstance(i0: TypedAst.Instance)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Instance, StratificationError] =
+    mapN(traverse(i0.defs)(d => visitDef(d)))(ds => i0.copy(defs = ds))
 
   /**
     * Performs stratification of the given definition `def0`.
     */
-  private def visitDef(def0: Def)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[Def, CompilationMessage] =
-    visitExp(def0.impl.exp) map {
-      case e => def0.copy(impl = def0.impl.copy(exp = e))
+  private def visitDef(def0: Def)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[Def, StratificationError] =
+    mapN(visitExp(def0.exp)) {
+      case e => def0.copy(exp = e)
     }
 
   /**
     * Performs stratification of the given expression `exp0`.
     *
-    * Returns [[Success]] if the expression is stratified. Otherwise returns [[Failure]] with a [[StratificationError]].
+    * Returns [[Success]] if the expression is stratified. Otherwise returns [[HardFailure]] with a [[StratificationError]].
     */
-  private def visitExp(exp0: Expr)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[Expr, StratificationError] = exp0 match {
-    case Expr.Cst(_, _, _) => exp0.toSuccess
+  private def visitExp(exp0: Expr)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[Expr, StratificationError] = exp0 match {
+    case Expr.Cst(_, _, _) => Validation.success(exp0)
 
-    case Expr.Var(_, _, _) => exp0.toSuccess
+    case Expr.Var(_, _, _) => Validation.success(exp0)
 
-    case Expr.Def(_, _, _) => exp0.toSuccess
+    case Expr.Def(_, _, _) => Validation.success(exp0)
 
-    case Expr.Sig(_, _, _) => exp0.toSuccess
+    case Expr.Sig(_, _, _) => Validation.success(exp0)
 
-    case Expr.Hole(_, _, _) => exp0.toSuccess
+    case Expr.Hole(_, _, _) => Validation.success(exp0)
 
     case Expr.HoleWithExp(exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
@@ -146,22 +151,17 @@ object Stratifier {
         case (e1, e2) => Expr.Let(sym, mod, e1, e2, tpe, eff, loc)
       }
 
-    case Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
+    case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
       mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expr.LetRec(sym, mod, e1, e2, tpe, eff, loc)
+        case (e1, e2) => Expr.LetRec(sym, ann, mod, e1, e2, tpe, eff, loc)
       }
 
     case Expr.Region(_, _) =>
-      exp0.toSuccess
+      Validation.success(exp0)
 
     case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => Expr.Scope(sym, regionVar, e, tpe, eff, loc)
-      }
-
-    case Expr.ScopeExit(exp1, exp2, tpe, eff, loc) =>
-      mapN(visitExp(exp1), visitExp(exp2)) {
-        case (e1, e2) => Expr.ScopeExit(e1, e2, tpe, eff, loc)
       }
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
@@ -175,7 +175,7 @@ object Stratifier {
       }
 
     case Expr.Discard(exp, eff, loc) =>
-      visitExp(exp) map {
+      mapN(visitExp(exp)) {
         case e => Expr.Discard(e, eff, loc)
       }
 
@@ -199,15 +199,6 @@ object Stratifier {
       }
       mapN(matchVal, rulesVal) {
         case (m, rs) => Expr.TypeMatch(m, rs, tpe, eff, loc)
-      }
-
-    case Expr.RelationalChoose(exps, rules, tpe, eff, loc) =>
-      val expsVal = traverse(exps)(visitExp)
-      val rulesVal = traverse(rules) {
-        case RelationalChooseRule(pat, exp) => mapN(visitExp(exp))(RelationalChooseRule(pat, _))
-      }
-      mapN(expsVal, rulesVal) {
-        case (es, rs) => Expr.RelationalChoose(es, rs, tpe, eff, loc)
       }
 
     case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) =>
@@ -235,21 +226,21 @@ object Stratifier {
       }
 
     case Expr.RecordEmpty(tpe, loc) =>
-      Expr.RecordEmpty(tpe, loc).toSuccess
+      Validation.success(Expr.RecordEmpty(tpe, loc))
 
-    case Expr.RecordSelect(base, field, tpe, eff, loc) =>
+    case Expr.RecordSelect(base, label, tpe, eff, loc) =>
       mapN(visitExp(base)) {
-        case b => Expr.RecordSelect(b, field, tpe, eff, loc)
+        case b => Expr.RecordSelect(b, label, tpe, eff, loc)
       }
 
-    case Expr.RecordExtend(field, value, rest, tpe, eff, loc) =>
+    case Expr.RecordExtend(label, value, rest, tpe, eff, loc) =>
       mapN(visitExp(value), visitExp(rest)) {
-        case (v, r) => Expr.RecordExtend(field, v, r, tpe, eff, loc)
+        case (v, r) => Expr.RecordExtend(label, v, r, tpe, eff, loc)
       }
 
-    case Expr.RecordRestrict(field, rest, tpe, eff, loc) =>
+    case Expr.RecordRestrict(label, rest, tpe, eff, loc) =>
       mapN(visitExp(rest)) {
-        case r => Expr.RecordRestrict(field, r, tpe, eff, loc)
+        case r => Expr.RecordRestrict(label, r, tpe, eff, loc)
       }
 
     case Expr.ArrayLit(exps, exp, tpe, eff, loc) =>
@@ -337,7 +328,8 @@ object Stratifier {
 
     case Expr.TryCatch(exp, rules, tpe, eff, loc) =>
       val rulesVal = traverse(rules) {
-        case CatchRule(sym, clazz, e) => visitExp(e).map(CatchRule(sym, clazz, _))
+        case CatchRule(sym, clazz, e) =>
+          mapN(visitExp(e))(CatchRule(sym, clazz, _))
       }
       mapN(visitExp(exp), rulesVal) {
         case (e, rs) => Expr.TryCatch(e, rs, tpe, eff, loc)
@@ -345,7 +337,8 @@ object Stratifier {
 
     case Expr.TryWith(exp, sym, rules, tpe, eff, loc) =>
       val rulesVal = traverse(rules) {
-        case HandlerRule(op, fparams, e) => visitExp(e).map(HandlerRule(op, fparams, _))
+        case HandlerRule(op, fparams, e) =>
+          mapN(visitExp(e))(HandlerRule(op, fparams, _))
       }
       mapN(visitExp(exp), rulesVal) {
         case (e, rs) => Expr.TryWith(e, sym, rs, tpe, eff, loc)
@@ -354,11 +347,6 @@ object Stratifier {
     case Expr.Do(sym, exps, tpe, eff, loc) =>
       mapN(traverse(exps)(visitExp)) {
         case es => Expr.Do(sym, es, tpe, eff, loc)
-      }
-
-    case Expr.Resume(exp, tpe, loc) =>
-      mapN(visitExp(exp)) {
-        case e => Expr.Resume(e, tpe, loc)
       }
 
     case Expr.InvokeConstructor(constructor, args, tpe, eff, loc) =>
@@ -387,7 +375,7 @@ object Stratifier {
       }
 
     case Expr.GetStaticField(field, tpe, eff, loc) =>
-      Expr.GetStaticField(field, tpe, eff, loc).toSuccess
+      Validation.success(Expr.GetStaticField(field, tpe, eff, loc))
 
     case Expr.PutStaticField(field, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
@@ -422,10 +410,11 @@ object Stratifier {
       }
 
       val defaultVal = default match {
-        case None => None.toSuccess
-        case Some(exp) => visitExp(exp) map {
-          case e => Some(e)
-        }
+        case None => Validation.success(None)
+        case Some(exp) =>
+          mapN(visitExp(exp)) {
+            case e => Some(e)
+          }
       }
 
       mapN(rulesVal, defaultVal) {
@@ -457,37 +446,37 @@ object Stratifier {
         case e => Expr.Force(e, tpe, eff, loc)
       }
 
-    case Expr.FixpointConstraintSet(cs0, _, tpe, loc) =>
+    case Expr.FixpointConstraintSet(cs0, tpe, loc) =>
       // Compute the stratification.
       val stf = stratify(g, tpe, loc)
 
       mapN(stf) {
-        case s =>
+        case _ =>
           val cs = cs0.map(reorder)
-          Expr.FixpointConstraintSet(cs, s, tpe, loc)
+          Expr.FixpointConstraintSet(cs, tpe, loc)
       }
 
-    case Expr.FixpointLambda(pparams, exp, _, tpe, eff, loc) =>
+    case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
       // Compute the stratification.
       val stf = stratify(g, tpe, loc)
       mapN(stf) {
-        case s => Expr.FixpointLambda(pparams, exp, s, tpe, eff, loc)
+        case _ => Expr.FixpointLambda(pparams, exp, tpe, eff, loc)
       }
 
-    case Expr.FixpointMerge(exp1, exp2, _, tpe, eff, loc) =>
+    case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
       // Compute the stratification.
       val stf = stratify(g, tpe, loc)
 
       mapN(visitExp(exp1), visitExp(exp2), stf) {
-        case (e1, e2, s) => Expr.FixpointMerge(e1, e2, s, tpe, eff, loc)
+        case (e1, e2, _) => Expr.FixpointMerge(e1, e2, tpe, eff, loc)
       }
 
-    case Expr.FixpointSolve(exp, _, tpe, eff, loc) =>
+    case Expr.FixpointSolve(exp, tpe, eff, loc) =>
       // Compute the stratification.
       val stf = stratify(g, tpe, loc)
 
       mapN(visitExp(exp), stf) {
-        case (e, s) => Expr.FixpointSolve(e, s, tpe, eff, loc)
+        case (e, _) => Expr.FixpointSolve(e, tpe, eff, loc)
       }
 
     case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
@@ -508,11 +497,11 @@ object Stratifier {
     case Expr.Error(m, tpe, eff) =>
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
-      Validation.SoftFailure(Expr.Error(m, tpe, eff), LazyList.empty)
+      Validation.SoftFailure(Expr.Error(m, tpe, eff), Chain.empty)
 
   }
 
-  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
+  private def visitJvmMethod(method: JvmMethod)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[JvmMethod, StratificationError] = method match {
     case JvmMethod(ident, fparams, exp, tpe, eff, loc) =>
       mapN(visitExp(exp)) {
         case e => JvmMethod(ident, fparams, e, tpe, eff, loc)
@@ -541,292 +530,9 @@ object Stratifier {
   }
 
   /**
-    * Returns the labelled graph of the given definition `def0`.
-    */
-  private def labelledGraphOfDef(def0: Def): LabelledGraph =
-    labelledGraphOfExp(def0.impl.exp)
-
-  /**
-    * Returns the labelled graph of the given expression `exp0`.
-    */
-  private def labelledGraphOfExp(exp0: Expr): LabelledGraph = exp0 match {
-    case Expr.Cst(_, _, _) => LabelledGraph.empty
-
-    case Expr.Var(_, _, _) => LabelledGraph.empty
-
-    case Expr.Def(_, _, _) => LabelledGraph.empty
-
-    case Expr.Sig(_, _, _) => LabelledGraph.empty
-
-    case Expr.Hole(_, _, _) => LabelledGraph.empty
-
-    case Expr.HoleWithExp(exp, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.OpenAs(_, exp, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.Use(_, _, exp, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.Lambda(_, exp, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.Apply(exp, exps, _, _, _) =>
-      val init = labelledGraphOfExp(exp)
-      exps.foldLeft(init) {
-        case (acc, exp) => acc + labelledGraphOfExp(exp)
-      }
-
-    case Expr.Unary(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.Binary(_, exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
-
-    case Expr.Let(_, _, exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
-
-    case Expr.LetRec(_, _, exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
-
-    case Expr.Region(_, _) =>
-      LabelledGraph.empty
-
-    case Expr.Scope(_, _, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.ScopeExit(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
-
-    case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2) + labelledGraphOfExp(exp3)
-
-    case Expr.Stm(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
-
-    case Expr.Discard(exp, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.Match(exp, rules, _, _, _) =>
-      val dg = labelledGraphOfExp(exp)
-      rules.foldLeft(dg) {
-        case (acc, MatchRule(_, g, b)) => acc + g.map(labelledGraphOfExp).getOrElse(LabelledGraph.empty) + labelledGraphOfExp(b)
-      }
-
-    case Expr.TypeMatch(exp, rules, _, _, _) =>
-      val dg = labelledGraphOfExp(exp)
-      rules.foldLeft(dg) {
-        case (acc, TypeMatchRule(_, _, b)) => acc + labelledGraphOfExp(b)
-      }
-
-    case Expr.RelationalChoose(exps, rules, _, _, _) =>
-      val dg1 = exps.foldLeft(LabelledGraph.empty) {
-        case (acc, exp) => acc + labelledGraphOfExp(exp)
-      }
-      val dg2 = rules.foldLeft(LabelledGraph.empty) {
-        case (acc, RelationalChooseRule(_, exp)) => acc + labelledGraphOfExp(exp)
-      }
-      dg1 + dg2
-
-    case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
-      val dg1 = labelledGraphOfExp(exp)
-      val dg2 = rules.foldLeft(LabelledGraph.empty) {
-        case (acc, RestrictableChooseRule(_, body)) => acc + labelledGraphOfExp(body)
-      }
-      dg1 + dg2
-
-    case Expr.Tag(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.RestrictableTag(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.Tuple(elms, _, _, _) =>
-      elms.foldLeft(LabelledGraph.empty) {
-        case (acc, e) => acc + labelledGraphOfExp(e)
-      }
-
-    case Expr.RecordEmpty(_, _) =>
-      LabelledGraph.empty
-
-    case Expr.RecordSelect(base, _, _, _, _) =>
-      labelledGraphOfExp(base)
-
-    case Expr.RecordExtend(_, value, rest, _, _, _) =>
-      labelledGraphOfExp(value) + labelledGraphOfExp(rest)
-
-    case Expr.RecordRestrict(_, rest, _, _, _) =>
-      labelledGraphOfExp(rest)
-
-    case Expr.ArrayLit(elms, exp, _, _, _) =>
-      elms.foldLeft(labelledGraphOfExp(exp)) {
-        case (acc, e) => acc + labelledGraphOfExp(e)
-      }
-
-    case Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2) + labelledGraphOfExp(exp3)
-
-    case Expr.ArrayLoad(base, index, _, _, _) =>
-      labelledGraphOfExp(base) + labelledGraphOfExp(index)
-
-    case Expr.ArrayLength(base, _, _) =>
-      labelledGraphOfExp(base)
-
-    case Expr.ArrayStore(base, index, elm, _, _) =>
-      labelledGraphOfExp(base) + labelledGraphOfExp(index) + labelledGraphOfExp(elm)
-
-    case Expr.VectorLit(exps, _, _, _) =>
-      exps.foldLeft(LabelledGraph.empty) {
-        case (acc, e) => acc + labelledGraphOfExp(e)
-      }
-
-    case Expr.VectorLoad(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
-
-    case Expr.VectorLength(exp, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.Ref(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
-
-    case Expr.Deref(exp, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.Assign(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
-
-    case Expr.Ascribe(exp, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.InstanceOf(exp, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.CheckedCast(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.UncheckedCast(exp, _, _, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.UncheckedMaskingCast(exp, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.Without(exp, _, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.TryCatch(exp, rules, _, _, _) =>
-      rules.foldLeft(labelledGraphOfExp(exp)) {
-        case (acc, CatchRule(_, _, e)) => acc + labelledGraphOfExp(e)
-      }
-
-    case Expr.TryWith(exp, _, rules, _, _, _) =>
-      rules.foldLeft(labelledGraphOfExp(exp)) {
-        case (acc, HandlerRule(_, _, e)) => acc + labelledGraphOfExp(e)
-      }
-
-    case Expr.Do(_, exps, _, _, _) =>
-      exps.foldLeft(LabelledGraph.empty) {
-        case (acc, exp) => acc + labelledGraphOfExp(exp)
-      }
-
-    case Expr.Resume(exp, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.InvokeConstructor(_, args, _, _, _) =>
-      args.foldLeft(LabelledGraph.empty) {
-        case (acc, e) => acc + labelledGraphOfExp(e)
-      }
-
-    case Expr.InvokeMethod(_, exp, args, _, _, _) =>
-      args.foldLeft(labelledGraphOfExp(exp)) {
-        case (acc, e) => acc + labelledGraphOfExp(e)
-      }
-
-    case Expr.InvokeStaticMethod(_, args, _, _, _) =>
-      args.foldLeft(LabelledGraph.empty) {
-        case (acc, e) => acc + labelledGraphOfExp(e)
-      }
-
-    case Expr.GetField(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.PutField(_, exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
-
-    case Expr.GetStaticField(_, _, _, _) =>
-      LabelledGraph.empty
-
-    case Expr.PutStaticField(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.NewObject(_, _, _, _, _, _) =>
-      LabelledGraph.empty
-
-    case Expr.NewChannel(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
-
-    case Expr.GetChannel(exp, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.PutChannel(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
-
-    case Expr.SelectChannel(rules, default, _, _, _) =>
-      val dg = default match {
-        case None => LabelledGraph.empty
-        case Some(d) => labelledGraphOfExp(d)
-      }
-
-      rules.foldLeft(dg) {
-        case (acc, SelectChannelRule(_, exp1, exp2)) => acc + labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
-      }
-
-    case Expr.Spawn(exp1, exp2, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
-
-    case Expr.ParYield(frags, exp, _, _, _) =>
-      frags.foldLeft(labelledGraphOfExp(exp)) {
-        case (acc, ParYieldFragment(_, e, _)) => acc + labelledGraphOfExp(e)
-      }
-
-    case Expr.Lazy(exp, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.Force(exp, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.FixpointConstraintSet(cs, _, _, _) =>
-      cs.foldLeft(LabelledGraph.empty) {
-        case (dg, c) => dg + labelledGraphOfConstraint(c)
-      }
-
-    case Expr.FixpointLambda(_, exp, _, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.FixpointMerge(exp1, exp2, _, _, _, _) =>
-      labelledGraphOfExp(exp1) + labelledGraphOfExp(exp2)
-
-    case Expr.FixpointSolve(exp, _, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.FixpointFilter(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.FixpointInject(exp, _, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.FixpointProject(_, exp, _, _, _) =>
-      labelledGraphOfExp(exp)
-
-    case Expr.Error(_, _, _) =>
-      LabelledGraph.empty
-
-  }
-
-  /**
     * Computes the stratification of the given labelled graph `g` for the given row type `tpe` at the given source location `loc`.
     */
-  private def stratify(g: LabelledGraph, tpe: Type, loc: SourceLocation)(implicit root: Root, flix: Flix): Validation[Stratification, StratificationError] = {
+  private def stratify(g: LabelledPrecedenceGraph, tpe: Type, loc: SourceLocation)(implicit flix: Flix): Validation[Unit, StratificationError] = {
     // The key is the set of predicates that occur in the row type.
     val key = predicateSymbolsOf(tpe)
 
@@ -834,7 +540,10 @@ object Stratifier {
     val rg = g.restrict(key, labelEq(_, _))
 
     // Compute the stratification.
-    UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc)
+    UllmansAlgorithm.stratify(labelledGraphToDependencyGraph(rg), tpe, loc) match {
+      case Result.Ok(_) => Validation.success(())
+      case Result.Err(e) => Validation.toSoftFailure((), e)
+    }
   }
 
   /**
@@ -858,63 +567,14 @@ object Stratifier {
   }
 
   /**
-    * Returns the labelled graph of the given constraint `c0`.
-    */
-  private def labelledGraphOfConstraint(c: Constraint): LabelledGraph = c match {
-    case Constraint(_, Predicate.Head.Atom(headPred, den, _, headTpe, _), body0, _) =>
-      val (headTerms, _) = termTypesAndDenotation(headTpe)
-
-      // We add all body predicates and the head to the labels of each edge
-      val bodyLabels: Vector[Label] = body0.collect {
-        case Body.Atom(bodyPred, den, _, _, _, bodyTpe, _) =>
-          val (terms, _) = termTypesAndDenotation(bodyTpe)
-          Label(bodyPred, den, terms.length, terms)
-      }.toVector
-
-      val labels = bodyLabels :+ Label(headPred, den, headTerms.length, headTerms)
-
-      val edges = body0.foldLeft(Vector.empty[LabelledEdge]) {
-        case (edges, body) => body match {
-          case Body.Atom(bodyPred, _, p, f, _, _, bodyLoc) =>
-            edges :+ LabelledEdge(headPred, p, f, labels, bodyPred, bodyLoc)
-          case Body.Functional(_, _, _) => edges
-          case Body.Guard(_, _) => edges
-        }
-      }
-
-      LabelledGraph(edges)
-  }
-
-  /**
-    * Returns the term types of the given relational or latticenal type.
-    */
-  private def termTypesAndDenotation(tpe: Type): (List[Type], Denotation) = eraseAliases(tpe) match {
-    case Type.Apply(Type.Cst(tc, _), t, _) =>
-      val den = tc match {
-        case TypeConstructor.Relation => Denotation.Relational
-        case TypeConstructor.Lattice => Denotation.Latticenal
-        case _ => throw InternalCompilerException(s"Unexpected non-denotation type constructor: '$tc'", tpe.loc)
-      }
-      t.baseType match {
-        case Type.Cst(TypeConstructor.Tuple(_), _) => (t.typeArguments, den) // Multi-ary
-        case Type.Cst(TypeConstructor.Unit, _) => (Nil, den)
-        case _ => (List(t), den) // Unary
-      }
-    case _: Type.Var =>
-      // This could occur when querying or projecting a non-existent predicate
-      (Nil, Denotation.Relational)
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe.'", tpe.loc)
-  }
-
-  /**
     * Returns `true` if the two given labels `l1` and `l2` are considered equal.
     */
-  private def labelEq(l1: Label, l2: Label)(implicit root: Root, flix: Flix): Boolean = {
+  private def labelEq(l1: Label, l2: Label)(implicit flix: Flix): Boolean = {
     val isEqPredicate = l1.pred == l2.pred
     val isEqDenotation = l1.den == l2.den
     val isEqArity = l1.arity == l2.arity
     val isEqTermTypes = l1.terms.zip(l2.terms).forall {
-      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty, LevelEnv.Unleveled, ListMap.empty) // TODO ASSOC-TYPES empty right?
+      case (t1, t2) => Unification.unifiesWith(t1, t2, RigidityEnv.empty, ListMap.empty) // TODO ASSOC-TYPES empty right?
     }
 
     isEqPredicate && isEqDenotation && isEqArity && isEqTermTypes
@@ -924,7 +584,7 @@ object Stratifier {
     * Computes the dependency graph from the labelled graph, throwing the labels away.
     * If a labelled edge is either negative or fixed it is transformed to a strong edge.
     */
-  private def labelledGraphToDependencyGraph(g: LabelledGraph): UllmansAlgorithm.DependencyGraph =
+  private def labelledGraphToDependencyGraph(g: LabelledPrecedenceGraph): UllmansAlgorithm.DependencyGraph =
     g.edges.map {
       case LabelledEdge(head, Polarity.Positive, Fixity.Loose, _, body, loc) =>
         // Positive, loose edges require that the strata of the head is equal to,

@@ -673,21 +673,21 @@ mod TestMutDeque {
 
     @test
     def foldLeft01(): Bool = region rc {
-        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, MutDeque.new(rc)) == 100
+        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, MutDeque.new(rc)) == 100
     }
 
     @test
     def foldLeft02(): Bool = region rc {
         let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
-        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
+        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, d) == 198
     }
 
     @test
     def foldLeft03(): Bool = region rc {
         let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
-        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
+        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, d) == 198
     }
 
     @test
@@ -695,7 +695,7 @@ mod TestMutDeque {
         let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
-        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, d) == 196
+        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, d) == 196
     }
 
     @test
@@ -704,7 +704,7 @@ mod TestMutDeque {
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(1, d);
-        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, d) == 386
+        MutDeque.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, d) == 386
     }
 
 
@@ -714,21 +714,21 @@ mod TestMutDeque {
 
     @test
     def foldRight01(): Bool = region rc {
-        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, MutDeque.new(rc)) == 100
+        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, MutDeque.new(rc)) == 100
     }
 
     @test
     def foldRight02(): Bool = region rc {
         let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
-        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
+        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, d) == 198
     }
 
     @test
     def foldRight03(): Bool = region rc {
         let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
-        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
+        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, d) == 198
     }
 
     @test
@@ -736,7 +736,7 @@ mod TestMutDeque {
         let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
-        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, d) == 194
+        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, d) == 194
     }
 
     @test
@@ -745,7 +745,7 @@ mod TestMutDeque {
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(1, d);
-        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, d) == 382
+        MutDeque.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, d) == 382
     }
 
 
@@ -755,21 +755,21 @@ mod TestMutDeque {
 
     @test
     def foldRightWithCont01(): Bool = region rc {
-        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, MutDeque.new(rc)) == 100
+        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, MutDeque.new(rc)) == 100
     }
 
     @test
     def foldRightWithCont02(): Bool = region rc {
         let d = MutDeque.new(rc);
         MutDeque.pushBack(1, d);
-        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
+        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, d) == 198
     }
 
     @test
     def foldRightWithCont03(): Bool = region rc {
         let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
-        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, d) == 198
+        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, d) == 198
     }
 
     @test
@@ -777,7 +777,7 @@ mod TestMutDeque {
         let d = MutDeque.new(rc);
         MutDeque.pushFront(1, d);
         MutDeque.pushBack(2, d);
-        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, d) == 194
+        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, d) == 194
     }
 
     @test
@@ -786,7 +786,7 @@ mod TestMutDeque {
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
         MutDeque.pushFront(1, d);
-        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, d) == 382
+        MutDeque.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, d) == 382
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1183,7 +1183,7 @@ mod TestMutDeque {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ NonDet = region rc {
+    def shuffle01(): Bool \ IO = region rc {
         let l: List[Int32] = Nil;
         let d1 = List.toMutDeque(rc, l);
         let d2 = MutDeque.shuffle(rc, Random.new(), d1);
@@ -1192,7 +1192,7 @@ mod TestMutDeque {
     }
 
     @test
-    def shuffle02(): Bool \ NonDet = region rc {
+    def shuffle02(): Bool \ IO = region rc {
         let l = 1 :: Nil;
         let d1 = List.toMutDeque(rc, l);
         let d2 = MutDeque.shuffle(rc, Random.new(), d1);
@@ -1201,7 +1201,7 @@ mod TestMutDeque {
     }
 
     @test
-    def shuffle03(): Bool \ NonDet = region rc {
+    def shuffle03(): Bool \ IO = region rc {
         let l = 1 :: 2 :: 3 :: Nil;
         let d1 = List.toMutDeque(rc, l);
         let d2 = MutDeque.shuffle(rc, Random.new(), d1);
@@ -1210,7 +1210,7 @@ mod TestMutDeque {
     }
 
     @test
-    def shuffle04(): Bool \ NonDet = region rc {
+    def shuffle04(): Bool \ IO = region rc {
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
         let d1 = List.toMutDeque(rc, l);
         let d2 = MutDeque.shuffle(rc, Random.new(), d1);

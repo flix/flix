@@ -1804,19 +1804,19 @@ mod TestVector {
 
     @test
     def foldLeft01(): Bool =
-        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Vector#{}) == 100
+        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{}) == 100
 
     @test
     def foldLeft02(): Bool =
-        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1}) == 198
+        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1}) == 198
 
     @test
     def foldLeft03(): Bool =
-        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1, 2}) == 196
+        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2}) == 196
 
     @test
     def foldLeft04(): Bool =
-        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1, 2, 3}) == 386
+        Vector.foldLeft((i, e) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}) == 386
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRight                                                               //
@@ -1824,19 +1824,19 @@ mod TestVector {
 
     @test
     def foldRight01(): Bool =
-        Vector.foldRight((e, i) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Vector#{}) == 100
+        Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{}) == 100
 
     @test
     def foldRight02(): Bool =
-        Vector.foldRight((e, i) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1}) == 198
+        Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1}) == 198
 
     @test
     def foldRight03(): Bool =
-        Vector.foldRight((e, i) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1, 2}) == 194
+        Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2}) == 194
 
     @test
     def foldRight04(): Bool =
-        Vector.foldRight((e, i) -> (i - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1, 2, 3}) == 382
+        Vector.foldRight((e, i) -> (i - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}) == 382
 
     /////////////////////////////////////////////////////////////////////////////
     // foldRightWithCont                                                       //
@@ -1844,19 +1844,19 @@ mod TestVector {
 
     @test
     def foldRightWithCont01(): Bool =
-        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, Vector#{}) == 100
+        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{}) == 100
 
     @test
     def foldRightWithCont02(): Bool =
-        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1}) == 198
+        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1}) == 198
 
     @test
     def foldRightWithCont03(): Bool =
-        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1, 2}) == 194
+        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2}) == 194
 
     @test
     def foldRightWithCont04(): Bool =
-        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, Vector#{1, 2, 3}) == 382
+        Vector.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Vector#{1, 2, 3}) == 382
 
     /////////////////////////////////////////////////////////////////////////////
     // foldMap                                                                 //
@@ -3188,42 +3188,42 @@ mod TestVector {
 
     @test
     def filterMap01(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{}: Vector[Int32]);
+        let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{}: Vector[Int32]);
         v == Vector#{}
 
     @test
     def filterMap02(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{1});
+        let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1});
         v == Vector#{}
 
     @test
     def filterMap03(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{2});
+        let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{2});
         v == Vector#{1}
 
     @test
     def filterMap04(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{1, 3});
+        let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1, 3});
         v == Vector#{}
 
     @test
     def filterMap05(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{1, 4});
+        let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1, 4});
         v == Vector#{2}
 
     @test
     def filterMap06(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{6, -1});
+        let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{6, -1});
         v == Vector#{3}
 
     @test
     def filterMap07(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{8, 6});
+        let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{8, 6});
         v == Vector#{4, 3}
 
     @test
     def filterMap08(): Bool =
-        let v = Vector.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{0, 1, 2, 3, 4, 5, 10});
+        let v = Vector.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{0, 1, 2, 3, 4, 5, 10});
         v == Vector#{0, 1, 2, 5}
 
     /////////////////////////////////////////////////////////////////////////////
@@ -3232,35 +3232,35 @@ mod TestVector {
 
     @test
     def findMap01(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{}: Vector[Int32]) == None
+        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{}: Vector[Int32]) == None
 
     @test
     def findMap02(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{1}) == None
+        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1}) == None
 
     @test
     def findMap03(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{2}) == Some(1)
+        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{2}) == Some(1)
 
     @test
     def findMap04(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{1, 3}) == None
+        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1, 3}) == None
 
     @test
     def findMap05(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{1, 4}) == Some(2)
+        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{1, 4}) == Some(2)
 
     @test
     def findMap06(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{6, -1}) == Some(3)
+        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{6, -1}) == Some(3)
 
     @test
     def findMap07(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{8, 6}) == Some(4)
+        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{8, 6}) == Some(4)
 
     @test
     def findMap08(): Bool =
-        Vector.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Vector#{0, 1, 2, 3, 4, 5, 10}) == Some(0)
+        Vector.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Vector#{0, 1, 2, 3, 4, 5, 10}) == Some(0)
 
     /////////////////////////////////////////////////////////////////////////////
     // toSet                                                                   //
@@ -4256,25 +4256,25 @@ mod TestVector {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def shuffle01(): Bool \ NonDet =
+    def shuffle01(): Bool \ IO =
         let v = Vector#{}: Vector[Int32];
         let v1 = Vector.shuffle(Random.new(), v);
         Vector.length(v1) == 0 and Vector.toSet(v1) == Set#{}
 
     @test
-    def shuffle02(): Bool \ NonDet =
+    def shuffle02(): Bool \ IO =
         let v = Vector#{0};
         let v1 = Vector.shuffle(Random.new(), v);
         Vector.length(v1) == 1 and Vector.toSet(v1) == Set#{0}
 
     @test
-    def shuffle03(): Bool \ NonDet =
+    def shuffle03(): Bool \ IO =
         let v = Vector#{0, 1, 2, 3};
         let v1 = Vector.shuffle(Random.new(), v);
         Vector.length(v1) == 4 and Vector.toSet(v1) == Set#{0, 1, 2, 3}
 
     @test
-    def shuffle04(): Bool \ NonDet =
+    def shuffle04(): Bool \ IO =
         let v = Vector#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
         let v1 = Vector.shuffle(Random.new(), v);
         Vector.length(v1) == 10 and Vector.toSet(v1) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}

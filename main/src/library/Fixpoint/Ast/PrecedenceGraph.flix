@@ -16,7 +16,7 @@
 
 mod Fixpoint.Ast {
 
-    use Fixpoint.Shared.PredSym
+    use Fixpoint.Ast.Shared.PredSym
 
     @Internal
     pub enum PrecedenceGraph(Set[PrecedenceEdge])

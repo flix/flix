@@ -18,9 +18,9 @@
 use Bool.{==>}
 
 ///
-/// A type class for join semi lattices.
+/// A trait for join semi lattices.
 ///
-pub lawful class JoinLattice[a] with PartialOrder[a] {
+pub lawful trait JoinLattice[a] with PartialOrder[a] {
 
     ///
     /// Returns the least upper bound of `x` and `y`.

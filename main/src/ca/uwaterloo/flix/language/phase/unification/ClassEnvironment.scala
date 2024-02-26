@@ -19,8 +19,7 @@ package ca.uwaterloo.flix.language.phase.unification
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.ClassContext
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, Symbol, Type}
-import ca.uwaterloo.flix.util.Validation
-import ca.uwaterloo.flix.util.Validation.{ToFailure, ToSuccess}
+import ca.uwaterloo.flix.util.{Result, Validation}
 import ca.uwaterloo.flix.util.collection.ListMap
 
 import scala.annotation.tailrec
@@ -39,7 +38,7 @@ object ClassEnvironment {
 
     // Case 1: tconstrs0 entail tconstr if tconstr is a super class of any member of tconstrs0
     if (superClasses.contains(tconstr)) {
-      ().toSuccess
+      Validation.success(())
     } else {
       // Case 2: there is an instance matching tconstr and all of the instance's constraints are entailed by tconstrs0
       Validation.flatMapN(byInst(tconstr, classEnv)) {
@@ -60,9 +59,9 @@ object ClassEnvironment {
     * Returns true iff the given type constraint holds under the given class environment.
     */
   def holds(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Boolean = {
-    byInst(tconstr, classEnv) match {
-      case Validation.Success(_) => true
-      case _failure => false
+    byInst(tconstr, classEnv).toHardResult match {
+      case Result.Ok(_) => true
+      case Result.Err(_) => false
     }
   }
 
@@ -75,11 +74,11 @@ object ClassEnvironment {
     def loop(tconstrs0: List[Ast.TypeConstraint], acc: List[Ast.TypeConstraint]): List[Ast.TypeConstraint] = tconstrs0 match {
       // Case 0: no tconstrs left to process, we're done
       case Nil => acc
-      case head :: tail => entail(acc ++ tail, head, classEnv) match {
+      case head :: tail => entail(acc ++ tail, head, classEnv).toHardResult match {
         // Case 1: `head` is entailed by the other type constraints, skip it
-        case Validation.Success(_) => loop(tail, acc)
+        case Result.Ok(_) => loop(tail, acc)
         // Case 2: `head` is not entailed, add it to the list
-        case _failure => loop(tail, head :: acc)
+        case Result.Err(_) => loop(tail, head :: acc)
       }
     }
 
@@ -93,9 +92,8 @@ object ClassEnvironment {
     val tconstrs1 = tconstrs0.map {
       case Ast.TypeConstraint(head, tpe, loc) => Ast.TypeConstraint(head, Type.eraseAliases(tpe), loc)
     }
-    for {
-      tconstrs <- Validation.sequence(tconstrs1.map(toHeadNormalForm(_, classEnv)))
-    } yield simplify(tconstrs.flatten, classEnv)
+    val normalization = Validation.sequence(tconstrs1.map(toHeadNormalForm(_, classEnv)))
+    Validation.mapN(normalization)(tconstrs => simplify(tconstrs.flatten, classEnv))
   }
 
   /**
@@ -103,7 +101,7 @@ object ClassEnvironment {
     */
   private def toHeadNormalForm(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, ClassContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
     if (isHeadNormalForm(tconstr.arg)) {
-      List(tconstr).toSuccess
+      Validation.success(List(tconstr))
     } else {
       byInst(tconstr, classEnv)
     }
@@ -121,25 +119,24 @@ object ClassEnvironment {
 
       // NB: This is different from the THIH implementation.
       // We also check `leq` instead of just `unifies` in order to support complex types in instances.
-      for {
-        subst <- Scheme.checkLessThanEqual(instSc, tconstrSc, Map.empty, ListMap.empty) // TODO ASSOC-TYPES ListMap.empty right?
-      } yield inst.tconstrs.map(subst(_))
+      val substVal = Scheme.checkLessThanEqual(instSc, tconstrSc, Map.empty, ListMap.empty) // TODO ASSOC-TYPES ListMap.empty right?
+      Validation.mapN(substVal)(subst => inst.tconstrs.map(subst(_)))
     }
 
-    val tconstrGroups = matchingInstances.map(tryInst).collect {
-      case Validation.Success(tconstrs) => tconstrs
+    val tconstrGroups = matchingInstances.map(tryInst).map(_.toHardResult).collect {
+      case Result.Ok(tconstrs) => tconstrs
     }
 
     tconstrGroups match {
-      case Nil => UnificationError.NoMatchingInstance(tconstr).toFailure
+      case Nil => Validation.toHardFailure(UnificationError.NoMatchingInstance(tconstr))
       case tconstrs :: Nil =>
         // apply the base tconstr location to the new tconstrs
-        tconstrs.map(_.copy(loc = tconstr.loc)).toSuccess
+        Validation.success(tconstrs.map(_.copy(loc = tconstr.loc)))
       case _ :: _ :: _ =>
         // Multiple matching instances: This will be caught in the Instances phase.
         // We return Nil here because there is no canonical set of constraints,
         // so we stop adding constraints and let the later phase take care of it.
-        Nil.toSuccess
+        Validation.success(Nil)
     }
   }
 

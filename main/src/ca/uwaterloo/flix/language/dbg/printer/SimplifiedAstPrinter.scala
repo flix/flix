@@ -27,14 +27,6 @@ object SimplifiedAstPrinter {
     * Returns the [[DocAst.Program]] representation of `root`.
     */
   def print(root: SimplifiedAst.Root): DocAst.Program = {
-    val enums = root.enums.values.map {
-      case SimplifiedAst.Enum(ann, mod, sym, cases0, _, _) =>
-        val cases = cases0.values.map {
-          case SimplifiedAst.Case(sym, tpe, _) =>
-            DocAst.Case(sym, MonoTypePrinter.print(tpe))
-        }.toList
-        DocAst.Enum(ann, mod, sym, Nil, cases)
-    }.toList
     val defs = root.defs.values.map {
       case SimplifiedAst.Def(ann, mod, sym, formals, exp, tpe, _, _) =>
         DocAst.Def(
@@ -43,10 +35,11 @@ object SimplifiedAstPrinter {
           sym,
           formals.map(printFormalParam),
           MonoTypePrinter.print(tpe),
+          PurityPrinter.print(exp.purity),
           print(exp)
         )
     }.toList
-    DocAst.Program(enums, defs)
+    DocAst.Program(Nil, defs)
   }
 
   /**
@@ -77,7 +70,6 @@ object SimplifiedAstPrinter {
         (op.sym, fparams.map(printFormalParam), print(exp))
     })
     case Do(op, exps, _, _, _) => DocAst.Expression.Do(op.sym, exps.map(print))
-    case Resume(exp, _, _) => DocAst.Expression.Resume(print(exp))
     case NewObject(name, clazz, tpe, _, methods, _) => DocAst.Expression.NewObject(name, clazz, MonoTypePrinter.print(tpe), methods.map {
       case SimplifiedAst.JvmMethod(ident, fparams, exp, retTpe, _, _) =>
         DocAst.JvmMethod(ident, fparams.map(printFormalParam), print(exp), MonoTypePrinter.print(retTpe))

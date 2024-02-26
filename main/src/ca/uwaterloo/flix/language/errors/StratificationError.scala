@@ -25,7 +25,7 @@ import ca.uwaterloo.flix.util.Formatter
 /**
   * An error raised to indicate that a constraint set is not stratified.
   */
-case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends CompilationMessage {
+case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends CompilationMessage with Recoverable {
   def kind: String = "Stratification Error"
 
   def summary: String = "The expression is not stratified. A predicate depends strongly on itself."
@@ -56,9 +56,4 @@ case class StratificationError(cycle: List[(Name.Pred, SourceLocation)], tpe: Ty
   private def fmtConstraints(formatter: Formatter): String = {
     cycle.map(t => "  " + formatter.cyan(t._1.name) + " at " + t._2.format + " (which depends on)" + System.lineSeparator()).mkString
   }
-
-  /**
-    * Returns a formatted string with helpful suggestions.
-    */
-  def explain(formatter: Formatter): Option[String] = None
 }

@@ -16,7 +16,6 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Formatter
@@ -29,28 +28,51 @@ sealed trait DerivationError extends CompilationMessage {
 }
 
 object DerivationError {
+
   /**
-    * Illegal type class derivation for an empty enum
+    * An error raised to indicate an illegal derivation.
     *
-    * @param clazz The type class being derived
-    * @param loc   The location where the error occured
+    * @param sym       the class symbol of the illegal derivation.
+    * @param legalSyms the list of class symbols of legal derivations.
+    * @param loc       the location where the error occurred.
     */
-  case class IllegalDerivationForEmptyEnum(`enum`: Symbol.EnumSym, clazz: Symbol.ClassSym, classLoc: SourceLocation)(implicit flix: Flix) extends DerivationError {
-    def summary: String = s"Illegal type class derivation for empty enum ${`enum`.toString}"
+  case class IllegalDerivation(sym: Symbol.ClassSym, legalSyms: List[Symbol.ClassSym], loc: SourceLocation) extends DerivationError with Recoverable {
+    override def summary: String = s"Illegal derivation: ${sym.name}"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""
-         |>> Illegal type class derivation for an empty enum
+      s"""${line(kind, source.name)}
+         |>> Illegal derivation '${red(sym.name)}'.
          |
-         |Attempted to derive an instance of ${cyan(clazz.toString)} for enum ${cyan(`enum`.toString)} but it is empty
-         |
-         |${code(classLoc, "illegal type class derivation")}
+         |${code(loc, "Illegal derivation.")}
          |""".stripMargin
     }
 
-    def explain(formatter: Formatter): Option[String] = Some("Empty enums cannot derive type classes")
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Only the following classes may be derived: ${legalSyms.map(_.name).mkString(", ")}."
+    })
+  }
 
-    def loc = classLoc
+  /**
+    * Illegal type class derivation for an empty enum.
+    *
+    * @param sym      the enum symbol.
+    * @param classSym the class symbol of what is being derived.
+    * @param loc      The source location where the error occurred.
+    */
+  case class IllegalDerivationForEmptyEnum(sym: Symbol.EnumSym, classSym: Symbol.ClassSym, loc: SourceLocation) extends DerivationError with Recoverable {
+    def summary: String = s"Cannot derive '${classSym.name}' for the empty enum '${sym.name}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Cannot derive '${magenta(classSym.name)}' for the empty enum '${red(sym.name)}'.
+         |
+         |${code(loc, "illegal derivation")}
+         |
+         |Flix cannot derive any instances for an empty enumeration.
+         |""".stripMargin
+    }
   }
 }

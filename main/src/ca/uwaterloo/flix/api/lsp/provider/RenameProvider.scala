@@ -46,7 +46,7 @@ object RenameProvider {
 
         case Entity.Exp(exp) => mkNotFound(uri, pos)
 
-        case Entity.Field(field) => renameField(field, newName)
+        case Entity.Label(label) => renameLabel(label, newName)
 
         case Entity.Pattern(pat) => pat match {
           case Pattern.Var(sym, _, _) => renameVar(sym, newName)
@@ -62,7 +62,7 @@ object RenameProvider {
 
         case Entity.Type(t) => t match {
           case Type.Cst(tc, _) => tc match {
-            case TypeConstructor.RecordRowExtend(field) => renameField(field, newName)
+            case TypeConstructor.RecordRowExtend(label) => renameLabel(label, newName)
             case TypeConstructor.SchemaRowExtend(pred) => renamePred(pred, newName)
             case _ => mkNotFound(uri, pos)
           }
@@ -126,9 +126,9 @@ object RenameProvider {
     rename(newName, uses + defn)
   }
 
-  private def renameField(field: Name.Field, newName: String)(implicit index: Index, root: Root): JObject = {
-    val defs = index.defsOf(field)
-    val uses = index.usesOf(field)
+  private def renameLabel(label: Name.Label, newName: String)(implicit index: Index, root: Root): JObject = {
+    val defs = index.defsOf(label)
+    val uses = index.usesOf(label)
     rename(newName, defs ++ uses)
   }
 

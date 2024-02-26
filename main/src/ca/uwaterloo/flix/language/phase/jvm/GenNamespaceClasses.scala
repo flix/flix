@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ReducedAst.{Def, Root}
+import ca.uwaterloo.flix.util.ParOps
 import org.objectweb.asm.ClassWriter
 import org.objectweb.asm.Opcodes._
 
@@ -33,31 +34,26 @@ object GenNamespaceClasses {
     //
     // Generate a namespace class for each namespace and collect the results in a map.
     //
-    namespaces.foldLeft(Map.empty[JvmName, JvmClass]) {
-      case (macc, ns) =>
-        val jvmType = JvmOps.getNamespaceClassType(ns)
-        val jvmName = jvmType.name
-        val bytecode = genBytecode(ns)
-        macc + (jvmName -> JvmClass(jvmName, bytecode))
-    }
+    ParOps.parMap(namespaces) {
+      case ns =>
+        val jvmName = JvmOps.getNamespaceClassType(ns)
+        jvmName -> JvmClass(jvmName, genBytecode(jvmName, ns))
+    }.toMap
   }
 
   /**
     * Returns the namespace class for the given namespace `ns`.
     */
-  private def genBytecode(ns: NamespaceInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
-    // JvmType for namespace
-    val namespaceClassType = JvmOps.getNamespaceClassType(ns)
-
+  private def genBytecode(jvmName: JvmName, ns: NamespaceInfo)(implicit root: Root, flix: Flix): Array[Byte] = {
     // Class visitor
     val visitor = AsmOps.mkClassWriter()
 
     // Class header
-    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, namespaceClassType.name.toInternalName, null,
+    visitor.visit(AsmOps.JavaVersion, ACC_PUBLIC + ACC_FINAL, jvmName.toInternalName, null,
       BackendObjType.JavaObject.jvmName.toInternalName, null)
 
     // Adding an IFO field and a shim method for each function in `ns` with no captured args
-    for ((_, defn) <- ns.defs if defn.cparams.isEmpty) {
+    for ((sym, defn) <- ns.defs if root.reachable.contains(sym)) {
       // Compile the shim method.
       compileShimMethod(visitor, defn)
     }
@@ -72,17 +68,13 @@ object GenNamespaceClasses {
   /**
     * Adding a shim for the function `defn` on namespace `ns`
     */
-  private def compileShimMethod(visitor: ClassWriter, defn: Def)(implicit root: Root, flix: Flix): Unit = {
-    // TODO: This can probably be removed (used in GenMain and other places)
+  private def compileShimMethod(visitor: ClassWriter, defn: Def): Unit = {
     // Name of the shim
     val name = JvmOps.getDefMethodNameInNamespaceClass(defn.sym)
 
-    // Jvm type of method args
-    val backendContinuationType = BackendObjType.Continuation(BackendType.toErasedBackendType(defn.tpe))
-
     // Erased argument and result type.
-    val erasedArgs = defn.arrowType.args.map(JvmOps.getErasedJvmType)
-    val erasedResult = JvmOps.getErasedJvmType(defn.tpe)
+    val erasedArgs = defn.fparams.map(_.tpe).map(JvmOps.getErasedJvmType)
+    val erasedResult = JvmOps.getErasedJvmType(defn.unboxedType.tpe)
 
     // Method header
     val method = visitor.visitMethod(ACC_PUBLIC + ACC_FINAL + ACC_STATIC, name, AsmOps.getMethodDescriptor(erasedArgs, erasedResult), null, null)
@@ -109,7 +101,7 @@ object GenNamespaceClasses {
       // Incrementing the offset
       offset += AsmOps.getStackSize(arg)
     }
-    method.visitMethodInsn(INVOKEVIRTUAL, functionInterface.name.toInternalName, backendContinuationType.UnwindMethod.name, AsmOps.getMethodDescriptor(Nil, erasedResult), false)
+    BackendObjType.Result.unwindSuspensionFreeThunkToType(BackendType.toErasedBackendType(defn.unboxedType.tpe), s"in shim method of $name", defn.loc)(new BytecodeInstructions.F(method))
     // no erasure here because the ns function works on erased values
 
     // Return
@@ -123,7 +115,7 @@ object GenNamespaceClasses {
   /**
     * Add the constructor for the class which initializes each field
     */
-  private def compileNamespaceConstructor(visitor: ClassWriter)(implicit root: Root, flix: Flix): Unit = {
+  private def compileNamespaceConstructor(visitor: ClassWriter): Unit = {
     // Method header
     val constructor = visitor.visitMethod(ACC_PUBLIC, "<init>", AsmOps.getMethodDescriptor(Nil, JvmType.Void), null, null)
 

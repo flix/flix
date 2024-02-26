@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LevelEnv, RigidityEnv, SourceLocation, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
@@ -40,7 +40,7 @@ object EqualityEnvironment {
     for {
       res1 <- reduceType(newTpe1, eqEnv)
       res2 <- reduceType(newTpe2, eqEnv)
-      res <- Unification.unifyTypes(res1, res2, renv, LevelEnv.Top) match {
+      res <- Unification.unifyTypes(res1, res2, renv) match {
         case Result.Ok((subst, Nil)) => Result.Ok(subst): Result[Substitution, UnificationError]
         case Result.Ok((_, _ :: _)) => Result.Err(UnificationError.UnsupportedEquality(res1, res2)): Result[Substitution, UnificationError]
         case Result.Err(_) => Result.Err(UnificationError.UnsupportedEquality(res1, res2): UnificationError): Result[Substitution, UnificationError]
@@ -87,7 +87,7 @@ object EqualityEnvironment {
     val insts = eqEnv(cst.sym)
     insts.iterator.flatMap { // TODO ASSOC-TYPES generalize this pattern (also in monomorph)
       inst =>
-        Unification.unifyTypes(arg, inst.arg, renv, LevelEnv.Top).toOption.map { // TODO level env?
+        Unification.unifyTypes(arg, inst.arg, renv).toOption.map {
           case (subst, econstrs) => subst(inst.ret) // TODO ASSOC-TYPES consider econstrs
         }
     }.nextOption() match {

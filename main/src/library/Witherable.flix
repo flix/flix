@@ -15,10 +15,10 @@
  */
 
 ///
-/// A type class for data structures that can be traversed in left-to-right
+/// A trait for data structures that can be traversed in left-to-right
 /// order with an applicative partial functor.
 ///
-pub class Witherable[t : Type -> Type] with Traversable[t], Filterable[t] {
+pub trait Witherable[t : Type -> Type] with Traversable[t], Filterable[t] {
 
     ///
     /// Returns the result of applying the applicative partial mapping function `f` to all the elements of the

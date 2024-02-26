@@ -32,8 +32,6 @@ object AtomicOp {
 
   case object Region extends AtomicOp
 
-  case object ScopeExit extends AtomicOp
-
   case class Is(sym: Symbol.CaseSym) extends AtomicOp
 
   case class Tag(sym: Symbol.CaseSym) extends AtomicOp
@@ -46,11 +44,11 @@ object AtomicOp {
 
   case object RecordEmpty extends AtomicOp
 
-  case class RecordSelect(field: Name.Field) extends AtomicOp
+  case class RecordSelect(label: Name.Label) extends AtomicOp
 
-  case class RecordExtend(field: Name.Field) extends AtomicOp
+  case class RecordExtend(label: Name.Label) extends AtomicOp
 
-  case class RecordRestrict(field: Name.Field) extends AtomicOp
+  case class RecordRestrict(label: Name.Label) extends AtomicOp
 
   case object ArrayLit extends AtomicOp
 
@@ -72,6 +70,10 @@ object AtomicOp {
 
   case object Cast extends AtomicOp
 
+  case object Unbox extends AtomicOp
+
+  case object Box extends AtomicOp
+
   case class InvokeConstructor(constructor: Constructor[_]) extends AtomicOp
 
   case class InvokeMethod(method: Method) extends AtomicOp
@@ -91,38 +93,6 @@ object AtomicOp {
   case object Lazy extends AtomicOp
 
   case object Force extends AtomicOp
-
-  case object BoxBool extends AtomicOp
-
-  case object BoxInt8 extends AtomicOp
-
-  case object BoxInt16 extends AtomicOp
-
-  case object BoxInt32 extends AtomicOp
-
-  case object BoxInt64 extends AtomicOp
-
-  case object BoxChar extends AtomicOp
-
-  case object BoxFloat32 extends AtomicOp
-
-  case object BoxFloat64 extends AtomicOp
-
-  case object UnboxBool extends AtomicOp
-
-  case object UnboxInt8 extends AtomicOp
-
-  case object UnboxInt16 extends AtomicOp
-
-  case object UnboxInt32 extends AtomicOp
-
-  case object UnboxInt64 extends AtomicOp
-
-  case object UnboxChar extends AtomicOp
-
-  case object UnboxFloat32 extends AtomicOp
-
-  case object UnboxFloat64 extends AtomicOp
 
   case class HoleError(sym: Symbol.HoleSym) extends AtomicOp
 

@@ -50,7 +50,7 @@ object NamedAst {
 
     case class RestrictableEnum(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.RestrictableEnumSym, index: TypeParam, tparams: TypeParams, derives: Derivations, cases: List[Declaration.RestrictableCase], loc: SourceLocation) extends Declaration
 
-    case class TypeAlias(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: TypeParams, tpe: Type, loc: SourceLocation) extends Declaration
+    case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: TypeParams, tpe: Type, loc: SourceLocation) extends Declaration
 
     case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, loc: SourceLocation) extends Declaration
 
@@ -117,19 +117,15 @@ object NamedAst {
 
     case class Let(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
-    case class LetRec(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class LetRec(sym: Symbol.VarSym, ann: Ast.Annotations, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class Region(tpe: ca.uwaterloo.flix.language.ast.Type, loc: SourceLocation) extends Expr
 
     case class Scope(sym: Symbol.VarSym, regionVar: Symbol.UnkindedTypeVarSym, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class ScopeExit(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
-
     case class Match(exp: Expr, rules: List[MatchRule], loc: SourceLocation) extends Expr
 
     case class TypeMatch(exp: Expr, rules: List[TypeMatchRule], loc: SourceLocation) extends Expr
-
-    case class RelationalChoose(star: Boolean, exps: List[Expr], rules: List[RelationalChooseRule], loc: SourceLocation) extends Expr
 
     case class RestrictableChoose(star: Boolean, exp: Expr, rules: List[RestrictableChooseRule], loc: SourceLocation) extends Expr
 
@@ -137,11 +133,11 @@ object NamedAst {
 
     case class RecordEmpty(loc: SourceLocation) extends Expr
 
-    case class RecordSelect(exp: Expr, field: Name.Field, loc: SourceLocation) extends Expr
+    case class RecordSelect(exp: Expr, label: Name.Label, loc: SourceLocation) extends Expr
 
-    case class RecordExtend(field: Name.Field, value: Expr, rest: Expr, loc: SourceLocation) extends Expr
+    case class RecordExtend(label: Name.Label, value: Expr, rest: Expr, loc: SourceLocation) extends Expr
 
-    case class RecordRestrict(field: Name.Field, rest: Expr, loc: SourceLocation) extends Expr
+    case class RecordRestrict(label: Name.Label, rest: Expr, loc: SourceLocation) extends Expr
 
     case class ArrayLit(exps: List[Expr], exp: Expr, loc: SourceLocation) extends Expr
 
@@ -182,8 +178,6 @@ object NamedAst {
     case class TryWith(exp: Expr, eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
     case class Do(op: Name.QName, args: List[Expr], loc: SourceLocation) extends Expr
-
-    case class Resume(exp: Expr, loc: SourceLocation) extends Expr
 
     case class InvokeConstructor(className: String, args: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
 
@@ -253,25 +247,15 @@ object NamedAst {
 
     case class Tuple(elms: List[Pattern], loc: SourceLocation) extends Pattern
 
-    case class Record(pats: List[Record.RecordFieldPattern], pat: Pattern, loc: SourceLocation) extends Pattern
+    case class Record(pats: List[Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation) extends Pattern
 
     case class RecordEmpty(loc: SourceLocation) extends Pattern
 
+    case class Error(loc: SourceLocation) extends Pattern
+
     object Record {
-      case class RecordFieldPattern(field: Name.Field, pat: Pattern, loc: SourceLocation)
+      case class RecordLabelPattern(label: Name.Label, pat: Pattern, loc: SourceLocation)
     }
-
-  }
-
-  sealed trait RelationalChoosePattern
-
-  object RelationalChoosePattern {
-
-    case class Wild(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Absent(loc: SourceLocation) extends RelationalChoosePattern
-
-    case class Present(sym: Symbol.VarSym, loc: SourceLocation) extends RelationalChoosePattern
 
   }
 
@@ -331,7 +315,7 @@ object NamedAst {
 
     case class RecordRowEmpty(loc: SourceLocation) extends Type
 
-    case class RecordRowExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation) extends Type
+    case class RecordRowExtend(label: Name.Label, tpe: Type, rest: Type, loc: SourceLocation) extends Type
 
     case class Record(row: Type, loc: SourceLocation) extends Type
 
@@ -425,8 +409,6 @@ object NamedAst {
   case class CatchRule(sym: Symbol.VarSym, className: String, exp: Expr)
 
   case class HandlerRule(op: Name.Ident, fparams: List[FormalParam], exp: Expr)
-
-  case class RelationalChooseRule(pat: List[RelationalChoosePattern], exp: Expr)
 
   case class RestrictableChooseRule(pat: RestrictableChoosePattern, exp: Expr)
 

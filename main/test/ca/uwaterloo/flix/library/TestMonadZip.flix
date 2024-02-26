@@ -16,9 +16,9 @@
 
 mod TestMonadZip {
 
-    // Generally the functions from the `MonadZip` class will be tested without
+    // Generally the functions from the `MonadZip` trait will be tested without
     // overloading in their respective modules. The tests here are basically
-    // to test the type class instances can be invoked as expected.
+    // to test the trait instances can be invoked as expected.
 
     // Helper
     def necOf2(x: a, y: a) : Nec[a] = Nec.cons(x, Nec.singleton(y))

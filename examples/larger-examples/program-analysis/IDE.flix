@@ -33,13 +33,12 @@ mod IDE {
         zero            = d,
         main            = p,
         cfg             = List[(n, n)],
-        startNodes      = List[(p, n)],            // TODO: Ondrej: Should this also be a function?
+        startNodes      = List[(p, n)],
         endNodes        = List[(p, n)],
         callGraph       = List[(n, p)],
-        eshIntra        = List[(n, d, d, f)],      // TODO: Ought to be a function: (n, d)      -> (d, f)
-        eshCallStart    = List[(n, d, p, d, f)],   // TODO: Ought to be a function: (n, d, p)   -> (d, f)
-        eshCallStartFn  = (n, d, p) -> Vector[(d, f)],
-        eshEndReturn    = List[(p, d, n, d, f)],   // TODO: Ought to be a function: (p, d, n)   -> (d, f)
+        eshIntra        = (n, d) -> Vector[(d, f)],
+        eshCallStart    = (n, d, p) -> Vector[(d, f)],
+        eshEndReturn    = (p, d, n) -> Vector[(d, f)],
         id              = f,
         apply           = (f, l) -> l,
         compose         = (f, f) -> f
@@ -50,7 +49,7 @@ mod IDE {
     ///
     pub def run(ide: IDE[p, n, d, f, l]): Vector[(n, d, l)]
         with LowerBound[f], JoinLattice[f], MeetLattice[f],
-             LowerBound[l], JoinLattice[l], MeetLattice[l],
+             LowerBound[l], UpperBound[l], JoinLattice[l], MeetLattice[l],
              Order[n], Order[d], Order[p], Order[f],  Order[l] =
 
         // Extract main.
@@ -59,6 +58,13 @@ mod IDE {
         // Extract apply and compose.
         let apply = ide.apply;
         let compose = ide.compose;
+
+        def prependId(v) = Vector.append(Vector#{(ide.zero, ide.id)}, v);
+        def augmentForZero(d, v) = if (d == ide.zero) prependId(v) else v;
+
+        def eshIntra1(n, d) = augmentForZero(d, ide.eshIntra(n, d));
+        def eshCallStart1(n, d, p) = augmentForZero(d, ide.eshCallStart(n, d, p));
+        def eshEndReturn1(p, d, n) = augmentForZero(d, ide.eshEndReturn(p, d, n));
 
         ///
         /// The core IDE Framework.
@@ -75,7 +81,7 @@ mod IDE {
             JumpFn(d1, m, d3; compose(long, short)) :-
                 CFG(n, m),
                 JumpFn(d1, n, d2; long),
-                EshIntra(n, d2, d3, short).
+                let (d3, short) = eshIntra1(n, d2).
 
             // use summary
             JumpFn(d1, m, d3; compose(caller, summary)) :-
@@ -83,13 +89,17 @@ mod IDE {
                 JumpFn(d1, n, d2; caller),
                 SummaryFn(n, d2, d3; summary).
 
-            JumpFn(d3, start, d3; ide.id) :-
+            EshCallStart(call, d2, target, d3, f) :-
                 JumpFn(_d1, call, d2; nonbottom1),
                 CallGraph(call, target),
+                let (d3, f) = eshCallStart1(call, d2, target).
+
+            JumpFn(d3, start, d3; ide.id) :-
                 EshCallStart(call, d2, target, d3, nonbottom2),
-                StartNode(target, start),
-                if (nonbottom1 != LowerBound.minValue() and
-                    nonbottom2 != LowerBound.minValue()). // TODO: Ondrej: Why are these checks here?
+                StartNode(target, start).
+
+            // Phase I line [6] from paper
+            JumpFn(ide.zero, n, ide.zero; ide.id) :- StartNode(main, n).
 
             // compute summary
             SummaryFn(call, d4, d5; compose(compose(cs, se), er)) :-
@@ -98,7 +108,15 @@ mod IDE {
                 EndNode(target, end),
                 EshCallStart(call, d4, target, d1, cs),
                 JumpFn(d1, end, d2; se),
-                EshEndReturn(target, d2, call, d5, er).
+                let (d5, er) = eshEndReturn1(target, d2, call).
+
+            // Phase II line [13] from paper
+            ResultProc(proc, dp; apply(cs,v)) :-
+                Results(call, d; v),
+                EshCallStart(call, d, proc, dp, cs).
+
+            // Phase II line [2] from paper
+            ResultProc(ide.main, ide.zero; UpperBound.maxValue()).
 
             // tabulate result
             Results(n, d; apply(fn, vp)) :-
@@ -106,39 +124,12 @@ mod IDE {
                 InProc(proc, n),
                 JumpFn(dp, n, d; fn).
 
-            // TODO: Ondrej: Add comment.
-            ResultProc(proc, dp; apply(cs,v)) :-
-                Results(call, d; v),
-                EshCallStart(call, d, proc, dp, cs).
-
-            // Variant by Magnus that uses the functional.
-            ResultProc(proc, dp; apply(cs,v)) :-
-                Proc(proc),
-                Results(call, d; v),
-                let (dp, cs) = ide.eshCallStartFn(call, d, proc).
-
-            // TODO: Ondrej: Add comment.
-            EshIntra(n, ide.zero, ide.zero, ide.id) :- CFG(n,_).
-
-            // TODO: Ondrej: Add comment.
-            EshCallStart(call, ide.zero, target, ide.zero, ide.id) :- CallGraph(call, target).
-
-            // TODO: Ondrej: Add comment.
-            EshEndReturn(target, ide.zero, call, ide.zero, ide.id) :- CallGraph(call, target).
-
-            // TODO: Ondrej: Add comment.
-            ResultProc(ide.main, ide.zero; LowerBound.minValue()).
-
-            // TODO: Ondrej: Add comment.
-            JumpFn(ide.zero, n, ide.zero; ide.id) :- StartNode(main, n).
-
         };
 
 
         let f1 = inject ide.cfg, ide.callGraph, ide.startNodes, ide.endNodes into CFG, CallGraph, StartNode, EndNode;
-        let f2 = inject ide.eshIntra, ide.eshCallStart, ide.eshEndReturn into EshIntra, EshCallStart, EshEndReturn;
 
-        query p, f1, f2 select (n, d, l) from Results(n, d; l)
+        query p, f1 select (n, d, l) from Results(n, d; l)
 
 }
 
@@ -171,6 +162,13 @@ mod ConstantProp {
     ///
     instance LowerBound[Const] {
         pub def minValue(): Const = Const.Bot
+    }
+
+    ///
+    /// The Top Element of `Const`.
+    ///
+    instance UpperBound[Const] {
+        pub def maxValue(): Const = Const.Top
     }
 
     ///
@@ -241,6 +239,9 @@ mod ConstantProp {
     ///
     pub enum MicroFunction with Eq, Order, ToString {
         case Bot,
+
+        // from paper: f = \l. a*l+b meet c; f(Top) = Top
+        // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
         case NonBot(Int32, Int32, ConstantProp.Const)
     }
 
@@ -271,17 +272,12 @@ mod ConstantProp {
                 case (MicroFunction.NonBot(a1, b1, c1), MicroFunction.NonBot(a2, b2, c2)) =>
                     if (a1 == a2 and b1 == b2)
                         MicroFunction.NonBot(a1, b1, lub(c1, c2))
-                    else if (c1 == c2)
-                        if((a2-a1) != 0 and 0 == (b1 - b2) `Int32.rem` (a2 - a1)) {
-                            // Divisible.
-                            MicroFunction.NonBot(a1, b2, lub(Const.Cst(a1 * (b1 - b2) / (a2 - a1) + b1), lub(c1, c2)))
-                        } else {
-                            // Indivisible.
-                            MicroFunction.NonBot(1, 0, Const.Top)
-                        }
-                    else {
-                        unreachable!()
-                    }
+                    else if((a2-a1) != 0 and 0 == (b1 - b2) `Int32.remainder` (a2 - a1))
+                        // Divisible.
+                        MicroFunction.NonBot(a1, b2, lub(Const.Cst(a1 * (b1 - b2) / (a2 - a1) + b1), lub(c1, c2)))
+                    else
+                        // Indivisible.
+                        MicroFunction.NonBot(1, 0, Const.Top)
             }
     }
 
@@ -320,12 +316,17 @@ mod ConstantProp {
         case MicroFunction.NonBot(a, b, c) => match l {
             case Const.Bot => Const.Bot
             case _         =>
-                // TODO: Ondrej corporate this somewhere:
-                // from paper: f = \l. a*l+b meet c; f(Top) = Top
-                // paper is upside-down, so: f = \l. a*l+b join c; f(Bot) = Bot
                 JoinLattice.leastUpperBound(sum(mul(l, lift(a)), lift(b)),c)
         }
     }
+}
+
+pub enum IR with Eq {
+    case MainEntry(Vector[String]), // main entry point of program
+    case Nop,
+    case CallConst(String, Int32), // pass constant int as arg
+    case CallVar(String, String),  // pass variable as arg
+    case Assign(String, Int32, String, Int32) // v1 := c1 * v2 + c2
 }
 
 ///
@@ -351,6 +352,7 @@ def main(): Unit \ IO =
         ("n8","n9") ::
         ("n9","ep") :: Nil;
 
+    // TODO: Build call graph from CallConst and CallVar instructions
     let callGraph =
         ("n1","p") ::
         ("n6","p") :: Nil;
@@ -363,44 +365,66 @@ def main(): Unit \ IO =
         ("main","emain") ::
         ("p","ep") :: Nil;
 
-    let eshIntra =
-        ("smain","zero","x", ConstantProp.MicroFunction.Bot) ::
-        ("n2","x","x", ConstantProp.id()) ::
-        ("n3","x","x", ConstantProp.id()) ::
+    def procedureParameters(p) = match p {
+        case "p" => "a"
+        case _ => ?unreachable
+    };
 
-        ("sp","a","a", ConstantProp.id()) ::
-        ("sp","x","x", ConstantProp.id()) ::
-        ("n4","a","a", ConstantProp.id()) ::
-        ("n4","x","x", ConstantProp.id()) ::
-        ("n5","a","a", ConstantProp.MicroFunction.NonBot(1,-2, ConstantProp.Const.Bot)) ::
-        ("n5","x","x", ConstantProp.id()) ::
-        ("n6","a","a", ConstantProp.id()) ::
-        ("n7","a","a", ConstantProp.id()) ::
-        ("n7","x","x", ConstantProp.id()) ::
-        ("n8","a","a", ConstantProp.MicroFunction.NonBot(1,2, ConstantProp.Const.Bot)) ::
-        ("n8","x","x", ConstantProp.id()) ::
-        ("n9","a","a", ConstantProp.id()) ::
-        ("n9","a","x", ConstantProp.MicroFunction.NonBot(-2,5, ConstantProp.Const.Bot)) :: Nil;
+    let globalVars = Set#{"x"};
+    def isGlobalVar(v) = Set.memberOf(v, globalVars);
 
-    let eshCallStart =
-        ("n1","zero","p","a",ConstantProp.MicroFunction.NonBot(0,7,ConstantProp.Const.Bot)) ::
-        ("n1","x","p","x",ConstantProp.id()) ::
-        ("n6","a","p","a",ConstantProp.id()) ::
-        ("n6","x","p","x",ConstantProp.id()) :: Nil;
+    def instruction(n) = match n {
+        case "smain" => IR.MainEntry(Vector#{"x"})
+        case "n1" => IR.CallConst("p", 7)
+        case "n2" => IR.Nop
+        case "n3" => IR.Nop
+        case "emain" => IR.Nop
 
-    // As a functional.
-    // Does this function need to be paramterized over the call graph (???)
-    def eshCallStartFn(n, d, p) = match (n, d, p) {
-        case ("n1", "zero", "p")    => Vector#{("a",ConstantProp.MicroFunction.NonBot(0,7,ConstantProp.Const.Bot))}
-        case ("n1","x","p")         => Vector#{("x",ConstantProp.id())}
-        case ("n6","a","p")         => Vector#{("a",ConstantProp.id())}
-        case ("n6","x","p")         => Vector#{("x",ConstantProp.id())}
+        case "sp" => IR.Nop
+        case "n4" => IR.Nop
+        case "n5" => IR.Assign("a", 1, "a", -2)
+        case "n6" => IR.CallVar("p", "a")
+        case "n7" => IR.Nop
+        case "n8" => IR.Assign("a", 1, "a", 2)
+        case "n9" => IR.Assign("x", -2, "a", 5)
+        case "ep" => IR.Nop
+
+        case _ => ?unreachable
+    };
+
+    def eshIntra(n, d) = match instruction(n) {
+        case IR.MainEntry(vars) =>
+            if (d == "zero") Vector.map(v -> (v, ConstantProp.MicroFunction.Bot), vars)
+            else Vector#{}
+        case IR.Assign(v1, c1, v2, c2) =>
+          let kill = if (d == v1) Vector#{} else Vector#{(d, ConstantProp.id())};
+          let microfn = ConstantProp.MicroFunction.NonBot(c1, c2, ConstantProp.Const.Bot);
+          let gen = if (d == v2) Vector#{(v1, microfn)} else Vector#{};
+          Vector.append(kill, gen)
+        case IR.CallConst(_, _) if isGlobalVar(d) => Vector#{}
+        case IR.CallVar(_, _) if isGlobalVar(d) => Vector#{}
+        case _ => Vector#{(d, ConstantProp.id())}
+    };
+
+    def eshCallStart(n, d, p) = match instruction(n) {
+        case IR.CallConst(proc, arg) if (proc == p) =>
+          let parm = procedureParameters(proc);
+          if (d == "zero") Vector#{(parm,ConstantProp.MicroFunction.NonBot(0,arg,ConstantProp.Const.Bot))}
+          else if (d == parm) Vector#{}
+          else Vector#{(d, ConstantProp.id())}
+        case IR.CallVar(proc, arg) if (proc == p) =>
+          let parm = procedureParameters(proc);
+          if (d == arg) Vector#{(parm,ConstantProp.id())}
+          else if (d == parm) Vector#{}
+          else Vector#{(d, ConstantProp.id())}
         case _ => Vector#{}
     };
 
-    let eshEndReturn =
-        ("p", "x", "n1", "x", ConstantProp.id()) ::
-        ("p", "x", "n6", "x", ConstantProp.id()) :: Nil;
+    def eshEndReturn(p, d, n) = match instruction(n) {
+        case IR.CallConst(proc,_) if p == proc and isGlobalVar(d) => Vector#{(d, ConstantProp.id())}
+        case IR.CallVar(proc,_) if p == proc and isGlobalVar(d) => Vector#{(d, ConstantProp.id())}
+        case _ => Vector#{}
+    };
 
     let result = IDE.run({
         zero            = "zero",
@@ -410,8 +434,7 @@ def main(): Unit \ IO =
         endNodes        = endNodes,
         callGraph       = callGraph,
         eshIntra        = eshIntra,
-        eshCallStart    = eshCallStart,         // Right now both are used, but obv. only the functional should be.
-        eshCallStartFn  = eshCallStartFn,       // Right now both are used, but obv. only the functional should be.
+        eshCallStart    = eshCallStart,
         eshEndReturn    = eshEndReturn,
         id              = ConstantProp.id(),
         apply           = ConstantProp.apply,
@@ -419,3 +442,35 @@ def main(): Unit \ IO =
         });
 
     println(result)
+
+    // Prints:
+    // Vector#{
+    //     (emain, x, Cst(-9)),
+    //     (emain, zero, Top),
+    //     (ep, a, Top),
+    //     (ep, x, Top),
+    //     (ep, zero, Top),
+    //     (n1, zero, Top),
+    //     (n2, x, Cst(-9)),
+    //     (n2, zero, Top),
+    //     (n3, x, Cst(-9)),
+    //     (n3, zero, Top),
+    //     (n4, a, Top),
+    //     (n4, zero, Top),
+    //     (n5, a, Top),
+    //     (n5, zero, Top),
+    //     (n6, a, Top),
+    //     (n6, zero, Top),
+    //     (n7, a, Top),
+    //     (n7, x, Top),
+    //     (n7, zero, Top),
+    //     (n8, a, Top),
+    //     (n8, x, Top),
+    //     (n8, zero, Top),
+    //     (n9, a, Top),
+    //     (n9, x, Top),
+    //     (n9, zero, Top),
+    //     (smain, zero, Top),
+    //     (sp, a, Top),
+    //     (sp, zero, Top)
+    // }

@@ -15,9 +15,9 @@
  */
 
 ///
-/// A type class for types that can be hashed.
+/// A trait for types that can be hashed.
 ///
-pub class Hash[a] {
+pub trait Hash[a] {
     ///
     /// Returns a hash value for the given x.
     ///

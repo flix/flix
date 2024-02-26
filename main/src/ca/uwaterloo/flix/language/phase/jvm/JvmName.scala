@@ -17,6 +17,9 @@
 
 package ca.uwaterloo.flix.language.phase.jvm
 
+import ca.uwaterloo.flix.api.Flix
+import org.objectweb.asm
+
 import java.nio.file.{Path, Paths}
 
 /**
@@ -39,6 +42,8 @@ object JvmName {
       // Descriptor of the method
       s"($argumentDescriptor)$resultDescriptor"
     }
+
+    def toAsmType: asm.Type = asm.Type.getType(toDescriptor)
   }
 
   object MethodDescriptor {
@@ -66,13 +71,62 @@ object JvmName {
     JvmName(l.init.toList, l.last)
   }
 
+  def ofClass(clazz: Class[_]): JvmName = {
+    // TODO: Ugly hack.
+    // Maybe use clazz.getPackage and clazz.getSimpleName
+    val fqn = clazz.getName.replace('.', '/')
+    JvmName.mk(fqn)
+  }
+
   val RootPackage: List[String] = Nil
+
+  /**
+    * Constructs a concatenated string using `JvmName.Delimiter`. The call
+    * `mkClassName("Tuple2", List(Object, Int, String))` would
+    * result in the string `"Tuple2$Obj$Int32$Obj"`.
+    */
+  def mkClassName(prefix: String, args: List[String]): String = {
+    // TODO: Should delimiter always be included?
+    val cPrefix = mangle(prefix)
+    if (args.isEmpty) s"$cPrefix${Flix.Delimiter}"
+    else s"$cPrefix${Flix.Delimiter}${args.map(mangle).mkString(Flix.Delimiter)}"
+  }
+
+  def mkClassName(prefix: String, arg: String): String =
+    mkClassName(prefix, List(arg))
+
+  def mkClassName(prefix: String): String =
+    mkClassName(prefix, Nil)
+
+  /**
+    * Performs name mangling on the given string `s` to avoid issues with special characters.
+    */
+  // TODO: Magnus: Use this in appropriate places.
+  def mangle(s: String): String = s.
+    replace("+", Flix.Delimiter + "plus").
+    replace("-", Flix.Delimiter + "minus").
+    replace("*", Flix.Delimiter + "asterisk").
+    replace("/", Flix.Delimiter + "fslash").
+    replace("\\", Flix.Delimiter + "bslash").
+    replace("<", Flix.Delimiter + "less").
+    replace(">", Flix.Delimiter + "greater").
+    replace("=", Flix.Delimiter + "eq").
+    replace("&", Flix.Delimiter + "ampersand").
+    replace("|", Flix.Delimiter + "bar").
+    replace("^", Flix.Delimiter + "caret").
+    replace("~", Flix.Delimiter + "tilde").
+    replace("!", Flix.Delimiter + "exclamation").
+    replace("#", Flix.Delimiter + "hashtag").
+    replace(":", Flix.Delimiter + "colon").
+    replace("?", Flix.Delimiter + "question").
+    replace("@", Flix.Delimiter + "at")
 
   //
   // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Java Names ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   //
 
   val JavaLang: List[String] = List("java", "lang")
+  val JavaLangInvoke: List[String] = List("java", "lang", "invoke")
   val JavaUtil: List[String] = List("java", "util")
   val JavaUtilFunction: List[String] = JavaUtil ::: List("function")
   val JavaUtilConcurrent: List[String] = JavaUtil ::: List("concurrent")
@@ -120,6 +174,7 @@ object JvmName {
   //
 
   val DevFlixRuntime: List[String] = List("dev", "flix", "runtime")
+  val Main: JvmName = JvmName(RootPackage, "Main")
 
 }
 
@@ -167,5 +222,5 @@ case class JvmName(pkg: List[String], name: String) {
   /**
     * Wraps this name in `BackendType.Reference(BackendObjType.Native(...))`.
     */
-  def toTpe: BackendType.Reference = BackendType.Reference(this.toObjTpe)
+  def toTpe: BackendType.Reference = this.toObjTpe.toTpe
 }

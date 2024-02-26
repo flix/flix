@@ -26,44 +26,40 @@ object Indexer {
     * Returns a reverse index for the given AST `root`.
     */
   def visitRoot(root: Root): Index = {
-    val idx1 = traverse(root.defs.values)(visitDef)
-    val idx2 = traverse(root.enums.values)(visitEnum)
-    val idx3 = traverse(root.classes.values)(visitClass)
-    val idx4 = traverse(root.instances.values) {
-      instances => traverse(instances)(visitInstance)
-    }
-    val idx5 = traverse(root.typeAliases.values)(visitTypeAlias)
-    val idx6 = traverse(root.effects.values)(visitEff)
-    idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5 ++ idx6
+    Index.all(
+      traverse(root.defs.values)(visitDef),
+      traverse(root.enums.values)(visitEnum),
+      traverse(root.classes.values)(visitClass),
+      traverse(root.instances.values) {
+        instances => traverse(instances)(visitInstance)
+      },
+      traverse(root.typeAliases.values)(visitTypeAlias),
+      traverse(root.effects.values)(visitEff),
+    )
   }
 
   /**
     * Returns a reverse index for the given definition `def0`.
     */
   private def visitDef(def0: Def): Index = def0 match {
-    case Def(_, spec, impl) =>
-      val idx0 = Index.occurrenceOf(def0)
-      val idx1 = visitSpec(spec)
-      val idx2 = visitImpl(impl)
-      idx0 ++ idx1 ++ idx2
+    case Def(_, spec, exp) =>
+      Index.all(
+        Index.occurrenceOf(def0),
+        visitSpec(spec),
+        visitExp(exp),
+      )
   }
 
   /**
     * Returns a reverse index for the given signature `sig0`.
     */
   private def visitSig(sig0: Sig): Index = sig0 match {
-    case Sig(_, spec, impl) =>
-      val idx0 = Index.occurrenceOf(sig0)
-      val idx1 = visitSpec(spec)
-      val idx2 = traverse(impl)(visitImpl)
-      idx0 ++ idx1 ++ idx2
-  }
-
-  /**
-    * Returns a reverse index for the given `impl`.
-    */
-  private def visitImpl(impl: Impl): Index = impl match {
-    case Impl(exp, _) => visitExp(exp)
+    case Sig(_, spec, exp) =>
+      Index.all(
+        Index.occurrenceOf(sig0),
+        visitSpec(spec),
+        traverse(exp)(visitExp),
+      )
   }
 
   /**
@@ -71,13 +67,14 @@ object Indexer {
     */
   private def visitSpec(spec: Spec): Index = spec match {
     case Spec(_, _, _, tparams, fparams, _, retTpe, eff, tconstrs, econstrs, _) =>
-      val idx1 = traverse(tparams)(visitTypeParam)
-      val idx2 = traverse(fparams)(visitFormalParam)
-      val idx3 = traverse(tconstrs)(visitTypeConstraint)
-      val idx4 = traverse(econstrs)(visitEqualityConstraint)
-      val idx5 = visitType(retTpe)
-      val idx6 = visitType(eff)
-      idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5
+      Index.all(
+        traverse(tparams)(visitTypeParam),
+        traverse(fparams)(visitFormalParam),
+        traverse(tconstrs)(visitTypeConstraint),
+        traverse(econstrs)(visitEqualityConstraint),
+        visitType(retTpe),
+        visitType(eff),
+      )
   }
 
   /**
@@ -85,13 +82,14 @@ object Indexer {
     */
   private def visitEnum(enum0: Enum): Index = enum0 match {
     case Enum(_, _, _, _, tparams, derives, cases, _, _) =>
-      val idx0 = Index.occurrenceOf(enum0)
-      val idx1 = traverse(tparams)(visitTypeParam)
-      val idx2 = traverse(derives.classes) {
-        case Ast.Derivation(clazz, loc) => Index.useOf(clazz, loc)
-      }
-      val idx3 = traverse(cases.values)(visitCase)
-      idx0 ++ idx1 ++ idx2 ++ idx3
+      Index.all(
+        Index.occurrenceOf(enum0),
+        traverse(tparams)(visitTypeParam),
+        traverse(derives.classes) {
+          case Ast.Derivation(clazz, loc) => Index.useOf(clazz, loc)
+        },
+        traverse(cases.values)(visitCase),
+      )
   }
 
   /**
@@ -107,13 +105,14 @@ object Indexer {
     */
   private def visitClass(class0: TypedAst.Class): Index = class0 match {
     case Class(doc, ann, mod, sym, tparam, superClasses, assocs, signatures, laws, loc) =>
-      val idx1 = Index.occurrenceOf(class0)
-      val idx2 = visitTypeParam(tparam)
-      val idx3 = traverse(superClasses)(visitTypeConstraint)
-      val idx4 = traverse(assocs)(visitAssocTypeSig)
-      val idx5 = traverse(signatures)(visitSig)
-      //      val idx6 = laws.map(visitDef) // TODO visit laws?
-      idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5
+      Index.all(
+        Index.occurrenceOf(class0),
+        visitTypeParam(tparam),
+        traverse(superClasses)(visitTypeConstraint),
+        traverse(assocs)(visitAssocTypeSig),
+        traverse(signatures)(visitSig),
+        //        laws.map(visitDef) // TODO visit laws?
+      )
   }
 
   /**
@@ -121,34 +120,38 @@ object Indexer {
     */
   private def visitInstance(instance0: Instance): Index = instance0 match {
     case Instance(_, _, _, clazz, tpe, tconstrs, assocs, defs, _, _) =>
-      val idx1 = Index.useOf(clazz.sym, clazz.loc)
-      val idx2 = visitType(tpe)
-      val idx3 = traverse(tconstrs)(visitTypeConstraint)
-      val idx4 = traverse(assocs)(visitAssocTypeDef)
-      val idx5 = traverse(defs)(visitDef)
-      idx1 ++ idx2 ++ idx3 ++ idx4 ++ idx5
+      Index.all(
+        Index.useOf(clazz.sym, clazz.loc),
+        visitType(tpe),
+        traverse(tconstrs)(visitTypeConstraint),
+        traverse(assocs)(visitAssocTypeDef),
+        traverse(defs)(visitDef),
+      )
   }
 
   /**
     * Returns a reverse index for the given type alias `alias0`.
     */
   private def visitTypeAlias(alias0: TypeAlias): Index = alias0 match {
-    case TypeAlias(_, _, _, tparams, tpe, _) =>
-      val idx1 = Index.occurrenceOf(alias0)
-      val idx2 = traverse(tparams)(visitTypeParam)
-      val idx3 = visitType(tpe)
-      idx1 ++ idx2 ++ idx3
+    case TypeAlias(_, _, _, _, tparams, tpe, _) =>
+      Index.all(
+        Index.occurrenceOf(alias0),
+        traverse(tparams)(visitTypeParam),
+        visitType(tpe),
+      )
   }
+
 
   /**
     * Returns a reverse index for the given associated type definition `assoc`.
     */
   private def visitAssocTypeDef(assoc: AssocTypeDef): Index = assoc match {
     case AssocTypeDef(_, _, Ast.AssocTypeSymUse(sym, loc), arg, tpe, _) =>
-      val idx1 = Index.useOf(sym, loc)
-      val idx2 = visitType(arg)
-      val idx3 = visitType(tpe)
-      idx1 ++ idx2 ++ idx3
+      Index.all(
+        Index.useOf(sym, loc),
+        visitType(arg),
+        visitType(tpe),
+      )
   }
 
   /**
@@ -156,9 +159,10 @@ object Indexer {
     */
   private def visitAssocTypeSig(assoc: AssocTypeSig): Index = assoc match {
     case AssocTypeSig(_, _, _, tparam, _, _) =>
-      val idx1 = Index.occurrenceOf(assoc)
-      val idx2 = visitTypeParam(tparam)
-      idx1 ++ idx2
+      Index.all(
+        Index.occurrenceOf(assoc),
+        visitTypeParam(tparam),
+      )
   }
 
   /**
@@ -166,9 +170,10 @@ object Indexer {
     */
   private def visitEff(eff0: Effect): Index = eff0 match {
     case Effect(_, _, _, _, ops, _) =>
-      val idx1 = Index.occurrenceOf(eff0)
-      val idx2 = traverse(ops)(visitOp)
-      idx1 ++ idx2
+      Index.all(
+        Index.occurrenceOf(eff0),
+        traverse(ops)(visitOp),
+      )
   }
 
   /**
@@ -176,9 +181,10 @@ object Indexer {
     */
   private def visitOp(op0: Op): Index = op0 match {
     case Op(_, spec) =>
-      val idx1 = Index.occurrenceOf(op0)
-      val idx2 = visitSpec(spec)
-      idx1 ++ idx2
+      Index.all(
+        Index.occurrenceOf(op0),
+        visitSpec(spec),
+      )
   }
 
   /**
@@ -227,7 +233,7 @@ object Indexer {
     case Expr.Let(sym, _, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expr.LetRec(sym, _, exp1, exp2, _, _, _) =>
+    case Expr.LetRec(sym, _, _, exp1, exp2, _, _, _) =>
       Index.occurrenceOf(sym, exp1.tpe) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.Region(_, _) =>
@@ -236,9 +242,6 @@ object Indexer {
     case Expr.Scope(sym, _, exp, _, _, loc) =>
       val tpe = Type.mkRegion(sym.tvar, loc)
       Index.occurrenceOf(sym, tpe) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
-
-    case Expr.ScopeExit(exp1, exp2, _, _, _) =>
-      visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ Index.occurrenceOf(exp0)
@@ -263,11 +266,6 @@ object Indexer {
       }
       i0 ++ i1
 
-    case Expr.RelationalChoose(exps, rules, _, _, _) =>
-      visitExps(exps) ++ traverse(rules) {
-        case RelationalChooseRule(_, exp) => visitExp(exp)
-      } ++ Index.occurrenceOf(exp0)
-
     case Expr.RestrictableChoose(_, exp, rules, _, _, _) =>
       visitExp(exp) ++ traverse(rules) {
         case RestrictableChooseRule(_, body) => visitExp(body)
@@ -288,14 +286,14 @@ object Indexer {
     case Expr.RecordEmpty(_, _) =>
       Index.occurrenceOf(exp0)
 
-    case Expr.RecordSelect(exp, field, _, _, _) =>
-      Index.occurrenceOf(field) ++ Index.useOf(field) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
+    case Expr.RecordSelect(exp, label, _, _, _) =>
+      Index.occurrenceOf(label) ++ Index.useOf(label) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expr.RecordExtend(field, exp1, exp2, _, _, _) =>
-      Index.occurrenceOf(field) ++ Index.defOf(field) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
+    case Expr.RecordExtend(label, exp1, exp2, _, _, _) =>
+      Index.occurrenceOf(label) ++ Index.defOf(label) ++ visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expr.RecordRestrict(field, exp, _, _, _) =>
-      Index.occurrenceOf(field) ++ Index.defOf(field) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
+    case Expr.RecordRestrict(label, exp, _, _, _) =>
+      Index.occurrenceOf(label) ++ Index.defOf(label) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expr.ArrayLit(exps, exp, _, _, _) =>
       visitExps(exps) ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
@@ -370,9 +368,6 @@ object Indexer {
       val parent = Entity.Exp(exp0)
       traverse(exps)(visitExp) ++ Index.occurrenceOf(exp0) ++ Index.useOf(op.sym, op.loc, parent)
 
-    case Expr.Resume(exp, _, _) =>
-      visitExp(exp) ++ Index.occurrenceOf(exp0)
-
     case Expr.InvokeConstructor(_, args, _, _, _) =>
       visitExps(args) ++ Index.occurrenceOf(exp0)
 
@@ -433,16 +428,16 @@ object Indexer {
     case Expr.Force(exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expr.FixpointConstraintSet(cs, _, _, _) => traverse(cs)(visitConstraint)
+    case Expr.FixpointConstraintSet(cs, _, _) => traverse(cs)(visitConstraint)
 
-    case Expr.FixpointLambda(pparams, exp, _, _, _, _) =>
+    case Expr.FixpointLambda(pparams, exp, _, _, _) =>
       val i0 = traverse(pparams)(visitPredicateParam)
       i0 ++ visitExp(exp) ++ Index.occurrenceOf(exp0)
 
-    case Expr.FixpointMerge(exp1, exp2, _, _, _, _) =>
+    case Expr.FixpointMerge(exp1, exp2, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ Index.occurrenceOf(exp0)
 
-    case Expr.FixpointSolve(exp, _, _, _, _) =>
+    case Expr.FixpointSolve(exp, _, _, _) =>
       visitExp(exp) ++ Index.occurrenceOf(exp0)
 
     case Expr.FixpointFilter(_, exp, _, _, _) =>
@@ -476,8 +471,9 @@ object Indexer {
       Index.occurrenceOf(pat0) ++ visitPat(pat) ++ Index.useOf(sym, loc, parent)
     case Pattern.Tuple(elms, _, _) => Index.occurrenceOf(pat0) ++ visitPats(elms)
     case Pattern.Record(pats, pat, _, _) =>
-      Index.occurrenceOf(pat0) ++ traverse(pats)(visitRecordFieldPattern) ++ visitPat(pat)
+      Index.occurrenceOf(pat0) ++ traverse(pats)(visitRecordLabelPattern) ++ visitPat(pat)
     case Pattern.RecordEmpty(_, _) => Index.empty
+    case Pattern.Error(_, _) => Index.empty
   }
 
   /**
@@ -486,10 +482,10 @@ object Indexer {
   private def visitPats(pats0: List[Pattern]): Index = traverse(pats0)(visitPat)
 
   /**
-    * Returns a reverse index for the given [[Pattern.Record.RecordFieldPattern]] `rfp`.
+    * Returns a reverse index for the given [[Pattern.Record.RecordLabelPattern]] `rfp`.
     */
-  private def visitRecordFieldPattern(rfp: Pattern.Record.RecordFieldPattern): Index = {
-    Index.useOf(rfp.field) ++ visitType(rfp.tpe) ++ visitPat(rfp.pat)
+  private def visitRecordLabelPattern(rfp: Pattern.Record.RecordLabelPattern): Index = {
+    Index.useOf(rfp.label) ++ visitType(rfp.tpe) ++ visitPat(rfp.pat)
   }
 
   /**
@@ -497,9 +493,10 @@ object Indexer {
     */
   private def visitConstraint(c0: Constraint): Index = c0 match {
     case Constraint(_, head, body, _) =>
-      val idx1 = visitHead(head)
-      val idx2 = traverse(body)(visitBody)
-      idx1 ++ idx2
+      Index.all(
+        visitHead(head),
+        traverse(body)(visitBody),
+      )
   }
 
   /**
@@ -550,7 +547,7 @@ object Indexer {
       case TypeConstructor.Arrow(_) =>
         // We do not index arrow constructors.
         Index.empty
-      case TypeConstructor.RecordRowExtend(field) => Index.occurrenceOf(tpe0) ++ Index.useOf(field)
+      case TypeConstructor.RecordRowExtend(label) => Index.occurrenceOf(tpe0) ++ Index.useOf(label)
       case TypeConstructor.SchemaRowExtend(pred) => Index.occurrenceOf(tpe0) ++ Index.useOf(pred)
       case TypeConstructor.Enum(sym, _) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc)
       case TypeConstructor.Effect(sym) => Index.occurrenceOf(tpe0) ++ Index.useOf(sym, loc)

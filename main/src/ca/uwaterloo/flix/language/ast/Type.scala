@@ -17,8 +17,10 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatType}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.language.ast.Symbol
 
 import java.util.Objects
 import scala.annotation.tailrec
@@ -43,12 +45,16 @@ sealed trait Type {
     * Returns the type variables in `this` type.
     *
     * Returns a sorted set to ensure that the compiler is deterministic.
+    *
+    * Note: We cache `typeVars` to improve performance.
     */
-  def typeVars: SortedSet[Type.Var] = this match {
+  lazy val typeVars: SortedSet[Type.Var] = this match {
     case x: Type.Var => SortedSet(x)
+
     case Type.Cst(tc, _) => SortedSet.empty
+
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
-    case Type.Alias(_, args, _, _) => args.flatMap(_.typeVars).to(SortedSet)
+    case Type.Alias(_, args, _, _) => args.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
     case Type.AssocType(_, arg, _, _) => arg.typeVars // TODO ASSOC-TYPES throw error?
   }
 
@@ -58,8 +64,8 @@ sealed trait Type {
   def effects: SortedSet[Symbol.EffectSym] = this match {
     case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(sym)
 
-    case _: Type.Cst => SortedSet.empty
     case _: Type.Var => SortedSet.empty
+    case _: Type.Cst => SortedSet.empty
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.effects ++ tpe2.effects
     case Type.Alias(_, _, tpe, _) => tpe.effects
@@ -72,12 +78,25 @@ sealed trait Type {
   def cases: SortedSet[Symbol.RestrictableCaseSym] = this match {
     case Type.Cst(TypeConstructor.CaseSet(syms, _), _) => syms
 
-    case _: Type.Cst => SortedSet.empty
     case _: Type.Var => SortedSet.empty
+    case _: Type.Cst => SortedSet.empty
 
     case Type.Apply(tpe1, tpe2, _) => tpe1.cases ++ tpe2.cases
     case Type.Alias(_, _, tpe, _) => tpe.cases
     case Type.AssocType(_, arg, _, _) => arg.cases // TODO ASSOC-TYPES throw error?
+  }
+
+  /**
+    * Returns all the associated types in the given type.
+    */
+  def assocs: Set[Type.AssocType] = this match {
+    case t: Type.AssocType => Set(t)
+
+    case _: Type.Var => Set.empty
+    case _: Type.Cst => Set.empty
+
+    case Type.Apply(tpe1, tpe2, _) => tpe1.assocs ++ tpe2.assocs
+    case Type.Alias(_, _, tpe, _) => tpe.assocs
   }
 
   /**
@@ -324,14 +343,14 @@ object Type {
   val Pure: Type = Type.Cst(TypeConstructor.Pure, SourceLocation.Unknown)
 
   /**
-    * Represents the universal effect set.
+    * Represents the IO effect.
     */
-  val EffUniv: Type = Type.Cst(TypeConstructor.EffUniv, SourceLocation.Unknown)
+  val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)
 
   /**
     * Represents the universal effect set.
     */
-  val Impure: Type = EffUniv
+  val Univ: Type = Type.Cst(TypeConstructor.Univ, SourceLocation.Unknown)
 
   /**
     * Represents the Complement type constructor.
@@ -485,7 +504,7 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.Var = {
+  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit level: Level, flix: Flix): Type.Var = {
     val sym = Symbol.freshKindedTypeVarSym(text, k, isRegion, loc)
     Type.Var(sym, loc)
   }
@@ -568,7 +587,7 @@ object Type {
   /**
     * Returns the EffUniv type with the given source location `loc`.
     */
-  def mkEffUniv(loc: SourceLocation): Type = Type.Cst(TypeConstructor.EffUniv, loc)
+  def mkEffUniv(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Univ, loc)
 
   /**
     * Returns the type `Sender[tpe, reg]` with the given optional source location `loc`.
@@ -616,9 +635,9 @@ object Type {
   def mkPureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Pure, b, loc)
 
   /**
-    * Constructs the impure arrow type A ~> B.
+    * Constructs the IO arrow type A -> B \ IO.
     */
-  def mkImpureArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, Impure, b, loc)
+  def mkIoArrow(a: Type, b: Type, loc: SourceLocation): Type = mkArrowWithEffect(a, IO, b, loc)
 
   /**
     * Constructs the arrow type A -> B \ p.
@@ -631,9 +650,9 @@ object Type {
   def mkPureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Pure, b, loc)
 
   /**
-    * Constructs the impure curried arrow type A_1 -> (A_2  -> ... -> A_n) ~> B.
+    * Constructs the IO curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B \ IO.
     */
-  def mkImpureCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, Impure, b, loc)
+  def mkIoCurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkCurriedArrowWithEffect(as, IO, b, loc)
 
   /**
     * Constructs the curried arrow type A_1 -> (A_2  -> ... -> A_n) -> B \ e.
@@ -650,9 +669,9 @@ object Type {
   def mkPureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Pure, b, loc)
 
   /**
-    * Constructs the impure uncurried arrow type (A_1, ..., A_n) ~> B.
+    * Constructs the IO uncurried arrow type (A_1, ..., A_n) -> B \ IO.
     */
-  def mkImpureUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, Impure, b, loc)
+  def mkIoUncurriedArrow(as: List[Type], b: Type, loc: SourceLocation): Type = mkUncurriedArrowWithEffect(as, IO, b, loc)
 
   /**
     * Constructs the uncurried arrow type (A_1, ..., A_n) -> B \ p.
@@ -670,16 +689,6 @@ object Type {
     */
   def mkApply(base: Type, ts: List[Type], loc: SourceLocation): Type = ts.foldLeft(base) {
     case (acc, t) => Apply(acc, t, loc)
-  }
-
-  /**
-    * Returns the type `Choice[tpe, isAbsent, isPresent]`.
-    */
-  def mkChoice(tpe0: Type, isAbsent: Type, isPresent: Type, loc: SourceLocation): Type = {
-    val sym = Symbol.mkEnumSym("Choice")
-    val kind = Kind.Star ->: Kind.Bool ->: Kind.Bool ->: Kind.Star
-    val tc = TypeConstructor.Enum(sym, kind)
-    Apply(Apply(Apply(Cst(tc, loc), tpe0, loc), isAbsent, loc), isPresent, loc)
   }
 
   /**
@@ -736,8 +745,8 @@ object Type {
   /**
     * Constructs a RecordExtend type.
     */
-  def mkRecordRowExtend(field: Name.Field, tpe: Type, rest: Type, loc: SourceLocation): Type = {
-    mkApply(Type.Cst(TypeConstructor.RecordRowExtend(field), loc), List(tpe, rest), loc)
+  def mkRecordRowExtend(label: Name.Label, tpe: Type, rest: Type, loc: SourceLocation): Type = {
+    mkApply(Type.Cst(TypeConstructor.RecordRowExtend(label), loc), List(tpe, rest), loc)
   }
 
   /**
@@ -792,7 +801,7 @@ object Type {
     */
   def mkComplement(tpe0: Type, loc: SourceLocation): Type = tpe0 match {
     case Type.Pure => Type.mkEffUniv(loc)
-    case Type.EffUniv => Type.mkPure(loc)
+    case Type.Univ => Type.mkPure(loc)
     case _ => Type.Apply(Type.Cst(TypeConstructor.Complement, loc), tpe0, loc)
   }
 
@@ -811,8 +820,8 @@ object Type {
   def mkUnion(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.Pure, _), _) => tpe2
     case (_, Type.Cst(TypeConstructor.Pure, _)) => tpe1
-    case (Type.Cst(TypeConstructor.EffUniv, _), _) => Type.EffUniv
-    case (_, Type.Cst(TypeConstructor.EffUniv, _)) => Type.EffUniv
+    case (Type.Cst(TypeConstructor.Univ, _), _) => Type.Univ
+    case (_, Type.Cst(TypeConstructor.Univ, _)) => Type.Univ
     case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.Union, tpe1, loc), tpe2, loc)
   }
@@ -843,8 +852,8 @@ object Type {
   def mkIntersection(tpe1: Type, tpe2: Type, loc: SourceLocation): Type = (tpe1, tpe2) match {
     case (Type.Cst(TypeConstructor.Pure, _), _) => Type.Pure
     case (_, Type.Cst(TypeConstructor.Pure, _)) => Type.Pure
-    case (Type.Cst(TypeConstructor.EffUniv, _), _) => tpe2
-    case (_, Type.Cst(TypeConstructor.EffUniv, _)) => tpe1
+    case (Type.Cst(TypeConstructor.Univ, _), _) => tpe2
+    case (_, Type.Cst(TypeConstructor.Univ, _)) => tpe1
     case (Type.Var(sym1, _), Type.Var(sym2, _)) if sym1 == sym2 => tpe1
     case _ => Type.Apply(Type.Apply(Type.Intersection, tpe1, loc), tpe2, loc)
   }
@@ -853,7 +862,7 @@ object Type {
     * Returns the type `Or(tpe1, Or(tpe2, ...))`.
     */
   def mkIntersection(tpes: List[Type], loc: SourceLocation): Type = tpes match {
-    case Nil => Type.EffUniv
+    case Nil => Type.Univ
     case x :: xs => mkIntersection(x, mkIntersection(xs, loc), loc)
   }
 
@@ -1042,12 +1051,32 @@ object Type {
     else if (c.isArray) {
       val comp = c.getComponentType
       val elmType = getFlixType(comp)
-      Type.mkArray(elmType, Type.EffUniv, SourceLocation.Unknown)
+      Type.mkArray(elmType, Type.IO, SourceLocation.Unknown)
     }
     // otherwise native type
     else {
       Type.mkNative(c, SourceLocation.Unknown)
     }
+  }
+
+  /**
+    * Returns the type of the given constant.
+    */
+  def constantType(cst: Ast.Constant): Type = cst match {
+    case Constant.Unit => Type.Unit
+    case Constant.Null => Type.Null
+    case Constant.Bool(_) => Type.Bool
+    case Constant.Char(_) => Type.Char
+    case Constant.Float32(_) => Type.Float32
+    case Constant.Float64(_) => Type.Float64
+    case Constant.BigDecimal(_) => Type.BigDecimal
+    case Constant.Int8(_) => Type.Int8
+    case Constant.Int16(_) => Type.Int16
+    case Constant.Int32(_) => Type.Int32
+    case Constant.Int64(_) => Type.Int64
+    case Constant.BigInt(_) => Type.BigInt
+    case Constant.Str(_) => Type.Str
+    case Constant.Regex(_) => Type.Regex
   }
 
 }
