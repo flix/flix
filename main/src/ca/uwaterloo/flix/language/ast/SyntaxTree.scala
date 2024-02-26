@@ -38,7 +38,7 @@ object SyntaxTree {
    * @param loc      The location that the node spans in the source file.
    * @param children The children of the node.
    */
-  case class Tree(kind: TreeKind, children: Array[Child], loc: SourceLocation)
+  case class Tree(kind: TreeKind, var children: Array[Child], var loc: SourceLocation)
 
   sealed trait Child
 
@@ -177,6 +177,8 @@ object SyntaxTree {
 
       case object Do extends Expr
 
+      case object Debug extends Expr
+
       case object FixpointConstraint extends Expr
 
       case object FixpointConstraintSet extends Expr
@@ -201,9 +203,11 @@ object SyntaxTree {
 
       case object ForMonadic extends Expr
 
-      case object Generator extends Expr
+      case object ForFragmentGenerator extends Expr
 
-      case object Guard extends Expr
+      case object ForFragmentGuard extends Expr
+
+      case object ForFragmentLet extends Expr
 
       case object Hole extends Expr
 
