@@ -94,10 +94,11 @@ object TypeMinimization {
     // Compute the variables in `tpe`.
     val tvars = tpe.typeVars.toList.map(tvar => BoolFormula.VarOrEff.Var(tvar.sym))
     val effs = tpe.effects.toList.map(BoolFormula.VarOrEff.Eff)
+    val assocs = tpe.assocs.toList.map(assoc => BoolFormula.VarOrEff.Assoc(assoc.cst.sym, assoc.arg))
 
     // Construct a bi-directional map from type variables to indices.
     // The idea is that the first variable becomes x0, the next x1, and so forth.
-    val m = (tvars ++ effs).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.VarOrEff, BoolFormulaTable.Variable]) {
+    val m = (tvars ++ effs ++ assocs).zipWithIndex.foldLeft(Bimap.empty[BoolFormula.VarOrEff, BoolFormulaTable.Variable]) {
       case (macc, (sym, x)) => macc + (sym -> x)
     }
 

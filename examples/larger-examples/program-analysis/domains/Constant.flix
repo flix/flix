@@ -145,13 +145,13 @@ mod Domain.Constant {
     ///
     /// Over-approximates integer `modulus`.
     ///
-//    #safe2((x, y) -> x `rem` y)
+//    #safe2((x, y) -> x `remainder` y)
 //    #strict2 #monotone2
     pub def modulo(e1: Constant, e2: Constant): Constant =
         match (e1, e2) {
             case (Constant.Bot, _)                    => Constant.Bot
             case (_, Constant.Bot)                    => Constant.Bot
-            case (Constant.Cst(n1), Constant.Cst(n2)) => Constant.Cst(n1 `Int32.rem` n2)
+            case (Constant.Cst(n1), Constant.Cst(n2)) => Constant.Cst(n1 `Int32.remainder` n2)
             case _                                    => Constant.Top
         }
 
