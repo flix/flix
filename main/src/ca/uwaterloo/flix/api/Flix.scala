@@ -507,8 +507,7 @@ class Flix {
     "Test.Kind.Trait.flix" -> LocalResource.get("/test/flix/Test.Kind.Trait.flix"),
     "Test.Exp.Hole.flix" -> LocalResource.get("/test/flix/Test.Exp.Hole.flix"),
     "Test.Exp.HoleWithExp.flix" -> LocalResource.get("/test/flix/Test.Exp.HoleWithExp.flix"),
-
-    //    "Test.Kind.Enum.flix" -> LocalResource.get("/test/flix/Test.Kind.Enum.flix"),
+    "Test.Kind.Enum.flix" -> LocalResource.get("/test/flix/Test.Kind.Enum.flix"),
 
     //    "Test.Predicate.Guard.flix" -> LocalResource.get("/test/flix/Test.Predicate.Guard.flix"),
 

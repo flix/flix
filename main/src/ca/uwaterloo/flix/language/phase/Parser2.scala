@@ -2433,7 +2433,7 @@ object Parser2 {
       // So the prefix is always "( name '='" or "'|'"
       val next = nth(1)
       val nextnext = nth(2)
-      val isRecordRow = next == TokenKind.Bar || next == TokenKind.NameLowerCase && nextnext == TokenKind.Equal
+      val isRecordRow = next == TokenKind.Bar || next == TokenKind.NameLowerCase && nextnext == TokenKind.Equal || next == TokenKind.ParenR
       if (isRecordRow) {
         recordRow()
       } else {
