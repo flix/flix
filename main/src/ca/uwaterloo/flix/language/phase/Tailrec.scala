@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast
-import ca.uwaterloo.flix.language.ast.LiftedAst._
+import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.util.ParOps
 
 /**
@@ -34,7 +34,6 @@ object Tailrec {
     */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Tailrec") {
     val defns = ParOps.parMapValues(root.defs)(visitDef)
-
     root.copy(defs = defns)
   }
 
@@ -55,6 +54,14 @@ object Tailrec {
       case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
         val e2 = visitExp(exp2)
         Expr.Let(sym, exp1, e2, tpe, purity, loc)
+
+      /*
+       * LetRec: The body expression is in tail position.
+       * (The value expression is *not* in tail position).
+       */
+      case Expr.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
+        val e2 = visitExp(exp2)
+        Expr.LetRec(varSym, index, defSym, exp1, e2, tpe, purity, loc)
 
       /*
        * If-Then-Else: Consequent and alternative are both in tail position.
@@ -78,7 +85,7 @@ object Tailrec {
        * ApplyClo.
        */
       case Expr.ApplyClo(exp, exps, _, tpe, purity, loc) =>
-        Expr.ApplyClo(exp, exps, Ast.CallType.TailCall, tpe, purity, loc)
+        Expr.ApplyClo(exp, exps, Ast.ExpPosition.Tail, tpe, purity, loc)
 
       /*
        * ApplyDef.
@@ -87,11 +94,14 @@ object Tailrec {
         // Check whether this is a self recursive call.
         if (defn.sym != sym) {
           // Case 1: Tail recursive call.
-          Expr.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc)
+          Expr.ApplyDef(sym, exps, Ast.ExpPosition.Tail, tpe, purity, loc)
         } else {
           // Case 2: Self recursive call.
           Expr.ApplySelfTail(sym, exps, tpe, purity, loc)
         }
+
+      case Expr.TryWith(exp, _, effUse, rules, tpe, purity, loc) =>
+        Expr.TryWith(exp, Ast.ExpPosition.Tail, effUse, rules, tpe, purity, loc)
 
       /*
        * Other expression: No calls in tail position.
@@ -99,7 +109,7 @@ object Tailrec {
       case _ => exp0
     }
 
-    defn.copy(exp = visitExp(defn.exp))
+    defn.copy(expr = visitExp(defn.expr))
   }
 
 }

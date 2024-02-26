@@ -18,7 +18,7 @@
 package ca.uwaterloo.flix.language.phase.jvm
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.CallType
+import ca.uwaterloo.flix.language.ast.Ast.ExpPosition
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.SemanticOp._
 import ca.uwaterloo.flix.language.ast.{MonoType, _}
@@ -1078,7 +1078,7 @@ object GenExpression {
 
     case Expr.ApplyClo(exp, exps, ct, _, purity, loc) =>
       ct match {
-        case CallType.TailCall =>
+        case ExpPosition.Tail =>
           // Type of the function abstract class
           val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
           val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
@@ -1100,7 +1100,7 @@ object GenExpression {
           // Return the closure
           mv.visitInsn(ARETURN)
 
-        case CallType.NonTailCall =>
+        case ExpPosition.NonTail =>
           // Type of the function abstract class
           val functionInterface = JvmOps.getFunctionInterfaceType(exp.tpe)
           val closureAbstractClass = JvmOps.getClosureAbstractClassType(exp.tpe)
@@ -1140,7 +1140,7 @@ object GenExpression {
       }
 
     case Expr.ApplyDef(sym, exps, ct, _, purity, loc) => ct match {
-      case CallType.TailCall =>
+      case ExpPosition.Tail =>
         // Type of the function abstract class
         val functionInterface = JvmOps.getFunctionInterfaceType(root.defs(sym).arrowType)
 
@@ -1158,7 +1158,7 @@ object GenExpression {
         // Return the def
         mv.visitInsn(ARETURN)
 
-      case CallType.NonTailCall =>
+      case ExpPosition.NonTail =>
         // JvmType of Def
         val defJvmType = JvmOps.getFunctionDefinitionClassType(sym)
 
@@ -1385,7 +1385,7 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
 
-    case Expr.TryWith(exp, effUse, rules, _, _, _) =>
+    case Expr.TryWith(exp, _, effUse, rules, _, _, _) =>
       // exp is a Unit -> exp.tpe closure
       val effectJvmName = JvmOps.getEffectDefinitionClassType(effUse.sym).name
       val ins = {
@@ -1425,7 +1425,7 @@ object GenExpression {
 
       mv.visitLabel(afterUnboxing)
 
-    case Expr.Do(op, exps, tpe, _, _) =>
+    case Expr.Do(op, exps, _, tpe, _, _) =>
       val pcPoint = ctx.pcCounter(0) + 1
       val pcPointLabel = ctx.pcLabels(pcPoint)
       val afterUnboxing = new Label()

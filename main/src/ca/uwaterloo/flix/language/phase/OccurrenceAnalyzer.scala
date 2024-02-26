@@ -106,8 +106,8 @@ object OccurrenceAnalyzer {
     val (e, oi) = visitExp(defn.sym, defn.exp)
     /// Def consists of a single direct call to a def
     val isDirectCall = e match {
-      case OccurrenceAst.Expression.ApplyDef(_, _, Ast.CallType.TailCall, _, _, _) => true
-      case OccurrenceAst.Expression.ApplyClo(clo, _, Ast.CallType.TailCall, _, _, _) =>
+      case OccurrenceAst.Expression.ApplyDef(_, _, _, _, _) => true
+      case OccurrenceAst.Expression.ApplyClo(clo, _, _, _, _) =>
         clo match {
           case OccurrenceAst.Expression.ApplyAtomic(AtomicOp.Closure(_), _, _, _, _) => true
           case _ => false
@@ -151,7 +151,7 @@ object OccurrenceAnalyzer {
       }
       (OccurrenceAst.Expression.ApplyAtomic(op, es, tpe, purity, loc), o1)
 
-    case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
+    case Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
       val (e, o1) = visitExp(sym0, exp)
       val (es, o2) = visitExps(sym0, exps)
       val o3 = combineAllSeq(o1, o2)
@@ -159,21 +159,15 @@ object OccurrenceAnalyzer {
         case Expr.ApplyAtomic(AtomicOp.Closure(sym), _, _, _, _) =>
           val o4 = OccurInfo(Map(sym -> Once), Map.empty, 0)
           val o5 = combineAllSeq(o3, o4)
-          (OccurrenceAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc), o5.increaseSizeByOne())
-        case _ => (OccurrenceAst.Expression.ApplyClo(e, es, ct, tpe, purity, loc), o3.increaseSizeByOne())
+          (OccurrenceAst.Expression.ApplyClo(e, es, tpe, purity, loc), o5.increaseSizeByOne())
+        case _ => (OccurrenceAst.Expression.ApplyClo(e, es, tpe, purity, loc), o3.increaseSizeByOne())
       }
 
-    case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+    case Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
       val (es, o1) = visitExps(sym0, exps)
       val o2 = OccurInfo(Map(sym -> Once), Map.empty, 0)
       val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.ApplyDef(sym, es, ct, tpe, purity, loc), o3.increaseSizeByOne())
-
-    case Expr.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
-      val (as, o1) = visitExps(sym0, actuals)
-      val o2 = OccurInfo(Map(sym -> Once), Map.empty, 0)
-      val o3 = combineAllSeq(o1, o2)
-      (OccurrenceAst.Expression.ApplySelfTail(sym, as, tpe, purity, loc), o3.increaseSizeByOne())
+      (OccurrenceAst.Expression.ApplyDef(sym, es, tpe, purity, loc), o3.increaseSizeByOne())
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val (e1, o1) = visitExp(sym0, exp1)

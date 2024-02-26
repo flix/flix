@@ -86,11 +86,11 @@ object AstPrinter {
       Some(("Simplifier", () => formatSimplifiedAst(flix.getSimplifierAst))),
       Some(("ClosureConv", () => formatSimplifiedAst(flix.getClosureConvAst))),
       Some(("LambdaLift", () => formatLiftedAst(flix.getLambdaLiftAst))),
-      Some(("Tailrec", () => formatLiftedAst(flix.getTailrecAst))),
       Some(("Optimizer", () => formatLiftedAst(flix.getOptimizerAst))),
       Some(("TreeShaker2", () => formatLiftedAst(flix.getTreeShaker2Ast))),
       Some(("EffectBinder", () => formatReducedAst(flix.getEffectBinderAst))),
       Some(("Eraser", () => formatReducedAst(flix.getEraserAst))),
+      Some(("Tailrec", () => formatReducedAst(flix.getTailrecAst))),
       Some(("Reducer", () => formatReducedAst(flix.getReducerAst))),
       Some(("VarOffsets", () => formatReducedAst(flix.getVarOffsetsAst))),
       wipPhase("JvmBackend")

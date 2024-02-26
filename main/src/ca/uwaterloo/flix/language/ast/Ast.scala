@@ -344,20 +344,20 @@ object Ast {
   }
 
   /**
-    * A common super-type that represents a call type.
+    * A common super-type that represents a expression position (e.g. tail position).
     */
-  sealed trait CallType
+  sealed trait ExpPosition
 
-  object CallType {
+  object ExpPosition {
     /**
-      * Represents a call in tail position.
+      * Represents tail position.
       */
-    case object TailCall extends CallType
+    case object Tail extends ExpPosition
 
     /**
-      * Represents a call in non-tail position.
+      * Represents non-tail position.
       */
-    case object NonTailCall extends CallType
+    case object NonTail extends ExpPosition
   }
 
   /**
