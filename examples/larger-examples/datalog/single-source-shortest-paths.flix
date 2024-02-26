@@ -46,7 +46,7 @@ mod ShortestPath {
 
     instance PartialOrder[Path[a]] {
         pub def lessEqual(x: Path[a], y: Path[a]): Bool = match (x, y) {
-            case (Bot, Bot)           => true
+            case (Bot, _)             => true
             case (Path(xs), Path(ys)) => List.length(xs) >= List.length(ys)
             case _                    => false
         }
