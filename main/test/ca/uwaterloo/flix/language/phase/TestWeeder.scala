@@ -1105,6 +1105,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalTypeConstraintParameter](result)
   }
 
+  test("IllegalTypeConstraintParameter.03") {
+    val input =
+      """
+        |instance C[a] with C[C[C[String]]]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalTypeConstraintParameter](result)
+  }
+
   test("IllegalUse.Alias.01") {
     val input =
       """
