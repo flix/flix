@@ -494,13 +494,13 @@ object FastBoolUnification {
       *
       * The size is the number of constants, variables, and connectives in the term.
       *
-      * For example, `size(x /\ y) = 3` and `size(x /\ not y) = 4`.
+      * For example, `size(x /\ y) = 1` and `size(x /\ not y) = 2`.
       */
     final def size: Int = this match {
       case Term.True => 0
       case Term.False => 0
       case Term.Cst(_) => 1
-      case Term.Var(_) => 1
+      case Term.Var(_) => 0
       case Term.Not(t) => t.size + 1
       case Term.And(csts, vars, rest) =>
         // We need a connective for each constant, variable, and term minus one.
@@ -775,6 +775,9 @@ object FastBoolUnification {
       BoolSubstitution(result.toMap)
     }
 
+    /**
+      * Returns a human-readable representation of `this` substitution.
+      */
     override def toString: String = {
       val indent = 4
 
@@ -791,6 +794,9 @@ object FastBoolUnification {
     }
   }
 
+  /**
+    * Returns a human-readable representations of the given list of unification equations `l`.
+    */
   private def format(l: List[Equation], indent: Int = 4): String = {
     val sb = new StringBuilder()
     for (Equation(t1, t2) <- l) {
@@ -803,11 +809,10 @@ object FastBoolUnification {
     sb.toString()
   }
 
-
   /**
     * Represents a Boolean unification failure between the two terms: `x` and `y`.
     */
-  case class ConflictException(x: Term, y: Term) extends RuntimeException // TODO: Add loc
+  case class ConflictException(x: Term, y: Term) extends RuntimeException // TODO: Add source location.
 
 
   /////////////////////////////////////////////////////////////////////////////
