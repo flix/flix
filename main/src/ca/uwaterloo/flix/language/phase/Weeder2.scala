@@ -1250,32 +1250,35 @@ object Weeder2 {
       assert(tree.kind == TreeKind.Expr.Unary)
       flatMapN(pick(TreeKind.Operator, tree.children), pick(TreeKind.Expr.Expr, tree.children))(
         (opTree, exprTree) => {
-          val op = text(opTree).head
-          val sp1 = tree.loc.sp1
-          val sp2 = tree.loc.sp2
-
-          val literalToken = tryPickNumberLiteralToken(exprTree)
-          literalToken match {
-            // fold unary minus into a constant
-            case Some(lit) if op == "-" =>
-              // Construct a synthetic literal tree with the unary minus and visit that like any other literal expression
-              // The token should include one more character to the left (the '-'). This is okay since unary minus must hug the literal.
-              val syntheticToken = Token(lit.kind, lit.src, lit.start - 1, lit.end, lit.beginLine, lit.beginCol, lit.endLine, lit.endCol)
-              val syntheticLiteral = Tree(TreeKind.Expr.Literal, exprTree.loc.asSynthetic, Array(Child.Token(syntheticToken)))
-              visitLiteral(syntheticLiteral)
-            case _ => mapN(visitExpression(exprTree))(expr => {
-              op match {
-                case "discard" => Expr.Discard(expr, tree.loc)
-                case "lazy" => Expr.Lazy(expr, tree.loc)
-                case "force" => Expr.Force(expr, tree.loc)
-                case "deref" => Expr.Deref(expr, tree.loc)
-                case "not" => Expr.Unary(SemanticOp.BoolOp.Not, expr, tree.loc)
-                case "-" => Expr.Apply(Expr.Ambiguous(Name.mkQName("Neg.neg", sp1, sp2), opTree.loc), List(expr), tree.loc)
-                case "+" => expr
-                case op => Expr.Apply(Expr.Ambiguous(Name.mkQName(op, sp1, sp2), opTree.loc), List(expr), tree.loc)
+          opTree.children(0) match {
+            case Child.Token(opToken) => {
+              val sp1 = tree.loc.sp1
+              val sp2 = tree.loc.sp2
+              val literalToken = tryPickNumberLiteralToken(exprTree)
+              literalToken match {
+                // fold unary minus into a constant
+                case Some(lit) if opToken.text == "-" =>
+                  // Construct a synthetic literal tree with the unary minus and visit that like any other literal expression
+                  val syntheticToken = Token(lit.kind, lit.src, opToken.start, lit.end, lit.beginLine, lit.beginCol, lit.endLine, lit.endCol)
+                  val syntheticLiteral = Tree(TreeKind.Expr.Literal, exprTree.loc.asSynthetic, Array(Child.Token(syntheticToken)))
+                  visitLiteral(syntheticLiteral)
+                case _ => mapN(visitExpression(exprTree))(expr => {
+                  opToken.text match {
+                    case "discard" => Expr.Discard(expr, tree.loc)
+                    case "lazy" => Expr.Lazy(expr, tree.loc)
+                    case "force" => Expr.Force(expr, tree.loc)
+                    case "deref" => Expr.Deref(expr, tree.loc)
+                    case "not" => Expr.Unary(SemanticOp.BoolOp.Not, expr, tree.loc)
+                    case "-" => Expr.Apply(Expr.Ambiguous(Name.mkQName("Neg.neg", sp1, sp2), opTree.loc), List(expr), tree.loc)
+                    case "+" => expr
+                    case op => Expr.Apply(Expr.Ambiguous(Name.mkQName(op, sp1, sp2), opTree.loc), List(expr), tree.loc)
+                  }
+                })
               }
-            })
+            }
+            case _ => throw InternalCompilerException(s"expected unary operator but found tree", tree.loc)
           }
+
         }
       )
     }
