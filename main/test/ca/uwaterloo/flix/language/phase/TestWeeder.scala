@@ -1009,6 +1009,18 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalPrivateDeclaration](result)
   }
 
+  test("IllegalPrivateDeclaration.03") {
+    val input =
+      """
+        |instance C[Int32] {
+        |    pub def f(): Int32 = 1
+        |    def g(): Int32 = 1
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalPrivateDeclaration](result)
+  }
+
   test("IllegalRecordExtensionPattern.01") {
     val input =
       """
