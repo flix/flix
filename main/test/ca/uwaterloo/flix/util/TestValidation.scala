@@ -370,7 +370,7 @@ class TestValidation extends AnyFunSuite {
     val result = traverse(List(1, 2, 3, 4, 5)) {
       case x => if (x % 2 == 1) Validation.toSoftFailure(x, DummyRecoverable(-x)) else HardFailure(Chain(DummyRecoverable(x)))
     }
-    assertResult(HardFailure(Chain(-1, 2, -3, 4, -5)))(result)
+    assertResult(HardFailure(Chain(DummyRecoverable(-1), DummyRecoverable(2), DummyRecoverable(-3), DummyRecoverable(4), DummyRecoverable(-5))))(result)
   }
 
   test("foldRight01") {
