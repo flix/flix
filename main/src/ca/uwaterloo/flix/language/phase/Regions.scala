@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
-import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.errors.{Recoverable, TypeError, Unrecoverable}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
@@ -35,13 +35,16 @@ import scala.collection.immutable.SortedSet
 object Regions {
 
   def run(root: Root)(implicit flix: Flix): Validation[Unit, CompilationMessage] = flix.phase("Regions") {
-    val errs = ParOps.parMap(root.defs)(kv => visitDef(kv._2)).flatten
+    val (recoverable, rest) = ParOps.parMap(root.defs)(kv => visitDef(kv._2)).flatten.partition(_.isInstanceOf[Recoverable])
+    val (unrecoverable, errs) = rest.partition(_.isInstanceOf[Unrecoverable])
 
     // TODO: Instances
 
-    errs match {
-      case Nil => Validation.success(())
-      case es => Validation.SoftFailure((), Chain.from(es))
+    (recoverable, unrecoverable, errs) match {
+      case (rs, Nil, Nil) =>
+        val rs1 = rs.asInstanceOf[Iterable[Recoverable]]
+        Validation.toSuccessOrSoftFailure((), rs1).asInstanceOf[Validation[Unit, CompilationMessage]]
+      case (rs, us, es) => Validation.HardFailure(Chain.from(rs) ++ Chain.from(us) ++ Chain.from(es))
     }
   }
 
