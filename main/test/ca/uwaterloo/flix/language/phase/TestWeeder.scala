@@ -1481,6 +1481,26 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MissingFormalParamAscription](result)
   }
 
+  test("MissingFormalParamAscription.02") {
+    val input =
+      """
+        |def f(x: Int32, y): Int32 = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MissingFormalParamAscription](result)
+  }
+
+  test("MissingFormalParamAscription.03") {
+    val input =
+      """
+        |instance A[Int32] {
+        |    pub def f(x): Int32 = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.MissingFormalParamAscription](result)
+  }
+
   test("MissingTypeParamKind.01") {
     val input =
       """
