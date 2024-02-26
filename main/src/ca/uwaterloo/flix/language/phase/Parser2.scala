@@ -2148,7 +2148,7 @@ object Parser2 {
   private object Type {
     def typeAndEffect()(implicit s: State): Mark.Closed = {
       val lhs = ttype()
-      if (at(TokenKind.Backslash)) {
+      if (eat(TokenKind.Backslash)) {
         effectSet()
       } else lhs
     }
@@ -2200,7 +2200,7 @@ object Parser2 {
       // BINARY OPS
       List(TokenKind.ArrowThinR), // ->
       // NB. UserDefinedOperator only really means '++' here. This is checked in the weeder
-      // But since '++' is used as a custom operator in Semigroup.combine it needs to be a user operator.
+      // But since '++' is used as a custom operator in 'Semigroup.combine' it needs to be a user operator.
       List(TokenKind.UserDefinedOperator, TokenKind.MinusMinus),
       List(TokenKind.AmpersandAmpersand), // &&
       List(TokenKind.Plus, TokenKind.Minus), // +, -
@@ -2321,7 +2321,7 @@ object Parser2 {
     private def typeDelimited()(implicit s: State): Mark.Closed = {
       val mark = open()
       nth(0) match {
-        case TokenKind.CurlyL => record()
+        case TokenKind.CurlyL => recordOrEffectSet()
         case TokenKind.HashCurlyL => schema()
         case TokenKind.HashParenL => schemaRow()
         case TokenKind.AngleL => caseSet()
@@ -2471,6 +2471,13 @@ object Parser2 {
       close(mark, TreeKind.Type.RecordRow)
     }
 
+    private def recordOrEffectSet()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.CurlyL))
+      val nextNext = nth(2)
+      val isRecord = nextNext == TokenKind.Equal || nextNext == TokenKind.Bar || nth(1) == TokenKind.CurlyR
+      if (isRecord) record() else effectSet()
+    }
+
     /**
      * record -> '{' (typeRecordField (',' typeRecordField)* )? ('|' Name.Variable)| '}'
      */
@@ -2513,9 +2520,6 @@ object Parser2 {
      * effectSet -> '\' effect | '{' ( effect ( ',' effect )* )? '}'
      */
     private def effectSet()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.Backslash))
-      expect(TokenKind.Backslash)
-
       if (at(TokenKind.CurlyL)) {
         val mark = open()
         separated(() => ttype())

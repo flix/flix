@@ -2238,6 +2238,7 @@ object Weeder2 {
         case TreeKind.Type.Schema => visitSchema(inner)
         case TreeKind.Type.SchemaRow => visitSchemaRow(inner)
         case TreeKind.Type.Constant => visitConstant(inner)
+        case TreeKind.Type.EffectSet => visitEffect(inner)
         case TreeKind.QName => visitName(inner)
         case TreeKind.Ident => mapN(tokenToIdent(inner)) {
           case ident if ident.isWild => Type.Var(ident, tree.loc)
@@ -2431,10 +2432,6 @@ object Weeder2 {
             args => args.foldLeft(tpe) { case (acc, t2) => Type.Apply(acc, t2, tree.loc) }
           }
       }
-    }
-
-    def pickEffect(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      flatMapN(pick(TreeKind.Type.EffectSet, tree.children))(visitEffect)
     }
 
     def tryPickEffect(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {

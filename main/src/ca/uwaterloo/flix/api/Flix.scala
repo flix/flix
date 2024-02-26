@@ -508,11 +508,11 @@ class Flix {
     "Test.Exp.Hole.flix" -> LocalResource.get("/test/flix/Test.Exp.Hole.flix"),
     "Test.Exp.HoleWithExp.flix" -> LocalResource.get("/test/flix/Test.Exp.HoleWithExp.flix"),
     "Test.Kind.Enum.flix" -> LocalResource.get("/test/flix/Test.Kind.Enum.flix"),
+    "Test.Predicate.Guard.flix" -> LocalResource.get("/test/flix/Test.Predicate.Guard.flix"), // TODO: due to 'true.' and 'false.'. Changed to 'true .' is that fine?
+    "Test.Java.Function.flix" -> LocalResource.get("/test/flix/Test.Java.Function.flix"),
+    "Test.Exp.Effect.flix" -> LocalResource.get("/test/flix/Test.Exp.Effect.flix"),
 
-    //    "Test.Predicate.Guard.flix" -> LocalResource.get("/test/flix/Test.Predicate.Guard.flix"),
-
-    //    "Test.Java.Function.flix" -> LocalResource.get("/test/flix/Test.Java.Function.flix"),
-
+    
     //    "Test.Unused.Def.flix" -> LocalResource.get("/test/flix/Test.Unused.Def.flix"),
     //    "Test.Unused.Var.flix" -> LocalResource.get("/test/flix/Test.Unused.Var.flix"),
 
@@ -580,10 +580,6 @@ class Flix {
     //    "Test.Exp.Jvm.PutField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.PutField.flix"),
     //    "Test.Exp.Jvm.PutStaticField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.PutStaticField.flix"),
     //    "Test.Exp.Jvm.TryCatch.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.TryCatch.flix"),
-
-
-    // TODO: Effect set semantics?  pub def enumWithEffect02(f: Do[{ef}]): Bool = ??? <- ef is an effect here?
-//    "Test.Exp.Effect.flix" -> LocalResource.get("/test/flix/Test.Exp.Effect.flix"),
 
 
     // TODO: KEYWORD PROJECT

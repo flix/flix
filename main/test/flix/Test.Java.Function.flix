@@ -24,13 +24,13 @@ mod Test.Java.Function {
     def testFunction(): Bool \ IO = {
         import static java.util.stream.Stream.of(Object): Stream \ IO;
         import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
-        import java.util.Optional.get(): Object;
+        import java.util.Optional.get(): Object as optGet;
         import java.lang.Object.toString(): String;
         let mkObject = i -> new Object {
             def toString(_this: Object): String = "${i}"
         };
         let stream = of(mkObject(42));
-        toString(get(findFirst(stream))) == "42"
+        toString(optGet(findFirst(stream))) == "42"
     }
 
     @Test
@@ -52,14 +52,14 @@ mod Test.Java.Function {
         import static java.util.stream.Stream.of(Array[Object, rc]): Stream \ IO;
         import java.util.stream.Stream.filter(Predicate): Stream \ IO;
         import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
-        import java.util.Optional.get(): Object;
+        import java.util.Optional.get(): Object as optGet;
         import java.lang.Object.toString(): String;
         let mkObject = i -> new Object {
             def toString(_this: Object): String = "${i}"
         };
         let stream0 = of(Array#{mkObject(1), mkObject(2), mkObject(3), mkObject(4), mkObject(5)} @ rc);
         let stream1 = filter(stream0, obj -> toString(obj) == "5");
-        toString(get(findFirst(stream1))) == "5"
+        toString(optGet(findFirst(stream1))) == "5"
     }
 
     @Test
@@ -67,14 +67,14 @@ mod Test.Java.Function {
         import static java.util.stream.IntStream.of(Int32): IntStream \ IO;
         import java.util.stream.IntStream.mapToObj(IntFunction): Stream \ IO;
         import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
-        import java.util.Optional.get(): Object;
+        import java.util.Optional.get(): Object as optGet;
         import java.lang.Object.toString(): String;
         let stream0 = of(42);
         let f = i -> new Object {
             def toString(_this: Object): String = "${i}"
         };
         let stream1 = mapToObj(stream0, f);
-        toString(get(findFirst(stream1))) == "42"
+        toString(optGet(findFirst(stream1))) == "42"
     }
 
     @Test
@@ -112,14 +112,14 @@ mod Test.Java.Function {
         import static java.util.stream.LongStream.of(Int64): LongStream \ IO;
         import java.util.stream.LongStream.mapToObj(LongFunction): Stream \ IO;
         import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
-        import java.util.Optional.get(): Object;
+        import java.util.Optional.get(): Object as optGet;
         import java.lang.Object.toString(): String;
         let stream0 = of(42i64);
         let f = i -> new Object {
             def toString(_this: Object): String = "${i}"
         };
         let stream1 = mapToObj(stream0, f);
-        toString(get(findFirst(stream1))) == "42"
+        toString(optGet(findFirst(stream1))) == "42"
     }
 
     @Test
@@ -157,7 +157,7 @@ mod Test.Java.Function {
         import static java.util.stream.DoubleStream.of(Float64): DoubleStream \ IO;
         import java.util.stream.DoubleStream.mapToObj(DoubleFunction): Stream \ IO;
         import java.util.stream.Stream.findFirst(): ##java.util.Optional \ IO;
-        import java.util.Optional.get(): Object;
+        import java.util.Optional.get(): Object as optGet;
         import java.lang.Object.toString(): String;
         let stream0 = of(42.0f64);
         let f = d -> new Object {
@@ -167,7 +167,7 @@ mod Test.Java.Function {
            }
         };
         let stream1 = mapToObj(stream0, f);
-        toString(get(findFirst(stream1))) == "42"
+        toString(optGet(findFirst(stream1))) == "42"
     }
 
     @Test

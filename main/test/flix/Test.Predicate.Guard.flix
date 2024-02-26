@@ -2,13 +2,13 @@ mod Test.Predicate.Guard {
 
     @test
     def testGuardConst01(): Bool =
-        let c = #{ R(1, 1) :- if true. };
+        let c = #{ R(1, 1) :- if true . };
         let r = query c select (x, y) from R(x, y);
         Vector.memberOf((1, 1), r)
 
     @test
     def testGuardConst02(): Bool =
-        let c = #{ R(1, 1) :- if true and true. };
+        let c = #{ R(1, 1) :- if true and true . };
         let r = query c select (x, y) from R(x, y);
         Vector.memberOf((1, 1), r)
 
@@ -20,13 +20,13 @@ mod Test.Predicate.Guard {
 
     @test
     def testGuardConst04(): Bool =
-        let c = #{ R(1, 1) :- if false. };
+        let c = #{ R(1, 1) :- if false . };
         let r = query c select (x, y) from R(x, y);
         not Vector.memberOf((1, 1), r)
 
     @test
     def testGuardConst05(): Bool =
-        let c = #{ R(1, 1) :- if true and false. };
+        let c = #{ R(1, 1) :- if true and false . };
         let r = query c select (x, y) from R(x, y);
         not Vector.memberOf((1, 1), r)
 
@@ -107,7 +107,7 @@ mod Test.Predicate.Guard {
     @test
     def testGuardCapturedVar02(): Bool =
         let k = true;
-        let c = #{ R(1, 1) :- if k and true. };
+        let c = #{ R(1, 1) :- if k and true . };
         let r = query c select (x, y) from R(x, y);
         Vector.memberOf((1, 1), r)
 
