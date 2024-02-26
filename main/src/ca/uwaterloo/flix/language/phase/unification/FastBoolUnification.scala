@@ -270,19 +270,6 @@ object FastBoolUnification {
     (rest.reverse, currentSubst)
   }
 
-  object Equation {
-    // Normalize: Move vars left and true/false/constants right.
-    def mk(t1: Term, t2: Term): Equation = (t1, t2) match {
-      case (_, _: Term.Var) => Equation(t2, t1)
-      case (Term.True, _) => Equation(t2, Term.True)
-      case (Term.False, _) => Equation(t2, Term.False)
-      case _ => Equation(t1, t2)
-    }
-  }
-
-  case class Equation(t1: Term, t2: Term) {
-    def size: Int = t1.size + t2.size
-  }
 
   private def boolUnifyAll(l: List[Equation], renv: Set[Int]): BoolSubstitution = l match {
     case Nil => BoolSubstitution.empty
@@ -430,6 +417,46 @@ object FastBoolUnification {
     }
 
     visit(t, SortedSet.empty, SortedSet.empty)
+  }
+
+  /**
+    * Companion object for [[Equation]].
+    */
+  object Equation {
+    /**
+      * Returns a unification equation  `t1 ~ t2` between the terms `t1` and `t2`.
+      *
+      * The smart constructor performs normalization:
+      * - We move true and false to the rhs.
+      * - We move a variable to the lhs (unconditionally).
+      * - We move a constant to the lhs (except if the lhs is a variable).
+      * - We reorder constant/variables equations so that the smaller constant/variable is on the lhs.
+      *
+      * Examples:
+      * -     true ~ x7 ==> x7 ~ true
+      * -       c3 ~ c2 ==> c2 ~ c3
+      * -       x7 ~ x5 ==> x5 ~ x7
+      * - x3 /\ x7 ~ x4 ==> x4 ~ x3 /\ x7
+      * - x1 /\ x2 ~ c5 ==> c5 ~ x1 /\ x2
+      */
+    def mk(t1: Term, t2: Term): Equation = (t1, t2) match {
+      case (Term.True, _) => Equation(t2, Term.True)
+      case (Term.False, _) => Equation(t2, Term.False)
+      case (Term.Cst(c1), Term.Cst(c2)) if c1 > c2 => Equation(t2, t1)
+      case (Term.Var(x1), Term.Var(x2)) if x1 > x2 => Equation(t2, t1)
+      case (_, _: Term.Var) => Equation(t2, t1)
+      case (_, _: Term.Cst) => Equation(t2, t1)
+      case _ => Equation(t1, t2)
+    }
+  }
+
+  /**
+    * Represents a unification equation `t1 ~ t2` between the terms `t1` and `t2`.
+    *
+    * WARNING: Equations should be normalized. Use the smart constructor [[Equation.mk]] to create a new equation.
+    */
+  case class Equation(t1: Term, t2: Term) {
+    def size: Int = t1.size + t2.size
   }
 
   /**
