@@ -1524,7 +1524,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("MissingTypeParamKind.03") {
     val input =
       """
-        |instance A[a: Type] {
+        |class A[a: Type] {
         |    pub def f[a](x: a): Int32 = ???
         |}
         |""".stripMargin
@@ -1638,6 +1638,17 @@ class TestWeeder extends AnyFunSuite with TestUtils {
       """
         |instance C[Int32] {
         |    type T[Int32, b] = Int32
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.NonUnaryAssocType](result)
+  }
+
+  test("NonUnaryAssocType.03") {
+    val input =
+      """
+        |instance A[a] {
+        |    type S[b, c, d] = Int32
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
