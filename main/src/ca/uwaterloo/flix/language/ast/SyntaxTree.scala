@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Herluf Baggesen
+ * Copyright 2024 Herluf Baggesen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,19 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.errors.Parse2Error
-
+import ca.uwaterloo.flix.language.errors.Parser2Error
 
 /**
- * A Syntax tree representing the __syntax__ in a source file.
- * The tree is built of nodes that hold a [[TreeKind]] and zero or more children.
- * Each child is either a [[Token]] or another node.
- * [[SyntaxTree]] is intentionally kept very flexible in definition, so it can encode faulty syntax.
- * Beware that this means that it gives few guarantees.
- * There is no guarantee on the amount or presence of children of a certain kind for instance.
+ * Represents the source code of a compilation unit.
+ *
+ * A [[SyntaxTree]] is unstructured: it allows much more flexibility than later
+ * abstract syntax trees. This flexibility is used to capture source code that may
+ * contain faulty syntax. The tree has nodes that hold a [[TreeKind]] and zero or
+ * more children. Each child is either a [[TokenChild]] or a [[TreeChild]].
+ *
+ * Note that [[SyntaxTree]] offers few guarantees. In particular:
+ *     - There is no guarantee that a specific node is present or absent as a child.
+ *     - There is no guarantee that a specific node has a specific number of children.
  */
 object SyntaxTree {
 
@@ -35,70 +38,55 @@ object SyntaxTree {
    * @param loc      The location that the node spans in the source file.
    * @param children The children of the node.
    */
-  case class Tree(kind: TreeKind, var loc: SourceLocation, var children: Array[Child]) {
-    /**
-     * Utility function that computes a textual representation of a [[SyntaxTree.Tree]].
-     * Meant for debugging use.
-     */
-    def toDebugString(nesting: Int = 1): String = {
-      val kindName = kind.debug_name match {
-        case Some(name) => s"$name.$kind"
-        case None => s"$kind"
-      }
-
-      s"$kindName (${loc.beginLine}, ${loc.beginCol}) -> (${loc.endLine}, ${loc.endCol}) ${
-        children.map {
-          case Child.Token(token) => s"\n${"  " * nesting}'${token.text}'"
-          case Child.Tree(tree) => s"\n${"  " * nesting}${tree.toDebugString(nesting + 1)}"
-        }.mkString("")
-      }"
-    }
-  }
+  case class Tree(kind: TreeKind, children: Array[Child], loc: SourceLocation)
 
   sealed trait Child
 
   /**
    * A child in a [[SyntaxTree]].
-   * It holds a [[Token]] or another [[SyntaxTree.Tree]].
    */
   object Child {
     /**
      * A [[SyntaxTree]] child holding a [[Token]].
      */
-    case class Token(token: ca.uwaterloo.flix.language.ast.Token) extends Child
+    case class TokenChild(token: Token) extends Child
 
     /**
      * A [[SyntaxTree]] child holding a nested [[SyntaxTree.Tree]]
      */
-    case class Tree(tree: SyntaxTree.Tree) extends Child
+    case class TreeChild(tree: Tree) extends Child
   }
 
 
-  sealed trait TreeKind {
-    def debug_name: Option[String] = None
-  }
+  /**
+   * A common super-type for [[TreeKind]]s
+   */
+  sealed trait TreeKind
 
   /**
    * Different kinds of syntax nodes in a [[SyntaxTree]].
+   *
    * The only error kind that holds data is the special [[TreeKind.ErrorTree]].
    */
   object TreeKind {
     /**
-     * A special error kind wrapping a [[Parse2Error]].
+     * A special error kind wrapping a [[Parser2Error]].
      */
-    case class ErrorTree(error: Parse2Error) extends TreeKind
+    case class ErrorTree(error: Parser2Error) extends TreeKind
 
-    case object Annotations extends TreeKind
+    case object AnnotationList extends TreeKind
 
     case object Argument extends TreeKind
 
     case object ArgumentNamed extends TreeKind
 
-    case object Arguments extends TreeKind
+    case object ArgumentList extends TreeKind
 
     case object Case extends TreeKind
 
-    case object Comments extends TreeKind
+    case object CommentList extends TreeKind
+
+    case object DerivationList extends Type
 
     case object Doc extends TreeKind
 
@@ -106,26 +94,26 @@ object SyntaxTree {
 
     case object Kind extends TreeKind
 
-    case object Modifiers extends TreeKind
+    case object ModifierList extends TreeKind
 
     case object Operator extends TreeKind
 
     case object Parameter extends TreeKind
 
-    case object Parameters extends TreeKind
+    case object ParameterList extends TreeKind
 
     case object QName extends TreeKind
 
-    case object Source extends TreeKind
+    case object Root extends TreeKind
 
     case object TypeParameter extends TreeKind
 
-    case object TypeParameters extends TreeKind
+    case object TypeParameterList extends TreeKind
 
-    /////////////// DECLARATIONS ///////////////
-    sealed trait Decl extends TreeKind {
-      override def debug_name: Option[String] = Some("Decl")
-    }
+    //////////////////////////////////////////////////////////////////////////////////////////
+    /// DECLARATIONS                                                                        //
+    //////////////////////////////////////////////////////////////////////////////////////////
+    sealed trait Decl extends TreeKind
 
     object Decl {
       case object AssociatedTypeDef extends Decl
@@ -146,7 +134,7 @@ object SyntaxTree {
 
       case object Module extends Decl
 
-      case object Operation extends Decl
+      case object Op extends Decl
 
       case object RestrictableEnum extends Decl
 
@@ -155,25 +143,27 @@ object SyntaxTree {
       case object TypeAlias extends Decl
     }
 
-    /////////////// EXPRESSIONS  ///////////////
-    sealed trait Expr extends TreeKind {
-      override def debug_name: Option[String] = Some("Expr")
-    }
+    //////////////////////////////////////////////////////////////////////////////////////////
+    /// EXPRESSIONS                                                                         //
+    //////////////////////////////////////////////////////////////////////////////////////////
+    sealed trait Expr extends TreeKind
 
     object Expr {
 
       /**
        * A marker kind used to wrap nested expressions.
-       * For instance on a binary expression "1 + 2" you would do
-       * Expr
-       *   Binary
-       *     Expr
-       *       LiteralNumber
-       *     Operator
-       *     Expr
-       *        LiteralNumber
        */
+      // For instance on a binary expression "1 + 2" you would do
+      // Expr
+      //   Binary
+      //     Expr
+      //       LiteralNumber
+      //   Operator
+      //     Expr
+      //       LiteralNumber
       case object Expr extends Expr
+
+      case object Apply extends Expr
 
       case object Ascribe extends Expr
 
@@ -181,21 +171,17 @@ object SyntaxTree {
 
       case object Block extends Expr
 
-      case object Call extends Expr
-
       case object CheckedEffectCast extends Expr
 
       case object CheckedTypeCast extends Expr
 
       case object Do extends Expr
 
-      case object Debug extends Expr
-
       case object FixpointConstraint extends Expr
 
       case object FixpointConstraintSet extends Expr
 
-      case object FixpointFrom extends Expr
+      case object FixpointFromFragment extends Expr
 
       case object FixpointInject extends Expr
 
@@ -215,11 +201,9 @@ object SyntaxTree {
 
       case object ForMonadic extends Expr
 
-      case object ForFragmentGenerator extends Expr
+      case object Generator extends Expr
 
-      case object ForFragmentGuard extends Expr
-
-      case object ForFragmentLet extends Expr
+      case object Guard extends Expr
 
       case object Hole extends Expr
 
@@ -232,8 +216,6 @@ object SyntaxTree {
       case object Intrinsic extends Expr
 
       case object JvmMethod extends Expr
-
-      case object KeyValue extends Expr
 
       case object Lambda extends Expr
 
@@ -253,9 +235,11 @@ object SyntaxTree {
 
       case object LiteralMap extends Expr
 
+      case object LiteralMapKeyValueFragment extends Expr
+
       case object LiteralRecord extends Expr
 
-      case object LiteralRecordField extends Expr
+      case object LiteralRecordFieldFragment extends Expr
 
       case object LiteralSet extends Expr
 
@@ -263,13 +247,13 @@ object SyntaxTree {
 
       case object Match extends Expr
 
-      case object MatchRule extends Expr
+      case object MatchRuleFragment extends Expr
 
       case object NewObject extends Expr
 
-      case object Open extends Expr
+      case object OpenVariant extends Expr
 
-      case object OpenAs extends Expr
+      case object OpenVariantAs extends Expr
 
       case object Paren extends Expr
 
@@ -303,19 +287,19 @@ object SyntaxTree {
 
       case object Try extends Expr
 
-      case object TryCatchBody extends Expr
+      case object TryCatchBodyFragment extends Expr
 
-      case object TryCatchRule extends Expr
+      case object TryCatchRuleFragment extends Expr
 
-      case object TryWithBody extends Expr
+      case object TryWithBodyFragment extends Expr
 
-      case object TryWithRule extends Expr
+      case object TryWithRuleFragment extends Expr
 
       case object Tuple extends Expr
 
       case object TypeMatch extends Expr
 
-      case object TypeMatchRule extends Expr
+      case object TypeMatchRuleFragment extends Expr
 
       case object Unary extends Expr
 
@@ -329,29 +313,29 @@ object SyntaxTree {
 
     }
 
-    /////////////// TYPES       ///////////////
-    sealed trait Type extends TreeKind {
-      override def debug_name: Option[String] = Some("Type")
-    }
+    //////////////////////////////////////////////////////////////////////////////////////////
+    /// TYPES                                                                               //
+    //////////////////////////////////////////////////////////////////////////////////////////
+    sealed trait Type extends TreeKind
 
     object Type {
       /**
        * A marker kind used to wrap nested types.
-       * For instance on a tuple type "(Int32, Bool)" you would do
-       * Type
-       *   Tuple
-       *     Type
-       *       Ident
-       *     Type
-       *       Ident
        */
+      // For instance on a tuple type "(Int32, Bool)" you would do
+      // Type
+      //   Tuple
+      //     Type
+      //       Ident
+      //     Type
+      //       Ident
       case object Type extends Type
 
       case object Apply extends Type
 
       case object Argument extends Type
 
-      case object Arguments extends Type
+      case object ArgumentList extends Type
 
       case object Ascribe extends Type
 
@@ -363,9 +347,7 @@ object SyntaxTree {
 
       case object Constraint extends Type
 
-      case object Constraints extends Type
-
-      case object Derivations extends Type
+      case object ConstraintList extends Type
 
       case object EffectSet extends Type
 
@@ -379,7 +361,7 @@ object SyntaxTree {
 
       case object Record extends Type
 
-      case object RecordField extends Type
+      case object RecordFieldFragment extends Type
 
       case object RecordRow extends Type
 
@@ -397,22 +379,22 @@ object SyntaxTree {
 
     }
 
-    /////////////// PATTERNS    ///////////////
-    sealed trait Pattern extends TreeKind {
-      override def debug_name: Option[String] = Some("Pattern")
-    }
+    //////////////////////////////////////////////////////////////////////////////////////////
+    /// PATTERNS                                                                            //
+    //////////////////////////////////////////////////////////////////////////////////////////
+    sealed trait Pattern extends TreeKind
 
     object Pattern {
       /**
        * A marker kind used to wrap nested patterns.
-       * For instance on cons pattern "0 :: xs" you would do
-       * Pattern
-       *   FCons
-       *     Pattern
-       *       Literal
-       *     Pattern
-       *       Ident
        */
+       // For instance on cons pattern "0 :: xs" you would do
+       // Pattern
+       //   FCons
+       //     Pattern
+       //       Literal
+       //     Pattern
+       //       Ident
       case object Pattern extends Pattern
 
       case object FCons extends Pattern
@@ -421,7 +403,7 @@ object SyntaxTree {
 
       case object Record extends Pattern
 
-      case object RecordField extends Pattern
+      case object RecordFieldFragment extends Pattern
 
       case object Tag extends Pattern
 
@@ -429,13 +411,12 @@ object SyntaxTree {
 
       case object Variable extends Pattern
 
-
     }
 
-    /////////////// FIXPOINT PREDICATES  ///////////////
-    sealed trait Predicate extends TreeKind {
-      override def debug_name: Option[String] = Some("Predicate")
-    }
+    //////////////////////////////////////////////////////////////////////////////////////////
+    /// PREDICATES                                                                          //
+    //////////////////////////////////////////////////////////////////////////////////////////
+    sealed trait Predicate extends TreeKind
 
     object Predicate {
 
@@ -457,10 +438,10 @@ object SyntaxTree {
 
     }
 
-    /////////////// JVM_OP      ///////////////
-    sealed trait JvmOp extends TreeKind {
-      override def debug_name: Option[String] = Some("JvmOp")
-    }
+    //////////////////////////////////////////////////////////////////////////////////////////
+    /// JVM_OP                                                                              //
+    //////////////////////////////////////////////////////////////////////////////////////////
+    sealed trait JvmOp extends TreeKind
 
     object JvmOp {
 
@@ -476,7 +457,7 @@ object SyntaxTree {
 
       case object PutField extends JvmOp
 
-      case object Signature extends JvmOp
+      case object Sig extends JvmOp
 
       case object StaticGetField extends JvmOp
 
@@ -486,10 +467,10 @@ object SyntaxTree {
 
     }
 
-    /////////////// IMPORTS     ///////////////
-    sealed trait UsesOrImports extends TreeKind {
-      override def debug_name: Option[String] = Some("UsesOrImports")
-    }
+    //////////////////////////////////////////////////////////////////////////////////////////
+    /// IMPORTS                                                                             //
+    //////////////////////////////////////////////////////////////////////////////////////////
+    sealed trait UsesOrImports extends TreeKind
 
     object UsesOrImports {
       case object Alias extends UsesOrImports
@@ -502,7 +483,7 @@ object SyntaxTree {
 
       case object UseMany extends UsesOrImports
 
-      case object UsesOrImports extends UsesOrImports
+      case object UseOrImportList extends UsesOrImports
     }
   }
 }

@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -130,6 +130,7 @@ case class BoolSubstitution[F](m: Map[Int, F]) {
         val tvar = k match {
           case BoolFormula.VarOrEff.Var(sym) => sym
           case BoolFormula.VarOrEff.Eff(sym) => throw InternalCompilerException(s"unexpected substituted effect: ${sym}", SourceLocation.Unknown)
+          case BoolFormula.VarOrEff.Assoc(sym, arg) => throw InternalCompilerException(s"unexpected substituted effect: ${sym}", SourceLocation.Unknown)
         }
         val v = alg.toType(v0, env)
         (tvar, v)

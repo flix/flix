@@ -17,9 +17,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ParsedAst, ReadAst, SourceKind, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
-import ca.uwaterloo.flix.language.errors.Parse2Error
+import ca.uwaterloo.flix.language.ast.SyntaxTree.{TreeKind}
+import ca.uwaterloo.flix.language.ast.{Ast, SyntaxTree, SourceLocation, Token}
+import ca.uwaterloo.flix.language.errors.Parser2Error
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, LibLevel, ParOps, Validation}
@@ -2747,4 +2747,16 @@ object Parser2 {
       case _ => acc
     }
   }
+
+  /**
+   * Utility function that computes a textual representation of a [[SyntaxTree.Tree]].
+   * Meant for debugging use.
+   */
+  def syntaxTreeToDebugString(tree: SyntaxTree.Tree, nesting: Int = 1): String = {
+    s"${tree.kind} (${tree.loc.beginLine}, ${tree.loc.beginCol}) -> (${tree.loc.endLine}, ${tree.loc.endCol}) ${
+      tree.children.map {
+        case SyntaxTree.Child.TokenChild(token) => s"\n${"  " * nesting}'${token.text}'"
+        case SyntaxTree.Child.TreeChild(tree) => s"\n${"  " * nesting}${syntaxTreeToDebugString(tree, nesting + 1)}"
+      }.mkString("")
+    }"
 }
