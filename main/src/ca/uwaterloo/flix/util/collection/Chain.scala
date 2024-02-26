@@ -122,10 +122,10 @@ sealed trait Chain[+A] {
   /**
     * Displays all elements of this collection in a string using a separator string.
     */
-  final def mkString(sep: String): String = this match {
-    case Chain.Empty => ""
-    case Chain.Link(l, r) => l.mkString(sep) ++ sep ++ r.mkString(sep)
-    case Chain.Proxy(xs) => xs.mkString(sep)
+  final def mkString(sep: String): String = {
+    val sb = new StringBuilder()
+    this.toList.addString(sb, sep)
+    sb.mkString
   }
 
   final override def hashCode(): Int = this.toList.hashCode()
