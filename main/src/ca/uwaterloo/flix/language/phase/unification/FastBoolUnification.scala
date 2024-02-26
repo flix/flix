@@ -90,9 +90,8 @@ object FastBoolUnification {
       println("--- Phase 1: Unit Propagation")
       println("    (resolves all equations of the form: x = c where x is a var and c is const)")
       println("-".repeat(80))
-      val (nextEqns, nextSubst) = propagateUnit(currentEqns, currentSubst)
-      currentEqns = simplify(nextEqns)
-      currentSubst = nextSubst
+      val s = propagateUnit(currentEqns, currentSubst)
+      updateState(s)
       printEquations()
       printSubstitution()
       println()
@@ -103,9 +102,8 @@ object FastBoolUnification {
       println("--- Phase 2: Variable Propagation")
       println("    (resolves all equations of the form: x = y where x and y are vars)")
       println("-".repeat(80))
-      val (nextEqns1, nextSubst1) = propagateVars(currentEqns, currentSubst)
-      currentEqns = simplify(nextEqns1)
-      currentSubst = nextSubst1
+      val s = propagateVars(currentEqns, currentSubst)
+      updateState(s)
       printEquations()
       printSubstitution()
       println()
@@ -116,9 +114,8 @@ object FastBoolUnification {
       println("--- Phase 3: Variable Assignment")
       println("    (resolves all equations of the form: x = t where x is free in t)")
       println("-".repeat(80))
-      val (nextEqns2, nextSubst2) = varAssignment(currentEqns, currentSubst)
-      currentEqns = simplify(nextEqns2)
-      currentSubst = nextSubst2
+      val s = varAssignment(currentEqns, currentSubst)
+      updateState(s)
       printEquations()
       printSubstitution()
       println()
@@ -134,6 +131,12 @@ object FastBoolUnification {
       currentSubst = currentSubst @@ restSubst
       printSubstitution()
       println()
+    }
+
+    private def updateState(p: (List[Equation], BoolSubstitution)): Unit = {
+      val (nextEqns, nextSubst) = p
+      currentEqns = simplify(nextEqns)
+      currentSubst = nextSubst
     }
 
     private def printEquations(): Unit = {
@@ -1152,15 +1155,15 @@ object FastBoolUnification {
 
   def main(args: Array[String]): Unit = {
     solveAll(FixpointInterpreter_evalTerm()).get
-    solveAll(Array_copyOfRange()).get
-    solveAll(FixpointAstDatalog_toString299997()).get
-    solveAll(Nec_zipWithA()).get
-    solveAll(ConcurrentChannel_selectHelper()).get
-    solveAll(Array_transpose()).get
-    solveAll(MutDeque_sameElements()).get
-    solveAll(FixpointAstDatalog_predSymsOf29898()).get
-    solveAll(Iterator_toArray()).get
-    solveAll(Files_append()).get
+    //solveAll(Array_copyOfRange()).get
+    //solveAll(FixpointAstDatalog_toString299997()).get
+    //solveAll(Nec_zipWithA()).get
+    //solveAll(ConcurrentChannel_selectHelper()).get
+    //solveAll(Array_transpose()).get
+    //solveAll(MutDeque_sameElements()).get
+    //solveAll(FixpointAstDatalog_predSymsOf29898()).get
+    //solveAll(Iterator_toArray()).get
+    //solveAll(Files_append()).get
   }
 
 }
