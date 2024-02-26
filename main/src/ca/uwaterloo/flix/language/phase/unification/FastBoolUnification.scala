@@ -91,7 +91,7 @@ object FastBoolUnification {
       println("    (resolves all equations of the form: x = c where x is a var and c is const)")
       println("-".repeat(80))
       val (nextEqns, nextSubst) = propagateUnit(currentEqns, currentSubst)
-      currentEqns = checkAndSimplify(nextEqns)
+      currentEqns = simplify(nextEqns)
       currentSubst = nextSubst
       printEquations()
       printSubstitution()
@@ -104,7 +104,7 @@ object FastBoolUnification {
       println("    (resolves all equations of the form: x = y where x and y are vars)")
       println("-".repeat(80))
       val (nextEqns1, nextSubst1) = propagateVars(currentEqns, currentSubst)
-      currentEqns = checkAndSimplify(nextEqns1)
+      currentEqns = simplify(nextEqns1)
       currentSubst = nextSubst1
       printEquations()
       printSubstitution()
@@ -117,7 +117,7 @@ object FastBoolUnification {
       println("    (resolves all equations of the form: x = t where x is free in t)")
       println("-".repeat(80))
       val (nextEqns2, nextSubst2) = varAssignment(currentEqns, currentSubst)
-      currentEqns = checkAndSimplify(nextEqns2)
+      currentEqns = simplify(nextEqns2)
       currentSubst = nextSubst2
       printEquations()
       printSubstitution()
@@ -148,31 +148,42 @@ object FastBoolUnification {
 
   }
 
-
   /**
-    * Checks for conflicts and removes any trivial equations.
+    * Returns a list of non-trivial unification equations computed from the given list `l`.
     *
-    * A conflict is an unsolvable equation such as:
-    *
-    * - true = false
-    * - false = true
-    * - true = r17 where r17 is rigid
+    * Throws a [[ConflictException]] if an unsolvable equation is encountered.
     *
     * A trivial equation is one of:
+    * -     true ~ true
+    * -    false ~ false
+    * -        c ~ c        (same constants)
+    * -        x ~ x        (same variables)
     *
-    * -  true = true
-    * - false = false
-    * -   r17 = r17
+    *
+    * An unsolvable (conflicted) equation is one of:
+    *
+    * -      true ~ false   (and mirrored)
+    * -       c_i ~ c_j     (different constants)
+    * -        c ~ true     (and mirrored)
+    * -        c ~ false    (and mirrored)
     */
-  private def checkAndSimplify(l: List[Equation]): List[Equation] = l match {
+  private def simplify(l: List[Equation]): List[Equation] = l match {
     case Nil => Nil
-    case e :: es => e match {
-      case Equation(Term.True, Term.True) => checkAndSimplify(es)
-      case Equation(Term.False, Term.False) => checkAndSimplify(es)
-      case Equation(Term.True, Term.False) => throw ConflictException(Term.True, Term.False)
-      case Equation(Term.False, Term.True) => throw ConflictException(Term.False, Term.True)
-      // TODO: Rigid
-      case _ => e :: checkAndSimplify(es)
+    case Equation(t1, t2) :: es => (t1, t2) match {
+      // Trivial equations: skip them.
+      case (Term.True, Term.True) => simplify(es)
+      case (Term.False, Term.False) => simplify(es)
+      case (Term.Cst(c1), Term.Cst(c2)) if c1 == c2 => simplify(es)
+      case (Term.Var(x1), Term.Var(x2)) if x1 == x2 => simplify(es)
+
+      // Unsolvable (conflicted) equations: raise an exception.
+      case (Term.True, Term.False) => throw ConflictException(t1, t2)
+      case (Term.False, Term.True) => throw ConflictException(t1, t2)
+      case (Term.Cst(c1), Term.Cst(c2)) if c1 != c2 => throw ConflictException(t1, t2)
+      // TODO
+
+      // Non-trivial and non-conflicted equation: keep it.
+      case _ => Equation(t1, t2) :: simplify(es)
     }
   }
 
@@ -1137,15 +1148,15 @@ object FastBoolUnification {
 
   def main(args: Array[String]): Unit = {
     solveAll(FixpointInterpreter_evalTerm()).get
-    //solveAll(Array_copyOfRange()).get
-    //solveAll(FixpointAstDatalog_toString299997()).get
-    //solveAll(Nec_zipWithA()).get
-    //solveAll(ConcurrentChannel_selectHelper()).get
-    //solveAll(Array_transpose()).get
-    //solveAll(MutDeque_sameElements()).get
-    //solveAll(FixpointAstDatalog_predSymsOf29898()).get
-    //solveAll(Iterator_toArray()).get
-    //solveAll(Files_append()).get
+    solveAll(Array_copyOfRange()).get
+    solveAll(FixpointAstDatalog_toString299997()).get
+    solveAll(Nec_zipWithA()).get
+    solveAll(ConcurrentChannel_selectHelper()).get
+    solveAll(Array_transpose()).get
+    solveAll(MutDeque_sameElements()).get
+    solveAll(FixpointAstDatalog_predSymsOf29898()).get
+    solveAll(Iterator_toArray()).get
+    solveAll(Files_append()).get
   }
 
 }
