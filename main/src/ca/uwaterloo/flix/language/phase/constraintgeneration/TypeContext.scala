@@ -78,6 +78,7 @@ class TypeContext {
 
   /**
     * The current rigidity environment.
+    *
     * This environment only grows; we don't remove rigid variables as we exit a region.
     * We use a mutable variable because RigidityEnv is an immutable structure.
     */
@@ -90,6 +91,7 @@ class TypeContext {
 
   /**
     * The typing context from outside the current scope.
+    *
     * We push and pop information from this stack when we enter and exit regions.
     */
   private val nest: mutable.Stack[ScopeConstraints] = mutable.Stack.empty
@@ -106,6 +108,7 @@ class TypeContext {
 
   /**
     * Generates constraints unifying the given types.
+    *
     * {{{
     *   tpe1 ~ tpe2
     * }}}
@@ -117,6 +120,7 @@ class TypeContext {
 
   /**
     * Generates constraints unifying the given types.
+    *
     * {{{
     *   tpe1 ~ tpe2
     *   tpe1 ~ tpe3
@@ -129,7 +133,9 @@ class TypeContext {
 
   /**
     * Generates constraints unifying the given types.
+    *
     * Returns a fresh type variable if the list is empty.
+    *
     * {{{
     *   tpe1 ~ tpe2
     *   tpe1 ~ tpe3
@@ -148,7 +154,9 @@ class TypeContext {
 
   /**
     * Generates constraints expecting the given type arguments to unify.
+    *
     * For expected types `tpeE1 ... tpeEN` and actual types `tpeA1 ... tpeAN`, generates:
+    *
     * {{{
     *   tpeE1 ~ tpeA1
     *   tpeE2 ~ tpeA2
@@ -168,6 +176,7 @@ class TypeContext {
 
   /**
     * Generates constraints expecting the given types to unify.
+    *
     * {{{
     *   expected ~ actual
     * }}}
