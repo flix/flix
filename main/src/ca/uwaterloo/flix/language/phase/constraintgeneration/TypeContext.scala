@@ -46,7 +46,7 @@ class TypeContext {
   /**
     * Stores typing information relating to a particular region scope.
     *
-    * @param region  the region symbol associated with the scope (None if not in a region).
+    * @param region the region symbol associated with the scope (None if not in a region).
     */
   private class ScopeConstraints(val region: Option[Symbol.KindedTypeVarSym]) {
 
@@ -144,10 +144,13 @@ class TypeContext {
     * }}}
     */
   def unifyAllTypesM(tpes: List[Type], kind: Kind, loc: SourceLocation)(implicit level: Level, flix: Flix): Type = {
+    // For performance, avoid creating a fresh type var if the list is empty
     tpes match {
+      // Case 1: Nonempty list. Unify everything with the first type.
       case tpe1 :: rest =>
         rest.foreach(unifyTypeM(tpe1, _, loc))
         tpe1
+      // Case 2: Empty list. Return a fresh type var.
       case Nil => Type.freshVar(kind, loc.asSynthetic)
     }
   }
@@ -209,7 +212,7 @@ class TypeContext {
     *
     * Note: Does not work for polymorphic effects.
     */
-    // TODO ASSOC-TYPES remove this once we introduce set effects
+  // TODO ASSOC-TYPES remove this once we introduce set effects
   def purifyEff(sym: Symbol.EffectSym, eff: Type): Type = {
     def visit(t: Type): Type = t match {
       case Type.Var(_, _) => t
