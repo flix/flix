@@ -94,7 +94,7 @@ class TypeContext {
     *
     * We push and pop information from this stack when we enter and exit regions.
     */
-  private val nest: mutable.Stack[ScopeConstraints] = mutable.Stack.empty
+  private val constraintStack: mutable.Stack[ScopeConstraints] = mutable.Stack.empty
 
   /**
     * Returns the current rigidity environment.
@@ -229,7 +229,7 @@ class TypeContext {
     */
   def enterRegionM(sym: Symbol.KindedTypeVarSym): Unit = {
     // save the info from the parent region
-    nest.push(currentScopeConstraints)
+    constraintStack.push(currentScopeConstraints)
     renv = renv.markRigid(sym)
     level = level.incr
     currentScopeConstraints = ScopeConstraints.emptyForRegion(sym)
@@ -247,7 +247,7 @@ class TypeContext {
         TypingConstraint.Purification(r, externalEff1, internalEff2, level, prov, currentScopeConstraints.getConstraints)
     }
 
-    currentScopeConstraints = nest.pop()
+    currentScopeConstraints = constraintStack.pop()
     currentScopeConstraints.add(constr)
     level = level.decr
   }
