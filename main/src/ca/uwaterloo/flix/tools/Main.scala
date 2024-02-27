@@ -3,18 +3,12 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.util.{Options, Result}
 
+import java.nio.file.Paths
+
 // temporary file
 object Main {
   def main(argv: Array[String]): Unit = {
-    val simple =
-      s"""
-         |def main(): Int32 = 32
-         |
-         |@Test
-         |def testMain1(): Bool = Assert.eq(main(), 32)
-         |
-       """.stripMargin
-    implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibAll).addSourceCode("main", simple)
+    implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibAll).addFlix(Paths.get("main/src/ca/uwaterloo/flix/tools/Main.flix"))
     flix.options = Options.Default.copy(progress = true)
 
     val ast = flix.check().unsafeGet

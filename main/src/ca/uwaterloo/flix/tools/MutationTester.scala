@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.Constant
+import ca.uwaterloo.flix.language.ast.Ast.{Constant, Input}
 import ca.uwaterloo.flix.language.ast.SemanticOp._
 import ca.uwaterloo.flix.language.ast.{SemanticOp, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expr, Root}
@@ -30,11 +30,8 @@ object MutationTester {
   def run(root: Root)(implicit flix: Flix): Result[(Int, Int, Int), Int] = {
     var all, killed, compilationFailed = 0 // TODO: refactor
 
-    // TODO: also need to filter library defs
-//    val defs = root.defs.values.filter(defn => !defn.spec.ann.isTest)
-
-    // for local testing
-    val defs = root.defs.filter(defn => defn._1.name.startsWith("main")).values
+    // don't want to mutate library functions and tests
+    val defs = root.defs.values.filter(defn => !isLibDef(defn) && !isTestDef(defn))
 
     defs.foreach {
       defn =>
@@ -64,6 +61,14 @@ object MutationTester {
         Validation.success(Tester.run(Nil, compilationResult))
     }
   }
+
+  private def isLibDef(defn: Def): Boolean = defn.exp.loc.source.input match {
+    case Input.Text(_, _, _) => true
+    case Input.TxtFile(_) => false
+    case Input.PkgFile(_) => false
+  }
+
+  private def isTestDef(defn: Def): Boolean = defn.spec.ann.isTest
 
   private sealed trait ExprMutator {
     def mutateExpr(exp: Expr): Option[Expr]
