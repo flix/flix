@@ -27,7 +27,9 @@ object MutationTester {
     ExprMutator.ConditionalBoundaryMutator,
   )
 
-  def run(root: Root)(implicit flix: Flix): (Int, Int, Int) = {
+  def run()(implicit flix: Flix): Result[(Int, Int, Int), Int] = {
+    val root = flix.getTyperAst
+
     var all, killed, compilationFailed = 0 // TODO: refactor
 
     // TODO: also need to filter library defs
@@ -52,7 +54,7 @@ object MutationTester {
         }
     }
 
-    (all, killed, compilationFailed)
+    Result.Ok(all, killed, compilationFailed)
   }
 
   private def testMutant(mutant: Root)(implicit flix: Flix) = {
