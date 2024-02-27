@@ -26,7 +26,6 @@ import ca.uwaterloo.flix.util.ParOps
   * - Lazy
   *   - component type erasure
   *   - force casting
-  * - Enum (todo)
   * - Function
   *   - result type boxing, this includes return types of defs and their applications
   *   - function call return value casting
