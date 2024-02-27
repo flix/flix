@@ -74,7 +74,7 @@ class TypeContext {
   /**
     * The information about the current scope.
     */
-  private var currentScopeInfo: ScopeConstraints = ScopeConstraints.empty
+  private var currentScopeConstraints: ScopeConstraints = ScopeConstraints.empty
 
   /**
     * The current rigidity environment.
@@ -102,7 +102,7 @@ class TypeContext {
   /**
     * Returns the current typing constraints.
     */
-  def getTypingConstraints: List[TypingConstraint] = currentScopeInfo.getConstraints
+  def getTypingConstraints: List[TypingConstraint] = currentScopeConstraints.getConstraints
 
   /**
     * Generates constraints unifying the given types.
@@ -112,7 +112,7 @@ class TypeContext {
     */
   def unifyTypeM(tpe1: Type, tpe2: Type, loc: SourceLocation): Unit = {
     val constr = TypingConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, loc))
-    currentScopeInfo.add(constr)
+    currentScopeConstraints.add(constr)
   }
 
   /**
@@ -162,7 +162,7 @@ class TypeContext {
         val argNum = index + 1
         val prov = Provenance.ExpectArgument(expectedType, actualType, sym, argNum, loc)
         val constr = TypingConstraint.Equality(expectedType, actualType, prov)
-        currentScopeInfo.add(constr)
+        currentScopeConstraints.add(constr)
     }
   }
 
@@ -174,7 +174,7 @@ class TypeContext {
     */
   def expectTypeM(expected: Type, actual: Type, loc: SourceLocation): Unit = {
     val constr = TypingConstraint.Equality(expected, actual, Provenance.ExpectType(expected, actual, loc))
-    currentScopeInfo.add(constr)
+    currentScopeConstraints.add(constr)
   }
 
   /**
@@ -185,7 +185,7 @@ class TypeContext {
     val tconstrs = tconstrs0.map {
       case Ast.TypeConstraint(head, arg, _) => TypingConstraint.Class(head.sym, arg, loc)
     }
-    currentScopeInfo.addAll(tconstrs)
+    currentScopeConstraints.addAll(tconstrs)
   }
 
   /**
@@ -220,26 +220,26 @@ class TypeContext {
     */
   def enterRegionM(sym: Symbol.KindedTypeVarSym): Unit = {
     // save the info from the parent region
-    nest.push(currentScopeInfo)
+    nest.push(currentScopeConstraints)
     renv = renv.markRigid(sym)
     level = level.incr
-    currentScopeInfo = ScopeConstraints.emptyForRegion(sym)
+    currentScopeConstraints = ScopeConstraints.emptyForRegion(sym)
   }
 
   /**
     * Exits a region, unifying the external effect with a purified version of the internal effect.
     */
   def exitRegionM(externalEff1: Type, internalEff2: Type, loc: SourceLocation): Unit = {
-    val constr = currentScopeInfo.region match {
+    val constr = currentScopeConstraints.region match {
       case None => throw InternalCompilerException("unexpected missing region", loc)
       case Some(r) =>
         // TODO ASSOC-TYPES improve prov. We can probably get a better prov than "match"
         val prov = Provenance.Match(externalEff1, internalEff2, loc)
-        TypingConstraint.Purification(r, externalEff1, internalEff2, level, prov, currentScopeInfo.getConstraints)
+        TypingConstraint.Purification(r, externalEff1, internalEff2, level, prov, currentScopeConstraints.getConstraints)
     }
 
-    currentScopeInfo = nest.pop()
-    currentScopeInfo.add(constr)
+    currentScopeConstraints = nest.pop()
+    currentScopeConstraints.add(constr)
     level = level.decr
   }
 }
