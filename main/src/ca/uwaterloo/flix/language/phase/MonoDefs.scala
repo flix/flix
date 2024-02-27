@@ -562,24 +562,18 @@ object MonoDefs {
     // Lookup the definition and its declared type.
     val defn = root.defs(sym)
 
-    // Compute the erased type.
-    val erasedType = eraseType(tpe)
-
     // Check if the function is non-polymorphic.
     if (defn.spec.tparams.isEmpty) {
       defn.sym
     } else {
-      specializeDef(defn, erasedType)
+      specializeDef(defn, tpe)
     }
   }
 
   /**
     * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
     */
-  private def specializeSigSym(sym: Symbol.SigSym, tpe0: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
-    // Perform erasure on the type
-    val tpe = eraseType(tpe0)
-
+  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     val sig = root.sigs(sym)
 
     // lookup the instance corresponding to this type
@@ -686,39 +680,6 @@ object MonoDefs {
       case Result.Err(_) =>
         throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.", tpe1.loc)
     }
-  }
-
-  /**
-    * Performs type erasure on the given type `tpe`.
-    *
-    * Flix does not erase normal types, but it does erase Boolean and caseset formulas.
-    */
-  private def eraseType(tpe: Type)(implicit root: LoweredAst.Root, flix: Flix): Type = tpe match {
-    case Type.Var(sym, loc) =>
-      sym.kind match {
-        case Kind.CaseSet(enumSym) =>
-          Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, enumSym), loc)
-        case Kind.Eff =>
-          // If an effect variable is free, we may assume its Pure due to the subst. lemma.
-          Type.Pure
-        case _ => tpe
-      }
-
-    case Type.Cst(_, _) => tpe
-
-    case Type.Apply(tpe1, tpe2, loc) =>
-      val t1 = eraseType(tpe1)
-      val t2 = eraseType(tpe2)
-      Type.Apply(t1, t2, loc)
-
-    case Type.Alias(sym, args, tpe, loc) =>
-      val as = args.map(eraseType)
-      val t = eraseType(tpe)
-      Type.Alias(sym, as, t, loc)
-
-    case Type.AssocType(cst, arg, _, _) =>
-      val a = eraseType(arg)
-      EqualityEnvironment.reduceAssocTypeStep(cst, a, root.eqEnv).get
   }
 
 }
