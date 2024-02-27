@@ -30,7 +30,7 @@ object MutationTester {
   def run(root: Root)(implicit flix: Flix): Result[(Int, Int, Int), Int] = {
     var all, killed, compilationFailed = 0 // TODO: refactor
 
-    // don't want to mutate library functions and tests
+    // don't want to mutate library defs and tests
     val defs = root.defs.values.filter(defn => !isLibDef(defn) && !isTestDef(defn))
 
     defs.foreach {
