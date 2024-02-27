@@ -189,7 +189,7 @@ class TypeContext {
   /**
     * Adds the given class constraints to the context.
     */
-  def addTypeConstraintsM(tconstrs0: List[Ast.TypeConstraint], loc: SourceLocation): Unit = {
+  def addClassConstraintsM(tconstrs0: List[Ast.TypeConstraint], loc: SourceLocation): Unit = {
     // convert all the syntax-level constraints to semantic constraints
     val tconstrs = tconstrs0.map {
       case Ast.TypeConstraint(head, arg, _) => TypingConstraint.Class(head.sym, arg, loc)
@@ -209,6 +209,7 @@ class TypeContext {
     *
     * Note: Does not work for polymorphic effects.
     */
+    // TODO ASSOC-TYPES remove this once we introduce set effects
   def purifyEff(sym: Symbol.EffectSym, eff: Type): Type = {
     def visit(t: Type): Type = t match {
       case Type.Var(_, _) => t
@@ -226,6 +227,11 @@ class TypeContext {
 
   /**
     * Enters a new region.
+    *
+    * Current scope information is pushed onto the stack,
+    * the region symbol is marked as rigid,
+    * the level is incremented,
+    * and we get a fresh empty set of constraints for the new scope.
     */
   def enterRegionM(sym: Symbol.KindedTypeVarSym): Unit = {
     // save the info from the parent region
@@ -237,6 +243,20 @@ class TypeContext {
 
   /**
     * Exits a region, unifying the external effect with a purified version of the internal effect.
+    *
+    * We generate a fresh purification constraint:
+    *
+    * {{{
+    *   externalEff1 ~ internalEff2[sym ↦ Pure]
+    * }}}
+    *
+    * Where the `sym` is the symbol of the region we are exiting.
+    * All the constraints from the inner region are nested under the new purification constraint.
+    * (They must be resolved first for the purification to be valid.)
+    *
+    * We pop the constraints from the parent scope; these become our current constraints.
+    * We add the new purification constraints to the current constraints.
+    * Finally, we decrement the level.
     */
   def exitRegionM(externalEff1: Type, internalEff2: Type, loc: SourceLocation): Unit = {
     val constr = currentScopeConstraints.region match {
