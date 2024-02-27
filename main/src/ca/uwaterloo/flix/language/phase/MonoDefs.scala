@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, RigidityEnv, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -65,13 +65,18 @@ object MonoDefs {
   private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
 
     private def default(tpe0: Type): Type = tpe0.kind match {
+      case Kind.Wild => Type.mkAnyType(tpe0.loc)
+      case Kind.WildCaseSet => Type.mkAnyType(tpe0.loc)
+      case Kind.Star => Type.mkAnyType(tpe0.loc)
       case Kind.Eff =>
         // If an effect variable is free, we may assume its Pure due to the subst. lemma.
         Type.Pure
+      case Kind.Bool => Type.mkAnyType(tpe0.loc)
       case Kind.RecordRow => Type.RecordRowEmpty
       case Kind.SchemaRow => Type.SchemaRowEmpty
+      case Kind.Predicate => Type.mkAnyType(tpe0.loc)
       case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
-      case _ => Type.Cst(TypeConstructor.AnyType, tpe0.loc)
+      case Kind.Arrow(_, _) => Type.mkAnyType(tpe0.loc)
     }
 
     /**
@@ -274,9 +279,9 @@ object MonoDefs {
       }
     }
 
-    val effects = ParOps.parMapValues(root.effects){
+    val effects = ParOps.parMapValues(root.effects) {
       case LoweredAst.Effect(doc, ann, mod, sym, ops0, loc) =>
-        val ops = ops0.map{
+        val ops = ops0.map {
           case LoweredAst.Op(sym, spec) =>
             MonoAst.Op(sym, visitEffectOpSpec(spec, empty))
         }
@@ -299,7 +304,7 @@ object MonoDefs {
     */
   private def visitEffectOpSpec(spec: LoweredAst.Spec, subst: StrictSubstitution): MonoAst.Spec = spec match {
     case LoweredAst.Spec(doc, ann, mod, _, fparams0, declaredScheme, retTpe, eff, _, loc) =>
-      val fparams = fparams0.map{
+      val fparams = fparams0.map {
         case LoweredAst.FormalParam(sym, mod, tpe, src, loc) =>
           MonoAst.FormalParam(sym, mod, subst(tpe), src, loc)
       }
