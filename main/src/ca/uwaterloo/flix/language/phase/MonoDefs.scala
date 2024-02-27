@@ -134,6 +134,12 @@ object MonoDefs {
     }
 
     /**
+      * Removes the binding for the given type variable `tvar` (if it exists).
+      */
+    def unbind(sym: Symbol.KindedTypeVarSym): StrictSubstitution =
+      StrictSubstitution(s.unbind(sym), eqEnv)
+
+    /**
       * Returns the non-strict version of this substitution.
       */
     def nonStrict: Substitution = s
@@ -398,9 +404,8 @@ object MonoDefs {
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
       // forcedly mark the region variable as IO inside the region
-      val subst1 = StrictSubstitution(subst.s.unbind(regionVar.sym), subst.eqEnv)
-      val subst2 = subst1 + (regionVar.sym -> Type.IO)
-      MonoAst.Expr.Scope(freshSym, regionVar, visitExp(exp, env1, subst2), subst(tpe), subst(eff), loc)
+      val subst1 = subst.unbind(regionVar.sym) + (regionVar.sym -> Type.IO)
+      MonoAst.Expr.Scope(freshSym, regionVar, visitExp(exp, env1, subst1), subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1, env0, subst)
