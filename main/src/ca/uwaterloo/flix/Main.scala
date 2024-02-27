@@ -261,6 +261,20 @@ object Main {
               System.exit(1)
           }
 
+        case Command.TestWithMutator =>
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.testWithMutator(flix)
+          }.toHardResult match {
+            case Result.Ok(_) =>
+              System.exit(0)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
+
         case Command.Repl =>
           if (cmdOpts.files.nonEmpty) {
             println("The 'repl' command cannot be used with a list of files.")
@@ -394,6 +408,8 @@ object Main {
 
     case object Test extends Command
 
+    case object TestWithMutator extends Command
+
     case object Repl extends Command
 
     case class Lsp(port: Int) extends Command
@@ -443,6 +459,9 @@ object Main {
       cmd("benchmark").action((_, c) => c.copy(command = Command.Benchmark)).text("  runs the benchmarks for the current project.")
 
       cmd("test").action((_, c) => c.copy(command = Command.Test)).text("  runs the tests for the current project.")
+
+      cmd("test-with-mutator").text("  launches mutation testing for the current project.")
+        .action((_, c) => c.copy(command = Command.TestWithMutator))
 
       cmd("repl").action((_, c) => c.copy(command = Command.Repl)).text("  starts a repl for the current project, or provided Flix source files.")
 
