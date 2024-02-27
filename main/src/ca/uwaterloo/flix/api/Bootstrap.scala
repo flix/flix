@@ -17,19 +17,19 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.ast.TypedAst
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
+import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.tools.{Benchmarker, MutationTester, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
 import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
 
-import java.io.{File, PrintStream, PrintWriter}
+import java.io.{PrintStream, PrintWriter}
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.util.zip.{ZipEntry, ZipInputStream, ZipOutputStream}
@@ -730,12 +730,14 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
    * Runs mutation testing.
    */
   def testWithMutator(flix: Flix): Validation[Unit, BootstrapError] = {
-    flatMapN(build(flix)) {
-      _ =>
-        MutationTester.run()(flix) match {
+    flix.check().toHardResult match {
+      case Result.Ok(root: TypedAst.Root) =>
+        MutationTester.run(root)(flix) match {
           case Ok(_) => Validation.success(())
           case Err(_) => Validation.toHardFailure(BootstrapError.GeneralError(List("MutationTester Error")))
         }
+      case Result.Err(errors: Chain[CompilationMessage]) =>
+        Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
     }
   }
 

@@ -27,13 +27,14 @@ object MutationTester {
     ExprMutator.ConditionalBoundaryMutator,
   )
 
-  def run()(implicit flix: Flix): Result[(Int, Int, Int), Int] = {
-    val root = flix.getTyperAst
-
+  def run(root: Root)(implicit flix: Flix): Result[(Int, Int, Int), Int] = {
     var all, killed, compilationFailed = 0 // TODO: refactor
 
     // TODO: also need to filter library defs
-    val defs = root.defs.values.filter(defn => !defn.spec.ann.isTest)
+//    val defs = root.defs.values.filter(defn => !defn.spec.ann.isTest)
+
+    // for local testing
+    val defs = root.defs.filter(defn => defn._1.name.startsWith("main")).values
 
     defs.foreach {
       defn =>
