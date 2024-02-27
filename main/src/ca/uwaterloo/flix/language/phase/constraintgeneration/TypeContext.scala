@@ -30,6 +30,19 @@ import scala.collection.mutable
   */
 class TypeContext {
 
+  private object ScopeConstraints {
+
+    /**
+      * Creates an empty ScopeConstraints with no associated region.
+      */
+    def empty: ScopeConstraints = new ScopeConstraints(None)
+
+    /**
+      * Creates an empty ScopeConstraints associated with the given region.
+      */
+    def emptyForRegion(r: Symbol.KindedTypeVarSym): ScopeConstraints = new ScopeConstraints(Some(r))
+  }
+
   /**
     * Stores typing information relating to a particular region scope.
     *
@@ -56,19 +69,6 @@ class TypeContext {
       * Returns the gathered constraints.
       */
     def getConstraints: List[TypingConstraint] = this.constrs.toList
-  }
-
-  private object ScopeConstraints {
-
-    /**
-      * Creates an empty ScopeConstraints with no associated region.
-      */
-    def empty: ScopeConstraints = new ScopeConstraints(None)
-
-    /**
-      * Creates an empty ScopeConstraints associated with the given region.
-      */
-    def emptyForRegion(r: Symbol.KindedTypeVarSym): ScopeConstraints = new ScopeConstraints(Some(r))
   }
 
   /**
