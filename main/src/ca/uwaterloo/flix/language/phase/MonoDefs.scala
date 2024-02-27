@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, RigidityEnv, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -79,46 +79,40 @@ object MonoDefs {
       *
       * NB: Applies the substitution first, then replaces every type variable with the unit type.
       */
-    def apply(tpe0: Type): Type = {
-      // NB: The order of cases has been determined by code coverage analysis.
-      def visit(t: Type): Type =
-        t match {
-          // When a substitution is performed, eliminate variables from the result.
-          case x: Type.Var => s.m.get(x.sym) match {
-            case Some(tpe) => tpe.map(default)
-            case None => default(t)
-          }
-          case Type.Cst(_, _) => t
-          case Type.Apply(t1, t2, loc) =>
-            val y = visit(t2)
-            visit(t1) match {
-              // Simplify boolean equations.
-              case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(y, loc)
-              case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => Type.mkUnion(x, y, loc)
-              case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => Type.mkIntersection(x, y, loc)
-
-              case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
-              case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
-              case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => Type.mkCaseUnion(x, y, sym, loc)
-
-              // Else just apply
-              case x => Type.Apply(x, y, loc)
-            }
-          case Type.Alias(sym, args0, tpe0, loc) =>
-            val args = args0.map(visit)
-            val tpe = visit(tpe0)
-            Type.Alias(sym, args, tpe, loc)
-
-          // Perform reduction on associated types.
-          case Type.AssocType(cst, arg0, _, loc) =>
-            val arg = visit(arg0)
-            EqualityEnvironment.reduceAssocType(cst, arg, eqEnv) match {
-              case Ok(t) => t
-              case Err(_) => throw InternalCompilerException("unexpected associated type reduction failure", loc)
-            }
+    def apply(tpe0: Type): Type = tpe0 match {
+      case x: Type.Var =>
+        // Remove variables by substitution, otherwise by default type.
+        s.m.get(x.sym) match {
+          case Some(t) => t.map(default) // TODO the map of default should not be needed if s is normalized
+          case None => default(tpe0)
         }
+      case Type.Cst(_, _) =>
+        tpe0
+      case Type.Apply(t1, t2, loc) =>
+        val y = apply(t2)
+        apply(t1) match {
+          // Simplify boolean equations.
+          case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(y, loc)
+          case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => Type.mkUnion(x, y, loc)
+          case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => Type.mkIntersection(x, y, loc)
 
-      visit(tpe0)
+          case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
+          case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
+          case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => Type.mkCaseUnion(x, y, sym, loc)
+
+          // Else just apply
+          case x => Type.Apply(x, y, loc)
+        }
+      case Type.Alias(_, _, t, _) =>
+        // Remove the Alias
+        apply(t)
+      case Type.AssocType(cst, arg0, _, loc) =>
+        // Remove the associated type
+        val arg = apply(arg0)
+        EqualityEnvironment.reduceAssocType(cst, arg, eqEnv) match {
+          case Ok(t) => apply(t)
+          case Err(_) => throw InternalCompilerException("unexpected associated type reduction failure", loc)
+        }
     }
 
     /**
@@ -274,9 +268,9 @@ object MonoDefs {
       }
     }
 
-    val effects = ParOps.parMapValues(root.effects){
+    val effects = ParOps.parMapValues(root.effects) {
       case LoweredAst.Effect(doc, ann, mod, sym, ops0, loc) =>
-        val ops = ops0.map{
+        val ops = ops0.map {
           case LoweredAst.Op(sym, spec) =>
             MonoAst.Op(sym, visitEffectOpSpec(spec, empty))
         }
@@ -299,7 +293,7 @@ object MonoDefs {
     */
   private def visitEffectOpSpec(spec: LoweredAst.Spec, subst: StrictSubstitution): MonoAst.Spec = spec match {
     case LoweredAst.Spec(doc, ann, mod, _, fparams0, declaredScheme, retTpe, eff, _, loc) =>
-      val fparams = fparams0.map{
+      val fparams = fparams0.map {
         case LoweredAst.FormalParam(sym, mod, tpe, src, loc) =>
           MonoAst.FormalParam(sym, mod, subst(tpe), src, loc)
       }
