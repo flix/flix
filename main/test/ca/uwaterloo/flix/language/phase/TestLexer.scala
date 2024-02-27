@@ -6,6 +6,7 @@ import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestLexer extends AnyFunSuite with TestUtils {
+
   test("LexerError.BlockCommentTooDeep.01") {
     val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* this is 32 levels deep */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
     val result = compile(input, Options.TestWithLibNix)
@@ -13,6 +14,20 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.BlockCommentTooDeep.02") {
+    val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* // this is 33 levels deep */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.BlockCommentTooDeep](result)
+  }
+
+  test("LexerError.BlockCommentTooDeep.03") {
+    // Note: The innermost block-comment is unterminated,
+    // but the lexer should stop after bottoming out so this should still be a 'too deep' error.
+    val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* this is 32 levels deep and unclosed */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.BlockCommentTooDeep](result)
+  }
+
+  test("LexerError.BlockCommentTooDeep.04") {
     // Note: The innermost block-comment is unterminated,
     // but the lexer should stop after bottoming out so this should still be a 'too deep' error.
     val input = "/* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* /* this is unclosed and deep */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */ */"
@@ -50,8 +65,52 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.DoubleDottedNumber](result)
   }
 
+  // DoubleEInNumber
+
+  test("LexerError.StringInterpolationTooDeep.01") {
+    val input = """ "${"${"${"${"${"${"${"${"${"${"${"${"${"${"${${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}}"}"}"}"}"}"}"}"}"}"}"}"}"}"}" """
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.StringInterpolationTooDeep](result)
+  }
+
+  test("LexerError.StringInterpolationTooDeep.02") {
+    // Note: The innermost interpolation is unterminated,
+    // but the lexer should stop after bottoming out so this should still be a 'too deep' error.
+    val input = """ "${"${"${"${"${"${"${"${"${"${"${"${"${"${"${${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${unterminated"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}}"}"}"}"}"}"}"}"}"}"}"}"}"}"}" """
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.StringInterpolationTooDeep](result)
+  }
+
+  test("LexerError.StringInterpolationTooDeep.03") {
+    // Note: The innermost interpolation is unterminated,
+    // but the lexer should stop after bottoming out so this should still be a 'too deep' error.
+    val input = """ "${"${"${"${"${"${"${"${"${"${"${"${"${"${"${${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${unclosed and deep"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}}"}"}"}"}"}"}"}"}"}"}"}"}"}"}" """
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.StringInterpolationTooDeep](result)
+  }
+
   test("LexerError.UnexpectedChar.01") {
     val input = "€"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnexpectedChar](result)
+  }
+
+  test("LexerError.UnexpectedChar.02") {
+    val input = "⟂"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnexpectedChar](result)
+  }
+
+  test("LexerError.UnexpectedChar.03") {
+    // Unicode hex U+2189, just below valid math unicode char
+    val input = "↉"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnexpectedChar](result)
+  }
+
+  test("LexerError.UnexpectedChar.04") {
+    // Unicode hex U+2300, just above valid math unicode char
+    val input = "⌀"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnexpectedChar](result)
   }
@@ -139,18 +198,6 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.UnterminatedChar](result)
   }
 
-  test("LexerError.UnterminatedRegex.01") {
-    val input = """ regex" """
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.UnterminatedRegex](result)
-  }
-
-  test("LexerError.UnterminatedRegex.02") {
-    val input = """ regex"\" """
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.UnterminatedRegex](result)
-  }
-
   test("LexerError.UnterminatedInfixFunction.01") {
     val input = "1 `add 2"
     val result = compile(input, Options.TestWithLibNix)
@@ -167,6 +214,24 @@ class TestLexer extends AnyFunSuite with TestUtils {
     val input = "1 `add 2"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedInfixFunction](result)
+  }
+
+  test("LexerError.UnterminatedRegex.01") {
+    val input = """ regex" """
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedRegex](result)
+  }
+
+  test("LexerError.UnterminatedRegex.02") {
+    val input = """ regex"\" """
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedRegex](result)
+  }
+
+  test("LexerError.UnterminatedRegex.03") {
+    val input = """ regex" regex\" """
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedRegex](result)
   }
 
   test("LexerError.UnterminatedString.01") {
@@ -187,7 +252,15 @@ class TestLexer extends AnyFunSuite with TestUtils {
     expectError[LexerError.UnterminatedString](result)
   }
 
-  test("LexerError.TerminatedStringNoNewline.01") {
+  test("LexerError.UnterminatedString.04") {
+    val input = """ regex" regex"" """
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[LexerError.UnterminatedString](result)
+  }
+
+  test("LexerError.UnterminatedString.05") {
+    // Actually not related to the error but asserts that the error
+    // is not a false positive
     val input = """ def f(): String = "This is terminated" """
     val result = compile(input, Options.TestWithLibNix)
     expectSuccess(result)
@@ -209,19 +282,5 @@ class TestLexer extends AnyFunSuite with TestUtils {
     val input = """ "${"Hi ${name!}"" """
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedStringInterpolation](result)
-  }
-
-  test("LexerError.StringInterpolationTooDeep.01") {
-    val input = """ "${"${"${"${"${"${"${"${"${"${"${"${"${"${"${${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}}"}"}"}"}"}"}"}"}"}"}"}"}"}"}" """
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.StringInterpolationTooDeep](result)
-  }
-
-  test("LexerError.StringInterpolationTooDeep.02") {
-    // Note: The innermost interpolation is unterminated,
-    // but the lexer should stop after bottoming out so this should still be a 'too deep' error.
-    val input = """ "${"${"${"${"${"${"${"${"${"${"${"${"${"${"${${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${"${unclosed and deep"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}"}}"}"}"}"}"}"}"}"}"}"}"}"}"}"}" """
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[LexerError.StringInterpolationTooDeep](result)
   }
 }
