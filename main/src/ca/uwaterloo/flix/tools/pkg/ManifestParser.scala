@@ -244,7 +244,7 @@ object ManifestParser {
 
   private def toFlixSafe(s: Option[String], p: Path): Result[Boolean, ManifestError] = {
     s match {
-      case None          => Ok(false)
+      case None          => Ok(true)
       case Some("true")  => Ok(true)
       case Some("false") => Ok(false)
       case Some(_)       => Err(ManifestError.IllegalSafetySignature(p, s.get))
