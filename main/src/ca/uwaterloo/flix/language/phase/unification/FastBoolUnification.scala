@@ -50,11 +50,20 @@ import scala.collection.mutable.ListBuffer
 object FastBoolUnification {
 
   /**
-    * Internal formatter. Only used for debugging.
+    * Internal formatter. Used for debugging.
     */
   private val formatter: Formatter = Formatter.AnsiTerminalFormatter
 
-  def solveAll(l: List[Equation]): Result[BoolSubstitution, ConflictException] = {
+  /**
+    * Attempts to solve all the given unification equations `l`.
+    *
+    * Returns `Ok(s)` where `s` is a most-general unifier for all equations.
+    *
+    * Returns `Err(c, l, s)` where `c` is a conflict, `l` is a list of unsolved equations, and `s` is a partial substitution.
+    *
+    * If multiple equations are unsolvable the implementation makes no guarantee about which one is returned.
+    */
+  def solveAll(l: List[Equation]): Result[BoolSubstitution, (ConflictException, List[Equation], BoolSubstitution)] = {
     val solver = new Solver(l)
     solver.solve()
   }
@@ -64,7 +73,7 @@ object FastBoolUnification {
     private var currentEqns = l
     private var currentSubst: BoolSubstitution = BoolSubstitution.empty
 
-    def solve(): Result[BoolSubstitution, ConflictException] = {
+    def solve(): Result[BoolSubstitution, (ConflictException, List[Equation], BoolSubstitution)] = {
       try {
         phase0()
         phase1()
@@ -73,7 +82,7 @@ object FastBoolUnification {
         phase4()
         Result.Ok(currentSubst)
       } catch {
-        case ex: ConflictException => Result.Err(ex)
+        case ex: ConflictException => Result.Err((ex, currentEqns, currentSubst))
       }
     }
 
