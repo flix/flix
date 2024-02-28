@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, RigidityEnv, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -99,13 +99,18 @@ object MonoDefs {
   private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
 
     private def default(tpe0: Type): Type = tpe0.kind match {
+      case Kind.Wild => Type.mkAnyType(tpe0.loc)
+      case Kind.WildCaseSet => Type.mkAnyType(tpe0.loc)
+      case Kind.Star => Type.mkAnyType(tpe0.loc)
       case Kind.Eff =>
         // If an effect variable is free, we may assume its Pure due to the subst. lemma.
         Type.Pure
+      case Kind.Bool => Type.mkAnyType(tpe0.loc)
       case Kind.RecordRow => Type.RecordRowEmpty
       case Kind.SchemaRow => Type.SchemaRowEmpty
+      case Kind.Predicate => Type.mkAnyType(tpe0.loc)
       case Kind.CaseSet(sym) => Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), tpe0.loc)
-      case _ => Type.Cst(TypeConstructor.AnyType, tpe0.loc)
+      case Kind.Arrow(_, _) => Type.mkAnyType(tpe0.loc)
     }
 
     /**
@@ -164,6 +169,12 @@ object MonoDefs {
     def +(kv: (Symbol.KindedTypeVarSym, Type)): StrictSubstitution = kv match {
       case (tvar, tpe) => StrictSubstitution(s ++ Substitution.singleton(tvar, tpe), eqEnv)
     }
+
+    /**
+      * Removes the binding for the given type variable `tvar` (if it exists).
+      */
+    def unbind(sym: Symbol.KindedTypeVarSym): StrictSubstitution =
+      StrictSubstitution(s.unbind(sym), eqEnv)
 
     /**
       * Returns the non-strict version of this substitution.
@@ -312,9 +323,9 @@ object MonoDefs {
       }
     }
 
-    val effects = ParOps.parMapValues(root.effects){
+    val effects = ParOps.parMapValues(root.effects) {
       case LoweredAst.Effect(doc, ann, mod, sym, ops0, loc) =>
-        val ops = ops0.map{
+        val ops = ops0.map {
           case LoweredAst.Op(sym, spec) =>
             MonoAst.Op(sym, visitEffectOpSpec(spec, empty))
         }
@@ -337,7 +348,7 @@ object MonoDefs {
     */
   private def visitEffectOpSpec(spec: LoweredAst.Spec, subst: StrictSubstitution): MonoAst.Spec = spec match {
     case LoweredAst.Spec(doc, ann, mod, _, fparams0, declaredScheme, retTpe, eff, _, loc) =>
-      val fparams = fparams0.map{
+      val fparams = fparams0.map {
         case LoweredAst.FormalParam(sym, mod, tpe, src, loc) =>
           MonoAst.FormalParam(sym, mod, subst(tpe), src, loc)
       }
@@ -432,9 +443,8 @@ object MonoDefs {
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
       // forcedly mark the region variable as IO inside the region
-      val subst1 = StrictSubstitution(subst.s.unbind(regionVar.sym), subst.eqEnv)
-      val subst2 = subst1 + (regionVar.sym -> Type.IO)
-      MonoAst.Expr.Scope(freshSym, regionVar, visitExp(exp, env1, subst2), subst(tpe), subst(eff), loc)
+      val subst1 = subst.unbind(regionVar.sym) + (regionVar.sym -> Type.IO)
+      MonoAst.Expr.Scope(freshSym, regionVar, visitExp(exp, env1, subst1), subst(tpe), subst(eff), loc)
 
     case LoweredAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
       val e1 = visitExp(exp1, env0, subst)
@@ -598,14 +608,11 @@ object MonoDefs {
     // Lookup the definition and its declared type.
     val defn = root.defs(sym)
 
-    // Compute the erased type.
-    val erasedType = eraseType(tpe)
-
     // Check if the function is non-polymorphic.
     if (defn.spec.tparams.isEmpty) {
       defn.sym
     } else {
-      specializeDef(defn, erasedType)
+      specializeDef(defn, tpe)
     }
   }
 
@@ -614,10 +621,7 @@ object MonoDefs {
     *
     * The given type must be a normalized type.
     */
-  private def specializeSigSym(sym: Symbol.SigSym, tpe0: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
-    // Perform erasure on the type
-    val tpe = eraseType(tpe0)
-
+  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     val sig = root.sigs(sym)
 
     // lookup the instance corresponding to this type
@@ -726,43 +730,6 @@ object MonoDefs {
       case Result.Err(_) =>
         throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.", tpe1.loc)
     }
-  }
-
-  /**
-    * Performs type erasure on the given type `tpe`.
-    *
-    * Returns the input type as-is if the input type is normalized.
-    *
-    * TODO should be deleted
-    *
-    * Flix does not erase normal types, but it does erase Boolean and caseset formulas.
-    */
-  private def eraseType(tpe: Type)(implicit root: LoweredAst.Root, flix: Flix): Type = tpe match {
-    case Type.Var(sym, loc) =>
-      sym.kind match {
-        case Kind.CaseSet(enumSym) =>
-          Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, enumSym), loc)
-        case Kind.Eff =>
-          // If an effect variable is free, we may assume its Pure due to the subst. lemma.
-          Type.Pure
-        case _ => tpe
-      }
-
-    case Type.Cst(_, _) => tpe
-
-    case Type.Apply(tpe1, tpe2, loc) =>
-      val t1 = eraseType(tpe1)
-      val t2 = eraseType(tpe2)
-      Type.Apply(t1, t2, loc)
-
-    case Type.Alias(sym, args, tpe, loc) =>
-      val as = args.map(eraseType)
-      val t = eraseType(tpe)
-      Type.Alias(sym, as, t, loc)
-
-    case Type.AssocType(cst, arg, _, _) =>
-      val a = eraseType(arg)
-      EqualityEnvironment.reduceAssocTypeStep(cst, a, root.eqEnv).get
   }
 
 }
