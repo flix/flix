@@ -212,7 +212,7 @@ class TypeContext {
     * Replaces every occurrence of the effect symbol `sym` with pure in `eff`.
     *
     * Note: Does not work for polymorphic effects. This should conceptually work
-    * like exiting a region or use set subtraction.
+    * like exiting a region or instead use set subtraction.
     */
   // TODO ASSOC-TYPES remove this once we introduce set effects
   def purifyEff(sym: Symbol.EffectSym, eff: Type): Type = {
