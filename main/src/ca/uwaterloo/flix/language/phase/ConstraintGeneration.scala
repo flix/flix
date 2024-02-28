@@ -35,7 +35,11 @@ object ConstraintGeneration {
     implicit def level: Level = c.getLevel
 
     exp0 match {
-      case Expr.Var(sym, _) => (sym.tvar, Type.Pure)
+      case Expr.Var(sym, _) =>
+        val resTpe = sym.tvar
+        val resEff = Type.Pure
+        (resTpe, resEff)
+
       case Expr.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
         val (tconstrs, defTpe) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
@@ -55,7 +59,9 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.Hole(_, tpe, _) =>
-        (tpe, Type.Pure)
+        val resTpe = tpe
+        val resEff = Type.Pure
+        (resTpe, resEff)
 
       case Expr.HoleWithExp(exp, tvar, evar, loc) =>
         val (_, eff) = visitExp(exp)
