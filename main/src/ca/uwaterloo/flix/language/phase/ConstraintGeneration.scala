@@ -992,6 +992,8 @@ object ConstraintGeneration {
 
   /**
     * Generates constraints for the pattern.
+    *
+    * Returns the pattern's type. The type may be a variable which must later be resolved.
     */
   def visitPattern(pat0: KindedAst.Pattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
     // Make the context's level available
