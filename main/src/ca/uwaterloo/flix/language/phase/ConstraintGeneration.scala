@@ -17,10 +17,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
-import ca.uwaterloo.flix.language.ast.Type.getFlixType
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, Name, RigidityEnv, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.constraintgeneration.{RestrictableChooseConstraintGeneration, SchemaConstraintGeneration, TypeContext, TypingConstraint}
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.constraintgeneration.{RestrictableChooseConstraintGeneration, SchemaConstraintGeneration, TypeContext}
+import ca.uwaterloo.flix.util.InternalCompilerException
 
 object ConstraintGeneration {
 
@@ -788,31 +787,31 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.InvokeConstructor(constructor, args, loc) =>
-        val classTpe = getFlixType(constructor.getDeclaringClass)
+        val classTpe = Type.getFlixType(constructor.getDeclaringClass)
         val (_, _) = args.map(visitExp).unzip
         val resTpe = classTpe
         val resEff = Type.IO
         (resTpe, resEff)
 
       case Expr.InvokeMethod(method, clazz, exp, args, loc) =>
-        val classTpe = getFlixType(clazz)
+        val classTpe = Type.getFlixType(clazz)
         val (baseTyp, _) = visitExp(exp)
         c.unifyTypeM(baseTyp, classTpe, loc)
         val (_, _) = args.map(visitExp).unzip
-        val resTpe = getFlixType(method.getReturnType)
+        val resTpe = Type.getFlixType(method.getReturnType)
         val resEff = Type.IO
         (resTpe, resEff)
 
       case Expr.InvokeStaticMethod(method, args, loc) =>
-        val returnTpe = getFlixType(method.getReturnType)
+        val returnTpe = Type.getFlixType(method.getReturnType)
         val (_, _) = args.map(visitExp).unzip
-        val resTpe = getFlixType(method.getReturnType)
+        val resTpe = Type.getFlixType(method.getReturnType)
         val resEff = Type.IO
         (resTpe, resEff)
 
       case Expr.GetField(field, clazz, exp, loc) =>
-        val classType = getFlixType(clazz)
-        val fieldType = getFlixType(field.getType)
+        val classType = Type.getFlixType(clazz)
+        val fieldType = Type.getFlixType(field.getType)
         val (tpe, _) = visitExp(exp)
         c.expectTypeM(expected = classType, actual = tpe, exp.loc)
         val resTpe = fieldType
@@ -820,8 +819,8 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.PutField(field, clazz, exp1, exp2, loc) =>
-        val fieldType = getFlixType(field.getType)
-        val classType = getFlixType(clazz)
+        val fieldType = Type.getFlixType(field.getType)
+        val classType = Type.getFlixType(clazz)
         val (tpe1, _) = visitExp(exp1)
         val (tpe2, _) = visitExp(exp2)
         c.expectTypeM(expected = classType, actual = tpe1, exp1.loc)
@@ -831,14 +830,14 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.GetStaticField(field, loc) =>
-        val fieldType = getFlixType(field.getType)
+        val fieldType = Type.getFlixType(field.getType)
         val resTpe = fieldType
         val resEff = Type.IO
         (resTpe, resEff)
 
       case Expr.PutStaticField(field, exp, loc) =>
         val (valueTyp, _) = visitExp(exp)
-        c.expectTypeM(expected = getFlixType(field.getType), actual = valueTyp, exp.loc)
+        c.expectTypeM(expected = Type.getFlixType(field.getType), actual = valueTyp, exp.loc)
         val resTpe = Type.Unit
         val resEff = Type.IO
         (resTpe, resEff)
@@ -866,7 +865,7 @@ object ConstraintGeneration {
         }
 
         methods.foreach(visitJvmMethod)
-        val resTpe = getFlixType(clazz)
+        val resTpe = Type.getFlixType(clazz)
         val resEff = Type.IO
         (resTpe, resEff)
 
