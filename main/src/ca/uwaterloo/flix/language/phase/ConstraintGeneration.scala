@@ -749,11 +749,11 @@ object ConstraintGeneration {
         val resultEff = Type.freshVar(Kind.Eff, loc) // TODO ASSOC-TYPES should be continuationEffect
         (resultTpe, resultEff)
 
-      case Expr.Do(op, exps, tvar, loc) =>
-        val eff = root.effects(op.sym.eff)
-        val operation = eff.ops.find(_.sym == op.sym)
-          .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $op in effect ${op.sym.eff}", loc))
-        val effTpe = Type.Cst(TypeConstructor.Effect(op.sym.eff), loc)
+      case Expr.Do(opUse, exps, tvar, loc) =>
+        val eff = root.effects(opUse.sym.eff)
+        val op = eff.ops.find(_.sym == opUse.sym)
+          .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $opUse in effect ${opUse.sym.eff}", loc))
+        val effTpe = Type.Cst(TypeConstructor.Effect(opUse.sym.eff), loc)
 
         def visitArg(arg: KindedAst.Expr, fparam: KindedAst.FormalParam): Type = {
           val (tpe, eff) = visitExp(arg)
@@ -762,23 +762,23 @@ object ConstraintGeneration {
         }
 
         // We special case the result type of the operation.
-        val operationType = operation.spec.tpe.typeConstructor match {
+        val opTpe = op.spec.tpe.typeConstructor match {
           case Some(TypeConstructor.Void) =>
             // The operation type is `Void`. Flix does not have subtyping, but here we want something close to it.
             // Hence we treat `Void` as a fresh type variable.
             // An alternative would be to allow empty pattern matches, but that is cumbersome.
-            Type.freshVar(Kind.Star, operation.spec.tpe.loc, isRegion = false, Ast.VarText.Absent)
-          case _ => operation.spec.tpe
+            Type.freshVar(Kind.Star, op.spec.tpe.loc, isRegion = false, Ast.VarText.Absent)
+          case _ => op.spec.tpe
         }
 
         // length check done in Resolver
-        val effs = (exps zip operation.spec.fparams) map {
+        val effs = (exps zip op.spec.fparams) map {
           case (arg, fparam) => visitArg(arg, fparam)
         }
 
-        c.unifyTypeM(operationType, tvar, loc)
+        c.unifyTypeM(opTpe, tvar, loc)
         val resTpe = tvar
-        val resEff = Type.mkUnion(effTpe :: operation.spec.eff :: effs, loc)
+        val resEff = Type.mkUnion(effTpe :: op.spec.eff :: effs, loc)
 
         (resTpe, resEff)
 
