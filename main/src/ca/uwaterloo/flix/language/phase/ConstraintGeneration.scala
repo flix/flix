@@ -1058,7 +1058,9 @@ object ConstraintGeneration {
   }
 
   /**
-    * Generates constraints for the record label pattern.
+    * Generates constraints for the patterns inside the record label pattern.
+    *
+    * Returns the label, pattern type, and location of the pattern.
     */
   private def visitRecordLabelPattern(pat: KindedAst.Pattern.Record.RecordLabelPattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Name.Label, Type, SourceLocation) = pat match {
     case KindedAst.Pattern.Record.RecordLabelPattern(label, tvar, p, loc) =>
