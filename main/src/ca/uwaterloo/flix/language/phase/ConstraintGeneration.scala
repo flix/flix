@@ -86,6 +86,9 @@ object ConstraintGeneration {
       case Expr.Apply(exp, exps, tvar, evar, loc) =>
         //
         // Determine if there is a direct call to a Def or Sig.
+        // By treating these as special cases, we can:
+        // - have better error messages (knowing the precise types of the arguments, etc)
+        // - have better performance (we don't generate unnecessary type variables)
         //
         val knownTarget = exp match {
           case KindedAst.Expr.Def(sym, tvar2, loc2) =>
