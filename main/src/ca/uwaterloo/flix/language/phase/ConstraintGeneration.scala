@@ -937,6 +937,7 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.Spawn(exp1, exp2, loc) =>
+        // TODO it is unclear what the type rules of spawn should be
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         val (_, _) = visitExp(exp1)
