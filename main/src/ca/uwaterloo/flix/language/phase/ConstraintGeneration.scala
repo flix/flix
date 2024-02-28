@@ -94,16 +94,16 @@ object ConstraintGeneration {
           case KindedAst.Expr.Def(sym, tvar2, loc2) =>
             // Case 1: Lookup the sym and instantiate its scheme.
             val defn = root.defs(sym)
-            val (tconstrs1, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
-            val constrs1 = tconstrs1.map(_.copy(loc = loc))
-            Some((sym, tvar2, constrs1, declaredType))
+            val (tconstrs0, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
+            val tconstrs = tconstrs0.map(_.copy(loc = loc))
+            Some((sym, tvar2, tconstrs, declaredType))
 
           case KindedAst.Expr.Sig(sym, tvar2, loc2) =>
             // Case 2: Lookup the sym and instantiate its scheme.
             val sig = root.classes(sym.clazz).sigs(sym)
-            val (tconstrs1, declaredType) = Scheme.instantiate(sig.spec.sc, loc2.asSynthetic)
-            val constrs1 = tconstrs1.map(_.copy(loc = loc))
-            Some((sym, tvar2, constrs1, declaredType))
+            val (tconstrs0, declaredType) = Scheme.instantiate(sig.spec.sc, loc2.asSynthetic)
+            val tconstrs = tconstrs0.map(_.copy(loc = loc))
+            Some((sym, tvar2, tconstrs, declaredType))
 
           case _ =>
             // Case 3: Unknown target.
