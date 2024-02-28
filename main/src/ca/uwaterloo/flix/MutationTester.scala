@@ -156,7 +156,10 @@ object MutationTester {
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
             val mut3 = mutateExpr(exp3).map(m => original.copy(exp3 = m))
             mut1:::mut2:::mut3
-        case Expr.Stm(exp1, exp2, tpe, eff, loc) => Nil
+        case original@Expr.Stm(exp1, exp2, _, _, _) =>
+            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+            mut1 ::: mut2
         case Expr.Discard(exp, eff, loc) => Nil
         case original@Expr.Match(_, rules, _, _, _) =>
             // refactor to permutation
