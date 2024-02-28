@@ -39,7 +39,7 @@ object EffUnification2 {
     FastBoolUnification.solveAll(equations) match {
       case Result.Ok(subst) => Result.Ok(fromBoolSubst(subst))
 
-      case Result.Err(ex) => // TODO: Use loc from ex.
+      case Result.Err((ex, _, _)) => // TODO: Use loc from ex.
         val tpe1 = fromTerm(ex.x, loc)
         val tpe2 = fromTerm(ex.y, loc)
         Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))

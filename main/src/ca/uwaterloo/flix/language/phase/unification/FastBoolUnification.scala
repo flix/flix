@@ -50,11 +50,20 @@ import scala.collection.mutable.ListBuffer
 object FastBoolUnification {
 
   /**
-    * Internal formatter. Only used for debugging.
+    * Internal formatter. Used for debugging.
     */
   private val formatter: Formatter = Formatter.AnsiTerminalFormatter
 
-  def solveAll(l: List[Equation]): Result[BoolSubstitution, ConflictException] = {
+  /**
+    * Attempts to solve all the given unification equations `l`.
+    *
+    * Returns `Ok(s)` where `s` is a most-general unifier for all equations.
+    *
+    * Returns `Err(c, l, s)` where `c` is a conflict, `l` is a list of unsolved equations, and `s` is a partial substitution.
+    *
+    * If multiple equations are unsolvable the implementation makes no guarantee about which one is returned.
+    */
+  def solveAll(l: List[Equation]): Result[BoolSubstitution, (ConflictException, List[Equation], BoolSubstitution)] = {
     val solver = new Solver(l)
     solver.solve()
   }
@@ -64,7 +73,7 @@ object FastBoolUnification {
     private var currentEqns = l
     private var currentSubst: BoolSubstitution = BoolSubstitution.empty
 
-    def solve(): Result[BoolSubstitution, ConflictException] = {
+    def solve(): Result[BoolSubstitution, (ConflictException, List[Equation], BoolSubstitution)] = {
       try {
         phase0()
         phase1()
@@ -73,7 +82,7 @@ object FastBoolUnification {
         phase4()
         Result.Ok(currentSubst)
       } catch {
-        case ex: ConflictException => Result.Err(ex)
+        case ex: ConflictException => Result.Err((ex, currentEqns, currentSubst))
       }
     }
 
@@ -275,7 +284,8 @@ object FastBoolUnification {
           // We use a singleton subst. to avoid idempotence issues.
           val singleton = BoolSubstitution.singleton(x, rhs)
 
-          currentSubst = currentSubst @@ singleton
+          // Update the current substitution.
+          currentSubst = singleton @@ currentSubst
 
           // Update the remaining eqns and the remainder.
           currentEqns = singleton(currentEqns)
@@ -764,7 +774,7 @@ object FastBoolUnification {
       BoolSubstitution(this.m ++ that.m)
     }
 
-    def @@(that: BoolSubstitution): BoolSubstitution = {
+    def @@(that: BoolSubstitution): BoolSubstitution = { // TODO: Verify that every single use correct.
       // Case 1: Return `that` if `this` is empty.
       if (this.m.isEmpty) {
         return that
@@ -1153,8 +1163,15 @@ object FastBoolUnification {
     Var(55075) ~ Var(112453)
   )
 
+  private def Iterator_next(): List[Equation] = List(
+    (Cst(1435) & Cst(1436)) ~ Var(55261),
+    Var(55251) ~ Var(112576),
+    Var(55257) ~ Var(112582),
+    Var(55261) ~ Var(112585)
+  )
+
   def main(args: Array[String]): Unit = {
-    solveAll(FixpointInterpreter_evalTerm()).get
+    //solveAll(FixpointInterpreter_evalTerm()).get
     //solveAll(Array_copyOfRange()).get
     //solveAll(FixpointAstDatalog_toString299997()).get
     //solveAll(Nec_zipWithA()).get
@@ -1164,6 +1181,7 @@ object FastBoolUnification {
     //solveAll(FixpointAstDatalog_predSymsOf29898()).get
     //solveAll(Iterator_toArray()).get
     //solveAll(Files_append()).get
+    solveAll(Iterator_next()).get
   }
 
 }
