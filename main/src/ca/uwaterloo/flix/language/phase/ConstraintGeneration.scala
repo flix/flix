@@ -1001,7 +1001,6 @@ object ConstraintGeneration {
     implicit def level: Level = c.getLevel
 
     pat0 match {
-
       case KindedAst.Pattern.Wild(tvar, _) => tvar
 
       case KindedAst.Pattern.Var(sym, tvar, loc) =>
