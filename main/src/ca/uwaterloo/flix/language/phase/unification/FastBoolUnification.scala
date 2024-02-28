@@ -275,7 +275,8 @@ object FastBoolUnification {
           // We use a singleton subst. to avoid idempotence issues.
           val singleton = BoolSubstitution.singleton(x, rhs)
 
-          currentSubst = currentSubst @@ singleton
+          // Update the current substitution.
+          currentSubst = singleton @@ currentSubst
 
           // Update the remaining eqns and the remainder.
           currentEqns = singleton(currentEqns)
@@ -764,7 +765,7 @@ object FastBoolUnification {
       BoolSubstitution(this.m ++ that.m)
     }
 
-    def @@(that: BoolSubstitution): BoolSubstitution = {
+    def @@(that: BoolSubstitution): BoolSubstitution = { // TODO: Verify that every single use correct.
       // Case 1: Return `that` if `this` is empty.
       if (this.m.isEmpty) {
         return that
@@ -1154,10 +1155,10 @@ object FastBoolUnification {
   )
 
   private def Iterator_next(): List[Equation] = List(
-    ((Cst(1435)) & (Cst(1436))) ~ (Var(55261)),
-    (Var(55251)) ~ (Var(112576)),
-    (Var(55257)) ~ (Var(112582)),
-    (Var(55261)) ~ (Var(112585))
+    (Cst(1435) & Cst(1436)) ~ Var(55261),
+    Var(55251) ~ Var(112576),
+    Var(55257) ~ Var(112582),
+    Var(55261) ~ Var(112585)
   )
 
   def main(args: Array[String]): Unit = {
