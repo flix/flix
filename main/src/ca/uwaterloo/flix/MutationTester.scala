@@ -209,7 +209,7 @@ object MutationTester {
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
             mut1 ::: mut2
-        case original@Expr.ArrayLength(exp, eff, loc) =>
+        case original@Expr.ArrayLength(exp, _, _) =>
             mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
@@ -229,7 +229,7 @@ object MutationTester {
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
             mut1 ::: mut2
-        case original@Expr.Deref(exp, tpe, eff, loc) =>
+        case original@Expr.Deref(exp, _, _, _) =>
             mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.Assign(exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
@@ -267,7 +267,7 @@ object MutationTester {
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
             mut1 ::: mut2
-        case original@Expr.GetChannel(exp, tpe, eff, loc) => mutateExpr(exp).map(m => original.copy(exp = m))
+        case original@Expr.GetChannel(exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.PutChannel(exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
@@ -296,6 +296,7 @@ object MutationTester {
 //    private def mutateAndPrepend[A](original: A, mutatee: A, func: (A => List[A]), copyFunc: (A => A), list: List[A]): List[A] = {
 //        func(mutatee).foldLeft(list)((acc, m) => copyFunc(m)::acc)
  //   }
+
     private def mutateMatchrule(mr: TypedAst.MatchRule): List[TypedAst.MatchRule] = {
         mutateExpr(mr.exp).map(m => mr.copy(exp = m))
 
@@ -365,6 +366,7 @@ object MutationTester {
         }
         helper(sop).filter(e => e != sop)
     }
+
     private def mutateCst(cst: Ast.Constant): List[Ast.Constant] = {
         cst match {
             case Constant.Unit => Constant.Unit :: Nil
@@ -383,5 +385,4 @@ object MutationTester {
             case Constant.Regex(_) => Constant.Regex(java.util.regex.Pattern.compile("a")) :: Nil
         }
     }
-
 }
