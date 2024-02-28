@@ -28,4 +28,9 @@ object ListOps {
       case ((h1, h2, h3, h4), (t1, t2, t3, t4)) => (h1 :: t1, h2 :: t2, h3 :: t3, h4 :: t4)
     }
   }
+
+  def zip[A, B](l1: List[A], l2: List[B]): List[(A, B)] = {
+    if (l1.lengthCompare(l2) != 0) throw new IllegalArgumentException(s"Zipped lists of different lengths\n$l1\n$l2")
+    else l1.zip(l2)
+  }
 }
