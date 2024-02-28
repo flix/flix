@@ -370,13 +370,8 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.LetRec(sym, ann, mod, exp1, exp2, loc) =>
-        // Ensure that `exp1` is a lambda.
-        //val a = Type.freshVar(Kind.Star, loc)
-        //val b = Type.freshVar(Kind.Star, loc)
-        //val p = Type.freshVar(Kind.Eff, loc)
-        //val expectedType = Type.mkArrowWithEffect(a, p, b, loc)
+        // exp1 is known to be a lambda syntactically
         val (tpe1, eff1) = visitExp(exp1)
-        //c.unifyTypeM(expectedType, tpe1, exp1.loc)
         c.unifyTypeM(sym.tvar, tpe1, exp1.loc)
         val (tpe2, eff2) = visitExp(exp2)
         val resTpe = tpe2
