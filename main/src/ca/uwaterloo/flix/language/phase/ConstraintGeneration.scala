@@ -671,7 +671,7 @@ object ConstraintGeneration {
         }
 
       case Expr.UncheckedCast(exp, declaredTpe, declaredEff, tvar, loc) =>
-        // A cast expression is unsound; the type system assumes the declared type is correct.
+        // A cast expression is unsound; the type system assumes the declared type and effect are correct.
         val (actualTyp, actualEff) = visitExp(exp)
         c.unifyTypeM(tvar, declaredTpe.getOrElse(actualTyp), loc)
         val resTpe = tvar
