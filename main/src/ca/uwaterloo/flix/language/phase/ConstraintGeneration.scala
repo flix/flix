@@ -695,11 +695,8 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.TryCatch(exp, rules, loc) =>
-        val (tpes, effs) = rules.map {
-          case KindedAst.CatchRule(_, _, body) =>
-            visitExp(body)
-        }.unzip
         val (tpe, eff) = visitExp(exp)
+        val (tpes, effs) = rules.map(visitCatchRule).unzip
         val ruleTpe = c.unifyAllTypesM(tpes, Kind.Star, loc)
         c.unifyTypeM(tpe, ruleTpe, loc)
         val resTpe = tpe
@@ -1089,9 +1086,9 @@ object ConstraintGeneration {
   }
 
   /**
-    * Generates constraints for the given match rule.
+    * Generates constraints for the given typematch rule.
     *
-    * Returns the pattern type, the body's type, and the body's effect
+    * Returns the the body's type and the body's effect
     */
   private def visitTypeMatchRule(rule: KindedAst.TypeMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
     case KindedAst.TypeMatchRule(sym, declTpe, exp) =>
@@ -1106,5 +1103,14 @@ object ConstraintGeneration {
       c.unifyTypeM(sym.tvar, declTpe, sym.loc)
 
       visitExp(exp)
+  }
+
+  /**
+    * Generates constraints for the given catch rule.
+    *
+    * Returns the the body's type and the body's effect
+    */
+  private def visitCatchRule(rule: KindedAst.CatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = rule match {
+    case KindedAst.CatchRule(_, _, exp) => visitExp(exp)
   }
 }
