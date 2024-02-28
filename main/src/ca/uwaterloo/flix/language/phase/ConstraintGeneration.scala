@@ -983,6 +983,7 @@ object ConstraintGeneration {
       case e: Expr.FixpointProject => SchemaConstraintGeneration.visitFixpointProject(e)
 
       case Expr.Error(_, tvar, evar) =>
+        // The error expression has whatever type and effect it needs to have.
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
