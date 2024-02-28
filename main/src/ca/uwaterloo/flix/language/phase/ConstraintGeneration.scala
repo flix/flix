@@ -421,15 +421,10 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.TypeMatch(exp, rules, loc) =>
-        val bodies = rules.map(_.exp)
         val (_, eff) = visitExp(exp)
-        // rigidify all the type vars in the rules
-        rules.flatMap(_.tpe.typeVars.toList).map(_.sym).foreach(c.rigidifyM)
-        // unify each rule's variable with its type
-        rules.foreach { rule => c.unifyTypeM(rule.sym.tvar, rule.tpe, rule.sym.loc) }
-        val (bodyTypes, bodyEffs) = bodies.map(visitExp).unzip
-        val resTpe = c.unifyAllTypesM(bodyTypes, Kind.Star, loc)
-        val resEff = Type.mkUnion(eff :: bodyEffs, loc)
+        val (tpes, effs) = rules.map(visitTypeMatchRule).unzip
+        val resTpe = c.unifyAllTypesM(tpes, Kind.Star, loc)
+        val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGeneration.visitRestrictableChoose(e)
@@ -1087,5 +1082,25 @@ object ConstraintGeneration {
       }
       val (tpe, eff) = visitExp(exp)
       (patTpe, tpe, eff)
+  }
+
+  /**
+    * Generates constraints for the given match rule.
+    *
+    * Returns the pattern type, the body's type, and the body's effect
+    */
+  private def visitTypeMatchRule(rule: KindedAst.TypeMatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
+    case KindedAst.TypeMatchRule(sym, declTpe, exp) =>
+      // We mark all the type vars in the declared type as rigid.
+      // This ensures we get a substitution from the actual type to the declared type.
+      // This marking only really affects wildcards,
+      // as non-wildcard variables must come from the function signature
+      // and are therefore already rigid.
+      declTpe.typeVars.map(_.sym).foreach(c.rigidifyM)
+
+      // Unify the variable's type with the declared type
+      c.unifyTypeM(sym.tvar, declTpe, sym.loc)
+
+      visitExp(exp)
   }
 }
