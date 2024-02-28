@@ -42,18 +42,18 @@ object ConstraintGeneration {
 
       case Expr.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val (tconstrs, defTpe) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
+        val (cconstrs, defTpe) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
         c.unifyTypeM(tvar, defTpe, loc)
-        c.addClassConstraintsM(tconstrs, loc)
+        c.addClassConstraintsM(cconstrs, loc)
         val resTpe = defTpe
         val resEff = Type.Pure
         (resTpe, resEff)
 
       case Expr.Sig(sym, tvar, loc) =>
         val sig = root.classes(sym.clazz).sigs(sym)
-        val (tconstrs, sigTpe) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
+        val (cconstrs, sigTpe) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
         c.unifyTypeM(tvar, sigTpe, loc)
-        c.addClassConstraintsM(tconstrs, loc)
+        c.addClassConstraintsM(cconstrs, loc)
         val resTpe = sigTpe
         val resEff = Type.Pure
         (resTpe, resEff)
@@ -94,16 +94,16 @@ object ConstraintGeneration {
           case KindedAst.Expr.Def(sym, tvar2, loc2) =>
             // Case 1: Lookup the sym and instantiate its scheme.
             val defn = root.defs(sym)
-            val (tconstrs0, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
-            val tconstrs = tconstrs0.map(_.copy(loc = loc))
-            Some((sym, tvar2, tconstrs, declaredType))
+            val (cconstrs0, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
+            val cconstrs = cconstrs0.map(_.copy(loc = loc))
+            Some((sym, tvar2, cconstrs, declaredType))
 
           case KindedAst.Expr.Sig(sym, tvar2, loc2) =>
             // Case 2: Lookup the sym and instantiate its scheme.
             val sig = root.classes(sym.clazz).sigs(sym)
-            val (tconstrs0, declaredType) = Scheme.instantiate(sig.spec.sc, loc2.asSynthetic)
-            val tconstrs = tconstrs0.map(_.copy(loc = loc))
-            Some((sym, tvar2, tconstrs, declaredType))
+            val (cconstrs0, declaredType) = Scheme.instantiate(sig.spec.sc, loc2.asSynthetic)
+            val cconstrs = cconstrs0.map(_.copy(loc = loc))
+            Some((sym, tvar2, cconstrs, declaredType))
 
           case _ =>
             // Case 3: Unknown target.
