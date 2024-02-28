@@ -52,7 +52,7 @@ object FastBoolUnification {
   /**
     * Internal formatter. Used for debugging.
     */
-  private val formatter: Formatter = Formatter.AnsiTerminalFormatter
+  private val formatter: Formatter = Formatter.NoFormatter
 
   /**
     * Attempts to solve all the given unification equations `l`.
@@ -64,6 +64,7 @@ object FastBoolUnification {
     * If multiple equations are unsolvable the implementation makes no guarantee about which one is returned.
     */
   def solveAll(l: List[Equation]): Result[BoolSubstitution, (ConflictException, List[Equation], BoolSubstitution)] = {
+//    Console.println(".")
     val solver = new Solver(l)
     solver.solve()
   }
@@ -85,6 +86,9 @@ object FastBoolUnification {
         case ex: ConflictException => Result.Err((ex, currentEqns, currentSubst))
       }
     }
+
+    private def println(x: Any): Unit = ()
+    private def println(): Unit = ()
 
     private def phase0(): Unit = {
       println("-".repeat(80))
@@ -252,13 +256,19 @@ object FastBoolUnification {
 
     // TODO: Could start from empty subst and then use ++ later.
 
+    var currentEqns = l
     var currentSubst = subst0
     var rest = ListBuffer.empty[Equation]
 
-    for (eqn <- l) {
+    while(currentEqns.nonEmpty) {
+      val eqn = currentEqns.head
+      currentEqns = currentEqns.tail
       eqn match {
         case Equation(Term.Var(x), Term.Var(y)) =>
-          currentSubst = currentSubst.extended(x, Term.Var(y))
+          val singleton = BoolSubstitution.singleton(x, Term.Var(y))
+
+          currentEqns = singleton(currentEqns)
+          currentSubst = singleton @@ currentSubst
         case _ => rest += eqn
       }
     }
@@ -755,7 +765,10 @@ object FastBoolUnification {
       case None => BoolSubstitution(m + (x -> t))
       case Some(t1) =>
         // Note: If t == t1 we can just return the same substitution.
-        if (t == t1) this else throw ConflictException(t, t1)
+        if (t == t1)
+          this
+        else
+          throw ConflictException(t, t1)
     }
 
     /**
@@ -1170,8 +1183,15 @@ object FastBoolUnification {
     Var(55261) ~ Var(112585)
   )
 
+  private def Boxable_lift1(): List[Equation] = List(
+    Var(56474) ~ True,
+    Var(56476) ~ (Var(113308) & Var(56474)),
+    Var(56478) ~ Var(56476)
+  )
+
+
   def main(args: Array[String]): Unit = {
-    //solveAll(FixpointInterpreter_evalTerm()).get
+    solveAll(FixpointInterpreter_evalTerm()).get
     //solveAll(Array_copyOfRange()).get
     //solveAll(FixpointAstDatalog_toString299997()).get
     //solveAll(Nec_zipWithA()).get
@@ -1181,7 +1201,8 @@ object FastBoolUnification {
     //solveAll(FixpointAstDatalog_predSymsOf29898()).get
     //solveAll(Iterator_toArray()).get
     //solveAll(Files_append()).get
-    solveAll(Iterator_next()).get
+    //solveAll(Iterator_next()).get
+    //solveAll(Boxable_lift1()).get
   }
 
 }
