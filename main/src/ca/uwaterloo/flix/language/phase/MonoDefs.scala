@@ -77,31 +77,32 @@ object MonoDefs {
     /**
       * Applies `this` substitution to the given type `tpe`.
       *
-      * NB: Applies the substitution first, then replaces every type variable with the unit type.
+      * Properties of the output type:
+      * - No associated types
+      * - No type aliases
       */
     def apply(tpe0: Type): Type = tpe0 match {
       case x: Type.Var =>
         // Remove variables by substitution, otherwise by default type.
         s.m.get(x.sym) match {
-          case Some(t) => t.map(default) // TODO the map of default should not be needed if s is normalized
+          case Some(t) => apply(t) // the image of s might be non-normalized
           case None => default(tpe0)
         }
       case Type.Cst(_, _) =>
         tpe0
       case Type.Apply(t1, t2, loc) =>
-        val y = apply(t2)
-        apply(t1) match {
+        (apply(t1), apply(t2)) match {
           // Simplify boolean equations.
-          case Type.Cst(TypeConstructor.Complement, _) => Type.mkComplement(y, loc)
-          case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) => Type.mkUnion(x, y, loc)
-          case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) => Type.mkIntersection(x, y, loc)
+          case (Type.Cst(TypeConstructor.Complement, _), y) => Type.mkComplement(y, loc)
+          case (Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y) => Type.mkUnion(x, y, loc)
+          case (Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y) => Type.mkIntersection(x, y, loc)
 
-          case Type.Cst(TypeConstructor.CaseComplement(sym), _) => Type.mkCaseComplement(y, sym, loc)
-          case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _) => Type.mkCaseIntersection(x, y, sym, loc)
-          case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _) => Type.mkCaseUnion(x, y, sym, loc)
+          case (Type.Cst(TypeConstructor.CaseComplement(sym), _), y) => Type.mkCaseComplement(y, sym, loc)
+          case (Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _), y) => Type.mkCaseIntersection(x, y, sym, loc)
+          case (Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _), y) => Type.mkCaseUnion(x, y, sym, loc)
 
           // Else just apply
-          case x => Type.Apply(x, y, loc)
+          case (x, y) => Type.Apply(x, y, loc)
         }
       case Type.Alias(_, _, t, _) =>
         // Remove the Alias
