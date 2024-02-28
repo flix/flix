@@ -128,9 +128,6 @@ object ConstraintGeneration {
             c.expectTypeM(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType, loc), loc)
             c.unifyTypeM(tvar, lambdaBodyType, loc)
             c.unifyTypeM(evar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
-            // TODO ASSOC-TYPES unbind?
-            //            _ <- unbindVar(lambdaBodyType) // NB: Safe to unbind since the variable is not used elsewhere.
-            //            _ <- unbindVar(lambdaBodyEff) // NB: Safe to unbind since the variable is not used elsewhere.
             val resTpe = tvar
             val resEff = evar
             (resTpe, resEff)
@@ -564,9 +561,6 @@ object ConstraintGeneration {
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val (tpe, eff) = visitExp(exp)
         c.expectTypeM(Type.mkArray(elmVar, regionVar, loc), tpe, exp.loc)
-        //        unbindVar(elmVar)
-        //        unbindVar(regionVar)
-        // TODO ASSOC-TYPES is there an unbind equivalent?
         val resTpe = Type.Int32
         val resEff = eff
         (resTpe, resEff)
@@ -594,7 +588,6 @@ object ConstraintGeneration {
         val elmVar = Type.freshVar(Kind.Star, loc)
         val (tpe, eff) = visitExp(exp)
         c.expectTypeM(Type.mkVector(elmVar, loc), tpe, exp.loc)
-        //        _ <- unbindVar(elmVar) // TODO ASSOC-TYPES
         val resTpe = Type.Int32
         val resEff = eff
         (resTpe, resEff)
