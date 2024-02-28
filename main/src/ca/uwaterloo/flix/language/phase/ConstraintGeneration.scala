@@ -27,7 +27,7 @@ object ConstraintGeneration {
     * Generates constraints for the given expression `exp0`, adding them to the type context `c`.
     *
     * Returns the type of the expression and its effect.
-    * The type and effect make include variables that must be resolved.
+    * The type and effect may include variables that must be resolved.
     */
   def visitExp(exp0: KindedAst.Expr)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     // Make the context's level available
