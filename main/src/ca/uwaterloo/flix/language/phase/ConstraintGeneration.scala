@@ -752,9 +752,9 @@ object ConstraintGeneration {
         val resultEff = Type.freshVar(Kind.Eff, loc) // TODO ASSOC-TYPES should be continuationEffect
         (resultTpe, resultEff)
 
-      case Expr.Do(op, args, tvar, loc) =>
-        val effect = root.effects(op.sym.eff)
-        val operation = effect.ops.find(_.sym == op.sym)
+      case Expr.Do(op, exps, tvar, loc) =>
+        val eff = root.effects(op.sym.eff)
+        val operation = eff.ops.find(_.sym == op.sym)
           .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $op in effect ${op.sym.eff}", loc))
         val effTpe = Type.Cst(TypeConstructor.Effect(op.sym.eff), loc)
 
@@ -775,7 +775,7 @@ object ConstraintGeneration {
         }
 
         // length check done in Resolver
-        val effs = (args zip operation.spec.fparams) map {
+        val effs = (exps zip operation.spec.fparams) map {
           case (arg, fparam) => visitArg(arg, fparam)
         }
 
@@ -785,24 +785,24 @@ object ConstraintGeneration {
 
         (resTpe, resEff)
 
-      case Expr.InvokeConstructor(constructor, args, _) =>
+      case Expr.InvokeConstructor(constructor, exps, _) =>
         val classTpe = Type.getFlixType(constructor.getDeclaringClass)
-        val (_, _) = args.map(visitExp).unzip
+        val (_, _) = exps.map(visitExp).unzip
         val resTpe = classTpe
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.InvokeMethod(method, clazz, exp, args, loc) =>
+      case Expr.InvokeMethod(method, clazz, exp, exps, loc) =>
         val classTpe = Type.getFlixType(clazz)
         val (baseTyp, _) = visitExp(exp)
         c.unifyTypeM(baseTyp, classTpe, loc)
-        val (_, _) = args.map(visitExp).unzip
+        val (_, _) = exps.map(visitExp).unzip
         val resTpe = Type.getFlixType(method.getReturnType)
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.InvokeStaticMethod(method, args, _) =>
-        val (_, _) = args.map(visitExp).unzip
+      case Expr.InvokeStaticMethod(method, exps, _) =>
+        val (_, _) = exps.map(visitExp).unzip
         val resTpe = Type.getFlixType(method.getReturnType)
         val resEff = Type.IO
         (resTpe, resEff)
