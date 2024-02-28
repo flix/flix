@@ -168,8 +168,8 @@ object MutationTester {
 
         case original@Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
             mutateExpr(exp2).map(m => original.copy(exp2 = m))
-        case original@Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => Nil
-        case original@Expr.Region(tpe, loc) => Nil
+        case original@Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => original :: Nil
+        case original@Expr.Region(tpe, loc) => original :: Nil
         case original@Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
@@ -180,7 +180,7 @@ object MutationTester {
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
             mut1 ::: mut2
-        case Expr.Discard(exp, eff, loc) => Nil
+        case original@Expr.Discard(exp, eff, loc) => original :: Nil
         case original@Expr.Match(_, rules, _, _, _) =>
             // refactor to permutation
             val permutations = rules.permutations.toList
@@ -192,10 +192,10 @@ object MutationTester {
         case original@Expr.Tuple(elms, _, _, _) =>
             val mutateElms = elms.map(e => mutateExpr(e))
             mutateElms.map(m => original.copy(elms = m))
-        case Expr.RecordEmpty(tpe, loc) => Nil
-        case Expr.RecordSelect(exp, label, tpe, eff, loc) => Nil
-        case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => Nil
-        case Expr.RecordRestrict(label, exp, tpe, eff, loc) => Nil
+        case original@Expr.RecordEmpty(tpe, loc) => original :: Nil
+        case original@Expr.RecordSelect(exp, label, tpe, eff, loc) => original :: Nil
+        case original@Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => original :: Nil
+        case original@Expr.RecordRestrict(label, exp, tpe, eff, loc) => original :: Nil
         case original@Expr.ArrayLit(exps, exp, _, _, _) =>
             val mut = mutateExpr(exp).map(m => original.copy (exp = m))
             val mutateExps = exps.map(e => mutateExpr(e))
@@ -250,7 +250,7 @@ object MutationTester {
         case original@Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) =>
             val mutateExps = exps.map(e => mutateExpr(e))
             mutateExps.map(m => original.copy(exps = m))
-        case original@Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => Nil
+        case original@Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => original :: Nil
         case original@Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) =>
             val mutateExps = exps.map(e => mutateExpr(e))
             mutateExps.map(m => original.copy(exps = m))
@@ -260,9 +260,9 @@ object MutationTester {
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
             mut1 ::: mut2
-        case original@Expr.GetStaticField(field, tpe, eff, loc) => Nil
+        case original@Expr.GetStaticField(field, tpe, eff, loc) => original :: Nil
         case original@Expr.PutStaticField(field, exp, tpe, eff, loc) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.NewObject(name, clazz, tpe, eff, methods, loc) => Nil
+        case original@Expr.NewObject(name, clazz, tpe, eff, methods, loc) => original :: Nil
         case original@Expr.NewChannel(exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
@@ -272,7 +272,7 @@ object MutationTester {
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
             mut1 ::: mut2
-        case original@Expr.SelectChannel(rules, default, tpe, eff, loc) => Nil
+        case original@Expr.SelectChannel(rules, default, tpe, eff, loc) => original :: Nil
         case original@Expr.Spawn(exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
@@ -280,7 +280,7 @@ object MutationTester {
         case original@Expr.ParYield(frags, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.Lazy(exp, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.Force(exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.FixpointConstraintSet(cs, tpe, loc) => Nil
+        case original@Expr.FixpointConstraintSet(cs, tpe, loc) => original :: Nil
         case original@Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.FixpointMerge(exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
@@ -290,7 +290,7 @@ object MutationTester {
         case original@Expr.FixpointFilter(pred, exp, tpe, eff, loc) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.FixpointInject(exp, pred, tpe, eff, loc) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.FixpointProject(pred, exp, tpe, eff, loc) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.Error(m, tpe, eff) => Nil
+        case original@Expr.Error(m, tpe, eff) => original :: Nil
     }
 
 //    private def mutateAndPrepend[A](original: A, mutatee: A, func: (A => List[A]), copyFunc: (A => A), list: List[A]): List[A] = {
