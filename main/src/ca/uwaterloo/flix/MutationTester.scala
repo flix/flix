@@ -148,9 +148,9 @@ object MutationTester {
 
         case original@Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
             mutateExpr(exp2).map(m => original.copy(exp2 = m))
-        case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => Nil
-        case Expr.Region(tpe, loc) => Nil
-        case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => Nil
+        case original@Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => Nil
+        case original@Expr.Region(tpe, loc) => Nil
+        case original@Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
