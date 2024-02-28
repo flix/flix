@@ -226,4 +226,14 @@ object ManifestError {
          |""".stripMargin
   }
 
+  case class IllegalSafetySignature(path: Path, signature: String) extends ManifestError {
+    override def message(f: Formatter): String =
+      s"""
+         |The safe entry in the toml file has an invalid value: ${f.red(signature)}.
+         |Allowed values:
+         |  true, false
+         |The toml file was found at ${f.cyan(if (path == null) "null" else path.toString)}.
+         |""".stripMargin
+  }
+
 }

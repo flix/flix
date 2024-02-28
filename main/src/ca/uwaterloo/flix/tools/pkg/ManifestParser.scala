@@ -87,6 +87,9 @@ object ManifestParser {
       repository <- getOptionalStringProperty("package.repository", parser, p);
       githubProject <- Result.traverseOpt(repository)(r => toGithubProject(r, p));
 
+      safe <- getOptionalStringProperty("package.safe", parser, p);
+      isSafe <- toFlixSafe(safe, p);
+
       modules <- getOptionalArrayProperty("package.modules", parser, p);
       moduleStrings <- Result.traverseOpt(modules)(m => convertTomlArrayToStringList(m, p));
       packageModules <- toPackageModules(moduleStrings, p);
@@ -114,7 +117,7 @@ object ManifestParser {
       jarDeps <- getOptionalTableProperty("jar-dependencies", parser, p);
       jarDepsList <- collectDependencies(jarDeps, flixDep = false, prodDep = false, jarDep = true, p)
 
-    ) yield Manifest(name, description, versionSemVer, githubProject, packageModules, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
+    ) yield Manifest(name, description, versionSemVer, githubProject, isSafe, packageModules, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
   }
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
@@ -230,6 +233,21 @@ object ManifestParser {
       }
     } catch {
       case e: NumberFormatException => Err(ManifestError.VersionNumberWrong(p, s, e.getMessage))
+    }
+  }
+
+  /**
+   * Converts a String `s` to a Boolean signature and returns
+   * an error if the String is not of the correct format.
+   * The allowed strings are: "true", "false".
+   */
+
+  private def toFlixSafe(s: Option[String], p: Path): Result[Boolean, ManifestError] = {
+    s match {
+      case None          => Ok(false)
+      case Some("true")  => Ok(true)
+      case Some("false") => Ok(false)
+      case Some(_)       => Err(ManifestError.IllegalSafetySignature(p, s.get))
     }
   }
 
