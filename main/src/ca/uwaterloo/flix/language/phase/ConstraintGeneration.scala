@@ -880,23 +880,23 @@ object ConstraintGeneration {
 
       case Expr.GetChannel(exp, tvar, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
-        val elmVar = Type.freshVar(Kind.Star, loc)
-        val channelType = Type.mkReceiver(elmVar, regionVar, loc)
+        val elmTpe = Type.freshVar(Kind.Star, loc)
+        val receiverTpe = Type.mkReceiver(elmTpe, regionVar, loc)
         val (tpe, eff) = visitExp(exp)
-        c.expectTypeM(expected = channelType, actual = tpe, exp.loc)
-        c.unifyTypeM(tvar, elmVar, loc)
+        c.expectTypeM(expected = receiverTpe, actual = tpe, exp.loc)
+        c.unifyTypeM(tvar, elmTpe, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(eff, regionVar, loc)
         (resTpe, resEff)
 
       case Expr.PutChannel(exp1, exp2, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
-        val elmVar = Type.freshVar(Kind.Star, loc)
-        val channelType = Type.mkSender(elmVar, regionVar, loc)
+        val elmTpe = Type.freshVar(Kind.Star, loc)
+        val senderTpe = Type.mkSender(elmTpe, regionVar, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        c.expectTypeM(expected = channelType, actual = tpe1, exp1.loc)
-        c.expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
+        c.expectTypeM(expected = senderTpe, actual = tpe1, exp1.loc)
+        c.expectTypeM(expected = elmTpe, actual = tpe2, exp2.loc)
         val resTpe = Type.mkUnit(loc)
         val resEff = Type.mkUnion(eff1, eff2, regionVar, loc)
         (resTpe, resEff)
