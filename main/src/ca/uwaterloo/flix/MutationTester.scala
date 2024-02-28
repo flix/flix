@@ -88,7 +88,6 @@ object MutationTester {
     private def mutateRoot(root: TypedAst.Root, testee: String): List[(Symbol.DefnSym, List[TypedAst.Def])] = {
         val defs = root.defs
         val defSyms = root.modules.filter(pair => (pair._1.toString.equals(testee))).values.toList.flatten
-        println(defSyms)
         mutateDefs(defs, defSyms).flatten
     }
 
@@ -98,8 +97,6 @@ object MutationTester {
             case (s, fun) =>
                 if (defSyms.contains(s)) {
                     val mutExps = mutateExpr(fun.exp)
-                    println(fun.exp)
-                    println(mutExps)
                     val mutDefs = mutExps.map(mexp => fun.copy(exp = mexp))
                     Some(d._1 -> mutDefs)
                 } else None
@@ -107,6 +104,35 @@ object MutationTester {
         })
     }
 
+
+    private def mutationPermutations(exps: List[TypedAst.Expr]): List[List[TypedAst.Expr]] = {
+        def mutate(exps: List[TypedAst.Expr], index: Int) : List[TypedAst.Expr] = (exps, index) match {
+            case (x::Nil, 0) => mutateExpr(x)
+            case (x::xs, 0) => mutateExpr(x)
+            case (x::xs, n) => mutate(xs, n-1)
+            case (_, _) => Nil
+        }
+
+        def replace(index: Int, mutation: TypedAst.Expr, exps: List[TypedAst.Expr]): List[TypedAst.Expr] =
+            (index, exps) match {
+                case (0, _::Nil) => mutation :: Nil
+                case (0, x::xs) => mutation::xs
+                case (n, x::xs) => x :: replace(n-1, mutation, xs)
+                case (_,_) => Nil
+        }
+
+        var perms: List[List[TypedAst.Expr]] = Nil
+
+        for (i <- exps.indices) {
+            val mutations = mutate(exps, i)
+            for(m <- mutations){
+                perms = replace(i, m, exps) :: perms
+            }
+
+        }
+        perms
+
+    }
     /**
         // var doesn't contain a subtree, and we don't mutate them so we don't need to return them
         case Expr.Var(_, _, _) => Nil
@@ -114,10 +140,10 @@ object MutationTester {
     private def mutateExpr(e: TypedAst.Expr): List[TypedAst.Expr] = e match {
         case Expr.Cst(cst, tpe, loc) =>
             mutateCst(cst).map(m => Expr.Cst(m, tpe, loc))
-        case original@Expr.Var(_, _, _) => Nil
-        case original@Expr.Def(sym, tpe, loc) => Nil
-        case original@Expr.Sig(sym, tpe, loc) => Nil
-        case original@Expr.Hole(sym, tpe, loc) => Nil
+        case original@Expr.Var(_, _, _) => original :: Nil
+        case original@Expr.Def(sym, tpe, loc) => original :: Nil
+        case original@Expr.Sig(sym, tpe, loc) => original :: Nil
+        case original@Expr.Hole(sym, tpe, loc) => original :: Nil
         case original@Expr.HoleWithExp(exp, tpe, eff, loc) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.OpenAs(symUse, exp, tpe, loc) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.Use(sym, alias, exp, loc) => mutateExpr(exp).map(m => original.copy(exp = m))
@@ -125,16 +151,10 @@ object MutationTester {
             mutateExpr(exp).map(m => original.copy(exp = m))
 
         case original@Expr.Apply(exp, exps, tpe, eff, loc) =>
-            def helper(expList: List[Expr], index: Int) : List[Expr]= (expList, index) match {
-                case (x::Nil, 0) => mutateExpr(x) ::: Nil
-                case (x::xs, 0) => mutateExpr(x) ::: xs
-                case (x::xs, n) =>  x::helper(xs, n-1)
-                case (_ ,_) => Nil
-            }
-            var list: List[List[Expr]] = Nil
-            for (i <- 0 until exps.length)
-                list = helper(exps, i) :: list
-            list.map(m => original.copy(exps = m))
+            mutationPermutations(exps).map(mp => {
+                println(mp)
+                original.copy(exps = mp)
+            })
 
         case original@Expr.Unary(sop, exp, tpe, eff, loc) =>
             val mut1 = Expr.Unary(sop, original, tpe, eff, loc)
@@ -163,14 +183,12 @@ object MutationTester {
         case Expr.Discard(exp, eff, loc) => Nil
         case original@Expr.Match(_, rules, _, _, _) =>
             // refactor to permutation
-            val permutations = rules.permutations
-            val shuffle = permutations.map(p => original.copy(rules = p)).toList
-            val ruleMute = rules.map(r => mutateMatchrule(r)).map(m => original.copy(rules = m))
-            shuffle:::ruleMute
-        case Expr.TypeMatch(exp, rules, tpe, eff, loc) => Nil
-        case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => Nil
-        case Expr.Tag(sym, exp, tpe, eff, loc) => Nil
-        case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => Nil
+            val permutations = rules.permutations.toList
+            permutations.flatMap(p => p.map(r => mutateMatchrule(r)).map(m => original.copy(rules = m)))
+        case original@Expr.TypeMatch(exp, rules, tpe, eff, loc) => original :: Nil
+        case original@Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => original :: Nil
+        case original@Expr.Tag(sym, exp, tpe, eff, loc) => original :: Nil
+        case original@Expr.RestrictableTag(sym, exp, tpe, eff, loc) => original :: Nil
         case original@Expr.Tuple(elms, _, _, _) =>
             val mutateElms = elms.map(e => mutateExpr(e))
             mutateElms.map(m => original.copy(elms = m))
