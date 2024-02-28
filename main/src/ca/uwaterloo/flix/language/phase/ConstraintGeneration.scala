@@ -32,7 +32,7 @@ object ConstraintGeneration {
     implicit def level: Level = c.getLevel
 
     exp0 match {
-      case Expr.Var(sym, loc) => (sym.tvar, Type.Pure)
+      case Expr.Var(sym, _) => (sym.tvar, Type.Pure)
       case Expr.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
         val (tconstrs, defTpe) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
@@ -51,11 +51,11 @@ object ConstraintGeneration {
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Hole(sym, tpe, loc) =>
+      case Expr.Hole(_, tpe, _) =>
         (tpe, Type.Pure)
 
       case Expr.HoleWithExp(exp, tvar, evar, loc) =>
-        val (tpe, eff) = visitExp(exp)
+        val (_, eff) = visitExp(exp)
         // effect type is AT LEAST the inner expression's effect
         val atLeastEff = Type.mkUnion(eff, Type.freshVar(Kind.Eff, loc.asSynthetic), loc.asSynthetic)
         c.unifyTypeM(atLeastEff, evar, loc)
@@ -66,10 +66,10 @@ object ConstraintGeneration {
 
       case e: Expr.OpenAs => RestrictableChooseConstraintGeneration.visitOpenAs(e)
 
-      case Expr.Use(sym, alias, exp, loc) =>
+      case Expr.Use(_, _, exp, _) =>
         visitExp(exp)
 
-      case Expr.Cst(cst, loc) =>
+      case Expr.Cst(cst, _) =>
         val resTpe = Type.constantType(cst)
         val resEff = Type.Pure
         (resTpe, resEff)
@@ -349,19 +349,19 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.Stm(exp1, exp2, loc) =>
-        val (tpe1, eff1) = visitExp(exp1)
+        val (_, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         val resTpe = tpe2
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
 
-      case Expr.Discard(exp, loc) =>
-        val (tpe, eff) = visitExp(exp)
+      case Expr.Discard(exp, _) =>
+        val (_, eff) = visitExp(exp)
         val resTpe = Type.Unit
         val resEff = eff
         (resTpe, resEff)
 
-      case Expr.Let(sym, mod, exp1, exp2, loc) =>
+      case Expr.Let(sym, _, exp1, exp2, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
         c.unifyTypeM(sym.tvar, tpe1, loc)
         val (tpe2, eff2) = visitExp(exp2)
@@ -369,7 +369,7 @@ object ConstraintGeneration {
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
 
-      case Expr.LetRec(sym, ann, mod, exp1, exp2, loc) =>
+      case Expr.LetRec(sym, _, _, exp1, exp2, loc) =>
         // exp1 is known to be a lambda syntactically
         val (tpe1, eff1) = visitExp(exp1)
         c.unifyTypeM(sym.tvar, tpe1, exp1.loc)
@@ -378,7 +378,7 @@ object ConstraintGeneration {
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
 
-      case Expr.Region(tpe, loc) =>
+      case Expr.Region(tpe, _) =>
         val resTpe = tpe
         val resEff = Type.Pure
         (resTpe, resEff)
@@ -409,7 +409,7 @@ object ConstraintGeneration {
 
       case Expr.TypeMatch(exp, rules, loc) =>
         val bodies = rules.map(_.exp)
-        val (tpe, eff) = visitExp(exp)
+        val (_, eff) = visitExp(exp)
         // rigidify all the type vars in the rules
         rules.flatMap(_.tpe.typeVars.toList).map(_.sym).foreach(c.rigidifyM)
         // unify each rule's variable with its type
@@ -634,8 +634,8 @@ object ConstraintGeneration {
         val resEff = actualEff
         (resTpe, resEff)
 
-      case Expr.InstanceOf(exp, clazz, loc) =>
-        val (tpe, eff) = visitExp(exp)
+      case Expr.InstanceOf(exp, _, _) =>
+        val (_, eff) = visitExp(exp)
         c.expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
         val resTpe = Type.Bool
         val resEff = Type.Pure
@@ -668,14 +668,14 @@ object ConstraintGeneration {
         val resEff = declaredEff.getOrElse(actualEff)
         (resTpe, resEff)
 
-      case Expr.UncheckedMaskingCast(exp, loc) =>
-        val (tpe, eff) = visitExp(exp)
+      case Expr.UncheckedMaskingCast(exp, _) =>
+        val (tpe, _) = visitExp(exp)
         val resTpe = tpe
         val resEff = Type.Pure
         (resTpe, resEff)
 
-      case Expr.Without(exp, effUse, loc) =>
-        val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
+      case Expr.Without(exp, _, _) =>
+        //        val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
         //        val expected = Type.mkDifference(Type.freshVar(Kind.Bool, loc), effType, loc)
         // TODO EFF-MIGRATION use expected
         val (tpe, eff) = visitExp(exp)
@@ -685,7 +685,7 @@ object ConstraintGeneration {
 
       case Expr.TryCatch(exp, rules, loc) =>
         val (tpes, effs) = rules.map {
-          case KindedAst.CatchRule(sym, clazz, body) =>
+          case KindedAst.CatchRule(_, _, body) =>
             visitExp(body)
         }.unzip
         val (tpe, eff) = visitExp(exp)
@@ -759,7 +759,7 @@ object ConstraintGeneration {
             // The operation type is `Void`. Flix does not have subtyping, but here we want something close to it.
             // Hence we treat `Void` as a fresh type variable.
             // An alternative would be to allow empty pattern matches, but that is cumbersome.
-            Type.freshVar(Kind.Star, operation.spec.tpe.loc, false, Ast.VarText.Absent)
+            Type.freshVar(Kind.Star, operation.spec.tpe.loc, isRegion = false, Ast.VarText.Absent)
           case _ => operation.spec.tpe
         }
 
@@ -774,7 +774,7 @@ object ConstraintGeneration {
 
         (resTpe, resEff)
 
-      case Expr.InvokeConstructor(constructor, args, loc) =>
+      case Expr.InvokeConstructor(constructor, args, _) =>
         val classTpe = Type.getFlixType(constructor.getDeclaringClass)
         val (_, _) = args.map(visitExp).unzip
         val resTpe = classTpe
@@ -790,14 +790,13 @@ object ConstraintGeneration {
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.InvokeStaticMethod(method, args, loc) =>
-        val returnTpe = Type.getFlixType(method.getReturnType)
+      case Expr.InvokeStaticMethod(method, args, _) =>
         val (_, _) = args.map(visitExp).unzip
         val resTpe = Type.getFlixType(method.getReturnType)
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.GetField(field, clazz, exp, loc) =>
+      case Expr.GetField(field, clazz, exp, _) =>
         val classType = Type.getFlixType(clazz)
         val fieldType = Type.getFlixType(field.getType)
         val (tpe, _) = visitExp(exp)
@@ -806,7 +805,7 @@ object ConstraintGeneration {
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.PutField(field, clazz, exp1, exp2, loc) =>
+      case Expr.PutField(field, clazz, exp1, exp2, _) =>
         val fieldType = Type.getFlixType(field.getType)
         val classType = Type.getFlixType(clazz)
         val (tpe1, _) = visitExp(exp1)
@@ -817,26 +816,26 @@ object ConstraintGeneration {
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.GetStaticField(field, loc) =>
+      case Expr.GetStaticField(field, _) =>
         val fieldType = Type.getFlixType(field.getType)
         val resTpe = fieldType
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.PutStaticField(field, exp, loc) =>
+      case Expr.PutStaticField(field, exp, _) =>
         val (valueTyp, _) = visitExp(exp)
         c.expectTypeM(expected = Type.getFlixType(field.getType), actual = valueTyp, exp.loc)
         val resTpe = Type.Unit
         val resEff = Type.IO
         (resTpe, resEff)
 
-      case Expr.NewObject(name, clazz, methods, loc) =>
+      case Expr.NewObject(_, clazz, methods, _) =>
 
         /**
           * Generates constraints for the JVM method.
           */
         def visitJvmMethod(method: KindedAst.JvmMethod): Unit = method match {
-          case KindedAst.JvmMethod(ident, fparams, exp, returnTpe, eff, loc) =>
+          case KindedAst.JvmMethod(_, fparams, exp, returnTpe, _, _) =>
 
             /**
               * Constrains the given formal parameter to its declared type.
@@ -847,7 +846,7 @@ object ConstraintGeneration {
             }
 
             fparams.foreach(visitFormalParam)
-            val (bodyTpe, bodyEff) = visitExp(exp)
+            val (bodyTpe, _) = visitExp(exp)
             c.expectTypeM(expected = returnTpe, actual = bodyTpe, exp.loc)
           // TODO ASSOC-TYPES check eff matches declared eff ?
         }
@@ -929,14 +928,14 @@ object ConstraintGeneration {
       case Expr.Spawn(exp1, exp2, loc) =>
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
-        val (tpe1, _) = visitExp(exp1)
+        val (_, _) = visitExp(exp1)
         val (tpe2, _) = visitExp(exp2)
         c.expectTypeM(expected = regionType, actual = tpe2, exp2.loc)
         val resTpe = Type.Unit
         val resEff = Type.mkUnion(Type.IO, regionVar, loc)
         (resTpe, resEff)
 
-      case Expr.ParYield(frags, exp, loc) =>
+      case Expr.ParYield(frags, exp, _) =>
         val patterns = frags.map(_.pat)
         val parExps = frags.map(_.exp)
         val patLocs = frags.map(_.loc)
@@ -971,7 +970,7 @@ object ConstraintGeneration {
       case e: Expr.FixpointInject => SchemaConstraintGeneration.visitFixpointInject(e)
       case e: Expr.FixpointProject => SchemaConstraintGeneration.visitFixpointProject(e)
 
-      case Expr.Error(m, tvar, evar) =>
+      case Expr.Error(_, tvar, evar) =>
         val resTpe = tvar
         val resEff = evar
         (resTpe, resEff)
@@ -988,13 +987,13 @@ object ConstraintGeneration {
 
     pat0 match {
 
-      case KindedAst.Pattern.Wild(tvar, loc) => tvar
+      case KindedAst.Pattern.Wild(tvar, _) => tvar
 
       case KindedAst.Pattern.Var(sym, tvar, loc) =>
         c.unifyTypeM(sym.tvar, tvar, loc)
         tvar
 
-      case KindedAst.Pattern.Cst(cst, loc) => Type.constantType(cst)
+      case KindedAst.Pattern.Cst(cst, _) => Type.constantType(cst)
 
       case KindedAst.Pattern.Tag(symUse, pat, tvar, loc) =>
         // Lookup the enum declaration.
