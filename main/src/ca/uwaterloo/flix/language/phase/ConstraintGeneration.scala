@@ -650,9 +650,11 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.CheckedCast(cast, exp, tvar, evar, loc) =>
+        // A cast expression is sound; the type system ensures the declared type is correct.
         cast match {
           case Ast.CheckedCastType.TypeCast =>
-            // Ignore the inferred type of exp.
+            // We replace the type with a fresh variable to allow any type.
+            // The validity of this cast is checked in the Safety phase.
             val (_, eff) = visitExp(exp)
             c.unifyTypeM(evar, eff, loc)
             val resTpe = tvar
@@ -660,7 +662,7 @@ object ConstraintGeneration {
             (resTpe, resEff)
 
           case Ast.CheckedCastType.EffectCast =>
-            // We simply union the purity and effect with a fresh variable.
+            // We union the effect with a fresh variable to allow unifying with a "larger" effect.
             val (tpe, eff) = visitExp(exp)
             c.unifyTypeM(tvar, tpe, loc)
             val resTpe = tvar
