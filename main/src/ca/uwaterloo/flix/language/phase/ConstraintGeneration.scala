@@ -396,6 +396,14 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.Scope(sym, regionVar, exp, evar, loc) =>
+        // We must visit exp INSIDE the region
+        // (i.e. between `enter` and `exit`)
+        // because we need to resolve local constraints
+        // BEFORE purifying the region as we exit
+
+        // We must unify sym.tvar and the region var INSIDE the region
+        // because we need to ensure that reference to the region are
+        // resolved BEFORE purifying the region as we exit
         c.enterRegionM(regionVar.sym)
         c.unifyTypeM(sym.tvar, Type.mkRegion(regionVar, loc), loc)
         val (tpe, eff) = visitExp(exp)
