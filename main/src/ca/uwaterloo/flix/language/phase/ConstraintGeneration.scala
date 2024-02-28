@@ -413,18 +413,11 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.Match(exp, rules, loc) =>
-        val patterns = rules.map(_.pat)
-        val guards = rules.flatMap(_.guard)
-        val bodies = rules.map(_.exp)
-        val guardLocs = guards.map(_.loc)
         val (tpe, eff) = visitExp(exp)
-        val patternTypes = patterns.map(visitPattern)
-        c.unifyAllTypesM(tpe :: patternTypes, Kind.Star, loc)
-        val (guardTpes, guardEffs) = guards.map(visitExp).unzip
-        guardTpes.zip(guardLocs).foreach { case (gTpe, gLoc) => c.expectTypeM(expected = Type.Bool, actual = gTpe, loc = gLoc) }
-        val (bodyTypes, bodyEffs) = bodies.map(visitExp).unzip
-        val resTpe = c.unifyAllTypesM(bodyTypes, Kind.Star, loc)
-        val resEff = Type.mkUnion(eff :: guardEffs ::: bodyEffs, loc)
+        val (patTpes, tpes, effs) = rules.map(visitMatchRule).unzip3
+        c.unifyAllTypesM(tpe :: patTpes, Kind.Star, loc)
+        val resTpe = c.unifyAllTypesM(tpes, Kind.Star, loc)
+        val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
       case Expr.TypeMatch(exp, rules, loc) =>
@@ -1078,4 +1071,21 @@ object ConstraintGeneration {
       (label, tpe, loc)
   }
 
+  /**
+    * Generates constraints for the given match rule.
+    *
+    * Returns the pattern type, the body's type, and the body's effect
+    */
+  private def visitMatchRule(rule: KindedAst.MatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type, Type) = rule match {
+    case KindedAst.MatchRule(pat, guard, exp) =>
+      val patTpe = visitPattern(pat)
+      guard.foreach {
+        g =>
+          val (guardTpe, guardEff) = visitExp(g)
+          c.expectTypeM(expected = Type.Bool, actual = guardTpe, g.loc)
+          c.expectTypeM(expected = Type.Pure, actual = guardEff, g.loc)
+      }
+      val (tpe, eff) = visitExp(exp)
+      (patTpe, tpe, eff)
+  }
 }
