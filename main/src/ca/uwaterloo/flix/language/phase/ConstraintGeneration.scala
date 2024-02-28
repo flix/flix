@@ -687,9 +687,8 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.Without(exp, _, _) =>
-        //        val effType = Type.Cst(TypeConstructor.Effect(effUse.sym), effUse.loc)
-        //        val expected = Type.mkDifference(Type.freshVar(Kind.Bool, loc), effType, loc)
-        // TODO EFF-MIGRATION use expected
+        // We ignore the `without` here.
+        // TODO EFF-MIGRATION Use set subtraction when we have set effects.
         val (tpe, eff) = visitExp(exp)
         val resTpe = tpe
         val resEff = eff
