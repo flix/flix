@@ -794,8 +794,8 @@ object ConstraintGeneration {
 
       case Expr.InvokeMethod(method, clazz, exp, exps, loc) =>
         val classTpe = Type.getFlixType(clazz)
-        val (baseTyp, _) = visitExp(exp)
-        c.unifyTypeM(baseTyp, classTpe, loc)
+        val (thisTpe, _) = visitExp(exp)
+        c.unifyTypeM(thisTpe, classTpe, loc)
         val (_, _) = exps.map(visitExp).unzip
         val resTpe = Type.getFlixType(method.getReturnType)
         val resEff = Type.IO
