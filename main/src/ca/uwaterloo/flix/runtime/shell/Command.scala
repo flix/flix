@@ -79,11 +79,10 @@ object Command {
     * Runs the tests for the current project.
     */
   case object Test extends Command
-  
+
   /**
     * Runs the mutation tests given a tester and testee.
     */
-  case object Mtest extends Command
 
   /**
     * Terminates the shell.
@@ -115,6 +114,8 @@ object Command {
     */
   case class Unknown(s: String) extends Command
 
+
+  case class Mtest(tester: String, testee: String) extends Command
   /**
     * Parses the given `input` into a command.
     */
@@ -164,8 +165,6 @@ object Command {
     if (input == ":test" || input == ":t")
       return Command.Test
 
-    if (input == ":mtest" || input == ":mt")
-      return Command.Mtest
 
     if (input == ":quit" || input == ":q")
       return Command.Quit
@@ -176,7 +175,12 @@ object Command {
     if (input == ":praise")
       return Command.Praise
 
-    //
+    if (input.startsWith(":mtest") || input.startsWith(":mt")) {
+      val args = input.split(" ")
+      return Command.Mtest(args(1), args(2))
+    }
+
+      //
     // Eval or Unknown?
     //
     if (input.startsWith(":"))

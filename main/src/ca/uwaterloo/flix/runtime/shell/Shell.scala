@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.runtime.shell
 
+import ca.uwaterloo.flix.MutationTester
 import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix, Version}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -171,7 +172,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case Command.Check => execBootstrap(bootstrap.check(flix))
       case Command.Doc => execBootstrap(bootstrap.doc(flix))
       case Command.Test => execBootstrap(bootstrap.test(flix))
-      case Command.Mtest => execBootstrap(bootstrap.mtest(flix, "aa", "bb"))
+      case Command.Mtest(a, b) => MutationTester.run(flix, a, b)
       case Command.Unknown(s) => execUnknown(s)
     }
   }

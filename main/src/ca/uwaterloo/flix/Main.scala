@@ -289,9 +289,21 @@ object Main {
               errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
-        
+
         case Command.Mtest(tester, testee) => {
-            MutationTester.run(cmdOpts.files, options, tester, testee)
+            flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+                bootstrap =>
+                    val flix = new Flix().setFormatter(formatter)
+                    flix.setOptions(options)
+                    bootstrap.mtest(flix, tester, testee)
+            }.toHardResult match {
+                case Result.Ok(_) =>
+                    System.exit(0)
+                case Result.Err(errors) =>
+                    errors.map(_.message(formatter)).foreach(println)
+                    System.exit(1)
+            }
+            //MutationTester.run(cmdOpts.files, options, tester, testee)
 
           }
 
@@ -421,7 +433,7 @@ object Main {
       cmd("mtest").text("  runs mutation tests given tester and testee files.")
         .children(
           arg[String]("tester").action((tes, c) => c.copy(mtests_temp = tes))
-            .required(), 
+            .required(),
           arg[String]("testee").action((tes, c) => c.copy(command = Command.Mtest(c.mtests_temp, tes)))
             .required()
         )
