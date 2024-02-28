@@ -486,11 +486,11 @@ object ConstraintGeneration {
         // ---------------------------------------------
         // { label = exp1 | exp2 } : { label  :: tpe | r }
         //
-        val restRow = Type.freshVar(Kind.RecordRow, loc)
+        val freshRowVar = Type.freshVar(Kind.RecordRow, loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        c.unifyTypeM(tpe2, Type.mkRecord(restRow, loc), loc)
-        c.unifyTypeM(tvar, Type.mkRecord(Type.mkRecordRowExtend(label, tpe1, restRow, loc), loc), loc)
+        c.unifyTypeM(tpe2, Type.mkRecord(freshRowVar, loc), loc)
+        c.unifyTypeM(tvar, Type.mkRecord(Type.mkRecordRowExtend(label, tpe1, freshRowVar, loc), loc), loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
