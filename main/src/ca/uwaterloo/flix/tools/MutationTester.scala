@@ -3,9 +3,12 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Input}
 import ca.uwaterloo.flix.language.ast.SemanticOp._
-import ca.uwaterloo.flix.language.ast.{SemanticOp, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expr, Root}
+import ca.uwaterloo.flix.language.ast.{SemanticOp, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.{Result, Validation}
+
+import java.io.IOException
 
 /* TODO: think also:
  * Do we need a flix.phase anywhere ?
@@ -71,9 +74,9 @@ object MutationTester {
   private def isTestDef(defn: Def): Boolean = defn.spec.ann.isTest
 
   private sealed trait ExprMutator {
-    def mutateExpr(exp: Expr): Option[Expr]
+    def mutateExpr(exp: Expr)(implicit flix: Flix): Option[Expr]
 
-    def mutate(root: Root, defn: Def): Option[Root] = {
+    def mutate(root: Root, defn: Def)(implicit flix: Flix): Option[Root] = {
       mutateExpr(defn.exp).map { mutatedExp =>
         val mutatedDef = defn.copy(exp = mutatedExp)
         root.copy(defs = root.defs + (mutatedDef.sym -> mutatedDef))
@@ -84,7 +87,7 @@ object MutationTester {
   private object ExprMutator {
     case object Incrementer extends ExprMutator {
 
-      override def mutateExpr(exp: Expr): Option[Expr] = exp match {
+      override def mutateExpr(exp: Expr)(implicit flix: Flix): Option[Expr] = exp match {
         case Expr.Cst(cst, tpe, loc) => cst match {
           case Constant.Float32(lit) => Some(Expr.Cst(Constant.Float32(lit + 1), tpe, loc))
           case Constant.Float64(lit) => Some(Expr.Cst(Constant.Float64(lit + 1), tpe, loc))
@@ -102,7 +105,7 @@ object MutationTester {
 
     case object Decrementer extends ExprMutator {
 
-      override def mutateExpr(exp: Expr): Option[Expr] = exp match {
+      override def mutateExpr(exp: Expr)(implicit flix: Flix): Option[Expr] = exp match {
         case Expr.Cst(cst, tpe, loc) => cst match {
           case Constant.Float32(lit) => Some(Expr.Cst(Constant.Float32(lit - 1), tpe, loc))
           case Constant.Float64(lit) => Some(Expr.Cst(Constant.Float64(lit - 1), tpe, loc))
@@ -120,7 +123,7 @@ object MutationTester {
 
     case object BooleanMutator extends ExprMutator {
 
-      override def mutateExpr(exp: Expr): Option[Expr] = exp match {
+      override def mutateExpr(exp: Expr)(implicit flix: Flix): Option[Expr] = exp match {
         case Expr.Cst(Constant.Bool(lit), tpe, loc) => Some(Expr.Cst(Constant.Bool(!lit), tpe, loc))
         case Expr.Unary(BoolOp.Not, exp, _, _, _) => Some(exp)
         case Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc) => Some(Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc))
@@ -144,7 +147,7 @@ object MutationTester {
         Int64Op.Not,
       )
 
-      override def mutateExpr(exp: Expr): Option[Expr] = exp match {
+      override def mutateExpr(exp: Expr)(implicit flix: Flix): Option[Expr] = exp match {
         case Expr.Unary(sop: SemanticOp, exp, _, _, _) => if (ops.contains(sop)) Some(exp) else None
         case _ => None
       }
@@ -226,7 +229,16 @@ object MutationTester {
         Int64Op.Shl -> Int64Op.Shr,
       )
 
-      override def mutateExpr(exp: TypedAst.Expr): Option[TypedAst.Expr] = exp match {
+      private val sigSyms: Map[String, (String, String)] = Map(
+        "Add.add" -> ("Sub", "sub"),
+        "Sub.sub" -> ("Add", "add"),
+        "Mul.mul" -> ("Div", "div"),
+        "Div.div" -> ("Mul", "mul"),
+      )
+
+      override def mutateExpr(exp: TypedAst.Expr)(implicit flix: Flix): Option[TypedAst.Expr] = exp match {
+        case Expr.Apply(Expr.Sig(sym, sigTpe, _), exps, tpe, eff, loc) =>
+          SymbolMutator.mutateSigSym(sym, sigSyms).map(mut => Expr.Apply(Expr.Sig(mut, sigTpe, SourceLocation.Unknown), exps, tpe, eff, loc))
         case Expr.Binary(sop: SemanticOp, exp1, exp2, tpe, eff, loc) =>
           sop match {
             case op: Float32Op => float32Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
@@ -302,7 +314,7 @@ object MutationTester {
         Int64Op.Ge -> Int64Op.Lt,
       )
 
-      override def mutateExpr(exp: TypedAst.Expr): Option[TypedAst.Expr] = exp match {
+      override def mutateExpr(exp: TypedAst.Expr)(implicit flix: Flix): Option[TypedAst.Expr] = exp match {
         case Expr.Binary(sop: SemanticOp, exp1, exp2, tpe, eff, loc) =>
           sop match {
             case op: BoolOp => boolOps.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
@@ -362,7 +374,7 @@ object MutationTester {
         Int64Op.Ge -> Int64Op.Gt,
       )
 
-      override def mutateExpr(exp: TypedAst.Expr): Option[TypedAst.Expr] = exp match {
+      override def mutateExpr(exp: TypedAst.Expr)(implicit flix: Flix): Option[TypedAst.Expr] = exp match {
         case Expr.Binary(sop: SemanticOp, exp1, exp2, tpe, eff, loc) =>
           sop match {
             case op: Float32Op => float32Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
@@ -374,6 +386,17 @@ object MutationTester {
             case _ => None
           }
         case _ => None
+      }
+    }
+  }
+
+  private object SymbolMutator {
+    def mutateSigSym(sigSym: Symbol.SigSym, changes: Map[String, (String, String)])(implicit flix: Flix): Option[Symbol.SigSym] = {
+      try {
+        changes.get(sigSym.toString).map(pair => PredefinedClasses.lookupSigSym(pair._1, pair._2, flix.getKinderAst))
+      } catch {
+        // todo: refactor
+        case _: IOException => None
       }
     }
   }
