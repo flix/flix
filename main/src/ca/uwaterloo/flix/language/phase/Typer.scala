@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.LabelledPrecedenceGraph
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.phase.constraintgeneration.TypeContext
 import ca.uwaterloo.flix.util.Validation.{mapN, traverse}
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -158,6 +159,8 @@ object Typer {
     */
   private def visitDef(defn: KindedAst.Def, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = {
     val substVal = TypeInference.visitDefn(defn, assumedTconstrs, root, classEnv, eqEnv)
+    // TODO ASSOC-TYPES temporarily also running constraintgen as a test
+    ConstraintGeneration.visitExp(defn.exp)(new TypeContext, root, flix)
     mapN(substVal) {
       case subst => TypeReconstruction.visitDef(defn, root, subst)
     }
@@ -199,6 +202,8 @@ object Typer {
     */
   private def visitSig(sig: KindedAst.Sig, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Sig, TypeError] = {
     val substVal = TypeInference.visitSig(sig, assumedTconstrs, root, classEnv, eqEnv)
+    // TODO ASSOC-TYPES temporarily also running constraintgen as a test
+    ConstraintGeneration.visitExp(defn.exp)(new TypeContext, root, flix)
     mapN(substVal) {
       case subst => TypeReconstruction.visitSig(sig, root, subst)
     }
