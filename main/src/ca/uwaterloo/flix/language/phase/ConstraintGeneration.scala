@@ -728,21 +728,10 @@ object ConstraintGeneration {
         (resultTpe, resultEff)
 
       case Expr.Do(opUse, exps, tvar, loc) =>
-        val eff = root.effects(opUse.sym.eff)
-        val op = eff.ops.find(_.sym == opUse.sym)
-          .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $opUse in effect ${opUse.sym.eff}", loc))
+        val op = lookupOp(opUse.sym, opUse.loc)
         val effTpe = Type.Cst(TypeConstructor.Effect(opUse.sym.eff), loc)
 
-
-        // We special case the result type of the operation.
-        val opTpe = op.spec.tpe.typeConstructor match {
-          case Some(TypeConstructor.Void) =>
-            // The operation type is `Void`. Flix does not have subtyping, but here we want something close to it.
-            // Hence we treat `Void` as a fresh type variable.
-            // An alternative would be to allow empty pattern matches, but that is cumbersome.
-            Type.freshVar(Kind.Star, op.spec.tpe.loc, isRegion = false, Ast.VarText.Absent)
-          case _ => op.spec.tpe
-        }
+        val opTpe = getDoType(op)
 
         // length check done in Resolver
         val effs = (exps zip op.spec.fparams) map {
@@ -1137,6 +1126,33 @@ object ConstraintGeneration {
         lbl, t, acc, l)
     }
     Type.mkRecord(ps, loc)
+  }
+
+  /**
+    * Returns the operation corresponding to the given symbol.
+    */
+  private def lookupOp(sym: Symbol.OpSym, loc: SourceLocation)(implicit root: KindedAst.Root): KindedAst.Op = {
+    val eff = root.effects(sym.eff)
+    eff.ops.find(_.sym == sym)
+      .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $sym in effect ${sym.eff}", loc))
+  }
+
+  /**
+    * Returns the type inferred for `do`ing the given op.
+    *
+    * This is usually the annotated return type of the op.
+    * But if the op returns Void, we return a free variable instead.
+    */
+  private def getDoType(op: KindedAst.Op): Type = {
+    // We special-case the result type of the operation.
+    op.spec.tpe.typeConstructor match {
+      case Some(TypeConstructor.Void) =>
+        // The operation type is `Void`. Flix does not have subtyping, but here we want something close to it.
+        // Hence we treat `Void` as a fresh type variable.
+        // An alternative would be to allow empty pattern matches, but that is cumbersome.
+        Type.freshVar(Kind.Star, op.spec.tpe.loc, isRegion = false, Ast.VarText.Absent)
+      case _ => op.spec.tpe
+    }
   }
 
 }
