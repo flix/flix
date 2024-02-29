@@ -203,7 +203,7 @@ object Typer {
   private def visitSig(sig: KindedAst.Sig, assumedTconstrs: List[Ast.TypeConstraint], root: KindedAst.Root, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Sig, TypeError] = {
     val substVal = TypeInference.visitSig(sig, assumedTconstrs, root, classEnv, eqEnv)
     // TODO ASSOC-TYPES temporarily also running constraintgen as a test
-    ConstraintGeneration.visitExp(defn.exp)(new TypeContext, root, flix)
+    sig.exp.foreach(ConstraintGeneration.visitExp(_)(new TypeContext, root, flix))
     mapN(substVal) {
       case subst => TypeReconstruction.visitSig(sig, root, subst)
     }
