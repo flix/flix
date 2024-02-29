@@ -59,7 +59,7 @@ mod IDE {
         let apply = ide.apply;
         let compose = ide.compose;
 
-        def prependId(v) = Vector.append(Vector#{(ide.zero, ide.id)}, v);
+        def prependId(v) = Vector#{(ide.zero, ide.id)} ++ v;
         def augmentForZero(d, v) = if (d == ide.zero) prependId(v) else v;
 
         def eshIntra1(n, d) = augmentForZero(d, ide.eshIntra(n, d));
@@ -256,7 +256,6 @@ mod ConstantProp {
     /// The Partial Order.
     ///
     instance PartialOrder[MicroFunction] {
-        // TODO: Ondrej: This seems a bit lazy. Can we do better? :)
         pub def lessEqual(x: MicroFunction, y: MicroFunction): Bool = y == JoinLattice.leastUpperBound(x, y)
     }
 
@@ -335,8 +334,6 @@ pub enum IR with Eq {
 def main(): Unit \ IO =
     println("Running IDE");
 
-    // TODO: Magnus: Use sets?
-
     let cfg =
         ("smain","n1") ::
         ("n1","n2") ::
@@ -352,7 +349,6 @@ def main(): Unit \ IO =
         ("n8","n9") ::
         ("n9","ep") :: Nil;
 
-    // TODO: Build call graph from CallConst and CallVar instructions
     let callGraph =
         ("n1","p") ::
         ("n6","p") :: Nil;
@@ -400,7 +396,7 @@ def main(): Unit \ IO =
           let kill = if (d == v1) Vector#{} else Vector#{(d, ConstantProp.id())};
           let microfn = ConstantProp.MicroFunction.NonBot(c1, c2, ConstantProp.Const.Bot);
           let gen = if (d == v2) Vector#{(v1, microfn)} else Vector#{};
-          Vector.append(kill, gen)
+          kill ++ gen
         case IR.CallConst(_, _) if isGlobalVar(d) => Vector#{}
         case IR.CallVar(_, _) if isGlobalVar(d) => Vector#{}
         case _ => Vector#{(d, ConstantProp.id())}
