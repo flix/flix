@@ -1118,6 +1118,8 @@ object ConstraintGeneration {
 
   /**
     * Generates constraints for the default rule.
+    *
+    * Returns the type and effect of the rule body.
     */
   private def visitDefaultRule(exp0: Option[KindedAst.Expr], loc: SourceLocation)(implicit l: Level, c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) =
     exp0 match {
