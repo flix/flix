@@ -132,12 +132,12 @@ object MutationTester {
     case object ArithmeticUnaryMutator extends ExprMutator {
 
       private val ops: Set[SemanticOp] = Set(
-        Float32Op.Neq,
-        Float64Op.Neq,
-        Int8Op.Neq,
-        Int16Op.Neq,
-        Int32Op.Neq,
-        Int64Op.Neq,
+        Float32Op.Neg,
+        Float64Op.Neg,
+        Int8Op.Neg,
+        Int16Op.Neg,
+        Int32Op.Neg,
+        Int64Op.Neg,
         Int8Op.Not,
         Int16Op.Not,
         Int32Op.Not,
