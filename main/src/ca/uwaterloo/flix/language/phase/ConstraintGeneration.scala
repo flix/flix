@@ -1133,7 +1133,6 @@ object ConstraintGeneration {
       val (tpe, eff) = visitExp(exp)
       c.unifyTypeM(patTpe, tpe, loc)
       c.expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
-      tpe
   }
 
   /**
