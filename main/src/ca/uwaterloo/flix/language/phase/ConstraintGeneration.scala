@@ -731,12 +731,11 @@ object ConstraintGeneration {
         val op = lookupOp(opUse.sym, opUse.loc)
         val effTpe = Type.Cst(TypeConstructor.Effect(opUse.sym.eff), loc)
 
-        val opTpe = getDoType(op)
-
         // length check done in Resolver
-        val effs = (exps zip op.spec.fparams) map {
-          case (arg, fparam) => visitArg(arg, fparam)
-        }
+        val effs = visitOpArgs(op, exps)
+
+        // specialize the return type of the op if needed
+        val opTpe = getDoType(op)
 
         c.unifyTypeM(opTpe, tvar, loc)
         val resTpe = tvar
@@ -1105,11 +1104,22 @@ object ConstraintGeneration {
   }
 
   /**
+    * Generates constraints unifying each argument's type with the corresponding parameter of the operation.
+    *
+    * The number of arguments must match the number of parameters (this check is done in Resolver).
+    */
+  private def visitOpArgs(op: KindedAst.Op, args: List[KindedAst.Expr])(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): List[Type] = {
+    (args zip op.spec.fparams) map {
+      case (arg, fparam) => visitOpArg(arg, fparam)
+    }
+  }
+
+  /**
     * Generates constraints unifying the given argument's type with the formal parameter's type.
     *
     * Returns the effect of the argument.
     */
-  def visitArg(arg: KindedAst.Expr, fparam: KindedAst.FormalParam)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
+  private def visitOpArg(arg: KindedAst.Expr, fparam: KindedAst.FormalParam)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
     val (tpe, eff) = visitExp(arg)
     c.expectTypeM(expected = fparam.tpe, actual = tpe, arg.loc)
     eff
