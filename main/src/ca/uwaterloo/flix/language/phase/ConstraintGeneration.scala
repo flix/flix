@@ -638,9 +638,9 @@ object ConstraintGeneration {
       case Expr.Ascribe(exp, expectedTpe, expectedEff, tvar, loc) =>
         // An ascribe expression is sound; the type system checks that the declared type matches the inferred type.
         val (actualTpe, actualEff) = visitExp(exp)
-        c.expectTypeM(expected = expectedTpe.getOrElse(Type.freshVar(Kind.Star, loc)), actual = actualTpe, loc)
+        expectedTpe.foreach { tpe => c.expectTypeM(expected = tpe, actual = actualTpe, loc) }
         c.unifyTypeM(actualTpe, tvar, loc)
-        c.expectTypeM(expected = expectedEff.getOrElse(Type.freshVar(Kind.Eff, loc)), actual = actualEff, loc)
+        expectedEff.foreach { eff => c.expectTypeM(expected = eff, actual = actualEff, loc) }
         val resTpe = tvar
         val resEff = actualEff
         (resTpe, resEff)
