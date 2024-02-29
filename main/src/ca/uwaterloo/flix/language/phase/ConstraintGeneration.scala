@@ -439,18 +439,11 @@ object ConstraintGeneration {
       case e: Expr.RestrictableChoose => RestrictableChooseConstraintGeneration.visitRestrictableChoose(e)
 
       case KindedAst.Expr.Tag(symUse, exp, tvar, loc) =>
-        // Lookup the enum declaration.
         val decl = root.enums(symUse.sym.enumSym)
-
-        // Lookup the case declaration.
         val caze = decl.cases(symUse.sym)
-
-        // Instantiate the type scheme of the case.
         val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
-        //
         // The tag type is a function from the type of variant to the type of the enum.
-        //
         val (tpe, eff) = visitExp(exp)
         c.unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
         val resTpe = tvar
@@ -1016,18 +1009,11 @@ object ConstraintGeneration {
       case KindedAst.Pattern.Cst(cst, _) => Type.constantType(cst)
 
       case KindedAst.Pattern.Tag(symUse, pat, tvar, loc) =>
-        // Lookup the enum declaration.
         val decl = root.enums(symUse.sym.enumSym)
-
-        // Lookup the case declaration.
         val caze = decl.cases(symUse.sym)
-
-        // Instantiate the type scheme of the case.
         val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
-        //
         // The tag type is a function from the type of variant to the type of the enum.
-        //
         val tpe = visitPattern(pat)
         c.unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
         tvar
