@@ -39,7 +39,7 @@ object DesugaredAst {
 
     case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Name.QName, tpe: Type, tconstrs: List[TypeConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], loc: SourceLocation) extends Declaration
 
-    case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: KindedTypeParams, fparams: List[FormalParam], exp: Option[Expr], tpe: Type, eff: Option[Type], tconstrs: List[TypeConstraint], loc: SourceLocation)
+    case class Sig(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: KindedTypeParams, fparams: List[FormalParam], exp: Option[Expr], tpe: Type, eff: Option[Type], tconstrs: List[TypeConstraint], econstrs: List[EqualityConstraint], loc: SourceLocation)
 
     case class Def(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: KindedTypeParams, fparams: List[FormalParam], exp: Expr, tpe: Type, eff: Option[Type], tconstrs: List[TypeConstraint], constrs: List[EqualityConstraint], loc: SourceLocation) extends Declaration
 
