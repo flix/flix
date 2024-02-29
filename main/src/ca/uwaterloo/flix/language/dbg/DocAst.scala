@@ -51,8 +51,6 @@ object DocAst {
 
     sealed trait RecordOp extends Atom
 
-    case class InRegion(d1: Expression, d2: Expression) extends Composite
-
     case object Unit extends Atom
 
     case class Tuple(elms: List[Expression]) extends Atom
@@ -78,7 +76,7 @@ object DocAst {
     case class Unary(op: String, d: Expression) extends Composite
 
     /** e.g. `arr?` */
-    case class UnaryRightAfter(d: Expression, s: String) extends Atom
+    case class UnaryRightAfter(d: Expression, op: String) extends Atom
 
     case class Binary(d1: Expression, op: String, d2: Expression) extends Composite
 
