@@ -816,27 +816,6 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.NewObject(_, clazz, methods, _) =>
-
-        /**
-          * Generates constraints for the JVM method.
-          */
-        def visitJvmMethod(method: KindedAst.JvmMethod): Unit = method match {
-          case KindedAst.JvmMethod(_, fparams, exp, returnTpe, _, _) =>
-
-            /**
-              * Constrains the given formal parameter to its declared type.
-              */
-            def visitFormalParam(fparam: KindedAst.FormalParam): Unit = fparam match {
-              case KindedAst.FormalParam(sym, _, tpe, _, loc) =>
-                c.unifyTypeM(sym.tvar, tpe, loc)
-            }
-
-            fparams.foreach(visitFormalParam)
-            val (bodyTpe, _) = visitExp(exp)
-            c.expectTypeM(expected = returnTpe, actual = bodyTpe, exp.loc)
-          // TODO ASSOC-TYPES check eff matches declared eff ?
-        }
-
         methods.foreach(visitJvmMethod)
         val resTpe = Type.getFlixType(clazz)
         val resEff = Type.IO
@@ -1124,5 +1103,25 @@ object ConstraintGeneration {
 
           (actualTpe, actualEff)
       }
+  }
+
+  /**
+    * Generates constraints for the JVM method.
+    */
+  def visitJvmMethod(method: KindedAst.JvmMethod)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = method match {
+    case KindedAst.JvmMethod(_, fparams, exp, returnTpe, _, _) =>
+
+      /**
+        * Constrains the given formal parameter to its declared type.
+        */
+      def visitFormalParam(fparam: KindedAst.FormalParam): Unit = fparam match {
+        case KindedAst.FormalParam(sym, _, tpe, _, loc) =>
+          c.unifyTypeM(sym.tvar, tpe, loc)
+      }
+
+      fparams.foreach(visitFormalParam)
+      val (bodyTpe, _) = visitExp(exp)
+      c.expectTypeM(expected = returnTpe, actual = bodyTpe, exp.loc)
+    // TODO ASSOC-TYPES check eff matches declared eff ?
   }
 }
