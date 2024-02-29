@@ -1164,7 +1164,7 @@ object ConstraintGeneration {
     * This is usually the annotated return type of the op.
     * But if the op returns Void, we return a free variable instead.
     */
-  private def getDoType(op: KindedAst.Op): Type = {
+  private def getDoType(op: KindedAst.Op)(implicit level: Level): Type = {
     // We special-case the result type of the operation.
     op.spec.tpe.typeConstructor match {
       case Some(TypeConstructor.Void) =>
