@@ -70,7 +70,7 @@ object AstPrinter {
       wipPhase("Resolver"),
       wipPhase("Kinder"),
       wipPhase("Deriver"),
-      wipPhase("Typer"),
+      Some("Typer", () => formatTypedAst(flix.getTyperAst)),
       wipPhase("Entrypoint"),
       wipPhase("PredDeps"),
       wipPhase("Stratifier"),
@@ -97,6 +97,14 @@ object AstPrinter {
     ).flatten.toMap
     frontend ++ backend
   }
+
+  /**
+    * Formats `root` for display.
+    */
+  def formatTypedAst(root: TypedAst.Root): String = {
+    formatDocProgram(TypedAstPrinter.print(root))
+  }
+
 
   /**
     * Formats `root` for display.
