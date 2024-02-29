@@ -629,7 +629,7 @@ object ConstraintGeneration {
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
         c.expectTypeM(expected = refType, actual = tpe1, exp1.loc)
-        c.expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
+        c.unifyTypeM(elmVar, tpe2, exp2.loc)
         c.unifyTypeM(evar, Type.mkUnion(eff1, eff2, regionVar, loc), loc)
         val resTpe = Type.Unit
         val resEff = evar
