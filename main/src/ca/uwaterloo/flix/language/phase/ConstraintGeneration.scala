@@ -859,14 +859,13 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.ParYield(frags, exp, _) =>
-        val patterns = frags.map(_.pat)
-        val parExps = frags.map(_.exp)
-        val patLocs = frags.map(_.loc)
+        // We don't need to keep the types of the fragments
+        // since they are all bound to the patterns
+
+        // The result effect is only the effect of exp
+        // because the fragments must all be pure.
+        frags.foreach(visitParYieldFragment)
         val (tpe, eff) = visitExp(exp)
-        val patternTypes = patterns.map(visitPattern)
-        val (fragTypes, fragEffs) = parExps.map(visitExp).unzip
-        patternTypes.zip(fragTypes).zip(patLocs).foreach { case ((patTpe, expTpe), l) => c.unifyTypeM(patTpe, expTpe, l) }
-        fragEffs.zip(patLocs).foreach { case (p, l) => c.expectTypeM(expected = Type.Pure, actual = p, l) }
         val resTpe = tpe
         val resEff = eff
         (resTpe, resEff)
@@ -1123,6 +1122,18 @@ object ConstraintGeneration {
     val (tpe, eff) = visitExp(arg)
     c.expectTypeM(expected = fparam.tpe, actual = tpe, arg.loc)
     eff
+  }
+
+  /**
+    * Generates constraints for the given ParYieldFragment.
+    */
+  private def visitParYieldFragment(frag: KindedAst.ParYieldFragment)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = frag match {
+    case KindedAst.ParYieldFragment(pat, exp, loc) =>
+      val patTpe = visitPattern(pat)
+      val (tpe, eff) = visitExp(exp)
+      c.unifyTypeM(patTpe, tpe, loc)
+      c.expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
+      tpe
   }
 
   /**
