@@ -21,6 +21,15 @@ import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, Name, Scheme
 import ca.uwaterloo.flix.language.phase.constraintgeneration.{RestrictableChooseConstraintGeneration, SchemaConstraintGeneration, TypeContext}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+/**
+  * This phase generates a list of type constraints, which include
+  * - equality constraints `tpe1 ~ tpe2`
+  * - class constraints `C[tpe1]`
+  * - purification constraints `eff1 ~ eff2[sym ↦ Pure]`
+  *
+  * We gather constraints as we traverse each def.
+  * Constraints are later resolved in ConstraintResolution.
+  */
 object ConstraintGeneration {
 
   /**
