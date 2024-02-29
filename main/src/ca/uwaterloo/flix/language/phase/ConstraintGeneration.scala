@@ -733,11 +733,6 @@ object ConstraintGeneration {
           .getOrElse(throw InternalCompilerException(s"Unexpected missing operation $opUse in effect ${opUse.sym.eff}", loc))
         val effTpe = Type.Cst(TypeConstructor.Effect(opUse.sym.eff), loc)
 
-        def visitArg(arg: KindedAst.Expr, fparam: KindedAst.FormalParam): Type = {
-          val (tpe, eff) = visitExp(arg)
-          c.expectTypeM(expected = fparam.tpe, actual = tpe, arg.loc)
-          eff
-        }
 
         // We special case the result type of the operation.
         val opTpe = op.spec.tpe.typeConstructor match {
@@ -1120,6 +1115,16 @@ object ConstraintGeneration {
     }
   }
 
+  /**
+    * Generates constraints unifying the given argument's type with the formal parameter's type.
+    *
+    * Returns the effect of the argument.
+    */
+  def visitArg(arg: KindedAst.Expr, fparam: KindedAst.FormalParam)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
+    val (tpe, eff) = visitExp(arg)
+    c.expectTypeM(expected = fparam.tpe, actual = tpe, arg.loc)
+    eff
+  }
 
   /**
     * Builds a record type from the given fields and rest type.
@@ -1133,4 +1138,5 @@ object ConstraintGeneration {
     }
     Type.mkRecord(ps, loc)
   }
+
 }
