@@ -1452,7 +1452,9 @@ object Weeder2 {
 
           if (isInfix) {
             val infixName = text(op).head.stripPrefix("`").stripSuffix("`")
-            val opExpr = Expr.Ambiguous(Name.mkQName(infixName, op.loc.sp1, op.loc.sp2), op.loc)
+            val infixNameParts = infixName.split('.').toList
+            val qname = Name.mkQName(infixNameParts.init, infixNameParts.last, op.loc.sp1, op.loc.sp2)
+            val opExpr = Expr.Ambiguous(qname, op.loc)
             return Validation.success(Expr.Infix(e1, opExpr, e2, tree.loc))
           }
 
@@ -1516,6 +1518,7 @@ object Weeder2 {
           if (lit == "") {
             Validation.success(acc)
           } else {
+            // TODO: Can we do Constants.string here?
             val unescapedLit = StringContext.processEscapes(lit)
             val cst = Expr.Cst(Ast.Constant.Str(unescapedLit), loc)
             Validation.success(Expr.Binary(SemanticOp.StringOp.Concat, acc, cst, tree.loc.asSynthetic))
@@ -2096,7 +2099,8 @@ object Weeder2 {
             Validation.toSoftFailure(Expr.Error(err), err)
         }
       } else {
-        Validation.success(Expr.Cst(Ast.Constant.Char(lit.head), loc))
+        val unescapedLit = StringContext.processEscapes(lit)
+        Validation.success(Expr.Cst(Ast.Constant.Char(unescapedLit.head), loc))
       }
 
     }
@@ -2110,9 +2114,10 @@ object Weeder2 {
       } catch {
         case e: StringContext.InvalidEscapeException => {
           // Scala will throw when trying to process an unknown escape such as '\1'.
-          // In that case we can just pass the literal string as is.
-          // TODO: Should this be a SoftFailure, pointing to the unecessary escape?
-          Validation.success(Expr.Cst(Ast.Constant.Str(lit), loc))
+          // In that case we can just remove the backslashes.
+          // TODO: Should this be a SoftFailure, pointing to the unecessary escape? That is probably something the lexer should handle though.
+          // Actually we probably should not use processEscapes, but rather make our own function. We want to allow \$ and \%.
+          Validation.success(Expr.Cst(Ast.Constant.Str(lit.replaceAll("\\\\", "")), loc))
         }
       }
 
@@ -2278,7 +2283,7 @@ object Weeder2 {
             case "-" => Validation.success(Type.Intersection(t1, Type.Complement(t2, tree.loc.asSynthetic), tree.loc))
             case "++" => Validation.success(Type.CaseUnion(t1, t2, tree.loc))
             case "&&" => Validation.success(Type.CaseIntersection(t1, t2, tree.loc))
-            case "--" => Validation.success(Type.CaseIntersection(t1, Type.Complement(t2, tree.loc.asSynthetic), tree.loc))
+            case "--" => Validation.success(Type.CaseIntersection(t1, Type.CaseComplement(t2, tree.loc.asSynthetic), tree.loc))
             case "&" => Validation.success(Type.Intersection(t1, t2, tree.loc))
             case "xor" => Validation.success(Type.Or(
               Type.And(t1, Type.Not(t2, tree.loc), tree.loc),

@@ -551,6 +551,7 @@ object Parser2 {
       if (at(TokenKind.KeywordMod)) {
         return module(mark)
       }
+
       annotations()
       modifiers()
       nth(0) match {
@@ -1010,7 +1011,7 @@ object Parser2 {
       (OpKind.Binary, List(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual)), // <, >, <=, >=
       (OpKind.Binary, List(TokenKind.TripleAngleL, TokenKind.TripleAngleR)), // <<<, >>>
       (OpKind.Binary, List(TokenKind.Plus, TokenKind.Minus)), // +, -
-      (OpKind.Binary, List(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash, TokenKind.KeywordMod)), // *, **, /, mod
+      (OpKind.Binary, List(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash)), // *, **, /
       (OpKind.Binary, List(TokenKind.AngledPlus)), // <+>
       (OpKind.Unary, List(TokenKind.KeywordDiscard)), // discard
       (OpKind.Binary, List(TokenKind.InfixFunction)), // `my_function`
@@ -1062,7 +1063,6 @@ object Parser2 {
     }
 
     private def exprDelimited(allowQualified: Boolean = true)(implicit s: State): Mark.Closed = {
-
       val mark = open()
       // Handle clearly delimited expressions
       nth(0) match {
@@ -1231,9 +1231,6 @@ object Parser2 {
     }
 
     private def fixpointQuerySelect()(implicit s: State): Mark.Closed = {
-      if (!at(TokenKind.KeywordSelect)) {
-        println(s"${currentSourceLocation()}")
-      }
       assert(at(TokenKind.KeywordSelect))
       val mark = open()
       expect(TokenKind.KeywordSelect)
@@ -2160,7 +2157,7 @@ object Parser2 {
       var lhs = if (left == TokenKind.ArrowThinR) typeAndEffect() else typeDelimited()
 
       // handle Type argument application
-      if (at(TokenKind.BracketL)) {
+      while (at(TokenKind.BracketL)) {
         val mark = openBefore(lhs)
         arguments()
         lhs = close(mark, TreeKind.Type.Apply)
@@ -2199,7 +2196,7 @@ object Parser2 {
     private def TYPE_OP_PRECEDENCE: List[List[TokenKind]] = List(
       // BINARY OPS
       List(TokenKind.ArrowThinR), // ->
-      // NB. UserDefinedOperator only really means '++' here. This is checked in the weeder
+      // TODO: NB. UserDefinedOperator only really means '++' here. This is checked in the weeder
       // But since '++' is used as a custom operator in 'Semigroup.combine' it needs to be a user operator.
       List(TokenKind.UserDefinedOperator, TokenKind.MinusMinus),
       List(TokenKind.AmpersandAmpersand), // &&
@@ -2407,7 +2404,7 @@ object Parser2 {
 
     private def variable()(implicit s: State): Mark.Closed = {
       val mark = open()
-      expect(TokenKind.NameLowerCase)
+      expectAny(List(TokenKind.NameLowerCase, TokenKind.NameGreek, TokenKind.NameMath, TokenKind.Underscore))
       close(mark, TreeKind.Type.Variable)
     }
 
@@ -2473,8 +2470,13 @@ object Parser2 {
 
     private def recordOrEffectSet()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.CurlyL))
-      val nextNext = nth(2)
-      val isRecord = nextNext == TokenKind.Equal || nextNext == TokenKind.Bar || nth(1) == TokenKind.CurlyR
+      val isRecord = (nth(1), nth(2)) match {
+        case (TokenKind.CurlyR, _)
+             | (TokenKind.Bar, _)
+             | (_, TokenKind.Bar)
+             | (_, TokenKind.Equal) => true
+        case _ => false
+      }
       if (isRecord) record() else effectSet()
     }
 

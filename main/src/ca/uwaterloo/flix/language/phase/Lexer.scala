@@ -334,6 +334,8 @@ object Lexer {
       case '_' =>
         val p = peek()
         if (p.isLetterOrDigit) acceptName(p.isUpper)
+        else if (isMathNameChar(p)) { advance(); acceptMathName() }
+        else if (ValidUserOpTokens.contains(p)) { advance(); acceptUserDefinedOp() }
         else TokenKind.Underscore
       case '~' => if (peek() == '~') {
         advance();
@@ -467,7 +469,7 @@ object Lexer {
       case _ if isKeyword("Map#") => TokenKind.MapHash
       case _ if isKeyword("List#") => TokenKind.ListHash
       case _ if isKeyword("Vector#") => TokenKind.VectorHash
-      case _ if isKeyword("regex\"") => acceptRegex()
+      case _ if isMatch("regex\"") => acceptRegex()
       case _ if isMathNameChar(c) => acceptMathName()
       case _ if isGreekNameChar(c) => acceptGreekName()
       case c if c.isLetter => acceptName(c.isUpper)
@@ -490,7 +492,8 @@ object Lexer {
    * Note that __comparison includes current__.
    */
   private def isSeparated(keyword: String)(implicit s: State): Boolean = {
-    val VALID_SEPARATORS =  List('(', ')', '[', ']', '{', '}', ',', ';')
+    // TODO: We can be smarter!
+    val VALID_SEPARATORS =  List('(', ')', '[', ']', '{', '}', ',', ';', '~', '+', '-')
     def isSep(c: Char) = c.isWhitespace || VALID_SEPARATORS.contains(c)
     s.src.data.lift(s.current.offset - 2).forall(isSep) && s.src.data.lift(s.current.offset + keyword.length - 1).forall(isSep)
   }

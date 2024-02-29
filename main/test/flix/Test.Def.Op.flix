@@ -9,7 +9,7 @@ mod Test.Def.Op {
     def testUserOp01(): Bool = "a" || "b" == "a || b"
 
     @test
-    def testUserOp02(): Bool = "a" && "b" == "a && b"
+    def testUserOp02(): Bool = "a" |&| "b" == "a && b"
 
     @test
     def testUserOp03(): Bool = "a" |= "b" == "a |= b"
