@@ -856,35 +856,9 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.SelectChannel(rules, default, tvar, loc) =>
-
         val regionVar = Type.freshVar(Kind.Eff, loc)
-
-        /**
-          * Generates constraints for the SelectChannelRule.
-          */
-        def visitSelectRule(sr0: KindedAst.SelectChannelRule): (Type, Type) = {
-          sr0 match {
-            case KindedAst.SelectChannelRule(sym, chan, body) =>
-              val (chanType, eff1) = visitExp(chan)
-              val (bodyType, eff2) = visitExp(body)
-              c.unifyTypeM(chanType, Type.mkReceiver(sym.tvar, regionVar, sym.loc), sym.loc)
-              val resTpe = bodyType
-              val resEff = Type.mkUnion(eff1, eff2, regionVar, loc)
-              (resTpe, resEff)
-          }
-        }
-
-        /**
-          * Generates constraints for the default rule.
-          */
-        def visitDefaultRule(exp0: Option[KindedAst.Expr]): (Type, Type) =
-          exp0 match {
-            case None => (Type.freshVar(Kind.Star, loc), Type.Pure)
-            case Some(exp) => visitExp(exp)
-          }
-
-        val (ruleTypes, ruleEffs) = rules.map(visitSelectRule).unzip
-        val (defaultType, eff2) = visitDefaultRule(default)
+        val (ruleTypes, ruleEffs) = rules.map(visitSelectRule(_, regionVar)).unzip
+        val (defaultType, eff2) = visitDefaultRule(default, loc)
         c.unifyAllTypesM(tvar :: defaultType :: ruleTypes, Kind.Star, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(regionVar :: eff2 :: ruleEffs, loc)
@@ -1108,7 +1082,7 @@ object ConstraintGeneration {
   /**
     * Generates constraints for the JVM method.
     */
-  def visitJvmMethod(method: KindedAst.JvmMethod)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = method match {
+  private def visitJvmMethod(method: KindedAst.JvmMethod)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = method match {
     case KindedAst.JvmMethod(_, fparams, exp, returnTpe, _, _) =>
 
       /**
@@ -1124,4 +1098,30 @@ object ConstraintGeneration {
       c.expectTypeM(expected = returnTpe, actual = bodyTpe, exp.loc)
     // TODO ASSOC-TYPES check eff matches declared eff ?
   }
+
+  /**
+    * Generates constraints for the SelectChannelRule.
+    *
+    * Returns the type and effect of the rule.
+    */
+  private def visitSelectRule(sr0: KindedAst.SelectChannelRule, regionVar: Type)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    sr0 match {
+      case KindedAst.SelectChannelRule(sym, chan, body) =>
+        val (chanType, eff1) = visitExp(chan)
+        val (bodyType, eff2) = visitExp(body)
+        c.unifyTypeM(chanType, Type.mkReceiver(sym.tvar, regionVar, sym.loc), sym.loc)
+        val resTpe = bodyType
+        val resEff = Type.mkUnion(eff1, eff2, regionVar, body.loc)
+        (resTpe, resEff)
+    }
+  }
+
+  /**
+    * Generates constraints for the default rule.
+    */
+  private def visitDefaultRule(exp0: Option[KindedAst.Expr], loc: SourceLocation)(implicit l: Level, c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) =
+    exp0 match {
+      case None => (Type.freshVar(Kind.Star, loc), Type.Pure)
+      case Some(exp) => visitExp(exp)
+    }
 }
