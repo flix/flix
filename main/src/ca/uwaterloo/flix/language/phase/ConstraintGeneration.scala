@@ -957,18 +957,10 @@ object ConstraintGeneration {
         val freshRowVar = Type.freshVar(Kind.RecordRow, loc.asSynthetic)
         val freshRecord = Type.mkRecord(freshRowVar, loc.asSynthetic)
 
-        def mkRecordType(patTypes: List[(Name.Label, Type, SourceLocation)]): Type = {
-          val ps = patTypes.foldRight(freshRowVar: Type) {
-            case ((lbl, t, l), acc) => Type.mkRecordRowExtend(
-              lbl, t, acc, l)
-          }
-          Type.mkRecord(ps, loc)
-        }
-
         val tailTpe = visitPattern(pat)
         c.unifyTypeM(freshRecord, tailTpe, loc.asSynthetic)
         val patTpes = pats.map(visitRecordLabelPattern)
-        val resTpe = mkRecordType(patTpes)
+        val resTpe = mkRecordType(patTpes, freshRowVar, loc)
         c.unifyTypeM(resTpe, tvar, loc)
         resTpe
 
@@ -1121,9 +1113,24 @@ object ConstraintGeneration {
     *
     * Returns the type and effect of the rule body.
     */
-  private def visitDefaultRule(exp0: Option[KindedAst.Expr], loc: SourceLocation)(implicit l: Level, c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) =
+  private def visitDefaultRule(exp0: Option[KindedAst.Expr], loc: SourceLocation)(implicit l: Level, c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     exp0 match {
       case None => (Type.freshVar(Kind.Star, loc), Type.Pure)
       case Some(exp) => visitExp(exp)
     }
+  }
+
+
+  /**
+    * Builds a record type from the given fields and rest type.
+    *
+    * The rest type represents the "tail" of the record.
+    */
+  private def mkRecordType(patTypes: List[(Name.Label, Type, SourceLocation)], rest: Type, loc: SourceLocation): Type = {
+    val ps = patTypes.foldRight(rest) {
+      case ((lbl, t, l), acc) => Type.mkRecordRowExtend(
+        lbl, t, acc, l)
+    }
+    Type.mkRecord(ps, loc)
+  }
 }
