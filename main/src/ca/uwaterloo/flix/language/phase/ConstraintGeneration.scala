@@ -54,7 +54,7 @@ object ConstraintGeneration {
         val (cconstrs, defTpe) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
         c.unifyTypeM(tvar, defTpe, loc)
         c.addClassConstraintsM(cconstrs, loc)
-        val resTpe = defTpe
+        val resTpe = tvar
         val resEff = Type.Pure
         (resTpe, resEff)
 
@@ -63,7 +63,7 @@ object ConstraintGeneration {
         val (cconstrs, sigTpe) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
         c.unifyTypeM(tvar, sigTpe, loc)
         c.addClassConstraintsM(cconstrs, loc)
-        val resTpe = sigTpe
+        val resTpe = tvar
         val resEff = Type.Pure
         (resTpe, resEff)
 
