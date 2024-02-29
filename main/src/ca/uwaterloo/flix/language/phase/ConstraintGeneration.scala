@@ -707,49 +707,24 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.TryWith(exp, effUse, rules, tvar, loc) =>
-        val effect = root.effects(effUse.sym)
-        val ops = effect.ops.map(op => op.sym -> op).toMap
+        val (tpe, eff) = visitExp(exp)
         val continuationEffect = Type.freshVar(Kind.Eff, loc)
+        val (tpes, effs) = rules.map(visitHandlerRule(_, tpe, continuationEffect, loc)).unzip
+        c.unifyAllTypesM(tpe :: tvar :: tpes, Kind.Star, loc)
 
-        def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam]): Unit = {
-          // length check done in Resolver
-          c.expectTypeArguments(op, expectedTypes = expected.map(_.tpe), actualTypes = actual.map(_.tpe), actual.map(_.loc), loc)
-        }
-
-        def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type): (Type, Type) = rule match {
-          case KindedAst.HandlerRule(op, actualFparams0, body, opTvar) =>
-            // Don't need to generalize since ops are monomorphic
-            // Don't need to handle unknown op because resolver would have caught this
-            val (actualFparams, List(resumptionFparam)) = actualFparams0.splitAt(actualFparams0.length - 1)
-            ops(op.sym) match {
-              case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, _, _, _, _)) =>
-                val resumptionArgType = opTpe
-                val resumptionResType = tryBlockTpe
-                val resumptionEff = continuationEffect
-                val expectedResumptionType = Type.mkArrowWithEffect(resumptionArgType, resumptionEff, resumptionResType, loc.asSynthetic)
-                unifyFormalParams(op.sym, expected = expectedFparams, actual = actualFparams)
-                c.expectTypeM(expected = expectedResumptionType, actual = resumptionFparam.tpe, resumptionFparam.loc)
-                val (actualTpe, actualEff) = visitExp(body)
-
-                // unify the operation return type with its tvar
-                c.unifyTypeM(actualTpe, opTvar, body.loc)
-
-                // unify the handler result type with the whole block's tvar
-                c.unifyTypeM(tvar, actualTpe, body.loc)
-                (actualTpe, actualEff)
-            }
-        }
 
         // TODO ASSOC-TYPES The types used here are not correct.
         // TODO ASSOC-TYPES We should use set subtraction instead.
-        val (tpe, bodyEff) = visitExp(exp)
-        val correctedBodyEff = c.purifyEff(effUse.sym, bodyEff) // Note: Does not work for polymorphic effects.
-        val (_, effs) = rules.map(visitHandlerRule(_, tpe)).unzip
+        // We subtract the handled effect from the body
+        // Note: Does not work for polymorphic effects.
+        val correctedBodyEff = c.purifyEff(effUse.sym, eff)
+
+        // The continuation effect is the effect of all the rule bodies, plus the effect of the try-body
         c.unifyTypeM(continuationEffect, Type.mkUnion(correctedBodyEff :: effs, loc), loc)
-        c.unifyTypeM(tvar, tpe, loc)
         val resultTpe = tpe
-        //        val resultEff = continuationEffect
-        val resultEff = Type.freshVar(Kind.Eff, loc) // TODO ASSOC-TYPES should be continuationEffect
+
+        // TODO ASSOC-TYPES should be continuationEffect
+        val resultEff = Type.freshVar(Kind.Eff, loc)
         (resultTpe, resultEff)
 
       case Expr.Do(opUse, exps, tvar, loc) =>
@@ -1109,5 +1084,45 @@ object ConstraintGeneration {
     */
   private def visitCatchRule(rule: KindedAst.CatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
     case KindedAst.CatchRule(_, _, exp) => visitExp(exp)
+  }
+
+  /**
+    * Generates constraints unifying the given expected and actual formal parameters.
+    */
+  private def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam], loc: SourceLocation)(implicit c: TypeContext, flix: Flix): Unit = {
+    // length check done in Resolver
+    c.expectTypeArguments(op, expectedTypes = expected.map(_.tpe), actualTypes = actual.map(_.tpe), actual.map(_.loc), loc)
+  }
+
+  /**
+    * Generates constraints for the given handler rule.
+    *
+    * Returns the body's type and the body's effect.
+    *
+    * @param tryBlockTpe        the type of the try-block associated with the handler
+    * @param continuationEffect the effect of the continuation
+    */
+  private def visitHandlerRule(rule: KindedAst.HandlerRule, tryBlockTpe: Type, continuationEffect: Type, loc: SourceLocation)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
+    case KindedAst.HandlerRule(op, actualFparams0, body, opTvar) =>
+      val effect = root.effects(op.sym.eff)
+      val ops = effect.ops.map(op => op.sym -> op).toMap
+      // Don't need to generalize since ops are monomorphic
+      // Don't need to handle unknown op because resolver would have caught this
+      val (actualFparams, List(resumptionFparam)) = actualFparams0.splitAt(actualFparams0.length - 1)
+      ops(op.sym) match {
+        case KindedAst.Op(_, KindedAst.Spec(_, _, _, _, expectedFparams, _, opTpe, _, _, _, _)) =>
+          val resumptionArgType = opTpe
+          val resumptionResType = tryBlockTpe
+          val resumptionEff = continuationEffect
+          val expectedResumptionType = Type.mkArrowWithEffect(resumptionArgType, resumptionEff, resumptionResType, loc.asSynthetic)
+          unifyFormalParams(op.sym, expected = expectedFparams, actual = actualFparams, op.loc)
+          c.expectTypeM(expected = expectedResumptionType, actual = resumptionFparam.tpe, resumptionFparam.loc)
+          val (actualTpe, actualEff) = visitExp(body)
+
+          // unify the operation return type with its tvar
+          c.unifyTypeM(actualTpe, opTvar, body.loc)
+
+          (actualTpe, actualEff)
+      }
   }
 }
