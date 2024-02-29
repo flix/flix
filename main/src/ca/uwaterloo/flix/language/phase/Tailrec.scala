@@ -20,9 +20,10 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast
 import ca.uwaterloo.flix.language.ast.LiftedAst._
 import ca.uwaterloo.flix.util.ParOps
+import ca.uwaterloo.flix.util.collection.MapOps
 
 /**
-  * The Tailrec phase identifies function calls that are in tail recursive position.
+  * The Tailrec phase identifies function calls that are in tail position and tail-recursive calls.
   *
   * Specifically, it replaces [[Expr.ApplyDef]] AST nodes with [[Expr.ApplySelfTail]] AST nodes
   * when the [[Expr.ApplyDef]] node calls the enclosing function and occurs in tail position.
@@ -37,7 +38,6 @@ object Tailrec {
     */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Tailrec") {
     val defns = ParOps.parMapValues(root.defs)(visitDef)
-
     root.copy(defs = defns)
   }
 
@@ -72,9 +72,7 @@ object Tailrec {
 
       case Expr.Branch(e0, br0, tpe, purity, loc) =>
         // Each branch is in tail position.
-        val br = br0 map {
-          case (sym, exp) => sym -> visitExp(exp)
-        }
+        val br = MapOps.mapValues(br0)(visitExp)
         Expr.Branch(e0, br, tpe, purity, loc)
 
       case Expr.ApplyClo(exp, exps, _, tpe, purity, loc) =>
@@ -83,10 +81,10 @@ object Tailrec {
       case Expr.ApplyDef(sym, exps, _, tpe, purity, loc) =>
         // Check whether this is a self recursive call.
         if (defn.sym != sym) {
-          // Case 1: Tail recursive call.
+          // Tail call.
           Expr.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc)
         } else {
-          // Case 2: Self recursive call.
+          // Self recursive tail call.
           Expr.ApplySelfTail(sym, exps, tpe, purity, loc)
         }
 
