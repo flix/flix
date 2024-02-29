@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.ParOps
   * when the [[Expr.ApplyDef]] node calls the enclosing function and occurs in tail position.
   *
   * For correctness it is assumed that all calls in the given AST have [[Ast.CallType.NonTailCall]]
-  * and there is no [[Expr.ApplySelfTail]] nodes present.
+  * and there are no [[Expr.ApplySelfTail]] nodes present.
   */
 object Tailrec {
 

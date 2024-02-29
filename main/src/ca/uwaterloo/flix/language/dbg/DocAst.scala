@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.language.dbg
 
+import ca.uwaterloo.flix.language.ast.Ast.CallType
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol}
 
 import java.lang.reflect.{Constructor, Field, Method}
@@ -229,13 +230,13 @@ object DocAst {
       printer.ConstantPrinter.print(cst)
 
     def ApplyClo(d: Expression, ds: List[Expression], ct: Option[Ast.CallType]): Expression =
-      App(d, ds)
+      if (ct.contains(CallType.TailCall)) Keyword("tail", App(d, ds)) else App(d, ds)
 
     def ApplySelfTail(sym: Symbol.DefnSym, ds: List[Expression]): Expression =
-      App(AsIs(sym.toString), ds)
+      Keyword("selftail", App(AsIs(sym.toString), ds))
 
     def ApplyDef(sym: Symbol.DefnSym, ds: List[Expression], ct: Option[Ast.CallType]): Expression =
-      App(AsIs(sym.toString), ds)
+      if (ct.contains(CallType.TailCall)) Keyword("tail", App(AsIs(sym.toString), ds)) else App(AsIs(sym.toString), ds)
 
     def Do(sym: Symbol.OpSym, ds: List[Expression]): Expression =
       Keyword("do", App(AsIs(sym.toString), ds))
