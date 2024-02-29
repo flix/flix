@@ -73,11 +73,11 @@ object ConstraintGeneration {
         (resTpe, resEff)
 
       case Expr.HoleWithExp(exp, tvar, evar, loc) =>
+        // We ignore exp's type and allow the hole to have any type.
+        // We allow the effect to be any superset of exp's effect.
         val (_, eff) = visitExp(exp)
-        // effect type is AT LEAST the inner expression's effect
         val atLeastEff = Type.mkUnion(eff, Type.freshVar(Kind.Eff, loc.asSynthetic), loc.asSynthetic)
         c.unifyTypeM(atLeastEff, evar, loc)
-        // result type is whatever is needed for the hole
         val resTpe = tvar
         val resEff = atLeastEff
         (resTpe, resEff)
