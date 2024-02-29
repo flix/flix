@@ -905,7 +905,7 @@ object ConstraintGeneration {
     *
     * Returns the pattern's type. The type may be a variable which must later be resolved.
     */
-  private def visitPattern(pat0: KindedAst.Pattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
+  def visitPattern(pat0: KindedAst.Pattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
     // Make the context's level available
     // This is a def rather than a val because c is mutable.
     implicit def level: Level = c.getLevel
@@ -1164,7 +1164,7 @@ object ConstraintGeneration {
     * This is usually the annotated return type of the op.
     * But if the op returns Void, we return a free variable instead.
     */
-  private def getDoType(op: KindedAst.Op)(implicit level: Level): Type = {
+  private def getDoType(op: KindedAst.Op)(implicit level: Level, flix: Flix): Type = {
     // We special-case the result type of the operation.
     op.spec.tpe.typeConstructor match {
       case Some(TypeConstructor.Void) =>
