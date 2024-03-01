@@ -84,7 +84,7 @@ object Namer {
     case decl: DesugaredAst.Declaration.Namespace => visitNamespace(decl, ns0)
     case decl: DesugaredAst.Declaration.Class => visitClass(decl, ns0)
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
-    case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonInstance)
+    case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
     case decl: DesugaredAst.Declaration.Enum => visitEnum(decl, ns0)
     case decl: DesugaredAst.Declaration.RestrictableEnum => visitRestrictableEnum(decl, ns0)
     case decl: DesugaredAst.Declaration.TypeAlias => visitTypeAlias(decl, ns0)
@@ -430,7 +430,7 @@ object Namer {
       val superClassesVal = traverse(superClasses0)(visitTypeConstraint(_, ns0))
       val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, sym, ns0)) // TODO switch param order to match visitSig
       val sigsVal = traverse(signatures)(visitSig(_, ns0, sym))
-      val lawsVal = traverse(laws0)(visitDef(_, ns0, DefKind.NonInstance))
+      val lawsVal = traverse(laws0)(visitDef(_, ns0, DefKind.Member))
 
       mapN(superClassesVal, assocsVal, sigsVal, lawsVal) {
         case (superClasses, assocs, sigs, laws) =>
@@ -450,7 +450,7 @@ object Namer {
       val assocsVal = traverse(assocs0)(visitAssocTypeDef(_, ns0))
       flatMapN(tpeVal, tconstrsVal, assocsVal) {
         case (tpe, tconstrs, assocs) =>
-          val defsVal = traverse(defs0)(visitDef(_, ns0, DefKind.Instance))
+          val defsVal = traverse(defs0)(visitDef(_, ns0, DefKind.Member))
           mapN(defsVal) {
             defs => NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, assocs, defs, ns0.parts, loc)
           }
@@ -484,8 +484,8 @@ object Namer {
     * Performs naming on the given signature declaration `sig`.
     */
   private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, classSym: Symbol.ClassSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
-    case DesugaredAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, loc) =>
-      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, eff0)
+    case DesugaredAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
+      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, eff0, econstrs0)
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
@@ -493,10 +493,10 @@ object Namer {
       val tpeVal = visitType(tpe0)
       val effVal = traverseOpt(eff0)(visitType)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
+      val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, ns0))
 
-      flatMapN(fparamsVal, tpeVal, effVal, tconstrsVal) {
-        case (fparams, tpe, eff, tconstrs) =>
-          val econstrs = Nil // TODO ASSOC-TYPES allow eq-constrs here
+      flatMapN(fparamsVal, tpeVal, effVal, tconstrsVal, econstrsVal) {
+        case (fparams, tpe, eff, tconstrs, econstrs) =>
 
           // Then visit the parts depending on the parameters
           val expVal = traverseOpt(exp0)(visitExp(_, ns0)(Level.Top, flix))
@@ -518,7 +518,7 @@ object Namer {
     case DesugaredAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
-      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, eff0)
+      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, eff0, econstrs0)
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
@@ -540,8 +540,8 @@ object Namer {
               // Give the def an id only if it is an instance def.
               // This distinguishes instance defs that could share a namespace.
               val id = defKind match {
-                case DefKind.Instance => Some(flix.genSym.freshId())
-                case DefKind.NonInstance => None
+                case DefKind.Member => Some(flix.genSym.freshId())
+                case DefKind.NonMember => None
               }
               val sym = Symbol.mkDefnSym(ns0, ident, id)
               val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc)
@@ -1478,9 +1478,9 @@ object Namer {
   /**
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
     */
-  private def getTypeParamsFromFormalParams(tparams0: DesugaredAst.TypeParams, fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type])(implicit flix: Flix): NamedAst.TypeParams = {
+  private def getTypeParamsFromFormalParams(tparams0: DesugaredAst.TypeParams, fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): NamedAst.TypeParams = {
     tparams0 match {
-      case DesugaredAst.TypeParams.Elided => getImplicitTypeParamsFromFormalParams(fparams, tpe, eff)
+      case DesugaredAst.TypeParams.Elided => getImplicitTypeParamsFromFormalParams(fparams, tpe, eff, econstrs)
       case DesugaredAst.TypeParams.Unkinded(tparams) => getExplicitTypeParams(tparams)
       case DesugaredAst.TypeParams.Kinded(tparams) => getExplicitKindedTypeParams(tparams)
 
@@ -1523,7 +1523,7 @@ object Namer {
   /**
     * Returns the implicit type parameters constructed from the given formal parameters and type.
     */
-  private def getImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type])(implicit flix: Flix): NamedAst.TypeParams = {
+  private def getImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): NamedAst.TypeParams = {
     // Compute the type variables that occur in the formal parameters.
     val fparamTvars = fparams.flatMap {
       case DesugaredAst.FormalParam(_, _, Some(tpe), _) => freeTypeVars(tpe)
@@ -1534,7 +1534,12 @@ object Namer {
 
     val effTvars = eff.toList.flatMap(freeTypeVars)
 
-    val tparams = (fparamTvars ::: tpeTvars ::: effTvars).distinct.map {
+    val econstrTvars = econstrs.flatMap {
+      // We only infer vars from the right-hand-side of the constraint.
+      case DesugaredAst.EqualityConstraint(_, _, tpe2, _) => freeTypeVars(tpe2)
+    }
+
+    val tparams = (fparamTvars ::: tpeTvars ::: effTvars ::: econstrTvars).distinct.map {
       ident => NamedAst.TypeParam.Implicit(ident, mkTypeVarSym(ident)(Level.Top, flix), ident.loc)
     }
 
@@ -1588,13 +1593,13 @@ object Namer {
 
   private object DefKind {
     /**
-      * A def that is a member of an instance.
+      * A def that is a member of an instance or class.
       */
-    case object Instance extends DefKind
+    case object Member extends DefKind
 
     /**
-      * A def that is not a member of an instance.
+      * A def that is not a member of an instance or class.
       */
-    case object NonInstance extends DefKind
+    case object NonMember extends DefKind
   }
 }

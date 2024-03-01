@@ -1015,70 +1015,70 @@ def fold04(): Bool = List.fold(("a", "b") :: ("c", "d") :: ("e", "f") :: Nil) ==
 // foldLeft                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldLeft01(): Bool = List.foldLeft((i, e) -> (i - e)*(e `Int32.rem` 2 + 1), 100, Nil) == 100
+def foldLeft01(): Bool = List.foldLeft((i, e) -> (i - e)*(e `Int32.remainder` 2 + 1), 100, Nil) == 100
 
 @test
-def foldLeft02(): Bool = List.foldLeft((i, e) -> (i - e)*(e `Int32.rem` 2 + 1), 100, 1 :: Nil) == 198
+def foldLeft02(): Bool = List.foldLeft((i, e) -> (i - e)*(e `Int32.remainder` 2 + 1), 100, 1 :: Nil) == 198
 
 @test
-def foldLeft03(): Bool = List.foldLeft((i, e) -> (i - e)*(e `Int32.rem` 2 + 1), 100, 1 :: 2 :: Nil) == 196
+def foldLeft03(): Bool = List.foldLeft((i, e) -> (i - e)*(e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil) == 196
 
 @test
-def foldLeft04(): Bool = List.foldLeft((i, e) -> (i - e)*(e `Int32.rem` 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 386
+def foldLeft04(): Bool = List.foldLeft((i, e) -> (i - e)*(e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 386
 
 /////////////////////////////////////////////////////////////////////////////
 // foldRight                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRight01(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, Nil) == 100
+def foldRight01(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, Nil) == 100
 
 @test
-def foldRight02(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, 1 :: Nil) == 198
+def foldRight02(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: Nil) == 198
 
 @test
-def foldRight03(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, 1 :: 2 :: Nil) == 194
+def foldRight03(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil) == 194
 
 @test
-def foldRight04(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+def foldRight04(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
 
 @test
-def foldRight05(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, Nil) == 100
+def foldRight05(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, Nil) == 100
 
 @test
-def foldRight06(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, 1 :: Nil) == 198
+def foldRight06(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: Nil) == 198
 
 @test
-def foldRight07(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, 1 :: 2 :: Nil) == 194
+def foldRight07(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil) == 194
 
 @test
-def foldRight08(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+def foldRight08(): Bool = List.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
 
 /////////////////////////////////////////////////////////////////////////////
 // foldRightWithCont                                                       //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def foldRightWithCont01(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, Nil) == 100
+def foldRightWithCont01(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Nil) == 100
 
 @test
-def foldRightWithCont02(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, 1 :: Nil) == 198
+def foldRightWithCont02(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: Nil) == 198
 
 @test
-def foldRightWithCont03(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, 1 :: 2 :: Nil) == 194
+def foldRightWithCont03(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil) == 194
 
 @test
-def foldRightWithCont04(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+def foldRightWithCont04(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
 
 @test
-def foldRightWithCont05(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, Nil) == 100
+def foldRightWithCont05(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, Nil) == 100
 
 @test
-def foldRightWithCont06(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, 1 :: Nil) == 198
+def foldRightWithCont06(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: Nil) == 198
 
 @test
-def foldRightWithCont07(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, 1 :: 2 :: Nil) == 194
+def foldRightWithCont07(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: Nil) == 194
 
 @test
-def foldRightWithCont08(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
+def foldRightWithCont08(): Bool = List.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, 1 :: 2 :: 3 :: Nil) == 382
 
 /////////////////////////////////////////////////////////////////////////////
 // reduceLeft                                                              //
@@ -1876,56 +1876,56 @@ def foldMap05(): Bool =
 // filterMap                                                               //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def filterMap01(): Bool = List.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Nil) == Nil
+def filterMap01(): Bool = List.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Nil) == Nil
 
 @test
-def filterMap02(): Bool = List.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, 1 :: Nil) == Nil
+def filterMap02(): Bool = List.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, 1 :: Nil) == Nil
 
 @test
-def filterMap03(): Bool = List.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, 2 :: Nil) == 1 :: Nil
+def filterMap03(): Bool = List.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, 2 :: Nil) == 1 :: Nil
 
 @test
-def filterMap04(): Bool = List.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, 1 :: 3 :: Nil) == Nil
+def filterMap04(): Bool = List.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, 1 :: 3 :: Nil) == Nil
 
 @test
-def filterMap05(): Bool = List.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, 1 :: 4 :: Nil) == 2 :: Nil
+def filterMap05(): Bool = List.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, 1 :: 4 :: Nil) == 2 :: Nil
 
 @test
-def filterMap06(): Bool = List.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, 6 :: -1 :: Nil) == 3 :: Nil
+def filterMap06(): Bool = List.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, 6 :: -1 :: Nil) == 3 :: Nil
 
 @test
-def filterMap07(): Bool = List.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, 8 :: 6 :: Nil) == 4 :: 3 :: Nil
+def filterMap07(): Bool = List.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, 8 :: 6 :: Nil) == 4 :: 3 :: Nil
 
 @test
-def filterMap08(): Bool = List.filterMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil) ==
+def filterMap08(): Bool = List.filterMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil) ==
                         0 :: 1 :: 2 :: 5 :: Nil
 
 /////////////////////////////////////////////////////////////////////////////
 // findMap                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def findMap01(): Bool = List.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, Nil) == None
+def findMap01(): Bool = List.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Nil) == None
 
 @test
-def findMap02(): Bool = List.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, 1 :: Nil) == None
+def findMap02(): Bool = List.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, 1 :: Nil) == None
 
 @test
-def findMap03(): Bool = List.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, 2 :: Nil) == Some(1)
+def findMap03(): Bool = List.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, 2 :: Nil) == Some(1)
 
 @test
-def findMap04(): Bool = List.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, 1 :: 3 :: Nil) == None
+def findMap04(): Bool = List.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, 1 :: 3 :: Nil) == None
 
 @test
-def findMap05(): Bool = List.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, 1 :: 4 :: Nil) == Some(2)
+def findMap05(): Bool = List.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, 1 :: 4 :: Nil) == Some(2)
 
 @test
-def findMap06(): Bool = List.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, 6 :: -1 :: Nil) == Some(3)
+def findMap06(): Bool = List.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, 6 :: -1 :: Nil) == Some(3)
 
 @test
-def findMap07(): Bool = List.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, 8 :: 6 :: Nil) == Some(4)
+def findMap07(): Bool = List.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, 8 :: 6 :: Nil) == Some(4)
 
 @test
-def findMap08(): Bool = List.findMap(i -> if (i `Int32.rem` 2 == 0) Some(i/2) else None, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil) == Some(0)
+def findMap08(): Bool = List.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 10 :: Nil) == Some(0)
 
 /////////////////////////////////////////////////////////////////////////////
 // toMutDeque                                                              //
@@ -2429,7 +2429,7 @@ def unfoldWithOkIter02(): Bool = region rc {
 def unfoldWithOkIter03(): Bool = region rc {
     let x = ref 1 @ rc;
     let step = () ->
-        if (deref x `Int32.rem` 5 > 0) {
+        if (deref x `Int32.remainder` 5 > 0) {
             let c = deref x;
             x := deref x + 1;
             Ok(Some(c))

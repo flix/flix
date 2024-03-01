@@ -289,37 +289,6 @@ object TypeError {
   }
 
   /**
-    * An error indicating the number of effect operation arguments does not match the expected number.
-    *
-    * @param op       the effect operation symbol.
-    * @param expected the expected number of arguments.
-    * @param actual   the actual number of arguments.
-    * @param loc      the location where the error occurred.
-    */
-  case class MismatchedOpArity(op: Symbol.OpSym, expected: Int, actual: Int, loc: SourceLocation) extends TypeError {
-    override def summary: String = s"Expected $expected parameter(s) but found $actual."
-
-    /**
-      * Returns the formatted error message.
-      */
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |
-         |The operation $op expects $expected parameter(s),
-         |but $actual are provided here.
-         |
-         |${code(loc, s"expected $expected parameter(s) but found $actual")}
-         |""".stripMargin
-    }
-
-    /**
-      * Returns a formatted string with helpful suggestions.
-      */
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-  /**
     * Mismatched Types.
     *
     * @param baseType1 the first base type.
@@ -710,6 +679,32 @@ object TypeError {
          |The region variable was declared here:
          |
          |${code(rvar.loc, "region variable declared here.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Unification equation was too complex to solve.
+    *
+    * @param tpe1 the lhs of the unification equation.
+    * @param tpe2 the rhs of the unification equation.
+    * @param loc  the location where the error occurred.
+    */
+  case class TooComplex(tpe1: Type, tpe2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Type inference too complex."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> ${red("Type inference failed due to too complex unification.")}'.
+         |
+         |Try to break your function into smaller functions.
+         |
+         |Type One: ${formatType(tpe1, Some(renv))}
+         |Type Two: ${formatType(tpe2, Some(renv))}
+         |
+         |${code(loc, "too complex constraints")}
+         |
          |""".stripMargin
     }
   }

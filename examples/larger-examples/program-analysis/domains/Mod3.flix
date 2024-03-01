@@ -72,9 +72,9 @@ mod Domain.Mod3 {
     ///
     pub def alpha(i: BigInt): Mod3 = {
     // TODO: The verifier must handle errors so it never enters a Switch/MatchError.
-        if      ((i `BigInt.rem` 3ii == 1ii) or (i `BigInt.rem` 3ii == -1ii)) Mod3.One
-        else if ((i `BigInt.rem` 3ii == 2ii) or (i `BigInt.rem` 3ii == -2ii)) Mod3.Two
-        else                                                                  Mod3.Zer
+        if      ((i `BigInt.remainder` 3ii == 1ii) or (i `BigInt.remainder` 3ii == -1ii)) Mod3.One
+        else if ((i `BigInt.remainder` 3ii == 2ii) or (i `BigInt.remainder` 3ii == -2ii)) Mod3.Two
+        else                                                                              Mod3.Zer
     }
 
     ///

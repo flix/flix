@@ -70,7 +70,7 @@ object AstPrinter {
       wipPhase("Resolver"),
       wipPhase("Kinder"),
       wipPhase("Deriver"),
-      wipPhase("Typer"),
+      Some("Typer", () => formatTypedAst(flix.getTyperAst)),
       wipPhase("Entrypoint"),
       wipPhase("PredDeps"),
       wipPhase("Stratifier"),
@@ -81,8 +81,8 @@ object AstPrinter {
     val backend = List(
       Some(("Lowering", () => formatLoweredAst(flix.getLoweringAst))),
       Some(("TreeShaker1", () => formatLoweredAst(flix.getTreeShaker1Ast))),
-      Some(("MonoDefs", () => formatLoweredAst(flix.getMonoDefsAst))),
-      Some(("MonoTypes", () => formatLoweredAst(flix.getMonoTypesAst))),
+      wipPhase("MonoDefs"),
+      wipPhase("MonoTypes"),
       Some(("Simplifier", () => formatSimplifiedAst(flix.getSimplifierAst))),
       Some(("ClosureConv", () => formatSimplifiedAst(flix.getClosureConvAst))),
       Some(("LambdaLift", () => formatLiftedAst(flix.getLambdaLiftAst))),
@@ -97,6 +97,14 @@ object AstPrinter {
     ).flatten.toMap
     frontend ++ backend
   }
+
+  /**
+    * Formats `root` for display.
+    */
+  def formatTypedAst(root: TypedAst.Root): String = {
+    formatDocProgram(TypedAstPrinter.print(root))
+  }
+
 
   /**
     * Formats `root` for display.

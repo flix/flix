@@ -349,14 +349,14 @@ mod TestMutSet {
 
     @test
     def foldRight01(): Bool = region rc {
-        MutSet.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, MutSet.new(rc)) == 100
+        MutSet.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, MutSet.new(rc)) == 100
     }
 
     @test
     def foldRight02(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
-        MutSet.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, s) == 198
+        MutSet.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, s) == 198
     }
 
     @test
@@ -364,7 +364,7 @@ mod TestMutSet {
         let s = MutSet.new(rc);
         MutSet.add!(2, s);
         MutSet.add!(1, s);
-        MutSet.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, s) == 194
+        MutSet.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, s) == 194
     }
 
     @test
@@ -373,7 +373,7 @@ mod TestMutSet {
         MutSet.add!(3, s);
         MutSet.add!(2, s);
         MutSet.add!(1, s);
-        MutSet.foldRight((e, acc) -> (acc - e) * (e `Int32.rem` 2 + 1), 100, s) == 382
+        MutSet.foldRight((e, acc) -> (acc - e) * (e `Int32.remainder` 2 + 1), 100, s) == 382
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -382,14 +382,14 @@ mod TestMutSet {
 
     @test
     def foldRightWithCont01(): Bool = region rc {
-        MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, MutSet.new(rc)) == 100
+        MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, MutSet.new(rc)) == 100
     }
 
     @test
     def foldRightWithCont02(): Bool = region rc {
         let s = MutSet.new(rc);
         MutSet.add!(1, s);
-        MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, s) == 198
+        MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, s) == 198
     }
 
     @test
@@ -397,7 +397,7 @@ mod TestMutSet {
         let s = MutSet.new(rc);
         MutSet.add!(2, s);
         MutSet.add!(1, s);
-        MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, s) == 194
+        MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, s) == 194
     }
 
     @test
@@ -406,7 +406,7 @@ mod TestMutSet {
         MutSet.add!(3, s);
         MutSet.add!(2, s);
         MutSet.add!(1, s);
-        MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.rem` 2 + 1), 100, s) == 382
+        MutSet.foldRightWithCont((e, k) -> (k() - e) * (e `Int32.remainder` 2 + 1), 100, s) == 382
     }
 
     /////////////////////////////////////////////////////////////////////////////

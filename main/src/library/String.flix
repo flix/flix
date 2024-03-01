@@ -275,7 +275,7 @@ mod String {
     ///
     def rotateLeftHelper(n: Int32, s: String): String =
         let len = length(s);
-        let f = i -> { let i1 = n + i; charAt(i1 `Int32.rem` len, s) };
+        let f = i -> { let i1 = n + i; charAt(i1 `Int32.remainder` len, s) };
         init(f, len)
 
     ///
@@ -294,9 +294,9 @@ mod String {
     ///
     def rotateRightHelper(n: Int32, s: String): String =
         let len = length(s);
-        let n1 = n `Int32.rem` len;
+        let n1 = n `Int32.remainder` len;
         let start = len - n1;
-        let f = i -> { let i1 = start + i; charAt(i1 `Int32.rem` len, s)};
+        let f = i -> { let i1 = start + i; charAt(i1 `Int32.remainder` len, s)};
         init(f, len)
 
     ///
@@ -805,7 +805,7 @@ mod String {
     pub def center(w: Int32, c: Char, s: String): String = region rc {
         let space = w - length(s);
         let floor = space / 2;
-        let ceil = space / 2 + Int32.rem(space, 2);
+        let ceil = space / 2 + Int32.remainder(space, 2);
 
         let prefix = repeat(floor, Char.toString(c));
         let postfix = repeat(ceil, Char.toString(c));
