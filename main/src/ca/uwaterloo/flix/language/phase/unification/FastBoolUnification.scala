@@ -142,7 +142,7 @@ object FastBoolUnification {
       println("-".repeat(80))
       val restSubst = boolUnifyAll(currentEqns, Set.empty)
       currentEqns = Nil
-      currentSubst = currentSubst @@ restSubst
+      currentSubst = restSubst @@ currentSubst // TODO: Verify
       printSubstitution()
       println()
     }
