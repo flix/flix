@@ -203,7 +203,7 @@ object TypeInference {
 
       case KindedAst.Expr.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val (tconstrs0, defType) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
+        val (tconstrs0, _, defType) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
         for {
           resultTyp <- unifyTypeM(tvar, defType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
@@ -212,7 +212,7 @@ object TypeInference {
       case KindedAst.Expr.Sig(sym, tvar, loc) =>
         // find the declared signature corresponding to this symbol
         val sig = root.classes(sym.clazz).sigs(sym)
-        val (tconstrs0, sigType) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
+        val (tconstrs0, _, sigType) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
         for {
           resultTyp <- unifyTypeM(tvar, sigType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
@@ -294,14 +294,14 @@ object TypeInference {
           case KindedAst.Expr.Def(sym, tvar2, loc2) =>
             // Case 1: Lookup the sym and instantiate its scheme.
             val defn = root.defs(sym)
-            val (tconstrs1, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
+            val (tconstrs1, _, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
             Some((sym, tvar2, constrs1, declaredType))
 
           case KindedAst.Expr.Sig(sym, tvar2, loc2) =>
             // Case 2: Lookup the sym and instantiate its scheme.
             val sig = root.classes(sym.clazz).sigs(sym)
-            val (tconstrs1, declaredType) = Scheme.instantiate(sig.spec.sc, loc2.asSynthetic)
+            val (tconstrs1, _, declaredType) = Scheme.instantiate(sig.spec.sc, loc2.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
             Some((sym, tvar2, constrs1, declaredType))
 
@@ -641,7 +641,7 @@ object TypeInference {
         val caze = decl.cases(symUse.sym)
 
         // Instantiate the type scheme of the case.
-        val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+        val (_, _, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         //
         // The tag type is a function from the type of variant to the type of the enum.
@@ -1386,7 +1386,7 @@ object TypeInference {
         val caze = decl.cases(symUse.sym)
 
         // Instantiate the type scheme of the case.
-        val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+        val (_, _, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         //
         // The tag type is a function from the type of variant to the type of the enum.
