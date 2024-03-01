@@ -101,28 +101,32 @@ instance Traversable[Identity] {
 }
 
 instance Add[Identity[a]] with Add[a] {
-    pub def add(x: Identity[a], y: Identity[a]): Identity[a] =
+    type Aef = Add.Aef[a]
+    pub def add(x: Identity[a], y: Identity[a]): Identity[a] \ Add.Aef[a] =
         let Identity.Identity(x1) = x;
         let Identity.Identity(y1) = y;
         Identity.Identity(Add.add(x1, y1))
 }
 
 instance Sub[Identity[a]] with Sub[a]  {
-    pub def sub(x: Identity[a], y: Identity[a]): Identity[a] =
+    type Aef = Sub.Aef[a]
+    pub def sub(x: Identity[a], y: Identity[a]): Identity[a] \ Sub.Aef[a] =
         let Identity.Identity(x1) = x;
         let Identity.Identity(y1) = y;
         Identity.Identity(Sub.sub(x1, y1))
 }
 
 instance Mul[Identity[a]] with Mul[a]  {
-    pub def mul(x: Identity[a], y: Identity[a]): Identity[a] =
+    type Aef = Mul.Aef[a]
+    pub def mul(x: Identity[a], y: Identity[a]): Identity[a] \ Mul.Aef[a] =
         let Identity.Identity(x1) = x;
         let Identity.Identity(y1) = y;
         Identity.Identity(Mul.mul(x1, y1))
 }
 
 instance Div[Identity[a]] with Div[a]  {
-    pub def div(x: Identity[a], y: Identity[a]): Identity[a] =
+    type Aef = Div.Aef[a]
+    pub def div(x: Identity[a], y: Identity[a]): Identity[a] \ Div.Aef[a] =
         let Identity.Identity(x1) = x;
         let Identity.Identity(y1) = y;
         Identity.Identity(Div.div(x1, y1))
