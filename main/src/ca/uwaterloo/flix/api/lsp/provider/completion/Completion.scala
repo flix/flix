@@ -71,6 +71,14 @@ sealed trait Completion {
         textEdit = textEdit,
         insertTextFormat = insertTextFormat,
         kind = CompletionItemKind.Enum)
+
+    case Completion.NewCompletion(text, priority, textEdit, insertTextFormat) =>
+      CompletionItem(label = text,
+        sortText = priority,
+        textEdit = textEdit,
+        insertTextFormat = insertTextFormat,
+        kind = CompletionItemKind.Text)
+
     case Completion.EnumCompletion(enumSym, nameSuffix, priority, textEdit, documentation) =>
       CompletionItem(label = s"${enumSym.toString}$nameSuffix",
         sortText = priority,
@@ -317,6 +325,17 @@ object Completion {
     * @param insertTextFormat the format of the insert text.
     */
   case class TypeBuiltinCompletion(name: String, priority: String, textEdit: TextEdit,
+                                   insertTextFormat: InsertTextFormat) extends Completion
+
+  /**
+    * Represents a new completion
+    *
+    * @param text             the text to be inserted.
+    * @param priority         the priority of the new completion.
+    * @param textEdit         the edit which is applied to a document when selecting this completion.
+    * @param insertTextFormat the format of the insert text.
+    */
+  case class NewCompletion(text: String, priority: String, textEdit: TextEdit,
                                    insertTextFormat: InsertTextFormat) extends Completion
 
   /**
