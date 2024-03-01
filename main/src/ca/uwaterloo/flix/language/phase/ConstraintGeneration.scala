@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.constraintgeneration.{RestrictableChooseConstraintGeneration, SchemaConstraintGeneration, TypeContext}
 import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.util.collection.ListOps
 
 /**
   * This phase generates a list of type constraints, which include
@@ -423,10 +424,10 @@ object ConstraintGeneration {
 
       case Expr.Match(exp, rules, loc) =>
         val (tpe, eff) = visitExp(exp)
-        val (patTpes, tpes, effs) = rules.map(visitMatchRule).unzip3
+        val (patTpes, guardEffs, tpes, effs) = ListOps.unzip4(rules.map(visitMatchRule))
         c.unifyAllTypesM(tpe :: patTpes, Kind.Star, loc)
         val resTpe = c.unifyAllTypesM(tpes, Kind.Star, loc)
-        val resEff = Type.mkUnion(eff :: effs, loc)
+        val resEff = Type.mkUnion(eff :: guardEffs ::: effs, loc)
         (resTpe, resEff)
 
       case Expr.TypeMatch(exp, rules, loc) =>
@@ -969,19 +970,19 @@ object ConstraintGeneration {
   /**
     * Generates constraints for the given match rule.
     *
-    * Returns the pattern type, the body's type, and the body's effect
+    * Returns the pattern type, the guard's effect, the body's type, and the body's effect
     */
-  private def visitMatchRule(rule: KindedAst.MatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type, Type) = rule match {
+  private def visitMatchRule(rule: KindedAst.MatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type, Type, Type) = rule match {
     case KindedAst.MatchRule(pat, guard, exp) =>
       val patTpe = visitPattern(pat)
-      guard.foreach {
+      val gEff = guard.map {
         g =>
           val (guardTpe, guardEff) = visitExp(g)
           c.expectTypeM(expected = Type.Bool, actual = guardTpe, g.loc)
-          c.expectTypeM(expected = Type.Pure, actual = guardEff, g.loc)
+          guardEff
       }
       val (tpe, eff) = visitExp(exp)
-      (patTpe, tpe, eff)
+      (patTpe, gEff.getOrElse(Type.Pure), tpe, eff)
   }
 
   /**
