@@ -65,7 +65,12 @@ object FastBoolUnification {
     */
   def solveAll(l: List[Equation]): Result[BoolSubstitution, (ConflictException, List[Equation], BoolSubstitution)] = {
     val solver = new Solver(l)
-    solver.solve()
+    solver.solve() map {
+      case s => {
+        verify(s, l);
+        s
+      }
+    }
   }
 
   private class Solver(l: List[Equation]) {
@@ -256,7 +261,7 @@ object FastBoolUnification {
     var currentSubst = subst0
     var rest = ListBuffer.empty[Equation]
 
-    while(currentEqns.nonEmpty) {
+    while (currentEqns.nonEmpty) {
       val eqn = currentEqns.head
       currentEqns = currentEqns.tail
       eqn match {
@@ -852,6 +857,33 @@ object FastBoolUnification {
   case class ConflictException(x: Term, y: Term) extends RuntimeException // TODO: Add source location.
 
 
+  /**
+    * Verifies that `s` is a solution to the given Boolean unification equations.
+    *
+    * Throws an exception if the solution is incorrect.
+    *
+    * Note: The function verifies that it is _a solution_, not that it is _the most general_.
+    *
+    * Note: Unfortunately this function is very slow since the SAT solver is very slow.
+    */
+  private def verify(s: BoolSubstitution, l: List[Equation]): Unit = {
+    // Apply the substitution to every equation and check that it is solved.
+    for (e <- l) {
+      // We want to check that `s(t1) == s(t2)`. In other words that both sides are either true or both sides are false.
+      // If we can find a situation where one side is true and the other side is false then the equation does not hold.
+      // We can look for such a situation by checking whether `s(t1) xor s(t2)` is satisfiable. If it is then we have
+      // found an equation that is not solved.
+      val t1 = s(e.t1)
+      val t2 = s(e.t2)
+      val query = Term.mkXor(t1, t2)
+      if (satisfiable(query)) {
+        println(s"  Original  : ${e.t1} ~ ${e.t2}")
+        println(s"  with Subst: $t1 ~ $t2")
+        throw InternalCompilerException(s"Incorrectly solved equation", SourceLocation.Unknown)
+      }
+    }
+  }
+
   /////////////////////////////////////////////////////////////////////////////
   /// Testing                                                               ///
   /////////////////////////////////////////////////////////////////////////////
@@ -1187,7 +1219,7 @@ object FastBoolUnification {
 
 
   def main(args: Array[String]): Unit = {
-    solveAll(FixpointInterpreter_evalTerm()).get
+    //solveAll(FixpointInterpreter_evalTerm()).get
     //solveAll(Array_copyOfRange()).get
     //solveAll(FixpointAstDatalog_toString299997()).get
     //solveAll(Nec_zipWithA()).get
@@ -1195,7 +1227,7 @@ object FastBoolUnification {
     //solveAll(Array_transpose()).get
     //solveAll(MutDeque_sameElements()).get
     //solveAll(FixpointAstDatalog_predSymsOf29898()).get
-    //solveAll(Iterator_toArray()).get
+    solveAll(Iterator_toArray()).get
     //solveAll(Files_append()).get
     //solveAll(Iterator_next()).get
     //solveAll(Boxable_lift1()).get
