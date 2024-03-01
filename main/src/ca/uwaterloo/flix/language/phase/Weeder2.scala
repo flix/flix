@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst, Type => AstType}
 import ca.uwaterloo.flix.language.errors.Parse2Error
 import ca.uwaterloo.flix.language.errors.WeederError._
-import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.Validation.{traverse, _}
 import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
@@ -769,6 +769,7 @@ object Weeder2 {
         case TreeKind.Expr.Ref => visitReference(tree)
         case TreeKind.Expr.Spawn => visitSpawn(tree)
         case TreeKind.Expr.Static => visitStatic(tree)
+        case TreeKind.Expr.RecordOperation => visitRecordOperation(tree)
         case TreeKind.Expr.LiteralRecord => visitLiteralRecord(tree)
         case TreeKind.Expr.LiteralList => visitLiteralList(tree)
         case TreeKind.Expr.LiteralSet => visitLiteralSet(tree)
@@ -1171,6 +1172,31 @@ object Weeder2 {
     private def visitScopeName(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.ScopeName)
       pickExpression(tree)
+    }
+
+    private def visitRecordOperation(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.RecordOperation)
+      val updates = pickAll(TreeKind.Expr.RecordOpUpdate, tree.children)
+      val eextends = pickAll(TreeKind.Expr.RecordOpExtend, tree.children)
+      val restricts = pickAll(TreeKind.Expr.RecordOpRestrict, tree.children)
+      val ops = (updates ++ eextends ++ restricts).sortBy(_.loc)
+      Validation.foldRight(ops)(pickExpression(tree))((op, acc) =>
+        op.kind match {
+          case TreeKind.Expr.RecordOpExtend => mapN(pickExpression(op), pickNameIdent(op))(
+            (expr, id) => Expr.RecordExtend(Name.mkLabel(id), expr, acc, op.loc)
+          )
+          case TreeKind.Expr.RecordOpRestrict => mapN(pickNameIdent(op))(
+            id => Expr.RecordRestrict(Name.mkLabel(id), acc, op.loc)
+          )
+          case TreeKind.Expr.RecordOpUpdate => mapN(pickExpression(op), pickNameIdent(op))(
+            (expr, id) => {
+              // An update is a restrict followed by an extension
+              val restricted = Expr.RecordRestrict(Name.mkLabel(id), acc, op.loc)
+              Expr.RecordExtend(Name.mkLabel(id), expr, restricted, op.loc)
+            })
+          case k => throw InternalCompilerException(s"'$k' is not a record operation", op.loc)
+        }
+      )
     }
 
     private def visitLiteralRecord(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {

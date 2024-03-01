@@ -323,7 +323,7 @@ object Parser2 {
 
   private def nth(lookahead: Int)(implicit s: State): TokenKind = {
     if (s.fuel == 0) {
-      throw InternalCompilerException(s"[${s.src.name}] Parser is stuck", currentSourceLocation())
+      throw InternalCompilerException(s"[${currentSourceLocation()}] Parser is stuck", currentSourceLocation())
     }
 
     s.fuel -= 1
@@ -331,6 +331,19 @@ object Parser2 {
       case Some(t) => t.kind
       case None => TokenKind.Eof
     }
+  }
+
+  private def findBefore(needle: TokenKind, before: List[TokenKind])(implicit s: State): Boolean = {
+    var lookahead = 1
+    while (!eof()) {
+      nth(lookahead) match {
+        case t if t == needle => return true
+        case t if before.contains(t) => return false
+        case TokenKind.Eof => return false
+        case _ => lookahead += 1
+      }
+    }
+    false
   }
 
   private def at(kind: TokenKind)(implicit s: State): Boolean = {
@@ -924,6 +937,14 @@ object Parser2 {
     def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false, allowQualified: Boolean = true)(implicit s: State): Mark.Closed = {
       var lhs = exprDelimited()
 
+      // Handle calls
+      while (at(TokenKind.ParenL)) {
+        val mark = openBefore(lhs)
+        arguments()
+        lhs = close(mark, TreeKind.Expr.Apply)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      }
+
       // Handle record select
       if (at(TokenKind.Dot) && nth(1) == TokenKind.NameLowerCase) {
         val mark = openBefore(lhs)
@@ -933,14 +954,6 @@ object Parser2 {
           name(NAME_FIELD)
         }
         lhs = close(mark, TreeKind.Expr.RecordSelect)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      }
-
-      // Handle calls
-      while (at(TokenKind.ParenL)) {
-        val mark = openBefore(lhs)
-        arguments()
-        lhs = close(mark, TreeKind.Expr.Apply)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
 
@@ -1215,12 +1228,12 @@ object Parser2 {
       }
 
       // TODO: Do we need project?
-//      if (eat(TokenKind.KeywordProject)) {
-//        name(NAME_PREDICATE)
-//        while (eat(TokenKind.Comma) && !eof()) {
-//          name(NAME_PREDICATE)
-//        }
-//      }
+      //      if (eat(TokenKind.KeywordProject)) {
+      //        name(NAME_PREDICATE)
+      //        while (eat(TokenKind.Comma) && !eof()) {
+      //          name(NAME_PREDICATE)
+      //        }
+      //      }
       close(mark, TreeKind.Expr.FixpointSolveWithProject)
     }
 
@@ -1918,13 +1931,18 @@ object Parser2 {
     }
 
     private def blockOrRecord()(implicit s: State): Mark.Closed = {
-      // Detemines if a '{' is opening a block or a record literal.
+      // Detemines if a '{' is opening a block, a record literal or a record operation.
       assert(at(TokenKind.CurlyL))
-      (nth(1), nth(2)) match {
-        case (TokenKind.CurlyR, _)
-             | (TokenKind.NameLowerCase, TokenKind.Equal) => recordLiteral()
-        case _ => block()
-        // TODO: Record operations
+      // If a '|' occurs before '}' or '{' then we are dealing with a record operation.
+      if (findBefore(TokenKind.Bar, before = List(TokenKind.CurlyL, TokenKind.CurlyR))) {
+        recordOperation()
+      } else {
+        // Otherwise a record literal can be detected by looking at the two next tokens.
+        (nth(1), nth(2)) match {
+          case (TokenKind.CurlyR, _)
+               | (TokenKind.NameLowerCase, TokenKind.Equal) => recordLiteral()
+          case _ => block()
+        }
       }
     }
 
@@ -1965,6 +1983,7 @@ object Parser2 {
           expression()
           close(mark, TreeKind.Expr.RecordOpExtend)
         case TokenKind.Minus =>
+          advance()
           name(NAME_FIELD)
           close(mark, TreeKind.Expr.RecordOpRestrict)
         case TokenKind.NameLowerCase =>

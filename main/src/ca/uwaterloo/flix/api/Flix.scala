@@ -528,22 +528,20 @@ class Flix {
     "Test.Exp.MonadicFor.flix" -> LocalResource.get("/test/flix/Test.Exp.MonadicFor.flix"),
     "Test.Exp.ForEachYield.flix" -> LocalResource.get("/test/flix/Test.Exp.ForEachYield.flix"),
     "Test.Exp.Unary.Arithmetic.flix" -> LocalResource.get("/test/flix/Test.Exp.Unary.Arithmetic.flix"), // TODO: Multiple uses of '--123' which is a userop. Ok make pr
+    "Test.Exp.Record.Literal.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Literal.flix"),
+    "Test.Exp.Record.Update.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Update.flix"),
+    "Test.Def.Generalization.flix" -> LocalResource.get("/test/flix/Test.Def.Generalization.flix"),
+    "Test.Exp.Match.Record.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Record.flix"),
+    "Test.Exp.Record.Extend.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Extend.flix"),
+    "Test.Exp.Record.Multiple.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Multiple.flix"),
+    "Test.Exp.Record.Polymorphism.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Polymorphism.flix"),
+    "Test.Exp.Record.Restrict.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Restrict.flix"),
+    "Test.Exp.Record.Select.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Select.flix"),
 
     // TODO: Ascribe precedece
     //  "Test.Exp.Lambda.Match.flix" -> LocalResource.get("/test/flix/Test.Exp.Lambda.Match.flix"),
-//      "Test.Exp.New.flix" -> LocalResource.get("/test/flix/Test.Exp.New.flix"),
+    //  "Test.Exp.New.flix" -> LocalResource.get("/test/flix/Test.Exp.New.flix"),
     //  "Test.Exp.Ref.Deref.flix" -> LocalResource.get("/test/flix/Test.Exp.Ref.Deref.flix"),
-
-    // TODO: Record operations
-    //    "Test.Def.Generalization.flix" -> LocalResource.get("/test/flix/Test.Def.Generalization.flix"),
-    //    "Test.Exp.Match.Record.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Record.flix"),
-    //    "Test.Exp.Record.Extend.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Extend.flix"),
-    //    "Test.Exp.Record.Literal.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Literal.flix"),
-    //    "Test.Exp.Record.Multiple.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Multiple.flix"),
-    //    "Test.Exp.Record.Polymorphism.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Polymorphism.flix"),
-    //    "Test.Exp.Record.Restrict.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Restrict.flix"),
-    //    "Test.Exp.Record.Select.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Select.flix"),
-    //    "Test.Exp.Record.Update.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Update.flix"),
 
     // TODO: JVM STUFF
     //    "Test.Exp.Jvm.GetField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetField.flix"),
