@@ -52,19 +52,21 @@ object ConstraintGeneration {
 
       case Expr.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val (cconstrs, defTpe) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
+        val (tconstrs, econstrs, defTpe) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
         c.unifyTypeM(tvar, defTpe, loc)
-        c.addClassConstraintsM(cconstrs, loc)
-        val resTpe = tvar
+        c.addClassConstraintsM(tconstrs, loc)
+        econstrs.foreach { econstr => c.unifyTypeM(econstr.tpe1, econstr.tpe2, loc) }
+        val resTpe = defTpe
         val resEff = Type.Pure
         (resTpe, resEff)
 
       case Expr.Sig(sym, tvar, loc) =>
         val sig = root.classes(sym.clazz).sigs(sym)
-        val (cconstrs, sigTpe) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
+        val (tconstrs, econstrs, sigTpe) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
         c.unifyTypeM(tvar, sigTpe, loc)
-        c.addClassConstraintsM(cconstrs, loc)
-        val resTpe = tvar
+        c.addClassConstraintsM(tconstrs, loc)
+        econstrs.foreach { econstr => c.unifyTypeM(econstr.tpe1, econstr.tpe2, loc) }
+        val resTpe = sigTpe
         val resEff = Type.Pure
         (resTpe, resEff)
 
@@ -104,16 +106,16 @@ object ConstraintGeneration {
           case KindedAst.Expr.Def(sym, tvar2, loc2) =>
             // Case 1: Lookup the sym and instantiate its scheme.
             val defn = root.defs(sym)
-            val (cconstrs0, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
-            val cconstrs = cconstrs0.map(_.copy(loc = loc))
-            Some((sym, tvar2, cconstrs, declaredType))
+            val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
+            val constrs1 = tconstrs1.map(_.copy(loc = loc))
+            Some((sym, tvar2, constrs1, econstrs1, declaredType))
 
           case KindedAst.Expr.Sig(sym, tvar2, loc2) =>
             // Case 2: Lookup the sym and instantiate its scheme.
             val sig = root.classes(sym.clazz).sigs(sym)
-            val (cconstrs0, declaredType) = Scheme.instantiate(sig.spec.sc, loc2.asSynthetic)
-            val cconstrs = cconstrs0.map(_.copy(loc = loc))
-            Some((sym, tvar2, cconstrs, declaredType))
+            val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(sig.spec.sc, loc2.asSynthetic)
+            val constrs1 = tconstrs1.map(_.copy(loc = loc))
+            Some((sym, tvar2, constrs1, econstrs1, declaredType))
 
           case _ =>
             // Case 3: Unknown target.
@@ -121,7 +123,7 @@ object ConstraintGeneration {
         }
 
         knownTarget match {
-          case Some((sym, tvar2, constrs1, declaredType)) =>
+          case Some((sym, tvar2, constrs1, econstrs1, declaredType)) =>
             //
             // Special Case: We are applying a Def or Sig and we break apart its declared type.
             //
@@ -132,6 +134,7 @@ object ConstraintGeneration {
             val (tpes, effs) = exps.map(visitExp).unzip
             c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc), loc)
             c.addClassConstraintsM(constrs1, loc)
+            econstrs1.foreach { econstr => c.unifyTypeM(econstr.tpe1, econstr.tpe2, loc) }
             c.unifyTypeM(tvar2, declaredType, loc)
             c.unifyTypeM(tvar, declaredResultType, loc)
             c.unifyTypeM(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
@@ -443,7 +446,7 @@ object ConstraintGeneration {
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
-        val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+        val (_, _, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         // The tag type is a function from the type of variant to the type of the enum.
         val (tpe, eff) = visitExp(exp)
@@ -924,7 +927,7 @@ object ConstraintGeneration {
         val decl = root.enums(symUse.sym.enumSym)
         val caze = decl.cases(symUse.sym)
         // We ignore constraints as tag schemes do not have them
-        val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+        val (_, _, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         // The tag type is a function from the type of variant to the type of the enum.
         val tpe = visitPattern(pat)
