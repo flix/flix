@@ -816,7 +816,6 @@ object ResolutionError {
     * @param loc   the location where the error occurred.
     */
   case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError with Unrecoverable {
-    println("Hi there!")
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {

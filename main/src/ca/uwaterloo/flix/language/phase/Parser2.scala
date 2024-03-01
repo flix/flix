@@ -1001,7 +1001,6 @@ object Parser2 {
     // Note that [[OpKind]] is necessary for the cases where the same token kind can be both unary and binary. IE. Plus or Minus
     private def PRECEDENCE: List[(OpKind, List[TokenKind])] = List(
       (OpKind.Binary, List(TokenKind.ColonEqual, TokenKind.KeywordInstanceOf)), // :=, instanceof
-      (OpKind.Binary, List(TokenKind.ColonColon, TokenKind.TripleColon)), // ::, :::
       (OpKind.Binary, List(TokenKind.KeywordOr)),
       (OpKind.Binary, List(TokenKind.KeywordAnd)),
       (OpKind.Binary, List(TokenKind.TripleBar)), // |||
@@ -1009,6 +1008,7 @@ object Parser2 {
       (OpKind.Binary, List(TokenKind.TripleAmpersand)), // &&&
       (OpKind.Binary, List(TokenKind.EqualEqual, TokenKind.AngledEqual, TokenKind.BangEqual)), // ==, <=>, !=
       (OpKind.Binary, List(TokenKind.AngleL, TokenKind.AngleR, TokenKind.AngleLEqual, TokenKind.AngleREqual)), // <, >, <=, >=
+      (OpKind.Binary, List(TokenKind.ColonColon, TokenKind.TripleColon)), // ::
       (OpKind.Binary, List(TokenKind.TripleAngleL, TokenKind.TripleAngleR)), // <<<, >>>
       (OpKind.Binary, List(TokenKind.Plus, TokenKind.Minus)), // +, -
       (OpKind.Binary, List(TokenKind.Star, TokenKind.StarStar, TokenKind.Slash)), // *, **, /
@@ -1039,7 +1039,7 @@ object Parser2 {
         return true
       }
 
-      if (rt == lt && left == right && rightAssoc.contains(left)) true else rt > lt
+      if (lt == rt && rightAssoc.contains(left)) true else rt > lt
     }
 
     /**
@@ -1123,6 +1123,7 @@ object Parser2 {
         case TokenKind.NameUpperCase
              | TokenKind.NameMath
              | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThinR) unaryLambda() else name(NAME_DEFINITION, allowQualified)
+        case TokenKind.HashParenL => fixpointLambda()
         case TokenKind.KeywordInject => fixpointInject()
         case TokenKind.KeywordQuery => fixpointQuery()
         case TokenKind.KeywordSolve => fixpointSolve()
@@ -1177,6 +1178,15 @@ object Parser2 {
       name(NAME_QNAME, allowQualified = true)
       arguments()
       close(mark, TreeKind.Expr.Do)
+    }
+
+    private def fixpointLambda()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.HashParenL))
+      val mark = open()
+      Predicate.params()
+      expect(TokenKind.ArrowThinR)
+      expression()
+      close(mark, TreeKind.Expr.FixpointLambda)
     }
 
     private def fixpointInject()(implicit s: State): Mark.Closed = {
@@ -1361,22 +1371,17 @@ object Parser2 {
       assert(at(TokenKind.KeywordForA))
       val mark = open()
       expect(TokenKind.KeywordForA)
-      if (eat(TokenKind.ParenL)) {
-        while (!at(TokenKind.ParenR) && !eof()) {
-          // Applicative can only have generator fragments
-          // so parse that inline rather than calling forFragments
-          val fragMark = open()
-          Pattern.pattern()
-          expect(TokenKind.ArrowThinL)
-          expression()
-          close(fragMark, TreeKind.Expr.ForFragmentGenerator)
-          expect(TokenKind.Semi)
-        }
-        expect(TokenKind.ParenR)
-      }
-      if (eat(TokenKind.KeywordYield)) {
+
+      separated(() => {
+        val mark = open()
+        Pattern.pattern()
+        expect(TokenKind.ArrowThinL)
         expression()
-      }
+        close(mark, TreeKind.Expr.ForFragmentGenerator)
+      }).by(TokenKind.Semi).zeroOrMore()
+
+      expect(TokenKind.KeywordYield)
+      expression()
       close(mark, TreeKind.Expr.ForApplicative)
     }
 
@@ -1916,7 +1921,8 @@ object Parser2 {
       // Detemines if a '{' is opening a block or a record literal.
       assert(at(TokenKind.CurlyL))
       (nth(1), nth(2)) match {
-        case (TokenKind.NameLowerCase, TokenKind.Equal) => recordLiteral()
+        case (TokenKind.CurlyR, _)
+             | (TokenKind.NameLowerCase, TokenKind.Equal) => recordLiteral()
         case _ => block()
         // TODO: Record operations
       }
@@ -1978,7 +1984,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.CurlyL)
       if (eat(TokenKind.CurlyR)) { // Handle empty block
-        return close(mark, TreeKind.Expr.Block)
+        return close(mark, TreeKind.Expr.LiteralRecord)
       }
       statement()
       expect(TokenKind.CurlyR)
@@ -2627,6 +2633,29 @@ object Parser2 {
       patternList()
       close(mark, TreeKind.Predicate.Atom)
     }
+
+    def params()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      separated(Predicate.param).within(TokenKind.HashParenL, TokenKind.ParenR).zeroOrMore()
+      close(mark, TreeKind.Predicate.ParamList)
+    }
+
+    def param()(implicit s: State): Mark.Closed = {
+      var kind: TreeKind = TreeKind.Predicate.ParamUntyped
+      val mark = open()
+      name(NAME_PREDICATE)
+      if (at(TokenKind.ParenL)) {
+        kind = TreeKind.Predicate.Param
+        separated(() => Type.ttype())
+          .zeroOrMore(followedBy = Some((TokenKind.Semi, () => {
+            val mark = open()
+            Type.ttype()
+            close(mark, TreeKind.Predicate.LatticeTerm)
+          })))
+      }
+      close(mark, kind)
+    }
+
   }
 
   private object JvmOp {

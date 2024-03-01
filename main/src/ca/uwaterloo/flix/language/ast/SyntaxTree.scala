@@ -183,6 +183,8 @@ object SyntaxTree {
 
       case object FixpointConstraintSet extends Expr
 
+      case object FixpointLambda extends Expr
+
       case object FixpointFromFragment extends Expr
 
       case object FixpointInject extends Expr
@@ -437,6 +439,12 @@ object SyntaxTree {
       case object LatticeTerm extends Predicate
 
       case object PatternList extends Predicate
+
+      case object ParamList extends  Predicate
+
+      case object Param extends Predicate
+
+      case object ParamUntyped extends Predicate
 
       case object TermList extends Predicate
 

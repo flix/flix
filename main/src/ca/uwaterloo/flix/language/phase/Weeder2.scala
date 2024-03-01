@@ -741,6 +741,7 @@ object Weeder2 {
         case TreeKind.Expr.FixpointConstraintSet => visitFixpointConstraintSet(tree)
         case TreeKind.Expr.FixpointSolveWithProject => visitFixpointSolve(tree)
         case TreeKind.Expr.FixpointInject => visitFixpointInject(tree)
+        case TreeKind.Expr.FixpointLambda => visitFixpointLambda(tree)
         case TreeKind.Expr.NewObject => visitNewObject(tree)
         case TreeKind.Expr.LetRecDef => visitLetRecDef(tree)
         case TreeKind.Expr.Ascribe => visitAscribe(tree)
@@ -840,6 +841,17 @@ object Weeder2 {
 
         case (exprs, idents) => Validation.success(Expr.FixpointInjectInto(exprs, idents, tree.loc))
       }
+    }
+
+    private def visitFixpointLambda(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.FixpointLambda)
+      val params = mapN(pick(TreeKind.Predicate.ParamList, tree.children))(t =>
+        (pickAll(TreeKind.Predicate.ParamUntyped, t.children) ++ pickAll(TreeKind.Predicate.Param, t.children)).sortBy(_.loc)
+      )
+      mapN(
+        flatMapN(params)(ps => traverse(ps)(Predicates.visitParam)),
+        pickExpression(tree)
+      )((params, expr) => Expr.FixpointLambda(params, expr, tree.loc))
     }
 
     private def visitFixpointSolve(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -2199,12 +2211,27 @@ object Weeder2 {
       }
     }
 
+    def visitParam(tree: Tree)(implicit s: State): Validation[PredicateParam, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Predicate.Param || tree.kind == TreeKind.Predicate.ParamUntyped)
+      val types = pickAll(TreeKind.Type.Type, tree.children)
+      val maybeLatTerm = tryPickLatticeTermType(tree)
+      mapN(pickNameIdent(tree), traverse(types)(Types.visitType), maybeLatTerm) {
+        case (ident, Nil, _) => PredicateParam.PredicateParamUntyped(Name.mkPred(ident), tree.loc)
+        case (ident, types, None) => PredicateParam.PredicateParamWithType(Name.mkPred(ident), Denotation.Relational, types, tree.loc)
+        case (ident, types, Some(latTerm)) => PredicateParam.PredicateParamWithType(Name.mkPred(ident), Denotation.Latticenal, types :+ latTerm, tree.loc)
+      }
+    }
+
     private def tryPickLatticeTermExpr(tree: Tree)(implicit s: State): Validation[Option[Expr], CompilationMessage] = {
       traverseOpt(tryPick(TreeKind.Predicate.LatticeTerm, tree.children))(Exprs.pickExpression)
     }
 
+    private def tryPickLatticeTermType(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {
+      traverseOpt(tryPick(TreeKind.Predicate.LatticeTerm, tree.children))(Types.pickType)
+    }
+
     private def tryPickLatticeTermPattern(tree: Tree)(implicit s: State): Validation[Option[Pattern], CompilationMessage] = {
-      traverseOpt(tryPick(TreeKind.Predicate.LatticeTerm, tree.children))(t => Patterns.pickPattern(t))
+      traverseOpt(tryPick(TreeKind.Predicate.LatticeTerm, tree.children))(Patterns.pickPattern(_))
     }
 
   }

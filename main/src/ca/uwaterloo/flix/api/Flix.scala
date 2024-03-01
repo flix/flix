@@ -521,20 +521,21 @@ class Flix {
     "Test.Exp.Infix.flix" -> LocalResource.get("/test/flix/Test.Exp.Infix.flix"),
     "Test.Exp.String.flix" -> LocalResource.get("/test/flix/Test.Exp.String.flix"),
     "Test.Exp.Regex.flix" -> LocalResource.get("/test/flix/Test.Exp.Regex.flix"),
+    "Test.Exp.Fixpoint.Lambda.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Lambda.flix"),
+    "Test.Exp.List.flix" -> LocalResource.get("/test/flix/Test.Exp.List.flix"),
+    "Test.Exp.TypeMatch.flix" -> LocalResource.get("/test/flix/Test.Exp.TypeMatch.flix"),
+    "Test.Exp.ApplicativeFor.flix" -> LocalResource.get("/test/flix/Test.Exp.ApplicativeFor.flix"),
+    "Test.Exp.MonadicFor.flix" -> LocalResource.get("/test/flix/Test.Exp.MonadicFor.flix"),
+    "Test.Exp.ForEachYield.flix" -> LocalResource.get("/test/flix/Test.Exp.ForEachYield.flix"),
+    "Test.Exp.Unary.Arithmetic.flix" -> LocalResource.get("/test/flix/Test.Exp.Unary.Arithmetic.flix"), // TODO: Multiple uses of '--123' which is a userop. Ok make pr
 
-//        "Test.Exp.Fixpoint.Lambda.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Lambda.flix"),
-//        "Test.Exp.Lambda.Match.flix" -> LocalResource.get("/test/flix/Test.Exp.Lambda.Match.flix"),
-//        "Test.Exp.List.flix" -> LocalResource.get("/test/flix/Test.Exp.List.flix"), // TODO: :: and ::: precedence
-        // "Test.Exp.Tuple.flix" -> LocalResource.get("/test/flix/Test.Exp.Tuple.flix"), // TODO: named tuple
-//        "Test.Exp.TypeMatch.flix" -> LocalResource.get("/test/flix/Test.Exp.TypeMatch.flix"), // TODO: :: associativity?
-//        "Test.Exp.ApplicativeFor.flix" -> LocalResource.get("/test/flix/Test.Exp.ApplicativeFor.flix"),
-//        "Test.Exp.MonadicFor.flix" -> LocalResource.get("/test/flix/Test.Exp.MonadicFor.flix"), // TODO: ::
-//        "Test.Exp.ForEachYield.flix" -> LocalResource.get("/test/flix/Test.Exp.ForEachYield.flix"), // TODO: ::
-//        "Test.Exp.New.flix" -> LocalResource.get("/test/flix/Test.Exp.New.flix"),
-//        "Test.Exp.Ref.Deref.flix" -> LocalResource.get("/test/flix/Test.Exp.Ref.Deref.flix"),
+    // TODO: Ascribe precedece
+    //  "Test.Exp.Lambda.Match.flix" -> LocalResource.get("/test/flix/Test.Exp.Lambda.Match.flix"),
+//      "Test.Exp.New.flix" -> LocalResource.get("/test/flix/Test.Exp.New.flix"),
+    //  "Test.Exp.Ref.Deref.flix" -> LocalResource.get("/test/flix/Test.Exp.Ref.Deref.flix"),
 
     // TODO: Record operations
-    // "Test.Def.Generalization.flix" -> LocalResource.get("/test/flix/Test.Def.Generalization.flix"),
+    //    "Test.Def.Generalization.flix" -> LocalResource.get("/test/flix/Test.Def.Generalization.flix"),
     //    "Test.Exp.Match.Record.flix" -> LocalResource.get("/test/flix/Test.Exp.Match.Record.flix"),
     //    "Test.Exp.Record.Extend.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Extend.flix"),
     //    "Test.Exp.Record.Literal.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Literal.flix"),
@@ -563,7 +564,7 @@ class Flix {
     //    "Test.Exp.Concurrency.Select.flix" -> LocalResource.get("/test/flix/Test.Exp.Concurrency.Select.flix"),
 
     // TODO: Expr Choose
-    //        "Test.Exp.Choose.Polymorphic.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.Polymorphic.flix"),
+    //    "Test.Exp.Choose.Polymorphic.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.Polymorphic.flix"),
     //    "Test.Exp.Choose.Recursive.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.Recursive.flix"),
     //    "Test.Exp.Choose.Simple.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.Simple.flix"),
     //    "Test.Exp.Choose.SimpleTerms.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.SimpleTerms.flix"),
@@ -573,18 +574,19 @@ class Flix {
     //    "Test.Exp.ChooseStar.Polymorphic.flix" -> LocalResource.get("/test/flix/Test.Exp.ChooseStar.Polymorphic.flix"),
     //    "Test.Exp.ChooseStar.Simple.flix" -> LocalResource.get("/test/flix/Test.Exp.ChooseStar.Simple.flix"),
 
+    // TODO: Make named arguments. Each named expressions becomes singleton record.
+    // "Test.Exp.Tuple.flix" -> LocalResource.get("/test/flix/Test.Exp.Tuple.flix"),
+    // "Test.Exp.Tag.flix" -> LocalResource.get("/test/flix/Test.Exp.Tag.flix"),
+
     // "Test.Use.Def.flix" -> LocalResource.get("/test/flix/Test.Use.Def.flix"), // TODO: Name clash with Test.Dec.Mod.flix
 
-    ///// TODO: ASK ABOUT BELOW
-    //        "Test.Exp.Tag.flix" -> LocalResource.get("/test/flix/Test.Exp.Tag.flix"), // TODO: Make named arguments. Each named expressions becomes singleton record.
+    ///// TODO
     "Test.Exp.Binary.Comparison.flix" -> LocalResource.get("/test/flix/Test.Exp.Binary.Comparison.flix"), // Changed '=-' to '= -' since the former is a userop // Made issue.
     // "Test.Exp.Ascribe.flix" -> LocalResource.get("/test/flix/Test.Exp.Ascribe.flix"), // TODO: 'not' should bind harder than ascribe? we made an issue!
     "Test.Predicate.Guard.flix" -> LocalResource.get("/test/flix/Test.Predicate.Guard.flix"), // TODO: due to 'true.' and 'false.'. Changed to 'true .' is that fine? no!
-//    "Test.Def.Op.flix" -> LocalResource.get("/test/flix/Test.Def.Op.flix"), // TODO: Changed invalid userop '&&' to '|&|'. Magnus handles this!
-//     "Test.Use.Sig.flix" -> LocalResource.get("/test/flix/Test.Use.Sig.flix"), // TODO: Name error not related to parser? weededAsts match. Hmm debuggin time
+    // "Test.Def.Op.flix" -> LocalResource.get("/test/flix/Test.Def.Op.flix"), // TODO: Changed invalid userop '&&' to '|&|'. Magnus handles this!
+    // "Test.Use.Sig.flix" -> LocalResource.get("/test/flix/Test.Use.Sig.flix"), // TODO: Name error not related to parser? weededAsts match. Hmm debuggin time
     // For debug: ListMap(HashMap(Nil -> List(Declaration(Case(List.Nil,Unit(List.flix:24:10),List.flix:24:5))), Err -> List(Declaration(Case(Result.Err,Var(e,Result.flix:27:14),Result.flix:26:15))), _unit -> List(Var(_unit$52820)), Cons -> List(Declaration(Case(List.Cons,Tuple(List(Var(t,List.flix:25:15), Apply(Ambiguous(List,List.flix:25:18),Var(t,List.flix:25:23),List.flix:25:18)),List.flix:25:14),List.flix:24:13))), Ok -> List(Declaration(Case(Result.Ok,Var(t,Result.flix:26:13),Result.flix:26:5))), Some -> List(Declaration(Case(Option.Some,Var(t,Option.flix:26:15),Option.flix:25:14))), None -> List(Declaration(Case(Option.None,Unit(Option.flix:25:10),Option.flix:25:5)))))
-
-    "Test.Exp.Unary.Arithmetic.flix" -> LocalResource.get("/test/flix/Test.Exp.Unary.Arithmetic.flix"), // TODO: Multiple uses of '--123' which is a userop. Ok make pr
 
     // TODO: KEYWORD PROJECT
     //    "Test.Term.Lit.flix" -> LocalResource.get("/test/flix/Test.Term.Lit.flix"),
