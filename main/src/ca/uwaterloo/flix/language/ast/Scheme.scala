@@ -43,7 +43,7 @@ object Scheme {
   /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
     */
-  def instantiate(sc: Scheme, loc: SourceLocation)(implicit level: Level, flix: Flix): (List[Ast.TypeConstraint], Type) = {
+  def instantiate(sc: Scheme, loc: SourceLocation)(implicit level: Level, flix: Flix): (List[Ast.TypeConstraint], List[Ast.BroadEqualityConstraint], Type) = {
     // Compute the base type.
     val baseType = sc.base
 
@@ -71,13 +71,18 @@ object Scheme {
 
     val newBase = visitType(baseType)
 
-    val newConstrs = sc.tconstrs.map {
+    val newTconstrs = sc.tconstrs.map {
       case Ast.TypeConstraint(head, tpe0, loc) =>
         val tpe = tpe0.map(visitType)
         Ast.TypeConstraint(head, tpe, loc)
     }
 
-    (newConstrs, newBase)
+    val newEconstrs = sc.econstrs.map {
+      case Ast.BroadEqualityConstraint(tpe1, tpe2) =>
+        Ast.BroadEqualityConstraint(visitType(tpe1), visitType(tpe2))
+    }
+
+    (newTconstrs, newEconstrs, newBase)
   }
 
   /**

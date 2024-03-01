@@ -510,6 +510,11 @@ object Type {
   }
 
   /**
+    * Returns the AnyType type with given source location `loc`.
+    */
+  def mkAnyType(loc: SourceLocation): Type = Type.Cst(TypeConstructor.AnyType, loc)
+
+  /**
     * Returns the Unit type with given source location `loc`.
     */
   def mkUnit(loc: SourceLocation): Type = Type.Cst(TypeConstructor.Unit, loc)
