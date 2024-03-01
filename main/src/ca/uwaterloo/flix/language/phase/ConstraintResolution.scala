@@ -173,38 +173,6 @@ object ConstraintResolution {
       }.toValidation
   }
 
-  def visitInstanceDef(defn: KindedAst.Def, instConstrs: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root, rootConstrs: ConstraintGeneration.PhaseResult)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
-    case KindedAst.Def(sym, KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc), exp) =>
-      val (infConstrs, infTpe, infEff, infRenv) = rootConstrs.defs(sym)
-
-      if (sym.name == "Fixpoint.Ast.Datalog.toString$30158") {
-        startLogging()
-      }
-      log(sym)
-
-      val initialSubst = fparams.foldLeft(Substitution.empty) {
-        case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, tpe)
-      }
-
-      // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
-      val allTparams = tpe.typeVars ++ eff.typeVars ++ fparams.flatMap(_.tpe.typeVars)
-
-      val renv = allTparams.foldLeft(infRenv) {
-        case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
-      }
-
-      val cenv = expandClassEnv(cenv0, instConstrs ++ tconstrs)
-      val eqEnv = expandEqualityEnv(eqEnv0, econstrs) // MATT consider econstrs from instance
-
-      val tpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
-      val effConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
-      val constrs = tpeConstr :: effConstr :: infConstrs
-      resolve(constrs, renv, cenv, eqEnv, initialSubst).map(_.newSubst).map(x => {
-        stopLogging();
-        x
-      }).toValidation // TODO check leftovers
-  }
-
   def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root, infResult: InfResult)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
     case KindedAst.Sig(_, _, None) => Validation.success(Substitution.empty)
     case KindedAst.Sig(sym, KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc), exp) =>
