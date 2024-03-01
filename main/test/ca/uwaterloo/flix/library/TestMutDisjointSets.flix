@@ -418,7 +418,7 @@ mod TestMutDisjointSets {
 
     @Test
     def size01(): Bool = region rc {
-        let s: MutDisjointSets[String, rc] = MutDisjointSets.empty(rc);
+        let s: MutDisjointSets[rc, String] = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(Nil, s);
         Assert.eq(0, MutDisjointSets.size(s))
     }

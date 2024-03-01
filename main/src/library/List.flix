@@ -88,7 +88,23 @@ instance Foldable[List] {
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRightWithCont(f, s, l)
 }
 
+instance Foldable2[List] {
+    type Aef = Pure
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldLeft(f, s, l)
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRight(f, s, l)
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRightWithCont(f, s, l)
+}
+
 instance UnorderedFoldable[List] {
+    pub def foldMap(f: a -> b \ ef, l: List[a]): b \ ef with CommutativeMonoid[b] = List.foldMap(f, l)
+    override pub def isEmpty(l: List[a]): Bool = List.isEmpty(l)
+    override pub def exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
+    override pub def forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
+    override pub def memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
+}
+
+instance UnorderedFoldable2[List] {
+    type Aef = Pure
     pub def foldMap(f: a -> b \ ef, l: List[a]): b \ ef with CommutativeMonoid[b] = List.foldMap(f, l)
     override pub def isEmpty(l: List[a]): Bool = List.isEmpty(l)
     override pub def exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)

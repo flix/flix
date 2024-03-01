@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.fmt._
+import ca.uwaterloo.flix.language.phase.unification.UnificationError
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
@@ -869,5 +870,24 @@ object TypeError {
     override def explain(formatter: Formatter): Option[String] = Some({
       "Tip: Add an equality constraint to the function."
     })
+  }
+
+  // MATT temp hack to get things compiling again
+  case class HackError(e: UnificationError) extends TypeError {
+
+    /**
+      * Returns the primary source location of the error.
+      */
+    override def loc: SourceLocation = SourceLocation.Unknown
+
+    /**
+      * Returns a short description of the error message.
+      */
+    override def summary: String = e.toString
+
+    /**
+      * Returns the formatted error message.
+      */
+    override def message(formatter: Formatter): String = e.toString
   }
 }
