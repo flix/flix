@@ -131,6 +131,8 @@ object TokenKind {
 
   case object KeywordChoose extends TokenKind
 
+  case object KeywordChooseStar extends TokenKind
+
   case object KeywordDebug extends TokenKind
 
   case object KeywordDebugBang extends TokenKind

@@ -1100,6 +1100,8 @@ object Parser2 {
         case TokenKind.KeywordUncheckedCast => uncheckedCast()
         case TokenKind.KeywordCheckedECast => checkedEffectCast()
         case TokenKind.KeywordCheckedCast => checkedTypeCast()
+        case TokenKind.KeywordChoose
+             | TokenKind.KeywordChooseStar => restrictableChoose()
         case TokenKind.KeywordForeach => foreach()
         case TokenKind.KeywordForM => forM()
         case TokenKind.KeywordForA => forA()
@@ -1769,6 +1771,22 @@ object Parser2 {
         expect(TokenKind.ParenR)
       }
       close(mark, TreeKind.Expr.CheckedTypeCast)
+    }
+
+    private def restrictableChoose()(implicit s: State): Mark.Closed = {
+      assert(atAny(List(TokenKind.KeywordChoose, TokenKind.KeywordChooseStar)))
+      val mark = open()
+      val isStar = eat(TokenKind.KeywordChooseStar)
+      if (!isStar) {
+        expect(TokenKind.KeywordChoose)
+      }
+      expression()
+      expect(TokenKind.CurlyL)
+      while (at(TokenKind.KeywordCase) && !eof()) {
+        matchRule()
+      }
+      expect(TokenKind.CurlyR)
+      close(mark, if (isStar) TreeKind.Expr.RestrictableChooseStar else TreeKind.Expr.RestrictableChoose)
     }
 
     private def checkedEffectCast()(implicit s: State): Mark.Closed = {

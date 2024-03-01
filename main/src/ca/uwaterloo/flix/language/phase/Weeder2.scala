@@ -767,6 +767,8 @@ object Weeder2 {
         case TreeKind.Expr.Lambda => visitLambda(tree)
         case TreeKind.Expr.LambdaMatch => visitLambdaMatch(tree)
         case TreeKind.Expr.Ref => visitReference(tree)
+        case TreeKind.Expr.RestrictableChoose
+             | TreeKind.Expr.RestrictableChooseStar => visitRestrictableChoose(tree)
         case TreeKind.Expr.Spawn => visitSpawn(tree)
         case TreeKind.Expr.Static => visitStatic(tree)
         case TreeKind.Expr.RecordOperation => visitRecordOperation(tree)
@@ -1134,6 +1136,47 @@ object Weeder2 {
             case (acc, ident) => Expr.RecordSelect(acc, Name.mkLabel(ident), ident.loc)
           }
       )
+    }
+
+    private def visitRestrictableChoose(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.RestrictableChoose || tree.kind == TreeKind.Expr.RestrictableChooseStar)
+      val isStar = tree.kind == TreeKind.Expr.RestrictableChooseStar
+      val rules = pickAll(TreeKind.Expr.MatchRuleFragment, tree.children)
+      mapN(
+        pickExpression(tree),
+        traverse(rules)(t => visitRestrictableChooseRule(isStar, t))
+      )((expr, rules) => Expr.RestrictableChoose(isStar, expr, rules, tree.loc))
+    }
+
+    private def visitRestrictableChooseRule(isStar: Boolean, tree: Tree)(implicit s: State): Validation[RestrictableChooseRule, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.MatchRuleFragment)
+      flatMapN(
+        pickRestrictableChoosePattern(isStar, tree),
+        pickExpression(tree)
+      )((pat, expr) => Validation.success(RestrictableChooseRule(pat, expr)))
+    }
+
+    private def pickRestrictableChoosePattern(isStar: Boolean, tree: Tree)(implicit s: State): Validation[RestrictableChoosePattern, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.MatchRuleFragment)
+      flatMapN(Patterns.pickPattern(tree)) {
+        case Pattern.Tag(qname, pat, loc) =>
+          val inner = pat match {
+            case Pattern.Wild(loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
+            case Pattern.Var(ident, loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Var(ident, loc)))
+            case Pattern.Cst(Ast.Constant.Unit, loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
+            case Pattern.Tuple(elms, _) =>
+              traverse(elms) {
+                case Pattern.Wild(loc) => Validation.success(WeededAst.RestrictableChoosePattern.Wild(loc))
+                case Pattern.Var(ident, loc) => Validation.success(WeededAst.RestrictableChoosePattern.Var(ident, loc))
+                case Pattern.Cst(Ast.Constant.Unit, loc) => Validation.success(WeededAst.RestrictableChoosePattern.Wild(loc))
+                case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(isStar, other.loc))
+              }
+            case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(isStar, other.loc))
+          }
+          mapN(inner)(RestrictableChoosePattern.Tag(qname, _, loc))
+
+        case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(isStar, other.loc))
+      }
     }
 
     private def visitReference(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {

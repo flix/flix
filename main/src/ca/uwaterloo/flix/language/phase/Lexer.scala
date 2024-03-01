@@ -396,6 +396,7 @@ object Lexer {
       case _ if isKeyword("catch") => TokenKind.KeywordCatch
       case _ if isKeyword("checked_cast") => TokenKind.KeywordCheckedCast
       case _ if isKeyword("checked_ecast") => TokenKind.KeywordCheckedECast
+      case _ if isKeyword("choose*") => TokenKind.KeywordChooseStar
       case _ if isKeyword("choose") => TokenKind.KeywordChoose
       case _ if isKeyword("debug") => TokenKind.KeywordDebug
       case _ if isKeyword("debug!") => TokenKind.KeywordDebugBang

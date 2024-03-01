@@ -537,6 +537,13 @@ class Flix {
     "Test.Exp.Record.Polymorphism.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Polymorphism.flix"),
     "Test.Exp.Record.Restrict.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Restrict.flix"),
     "Test.Exp.Record.Select.flix" -> LocalResource.get("/test/flix/Test.Exp.Record.Select.flix"),
+    "Test.Exp.Choose.Polymorphic.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.Polymorphic.flix"),
+    "Test.Exp.Choose.Recursive.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.Recursive.flix"),
+    "Test.Exp.Choose.Simple.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.Simple.flix"),
+    "Test.Exp.Choose.SimpleTerms.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.SimpleTerms.flix"),
+    "Test.Def.ChooseStar.Simple.flix" -> LocalResource.get("/test/flix/Test.Def.ChooseStar.Simple.flix"),
+    "Test.Exp.ChooseStar.Polymorphic.flix" -> LocalResource.get("/test/flix/Test.Exp.ChooseStar.Polymorphic.flix"),
+    "Test.Exp.ChooseStar.Simple.flix" -> LocalResource.get("/test/flix/Test.Exp.ChooseStar.Simple.flix"),
 
     // TODO: Ascribe precedece
     //  "Test.Exp.Lambda.Match.flix" -> LocalResource.get("/test/flix/Test.Exp.Lambda.Match.flix"),
@@ -561,20 +568,14 @@ class Flix {
     //    "Test.Unused.Var.flix" -> LocalResource.get("/test/flix/Test.Unused.Var.flix"),
     //    "Test.Exp.Concurrency.Select.flix" -> LocalResource.get("/test/flix/Test.Exp.Concurrency.Select.flix"),
 
-    // TODO: Expr Choose
-    //    "Test.Exp.Choose.Polymorphic.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.Polymorphic.flix"),
-    //    "Test.Exp.Choose.Recursive.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.Recursive.flix"),
-    //    "Test.Exp.Choose.Simple.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.Simple.flix"),
-    //    "Test.Exp.Choose.SimpleTerms.flix" -> LocalResource.get("/test/flix/Test.Exp.Choose.SimpleTerms.flix"),
-
-    // TODO: Expr choose star
-    // "Test.Def.ChooseStar.Simple.flix" -> LocalResource.get("/test/flix/Test.Def.ChooseStar.Simple.flix"),
-    //    "Test.Exp.ChooseStar.Polymorphic.flix" -> LocalResource.get("/test/flix/Test.Exp.ChooseStar.Polymorphic.flix"),
-    //    "Test.Exp.ChooseStar.Simple.flix" -> LocalResource.get("/test/flix/Test.Exp.ChooseStar.Simple.flix"),
-
     // TODO: Make named arguments. Each named expressions becomes singleton record.
     // "Test.Exp.Tuple.flix" -> LocalResource.get("/test/flix/Test.Exp.Tuple.flix"),
     // "Test.Exp.Tag.flix" -> LocalResource.get("/test/flix/Test.Exp.Tag.flix"),
+
+    // TODO: KEYWORD PROJECT
+    //    "Test.Term.Lit.flix" -> LocalResource.get("/test/flix/Test.Term.Lit.flix"),
+    //    "Test.Exp.Fixpoint.Constraint.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
+    //    "Test.Exp.Fixpoint.Project.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Project.flix"),
 
     // "Test.Use.Def.flix" -> LocalResource.get("/test/flix/Test.Use.Def.flix"), // TODO: Name clash with Test.Dec.Mod.flix
 
@@ -586,10 +587,7 @@ class Flix {
     // "Test.Use.Sig.flix" -> LocalResource.get("/test/flix/Test.Use.Sig.flix"), // TODO: Name error not related to parser? weededAsts match. Hmm debuggin time
     // For debug: ListMap(HashMap(Nil -> List(Declaration(Case(List.Nil,Unit(List.flix:24:10),List.flix:24:5))), Err -> List(Declaration(Case(Result.Err,Var(e,Result.flix:27:14),Result.flix:26:15))), _unit -> List(Var(_unit$52820)), Cons -> List(Declaration(Case(List.Cons,Tuple(List(Var(t,List.flix:25:15), Apply(Ambiguous(List,List.flix:25:18),Var(t,List.flix:25:23),List.flix:25:18)),List.flix:25:14),List.flix:24:13))), Ok -> List(Declaration(Case(Result.Ok,Var(t,Result.flix:26:13),Result.flix:26:5))), Some -> List(Declaration(Case(Option.Some,Var(t,Option.flix:26:15),Option.flix:25:14))), None -> List(Declaration(Case(Option.None,Unit(Option.flix:25:10),Option.flix:25:5)))))
 
-    // TODO: KEYWORD PROJECT
-    //    "Test.Term.Lit.flix" -> LocalResource.get("/test/flix/Test.Term.Lit.flix"),
-    //    "Test.Exp.Fixpoint.Constraint.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
-    //    "Test.Exp.Fixpoint.Project.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Project.flix"),
+
   )
 
   /**

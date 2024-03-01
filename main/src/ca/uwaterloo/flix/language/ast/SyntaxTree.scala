@@ -279,6 +279,10 @@ object SyntaxTree {
 
       case object Ref extends Expr
 
+      case object RestrictableChoose extends Expr
+
+      case object RestrictableChooseStar extends Expr
+
       case object Scope extends Expr
 
       case object ScopeName extends Expr
