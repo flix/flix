@@ -131,59 +131,59 @@ object FastBoolUnification {
     }
 
     private def phase0Init(): Unit = {
-      println("-".repeat(80))
-      println("--- Input")
-      println("-".repeat(80))
+      debugln("-".repeat(80))
+      debugln("--- Input")
+      debugln("-".repeat(80))
       printEquations()
-      println()
+      debugln()
     }
 
     private def phase1UnitPropagation(): Unit = {
-      println("-".repeat(80))
-      println("--- Phase 1: Unit Propagation")
-      println("    (resolves all equations of the form: x = c where x is a var and c is const)")
-      println("-".repeat(80))
+      debugln("-".repeat(80))
+      debugln("--- Phase 1: Unit Propagation")
+      debugln("    (resolves all equations of the form: x = c where x is a var and c is const)")
+      debugln("-".repeat(80))
       val s = propagateUnit(currentEqns, currentSubst)
       updateState(s)
       printEquations()
       printSubstitution()
-      println()
+      debugln()
     }
 
     private def phase2VarPropagation(): Unit = {
-      println("-".repeat(80))
-      println("--- Phase 2: Variable Propagation")
-      println("    (resolves all equations of the form: x = y where x and y are vars)")
-      println("-".repeat(80))
+      debugln("-".repeat(80))
+      debugln("--- Phase 2: Variable Propagation")
+      debugln("    (resolves all equations of the form: x = y where x and y are vars)")
+      debugln("-".repeat(80))
       val s = propagateVars(currentEqns, currentSubst)
       updateState(s)
       printEquations()
       printSubstitution()
-      println()
+      debugln()
     }
 
     private def phase3VarAssignment(): Unit = {
-      println("-".repeat(80))
-      println("--- Phase 3: Variable Assignment")
-      println("    (resolves all equations of the form: x = t where x is free in t)")
-      println("-".repeat(80))
+      debugln("-".repeat(80))
+      debugln("--- Phase 3: Variable Assignment")
+      debugln("    (resolves all equations of the form: x = t where x is free in t)")
+      debugln("-".repeat(80))
       val s = varAssignment(currentEqns, currentSubst)
       updateState(s)
       printEquations()
       printSubstitution()
-      println()
+      debugln()
     }
 
     private def phase4SVE(): Unit = {
-      println("-".repeat(80))
-      println("--- Phase 4: Boolean Unification")
-      println("    (resolves all remaining equations using SVE.)")
-      println("-".repeat(80))
+      debugln("-".repeat(80))
+      debugln("--- Phase 4: Boolean Unification")
+      debugln("    (resolves all remaining equations using SVE.)")
+      debugln("-".repeat(80))
       val restSubst = boolUnifyAll(currentEqns, Set.empty)
       currentEqns = Nil
       currentSubst = restSubst @@ currentSubst // TODO: Verify
       printSubstitution()
-      println()
+      debugln()
     }
 
     /**
@@ -214,13 +214,21 @@ object FastBoolUnification {
     }
 
     private def printEquations(): Unit = {
-      println(s"Equations (${currentEqns.size}):")
-      println(format(currentEqns))
+      debugln(s"Equations (${currentEqns.size}):")
+      debugln(format(currentEqns))
     }
 
     private def printSubstitution(): Unit = {
-      println(s"Substitution (${currentSubst.bindings}):")
-      println(currentSubst.toString)
+      debugln(s"Substitution (${currentSubst.bindings}):")
+      debugln(currentSubst.toString)
+    }
+
+    private def debugln(): Unit = debugln("")
+
+    private def debugln(s: String): Unit = {
+      if (Debugging) {
+        Console.println(s)
+      }
     }
 
   }
@@ -393,15 +401,6 @@ object FastBoolUnification {
 
     // Eliminate all variables.
     val subst = successiveVariableElimination(query, freeVars)
-
-    //    if (!subst.isEmpty) {
-    //      val s = subst.toString
-    //      val len = s.length
-    //      if (len > 50) {
-    //        println(s.substring(0, Math.min(len, 300)))
-    //        println()
-    //      }
-    //    }
 
     subst
   }
