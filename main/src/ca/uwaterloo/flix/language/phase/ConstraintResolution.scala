@@ -19,9 +19,9 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.errors.TypeError.HackError
-import ca.uwaterloo.flix.language.phase.constraintgeneration.{Debug, TypingConstraint}
 import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.unification.Unification.{getUnderOrOverAppliedError, unifiesWith}
+import ca.uwaterloo.flix.language.phase.constraintgeneration.{Debug, TypingConstraint}
+import ca.uwaterloo.flix.language.phase.unification.Unification.getUnderOrOverAppliedError
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.util.Result.Err
 import ca.uwaterloo.flix.util.collection.ListMap
@@ -59,34 +59,26 @@ object ConstraintResolution {
 
   sealed trait EqualityResult {
     def subst: Substitution = this match {
-      case EqualityResult.NoProgress => Substitution.empty
-      case EqualityResult.Subst(s, cs) => s
-      case EqualityResult.Constrs(cs) => Substitution.empty
+      case EqualityResult.Subst(s, _) => s
+      case EqualityResult.Constrs(_, _) => Substitution.empty
     }
 
     def constrs: List[TypingConstraint] = this match {
-      case EqualityResult.NoProgress => Nil
-      case EqualityResult.Subst(s, cs) => cs
-      case EqualityResult.Constrs(cs) => cs
+      case EqualityResult.Subst(_, cs) => cs
+      case EqualityResult.Constrs(cs, _) => cs
     }
 
 
     def @@(that: EqualityResult): EqualityResult = (this, that) match {
-      case (res1, EqualityResult.NoProgress) => res1
-      case (EqualityResult.NoProgress, res2) => res2
-
-      case (EqualityResult.Constrs(cs1), EqualityResult.Constrs(cs2)) => EqualityResult.Constrs(cs1 ++ cs2)
-
+      case (EqualityResult.Constrs(cs1, p1), EqualityResult.Constrs(cs2, p2)) => EqualityResult.Constrs(cs1 ++ cs2, p1 || p2)
       case _ => EqualityResult.Subst(this.subst @@ that.subst, this.constrs ++ that.constrs)
     }
   }
 
   object EqualityResult {
-    case object NoProgress extends EqualityResult
-
     case class Subst(s: Substitution, cs: List[TypingConstraint]) extends EqualityResult
 
-    case class Constrs(cs: List[TypingConstraint]) extends EqualityResult
+    case class Constrs(cs: List[TypingConstraint], progress: Boolean) extends EqualityResult
   }
 
   // TODO ASSOC-TYPES this is duplicated in TypeReconstruction
@@ -209,10 +201,8 @@ object ConstraintResolution {
         res =
           if (res0._2.isEmpty) {
             EqualityResult.Subst(res0._1, Nil)
-          } else if (p1 || p2) {
-            EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, prov)))
           } else {
-            EqualityResult.NoProgress
+            EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, prov)), p1 || p2)
           }
       } yield res
 
@@ -226,10 +216,8 @@ object ConstraintResolution {
         res =
           if (res0._2.isEmpty) {
             EqualityResult.Subst(res0._1, Nil)
-          } else if (p1 || p2) {
-            EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, prov)))
           } else {
-            EqualityResult.NoProgress
+            EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, prov)), p1 || p2)
           }
       } yield res
 
@@ -278,8 +266,8 @@ object ConstraintResolution {
 
 
     // reflU
-    case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(EqualityResult.Constrs(Nil))
-    case (x: Type.Var, y: Type.Var) if (x == y) => Result.Ok(EqualityResult.Constrs(Nil))
+    case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(EqualityResult.Constrs(Nil, progress = true))
+    case (x: Type.Var, y: Type.Var) if (x == y) => Result.Ok(EqualityResult.Constrs(Nil, progress = true))
 
     case (Type.Alias(_, _, tpe, _), _) => simplifyEquality(tpe, tpe2, prov, renv, eqEnv, loc)
 
@@ -294,29 +282,21 @@ object ConstraintResolution {
 
     // reflU
     case (Type.AssocType(cst1, args1, _, _), Type.AssocType(cst2, args2, _, _)) if cst1.sym == cst2.sym && args1 == args2 =>
-      Result.Ok(EqualityResult.Constrs(Nil))
+      Result.Ok(EqualityResult.Constrs(Nil, progress = true))
 
     // redU
     case (assoc: Type.AssocType, t2) =>
       for {
         (t1, progress) <- simplifyType(assoc, renv, eqEnv, loc)
       } yield {
-        if (progress) {
-          EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, prov)))
-        } else {
-          EqualityResult.NoProgress
-        }
+        EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, prov)), progress)
       }
 
     case (t1, assoc: Type.AssocType) =>
       for {
         (t2, progress) <- simplifyType(assoc, renv, eqEnv, loc)
       } yield {
-        if (progress) {
-          EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, prov)))
-        } else {
-          EqualityResult.NoProgress
-        }
+        EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, prov)), progress)
       }
 
     case _ =>
@@ -494,26 +474,26 @@ object ConstraintResolution {
     * - mismatched types
     *   - check for over/under applied
     *   - else return as is
-    * - mismatched bools -> mismatched bools
-    * - mismatched effects
+    *     - mismatched bools -> mismatched bools
+    *     - mismatched effects
     *   - check for mismatched arrow effects
     *   - else return as is
-    * - mismatched case sets -> mismatched case sets
-    * - mismatched arity -> mismatched arity
-    * - rigid var -> mismatched types
-    * - occurs check -> occurs check
-    * - undefined label -> undefined label
-    * - non-record type -> non-record type
-    * - undefined predicate -> undefined predicate
-    * - non-schema type -> non-schema type
-    * - no matching instance
+    *     - mismatched case sets -> mismatched case sets
+    *     - mismatched arity -> mismatched arity
+    *     - rigid var -> mismatched types
+    *     - occurs check -> occurs check
+    *     - undefined label -> undefined label
+    *     - non-record type -> non-record type
+    *     - undefined predicate -> undefined predicate
+    *     - non-schema type -> non-schema type
+    *     - no matching instance
     *   - check for specific instance
     *     - toString
     *     - eq
     *     - ord
     *     - hash
     *     - ?
-    * - (other cases should be impossible on this branch)
+    *       - (other cases should be impossible on this branch)
     */
   def toTypeError(err0: UnificationError, prov: Provenance)(implicit flix: Flix): TypeError = (err0, prov) match {
     case (err, Provenance.ExpectType(expected, actual, loc)) =>
@@ -532,12 +512,12 @@ object ConstraintResolution {
       toTypeError(err, Provenance.Match(expected, actual, loc)) match {
         case TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, _) =>
           // MATT bad
-//          val upcast = Type.mkUnion(actual, Type.freshVar(Kind.Eff, SourceLocation.Unknown)(Level.Default, flix), SourceLocation.Unknown) // level is irrelevant here
-//          if (unifiesWith(expected, upcast, renv, ListMap.empty)) { // TODO level env in error // TODO eqenv?
-//            TypeError.PossibleCheckedEffectCast(expected, actual, renv, loc)
-//          } else {
-            TypeError.UnexpectedEffect(baseType1, baseType2, renv, loc)
-//          }
+          //          val upcast = Type.mkUnion(actual, Type.freshVar(Kind.Eff, SourceLocation.Unknown)(Level.Default, flix), SourceLocation.Unknown) // level is irrelevant here
+          //          if (unifiesWith(expected, upcast, renv, ListMap.empty)) { // TODO level env in error // TODO eqenv?
+          //            TypeError.PossibleCheckedEffectCast(expected, actual, renv, loc)
+          //          } else {
+          TypeError.UnexpectedEffect(baseType1, baseType2, renv, loc)
+        //          }
         case e => e
       }
 
@@ -608,8 +588,7 @@ object ConstraintResolution {
       val t2 = TypeMinimization.minimizeType(subst0(tpe2))
       simplifyEquality(t1, t2, prov, renv, eqEnv, constr0.loc).map {
         case EqualityResult.Subst(subst, constrs) => ReductionResult(subst0, subst @@ subst0, List(constr0), constrs, progress = true)
-        case EqualityResult.Constrs(constrs) => ReductionResult(subst0, subst0, List(constr0), constrs, progress = true)
-        case EqualityResult.NoProgress => ReductionResult(subst0, subst0, List(constr0), List(constr0), progress = false)
+        case EqualityResult.Constrs(constrs, p) => ReductionResult(subst0, subst0, List(constr0), constrs, progress = p)
       }
     case TypingConstraint.Class(sym, tpe, loc) =>
       simplifyClass(sym, subst0(tpe), cenv, eqEnv, renv, loc).map {
