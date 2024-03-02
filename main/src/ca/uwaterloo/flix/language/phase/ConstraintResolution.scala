@@ -347,9 +347,9 @@ object ConstraintResolution {
           // find the first (and only) instance that matches
           insts.iterator.flatMap { // TODO ASSOC-TYPES generalize this pattern (also in monomorph)
             inst =>
-              Unification.unifyTypes(arg, inst.arg, renv).toOption.map {
-                case (subst, Nil) => subst(inst.ret)
-                case (_, _) => throw InternalCompilerException("unexpected leftover constraints", SourceLocation.Unknown)
+              Unification.unifyTypes(t, inst.arg, renv).toOption.flatMap {
+                case (subst, Nil) => Some(subst(inst.ret))
+                case (_, _ :: _) => None // if we have leftover constraints then it didn't actually unify
               }
           }.nextOption() match {
             // Can't reduce. Check what the original type was.
@@ -358,6 +358,8 @@ object ConstraintResolution {
                 // If it's a var, it's ok. It may be substituted later to a type we can reduce.
                 // Or it might be part of the signature as an associated type.
                 case Type.Var(sym, loc) => Result.Ok((Type.AssocType(cst, t, kind, loc), p))
+                // If it's an associated type, it's ok. It may be reduced later to a concrete type.
+                case _: Type.AssocType => Result.Ok((Type.AssocType(cst, t, kind, loc), p))
                 // Otherwise it's a problem.
                 case baseTpe => Result.Err(TypeError.MissingInstance(cst.sym.clazz, baseTpe, renv, loc)) // MATT must pipe in loc
               }
@@ -529,12 +531,13 @@ object ConstraintResolution {
     case (err, Provenance.ExpectEffect(expected, actual, loc)) =>
       toTypeError(err, Provenance.Match(expected, actual, loc)) match {
         case TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, _) =>
-          val upcast = Type.mkUnion(actual, Type.freshVar(Kind.Eff, SourceLocation.Unknown)(Level.Default, flix), SourceLocation.Unknown) // level is irrelevant here
-          if (unifiesWith(expected, upcast, renv, ListMap.empty)) { // TODO level env in error // TODO eqenv?
-            TypeError.PossibleCheckedEffectCast(expected, actual, renv, loc)
-          } else {
+          // MATT bad
+//          val upcast = Type.mkUnion(actual, Type.freshVar(Kind.Eff, SourceLocation.Unknown)(Level.Default, flix), SourceLocation.Unknown) // level is irrelevant here
+//          if (unifiesWith(expected, upcast, renv, ListMap.empty)) { // TODO level env in error // TODO eqenv?
+//            TypeError.PossibleCheckedEffectCast(expected, actual, renv, loc)
+//          } else {
             TypeError.UnexpectedEffect(baseType1, baseType2, renv, loc)
-          }
+//          }
         case e => e
       }
 
