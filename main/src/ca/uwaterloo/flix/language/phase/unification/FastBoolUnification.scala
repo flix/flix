@@ -375,7 +375,7 @@ object FastBoolUnification {
           rest = e :: rest
       }
 
-      // INVARIANT: The current substitution has been applied to rest.
+      // INVARIANT: TODO: Need invariant that currentsubst applied to BOTH rest and currentEquations.
     }
 
     (currentSubst(rest.reverse), currentSubst)
