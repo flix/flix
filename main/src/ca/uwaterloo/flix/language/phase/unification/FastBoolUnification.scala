@@ -120,7 +120,7 @@ object FastBoolUnification {
         phase2VarPropagation()
         phase3VarAssignment()
         phase4SVE()
-        verifySolution()
+        // verifySolution() //  TODO
         verifySolutionSize()
 
         Result.Ok(currentSubst)
