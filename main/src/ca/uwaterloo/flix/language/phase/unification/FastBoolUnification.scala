@@ -75,7 +75,7 @@ object FastBoolUnification {
     *
     * If multiple equations are unsolvable the implementation makes no guarantee about which one is returned.
     */
-  def solveAll(l: List[Equation]): Result[BoolSubstitution, (Exception, List[Equation], BoolSubstitution)] = {
+  def solveAll(l: List[Equation]): Result[BoolSubstitution, (FastBoolUnificationException, List[Equation], BoolSubstitution)] = {
     val solver = new Solver(l)
     solver.solve()
   }
@@ -106,24 +106,31 @@ object FastBoolUnification {
       */
     private var currentSubst: BoolSubstitution = BoolSubstitution.empty
 
-
-    def solve(): Result[BoolSubstitution, (ConflictException, List[Equation], BoolSubstitution)] = {
+    /**
+      * Attempts to solve the equation system that this solver was instantiated with.
+      *
+      * Returns `Result.Ok(s)` with a most-general substitution which solves the equations system.
+      *
+      * Returns `Result.Err((ex, l, s))` which an exception `ex`, a list of pending (unsolved) equations, and a partial substitution `s`.
+      */
+    def solve(): Result[BoolSubstitution, (FastBoolUnificationException, List[Equation], BoolSubstitution)] = {
       try {
-        phase0()
-        phase1()
-        phase2()
-        phase3()
-        phase4()
-        verifyPhase()
-        checkSize()
+        phase0Init()
+        phase1UnitPropagation()
+        phase2VarPropagation()
+        phase3VarAssignment()
+        phase4SVE()
+        verifySolution()
+        verifySolutionSize()
 
         Result.Ok(currentSubst)
       } catch {
         case ex: ConflictException => Result.Err((ex, currentEqns, currentSubst))
+        case ex: TooComplexException => Result.Err((ex, currentEqns, currentSubst))
       }
     }
 
-    private def phase0(): Unit = {
+    private def phase0Init(): Unit = {
       println("-".repeat(80))
       println("--- Input")
       println("-".repeat(80))
@@ -131,7 +138,7 @@ object FastBoolUnification {
       println()
     }
 
-    private def phase1(): Unit = {
+    private def phase1UnitPropagation(): Unit = {
       println("-".repeat(80))
       println("--- Phase 1: Unit Propagation")
       println("    (resolves all equations of the form: x = c where x is a var and c is const)")
@@ -143,7 +150,7 @@ object FastBoolUnification {
       println()
     }
 
-    private def phase2(): Unit = {
+    private def phase2VarPropagation(): Unit = {
       println("-".repeat(80))
       println("--- Phase 2: Variable Propagation")
       println("    (resolves all equations of the form: x = y where x and y are vars)")
@@ -155,7 +162,7 @@ object FastBoolUnification {
       println()
     }
 
-    private def phase3(): Unit = {
+    private def phase3VarAssignment(): Unit = {
       println("-".repeat(80))
       println("--- Phase 3: Variable Assignment")
       println("    (resolves all equations of the form: x = t where x is free in t)")
@@ -167,7 +174,7 @@ object FastBoolUnification {
       println()
     }
 
-    private def phase4(): Unit = {
+    private def phase4SVE(): Unit = {
       println("-".repeat(80))
       println("--- Phase 4: Boolean Unification")
       println("    (resolves all remaining equations using SVE.)")
@@ -184,7 +191,7 @@ object FastBoolUnification {
       *
       * Throws an exception from inside [[verify]] if the solution is invalid.
       */
-    private def verifyPhase(): Unit = {
+    private def verifySolution(): Unit = {
       if (Debugging) {
         verify(currentSubst, l)
       }
@@ -193,7 +200,7 @@ object FastBoolUnification {
     /**
       * Checks that current substitution has not grown too large according to the defined threshold.
       */
-    private def checkSize(): Unit = {
+    private def verifySolutionSize(): Unit = {
       val size = currentSubst.size
       if (size > Threshold) {
         throw TooComplexException(size)
@@ -939,14 +946,19 @@ object FastBoolUnification {
   }
 
   /**
+    * A common super-type for exceptions throw by the solver.
+    */
+  sealed trait FastBoolUnificationException extends RuntimeException
+
+  /**
     * Represents a Boolean unification failure between the two terms: `x` and `y`.
     */
-  case class ConflictException(x: Term, y: Term) extends RuntimeException // TODO: Add source location.
+  case class ConflictException(x: Term, y: Term) extends FastBoolUnificationException // TODO: Add source location.
 
   /**
     * Represents a solution that is too complex (i.e. too large according to the threshold).
     */
-  case class TooComplexException(size: Int) extends RuntimeException
+  case class TooComplexException(size: Int) extends FastBoolUnificationException
 
   /////////////////////////////////////////////////////////////////////////////
   /// Testing                                                               ///
