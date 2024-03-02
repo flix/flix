@@ -50,6 +50,18 @@ import scala.collection.mutable.ListBuffer
 object FastBoolUnification {
 
   /**
+    * The threshold for when a solution is considered too complex.
+    *
+    * If a solution is too complex an [[TooComplexException]] exception is thrown.
+    */
+  private val Threshold: Int = 1_000
+
+  /**
+    * Enable debugging (prints information during Boolean unification).
+    */
+  private val Debugging: Boolean = true
+
+  /**
     * Internal formatter. Used for debugging.
     */
   private val formatter: Formatter = Formatter.NoFormatter
@@ -63,14 +75,9 @@ object FastBoolUnification {
     *
     * If multiple equations are unsolvable the implementation makes no guarantee about which one is returned.
     */
-  def solveAll(l: List[Equation]): Result[BoolSubstitution, (ConflictException, List[Equation], BoolSubstitution)] = {
+  def solveAll(l: List[Equation]): Result[BoolSubstitution, (Exception, List[Equation], BoolSubstitution)] = {
     val solver = new Solver(l)
-    solver.solve() map {
-      case s => {
-        verify(s, l);
-        s
-      }
-    }
+    solver.solve()
   }
 
   private class Solver(l: List[Equation]) {
@@ -85,6 +92,9 @@ object FastBoolUnification {
         phase2()
         phase3()
         phase4()
+        verifyPhase()
+        checkSize()
+
         Result.Ok(currentSubst)
       } catch {
         case ex: ConflictException => Result.Err((ex, currentEqns, currentSubst))
@@ -147,6 +157,27 @@ object FastBoolUnification {
       println()
     }
 
+    /**
+      * If debugging is enabled, checks that the current substitution is a valid solution to the original equations `l`.
+      *
+      * Throws an exception from inside [[verify]] if the solution is invalid.
+      */
+    private def verifyPhase(): Unit = {
+      if (Debugging) {
+        verify(currentSubst, l)
+      }
+    }
+
+    /**
+      * Checks that current substitution has not grown too large according to the defined threshold.
+      */
+    private def checkSize(): Unit = {
+      val size = currentSubst.size
+      if (size > Threshold) {
+        throw TooComplexException(size)
+      }
+    }
+
     private def updateState(p: (List[Equation], BoolSubstitution)): Unit = {
       val (nextEqns, nextSubst) = p
       currentEqns = simplify(nextEqns)
@@ -159,7 +190,7 @@ object FastBoolUnification {
     }
 
     private def printSubstitution(): Unit = {
-      println(s"Substitution (${currentSubst.size}):")
+      println(s"Substitution (${currentSubst.bindings}):")
       println(currentSubst.toString)
     }
 
@@ -755,7 +786,14 @@ object FastBoolUnification {
     /**
       * Returns the number of bindings in `this` substitution.
       */
-    def size: Int = m.size
+    def bindings: Int = m.size
+
+    /**
+      * Returns the size of `this` substitution.
+      *
+      * The size of a substitution is the sum of the sizes of all terms in its co-domain.
+      */
+    def size: Int = m.values.map(_.size).sum
 
     /**
       * Extends `this` substitution with a new binding from the variable `x` to the term `t`.
@@ -852,12 +890,6 @@ object FastBoolUnification {
   }
 
   /**
-    * Represents a Boolean unification failure between the two terms: `x` and `y`.
-    */
-  case class ConflictException(x: Term, y: Term) extends RuntimeException // TODO: Add source location.
-
-
-  /**
     * Verifies that `s` is a solution to the given Boolean unification equations.
     *
     * Throws an exception if the solution is incorrect.
@@ -883,6 +915,16 @@ object FastBoolUnification {
       }
     }
   }
+
+  /**
+    * Represents a Boolean unification failure between the two terms: `x` and `y`.
+    */
+  case class ConflictException(x: Term, y: Term) extends RuntimeException // TODO: Add source location.
+
+  /**
+    * Represents a solution that is too complex (i.e. too large according to the threshold).
+    */
+  case class TooComplexException(size: Int) extends RuntimeException
 
   /////////////////////////////////////////////////////////////////////////////
   /// Testing                                                               ///

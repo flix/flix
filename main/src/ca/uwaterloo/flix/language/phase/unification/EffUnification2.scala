@@ -17,7 +17,8 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Rigidity, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.unification.FastBoolUnification.{Equation, Term}
+import ca.uwaterloo.flix.language.phase.unification.FastBoolUnification.{ConflictException, Equation, Term, TooComplexException}
+import ca.uwaterloo.flix.language.phase.unification.UnificationError.TooComplex
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result}
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -39,10 +40,17 @@ object EffUnification2 {
     FastBoolUnification.solveAll(equations) match {
       case Result.Ok(subst) => Result.Ok(fromBoolSubst(subst))
 
-      case Result.Err((ex, _, _)) => // TODO: Use loc from ex.
+      case Result.Err((ex: ConflictException, _, _)) => // TODO: Use loc from ex.
         val tpe1 = fromTerm(ex.x, loc)
         val tpe2 = fromTerm(ex.y, loc)
         Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
+
+      case Result.Err((ex: TooComplexException, _, _)) => // TODO: Use loc from ex.
+        val tpe1 = ??? // TODO
+        val tpe2 = ??? // TODO
+        Result.Err(UnificationError.TooComplex(tpe1, tpe2))
+
+      case Result.Err((ex, _, _)) => throw ex
     }
   }
 
