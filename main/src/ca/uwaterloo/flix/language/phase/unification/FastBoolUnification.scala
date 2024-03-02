@@ -984,7 +984,7 @@ object FastBoolUnification {
     *
     * Note: Unfortunately this function is very slow since the SAT solver is very slow.
     */
-  private def verify(s: BoolSubstitution, l: List[Equation]): Unit = {
+  def verify(s: BoolSubstitution, l: List[Equation]): Unit = {
     // Apply the substitution to every equation and check that it is solved.
     for (e <- l) {
       // We want to check that `s(t1) == s(t2)`. In other words that both sides are either true or both sides are false.
@@ -1356,16 +1356,16 @@ object FastBoolUnification {
   def main(args: Array[String]): Unit = {
     //solveAll(FixpointInterpreter_evalTerm()).get
     //    solveAll(Array_copyOfRange()).get
-    solveAll(FixpointAstDatalog_toString299997()).get
-    solveAll(Nec_zipWithA()).get
-    solveAll(ConcurrentChannel_selectHelper()).get
-    solveAll(Array_transpose()).get
-    solveAll(MutDeque_sameElements()).get
-    solveAll(FixpointAstDatalog_predSymsOf29898()).get
-    solveAll(Iterator_toArray()).get
+    //solveAll(FixpointAstDatalog_toString299997()).get
+    //solveAll(Nec_zipWithA()).get
+    //solveAll(ConcurrentChannel_selectHelper()).get
+    //solveAll(Array_transpose()).get
+    //solveAll(MutDeque_sameElements()).get
+    //solveAll(FixpointAstDatalog_predSymsOf29898()).get
+    //solveAll(Iterator_toArray()).get
     solveAll(Files_append()).get
-    solveAll(Iterator_next()).get
-    solveAll(Boxable_lift1()).get
+    //solveAll(Iterator_next()).get
+    //solveAll(Boxable_lift1()).get
   }
 
 }
