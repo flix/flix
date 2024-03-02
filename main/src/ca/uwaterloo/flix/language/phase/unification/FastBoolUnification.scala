@@ -505,14 +505,35 @@ object FastBoolUnification {
         false
       } else {
         // Case 2: We know that csts is empty.
-        // We must ensure that all variables are true and that all sub-terms evaluate to true.
-        // TODO: Increase effiency here by being lazy.
-        val allVarsTrue = vars.forall(v => trueVars.contains(v.x))
-        val allRestTrue = rest.foldLeft(true) { case (bacc, t0) => bacc && evaluate(t0, trueVars) }
-        allVarsTrue && allRestTrue
+        // We must pay attention to performance here.
+
+        // We first check if there is a variable x that is false (i.e. an x not in trueVars).
+        for (x <- vars.map(_.x)) {
+          if (!trueVars.contains(x)) {
+            return false
+          }
+        }
+
+        // All vars were true. We evaluate each sub-term until we find one that is false.
+        for (t0 <- rest) {
+          if (!evaluate(t0, trueVars)) {
+            return false
+          }
+        }
+
+        // All variables and sub-terms were true, return true.
+        true
       }
 
-    case Term.Or(ts) => ts.foldLeft(false) { case (bacc, term) => bacc || evaluate(term, trueVars) }
+    case Term.Or(ts) =>
+      for (t0 <- ts) {
+        if (evaluate(t0, trueVars)) {
+          return true
+        }
+      }
+      // All sub-terms were false, return false.
+      false
+
   }
 
 
@@ -1334,17 +1355,17 @@ object FastBoolUnification {
 
   def main(args: Array[String]): Unit = {
     //solveAll(FixpointInterpreter_evalTerm()).get
-    //solveAll(Array_copyOfRange()).get
-    //solveAll(FixpointAstDatalog_toString299997()).get
-    //solveAll(Nec_zipWithA()).get
-    //solveAll(ConcurrentChannel_selectHelper()).get
-    //solveAll(Array_transpose()).get
-    //solveAll(MutDeque_sameElements()).get
-    //solveAll(FixpointAstDatalog_predSymsOf29898()).get
+    //    solveAll(Array_copyOfRange()).get
+    solveAll(FixpointAstDatalog_toString299997()).get
+    solveAll(Nec_zipWithA()).get
+    solveAll(ConcurrentChannel_selectHelper()).get
+    solveAll(Array_transpose()).get
+    solveAll(MutDeque_sameElements()).get
+    solveAll(FixpointAstDatalog_predSymsOf29898()).get
     solveAll(Iterator_toArray()).get
-    //solveAll(Files_append()).get
-    //solveAll(Iterator_next()).get
-    //solveAll(Boxable_lift1()).get
+    solveAll(Files_append()).get
+    solveAll(Iterator_next()).get
+    solveAll(Boxable_lift1()).get
   }
 
 }
