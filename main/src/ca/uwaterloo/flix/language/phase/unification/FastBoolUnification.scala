@@ -319,30 +319,66 @@ object FastBoolUnification {
     (currentEqns, currentSubst)
   }
 
-
-  private def propagateVars(l: List[Equation], subst0: BoolSubstitution): (List[Equation], BoolSubstitution) = {
-    // TODO: Fixpoint or disjoint sets needed?
-
-    // TODO: Could start from empty subst and then use ++ later.
-
+  /**
+    * Propagates variables through the equation system. Cannot fail.
+    *
+    *
+    *
+    * For example, if the equation system is:
+    *
+    * {{{
+    *     x78914 ~ (c1498 ∧ c1500 ∧ c1501)
+    *     x78914 ~ (x78926 ∧ x78923 ∧ x78917)
+    *     x78917 ~ x127244
+    *     x78921 ~ x127251
+    *     x78923 ~ (x127249 ∧ x127247 ∧ x127248)
+    *     x78926 ~ (x127254 ∧ x127252)
+    * }}}
+    *
+    * then after variable propagation it is:
+    *
+    * {{{
+    *     x78914 ~ (c1498 ∧ c1500 ∧ c1501)
+    *     x78914 ~ (x78926 ∧ x78923 ∧ x127244)
+    *     x78923 ~ (x127249 ∧ x127247 ∧ x127248)
+    *     x78926 ~ (x127254 ∧ x127252)
+    * }}}
+    *
+    * with the substitution:
+    *
+    * {{{
+    *      x78917 -> x127244
+    *     x127251 -> x78921
+    * }}}
+    *
+    * Returns a list of pending equations and a partial substitution.
+    */
+  private def propagateVars(l: List[Equation], s: BoolSubstitution): (List[Equation], BoolSubstitution) = {
     var currentEqns = l
-    var currentSubst = subst0
-    var rest = ListBuffer.empty[Equation]
+    var currentSubst = s
 
+    var rest: List[Equation] = Nil
     while (currentEqns.nonEmpty) {
-      val eqn = currentEqns.head
+      // Extract the next equation and update the current (pending) equations.
+      val e = currentEqns.head
       currentEqns = currentEqns.tail
-      eqn match {
+
+      e match {
         case Equation(Term.Var(x), Term.Var(y), _) =>
+          // Case 1: We found an equation: `x ~ y`.
           val singleton = BoolSubstitution.singleton(x, Term.Var(y))
 
           currentEqns = singleton(currentEqns)
           currentSubst = singleton @@ currentSubst
-        case _ => rest += eqn
+        case _ =>
+          // Case 2: We have some other equation. We keep it pending and continue.
+          rest = e :: rest
       }
+
+      // INVARIANT: The current substitution has been applied to rest.
     }
 
-    (currentSubst(rest.toList), currentSubst)
+    (currentSubst(rest.reverse), currentSubst)
   }
 
   // Deals with x92747 ~ (x135862 ∧ x135864)
