@@ -80,10 +80,32 @@ object FastBoolUnification {
     solver.solve()
   }
 
+  /**
+    * A stateful phased solver for Boolean unification equations. The solver maintains two fields that change over time:
+    *
+    * - The current (pending) unification equations to solve.
+    * - The current (partial) substitution which represents the solution.
+    *
+    * @param l The list of Boolean unification equations to solve.
+    */
   private class Solver(l: List[Equation]) {
 
-    private var currentEqns = l
+    /**
+      * The current (pending) equations to solve.
+      *
+      * The list of pending equations decrease as the solver progresses.
+      *
+      * Note that the pending equations is not a strict subset of the original equations because they may be simplified during computation.
+      *
+      * If Boolean unification is successful, the list of pending equations will become empty at the end of the computation.
+      */
+    private var currentEqns: List[Equation] = l
+
+    /**
+      * The current substitution. Initially empty, but then grows during computation.
+      */
     private var currentSubst: BoolSubstitution = BoolSubstitution.empty
+
 
     def solve(): Result[BoolSubstitution, (ConflictException, List[Equation], BoolSubstitution)] = {
       try {
