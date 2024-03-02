@@ -254,7 +254,7 @@ object FastBoolUnification {
     */
   private def simplify(l: List[Equation]): List[Equation] = l match {
     case Nil => Nil
-    case Equation(t1, t2) :: es => (t1, t2) match {
+    case Equation(t1, t2, loc) :: es => (t1, t2) match {
       // Trivial equations: skip them.
       case (Term.True, Term.True) => simplify(es)
       case (Term.False, Term.False) => simplify(es)
@@ -272,7 +272,7 @@ object FastBoolUnification {
       case (Term.False, Term.Cst(_)) => throw ConflictException(t1, t2)
 
       // Non-trivial and non-conflicted equation: keep it.
-      case _ => Equation(t1, t2) :: simplify(es)
+      case _ => Equation(t1, t2, loc) :: simplify(es)
     }
   }
 
@@ -290,17 +290,17 @@ object FastBoolUnification {
       for (e <- currentEqns) {
         e match {
           // Case 1: x =?= true
-          case Equation(Term.Var(x), Term.True) =>
+          case Equation(Term.Var(x), Term.True, _) =>
             currentSubst = currentSubst.extended(x, Term.True)
             changed = true
 
           // Case 2: x =?= c
-          case Equation(Term.Var(x), Term.Cst(c)) =>
+          case Equation(Term.Var(x), Term.Cst(c), _) =>
             currentSubst = currentSubst.extended(x, Term.Cst(c))
             changed = true
 
           // Case 3: x /\ y /\ z /\... = true
-          case Equation(Term.And(csts, vars, rest), Term.True) if csts.isEmpty && rest.isEmpty =>
+          case Equation(Term.And(csts, vars, rest), Term.True, _) if csts.isEmpty && rest.isEmpty =>
             for (Term.Var(x) <- vars) {
               currentSubst = currentSubst.extended(x, Term.True)
               changed = true
@@ -333,7 +333,7 @@ object FastBoolUnification {
       val eqn = currentEqns.head
       currentEqns = currentEqns.tail
       eqn match {
-        case Equation(Term.Var(x), Term.Var(y)) =>
+        case Equation(Term.Var(x), Term.Var(y), _) =>
           val singleton = BoolSubstitution.singleton(x, Term.Var(y))
 
           currentEqns = singleton(currentEqns)
@@ -357,7 +357,7 @@ object FastBoolUnification {
       currentEqns = currentEqns.tail
 
       eqn match {
-        case Equation(Term.Var(x), rhs) if !rhs.freeVars.contains(x) =>
+        case Equation(Term.Var(x), rhs, _) if !rhs.freeVars.contains(x) =>
           // Update the remaining equations with the new binding.
           // This is required for correctness.
           // We use a singleton subst. to avoid idempotence issues.
@@ -380,7 +380,7 @@ object FastBoolUnification {
 
   private def boolUnifyAll(l: List[Equation], renv: Set[Int]): BoolSubstitution = l match {
     case Nil => BoolSubstitution.empty
-    case Equation(t1, t2) :: xs =>
+    case Equation(t1, t2, _) :: xs =>
       val subst = boolUnifyOne(t1, t2, renv)
       val subst1 = boolUnifyAll(subst(xs), renv)
       subst @@ subst1 // TODO: order?
@@ -537,14 +537,14 @@ object FastBoolUnification {
       * - x3 /\ x7 ~ x4 ==> x4 ~ x3 /\ x7
       * - x1 /\ x2 ~ c5 ==> c5 ~ x1 /\ x2
       */
-    def mk(t1: Term, t2: Term): Equation = (t1, t2) match {
-      case (Term.True, _) => Equation(t2, Term.True)
-      case (Term.False, _) => Equation(t2, Term.False)
-      case (Term.Cst(c1), Term.Cst(c2)) if c1 > c2 => Equation(t2, t1)
-      case (Term.Var(x1), Term.Var(x2)) if x1 > x2 => Equation(t2, t1)
-      case (_, _: Term.Var) => Equation(t2, t1)
-      case (_, _: Term.Cst) => Equation(t2, t1)
-      case _ => Equation(t1, t2)
+    def mk(t1: Term, t2: Term, loc: SourceLocation): Equation = (t1, t2) match {
+      case (Term.True, _) => Equation(t2, Term.True, loc)
+      case (Term.False, _) => Equation(t2, Term.False, loc)
+      case (Term.Cst(c1), Term.Cst(c2)) if c1 > c2 => Equation(t2, t1, loc)
+      case (Term.Var(x1), Term.Var(x2)) if x1 > x2 => Equation(t2, t1, loc)
+      case (_, _: Term.Var) => Equation(t2, t1, loc)
+      case (_, _: Term.Cst) => Equation(t2, t1, loc)
+      case _ => Equation(t1, t2, loc)
     }
   }
 
@@ -553,7 +553,7 @@ object FastBoolUnification {
     *
     * WARNING: Equations should be normalized. Use the smart constructor [[Equation.mk]] to create a new equation.
     */
-  case class Equation(t1: Term, t2: Term) {
+  case class Equation(t1: Term, t2: Term, loc: SourceLocation) {
     def size: Int = t1.size + t2.size
   }
 
@@ -570,7 +570,7 @@ object FastBoolUnification {
     /**
       * Syntactic sugar for [[Equation.mk]]
       */
-    final def ~(that: Term): Equation = Equation.mk(this, that)
+    final def ~(that: Term)(implicit loc: SourceLocation): Equation = Equation.mk(this, that, loc)
 
     /**
       * Returns all variables that occur in `this` term.
@@ -803,7 +803,7 @@ object FastBoolUnification {
       * If `s = [x -> y]` and `e = true ~ x and y` then `s(e) = y ~ true` which has flipped lhs and rhs.
       */
     def apply(e: Equation): Equation = e match {
-      case Equation(t1, t2) => Equation.mk(apply(t1), apply(t2))
+      case Equation(t1, t2, loc) => Equation.mk(apply(t1), apply(t2), loc)
     }
 
     /**
@@ -907,7 +907,7 @@ object FastBoolUnification {
     */
   private def format(l: List[Equation], indent: Int = 4): String = {
     val sb = new StringBuilder()
-    for (Equation(t1, t2) <- l) {
+    for (Equation(t1, t2, _) <- l) {
       sb.append(" ".repeat(indent))
       sb.append(t1.toString)
       sb.append(" ~ ")
@@ -964,6 +964,8 @@ object FastBoolUnification {
   /////////////////////////////////////////////////////////////////////////////
 
   import Term._
+
+  private implicit val defaultLoc: SourceLocation = SourceLocation.Unknown
 
   private def FixpointInterpreter_evalTerm(): List[Equation] = List(
     Cst(442) ~ (Var(69984) & (Var(69992) & (Var(70006) & (Var(70010) & ((Var(70016) & Var(70018)) & ((Var(70025) & (Var(70028) & Var(70032))) & ((Var(70040) & (Var(70043) & (Var(70046) & Var(70052)))) & ((Var(70061) & (Var(70064) & (Var(70067) & (Var(70070) & Var(70078))))) & ((Var(70088) & (Var(70091) & (Var(70094) & (Var(70097) & (Var(70100) & Var(70110)))))) & (Var(70126) & Var(70135))))))))))),

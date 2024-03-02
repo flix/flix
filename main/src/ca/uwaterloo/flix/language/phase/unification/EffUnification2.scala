@@ -34,7 +34,7 @@ object EffUnification2 {
     implicit val bimap: Bimap[Type.Var, Int] = mkBidirectionalVarMap(l)
 
     // Translate all unification problems from equations on types to equations on terms.
-    val equations = l.map(toEquation(_)(renv, bimap))
+    val equations = l.map(p => toEquation(p._1, p._2, SourceLocation.Unknown)(renv, bimap)) // TODO: Argument needs source location. Probably argument should be TypeConstraint?
 
     // Compute the most-general unifier of all the term equations.
     FastBoolUnification.solveAll(equations) match {
@@ -80,9 +80,9 @@ object EffUnification2 {
   /**
     * Translates the given unification equation on types `p` into a unification equation on terms.
     */
-  private def toEquation(p: (Type, Type))(implicit renv: RigidityEnv, m: Bimap[Type.Var, Int]): Equation = {
-    val (tpe1, tpe2) = p
-    Equation.mk(toTerm(tpe1), toTerm(tpe2))
+  private def toEquation(p: (Type, Type, SourceLocation))(implicit renv: RigidityEnv, m: Bimap[Type.Var, Int]): Equation = {
+    val (tpe1, tpe2, loc) = p
+    Equation.mk(toTerm(tpe1), toTerm(tpe2), loc)
   }
 
   /**
