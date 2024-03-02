@@ -506,6 +506,7 @@ object FastBoolUnification {
       } else {
         // Case 2: We know that csts is empty.
         // We must ensure that all variables are true and that all sub-terms evaluate to true.
+        // TODO: Increase effiency here by being lazy.
         val allVarsTrue = vars.forall(v => trueVars.contains(v.x))
         val allRestTrue = rest.foldLeft(true) { case (bacc, t0) => bacc && evaluate(t0, trueVars) }
         allVarsTrue && allRestTrue
