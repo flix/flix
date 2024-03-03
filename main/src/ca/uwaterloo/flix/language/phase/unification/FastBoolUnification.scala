@@ -514,7 +514,7 @@ object FastBoolUnification {
   private def successiveVariableElimination(t: Term, flexvs: List[Int]): BoolSubstitution = flexvs match {
     case Nil =>
       // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      if (!satisfiable(t))
+      if (!satisfiable(flexify(t))) // TODO: Is it right to flexify here?
         BoolSubstitution.empty
       else
         throw BoolUnificationException()
@@ -527,6 +527,17 @@ object FastBoolUnification {
       val f1 = propagateAnd(Term.mkOr(se(t0), Term.mkAnd(Term.Var(x), Term.mkNot(se(t1)))))
       val st = BoolSubstitution.singleton(x, f1)
       st ++ se
+  }
+
+  // TODO: Carefully inspect.
+  private def flexify(t: Term): Term = t match {
+    case Term.True => Term.True
+    case Term.False => Term.False
+    case Term.Cst(c) => Term.Var(c)
+    case Term.Var(x) => Term.Var(x)
+    case Term.Not(t) => Term.mkNot(flexify(t))
+    case Term.And(csts, vars, rest) => Term.mkAnd(csts.map(c => Term.Var(c.c)).toList ++ vars ++ rest)
+    case Term.Or(ts) => Term.mkOr(ts.map(flexify))
   }
 
   /**
@@ -1424,7 +1435,7 @@ object FastBoolUnification {
 
 
   def main(args: Array[String]): Unit = {
-    //solveAll(FixpointInterpreter_evalTerm()).get
+    solveAll(FixpointInterpreter_evalTerm()).get
     //    solveAll(Array_copyOfRange()).get
     //solveAll(FixpointAstDatalog_toString299997()).get
     //solveAll(Nec_zipWithA()).get
@@ -1433,7 +1444,7 @@ object FastBoolUnification {
     //solveAll(MutDeque_sameElements()).get
     //solveAll(FixpointAstDatalog_predSymsOf29898()).get
     //solveAll(Iterator_toArray()).get
-    solveAll(Files_append()).get
+    //solveAll(Files_append()).get
     //solveAll(Iterator_next()).get
     //solveAll(Boxable_lift1()).get
   }
