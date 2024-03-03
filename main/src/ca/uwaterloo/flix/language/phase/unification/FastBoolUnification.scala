@@ -819,7 +819,7 @@ object FastBoolUnification {
     /**
       * Returns a singleton substitution where the variable `x` is bound to the term `t`.
       */
-    def singleton(x: Int, t: Term): BoolSubstitution = empty.extended(x, t)
+    def singleton(x: Int, t: Term): BoolSubstitution = BoolSubstitution(Map(x -> t))
   }
 
   /**
