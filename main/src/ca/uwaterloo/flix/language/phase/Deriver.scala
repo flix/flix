@@ -515,6 +515,8 @@ object Deriver {
       val toStringClassSym = PredefinedClasses.lookupClassSym("ToString", root)
       val toStringAefSym = new Symbol.AssocTypeSym(toStringClassSym, "Aef", loc)
 
+      val eff = Type.mkUnion(getEffectsForTypeParams(tparams, toStringAefSym, loc), loc)
+
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
@@ -525,10 +527,10 @@ object Deriver {
           tparams.map(_.sym),
           List(Ast.TypeConstraint(Ast.TypeConstraint.Head(toStringClassSym, loc), tpe, loc)),
           Nil,
-          Type.mkPureArrow(tpe, Type.mkString(loc), loc)
+          Type.mkArrowWithEffect(tpe, eff, Type.mkString(loc), loc)
         ),
         tpe = Type.mkString(loc),
-        eff = Type.mkUnion(getEffectsForTypeParams(tparams, toStringAefSym, loc), loc),
+        eff = eff,
         tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(toStringClassSym, loc), tpe, loc)),
         econstrs = Nil,
         loc = loc
