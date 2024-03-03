@@ -807,6 +807,28 @@ object Weeder {
         }
       }
 
+    case ParsedAst.Expression.Index(exp1, exp2, sp2) =>
+      val sp1 = leftMostSourcePosition(exp1)
+      val e1Val = visitExp(exp1)
+      val e2Val = visitExp(exp2)
+      Validation.mapN(e1Val, e2Val) {
+        case (e1, e2) => WeededAst.Expr.IndexGet(e1, e2, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.IndexPut(ParsedAst.Expression.Index(exp1, exp2, _), exp3, sp2) =>
+      val sp1 = leftMostSourcePosition(exp1)
+      val e1Val = visitExp(exp1)
+      val e2Val = visitExp(exp2)
+      val e3Val = visitExp(exp3)
+      Validation.mapN(e1Val, e2Val, e3Val) {
+        case (e1, e2, e3) => WeededAst.Expr.IndexPut(e1, e2, e3, mkSL(sp1, sp2))
+      }
+
+    case ParsedAst.Expression.IndexPut(exp1, _, sp2) =>
+      val sp1 = leftMostSourcePosition(exp1)
+      val err = WeederError.IllegalAssignment(mkSL(sp1, sp2))
+      Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+
     case ParsedAst.Expression.Apply(lambda, args, sp2) =>
       val sp1 = leftMostSourcePosition(lambda)
       val loc = mkSL(sp1, sp2)
@@ -2972,6 +2994,8 @@ object Weeder {
     case ParsedAst.Expression.Use(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Lit(sp1, _, _) => sp1
     case ParsedAst.Expression.Intrinsic(sp1, _, _, _) => sp1
+    case ParsedAst.Expression.Index(e1, _, _) => leftMostSourcePosition(e1)
+    case ParsedAst.Expression.IndexPut(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Apply(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Infix(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Lambda(sp1, _, _, _) => sp1
