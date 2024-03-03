@@ -6,7 +6,9 @@ import ca.uwaterloo.flix.language.ast.SemanticOp._
 import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expr, Root}
 import ca.uwaterloo.flix.language.ast.{SemanticOp, SourceLocation, Type, TypedAst}
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
-import ca.uwaterloo.flix.util.{Result, Validation}
+import ca.uwaterloo.flix.runtime.CompilationResult
+import ca.uwaterloo.flix.tools.Tester.ConsoleRedirection
+import ca.uwaterloo.flix.util.Result
 
 import java.io.IOException
 
@@ -15,6 +17,10 @@ import java.io.IOException
  * Add statistics
  * Add reporter
  * Recursive operators mutation
+ * Compile source and run tests on it before mutation testing
+ * Save source tests to run them on mutants. Can run them before first failure. Think about creating LocalTester
+ * If possible, try running only tests related to mutants
+ * Run tests on mutant with timeout (calculate it by time spent to run tests on source)
 */
 
 object MutationTester {
@@ -42,13 +48,25 @@ object MutationTester {
             mutator.mutate(root, defn) match {
               case Some(mutant) =>
                 all += 1
-                testMutant(mutant).toHardResult match {
-                  case Result.Ok(testResult) => testResult match {
-                    case Result.Ok(_) => // mutant was not killed
-                    case Result.Err(_) => killed += 1
+
+                val formatter = flix.getFormatter
+                import formatter._
+
+                println("mutant created for " + blue(defn.sym.toString))
+
+                flix.codeGen(mutant).toSoftResult match {
+                  case Result.Ok(t) => if (!checkMutant(t._1)) {
+                    killed += 1
+                    println(green("mutant killed"))
+                  } else {
+                    println(red("mutant survived"))
                   }
-                  case Result.Err(_) => compilationFailed += 1
+                  case Result.Err(_) =>
+                    compilationFailed += 1
+                    println(yellow("mutant compilation failed"))
                 }
+
+                println("-" * 80)
               case None => // do nothing
             }
         }
@@ -57,11 +75,34 @@ object MutationTester {
     Result.Ok(all, killed, compilationFailed)
   }
 
-  private def testMutant(mutant: Root)(implicit flix: Flix) = {
-    Validation.flatMapN(flix.codeGen(mutant).toHardFailure) {
-      compilationResult =>
-        Validation.success(Tester.run(Nil, compilationResult))
+  /**
+    * returns true if all tests passed, false otherwise
+    */
+  private def checkMutant(compilationResult: CompilationResult)(implicit flix: Flix): Boolean = {
+    val tests = compilationResult.getTests.values.filter(!_.skip)
+
+    for (test <- tests) {
+      // Taken from Tester.scala.
+      val redirect = new ConsoleRedirection
+      redirect.redirect()
+
+      try {
+        val result = test.run()
+        redirect.restore()
+
+        result match {
+          case java.lang.Boolean.FALSE => return false
+          case _ => if (redirect.stdErr.nonEmpty) return false
+        }
+      } catch {
+        case _: Throwable =>
+          redirect.restore()
+
+          return false
+      }
     }
+
+    true
   }
 
   private def isLibDef(defn: Def): Boolean = defn.exp.loc.source.input match {
