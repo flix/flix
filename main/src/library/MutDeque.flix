@@ -412,13 +412,17 @@ mod MutDeque {
     ///
     /// Modifying `d` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 + r2, r1] \ r1 =
         let MutDeque(_, a, f, b) = d;
-        let i = ref (deref f) @ rc;
+        let iOpt = ref None @ rc;
         let next = () -> {
-            if (deref i < deref b) {
-                let x = Array.get(deref i, deref a);
-                i := deref i + Int32.bitwiseAnd(1, capacity(d) - 1);
+            let i = match deref iOpt {
+                case None => deref f
+                case Some(x) => x
+            };
+            if (i < deref b) {
+                let x = Array.get(i, deref a);
+                iOpt := Some(i + Int32.bitwiseAnd(1, capacity(d) - 1));
                 Some(x)
             } else {
                 None

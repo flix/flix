@@ -15,7 +15,7 @@
  */
 
 mod Reachable.Imperative {
-    pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Iterable[f], Order[n] =
+    pub def reachable(origin: n, edges: f): Set[n] \ Iterable.Aef[f] with Iterable[f], Order[n] where Iterable.Elm[f] ~ (n, n) =
         region rc {
             // collect edge lists
             let edgeMap = MutMap.new(rc);

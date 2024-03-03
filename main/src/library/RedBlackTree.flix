@@ -82,9 +82,12 @@ instance Filterable[RedBlackTree[k]] with Order[k] {
     pub override def filter(f: a -> Bool \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, a] \ ef = RedBlackTree.filter(f, t)
 }
 
-instance Iterable[RedBlackTree[k]] {
-    pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[v, r, r] \ r =
-            RedBlackTree.iterator(rc, t) |> Iterator.map(snd)
+instance Iterable[RedBlackTree[k, v]] {
+    type Elm = (k, v)
+    type Aef = Pure
+
+    pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r, r] \ r =
+            RedBlackTree.iterator(rc, t)
 }
 
 mod RedBlackTree {
