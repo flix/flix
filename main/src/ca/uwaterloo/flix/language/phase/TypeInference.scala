@@ -1257,7 +1257,7 @@ object TypeInference {
           resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
-      case KindedAst.Expr.FixpointInject(exp, pred, tvar, loc) =>
+      case KindedAst.Expr.FixpointInject(exp, pred, tvar, evar, loc) =>
         //
         //  exp : F[freshElmType] where F is Foldable
         //  -------------------------------------------

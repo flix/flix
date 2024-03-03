@@ -82,23 +82,24 @@ instance MonadZip[Nec] {
     pub override def unzip(xs: Nec[(a, b)]): (Nec[a], Nec[b]) = Nec.unzip(xs)
 }
 
-instance Foldable[Nec] {
+instance Foldable[Nec[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldRight(f, s, c)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, c: Nec[a]): b \ ef = Nec.foldRightWithCont(f, s, c)
 }
 
-instance UnorderedFoldable[Nec] {
+instance UnorderedFoldable[Nec[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldMap(f: a -> b \ ef, c: Nec[a]): b \ ef with CommutativeMonoid[b] = Nec.foldMap(f, c)
     override pub def isEmpty(_: Nec[a]): Bool = false
     override pub def exists(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.exists(f, c)
     override pub def forAll(f: a -> Bool \ ef, c: Nec[a]): Bool \ ef = Nec.forAll(f, c)
     override pub def memberOf(x: a, c: Nec[a]): Bool with Eq[a] = Nec.memberOf(x, c)
-}
-
-instance Traversable[Nec] {
-    pub def traverse(f: a -> m[b] \ ef, t: Nec[a]): m[Nec[b]] \ ef with Applicative[m] = Nec.traverse(f, t)
-    pub override def sequence(t: Nec[m[a]]): m[Nec[a]] with Applicative[m] = Nec.sequence(t)
 }
 
 instance Reducible[Nec] {

@@ -70,7 +70,10 @@ instance MonadZip[Identity] {
         Identity.Identity <$> f(x1, y1)
 }
 
-instance Foldable[Identity] {
+instance Foldable[Identity[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, x: Identity[a]): b \ ef =
         let Identity.Identity(x1) = x;
         f(s, x1)
@@ -84,20 +87,12 @@ instance Foldable[Identity] {
         f(x1, constant(s))
 }
 
-instance UnorderedFoldable[Identity] {
+instance UnorderedFoldable[Identity[a]] {
+    type Elm = a
+    type Aef = Pure
     pub def foldMap(f: a -> b \ ef, x: Identity[a]): b \ ef with CommutativeMonoid[b] =
         let Identity.Identity(x1) = x;
         f(x1)
-}
-
-instance Traversable[Identity] {
-    pub def traverse(f: a -> m[b] \ ef, x: Identity[a]): m[Identity[b]] \ ef with Applicative[m] =
-        let Identity.Identity(x1) = x;
-        Functor.map(Identity.Identity, f(x1))
-
-    pub override def sequence(x: Identity[m[a]]): m[Identity[a]] with Applicative[m] =
-        let Identity.Identity(x1) = x;
-        Functor.map(Identity.Identity, x1)
 }
 
 instance Add[Identity[a]] with Add[a] {

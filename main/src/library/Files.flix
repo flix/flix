@@ -592,7 +592,7 @@ mod Files {
     ///
     /// Returns `true` if the file `f` was created, and `false` if `f` was overwritten.
     ///
-    pub def writeLines(f: String, data: f[String]): Result[IOError, Bool] \ IO with Foldable[f] =
+    pub def writeLines(f: String, data: f): Result[IOError, Bool] \ Foldable.Aef[f] + IO with Foldable[f] where Foldable.Elm[f] ~ String =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter \ IO as newPrintWriter;
@@ -661,7 +661,7 @@ mod Files {
     ///
     /// Returns `true` if the file `f` was created, and `false` if `data` was appended to an existing `f`.
     ///
-    pub def appendLines(f: String, data: f[String]): Result[IOError, Bool] \ IO with Foldable[f] =
+    pub def appendLines(f: String, data: f): Result[IOError, Bool] \ Foldable.Aef[f] + IO with Foldable[f] where Foldable.Elm[f] ~ String =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import new java.io.FileWriter(##java.io.File, Bool): ##java.io.FileWriter \ IO as newFileWriter;
@@ -699,7 +699,7 @@ mod Files {
     ///
     /// Returns `true` if the file `f` was created, and `false` if `f` was overwritten.
     ///
-    pub def writeBytes(f: String, data: f[Int8]): Result[IOError, Bool] \ IO with Foldable[f] = region rc {
+    pub def writeBytes(f: String, data: f): Result[IOError, Bool] \ Foldable.Aef[f] + IO with Foldable[f] where Foldable.Elm[f] ~ Int8 = region rc {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import new java.io.FileOutputStream(##java.io.File): ##java.io.FileOutputStream \ IO as newFileStream;
@@ -736,7 +736,7 @@ mod Files {
     ///
     /// Returns `true` if the file `f` was created, and `false` if `data` was appended to an existing `f`.
     ///
-    pub def appendBytes(f: String, data: f[Int8]): Result[IOError, Bool] \ IO with Foldable[f] = region rc {
+    pub def appendBytes(f: String, data: f): Result[IOError, Bool] \ Foldable.Aef[f] + IO with Foldable[f] where Foldable.Elm[f] ~ Int8 = region rc {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import new java.io.FileOutputStream(##java.io.File, Bool): ##java.io.FileOutputStream \ IO as newFileStream;
