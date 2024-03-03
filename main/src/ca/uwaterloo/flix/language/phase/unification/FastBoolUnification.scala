@@ -44,8 +44,10 @@ import scala.collection.mutable.ListBuffer
 ///   - We try to move ground terms to the RHS.
 ///
 ///
-/// Future Ideas:
+/// TODO: Future Ideas:
 /// - Explore change of basis.
+/// - Explore slack variables (i.e. variables marked don't care, and use SAT).
+/// - Explore in detail how constraints are generated.
 ///
 object FastBoolUnification {
 
