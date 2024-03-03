@@ -598,6 +598,24 @@ object ParsedAst {
     case class Intrinsic(sp1: SourcePosition, op: Name.Ident, exps: Seq[ParsedAst.Argument], sp2: SourcePosition) extends ParsedAst.Expression
 
     /**
+      * Indexing Expression.
+      *
+      * @param exp1 the indexable value
+      * @param exp2 the index
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class Index(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
+      * Index Mutation Expression.
+      *
+      * @param exp1 the indexing expression
+      * @param exp2 the new value at the index
+      * @param sp2  the position of the last character in the expression.
+      */
+    case class IndexPut(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
+
+    /**
       * Apply Expression (function call).
       *
       * @param exp  the lambda expression.

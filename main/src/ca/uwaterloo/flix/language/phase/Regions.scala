@@ -20,9 +20,9 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast.{Kind, SourceLocation, Type}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.unification.Substitution
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution}
 import ca.uwaterloo.flix.util.collection.Chain
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 import scala.collection.immutable.SortedSet
 
@@ -35,6 +35,7 @@ import scala.collection.immutable.SortedSet
 object Regions {
 
   def run(root: Root)(implicit flix: Flix): Validation[Unit, CompilationMessage] = flix.phase("Regions") {
+    implicit val r: Root = root
     val errs = ParOps.parMap(root.defs)(kv => visitDef(kv._2)).flatten
 
     // TODO: Instances
@@ -45,10 +46,10 @@ object Regions {
     }
   }
 
-  private def visitDef(def0: Def)(implicit flix: Flix): List[TypeError] =
-    visitExp(def0.exp)(Nil, flix)
+  private def visitDef(def0: Def)(implicit root: Root, flix: Flix): List[TypeError] =
+    visitExp(def0.exp)(Nil, root, flix)
 
-  private def visitExp(exp0: Expr)(implicit scope: List[Type.Var], flix: Flix): List[TypeError] = exp0 match {
+  private def visitExp(exp0: Expr)(implicit scope: List[Type.Var], root: Root,  flix: Flix): List[TypeError] = exp0 match {
     case Expr.Cst(_, _, _) => Nil
 
     case Expr.Var(_, tpe, loc) => checkType(tpe, loc)
@@ -89,7 +90,7 @@ object Regions {
       Nil
 
     case Expr.Scope(_, regionVar, exp, tpe, _, loc) =>
-      visitExp(exp)(regionVar :: scope, flix) ++ checkType(tpe, loc)
+      visitExp(exp)(regionVar :: scope, root, flix) ++ checkType(tpe, loc)
 
     case Expr.IfThenElse(exp1, exp2, exp3, tpe, _, loc) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3) ++ checkType(tpe, loc)
@@ -288,7 +289,7 @@ object Regions {
 
   }
 
-  def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], flix: Flix): List[TypeError] = method match {
+  def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], root: Root, flix: Flix): List[TypeError] = method match {
     case JvmMethod(_, _, exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
   }
@@ -296,7 +297,7 @@ object Regions {
   /**
     * Ensures that no region escapes inside `tpe`.
     */
-  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var], flix: Flix): List[TypeError] = {
+  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var], root: Root, flix: Flix): List[TypeError] = {
     // Compute the region variables that escape.
     // We should minimize `tpe`, but we do not because of the performance cost.
     val regs = regionVarsOf(tpe)
@@ -314,7 +315,7 @@ object Regions {
     * A type variable is essential if its ascription has a bearing on the resulting value.
     * For example, in the type `a and (not a)`, `a` is not essential since the result is always `false`.
     */
-  def essentialTo(tvar: Type.Var, tpe: Type)(implicit flix: Flix): Boolean = {
+  def essentialTo(tvar: Type.Var, tpe: Type)(implicit root: Root, flix: Flix): Boolean = {
     if (!tpe.typeVars.contains(tvar)) {
       // Case 1: The type variable is not present in the type. It cannot be essential.
       false
@@ -342,13 +343,18 @@ object Regions {
   /**
     * Extracts all the boolean formulas from the given type `t0`.
     */
-  private def boolTypesOf(t0: Type): List[Type] = t0 match {
+  private def boolTypesOf(t0: Type)(implicit root: Root, flix: Flix): List[Type] = t0 match {
+    case Type.AssocType(cst, arg, _, _) =>
+      // reduce assoc types if possible
+      EqualityEnvironment.reduceAssocTypeStep(cst, arg, root.eqEnv) match {
+        case Result.Ok(t) => boolTypesOf(t)
+        case Result.Err(_) => boolTypesOf(arg)
+      }
     case t if t.kind == Kind.Eff => List(t)
     case _: Type.Var => Nil
     case _: Type.Cst => Nil
     case Type.Apply(tpe1, tpe2, _) => boolTypesOf(tpe1) ::: boolTypesOf(tpe2)
     case Type.Alias(_, _, tpe, _) => boolTypesOf(tpe)
-    case Type.AssocType(_, arg, _, _) => boolTypesOf(arg) // TODO ASSOC-TYPES ???
   }
 
   /**
