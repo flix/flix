@@ -470,7 +470,7 @@ mod Graph {
     /// The strings of nodes are put in quotes but DOT identifier validity is
     /// up to the caller.
     ///
-    pub def toGraphviz(g: m): String \ Foldable.Aef[m] with Foldable[m], Order[t], ToString[t] where Foldable.Elm[m] ~ (t, t) = region rc {
+    pub def toGraphviz(g: m): String \ Foldable.Aef[m] + ToString.Aef[t] with Foldable[m], Order[t], ToString[t] where Foldable.Elm[m] ~ (t, t) = region rc {
         let sb = StringBuilder.new(rc);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
@@ -486,7 +486,7 @@ mod Graph {
     /// The strings of nodes are put in quotes and existing quotes are escaped.
     /// Other than that, DOT identifier validity is up to the caller.
     ///
-    pub def toGraphvizWeighted(g: m): String \ Foldable.Aef[m] with Foldable[m], Order[t], ToString[t] where Foldable.Elm[m] ~ (t, Int32, t) = region rc {
+    pub def toGraphvizWeighted(g: m): String \ Foldable.Aef[m] + ToString.Aef[t] with Foldable[m], Order[t], ToString[t] where Foldable.Elm[m] ~ (t, Int32, t) = region rc {
         let sb = StringBuilder.new(rc);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
@@ -507,7 +507,7 @@ mod Graph {
     /// Wraps `toString(id)` with double quotes and escapes any existing quotes
     /// with backslash.
     ///
-    def graphvizId(id: t): String with ToString[t] = {
+    def graphvizId(id: t): String \ ToString.Aef[t] with ToString[t] = {
         "\"${String.replace(from = "\"", to = "\\\"", "${id}")}\""
     }
 

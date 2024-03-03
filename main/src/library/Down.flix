@@ -34,7 +34,9 @@ instance Coerce[Down] {
 }
 
 instance ToString[Down[a]] with ToString[a] {
-    pub def toString(x: Down[a]): String = match x {
+    type Aef = ToString.Aef[a]
+
+    pub def toString(x: Down[a]): String \ ToString.Aef[a] = match x {
         case Down.Down(xx) => ToString.toString(xx)
     }
 }

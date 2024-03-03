@@ -28,7 +28,9 @@ pub enum MultiMap[k, v] with Sendable {
 }
 
 instance ToString[MultiMap[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: MultiMap[k, v]): String = MultiMap.toString(m)
+    type Aef = ToString.Aef[k] + ToString.Aef[v]
+
+    pub def toString(m: MultiMap[k, v]): String \ ToString.Aef[k] + ToString.Aef[v] = MultiMap.toString(m)
 }
 
 instance Hash[MultiMap[k, v]] with Hash[k], Hash[v] {
@@ -84,7 +86,7 @@ mod MultiMap {
     ///
     /// Returns a string representation of `m`.
     ///
-    pub def toString(m: MultiMap[k, v]): String with ToString[k], ToString[v] = region rc {
+    pub def toString(m: MultiMap[k, v]): String \ ToString.Aef[k] + ToString.Aef[v] with ToString[k], ToString[v] = region rc {
         let sb = StringBuilder.new(rc);
         let MultiMap(m1) = m;
         StringBuilder.appendString!("MultiMap#{", sb);

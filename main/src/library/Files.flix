@@ -557,7 +557,7 @@ mod Files {
     ///
     /// Returns `true` if the file was created.
     ///
-    pub def write(f: String, data: t): Result[IOError, Bool] \ IO with ToString[t] =
+    pub def write(f: String, data: t): Result[IOError, Bool] \ ToString.Aef[t] + IO with ToString[t] =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import new java.io.PrintWriter(##java.io.File): ##java.io.PrintWriter \ IO as newPrintWriter;
@@ -625,7 +625,7 @@ mod Files {
     ///
     /// Returns `true` if the file `f` was created, and `false` if `data` was appended to an existing `f`.
     ///
-    pub def append(f: String, data: t): Result[IOError, Bool] \ IO with ToString[t] =
+    pub def append(f: String, data: t): Result[IOError, Bool] \ ToString.Aef[t] + IO with ToString[t] =
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import new java.io.FileWriter(##java.io.File, Bool): ##java.io.FileWriter \ IO as newFileWriter;

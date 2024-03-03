@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, UnkindedType}
 import ca.uwaterloo.flix.language.errors.DerivationError
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.Validation.mapN
@@ -464,6 +464,7 @@ object Deriver {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val toStringClassSym = PredefinedClasses.lookupClassSym("ToString", root)
       val toStringDefSym = Symbol.mkDefnSym("ToString.toString", Some(flix.genSym.freshId()))
+      val toStringAefSym = new Symbol.AssocTypeSym(toStringClassSym, "Aef", loc)
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
       val exp = mkToStringImpl(enum0, param, loc, root)
@@ -473,6 +474,9 @@ object Deriver {
 
       val tconstrs = getTypeConstraintsForTypeParams(tparams, toStringClassSym, loc)
 
+      val aef = Type.mkUnion(getEffectsForTypeParams(tparams, toStringAefSym, loc), loc)
+      val assoc = KindedAst.AssocTypeDef(Ast.Doc(Nil, loc), Ast.Modifiers.Empty, Ast.AssocTypeSymUse(toStringAefSym, loc), tpe, aef, loc)
+
       Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
@@ -480,7 +484,7 @@ object Deriver {
         clazz = Ast.ClassSymUse(toStringClassSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
-        assocs = Nil,
+        assocs = List(assoc),
         defs = List(defn),
         ns = Name.RootNS,
         loc = loc
@@ -509,6 +513,8 @@ object Deriver {
   private def mkToStringSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val toStringClassSym = PredefinedClasses.lookupClassSym("ToString", root)
+      val toStringAefSym = new Symbol.AssocTypeSym(toStringClassSym, "Aef", loc)
+
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
@@ -522,7 +528,7 @@ object Deriver {
           Type.mkPureArrow(tpe, Type.mkString(loc), loc)
         ),
         tpe = Type.mkString(loc),
-        eff = Type.Cst(TypeConstructor.Pure, loc),
+        eff = Type.mkUnion(getEffectsForTypeParams(tparams, toStringAefSym, loc), loc),
         tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(toStringClassSym, loc), tpe, loc)),
         econstrs = Nil,
         loc = loc
@@ -758,6 +764,15 @@ object Deriver {
   private def getTypeConstraintsForTypeParams(tparams: List[KindedAst.TypeParam], clazz: Symbol.ClassSym, loc: SourceLocation): List[Ast.TypeConstraint] = tparams.collect {
     case tparam if tparam.sym.kind == Kind.Star && !tparam.name.isWild =>
       Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), Type.Var(tparam.sym, loc), loc)
+  }
+
+  /**
+    * Creates associated effects for the given type parameters.
+    * Filters out non-star type parameters and wild type parameters.
+    */
+  private def getEffectsForTypeParams(tparams: List[KindedAst.TypeParam], assoc: Symbol.AssocTypeSym, loc: SourceLocation): List[Type] = tparams.collect {
+    case tparam if tparam.sym.kind == Kind.Star && !tparam.name.isWild =>
+      Type.AssocType(Ast.AssocTypeConstructor(assoc, loc), Type.Var(tparam.sym, loc), Kind.Eff, loc)
   }
 
   /**

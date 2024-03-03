@@ -19,7 +19,9 @@
 ///
 
 instance ToString[Vector[a]] with ToString[a] {
-    pub def toString(v: Vector[a]): String = Vector.toString(v)
+    type Aef = ToString.Aef[a]
+
+    pub def toString(v: Vector[a]): String \ ToString.Aef[a] = Vector.toString(v)
 }
 
 instance Hash[Vector[a]] with Hash[a] {
@@ -134,7 +136,7 @@ mod Vector {
     ///
     /// Returns a string representation of the given vector `v`.
     ///
-    pub def toString(v: Vector[a]): String with ToString[a] = region rc {
+    pub def toString(v: Vector[a]): String \ ToString.Aef[a] with ToString[a] = region rc {
         let sb = StringBuilder.new(rc);
         let first = ref true @ rc;
 
@@ -1435,7 +1437,7 @@ mod Vector {
     /// Returns the concatenation of the string representation
     /// of each element in `v` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, v: Vector[a]): String with ToString[a] =
+    pub def join(sep: String, v: Vector[a]): String \ ToString.Aef[a] with ToString[a] =
         joinWith(ToString.toString, sep, v)
 
     ///

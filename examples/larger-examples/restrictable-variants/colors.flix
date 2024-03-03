@@ -96,6 +96,7 @@ mod Colors {
 // Trait Instances
 
 instance ToString[Colors.Color[i]] {
+    type Aef = Pure
     pub def toString(x: Colors.Color[i]): String = choose x {
         case Colors.Color.Red   => "Red"
         case Colors.Color.Green => "Green"

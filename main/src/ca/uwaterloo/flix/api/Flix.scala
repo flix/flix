@@ -313,7 +313,7 @@ class Flix {
     "Index.flix" -> LocalResource.get("/src/library/Index.flix"),
     "IndexMut.flix" -> LocalResource.get("/src/library/IndexMut.flix"),
 
-    "ToString2.flix" -> LocalResource.get("/src/library/ToString2.flix"),
+    "ToStringMut.flix" -> LocalResource.get("/src/library/ToStringMut.flix"),
   )
 
   /**
