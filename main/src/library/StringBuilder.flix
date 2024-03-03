@@ -31,7 +31,7 @@ mod StringBuilder {
     ///
     /// Append `x` to the StringBuilder `sb`.
     ///
-    pub def append!(x: a, sb: StringBuilder[r]): Unit \ r with ToString[a] =
+    pub def append!(x: a, sb: StringBuilder[r]): Unit \ ToString.Aef[a] + r with ToString[a] =
         let s = ToString.toString(x);
         s `appendString!` sb;
         ()

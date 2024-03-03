@@ -353,7 +353,7 @@ pub trait Foldable2[t : Type -> Type] {
     /// Returns the concatenation of the string representation
     /// of each element in `t` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, t: t[a]): String \ Foldable2.Aef[t] with ToString[a] =
+    pub def join(sep: String, t: t[a]): String \ Foldable2.Aef[t] + ToString.Aef[a] with ToString[a] =
         Foldable2.joinWith(ToString.toString, sep, t)
 
     ///

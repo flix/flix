@@ -22,7 +22,9 @@ pub enum Nel[a] with Sendable {
 }
 
 instance ToString[Nel[a]] with ToString[a] {
-    pub def toString(l: Nel[a]): String = Nel.toString(l)
+    type Aef = ToString.Aef[a]
+
+    pub def toString(l: Nel[a]): String \ ToString.Aef[a] = Nel.toString(l)
 }
 
 instance Hash[Nel[a]] with Hash[a] {
@@ -125,7 +127,7 @@ mod Nel {
     ///
     /// Returns a string representation of the given non-empty list `l`.
     ///
-    pub def toString(l: Nel[a]): String with ToString[a] = region rc {
+    pub def toString(l: Nel[a]): String \ ToString.Aef[a] with ToString[a] = region rc {
         let Nel(x, xs) = l;
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Nel(${x}, ", sb);
@@ -676,7 +678,7 @@ mod Nel {
     /// Returns the concatenation of the string representation
     /// of each element in `l` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, l: Nel[a]): String with ToString[a] =
+    pub def join(sep: String, l: Nel[a]): String \ ToString.Aef[a] with ToString[a] =
         Foldable.join(sep, l)
 
     ///

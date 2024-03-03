@@ -63,7 +63,9 @@ instance Order[DelayList[a]] with Order[a] {
 }
 
 instance ToString[DelayList[a]] with ToString[a] {
-    pub def toString(l: DelayList[a]): String = DelayList.toString(l)
+    type Aef = ToString.Aef[a]
+
+    pub def toString(l: DelayList[a]): String \ ToString.Aef[a] = DelayList.toString(l)
 }
 
 
@@ -131,7 +133,7 @@ mod DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toString(l: DelayList[a]): String with ToString[a] = region rc {
+    pub def toString(l: DelayList[a]): String \ ToString.Aef[a] with ToString[a] = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("DelayList(", sb);
         forEachWithIndex((i, x) -> {
@@ -1279,7 +1281,7 @@ mod DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def join(sep: String, l: DelayList[a]): String with ToString[a] =
+    pub def join(sep: String, l: DelayList[a]): String \ ToString.Aef[a] with ToString[a] =
         Foldable.join(sep, l)
 
     ///

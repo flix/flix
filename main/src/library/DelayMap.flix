@@ -29,7 +29,9 @@ instance Order[DelayMap[k, v]] with Order[k], Order[v] {
 }
 
 instance ToString[DelayMap[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: DelayMap[k, v]): String = DelayMap.toString(m)
+    type Aef = ToString.Aef[k] + ToString.Aef[v]
+
+    pub def toString(m: DelayMap[k, v]): String \ ToString.Aef[k] + ToString.Aef[v] = DelayMap.toString(m)
 }
 
 instance Functor[DelayMap[k]] {
@@ -54,7 +56,7 @@ mod DelayMap {
     /// Returns a string representation of the given `DelayMap` `m`.
     ///
     @Experimental
-    pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region rc {
+    pub def toString(m: DelayMap[k, v]): String \ ToString.Aef[k] + ToString.Aef[v] with ToString[k], ToString[v] = region rc {
         let sb = StringBuilder.new(rc);
         let _ = parallelForce(m);
         StringBuilder.appendString!("DelayMap#{", sb);
@@ -857,7 +859,7 @@ mod DelayMap {
     /// in `m` with `sep` inserted between each element.
     ///
     @Experimental
-    pub def joinKeys(sep: String, m: DelayMap[k, v]): String with ToString[k] =
+    pub def joinKeys(sep: String, m: DelayMap[k, v]): String \ ToString.Aef[k] with ToString[k] =
         let DMap(t) = m;
         RedBlackTree.joinKeys(sep, t)
 
@@ -866,7 +868,7 @@ mod DelayMap {
     /// in `m` with `sep` inserted between each element.
     ///
     @Experimental
-    pub def joinValues(sep: String, m: DelayMap[k, v]): String with ToString[v] =
+    pub def joinValues(sep: String, m: DelayMap[k, v]): String \ ToString.Aef[v] with ToString[v] =
         joinWith((_, v) -> ToString.toString(v), sep, m)
 
     ///

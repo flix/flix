@@ -41,6 +41,7 @@ mod TestGetOpt {
     }
 
     instance ToString[Flag] {
+        type Aef = Pure
         pub def toString(x: Flag): String = match x {
             case Flag.HiRes      => "A"
             case Flag.Colour(y)  => "Colour(${y})"

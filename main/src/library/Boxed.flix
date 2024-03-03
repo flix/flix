@@ -63,6 +63,8 @@ instance Order[Boxed] {
 }
 
 instance ToString[Boxed] {
+    type Aef = Pure
+
     pub def toString(b: Boxed): String = match b {
         case Boxed.BoxedBool(v)      => ToString.toString(v)
         case Boxed.BoxedChar(v)      => ToString.toString(v)

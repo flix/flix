@@ -58,7 +58,7 @@ mod Seq {
     ///
     /// Renders the list `l` to a String.
     ///
-    pub def toString(l: Seq[s][a]): String with ToString[a] = region rc {
+    pub def toString(l: Seq[s][a]): String \ ToString.Aef[a] with ToString[a] = region rc {
         let sb = StringBuilder.new(rc);
         foreach (x <- l)
             StringBuilder.appendString!("${x} :: ", sb);
@@ -703,7 +703,7 @@ mod Seq {
     /// Returns the concatenation of the string representation
     /// of each element in `l` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, l: Seq[s][a]): String with ToString[a] =
+    pub def join(sep: String, l: Seq[s][a]): String \ ToString.Aef[a] with ToString[a] =
         Foldable.join(sep, l)
 
     ///
@@ -864,7 +864,8 @@ mod Seq {
 
 
 instance ToString[Seq.Seq[s][a]] with ToString[a] {
-    pub def toString(l: Seq.Seq[s][a]): String = Seq.toString(l)
+    type Aef = ToString.Aef[a]
+    pub def toString(l: Seq.Seq[s][a]): String \ ToString.Aef[a] = Seq.toString(l)
 }
 
 instance Hash[Seq.Seq[s][a]] with Hash[a] {

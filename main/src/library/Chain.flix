@@ -96,7 +96,9 @@ instance Filterable[Chain] {
 instance Witherable[Chain]
 
 instance ToString[Chain[a]] with ToString[a] {
-    pub def toString(c: Chain[a]): String = region rc {
+    type Aef = ToString.Aef[a]
+
+    pub def toString(c: Chain[a]): String \ ToString.Aef[a] = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Chain#{", sb);
         Chain.forEachWithIndex((i, x) -> {
@@ -932,7 +934,7 @@ mod Chain {
     /// Returns the concatenation of the string representation
     /// of each element in `c` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, c: Chain[a]): String with ToString[a] =
+    pub def join(sep: String, c: Chain[a]): String \ ToString.Aef[a] with ToString[a] =
         Foldable.join(sep, c)
 
     ///

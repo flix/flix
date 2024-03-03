@@ -103,7 +103,7 @@ pub def coerce(x: t[a]): a with Coerce[t] = Coerce.coerce(x)
 ///
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
-pub def println(x: a): Unit \ IO with ToString[a] =
+pub def println(x: a): Unit \ ToString.Aef[a] + IO with ToString[a] =
     import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
     import java.io.PrintStream.println(String): Unit \ IO;
     x |> ToString.toString |> println(getOut())
@@ -163,7 +163,7 @@ pub def unreachable!(): a = bug!("Reached unreachable expression.")
 /// Prints the argument unless it is ().
 ///
 @Internal
-pub def printUnlessUnit(x: a): Unit \ IO with ToString[a] = {
+pub def printUnlessUnit(x: a): Unit \ ToString.Aef[a] + IO with ToString[a] = {
     typematch x {
         case _: Unit => ()
         case _: _ => println(x)

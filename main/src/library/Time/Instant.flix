@@ -22,6 +22,8 @@ mod Time {
     enum Instant(##java.time.Instant)
 
     instance ToString[Instant] {
+        type Aef = Pure
+
         pub def toString(x: Time.Instant): String = Instant.toString(x)
     }
 

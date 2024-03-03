@@ -26,7 +26,9 @@ pub enum List[t] with Sendable {
 }
 
 instance ToString[List[a]] with ToString[a] {
-    pub def toString(l: List[a]): String = List.toString(l)
+    type Aef = ToString.Aef[a]
+
+    pub def toString(l: List[a]): String \ ToString.Aef[a] = List.toString(l)
 }
 
 instance Hash[List[a]] with Hash[a] {
@@ -150,7 +152,7 @@ mod List {
     ///
     /// Renders the list `l` to a String.
     ///
-    pub def toString(l: List[a]): String with ToString[a] = region rc {
+    pub def toString(l: List[a]): String \ ToString.Aef[a] with ToString[a] = region rc {
         let sb = StringBuilder.new(rc);
         foreach (x <- l)
             StringBuilder.appendString!("${x} :: ", sb);
@@ -1076,7 +1078,7 @@ mod List {
     /// Returns the concatenation of the string representation
     /// of each element in `l` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, l: List[a]): String with ToString[a] =
+    pub def join(sep: String, l: List[a]): String \ ToString.Aef[a] with ToString[a] =
         Foldable.join(sep, l)
 
     ///

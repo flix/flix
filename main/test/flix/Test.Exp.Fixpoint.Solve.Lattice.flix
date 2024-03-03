@@ -63,6 +63,7 @@ mod Test.Exp.Fixpoint.Solve.Lattice {
     }
 
     instance ToString[Constant] {
+        type Aef = Pure
         pub def toString(x: Constant): String = match x {
             case Constant.Top    => "Constant.Top"
             case Constant.Cst(n) => "Constant.Cst(${n})"
