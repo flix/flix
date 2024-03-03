@@ -4,14 +4,13 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Input}
 import ca.uwaterloo.flix.language.ast.SemanticOp._
 import ca.uwaterloo.flix.language.ast.TypedAst.{Def, Expr, Root}
-import ca.uwaterloo.flix.language.ast.{SemanticOp, SourceLocation, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.{SemanticOp, SourceLocation, Type, TypedAst}
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.util.{Result, Validation}
 
 import java.io.IOException
 
 /* TODO: think also:
- * Do we need a flix.phase anywhere ?
  * Check mutant compilation. Create 'MutantStatus' enum
  * Add statistics
  * Add reporter
@@ -148,12 +147,36 @@ object MutationTester {
       )
 
       override def mutateExpr(exp: Expr)(implicit flix: Flix): Option[Expr] = exp match {
+        case Expr.Apply(exp, exps, _, _, _) => exp match {
+          case Expr.Def(sym, _, _) => if (sym.text == "bitwiseNot") Some(exps.head) else None
+          case _ => None
+        }
         case Expr.Unary(sop: SemanticOp, exp, _, _, _) => if (ops.contains(sop)) Some(exp) else None
         case _ => None
       }
     }
 
     case object ArithmeticBinaryMutator extends ExprMutator {
+
+      private val sigToSig: Map[String, (String, String)] = Map(
+        "Add.add" -> ("Sub", "sub"),
+        "Sub.sub" -> ("Add", "add"),
+        "Mul.mul" -> ("Div", "div"),
+        "Div.div" -> ("Mul", "mul"),
+      )
+
+      private val defnToSig: Map[String, (String, String)] = Map(
+        "modulo" -> ("Mul", "mul"),
+        "remainder" -> ("Mul", "mul"),
+      )
+
+      private val defnToDefn: Map[String, String] = Map(
+        "bitwiseAnd" -> "bitwiseOr",
+        "bitwiseOr" -> "bitwiseAnd",
+        "bitwiseXor" -> "bitwiseAnd",
+        "leftShift" -> "rightShift",
+        "rightShift" -> "leftShift",
+      )
 
       private val float32Ops: Map[Float32Op, Float32Op] = Map(
         Float32Op.Add -> Float32Op.Sub,
@@ -170,7 +193,6 @@ object MutationTester {
       )
 
       private val int8Ops: Map[Int8Op, Int8Op] = Map(
-        // base
         Int8Op.Add -> Int8Op.Sub,
         Int8Op.Sub -> Int8Op.Add,
         Int8Op.Mul -> Int8Op.Div,
@@ -185,7 +207,6 @@ object MutationTester {
       )
 
       private val int16Ops: Map[Int16Op, Int16Op] = Map(
-        // base
         Int16Op.Add -> Int16Op.Sub,
         Int16Op.Sub -> Int16Op.Add,
         Int16Op.Mul -> Int16Op.Div,
@@ -200,7 +221,6 @@ object MutationTester {
       )
 
       private val int32Ops: Map[Int32Op, Int32Op] = Map(
-        // base
         Int32Op.Add -> Int32Op.Sub,
         Int32Op.Sub -> Int32Op.Add,
         Int32Op.Mul -> Int32Op.Div,
@@ -215,7 +235,6 @@ object MutationTester {
       )
 
       private val int64Ops: Map[Int64Op, Int64Op] = Map(
-        // base
         Int64Op.Add -> Int64Op.Sub,
         Int64Op.Sub -> Int64Op.Add,
         Int64Op.Mul -> Int64Op.Div,
@@ -229,24 +248,31 @@ object MutationTester {
         Int64Op.Shl -> Int64Op.Shr,
       )
 
-      private val sigSyms: Map[String, (String, String)] = Map(
-        "Add.add" -> ("Sub", "sub"),
-        "Sub.sub" -> ("Add", "add"),
-        "Mul.mul" -> ("Div", "div"),
-        "Div.div" -> ("Mul", "mul"),
-      )
-
       override def mutateExpr(exp: TypedAst.Expr)(implicit flix: Flix): Option[TypedAst.Expr] = exp match {
-        case Expr.Apply(Expr.Sig(sym, sigTpe, _), exps, tpe, eff, loc) =>
-          SymbolMutator.mutateSigSym(sym, sigSyms).map(mut => Expr.Apply(Expr.Sig(mut, sigTpe, SourceLocation.Unknown), exps, tpe, eff, loc))
+        case Expr.Apply(exp, exps, tpe, eff, loc) =>
+          exp match {
+            case Expr.Sig(sym, tpe1, _) =>
+              sigToSig.get(sym.toString)
+                .flatMap(p => findSig(p._1, p._2, tpe1))
+                .map(Expr.Apply(_, exps, tpe, eff, loc))
+            case Expr.Def(sym, tpe1, _) =>
+              defnToDefn.get(sym.text)
+                .flatMap(findDef(sym.namespace, _, tpe1))
+                .orElse {
+                  defnToSig.get(sym.text)
+                    .flatMap(p => findSig(p._1, p._2, tpe1))
+                }
+                .map(Expr.Apply(_, exps, tpe, eff, loc))
+            case _ => None
+          }
         case Expr.Binary(sop: SemanticOp, exp1, exp2, tpe, eff, loc) =>
           sop match {
-            case op: Float32Op => float32Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
-            case op: Float64Op => float64Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
-            case op: Int8Op => int8Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
-            case op: Int16Op => int16Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
-            case op: Int32Op => int32Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
-            case op: Int64Op => int64Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
+            case op: Float32Op => float32Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
+            case op: Float64Op => float64Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
+            case op: Int8Op => int8Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
+            case op: Int16Op => int16Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
+            case op: Int32Op => int32Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
+            case op: Int64Op => int64Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
             case _ => None
           }
         case _ => None
@@ -254,6 +280,15 @@ object MutationTester {
     }
 
     case object ConditionalNegateMutator extends ExprMutator {
+
+      private val sigToSig: Map[String, (String, String)] = Map(
+        "Eq.eq" -> ("Eq", "neq"),
+        "Eq.neq" -> ("Eq", "eq"),
+        "Order.less" -> ("Order", "greaterEqual"),
+        "Order.lessEqual" -> ("Order", "greater"),
+        "Order.greater" -> ("Order", "lessEqual"),
+        "Order.greaterEqual" -> ("Order", "less"),
+      )
 
       private val boolOps: Map[BoolOp, BoolOp] = Map(
         BoolOp.Eq -> BoolOp.Neq,
@@ -315,15 +350,23 @@ object MutationTester {
       )
 
       override def mutateExpr(exp: TypedAst.Expr)(implicit flix: Flix): Option[TypedAst.Expr] = exp match {
+        case Expr.Apply(exp, exps, tpe, eff, loc) =>
+          exp match {
+            case Expr.Sig(sym, tpe1, _) =>
+              sigToSig.get(sym.toString)
+                .flatMap(p => findSig(p._1, p._2, tpe1))
+                .map(Expr.Apply(_, exps, tpe, eff, loc))
+            case _ => None
+          }
         case Expr.Binary(sop: SemanticOp, exp1, exp2, tpe, eff, loc) =>
           sop match {
-            case op: BoolOp => boolOps.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
-            case op: Float32Op => float32Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
-            case op: Float64Op => float64Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
-            case op: Int8Op => int8Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
-            case op: Int16Op => int16Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
-            case op: Int32Op => int32Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
-            case op: Int64Op => int64Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
+            case op: BoolOp => boolOps.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
+            case op: Float32Op => float32Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
+            case op: Float64Op => float64Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
+            case op: Int8Op => int8Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
+            case op: Int16Op => int16Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
+            case op: Int32Op => int32Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
+            case op: Int64Op => int64Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
             case _ => None
           }
         case _ => None
@@ -331,6 +374,13 @@ object MutationTester {
     }
 
     case object ConditionalBoundaryMutator extends ExprMutator {
+
+      private val sigToSig: Map[String, (String, String)] = Map(
+        "Order.less" -> ("Order", "lessEqual"),
+        "Order.lessEqual" -> ("Order", "less"),
+        "Order.greater" -> ("Order", "greaterEqual"),
+        "Order.greaterEqual" -> ("Order", "greater"),
+      )
 
       private val float32Ops: Map[Float32Op, Float32Op] = Map(
         Float32Op.Lt -> Float32Op.Le,
@@ -375,29 +425,39 @@ object MutationTester {
       )
 
       override def mutateExpr(exp: TypedAst.Expr)(implicit flix: Flix): Option[TypedAst.Expr] = exp match {
+        case Expr.Apply(exp, exps, tpe, eff, loc) =>
+          exp match {
+            case Expr.Sig(sym, tpe1, _) =>
+              sigToSig.get(sym.toString)
+                .flatMap(p => findSig(p._1, p._2, tpe1))
+                .map(Expr.Apply(_, exps, tpe, eff, loc))
+            case _ => None
+          }
         case Expr.Binary(sop: SemanticOp, exp1, exp2, tpe, eff, loc) =>
           sop match {
-            case op: Float32Op => float32Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
-            case op: Float64Op => float64Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
-            case op: Int8Op => int8Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
-            case op: Int16Op => int16Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
-            case op: Int32Op => int32Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
-            case op: Int64Op => int64Ops.get(op).map(mut => Expr.Binary(mut, exp1, exp2, tpe, eff, loc))
+            case op: Float32Op => float32Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
+            case op: Float64Op => float64Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
+            case op: Int8Op => int8Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
+            case op: Int16Op => int16Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
+            case op: Int32Op => int32Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
+            case op: Int64Op => int64Ops.get(op).map(Expr.Binary(_, exp1, exp2, tpe, eff, loc))
             case _ => None
           }
         case _ => None
       }
     }
-  }
 
-  private object SymbolMutator {
-    def mutateSigSym(sigSym: Symbol.SigSym, changes: Map[String, (String, String)])(implicit flix: Flix): Option[Symbol.SigSym] = {
-      try {
-        changes.get(sigSym.toString).map(pair => PredefinedClasses.lookupSigSym(pair._1, pair._2, flix.getKinderAst))
-      } catch {
-        // todo: refactor
-        case _: IOException => None
-      }
+    private def findSig(clazz: String, sig: String, tpe: Type)(implicit flix: Flix): Option[Expr.Sig] = try {
+      Some(Expr.Sig(PredefinedClasses.lookupSigSym(clazz, sig, flix.getKinderAst), tpe, SourceLocation.Unknown))
+    } catch {
+      case _: IOException => None // todo: refactor ?
+    }
+
+    // todo: do we need to verify namespace ? For example: MyNotNumberType.bitwiseAnd()
+    private def findDef(namespace: List[String], name: String, tpe: Type)(implicit flix: Flix): Option[Expr.Def] = try {
+      Some(Expr.Def(PredefinedClasses.lookupDefSym(namespace, name, flix.getKinderAst), tpe, SourceLocation.Unknown))
+    } catch {
+      case _: IOException => None // todo: refactor ?
     }
   }
 }
