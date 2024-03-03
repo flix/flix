@@ -322,7 +322,9 @@ object FastBoolUnification {
   /**
     * Propagates variables through the equation system. Cannot fail.
     *
-    *
+    * The observation is that we if we have simple equations of the form: `x ~ y`
+    * then we can create a substitution that binds `[x -> y]`. Every time we create
+    * a binding, we must be careful to update both unsolved and pending equations.
     *
     * For example, if the equation system is:
     *
@@ -351,34 +353,44 @@ object FastBoolUnification {
     *     x127251 -> x78921
     * }}}
     *
-    * Returns a list of pending equations and a partial substitution.
+    * Returns a list of unsolved equations and a partial substitution.
     */
   private def propagateVars(l: List[Equation], s: BoolSubstitution): (List[Equation], BoolSubstitution) = {
-    var currentEqns = l
-    var currentSubst = s
+    var pending = l
+    var subst = s
 
-    var rest: List[Equation] = Nil
-    while (currentEqns.nonEmpty) {
-      // Extract the next equation and update the current (pending) equations.
-      val e = currentEqns.head
-      currentEqns = currentEqns.tail
+    var unsolved: List[Equation] = Nil
+
+    // INVARIANT: The current substitution has been applied to BOTH unsolved AND pending equations.
+    while (pending.nonEmpty) {
+      // Extract the next equation and update the pending equations.
+      val e = pending.head
+      pending = pending.tail
 
       e match {
         case Equation(Term.Var(x), Term.Var(y), _) =>
-          // Case 1: We found an equation: `x ~ y`.
+          // Case 1: We have found an equation: `x ~ y`.
+          // Construct a singleton substitution `[x -> y]`.
           val singleton = BoolSubstitution.singleton(x, Term.Var(y))
 
-          currentEqns = singleton(currentEqns)
-          currentSubst = singleton @@ currentSubst
-        case _ =>
-          // Case 2: We have some other equation. We keep it pending and continue.
-          rest = e :: rest
-      }
+          // Apply the singleton substitution to the pending equations.
+          pending = singleton(pending)
 
-      // INVARIANT: TODO: Need invariant that currentsubst applied to BOTH rest and currentEquations.
+          // Apply the singleton substitution to the unsolved equations.
+          unsolved = singleton(unsolved)
+
+          // Update the current substitution with the new binding.
+          subst = singleton @@ subst
+
+        case _ =>
+          // Case 2: We have some other type of equation. Add it to the list of unsolved equations.
+          // The invariant ensures that the current substitution has already been applied to the equation.
+          unsolved = e :: unsolved
+      }
     }
 
-    (currentSubst(rest.reverse), currentSubst)
+    // Reverse the unsolved equations to ensure they are returned in the original order.
+    (unsolved.reverse, subst)
   }
 
   // Deals with x92747 ~ (x135862 ∧ x135864)
