@@ -121,7 +121,7 @@ mod MutDisjointSets {
     ///
     /// Updates `s` with the elements of the iterable `m`.
     ///
-    pub def makeSets(m: m[t], s: MutDisjointSets[r, t]): Unit \ r with Iterable[m], Order[t] = region rc {
+    pub def makeSets(m: m, s: MutDisjointSets[r, t]): Unit \ Iterable.Aef[m] + r with Iterable[m], Order[t] where Iterable.Elm[m] ~ t = region rc {
         Iterable.iterator(rc, m) |> Iterator.forEach(x -> makeSet(x, s))
     }
 

@@ -904,6 +904,8 @@ instance Foldable[Seq.Seq[s]] {
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: Seq.Seq[s][a]): b \ ef = Seq.foldRightWithCont(f, s, l)
 }
 
-instance Iterable[Seq.Seq[s]] {
+instance Iterable[Seq.Seq[s][a]] {
+    type Elm = s
+    type Aef = Pure
     pub def iterator(rc: Region[r], l: Seq.Seq[s][a]): Iterator[a, r, r] \ r = Seq.iterator(rc, l)
 }

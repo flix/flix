@@ -43,9 +43,11 @@ instance Foldable[DelayMap[k]] {
 
 }
 
-instance Iterable[DelayMap[k]] {
-    pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[v, r, r] \ r =
-        DelayMap.iterator(rc, m) |> Iterator.map(snd)
+instance Iterable[DelayMap[k, v]] {
+    type Elm = (k, v)
+    type Aef = Pure
+    pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[(k, v), r, r] \ r =
+        DelayMap.iterator(rc, m)
 }
 
 mod DelayMap {
