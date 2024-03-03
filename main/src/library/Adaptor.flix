@@ -175,14 +175,14 @@ mod Adaptor {
     ///
     /// Alias for `toArrayList`.
     ///
-    pub def toList(ma: m[a]): ##java.util.List \ IO with Foldable[m] = checked_cast(toArrayList(ma))
+    pub def toList(ma: m): ##java.util.List \ Foldable.Aef[m] + IO with Foldable[m] = checked_cast(toArrayList(ma))
 
     ///
     /// Returns the elements of the given foldable `ma` as a new Java `ArrayList`.
     ///
     /// Creates a fresh `ArrayList` and copies all elements in `ma` into it.
     ///
-    pub def toArrayList(ma: m[a]): ##java.util.ArrayList \ IO with Foldable[m] =
+    pub def toArrayList(ma: m): ##java.util.ArrayList \ Foldable.Aef[m] + IO with Foldable[m] =
         import new java.util.ArrayList(): ##java.util.ArrayList \ IO as newArrayList;
         import java.util.ArrayList.add(##java.lang.Object): Bool \ IO;
         let alist = newArrayList();
@@ -194,7 +194,7 @@ mod Adaptor {
     ///
     /// Creates a fresh `LinkedList` and copies all elements in `ma` into it.
     ///
-    pub def toLinkedList(ma: m[a]): ##java.util.LinkedList \ IO with Foldable[m] =
+    pub def toLinkedList(ma: m): ##java.util.LinkedList \ Foldable.Aef[m] + IO with Foldable[m] =
         import new java.util.LinkedList(): ##java.util.LinkedList \ IO as newLinkedList;
         import java.util.LinkedList.add(##java.lang.Object): Bool \ IO;
         let llist = newLinkedList();
@@ -204,12 +204,12 @@ mod Adaptor {
     ///
     /// Alias for `toTreeSet`.
     ///
-    pub def toSet(ma: m[a]): ##java.util.Set \ IO with Order[a], Foldable[m] = checked_cast(toTreeSet(ma))
+    pub def toSet(ma: m): ##java.util.Set \ Foldable.Aef[m] + IO with Order[a], Foldable[m] where Foldable.Elm[m] ~ a = checked_cast(toTreeSet(ma))
 
     ///
     /// Returns the elements of the given foldable `ma` as a new `TreeSet`.
     ///
-    pub def toTreeSet(ma: m[a]): ##java.util.TreeSet \ IO with Order[a], Foldable[m] =
+    pub def toTreeSet(ma: m): ##java.util.TreeSet \ Foldable.Aef[m] + IO with Order[a], Foldable[m] where Foldable.Elm[m] ~ a =
         import new java.util.TreeSet(): ##java.util.TreeSet \ IO as newTreeSet;
         import java.util.TreeSet.add(##java.lang.Object): Bool \ IO;
         let tset = newTreeSet();

@@ -97,41 +97,26 @@ instance MonadZip[Option] {
         }
 }
 
-instance Foldable[Option] {
+instance Foldable[Option[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldLeft(f, s, o)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldRight(f, o, s)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, o: Option[a]): b \ ef = Option.foldRightWithCont(f, o, s)
 }
 
-instance UnorderedFoldable[Option] {
+instance UnorderedFoldable[Option[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldMap(f: a -> b \ ef, o: Option[a]): b \ ef with CommutativeMonoid[b] = Option.foldMap(f, o)
-}
-
-instance Traversable[Option] {
-    pub def traverse(f: a -> m[b] \ ef, t: Option[a]): m[Option[b]] \ ef with Applicative[m] =
-        use Applicative.{point};
-        use Functor.{map};
-        match t {
-            case None => point(None)
-            case Some(a) => f(a) |> map(Some)
-        }
-
-    pub override def sequence(t: Option[m[a]]): m[Option[a]] with Applicative[m] =
-        use Applicative.{point};
-        use Functor.{map};
-        match t {
-            case Some(ma) => map(Some, ma)
-            case None => point(None)
-        }
-
 }
 
 instance Filterable[Option] {
     pub def filterMap(f: a -> Option[b] \ ef, o: Option[a]): Option[b] \ ef = Option.flatMap(f, o)
     pub override def filter(f: a -> Bool \ ef, o: Option[a]): Option[a] \ ef = Option.filter(f, o)
 }
-
-instance Witherable[Option]
 
 instance SemiGroup[Option[a]] with SemiGroup[a] {
     pub def combine(x: Option[a], y: Option[a]): Option[a] = match (x, y) {

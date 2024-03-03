@@ -67,14 +67,20 @@ instance ToString[DelayList[a]] with ToString[a] {
 }
 
 
-instance Foldable[DelayList] {
+instance Foldable[DelayList[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
     override pub def toDelayList(l: DelayList[a]): DelayList[a] = l
 }
 
-instance UnorderedFoldable[DelayList] {
+instance UnorderedFoldable[DelayList[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldMap(f: a -> b \ ef, l: DelayList[a]): b \ ef with CommutativeMonoid[b] = DelayList.foldMap(f, l)
     override pub def isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
     override pub def exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
@@ -99,17 +105,10 @@ instance MonadZero[DelayList] {
     pub def empty(): DelayList[a] = DelayList.empty()
 }
 
-instance Traversable[DelayList] {
-    pub def traverse(f: a -> m[b] \ ef, l: DelayList[a]): m[DelayList[b]] \ ef with Applicative[m] = DelayList.traverse(f, l)
-    pub override def sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
-}
-
 instance Filterable[DelayList] {
     pub def filterMap(f: a -> Option[b] \ ef, x: DelayList[a]): DelayList[b] \ ef = DelayList.filterMap(f, x)
     pub override def filter(f: a -> Bool \ ef, x: DelayList[a]): DelayList[a] \ ef = DelayList.filter(f, x)
 }
-
-instance Witherable[DelayList]
 
 instance SemiGroup[DelayList[a]] {
     pub def combine(l1: DelayList[a], l2: DelayList[a]): DelayList[a] = DelayList.append(l1, l2)

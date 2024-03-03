@@ -267,8 +267,6 @@ class Flix {
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
     "Reducible.flix" -> LocalResource.get("/src/library/Reducible.flix"),
     "SemiGroup.flix" -> LocalResource.get("/src/library/SemiGroup.flix"),
-    "Traversable.flix" -> LocalResource.get("/src/library/Traversable.flix"),
-    "Witherable.flix" -> LocalResource.get("/src/library/Witherable.flix"),
     "UnorderedFoldable.flix" -> LocalResource.get("/src/library/UnorderedFoldable.flix"),
     "Collectable.flix" -> LocalResource.get("/src/library/Collectable.flix"),
 
@@ -306,11 +304,16 @@ class Flix {
 
     "Eff/Random.flix" -> LocalResource.get("/src/library/Eff/Random.flix"),
 
-    "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
+//    "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
     "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
     "Adaptor.flix" -> LocalResource.get("/src/library/Adaptor.flix"),
     "ToJava.flix" -> LocalResource.get("/src/library/ToJava.flix"),
+
+    "Index.flix" -> LocalResource.get("/src/library/Index.flix"),
+    "IndexMut.flix" -> LocalResource.get("/src/library/IndexMut.flix"),
+
+    "ToString2.flix" -> LocalResource.get("/src/library/ToString2.flix"),
   )
 
   /**

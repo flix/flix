@@ -237,8 +237,9 @@ object Redundancy {
     * Finds unused type parameters.
     */
   private def findUnusedTypeParameters(spec: Spec): List[UnusedTypeParam] = {
+    val usedTypeVars = spec.declaredScheme.base.typeVars.map(_.sym) ++ spec.declaredScheme.econstrs.flatMap(_.tpe2.typeVars.map(_.sym))
     spec.tparams.collect {
-      case tparam if deadTypeVar(tparam.sym, spec.declaredScheme.base.typeVars.map(_.sym)) => UnusedTypeParam(tparam.name)
+      case tparam if deadTypeVar(tparam.sym, usedTypeVars) => UnusedTypeParam(tparam.name)
     }
   }
 

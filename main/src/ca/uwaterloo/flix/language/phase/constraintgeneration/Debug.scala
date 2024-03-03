@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.phase.unification.Substitution
 /**
   * Debugging utilities for typing constraints.
   */
-class Debug {
+object Debug {
 
   /**
     * Generates a GraphViz (dot) string representing the given constraints.

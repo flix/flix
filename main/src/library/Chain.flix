@@ -69,13 +69,19 @@ instance MonadZip[Chain] {
     pub override def unzip(xs: Chain[(a, b)]): (Chain[a], Chain[b]) = Chain.unzip(xs)
 }
 
-instance Foldable[Chain] {
+instance Foldable[Chain[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldLeft(f, s, c)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRight(f, s, c)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, c: Chain[a]): b \ ef = Chain.foldRightWithCont(f, s, c)
 }
 
-instance UnorderedFoldable[Chain] {
+instance UnorderedFoldable[Chain[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldMap(f: a -> b \ ef, c: Chain[a]): b \ ef with CommutativeMonoid[b] = Chain.foldMap(f, c)
     override pub def isEmpty(c: Chain[a]): Bool = Chain.isEmpty(c)
     override pub def exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = Chain.exists(f, c)
@@ -83,17 +89,10 @@ instance UnorderedFoldable[Chain] {
     override pub def memberOf(x: a, c: Chain[a]): Bool with Eq[a] = Chain.memberOf(x, c)
 }
 
-instance Traversable[Chain] {
-    pub def traverse(f: a -> m[b] \ ef, t: Chain[a]): m[Chain[b]] \ ef with Applicative[m] = Chain.traverse(f, t)
-    pub override def sequence(t: Chain[m[a]]): m[Chain[a]] with Applicative[m] = Chain.sequence(t)
-}
-
 instance Filterable[Chain] {
     pub def filterMap(f: a -> Option[b] \ ef, x: Chain[a]): Chain[b] \ ef = Chain.filterMap(f, x)
     pub override def filter(f: a -> Bool \ ef, x: Chain[a]): Chain[a] \ ef = Chain.filter(f, x)
 }
-
-instance Witherable[Chain]
 
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String = region rc {

@@ -603,13 +603,13 @@ mod MutList {
     ///
     /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
     ///
-    pub def pushAll!(m: m[a], v: MutList[a, r]): Unit \ r with Foldable[m] =
+    pub def pushAll!(m: m, v: MutList[a, r]): Unit \ Foldable.Aef[m] + r with Foldable[m] where Foldable.Elm[m] ~ a =
         Foldable.forEach(x -> MutList.push!(x, v), m)
 
     ///
     /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
     ///
-    pub def append!(m: m[a], v: MutList[a, r]): Unit \ r with Foldable[m] =
+    pub def append!(m: m, v: MutList[a, r]): Unit \ Foldable.Aef[m] + r with Foldable[m] where Foldable.Elm[m] ~ a =
         pushAll!(m, v)
 
     ///

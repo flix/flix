@@ -59,13 +59,19 @@ instance MonadZip[Vector] {
     pub override def unzip(v: Vector[(a, b)]): (Vector[a], Vector[b]) = Vector.unzip(v)
 }
 
-instance Foldable[Vector] {
+instance Foldable[Vector[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): b \ ef = Vector.foldLeft(f, s, v)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): b \ ef = Vector.foldRight(f, s, v)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, v: Vector[a]): b \ ef = Vector.foldRightWithCont(f, s, v)
 }
 
-instance UnorderedFoldable[Vector] {
+instance UnorderedFoldable[Vector[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldMap(f: a -> b \ ef, v: Vector[a]): b \ ef with CommutativeMonoid[b] = Vector.foldMap(f, v)
     override pub def isEmpty(v: Vector[a]): Bool = Vector.isEmpty(v)
     override pub def exists(f: a -> Bool \ ef, v: Vector[a]): Bool \ ef = Vector.exists(f, v)
@@ -73,17 +79,10 @@ instance UnorderedFoldable[Vector] {
     override pub def memberOf(x: a, v: Vector[a]): Bool with Eq[a] = Vector.memberOf(x, v)
 }
 
-instance Traversable[Vector] {
-    pub def traverse(f: a -> m[b] \ ef, t: Vector[a]): m[Vector[b]] \ ef with Applicative[m] = Vector.traverse(f, t)
-    pub override def sequence(t: Vector[m[a]]): m[Vector[a]] with Applicative[m] = Vector.sequence(t)
-}
-
 instance Filterable[Vector] {
     pub def filterMap(f: a -> Option[b] \ ef, x: Vector[a]): Vector[b] \ ef = Vector.filterMap(f, x)
     pub override def filter(f: a -> Bool \ ef, x: Vector[a]): Vector[a] \ ef = Vector.filter(f, x)
 }
-
-instance Witherable[Vector]
 
 instance SemiGroup[Vector[a]] {
     pub def combine(x: Vector[a], y: Vector[a]): Vector[a] = Vector.append(x, y)

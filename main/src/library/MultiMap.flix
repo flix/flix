@@ -48,13 +48,19 @@ instance Order[MultiMap[k, v]] with Order[k], Order[v] {
         MultiMap.toList(x) <=> MultiMap.toList(y)
 }
 
-instance Foldable[MultiMap[k]] {
+instance Foldable[MultiMap[k, v]] {
+    type Elm = v
+    type Aef = Pure
+
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldLeft((acc, v) -> f(acc, v), s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldRight(f, s, m)
     pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: MultiMap[k, v]): b \ ef = MultiMap.foldRightWithCont(f, s, m)
 }
 
-instance UnorderedFoldable[MultiMap[k]] {
+instance UnorderedFoldable[MultiMap[k, v]] {
+    type Elm = v
+    type Aef = Pure
+
     pub def foldMap(f: v -> b \ ef, m: MultiMap[k, v]): b \ ef with CommutativeMonoid[b] = MultiMap.foldMap(f, m)
     override pub def isEmpty(m: MultiMap[k, v]): Bool = MultiMap.isEmpty(m)
     override pub def exists(f: v -> Bool \ ef, m: MultiMap[k, v]): Bool \ ef = MultiMap.exists(_ -> f, m)
@@ -153,7 +159,7 @@ mod MultiMap {
     ///
     /// Where `vs` is any foldable container. If `vs` is empty nothing is inserted.
     ///
-    pub def insertAll(k: k, vs: t[v], m: MultiMap[k, v]): MultiMap[k, v] with Order[k], Order[v], Foldable[t] =
+    pub def insertAll(k: k, vs: t, m: MultiMap[k, v]): MultiMap[k, v] \ Foldable.Aef[t] with Order[k], Order[v], Foldable[t] where Foldable.Elm[t] ~ v =
         match Foldable.toSet(vs) {
             case s1 if Set.isEmpty(s1) => m
             case s1                    => {
