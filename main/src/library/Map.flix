@@ -46,30 +46,29 @@ instance Functor[Map[k]] {
     pub def map(f: v1 -> v2 \ ef, m: Map[k, v1]): Map[k, v2] \ ef = Map.map(f, m)
 }
 
-instance Foldable[Map[k]] {
+instance Foldable[Map[k, v]] {
+    type Elm = v
+    type Aef = Pure
+
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRight(f, s, m)
     pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: Map[k, v]): b \ ef = Map.foldRightWithCont(f, s, m)
 }
 
-instance UnorderedFoldable[Map[k]] {
+instance UnorderedFoldable[Map[k, v]] {
+    type Elm = v
+    type Aef = Pure
+
     pub def foldMap(f: v -> b \ ef, m: Map[k, v]): b \ ef with CommutativeMonoid[b] = Map.foldMap(f, m)
     override pub def isEmpty(m: Map[k, v]): Bool = Map.isEmpty(m)
     override pub def exists(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.exists(_ -> f, m)
     override pub def forAll(f: v -> Bool \ ef, m: Map[k, v]): Bool \ ef = Map.forAll(_ -> f, m)
 }
 
-instance Traversable[Map[k]] {
-    pub def traverse(f: a -> m[b] \ ef, t: Map[k, a]): m[Map[k, b]] \ ef with Applicative[m] = Map.traverse(f, t)
-    pub override def sequence(t: Map[k, m[a]]): m[Map[k, a]] with Applicative[m] = Map.sequence(t)
-}
-
 instance Filterable[Map[k]] with Order[k] {
     pub def filterMap(f: a -> Option[b] \ ef, m: Map[k, a]): Map[k, b] \ ef = Map.filterMap(f, m)
     pub override def filter(f: a -> Bool \ ef, m: Map[k, a]): Map[k, a] \ ef = Map.filter(f, m)
 }
-
-instance Witherable[Map[k]] with Order[k]
 
 instance SemiGroup[Map[k,v]] with Order[k], SemiGroup[v] {
     pub def combine(x: Map[k,v], y: Map[k,v]): Map[k,v] = Map.unionWith(SemiGroup.combine, x, y)
@@ -853,7 +852,7 @@ mod Map {
     ///
     /// Returns the set of tuples `(k, v)` where `v` is a value in `t` and `k => t`.
     ///
-    pub def explode(m: Map[k, t[v]]): Set[(k, v)] with Foldable[t], Order[k], Order[v] =
+    pub def explode(m: Map[k, t]): Set[(k, v)] \ Foldable.Aef[t] with Foldable[t], Order[k], Order[v] where Foldable.Elm[t] ~ v =
         foldLeftWithKey((acc, k, t) -> Foldable.toSet(t) |> Set.map(e -> (k, e)) |> Set.union(acc), Set.empty(), m)
 
     ///
@@ -904,7 +903,7 @@ mod Map {
     ///
     pub def sequence(m: Map[k, m[v]]): m[Map[k, v]] with Applicative[m] =
         let Map(t) = m;
-        Functor.map(Map, Traversable.sequence(t))
+        Functor.map(Map, RedBlackTree.mapAWithKey((_, v) -> v, t))
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the values of the
@@ -912,7 +911,7 @@ mod Map {
     ///
     pub def traverse(f: v1 -> m[v2] \ ef, m: Map[k, v1]): m[Map[k, v2]] \ ef with Applicative[m] =
         let Map(t) = m;
-        Functor.map(Map, Traversable.traverse(f, t))
+        Functor.map(Map, RedBlackTree.mapAWithKey((_, v) -> f(v), t))
 
     ///
     /// Returns the result of applying the applicative mapping function `f` to all the key-value pairs

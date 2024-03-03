@@ -256,7 +256,6 @@ class Flix {
     "CommutativeMonoid.flix" -> LocalResource.get("/src/library/CommutativeMonoid.flix"),
     "CommutativeSemiGroup.flix" -> LocalResource.get("/src/library/CommutativeSemiGroup.flix"),
     "Foldable.flix" -> LocalResource.get("/src/library/Foldable.flix"),
-    "Foldable2.flix" -> LocalResource.get("/src/library/Foldable2.flix"),
     "FromString.flix" -> LocalResource.get("/src/library/FromString.flix"),
     "Functor.flix" -> LocalResource.get("/src/library/Functor.flix"),
     "Filterable.flix" -> LocalResource.get("/src/library/Filterable.flix"),
@@ -268,10 +267,7 @@ class Flix {
     "Monoid.flix" -> LocalResource.get("/src/library/Monoid.flix"),
     "Reducible.flix" -> LocalResource.get("/src/library/Reducible.flix"),
     "SemiGroup.flix" -> LocalResource.get("/src/library/SemiGroup.flix"),
-    "Traversable.flix" -> LocalResource.get("/src/library/Traversable.flix"),
-    "Witherable.flix" -> LocalResource.get("/src/library/Witherable.flix"),
     "UnorderedFoldable.flix" -> LocalResource.get("/src/library/UnorderedFoldable.flix"),
-    "UnorderedFoldable2.flix" -> LocalResource.get("/src/library/UnorderedFoldable2.flix"),
     "Collectable.flix" -> LocalResource.get("/src/library/Collectable.flix"),
 
     "Validation.flix" -> LocalResource.get("/src/library/Validation.flix"),
@@ -308,7 +304,7 @@ class Flix {
 
     "Eff/Random.flix" -> LocalResource.get("/src/library/Eff/Random.flix"),
 
-    "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
+//    "Graph.flix" -> LocalResource.get("/src/library/Graph.flix"),
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
     "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
     "Adaptor.flix" -> LocalResource.get("/src/library/Adaptor.flix"),

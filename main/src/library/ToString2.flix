@@ -129,25 +129,26 @@ instance ToString2[(a1, a2, a3)] with ToString2[a1], ToString2[a2], ToString2[a3
     }
 }
 
-instance ToString2[Array[a, r]] with ToString2[a] {
-    type Aef = r + ToString2.Aef[a]
-
-    pub def toString(a: Array[a, r]): String \ r + ToString2.Aef[a] = region rc2 {
-        let sb = StringBuilder.new(rc2);
-        let first = ref true @ rc2;
-
-        StringBuilder.appendString!("Array#{", sb);
-
-        let f = (x) -> {
-            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
-            StringBuilder.appendString!(ToString2.toString(x), sb)
-        };
-        Array.forEach(f, a);
-
-        StringBuilder.appendString!("}", sb);
-        StringBuilder.toString(sb)
-    }
-}
+//instance ToString2[Array[a, r]] with ToString2[a] {
+//    type Aef = r + ToString2.Aef[a]
+//
+//    pub def toString(a: Array[a, r]): String \ r + ToString2.Aef[a] = region rc2 {
+//
+//        let sb = StringBuilder.new(rc2);
+//        let first = ref true @ rc2;
+//
+//        StringBuilder.appendString!("Array#{", sb);
+//
+//        let f = (x) -> {
+//            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
+//            StringBuilder.appendString!(ToString2.toString(x), sb)
+//        };
+//        Array.forEach(f, a);
+//
+//        StringBuilder.appendString!("}", sb);
+//        StringBuilder.toString(sb)
+//    }
+//}
 
 instance ToString2[(a1, a2, a3, a4)] with ToString2[a1], ToString2[a2], ToString2[a3], ToString2[a4] {
     type Aef = ToString2.Aef[a1] + ToString2.Aef[a2] + ToString2.Aef[a3] + ToString2.Aef[a4]

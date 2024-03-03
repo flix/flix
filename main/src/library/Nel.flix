@@ -68,23 +68,24 @@ instance MonadZip[Nel] {
     pub override def unzip(xs: Nel[(a, b)]): (Nel[a], Nel[b]) = Nel.unzip(xs)
 }
 
-instance Foldable[Nel] {
+instance Foldable[Nel[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldRightWithCont(f, s, l)
 }
 
-instance UnorderedFoldable[Nel] {
+instance UnorderedFoldable[Nel[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldMap(f: a -> b \ ef, l: Nel[a]): b \ ef with CommutativeMonoid[b] = Nel.foldMap(f, l)
     override pub def isEmpty(_: Nel[a]): Bool = false
     override pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
     override pub def forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
     override pub def memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
-}
-
-instance Traversable[Nel] {
-    pub def traverse(f: a -> m[b] \ ef, t: Nel[a]): m[Nel[b]] \ ef with Applicative[m] = Nel.traverse(f, t)
-    pub override def sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
 }
 
 instance Reducible[Nel] {
@@ -652,7 +653,7 @@ mod Nel {
     ///
     pub def sequence(l: Nel[m[a]]): m[Nel[a]] with Applicative[m] =
         match l {
-            case Nel(x, xs) => (((y, ys) -> Nel(y, ys)) `Functor.map` x) `Applicative.ap` Traversable.sequence(xs)
+            case Nel(x, xs) => (((y, ys) -> Nel(y, ys)) `Functor.map` x) `Applicative.ap` List.sequence(xs)
         }
 
     ///
@@ -660,7 +661,7 @@ mod Nel {
     ///
     pub def traverse(f: a -> m[b] \ ef, l: Nel[a]): m[Nel[b]] \ ef with Applicative[m] =
         match l {
-            case Nel(x, xs) => (((y, ys) -> Nel(y, ys)) `Functor.map` f(x)) `Applicative.ap` Traversable.traverse(f, xs)
+            case Nel(x, xs) => (((y, ys) -> Nel(y, ys)) `Functor.map` f(x)) `Applicative.ap` List.traverse(f, xs)
         }
 
     ///

@@ -86,7 +86,7 @@ object ConstraintResolution {
   /**
     * Adds the given type constraints as assumptions to the class environment.
     */
-  private def expandClassEnv(cenv: Map[Symbol.ClassSym, Ast.ClassContext], tconstrs: List[Ast.TypeConstraint]): Map[Symbol.ClassSym, Ast.ClassContext] = {
+  def expandClassEnv(cenv: Map[Symbol.ClassSym, Ast.ClassContext], tconstrs: List[Ast.TypeConstraint]): Map[Symbol.ClassSym, Ast.ClassContext] = {
 
     tconstrs.flatMap(withSupers(_, cenv)).foldLeft(cenv) {
       case (acc, Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, _), arg, loc)) =>
@@ -117,7 +117,7 @@ object ConstraintResolution {
   /**
     * Adds the given equality constraints as assumptions to the equality environment.
     */
-  private def expandEqualityEnv(eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], econstrs: List[Ast.EqualityConstraint]): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = {
+  def expandEqualityEnv(eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], econstrs: List[Ast.EqualityConstraint]): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = {
     econstrs.foldLeft(eqEnv) {
       case (acc, Ast.EqualityConstraint(Ast.AssocTypeConstructor(sym, _), tpe1, tpe2, _)) =>
         val assoc = Ast.AssocTypeDef(tpe1, tpe2)
@@ -140,7 +140,7 @@ object ConstraintResolution {
       }
 
       // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
-      val allTparams = tpe.typeVars ++ eff.typeVars ++ fparams.flatMap(_.tpe.typeVars)
+      val allTparams = tpe.typeVars ++ eff.typeVars ++ fparams.flatMap(_.tpe.typeVars) ++ econstrs.flatMap(_.tpe2.typeVars)
 
       val renv = allTparams.foldLeft(infRenv ++ renv0) {
         case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
@@ -304,7 +304,7 @@ object ConstraintResolution {
   }
 
   // Θ ⊩ τ ⤳ τ'
-  private def simplifyType(tpe: Type, renv0: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
+  def simplifyType(tpe: Type, renv0: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
     // A var is already simple.
     case t: Type.Var => Result.Ok((t, false))
     // A constant is already simple
@@ -372,12 +372,21 @@ object ConstraintResolution {
             // find the first (and only) instance that matches
             insts.iterator.flatMap { // TODO ASSOC-TYPES generalize this pattern (also in monomorph)
               inst =>
-                Unification.unifyTypes(t, inst.tpe, renv).toOption.map {
-                  case (subst, Nil) => inst.tconstrs.map(subst.apply)
-                  case (_, cs) => throw InternalCompilerException(s"unexpected leftover constraints: $cs", SourceLocation.Unknown)
+                Unification.unifyTypes(t, inst.tpe, renv).toOption.flatMap {
+                  case (subst, Nil) => Some(inst.tconstrs.map(subst.apply))
+                  case (_, _ :: _) => None // if we have leftover constraints then it didn't actually unify
                 }
             }.nextOption() match {
-              case None => Result.Err(TypeError.MissingInstance(clazz, tpe0, renv, loc)) // MATT loc??
+              case None =>
+                t.baseType match {
+                  // If it's a var, it's ok. It may be substituted later to a type we can reduce.
+                  // Or it might be part of the signature an expected constraint.
+                  case Type.Var(sym, loc) => Result.Ok(List(TypingConstraint.Class(clazz, t, loc)), progress)
+                  // If it's an associated type, it's ok. It may be reduced later to a concrete type.
+                  case _: Type.AssocType => Result.Ok(List(TypingConstraint.Class(clazz, t, loc)), progress)
+                  // Otherwise it's a problem.
+                  case _ => Result.Err(TypeError.MissingInstance(clazz, tpe0, renv, loc)) // MATT loc??
+                }
               case Some(tconstrs) =>
                 // simplify all the implied constraints
                 Result.traverse(tconstrs) {
@@ -399,7 +408,7 @@ object ConstraintResolution {
   //    case TypingConstraint.Purification(tpe1, tpe2, sym, level, prov, loc) => SimpleTypingConstraint.Pure(tpe1, tpe2, sym, loc)
   //  }
 
-  private def resolve(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, TypeError] = {
+  def resolve(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, TypeError] = {
     var last = List.empty[TypingConstraint]
     var curr = constrs.sortBy(_.numVars)
     var subst = subst0

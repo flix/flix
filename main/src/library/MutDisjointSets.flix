@@ -23,7 +23,8 @@ pub enum MutDisjointSets[r: Eff, t: Type]({
     forest = MutMap[t, MutDisjointSets.Node[t, r], r]
 })
 
-instance Foldable2[MutDisjointSets[r]] {
+instance Foldable[MutDisjointSets[r, a]] {
+    type Elm = a
     type Aef = r
 
     ///
@@ -58,25 +59,20 @@ instance Foldable2[MutDisjointSets[r]] {
     ///
     /// A `foldRightWithCont` allows early termination by not calling the continuation.
     ///
-    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, t: MutDisjointSets[r, a]): b \ r + ef = {
+    pub def foldRightWithCont(f: (a, Unit -> b \ r + ef) -> b \ r + ef, s: b, t: MutDisjointSets[r, a]): b \ r + ef = {
         let MutDisjointSets.MutDisjointSets({forest | _}) = t;
         MutMap.foldRightWithCont(
-            match MutDisjointSets.Node.Node({value | _}) -> cont -> f(value, cont),
+            match MutDisjointSets.Node.Node({value | _}) -> cont -> checked_ecast(f(value, cont)),
             s,
             forest
         )
     }
 }
 
-instance UnorderedFoldable2[MutDisjointSets[r]] {
+instance UnorderedFoldable[MutDisjointSets[r, a]] {
+    type Elm = a
     type Aef = r
 
-    ///
-    /// Unordered fold of `t`.
-    ///
-    /// Applies `f` to all elements in `t` and combines the results
-    /// i.e. `CommutativeMonoid.combine(f(a))` for all `a` in `t`.
-    ///
     pub def foldMap(f: a -> b \ ef, t: MutDisjointSets[r, a]): b \ r + ef with CommutativeMonoid[b] = {
         let MutDisjointSets.MutDisjointSets({forest | _}) = t;
         forest |> MutMap.valuesOf |> List.foldMap(match MutDisjointSets.Node.Node({value | _}) -> f(value))

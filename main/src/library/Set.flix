@@ -59,13 +59,19 @@ instance MeetLattice[Set[a]] with Order[a] {
     pub def greatestLowerBound(s1: Set[a], s2: Set[a]): Set[a] = s1 `Set.intersection` s2
 }
 
-instance Foldable[Set] {
+instance Foldable[Set[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldLeft(f, s, s1)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRight(f, s, s1)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRightWithCont(f, s, s1)
 }
 
-instance UnorderedFoldable[Set] {
+instance UnorderedFoldable[Set[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldMap(f: a -> b \ ef, s: Set[a]): b \ ef with CommutativeMonoid[b] = Set.foldMap(f, s)
     override pub def isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
     override pub def exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
