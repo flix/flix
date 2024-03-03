@@ -91,6 +91,10 @@ object WeededAst {
 
     case class Cst(cst: Ast.Constant, loc: SourceLocation) extends Expr
 
+    case class IndexGet(exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+
+    case class IndexPut(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
+
     case class Apply(exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class Infix(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
