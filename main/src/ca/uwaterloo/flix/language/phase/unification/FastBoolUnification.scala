@@ -276,8 +276,66 @@ object FastBoolUnification {
     }
   }
 
-
-  // Saturates all unit clauses.
+  /**
+    * Propagates constants and truth values through the equation system.
+    *
+    * The implementation saturates the system, i.e. it computes a fixpoint.
+    *
+    * The implementation uses three rewrite rules:
+    *
+    * - `x ~ true` becomes `[x -> true]`.
+    * - `x ~ c` becomes `[x -> c]`.
+    * - `x /\ y /\ ... = true` becomes `[x -> true, y -> true, ...`.
+    *
+    * For example, if the equation system is:
+    *
+    * {{{
+    *     c1794221043 ~ (x55062 ∧ x55050 ∧ x55046 ∧ x55060 ∧ x55066 ∧ x55040 ∧ x55075 ∧ x55042 ∧ x55058 ∧ x55078)
+    *     x55078 ~ x112431
+    *     c1794221043 ~ x55040
+    *     x55042 ~ x112433
+    *     x55044 ~ x112437
+    *     x55046 ~ (x112435 ∧ x55044)
+    *     x55048 ~ true
+    *     x55050 ~ (x112439 ∧ x55048)
+    *     x55052 ~ x112443
+    *     x55055 ~ true
+    *     x55058 ~ (x55052 ∧ x112441 ∧ x55055)
+    *     x55060 ~ x112446
+    *     x55062 ~ x112448
+    *     x55066 ~ true
+    *     x55075 ~ x112453
+    * }}}
+    *
+    * then after unit propagation it is:
+    *
+    * {{{
+    *     c1794221043 ~ (c1794221043 ∧ x55062 ∧ x55050 ∧ x55046 ∧ x55060 ∧ x55075 ∧ x55042 ∧ x55058 ∧ x55078)
+    *     x55078 ~ x112431
+    *     x55042 ~ x112433
+    *     x55044 ~ x112437
+    *     x55046 ~ (x112435 ∧ x55044)
+    *     x112439 ~ x55050
+    *     x55052 ~ x112443
+    *     x55058 ~ (x55052 ∧ x112441)
+    *     x55060 ~ x112446
+    *     x55062 ~ x112448
+    *     x55075 ~ x112453
+    * }}}
+    *
+    * with the substitution:
+    *
+    * {{{
+    *     x55048 -> true
+    *     x55055 -> true
+    *     x55066 -> true
+    *     x55040 -> c1794221043
+    * }}}
+    *
+    * Note that several equations were simplified.
+    *
+    * Note: We ignore `False` -- for now -- because the input rarely contains it.
+    */
   private def propagateUnit(l: List[Equation], s: BoolSubstitution): (List[Equation], BoolSubstitution) = {
     var currentEqns = l
     var currentSubst = s
@@ -610,8 +668,8 @@ object FastBoolUnification {
     def mk(t1: Term, t2: Term, loc: SourceLocation): Equation = (t1, t2) match {
       case (Term.True, _) => Equation(t2, Term.True, loc)
       case (Term.False, _) => Equation(t2, Term.False, loc)
-      case (Term.Cst(c1), Term.Cst(c2)) if c1 > c2 => Equation(t2, t1, loc)
-      case (Term.Var(x1), Term.Var(x2)) if x1 > x2 => Equation(t2, t1, loc)
+      case (Term.Cst(c1), Term.Cst(c2)) => if (c1 <= c2) Equation(t1, t2, loc) else Equation(t2, t1, loc)
+      case (Term.Var(x1), Term.Var(x2)) => if (x1 <= x2) Equation(t1, t2, loc) else Equation(t2, t1, loc)
       case (_, _: Term.Var) => Equation(t2, t1, loc)
       case (_, _: Term.Cst) => Equation(t2, t1, loc)
       case _ => Equation(t1, t2, loc)
