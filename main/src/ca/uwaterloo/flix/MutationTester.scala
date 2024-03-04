@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Lukas Schröder, Samuel Skovbakke & Alexander Sommer
+ * Copyright 2024 Lukas Schröder, Samuel Skovbakke & Alexander Sommer
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,10 +31,11 @@ object MutationTester {
         val timeSec = end.toFloat / 1_000_000_000.0
         println(s"time to generate mutations: $timeSec")
         runMutations(flix, root, root1)
+
         /**
-        val result = root1.map(r => flix.codeGen(r).unsafeGet)
-        val tests = result.map(res => res.getTests)
-        */
+          * val result = root1.map(r => flix.codeGen(r).unsafeGet)
+          * val tests = result.map(res => res.getTests)
+          */
     }
 
     private def runMutations(flix: Flix, root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[TypedAst.Def])]): Unit = {
@@ -74,11 +75,12 @@ object MutationTester {
         })
         val totalEndTime = System.nanoTime() - totalStartTime
         println(s"there where $survivorCount surviving mutations, out of $mutantCounter mutations")
-        val average = timeTemp/mutantCounter
+        val average = timeTemp / mutantCounter
         println(s"average time to test a mutant:  $average sec")
-        val time = totalEndTime.toFloat/1_000_000_000
+        val time = totalEndTime.toFloat / 1_000_000_000
         println(s"total time to test all mutants: $time sec")
     }
+
     private def mutateRoot(root: TypedAst.Root, testee: String): List[(Symbol.DefnSym, List[TypedAst.Def])] = {
         val defs = root.defs
         val defSyms = root.modules.filter(pair => (pair._1.toString.equals(testee))).values.toList.flatten
@@ -100,26 +102,26 @@ object MutationTester {
 
 
     private def mutationPermutations[A](exps: List[A], mutationFunc: (A => List[A])): List[List[A]] = {
-        def mutate(exps: List[A], index: Int) : List[A] = (exps, index) match {
-            case (x::Nil, 0) => mutationFunc(x)
-            case (x::xs, 0) => mutationFunc(x)
-            case (x::xs, n) => mutate(xs, n-1)
+        def mutate(exps: List[A], index: Int): List[A] = (exps, index) match {
+            case (x :: Nil, 0) => mutationFunc(x)
+            case (x :: xs, 0) => mutationFunc(x)
+            case (x :: xs, n) => mutate(xs, n - 1)
             case (_, _) => Nil
         }
 
         def replace(index: Int, mutation: A, exps: List[A]): List[A] =
             (index, exps) match {
-                case (0, _::Nil) => mutation :: Nil
-                case (0, x::xs) => mutation::xs
-                case (n, x::xs) => x :: replace(n-1, mutation, xs)
-                case (_,_) => Nil
-        }
+                case (0, _ :: Nil) => mutation :: Nil
+                case (0, x :: xs) => mutation :: xs
+                case (n, x :: xs) => x :: replace(n - 1, mutation, xs)
+                case (_, _) => Nil
+            }
 
         var perms: List[List[A]] = Nil
 
         for (i <- exps.indices) {
             val mutations = mutate(exps, i)
-            for(m <- mutations){
+            for (m <- mutations) {
                 perms = replace(i, m, exps) :: perms
             }
 
@@ -127,9 +129,10 @@ object MutationTester {
         perms
 
     }
+
     /**
-        // var doesn't contain a subtree, and we don't mutate them so we don't need to return them
-        case Expr.Var(_, _, _) => Nil
+      * // var doesn't contain a subtree, and we don't mutate them so we don't need to return them
+      * case Expr.Var(_, _, _) => Nil
       */
     private def mutateExpr(e: TypedAst.Expr): List[TypedAst.Expr] = e match {
         case Expr.Cst(cst, tpe, loc) =>
@@ -137,7 +140,7 @@ object MutationTester {
         case original@Expr.Var(_, _, _) => original :: Nil
         case original@Expr.Def(sym, _, _) => original :: Nil
         case original@Expr.Sig(sym, _, _) =>
-            println(sym)
+            // println(sym)
             original :: Nil
         case original@Expr.Hole(sym, _, _) => original :: Nil
         case original@Expr.HoleWithExp(exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
@@ -158,16 +161,16 @@ object MutationTester {
             val mut1 = mutateSop(sop).map(m => original.copy(sop = m))
             val mut2 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut3 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1:::mut2:::mut3
+            mut1 ::: mut2 ::: mut3
 
         case original@Expr.Let(sym, mod, exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1:::mut2
+            mut1 ::: mut2
         case original@Expr.LetRec(sym, ann, mod, exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1:::mut2
+            mut1 ::: mut2
         case original@Expr.Region(tpe, loc) => original :: Nil
         case original@Expr.Scope(sym, regionVar, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.IfThenElse(exp1, exp2, exp3, _, _, loc) =>
@@ -175,12 +178,12 @@ object MutationTester {
             val ifFalse = original.copy(exp1 = Expr.Cst(Constant.Bool(false), False, exp1.loc))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
             val mut3 = mutateExpr(exp3).map(m => original.copy(exp3 = m))
-            ifTrue::ifFalse::mut2:::mut3
+            ifTrue :: ifFalse :: mut2 ::: mut3
         case original@Expr.Stm(exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
             mut1 ::: mut2
-        case original@Expr.Discard(exp, _, _) => mutateExpr(exp).map(m => original.copy (exp = m))
+        case original@Expr.Discard(exp, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.Match(_, rules, _, _, _) =>
             // refactor to permutation
             val permutations = rules.permutations.toList
@@ -193,30 +196,30 @@ object MutationTester {
             res.flatten ::: deletedCasesMutation.reverse.tail
         case original@Expr.TypeMatch(exp, rules, _, _, _) => mutateExpr(exp).map(m => original.copy (exp = m))
         case original@Expr.RestrictableChoose(star, exp, rules, _, _, _) =>
-            mutateExpr(exp).map(m => original.copy (exp = m))
+            mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.Tag(sym, exp, _, _, _) =>
-            mutateExpr(exp).map(m => original.copy (exp = m))
+            mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.RestrictableTag(sym, exp, _, _, _) =>
-            mutateExpr(exp).map(m => original.copy (exp = m))
+            mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.Tuple(elms, _, _, _) =>
             mutationPermutations(elms, mutateExpr).map(mp => original.copy(elms = mp))
         case original@Expr.RecordEmpty(tpe, loc) => original :: Nil
         case original@Expr.RecordSelect(exp, label, _, _, _) =>
-            mutateExpr(exp).map(m => original.copy (exp = m))
+            mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.RecordExtend(label, exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
             mut1 ::: mut2
         case original@Expr.RecordRestrict(label, exp, _, _, _) =>
-            mutateExpr(exp).map(m => original.copy (exp = m))
+            mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.ArrayLit(exps, exp, _, _, _) =>
-            val mut = mutateExpr(exp).map(m => original.copy (exp = m))
+            val mut = mutateExpr(exp).map(m => original.copy(exp = m))
             val mutateExps = exps.map(e => mutateExpr(e))
             mutateExps.map(m => original.copy(exps = m)) ::: mut
         case original@Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
-            val mut1 = mutateExpr(exp1).map (m => original.copy(exp1 = m))
-            val mut2 = mutateExpr(exp2).map (m => original.copy(exp2 = m))
-            val mut3 = mutateExpr(exp3).map (m => original.copy (exp3 = m) )
+            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+            val mut3 = mutateExpr(exp3).map(m => original.copy(exp3 = m))
             mut1 ::: mut2 ::: mut3
         case original@Expr.ArrayLoad(exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
@@ -246,7 +249,7 @@ object MutationTester {
         case original@Expr.Assign(exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1:::mut2
+            mut1 ::: mut2
         case original@Expr.Ascribe(exp, _, _, _) =>
             mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.InstanceOf(exp, clazz, _) => mutateExpr(exp).map(m => original.copy(exp = m))
@@ -307,9 +310,9 @@ object MutationTester {
         case original@Expr.Error(m, _, _) => original :: Nil
     }
 
-//    private def mutateAndPrepend[A](original: A, mutatee: A, func: (A => List[A]), copyFunc: (A => A), list: List[A]): List[A] = {
-//        func(mutatee).foldLeft(list)((acc, m) => copyFunc(m)::acc)
- //   }
+    //    private def mutateAndPrepend[A](original: A, mutatee: A, func: (A => List[A]), copyFunc: (A => A), list: List[A]): List[A] = {
+    //        func(mutatee).foldLeft(list)((acc, m) => copyFunc(m)::acc)
+    //   }
 
     private def mutateMatchrule(mr: TypedAst.MatchRule): List[TypedAst.MatchRule] = {
         val mut1 = mutateExpr(mr.exp).map(m => mr.copy(exp = m))
@@ -323,14 +326,15 @@ object MutationTester {
             case e => e ::Nil
         }
     }
-/**
-    private def mutateSig(sig: Expr.Sig): List[Expr.Sig] = (sig.sym, sig.tpe) match {
-        case ("Add.add", t) => t match {
-            case Apply()
-        }
 
-    }
-*/
+    /**
+      * private def mutateSig(sig: Expr.Sig): List[Expr.Sig] = (sig.sym, sig.tpe) match {
+      * case ("Add.add", t) => t match {
+      * case Apply()
+      * }
+      *
+      * }
+      */
     private def mutateSop(sop: SemanticOp): List[SemanticOp] = {
         def helper(sop: SemanticOp): List[SemanticOp] = sop match {
             case op: SemanticOp.BoolOp => op match {
@@ -340,10 +344,10 @@ object MutationTester {
             case op: SemanticOp.CharOp => op match {
                 case _ => CharOp.Neq :: CharOp.Eq :: CharOp.Neq :: CharOp.Ge :: CharOp.Le :: CharOp.Lt :: CharOp.Gt :: Nil
             }
-            case op: SemanticOp.Float32Op => op match{
+            case op: SemanticOp.Float32Op => op match {
                 case Float32Op.Neg => Float32Op.Neg :: Nil
                 case Float32Op.Add | Float32Op.Sub | Float32Op.Mul |
-                  Float32Op.Sub | Float32Op.Div | Float32Op.Exp =>
+                     Float32Op.Sub | Float32Op.Div | Float32Op.Exp =>
                     Float32Op.Add :: Float32Op.Sub :: Float32Op.Mul :: Float32Op.Sub :: Float32Op.Div :: Float32Op.Exp :: Nil
                 case _ => Float32Op.Eq :: Float32Op.Neq :: Float32Op.Lt :: Float32Op.Le :: Float32Op.Gt :: Float32Op.Ge :: Nil
             }
@@ -356,7 +360,7 @@ object MutationTester {
                 case Int8Op.Neg => Int8Op.Neg :: Nil
                 case Int8Op.Not => Int8Op.Not :: Nil
                 case Int8Op.Add | Int8Op.Div | Int8Op.Sub | Int8Op.Mul | Int8Op.Rem | Int8Op.Exp | Int8Op.Shl | Int8Op.Shr =>
-                    Int8Op.Add :: Int8Op.Div :: Int8Op.Sub :: Int8Op.Mul :: Int8Op.Rem :: Int8Op.Exp :: Int8Op.Shl :: Int8Op.Shr ::Nil
+                    Int8Op.Add :: Int8Op.Div :: Int8Op.Sub :: Int8Op.Mul :: Int8Op.Rem :: Int8Op.Exp :: Int8Op.Shl :: Int8Op.Shr :: Nil
                 case Int8Op.And | Int8Op.Or | Int8Op.Xor => Int8Op.And :: Int8Op.Or :: Int8Op.Xor :: Nil
                 case _ => Int8Op.Eq :: Int8Op.Neq :: Int8Op.Lt :: Int8Op.Le :: Int8Op.Gt :: Int8Op.Ge :: Nil
             }
@@ -379,7 +383,7 @@ object MutationTester {
             case op: SemanticOp.Int64Op => op match {
                 case Int64Op.Neg => Int64Op.Neg :: Nil
                 case Int64Op.Not => Int64Op.Not :: Nil
-                case Int64Op.Add | Int64Op.Sub | Int64Op.Shl | Int64Op.Shr | Int64Op.Mul | Int64Op.Div | Int64Op.Rem | Int64Op.Exp  =>
+                case Int64Op.Add | Int64Op.Sub | Int64Op.Shl | Int64Op.Shr | Int64Op.Mul | Int64Op.Div | Int64Op.Rem | Int64Op.Exp =>
                     Int64Op.Add :: Int64Op.Sub :: Int64Op.Mul :: Int64Op.Shl :: Int64Op.Shr :: Int64Op.Div :: Int64Op.Rem :: Int64Op.Exp :: Nil
                 case Int64Op.And | Int64Op.Or | Int64Op.Xor => Int64Op.And :: Int64Op.Or :: Int64Op.Xor :: Nil
                 case _ => Int64Op.Eq :: Int64Op.Neq :: Int64Op.Lt :: Int64Op.Le :: Int64Op.Gt :: Int64Op.Ge :: Nil
@@ -392,21 +396,54 @@ object MutationTester {
     }
 
     private def mutateCst(cst: Ast.Constant): List[Ast.Constant] = {
-        cst match {
-            case Constant.Unit => Constant.Unit :: Nil
-            case Constant.Null => Constant.Null :: Nil
-            case Constant.Bool(lit) => Constant.Bool(!lit) :: Nil
-            case Constant.Char(lit) => Constant.Char((lit^Char.MaxValue).toChar) :: Nil
-            case Constant.Float32(lit) => Constant.Float32(lit + 1) :: Nil
-            case Constant.Float64(lit) => Constant.Float64(lit + 1) :: Nil
-            case Constant.BigDecimal(lit) => Constant.BigDecimal(lit.add(java.math.BigDecimal.ONE)) :: Nil
-            case Constant.Int8(lit) => Constant.Int8(lit.+(1).toByte) :: Nil
-            case Constant.Int16(lit) => Constant.Int16(lit.+(1).toShort) :: Nil
-            case Constant.Int32(lit) => Constant.Int32(lit + 1) :: Nil
-            case Constant.Int64(lit) => Constant.Int64(lit + 1) :: Nil
-            case Constant.BigInt(lit) => Constant.BigInt(lit.add(lit)) :: Nil
-            case Constant.Str(lit) => Constant.Str(lit + "\b") :: Nil
-            case Constant.Regex(_) => Constant.Regex(java.util.regex.Pattern.compile("a")) :: Nil
+        def helper(cst: Ast.Constant): List[Ast.Constant] = {
+            cst match {
+                case Constant.Unit => Nil
+                case Constant.Null => Nil
+                case Constant.Bool(lit) => Constant.Bool(!lit) :: Nil
+                case Constant.Char(lit) => Constant.Char((lit ^ Char.MaxValue).toChar) :: Nil
+                case original@Constant.Float32(lit) =>
+                   Constant.Float32(lit + 1) :: Constant.Float32(lit - 1) :: Constant.Float32(1) ::
+                        Constant.Float32(-1) :: Constant.Float32(0) :: Constant.Float32(2) :: Constant.Float32(4) :: Constant.Float32(8) ::
+                        Constant.Float32(16) :: Constant.Float32(Float.MaxValue) :: Constant.Float32(Float.MinValue) :: Nil
+
+                case Constant.Float64(lit) =>
+                    Constant.Float64(lit + 1) :: Constant.Float64(lit - 1) ::
+                        Constant.Float64(1) :: Constant.Float64(-1) :: Constant.Float64(0) ::
+                        Constant.Float64(2) :: Constant.Float64(4) :: Constant.Float64(8) :: Constant.Float64(16) ::
+                        Constant.Float64(Double.MaxValue) :: Constant.Float64(Double.MinValue) :: Nil
+                case Constant.BigDecimal(lit) =>
+                    Constant.BigDecimal(lit.add(java.math.BigDecimal.ONE)) :: Constant.BigDecimal(java.math.BigDecimal.ONE) ::
+                        Constant.BigDecimal(lit.subtract(java.math.BigDecimal.ONE)) :: Constant.BigDecimal(java.math.BigDecimal.ZERO) ::
+                        Constant.BigDecimal(java.math.BigDecimal.ZERO.subtract(java.math.BigDecimal.ONE)) :: Nil
+                case Constant.Int8(lit) =>
+                    (Constant.Int8(lit.+(1).toByte) :: Constant.Int8(lit.-(1).toByte)
+                        :: Constant.Int8((-1).toByte) :: Constant.Int8((0.toByte))
+                        :: Constant.Int8((1).toByte) :: Constant.Int8((2).toByte)
+                        :: Constant.Int8((4).toByte) :: Constant.Int8((8).toByte) :: Constant.Int8((16).toByte)
+                        :: Constant.Int8(Byte.MaxValue) :: Constant.Int8(Byte.MinValue) :: Nil)
+                case Constant.Int16(lit) =>
+                    (Constant.Int16(lit.+(1).toShort) :: Constant.Int16(lit.+(1).toShort)
+                        :: Constant.Int16((-1).toShort) :: Constant.Int16((0).toShort)
+                        :: Constant.Int16((1).toShort) :: Constant.Int16((2).toByte)
+                        :: Constant.Int16((4).toShort) :: Constant.Int16((8).toShort) :: Constant.Int16((16).toShort)
+                        :: Constant.Int16(Short.MaxValue) :: Constant.Int16(Short.MinValue) :: Nil)
+                case Constant.Int32(lit) =>
+                    (Constant.Int32(lit + 1) :: Constant.Int32(lit - 1)
+                        :: Constant.Int32(-1) :: Constant.Int32(0) :: Constant.Int32(1)
+                        :: Constant.Int32(2) :: Constant.Int32(4) :: Constant.Int32(8) :: Constant.Int32(16)
+                        :: Constant.Int32(Int.MaxValue) :: Constant.Int32(Int.MinValue) :: Nil)
+                case Constant.Int64(lit) =>
+                    (Constant.Int64(lit + 1) :: Constant.Int64(lit - 1)
+                        :: Constant.Int64(-1) :: Constant.Int64(0)
+                        :: Constant.Int64(2) :: Constant.Int64(4) :: Constant.Int64(8) :: Constant.Int64(16)
+                        :: Constant.Int64(1) :: Constant.Int64(Long.MaxValue)
+                        :: Constant.Int64(Long.MinValue) :: Nil)
+                case Constant.BigInt(lit) => Constant.BigInt(lit.add(lit)) :: Nil
+                case Constant.Str(lit) => Constant.Str(lit + "\b") :: Nil
+                case Constant.Regex(_) => Constant.Regex(java.util.regex.Pattern.compile("a")) :: Nil
+            }
         }
+        helper(cst).filter(c => c != cst)
     }
 }
