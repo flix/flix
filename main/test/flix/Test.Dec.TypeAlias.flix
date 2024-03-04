@@ -167,5 +167,5 @@ mod Test.Dec.TypeAlias {
     type alias P[_: Bool] = String
 
     @test
-    def testTypeAlias28(): P[If[true, true, false]] = "xyz": P[true]
+    def testTypeAlias28(): P[If[true, true, false]] = ("xyz": P[true])
 }
