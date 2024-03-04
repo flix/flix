@@ -287,6 +287,12 @@ object SyntaxTree {
 
       case object ScopeName extends Expr
 
+      case object Select extends Expr
+
+      case object SelectRuleFragment extends Expr
+
+      case object SelectRuleDefaultFragment extends Expr
+
       case object Spawn extends Expr
 
       case object Statement extends Expr

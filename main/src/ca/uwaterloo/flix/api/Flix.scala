@@ -544,14 +544,21 @@ class Flix {
     "Test.Def.ChooseStar.Simple.flix" -> LocalResource.get("/test/flix/Test.Def.ChooseStar.Simple.flix"),
     "Test.Exp.ChooseStar.Polymorphic.flix" -> LocalResource.get("/test/flix/Test.Exp.ChooseStar.Polymorphic.flix"),
     "Test.Exp.ChooseStar.Simple.flix" -> LocalResource.get("/test/flix/Test.Exp.ChooseStar.Simple.flix"),
+    "Test.Unused.Var.flix" -> LocalResource.get("/test/flix/Test.Unused.Var.flix"),
+    "Test.Exp.Concurrency.Select.flix" -> LocalResource.get("/test/flix/Test.Exp.Concurrency.Select.flix"),
 
     // TODO: Ascribe precedece
     //  "Test.Exp.Lambda.Match.flix" -> LocalResource.get("/test/flix/Test.Exp.Lambda.Match.flix"),
     //  "Test.Exp.New.flix" -> LocalResource.get("/test/flix/Test.Exp.New.flix"),
     //  "Test.Exp.Ref.Deref.flix" -> LocalResource.get("/test/flix/Test.Exp.Ref.Deref.flix"),
 
+    // TODO: KEYWORD PROJECT
+    //    "Test.Term.Lit.flix" -> LocalResource.get("/test/flix/Test.Term.Lit.flix"),
+    //    "Test.Exp.Fixpoint.Constraint.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
+    //    "Test.Exp.Fixpoint.Project.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Project.flix"),
+
     // TODO: JVM STUFF
-    //    "Test.Exp.Jvm.GetField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetField.flix"),
+//        "Test.Exp.Jvm.GetField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetField.flix"),
     //    "Test.Exp.Jvm.GetFieldDoubleNestedClass.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetFieldDoubleNestedClass.flix"),
     //    "Test.Exp.Jvm.GetFieldStaticInnerClass.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetFieldStaticInnerClass.flix"),
     //    "Test.Exp.Jvm.GetStaticField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetStaticField.flix"),
@@ -559,23 +566,14 @@ class Flix {
     //    "Test.Exp.Jvm.InvokeConstructor.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.InvokeConstructor.flix"),
     //    "Test.Exp.Jvm.InvokeMethod.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.InvokeMethod.flix"),
     //    "Test.Exp.Jvm.InvokeStaticMethod.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.InvokeStaticMethod.flix"),
-    //    "Test.Exp.Jvm.NewObject.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.NewObject.flix"),
+//        "Test.Exp.Jvm.NewObject.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.NewObject.flix"),
     //    "Test.Exp.Jvm.PutField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.PutField.flix"),
     //    "Test.Exp.Jvm.PutStaticField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.PutStaticField.flix"),
     //    "Test.Exp.Jvm.TryCatch.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.TryCatch.flix"),
 
-    // TODO: Expression Channel select.
-    //    "Test.Unused.Var.flix" -> LocalResource.get("/test/flix/Test.Unused.Var.flix"),
-    //    "Test.Exp.Concurrency.Select.flix" -> LocalResource.get("/test/flix/Test.Exp.Concurrency.Select.flix"),
-
     // TODO: Make named arguments. Each named expressions becomes singleton record.
     // "Test.Exp.Tuple.flix" -> LocalResource.get("/test/flix/Test.Exp.Tuple.flix"),
     // "Test.Exp.Tag.flix" -> LocalResource.get("/test/flix/Test.Exp.Tag.flix"),
-
-    // TODO: KEYWORD PROJECT
-    //    "Test.Term.Lit.flix" -> LocalResource.get("/test/flix/Test.Term.Lit.flix"),
-    //    "Test.Exp.Fixpoint.Constraint.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
-    //    "Test.Exp.Fixpoint.Project.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Project.flix"),
 
     // "Test.Use.Def.flix" -> LocalResource.get("/test/flix/Test.Use.Def.flix"), // TODO: Name clash with Test.Dec.Mod.flix
 

@@ -1108,6 +1108,7 @@ object Parser2 {
         case TokenKind.KeywordRef => reference()
         case TokenKind.KeywordNew => newObject()
         case TokenKind.KeywordTry => exprTry()
+        case TokenKind.KeywordSelect => select()
         case TokenKind.KeywordDebug
              | TokenKind.KeywordDebugBang
              | TokenKind.KeywordDebugBangBang => debug()
@@ -1450,6 +1451,44 @@ object Parser2 {
       } else {
         TreeKind.Expr.ForFragmentLet
       })
+    }
+
+    private def select()(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordSelect))
+      val mark = open()
+      expect(TokenKind.KeywordSelect)
+
+      expect(TokenKind.CurlyL)
+      var continue = true
+      while (continue && at(TokenKind.KeywordCase) && !eof()) {
+        val ruleMark = open()
+        expect(TokenKind.KeywordCase)
+        val isDefault = findBefore(TokenKind.ArrowThickR, List(TokenKind.ArrowThinL))
+        if (isDefault) {
+          // Only the last rule can be a wildcard rule so stop after this one
+          continue = false
+          expect(TokenKind.Underscore)
+          expect(TokenKind.ArrowThickR)
+          statement()
+          close(ruleMark, TreeKind.Expr.SelectRuleDefaultFragment)
+        } else {
+          name(NAME_VARIABLE)
+          expect(TokenKind.ArrowThinL)
+          // NB. Only "Channel.recv" and "recv" are allowed for this name.
+          // We don't want to reserve "Channel" and "recv" as keywords,
+          // so parsing it as a qname seems fine for now.
+          name(NAME_QNAME, allowQualified = true)
+          expect(TokenKind.ParenL)
+          expression()
+          expect(TokenKind.ParenR)
+          expect(TokenKind.ArrowThickR)
+          statement()
+          close(ruleMark, TreeKind.Expr.SelectRuleFragment)
+        }
+      }
+      expect(TokenKind.CurlyR)
+
+      close(mark, TreeKind.Expr.Select)
     }
 
     private def exprTry()(implicit s: State): Mark.Closed = {

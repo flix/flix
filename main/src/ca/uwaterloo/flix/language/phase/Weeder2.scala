@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst, Type => AstType}
-import ca.uwaterloo.flix.language.errors.Parse2Error
+import ca.uwaterloo.flix.language.errors.{Parse2Error, WeederError}
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation.{traverse, _}
 import ca.uwaterloo.flix.util.collection.Chain
@@ -767,6 +767,7 @@ object Weeder2 {
         case TreeKind.Expr.Lambda => visitLambda(tree)
         case TreeKind.Expr.LambdaMatch => visitLambdaMatch(tree)
         case TreeKind.Expr.Ref => visitReference(tree)
+        case TreeKind.Expr.Select => visitSelect(tree)
         case TreeKind.Expr.RestrictableChoose
              | TreeKind.Expr.RestrictableChooseStar => visitRestrictableChoose(tree)
         case TreeKind.Expr.Spawn => visitSpawn(tree)
@@ -1176,6 +1177,28 @@ object Weeder2 {
           mapN(inner)(RestrictableChoosePattern.Tag(qname, _, loc))
 
         case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(isStar, other.loc))
+      }
+    }
+
+    private def visitSelect(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Select)
+      val rules = traverse(pickAll(TreeKind.Expr.SelectRuleFragment, tree.children))(visitSelectRule)
+      val maybeDefault = traverseOpt(tryPick(TreeKind.Expr.SelectRuleDefaultFragment, tree.children))(pickExpression)
+      mapN(rules, maybeDefault)((rules, maybeDefault) => Expr.SelectChannel(rules, maybeDefault, tree.loc))
+    }
+
+    private def visitSelectRule(tree: Tree)(implicit s: State): Validation[SelectChannelRule, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.SelectRuleFragment)
+      val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree.children))(visitExpression)
+      flatMapN(pickNameIdent(tree), exprs) {
+        case (ident, channel :: body :: Nil) =>
+          Validation.success(SelectChannelRule(ident, channel, body))
+        case (ident, channel :: Nil) =>
+          val err = Parse2Error.DevErr(tree.loc, "Missing body in select rule")
+          Validation.SoftFailure(SelectChannelRule(ident, channel, Expr.Error(err)), Chain(err))
+        case _ =>
+          val err = Parse2Error.DevErr(tree.loc, "Malformed select rule")
+          Validation.HardFailure(Chain(err))
       }
     }
 
