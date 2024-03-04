@@ -74,33 +74,27 @@ object Reducer {
     ctx.defTypes.add(exp0.tpe)
     exp0 match {
       case Expr.Cst(cst, tpe, loc) =>
-        ctx.defTypes.add(tpe)
         Expr.Cst(cst, tpe, loc)
 
       case Expr.Var(sym, tpe, loc) =>
-        ctx.defTypes.add(tpe)
         Expr.Var(sym, tpe, loc)
 
       case Expr.ApplyAtomic(op, exps, tpe, purity, loc) =>
-        ctx.defTypes.add(tpe)
         val es = exps.map(visitExpr)
         Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
       case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
         if (ct == CallType.NonTailCall && Purity.isControlImpure(purity)) lctx.pcPoints += 1
-        ctx.defTypes.add(tpe)
         val e = visitExpr(exp)
         val es = exps.map(visitExpr)
         Expr.ApplyClo(e, es, ct, tpe, purity, loc)
 
       case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
         if (ct == CallType.NonTailCall && Purity.isControlImpure(purity)) lctx.pcPoints += 1
-        ctx.defTypes.add(tpe)
         val es = exps.map(visitExpr)
         Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
       case Expr.ApplySelfTail(sym, exps, tpe, purity, loc) =>
-        ctx.defTypes.add(tpe)
         val es = exps.map(visitExpr)
         Expr.ApplySelfTail(sym, es, tpe, purity, loc)
 
@@ -164,7 +158,6 @@ object Reducer {
 
       case Expr.Do(op, exps, tpe, purity, loc) =>
         lctx.pcPoints += 1
-        ctx.defTypes.add(tpe)
         val es = exps.map(visitExpr)
         Expr.Do(op, es, tpe, purity, loc)
 
