@@ -37,8 +37,9 @@ object Safety {
     val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef).flatten
     val sigErrs = ParOps.parMap(root.sigs.values)(visitSig).flatten
     val entryPointErrs = ParOps.parMap(root.reachable)(visitEntryPoint(_)(root)).flatten
+    val unsafeEffectErrs = if (flix.options.safe) ParOps.parMap(root.effects.values)(visitEffect).flatten else Nil
 
-    val errors = classSigErrs ++ defErrs ++ instanceDefErrs ++ sigErrs ++ entryPointErrs ++ visitSendable(root)
+    val errors = classSigErrs ++ defErrs ++ instanceDefErrs ++ sigErrs ++ entryPointErrs ++ visitSendable(root) ++ unsafeEffectErrs
 
     //
     // Check if any errors were found.
@@ -85,6 +86,14 @@ object Safety {
   }
 
   /**
+   * Checks if a safe package contains unsafe effect.
+   */
+  private def visitEffect(eff0: Effect): List[SafetyError] = eff0.sym.name match {
+    case "IO" => NotAllowedEffect("IO") :: Nil
+    case _ => Nil
+  }
+
+  /**
     * Checks that every every reachable function entry point has a valid signature.
     *
     * A signature is valid if there is a single argument of type `Unit` and if it is pure or has the IO effect.
@@ -126,10 +135,6 @@ object Safety {
       case Type.IO => true
       case _ => false
     }
-  }
-
-  private def visitSafety()(implicit flix: Flix): List[SafetyError] = {
-
   }
 
   /**
