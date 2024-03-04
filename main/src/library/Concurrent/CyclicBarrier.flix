@@ -19,7 +19,7 @@ mod Concurrent {
   /// A wrapper around a Java CyclicBarrier
   ///
   @Internal
-  pub enum CyclicBarrier(##java.util.concurrent.CyclicBarrier)
+  pub enum CyclicBarrier[r: Region](Region[r], ##java.util.concurrent.CyclicBarrier)
 }
 
 mod Concurrent.CyclicBarrier {
@@ -32,16 +32,16 @@ mod Concurrent.CyclicBarrier {
   /// Create a new CyclicBarrier which will wait for `parties` threads
   ///
   @Internal
-  pub def newCyclicBarrier(parties: Int32): CyclicBarrier \ IO =
-    import new java.util.concurrent.CyclicBarrier(Int32): ##java.util.concurrent.CyclicBarrier \ IO as newBarrier;
-    CyclicBarrier(newBarrier(parties))
+  pub def newCyclicBarrier(rc: Region[r], parties: Int32): CyclicBarrier[r] \ r =
+    import new java.util.concurrent.CyclicBarrier(Int32): ##java.util.concurrent.CyclicBarrier \ r as newBarrier;
+    CyclicBarrier(rc, newBarrier(parties))
 
   ///
   /// Waits until all parties have invoked `await` on this barrier
   ///
   @Internal
-  pub def awaitBarrier(barrier: CyclicBarrier): Int32 \ IO =
-    import java.util.concurrent.CyclicBarrier.await(): Int32 \ IO;
-    let CyclicBarrier(b) = barrier;
+  pub def awaitBarrier(barrier: CyclicBarrier[r]): Int32 \ r =
+    import java.util.concurrent.CyclicBarrier.await(): Int32 \ r;
+    let CyclicBarrier(_, b) = barrier;
     await(b)
 }
