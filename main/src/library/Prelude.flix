@@ -18,6 +18,10 @@ pub enum Proxy[_] {
 ///
 pub eff IO
 
+pub eff IndexOutOfBounds {
+    pub def oob(): Void
+}
+
 ///
 /// The pure identity function.
 ///

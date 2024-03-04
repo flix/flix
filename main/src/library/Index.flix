@@ -1,9 +1,3 @@
-eff IndexOutOfBounds {
-    pub def oob(): Void
-}
-
-def oob(): a \ IndexOutOfBounds = unchecked_cast(do IndexOutOfBounds.oob() as a)
-
 class Index[a] {
     type Idx: Type
     type Elm: Type
@@ -16,8 +10,8 @@ instance Index[List[a]] {
     type Elm = a
     type Aef = IndexOutOfBounds
     pub def get(t: List[a], i: Int32): a \ IndexOutOfBounds = match (i, t) {
-        case (_, Nil) => oob()
-        case (n, _) if n < 0 => oob()
+        case (_, Nil) => do IndexOutOfBounds.oob()
+        case (n, _) if n < 0 => do IndexOutOfBounds.oob()
         case (0, hd :: _) => hd
         case (n, _ :: tl) => Index.get(tl, n - 1)
     }
@@ -29,7 +23,7 @@ instance Index[MutList[a, r]] {
     type Aef = IndexOutOfBounds + r
     pub def get(t: MutList[a, r], i: Int32): a \ IndexOutOfBounds + r = {
         match MutList.nth(i, t) {
-            case None => oob()
+            case None => do IndexOutOfBounds.oob()
             case Some(x) => x
         }
     }
@@ -40,7 +34,7 @@ instance Index[Vector[a]] {
     type Elm = a
     type Aef = IndexOutOfBounds
     pub def get(t: Vector[a], i: Int32): a \ IndexOutOfBounds = match Vector.nth(i, t) {
-        case None => oob()
+        case None => do IndexOutOfBounds.oob()
         case Some(x) => x
     }
 }
@@ -50,7 +44,7 @@ instance Index[Array[a, r]] {
     type Elm = a
     type Aef = IndexOutOfBounds + r
     pub def get(t: Array[a, r], i: Int32): a \ IndexOutOfBounds + r = match Array.nth(i, t) {
-        case None => oob()
+        case None => do IndexOutOfBounds.oob()
         case Some(x) => x
     }
 }
@@ -60,7 +54,7 @@ instance Index[Map[k, v]] with Order[k] {
     type Elm = v
     type Aef = IndexOutOfBounds
     pub def get(t: Map[k, v], i: k): v \ IndexOutOfBounds = match Map.get(i, t) {
-        case None => oob()
+        case None => do IndexOutOfBounds.oob()
         case Some(x) => x
     }
 }
@@ -70,7 +64,7 @@ instance Index[MutMap[k, v, r]] with Order[k] {
     type Elm = v
     type Aef = IndexOutOfBounds + r
     pub def get(t: MutMap[k, v, r], i: k): v \ IndexOutOfBounds + r = match MutMap.get(i, t) {
-        case None => oob()
+        case None => do IndexOutOfBounds.oob()
         case Some(x) => x
     }
 }
@@ -83,7 +77,7 @@ instance Index[DelayList[a]] {
         match (i, DelayList.head(t), DelayList.tail(t)) {
             case (0, Some(hd), _) => hd
             case (n, _, tl) if n >= 1 => tl[n - 1]
-            case _ => oob()
+            case _ => do IndexOutOfBounds.oob()
         }
     }
 }
@@ -94,7 +88,7 @@ instance Index[DelayMap[k, v]] with Order[k] {
     type Aef = IndexOutOfBounds
     pub def get(t: DelayMap[k, v], i: k): v \ IndexOutOfBounds = {
         match DelayMap.get(i, t) {
-            case None => oob()
+            case None => do IndexOutOfBounds.oob()
             case Some(x) => x
         }
     }
@@ -115,7 +109,7 @@ instance Index[MutDeque[a, r]] {
     type Aef = IndexOutOfBounds + r
     pub def get(t: MutDeque[a, r], i: Int32): a \ IndexOutOfBounds + r = {
         if (i < 0 or i >= MutDeque.size(t)) {
-            oob()
+            do IndexOutOfBounds.oob()
         } else {
             let MutDeque.MutDeque(_, arr, front, _) = t;
             let idx = (deref front + i) `Int32.modulo` Array.length(deref arr);
@@ -130,7 +124,7 @@ instance Index[RedBlackTree[k, v]] with Order[k] {
     type Aef = IndexOutOfBounds
     pub def get(t: RedBlackTree[k, v], i: k): v \ IndexOutOfBounds = {
         match RedBlackTree.get(i, t) {
-            case None => oob()
+            case None => do IndexOutOfBounds.oob()
             case Some(x) => x
         }
     }
