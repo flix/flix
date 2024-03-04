@@ -92,10 +92,10 @@ sealed trait Chain[+A] {
     * Applies `f` this every element in `this`.
     */
   final def foreach(f: A => Unit): Unit = this match {
-    // N.B.: We must use type annotations
+    // N.B.: We must match on the type to avoid
     // infinite recursion when pattern matching
     // since it calls the equals method which
-    // depends on toList.
+    // depends on foreach.
     case _: Chain.Empty.type => ()
     case c: Chain.Link[A] => c.l.foreach(f); c.r.foreach(f)
     case c: Chain.Proxy[A] => c.xs.foreach(f)
