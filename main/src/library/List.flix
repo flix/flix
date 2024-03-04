@@ -451,9 +451,10 @@ mod List {
         loop(l, i, identity)
 
     ///
-    /// Returns `l` with every occurrence of `from` replaced by `to`.
+    /// Returns `l` with every occurrence of `src` replaced by `dst`.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, l: List[a]): List[a] with Eq[a] = map(e -> if (e == from.from) to.to else e, l)
+    pub def replace(src: {src = a}, dst: {dst = a}, l: List[a]): List[a] with Eq[a] =
+        map(e -> if (e == src.src) dst.dst else e, l)
 
     ///
     /// Returns `l2` with the `n` elements starting at index `i` replaced with the elements of `l1`.
