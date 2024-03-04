@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.{MonoType, Purity}
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.util.ParOps
 
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.{ConcurrentHashMap, ConcurrentLinkedQueue}
 import scala.annotation.tailrec
 import scala.collection.immutable.Queue
 import scala.collection.mutable
@@ -37,7 +37,7 @@ import scala.jdk.CollectionConverters._
 object Reducer {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Reducer") {
-    implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue, new ConcurrentLinkedQueue)
+    implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue, ConcurrentHashMap.newKeySet())
 
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
     val defTypes = ctx.defTypes.asScala.toSet
@@ -200,7 +200,7 @@ object Reducer {
     *
     * We use a concurrent (non-blocking) linked queue to ensure thread-safety.
     */
-  private case class SharedContext(anonClasses: ConcurrentLinkedQueue[AnonClass], defTypes: ConcurrentLinkedQueue[MonoType])
+  private case class SharedContext(anonClasses: ConcurrentLinkedQueue[AnonClass], defTypes: ConcurrentHashMap.KeySetView[MonoType, java.lang.Boolean])
 
   /**
     * Returns all types contained in the given `Effect`.
