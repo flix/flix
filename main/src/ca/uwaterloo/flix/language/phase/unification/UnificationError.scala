@@ -15,133 +15,133 @@
  */
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.errors.Unrecoverable
 
 /**
-  * A common super-type for unification errors.
-  */
+ * A common super-type for unification errors.
+ */
 sealed trait UnificationError
 
 object UnificationError {
 
   /**
-    * An unification error due to a mismatch between the types `tpe1` and `tpe2`.
-    *
-    * @param tpe1 the first type.
-    * @param tpe2 the second type.
-    */
+   * An unification error due to a mismatch between the types `tpe1` and `tpe2`.
+   *
+   * @param tpe1 the first type.
+   * @param tpe2 the second type.
+   */
   case class MismatchedTypes(tpe1: Type, tpe2: Type) extends UnificationError
 
   /**
-    * An unification error due to a mismatch between the boolean formulas `tpe1` and `tpe2`.
-    *
-    * @param tpe1 the first boolean formula.
-    * @param tpe2 the second boolean formula.
-    */
+   * An unification error due to a mismatch between the boolean formulas `tpe1` and `tpe2`.
+   *
+   * @param tpe1 the first boolean formula.
+   * @param tpe2 the second boolean formula.
+   */
   case class MismatchedBools(tpe1: Type, tpe2: Type) extends UnificationError
 
   /**
-    * An unification error due to a mismatch between the effect formulas `tpe1` and `tpe2`.
-    *
-    * @param tpe1 the first effect formula.
-    * @param tpe2 the second effect formula.
-    */
+   * An unification error due to a mismatch between the effect formulas `tpe1` and `tpe2`.
+   *
+   * @param tpe1 the first effect formula.
+   * @param tpe2 the second effect formula.
+   */
   case class MismatchedEffects(tpe1: Type, tpe2: Type) extends UnificationError
 
   /**
-    * An unification error due to a mismatch between the case set formulas `tpe1` and `tpe2`.
-    *
-    * @param tpe1 the first case set formula.
-    * @param tpe2 the second case set formula.
-    */
+   * An unification error due to a mismatch between the case set formulas `tpe1` and `tpe2`.
+   *
+   * @param tpe1 the first case set formula.
+   * @param tpe2 the second case set formula.
+   */
   case class MismatchedCaseSets(tpe1: Type, tpe2: Type) extends UnificationError
 
   /**
-    * An unification error due to a mismatch between the arity of `ts1` and `ts2`.
-    *
-    * @param ts1 the first list of types.
-    * @param ts2 the second list of types.
-    */
+   * An unification error due to a mismatch between the arity of `ts1` and `ts2`.
+   *
+   * @param ts1 the first list of types.
+   * @param ts2 the second list of types.
+   */
   case class MismatchedArity(ts1: List[Type], ts2: List[Type]) extends UnificationError
 
   /**
-    * An unification error due to a rigid type variable `tvar` in `tpe`.
-    *
-    * @param tvar the type variable.
-    * @param tpe  the type.
-    */
+   * An unification error due to a rigid type variable `tvar` in `tpe`.
+   *
+   * @param tvar the type variable.
+   * @param tpe  the type.
+   */
   case class RigidVar(tvar: Type.Var, tpe: Type) extends UnificationError
 
   /**
-    * An unification error due to an occurrence of `tvar` in `tpe`.
-    *
-    * @param tvar the type variable.
-    * @param tpe  the type.
-    */
+   * An unification error due to an occurrence of `tvar` in `tpe`.
+   *
+   * @param tvar the type variable.
+   * @param tpe  the type.
+   */
   case class OccursCheck(tvar: Type.Var, tpe: Type) extends UnificationError
 
   /**
-    * An unification error due the label `labelName` of type `labelType` missing from the type `recordType`.
-    *
-    * @param label      the name of the missing label.
-    * @param labelType  the type of the missing label.
-    * @param recordType the record type where the label is missing.
-    */
+   * An unification error due the label `labelName` of type `labelType` missing from the type `recordType`.
+   *
+   * @param label      the name of the missing label.
+   * @param labelType  the type of the missing label.
+   * @param recordType the record type where the label is missing.
+   */
   case class UndefinedLabel(label: Name.Label, labelType: Type, recordType: Type) extends UnificationError
 
   /**
-    * An unification error due the predicate `pred` of type `predType` missing from the type `schemaType`.
-    *
-    * @param pred       the name of the missing predicate.
-    * @param predType   the type of the missing predicate.
-    * @param schemaType the schema type where the predicate is missing.
-    */
+   * An unification error due the predicate `pred` of type `predType` missing from the type `schemaType`.
+   *
+   * @param pred       the name of the missing predicate.
+   * @param predType   the type of the missing predicate.
+   * @param schemaType the schema type where the predicate is missing.
+   */
   case class UndefinedPredicate(pred: Name.Pred, predType: Type, schemaType: Type) extends UnificationError
 
   /**
-    * An unification error due to an unexpected non-record type.
-    *
-    * @param nonRecordType the unexpected non-record type.
-    */
+   * An unification error due to an unexpected non-record type.
+   *
+   * @param nonRecordType the unexpected non-record type.
+   */
   case class NonRecordType(nonRecordType: Type) extends UnificationError
 
   /**
-    * An unification error due to an unexpected non-schema type.
-    *
-    * @param nonSchemaType the unexpected non-schema type.
-    */
+   * An unification error due to an unexpected non-schema type.
+   *
+   * @param nonSchemaType the unexpected non-schema type.
+   */
   case class NonSchemaType(nonSchemaType: Type) extends UnificationError
 
   /**
-    * A unification error resulting from a type constraint with no matching instance.
-    *
-    * @param tconstr the type constraint.
-    */
+   * A unification error resulting from a type constraint with no matching instance.
+   *
+   * @param tconstr the type constraint.
+   */
   case class NoMatchingInstance(tconstr: Ast.TypeConstraint) extends UnificationError with Unrecoverable
 
   /**
-    * A unification error resulting from an equality constraint that is not supported by the context.
-    *
-    * @param t1 the first type
-    * @param t2 the second type
-    */
+   * A unification error resulting from an equality constraint that is not supported by the context.
+   *
+   * @param t1 the first type
+   * @param t2 the second type
+   */
   case class UnsupportedEquality(t1: Type, t2: Type) extends UnificationError
 
   /**
-    * A unification error resulting from an associated type expression that cannot be reduced.
-    *
-    * @param sym the associated type symbol
-    * @param t   the type
-    */
+   * A unification error resulting from an associated type expression that cannot be reduced.
+   *
+   * @param sym the associated type symbol
+   * @param t   the type
+   */
   case class IrreducibleAssocType(sym: Symbol.AssocTypeSym, t: Type) extends UnificationError
 
   /**
-    * A unification error resulting from a unification equation that is too complex to solve.
-    *
-    * @param tpe1 the lhs of the unification equation that is too complex.
-    * @param tpe2 the rhs of the unification equation that is too complex.
-    */
-  case class TooComplex(tpe1: Type, tpe2: Type) extends UnificationError
+   * A unification error resulting from a unification equation system that is too complex to solve.
+   *
+   * @param size the size of the unification equation system.
+   * @param loc  the source location of the entire unification equation system, e.g. the entire function body.
+   */
+  case class TooComplex(size: Int, loc: SourceLocation) extends UnificationError
 
 }

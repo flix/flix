@@ -264,14 +264,14 @@ object FastBoolUnification {
       case (Term.Var(x1), Term.Var(x2)) if x1 == x2 => simplify(es)
 
       // Unsolvable (conflicted) equations: raise an exception.
-      case (Term.True, Term.False) => throw ConflictException(t1, t2)
-      case (Term.False, Term.True) => throw ConflictException(t1, t2)
-      case (Term.Cst(c1), Term.Cst(c2)) if c1 != c2 => throw ConflictException(t1, t2)
+      case (Term.True, Term.False) => throw ConflictException(t1, t2, loc)
+      case (Term.False, Term.True) => throw ConflictException(t1, t2, loc)
+      case (Term.Cst(c1), Term.Cst(c2)) if c1 != c2 => throw ConflictException(t1, t2, loc)
       // Note: two different variables are of course solvable!
-      case (Term.Cst(_), Term.True) => throw ConflictException(t1, t2)
-      case (Term.Cst(_), Term.False) => throw ConflictException(t1, t2)
-      case (Term.True, Term.Cst(_)) => throw ConflictException(t1, t2)
-      case (Term.False, Term.Cst(_)) => throw ConflictException(t1, t2)
+      case (Term.Cst(_), Term.True) => throw ConflictException(t1, t2, loc)
+      case (Term.Cst(_), Term.False) => throw ConflictException(t1, t2, loc)
+      case (Term.True, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
+      case (Term.False, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
 
       // Non-trivial and non-conflicted equation: keep it.
       case _ => Equation(t1, t2, loc) :: simplify(es)
@@ -354,19 +354,19 @@ object FastBoolUnification {
       for (e <- pending) {
         e match {
           // Case 1: x ~ true
-          case Equation(Term.Var(x), Term.True, _) =>
-            subst = subst.extended(x, Term.True)
+          case Equation(Term.Var(x), Term.True, loc) =>
+            subst = subst.extended(x, Term.True, loc)
             changed = true
 
           // Case 2: x ~ c
-          case Equation(Term.Var(x), Term.Cst(c), _) =>
-            subst = subst.extended(x, Term.Cst(c))
+          case Equation(Term.Var(x), Term.Cst(c), loc) =>
+            subst = subst.extended(x, Term.Cst(c), loc)
             changed = true
 
           // Case 3: x /\ y /\ z /\... ~ true
-          case Equation(Term.And(csts, vars, rest), Term.True, _) if csts.isEmpty && rest.isEmpty =>
+          case Equation(Term.And(csts, vars, rest), Term.True, loc) if csts.isEmpty && rest.isEmpty =>
             for (Term.Var(x) <- vars) {
-              subst = subst.extended(x, Term.True)
+              subst = subst.extended(x, Term.True, loc)
               changed = true
             }
 
@@ -972,14 +972,14 @@ object FastBoolUnification {
       *
       * If the variable `x` already occurs in `this` substitution then it must be bound to the same term as `t`.
       */
-    def extended(x: Int, t: Term): BoolSubstitution = m.get(x) match {
+    def extended(x: Int, t: Term, loc: SourceLocation): BoolSubstitution = m.get(x) match {
       case None => BoolSubstitution(m + (x -> t))
       case Some(t1) =>
         // Note: If t == t1 we can just return the same substitution.
         if (t == t1)
           this
         else
-          throw ConflictException(t, t1)
+          throw ConflictException(t, t1, loc)
     }
 
     /**
@@ -1096,7 +1096,7 @@ object FastBoolUnification {
   /**
     * Represents a Boolean unification failure between the two terms: `x` and `y`.
     */
-  case class ConflictException(x: Term, y: Term) extends FastBoolUnificationException // TODO: Add source location.
+  case class ConflictException(x: Term, y: Term, loc: SourceLocation) extends FastBoolUnificationException
 
   /**
     * Represents a solution that is too complex (i.e. too large according to the threshold).
@@ -1106,6 +1106,8 @@ object FastBoolUnification {
   /////////////////////////////////////////////////////////////////////////////
   /// Testing                                                               ///
   /////////////////////////////////////////////////////////////////////////////
+
+  // TODO: Delete everything below this line just before merge.
 
   import Term._
 

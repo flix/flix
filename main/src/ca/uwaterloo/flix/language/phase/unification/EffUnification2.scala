@@ -28,39 +28,41 @@ object EffUnification2 {
 
   /**
     * Returns the most general unifier of the pairwise unification equations in `l`.
+   *
+   * @param l the list of unification equations.
+   * @param renv the rigidity environment.
+   * @param loc the source location of the entire equation system, e.g. the entire function body.
     */
-  def unifyAll(l: List[(Type, Type)], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[Substitution, UnificationError] = {
+  def unifyAll(l: List[(Type, Type, SourceLocation)], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[Substitution, UnificationError] = {
     // Compute a bi-directional from type variables to ints.
     implicit val bimap: Bimap[Type.Var, Int] = mkBidirectionalVarMap(l)
 
     // Translate all unification problems from equations on types to equations on terms.
-    val equations = l.map(p => toEquation(p._1, p._2, SourceLocation.Unknown)(renv, bimap)) // TODO: Argument needs source location. Probably argument should be TypeConstraint?
+    val equations = l.map {
+      case (tpe1, tpe2, loc) => toEquation(tpe1, tpe2, loc)(renv, bimap)
+    }
 
     // Compute the most-general unifier of all the term equations.
     FastBoolUnification.solveAll(equations) match {
       case Result.Ok(subst) => Result.Ok(fromBoolSubst(subst))
 
-      case Result.Err((ex: ConflictException, _, _)) => // TODO: Use loc from ex.
-        val tpe1 = fromTerm(ex.x, loc)
-        val tpe2 = fromTerm(ex.y, loc)
+      case Result.Err((ex: ConflictException, _, _)) =>
+        val tpe1 = fromTerm(ex.x, ex.loc)
+        val tpe2 = fromTerm(ex.y, ex.loc)
         Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
 
-      case Result.Err((ex: TooComplexException, _, _)) => // TODO: Use loc from ex.
-        val tpe1 = ??? // TODO
-        val tpe2 = ??? // TODO
-        Result.Err(UnificationError.TooComplex(tpe1, tpe2))
-
-      case Result.Err((ex, _, _)) => throw ex
+      case Result.Err((ex: TooComplexException, _, _)) =>
+        Result.Err(UnificationError.TooComplex(ex.size, loc))
     }
   }
 
   /**
     * Returns a bi-directional from type variables to ints computed from the given list of unification equations `l`.
     */
-  private def mkBidirectionalVarMap(l: List[(Type, Type)]): Bimap[Type.Var, Int] = {
+  private def mkBidirectionalVarMap(l: List[(Type, Type, SourceLocation)]): Bimap[Type.Var, Int] = {
     // Find all type variables that occur in anywhere in `l`.
     val allVars = mutable.Set.empty[Type.Var]
-    for ((t1, t2) <- l) {
+    for ((t1, t2, _) <- l) {
       allVars ++= t1.typeVars
       allVars ++= t2.typeVars
     }
