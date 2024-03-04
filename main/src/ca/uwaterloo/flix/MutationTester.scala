@@ -140,8 +140,7 @@ object MutationTester {
         case original@Expr.Var(_, _, _) =>  Nil
         case original@Expr.Def(sym, _, _) => Nil
         case original@Expr.Sig(sym, _, _) =>
-            // println(sym)
-             Nil
+               Nil
         case original@Expr.Hole(sym, _, _) => Nil
         case original@Expr.HoleWithExp(exp, _, _, _) => Nil
         case original@Expr.OpenAs(symUse, exp, _, _) => Nil
