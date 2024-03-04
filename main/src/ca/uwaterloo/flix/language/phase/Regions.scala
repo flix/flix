@@ -35,17 +35,11 @@ import scala.collection.immutable.SortedSet
 object Regions {
 
   def run(root: Root)(implicit flix: Flix): Validation[Unit, CompilationMessage] = flix.phase("Regions") {
-    val (recoverable, rest) = ParOps.parMap(root.defs)(kv => visitDef(kv._2)).flatten.partition(_.isInstanceOf[Recoverable])
-    val (unrecoverable, errs) = rest.partition(_.isInstanceOf[Unrecoverable])
+    val recoverable = ParOps.parMap(root.defs)(kv => visitDef(kv._2)).flatten.filter(_.isInstanceOf[Recoverable])
 
     // TODO: Instances
-
-    (recoverable, unrecoverable, errs) match {
-      case (rs, Nil, Nil) =>
-        val rs1 = rs.asInstanceOf[Iterable[Recoverable]]
-        Validation.toSuccessOrSoftFailure((), rs1).asInstanceOf[Validation[Unit, CompilationMessage]]
-      case (rs, us, es) => Validation.HardFailure(Chain.from(rs) ++ Chain.from(us) ++ Chain.from(es))
-    }
+    Validation.toSuccessOrSoftFailure((), recoverable.asInstanceOf[Iterable[Recoverable]])
+      .asInstanceOf[Validation[Unit, CompilationMessage]]
   }
 
   private def visitDef(def0: Def)(implicit flix: Flix): List[TypeError] =
