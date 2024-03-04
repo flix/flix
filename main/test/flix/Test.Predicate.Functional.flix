@@ -8,7 +8,7 @@ mod Test.Predicate.Functional {
             R(a, b) :- A(x), let (a, b) = ff(x).
         };
         let actual = query pr select (x, y) from R(x, y);
-        Assert.eq((Vector#{}: Vector[(Int32, Int32))], actual)
+        Assert.eq((Vector#{}: Vector[(Int32, Int32)]), actual)
 
     @Test
     def testFunctionalF1X2_02(): Bool =
