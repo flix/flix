@@ -52,7 +52,7 @@ object MutationTester {
                 mutantCounter += 1
                 val start = System.nanoTime()
                 val n = defs + (mut._1 -> mDef)
-                //println(s"mutation: $mDef")
+                println(s"mutation: $mDef")
                 val newRoot = root.copy(defs = n)
                 val cRes = flix.codeGen(newRoot).unsafeGet
                 val testResults = cRes.getTests.values.forall(c =>
@@ -151,10 +151,10 @@ object MutationTester {
 
         case original@Expr.Apply(exp, exps, _, _, _) =>
             val mut = mutateExpr(exp).map(m => original.copy(exp = m))
-            val mutateExps = exps.zipWithIndex.flatMap { case (exp, index) => {
+            val mutateExps = exps.zipWithIndex.flatMap {
+                case (exp, index) =>
                     val mutations = mutateExpr(exp)
                     mutations.map(m => original.copy(exps = exps.updated(index, m)))
-                }
             }
             val lengths = mutateExps.map(mr => mr.exps.length)
             lengths.foreach(l => assert(exps.length == l, "fail in apply"))
@@ -169,7 +169,6 @@ object MutationTester {
             val mut2 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut3 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
             mut1 ::: mut2 ::: mut3
-
         case original@Expr.Let(sym, mod, exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
@@ -199,9 +198,9 @@ object MutationTester {
                     rules.filter(e => rules.indexOf(e) != index || rules.indexOf(e) == rules.length - 1))
                 .toList.map(m => original.copy(rules = m))
             val mutateRules = rules.zipWithIndex.flatMap { case (rule, index) => {
-                val mutations = mutateMatchrule(rule)
-                mutations.map(m => original.copy(rules = rules.updated(index, m)))
-            }
+                    val mutations = mutateMatchrule(rule)
+                    mutations.map(m => original.copy(rules = rules.updated(index, m)))
+                }
             }
             val lengths = mutateRules.map(mr => mr.rules.length)
             lengths.foreach(l => assert(rules.length == l, "fail in match"))
@@ -212,7 +211,11 @@ object MutationTester {
             mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.RestrictableTag(sym, exp, _, _, _) => Nil
         case original@Expr.Tuple(elms, _, _, _) =>
-            mutationPermutations(elms, mutateExpr).map(mp => original.copy(elms = mp))
+            elms.zipWithIndex.flatMap {
+                case (exp, index) =>
+                    val mutations = mutateExpr(exp)
+                    mutations.map(m => original.copy(elms = elms.updated(index, m)))
+            }
         case original@Expr.RecordEmpty(tpe, loc) => Nil
         case original@Expr.RecordSelect(exp, label, _, _, _) =>
             mutateExpr(exp).map(m => original.copy(exp = m))
@@ -243,7 +246,11 @@ object MutationTester {
             val mut3 = mutateExpr(exp3).map(m => original.copy(exp3 = m))
             mut1 ::: mut2 ::: mut3
         case original@Expr.VectorLit(exps, _, _, _) =>
-            mutationPermutations(exps, mutateExpr).map(mp => original.copy(exps = mp))
+            exps.zipWithIndex.flatMap {
+                case (exp, index) =>
+                    val mutations = mutateExpr(exp)
+                    mutations.map(m => original.copy(exps = exps.updated(index, m)))
+            }
         case original@Expr.VectorLoad(exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
@@ -319,10 +326,6 @@ object MutationTester {
         case original@Expr.FixpointProject(pred, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.Error(m, _, _) => Nil
     }
-
-    //    private def mutateAndPrepend[A](original: A, mutatee: A, func: (A => List[A]), copyFunc: (A => A), list: List[A]): List[A] = {
-    //        func(mutatee).foldLeft(list)((acc, m) => copyFunc(m)::acc)
-    //   }
 
     private def mutateMatchrule(mr: TypedAst.MatchRule): List[TypedAst.MatchRule] = {
         val mut1 = mutateExpr(mr.exp).map(m => mr.copy(exp = m))
