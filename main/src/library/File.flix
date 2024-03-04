@@ -23,6 +23,7 @@
 enum File(##java.io.RandomAccessFile)
 
 instance Reader[File] {
+    type Aef: Eff = IO
     pub def read(b: Array[Int8, r], r: File): Result[IOError, Int32] \ {IO, r} =
         File.read!(b, r)
 }

@@ -18,6 +18,8 @@
 /// A trait for types which are resources that can be accessed as bytes.
 ///
 trait Reader[t] {
+    type Aef: Eff
+
     ///
     /// Reads `k` bytes from the underlying resource and writes them into `b`.
     ///
@@ -27,5 +29,5 @@ trait Reader[t] {
     ///
     /// Returns `Err(e)` if some underlying I/O error occurs.
     ///
-    pub def read(b: Array[Int8, r], r: t): Result[IOError, Int32] \ {r, IO}
+    pub def read(b: Array[Int8, r], r: t): Result[IOError, Int32] \ Reader.Aef[t] + r
 }
