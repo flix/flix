@@ -352,6 +352,10 @@ object Inliner {
       val e2 = rewriteTailCalls(exp2)
       OccurrenceAst.Expression.Let(sym, exp1, e2, occur, tpe, purity, loc)
 
+    case OccurrenceAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
+      val e2 = rewriteTailCalls(exp2)
+      OccurrenceAst.Expression.LetRec(varSym, index, defSym, exp1, e2, tpe, purity, loc)
+
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e2 = rewriteTailCalls(exp2)
       val e3 = rewriteTailCalls(exp3)

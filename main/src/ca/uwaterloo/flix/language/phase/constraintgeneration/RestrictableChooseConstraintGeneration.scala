@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matthew Lutze
+ * Copyright 2023 Matthew Lutze, Jonathan Lindegaard Starup
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase.inference
+package ca.uwaterloo.flix.language.phase.constraintgeneration
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.RestrictableChoosePattern
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.TypeInference.inferExp
-import ca.uwaterloo.flix.language.phase.unification.InferMonad
-import ca.uwaterloo.flix.language.phase.unification.InferMonad.traverseM
-import ca.uwaterloo.flix.language.phase.unification.Unification.{expectTypeM, liftM, unifyTypeM}
+import ca.uwaterloo.flix.language.phase.ConstraintGeneration.visitExp
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.immutable.SortedSet
 
-object RestrictableChooseInference {
+object RestrictableChooseConstraintGeneration {
 
   /**
     * Returns the domain of the list of rules,
@@ -61,18 +58,20 @@ object RestrictableChooseInference {
   /**
     * Unifies t1 and t2 where t1 is a subset of t2.
     */
-  private def unifySubset(t1: Type, t2: Type, sym: Symbol.RestrictableEnumSym, root: KindedAst.Root, loc: SourceLocation)(implicit flix: Flix): InferMonad[Unit] = {
+  private def unifySubset(t1: Type, t2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = {
     val diff = Type.mkCaseDifference(t1, t2, sym, loc)
     // t1 <: t2 <=> t1 - t2 ≡ ∅
-    for {
-      _ <- unifyTypeM(diff, Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), loc), loc)
-    } yield ()
+    c.unifyTypeM(diff, Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), loc), loc)
   }
 
   /**
     * Performs type inference on the given restrictable choose expression.
     */
-  def infer(exp: KindedAst.Expr.RestrictableChoose, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = {
+  def visitRestrictableChoose(exp: KindedAst.Expr.RestrictableChoose)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+
+    // Make the context's level available
+    // This is a def rather than a val because c is mutable.
+    implicit def level: Level = c.getLevel
 
     exp match {
       case KindedAst.Expr.RestrictableChoose(false, exp0, rules0, tpe0, loc) =>
@@ -88,26 +87,27 @@ object RestrictableChooseInference {
         val domSet = dom(rules0)
         val domM = toType(domSet, enumSym, loc.asSynthetic)
 
-        for {
-          // Γ ⊢ e: τ_in
-          (constrs, tpe, eff) <- inferExp(exp0, root, level)
-          patTpes <- inferRestrictableChoosePatterns(rules0.map(_.pat), root)
-          _ <- unifyTypeM(tpe :: patTpes, loc)
+        // Γ ⊢ e: τ_in
+        val (tpe, eff) = visitExp(exp0)
+        val patTpes = visitRestrictableChoosePatterns(rules0.map(_.pat))
+        c.unifyAllTypesM(tpe :: patTpes, tpe.kind, loc)
 
-          // τ_in = (... + l_i(τ_i) + ...)[φ_in]
-          _ <- unifyTypeM(enumType, tpe, loc)
+        // τ_in = (... + l_i(τ_i) + ...)[φ_in]
+        c.unifyTypeM(enumType, tpe, loc)
 
-          // φ_in <: dom(M)
-          _ <- if (domSet != universe) unifySubset(indexVar, domM, enumSym, root, loc.asSynthetic) else InferMonad.point(())
+        // φ_in <: dom(M)
+        if (domSet != universe) {
+          unifySubset(indexVar, domM, enumSym, loc.asSynthetic)
+        }
 
-          // Γ, x_i: τ_i ⊢ e_i: τ_out
-          (constrss, tpes, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root, level)).map(_.unzip3)
-          resultTconstrs = constrs ::: constrss.flatten
+        // Γ, x_i: τ_i ⊢ e_i: τ_out
+        val (tpes, effs) = rules0.map(rule => visitExp(rule.exp)).unzip
 
-          // τ_out
-          resultTpe <- unifyTypeM(tpe0 :: tpes, loc)
-          resultEff = Type.mkUnion(eff :: effs, loc)
-        } yield (resultTconstrs, resultTpe, resultEff)
+        // τ_out
+        c.unifyAllTypesM(tpe0 :: tpes, tpe0.kind, loc)
+        val resTpe = tpe0
+        val resEff = Type.mkUnion(eff :: effs, loc)
+        (resTpe, resEff)
 
       case KindedAst.Expr.RestrictableChoose(true, exp0, rules0, tpe0, loc) =>
 
@@ -133,44 +133,42 @@ object RestrictableChooseInference {
           l.reduceOption(Type.mkCaseUnion(_, _, enumSym, loc.asSynthetic)).
             getOrElse(throw InternalCompilerException("unexpected empty choose", loc))
 
-        for {
-          // Γ ⊢ e: τ_in
-          (constrs, tpe, eff) <- inferExp(exp0, root, level)
-          patTpes <- inferRestrictableChoosePatterns(rules0.map(_.pat), root)
-          _ <- unifyTypeM(tpe :: patTpes, loc)
+        // Γ ⊢ e: τ_in
+        val (tpe, eff) = visitExp(exp0)
+        val patTpes = visitRestrictableChoosePatterns(rules0.map(_.pat))
+        c.unifyAllTypesM(tpe :: patTpes, tpe.kind, loc)
 
-          // τ_in = (... + l^in_i(τ^in_i) + ...)[φ_in]
-          _ <- unifyTypeM(enumTypeIn, tpe, loc)
+        // τ_in = (... + l^in_i(τ^in_i) + ...)[φ_in]
+        c.unifyTypeM(enumTypeIn, tpe, loc)
 
-          // φ_in <: dom(M)
-          _ <- unifySubset(indexInVar, domM, enumSym, root, loc.asSynthetic)
+        // φ_in <: dom(M)
+        unifySubset(indexInVar, domM, enumSym, loc.asSynthetic)
 
-          // Γ, x_i: τ^in_i ⊢ e_i: τ^out_i
-          (constrss, tpes, effs) <- traverseM(rules0)(rule => inferExp(rule.exp, root, level)).map(_.unzip3)
-          _ <- traverseM(tpes.zip(bodyTypes)) { case (t1, t2) => unifyTypeM(t1, t2, loc) }
+        // Γ, x_i: τ^in_i ⊢ e_i: τ^out_i
+        val (tpes, effs) = rules0.map(rule => visitExp(rule.exp)).unzip
+        tpes.zip(bodyTypes).foreach { case (t1, t2) => c.unifyTypeM(t1, t2, loc) }
 
-          // τ_out = (... + l^out_i(τ^out_i) + ...)[_]
-          _ <- traverseM((targsOut :: bodyTargs).transpose)(unifyTypeM(_, loc))
+        // τ_out = (... + l^out_i(τ^out_i) + ...)[_]
+        ((targsOut :: bodyTargs).transpose).foreach(c.unifyAllTypesM(_, Kind.CaseSet(enumSym), loc))
 
-          indicesAndTags = bodyIndexVars.zip(patternTagTypes)
-          intros = mkUnion(indicesAndTags.map { case (i, tag) => Type.mkCaseDifference(i, tag, enumSym, loc.asSynthetic) })
-          potentiallyStable = mkUnion(indicesAndTags.map { case (i, tag) => Type.mkCaseIntersection(i, tag, enumSym, loc.asSynthetic) })
+        val indicesAndTags = bodyIndexVars.zip(patternTagTypes)
+        val intros = mkUnion(indicesAndTags.map { case (i, tag) => Type.mkCaseDifference(i, tag, enumSym, loc.asSynthetic) })
+        val potentiallyStable = mkUnion(indicesAndTags.map { case (i, tag) => Type.mkCaseIntersection(i, tag, enumSym, loc.asSynthetic) })
 
-          // φ_out :> (φ_in ∩ potentiallyStable) ∪ intros
-          set = Type.mkCaseUnion(
-            Type.mkCaseIntersection(indexInVar, potentiallyStable, enumSym, loc),
-            intros,
-            enumSym,
-            loc
-          )
-          _ <- unifySubset(set, indexOutVar, enumSym, root, loc)
+        // φ_out :> (φ_in ∩ potentiallyStable) ∪ intros
+        val set = Type.mkCaseUnion(
+          Type.mkCaseIntersection(indexInVar, potentiallyStable, enumSym, loc),
+          intros,
+          enumSym,
+          loc
+        )
+        unifySubset(set, indexOutVar, enumSym, loc)
 
-          resultTconstrs = constrs ::: constrss.flatten
-
-          // τ_out
-          resultTpe <- unifyTypeM(enumTypeOut, tpe0, loc)
-          resultEff = Type.mkUnion(eff :: effs, loc)
-        } yield (resultTconstrs, resultTpe, resultEff)
+        // τ_out
+        c.unifyTypeM(enumTypeOut, tpe0, loc)
+        val resTpe = enumTypeOut
+        val resEff = Type.mkUnion(eff :: effs, loc)
+        (resTpe, resEff)
 
     }
   }
@@ -178,34 +176,39 @@ object RestrictableChooseInference {
   /**
     * Performs type inference on the given restrictable tag expression.
     */
-  def inferRestrictableTag(exp: KindedAst.Expr.RestrictableTag, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = exp match {
-    case KindedAst.Expr.RestrictableTag(symUse, exp, isOpen, tvar, loc) =>
+  def visitRestrictableTag(exp: KindedAst.Expr.RestrictableTag)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+    // Make the context's level available
+    // This is a def rather than a val because c is mutable.
+    implicit def level: Level = c.getLevel
 
-      // Lookup the enum declaration.
-      val enumSym = symUse.sym.enumSym
-      val decl = root.restrictableEnums(enumSym)
+    exp match {
+      case KindedAst.Expr.RestrictableTag(symUse, exp, isOpen, tvar, loc) =>
 
-      // Lookup the case declaration.
-      val caze = decl.cases(symUse.sym)
+        // Lookup the enum declaration.
+        val enumSym = symUse.sym.enumSym
+        val decl = root.restrictableEnums(enumSym)
 
-      // create the schema output type
-      val (enumType, indexVar, targs) = instantiatedEnumType(enumSym, decl, loc.asSynthetic)
-      // create our output type
-      val (enumTypeOut, indexVarOut, targsOut) = instantiatedEnumType(enumSym, decl, loc.asSynthetic)
+        // Lookup the case declaration.
+        val caze = decl.cases(symUse.sym)
 
-      // for open tags we want to add the label to the index
-      // indexVarOut == indexVar U {label}
-      // targs == targsOut
+        // create the schema output type
+        val (enumType, indexVar, targs) = instantiatedEnumType(enumSym, decl, loc.asSynthetic)
+        // create our output type
+        val (enumTypeOut, indexVarOut, targsOut) = instantiatedEnumType(enumSym, decl, loc.asSynthetic)
 
-      // for non-open tags we want to constrict the index to the singelton label
-      // indexVar == {label} == indexVarOut
-      // targs == targsOut
+        // for open tags we want to add the label to the index
+        // indexVarOut == indexVar U {label}
+        // targs == targsOut
 
-      // We do this because indexVar is unconstrained for non-recursive types
-      // and we want to control the open variables in the source program for
-      // unification performance
+        // for non-open tags we want to constrict the index to the singelton label
+        // indexVar == {label} == indexVarOut
+        // targs == targsOut
 
-      val indexUnification =
+        // We do this because indexVar is unconstrained for non-recursive types
+        // and we want to control the open variables in the source program for
+        // unification performance
+
+        // TODO ASSOC-TYPES is there a reason we do this later?
         if (isOpen) {
           // φ_in ∪ {l_i}
           val index =
@@ -215,31 +218,31 @@ object RestrictableChooseInference {
               enumSym,
               loc.asSynthetic
             )
-          unifyTypeM(index, indexVarOut, loc)
-        }
-        else {
+          c.unifyTypeM(index, indexVarOut, loc)
+        } else {
           // {l_i}
           val index = Type.Cst(TypeConstructor.CaseSet(SortedSet(symUse.sym), enumSym), loc.asSynthetic)
-          unifyTypeM(index, indexVar, loc).flatMap(_ => unifyTypeM(indexVar, indexVarOut, loc))
+          c.unifyTypeM(index, indexVar, loc)
+          c.unifyTypeM(indexVar, indexVarOut, loc)
         }
 
 
-      // Instantiate the type scheme of the case.
-      val (_, _, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+        // Instantiate the type scheme of the case.
+        val (_, _, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
-      //
-      // The tag type is a function from the type of variant to the type of the enum.
-      //
-      for {
+        //
+        // The tag type is a function from the type of variant to the type of the enum.
+        //
         // Γ ⊢ e: τ
-        (constrs, tpe, eff) <- inferExp(exp, root, level)
-        _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, enumType, loc), loc)
-        _ <- traverseM(targs.zip(targsOut)) { case (targ, targOut) => unifyTypeM(targ, targOut, loc) }
-        _ <- indexUnification
-        _ <- unifyTypeM(enumTypeOut, tvar, loc)
-        resultTyp = tvar
-        resultEff = eff
-      } yield (constrs, resultTyp, resultEff)
+        val (tpe, eff) = visitExp(exp)
+        c.unifyTypeM(tagType, Type.mkPureArrow(tpe, enumType, loc), loc)
+        targs.zip(targsOut).foreach { case (targ, targOut) => c.unifyTypeM(targ, targOut, loc) }
+        //        _ <- indexUnification // TODO ASSOC-TYPES here is where we did the index unification before
+        c.unifyTypeM(enumTypeOut, tvar, loc)
+        val resTpe = tvar
+        val resEff = eff
+        (resTpe, resEff)
+    }
   }
 
   /**
@@ -252,36 +255,43 @@ object RestrictableChooseInference {
     * -------------------------------------
     * Γ ⊢ open_as X e : X[s + φ][α1 ... αn]
     */
-  def inferOpenAs(exp0: KindedAst.Expr.OpenAs, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[(List[Ast.TypeConstraint], Type, Type)] = exp0 match {
-    case KindedAst.Expr.OpenAs(Ast.RestrictableEnumSymUse(sym, _), exp, tvar, loc) =>
-      val `enum` = root.restrictableEnums(sym)
+  def visitOpenAs(exp0: KindedAst.Expr.OpenAs)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
 
-      val (enumType, indexVar, targs) = instantiatedEnumType(sym, `enum`, loc.asSynthetic)
-      val kargs = `enum`.index.sym.kind :: `enum`.tparams.map(_.sym.kind)
-      val kind = Kind.mkArrow(kargs)
+    // Make the context's level available
+    // This is a def rather than a val because c is mutable.
+    implicit def level: Level = c.getLevel
 
-      for {
+    exp0 match {
+      case KindedAst.Expr.OpenAs(Ast.RestrictableEnumSymUse(sym, _), exp, tvar, loc) =>
+        val `enum` = root.restrictableEnums(sym)
+
+        val (enumType, indexVar, targs) = instantiatedEnumType(sym, `enum`, loc.asSynthetic)
+        val kargs = `enum`.index.sym.kind :: `enum`.tparams.map(_.sym.kind)
+        val kind = Kind.mkArrow(kargs)
+
         // infer the inner expression type τ
-        (constrs, tpe, eff) <- inferExp(exp, root, level)
+        val (tpe, eff) = visitExp(exp)
 
         // make sure the expression has type EnumType[s][α1 ... αn]
-        _ <- expectTypeM(expected = enumType, actual = tpe, loc)
+        c.expectTypeM(expected = enumType, actual = tpe, loc)
 
         // the new index is s ∪ φ for some free φ
-        openIndex = Type.mkCaseUnion(indexVar, Type.freshVar(Kind.CaseSet(`enum`.sym), loc.asSynthetic), sym, loc)
+        val openIndex = Type.mkCaseUnion(indexVar, Type.freshVar(Kind.CaseSet(`enum`.sym), loc.asSynthetic), sym, loc)
 
         // the result type is EnumType[s ∪ φ][α1 ... αn]
-        resultType = Type.mkApply(
+        val resultType = Type.mkApply(
           Type.Cst(TypeConstructor.RestrictableEnum(sym, kind), loc.asSynthetic),
           openIndex :: targs,
           loc
         )
 
         // unify the tvar
-        _ <- unifyTypeM(tvar, resultType, loc)
+        c.unifyTypeM(tvar, resultType, loc)
 
-      } yield (constrs, resultType, eff)
-
+        val resTpe = resultType
+        val resEff = eff
+        (resTpe, resEff)
+    }
   }
 
   /**
@@ -315,12 +325,16 @@ object RestrictableChooseInference {
   /**
     * Infers the type of the given restrictable choice pattern `pat0`.
     */
-  private def inferRestrictableChoosePattern(pat0: KindedAst.RestrictableChoosePattern, root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[Type] = {
+  private def visitRestrictableChoosePattern(pat0: KindedAst.RestrictableChoosePattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
+
+    // Make the context's level available
+    // This is a def rather than a val because c is mutable.
+    implicit def level: Level = c.getLevel
 
     /**
       * Local pattern visitor.
       */
-    def visit(p: KindedAst.RestrictableChoosePattern): InferMonad[Type] = p match {
+    def visit(p: KindedAst.RestrictableChoosePattern): Type = p match {
       case KindedAst.RestrictableChoosePattern.Tag(symUse, pat, tvar, loc) =>
         // Lookup the enum declaration.
         val decl = root.restrictableEnums(symUse.sym.enumSym)
@@ -334,12 +348,11 @@ object RestrictableChooseInference {
         //
         // The tag type is a function from the type of variant to the type of the enum.
         //
-        for {
-          tpes <- traverseM(pat)(inferVarOrWild(_, root))
-          tpe = Type.mkTuplish(tpes, loc)
-          _ <- unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
-          resultTyp = tvar
-        } yield resultTyp
+        val tpes = pat.map(visitVarOrWild)
+        val tpe = Type.mkTuplish(tpes, loc)
+        c.unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
+        val resTpe = tvar
+        resTpe
     }
 
     visit(pat0)
@@ -348,16 +361,17 @@ object RestrictableChooseInference {
   /**
     * Infers the type of the given restrictable choice pattern `pat0`.
     */
-  private def inferVarOrWild(pat: KindedAst.RestrictableChoosePattern.VarOrWild, root: KindedAst.Root)(implicit flix: Flix): InferMonad[Type] = pat match {
-    case KindedAst.RestrictableChoosePattern.Wild(tvar, _) => liftM(tvar)
-    case KindedAst.RestrictableChoosePattern.Var(sym, tvar, loc) => unifyTypeM(sym.tvar, tvar, loc)
+  private def visitVarOrWild(pat: KindedAst.RestrictableChoosePattern.VarOrWild)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = pat match {
+    case KindedAst.RestrictableChoosePattern.Wild(tvar, _) => tvar
+    case KindedAst.RestrictableChoosePattern.Var(sym, tvar, loc) =>
+      c.unifyTypeM(sym.tvar, tvar, loc)
+      tvar
   }
 
   /**
     * Infers the type of the given patterns `pats0`.
     */
-  private def inferRestrictableChoosePatterns(pats0: List[KindedAst.RestrictableChoosePattern], root: KindedAst.Root)(implicit level: Level, flix: Flix): InferMonad[List[Type]] = {
-    traverseM(pats0)(inferRestrictableChoosePattern(_, root))
+  private def visitRestrictableChoosePatterns(pats0: List[KindedAst.RestrictableChoosePattern])(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): List[Type] = {
+    pats0.map(visitRestrictableChoosePattern)
   }
-
 }
