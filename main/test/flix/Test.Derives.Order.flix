@@ -74,7 +74,7 @@ mod Test.Derives.Order {
     def testEq10(): Bool = compare((PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int32]]), (PolyEnum.EmptyCase: PolyEnum[PolyEnum[Int32]])) == EqualTo
 
     @test
-    def testEq11(): Bool = compare(PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]], PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]]) == EqualTo
+    def testEq11(): Bool = compare((PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]]), (PolyEnum.SingletonCase(PolyEnum.EmptyCase): PolyEnum[PolyEnum[Int32]])) == EqualTo
 
     @test
     def testEq12(): Bool = compare(PolyEnum.SingletonCase(PolyEnum.SingletonCase(123)), PolyEnum.SingletonCase(PolyEnum.SingletonCase(123))) == EqualTo
@@ -89,10 +89,10 @@ mod Test.Derives.Order {
     def testEq15(): Bool = compare((PolyMultiEnum.EmptyCase: PolyMultiEnum[Int32, Bool]), (PolyMultiEnum.EmptyCase: PolyMultiEnum[Int32, Bool])) == EqualTo
 
     @test
-    def testEq16(): Bool = compare(PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Bool], PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Bool]) == EqualTo
+    def testEq16(): Bool = compare((PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Bool]), (PolyMultiEnum.LeftCase(123): PolyMultiEnum[Int32, Bool])) == EqualTo
 
     @test
-    def testEq17(): Bool = compare(PolyMultiEnum.RightCase(true): PolyMultiEnum[Int32, Bool], PolyMultiEnum.RightCase(true): PolyMultiEnum[Int32, Bool]) == EqualTo
+    def testEq17(): Bool = compare((PolyMultiEnum.RightCase(true): PolyMultiEnum[Int32, Bool]), (PolyMultiEnum.RightCase(true): PolyMultiEnum[Int32, Bool])) == EqualTo
 
     @test
     def testEq18(): Bool = compare(PolyMultiEnum.BothCase(123, true), PolyMultiEnum.BothCase(123, true)) == EqualTo
@@ -101,7 +101,7 @@ mod Test.Derives.Order {
     def testEq19(): Bool = compare((PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure]), (PolyBoolEnum.EmptyCase: PolyBoolEnum[Pure])) == EqualTo
 
     @test
-    def testEq20(): Bool = compare(PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure], PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure]) == EqualTo
+    def testEq20(): Bool = compare((PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure]), (PolyBoolEnum.RecursiveCase(PolyBoolEnum.EmptyCase): PolyBoolEnum[Pure])) == EqualTo
 
     @test
     def testEq21(): Bool = compare(MutRecursiveEnum1.EmptyCase, MutRecursiveEnum1.EmptyCase) == EqualTo
