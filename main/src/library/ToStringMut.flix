@@ -6,6 +6,19 @@ instance ToString[Array[a, r]] with ToString[a] {
     }
 }
 
+instance ToString[MutDisjointSets[r, a]] with ToString[a] {
+    type Aef = r + ToString.Aef[a]
+
+    pub def toString(a: MutDisjointSets[r, a]): String \ r + ToString.Aef[a] = {
+        "MutDisjointSets#{" +
+            Foldable.foldLeft(
+                (left, right) -> ToString.toString(left) + ", " + ToString.toString(right),
+                "",
+                a
+            ) + "}"
+    }
+}
+
 instance ToString[MutDeque[a, r]] with ToString[a] {
     type Aef = r + ToString.Aef[a]
 
