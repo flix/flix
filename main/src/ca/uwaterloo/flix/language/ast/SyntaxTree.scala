@@ -128,6 +128,10 @@ object SyntaxTree {
 
       case object Enum extends Decl
 
+      case object EqualityConstraintList extends Decl
+
+      case object EqualityConstraintFragment extends Decl
+
       case object Instance extends Decl
 
       case object Law extends Decl

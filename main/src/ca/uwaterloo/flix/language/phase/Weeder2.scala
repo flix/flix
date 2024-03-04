@@ -450,7 +450,7 @@ object Weeder2 {
         Exprs.pickExpression(tree),
         Types.pickType(tree),
         Types.pickConstraints(tree),
-        pickConstraints(tree),
+        pickEqualityConstraints(tree),
         Types.tryPickEffect(tree)
       ) {
         case (doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
@@ -541,10 +541,11 @@ object Weeder2 {
         Types.pickType(tree),
         Types.tryPickEffect(tree),
         Types.pickConstraints(tree),
+        pickEqualityConstraints(tree),
         traverseOpt(maybeExpression)(Exprs.visitExpression)
       ) {
-        case (doc, annotations, modifiers, ident, tparams, fparams, tpe, eff, tconstrs, expr) =>
-          Declaration.Sig(doc, annotations, modifiers, ident, tparams, fparams, expr, tpe, eff, tconstrs, tree.loc)
+        case (doc, annotations, modifiers, ident, tparams, fparams, tpe, eff, tconstrs, econstrs, expr) =>
+          Declaration.Sig(doc, annotations, modifiers, ident, tparams, fparams, expr, tpe, eff, tconstrs, econstrs, tree.loc)
       }
     }
 
@@ -600,9 +601,24 @@ object Weeder2 {
       }
     }
 
-    private def pickConstraints(tree: Tree): Validation[List[EqualityConstraint], CompilationMessage] = {
-      // TODO
-      Validation.success(List.empty)
+    private def pickEqualityConstraints(tree: Tree)(implicit s: State): Validation[List[EqualityConstraint], CompilationMessage] = {
+      val maybeContraintList = tryPick(TreeKind.Decl.EqualityConstraintList, tree.children)
+      val constraints = traverseOpt(maybeContraintList)(t => {
+        val constraintTrees = pickAll(TreeKind.Decl.EqualityConstraintFragment, t.children)
+        traverse(constraintTrees)(visitEqualityConstraint)
+      })
+
+      mapN(constraints)(_.getOrElse(List.empty))
+    }
+
+    private def visitEqualityConstraint(tree: Tree)(implicit s: State): Validation[EqualityConstraint, CompilationMessage] = {
+      flatMapN(traverse(pickAll(TreeKind.Type.Type, tree.children))(Types.visitType)) {
+        case t1 :: t2 :: Nil => t1 match {
+          case Type.Apply(Type.Ambiguous(qname, _), t11, _) => Validation.success(EqualityConstraint(qname, t11, t2, tree.loc))
+          case _ => Validation.toHardFailure(IllegalEqualityConstraint(tree.loc))
+        }
+        case _ => Validation.toHardFailure(IllegalEqualityConstraint(tree.loc))
+      }
     }
 
     val ALL_MODIFIERS: Set[TokenKind] = Set(

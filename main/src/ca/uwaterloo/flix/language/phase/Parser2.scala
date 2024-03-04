@@ -654,6 +654,9 @@ object Parser2 {
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
+      if (at(TokenKind.KeywordWhere)){
+        equalityConstraints(TokenKind.Equal)
+      }
       expect(TokenKind.Equal)
       Expr.statement()
       close(mark, TreeKind.Decl.Def)
@@ -861,6 +864,9 @@ object Parser2 {
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
+      if (at(TokenKind.KeywordWhere)){
+        equalityConstraints(TokenKind.Equal)
+      }
       if (at(TokenKind.Equal)) {
         expect(TokenKind.Equal)
         Expr.statement()
@@ -916,6 +922,21 @@ object Parser2 {
         Type.ttype()
       }
       close(mark, TreeKind.Parameter)
+    }
+
+    def equalityConstraints(terminator: TokenKind)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordWhere))
+      val mark = open()
+      expect(TokenKind.KeywordWhere)
+      while (!at(terminator) && !eof()) {
+        val markConstraint = open()
+        Type.ttype()
+        expect(TokenKind.Tilde)
+        Type.ttype()
+        eat(TokenKind.Comma)
+        close(markConstraint, TreeKind.Decl.EqualityConstraintFragment)
+      }
+      close(mark, TreeKind.Decl.EqualityConstraintList)
     }
   }
 
