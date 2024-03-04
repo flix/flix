@@ -92,7 +92,7 @@ sealed trait Chain[+A] {
     * Applies `f` this every element in `this`.
     */
   final def foreach(f: A => Unit): Unit = this match {
-    // N.B.: We have to use reflection to avoid
+    // N.B.: We must use type annotations
     // infinite recursion when pattern matching
     // since it calls the equals method which
     // depends on toList.
