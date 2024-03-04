@@ -978,13 +978,6 @@ object Parser2 {
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
 
-      // Handle type ascriptions
-      if (!leftIsUnary && eat(TokenKind.Colon)) {
-        Type.ttype()
-        lhs = close(openBefore(lhs), TreeKind.Expr.Ascribe)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      }
-
       // Handle binary operators
       var continue = true
       while (continue) {
@@ -1956,23 +1949,38 @@ object Parser2 {
           if (isLambda) {
             lambda()
           } else {
-            // Distinguish between expression in parenthesis and tuples
-            var kind: TreeKind = TreeKind.Expr.Paren
-            val mark = open()
-            expect(TokenKind.ParenL)
-            expression()
-            if (at(TokenKind.Comma)) {
-              kind = TreeKind.Expr.Tuple
-              while (!at(TokenKind.ParenR) && !eof()) {
-                expect(TokenKind.Comma)
-                expression()
-              }
-            }
-            expect(TokenKind.ParenR)
-            close(mark, kind)
+            parenOrTupleOrAscribe()
           }
 
         case (t1, _) => advanceWithError(Parser2Error.DevErr(currentSourceLocation(), s"Expected ParenL, found '$t1'"))
+      }
+    }
+
+    private def parenOrTupleOrAscribe()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      expect(TokenKind.ParenL)
+      expression()
+      // Distinguish between expression in parenthesis, type ascriptions and tuples
+      nth(0) match {
+        // Type ascription
+        case TokenKind.Colon =>
+          expect(TokenKind.Colon)
+          Type.ttype()
+          expect(TokenKind.ParenR)
+          var lhs = close(mark, TreeKind.Expr.Ascribe)
+          lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+          close(openBefore(lhs), TreeKind.Expr.Paren)
+        // Tuple
+        case TokenKind.Comma =>
+          while (!at(TokenKind.ParenR) && !eof()) {
+            expect(TokenKind.Comma)
+            expression()
+          }
+          expect(TokenKind.ParenR)
+          close(mark, TreeKind.Expr.Tuple)
+        case _ =>
+          expect(TokenKind.ParenR)
+          close(mark, TreeKind.Expr.Paren)
       }
     }
 
@@ -2094,15 +2102,7 @@ object Parser2 {
       expectAny(List(TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde, TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDiscard, TokenKind.KeywordDeref))
       close(markOp, TreeKind.Operator)
       expression(left = op, leftIsUnary = true)
-      var lhs = close(mark, TreeKind.Expr.Unary)
-      // handle ascription after a unary
-      if (eat(TokenKind.Colon)) {
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-        Type.ttype()
-        close(openBefore(lhs), TreeKind.Expr.Ascribe)
-      } else {
-        lhs
-      }
+      close(mark, TreeKind.Expr.Unary)
     }
 
     private def letImport()(implicit s: State): Mark.Closed = {

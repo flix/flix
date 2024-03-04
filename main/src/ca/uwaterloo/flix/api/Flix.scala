@@ -546,16 +546,16 @@ class Flix {
     "Test.Exp.ChooseStar.Simple.flix" -> LocalResource.get("/test/flix/Test.Exp.ChooseStar.Simple.flix"),
     "Test.Unused.Var.flix" -> LocalResource.get("/test/flix/Test.Unused.Var.flix"),
     "Test.Exp.Concurrency.Select.flix" -> LocalResource.get("/test/flix/Test.Exp.Concurrency.Select.flix"),
+    "Test.Term.Lit.flix" -> LocalResource.get("/test/flix/Test.Term.Lit.flix"),
+    "Test.Exp.Fixpoint.Constraint.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
+    "Test.Exp.Fixpoint.Project.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Project.flix"),
+    "Test.Exp.Binary.Comparison.flix" -> LocalResource.get("/test/flix/Test.Exp.Binary.Comparison.flix"),
 
     // TODO: Ascribe precedece
-    //  "Test.Exp.Lambda.Match.flix" -> LocalResource.get("/test/flix/Test.Exp.Lambda.Match.flix"),
-    //  "Test.Exp.New.flix" -> LocalResource.get("/test/flix/Test.Exp.New.flix"),
-    //  "Test.Exp.Ref.Deref.flix" -> LocalResource.get("/test/flix/Test.Exp.Ref.Deref.flix"),
-
-    // TODO: KEYWORD PROJECT
-        "Test.Term.Lit.flix" -> LocalResource.get("/test/flix/Test.Term.Lit.flix"),
-        "Test.Exp.Fixpoint.Constraint.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
-        "Test.Exp.Fixpoint.Project.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Project.flix"),
+    // "Test.Exp.Lambda.Match.flix" -> LocalResource.get("/test/flix/Test.Exp.Lambda.Match.flix"),
+    // "Test.Exp.New.flix" -> LocalResource.get("/test/flix/Test.Exp.New.flix"),
+    // "Test.Exp.Ref.Deref.flix" -> LocalResource.get("/test/flix/Test.Exp.Ref.Deref.flix"),
+    // "Test.Exp.Ascribe.flix" -> LocalResource.get("/test/flix/Test.Exp.Ascribe.flix"),
 
     // TODO: JVM STUFF
 //        "Test.Exp.Jvm.GetField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetField.flix"),
@@ -571,15 +571,13 @@ class Flix {
     //    "Test.Exp.Jvm.PutStaticField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.PutStaticField.flix"),
     //    "Test.Exp.Jvm.TryCatch.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.TryCatch.flix"),
 
-    // TODO: Make named arguments. Each named expressions becomes singleton record.
+    // TODO: Make named arguments. Each named expression becomes singleton record.
     // "Test.Exp.Tuple.flix" -> LocalResource.get("/test/flix/Test.Exp.Tuple.flix"),
     // "Test.Exp.Tag.flix" -> LocalResource.get("/test/flix/Test.Exp.Tag.flix"),
 
     // "Test.Use.Def.flix" -> LocalResource.get("/test/flix/Test.Use.Def.flix"), // TODO: Name clash with Test.Dec.Mod.flix
 
     ///// TODO
-    "Test.Exp.Binary.Comparison.flix" -> LocalResource.get("/test/flix/Test.Exp.Binary.Comparison.flix"), // Changed '=-' to '= -' since the former is a userop // Made issue.
-    // "Test.Exp.Ascribe.flix" -> LocalResource.get("/test/flix/Test.Exp.Ascribe.flix"), // TODO: 'not' should bind harder than ascribe? we made an issue!
     "Test.Predicate.Guard.flix" -> LocalResource.get("/test/flix/Test.Predicate.Guard.flix"), // TODO: due to 'true.' and 'false.'. Changed to 'true .' is that fine? no!
     // "Test.Def.Op.flix" -> LocalResource.get("/test/flix/Test.Def.Op.flix"), // TODO: Changed invalid userop '&&' to '|&|'. Magnus handles this!
     // "Test.Use.Sig.flix" -> LocalResource.get("/test/flix/Test.Use.Sig.flix"), // TODO: Name error not related to parser? weededAsts match. Hmm debuggin time
