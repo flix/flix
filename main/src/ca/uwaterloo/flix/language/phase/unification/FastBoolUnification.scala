@@ -339,44 +339,45 @@ object FastBoolUnification {
     * Note: We ignore `False` -- for now -- because the input rarely contains it.
     */
   private def propagateUnit(l: List[Equation], s: BoolSubstitution): (List[Equation], BoolSubstitution) = {
-    var currentEqns = l
-    var currentSubst = s
+    var pending = l
+    var subst = s
 
     var changed = true
     while (changed) {
+      // We compute a fixpoint until no more propagation happens
       changed = false
 
-      val remainder = ListBuffer.empty[Equation]
-      for (e <- currentEqns) {
+      var rest: List[Equation] = Nil
+
+      for (e <- pending) {
         e match {
-          // Case 1: x =?= true
+          // Case 1: x ~ true
           case Equation(Term.Var(x), Term.True, _) =>
-            currentSubst = currentSubst.extended(x, Term.True)
+            subst = subst.extended(x, Term.True)
             changed = true
 
-          // Case 2: x =?= c
+          // Case 2: x ~ c
           case Equation(Term.Var(x), Term.Cst(c), _) =>
-            currentSubst = currentSubst.extended(x, Term.Cst(c))
+            subst = subst.extended(x, Term.Cst(c))
             changed = true
 
-          // Case 3: x /\ y /\ z /\... = true
+          // Case 3: x /\ y /\ z /\... ~ true
           case Equation(Term.And(csts, vars, rest), Term.True, _) if csts.isEmpty && rest.isEmpty =>
             for (Term.Var(x) <- vars) {
-              currentSubst = currentSubst.extended(x, Term.True)
+              subst = subst.extended(x, Term.True)
               changed = true
             }
 
           case _ =>
-            remainder += e
+            rest = e :: rest
         }
       }
       // Invariant: We apply the current substitution to all remaining equations.
-      currentEqns = currentSubst(remainder.toList)
+      pending = subst(rest)
     }
 
-    // Fixpoint complete. We return the remaining equations and the current substitution.
-    // We do not have to apply the current substitution because that was already done in the last iteration.
-    (currentEqns, currentSubst)
+    // Reverse the unsolved equations to ensure they are returned in the original order.
+    (pending.reverse, subst)
   }
 
   /**
