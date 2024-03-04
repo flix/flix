@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.util.{Formatter, InternalCompilerException, Result}
 
 import scala.collection.immutable.SortedSet
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 ///
 /// Fast Type Inference with Systems of Boolean Unification Equations
@@ -122,7 +121,7 @@ object FastBoolUnification {
         phase2VarPropagation()
         phase3VarAssignment()
         phase4SVE()
-        // verifySolution() //  TODO
+        // verifySolution() // Not enabled by default due to cost. Enable for debugging.
         verifySolutionSize()
 
         Result.Ok(currentSubst)
@@ -183,20 +182,31 @@ object FastBoolUnification {
       debugln("-".repeat(80))
       val restSubst = boolUnifyAll(currentEqns, Set.empty)
       currentEqns = Nil
-      currentSubst = restSubst @@ currentSubst // TODO: Verify
+      currentSubst = restSubst @@ currentSubst
       printSubstitution()
       debugln()
     }
 
     /**
-      * If debugging is enabled, checks that the current substitution is a valid solution to the original equations `l`.
-      *
-      * Throws an exception from inside [[verify]] if the solution is invalid.
+     * Updates the internal state with the given list of pending equations and partial substitution.
+     *
+     */
+      // TODO: Comment
+    private def updateState(p: (List[Equation], BoolSubstitution)): Unit = {
+      val (nextEqns, nextSubst) = p
+      currentEqns = simplify(nextEqns)
+      currentSubst = nextSubst
+    }
+
+    /**
+     * Verifies that the current substitution is a valid solution to the original equations `l`.
+     *
+     * Note: Does not make sense to call before the equation system has been fully solved.
+     *
+     * @throws ConflictException if an equation is not solved by the current substitution.
       */
     private def verifySolution(): Unit = {
-      if (Debugging) {
-        verify(currentSubst, l)
-      }
+      verify(currentSubst, l)
     }
 
     /**
@@ -207,12 +217,6 @@ object FastBoolUnification {
       if (size > Threshold) {
         throw TooComplexException(size)
       }
-    }
-
-    private def updateState(p: (List[Equation], BoolSubstitution)): Unit = {
-      val (nextEqns, nextSubst) = p
-      currentEqns = simplify(nextEqns)
-      currentSubst = nextSubst
     }
 
     private def printEquations(): Unit = {
