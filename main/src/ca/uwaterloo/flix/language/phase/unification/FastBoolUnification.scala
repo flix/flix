@@ -336,19 +336,21 @@ object FastBoolUnification {
     *
     * Note that several equations were simplified.
     *
-    * Note: We ignore `False` -- for now -- because the input rarely contains it.
+    * Note: We do not propagate false -- this extension can be made later, if needed.
+    * Note: Since we do not propagate false, we do not have to check for conflicts.
+    * - We never overwrite a value in the substitution, and
+    * - a conflict will be detected by the subsequent call to simplify.
     */
   private def propagateUnit(l: List[Equation], s: BoolSubstitution): (List[Equation], BoolSubstitution) = {
     var pending = l
     var subst = s
 
+    // We compute a fixpoint until no more propagation occurs.
     var changed = true
     while (changed) {
-      // We compute a fixpoint until no more propagation happens
       changed = false
 
       var rest: List[Equation] = Nil
-
       for (e <- pending) {
         e match {
           // Case 1: x ~ true
@@ -372,7 +374,7 @@ object FastBoolUnification {
             rest = e :: rest
         }
       }
-      // Invariant: We apply the current substitution to all remaining equations.
+      // INVARIANT: We apply the current substitution to all remaining equations.
       pending = subst(rest)
     }
 
