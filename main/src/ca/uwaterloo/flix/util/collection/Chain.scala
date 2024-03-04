@@ -124,7 +124,10 @@ sealed trait Chain[+A] {
     */
   final def mkString(sep: String): String = {
     val sb = new StringBuilder()
-    this.toList.addString(sb, sep)
+    this.foreach { x =>
+      sb.addAll(x.toString); sb.addAll(sep)
+    }
+    sb.dropRight(sep.length)
     sb.mkString
   }
 
