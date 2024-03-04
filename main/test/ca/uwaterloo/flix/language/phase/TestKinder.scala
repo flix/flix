@@ -1009,7 +1009,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    case D2
         |}
         |
-        |def f(x: F[s ++ d], y: E[~~d]): String = ???
+        |def f(x: F[s rvadd d], y: E[rvnot d]): String = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.MismatchedKinds](result)
