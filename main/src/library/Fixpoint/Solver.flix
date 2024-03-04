@@ -94,7 +94,7 @@ mod Fixpoint.Solver {
     /// Project all facts in the given Datalog program `d` that has `p` in its head.
     ///
     @Internal
-    pub def project(p: PredSym, d: Datalog[v]): Datalog[v] with Order[v] = match d {
+    pub def projectAll(p: PredSym, d: Datalog[v]): Datalog[v] with Order[v] = match d {
         case Datalog(facts, _) =>
             let pFacts = Vector.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
             Datalog(pFacts, Vector.empty())
@@ -108,7 +108,7 @@ mod Fixpoint.Solver {
             }, db) |>
             List.toMap |>
             Model
-        case Join(d1, d2) => union(project(p, d1), project(p, d2))
+        case Join(d1, d2) => union(projectAll(p, d1), projectAll(p, d2))
     }
 
     ///

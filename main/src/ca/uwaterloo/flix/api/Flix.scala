@@ -553,9 +553,9 @@ class Flix {
     //  "Test.Exp.Ref.Deref.flix" -> LocalResource.get("/test/flix/Test.Exp.Ref.Deref.flix"),
 
     // TODO: KEYWORD PROJECT
-    //    "Test.Term.Lit.flix" -> LocalResource.get("/test/flix/Test.Term.Lit.flix"),
-    //    "Test.Exp.Fixpoint.Constraint.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
-    //    "Test.Exp.Fixpoint.Project.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Project.flix"),
+        "Test.Term.Lit.flix" -> LocalResource.get("/test/flix/Test.Term.Lit.flix"),
+        "Test.Exp.Fixpoint.Constraint.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
+        "Test.Exp.Fixpoint.Project.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Project.flix"),
 
     // TODO: JVM STUFF
 //        "Test.Exp.Jvm.GetField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetField.flix"),

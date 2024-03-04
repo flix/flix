@@ -654,7 +654,7 @@ object Parser2 {
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
-      if (at(TokenKind.KeywordWhere)){
+      if (at(TokenKind.KeywordWhere)) {
         equalityConstraints(TokenKind.Equal)
       }
       expect(TokenKind.Equal)
@@ -864,7 +864,7 @@ object Parser2 {
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
-      if (at(TokenKind.KeywordWhere)){
+      if (at(TokenKind.KeywordWhere)) {
         equalityConstraints(TokenKind.Equal)
       }
       if (at(TokenKind.Equal)) {
@@ -1251,13 +1251,12 @@ object Parser2 {
         expression()
       }
 
-      // TODO: Do we need project?
-      //      if (eat(TokenKind.KeywordProject)) {
-      //        name(NAME_PREDICATE)
-      //        while (eat(TokenKind.Comma) && !eof()) {
-      //          name(NAME_PREDICATE)
-      //        }
-      //      }
+      if (eat(TokenKind.KeywordProject)) {
+        name(NAME_PREDICATE)
+        while (eat(TokenKind.Comma) && !eof()) {
+          name(NAME_PREDICATE)
+        }
+      }
       close(mark, TreeKind.Expr.FixpointSolveWithProject)
     }
 

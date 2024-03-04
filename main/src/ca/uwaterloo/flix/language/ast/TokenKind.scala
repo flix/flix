@@ -221,6 +221,8 @@ object TokenKind {
 
   case object KeywordPure extends TokenKind
 
+  case object KeywordProject extends TokenKind
+
   case object KeywordQuery extends TokenKind
 
   case object KeywordRef extends TokenKind
