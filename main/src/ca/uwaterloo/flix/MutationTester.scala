@@ -207,12 +207,10 @@ object MutationTester {
             lengths.foreach(l => assert(rules.length == l, "fail in match"))
             permutations ::: mutateRules ::: deletedCasesMutation.reverse.tail
         case original@Expr.TypeMatch(exp, rules, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.RestrictableChoose(star, exp, rules, _, _, _) =>
-            mutateExpr(exp).map(m => original.copy(exp = m))
+        case original@Expr.RestrictableChoose(star, exp, rules, _, _, _) => Nil
         case original@Expr.Tag(sym, exp, _, _, _) =>
             mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.RestrictableTag(sym, exp, _, _, _) =>
-            mutateExpr(exp).map(m => original.copy(exp = m))
+        case original@Expr.RestrictableTag(sym, exp, _, _, _) => Nil
         case original@Expr.Tuple(elms, _, _, _) =>
             mutationPermutations(elms, mutateExpr).map(mp => original.copy(elms = mp))
         case original@Expr.RecordEmpty(tpe, loc) => original :: Nil
