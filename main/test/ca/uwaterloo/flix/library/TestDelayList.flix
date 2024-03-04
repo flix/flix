@@ -1859,35 +1859,35 @@ mod TestDelayList {
 
     @test
     def replace01(): Bool =
-        DelayList.replace(from = 3, to = 4, ENil) == ENil
+        DelayList.replace(src = 3, dst = 4, ENil) == ENil
 
     @test
     def replace02(): Bool =
-        DelayList.replace(from = 3, to = 4, ECons(1, ENil)) == ECons(1, ENil)
+        DelayList.replace(src = 3, dst = 4, ECons(1, ENil)) == ECons(1, ENil)
 
     @test
     def replace03(): Bool =
-        DelayList.replace(from = 3, to = 4, ECons(3, ENil)) == ECons(4, ENil)
+        DelayList.replace(src = 3, dst = 4, ECons(3, ENil)) == ECons(4, ENil)
 
     @test
     def replace04(): Bool =
-        DelayList.replace(from = 3, to = 4, ECons(4, ECons(4, ECons(4, ENil)))) == ECons(4, ECons(4, ECons(4, ENil)))
+        DelayList.replace(src = 3, dst = 4, ECons(4, ECons(4, ECons(4, ENil)))) == ECons(4, ECons(4, ECons(4, ENil)))
 
     @test
     def replace05(): Bool =
-        DelayList.replace(from = 3, to = 4, ECons(2, ECons(2, ECons(2, ENil)))) == ECons(2, ECons(2, ECons(2, ENil)))
+        DelayList.replace(src = 3, dst = 4, ECons(2, ECons(2, ECons(2, ENil)))) == ECons(2, ECons(2, ECons(2, ENil)))
 
     @test
     def replace06(): Bool =
-        DelayList.replace(from = 3, to = 4, ECons(2, ECons(3, ECons(2, ENil)))) == ECons(2, ECons(4, ECons(2, ENil)))
+        DelayList.replace(src = 3, dst = 4, ECons(2, ECons(3, ECons(2, ENil)))) == ECons(2, ECons(4, ECons(2, ENil)))
 
     @test
     def replace07(): Bool =
-        DelayList.replace(from = 0, to = 1, ECons(0, ECons(0, ECons(0, ENil)))) == ECons(1, ECons(1, ECons(1, ENil)))
+        DelayList.replace(src = 0, dst = 1, ECons(0, ECons(0, ECons(0, ENil)))) == ECons(1, ECons(1, ECons(1, ENil)))
 
     @test
     def replace08(): Bool =
-        DelayList.replace(from = 3, to = 4, LList(lazy ECons(3, LList(lazy LCons(3, lazy LList(lazy LCons(3, lazy LList(lazy ENil)))))))) == ECons(4, ECons(4, ECons(4, ENil)))
+        DelayList.replace(src = 3, dst = 4, LList(lazy ECons(3, LList(lazy LCons(3, lazy LList(lazy LCons(3, lazy LList(lazy ENil)))))))) == ECons(4, ECons(4, ECons(4, ENil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
