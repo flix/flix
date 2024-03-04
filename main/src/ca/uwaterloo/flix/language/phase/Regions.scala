@@ -35,17 +35,17 @@ import scala.collection.immutable.SortedSet
 object Regions {
 
   def run(root: Root)(implicit flix: Flix): Validation[Unit, CompilationMessage] = flix.phase("Regions") {
-    val recoverable = ParOps.parMap(root.defs)(kv => visitDef(kv._2)).flatten.filter(_.isInstanceOf[Recoverable])
+    val errors = ParOps.parMap(root.defs)(kv => visitDef(kv._2)).flatten
 
     // TODO: Instances
-    Validation.toSuccessOrSoftFailure((), recoverable.asInstanceOf[Iterable[Recoverable]])
+    Validation.toSuccessOrSoftFailure((), errors.asInstanceOf[Iterable[Recoverable]])
       .asInstanceOf[Validation[Unit, CompilationMessage]]
   }
 
-  private def visitDef(def0: Def)(implicit flix: Flix): List[TypeError] =
+  private def visitDef(def0: Def)(implicit flix: Flix): List[TypeError.RegionVarEscapes] =
     visitExp(def0.exp)(Nil, flix)
 
-  private def visitExp(exp0: Expr)(implicit scope: List[Type.Var], flix: Flix): List[TypeError] = exp0 match {
+  private def visitExp(exp0: Expr)(implicit scope: List[Type.Var], flix: Flix): List[TypeError.RegionVarEscapes] = exp0 match {
     case Expr.Cst(_, _, _) => Nil
 
     case Expr.Var(_, tpe, loc) => checkType(tpe, loc)
@@ -285,7 +285,7 @@ object Regions {
 
   }
 
-  def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], flix: Flix): List[TypeError] = method match {
+  def visitJvmMethod(method: JvmMethod)(implicit scope: List[Type.Var], flix: Flix): List[TypeError.RegionVarEscapes] = method match {
     case JvmMethod(_, _, exp, tpe, _, loc) =>
       visitExp(exp) ++ checkType(tpe, loc)
   }
@@ -293,7 +293,7 @@ object Regions {
   /**
     * Ensures that no region escapes inside `tpe`.
     */
-  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var], flix: Flix): List[TypeError] = {
+  private def checkType(tpe: Type, loc: SourceLocation)(implicit scope: List[Type.Var], flix: Flix): List[TypeError.RegionVarEscapes] = {
     // Compute the region variables that escape.
     // We should minimize `tpe`, but we do not because of the performance cost.
     val regs = regionVarsOf(tpe)
