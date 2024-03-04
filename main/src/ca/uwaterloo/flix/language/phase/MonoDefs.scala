@@ -75,7 +75,6 @@ import scala.collection.mutable
   * - Schema fields are in alphabetical order
   * - Effect formulas are flat unions of effects in alphabetical order.
   * - Case set formulas are a single CaseSet literal.
-  * - Function types are all curried (Arrows have arity 1) (TODO is this the best choice?)
   *
   */
 object MonoDefs {
@@ -194,9 +193,9 @@ object MonoDefs {
       *
       * For example, if the queue contains the entry:
       *
-      * -   (f$1, f, [a -> Int])
+      * -   (f$1, f, [a -> Int32])
       *
-      * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
+      * it means that the function definition f should be specialized w.r.t. the map [a -> Int32] under the fresh name f$1.
       *
       * Note: We use a concurrent linked queue (which is non-blocking) so threads can enqueue items without contention.
       */
@@ -239,9 +238,9 @@ object MonoDefs {
       *
       * -   def fst[a, b](x: a, y: b): a = ...
       *
-      * has been specialized w.r.t. to `Int` and `Str` then this map will contain an entry:
+      * has been specialized w.r.t. to `Int32` and `String` then this map will contain an entry:
       *
-      * -   (fst, Int32 -> Str -> Int) -> fst$1 (TODO what is function normalization)
+      * -   (fst, (Int32, String) -> Int32) -> fst$1
       */
     private val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
 
