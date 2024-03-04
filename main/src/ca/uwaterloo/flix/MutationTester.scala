@@ -151,7 +151,14 @@ object MutationTester {
 
         case original@Expr.Apply(exp, exps, _, _, _) =>
             val mut = mutateExpr(exp).map(m => original.copy(exp = m))
-            mut ::: mutationPermutations(exps, mutateExpr).map(mp => original.copy(exps = mp))
+            val mutateExps = exps.zipWithIndex.flatMap { case (exp, index) => {
+                    val mutations = mutateExpr(exp)
+                    mutations.map(m => original.copy(exps = exps.updated(index, m)))
+                }
+            }
+            val lengths = mutateExps.map(mr => mr.exps.length)
+            lengths.foreach(l => assert(exps.length == l, "fail in apply"))
+            mut ::: mutateExps
 
         case original@Expr.Unary(sop, exp, tpe, eff, loc) =>
             val mut1 = Expr.Unary(sop, original, tpe, eff, loc)
@@ -186,15 +193,20 @@ object MutationTester {
         case original@Expr.Discard(exp, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.Match(_, rules, _, _, _) =>
             // refactor to permutation
-            val permutations = rules.permutations.toList
-            val pms = permutations.map(p => mutationPermutations(p, mutateMatchrule))
+            val permutations = rules.permutations.toList.map(m => original.copy(rules = m))
             val deletedCasesMutation = rules.indices
-                                            .map(index =>
-                                                rules.filter(e => rules.indexOf(e) != index || rules.indexOf(e) == rules.length - 1))
-                                            .toList.map(m => original.copy(rules = m))
-            val res = pms.map(m => m.map(mm => original.copy(rules = mm)))
-            res.flatten ::: deletedCasesMutation.reverse.tail
-        case original@Expr.TypeMatch(exp, rules, _, _, _) => mutateExpr(exp).map(m => original.copy (exp = m))
+                .map(index =>
+                    rules.filter(e => rules.indexOf(e) != index || rules.indexOf(e) == rules.length - 1))
+                .toList.map(m => original.copy(rules = m))
+            val mutateRules = rules.zipWithIndex.flatMap { case (rule, index) => {
+                val mutations = mutateMatchrule(rule)
+                mutations.map(m => original.copy(rules = rules.updated(index, m)))
+            }
+            }
+            val lengths = mutateRules.map(mr => mr.rules.length)
+            lengths.foreach(l => assert(rules.length == l, "fail in match"))
+            permutations ::: mutateRules ::: deletedCasesMutation.reverse.tail
+        case original@Expr.TypeMatch(exp, rules, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.RestrictableChoose(star, exp, rules, _, _, _) =>
             mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.Tag(sym, exp, _, _, _) =>
@@ -323,7 +335,7 @@ object MutationTester {
     private def mutatePattern(pattern: TypedAst.Pattern): List[TypedAst.Pattern] = {
         pattern match {
             case original@TypedAst.Pattern.Cst(cst, _, _) => mutateCst(cst).map(m => original.copy(m))
-            case e => e ::Nil
+            case _ => Nil
         }
     }
 
