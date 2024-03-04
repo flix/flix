@@ -698,7 +698,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): ##dev.flix.test.TestClassWithDefaultConstructor \ IO =
-        |    import new dev.flix.test.TestClassWithInheritedMethod(): ##dev.flix.test.TestClassWithInheritedMethod as newObj;
+        |    import java_new dev.flix.test.TestClassWithInheritedMethod(): ##dev.flix.test.TestClassWithInheritedMethod as newObj;
         |    let x: ##dev.flix.test.TestClassWithDefaultConstructor = newObj();
         |    x
       """.stripMargin
