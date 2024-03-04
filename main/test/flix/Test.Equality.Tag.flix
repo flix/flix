@@ -1,7 +1,7 @@
 mod Test.Equality.Tag {
 
     @test
-    def testEqTag01(): Bool = None: Option[Unit] == None
+    def testEqTag01(): Bool = (None: Option[Unit]) == None
 
     @test
     def testEqTag02(): Bool = Some(42) == Some(42)
@@ -13,7 +13,7 @@ mod Test.Equality.Tag {
     def testEqTag04(): Bool = Err(42): Result[_, Unit] == Err(42)
 
     @test
-    def testEqTag05(): Bool = Nil: List[Unit] == Nil
+    def testEqTag05(): Bool = (Nil: List[Unit]) == Nil
 
     @test
     def testEqTag06(): Bool = (42 :: Nil) == (42 :: Nil)
