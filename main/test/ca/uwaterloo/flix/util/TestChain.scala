@@ -263,4 +263,34 @@ class TestChain extends AnyFunSuite {
     val chain = Chain(1) ++ Chain(2) ++ Chain(3) ++ Chain(4) ++ Chain(5)
     assertResult(chain.mkString("-"))("1-2-3-4-5")
   }
+
+  test("TestToString.01") {
+    val chain = Chain.empty
+    assertResult(chain.toString)("Chain()")
+  }
+
+  test("TestToString.02") {
+    val chain = Chain.from(Seq.empty)
+    assertResult(chain.toString)("Chain()")
+  }
+
+  test("TestToString.03") {
+    val chain = Chain(1, 2, 3)
+    assertResult(chain.toString)("Chain(1, 2, 3)")
+  }
+
+  test("TestToString.04") {
+    val chain = Seq(Chain(1), Chain(2), Chain(3), Chain(4), Chain(5)).fold(Chain.empty)(_ ++ _)
+    assertResult(chain.toString)("Chain(1, 2, 3, 4, 5)")
+  }
+
+  test("TestToString.05") {
+    val chain = Chain(1) ++ Chain(2) ++ Chain(3) ++ Chain(4) ++ Chain(5)
+    assertResult(chain.toString)("Chain(1, 2, 3, 4, 5)")
+  }
+
+  test("TestToString.06") {
+    val chain = Chain.empty ++ Chain(1) ++ Chain.from(Seq.empty) ++ Chain.from(Seq(2, 3)) ++ Chain.from(Seq(4, 5))
+    assertResult(chain.toString)("Chain(1, 2, 3, 4, 5)")
+  }
 }
