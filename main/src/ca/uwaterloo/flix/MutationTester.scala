@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2015-2016 Lukas Schröder, Samuel Skovbakke & Alexander Sommer
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,15 +18,9 @@ package ca.uwaterloo.flix
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.SemanticOp.{BoolOp, CharOp, Float32Op, Float64Op, Int16Op, Int32Op, Int64Op, Int8Op, StringOp}
-import ca.uwaterloo.flix.language.ast.{Ast, SemanticOp, Symbol, TypedAst}
+import ca.uwaterloo.flix.language.ast.Type.{Apply, False, True}
+import ca.uwaterloo.flix.language.ast.{Ast, SemanticOp, Symbol, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
-import ca.uwaterloo.flix.tools.Tester
-import ca.uwaterloo.flix.util._
-import org.json4s.reflect.fail
-
-import java.io.File
-import scala.::
-import scala.util.Random
 
 object MutationTester {
     def run(flix: Flix, tester: String, testee: String): Unit = {
@@ -57,7 +51,7 @@ object MutationTester {
                 mutantCounter += 1
                 val start = System.nanoTime()
                 val n = defs + (mut._1 -> mDef)
-                println(s"mutation: $mDef")
+                //println(s"mutation: $mDef")
                 val newRoot = root.copy(defs = n)
                 val cRes = flix.codeGen(newRoot).unsafeGet
                 val testResults = cRes.getTests.values.forall(c =>
@@ -74,7 +68,7 @@ object MutationTester {
                 if (testResults) {
                     survivorCount += 1
                     val sym = mDef.sym.toString
-                    println(s"mutation in $sym survived")
+                    //println(s"mutation in $sym survived")
                 }
             })
         })
@@ -141,17 +135,20 @@ object MutationTester {
         case Expr.Cst(cst, tpe, loc) =>
             mutateCst(cst).map(m => Expr.Cst(m, tpe, loc))
         case original@Expr.Var(_, _, _) => original :: Nil
-        case original@Expr.Def(sym, tpe, loc) => original :: Nil
-        case original@Expr.Sig(sym, tpe, loc) => original :: Nil
-        case original@Expr.Hole(sym, tpe, loc) => original :: Nil
-        case original@Expr.HoleWithExp(exp, tpe, eff, loc) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.OpenAs(symUse, exp, tpe, loc) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.Use(sym, alias, exp, loc) => mutateExpr(exp).map(m => original.copy(exp = m))
+        case original@Expr.Def(sym, _, _) => original :: Nil
+        case original@Expr.Sig(sym, _, _) =>
+            println(sym)
+            original :: Nil
+        case original@Expr.Hole(sym, _, _) => original :: Nil
+        case original@Expr.HoleWithExp(exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+        case original@Expr.OpenAs(symUse, exp, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+        case original@Expr.Use(sym, alias, exp, _) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.Lambda(fparam, exp, _, _) =>
             mutateExpr(exp).map(m => original.copy(exp = m))
 
-        case original@Expr.Apply(exp, exps, tpe, eff, loc) =>
-            mutationPermutations(exps, mutateExpr).map(mp => original.copy(exps = mp))
+        case original@Expr.Apply(exp, exps, _, _, _) =>
+            val mut = mutateExpr(exp).map(m => original.copy(exp = m))
+            mut ::: mutationPermutations(exps, mutateExpr).map(mp => original.copy(exps = mp))
 
         case original@Expr.Unary(sop, exp, tpe, eff, loc) =>
             val mut1 = Expr.Unary(sop, original, tpe, eff, loc)
@@ -163,28 +160,38 @@ object MutationTester {
             val mut3 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
             mut1:::mut2:::mut3
 
-        case original@Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
-            mutateExpr(exp2).map(m => original.copy(exp2 = m))
-        case original@Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => original :: Nil
-        case original@Expr.Region(tpe, loc) => original :: Nil
-        case original@Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+        case original@Expr.Let(sym, mod, exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+            mut1:::mut2
+        case original@Expr.LetRec(sym, ann, mod, exp1, exp2, _, _, _) =>
+            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+            mut1:::mut2
+        case original@Expr.Region(tpe, loc) => original :: Nil
+        case original@Expr.Scope(sym, regionVar, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+        case original@Expr.IfThenElse(exp1, exp2, exp3, _, _, loc) =>
+            val ifTrue = original.copy(exp1 = Expr.Cst(Constant.Bool(true), True, exp1.loc))
+            val ifFalse = original.copy(exp1 = Expr.Cst(Constant.Bool(false), False, exp1.loc))
+            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
             val mut3 = mutateExpr(exp3).map(m => original.copy(exp3 = m))
-            mut1:::mut2:::mut3
+            ifTrue::ifFalse::mut2:::mut3
         case original@Expr.Stm(exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
             mut1 ::: mut2
-        case original@Expr.Discard(exp, eff, loc) => original :: Nil
+        case original@Expr.Discard(exp, _, _) => mutateExpr(exp).map(m => original.copy (exp = m))
         case original@Expr.Match(_, rules, _, _, _) =>
             // refactor to permutation
             val permutations = rules.permutations.toList
             val pms = permutations.map(p => mutationPermutations(p, mutateMatchrule))
+            val deletedCasesMutation = rules.indices
+                                            .map(index =>
+                                                rules.filter(e => rules.indexOf(e) != index || rules.indexOf(e) == rules.length - 1))
+                                            .toList.map(m => original.copy(rules = m))
             val res = pms.map(m => m.map(mm => original.copy(rules = mm)))
-            res.flatten
-        case original@Expr.TypeMatch(exp, rules, tpe, eff, loc) => original :: Nil
+            res.flatten ::: deletedCasesMutation.reverse.tail
+        case original@Expr.TypeMatch(exp, rules, _, _, _) => mutateExpr(exp).map(m => original.copy (exp = m))
         case original@Expr.RestrictableChoose(star, exp, rules, _, _, _) =>
             mutateExpr(exp).map(m => original.copy (exp = m))
         case original@Expr.Tag(sym, exp, _, _, _) =>
@@ -261,9 +268,9 @@ object MutationTester {
         case original@Expr.InvokeStaticMethod(method, exps, _, _, _) =>
             val mutateExps = exps.map(e => mutateExpr(e))
             mutateExps.map(m => original.copy(exps = m))
-        case original@Expr.GetField(field, exp, tpe, eff, loc) =>
+        case original@Expr.GetField(field, exp, _, _, _) =>
             mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.PutField(field, exp1, exp2, tpe, eff, loc) =>
+        case original@Expr.PutField(field, exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
             mut1 ::: mut2
@@ -316,7 +323,14 @@ object MutationTester {
             case e => e ::Nil
         }
     }
+/**
+    private def mutateSig(sig: Expr.Sig): List[Expr.Sig] = (sig.sym, sig.tpe) match {
+        case ("Add.add", t) => t match {
+            case Apply()
+        }
 
+    }
+*/
     private def mutateSop(sop: SemanticOp): List[SemanticOp] = {
         def helper(sop: SemanticOp): List[SemanticOp] = sop match {
             case op: SemanticOp.BoolOp => op match {
