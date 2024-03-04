@@ -44,7 +44,7 @@ mod Fixpoint.Ast.Shared {
     @Internal
     pub def isRelational(den: Denotation[v]): Bool = match den {
         case Denotation.Relational => true
-        case _          => false
+        case _                     => false
     }
 
     ///
