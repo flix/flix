@@ -495,7 +495,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def build(flix: Flix): Validation[CompilationResult, BootstrapError] = {
     // Configure a new Flix object.
-    val newOptions = flix.options.copy(output = Some(Bootstrap.getBuildDirectory(projectPath)))
+    val isSafe = optManifest match {
+      case Some(m) => m.safe
+      case None => true
+    }
+    val newOptions = flix.options.copy(output = Some(Bootstrap.getBuildDirectory(projectPath)), safe = isSafe)
     flix.setOptions(newOptions)
 
     // Add sources and packages.

@@ -503,6 +503,19 @@ object SafetyError {
     }
   }
 
+  case class IncorrectSafetySignature(loc: SourceLocation) extends SafetyError with Recoverable {
+    override def summary: String = s"Flix package is unsafe but it was stated it is safe"
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Flix package is unsafe but it was stated it is safe
+         |
+         |${code(loc, s"the unsafe method occurs here.")}
+         |""".stripMargin
+    }
+  }
+
   /**
     * Format a Java type suitable for method implementation.
     */

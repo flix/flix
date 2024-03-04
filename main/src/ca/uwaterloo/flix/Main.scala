@@ -93,6 +93,7 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
+      safe = true,
       xbddthreshold = cmdOpts.xbddthreshold,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
@@ -203,7 +204,6 @@ object Main {
               errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
-
         case Command.Run =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap =>

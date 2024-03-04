@@ -37,6 +37,7 @@ object Safety {
     val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef).flatten
     val sigErrs = ParOps.parMap(root.sigs.values)(visitSig).flatten
     val entryPointErrs = ParOps.parMap(root.reachable)(visitEntryPoint(_)(root)).flatten
+
     val errors = classSigErrs ++ defErrs ++ instanceDefErrs ++ sigErrs ++ entryPointErrs ++ visitSendable(root)
 
     //
@@ -125,6 +126,10 @@ object Safety {
       case Type.IO => true
       case _ => false
     }
+  }
+
+  private def visitSafety()(implicit flix: Flix): List[SafetyError] = {
+
   }
 
   /**
@@ -451,7 +456,7 @@ object Safety {
     * - No primitive type can be cast to a reference type and vice-versa.
     * - No Bool type can be cast to a non-Bool type  and vice-versa.
     */
-  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit flix: Flix): List[SafetyError.ImpossibleUncheckedCast] = {
+  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType
     val tpe2 = cast.declaredType.map(Type.eraseAliases).map(_.baseType)
 
@@ -487,7 +492,8 @@ object Safety {
       case (t1, Some(t2)) if primitives.contains(t2) && !primitives.contains(t1) =>
         ImpossibleUncheckedCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
-      case _ => Nil
+      // Disallow using Unchecked Cast if the package is marked safe
+      case _ => if (flix.options.safe) IncorrectSafetySignature(cast.loc) :: Nil else Nil
     }
   }
 
