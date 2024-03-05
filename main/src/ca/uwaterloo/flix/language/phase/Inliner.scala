@@ -75,10 +75,10 @@ object Inliner {
   private def visitDef(def0: OccurrenceAst.Def)(implicit flix: Flix, root: OccurrenceAst.Root): LiftedAst.Def = {
     val convertedExp = visitExp(def0.exp, Map.empty)(root, flix)
     val cparams = def0.cparams.map {
-      case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+      case (OccurrenceAst.FormalParam(sym, mod, tpe, loc), _) => LiftedAst.FormalParam(sym, mod, tpe, loc)
     }
     val fparams = def0.fparams.map {
-      case OccurrenceAst.FormalParam(sym, mod, tpe, loc) => LiftedAst.FormalParam(sym, mod, tpe, loc)
+      case (OccurrenceAst.FormalParam(sym, mod, tpe, loc), _) => LiftedAst.FormalParam(sym, mod, tpe, loc)
     }
     LiftedAst.Def(def0.ann, def0.mod, def0.sym, cparams, fparams, convertedExp, def0.tpe, convertedExp.purity, def0.loc)
   }
@@ -147,7 +147,7 @@ object Inliner {
               case CallType.NonTailCall => rewriteTailCalls(def1.exp)
             }
             // Map for substituting formal parameters of a function with the closureArgs currently in scope
-            bindFormals(e1, (def1.cparams ++ def1.fparams).map(_.sym), closureArgs ++ es, Map.empty)
+            bindFormals(e1, def1.cparams ++ def1.fparams, closureArgs ++ es, Map.empty)
           } else {
             LiftedAst.Expr.ApplyClo(e, es, ct, tpe, purity, loc)
           }
@@ -165,7 +165,7 @@ object Inliner {
           case CallType.TailCall => def1.exp
           case CallType.NonTailCall => rewriteTailCalls(def1.exp)
         }
-        bindFormals(e1, (def1.cparams ++ def1.fparams).map(_.sym), es, Map.empty)
+        bindFormals(e1, def1.cparams ++ def1.fparams, es, Map.empty)
       } else {
         LiftedAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
       }
@@ -312,15 +312,31 @@ object Inliner {
   }
 
   /**
+    * Checks if `occur` is dead and  `exp` is pure.
+    */
+  private def isDeadAndPure(occur: OccurrenceAst.Occur, exp: LiftedAst.Expr): Boolean = (occur, exp.purity) match {
+    case (Dead, Pure) => true
+    case _ => false
+  }
+
+  /**
     * Recursively bind each argument in `args` to a let-expression with a fresh symbol
     * Add corresponding symbol from `symbols` to substitution map `env0`, mapping old symbols to fresh symbols.
     * Substitute variables in `exp0` via the filled substitution map `env0`
     */
-  private def bindFormals(exp0: OccurrenceAst.Expression, symbols: List[Symbol.VarSym], args: List[LiftedAst.Expr], env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst.Root, flix: Flix): LiftedAst.Expr = {
+  private def bindFormals(exp0: OccurrenceAst.Expression, symbols: List[(OccurrenceAst.FormalParam, OccurrenceAst.Occur)], args: List[LiftedAst.Expr], env0: Map[Symbol.VarSym, Symbol.VarSym])(implicit root: OccurrenceAst.Root, flix: Flix): LiftedAst.Expr = {
     (symbols, args) match {
-      case (sym :: nextSymbols, e1 :: nextExpressions) =>
-        val freshVar = Symbol.freshVarSym(sym)
-        val env1 = env0 + (sym -> freshVar)
+      case ((_, occur) :: nextSymbols, e1 :: nextExpressions) if isDeadAndPure(occur, e1) =>
+        // if the parameter is unused and the argument is pure, then throw it away.
+        bindFormals(exp0, nextSymbols, nextExpressions, env0)
+      case ((_, occur) :: nextSymbols, e1 :: nextExpressions) if isDead(occur) =>
+        // if the parameter is unused and the argument is NOT pure, then put it in a statement.
+        val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env0)
+        val purity = Purity.combine(e1.purity, nextLet.purity)
+        LiftedAst.Expr.Stmt(e1, nextLet, exp0.tpe, purity, exp0.loc)
+      case ((formal, _) :: nextSymbols, e1 :: nextExpressions) =>
+        val freshVar = Symbol.freshVarSym(formal.sym)
+        val env1 = env0 + (formal.sym -> freshVar)
         val nextLet = bindFormals(exp0, nextSymbols, nextExpressions, env1)
         val purity = Purity.combine(e1.purity, nextLet.purity)
         LiftedAst.Expr.Let(freshVar, e1, nextLet, exp0.tpe, purity, exp0.loc)
