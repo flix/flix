@@ -418,7 +418,7 @@ object ConstraintResolution {
     // first solve the unifyAllable constraints
     // first pull out all simple Boolean constraints and put them through unifyAll
     val (simple, complex) = extractSimpleBooleanConstaints(curr, renv)
-    val simple1 = simple.map { case (t1, t2) => (subst(t1), subst(t2)) }
+    val simple1 = simple.map { case (t1, t2, loc) => (subst(t1), subst(t2), loc) }
     EffUnification2.unifyAll(simple1, renv, SourceLocation.Unknown) match {
       case Result.Ok(newSubst) =>
         subst = newSubst @@ subst
@@ -474,9 +474,9 @@ object ConstraintResolution {
     tryReduce(sort(constrs))
   }
 
-  def extractSimpleBooleanConstaints(constrs: List[TypingConstraint], renv: RigidityEnv): (List[(Type, Type)], List[TypingConstraint]) = {
+  def extractSimpleBooleanConstaints(constrs: List[TypingConstraint], renv: RigidityEnv): (List[(Type, Type, SourceLocation)], List[TypingConstraint]) = {
     @tailrec
-    def loop(cs: List[TypingConstraint], simpleAcc: List[(Type, Type)], complexAcc: List[TypingConstraint]): (List[(Type, Type)], List[TypingConstraint]) = cs match {
+    def loop(cs: List[TypingConstraint], simpleAcc: List[(Type, Type, SourceLocation)], complexAcc: List[TypingConstraint]): (List[(Type, Type, SourceLocation)], List[TypingConstraint]) = cs match {
       case Nil => (simpleAcc.reverse, complexAcc.reverse)
       case hd :: tl => getSimpleBooleanConstraint(hd, renv) match {
         case None => loop(tl, simpleAcc, hd :: complexAcc)
@@ -487,10 +487,10 @@ object ConstraintResolution {
     loop(constrs, Nil, Nil)
   }
 
-  def getSimpleBooleanConstraint(constr: TypingConstraint, renv: RigidityEnv): Option[(Type, Type)] = constr match {
+  def getSimpleBooleanConstraint(constr: TypingConstraint, renv: RigidityEnv): Option[(Type, Type, SourceLocation)] = constr match {
     case TypingConstraint.Equality(tpe1, tpe2, prov) if
       isSimpleEffectType(tpe1, renv) && isSimpleEffectType(tpe2, renv) =>
-      Some((tpe1, tpe2))
+      Some((tpe1, tpe2, prov.loc))
     case _ => None
   }
 
@@ -617,7 +617,7 @@ object ConstraintResolution {
       TypeError.MismatchedArity(tpe1, tpe2, RigidityEnv.empty, loc) // MATT renv
 
     case (UnificationError.TooComplex(tpe1, tpe2), Provenance.Match(_, _, loc)) =>
-      TypeError.TooComplex(tpe1, tpe2, RigidityEnv.empty, loc) // MATT renv
+      TypeError.TooComplex(loc) // MATT renv
 
     case (UnificationError.RigidVar(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
       TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc) // MATT renv
