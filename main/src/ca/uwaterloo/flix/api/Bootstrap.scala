@@ -449,6 +449,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     for (path <- flixPackagePaths if hasChanged(path)) {
+      // TODO: open path, read the zipfile, find the manifest.toml, parse it with existing parser, and pass it to addPkg
       flix.addPkg(path)
     }
 

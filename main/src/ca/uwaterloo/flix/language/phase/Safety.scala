@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
@@ -37,9 +38,8 @@ object Safety {
     val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef).flatten
     val sigErrs = ParOps.parMap(root.sigs.values)(visitSig).flatten
     val entryPointErrs = ParOps.parMap(root.reachable)(visitEntryPoint(_)(root)).flatten
-    val unsafeEffectErrs = if (flix.options.safe) ParOps.parMap(root.effects.values)(visitEffect).flatten else Nil
 
-    val errors = classSigErrs ++ defErrs ++ instanceDefErrs ++ sigErrs ++ entryPointErrs ++ visitSendable(root) ++ unsafeEffectErrs
+    val errors = classSigErrs ++ defErrs ++ instanceDefErrs ++ sigErrs ++ entryPointErrs ++ visitSendable(root)
 
     //
     // Check if any errors were found.
@@ -83,14 +83,6 @@ object Safety {
       case (acc, e) => acc.markRigid(e)
     }
     visitExp(def0.exp, renv)
-  }
-
-  /**
-   * Checks if a safe package contains unsafe effect.
-   */
-  private def visitEffect(eff0: Effect): List[SafetyError] = eff0.sym.name match {
-    case "IO" => NotAllowedEffect("IO") :: Nil
-    case _ => Nil
   }
 
   /**
@@ -290,8 +282,8 @@ object Safety {
             visit(exp)
         }
 
-      case e@Expr.UncheckedCast(exp, _, _, _, _, _) =>
-        val errors = verifyUncheckedCast(e)
+      case e@Expr.UncheckedCast(exp, _, _, _, _, loc) =>
+        val errors = isUncheckedCastAllowed(loc) ++ verifyUncheckedCast(e)
         visit(exp) ++ errors
 
       case Expr.UncheckedMaskingCast(exp, _, _, _) =>
@@ -498,7 +490,7 @@ object Safety {
         ImpossibleUncheckedCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
       // Disallow using Unchecked Cast if the package is marked safe
-      case _ => if (flix.options.safe) IncorrectSafetySignature(cast.loc) :: Nil else Nil
+      case _ => Nil
     }
   }
 
@@ -711,6 +703,17 @@ object Safety {
     */
   private def visitPats(terms: List[Pattern], loc: SourceLocation): List[SafetyError] = {
     terms.flatMap(visitPat(_, loc))
+  }
+
+  /**
+   *  Checks whether an unchecked cast is allowed to use or not
+   *  If not it will return an 'IncorrectSafetySignature'
+   */
+  private def isUncheckedCastAllowed(loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = loc.source.input match {
+    case _: Input.Text => Nil
+    case _: Input.PkgFile => if (flix.options.safe) IncorrectSafetySignature(loc) :: Nil else Nil //TODO: check the package's manifest for safety. (Might not be necessary)
+    case _: Input.TxtFile => if (flix.options.safe) IncorrectSafetySignature(loc) :: Nil else Nil
+    case _ => Nil // Add a default case to handle other input types or unexpected situations
   }
 
   /**

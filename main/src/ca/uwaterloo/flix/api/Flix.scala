@@ -413,7 +413,7 @@ class Flix {
       throw new IllegalArgumentException(s"'$p' must be a readable file.")
     if (!p.getFileName.toString.endsWith(".fpkg"))
       throw new IllegalArgumentException(s"'$p' must be a *.pkg file.")
-
+    // TODO: get manifest as a parameter and check the safety of the package.
     addInput(p.toString, Input.PkgFile(p))
     this
   }
