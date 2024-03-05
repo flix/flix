@@ -31,7 +31,7 @@ object TypeMinimization {
   /**
     * Minimizes the given type, reducing it to a more concise equivalent form.
     */
-  def minimizeType(t: Type)(implicit flix: Flix): Type = t.kind match {
+  def minimizeType(t: Type): Type = t.kind match {
     case Kind.Eff => minimizeBoolAlg(t)
     case Kind.Bool => minimizeBoolAlg(t)
     case _ => t match {
@@ -67,12 +67,7 @@ object TypeMinimization {
     *
     * Returns the same formula or a smaller formula that is equivalent.
     */
-  private def minimizeBoolAlg(tpe0: Type)(implicit flix: Flix): Type = {
-    // Check whether minimization via tabling is disabled.
-    if (flix.options.xnobooltable) {
-      return tpe0
-    }
-
+  private def minimizeBoolAlg(tpe0: Type): Type = {
     // Check that the `tpe` argument is a Boolean formula.
     tpe0.kind match {
       case Kind.Eff => // OK

@@ -103,7 +103,7 @@ mod MutQueue {
     ///
     /// Enqueues each element in `l` into `mq`.
     ///
-    pub def enqueueAll(mq: MutQueue[a, r], m: m[a]): Unit \ r with Order[a], Iterable[m] =
+    pub def enqueueAll(mq: MutQueue[a, r], m: m): Unit \ Iterable.Aef[m] + r with Order[a], Iterable[m] where Iterable.Elm[m] ~ a =
         foreach(x <- m) {
             enqueue(mq, x)
         }
@@ -113,10 +113,19 @@ mod MutQueue {
     ///
     /// Modifying `mq` during iteration is undefined and not recommended.
     ///
-    pub def iterator(rc: Region[r1], mq: MutQueue[a, r2]): Iterator[a, r1 + r2, r1] \ {r1, r2} =
+    pub def iterator(rc: Region[r1], mq: MutQueue[a, r2]): Iterator[a, r1 + r2, r1] \ r1 =
         let MutQueue(_, arr, s) = mq;
-        let it1 = Iterator.range(rc, 0, deref s);
-        Iterator.map(x -> Array.get(x, deref arr), it1)
+        let iterOptRef = ref None @ rc;
+        let next = () -> {
+            let iter = match deref iterOptRef {
+                case None =>
+                    Iterator.range(rc, 0, deref s)
+                    |> Iterator.map(i -> Array.get(i, deref arr))
+                case Some(it) => it
+            };
+            Iterator.next(iter)
+        };
+        Iterator.iterate(rc, next)
 
     ///
     /// Returns a List representation of `mq`.

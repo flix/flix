@@ -390,14 +390,23 @@ mod MutSet {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 + r2, r1] \ r1 =
         let MutSet(_, ms) = s;
-        Set.iterator(rc, deref ms) |> Iterator.map(x -> {discard deref ms; x})
+        let iterOptRef = ref None @ rc;
+        let next = () -> {
+            let iter = match deref iterOptRef {
+                case None => Set.iterator(rc, deref ms)
+                case Some(x) => x
+            };
+            iterOptRef := Some(iter);
+            Iterator.next(iter)
+        };
+        Iterator.iterate(rc, next)
 
     ///
     /// Returns an enumerator over `s`.
     ///
-    pub def enumerator(rc: Region[r1], s: MutSet[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ { r1, r2 } =
+    pub def enumerator(rc: Region[r1], s: MutSet[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ r1 =
         iterator(rc, s) |> Iterator.zipWithIndex
 
     ///

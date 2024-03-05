@@ -101,8 +101,10 @@ instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
         Map.intersectionWith(MeetLattice.greatestLowerBound, m1, m2)
 }
 
-instance Iterable[Map[k]] {
-    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ r = Map.iteratorValues(rc, m)
+instance Iterable[Map[k, v]] {
+    type Elm = (k, v)
+    type Aef = Pure
+    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ r = Map.iterator(rc, m)
 }
 
 instance ToJava[Map[k, v]] with Order[k] {
