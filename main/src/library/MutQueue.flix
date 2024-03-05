@@ -32,7 +32,7 @@ mod MutQueue {
     ///
     /// Returns a String representation of the mutable priority queue `mq`.
     ///
-    pub def toString(mq: MutQueue[a, r]): String \ r with ToString[a] = region reg {
+    pub def toString(mq: MutQueue[a, r]): String \ ToString.Aef[a] + r with ToString[a] = region reg {
         let MutQueue(_, arr, s) = mq;
         let sb = StringBuilder.new(reg);
         StringBuilder.appendString!("MutQueue {", sb);

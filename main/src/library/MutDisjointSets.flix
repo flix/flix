@@ -18,10 +18,70 @@
 /// Represents a mutable disjoint set data structure
 /// using union-by-rank and path compression.
 ///
-pub enum MutDisjointSets[t: Type, r: Eff]({
+pub enum MutDisjointSets[r: Eff, t: Type]({
     rc = Region[r],
     forest = MutMap[t, MutDisjointSets.Node[t, r], r]
 })
+
+instance Foldable2[MutDisjointSets[r]] {
+    type Aef = r
+
+    ///
+    /// Left-associative fold of a structure.
+    /// Applies `f` to a start value `s` and all elements in `t` going from left to right.
+    ///
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, t: MutDisjointSets[r, a]): b \ r + ef = {
+        let MutDisjointSets.MutDisjointSets({forest | _}) = t;
+        MutMap.foldLeft(
+            acc -> match MutDisjointSets.Node.Node({value | _}) -> f(acc, value),
+            s,
+            forest
+        )
+    }
+
+    ///
+    /// Right-associative fold of a structure.
+    /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
+    ///
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, t: MutDisjointSets[r, a]): b \ r + ef = {
+        let MutDisjointSets.MutDisjointSets({forest | _}) = t;
+        MutMap.foldRight(
+            match MutDisjointSets.Node.Node({value | _}) -> acc -> f(value, acc),
+            s,
+            forest
+        )
+    }
+
+    ///
+    /// Right-associative fold of a structure.
+    /// Applies `f` to a start value `s` and all elements in `t` going from right to left.
+    ///
+    /// A `foldRightWithCont` allows early termination by not calling the continuation.
+    ///
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, t: MutDisjointSets[r, a]): b \ r + ef = {
+        let MutDisjointSets.MutDisjointSets({forest | _}) = t;
+        MutMap.foldRightWithCont(
+            match MutDisjointSets.Node.Node({value | _}) -> cont -> f(value, cont),
+            s,
+            forest
+        )
+    }
+}
+
+instance UnorderedFoldable2[MutDisjointSets[r]] {
+    type Aef = r
+
+    ///
+    /// Unordered fold of `t`.
+    ///
+    /// Applies `f` to all elements in `t` and combines the results
+    /// i.e. `CommutativeMonoid.combine(f(a))` for all `a` in `t`.
+    ///
+    pub def foldMap(f: a -> b \ ef, t: MutDisjointSets[r, a]): b \ r + ef with CommutativeMonoid[b] = {
+        let MutDisjointSets.MutDisjointSets({forest | _}) = t;
+        forest |> MutMap.valuesOf |> List.foldMap(match MutDisjointSets.Node.Node({value | _}) -> f(value))
+    }
+}
 
 mod MutDisjointSets {
 
@@ -39,14 +99,14 @@ mod MutDisjointSets {
     ///
     /// Returns new and empty `MutDisjointSets` in the region `rc`.
     ///
-    pub def new(rc: Region[r]): MutDisjointSets[t, r] \ r =
+    pub def new(rc: Region[r]): MutDisjointSets[r, t] \ r =
         MutDisjointSets({ rc = rc, forest = MutMap.new(rc) })
 
     ///
     /// Updates `s` with a new disjoint set containing `x`
     /// if `x` is not already in `s`.
     ///
-    pub def makeSet(x: t, s: MutDisjointSets[t, r]): Unit \ r with Order[t] = {
+    pub def makeSet(x: t, s: MutDisjointSets[r, t]): Unit \ r with Order[t] = {
         def singleton(rc, y) = {
             Node.Node({ rc = rc, value = y, parent = Ref.new(rc, None), rank = Ref.new(rc, 0) })
         };
@@ -61,14 +121,14 @@ mod MutDisjointSets {
     ///
     /// Updates `s` with the elements of the iterable `m`.
     ///
-    pub def makeSets(m: m[t], s: MutDisjointSets[t, r]): Unit \ r with Iterable[m], Order[t] = region rc {
+    pub def makeSets(m: m[t], s: MutDisjointSets[r, t]): Unit \ r with Iterable[m], Order[t] = region rc {
         Iterable.iterator(rc, m) |> Iterator.forEach(x -> makeSet(x, s))
     }
 
     ///
     /// Returns `true` iff `x` is a member of `s`.
     ///
-    pub def memberOf(x: t, s: MutDisjointSets[t, r]): Bool \ r with Order[t] = {
+    pub def memberOf(x: t, s: MutDisjointSets[r, t]): Bool \ r with Order[t] = {
         let MutDisjointSets({ forest | _ }) = s;
         MutMap.memberOf(x, forest)
     }
@@ -76,13 +136,13 @@ mod MutDisjointSets {
     ///
     /// Returns the representative / root of the set that contains `x`.
     ///
-    pub def find(x: t, s: MutDisjointSets[t, r]): Option[t] \ r with Order[t] =
+    pub def find(x: t, s: MutDisjointSets[r, t]): Option[t] \ r with Order[t] =
         findSet(x, s) |> Option.map(match Node.Node({ value | _ }) -> value)
 
     ///
     /// Returns the representative / root `Node` of the set that contains `x`.
     ///
-    def findSet(x: t, s: MutDisjointSets[t, r]): Option[Node[t, r]] \ r with Order[t] = {
+    def findSet(x: t, s: MutDisjointSets[r, t]): Option[Node[t, r]] \ r with Order[t] = {
         def findRoot(y) = {
             let Node.Node({ parent | _ }) = y;
             match Ref.get(parent) {
@@ -111,7 +171,7 @@ mod MutDisjointSets {
     /// Further reading:
     /// https://en.wikipedia.org/wiki/Disjoint-set_data_structure
     ///
-    pub def union(x: t, y: t, s: MutDisjointSets[t, r]): Unit \ r with Order[t] =
+    pub def union(x: t, y: t, s: MutDisjointSets[r, t]): Unit \ r with Order[t] =
         def link(x1, y1) = {
             if (not equal(x1, y1)) {
                 let Node.Node({ parent = xParent, rank = xr | _ }) = x1;
@@ -155,7 +215,7 @@ mod MutDisjointSets {
     /// This is equivalent to having the same representative / root.
     /// Returns false if either `x` or `y` is not in `s`.
     ///
-    pub def equivalent(x: t, y: t, s: MutDisjointSets[t, r]): Bool \ r with Order[t] =
+    pub def equivalent(x: t, y: t, s: MutDisjointSets[r, t]): Bool \ r with Order[t] =
         match (findSet(x, s), findSet(y, s)) {
             case (Some(xn), Some(yn)) => equal(xn, yn)
             case _                    => false
@@ -171,7 +231,7 @@ mod MutDisjointSets {
     ///
     /// Returns the number of elements in `s`.
     ///
-    pub def size(s: MutDisjointSets[t, r]): Int32 \ r with Order[t] =
+    pub def size(s: MutDisjointSets[r, t]): Int32 \ r with Order[t] =
         let MutDisjointSets({ forest | _ }) = s;
         MutMap.size(forest)
 

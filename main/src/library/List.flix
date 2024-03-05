@@ -26,7 +26,9 @@ pub enum List[t] with Sendable {
 }
 
 instance ToString[List[a]] with ToString[a] {
-    pub def toString(l: List[a]): String = List.toString(l)
+    type Aef = ToString.Aef[a]
+
+    pub def toString(l: List[a]): String \ ToString.Aef[a] = List.toString(l)
 }
 
 instance Hash[List[a]] with Hash[a] {
@@ -88,7 +90,23 @@ instance Foldable[List] {
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRightWithCont(f, s, l)
 }
 
+instance Foldable2[List] {
+    type Aef = Pure
+    pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldLeft(f, s, l)
+    pub def foldRight(f: (a, b) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRight(f, s, l)
+    pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: List[a]): b \ ef = List.foldRightWithCont(f, s, l)
+}
+
 instance UnorderedFoldable[List] {
+    pub def foldMap(f: a -> b \ ef, l: List[a]): b \ ef with CommutativeMonoid[b] = List.foldMap(f, l)
+    override pub def isEmpty(l: List[a]): Bool = List.isEmpty(l)
+    override pub def exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
+    override pub def forAll(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.forAll(f, l)
+    override pub def memberOf(x: a, l: List[a]): Bool with Eq[a] = List.memberOf(x, l)
+}
+
+instance UnorderedFoldable2[List] {
+    type Aef = Pure
     pub def foldMap(f: a -> b \ ef, l: List[a]): b \ ef with CommutativeMonoid[b] = List.foldMap(f, l)
     override pub def isEmpty(l: List[a]): Bool = List.isEmpty(l)
     override pub def exists(f: a -> Bool \ ef, l: List[a]): Bool \ ef = List.exists(f, l)
@@ -134,7 +152,7 @@ mod List {
     ///
     /// Renders the list `l` to a String.
     ///
-    pub def toString(l: List[a]): String with ToString[a] = region rc {
+    pub def toString(l: List[a]): String \ ToString.Aef[a] with ToString[a] = region rc {
         let sb = StringBuilder.new(rc);
         foreach (x <- l)
             StringBuilder.appendString!("${x} :: ", sb);
@@ -1061,7 +1079,7 @@ mod List {
     /// Returns the concatenation of the string representation
     /// of each element in `l` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, l: List[a]): String with ToString[a] =
+    pub def join(sep: String, l: List[a]): String \ ToString.Aef[a] with ToString[a] =
         Foldable.join(sep, l)
 
     ///

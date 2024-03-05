@@ -103,6 +103,7 @@ instance Order[Constant] {
 // We need an instance of ToString for pretty printing:
 //
 instance ToString[Constant] {
+    type Aef = Pure
     pub def toString(x: Constant): String = match x {
         case Constant.Top    => "Constant.Top"
         case Constant.Cst(n) => "Constant.Cst(${n})"

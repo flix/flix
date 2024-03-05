@@ -23,6 +23,7 @@ enum Date(Year, Month, Day) with Eq, Order
 /// We implement our own instance of ToString for Date
 /// since we don't want the default "Date(1948, December, 10)"
 instance ToString[Date] {
+    type Aef = Pure
     pub def toString(x: Date): String =
         let Date.Date(y, m, d) = x;
         "${d} ${m}, ${y}"

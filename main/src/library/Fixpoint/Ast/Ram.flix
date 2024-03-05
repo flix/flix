@@ -37,6 +37,8 @@ mod Fixpoint.Ast.Ram {
     }
 
     instance ToString[RamStmt[v]] {
+        type Aef = Pure
+
         pub def toString(stmt: RamStmt[v]): String =
             let nl = String.lineSeparator();
             match stmt {
@@ -66,6 +68,8 @@ mod Fixpoint.Ast.Ram {
     }
 
     instance ToString[RelOp[v]] {
+        type Aef = Pure
+
         pub def toString(op: RelOp[v]): String =
             let nl = String.lineSeparator();
             match op {
@@ -105,6 +109,8 @@ mod Fixpoint.Ast.Ram {
     }
 
     instance ToString[BoolExp[v]] {
+        type Aef = Pure
+
         pub def toString(exp: BoolExp[v]): String =
             match exp {
                 case BoolExp.Empty(ramSym) => "${ramSym} == ∅"
@@ -148,6 +154,8 @@ mod Fixpoint.Ast.Ram {
     }
 
     instance ToString[RamTerm[v]] {
+        type Aef = Pure
+
         pub def toString(term: RamTerm[v]): String = match term {
             case RamTerm.Lit(v) => "%{v}"
             case RamTerm.RowLoad(var, index) => "${var}[${index}]"
@@ -225,6 +233,8 @@ mod Fixpoint.Ast.Ram {
     }
 
     instance ToString[RamSym[v]] {
+        type Aef = Pure
+
         pub def toString(ramSym: RamSym[v]): String = match ramSym {
             case RamSym.Full(sym, _, _)    => "${sym}"
             case RamSym.Delta(sym, _, _)   => "Δ${sym}"
@@ -257,6 +267,8 @@ mod Fixpoint.Ast.Ram {
     }
 
     instance ToString[RowVar] {
+        type Aef = Pure
+
         pub def toString(var: RowVar): String = match var {
             case RowVar.Named(name) => name
             case RowVar.Index(i) => "${i}$"
