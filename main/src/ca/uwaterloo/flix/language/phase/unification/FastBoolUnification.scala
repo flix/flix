@@ -663,7 +663,7 @@ object FastBoolUnification {
 
   }
 
-
+  // TODO: DOC
   private def propagateAnd(t: Term): Term = {
     def visit(t: Term, trueCsts: SortedSet[Int], trueVars: SortedSet[Int]): Term = t match {
       case Term.True => Term.True
@@ -744,6 +744,8 @@ object FastBoolUnification {
 
   /**
     * A common super-type for Boolean terms.
+    *
+    * Note: We assume that the integers used for constants and variables are disjoint.
     */
   sealed trait Term {
 
@@ -812,21 +814,48 @@ object FastBoolUnification {
 
   object Term {
 
+    /**
+      * The TRUE symbol.
+      */
     case object True extends Term
 
+    /**
+      * The FALSE symbol.
+      */
     case object False extends Term
 
+    /**
+      * Represents an uninterpreted constant ("rigid variable").
+      *
+      * Note: We assume that constants and variables are disjoint.
+      */
     case class Cst(c: Int) extends Term
 
+    /**
+      * Represents a Boolean variable ("flexible variable").
+      *
+      * Note: We assume that constants and variables are disjoint.
+      */
     case class Var(x: Int) extends Term
 
+    /**
+      * Represents the negation of the term `t`.
+      */
     case class Not(t: Term) extends Term
 
-    case class And(csts: Set[Term.Cst], vars: Set[Term.Var], rest: List[Term]) extends Term { // TODO: SortedSets?
+
+    case class And(csts: Set[Term.Cst], vars: Set[Term.Var], rest: List[Term]) extends Term {
+      // We ensure that `rest` cannot contain constants and variables.
+      // Once the code is better tested, we can remove these assertions.
       assert(!rest.exists(_.isInstanceOf[Term.Cst]))
       assert(!rest.exists(_.isInstanceOf[Term.Var]))
     }
 
+    /**
+      * A disjunction of the terms `ts`.
+      *
+      * Note: We do not use currently use any clever representation of disjunctions (because there has been no need).
+      */
     case class Or(ts: List[Term]) extends Term {
       assert(ts.length >= 2)
     }
