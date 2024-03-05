@@ -550,12 +550,11 @@ class Flix {
     "Test.Exp.Fixpoint.Constraint.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Constraint.flix"),
     "Test.Exp.Fixpoint.Project.flix" -> LocalResource.get("/test/flix/Test.Exp.Fixpoint.Project.flix"),
     "Test.Exp.Binary.Comparison.flix" -> LocalResource.get("/test/flix/Test.Exp.Binary.Comparison.flix"),
-
-    // TODO: Ascribe precedece
      "Test.Exp.Lambda.Match.flix" -> LocalResource.get("/test/flix/Test.Exp.Lambda.Match.flix"),
      "Test.Exp.New.flix" -> LocalResource.get("/test/flix/Test.Exp.New.flix"),
      "Test.Exp.Ref.Deref.flix" -> LocalResource.get("/test/flix/Test.Exp.Ref.Deref.flix"),
      "Test.Exp.Ascribe.flix" -> LocalResource.get("/test/flix/Test.Exp.Ascribe.flix"),
+     "Test.Def.Op.flix" -> LocalResource.get("/test/flix/Test.Def.Op.flix"),
 
     // TODO: JVM STUFF
 //        "Test.Exp.Jvm.GetField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetField.flix"),
@@ -579,7 +578,6 @@ class Flix {
 
     ///// TODO
     "Test.Predicate.Guard.flix" -> LocalResource.get("/test/flix/Test.Predicate.Guard.flix"), // TODO: due to 'true.' and 'false.'. Changed to 'true .' is that fine? no!
-    // "Test.Def.Op.flix" -> LocalResource.get("/test/flix/Test.Def.Op.flix"), // TODO: Changed invalid userop '&&' to '|&|'. Magnus handles this!
     // "Test.Use.Sig.flix" -> LocalResource.get("/test/flix/Test.Use.Sig.flix"), // TODO: Name error not related to parser? weededAsts match. Hmm debuggin time
     // For debug: ListMap(HashMap(Nil -> List(Declaration(Case(List.Nil,Unit(List.flix:24:10),List.flix:24:5))), Err -> List(Declaration(Case(Result.Err,Var(e,Result.flix:27:14),Result.flix:26:15))), _unit -> List(Var(_unit$52820)), Cons -> List(Declaration(Case(List.Cons,Tuple(List(Var(t,List.flix:25:15), Apply(Ambiguous(List,List.flix:25:18),Var(t,List.flix:25:23),List.flix:25:18)),List.flix:25:14),List.flix:24:13))), Ok -> List(Declaration(Case(Result.Ok,Var(t,Result.flix:26:13),Result.flix:26:5))), Some -> List(Declaration(Case(Option.Some,Var(t,Option.flix:26:15),Option.flix:25:14))), None -> List(Declaration(Case(Option.None,Unit(Option.flix:25:10),Option.flix:25:5)))))
 
