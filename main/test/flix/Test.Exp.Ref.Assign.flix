@@ -93,7 +93,7 @@ mod Test.Exp.Ref.Assign {
 
     @test
     def testAssignOption01(): Bool = region rc {
-        let l = ref None : Option[Int32] @ rc;
+        let l = ref None @ rc;
         l := Some(123);
         deref l == Some(123)
     }

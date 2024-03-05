@@ -101,9 +101,9 @@ object OccurrenceAnalyzer {
     * Visits a definition in the program and performs occurrence analysis
     */
   private def visitDef(defn: LiftedAst.Def): (OccurrenceAst.Def, OccurInfo) = {
-    val cparams = defn.cparams.map(visitFormalParam)
-    val fparams = defn.fparams.map(visitFormalParam)
     val (e, oi) = visitExp(defn.sym, defn.exp)
+    val cparams = defn.cparams.map(visitFormalParam).map(p => (p, oi.vars.getOrElse(p.sym, Dead)))
+    val fparams = defn.fparams.map(visitFormalParam).map(p => (p, oi.vars.getOrElse(p.sym, Dead)))
     /// Def consists of a single direct call to a def
     val isDirectCall = e match {
       case OccurrenceAst.Expression.ApplyDef(_, _, Ast.CallType.TailCall, _, _, _) => true

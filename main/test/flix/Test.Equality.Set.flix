@@ -1,7 +1,7 @@
 mod Test.Equality.Set {
 
     @test
-    def testEqSet01(): Bool = (Set#{}: Set[Unit]) == Set#{}: Set[Unit]
+    def testEqSet01(): Bool = (Set#{}: Set[Unit]) == (Set#{}: Set[Unit])
 
     @test
     def testEqSet02(): Bool = Set#{1} == Set#{1}
@@ -13,7 +13,7 @@ mod Test.Equality.Set {
     def testEqSet04(): Bool = Set#{Set#{3, 2}} == Set#{Set#{2, 3}}
 
     @test
-    def testEqSet05(): Bool = Set#{Set#{Set#{}: Set[Unit]}} == Set#{Set#{Set#{}}}
+    def testEqSet05(): Bool = Set#{Set#{(Set#{}: Set[Unit])}} == Set#{Set#{Set#{}}}
 
     @test
     def testEqSet06(): Bool = Set#{Set#{Set#{4}}} == Set#{Set#{Set#{4}}}
