@@ -663,21 +663,43 @@ object FastBoolUnification {
 
   }
 
-  // TODO: DOC
+  /**
+    * Perform AND-propagation on the given `term`.
+    *
+    * We use AND-propagation to simplify terms during the Successive Variable Elimination (SVE) algorithm.
+    *
+    * For example, the term:
+    *
+    * {{{
+    *   x1 /\ x2 /\ (x7 /\ x9 /\ x1)
+    * }}}
+    *
+    * is simplified to the term:
+    *
+    * {{{
+    *   x1 /\ x2 /\ (x7 /\ x9 /\ TRUE)
+    * }}}
+    *
+    * The idea is that since x1 (and x2) must hold for the entire conjunction to be TRUE they can be removed from the sub-term.
+    */
   private def propagateAnd(t: Term): Term = {
+    // Simplifies the given term `t` assuming that `trueCsts` and `trueVars` are all TRUE.
     def visit(t: Term, trueCsts: SortedSet[Int], trueVars: SortedSet[Int]): Term = t match {
       case Term.True => Term.True
       case Term.False => Term.False
-      case Term.Cst(c) => if (trueCsts.contains(c)) Term.True else Term.Cst(c)
-      case Term.Var(x) => if (trueVars.contains(x)) Term.True else Term.Var(x)
+      case Term.Cst(c) => if (trueCsts.contains(c)) Term.True else Term.Cst(c) // `c` holds so we can replace it by TRUE.
+      case Term.Var(x) => if (trueVars.contains(x)) Term.True else Term.Var(x) // `x` holds so we can replace it by TRUE.
       case Term.Not(t0) => Term.mkNot(visit(t0, trueCsts, trueVars))
       case Term.And(csts0, vars0, rest0) =>
         // Compute the constants and variables that _must_ hold for the whole conjunction to hold.
         val termCsts = csts0.map(_.c)
         val termVars = vars0.map(_.x)
+
+        // Extend trueCsts and trueVars.
         val currentCsts = trueCsts ++ termCsts
         val currentVars = trueVars ++ termVars
 
+        // Recurse on the sub-terms with the updated maps.
         val rest = rest0.collect {
           case t: Term.Not => visit(t, currentCsts, currentVars)
           case t: Term.And => visit(t, currentCsts, currentVars)
@@ -690,10 +712,11 @@ object FastBoolUnification {
             throw InternalCompilerException("Unexpected variable", SourceLocation.Unknown)
         }
 
-        // Compute the constants and variables that do not already hold.
+        // Compute new constant and variable sets by removing constants and variables that hold.
         val csts = termCsts -- trueCsts
         val vars = termVars -- trueVars
 
+        // Recompose the conjunction. We use the smart constructor because some sets may have become empty.
         Term.mkAnd(csts.toList.map(Term.Cst) ++ vars.toList.map(Term.Var) ++ rest)
 
       case Term.Or(ts) => Term.mkOr(ts.map(visit(_, trueCsts, trueVars)))
