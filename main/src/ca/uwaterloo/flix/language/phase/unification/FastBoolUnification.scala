@@ -1153,7 +1153,14 @@ object FastBoolUnification {
       BoolSubstitution(this.m ++ that.m)
     }
 
-    def @@(that: BoolSubstitution): BoolSubstitution = { // TODO: Verify that every single use correct.
+    /**
+      * Composes `this` substitution with `that` substitution.
+      *
+      * Conceptually `this` is a function: `b -> c` and `that` is a function `a -> b`.
+      *
+      * We want to compute `a -> c` which we get by computing `x -> this(that(x))`.
+      */
+    def @@(that: BoolSubstitution): BoolSubstitution = {
       // Case 1: Return `that` if `this` is empty.
       if (this.m.isEmpty) {
         return that
