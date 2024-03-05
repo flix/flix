@@ -552,10 +552,10 @@ class Flix {
     "Test.Exp.Binary.Comparison.flix" -> LocalResource.get("/test/flix/Test.Exp.Binary.Comparison.flix"),
 
     // TODO: Ascribe precedece
-    // "Test.Exp.Lambda.Match.flix" -> LocalResource.get("/test/flix/Test.Exp.Lambda.Match.flix"),
-    // "Test.Exp.New.flix" -> LocalResource.get("/test/flix/Test.Exp.New.flix"),
-    // "Test.Exp.Ref.Deref.flix" -> LocalResource.get("/test/flix/Test.Exp.Ref.Deref.flix"),
-    // "Test.Exp.Ascribe.flix" -> LocalResource.get("/test/flix/Test.Exp.Ascribe.flix"),
+     "Test.Exp.Lambda.Match.flix" -> LocalResource.get("/test/flix/Test.Exp.Lambda.Match.flix"),
+     "Test.Exp.New.flix" -> LocalResource.get("/test/flix/Test.Exp.New.flix"),
+     "Test.Exp.Ref.Deref.flix" -> LocalResource.get("/test/flix/Test.Exp.Ref.Deref.flix"),
+     "Test.Exp.Ascribe.flix" -> LocalResource.get("/test/flix/Test.Exp.Ascribe.flix"),
 
     // TODO: JVM STUFF
 //        "Test.Exp.Jvm.GetField.flix" -> LocalResource.get("/test/flix/Test.Exp.Jvm.GetField.flix"),

@@ -2400,18 +2400,22 @@ object Weeder2 {
         case (op, t1 :: t2 :: Nil) =>
           text(op).head match {
             // ARROW FUNCTIONS
-            case "->" => mapN(tryPickEffect(tree))(eff => {
+            case "->" => flatMapN(tryPickEffect(tree))(eff => {
               val l = tree.loc.asSynthetic
-              val lastParam = t1 match {
-                case Type.Tuple(inners, _) => inners.last
-                case t => t
+              val t1Revisitied = t1 match {
+                // Normally singleton tuples `((a, b))` are treated as `(a, b)`. That's fine unless we are doing an arrow type!
+                // In this case we need t1 "unflattened" so we redo the visit.
+                case Type.Tuple(_, _) =>
+                  val t1Tree = flatMapN(pick(TreeKind.Type.Type, tree.children))(t => pick(TreeKind.Type.Tuple, t.children))
+                  val params = flatMapN(t1Tree)(t => traverse(pickAll(TreeKind.Type.Type, t.children))(visitType))
+                  mapN(params)(params => (params.last, params.init))
+                case t => Validation.success((t, List.empty))
               }
-              val initParams = t1 match {
-                case Type.Tuple(inners, _) => inners.init
-                case _ => List()
+              mapN(t1Revisitied) {
+                case (lastParam, initParams) =>
+                  val base = Type.Arrow(List(lastParam), eff, t2, l)
+                  initParams.foldRight(base)((acc, tpe) => Type.Arrow(List(acc), None, tpe, l))
               }
-              val base = Type.Arrow(List(lastParam), eff, t2, l)
-              initParams.foldRight(base)((acc, tpe) => Type.Arrow(List(acc), None, tpe, l))
             })
             // REGULAR TYPE OPERATORS
             case "+" => Validation.success(Type.Union(t1, t2, tree.loc))
