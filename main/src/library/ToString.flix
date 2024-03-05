@@ -129,26 +129,6 @@ instance ToString[(a1, a2, a3)] with ToString[a1], ToString[a2], ToString[a3] {
     }
 }
 
-//instance ToString[Array[a, r]] with ToString[a] {
-//    type Aef = r + ToString.Aef[a]
-//
-//    pub def toString(a: Array[a, r]): String \ r + ToString.Aef[a] = region rc2 {
-//        let sb = StringBuilder.new(rc2);
-//        let first = ref true @ rc2;
-//
-//        StringBuilder.appendString!("Array#{", sb);
-//
-//        let f = (x) -> {
-//            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
-//            StringBuilder.appendString!(ToString.toString(x), sb)
-//        };
-//        Array.forEach(f, a);
-//
-//        StringBuilder.appendString!("}", sb);
-//        StringBuilder.toString(sb)
-//    }
-//}
-
 instance ToString[(a1, a2, a3, a4)] with ToString[a1], ToString[a2], ToString[a3], ToString[a4] {
     type Aef = ToString.Aef[a1] + ToString.Aef[a2] + ToString.Aef[a3] + ToString.Aef[a4]
     pub def toString(t: (a1, a2, a3, a4)): String \ ToString.Aef[a1] + ToString.Aef[a2] + ToString.Aef[a3] + ToString.Aef[a4] = match t {
