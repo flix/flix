@@ -502,6 +502,24 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("Test.UnexpectedEffect.07") {
+    // guards must be pure
+    val input =
+      """
+        |eff E
+        |def impureBool(): Bool \ E = checked_ecast(???)
+        |
+        |def foo(): Int32 \ E = {
+        |    match 0 {
+        |        case 0 if impureBool() => 0
+        |        case _ => 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
   test("Test.EffectGeneralizationError.01") {
     val input =
       """
@@ -632,6 +650,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
+
 
   test("Test.UnexpectedType.OpParam.01") {
     val input =
