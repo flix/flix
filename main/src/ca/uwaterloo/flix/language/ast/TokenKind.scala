@@ -29,8 +29,6 @@ sealed trait TokenKind
 object TokenKind {
   case object Ampersand extends TokenKind
 
-  case object AmpersandAmpersand extends TokenKind
-
   case object AngledEqual extends TokenKind
 
   case object AngledPlus extends TokenKind
@@ -231,6 +229,14 @@ object TokenKind {
 
   case object KeywordRestrictable extends TokenKind
 
+  case object KeywordRvadd extends TokenKind
+
+  case object KeywordRvand extends TokenKind
+
+  case object KeywordRvnot extends TokenKind
+
+  case object KeywordRvsub extends TokenKind
+
   case object KeywordSealed extends TokenKind
 
   case object KeywordSelect extends TokenKind
@@ -307,8 +313,6 @@ object TokenKind {
 
   case object Minus extends TokenKind
 
-  case object MinusMinus extends TokenKind
-
   case object NameGreek extends TokenKind
 
   case object NameJava extends TokenKind
@@ -336,8 +340,6 @@ object TokenKind {
   case object StarStar extends TokenKind
 
   case object Tilde extends TokenKind
-
-  case object TildeTilde extends TokenKind
 
   case object TripleAmpersand extends TokenKind
 

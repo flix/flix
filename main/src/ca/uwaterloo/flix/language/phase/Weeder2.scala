@@ -2416,9 +2416,9 @@ object Weeder2 {
             // REGULAR TYPE OPERATORS
             case "+" => Validation.success(Type.Union(t1, t2, tree.loc))
             case "-" => Validation.success(Type.Intersection(t1, Type.Complement(t2, tree.loc.asSynthetic), tree.loc))
-            case "++" => Validation.success(Type.CaseUnion(t1, t2, tree.loc))
-            case "&&" => Validation.success(Type.CaseIntersection(t1, t2, tree.loc))
-            case "--" => Validation.success(Type.CaseIntersection(t1, Type.CaseComplement(t2, tree.loc.asSynthetic), tree.loc))
+            case "rvadd" => Validation.success(Type.CaseUnion(t1, t2, tree.loc))
+            case "rvand" => Validation.success(Type.CaseIntersection(t1, t2, tree.loc))
+            case "rvsub" => Validation.success(Type.CaseIntersection(t1, Type.CaseComplement(t2, tree.loc.asSynthetic), tree.loc))
             case "&" => Validation.success(Type.Intersection(t1, t2, tree.loc))
             case "xor" => Validation.success(Type.Or(
               Type.And(t1, Type.Not(t2, tree.loc), tree.loc),
@@ -2444,7 +2444,7 @@ object Weeder2 {
         case (op, t :: Nil) =>
           text(op).head match {
             case "~" => Validation.success(Type.Complement(t, tree.loc))
-            case "~~" => Validation.success(Type.CaseComplement(t, tree.loc))
+            case "rvnot" => Validation.success(Type.CaseComplement(t, tree.loc))
             case "not" => Validation.success(Type.Not(t, tree.loc))
             // UNRECOGNIZED
             // TODO: Use Type.Error here

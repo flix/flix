@@ -337,10 +337,6 @@ object Lexer {
         else if (isMathNameChar(p)) { advance(); acceptMathName() }
         else if (ValidUserOpTokens.contains(p)) { advance(); acceptUserDefinedOp() }
         else TokenKind.Underscore
-      case '~' => if (peek() == '~') {
-        advance();
-        TokenKind.TildeTilde
-      } else TokenKind.Tilde
       case '\\' => TokenKind.Backslash
       case '$' if peek().isUpper => acceptBuiltIn()
       case '\"' => acceptString()
@@ -372,7 +368,6 @@ object Lexer {
       }
       case _ if isMatch("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
-      case _ if isKeyword("--") => TokenKind.MinusMinus
       case _ if isKeyword("**") => TokenKind.StarStar
       case _ if isKeyword("<-") => TokenKind.ArrowThinL
       case _ if isKeyword("->") => TokenKind.ArrowThinR
@@ -382,12 +377,12 @@ object Lexer {
       case _ if isKeyword("==") => TokenKind.EqualEqual
       case _ if isKeyword("!=") => TokenKind.BangEqual
       case _ if isKeyword("&&&") => TokenKind.TripleAmpersand
-      case _ if isKeyword("&&") => TokenKind.AmpersandAmpersand
       case _ if isKeyword("<<<") => TokenKind.TripleAngleL
       case _ if isKeyword(">>>") => TokenKind.TripleAngleR
       case _ if isKeyword("^^^") => TokenKind.TripleCaret
       case _ if isKeyword("|||") => TokenKind.TripleBar
       case _ if isKeyword("~~~") => TokenKind.TripleTilde
+      case '~' => TokenKind.Tilde
       case _ if isKeyword("<+>") => TokenKind.AngledPlus
       case _ if isKeyword("alias") => TokenKind.KeywordAlias
       case _ if isKeyword("and") => TokenKind.KeywordAnd
@@ -446,6 +441,10 @@ object Lexer {
       case _ if isKeyword("ref") => TokenKind.KeywordRef
       case _ if isKeyword("region") => TokenKind.KeywordRegion
       case _ if isKeyword("restrictable") => TokenKind.KeywordRestrictable
+      case _ if isKeyword("rvadd") => TokenKind.KeywordRvadd
+      case _ if isKeyword("rvand") => TokenKind.KeywordRvand
+      case _ if isKeyword("rvsub") => TokenKind.KeywordRvsub
+      case _ if isKeyword("rvnot") => TokenKind.KeywordRvnot
       case _ if isKeyword("sealed") => TokenKind.KeywordSealed
       case _ if isKeyword("select") => TokenKind.KeywordSelect
       case _ if isKeyword("set") => TokenKind.KeywordSet

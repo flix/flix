@@ -2298,10 +2298,8 @@ object Parser2 {
     private def TYPE_OP_PRECEDENCE: List[List[TokenKind]] = List(
       // BINARY OPS
       List(TokenKind.ArrowThinR), // ->
-      // TODO: NB. UserDefinedOperator only really means '++' here. This is checked in the weeder
-      // But since '++' is used as a custom operator in 'Semigroup.combine' it needs to be a user operator.
-      List(TokenKind.UserDefinedOperator, TokenKind.MinusMinus),
-      List(TokenKind.AmpersandAmpersand), // &&
+      List(TokenKind.KeywordRvadd, TokenKind.KeywordRvsub), // rvadd, rvsub
+      List(TokenKind.KeywordRvand), // rvand
       List(TokenKind.Plus, TokenKind.Minus), // +, -
       List(TokenKind.Ampersand), // &
       List(TokenKind.KeywordXor), // xor
@@ -2309,7 +2307,7 @@ object Parser2 {
       List(TokenKind.KeywordAnd), // and
       List(TokenKind.Colon), // :
       // UNARY OPS
-      List(TokenKind.TildeTilde, TokenKind.Tilde, TokenKind.KeywordNot) // ~~~, ~, not
+      List(TokenKind.KeywordRvnot, TokenKind.Tilde, TokenKind.KeywordNot) // rvnot, ~, not
     )
 
     private def rightBindsTighter(left: TokenKind, right: TokenKind): Boolean = {
@@ -2437,7 +2435,7 @@ object Parser2 {
              | TokenKind.KeywordTrue => constant()
         case TokenKind.KeywordNot
              | TokenKind.Tilde
-             | TokenKind.TildeTilde => unary()
+             | TokenKind.KeywordRvnot => unary()
         // TODO: Static is used as a type name in std.lib but that should be an error since 'Static' is a reserved keyword
         case TokenKind.KeywordStaticUppercase => name(List(TokenKind.KeywordStaticUppercase))
         case t => advanceWithError(Parser2Error.DevErr(currentSourceLocation(), s"Expected type, found $t"))
@@ -2492,7 +2490,7 @@ object Parser2 {
       val mark = open()
       val op = nth(0)
       val markOp = open()
-      expectAny(List(TokenKind.Tilde, TokenKind.KeywordNot, TokenKind.TildeTilde))
+      expectAny(List(TokenKind.Tilde, TokenKind.KeywordNot, TokenKind.KeywordRvnot))
       close(markOp, TreeKind.Operator)
       ttype(left = op)
       close(mark, TreeKind.Type.Unary)
@@ -2663,6 +2661,9 @@ object Parser2 {
     }
 
     private def termList()(implicit s: State): Mark.Closed = {
+      if (!at(TokenKind.ParenL)) {
+        println(currentSourceLocation())
+      }
       assert(at(TokenKind.ParenL))
       val mark = open()
       separated(() => Expr.expression())
