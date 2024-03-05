@@ -162,7 +162,7 @@ mod Test.Exp.Interpolation {
 
     @test
     def interpolation30(): Bool =
-        let x = None : Option[Int32];
+        let x = (None : Option[Int32]);
         "${x}" == "None"
 
     @test

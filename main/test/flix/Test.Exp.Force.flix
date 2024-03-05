@@ -164,7 +164,7 @@ mod Test.Exp.Force {
     @test
     def testOptionForce01(): Bool =
         let x = lazy Poly.None;
-        Poly.None: Poly[Unit, Unit] == force x
+        (Poly.None: Poly[Unit, Unit]) == force x
 
     @test
     def testPrecedenceForce01(): Bool =
@@ -187,8 +187,8 @@ mod Test.Exp.Force {
 
     @test
     def testPrecedenceForce04(): Bool =
-        let x = lazy 2 : Lazy[Int32];
-        let y = force x : Int32;
+        let x = ((lazy 2) : Lazy[Int32]);
+        let y = ((force x) : Int32);
         y == 2
 
     pub enum Suit {

@@ -386,7 +386,7 @@ mod DelayList {
     /// Returns an infinite sequence of integers starting from and including `n`.
     ///
     @Experimental @Lazy
-    pub def from_(n: Int32): DelayList[Int32] =
+    pub def startFrom(n: Int32): DelayList[Int32] =
         def loop(i) = LCons(i, lazy loop(i + 1));
         LList(lazy loop(n))
 
@@ -571,13 +571,13 @@ mod DelayList {
         LList(lazy loop(l, ENil))
 
     ///
-    /// Returns `l` with every occurrence of `from` replaced by `to`.
+    /// Returns `l` with every occurrence of `src` replaced by `dst`.
     ///
     /// Does not force the tail of `l`.
     ///
     @Experimental @Lazy
-    pub def replace(from_: {from_ = a}, to: {to = a}, l: DelayList[a]): DelayList[a] with Eq[a] =
-        map(e -> if (from_.from_ == e) to.to else e, l)
+    pub def replace(src: {src = a}, dst: {dst = a}, l: DelayList[a]): DelayList[a] with Eq[a] =
+        map(e -> if (src.src == e) dst.dst else e, l)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `l` going from left to right.

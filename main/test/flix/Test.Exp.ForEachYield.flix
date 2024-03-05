@@ -108,7 +108,7 @@ mod Test.Exp.ForEachYield {
     @test
     def testForEachYieldResult11(): Bool =
         (foreach ((x, y) <- (-1, 0) :: (1, 2) :: (3, 4) :: Nil; if y < 0; z <- "1" :: "2" :: "3" :: Nil)
-            yield (x, z, y)) == Nil: List[(Int32, String, Int32)]
+            yield (x, z, y)) == (Nil: List[(Int32, String, Int32)])
 
     @test
     def testForEachYield12(): List[(Int32, String, Int32)] =

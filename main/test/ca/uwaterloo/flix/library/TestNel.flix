@@ -278,16 +278,16 @@ mod TestNel {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def replace01(): Bool = Nel.replace(from_ = 1, to = 42, Nel(1, Nil)) == Nel(42, Nil)
+    def replace01(): Bool = Nel.replace(src = 1, dst = 42, Nel(1, Nil)) == Nel(42, Nil)
 
     @test
-    def replace02(): Bool = Nel.replace(from_ = 7, to = 42, Nel(1, Nil)) == Nel(1, Nil)
+    def replace02(): Bool = Nel.replace(src = 7, dst = 42, Nel(1, Nil)) == Nel(1, Nil)
 
     @test
-    def replace03(): Bool = Nel.replace(from_ = 2, to = 42, Nel(1, 2 :: Nil)) == Nel(1, 42 :: Nil)
+    def replace03(): Bool = Nel.replace(src = 2, dst = 42, Nel(1, 2 :: Nil)) == Nel(1, 42 :: Nil)
 
     @test
-    def replace04(): Bool = Nel.replace(from_ = 7, to = 42, Nel(1, 2 :: Nil)) == Nel(1, 2 :: Nil)
+    def replace04(): Bool = Nel.replace(src = 7, dst = 42, Nel(1, 2 :: Nil)) == Nel(1, 2 :: Nil)
 
     /////////////////////////////////////////////////////////////////////////////
     // permutations                                                            //

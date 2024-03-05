@@ -84,7 +84,7 @@ mod Fixpoint.Interpreter {
                 }, MutMap.getWithDefault(ramSym, MutMap.new_(rc1), db))
             case RelOp.Functional(RowVar.Index(i), f, terms, body) =>
                 let args = terms |> Vector.map(evalTerm(env));
-                let result = (f(args): Vector[Vector[v]]);
+                let result = f(args);
 
                 let (tupleEnv, _latEnv) = env; // TODO: Do we ever need to use latEnv?
                 foreach (t <- result) {

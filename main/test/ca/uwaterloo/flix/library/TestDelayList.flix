@@ -1253,40 +1253,40 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def from01(): Bool =
-        DelayList.from_(-1) |> DelayList.take(0) == ENil
+    def startFrom01(): Bool =
+        DelayList.startFrom(-1) |> DelayList.take(0) == ENil
 
     @test
-    def from02(): Bool =
-        DelayList.from_(0) |> DelayList.take(0) == ENil
+    def startFrom02(): Bool =
+        DelayList.startFrom(0) |> DelayList.take(0) == ENil
 
     @test
-    def from04(): Bool =
-        DelayList.from_(100) |> DelayList.take(-1) == ENil
+    def startFrom04(): Bool =
+        DelayList.startFrom(100) |> DelayList.take(-1) == ENil
 
     @test
-    def from05(): Bool =
-    	DelayList.from_(-1) |> DelayList.take(1) == ECons(-1, ENil)
+    def startFrom05(): Bool =
+    	DelayList.startFrom(-1) |> DelayList.take(1) == ECons(-1, ENil)
 
     @test
-    def from06(): Bool =
-    	DelayList.from_(5) |> DelayList.take(1) == ECons(5, ENil)
+    def startFrom06(): Bool =
+    	DelayList.startFrom(5) |> DelayList.take(1) == ECons(5, ENil)
 
     @test
-    def from07(): Bool =
-    	DelayList.from_(1) |> DelayList.take(3) == ECons(1, ECons(2, ECons(3, ENil)))
+    def startFrom07(): Bool =
+    	DelayList.startFrom(1) |> DelayList.take(3) == ECons(1, ECons(2, ECons(3, ENil)))
 
     @test
-    def from08(): Bool =
-    	DelayList.from_(-1000) |> DelayList.take(1000) == DelayList.range(-1000, 0)
+    def startFrom08(): Bool =
+    	DelayList.startFrom(-1000) |> DelayList.take(1000) == DelayList.range(-1000, 0)
 
     @test
-    def from09(): Bool =
-    	DelayList.from_(-1000) |> DelayList.take(2000) == DelayList.range(-1000, 1000)
+    def startFrom09(): Bool =
+    	DelayList.startFrom(-1000) |> DelayList.take(2000) == DelayList.range(-1000, 1000)
 
     @test
-    def from10(): Bool =
-    	DelayList.from_(0) |> DelayList.take(2000) == DelayList.range(0, 2000)
+    def startFrom10(): Bool =
+    	DelayList.startFrom(0) |> DelayList.take(2000) == DelayList.range(0, 2000)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -1859,35 +1859,35 @@ mod TestDelayList {
 
     @test
     def replace01(): Bool =
-        DelayList.replace(from_ = 3, to = 4, ENil) == ENil
+        DelayList.replace(src = 3, dst = 4, ENil) == ENil
 
     @test
     def replace02(): Bool =
-        DelayList.replace(from_ = 3, to = 4, ECons(1, ENil)) == ECons(1, ENil)
+        DelayList.replace(src = 3, dst = 4, ECons(1, ENil)) == ECons(1, ENil)
 
     @test
     def replace03(): Bool =
-        DelayList.replace(from_ = 3, to = 4, ECons(3, ENil)) == ECons(4, ENil)
+        DelayList.replace(src = 3, dst = 4, ECons(3, ENil)) == ECons(4, ENil)
 
     @test
     def replace04(): Bool =
-        DelayList.replace(from_ = 3, to = 4, ECons(4, ECons(4, ECons(4, ENil)))) == ECons(4, ECons(4, ECons(4, ENil)))
+        DelayList.replace(src = 3, dst = 4, ECons(4, ECons(4, ECons(4, ENil)))) == ECons(4, ECons(4, ECons(4, ENil)))
 
     @test
     def replace05(): Bool =
-        DelayList.replace(from_ = 3, to = 4, ECons(2, ECons(2, ECons(2, ENil)))) == ECons(2, ECons(2, ECons(2, ENil)))
+        DelayList.replace(src = 3, dst = 4, ECons(2, ECons(2, ECons(2, ENil)))) == ECons(2, ECons(2, ECons(2, ENil)))
 
     @test
     def replace06(): Bool =
-        DelayList.replace(from_ = 3, to = 4, ECons(2, ECons(3, ECons(2, ENil)))) == ECons(2, ECons(4, ECons(2, ENil)))
+        DelayList.replace(src = 3, dst = 4, ECons(2, ECons(3, ECons(2, ENil)))) == ECons(2, ECons(4, ECons(2, ENil)))
 
     @test
     def replace07(): Bool =
-        DelayList.replace(from_ = 0, to = 1, ECons(0, ECons(0, ECons(0, ENil)))) == ECons(1, ECons(1, ECons(1, ENil)))
+        DelayList.replace(src = 0, dst = 1, ECons(0, ECons(0, ECons(0, ENil)))) == ECons(1, ECons(1, ECons(1, ENil)))
 
     @test
     def replace08(): Bool =
-        DelayList.replace(from_ = 3, to = 4, LList(lazy ECons(3, LList(lazy LCons(3, lazy LList(lazy LCons(3, lazy LList(lazy ENil)))))))) == ECons(4, ECons(4, ECons(4, ENil)))
+        DelayList.replace(src = 3, dst = 4, LList(lazy ECons(3, LList(lazy LCons(3, lazy LList(lazy LCons(3, lazy LList(lazy ENil)))))))) == ECons(4, ECons(4, ECons(4, ENil)))
 
 
     /////////////////////////////////////////////////////////////////////////////
