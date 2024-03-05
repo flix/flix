@@ -37,10 +37,10 @@ import scala.jdk.CollectionConverters._
 object Reducer {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Reducer") {
-    implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue, ConcurrentHashMap.newKeySet())
+    implicit val ctx: SharedContext = SharedContext(new ConcurrentLinkedQueue, new ConcurrentHashMap())
 
     val newDefs = ParOps.parMapValues(root.defs)(visitDef)
-    val defTypes = ctx.defTypes.asScala.toSet
+    val defTypes = ctx.defTypes.keys.asScala.toSet
 
     val effectTypes = root.effects.values.toSet.flatMap(typesOfEffect)
 
@@ -63,15 +63,15 @@ object Reducer {
       }
 
       // `defn.fparams` and `defn.tpe` are both included in `defn.arrowType`
-      ctx.defTypes.add(d.arrowType)
-      ctx.defTypes.add(unboxedType.tpe)
-      ctx.defTypes.addAll(cParamTypes.asJavaCollection)
+      ctx.defTypes.put(d.arrowType, ())
+      ctx.defTypes.put(unboxedType.tpe, ())
+      cParamTypes.foreach(t => ctx.defTypes.put(t, ()))
 
       Def(ann, mod, sym, cparams, fparams, ls, pcPoints, e, tpe, unboxedType, purity, loc)
   }
 
   private def visitExpr(exp0: Expr)(implicit lctx: LocalContext, ctx: SharedContext): Expr = {
-    ctx.defTypes.add(exp0.tpe)
+    ctx.defTypes.put(exp0.tpe, ())
     exp0 match {
       case Expr.Cst(cst, tpe, loc) =>
         Expr.Cst(cst, tpe, loc)
@@ -193,7 +193,7 @@ object Reducer {
     *
     * We use a concurrent (non-blocking) linked queue to ensure thread-safety.
     */
-  private case class SharedContext(anonClasses: ConcurrentLinkedQueue[AnonClass], defTypes: ConcurrentHashMap.KeySetView[MonoType, java.lang.Boolean])
+  private case class SharedContext(anonClasses: ConcurrentLinkedQueue[AnonClass], defTypes: ConcurrentHashMap[MonoType, Unit])
 
   /**
     * Returns all types contained in the given `Effect`.
