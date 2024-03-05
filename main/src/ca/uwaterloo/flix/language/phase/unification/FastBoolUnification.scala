@@ -493,13 +493,33 @@ object FastBoolUnification {
     (rest.reverse, currentSubst)
   }
 
+  /**
+    * Computes the most-general unifier of all the given equations `l`.
+    *
+    * Throws a [[ConflictException]] if an equation in `l` cannot be solved.
+    *
+    * Note: We assume that any existing substitution has already been applied to the equations in `l`.
+    *
+    * Note: We assume that any existing substitution will be composed with the substitution returned by this function.
+    */
+  private def boolUnifyAll(l: List[Equation]): BoolSubstitution = {
+    var subst = BoolSubstitution.empty
+    var pending = l
+    while (pending.nonEmpty) {
+      val e = pending.head
+      pending = pending.tail
 
-  private def boolUnifyAll(l: List[Equation]): BoolSubstitution = l match {
-    case Nil => BoolSubstitution.empty
-    case e :: xs =>
-      val subst = boolUnifyOne(e)
-      val subst1 = boolUnifyAll(subst(xs))
-      subst @@ subst1 // TODO: order?
+      // Compute the most-general unifier for the current equation `e`.
+      val newSubst = boolUnifyOne(e)
+
+      // Apply the computed substitution to all pending equations.
+      pending = newSubst(pending)
+
+      // Compose the new substitution with the current substitution.
+      subst = newSubst @@ subst
+    }
+
+    subst
   }
 
   /**
@@ -526,6 +546,8 @@ object FastBoolUnification {
     * The Successive Variable Elimination algorithm.
     *
     * Computes the most-general unifier of the given term `t ~ false` where `fvs` is the list of free variables in `t`.
+    *
+    * Eliminates variables one-by-one from the given list `fvs`.
     *
     * Throws a [[BoolUnificationException]] if there is no solution.
     */
@@ -1461,13 +1483,13 @@ object FastBoolUnification {
 
 
   def main(args: Array[String]): Unit = {
-    solveAll(FixpointInterpreter_evalTerm()).get
-    //    solveAll(Array_copyOfRange()).get
+    //solveAll(FixpointInterpreter_evalTerm()).get
+    //solveAll(Array_copyOfRange()).get
     //solveAll(FixpointAstDatalog_toString299997()).get
     //solveAll(Nec_zipWithA()).get
     //solveAll(ConcurrentChannel_selectHelper()).get
     //solveAll(Array_transpose()).get
-    //solveAll(MutDeque_sameElements()).get
+    solveAll(MutDeque_sameElements()).get
     //solveAll(FixpointAstDatalog_predSymsOf29898()).get
     //solveAll(Iterator_toArray()).get
     //solveAll(Files_append()).get
