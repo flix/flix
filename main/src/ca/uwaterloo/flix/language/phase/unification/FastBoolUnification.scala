@@ -43,7 +43,7 @@ import scala.collection.mutable
 ///   - We try to move ground terms to the RHS.
 ///
 ///
-/// TODO: Future Ideas:
+/// Future Ideas:
 /// - Explore change of basis.
 /// - Explore slack variables (i.e. variables marked don't care, and use SAT).
 /// - Explore in detail how constraints are generated.
@@ -180,7 +180,7 @@ object FastBoolUnification {
       debugln("--- Phase 4: Boolean Unification")
       debugln("    (resolves all remaining equations using SVE.)")
       debugln("-".repeat(80))
-      val restSubst = boolUnifyAll(currentEqns, Set.empty)
+      val restSubst = boolUnifyAll(currentEqns)
       currentEqns = Nil
       currentSubst = restSubst @@ currentSubst
       printSubstitution()
@@ -188,10 +188,10 @@ object FastBoolUnification {
     }
 
     /**
-     * Updates the internal state with the given list of pending equations and partial substitution.
-     *
-     */
-      // TODO: Comment
+      * Updates the internal state with the given list of pending equations and partial substitution.
+      *
+      * Simplifies the pending equations. Throws [[ConflictException]] if an unsolvable equation is detected.
+      */
     private def updateState(p: (List[Equation], BoolSubstitution)): Unit = {
       val (nextEqns, nextSubst) = p
       currentEqns = simplify(nextEqns)
@@ -199,11 +199,11 @@ object FastBoolUnification {
     }
 
     /**
-     * Verifies that the current substitution is a valid solution to the original equations `l`.
-     *
-     * Note: Does not make sense to call before the equation system has been fully solved.
-     *
-     * @throws ConflictException if an equation is not solved by the current substitution.
+      * Verifies that the current substitution is a valid solution to the original equations `l`.
+      *
+      * Note: Does not make sense to call before the equation system has been fully solved.
+      *
+      * Throws a [[ConflictException]] if an equation is not solved by the current substitution.
       */
     private def verifySolution(): Unit = {
       verify(currentSubst, l)
@@ -460,6 +460,7 @@ object FastBoolUnification {
     (unsolved.reverse, subst)
   }
 
+  // TODO: DOC
   // Deals with x92747 ~ (x135862 ∧ x135864)
   // where LHS is var and is free on RHS
   private def varAssignment(l: List[Equation], subst0: BoolSubstitution): (List[Equation], BoolSubstitution) = {
@@ -493,37 +494,45 @@ object FastBoolUnification {
   }
 
 
-  private def boolUnifyAll(l: List[Equation], renv: Set[Int]): BoolSubstitution = l match {
+  private def boolUnifyAll(l: List[Equation]): BoolSubstitution = l match {
     case Nil => BoolSubstitution.empty
-    case Equation(t1, t2, _) :: xs =>
-      val subst = boolUnifyOne(t1, t2, renv)
-      val subst1 = boolUnifyAll(subst(xs), renv)
+    case e :: xs =>
+      val subst = boolUnifyOne(e)
+      val subst1 = boolUnifyAll(subst(xs))
       subst @@ subst1 // TODO: order?
   }
 
-  private def boolUnifyOne(t1: Term, t2: Term, renv: Set[Int]): BoolSubstitution = {
+  /**
+    * Boolean unification using the SVE algorithm.
+    *
+    * Returns a most-general unifier that solves the given equation `e`.
+    *
+    * Throws a [[ConflictException]] if the equation cannot be solved.
+    */
+  private def boolUnifyOne(e: Equation): BoolSubstitution = try {
     // The boolean expression we want to show is false.
-    val query = Term.mkXor(t1, t2)
-
-    // Compute the variables in the query.
-    val typeVars = query.freeVars.toList
-
-    // Compute the flexible variables.
-    val flexibleTypeVars = typeVars.filterNot(renv.contains)
+    val query = Term.mkXor(e.t1, e.t2)
 
     // Determine the order in which to eliminate the variables.
-    val freeVars = flexibleTypeVars
+    val fvs = query.freeVars.toList
 
-    // Eliminate all variables.
-    val subst = successiveVariableElimination(query, freeVars)
-
-    subst
+    // Eliminate all variables one by one in the order specified by fvs.
+    successiveVariableElimination(query, fvs)
+  } catch {
+    case _: BoolUnificationException => throw ConflictException(e.t1, e.t2, e.loc)
   }
 
-  private def successiveVariableElimination(t: Term, flexvs: List[Int]): BoolSubstitution = flexvs match {
+  /**
+    * The Successive Variable Elimination algorithm.
+    *
+    * Computes the most-general unifier of the given term `t ~ false` where `fvs` is the list of free variables in `t`.
+    *
+    * Throws a [[BoolUnificationException]] if there is no solution.
+    */
+  private def successiveVariableElimination(t: Term, fvs: List[Int]): BoolSubstitution = fvs match {
     case Nil =>
-      // Determine if f is unsatisfiable when all (rigid) variables are made flexible.
-      if (!satisfiable(flexify(t))) // TODO: Is it right to flexify here?
+      // Determine if f is unsatisfiable when all constants are made into (flexible) variables.
+      if (!satisfiable(flexify(t)))
         BoolSubstitution.empty
       else
         throw BoolUnificationException()
@@ -538,14 +547,20 @@ object FastBoolUnification {
       st ++ se
   }
 
-  // TODO: Carefully inspect.
+  /**
+    * Returns `t` where every constant has been made into a variable.
+    *
+    * Note: We use the constant name as the variable. This assume that constants and variables are disjoint.
+    */
   private def flexify(t: Term): Term = t match {
     case Term.True => Term.True
     case Term.False => Term.False
-    case Term.Cst(c) => Term.Var(c)
+    case Term.Cst(c) => Term.Var(c) // We use the constant name as the variable name.
     case Term.Var(x) => Term.Var(x)
     case Term.Not(t) => Term.mkNot(flexify(t))
-    case Term.And(csts, vars, rest) => Term.mkAnd(csts.map(c => Term.Var(c.c)).toList ++ vars ++ rest)
+    case Term.And(csts, vars, rest) =>
+      // Translate every constant into a variable:
+      Term.mkAnd(csts.map(c => Term.Var(c.c)).toList ++ vars ++ rest)
     case Term.Or(ts) => Term.mkOr(ts.map(flexify))
   }
 
