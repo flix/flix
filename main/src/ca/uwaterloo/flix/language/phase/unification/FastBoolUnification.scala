@@ -868,13 +868,19 @@ object FastBoolUnification {
       assert(ts.length >= 2)
     }
 
-    final def mkNot(t0: Term): Term = t0 match {
+    /**
+      * Smart constructor for negation.
+      */
+    final def mkNot(t: Term): Term = t match {
       case True => False
       case False => True
-      case Not(t) => t
-      case _ => Not(t0)
+      case Not(t0) => t0
+      case _ => Not(t)
     }
 
+    /**
+      * Smart constructor for conjunction.
+      */
     final def mkAnd(t1: Term, t2: Term): Term = (t1, t2) match {
       case (False, _) => False
       case (_, False) => False
@@ -883,6 +889,9 @@ object FastBoolUnification {
       case _ => mkAnd(List(t1, t2))
     }
 
+    /**
+      * Smart constructor for disjunction.
+      */
     final def mkOr(t1: Term, t2: Term): Term = (t1, t2) match {
       case (True, _) => True
       case (_, True) => True
@@ -891,43 +900,58 @@ object FastBoolUnification {
       case _ => mkOr(List(t1, t2))
     }
 
+    /**
+      * Smart constructor for conjunction.
+      *
+      * A lot of heavy lifting occurs here. In particular, we must partition `ts` into (a) constants, (b) variables,
+      * and (c) other sub-terms. Moreover, we look into those sub-terms and flatten any conjunctions we find within.
+      */
     final def mkAnd(ts: List[Term]): Term = {
-      // TODO: Group cst and vars.
+      // Mutable data structures to hold constants, variables, and other sub-terms.
       val cstTerms = mutable.Set.empty[Term.Cst]
       val varTerms = mutable.Set.empty[Term.Var]
       val restTerms = mutable.ListBuffer.empty[Term]
       for (t <- ts) {
         t match {
-          case True => // nop
-          case False => return False
+          case True => // NOP - We do not have to include True in a conjunction.
+          case False => return False // If the conjunction contains FALSE then whole conjunct is FALSE.
           case x@Term.Cst(_) => cstTerms += x
           case x@Term.Var(_) => varTerms += x
           case And(csts0, vars0, rest0) =>
+            // We have found a nested conjunction. We can immediately add _its_ constants and variables.
             cstTerms ++= csts0
             varTerms ++= vars0
             for (t0 <- rest0) {
+              // We then iterate through the nested sub-terms of the nested conjunction.
               t0 match {
-                case True => // nop
-                case False => return False
+                case True => // NOP - We do not have to include True in a conjunction.
+                case False => return False // If the sub-conjunction contains FALSE then the whole conjunct is FALSE.
                 case x@Term.Cst(_) => cstTerms += x
                 case x@Term.Var(_) => varTerms += x
                 case _ => restTerms += t0
               }
             }
-          case _ => restTerms += t
+          case _ => restTerms += t // We found some other sub-term.
         }
       }
 
-      (cstTerms.toList, varTerms.toList, restTerms.toList) match { // TODO: Smarter?
-        case (Nil, Nil, Nil) => Term.True
-        case (List(t), Nil, Nil) => t
-        case (Nil, List(t), Nil) => t
-        case (Nil, Nil, List(t)) => t
+      // We now have a set of constants, a set of variables, and a list of sub-terms.
+      // We optimize for the case where each of these is empty EXCEPT for one element.
+      (cstTerms.toList, varTerms.toList, restTerms.toList) match {
+        case (Nil, Nil, Nil) => Term.True // Everything is empty, so we return the neutral element, i.e. TRUE.
+        case (List(c), Nil, Nil) => c // A single constant.
+        case (Nil, List(x), Nil) => x // A single variable.
+        case (Nil, Nil, List(t)) => t // A single non-constant and non-variable sub-term.
         case _ => And(cstTerms.toSet, varTerms.toSet, restTerms.toList)
       }
     }
 
+    /**
+      * Smart constructor for disjunction.
+      */
     final def mkOr(ts: List[Term]): Term = {
+      // We refer to [[mkAnd]] since the structure is similar.
+
       val varTerms = mutable.Set.empty[Term]
       val nonVarTerms = mutable.ListBuffer.empty[Term]
       for (t <- ts) {
@@ -955,6 +979,9 @@ object FastBoolUnification {
       }
     }
 
+    /**
+      * Returns the Xor of `x` and `y`. Implemented by desugaring.
+      */
     final def mkXor(x: Term, y: Term): Term = mkOr(mkAnd(x, mkNot(y)), mkAnd(mkNot(x), y))
 
   }
