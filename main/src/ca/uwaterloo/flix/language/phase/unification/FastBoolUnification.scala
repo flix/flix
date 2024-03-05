@@ -460,37 +460,64 @@ object FastBoolUnification {
     (unsolved.reverse, subst)
   }
 
-  // TODO: DOC
-  // Deals with x92747 ~ (x135862 ∧ x135864)
-  // where LHS is var and is free on RHS
+  /**
+    * Assigns variables. Given a unification equation `x ~ t` we can assign `[x -> t]` if `x` does not occur in `t`.
+    *
+    * For example, given the equation system:
+    *
+    * {{{
+    *    x78914 ~ (c1498 ∧ c1500 ∧ c1501)
+    *    x78914 ~ (x78926 ∧ x78923 ∧ x127244)
+    *    x78923 ~ (x127249 ∧ x127247 ∧ x127248)
+    *    x78926 ~ (x127254 ∧ x127252)
+    * }}}
+    *
+    * We compute the substitution:
+    *
+    * {{{
+    *     x78926 -> (x127254 ∧ x127252)
+    *     x78914 -> (c1498 ∧ c1500 ∧ c1501)
+    *     x78923 -> (x127249 ∧ x127247 ∧ x127248)
+    * }}}
+    *
+    * and we have the remaining equations:
+    *
+    * {{{
+    *     (c1498 ∧ c1500 ∧ c1501) ~ (x127248 ∧ x127244 ∧ x127254 ∧ x127252 ∧ x127249 ∧ x127247)
+    * }}}
+    */
   private def varAssignment(l: List[Equation], subst0: BoolSubstitution): (List[Equation], BoolSubstitution) = {
-    var currentSubst = subst0
-    var currentEqns = l
-    var rest: List[Equation] = Nil
+    var subst = subst0
+    var pending = l
 
-    while (currentEqns != Nil) {
-      val eqn = currentEqns.head
-      currentEqns = currentEqns.tail
+    var unsolved: List[Equation] = Nil
 
-      eqn match {
+    // INVARIANT: The current substitution has been applied to BOTH unsolved AND pending equations.
+    while (pending != Nil) {
+      val e = pending.head
+      pending = pending.tail
+
+      e match {
         case Equation(Term.Var(x), rhs, _) if !rhs.freeVars.contains(x) =>
-          // Update the remaining equations with the new binding.
-          // This is required for correctness.
-          // We use a singleton subst. to avoid idempotence issues.
+          // Case 1: We have found an equation: `x ~ t` where `x` is not free in `t`.
+          // Construct a singleton substitution `[x -> y]`.
           val singleton = BoolSubstitution.singleton(x, rhs)
 
-          // Update the current substitution.
-          currentSubst = singleton @@ currentSubst
+          // Apply the singleton substitution to the unsolved equations.
+          pending = singleton(pending)
 
-          // Update the remaining eqns and the remainder.
-          currentEqns = singleton(currentEqns)
-          rest = singleton(rest)
+          // Apply the singleton substitution to the unsolved equations.
+          unsolved = singleton(unsolved)
 
-        case _ => rest = eqn :: rest
+          // Compose the new substitution with the current substitution.
+          subst = singleton @@ subst
+
+        case _ => unsolved = e :: unsolved
       }
     }
 
-    (rest.reverse, currentSubst)
+    // Reverse the unsolved equations to ensure they are returned in the original order.
+    (unsolved.reverse, subst)
   }
 
   /**
@@ -1576,9 +1603,9 @@ object FastBoolUnification {
     //solveAll(Nec_zipWithA()).get
     //solveAll(ConcurrentChannel_selectHelper()).get
     //solveAll(Array_transpose()).get
-    solveAll(MutDeque_sameElements()).get
+    //solveAll(MutDeque_sameElements()).get
     //solveAll(FixpointAstDatalog_predSymsOf29898()).get
-    //solveAll(Iterator_toArray()).get
+    solveAll(Iterator_toArray()).get
     //solveAll(Files_append()).get
     //solveAll(Iterator_next()).get
     //solveAll(Boxable_lift1()).get
