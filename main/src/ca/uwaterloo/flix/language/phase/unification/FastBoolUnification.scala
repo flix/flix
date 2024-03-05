@@ -843,7 +843,15 @@ object FastBoolUnification {
       */
     case class Not(t: Term) extends Term
 
-
+    /**
+      * Represents a conjunction of terms.
+      *
+      * We use a clever representation where we have a conjunction of constants, variables, and then sub-terms.
+      *
+      * For example, the conjunction: `x7 /\ (not x2) /\ c1 /\ x4` is represented as: `Set(c1), Set(x4, x7), List((not x2))`.
+      *
+      * This representation is key to efficiency because the equations we solve are heavy on conjunctions.
+      */
     case class And(csts: Set[Term.Cst], vars: Set[Term.Var], rest: List[Term]) extends Term {
       // We ensure that `rest` cannot contain constants and variables.
       // Once the code is better tested, we can remove these assertions.
