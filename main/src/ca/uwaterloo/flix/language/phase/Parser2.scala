@@ -1072,7 +1072,7 @@ object Parser2 {
     /**
      * arguments -> '(' (argument (',' argument)* )? ')'
      */
-    private def arguments()(implicit s: State): Mark.Closed = {
+    def arguments()(implicit s: State): Mark.Closed = {
       val mark = open()
       separated(argument).zeroOrMore()
       close(mark, TreeKind.ArgumentList)
@@ -1959,7 +1959,7 @@ object Parser2 {
     private def parenOrTupleOrAscribe()(implicit s: State): Mark.Closed = {
       val mark = open()
       expect(TokenKind.ParenL)
-      expression()
+      val markExpr = expression()
       // Distinguish between expression in parenthesis, type ascriptions and tuples
       nth(0) match {
         // Type ascription
@@ -1971,13 +1971,20 @@ object Parser2 {
           lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
           close(openBefore(lhs), TreeKind.Expr.Paren)
         // Tuple
-        case TokenKind.Comma =>
-          while (!at(TokenKind.ParenR) && !eof()) {
-            expect(TokenKind.Comma)
+        case TokenKind.Equal | TokenKind.Comma =>
+          if (eat(TokenKind.Equal)) {
             expression()
+            close(openBefore(markExpr), TreeKind.ArgumentNamed)
+          } else {
+            close(openBefore(markExpr), TreeKind.Argument)
+          }
+          while(!at(TokenKind.ParenR) && !eof()) {
+            eat(TokenKind.Comma)
+            argument()
           }
           expect(TokenKind.ParenR)
           close(mark, TreeKind.Expr.Tuple)
+        // Paren
         case _ =>
           expect(TokenKind.ParenR)
           close(mark, TreeKind.Expr.Paren)

@@ -1076,8 +1076,13 @@ object Weeder2 {
 
     private def visitTuple(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Tuple)
-      val expressions = pickAll(TreeKind.Expr.Expr, tree.children)
-      mapN(traverse(expressions)(visitExpression))(Expr.Tuple(_, tree.loc))
+      mapN(
+        traverse(pickAll(TreeKind.Argument, tree.children))(pickExpression),
+        traverse(pickAll(TreeKind.ArgumentNamed, tree.children))(visitArgumentNamed)
+      )((unnamed, named) => unnamed ++ named match {
+        // TODO: sort by SourceLocation is only used for comparison with Weeder
+        case args =>  Expr.Tuple(args.sortBy(_.loc), tree.loc)
+      })
     }
 
     private def visitTry(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -1752,20 +1757,19 @@ object Weeder2 {
     }
 
     private def pickArguments(tree: Tree)(implicit s: State): Validation[List[Expr], CompilationMessage] = {
-      flatMapN(
-        pick(TreeKind.ArgumentList, tree.children)
-      ) {
-        argTree =>
-          mapN(
-            traverse(pickAll(TreeKind.Argument, argTree.children))(pickExpression),
-            traverse(pickAll(TreeKind.ArgumentNamed, argTree.children))(visitArgumentNamed)
-          )((unnamed, named) => unnamed ++ named match {
-            // Add synthetic unit arguments if there are none
-            case Nil => List(Expr.Cst(Ast.Constant.Unit, tree.loc))
-            // TODO: sort by SourceLocation is only used for comparison with Weeder
-            case args => args.sortBy(_.loc)
-          })
-      }
+      flatMapN(pick(TreeKind.ArgumentList, tree.children))(visitArguments)
+    }
+
+    private def visitArguments(tree: Tree)(implicit s: State): Validation[List[Expr], CompilationMessage] = {
+      mapN(
+        traverse(pickAll(TreeKind.Argument, tree.children))(pickExpression),
+        traverse(pickAll(TreeKind.ArgumentNamed, tree.children))(visitArgumentNamed)
+      )((unnamed, named) => unnamed ++ named match {
+        // Add synthetic unit arguments if there are none
+        case Nil => List(Expr.Cst(Ast.Constant.Unit, tree.loc))
+        // TODO: sort by SourceLocation is only used for comparison with Weeder
+        case args => args.sortBy(_.loc)
+      })
     }
 
     private def visitArgumentNamed(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
