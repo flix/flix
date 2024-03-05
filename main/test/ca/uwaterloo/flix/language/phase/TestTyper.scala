@@ -520,6 +520,25 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("Test.UnexpectedEffect.08") {
+    val input =
+      """
+        |eff IO
+        |
+        |def impureX(): String \ IO = checked_ecast("x")
+        |
+        |def f(): ##java.lang.Object \ IO = {
+        |    let x = new ##java.lang.Object {
+        |        def toString(_this: ##java.lang.Object): String = impureX()
+        |    };
+        |    x
+        |}
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
   test("Test.EffectGeneralizationError.01") {
     val input =
       """
