@@ -651,9 +651,8 @@ object ConstraintGeneration {
 
       case Expr.InstanceOf(exp, _, _) =>
         val (_, eff) = visitExp(exp)
-        c.expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
         val resTpe = Type.Bool
-        val resEff = Type.Pure
+        val resEff = eff
         (resTpe, resEff)
 
       case Expr.CheckedCast(cast, exp, tvar, evar, loc) =>

@@ -848,7 +848,7 @@ object TypeInference {
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           resultTyp = Type.Bool
-          resultEff <- expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
+          resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expr.CheckedCast(cast, exp, tvar, pvar, loc) =>
