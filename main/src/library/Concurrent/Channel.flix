@@ -136,7 +136,7 @@ mod Concurrent.Channel {
     ///
     @Internal
     pub def newChannel(bufferSize: Int32): Mpmc[a] \ IO =
-        import static dev.flix.runtime.Global.emptyId(): Int64 \ IO;
+        import static dev.flix.runtime.Global.newId(): Int64 \ IO;
         let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
         let unBuffered = bufferSize == 0;
         let reentrantLock = newLock(fairness());

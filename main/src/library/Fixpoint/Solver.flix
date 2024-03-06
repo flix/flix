@@ -120,7 +120,7 @@ mod Fixpoint.Solver {
         use Fixpoint.SubstitutePredSym.substitute;
 
         // Import a function that can create new ids.
-        import static dev.flix.runtime.Global.emptyId(): Int64 \ IO;
+        import static dev.flix.runtime.Global.newId(): Int64 \ IO;
 
         // Determine all the predicate symbols in `d`.
         let predSyms = predSymsOf(d);
