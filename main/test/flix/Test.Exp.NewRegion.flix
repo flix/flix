@@ -1,4 +1,4 @@
-mod Test.Exp.empty {
+mod Test.Exp.NewRegion {
 
     @test
     def testEmptyMutList1Region04(): Unit =
