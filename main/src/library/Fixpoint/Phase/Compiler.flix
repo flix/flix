@@ -85,19 +85,19 @@ mod Fixpoint.Phase.Compiler {
             MutList.push!(mergeDelta, stmts)
         }, idb);
         Map.forEach(predSym -> match (arity, den) -> {
-            let purge = RamStmt.Purge(RamSym.empty(predSym, arity, den));
+            let purge = RamStmt.Purge(RamSym.New(predSym, arity, den));
             MutList.push!(purge, loopBody)
         }, idb);
         List.forEach(compileRuleIncr(loopBody), stratum);
         Map.forEach(predSym -> match (arity, den) -> {
-            let newr = RamSym.empty(predSym, arity, den);
+            let newr = RamSym.New(predSym, arity, den);
             let full = RamSym.Full(predSym, arity, den);
             let mergeNew = RamStmt.Merge(newr, full);
             MutList.push!(mergeNew, loopBody)
         }, idb);
         Map.forEach(predSym -> match (arity, den) -> {
             let delta = RamSym.Delta(predSym, arity, den);
-            let newr = RamSym.empty(predSym, arity, den);
+            let newr = RamSym.New(predSym, arity, den);
             let assign = RamStmt.Assign(delta, newr);
             MutList.push!(assign, loopBody)
         }, idb);
@@ -187,7 +187,7 @@ mod Fixpoint.Phase.Compiler {
             let env = unifyVars(augBody);
             let ramTerms = Vector.map(compileHeadTerm(env), headTerms);
             let arity = Vector.length(ramTerms);
-            let projection = RelOp.Project(ramTerms, RamSym.empty(headSym, arity, headDen));
+            let projection = RelOp.Project(ramTerms, RamSym.New(headSym, arity, headDen));
             let join = compileBody(env, augBody);
             let loopBody = RelOp.If(Vector.append(Vector#{BoolExp.NotMemberOf(ramTerms, RamSym.Full(headSym, arity, headDen))}, join), projection);
             let compile = delta -> { // `delta` designates the focused atom.
