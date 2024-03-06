@@ -30,28 +30,30 @@ import scala.collection.mutable
 ///
 /// - We work on all the equations as one whole system.
 /// - We progress in the following order:
-///   1. We propagate ground terms in a fixpoint.
-///   2. We propagate variables in a fixpoint.
+///   1. We propagate ground terms (true/false/constant) in a fixpoint.
+///   2. We propagate variables.
 ///   3. We perform trivial assignments where the left-hand variables does not occur in the RHS.
 ///   4. We do full-blown Boolean unification with SVE.
 /// - We represent a conjunction with n >= 2 terms.
-///   - We group the terms into three: a set of constants, a set of variables, and a list of the rest.
+///   - We group the terms into three: a set of constants, a set of variables, and a list of sub-terms.
 ///   - We flatten conjunctions at least one level per call to `mkAnd`.
-///   - We apply the same idea for negation and disjunction.
 /// - We normalize the representation of an equation t1 ~ t2.
 ///   - We try to move single variables to the lhs.
-///   - We try to move ground terms to the RHS.
+///   - We try to move ground terms (true/false/constants) to the RHS.
 ///
-///
-/// Future Ideas:
+/// In the future, we could:
 /// - Explore change of basis.
-/// - Explore slack variables (i.e. variables marked don't care, and use SAT).
+/// - Explore use slack variables (i.e. variables marked don't care, and use SAT).
 /// - Explore in detail how constraints are generated.
 ///
 object FastBoolUnification {
 
   /**
     * The threshold for when a solution is considered too complex.
+    *
+    * The threshold is specified as an upper bound on the permitted connectives in a substitution.
+    *
+    * The threshold must be at least 600 for the test suite to pass.
     *
     * If a solution is too complex an [[TooComplexException]] exception is thrown.
     */
@@ -73,8 +75,6 @@ object FastBoolUnification {
     * Returns `Ok(s)` where `s` is a most-general unifier for all equations.
     *
     * Returns `Err(c, l, s)` where `c` is a conflict, `l` is a list of unsolved equations, and `s` is a partial substitution.
-    *
-    * If multiple equations are unsolvable the implementation makes no guarantee about which one is returned.
     */
   def solveAll(l: List[Equation]): Result[BoolSubstitution, (FastBoolUnificationException, List[Equation], BoolSubstitution)] = {
     val solver = new Solver(l)
@@ -87,7 +87,7 @@ object FastBoolUnification {
     * - The current (pending) unification equations to solve.
     * - The current (partial) substitution which represents the solution.
     *
-    * @param l The list of Boolean unification equations to solve.
+    * @param l The input list of Boolean unification equations to solve.
     */
   private class Solver(l: List[Equation]) {
 
@@ -103,7 +103,7 @@ object FastBoolUnification {
     private var currentEqns: List[Equation] = l
 
     /**
-      * The current substitution. Initially empty, but then grows during computation.
+      * The current substitution. Initially empty, but grows during computation.
       */
     private var currentSubst: BoolSubstitution = BoolSubstitution.empty
 
@@ -112,7 +112,7 @@ object FastBoolUnification {
       *
       * Returns `Result.Ok(s)` with a most-general substitution which solves the equations system.
       *
-      * Returns `Result.Err((ex, l, s))` which an exception `ex`, a list of pending (unsolved) equations, and a partial substitution `s`.
+      * Returns `Result.Err((ex, l, s))` where `c` is a conflict, `l` is a list of unsolved equations, and `s` is a partial substitution.
       */
     def solve(): Result[BoolSubstitution, (FastBoolUnificationException, List[Equation], BoolSubstitution)] = {
       try {
@@ -180,20 +180,20 @@ object FastBoolUnification {
       debugln("--- Phase 4: Boolean Unification")
       debugln("    (resolves all remaining equations using SVE.)")
       debugln("-".repeat(80))
-      val restSubst = boolUnifyAll(currentEqns)
+      val newSubst = boolUnifyAll(currentEqns)
       currentEqns = Nil
-      currentSubst = restSubst @@ currentSubst
+      currentSubst = newSubst @@ currentSubst
       printSubstitution()
       debugln()
     }
 
     /**
-      * Updates the internal state with the given list of pending equations and partial substitution.
+      * Updates the internal state with the given list of pending equations and partial substitution `l`.
       *
       * Simplifies the pending equations. Throws [[ConflictException]] if an unsolvable equation is detected.
       */
-    private def updateState(p: (List[Equation], BoolSubstitution)): Unit = {
-      val (nextEqns, nextSubst) = p
+    private def updateState(l: (List[Equation], BoolSubstitution)): Unit = {
+      val (nextEqns, nextSubst) = l
       currentEqns = simplify(nextEqns)
       currentSubst = nextSubst
     }
