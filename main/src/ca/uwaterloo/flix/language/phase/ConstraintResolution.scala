@@ -305,6 +305,24 @@ object ConstraintResolution {
       Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
   }
 
+  def simplifyConstraintWithoutSolving(constr: TypingConstraint, renv0: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[TypingConstraint, TypeError] = constr match {
+    case TypingConstraint.Equality(tpe1, tpe2, prov) =>
+      for {
+        (t1, _) <- simplifyType(tpe1, renv0, eqEnv, loc)
+        (t2, _) <- simplifyType(tpe2, renv0, eqEnv, loc)
+      } yield TypingConstraint.Equality(t1, t2, prov)
+    case TypingConstraint.Class(sym, tpe, loc) =>
+      for {
+        (t, _) <- simplifyType(tpe, renv0, eqEnv, loc)
+      } yield TypingConstraint.Class(sym, tpe, loc)
+    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) =>
+      for {
+        (e1, _) <- simplifyType(eff1, renv0, eqEnv, loc)
+        (e2, _) <- simplifyType(eff2, renv0, eqEnv, loc)
+        ns <- Result.traverse(nested)(simplifyConstraintWithoutSolving(_, renv0, eqEnv, loc))
+      } yield TypingConstraint.Purification(sym, e1, e2, level, prov, nested)
+  }
+
   // Θ ⊩ τ ⤳ τ'
   def simplifyType(tpe: Type, renv0: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
     // A var is already simple.
@@ -443,24 +461,18 @@ object ConstraintResolution {
       }
     }
 
-    val (simple, complex) = extractSimpleBooleanConstaints(curr, renv)
-    val simple1 = simple.map { case (t1, t2, loc) => (subst(t1), subst(t2), loc) }
-    val simple2Val = Result.traverse(simple1) {
-      case (t1, t2, loc) =>
-        for {
-          (st1, _) <- simplifyType(t1, renv, eqEnv, loc)
-          (st2, _) <- simplifyType(t2, renv, eqEnv, loc)
-        } yield (st1, st2, loc)
-    }
-    simple2Val.flatMap {
-      simple2 =>
-        EffUnification2.unifyAll(simple2, renv, SourceLocation.Unknown) match {
+    val curr1 = curr.map(subst.apply)
+    val curr2Val = Result.traverse(curr1)(simplifyConstraintWithoutSolving(_, renv, eqEnv, SourceLocation.Unknown))
+    curr2Val.map {
+      case curr2 =>
+        val (simple, complex) = extractSimpleBooleanConstaints(curr2, renv)
+        EffUnification2.unifyAll(simple, renv, SourceLocation.Unknown) match {
           case Result.Ok(newSubst) =>
             subst = newSubst @@ subst
             curr = complex
           case Err(e) => return Result.Err(HackError(e)) // MATT no prov info here...
         }
-        Result.Ok(ReductionResult(subst0, subst, Nil, curr, progress = true))
+        ReductionResult(subst0, subst, Nil, curr, progress = true)
     }
   }
 
@@ -675,29 +687,21 @@ object ConstraintResolution {
           val subst = qvars.foldLeft(subst1)(_.unbind(_))
           val constr = TypingConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov)
           Result.Ok(ReductionResult(subst0, subst, oldConstrs, List(constr), progress = true))
+
         // Case 2: Constraints remain below. Maintain the purity constraint.
         case ReductionResult(_oldSubst, subst, oldConstrs, newConstrs, false) =>
           // MATT hack: if no progress made then try solving the effs
 
-          // MATT need to apply subst before extracting simple constraints
-          val (simple, complex) = extractSimpleBooleanConstaints(newConstrs, renv)
-          val simple1 = simple.map { case (t1, t2, loc) => (subst(t1), subst(t2), loc) }
-          val simple2Val = Result.traverse(simple1) {
-            case (t1, t2, loc) =>
-              for {
-                (st1, _) <- simplifyType(t1, renv, eqEnv, loc)
-                (st2, _) <- simplifyType(t2, renv, eqEnv, loc)
-              } yield (st1, st2, loc)
-          }
-          simple2Val.map {
-            simple2 =>
-              EffUnification2.unifyAll(simple2, renv, SourceLocation.Unknown) match {
+          val newConstrs1 = newConstrs.map(subst.apply)
+          val newConstrs2Val = Result.traverse(newConstrs1)(simplifyConstraintWithoutSolving(_, renv, eqEnv, SourceLocation.Unknown))
+          newConstrs2Val.map {
+            case newConstrs2 =>
+              val (simple, complex) = extractSimpleBooleanConstaints(newConstrs2, renv)
+              val subst2 = EffUnification2.unifyAll(simple, renv, SourceLocation.Unknown) match {
                 case Result.Ok(newSubst) =>
                   newSubst @@ subst
                 case Err(e) => return Result.Err(HackError(e)) // MATT no prov info here...
               }
-          }.map {
-            case subst2 =>
               // we made progress if we got rid of any simple constraints
               val progress = simple.nonEmpty
               val constr = TypingConstraint.Purification(sym, eff1, eff2, level, prov, complex)

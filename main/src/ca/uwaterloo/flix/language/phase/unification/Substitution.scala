@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -130,6 +131,16 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     */
   def apply(ec: Ast.BroadEqualityConstraint): Ast.BroadEqualityConstraint = if (isEmpty) ec else ec match {
     case Ast.BroadEqualityConstraint(t1, t2) => Ast.BroadEqualityConstraint(apply(t1), apply(t2))
+  }
+
+  /**
+    * Applies `this` substitution to the given typing constraint.
+    */
+  def apply(tc: TypingConstraint): TypingConstraint = if (isEmpty) tc else tc match {
+    case TypingConstraint.Equality(tpe1, tpe2, prov) => TypingConstraint.Equality(apply(tpe1), apply(tpe2), prov)
+    case TypingConstraint.Class(sym, tpe, loc) => TypingConstraint.Class(sym, apply(tpe), loc)
+    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) =>
+      TypingConstraint.Purification(sym, apply(eff1), apply(eff2), level, prov, nested.map(apply))
   }
 
   /**
