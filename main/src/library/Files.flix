@@ -321,7 +321,7 @@ mod Files {
         IOError.tryCatch(_ -> {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.emptyBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader \ IO;
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader \ IO;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
@@ -351,7 +351,7 @@ mod Files {
         IOError.tryCatch(_ -> {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.emptyBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader \ IO;
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader \ IO;
             import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
 
             let javaFile = newFile(f);
@@ -367,7 +367,7 @@ mod Files {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.emptyBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader \ IO;
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader \ IO;
             import java.io.BufferedReader.readLine(): String \ IO;
 
             let javaFile = newFile(f);
@@ -407,7 +407,7 @@ mod Files {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.emptyBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader \ IO;
+            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader \ IO;
             import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
             import java.io.BufferedReader.readLine(): String \ IO;
 
@@ -869,7 +869,7 @@ mod Files {
         IOError.tryCatch(_ -> {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.emptyDirectoryStream(##java.nio.file.Path): ##java.nio.file.DirectoryStream \ IO;
+            import static java.nio.file.Files.newDirectoryStream(##java.nio.file.Path): ##java.nio.file.DirectoryStream \ IO;
             import java.nio.file.DirectoryStream.iterator(): ##java.util.Iterator \ IO;
             import java.nio.file.Path.toString(): String \ {} as pathToString;
 

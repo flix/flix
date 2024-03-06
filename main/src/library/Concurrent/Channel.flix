@@ -19,11 +19,11 @@
 mod Concurrent.Channel {
     use Concurrent.ReentrantLock.lock
     use Concurrent.ReentrantLock
-    use Concurrent.ReentrantLock.emptyLock
+    use Concurrent.ReentrantLock.newLock
     use Concurrent.Condition
-    use Concurrent.ReentrantLock.emptyCondition
+    use Concurrent.ReentrantLock.newCondition
     use Concurrent.CyclicBarrier
-    use Concurrent.CyclicBarrier.emptyCyclicBarrier
+    use Concurrent.CyclicBarrier.newCyclicBarrier
     use Concurrent.CyclicBarrier.awaitBarrier
 
     ///
