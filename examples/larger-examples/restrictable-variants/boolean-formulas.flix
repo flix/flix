@@ -21,7 +21,7 @@ mod BooleanFormulas {
         println("input ${if (eq(example, fls)) "is" else "is not"} structurally equal to '${toString(fls)}'")
     }
 
-    pub def evalNaive(e: Exp[~~<Exp.Var>]): Bool =
+    pub def evalNaive(e: Exp[rvnot<Exp.Var>]): Bool =
         choose e {
             // Var case omitted: We can only evaluate closed terms.
             case Exp.Cst(b)     => b
@@ -31,7 +31,7 @@ mod BooleanFormulas {
             case Exp.Xor(x, y)  => evalNaive(x) != evalNaive(y)
         }
 
-    pub def eval(e: Exp[s -- <Exp.Var>]): Bool =
+    pub def eval(e: Exp[s rvsub <Exp.Var>]): Bool =
         choose e {
             // Var case omitted: We can only evaluate closed terms.
             case Exp.Cst(b)     => b
@@ -41,7 +41,7 @@ mod BooleanFormulas {
             case Exp.Xor(x, y)  => eval(x) != eval(y)
         }
 
-    pub def simplifyNaive(e: Exp[s]): Exp[~~<Exp.Xor>] =
+    pub def simplifyNaive(e: Exp[s]): Exp[rvnot<Exp.Xor>] =
         choose e {
             case Exp.Var(x)     => open_variant Exp.Var(x)
             case Exp.Cst(b)     => open_variant Exp.Cst(b)
@@ -64,7 +64,7 @@ mod BooleanFormulas {
             case Exp.Xor(x, y)  => open_variant Exp.Xor(map(f, x), map(f, y))
         }
 
-    pub def simplify(e: Exp[s]): Exp[(s -- <Exp.Xor>) ++ <Exp.Or, Exp.And, Exp.Not>] =
+    pub def simplify(e: Exp[s]): Exp[(s rvsub <Exp.Xor>) rvadd <Exp.Or, Exp.And, Exp.Not>] =
         choose* e {
             case Exp.Var(x)     => open_variant Exp.Var(x)
             case Exp.Cst(b)     => open_variant Exp.Cst(b)
@@ -77,11 +77,11 @@ mod BooleanFormulas {
                 open_variant Exp.Or(open_variant Exp.And(x1, open_variant Exp.Not(y1)), open_variant Exp.And(open_variant Exp.Not(x1), y1))
     }
 
-    pub def run(e: Exp[s -- <Exp.Var>]): Bool =
+    pub def run(e: Exp[s rvsub <Exp.Var>]): Bool =
         let f = simplify >> eval;
         f(e)
 
-    pub def subst(m: Map[Int32, Bool], e: Exp[s]): Exp[(s -- <Exp.Var>) ++ <Exp.Cst>] =
+    pub def subst(m: Map[Int32, Bool], e: Exp[s]): Exp[(s rvsub <Exp.Var>) rvadd <Exp.Cst>] =
         choose* e {
             case Exp.Var(x)     => Exp.Cst(Map.getWithDefault(x, false, m))
             case Exp.Cst(b)     => Exp.Cst(b)
@@ -91,7 +91,7 @@ mod BooleanFormulas {
             case Exp.Xor(x, y)  => open_variant Exp.Xor(subst(m, x), subst(m, y))
         }
 
-    pub def fasteval(e: Exp[s && <Exp.Cst, Exp.Not, Exp.And, Exp.Or>]): Bool =
+    pub def fasteval(e: Exp[s rvand <Exp.Cst, Exp.Not, Exp.And, Exp.Or>]): Bool =
         choose e {
             // Var case omitted: We can only evaluate closed terms.
             case Exp.Cst(b)     => b

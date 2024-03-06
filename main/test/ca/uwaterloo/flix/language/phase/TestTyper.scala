@@ -502,6 +502,24 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("Test.UnexpectedEffect.07") {
+    // guards must be pure
+    val input =
+      """
+        |eff E
+        |def impureBool(): Bool \ E = checked_ecast(???)
+        |
+        |def foo(): Int32 \ E = {
+        |    match 0 {
+        |        case 0 if impureBool() => 0
+        |        case _ => 1
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
   test("Test.EffectGeneralizationError.01") {
     val input =
       """
@@ -632,6 +650,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibMin)
     expectError[TypeError](result)
   }
+
 
   test("Test.UnexpectedType.OpParam.01") {
     val input =
@@ -1014,7 +1033,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case C
         |}
         |
-        |def n(e: E[s && <E.N>]): _ = ???
+        |def n(e: E[s rvand <E.N>]): _ = ???
         |
         |def foo(e: E[s]): E[s] = choose* e {
         |    case E.N(x) => n(x)            // must have x <: <E.N> but this doesn't hold
@@ -1048,7 +1067,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |// forgot Green intro
-        |def redToGreen(c: Color[s]): Color[s -- <Color.Red>] = choose* c {
+        |def redToGreen(c: Color[s]): Color[s rvsub <Color.Red>] = choose* c {
         |    case Color.Red => Color.Green
         |    case Color.Green => Color.Green
         |    case Color.Blue => Color.Blue
@@ -1065,7 +1084,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |// Wrong minus
-        |def isRed(c: Color[s -- <Color.Blue>]): Bool = choose* c {
+        |def isRed(c: Color[s rvsub <Color.Blue>]): Bool = choose* c {
         |    case Color.Red => true
         |    case Color.Blue => false
         |}
@@ -1081,7 +1100,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |// Wrong minus parsing
-        |def isRed(c: Color[s -- <Color.Red> ++ <Color.Green>]): Color[(s -- <Color.Red>) ++ <Color.Green>] = c
+        |def isRed(c: Color[s rvsub <Color.Red> rvadd <Color.Green>]): Color[(s rvsub <Color.Red>) rvadd <Color.Green>] = c
         |""".stripMargin
     expectError[TypeError](compile(input, Options.TestWithLibNix))
   }
