@@ -62,7 +62,7 @@ mod MutDeque {
     /// Returns a string representation of the given MutDeque `d`.
     ///
     pub def toString(d: MutDeque[a, r]): String \ r with ToString[a] = region rc2 {
-        let sb = StringBuilder.new(rc2);
+        let sb = StringBuilder.empty(rc2);
         StringBuilder.appendString!("MutDeque#{", sb);
         forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -77,8 +77,8 @@ mod MutDeque {
     ///
     /// Returns an empty MutDeque.
     ///
-    pub def new(rc: Region[r]): MutDeque[a, r] \ r =
-        MutDeque(rc, ref Array.new(rc, minCapacity()) @ rc, ref 0 @ rc, ref 0 @ rc)
+    pub def empty(rc: Region[r]): MutDeque[a, r] \ r =
+        MutDeque(rc, ref Array.empty(rc, minCapacity()) @ rc, ref 0 @ rc, ref 0 @ rc)
 
     ///
     /// Returns the number of elements in `d`.
@@ -279,8 +279,8 @@ mod MutDeque {
     def grow!(d: MutDeque[a, r]): Unit \ r =
         let MutDeque(r, a, f, b) = d;
         let c = capacity(d);
-        let arr = Array.new(r, Int32.leftShift(c, 1));    // Allocate new array `arr` with double the capacity of `a`.
-        copyElements!(r, deref f, deref b, deref a, arr); // Copy elements from old array `a` to new array `arr`.
+        let arr = Array.empty(r, Int32.leftShift(c, 1));  // Allocate empty array `arr` with double the capacity of `a`.
+        copyElements!(r, deref f, deref b, deref a, arr); // Copy elements from old array `a` to empty array `arr`.
         a := arr;                                         // Update references.
         b := computeSize(c, deref f, deref b);
         f := 0
@@ -305,8 +305,8 @@ mod MutDeque {
         let mc = minCapacity();
         let c = capacity(d);
         if (c > mc) {                                         // Prevent the backing array from shrinking below `minCapacity`.
-            let arr = Array.new(r, Int32.rightShift(c, 1));   // Allocate new array `arr` with half the capacity of `a`.
-            copyElements!(r, deref f, deref b, deref a, arr); // Copy elements from old array `a` to new array `arr`.
+            let arr = Array.empty(r, Int32.rightShift(c, 1)); // Allocate empty array `arr` with half the capacity of `a`.
+            copyElements!(r, deref f, deref b, deref a, arr); // Copy elements from old array `a` to empty array `arr`.
             a := arr;                                         // Update references.
             b := computeSize(c, deref f, deref b);
             f := 0
@@ -349,8 +349,8 @@ mod MutDeque {
         if (aSize == bSize) {
             let MutDeque(_, aArray, aFront, aBack) = d1;
             let MutDeque(_, bArray, bFront, bBack) = d2;
-            let a1 = Array.new(rc3, aSize);
-            let b1 = Array.new(rc3, bSize);
+            let a1 = Array.empty(rc3, aSize);
+            let b1 = Array.empty(rc3, bSize);
             copyElements!(rc3, deref aFront, deref aBack, deref aArray, a1);
             copyElements!(rc3, deref bFront, deref bBack, deref bArray, b1);
             Array.sameElements(a1, b1)
@@ -383,7 +383,7 @@ mod MutDeque {
     /// Returns `d` as a vector.
     ///
     pub def toVector(d: MutDeque[a, r]): Vector[a] \ r = region rc {
-        let arr = Array.new(rc, size(d));
+        let arr = Array.empty(rc, size(d));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), d);
         Array.toVector(arr)
     }
@@ -402,7 +402,7 @@ mod MutDeque {
     pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, r } = region rc1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new(rc1);
+        let sb = StringBuilder.empty(rc1);
         forEach(x -> { append!(f(x), sb); append!(sep, sb) }, d);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
