@@ -9,7 +9,7 @@ mod Random {
     ///
     /// Returns a fresh random number generator.
     ///
-    pub def new(): Random \ IO =
+    pub def fresh(): Random \ IO =
         import new java.util.Random(): ##java.util.Random \ IO as newRandom;
         Random(newRandom())
 
