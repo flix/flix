@@ -213,7 +213,7 @@ object FastBoolUnification {
       * Checks that current substitution has not grown too large according to the defined threshold.
       */
     private def verifySolutionSize(): Unit = {
-      val size = currentSubst.size
+      val size = currentSubst.numberOfConnectives
       if (size > Threshold) {
         throw TooComplexException(size)
       }
@@ -225,7 +225,7 @@ object FastBoolUnification {
     }
 
     private def printSubstitution(): Unit = {
-      debugln(s"Substitution (${currentSubst.bindings}):")
+      debugln(s"Substitution (${currentSubst.numberOfBindings}):")
       debugln(currentSubst.toString)
     }
 
@@ -247,8 +247,8 @@ object FastBoolUnification {
     * A trivial equation is one of:
     * -     true ~ true
     * -    false ~ false
-    * -        c ~ c        (same constants)
-    * -        x ~ x        (same variables)
+    * -        c ~ c        (same constant)
+    * -        x ~ x        (same variable)
     *
     *
     * An unsolvable (conflicted) equation is one of:
@@ -271,7 +271,7 @@ object FastBoolUnification {
       case (Term.True, Term.False) => throw ConflictException(t1, t2, loc)
       case (Term.False, Term.True) => throw ConflictException(t1, t2, loc)
       case (Term.Cst(c1), Term.Cst(c2)) if c1 != c2 => throw ConflictException(t1, t2, loc)
-      // Note: two different variables are of course solvable!
+      // Note: A constraint with two different variables is of course solvable!
       case (Term.Cst(_), Term.True) => throw ConflictException(t1, t2, loc)
       case (Term.Cst(_), Term.False) => throw ConflictException(t1, t2, loc)
       case (Term.True, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
@@ -291,7 +291,7 @@ object FastBoolUnification {
     *
     * - `x ~ true` becomes `[x -> true]`.
     * - `x ~ c` becomes `[x -> c]`.
-    * - `x /\ y /\ ... = true` becomes `[x -> true, y -> true, ...`.
+    * - `x /\ y /\ ... = true` becomes `[x -> true, y -> true, ...]`.
     *
     * For example, if the equation system is:
     *
@@ -340,16 +340,16 @@ object FastBoolUnification {
     *
     * Note that several equations were simplified.
     *
-    * Note: We do not propagate false -- this extension can be made later, if needed.
-    * Note: Since we do not propagate false, we do not have to check for conflicts.
-    * - We never overwrite a value in the substitution, and
-    * - a conflict will be detected by the subsequent call to simplify.
+    * Note: We do not propagate false. This extended can be added, if needed.
+    *
+    * Note: We use `subst.extended` to check for conflicts. For example, if we already know that `s = [x -> c17]` and we
+    * learn that `x -> true` then we will try to extend s with the new binding which will raise a [[ConflictException]].
     */
   private def propagateUnit(l: List[Equation], s: BoolSubstitution): (List[Equation], BoolSubstitution) = {
     var pending = l
     var subst = s
 
-    // We compute a fixpoint until no more propagation occurs.
+    // We iterate until no changes are detected.
     var changed = true
     while (changed) {
       changed = false
@@ -492,8 +492,9 @@ object FastBoolUnification {
 
     var unsolved: List[Equation] = Nil
 
-    // INVARIANT: The current substitution has been applied to BOTH unsolved AND pending equations.
-    while (pending != Nil) {
+    // INVARIANT: The current substitution has been applied to BOTH the unsolved AND pending equations.
+    while (pending.nonEmpty) {
+      // Extract the next equation and update the pending equations.
       val e = pending.head
       pending = pending.tail
 
@@ -1113,14 +1114,14 @@ object FastBoolUnification {
     /**
       * Returns the number of bindings in `this` substitution.
       */
-    def bindings: Int = m.size
+    def numberOfBindings: Int = m.size
 
     /**
       * Returns the size of `this` substitution.
       *
       * The size of a substitution is the sum of the sizes of all terms in its co-domain.
       */
-    def size: Int = m.values.map(_.size).sum
+    def numberOfConnectives: Int = m.values.map(_.size).sum
 
     /**
       * Extends `this` substitution with a new binding from the variable `x` to the term `t`.
