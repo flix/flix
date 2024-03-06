@@ -4258,25 +4258,25 @@ mod TestVector {
     @test
     def shuffle01(): Bool \ IO =
         let v = Vector#{}: Vector[Int32];
-        let v1 = Vector.shuffle(Random.empty(), v);
+        let v1 = Vector.shuffle(Random.fresh(), v);
         Vector.length(v1) == 0 and Vector.toSet(v1) == Set#{}
 
     @test
     def shuffle02(): Bool \ IO =
         let v = Vector#{0};
-        let v1 = Vector.shuffle(Random.empty(), v);
+        let v1 = Vector.shuffle(Random.fresh(), v);
         Vector.length(v1) == 1 and Vector.toSet(v1) == Set#{0}
 
     @test
     def shuffle03(): Bool \ IO =
         let v = Vector#{0, 1, 2, 3};
-        let v1 = Vector.shuffle(Random.empty(), v);
+        let v1 = Vector.shuffle(Random.fresh(), v);
         Vector.length(v1) == 4 and Vector.toSet(v1) == Set#{0, 1, 2, 3}
 
     @test
     def shuffle04(): Bool \ IO =
         let v = Vector#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-        let v1 = Vector.shuffle(Random.empty(), v);
+        let v1 = Vector.shuffle(Random.fresh(), v);
         Vector.length(v1) == 10 and Vector.toSet(v1) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 
 }

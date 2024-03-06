@@ -5970,28 +5970,28 @@ mod TestArray {
     @test
     def shuffle01(): Bool \ IO = region rc {
         let a = (Array#{} @ rc): Array[Int32, _];
-        Array.shuffle(Random.empty(), a);
+        Array.shuffle(Random.fresh(), a);
         Array.length(a) == 0 and Array.toSet(a) == Set#{}
     }
 
     @test
     def shuffle02(): Bool \ IO = region rc {
         let a = (Array#{0} @ rc);
-        Array.shuffle(Random.empty(), a);
+        Array.shuffle(Random.fresh(), a);
         Array.length(a) == 1 and Array.toSet(a) == Set#{0}
     }
 
     @test
     def shuffle03(): Bool \ IO = region rc {
         let a = (Array#{0, 1, 2, 3} @ rc);
-        Array.shuffle(Random.empty(), a);
+        Array.shuffle(Random.fresh(), a);
         Array.length(a) == 4 and Array.toSet(a) == Set#{0, 1, 2, 3}
     }
 
     @test
     def shuffle04(): Bool \ IO = region rc {
         let a = (Array#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9} @ rc);
-        Array.shuffle(Random.empty(), a);
+        Array.shuffle(Random.fresh(), a);
         Array.length(a) == 10 and Array.toSet(a) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
     }
 
