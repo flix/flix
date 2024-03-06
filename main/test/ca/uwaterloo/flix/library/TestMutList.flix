@@ -2373,7 +2373,7 @@ mod TestMutList {
 
     @test
     def sumWith04(): Bool = region rc {
-        let l = MutList.new(rc);
+        let l = MutList.empty(rc);
         let xs = 1 :: 2 :: 3 :: -3 :: Nil;
         List.forEach(x -> MutList.push!(x, l), xs);
         MutList.sumWith(x -> x + 1, l) == 7
@@ -2381,7 +2381,7 @@ mod TestMutList {
 
     @test
     def sumWith05(): Bool = region rc {
-        let l = MutList.new(rc);
+        let l = MutList.empty(rc);
         let xs = -1 :: -2 :: -3 :: -4 :: Nil;
         List.forEach(x -> MutList.push!(x, l), xs);
         MutList.sumWith(x -> x + 1, l) == -6
@@ -2389,7 +2389,7 @@ mod TestMutList {
 
     @test
     def sumWith06(): Bool = region rc {
-        let l = MutList.new(rc);
+        let l = MutList.empty(rc);
         let xs = 10 :: -10 :: Nil;
         List.forEach(x -> MutList.push!(x, l), xs);
         MutList.sumWith(x -> x + 1, l) == 2
@@ -2402,12 +2402,12 @@ mod TestMutList {
 
     @test
     def join01(): Bool = region rc {
-        (MutList.new(rc): MutList[Int32, _]) |> MutList.join(",") == ""
+        (MutList.empty(rc): MutList[Int32, _]) |> MutList.join(",") == ""
     }
 
     @test
     def join02(): Bool = region rc {
-        let l = MutList.new(rc);
+        let l = MutList.empty(rc);
         let xs = 1 :: Nil;
         List.forEach(x -> MutList.push!(x, l), xs);
         MutList.join(",", l) == "1"
@@ -2415,7 +2415,7 @@ mod TestMutList {
 
     @test
     def join03(): Bool = region rc {
-        let l = MutList.new(rc);
+        let l = MutList.empty(rc);
         let xs = 1 :: 2 :: 3 :: Nil;
         List.forEach(x -> MutList.push!(x, l), xs);
         MutList.join(",", l) == "1,2,3"
@@ -2423,7 +2423,7 @@ mod TestMutList {
 
     @test
     def join04(): Bool = region rc {
-        let l = MutList.new(rc);
+        let l = MutList.empty(rc);
         let xs = "1" :: "2" :: "3" :: Nil;
         List.forEach(x -> MutList.push!(x, l), xs);
         MutList.join(",", l) == "1,2,3"
@@ -2436,12 +2436,12 @@ mod TestMutList {
 
     @test
     def joinWith01(): Bool = region rc {
-        (MutList.new(rc): MutList[Int32, _]) |> MutList.joinWith(x -> "${x + 1}", ",") == ""
+        (MutList.empty(rc): MutList[Int32, _]) |> MutList.joinWith(x -> "${x + 1}", ",") == ""
     }
 
     @test
     def joinWith02(): Bool = region rc {
-        let l = MutList.new(rc);
+        let l = MutList.empty(rc);
         let xs = 1 :: Nil;
         List.forEach(x -> MutList.push!(x, l), xs);
         MutList.joinWith(x -> "${x + 1}", ",", l) == "2"
@@ -2449,7 +2449,7 @@ mod TestMutList {
 
     @test
     def joinWith03(): Bool = region rc {
-        let l = MutList.new(rc);
+        let l = MutList.empty(rc);
         let xs = 1 :: 2 :: 3 :: Nil;
         List.forEach(x -> MutList.push!(x, l), xs);
         MutList.joinWith(x -> "${x + 1}", ",", l) == "2,3,4"
@@ -2457,7 +2457,7 @@ mod TestMutList {
 
     @test
     def joinWith04(): Bool = region rc {
-        let l = MutList.new(rc);
+        let l = MutList.empty(rc);
         let xs = "1" :: "2" :: "3" :: Nil;
         List.forEach(x -> MutList.push!(x, l), xs);
         MutList.joinWith(x -> x + x, ",", l) == "11,22,33"
