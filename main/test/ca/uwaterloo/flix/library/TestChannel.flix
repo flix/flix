@@ -21,7 +21,7 @@
     use Concurrent.Channel.unsafeGetAndUnlock
     use Concurrent.Channel.get
     use Concurrent.Channel.mpmcAdmin
-    use Concurrent.Channel.emptyChannel
+    use Concurrent.Channel.newChannel
     use Concurrent.Channel.put
     use Concurrent.Channel.selectFrom
 
