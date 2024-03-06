@@ -193,7 +193,7 @@ mod TestRedBlackTree {
     ///
     def random(n: Int32): RedBlackTree[Int32, Unit] \ IO = {
         let seed = 42i64;
-        let r = Random.emptyWithSeed(seed);
+        let r = Random.newWithSeed(seed);
         List.foldLeft((acc, x) -> RedBlackTree.insert(x, (), acc), RedBlackTree.empty(),
             List.map(_ -> Random.nextInt32(r), List.range(0, n)))
     }

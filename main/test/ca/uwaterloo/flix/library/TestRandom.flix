@@ -24,7 +24,7 @@ def testOneOf03(): Option[Result[Int32, Int32]] \ IO =
 
 @test
 def testNextBool(): Bool \ IO =
-    let r = Random.emptyWithSeed(0i64);
+    let r = Random.newWithSeed(0i64);
     Random.nextBool(r)
 
 @test
