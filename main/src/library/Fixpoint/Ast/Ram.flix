@@ -177,7 +177,7 @@ mod Fixpoint.Ast.Ram {
         pub def eq(a: RamSym[v], b: RamSym[v]): Bool = match (a, b) {
             case (RamSym.Full(s1, _, _),  RamSym.Full(s2, _, _))  => s1 == s2
             case (RamSym.Delta(s1, _, _), RamSym.Delta(s2, _, _)) => s1 == s2
-            case (RamSym.empty(s1, _, _),   RamSym.empty(s2, _, _))   => s1 == s2
+            case (RamSym.New(s1, _, _),   RamSym.New(s2, _, _))   => s1 == s2
             case _                                  => false
         }
     }
@@ -190,11 +190,11 @@ mod Fixpoint.Ast.Ram {
             }
             case RamSym.Delta(s1, _, _) => match b {
                 case RamSym.Delta(s2, _, _) => s1 <=> s2
-                case RamSym.empty(_) => Comparison.GreaterThan
+                case RamSym.New(_) => Comparison.GreaterThan
                 case RamSym.Full(_) => Comparison.LessThan
             }
-            case RamSym.empty(s1, _, _) => match b {
-                case RamSym.empty(s2, _, _) => s1 <=> s2
+            case RamSym.New(s1, _, _) => match b {
+                case RamSym.New(s2, _, _) => s1 <=> s2
                 case _ => Comparison.LessThan
             }
         }
@@ -204,7 +204,7 @@ mod Fixpoint.Ast.Ram {
         pub def predSymsOf(x: RamSym[v]): Set[PredSym] = match x {
             case RamSym.Full(predSym, _, _)    => Set.singleton(predSym)
             case RamSym.Delta(predSym, _, _)   => Set.singleton(predSym)
-            case RamSym.empty(predSym, _, _)     => Set.singleton(predSym)
+            case RamSym.New(predSym, _, _)     => Set.singleton(predSym)
         }
     }
 
@@ -218,9 +218,9 @@ mod Fixpoint.Ast.Ram {
                 let newSym = Map.getWithDefault(predSym, predSym, s);
                 RamSym.Delta(newSym, arity, den)
 
-            case RamSym.empty(predSym, arity, den)   =>
+            case RamSym.New(predSym, arity, den)   =>
                 let newSym = Map.getWithDefault(predSym, predSym, s);
-                RamSym.empty(newSym, arity, den)
+                RamSym.New(newSym, arity, den)
         }
     }
 
@@ -228,7 +228,7 @@ mod Fixpoint.Ast.Ram {
         pub def toString(ramSym: RamSym[v]): String = match ramSym {
             case RamSym.Full(sym, _, _)    => "${sym}"
             case RamSym.Delta(sym, _, _)   => "Δ${sym}"
-            case RamSym.empty(sym, _, _)     => "Δ${sym}'"
+            case RamSym.New(sym, _, _)     => "Δ${sym}'"
         }
     }
 
@@ -236,14 +236,14 @@ mod Fixpoint.Ast.Ram {
     pub def arityOf(ramSym: RamSym[v]): Int32 = match ramSym {
         case RamSym.Full(_, arity, _) => arity
         case RamSym.Delta(_, arity, _) => arity
-        case RamSym.empty(_, arity, _) => arity
+        case RamSym.New(_, arity, _) => arity
     }
 
     @Internal
     pub def toDenotation(ramSym: RamSym[v]): Denotation[v] = match ramSym {
         case RamSym.Full(_, _, den) => den
         case RamSym.Delta(_, _, den) => den
-        case RamSym.empty(_, _, den) => den
+        case RamSym.New(_, _, den) => den
     }
 
     /////////////////////////////////////////////////////////////////////////////
