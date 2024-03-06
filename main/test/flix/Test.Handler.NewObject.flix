@@ -1,4 +1,4 @@
-mod Test.Handler.emptyObject {
+mod Test.Handler.NewObject {
 
     import java.lang.Runnable
 
