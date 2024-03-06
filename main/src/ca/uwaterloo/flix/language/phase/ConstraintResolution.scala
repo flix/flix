@@ -129,8 +129,8 @@ object ConstraintResolution {
     case KindedAst.Def(sym, KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc), exp) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
-      if (sym.toString == "Test.Dec.AssocEff.avg") {
-        //        startLogging()
+      if (sym.toString == "Fixpoint.Ast.Datalog.toString$30062") {
+                startLogging()
       }
       log(sym)
 
@@ -160,7 +160,7 @@ object ConstraintResolution {
             case Nil => Result.Ok(subst)
             case TypingConstraint.Equality(tpe1, tpe2, prov) :: _ => Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
             case TypingConstraint.Class(sym, tpe, loc) :: _ => Err(TypeError.MissingInstance(sym, tpe, renv, loc))
-            case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) :: _ => throw InternalCompilerException("unexpected purificaiton error", loc)
+            case err@TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) :: _ => throw InternalCompilerException(s"unexpected purificaiton error: $err", loc)
           }
       }.toValidation
   }
@@ -191,20 +191,22 @@ object ConstraintResolution {
   }
 
   private def simplifyEquality(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[EqualityResult, TypeError] = (tpe1.kind, tpe2.kind) match {
-    case (Kind.Eff, Kind.Eff) =>
-      // first simplify the types to get rid of assocs if we can
-      for {
-        (t1, p1) <- simplifyType(tpe1, renv, eqEnv, loc)
-        (t2, p2) <- simplifyType(tpe2, renv, eqEnv, loc)
-        res0 <- EffUnification.unify(t1, t2, renv).mapErr(toTypeError(_, prov))
-        // If eff unification has any constrs in output, then we know it failed so the subst is empty
-        res =
-          if (res0._2.isEmpty) {
-            EqualityResult.Subst(res0._1, Nil)
-          } else {
-            EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, prov)), p1 || p2)
-          }
-      } yield res
+    // MATT hacking so eff unification always defers
+    case (Kind.Eff, Kind.Eff) => Result.Ok(EqualityResult.Constrs(List(TypingConstraint.Equality(tpe1, tpe2, prov)), progress = false))
+//    case (Kind.Eff, Kind.Eff) =>
+//      // first simplify the types to get rid of assocs if we can
+//      for {
+//        (t1, p1) <- simplifyType(tpe1, renv, eqEnv, loc)
+//        (t2, p2) <- simplifyType(tpe2, renv, eqEnv, loc)
+//        res0 <- EffUnification.unify(t1, t2, renv).mapErr(toTypeError(_, prov))
+//        // If eff unification has any constrs in output, then we know it failed so the subst is empty
+//        res =
+//          if (res0._2.isEmpty) {
+//            EqualityResult.Subst(res0._1, Nil)
+//          } else {
+//            EqualityResult.Constrs(List(TypingConstraint.Equality(t1, t2, prov)), p1 || p2)
+//          }
+//      } yield res
 
     case (Kind.Bool, Kind.Bool) =>
       // first simplify the types to get rid of assocs if we can
@@ -415,18 +417,6 @@ object ConstraintResolution {
     var count = 0
     var prog = true
 
-    // first solve the unifyAllable constraints
-    // first pull out all simple Boolean constraints and put them through unifyAll
-    val (simple, complex) = extractSimpleBooleanConstaints(curr, renv)
-    val simple1 = simple.map { case (t1, t2, loc) => (subst(t1), subst(t2), loc) }
-    EffUnification2.unifyAll(simple1, renv, SourceLocation.Unknown) match {
-      case Result.Ok(newSubst) =>
-        subst = newSubst @@ subst
-        curr = complex
-      case Err(e) => return Result.Err(HackError(e)) // MATT no prov info here...
-    }
-
-
     while (prog) {
       if (count >= MaxIterations) {
         return Result.Err(HackError(UnificationError.IterationLimit(MaxIterations)))
@@ -452,7 +442,26 @@ object ConstraintResolution {
           return res
       }
     }
-    Result.Ok(ReductionResult(subst0, subst, Nil, curr, progress = true))
+
+    val (simple, complex) = extractSimpleBooleanConstaints(curr, renv)
+    val simple1 = simple.map { case (t1, t2, loc) => (subst(t1), subst(t2), loc) }
+    val simple2Val = Result.traverse(simple1) {
+      case (t1, t2, loc) =>
+        for {
+          (st1, _) <- simplifyType(t1, renv, eqEnv, loc)
+          (st2, _) <- simplifyType(t2, renv, eqEnv, loc)
+        } yield (st1, st2, loc)
+    }
+    simple2Val.flatMap {
+      simple2 =>
+        EffUnification2.unifyAll(simple2, renv, SourceLocation.Unknown) match {
+          case Result.Ok(newSubst) =>
+            subst = newSubst @@ subst
+            curr = complex
+          case Err(e) => return Result.Err(HackError(e)) // MATT no prov info here...
+        }
+        Result.Ok(ReductionResult(subst0, subst, Nil, curr, progress = true))
+    }
   }
 
   private def reduceAll3(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, TypeError] = {
@@ -655,7 +664,7 @@ object ConstraintResolution {
       }
     case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested0) =>
       // First reduce nested constraints
-      reduceAll3(nested0, renv, cenv, eqEnv, subst0).map {
+      reduceAll3(nested0, renv, cenv, eqEnv, subst0).flatMap {
         // Case 1: We have reduced everything below. Now reduce the purity constraint.
         case ReductionResult(_oldSubst, subst1, oldConstrs, newConstrs, progress) if newConstrs.isEmpty =>
           val e1 = subst1(eff1)
@@ -665,11 +674,42 @@ object ConstraintResolution {
           val qvars = e2Raw.typeVars.map(_.sym).filter(_.level >= level)
           val subst = qvars.foldLeft(subst1)(_.unbind(_))
           val constr = TypingConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov)
-          ReductionResult(subst0, subst, oldConstrs, List(constr), progress = true)
+          Result.Ok(ReductionResult(subst0, subst, oldConstrs, List(constr), progress = true))
         // Case 2: Constraints remain below. Maintain the purity constraint.
-        case ReductionResult(_oldSubst, subst, oldConstrs, newConstrs, progress) =>
+        case ReductionResult(_oldSubst, subst, oldConstrs, newConstrs, false) =>
+          // MATT hack: if no progress made then try solving the effs
+
+          // MATT need to apply subst before extracting simple constraints
+          val (simple, complex) = extractSimpleBooleanConstaints(newConstrs, renv)
+          val simple1 = simple.map { case (t1, t2, loc) => (subst(t1), subst(t2), loc) }
+          val simple2Val = Result.traverse(simple1) {
+            case (t1, t2, loc) =>
+              for {
+                (st1, _) <- simplifyType(t1, renv, eqEnv, loc)
+                (st2, _) <- simplifyType(t2, renv, eqEnv, loc)
+              } yield (st1, st2, loc)
+          }
+          simple2Val.map {
+            simple2 =>
+              EffUnification2.unifyAll(simple2, renv, SourceLocation.Unknown) match {
+                case Result.Ok(newSubst) =>
+                  newSubst @@ subst
+                case Err(e) => return Result.Err(HackError(e)) // MATT no prov info here...
+              }
+          }.map {
+            case subst2 =>
+              // we made progress if we got rid of any simple constraints
+              val progress = simple.nonEmpty
+              val constr = TypingConstraint.Purification(sym, eff1, eff2, level, prov, complex)
+              ReductionResult(subst0, subst2, oldConstrs, List(constr), progress)
+          }
+
+        // Case 3: Constriants remain below but we are making progress. Don't try to deal with effs yet.
+        case ReductionResult(_oldSubst, subst, oldConstrs, newConstrs, true) =>
+
           val constr = TypingConstraint.Purification(sym, eff1, eff2, level, prov, newConstrs)
-          ReductionResult(subst0, subst, oldConstrs, List(constr), progress)
+          Result.Ok(ReductionResult(subst0, subst, oldConstrs, List(constr), true))
+
       }
   }
 
