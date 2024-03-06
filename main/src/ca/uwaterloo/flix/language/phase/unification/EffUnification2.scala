@@ -34,7 +34,7 @@ object EffUnification2 {
    * @param loc the source location of the entire equation system, e.g. the entire function body.
     */
   def unifyAll(l: List[(Type, Type, SourceLocation)], renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[Substitution, UnificationError] = {
-    // Compute a bi-directional from type variables to ints.
+    // Compute a bi-directional map from type variables to ints.
     implicit val bimap: Bimap[Type.Var, Int] = mkBidirectionalVarMap(l)
 
     // Translate all unification problems from equations on types to equations on terms.
@@ -42,7 +42,7 @@ object EffUnification2 {
       case (tpe1, tpe2, loc) => toEquation(tpe1, tpe2, loc)(renv, bimap)
     }
 
-    // Compute the most-general unifier of all the term equations.
+    // Compute the most-general unifier of all the equations.
     FastBoolUnification.solveAll(equations) match {
       case Result.Ok(subst) => Result.Ok(fromBoolSubst(subst))
 
@@ -57,7 +57,7 @@ object EffUnification2 {
   }
 
   /**
-    * Returns a bi-directional from type variables to ints computed from the given list of unification equations `l`.
+    * Returns a bi-directional map from type variables to ints computed from the given list of unification equations `l`.
     */
   private def mkBidirectionalVarMap(l: List[(Type, Type, SourceLocation)]): Bimap[Type.Var, Int] = {
     // Find all type variables that occur in anywhere in `l`.
@@ -67,7 +67,7 @@ object EffUnification2 {
       allVars ++= t2.typeVars
     }
 
-    // Construct the map from type variables to ints.
+    // Construct the forward map from type variables to ints.
     val forward = allVars.foldLeft(Map.empty[Type.Var, Int]) {
       case (macc, tvar) => macc + (tvar -> tvar.sym.id)
     }
