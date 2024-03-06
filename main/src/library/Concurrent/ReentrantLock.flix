@@ -75,7 +75,7 @@ mod Concurrent {
         ///
         @Internal
         pub def newCondition(lock: ReentrantLock): Condition \ IO =
-            import java.util.concurrent.locks.ReentrantLock.newCondition(): ##java.util.concurrent.locks.Condition \ IO;
+            import java.util.concurrent.locks.ReentrantLock.emptyCondition(): ##java.util.concurrent.locks.Condition \ IO;
             let ReentrantLock(l) = lock;
             Condition(newCondition(l))
 

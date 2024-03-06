@@ -272,7 +272,7 @@ mod Files {
                 let stream = newInputStream(javaFile);
                 match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
                     case Ok(_)    => {
-                        let bytes = Array.new(rc, opts.count);
+                        let bytes = Array.empty(rc, opts.count);
                         discard read(stream, bytes, 0, opts.count);
                         let charSet = forName(opts.charSet);
                         let returnString = newString(bytes, charSet);
@@ -321,7 +321,7 @@ mod Files {
         IOError.tryCatch(_ -> {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader \ IO;
+            import static java.nio.file.Files.emptyBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader \ IO;
             let javaFile = newFile(f);
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
@@ -351,7 +351,7 @@ mod Files {
         IOError.tryCatch(_ -> {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader \ IO;
+            import static java.nio.file.Files.emptyBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader \ IO;
             import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
 
             let javaFile = newFile(f);
@@ -367,7 +367,7 @@ mod Files {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader \ IO;
+            import static java.nio.file.Files.emptyBufferedReader(##java.nio.file.Path): ##java.io.BufferedReader \ IO;
             import java.io.BufferedReader.readLine(): String \ IO;
 
             let javaFile = newFile(f);
@@ -407,7 +407,7 @@ mod Files {
         try {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.newBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader \ IO;
+            import static java.nio.file.Files.emptyBufferedReader(##java.nio.file.Path, ##java.nio.charset.Charset): ##java.io.BufferedReader \ IO;
             import static java.nio.charset.Charset.forName(String): ##java.nio.charset.Charset \ IO;
             import java.io.BufferedReader.readLine(): String \ IO;
 
@@ -472,7 +472,7 @@ mod Files {
                 let stream = newInputStream(javaFile);
                 match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
                     case Ok(_)    => {
-                        let bytes = Array.new(rc, opts.count);
+                        let bytes = Array.empty(rc, opts.count);
                         let numberRead = read(stream, bytes, 0, opts.count);
                         let res = readBytesWithHelper(rc, bytes, numberRead, opts.count);
                         Ok(res)
@@ -519,13 +519,13 @@ mod Files {
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
-                let bytes = ref Array.new(rc, chunkSize) @ rc;
+                let bytes = ref Array.empty(rc, chunkSize) @ rc;
                 let numberRead = ref read(stream, deref bytes) @ rc;
                 let next = () -> checked_ecast({
                     if (deref numberRead >= 0) {
                         try {
                             let chunk = deref bytes;
-                            bytes := Array.new(rc, chunkSize);
+                            bytes := Array.empty(rc, chunkSize);
                             let accRead = deref numberRead;
                             numberRead := read(stream, deref bytes);
                             Some(Ok(readBytesWithHelper(rc, chunk, accRead, chunkSize)))
@@ -869,7 +869,7 @@ mod Files {
         IOError.tryCatch(_ -> {
             import new java.io.File(String): ##java.io.File \ IO as newFile;
             import java.io.File.toPath(): ##java.nio.file.Path \ IO;
-            import static java.nio.file.Files.newDirectoryStream(##java.nio.file.Path): ##java.nio.file.DirectoryStream \ IO;
+            import static java.nio.file.Files.emptyDirectoryStream(##java.nio.file.Path): ##java.nio.file.DirectoryStream \ IO;
             import java.nio.file.DirectoryStream.iterator(): ##java.util.Iterator \ IO;
             import java.nio.file.Path.toString(): String \ {} as pathToString;
 

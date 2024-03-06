@@ -1,4 +1,4 @@
-mod Test.Exp.Jvm.NewObject {
+mod Test.Exp.Jvm.emptyObject {
 
   import java.lang.Object
   import dev.flix.test.{TestBoolArrayInterface, TestBoolInterface, TestCharArrayInterface, TestCharInterface,

@@ -19,11 +19,11 @@
 mod Concurrent.Channel {
     use Concurrent.ReentrantLock.lock
     use Concurrent.ReentrantLock
-    use Concurrent.ReentrantLock.newLock
+    use Concurrent.ReentrantLock.emptyLock
     use Concurrent.Condition
-    use Concurrent.ReentrantLock.newCondition
+    use Concurrent.ReentrantLock.emptyCondition
     use Concurrent.CyclicBarrier
-    use Concurrent.CyclicBarrier.newCyclicBarrier
+    use Concurrent.CyclicBarrier.emptyCyclicBarrier
     use Concurrent.CyclicBarrier.awaitBarrier
 
     ///
@@ -136,7 +136,7 @@ mod Concurrent.Channel {
     ///
     @Internal
     pub def newChannel(bufferSize: Int32): Mpmc[a] \ IO =
-        import static dev.flix.runtime.Global.newId(): Int64 \ IO;
+        import static dev.flix.runtime.Global.emptyId(): Int64 \ IO;
         let _bufferCheck = if (bufferSize < 0) bug!("bufferSize < 0") else ();
         let unBuffered = bufferSize == 0;
         let reentrantLock = newLock(fairness());
@@ -148,11 +148,11 @@ mod Concurrent.Channel {
                 unBuffered,
                 if (unBuffered) 1 else bufferSize,
                 size,
-                MutList.new(Static),
+                MutList.empty(Static),
                 newCyclicBarrier(2),
                 newCondition(reentrantLock)
             ),
-            MutDeque.new(Static)
+            MutDeque.empty(Static)
         )
 
     ///
