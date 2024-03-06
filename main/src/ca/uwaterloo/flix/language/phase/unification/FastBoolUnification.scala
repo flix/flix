@@ -699,13 +699,13 @@ object FastBoolUnification {
     * For example, the term:
     *
     * {{{
-    *   x1 /\ x2 /\ (x7 /\ x9 /\ x1)
+    *   x1 /\ x2 /\ not (x7 /\ x9 /\ x1)
     * }}}
     *
     * is simplified to the term:
     *
     * {{{
-    *   x1 /\ x2 /\ (x7 /\ x9 /\ TRUE)
+    *   x1 /\ x2 /\ not (x7 /\ x9 /\ TRUE)
     * }}}
     *
     * The idea is that since x1 (and x2) must hold for the entire conjunction to be TRUE they can be removed from the sub-term.
