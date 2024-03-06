@@ -21,7 +21,7 @@ mod TestStringBuilder {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def new01(): StringBuilder[Static] \ IO =
+    def empty01(): StringBuilder[Static] \ IO =
         StringBuilder.empty(Static) // Must be Impure, otherwise the StringBuilder would escape its region
 
 

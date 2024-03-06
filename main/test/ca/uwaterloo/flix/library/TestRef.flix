@@ -21,7 +21,7 @@ mod TestRef {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def new01(): Ref[Int32, Static] \ IO =
+    def to01(): Ref[Int32, Static] \ IO =
         Ref.to(Static, 1)
 
 
