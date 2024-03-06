@@ -28,7 +28,7 @@ mod RewindExample {
     /// And we will this by guessing and retrying
     def search(k: Int32): Int32 \ Rewind + IO = {
         println("Beginning to search!");
-        let random = Random.newWithSeed(123i64);
+        let random = Random.freshWithSeed(123i64);
         do Rewind.save("start");
         let guess = Random.nextNatWithMax(random, k);
         // 1. and 2. hold automatically
