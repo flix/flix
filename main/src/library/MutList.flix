@@ -37,7 +37,7 @@ mod MutList {
     /// Returns a string representation of the given MutList `l`.
     ///
     pub def toString(l: MutList[a, r]): String \ r with ToString[a] = region rc2 {
-        let sb = StringBuilder.new(rc2);
+        let sb = StringBuilder.empty(rc2);
         StringBuilder.appendString!("MutList#{", sb);
         forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -50,10 +50,10 @@ mod MutList {
     }
 
     ///
-    /// Returns a new empty mutable list with a default capacity.
+    /// Returns an empty empty mutable list with a default capacity.
     ///
-    pub def new(rc: Region[r]): MutList[a, r] \ r =
-        MutList(rc, ref Array.new(rc, minCapacity()) @ rc, ref 0 @ rc)
+    pub def empty(rc: Region[r]): MutList[a, r] \ r =
+        MutList(rc, ref Array.empty(rc, minCapacity()) @ rc, ref 0 @ rc)
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -336,11 +336,11 @@ mod MutList {
     ///
     /// Apply `f` to every element in `v`.
     ///
-    /// The result is a new mutable list.
+    /// The result is an empty mutable list.
     ///
     pub def map(rc1: Region[r1], f: a -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, r, r1 } =
         if (isEmpty(v))
-            MutList.new(rc1)
+            MutList.empty(rc1)
         else {
             let MutList(_, ra, rl) = v;
             let a = deref ra;
@@ -364,7 +364,7 @@ mod MutList {
     ///
     pub def mapWithIndex(rc1: Region[r1], f: (Int32, a) -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, r, r1 } =
         if (isEmpty(v))
-            MutList.new(rc1)
+            MutList.empty(rc1)
         else {
             let MutList(_, ra, rl) = v;
             let a = deref ra;
@@ -509,7 +509,7 @@ mod MutList {
     ///
     pub def clear!(v: MutList[a, r]): Unit \ r =
         let MutList(r, a, l) = v;
-        a := Array.new(r, Array.length(deref a));
+        a := Array.empty(r, Array.length(deref a));
         l := 0
 
     ///
@@ -617,7 +617,7 @@ mod MutList {
     ///
     pub def retain!(f: a -> Bool, v: MutList[a, r]): Unit \ r =
         let MutList(r, a1, l1) = v;
-        let l = MutList.new(r);
+        let l = MutList.empty(r);
         forEach(e -> if (f(e)) push!(e, l) else (), v);
         let MutList(_, a2, l2) = l;
         a1 := deref a2;
@@ -689,7 +689,7 @@ mod MutList {
             let minCap = minCapacity();
             let c = Order.max(l, minCap);
             l0 := l;
-            Array.updateSequence!(0, deref a, Array.new(r, c))
+            Array.updateSequence!(0, deref a, Array.empty(r, c))
         }
         else
             ()
@@ -722,7 +722,7 @@ mod MutList {
     /// Returns `xs` as a vector.
     ///
     pub def toVector(xs: MutList[a, r]): Vector[a] \ r = region rc {
-        let arr = Array.new(rc, length(xs));
+        let arr = Array.empty(rc, length(xs));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), xs);
         Array.toVector(arr)
     }
@@ -737,7 +737,7 @@ mod MutList {
     /// Returns `v` as a MutDeque.
     ///
     pub def toMutDeque(rc1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { r2, r1 }  =
-        let d = MutDeque.new(rc1);
+        let d = MutDeque.empty(rc1);
         forEach(x -> MutDeque.pushBack(x, d), v);
         d
 
@@ -773,7 +773,7 @@ mod MutList {
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: a -> String \ ef, sep: String, v: MutList[a, r]): String \ { ef, r } = region rc1 {
-        let sb = StringBuilder.new(rc1);
+        let sb = StringBuilder.empty(rc1);
         let step = (i, x) ->
             if (i == 0)
                 StringBuilder.appendString!(f(x), sb)
