@@ -459,9 +459,8 @@ mod Chain {
     /// Returns `false` if `c` is empty.
     ///
     pub def exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = match viewLeft(c) {
-        case ViewLeft.NoneLeft               => false
-        case ViewLeft.SomeLeft(x, _) if f(x) => true
-        case ViewLeft.SomeLeft(_, xs)        => exists(f, xs)
+        case ViewLeft.NoneLeft        => false
+        case ViewLeft.SomeLeft(x, xs) => f(x) or exists(f, xs)
     }
 
     ///
@@ -470,9 +469,8 @@ mod Chain {
     /// Returns `true` if `c` is empty.
     ///
     pub def forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = match viewLeft(c) {
-        case ViewLeft.NoneLeft                   => true
-        case ViewLeft.SomeLeft(x, _) if not f(x) => false
-        case ViewLeft.SomeLeft(_, xs)            => forAll(f, xs)
+        case ViewLeft.NoneLeft        => true
+        case ViewLeft.SomeLeft(x, xs) => f(x) and forAll(f, xs)
     }
 
     ///
@@ -558,16 +556,16 @@ mod Chain {
     /// Returns `c` without the longest prefix that satisfies the predicate `f`.
     ///
     pub def dropWhileLeft(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef = match viewLeft(c) {
-        case ViewLeft.SomeLeft(x, xs) if (f(x)) => dropWhileLeft(f, xs)
-        case _                         => c
+        case ViewLeft.SomeLeft(x, xs)  => if (f(x)) dropWhileLeft(f, xs) else c
+        case ViewLeft.NoneLeft         => c
     }
 
     ///
     /// Returns `c` without the longest suffix that satisfies the predicate `f`.
     ///
     pub def dropWhileRight(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef = match viewRight(c) {
-        case ViewRight.SomeRight(xs, x) if (f(x)) => dropWhileRight(f, xs)
-        case _                          => c
+        case ViewRight.SomeRight(xs, x) => if (f(x)) dropWhileRight(f, xs) else c
+        case ViewRight.NoneRight        => c
     }
 
     ///
@@ -619,8 +617,8 @@ mod Chain {
     ///
     pub def takeWhileRight(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef =
         def loop(cc, acc) = match viewRight(cc) {
-            case ViewRight.SomeRight(rs, a) if (f(a)) => loop(rs, cons(a, acc))
-            case _                          => acc
+            case ViewRight.NoneRight => acc
+            case ViewRight.SomeRight(rs, a) => if (f(a)) loop(rs, cons(a, acc)) else acc
         };
         loop(c, Empty)
 
