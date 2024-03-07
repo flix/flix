@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.BoundBy
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, CallType}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Level, LiftedAst, Purity, ReducedAst, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression
@@ -121,17 +121,12 @@ object EffectBinder {
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
-    case LiftedAst.Expr.ApplyClo(_, _, _, _, _, _) =>
+    case LiftedAst.Expr.ApplyClo(_, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
 
-    case LiftedAst.Expr.ApplyDef(_, _, _, _, _, _) =>
-      val binders = mutable.ArrayBuffer.empty[Binder]
-      val e = visitExprInnerWithBinders(binders)(exp)
-      bindBinders(binders, e)
-
-    case LiftedAst.Expr.ApplySelfTail(_, _, _, _, _) =>
+    case LiftedAst.Expr.ApplyDef(_, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
       val e = visitExprInnerWithBinders(binders)(exp)
       bindBinders(binders, e)
@@ -230,18 +225,14 @@ object EffectBinder {
       val es = exps.map(visitExprWithBinders(binders))
       ReducedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
-    case LiftedAst.Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
+    case LiftedAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExprWithBinders(binders)(exp)
       val es = exps.map(visitExprWithBinders(binders))
-      ReducedAst.Expr.ApplyClo(e, es, ct, tpe, purity, loc)
+      ReducedAst.Expr.ApplyClo(e, es, CallType.NonTailCall, tpe, purity, loc)
 
-    case LiftedAst.Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+    case LiftedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExprWithBinders(binders))
-      ReducedAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
-
-    case LiftedAst.Expr.ApplySelfTail(sym, actuals0, tpe, purity, loc) =>
-      val actuals = actuals0.map(visitExprWithBinders(binders))
-      ReducedAst.Expr.ApplySelfTail(sym, actuals, tpe, purity, loc)
+      ReducedAst.Expr.ApplyDef(sym, es, CallType.NonTailCall, tpe, purity, loc)
 
     case LiftedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExprInnerWithBinders(binders)(exp1)

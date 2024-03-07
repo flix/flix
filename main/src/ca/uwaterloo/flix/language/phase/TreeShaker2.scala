@@ -73,14 +73,11 @@ object TreeShaker2 {
     case Expr.ApplyAtomic(op, exps, _, _, _) =>
       visitAtomicOp(op) ++ visitExps(exps)
 
-    case Expr.ApplyClo(exp, exps, _, _, _, _) =>
+    case Expr.ApplyClo(exp, exps, _, _, _) =>
       visitExp(exp) ++ visitExps(exps)
 
-    case Expr.ApplyDef(sym, exps, _, _, _, _) =>
+    case Expr.ApplyDef(sym, exps, _, _, _) =>
       Set(sym) ++ visitExps(exps)
-
-    case Expr.ApplySelfTail(sym, args, _, _, _) =>
-      Set(sym) ++ visitExps(args)
 
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       visitExp(exp1) ++ visitExp(exp2) ++ visitExp(exp3)
