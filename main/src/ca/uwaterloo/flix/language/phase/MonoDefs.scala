@@ -91,9 +91,9 @@ object MonoDefs {
     * - Types are normalized (e.g. record ordering)
     *
     * Notes on `s`: It is only applied to variables directly in the apply of the strict
-    * substitution. It is assumes, and should be enforced, that the types in the output of `s` have
-    * the above mentioned properties. `s` is used directly to support variables in typematch, where
-    * it is not only used on variables.
+    * substitution. They image of `s` does not have to be normalized or even ground, but it is
+    * assumed that variables in the image are unconstrained. `s` is used directly to support
+    * variables in typematch, where it is not only used on variables.
     */
   private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
 
@@ -125,10 +125,9 @@ object MonoDefs {
         // Remove variables by substitution, otherwise by default type.
         s.m.get(x.sym) match {
           case Some(t) =>
-            // The image of s might have unconstrained variables and be
-            // non-normalized.
-            // It is important to use default first, because the variables of t
-            // might be in the domain of the substitution.
+            // The image of s might have unconstrained variables and be non-normalized.
+            // It is important to use default first, because the variables of t might be in the
+            // domain of the substitution.
             apply(t.map(default))
           case None =>
             default(tpe0)
