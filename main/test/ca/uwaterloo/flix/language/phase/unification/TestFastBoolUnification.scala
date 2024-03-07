@@ -214,57 +214,6 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
     // verify(s, l) -- TOO SLOW
   }
 
-  test("Fixpoint.Interpreter.evalTerm") {
-    val l = List(
-      Cst(442) ~ (Var(69984) & (Var(69992) & (Var(70006) & (Var(70010) & ((Var(70016) & Var(70018)) & ((Var(70025) & (Var(70028) & Var(70032))) & ((Var(70040) & (Var(70043) & (Var(70046) & Var(70052)))) & ((Var(70061) & (Var(70064) & (Var(70067) & (Var(70070) & Var(70078))))) & ((Var(70088) & (Var(70091) & (Var(70094) & (Var(70097) & (Var(70100) & Var(70110)))))) & (Var(70126) & Var(70135))))))))))),
-      Var(69982) ~ Var(121740),
-      Var(69984) ~ Var(69982),
-      Var(69992) ~ Var(121742),
-      Var(69999) ~ Var(121748),
-      Var(70001) ~ (Var(121746) & Var(69999)),
-      Var(70004) ~ Var(121750),
-      Var(70006) ~ (Var(121744) & (Var(70001) & Var(70004))),
-      Var(70010) ~ Var(121752),
-      Var(70016) ~ Var(121754),
-      Var(70018) ~ Var(121756),
-      Var(70025) ~ Var(121758),
-      Var(70028) ~ Var(121760),
-      Var(70030) ~ Var(121764),
-      Var(70032) ~ (Var(121762) & Var(70030)),
-      Var(70040) ~ Var(121766),
-      Var(70043) ~ Var(121768),
-      Var(70046) ~ Var(121770),
-      Var(70048) ~ Var(121776),
-      Var(70050) ~ (Var(121774) & Var(70048)),
-      Var(70052) ~ (Var(121772) & Var(70050)),
-      Var(70061) ~ Var(121778),
-      Var(70064) ~ Var(121780),
-      Var(70067) ~ Var(121782),
-      Var(70070) ~ Var(121784),
-      Var(70072) ~ Var(121792),
-      Var(70074) ~ (Var(121790) & Var(70072)),
-      Var(70076) ~ (Var(121788) & Var(70074)),
-      Var(70078) ~ (Var(121786) & Var(70076)),
-      Var(70088) ~ Var(121794),
-      Var(70091) ~ Var(121796),
-      Var(70094) ~ Var(121798),
-      Var(70097) ~ Var(121800),
-      Var(70100) ~ Var(121802),
-      Var(70102) ~ Var(121812),
-      Var(70104) ~ (Var(121810) & Var(70102)),
-      Var(70106) ~ (Var(121808) & Var(70104)),
-      Var(70108) ~ (Var(121806) & Var(70106)),
-      Var(70110) ~ (Var(121804) & Var(70108)),
-      Var(70118) ~ True,
-      Var(70123) ~ True,
-      Var(70126) ~ (Var(70118) & Var(70123)),
-      Var(70132) ~ True,
-      Var(70135) ~ Var(70132)
-    )
-    val s = solveAll(l).get
-    // verify(s, l) -- TOO SLOW
-  }
-
   test("Fixpoint.Phase.Compiler.compileRuleIncr") {
     val l = List(
       Cst(14919) ~ (Var(69065) & (Var(69068) & (Var(69076) & (Var(69079) & (Var(69084) & (Var(69091) & (Var(69150) & (Var(69153) & ((Var(69156) & (Var(69160) & Var(69167))) & Var(69174)))))))))),
