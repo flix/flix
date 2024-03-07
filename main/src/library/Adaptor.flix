@@ -62,7 +62,7 @@ mod Adaptor {
     ///
     pub def fromList(l: ##java.util.List): List[a] = region rc {
         import java.util.List.iterator(): ##java.util.Iterator \ rc;
-        iterator(l) |> fromIterator(rc, Proxy.Proxy: Proxy[a]) |> Iterator.toList
+        iterator(l) |> fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toList
     }
 
     ///
@@ -79,7 +79,7 @@ mod Adaptor {
     ///
     pub def fromSet(l: ##java.util.Set): Set[a] with Order[a] = region rc {
         import java.util.Set.iterator(): ##java.util.Iterator \ rc;
-        iterator(l) |> fromIterator(rc, Proxy.Proxy: Proxy[a]) |> Iterator.toSet
+        iterator(l) |> fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toSet
     }
 
     ///
@@ -115,7 +115,7 @@ mod Adaptor {
         let getNext = () -> match hasNext(iter) {
             case true  => {
                 let entry = {let obj = next(iter); unchecked_cast(obj as ##java.util.Map$Entry)};
-                let (k, v) = fromMapEntry(Proxy.Proxy: Proxy[k], Proxy.Proxy: Proxy[v], entry);
+                let (k, v) = fromMapEntry((Proxy.Proxy: Proxy[k]), (Proxy.Proxy: Proxy[v]), entry);
                 Some((k, v))
             }
             case false => None

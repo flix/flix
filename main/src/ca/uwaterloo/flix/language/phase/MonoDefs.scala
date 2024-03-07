@@ -29,8 +29,14 @@ import scala.collection.immutable.SortedSet
 import scala.collection.mutable
 
 /**
-  * Monomorphization is a whole-program compilation strategy that replaces every reference to a parametric function with
-  * a reference to a non-parametric version (of that function) specialized to the concrete types of the reference.
+  * Monomorphization is a whole-program compilation strategy that replaces every reference to a
+  * parametric function with a reference to a non-parametric version (of that function) specialized
+  * to the concrete types of the reference.
+  *
+  * Additionally it eliminates all type variables and normalizes types. This means that types have
+  * unique representations, without aliases and associated types.
+  *
+  * Additionally it resolves type class methods into actual function calls.
   *
   * For example, the polymorphic program:
   *
@@ -41,26 +47,53 @@ import scala.collection.mutable
   * is, roughly speaking, translated to:
   *
   * -   def fst$1(p: (Bool, Char)): Bool = let (x, y) = p ; x
-  * -   def fst$2(p: (Int32, Str)): Int32 = let (x, y) = p ; x
+  * -   def fst$2(p: (Int32, String)): Int32 = let (x, y) = p ; x
   * -   def f: Bool = fst$1((true, 'a'))
   * -   def g: Bool = fst$2((42, "foo"))
   *
+  * Additionally for things like record types and effect formulas, equivalent types are flattened
+  * and ordered. This means that `{b = String, a = String}` becomes `{a = String, b = String}` and
+  * that `Print + (Crash + Print)` becomes `Crash + Print`.
+  *
   * At a high-level, monomorphization works as follows:
   *
-  * 1. We maintain a queue of functions and the concrete types they must be specialized to.
-  * 2. We populate the queue by specialization of non-parametric function definitions and other top-level expressions.
+  * 1. We maintain a queue of functions and the concrete, normalized types they must be specialized
+  *    to.
+  * 2. We populate the queue by specialization of non-parametric function definitions.
   * 3. We iteratively extract a function from the queue and specialize it:
   *    a. We replace every type variable appearing anywhere in the definition by its concrete type.
-  *       b. We create new fresh local variable symbols (since the function is effectively being copied).
-  *       c. We enqueue (or re-used) other functions referenced by the current function which require specialization.
-  *       4. We reconstruct the AST from the specialized functions and remove all parametric functions.
+  *       b. We create new fresh local variable symbols (since the function is effectively being
+  *          copied).
+  *       c. We enqueue (or re-used) other functions referenced by the current function which
+  *          require specialization.
+  *       4. We reconstruct the AST from the specialized functions and remove all parametric
+  *          functions (Enum declarations are deleted to avoid specializing them).
+  *
+  * Type normalization details:
+  *
+  * - Record fields are in alphabetical order
+  * - Schema fields are in alphabetical order
+  * - Effect formulas are flat unions of effects in alphabetical order.
+  * - Case set formulas are a single CaseSet literal.
+  *
   */
 object MonoDefs {
 
   /**
-    * A strict substitution is similar to a regular substitution except that free type variables are replaced by the
-    * Unit type. In other words, when performing a type substitution if there is no requirement on a polymorphic type
-    * we assume it to be Unit. This is safe since otherwise the type would not be polymorphic after type-inference.
+    * A strict substitution is similar to a regular substitution except that free type variables are
+    * replaced by an appropriate default type. In other words, when performing a type substitution,
+    * if there is no requirement on a polymorphic type, we assume it to be the default type of its
+    * kind. This is safe since otherwise the type would not be polymorphic after type-inference.
+    *
+    * Properties of the output types:
+    * - No associated types
+    * - No type aliases
+    * - Types are normalized (e.g. record ordering)
+    *
+    * Notes on `s`: It is only applied to variables directly in the apply of the strict
+    * substitution. It is assumes, and should be enforced, that the types in the output of `s` have
+    * the above mentioned properties. `s` is used directly to support variables in typematch, where
+    * it is not only used on variables.
     */
   private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
 
@@ -85,13 +118,20 @@ object MonoDefs {
       * Properties of the output type:
       * - No associated types
       * - No type aliases
+      * - Types are normalized (e.g. record ordering)
       */
     def apply(tpe0: Type): Type = tpe0 match {
       case x: Type.Var =>
         // Remove variables by substitution, otherwise by default type.
         s.m.get(x.sym) match {
-          case Some(t) => apply(t) // the image of s might be non-normalized
-          case None => default(tpe0)
+          case Some(t) =>
+            // The image of s might have unconstrained variables and be
+            // non-normalized.
+            // It is important to use default first, because the variables of t
+            // might be in the domain of the substitution.
+            apply(t.map(default))
+          case None =>
+            default(tpe0)
         }
       case Type.Cst(_, _) =>
         tpe0
@@ -148,13 +188,13 @@ object MonoDefs {
   private class Context() {
 
     /**
-      * A function-local queue of pending (fresh symbol, function definition, and substitution)-triples.
+      * A queue of pending (fresh symbol, function definition, and substitution)-triples.
       *
       * For example, if the queue contains the entry:
       *
-      * -   (f$1, f, [a -> Int])
+      * -   (f$1, f, [a -> Int32])
       *
-      * it means that the function definition f should be specialized w.r.t. the map [a -> Int] under the fresh name f$1.
+      * it means that the function definition f should be specialized w.r.t. the map [a -> Int32] under the fresh name f$1.
       *
       * Note: We use a concurrent linked queue (which is non-blocking) so threads can enqueue items without contention.
       */
@@ -190,15 +230,16 @@ object MonoDefs {
     }
 
     /**
-      * A function-local map from a symbol and a concrete type to the fresh symbol for the specialized version of that function.
+      * A map from a symbol and a normalized type to the fresh symbol for the specialized version
+      * of that function.
       *
       * For example, if the function:
       *
       * -   def fst[a, b](x: a, y: b): a = ...
       *
-      * has been specialized w.r.t. to `Int` and `Str` then this map will contain an entry:
+      * has been specialized w.r.t. to `Int32` and `String` then this map will contain an entry:
       *
-      * -   (fst, (Int, Str) -> Int) -> fst$1
+      * -   (fst, (Int32, String) -> Int32) -> fst$1
       */
     private val def2def: mutable.Map[(Symbol.DefnSym, Type), Symbol.DefnSym] = mutable.Map.empty
 
@@ -342,14 +383,15 @@ object MonoDefs {
   }
 
   /**
-    * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the given substitution `subst`.
+    * Performs specialization of the given expression `exp0` under the environment `env0` w.r.t. the
+    * given substitution `subst`.
     *
     * Replaces every reference to a parametric function with a reference to its specialized version.
     *
     * Replaces every local variable symbol with a fresh local variable symbol.
     *
-    * If a specialized version of a function does not yet exists, a fresh symbol is created for it, and the
-    * definition and substitution is enqueued.
+    * If a specialized version of a function does not yet exist, a fresh symbol is created for it,
+    * and the definition and substitution is enqueued.
     */
   private def visitExp(exp0: LoweredAst.Expr, env0: Map[Symbol.VarSym, Symbol.VarSym], subst: StrictSubstitution)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): MonoAst.Expr = exp0 match {
     case LoweredAst.Expr.Var(sym, tpe, loc) =>
@@ -557,6 +599,8 @@ object MonoDefs {
 
   /**
     * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
+    *
+    * The given type must be a normalized type.
     */
   private def specializeDefSym(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     // Lookup the definition and its declared type.
@@ -572,6 +616,8 @@ object MonoDefs {
 
   /**
     * Returns the def symbol corresponding to the specialized symbol `sym` w.r.t. to the type `tpe`.
+    *
+    * The given type must be a normalized type.
     */
   private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     val sig = root.sigs(sym)
@@ -616,6 +662,8 @@ object MonoDefs {
 
   /**
     * Returns the def symbol corresponding to the specialized def `defn` w.r.t. to the type `tpe`.
+    *
+    * The given type must be a normalized type.
     */
   private def specializeDef(defn: LoweredAst.Def, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.

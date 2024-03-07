@@ -37,7 +37,7 @@ mod Debug {
         typematch x {
             case _: Unit => "()"
             case b: Bool =>  if (b) "true" else "false"
-            case c: Char => "\'" + escape("${c: Char}") + "\'"
+            case c: Char => "\'" + escape("${(c: Char)}") + "\'"
             case y: Float32 =>
                 import static java.lang.Float.toString(Float32): String \ {};
                 toString(y) + "f32"

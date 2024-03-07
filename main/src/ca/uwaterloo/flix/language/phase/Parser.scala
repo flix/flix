@@ -256,7 +256,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ WithClause ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ WithClause ~ optWS ~ OptEqualityConstraintList ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
@@ -1427,11 +1427,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def CaseUnionOrDifference: Rule1[ParsedAst.Type] = {
       def CaseUnionTail = rule {
-        WS ~ atomic("++") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseUnion
+        WS ~ atomic("rvadd") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseUnion
       }
 
       def CaseDifferenceTail = rule {
-        WS ~ atomic("--") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseDifference
+        WS ~ atomic("rvsub") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseDifference
       }
 
       rule {
@@ -1440,7 +1440,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def CaseIntersection: Rule1[ParsedAst.Type] = rule {
-      UnionOrDifference ~ zeroOrMore(WS ~ atomic("&&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseIntersection)
+      UnionOrDifference ~ zeroOrMore(WS ~ atomic("rvand") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseIntersection)
     }
 
     def UnionOrDifference: Rule1[ParsedAst.Type] = {
@@ -1574,7 +1574,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def CaseComplement: Rule1[ParsedAst.Type] = rule {
       // NB: We must not use Type here because it gives the wrong precedence.
-      SP ~ "~~" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.CaseComplement
+      SP ~ "rvnot" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.CaseComplement
     }
 
     def Complement: Rule1[ParsedAst.Type] = rule {
