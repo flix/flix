@@ -580,6 +580,23 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
     verify(s, l)
   }
 
+  test("Iterable.enumerator") {
+    val l = List(
+      Var(101438) ~ Var(101439),
+      Var(101434) ~ Var(101437),
+      Var(101431) ~ Cst(101435),
+      Var(101438) ~ Cst(101435),
+      Var(101433) ~ Var(101437),
+      Var(101434) ~ Var(101438),
+      Var(101434) ~ Cst(101435),
+      Var(101432) ~ (Cst(101436) & Var(101438)),
+      Var(101431) ~ (Var(101433) & Var(101439)),
+      (Cst(101436) & Cst(101435)) ~ (Var(101434) & Var(101432))
+    )
+    val s = solveAll(l).get
+    verify(s, l)
+  }
+
   test("Iterator.next") {
     val l = List(
       (Cst(1435) & Cst(1436)) ~ Var(55261),

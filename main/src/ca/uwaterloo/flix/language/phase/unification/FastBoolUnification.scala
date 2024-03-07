@@ -610,7 +610,7 @@ object FastBoolUnification {
     case Term.Not(t) => Term.mkNot(flexify(t))
     case Term.And(csts, vars, rest) =>
       // Translate every constant into a variable:
-      Term.mkAnd(csts.map(c => Term.Var(c.c)).toList ++ vars ++ rest)
+      Term.mkAnd(csts.map(c => Term.Var(c.c)).toList ++ vars ++ rest.map(flexify))
     case Term.Or(ts) => Term.mkOr(ts.map(flexify))
   }
 
@@ -1601,13 +1601,25 @@ object FastBoolUnification {
     Var(56478) ~ Var(56476)
   )
 
+  private def Iterable_enumerator(): List[Equation] = List(
+    Var(101438) ~ Var(101439),
+    Var(101434) ~ Var(101437),
+    Var(101431) ~ Cst(101435),
+    Var(101438) ~ Cst(101435),
+    Var(101433) ~ Var(101437),
+    Var(101434) ~ Var(101438),
+    Var(101434) ~ Cst(101435),
+    Var(101432) ~ (Cst(101436) & Var(101438)),
+    Var(101431) ~ (Var(101433) & Var(101439)),
+    (Cst(101436) & Cst(101435)) ~ (Var(101434) & Var(101432))
+  )
 
   def main(args: Array[String]): Unit = {
     //solveAll(FixpointInterpreter_evalTerm()).get
     //solveAll(Array_copyOfRange()).get
     //solveAll(FixpointAstDatalog_toString299997()).get
     //solveAll(Nec_zipWithA()).get
-    solveAll(ConcurrentChannel_selectHelper()).get
+    //solveAll(ConcurrentChannel_selectHelper()).get
     //solveAll(Array_transpose()).get
     //solveAll(MutDeque_sameElements()).get
     //solveAll(FixpointAstDatalog_predSymsOf29898()).get
@@ -1615,6 +1627,7 @@ object FastBoolUnification {
     //solveAll(Files_append()).get
     //solveAll(Iterator_next()).get
     //solveAll(Boxable_lift1()).get
+    solveAll(Iterable_enumerator()).get
   }
 
 }
