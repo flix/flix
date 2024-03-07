@@ -20,13 +20,16 @@ import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Input, Source}
 import ca.uwaterloo.flix.language.ast.{Ast, ReadAst}
+import ca.uwaterloo.flix.tools.pkg.ManifestParser
+import ca.uwaterloo.flix.util.Result.Ok
 import ca.uwaterloo.flix.util.{StreamOps, Validation}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.io.IOException
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 import java.util.zip.ZipFile
 import scala.collection.mutable
+import scala.jdk.CollectionConverters.EnumerationHasAsScala
 import scala.util.Using
 
 /**
@@ -58,6 +61,8 @@ object Reader {
             for (src <- unpack(path)) {
               result += (src -> ())
             }
+
+          case _ => Validation.success(()) //This case should never happen. Otherwise it should be handled correctly.
         }
       }
 
@@ -77,6 +82,7 @@ object Reader {
     // Open the zip file.
     Using(new ZipFile(p.toFile)) { zip =>
       // Collect all source and test files.
+      val isPkgSafe = isZipPkgSafe(zip, p)
       val result = mutable.ListBuffer.empty[Source]
       val iterator = zip.entries()
       while (iterator.hasMoreElements) {
@@ -87,11 +93,30 @@ object Reader {
           val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
           val str = new String(bytes, flix.defaultCharset)
           val arr = str.toCharArray
-          result += Source(Input.PkgFile(p), arr, stable = false)
+          result += Source(Ast.Input.PkgTxtFile(p, isPkgSafe), arr, stable = false)
         }
       }
       result.toList
     }.get // TODO Return a Result instead, see https://github.com/flix/flix/issues/3132
+  }
+
+  /**
+   * Returns the package's safety signature.
+   */
+  private def isZipPkgSafe(zipFile: ZipFile, zipPath: Path): Boolean = {
+    zipFile.entries().asScala.find(_.getName.endsWith(".toml")) match {
+      case Some(tomlEntry) =>
+        val s = new String(zipFile.getInputStream(tomlEntry).readAllBytes())
+
+        val p = zipPath.toString.stripSuffix(".fpkg") + "/" + tomlEntry.getName
+        ManifestParser.parse(s, Paths.get(p)) match {
+          case Ok(m) => m.safe
+          // If the manifest is not correct we return the default safety value.
+          case _  => true
+        }
+      // if the zip file doesn't contain "flix.toml" we return the default safety value
+      case _ => true
+    }
   }
 
   /**

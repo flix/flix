@@ -55,6 +55,11 @@ object Ast {
       */
     case class PkgFile(path: Path) extends Input
 
+    /**
+     * A source that is backed by a file from a flix package.
+     */
+    case class PkgTxtFile(path: Path, safe: Boolean) extends Input
+
   }
 
   /**
@@ -68,6 +73,7 @@ object Ast {
       case Input.Text(name, _, _) => name
       case Input.TxtFile(path) => path.toString
       case Input.PkgFile(path) => path.toString
+      case Input.PkgTxtFile(path, _) => path.toString
     }
 
     def src: Source = this

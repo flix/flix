@@ -21,8 +21,9 @@ import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
+import ca.uwaterloo.flix.tools.pkg.PackageError.ManifestSafetyError
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, PackageModules, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError, Dependency}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
@@ -358,6 +359,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   // The `flix.toml` manifest if in project mode, otherwise `None`
   private var optManifest: Option[Manifest] = None
 
+  private var safe: Boolean = true
+
   // Timestamps at the point the sources were loaded
   private var timestamps: Map[Path, Long] = Map.empty
 
@@ -397,6 +400,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     JarPackageManager.installAll(manifests, projectPath) match {
       case Ok(l) => jarPackagePaths = l
       case Err(e) => return Validation.toHardFailure(BootstrapError.JarPackageError(e))
+    }
+    manifests.forall(_.safe) match {
+      case manifest.safe => safe = manifest.safe
+      case _ => return Validation.toHardFailure(BootstrapError.FlixPackageError(ManifestSafetyError(projectPath.getFileName.toString)))
     }
     out.println("Dependency resolution completed.")
 
@@ -444,17 +451,16 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def reconfigureFlix(flix: Flix): Unit = {
     val previousSources = timestamps.keySet
 
+    optManifest match {
+      case Some(m) => flix.safe = m.safe
+      case _ => flix.safe = true
+    }
+
     for (path <- sourcePaths if hasChanged(path)) {
       flix.addFlix(path)
     }
 
     for (path <- flixPackagePaths if hasChanged(path)) {
-      // TODO: open path, read the zipfile, find the manifest.toml, parse it with existing parser, and pass it to addPkg
-
-      //ManifestParser.parse(path) match {
-      //  case Ok(m) => flix.addPkg(path, m)
-      //  case _ => Validation.success(())
-      //}
       flix.addPkg(path)
     }
 
@@ -499,11 +505,8 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def build(flix: Flix): Validation[CompilationResult, BootstrapError] = {
     // Configure a new Flix object.
-    val isSafe = optManifest match {
-      case Some(m) => m.safe
-      case None => true
-    }
-    val newOptions = flix.options.copy(output = Some(Bootstrap.getBuildDirectory(projectPath)), safe = isSafe)
+
+    val newOptions = flix.options.copy(output = Some(Bootstrap.getBuildDirectory(projectPath)))
     flix.setOptions(newOptions)
 
     // Add sources and packages.

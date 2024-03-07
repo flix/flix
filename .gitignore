@@ -17,5 +17,6 @@ flix.toml
 src
 test
 lib
+README.md
 # local development files
 **/personal/**

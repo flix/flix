@@ -711,8 +711,10 @@ object Safety {
    */
   private def isUncheckedCastAllowed(loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = loc.source.input match {
     case _: Input.Text => Nil
-    case _: Input.PkgFile => if (flix.options.safe) IncorrectSafetySignature(loc) :: Nil else Nil //TODO: check the package's manifest for safety. (Might not be necessary)
-    case _: Input.TxtFile => if (flix.options.safe) IncorrectSafetySignature(loc) :: Nil else Nil
+    case _: Input.PkgFile => Nil
+    case _: Input.TxtFile => if (flix.safe) IncorrectSafetySignature(loc) :: Nil else Nil
+    case Input.PkgTxtFile(_, true) => IncorrectSafetySignature(loc) :: Nil
+    case Input.PkgTxtFile(_, false) => if (flix.safe) IncorrectSafetySignature(loc) :: Nil else  Nil //This case should never occur
     case _ => Nil // Add a default case to handle other input types or unexpected situations
   }
 

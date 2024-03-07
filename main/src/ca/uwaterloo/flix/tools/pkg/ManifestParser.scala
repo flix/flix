@@ -131,7 +131,7 @@ object ManifestParser {
 
     val dottedKeys = parser.dottedKeySet().asScala.toSet
     val packageKeys = dottedKeys.filter(s => s.startsWith("package."))
-    val allowedPackageKeys = Set("package.name", "package.description", "package.version", "package.repository", "package.modules", "package.flix", "package.authors", "package.license")
+    val allowedPackageKeys = Set("package.name", "package.description", "package.version", "package.repository", "package.modules", "package.flix", "package.authors", "package.license", "package.safe")
     val illegalPackageKeys = packageKeys.diff(allowedPackageKeys)
     if (illegalPackageKeys.nonEmpty) {
       return Err(ManifestError.IllegalPackageKeyFound(p, illegalPackageKeys.head))

@@ -120,4 +120,12 @@ object PackageError {
     override def message(f: Formatter): String = e.message(f)
   }
 
+  case class ManifestSafetyError(project: String) extends PackageError {
+
+    override def message(f: Formatter): String =
+      s"""
+         |'${f.bold(project)}' is marked as safe but contains unsafe dependencies.
+         |""".stripMargin
+  }
+
 }
