@@ -86,9 +86,11 @@ object ConstraintResolution {
   /**
     * Adds the given type constraints as assumptions to the class environment.
     */
-  def expandClassEnv(cenv: Map[Symbol.ClassSym, Ast.ClassContext], tconstrs: List[Ast.TypeConstraint]): Map[Symbol.ClassSym, Ast.ClassContext] = {
-
-    tconstrs.flatMap(withSupers(_, cenv)).foldLeft(cenv) {
+  def expandClassEnv(cenv: Map[Symbol.ClassSym, Ast.ClassContext], tconstrs: List[Ast.TypeConstraint])(implicit flix: Flix): Map[Symbol.ClassSym, Ast.ClassContext] = {
+    // TODO ASSOC-TYPES ensure this is safe
+    // TODO generally safe because tconstr args tend to be vars so reduce does nothing
+    // TODO but in Instances the args may not be vars (coming from class constraints)
+    ClassEnvironment.reduce(tconstrs, cenv, RigidityEnv.empty).unsafeGet.flatMap(withSupers(_, cenv)).foldLeft(cenv) {
       case (acc, Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, _), arg, loc)) =>
         val inst = Ast.Instance(arg, Nil)
         val context = acc.get(sym) match {

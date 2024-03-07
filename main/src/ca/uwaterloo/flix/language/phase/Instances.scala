@@ -168,6 +168,9 @@ object Instances {
           case (Some(defn), Some(_)) if !defn.spec.mod.isOverride => List(InstanceError.UnmarkedOverride(defn.sym, defn.sym.loc))
           // Case 5: there is an implementation with the right modifier
           case (Some(defn), _) =>
+            if (defn.sym.toString == "foldMap$4128") {
+              println("debug")
+            }
             val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, clazz.tparam.sym, inst.tpe, defn.sym.loc)
             if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.classEnv, root.eqEnv)) {
               // Case 5.1: the schemes match. Success!

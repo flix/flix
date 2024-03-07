@@ -55,7 +55,7 @@ object FastBoolUnification {
     *
     * If a solution is too complex an [[TooComplexException]] exception is thrown.
     */
-  private val Threshold: Int = 1_000
+  private val Threshold: Int = 4_000
 
   /**
     * Enable debugging (prints information during Boolean unification).
