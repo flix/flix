@@ -427,10 +427,10 @@ object ConstraintGeneration {
 
       case Expr.Match(exp, rules, loc) =>
         val (tpe, eff) = visitExp(exp)
-        val (patTpes, guardEffs, tpes, effs) = ListOps.unzip4(rules.map(visitMatchRule))
+        val (patTpes, tpes, effs) = rules.map(visitMatchRule).unzip3
         c.unifyAllTypesM(tpe :: patTpes, Kind.Star, loc)
         val resTpe = c.unifyAllTypesM(tpes, Kind.Star, loc)
-        val resEff = Type.mkUnion(eff :: guardEffs ::: effs, loc)
+        val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
       case Expr.TypeMatch(exp, rules, loc) =>
@@ -651,9 +651,8 @@ object ConstraintGeneration {
 
       case Expr.InstanceOf(exp, _, _) =>
         val (_, eff) = visitExp(exp)
-        c.expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
         val resTpe = Type.Bool
-        val resEff = Type.Pure
+        val resEff = eff
         (resTpe, resEff)
 
       case Expr.CheckedCast(cast, exp, tvar, evar, loc) =>
@@ -973,19 +972,19 @@ object ConstraintGeneration {
   /**
     * Generates constraints for the given match rule.
     *
-    * Returns the pattern type, the guard's effect, the body's type, and the body's effect
+    * Returns the pattern type, the body's type, and the body's effect
     */
-  private def visitMatchRule(rule: KindedAst.MatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type, Type, Type) = rule match {
+  private def visitMatchRule(rule: KindedAst.MatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type, Type) = rule match {
     case KindedAst.MatchRule(pat, guard, exp) =>
       val patTpe = visitPattern(pat)
-      val gEff = guard.map {
+      guard.foreach {
         g =>
           val (guardTpe, guardEff) = visitExp(g)
           c.expectTypeM(expected = Type.Bool, actual = guardTpe, g.loc)
-          guardEff
+          c.expectTypeM(expected = Type.Pure, actual = guardEff, g.loc)
       }
       val (tpe, eff) = visitExp(exp)
-      (patTpe, gEff.getOrElse(Type.Pure), tpe, eff)
+      (patTpe, tpe, eff)
   }
 
   /**
