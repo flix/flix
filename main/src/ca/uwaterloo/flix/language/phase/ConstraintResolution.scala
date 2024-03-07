@@ -172,7 +172,7 @@ object ConstraintResolution {
     case KindedAst.Sig(sym, KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc), exp) =>
 
       if (sym.toString == "Foldable.toMutSet") {
-        startLogging()
+//        startLogging()
       }
       log(sym)
 
