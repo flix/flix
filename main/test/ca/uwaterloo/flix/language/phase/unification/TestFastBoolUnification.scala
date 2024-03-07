@@ -647,6 +647,39 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
     verify(s, l)
   }
 
+  test("List.scanRight") {
+    val l = List(
+      Var(144695) ~ True,
+      Var(144681) ~ Var(144691),
+      Var(144684) ~ True,
+      Var(144677) ~ Var(144690),
+      Var(144680) ~ Var(144696),
+      Var(144684) ~ Var(144693),
+      Var(144679) ~ Var(144695),
+      Var(144682) ~ Var(144691),
+      Var(144688) ~ True,
+      Var(144685) ~ Cst(144689),
+      Var(144683) ~ Cst(144689),
+      Var(144680) ~ Var(144695),
+      Var(144677) ~ Var(144691),
+      True ~ True,
+      True ~ True,
+      True ~ True,
+      True ~ True,
+      True ~ True,
+      True ~ True,
+      Var(144691) ~ (Var(144678) & Var(144688)),
+      Var(144692) ~ (Var(144682) & Var(144687)),
+      Var(144694) ~ (Var(144682) & Var(144687)),
+      Var(144685) ~ (Var(144696) & Var(144694)),
+      Var(144687) ~ (Var(144679) & Var(144692)),
+      Var(144678) ~ (Var(144681) & Var(144686)),
+      Var(144686) ~ (Var(144683) & Var(144693))
+    )
+    val s = solveAll(l).get
+    verify(s, l)
+  }
+
   test("MutDeque.sameElements") {
     val l = List(
       (Var(876) & Var(877)) ~ Var(90798),
