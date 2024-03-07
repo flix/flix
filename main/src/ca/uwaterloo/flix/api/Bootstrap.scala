@@ -450,6 +450,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
 
     for (path <- flixPackagePaths if hasChanged(path)) {
       // TODO: open path, read the zipfile, find the manifest.toml, parse it with existing parser, and pass it to addPkg
+
+      //ManifestParser.parse(path) match {
+      //  case Ok(m) => flix.addPkg(path, m)
+      //  case _ => Validation.success(())
+      //}
       flix.addPkg(path)
     }
 
@@ -483,12 +488,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def check(flix: Flix): Validation[Unit, BootstrapError] = {
     // Add sources and packages.
-    reconfigureFlix(flix)
-
     flix.check().toHardResult match {
-      case Result.Ok(_) => Validation.success(())
-      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
-    }
+        case Result.Ok(_) => Validation.success(())
+        case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+      }
   }
 
   /**

@@ -87,7 +87,8 @@ object Reader {
           val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
           val str = new String(bytes, flix.defaultCharset)
           val arr = str.toCharArray
-          result += Source(Ast.Input.Text(fullName, str, stable = false), arr, stable = false)
+          val src = Source(Input.PkgFile(p), arr, stable = false)
+          result += src
         }
       }
       result.toList

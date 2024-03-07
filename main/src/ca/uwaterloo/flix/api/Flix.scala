@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.Chain
+import ca.uwaterloo.flix.tools.pkg.Manifest
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
