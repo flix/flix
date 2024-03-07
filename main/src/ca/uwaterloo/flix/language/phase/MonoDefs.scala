@@ -92,8 +92,9 @@ object MonoDefs {
     *
     * Notes on `s`: It is only applied to variables directly in the apply of the strict
     * substitution. They image of `s` does not have to be normalized or even ground, but it is
-    * assumed that variables in the image are unconstrained. `s` is used directly to support
-    * variables in typematch, where it is not only used on variables.
+    * assumed that variables in the image are unconstrained and will be mapped to their default
+    * representation. `s` is used directly to support variables in typematch, where it is not only
+    * used on variables.
     */
   private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
 
