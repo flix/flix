@@ -259,7 +259,7 @@ mod Test.Exp.Jvm.NewObject {
   def testVarargsInterface01(): Bool \ IO =
     import static dev.flix.test.TestVarargsInterface.runTest(TestVarargsInterface): Bool;
     let anon = new TestVarargsInterface {
-      def testMethod(_this: TestVarargsInterface, xs: Array[Int32, Static]): Int32 =
+      def testMethod(_this: TestVarargsInterface, xs: Array[Int32, Static]): Int32 \ IO =
         xs |> Array.sum
     };
     runTest(anon)
