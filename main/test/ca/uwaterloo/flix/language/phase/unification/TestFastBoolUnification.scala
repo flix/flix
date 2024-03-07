@@ -182,6 +182,336 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
     verify(s, l)
   }
 
+  test("Fixpoint.Interpreter.evalStmt") {
+    val l = List(
+      Cst(164) ~ (Var(73972) & ((Var(73981) & (Var(73984) & (Var(73994) & Var(74008)))) & (Var(74020) & (Var(74025) & (Var(74037) & (Var(74047) & (Var(74050) & Var(74053)))))))),
+      Var(73970) ~ Var(124149),
+      Var(73972) ~ ((Var(124146) & Var(124148)) & Var(73970)),
+      Var(73979) ~ Var(124154),
+      Var(73981) ~ (Var(124153) & Var(73979)),
+      Var(73984) ~ True,
+      Var(73990) ~ Var(124167),
+      Var(73992) ~ (Var(124166) & Var(73990)),
+      Var(73994) ~ ((Var(124162) & Var(124163)) & Var(73992)),
+      Var(74004) ~ Var(124178),
+      Var(74006) ~ (Var(124177) & Var(74004)),
+      Var(74008) ~ (((Var(124171) & Var(124173)) & Var(124174)) & Var(74006)),
+      Var(74016) ~ Var(124187),
+      Var(74018) ~ (Var(124186) & Var(74016)),
+      Var(74020) ~ (Var(124183) & Var(74018)),
+      Var(74025) ~ Var(124192),
+      Var(74031) ~ Var(124199),
+      Var(74033) ~ Var(124198),
+      Var(74035) ~ (Var(124196) & Var(74033)),
+      Var(74037) ~ (Var(124194) & Var(74035)),
+      Var(74043) ~ Var(124204),
+      Var(74045) ~ Var(124206),
+      Var(74047) ~ ((Var(124201) & Var(124203)) & (Var(74043) & Var(74045))),
+      Var(74050) ~ Var(124208),
+      Var(74053) ~ Var(124210)
+    )
+    val s = solveAll(l).get
+    // verify(s, l) -- TOO SLOW
+  }
+
+  test("Fixpoint.Interpreter.evalTerm") {
+    val l = List(
+      Cst(442) ~ (Var(69984) & (Var(69992) & (Var(70006) & (Var(70010) & ((Var(70016) & Var(70018)) & ((Var(70025) & (Var(70028) & Var(70032))) & ((Var(70040) & (Var(70043) & (Var(70046) & Var(70052)))) & ((Var(70061) & (Var(70064) & (Var(70067) & (Var(70070) & Var(70078))))) & ((Var(70088) & (Var(70091) & (Var(70094) & (Var(70097) & (Var(70100) & Var(70110)))))) & (Var(70126) & Var(70135))))))))))),
+      Var(69982) ~ Var(121740),
+      Var(69984) ~ Var(69982),
+      Var(69992) ~ Var(121742),
+      Var(69999) ~ Var(121748),
+      Var(70001) ~ (Var(121746) & Var(69999)),
+      Var(70004) ~ Var(121750),
+      Var(70006) ~ (Var(121744) & (Var(70001) & Var(70004))),
+      Var(70010) ~ Var(121752),
+      Var(70016) ~ Var(121754),
+      Var(70018) ~ Var(121756),
+      Var(70025) ~ Var(121758),
+      Var(70028) ~ Var(121760),
+      Var(70030) ~ Var(121764),
+      Var(70032) ~ (Var(121762) & Var(70030)),
+      Var(70040) ~ Var(121766),
+      Var(70043) ~ Var(121768),
+      Var(70046) ~ Var(121770),
+      Var(70048) ~ Var(121776),
+      Var(70050) ~ (Var(121774) & Var(70048)),
+      Var(70052) ~ (Var(121772) & Var(70050)),
+      Var(70061) ~ Var(121778),
+      Var(70064) ~ Var(121780),
+      Var(70067) ~ Var(121782),
+      Var(70070) ~ Var(121784),
+      Var(70072) ~ Var(121792),
+      Var(70074) ~ (Var(121790) & Var(70072)),
+      Var(70076) ~ (Var(121788) & Var(70074)),
+      Var(70078) ~ (Var(121786) & Var(70076)),
+      Var(70088) ~ Var(121794),
+      Var(70091) ~ Var(121796),
+      Var(70094) ~ Var(121798),
+      Var(70097) ~ Var(121800),
+      Var(70100) ~ Var(121802),
+      Var(70102) ~ Var(121812),
+      Var(70104) ~ (Var(121810) & Var(70102)),
+      Var(70106) ~ (Var(121808) & Var(70104)),
+      Var(70108) ~ (Var(121806) & Var(70106)),
+      Var(70110) ~ (Var(121804) & Var(70108)),
+      Var(70118) ~ True,
+      Var(70123) ~ True,
+      Var(70126) ~ (Var(70118) & Var(70123)),
+      Var(70132) ~ True,
+      Var(70135) ~ Var(70132)
+    )
+    val s = solveAll(l).get
+    // verify(s, l) -- TOO SLOW
+  }
+
+  test("Fixpoint.Phase.Compiler.compileRuleIncr") {
+    val l = List(
+      Cst(14919) ~ (Var(69065) & (Var(69068) & (Var(69076) & (Var(69079) & (Var(69084) & (Var(69091) & (Var(69150) & (Var(69153) & ((Var(69156) & (Var(69160) & Var(69167))) & Var(69174)))))))))),
+      Var(69065) ~ True,
+      Var(69068) ~ True,
+      Var(69072) ~ True,
+      Var(69074) ~ Var(121219),
+      Var(69076) ~ (Var(121216) & Var(69074)),
+      Var(69079) ~ True,
+      Var(69084) ~ True,
+      Var(69089) ~ True,
+      Var(69091) ~ Var(69089),
+      Var(69105) ~ True,
+      Var(69108) ~ True,
+      Var(69111) ~ True,
+      Var(69124) ~ True,
+      Var(69126) ~ Var(69124),
+      Var(69128) ~ Var(121244),
+      Var(69132) ~ Var(121234),
+      Var(69135) ~ (Var(121230) & Var(69132)),
+      Var(69138) ~ Var(121252),
+      Var(69150) ~ Var(121254),
+      Var(69153) ~ True,
+      Var(69156) ~ True,
+      Var(69160) ~ Var(121259),
+      Var(69165) ~ Var(121263),
+      Var(69167) ~ Var(121261),
+      Var(69172) ~ Var(121267),
+      Var(69174) ~ Var(121265)
+    )
+    val s = solveAll(l).get
+    verify(s, l)
+  }
+
+  test("Fixpoint.Phase.IndexSelection.queryOp") {
+    val l = List(
+      True ~ ((Var(66558) & (Var(66568) & (Var(66628) & (Var(66633) & (Var(66638) & (Var(66641) & (Var(66644) & (Var(66657) & Var(66660))))))))) & (Var(66668) & (Var(66673) & (Var(66678) & (Var(66684) & Var(66689)))))),
+      Var(66556) ~ True,
+      Var(66558) ~ Var(66556),
+      Var(66564) ~ True,
+      Var(66566) ~ Var(119740),
+      Var(66568) ~ (Var(119738) & Var(66566)),
+      Var(66582) ~ True,
+      Var(66597) ~ Var(119746),
+      Var(66600) ~ Var(119764),
+      Var(66610) ~ True,
+      Var(66613) ~ True,
+      Var(66623) ~ True,
+      Var(66626) ~ Var(119762),
+      Var(66628) ~ (Var(119743) & (Var(66597) & Var(66626))),
+      Var(66633) ~ True,
+      Var(66638) ~ True,
+      Var(66641) ~ True,
+      Var(66644) ~ True,
+      Var(66657) ~ Var(119782),
+      Var(66660) ~ True,
+      Var(66668) ~ True,
+      Var(66673) ~ True,
+      Var(66678) ~ True,
+      Var(66684) ~ True,
+      Var(66689) ~ True
+    )
+    val s = solveAll(l).get
+    verify(s, l)
+  }
+
+  test("Fixpoint.Phase.Simplifier.simplifyOp") {
+    val l = List(
+      True ~ ((Var(58593) & (Var(58598) & Var(58601))) & (Var(58635) & (Var(58667) & Var(58683)))),
+      Var(58568) ~ True,
+      Var(58576) ~ True,
+      Var(58579) ~ True,
+      Var(58583) ~ Var(114603),
+      Var(58586) ~ Var(114615),
+      Var(58591) ~ Var(114613),
+      Var(58593) ~ (Var(114600) & (Var(58583) & Var(58591))),
+      Var(58598) ~ True,
+      Var(58601) ~ True,
+      Var(58613) ~ True,
+      Var(58626) ~ True,
+      Var(58628) ~ Var(114640),
+      Var(58630) ~ (Var(114635) & Var(58628)),
+      Var(58633) ~ True,
+      Var(58635) ~ (Var(114631) & Var(58633)),
+      Var(58645) ~ True,
+      Var(58658) ~ True,
+      Var(58660) ~ Var(114660),
+      Var(58662) ~ (Var(114655) & Var(58660)),
+      Var(58665) ~ True,
+      Var(58667) ~ (Var(114651) & Var(58665)),
+      Var(58678) ~ True,
+      Var(58681) ~ True,
+      Var(58683) ~ (Var(114664) & Var(58681))
+    )
+    val s = solveAll(l).get
+    verify(s, l)
+  }
+
+  test("Fixpoint.Solver.solveWithStratification") {
+    val l = List(
+      True ~ (Var(65701) & (Var(65724) & Var(65762))),
+      Var(65677) ~ Cst(1794221043),
+      Var(65683) ~ True,
+      Var(65686) ~ True,
+      Var(65688) ~ (Var(119207) & Var(65683)),
+      Var(65691) ~ True,
+      Var(65693) ~ (Var(119204) & Var(65688)),
+      Var(65696) ~ True,
+      Var(65698) ~ (Var(119201) & Var(65693)),
+      Var(65701) ~ Var(65717),
+      Var(65705) ~ Var(119224),
+      Var(65708) ~ Var(119227),
+      Var(65710) ~ Var(119226),
+      Var(65712) ~ (Var(119221) & (Var(65705) & Var(65710))),
+      Var(65715) ~ Var(119230),
+      Var(65717) ~ (Var(119218) & Var(65712)),
+      Var(65724) ~ (Var(65740) & Var(65758)),
+      Var(65729) ~ Var(119240),
+      Var(65731) ~ Var(119239),
+      Var(65733) ~ (Var(119235) & Var(65731)),
+      Var(65736) ~ Var(119245),
+      Var(65738) ~ Var(119244),
+      Var(65740) ~ (Var(119232) & (Var(65733) & Var(65738))),
+      Var(65744) ~ Var(119255),
+      Var(65747) ~ Var(119260),
+      Var(65749) ~ Var(119259),
+      Var(65751) ~ (Var(119257) & Var(65749)),
+      Var(65753) ~ (Var(119252) & (Var(65744) & Var(65751))),
+      Var(65756) ~ Var(119263),
+      Var(65758) ~ (Var(119249) & Var(65753)),
+      Var(65762) ~ True,
+      Var(65765) ~ Cst(1794221043)
+    )
+    val s = solveAll(l).get
+    verify(s, l)
+  }
+
+  test("Iterable.enumerator") {
+    val l = List(
+      Var(101438) ~ Var(101439),
+      Var(101434) ~ Var(101437),
+      Var(101431) ~ Cst(101435),
+      Var(101438) ~ Cst(101435),
+      Var(101433) ~ Var(101437),
+      Var(101434) ~ Var(101438),
+      Var(101434) ~ Cst(101435),
+      Var(101432) ~ (Cst(101436) & Var(101438)),
+      Var(101431) ~ (Var(101433) & Var(101439)),
+      (Cst(101436) & Cst(101435)) ~ (Var(101434) & Var(101432))
+    )
+    val s = solveAll(l).get
+    verify(s, l)
+  }
+
+  test("Iterator.next") {
+    val l = List(
+      (Cst(1435) & Cst(1436)) ~ Var(55261),
+      Var(55251) ~ Var(112576),
+      Var(55257) ~ Var(112582),
+      Var(55261) ~ Var(112585)
+    )
+    val s = solveAll(l).get
+    verify(s, l)
+  }
+
+  test("Iterator.toArray") {
+    val l = List(
+      ((Cst(1500) & Cst(1501)) & Cst(1498)) ~ Var(78914),
+      Var(78914) ~ (Var(78917) & (Var(78923) & Var(78926))),
+      Var(78917) ~ Var(127244),
+      Var(78921) ~ Var(127251),
+      Var(78923) ~ ((Var(127248) & Var(127247)) & Var(127249)),
+      Var(78926) ~ (Var(127254) & Var(127252))
+    )
+    val s = solveAll(l).get
+    verify(s, l)
+  }
+
+  test("List.merge") {
+    val l = List(
+      True ~ Var(86467),
+      Var(86412) ~ True,
+      Var(86416) ~ True,
+      Var(86420) ~ True,
+      Var(86423) ~ Var(131895),
+      Var(86425) ~ (Var(131893) & Var(86423)),
+      Var(86428) ~ Var(131897),
+      Var(86430) ~ (Var(131891) & Var(86425)),
+      Var(86432) ~ Var(131904),
+      Var(86434) ~ (Var(131902) & Var(86432)),
+      Var(86437) ~ Var(131906),
+      Var(86439) ~ (Var(131900) & Var(86434)),
+      Var(86446) ~ Var(131909),
+      Var(86453) ~ Var(131912),
+      Var(86458) ~ Var(131915),
+      Var(86460) ~ Var(131922),
+      Var(86462) ~ (Var(131920) & Var(86460)),
+      Var(86465) ~ True,
+      Var(86467) ~ (Var(131918) & Var(86462))
+    )
+    val s = solveAll(l).get
+    verify(s, l)
+  }
+
+  test("MutDeque.sameElements") {
+    val l = List(
+      (Var(876) & Var(877)) ~ Var(90798),
+      Var(90798) ~ (Var(90801) & Var(90804) & Var(90807) & Var(90820) & Var(90823) & Var(90832) & Var(90841) & Var(90844)),
+      Var(90801) ~ Var(134687),
+      Var(90804) ~ Var(134689),
+      Var(90807) ~ True,
+      Var(90820) ~ Var(134695),
+      Var(90823) ~ Var(134697),
+      Var(90826) ~ Var(134703),
+      Var(90828) ~ Var(134705),
+      Var(90830) ~ Var(134707),
+      Var(90832) ~ (Var(134701) & Var(134699) & Var(90826) & Var(90828) & Var(90830)),
+      Var(90835) ~ Var(134712),
+      Var(90837) ~ Var(134714),
+      Var(90839) ~ Var(134716),
+      Var(90841) ~ (Var(134710) & Var(134708) & Var(90835) & Var(90837) & Var(90839)),
+      Var(90844) ~ (Var(134718) & Var(134719))
+    )
+    val s = solveAll(l).get
+    // verify(s, l) -- TOO SLOW
+  }
+
+  test("MutDeque.toArray") {
+    val l = List(
+      (Cst(915) & Cst(913)) ~ (Var(85240) & (Var(85242) & (Var(85244) & (Var(85247) & (Var(85249) & (Var(85252) & (Var(85257) & Var(85270)))))))),
+      Var(85240) ~ Var(131193),
+      Var(85242) ~ Var(131195),
+      Var(85244) ~ Var(131197),
+      Var(85247) ~ True,
+      Var(85249) ~ Var(131199),
+      Var(85252) ~ True,
+      Var(85255) ~ Var(131206),
+      Var(85257) ~ ((Var(131204) & Var(131202)) & Var(85255)),
+      Var(85261) ~ Var(131215),
+      Var(85263) ~ ((Var(131213) & Var(131211)) & Var(85261)),
+      Var(85266) ~ Var(131220),
+      Var(85268) ~ ((Var(131218) & Var(131216)) & Var(85266)),
+      Var(85270) ~ (((Var(131209) & Var(131210)) & Var(131207)) & (Var(85263) & Var(85268)))
+    )
+    val s = solveAll(l).get
+    verify(s, l)
+  }
 
   test("Nec.zipWithA") {
     val l = List(
