@@ -60,7 +60,7 @@ object FastBoolUnification {
   /**
     * Enable debugging (prints information during Boolean unification).
     */
-  private val Debugging: Boolean = true
+  private val Debugging: Boolean = false
 
   /**
     * Internal formatter. Used for debugging.
