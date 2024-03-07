@@ -14,8 +14,7 @@ target
 .bloop
 crash_report_*.txt
 flix.toml
-src
+
 test
-lib
 # local development files
 **/personal/**
