@@ -130,7 +130,7 @@ object ConstraintResolution {
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
       if (sym.toString == "Fixpoint.Ast.Datalog.toString$30062") {
-                startLogging()
+//                startLogging()
       }
       log(sym)
 
@@ -168,6 +168,12 @@ object ConstraintResolution {
   def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root, infResult: InfResult)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
     case KindedAst.Sig(_, _, None) => Validation.success(Substitution.empty)
     case KindedAst.Sig(sym, KindedAst.Spec(doc, ann, mod, tparams, fparams, sc, tpe, eff, tconstrs, econstrs, loc), exp) =>
+
+      if (sym.toString == "Foldable.toMutSet") {
+        startLogging()
+      }
+      log(sym)
+
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
 
       val initialSubst = fparams.foldLeft(Substitution.empty) {
@@ -175,7 +181,7 @@ object ConstraintResolution {
       }
 
       // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
-      val allTparams = tpe.typeVars ++ eff.typeVars ++ fparams.flatMap(_.tpe.typeVars)
+      val allTparams = tpe.typeVars ++ eff.typeVars ++ fparams.flatMap(_.tpe.typeVars) ++ econstrs.flatMap(_.tpe2.typeVars)
 
       val renv = allTparams.foldLeft(infRenv ++ renv0) {
         case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
@@ -187,7 +193,17 @@ object ConstraintResolution {
       val tpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
       val effConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
       val constrs = tpeConstr :: effConstr :: infConstrs
-      resolve(constrs, renv, cenv, eqEnv, initialSubst).map(_.newSubst).toValidation // TODO check leftovers
+      resolve(constrs, renv, cenv, eqEnv, initialSubst).flatMap {
+        case ReductionResult(_, subst, _, deferred, progress) =>
+          stopLogging()
+          // TODO here we only consider the first error
+          deferred match {
+            case Nil => Result.Ok(subst)
+            case TypingConstraint.Equality(tpe1, tpe2, prov) :: _ => Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
+            case TypingConstraint.Class(sym, tpe, loc) :: _ => Err(TypeError.MissingInstance(sym, tpe, renv, loc))
+            case err@TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) :: _ => throw InternalCompilerException(s"unexpected purificaiton error: $err", loc)
+          }
+      }.toValidation
   }
 
   private def simplifyEquality(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[EqualityResult, TypeError] = (tpe1.kind, tpe2.kind) match {
