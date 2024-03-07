@@ -553,16 +553,16 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def replace01(): Bool = Nec.replace(from_ = 1, to = 42, singleton(1)) == singleton(42)
+    def replace01(): Bool = Nec.replace(from = 1, to = 42, singleton(1)) == singleton(42)
 
     @test
-    def replace02(): Bool = Nec.replace(from_ = 7, to = 42, singleton(1)) == singleton(1)
+    def replace02(): Bool = Nec.replace(from = 7, to = 42, singleton(1)) == singleton(1)
 
     @test
-    def replace03(): Bool = Nec.replace(from_ = 2, to = 42, necOf2(1, 2)) == necOf2(1, 42)
+    def replace03(): Bool = Nec.replace(from = 2, to = 42, necOf2(1, 2)) == necOf2(1, 42)
 
     @test
-    def replace04(): Bool = Nec.replace(from_ = 7, to = 42, necOf2(1, 2)) == necOf2(1, 2)
+    def replace04(): Bool = Nec.replace(from = 7, to = 42, necOf2(1, 2)) == necOf2(1, 2)
 
     /////////////////////////////////////////////////////////////////////////////
     // permutations                                                            //
@@ -1055,7 +1055,7 @@ mod TestNec {
         let c = singleton(1);
         let d1 = Nec.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new_(rc);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushBack(1, d2);
 
         d1 `MutDeque.sameElements` d2
@@ -1066,7 +1066,7 @@ mod TestNec {
         let c = necOf2(1, 2);
         let d1 = Nec.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new_(rc);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushFront(1, d2);
         MutDeque.pushBack(2, d2);
 
@@ -1078,7 +1078,7 @@ mod TestNec {
         let c = necOf3('a', 'b', 'c');
         let d1 = Nec.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new_(rc);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushFront('b', d2);
         MutDeque.pushBack('c', d2);
         MutDeque.pushFront('a', d2);
@@ -1424,10 +1424,10 @@ mod TestNec {
     def traverse02(): Bool = Nec.traverse(x -> Some(x+1), necOf2(1, 2)) == Some(necOf2(2, 3))
 
     @test
-    def traverse03(): Bool = Nec.traverse(_ -> None: Option[Int32], singleton(1)) == None
+    def traverse03(): Bool = Nec.traverse(_ -> (None: Option[Int32]), singleton(1)) == None
 
     @test
-    def traverse04(): Bool = Nec.traverse(_ -> None: Option[Int32], necOf2(1, 2)) == None
+    def traverse04(): Bool = Nec.traverse(_ -> (None: Option[Int32]), necOf2(1, 2)) == None
 
     @test
     def traverse05(): Bool = region rc {
@@ -1677,7 +1677,7 @@ mod TestNec {
 
     @test
     def shuffle01(): Bool \ IO =
-        let c = Nec.singleton(1) |> Nec.shuffle(Random.new_());
+        let c = Nec.singleton(1) |> Nec.shuffle(Random.new());
         match c {
             case Some(cc) => Nec.length(cc) == 1 and Nec.toSet(cc) == Set#{1}
             case _       => false
@@ -1685,7 +1685,7 @@ mod TestNec {
 
     @test
     def shuffle02(): Bool \ IO =
-        let c = necOf3(1, 2, 3) |> Nec.shuffle(Random.new_());
+        let c = necOf3(1, 2, 3) |> Nec.shuffle(Random.new());
         match c {
             case Some(cc) => Nec.length(cc) == 3 and Nec.toSet(cc) == Set#{1, 2, 3}
             case _       => false
@@ -1693,7 +1693,7 @@ mod TestNec {
 
     @test
     def shuffle03(): Bool \ IO =
-        let c = necOf8(1, 2, 3, 4, 5, 6, 7, 8) |> Nec.shuffle(Random.new_());
+        let c = necOf8(1, 2, 3, 4, 5, 6, 7, 8) |> Nec.shuffle(Random.new());
         match c {
             case Some(cc) => Nec.length(cc) == 8 and Nec.toSet(cc) == Set#{1, 2, 3, 4, 5, 6, 7, 8}
             case _       => false

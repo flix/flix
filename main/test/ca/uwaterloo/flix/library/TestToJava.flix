@@ -24,7 +24,7 @@ mod TestToJava {
     def chainToJava01(): Bool \ IO =
         import static java.util.List.of(): ##java.util.List \ {};
         import java.util.List.equals(##java.lang.Object): Bool \ {};
-        let l: ##java.util.List = ToJava.toJava(Chain.empty() : Chain[String]);
+        let l: ##java.util.List = ToJava.toJava((Chain.empty() : Chain[String]));
         equals(of(), checked_cast(l))
 
     @test
@@ -49,7 +49,7 @@ mod TestToJava {
     def listToJava01(): Bool \ IO =
         import static java.util.List.of(): ##java.util.List \ {};
         import java.util.List.equals(##java.lang.Object): Bool \ {};
-        let l: ##java.util.List = ToJava.toJava(Nil : List[String]);
+        let l: ##java.util.List = ToJava.toJava((Nil : List[String]));
         equals(of(), checked_cast(l))
 
     @test
@@ -74,7 +74,7 @@ mod TestToJava {
     def mapToJava01(): Bool \ IO =
         import static java.util.Map.of(): ##java.util.Map \ {};
         import java.util.Map.equals(##java.lang.Object): Bool \ {};
-        let m: ##java.util.Map = ToJava.toJava(Map#{} : Map[String, String]);
+        let m: ##java.util.Map = ToJava.toJava((Map#{} : Map[String, String]));
         equals(of(), checked_cast(m))
 
     @test
@@ -135,7 +135,7 @@ mod TestToJava {
     def toSet01(): Bool \ IO =
         import static java.util.Set.of(): ##java.util.Set \ {};
         import java.util.Set.equals(##java.lang.Object): Bool \ {};
-        let s: ##java.util.Set = ToJava.toJava(Set#{} : Set[String]);
+        let s: ##java.util.Set = ToJava.toJava((Set#{} : Set[String]));
         equals(of(), checked_cast(s))
 
     @test
@@ -160,7 +160,7 @@ mod TestToJava {
     def vectorToJava01(): Bool \ IO =
         import static java.util.List.of(): ##java.util.List \ {};
         import java.util.List.equals(##java.lang.Object): Bool \ {};
-        let v: ##java.util.List = ToJava.toJava(Vector#{} : Vector[String]);
+        let v: ##java.util.List = ToJava.toJava((Vector#{} : Vector[String]));
         equals(of(), checked_cast(v))
 
     @test

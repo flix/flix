@@ -753,7 +753,7 @@ mod TestNel {
         let l = Nel(1, 2 :: Nil);
         let d1 = Nel.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new_(rc);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushBack(1, d2);
         MutDeque.pushBack(2, d2);
 
@@ -765,7 +765,7 @@ mod TestNel {
         let l = Nel(3, 1 :: 2 :: Nil);
         let d1 = Nel.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new_(rc);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushBack(1, d2);
         MutDeque.pushBack(2, d2);
         MutDeque.pushFront(3, d2);
@@ -778,7 +778,7 @@ mod TestNel {
         let l = Nel('a', 'b' :: 'c' :: Nil);
         let d1 = Nel.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new_(rc);
+        let d2 = MutDeque.new(rc);
         MutDeque.pushFront('c', d2);
         MutDeque.pushFront('b', d2);
         MutDeque.pushFront('a', d2);
@@ -1139,7 +1139,7 @@ mod TestNel {
     @test
     def shuffle01(): Bool \ IO =
         let l = Nel.singleton(1);
-        match Nel.shuffle(Random.new_(), l) {
+        match Nel.shuffle(Random.new(), l) {
             case Some(ll) => Nel.length(ll) == 1 and (ll |> Nel.toList |> List.toSet) == Set#{1}
             case _        => false
         }
@@ -1147,7 +1147,7 @@ mod TestNel {
     @test
     def shuffle02(): Bool \ IO =
         let l = Nel.cons(1, Nel.cons(2, Nel.singleton(3)));
-        match Nel.shuffle(Random.new_(), l) {
+        match Nel.shuffle(Random.new(), l) {
             case Some(ll) => Nel.length(ll) == 3 and (ll |> Nel.toList |> List.toSet) == Set#{1, 2, 3}
             case _        => false
         }
@@ -1155,7 +1155,7 @@ mod TestNel {
     @test
     def shuffle03(): Bool \ IO =
         let l = Nel.cons(1, Nel.cons(2, Nel.cons(3, Nel.cons(4, Nel.cons(5, Nel.cons(6, Nel.cons(7, Nel.singleton(8))))))));
-        match Nel.shuffle(Random.new_(), l) {
+        match Nel.shuffle(Random.new(), l) {
             case Some(ll) => Nel.length(ll) == 8 and
                                 (ll |> Nel.toList |> List.toSet) == Set#{1, 2, 3, 4, 5, 6, 7, 8}
             case _        => false
