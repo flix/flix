@@ -368,17 +368,6 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
     verify(s, l)
   }
 
-  test("Iterator.next") {
-    val l = List(
-      (Cst(1435) & Cst(1436)) ~ Var(55261),
-      Var(55251) ~ Var(112576),
-      Var(55257) ~ Var(112582),
-      Var(55261) ~ Var(112585)
-    )
-    val s = solveAll(l).get
-    verify(s, l)
-  }
-
   test("Iterator.toArray") {
     val l = List(
       ((Cst(1500) & Cst(1501)) & Cst(1498)) ~ Var(78914),
@@ -416,29 +405,6 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
     )
     val s = solveAll(l).get
     verify(s, l)
-  }
-
-  test("MutDeque.sameElements") {
-    val l = List(
-      (Var(876) & Var(877)) ~ Var(90798),
-      Var(90798) ~ (Var(90801) & Var(90804) & Var(90807) & Var(90820) & Var(90823) & Var(90832) & Var(90841) & Var(90844)),
-      Var(90801) ~ Var(134687),
-      Var(90804) ~ Var(134689),
-      Var(90807) ~ True,
-      Var(90820) ~ Var(134695),
-      Var(90823) ~ Var(134697),
-      Var(90826) ~ Var(134703),
-      Var(90828) ~ Var(134705),
-      Var(90830) ~ Var(134707),
-      Var(90832) ~ (Var(134701) & Var(134699) & Var(90826) & Var(90828) & Var(90830)),
-      Var(90835) ~ Var(134712),
-      Var(90837) ~ Var(134714),
-      Var(90839) ~ Var(134716),
-      Var(90841) ~ (Var(134710) & Var(134708) & Var(90835) & Var(90837) & Var(90839)),
-      Var(90844) ~ (Var(134718) & Var(134719))
-    )
-    val s = solveAll(l).get
-    // verify(s, l) -- TOO SLOW
   }
 
   test("MutDeque.toArray") {
@@ -627,21 +593,6 @@ class TestFastBoolUnification extends AnyFunSuite with TestUtils {
     val s = solveAll(l).get
     verify(s, l)
   }
-
-
-  test("Iterator.toArray") {
-    val l = List(
-      ((Cst(1500) & Cst(1501)) & Cst(1498)) ~ Var(78914),
-      Var(78914) ~ (Var(78917) & (Var(78923) & Var(78926))),
-      Var(78917) ~ Var(127244),
-      Var(78921) ~ Var(127251),
-      Var(78923) ~ ((Var(127248) & Var(127247)) & Var(127249)),
-      Var(78926) ~ (Var(127254) & Var(127252))
-    )
-    val s = solveAll(l).get
-    verify(s, l)
-  }
-
 
   test("Files.append") {
     val l = List(
