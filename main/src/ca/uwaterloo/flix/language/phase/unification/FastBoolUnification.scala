@@ -45,6 +45,7 @@ import scala.collection.mutable
 /// - Explore change of basis.
 /// - Explore use slack variables (i.e. variables marked don't care, and use SAT).
 /// - Explore in detail how constraints are generated.
+/// - Explore whether to run Phase 1-3 after _ONE_ SVE computation.
 ///
 object FastBoolUnification {
 
@@ -58,6 +59,17 @@ object FastBoolUnification {
     * If a solution is too complex an [[TooComplexException]] exception is thrown.
     */
   private val Threshold: Int = 1_000
+
+  /**
+   * The maximum number of permutations to try while solving a system of unification equations using SVE.
+   *
+   * Recall that for a list of length
+   *    0, 1, 2, 3,  4,   5,   6,    7,      8
+   * there are
+   *    1, 1, 2, 6, 24, 120, 720, 5040, 40,320
+   * permutations.
+   */
+  private val PermutationLimit: Int = 3
 
   /**
     * Enable debugging (prints information during Boolean unification).
@@ -521,27 +533,36 @@ object FastBoolUnification {
     (unsolved.reverse, subst)
   }
 
-  // TODO: Document and experiment.
+  /**
+   * Given a unification equation system `l` computes a most-general unifier for all its equations.
+   *
+   * If multiple equations are involved then we try to solve them in different order to find a small substitution.
+   */
   private def boolUnifyAllPickSmallest(l: List[Equation]): BoolSubstitution = {
-    // Case 1: We at most one equation to solve, so we just solve it.
-    if (l.size <= 1) {
+    // Case 1: We have at most one equation to solve: just solve immediately.
+    if (l.length <= 1) {
       return boolUnifyAll(l)
     }
 
-    // Case 2: We have multiple equations to solve. We try different orders.
+    // Case 2: We have too many equations. We cannot hope to compute with all their permutations: just solve immediately.
+    if (l.length > PermutationLimit) {
+      return boolUnifyAll(l)
+    }
 
+    // Case 3: We have a reasonable number of permutations. We solve all of them and pick the smallest substitution.
     val results = l.permutations.toList.map {
-      case p =>
-        val s = boolUnifyAll(p)
-        (p, s)
+      case p => (p, boolUnifyAll(p))
+    }.sortBy {
+      case (_, s) => s.size
     }
 
     println("Permutations:")
     for ((p, s) <- results) {
-      println(s"  ${p} -- ${s.size}")
+      println(s"  $p -- ${s.size}")
     }
 
-    results.minBy(_._2.size)._2
+    // Pick the smallest substitution.
+    results.head._2
   }
 
   /**
