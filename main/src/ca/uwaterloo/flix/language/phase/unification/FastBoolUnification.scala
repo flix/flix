@@ -712,7 +712,6 @@ object FastBoolUnification {
       * The smart constructor performs normalization:
       * - We move true and false to the rhs.
       * - We move a variable to the lhs (unconditionally).
-      * - We move a constant to the lhs (except if the lhs is a variable).
       * - We reorder constant/variables equations so that the smaller constant/variable is on the lhs.
       *
       * Examples:
@@ -723,12 +722,11 @@ object FastBoolUnification {
       * - x1 /\ x2 ~ c5 ==> c5 ~ x1 /\ x2
       */
     def mk(t1: Term, t2: Term, loc: SourceLocation): Equation = (t1, t2) match {
-      case (Term.True, _) => Equation(t2, Term.True, loc)
-      case (Term.False, _) => Equation(t2, Term.False, loc)
       case (Term.Cst(c1), Term.Cst(c2)) => if (c1 <= c2) Equation(t1, t2, loc) else Equation(t2, t1, loc)
       case (Term.Var(x1), Term.Var(x2)) => if (x1 <= x2) Equation(t1, t2, loc) else Equation(t2, t1, loc)
-      case (_, _: Term.Var) => Equation(t2, t1, loc)
-      case (_, _: Term.Cst) => Equation(t2, t1, loc)
+      case (Term.True, _) => Equation(t2, Term.True, loc)
+      case (Term.False, _) => Equation(t2, Term.False, loc)
+      case (_, Term.Var(_)) => Equation(t2, t1, loc)
       case _ => Equation(t1, t2, loc)
     }
   }
@@ -1551,7 +1549,7 @@ object FastBoolUnification {
     //solveAll(Array_copyOfRange()).get
     //solveAll(FixpointAstDatalog_toString299997()).get
     //solveAll(Nec_zipWithA()).get
-    //solveAll(ConcurrentChannel_selectHelper()).get
+    solveAll(ConcurrentChannel_selectHelper()).get
     //solveAll(Array_transpose()).get
     solveAll(MutDeque_sameElements()).get
     //solveAll(FixpointAstDatalog_predSymsOf29898()).get
