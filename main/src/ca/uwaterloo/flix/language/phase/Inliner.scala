@@ -132,7 +132,7 @@ object Inliner {
         case _ => LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExp(exp, subst0)
       val es = exps.map(visitExp(_, subst0))
       e match {
@@ -142,37 +142,25 @@ object Inliner {
           // it is trivial
           // then inline the body of `def1`
           if (canInlineDef(def1)) {
-            val e1 = ct match {
-              case CallType.TailCall => def1.exp
-              case CallType.NonTailCall => rewriteTailCalls(def1.exp)
-            }
             // Map for substituting formal parameters of a function with the closureArgs currently in scope
-            bindFormals(e1, def1.cparams ++ def1.fparams, closureArgs ++ es, Map.empty)
+            bindFormals(def1.exp, def1.cparams ++ def1.fparams, closureArgs ++ es, Map.empty)
           } else {
-            LiftedAst.Expr.ApplyClo(e, es, ct, tpe, purity, loc)
+            LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
           }
-        case _ => LiftedAst.Expr.ApplyClo(e, es, ct, tpe, purity, loc)
+        case _ => LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExp(_, subst0))
       val def1 = root.defs.apply(sym)
       // If `def1` is a single non-self call or
       // it is trivial
       // then inline the body of `def1`
       if (canInlineDef(def1)) {
-        val e1 = ct match {
-          case CallType.TailCall => def1.exp
-          case CallType.NonTailCall => rewriteTailCalls(def1.exp)
-        }
-        bindFormals(e1, def1.cparams ++ def1.fparams, es, Map.empty)
+        bindFormals(def1.exp, def1.cparams ++ def1.fparams, es, Map.empty)
       } else {
-        LiftedAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
+        LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
       }
-
-    case OccurrenceAst.Expression.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
-      val as = actuals.map(visitExp(_, subst0))
-      LiftedAst.Expr.ApplySelfTail(sym, as, tpe, purity, loc)
 
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExp(exp1, subst0)
@@ -345,38 +333,6 @@ object Inliner {
   }
 
   /**
-    * Converts all tail calls in `exp0` to non-tail calls.
-    */
-  private def rewriteTailCalls(exp0: OccurrenceAst.Expression): OccurrenceAst.Expression = exp0 match {
-    case OccurrenceAst.Expression.Let(sym, exp1, exp2, occur, tpe, purity, loc) =>
-      val e2 = rewriteTailCalls(exp2)
-      OccurrenceAst.Expression.Let(sym, exp1, e2, occur, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.LetRec(varSym, index, defSym, exp1, exp2, tpe, purity, loc) =>
-      val e2 = rewriteTailCalls(exp2)
-      OccurrenceAst.Expression.LetRec(varSym, index, defSym, exp1, e2, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
-      val e2 = rewriteTailCalls(exp2)
-      val e3 = rewriteTailCalls(exp3)
-      OccurrenceAst.Expression.IfThenElse(exp1, e2, e3, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.Branch(e0, br0, tpe, purity, loc) =>
-      val br = br0 map {
-        case (sym, exp) => sym -> rewriteTailCalls(exp)
-      }
-      OccurrenceAst.Expression.Branch(e0, br, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.ApplyClo(exp, args, Ast.CallType.TailCall, tpe, purity, loc) => OccurrenceAst.Expression.ApplyClo(exp, args, Ast.CallType.NonTailCall, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, exps, Ast.CallType.NonTailCall, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.ApplySelfTail(sym, actuals, tpe, purity, loc) => OccurrenceAst.Expression.ApplyDef(sym, actuals, Ast.CallType.NonTailCall, tpe, purity, loc)
-
-    case _ => exp0
-  }
-
-  /**
     * returns `true` if `exp0` is considered a trivial expression.
     *
     * An expression is trivial if:
@@ -412,18 +368,14 @@ object Inliner {
         case _ => LiftedAst.Expr.ApplyAtomic(op, es, tpe, purity, loc)
       }
 
-    case OccurrenceAst.Expression.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = substituteExp(exp, env0)
       val es = exps.map(substituteExp(_, env0))
-      LiftedAst.Expr.ApplyClo(e, es, ct, tpe, purity, loc)
+      LiftedAst.Expr.ApplyClo(e, es, tpe, purity, loc)
 
-    case OccurrenceAst.Expression.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
+    case OccurrenceAst.Expression.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(substituteExp(_, env0))
-      LiftedAst.Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
-
-    case OccurrenceAst.Expression.ApplySelfTail(sym, actuals, tpe, purity, loc) =>
-      val as = actuals.map(substituteExp(_, env0))
-      LiftedAst.Expr.ApplySelfTail(sym, as, tpe, purity, loc)
+      LiftedAst.Expr.ApplyDef(sym, es, tpe, purity, loc)
 
     case OccurrenceAst.Expression.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = substituteExp(exp1, env0)
