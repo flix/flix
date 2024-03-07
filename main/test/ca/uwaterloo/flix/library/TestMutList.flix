@@ -1465,7 +1465,7 @@ mod TestMutList {
 
     @test
     def iterator01(): Bool = region rc {
-        let l = MutList.new(rc): MutList[Int32, rc];
+        let l = (MutList.new(rc): MutList[Int32, rc]);
         let iter = MutList.iterator(rc, l);
         match Iterator.next(iter) {
             case None => true
@@ -1874,7 +1874,7 @@ mod TestMutList {
 
     @test
     def sortWith01(): Bool = region rc {
-        let a = MutList.sortWith(rc, cmp, Array.toMutList(rc, (Array#{} @ rc): Array[Int32, rc]));
+        let a = MutList.sortWith(rc, cmp, Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])));
         a `sameElements` Array.toMutList(rc, Array#{} @ rc)
     }
 

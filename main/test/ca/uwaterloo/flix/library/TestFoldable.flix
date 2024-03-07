@@ -196,7 +196,7 @@ mod TestFoldable {
 
     @test
     def length01(): Bool =
-        Foldable.length(Nil: List[String]) == 0
+        Foldable.length((Nil: List[String])) == 0
 
     @test
     def length02(): Bool =

@@ -298,7 +298,7 @@ mod TestIterator {
     @test
     def toMutDeque01(): Bool = region rc {
         let iter = (Iterator.empty(rc): Iterator[Int32, rc, rc]);
-        let d = MutDeque.new(rc): MutDeque[Int32, _];
+        let d = (MutDeque.new(rc): MutDeque[Int32, _]);
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }
 

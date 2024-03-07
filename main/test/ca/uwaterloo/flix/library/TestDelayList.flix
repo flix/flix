@@ -913,7 +913,7 @@ mod TestDelayList {
 
     @test
     def toMutDeque02(): Bool = region rc {
-    	let l = LList(lazy ENil): DelayList[Int32];
+    	let l = (LList(lazy ENil): DelayList[Int32]);
         let d1 = DelayList.toMutDeque(rc, l);
 
         let d2 = MutDeque.new(rc);
@@ -941,10 +941,10 @@ mod TestDelayList {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMap01(): Bool = DelayList.toMap(ENil: DelayList[(Unit, Unit)]) == Map#{}
+    def toMap01(): Bool = DelayList.toMap((ENil: DelayList[(Unit, Unit)])) == Map#{}
 
     @test
-    def toMap02(): Bool = DelayList.toMap(LList(lazy ENil): DelayList[(Unit, Unit)]) == Map#{}
+    def toMap02(): Bool = DelayList.toMap((LList(lazy ENil): DelayList[(Unit, Unit)])) == Map#{}
 
     @test
     def toMap03(): Bool = DelayList.toMap(ECons((1, true), ENil)) == Map#{1 => true}
@@ -962,11 +962,11 @@ mod TestDelayList {
 
     @test
     def toSet01(): Bool =
-    	DelayList.toSet(ENil): Set[Unit] == Set.empty()
+    	(DelayList.toSet(ENil): Set[Unit]) == Set.empty()
 
     @test
     def toSet02(): Bool =
-    	DelayList.toSet(LList(lazy ENil)): Set[Unit] == Set.empty()
+    	(DelayList.toSet(LList(lazy ENil)): Set[Unit]) == Set.empty()
 
     @test
     def toSet03(): Bool =
@@ -1349,23 +1349,23 @@ mod TestDelayList {
 
     @test
     def zip01(): Bool =
-        DelayList.zip((ENil: DelayList[Int32]), ENil: DelayList[String]) == ENil
+        DelayList.zip((ENil: DelayList[Int32]), (ENil: DelayList[String])) == ENil
 
     @test
     def zip02(): Bool =
-        DelayList.zip(LList(lazy ENil): DelayList[Int32], ENil: DelayList[String]) == ENil
+        DelayList.zip((LList(lazy ENil): DelayList[Int32]), (ENil: DelayList[String])) == ENil
 
     @test
     def zip03(): Bool =
-    	DelayList.zip((ENil: DelayList[Int32]), LList(lazy ENil): DelayList[String]) == ENil
+    	DelayList.zip((ENil: DelayList[Int32]),( LList(lazy ENil): DelayList[String])) == ENil
 
     @test
     def zip04(): Bool =
-    	DelayList.zip(LList(lazy ENil): DelayList[Int32], LList(lazy ENil): DelayList[String]) == ENil
+    	DelayList.zip((LList(lazy ENil): DelayList[Int32]), (LList(lazy ENil): DelayList[String])) == ENil
 
     @test
     def zip05(): Bool =
-        DelayList.zip(ECons(1, ECons(2, ENil)), ENil: DelayList[String]) == ENil
+        DelayList.zip(ECons(1, ECons(2, ENil)), (ENil: DelayList[String])) == ENil
 
     @test
     def zip06(): Bool =
@@ -1508,7 +1508,7 @@ mod TestDelayList {
 
     @test
     def zipWithIndex01(): Bool =
-        DelayList.zipWithIndex((ENil: DelayList[Unit])) == ENil: DelayList[(Int32, Unit)]
+        DelayList.zipWithIndex((ENil: DelayList[Unit])) == (ENil: DelayList[(Int32, Unit)])
 
     @test
     def zipWithIndex02(): Bool =

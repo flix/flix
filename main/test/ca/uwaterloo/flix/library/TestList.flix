@@ -24,7 +24,7 @@ mod TestList {
 /////////////////////////////////////////////////////////////////////////////
 @test
 def collect01(): Bool = region rc {
-    Collectable.collect(Iterator.empty(rc): Iterator[Int32, rc, rc]) == Nil
+    Collectable.collect((Iterator.empty(rc): Iterator[Int32, rc, rc])) == Nil
 }
 
 @test
@@ -796,10 +796,10 @@ def transpose01(): Bool = List.transpose((Nil: List[List[Unit]])) == Nil
 def transpose02(): Bool = (List.transpose(Nil :: Nil): List[List[Unit]]) == Nil :: Nil
 
 @test
-def transpose03(): Bool = List.transpose(Nil :: Nil :: Nil): List[List[Unit]] == Nil :: Nil :: Nil
+def transpose03(): Bool = (List.transpose(Nil :: Nil :: Nil): List[List[Unit]]) == Nil :: Nil :: Nil
 
 @test
-def transpose04(): Bool = List.transpose(Nil :: Nil :: Nil :: Nil): List[List[Unit]] == Nil :: Nil :: Nil :: Nil
+def transpose04(): Bool = (List.transpose(Nil :: Nil :: Nil :: Nil): List[List[Unit]]) == Nil :: Nil :: Nil :: Nil
 
 @test
 def transpose05(): Bool = List.transpose((1 :: Nil) :: Nil) == (1 :: Nil) :: Nil
@@ -1147,7 +1147,7 @@ def count07(): Bool = List.count(i -> i > 3, 6 :: 7 :: Nil) == 2
 def flatten01(): Bool = List.flatten((Nil: List[List[Unit]])) == Nil
 
 @test
-def flatten02(): Bool = List.flatten(Nil :: Nil): List[Unit] == Nil
+def flatten02(): Bool = (List.flatten(Nil :: Nil): List[Unit]) == Nil
 
 @test
 def flatten03(): Bool = List.flatten((1 :: Nil) :: Nil) == 1 :: Nil
@@ -1156,7 +1156,7 @@ def flatten03(): Bool = List.flatten((1 :: Nil) :: Nil) == 1 :: Nil
 def flatten04(): Bool = List.flatten((1 :: 2 :: Nil) :: Nil) == 1 :: 2 :: Nil
 
 @test
-def flatten05(): Bool = List.flatten(Nil :: Nil :: Nil): List[Unit] == Nil
+def flatten05(): Bool = (List.flatten(Nil :: Nil :: Nil): List[Unit]) == Nil
 
 @test
 def flatten06(): Bool = List.flatten((1 :: Nil) :: Nil :: Nil) == 1 :: Nil
