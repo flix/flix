@@ -353,6 +353,11 @@ class Flix {
 //    "TestVector.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestVector.flix"),
 //    "TestWitherable.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestWitherable.flix"),
 
+    // TODO: Run through above and fix
+      // Ascriptions
+      // project, from keywords
+      // dont change get, new, set etc.
+
     // TODO: due to 'true.' and 'false.'. Changed to 'true .' is that fine? no!
 //    "Test.Predicate.Guard.flix" -> LocalResource.get("/test/flix/Test.Predicate.Guard.flix"),
 
