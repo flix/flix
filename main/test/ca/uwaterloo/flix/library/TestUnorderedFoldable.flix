@@ -25,11 +25,11 @@ mod TestUnorderedFoldable {
 
     @test
     def fold01(): Bool =
-        UnorderedFoldable.fold(Set#{}: Set[Unit]) == ()
+        UnorderedFoldable.fold((Set#{}: Set[Unit])) == ()
 
     @test
     def fold02(): Bool =
-        UnorderedFoldable.fold(Set#{}: Set[Int32]) == 0
+        UnorderedFoldable.fold((Set#{}: Set[Int32])) == 0
 
     @test
     def fold03(): Bool =
@@ -46,7 +46,7 @@ mod TestUnorderedFoldable {
 
     @test
     def isEmpty01(): Bool =
-        UnorderedFoldable.isEmpty(Set#{}: Set[Unit]) == true
+        UnorderedFoldable.isEmpty((Set#{}: Set[Unit])) == true
 
     @test
     def isEmpty02(): Bool =
