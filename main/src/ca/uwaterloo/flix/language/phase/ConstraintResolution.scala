@@ -521,12 +521,13 @@ object ConstraintResolution {
 
       case Type.Pure => true
       case Type.Univ => true
-      case Type.Cst(TypeConstructor.Effect(_), _) => false
+      case Type.Cst(TypeConstructor.Effect(_), _) => true
       case Type.Cst(_, _) => true
 
       case Type.Apply(tpe1, tpe2, loc) => visit(tpe1) && visit(tpe2)
       case Type.Alias(cst, args, tpe, loc) => false
-      case Type.AssocType(cst, arg, kind, loc) => false
+      case Type.AssocType(_, Type.Var(sym, _), kind, loc) => renv.isRigid(sym)
+      case Type.AssocType(_, _, _, _) => false
     }
 
     tpe.kind == Kind.Eff && visit(tpe)
