@@ -1,9 +1,0 @@
-[package]
-name        = "thesis"
-description = "A simple library"
-version     = "0.1.0"
-flix        = "0.44.0"
-authors     = ["Oliver"]
-
-[dependencies]
-"github:domolitom/matops-flix" = "0.2.0"
