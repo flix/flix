@@ -57,7 +57,7 @@ object FastBoolUnification {
     *
     * If a solution is too complex an [[TooComplexException]] exception is thrown.
     */
-  private val Threshold: Int = 10_000
+  private val Threshold: Int = 1_000
 
   /**
     * Enable debugging (prints information during Boolean unification).
@@ -180,7 +180,7 @@ object FastBoolUnification {
       debugln("--- Phase 4: Boolean Unification")
       debugln("    (resolves all remaining equations using SVE.)")
       debugln("-".repeat(80))
-      val newSubst = boolUnifyAll(currentEqns)
+      val newSubst = boolUnifyAllPickSmallest(currentEqns)
       currentEqns = Nil
       currentSubst = newSubst @@ currentSubst
       printSubstitution()
@@ -213,7 +213,7 @@ object FastBoolUnification {
       * Checks that current substitution has not grown too large according to the defined threshold.
       */
     private def verifySolutionSize(): Unit = {
-      val size = currentSubst.numberOfConnectives
+      val size = currentSubst.size
       if (size > Threshold) {
         throw TooComplexException(size)
       }
@@ -521,6 +521,29 @@ object FastBoolUnification {
     (unsolved.reverse, subst)
   }
 
+  // TODO: Document and experiment.
+  private def boolUnifyAllPickSmallest(l: List[Equation]): BoolSubstitution = {
+    // Case 1: We at most one equation to solve, so we just solve it.
+    if (l.size <= 1) {
+      return boolUnifyAll(l)
+    }
+
+    // Case 2: We have multiple equations to solve. We try different orders.
+
+    val results = l.permutations.toList.map {
+      case p =>
+        val s = boolUnifyAll(p)
+        (p, s)
+    }
+
+    println("Permutations:")
+    for ((p, s) <- results) {
+      println(s"  ${p} -- ${s.size}")
+    }
+
+    results.minBy(_._2.size)._2
+  }
+
   /**
     * Computes the most-general unifier of all the given equations `l`.
     *
@@ -788,7 +811,15 @@ object FastBoolUnification {
     * WARNING: Equations should be normalized. Use the smart constructor [[Equation.mk]] to create a new equation.
     */
   case class Equation(t1: Term, t2: Term, loc: SourceLocation) {
-    def size: Int = t1.size + t2.size
+    /**
+      * Returns the size of this equation which is the sum of its lhs and rhs.
+      */
+    final def size: Int = t1.size + t2.size
+
+    /**
+      * Returns a human-readable representation of `this` unification equation.
+      */
+    override final def toString: String = s"$t1 ~ $t2"
   }
 
   /**
@@ -1119,7 +1150,7 @@ object FastBoolUnification {
       *
       * The size of a substitution is the sum of the sizes of all terms in its co-domain.
       */
-    def numberOfConnectives: Int = m.values.map(_.size).sum
+    def size: Int = m.values.map(_.size).sum
 
     /**
       * Extends `this` substitution with a new binding from the variable `x` to the term `t`.
