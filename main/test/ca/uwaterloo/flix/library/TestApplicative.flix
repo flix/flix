@@ -185,7 +185,7 @@ mod TestApplicative {
 
     @test
     def symReversedAp01(): Bool =
-        None: Option[Int32] <**> None: Option[Int32 -> Int32] == None
+        (None: Option[Int32]) <**> (None: Option[Int32 -> Int32]) == None
 
     @test
     def symReversedAp02(): Bool =
@@ -201,7 +201,7 @@ mod TestApplicative {
 
     @test
     def symProductLeft01(): Bool =
-        None: Option[Int32] <* Some(2) == None
+        (None: Option[Int32]) <* Some(2) == None
 
     @test
     def symProductLeft02(): Bool =
@@ -221,7 +221,7 @@ mod TestApplicative {
 
     @test
     def symProductRight02(): Bool =
-        Some(1) *> None: Option[Int32] == None
+        Some(1) *> (None: Option[Int32]) == None
 
     @test
     def symProductRight03(): Bool =
