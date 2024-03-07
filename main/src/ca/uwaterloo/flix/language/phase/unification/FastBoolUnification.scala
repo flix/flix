@@ -57,7 +57,7 @@ object FastBoolUnification {
     *
     * If a solution is too complex an [[TooComplexException]] exception is thrown.
     */
-  private val Threshold: Int = 1_000
+  private val Threshold: Int = 10_000
 
   /**
     * Enable debugging (prints information during Boolean unification).
@@ -1614,6 +1614,35 @@ object FastBoolUnification {
     (Cst(101436) & Cst(101435)) ~ (Var(101434) & Var(101432))
   )
 
+  private def List_scanRight(): List[Equation] = List(
+    Var(144695) ~ True,
+    Var(144681) ~ Var(144691),
+    Var(144684) ~ True,
+    Var(144677) ~ Var(144690),
+    Var(144680) ~ Var(144696),
+    Var(144684) ~ Var(144693),
+    Var(144679) ~ Var(144695),
+    Var(144682) ~ Var(144691),
+    Var(144688) ~ True,
+    Var(144685) ~ Cst(144689),
+    Var(144683) ~ Cst(144689),
+    Var(144680) ~ Var(144695),
+    Var(144677) ~ Var(144691),
+    True ~ True,
+    True ~ True,
+    True ~ True,
+    True ~ True,
+    True ~ True,
+    True ~ True,
+    Var(144691) ~ (Var(144678) & Var(144688)),
+    Var(144692) ~ (Var(144682) & Var(144687)),
+    Var(144694) ~ (Var(144682) & Var(144687)),
+    Var(144685) ~ (Var(144696) & Var(144694)),
+    Var(144687) ~ (Var(144679) & Var(144692)),
+    Var(144678) ~ (Var(144681) & Var(144686)),
+    Var(144686) ~ (Var(144683) & Var(144693))
+  )
+
   def main(args: Array[String]): Unit = {
     //solveAll(FixpointInterpreter_evalTerm()).get
     //solveAll(Array_copyOfRange()).get
@@ -1627,7 +1656,8 @@ object FastBoolUnification {
     //solveAll(Files_append()).get
     //solveAll(Iterator_next()).get
     //solveAll(Boxable_lift1()).get
-    solveAll(Iterable_enumerator()).get
+    //solveAll(Iterable_enumerator()).get
+    solveAll(List_scanRight()).get
   }
 
 }
