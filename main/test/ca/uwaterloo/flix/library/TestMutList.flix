@@ -117,7 +117,7 @@ mod TestMutList {
 
     @test
     def nth01(): Bool = region rc {
-        MutList.nth(0, MutList.new(rc): MutList[Int32, _]) == None
+        MutList.nth(0, (MutList.new(rc): MutList[Int32, _])) == None
     }
 
     @test
@@ -354,7 +354,7 @@ mod TestMutList {
 
     @test
     def head02(): Bool = region rc {
-        MutList.head(MutList.new(rc): MutList[Unit, _]) == None
+        MutList.head((MutList.new(rc): MutList[Unit, _])) == None
     }
 
     @test
@@ -372,7 +372,7 @@ mod TestMutList {
 
     @test
     def last01(): Bool = region rc {
-        MutList.last(MutList.new(rc): MutList[Unit, _]) == None
+        MutList.last((MutList.new(rc): MutList[Unit, _])) == None
     }
 
     @test
@@ -577,7 +577,7 @@ mod TestMutList {
 
     @test
     def map03(): Bool = region rc {
-        let v = MutList.map(rc, identity, MutList.new(rc): MutList[Unit, _]);
+        let v = MutList.map(rc, identity, (MutList.new(rc): MutList[Unit, _]));
         MutList.sameElements(v, MutList.new(rc))
     }
 
@@ -768,7 +768,7 @@ mod TestMutList {
 
     @test
     def foldMap01(): Bool = region rc {
-        MutList.foldMap(x -> 2 * x, List.toMutList(rc, Nil: List[Int32])) == 0
+        MutList.foldMap(x -> 2 * x, List.toMutList(rc, (Nil: List[Int32]))) == 0
     }
 
     @test
@@ -798,7 +798,7 @@ mod TestMutList {
 
     @test
     def reduceLeft01(): Bool = region rc {
-        MutList.reduceLeft((x, y) -> x + y, MutList.new(rc): MutList[Int32, _]) == None
+        MutList.reduceLeft((x, y) -> x + y, (MutList.new(rc): MutList[Int32, _])) == None
     }
 
     @test
@@ -823,7 +823,7 @@ mod TestMutList {
 
     @test
     def reduceRight01(): Bool = region rc {
-        MutList.reduceRight((x, y) -> x + y, MutList.new(rc): MutList[Int32, _]) == None
+        MutList.reduceRight((x, y) -> x + y, (MutList.new(rc): MutList[Int32, _])) == None
     }
 
     @test
@@ -1154,7 +1154,7 @@ mod TestMutList {
     @test
     def pushAll!03(): Bool = region rc {
         let v = MutList.range(rc, 9, 24);
-        let l = Nil: List[Int32];
+        let l = (Nil: List[Int32]);
         MutList.pushAll!(l, v);
         MutList.sameElements(v, MutList.range(rc, 9, 24))
     }
@@ -1637,7 +1637,7 @@ mod TestMutList {
 
     @test
     def minimumBy01(): Bool = region rc {
-        MutList.minimumBy((x, y) -> x <=> y, MutList.new(rc): MutList[Int32, _]) == None
+        MutList.minimumBy((x, y) -> x <=> y, (MutList.new(rc): MutList[Int32, _])) == None
     }
 
     @test
@@ -1671,7 +1671,7 @@ mod TestMutList {
 
     @test
     def maximumBy01(): Bool = region rc {
-        MutList.maximumBy((x, y) -> x <=> y, MutList.new(rc): MutList[Int32, _]) == None
+        MutList.maximumBy((x, y) -> x <=> y, (MutList.new(rc): MutList[Int32, _])) == None
     }
 
     @test
@@ -1729,7 +1729,7 @@ mod TestMutList {
 
     @test
     def toVector01(): Bool = region rc {
-        MutList.toVector(MutList.new(rc) : MutList[Int32, _]) `Vector.equals` Vector.empty()
+        MutList.toVector((MutList.new(rc) : MutList[Int32, _])) `Vector.equals` Vector.empty()
     }
 
     @test
@@ -1754,7 +1754,7 @@ mod TestMutList {
 
     @test
     def toList01(): Bool = region rc {
-        MutList.new(rc): MutList[Int32, _] |> MutList.toList == Nil: List[Int32]
+        (MutList.new(rc): MutList[Int32, _]) |> MutList.toList == (Nil: List[Int32])
     }
 
     @test
@@ -1815,8 +1815,8 @@ mod TestMutList {
 
     @test
     def toMutDeque01(): Bool = region rc {
-        let l = MutList.new(rc): MutList[Int32, _];
-        let d = MutDeque.new(rc): MutDeque[Int32, _];
+        let l = (MutList.new(rc): MutList[Int32, _]);
+        let d = (MutDeque.new(rc): MutDeque[Int32, _]);
 
         MutList.toMutDeque(rc, l) `MutDeque.sameElements` d
     }
@@ -1961,7 +1961,7 @@ mod TestMutList {
 
     @test
     def sort01(): Bool = region rc {
-        testSortVsSortWith(Array.toMutList(rc, (Array#{} @ rc): Array[Int32, rc]))
+        testSortVsSortWith(Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])))
     }
 
     @test
@@ -2010,9 +2010,9 @@ mod TestMutList {
 
     @test
     def sortWith01!(): Bool = region rc {
-        let a = Array.toMutList(rc, (Array#{} @ rc): Array[Int32, rc]);
+        let a = Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc]));
         MutList.sortWith!(cmp, a);
-        a `sameElements` Array.toMutList(rc, (Array#{} @ rc): Array[Int32, rc])
+        a `sameElements` Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc]))
     }
 
     @test
@@ -2112,7 +2112,7 @@ mod TestMutList {
 
     @test
     def sort!01(): Bool = region rc {
-        testSort!VsSortWith!(Array.toMutList(rc, (Array#{} @ rc): Array[Int32, rc]))
+        testSort!VsSortWith!(Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])))
     }
 
     @test
@@ -2168,7 +2168,7 @@ mod TestMutList {
 
     @test
     def sortBy01(): Bool = region rc {
-        testSortByVsSort(Array.toMutList(rc, (Array#{} @ rc): Array[Int32, rc]))
+        testSortByVsSort(Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])))
     }
 
     @test
@@ -2244,7 +2244,7 @@ mod TestMutList {
 
     @test
     def sortBy!01(): Bool = region rc {
-        testSortBy!VsSortBy(Array.toMutList(rc, (Array#{} @ rc): Array[Int32, rc]))
+        testSortBy!VsSortBy(Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])))
     }
 
     @test
@@ -2402,7 +2402,7 @@ mod TestMutList {
 
     @test
     def join01(): Bool = region rc {
-        (MutList.new(rc): MutList[Int32, _]) |> MutList.join(",") == ""
+        ((MutList.new(rc): MutList[Int32, _])) |> MutList.join(",") == ""
     }
 
     @test
@@ -2436,7 +2436,7 @@ mod TestMutList {
 
     @test
     def joinWith01(): Bool = region rc {
-        (MutList.new(rc): MutList[Int32, _]) |> MutList.joinWith(x -> "${x + 1}", ",") == ""
+        ((MutList.new(rc): MutList[Int32, _])) |> MutList.joinWith(x -> "${x + 1}", ",") == ""
     }
 
     @test
