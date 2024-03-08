@@ -260,6 +260,8 @@ object ConstraintResolution {
     *
     * Θ ⊩ τ ⤳ τ'
     *
+    * Returns the simplified type and a Boolean flag to indicate whether progress was made.
+    *
     * Applications that cannot be resolved are left as they are.
     * These are applications to variables and applications to other unresolvable types.
     *
@@ -312,9 +314,20 @@ object ConstraintResolution {
     case Type.Alias(cst, args, t, _) => simplifyType(t, renv0, eqEnv, loc)
   }
 
-  // Θ ⊩ₑ π ⤳ P
-  // paper contains substitution R but it is only needed for equality
-  private def simplifyClass(clazz: Symbol.ClassSym, tpe0: Type, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], renv0: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[(List[TypingConstraint], Boolean), TypeError] = {
+  /**
+    * Resolves the given class constraint.
+    *
+    * Θ ⊩ₑ π ⤳ P
+    *
+    * Returns a list of resulting constraints and a Boolean flag to indicate whether progress was made.
+    *
+    * Constraints that cannot be resolved are left as they are.
+    * These are applications to variables and applications to other unresolvable types.
+    *
+    * Constraints that are illegal result in an Err.
+    * These are applications to types for which the classEnv has no corresponding instance.
+    */
+  private def resolveClassConstraint(clazz: Symbol.ClassSym, tpe0: Type, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], renv0: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[(List[TypingConstraint], Boolean), TypeError] = {
     // redE
     simplifyType(tpe0, renv0, eqEnv, loc).flatMap {
       case (t, progress) =>
@@ -353,7 +366,7 @@ object ConstraintResolution {
                 // simplify all the implied constraints
                 Result.traverse(tconstrs) {
                   case Ast.TypeConstraint(Ast.TypeConstraint.Head(c, _), arg, _) =>
-                    simplifyClass(c, arg, classEnv, eqEnv, renv0, loc)
+                    resolveClassConstraint(c, arg, classEnv, eqEnv, renv0, loc)
                 } map {
                   case res =>
                     val cs = res.flatMap { case (c, _) => c }
@@ -436,7 +449,7 @@ object ConstraintResolution {
         case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
       }
     case TypingConstraint.Class(sym, tpe, loc) =>
-      simplifyClass(sym, subst0(tpe), cenv, eqEnv, renv, loc).map {
+      resolveClassConstraint(sym, subst0(tpe), cenv, eqEnv, renv, loc).map {
         case (constrs, progress) => ResolutionResult(subst0, constrs, progress)
       }
     case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested0) =>
