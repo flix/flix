@@ -130,7 +130,26 @@ object MutationTester {
 
     }
 
-    /**
+  def mutateSig(sig: Expr.Sig): List[TypedAst.Expr.Sig]= {
+    val tpe = sig.tpe
+    val sym = sig.sym
+
+    (sym.toString(), tpe.arrowArgTypes) match {
+      case ("Add.add", List(Int32, Int32)) | ("Sub.sub", List(Int32, Int32))| ("Div.div", List(Int32, Int32))| ("Mul.mul", List(Int32, Int32)) =>
+        val sub = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Sub"), Name.Ident(sym.loc.sp1, "sub", sym.loc.sp2)))
+        val add = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Add"), Name.Ident(sym.loc.sp1, "add", sym.loc.sp2)))
+        val div = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Div"), Name.Ident(sym.loc.sp1, "div", sym.loc.sp2)))
+        val mul = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Mul"), Name.Ident(sym.loc.sp1, "mul", sym.loc.sp2)))
+        sub :: add :: div :: mul :: Nil
+      case ("Eq.eq", _) =>
+        sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Eq"),  Name.Ident(sym.loc.sp1, "neq", sym.loc.sp2))) :: Nil
+      case ("Eq.neq", _) =>
+        sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Eq"), Name.Ident(sym.loc.sp1, "eq", sym.loc.sp2))) :: Nil
+      case _ => Nil
+    }
+  }
+
+  /**
       * // var doesn't contain a subtree, and we don't mutate them so we don't need to return them
       * case Expr.Var(_, _, _) => Nil
       */
@@ -140,16 +159,7 @@ object MutationTester {
         case original@Expr.Var(_, _, _) =>  Nil
         case original@Expr.Def(sym, _, _) => Nil
         case original@Expr.Sig(sym, tpe, loc) =>
-          println(original)
-          (sym.toString(), tpe.arrowArgTypes) match {
-            case ("Add.add", List(Int32, Int32)) =>
-              val clazz = Symbol.mkClassSym("Sub")
-              val id = Name.Ident(sym.loc.sp1,"sub",sym.loc.sp2)
-              val res = original.copy(sym = Symbol.mkSigSym(clazz, id)) :: Nil
-              println(s"created sig mutation $res")
-              res
-            case _ => Nil
-          }
+          mutateSig(original)
         case original@Expr.Hole(sym, _, _) => Nil
         case original@Expr.HoleWithExp(exp, _, _, _) => Nil
         case original@Expr.OpenAs(symUse, exp, _, _) => Nil
@@ -424,7 +434,7 @@ object MutationTester {
                 case Constant.Bool(lit) => Constant.Bool(!lit) :: Nil
                 case Constant.Char(lit) => Constant.Char((lit ^ Char.MaxValue).toChar) :: Nil
                 case original@Constant.Float32(lit) =>
-                   Constant.Float32(lit + 1) :: Constant.Float32(lit - 1) :: Constant.Float32(1) ::
+                  Constant.Float32(lit + 1) :: Constant.Float32(lit - 1) :: Constant.Float32(1) ::
                         Constant.Float32(-1) :: Constant.Float32(0) :: Constant.Float32(2) :: Constant.Float32(4) :: Constant.Float32(8) ::
                         Constant.Float32(16) :: Constant.Float32(Float.MaxValue) :: Constant.Float32(Float.MinValue) :: Nil
 
