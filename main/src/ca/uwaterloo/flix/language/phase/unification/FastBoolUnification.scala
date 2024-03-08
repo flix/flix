@@ -568,10 +568,10 @@ object FastBoolUnification {
       case (_, s) => s.size
     }
 
-    println("Permutations:")
-    for ((p, s) <- results) {
-      println(s"  $p -- ${s.size}")
-    }
+//    println("Permutations:")
+//    for ((p, s) <- results) {
+//      println(s"  $p -- ${s.size}")
+//    }
 
     // Pick the smallest substitution.
     results.head._2
