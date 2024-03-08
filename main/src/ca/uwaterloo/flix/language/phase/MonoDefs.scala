@@ -167,7 +167,7 @@ object MonoDefs {
     /**
       * Adds the given mapping to the substitution.
       *
-      * The type must be a normal type.
+      * The type must be a normalized type.
       */
     def +(kv: (Symbol.KindedTypeVarSym, Type)): StrictSubstitution = kv match {
       case (tvar, tpe) => StrictSubstitution(s ++ Substitution.singleton(tvar, tpe), eqEnv)
