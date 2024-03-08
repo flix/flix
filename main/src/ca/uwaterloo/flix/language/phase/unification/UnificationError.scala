@@ -31,7 +31,7 @@ object UnificationError {
     * @param tpe1 the first type.
     * @param tpe2 the second type.
     */
-  case class MismatchedTypes(tpe1: Type, tpe2: Type) extends UnificationError
+  case class MismatchedTypes(tpe1: Type, tpe2: Type) extends UnificationError with Unrecoverable
 
   /**
     * An unification error due to a mismatch between the boolean formulas `tpe1` and `tpe2`.
