@@ -142,7 +142,7 @@ object ConstraintResolution {
       }.toValidation
   }
 
-  private def simplifyEquality(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[ResolutionResult, TypeError] = (tpe1.kind, tpe2.kind) match {
+  private def resolveEquality(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[ResolutionResult, TypeError] = (tpe1.kind, tpe2.kind) match {
     case (Kind.Eff, Kind.Eff) =>
       // first simplify the types to get rid of assocs if we can
       for {
@@ -199,13 +199,20 @@ object ConstraintResolution {
         res <- CaseSetUnification.unify(t1, t2, renv, sym1.universe, sym1).mapErr(toTypeError(_, prov))
       } yield ResolutionResult.newSubst(res)
 
-    case (k1, k2) if KindUnification.unifiesWith(k1, k2) => simplifyEqualityStar(tpe1, tpe2, prov, renv, eqEnv, loc)
+    case (k1, k2) if KindUnification.unifiesWith(k1, k2) => resolveEqualityStar(tpe1, tpe2, prov, renv, eqEnv, loc)
 
     case _ => Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
   }
 
-  // Θ ⊩ᵤ τ₁ = τ₂ ⤳ U; R
-  private def simplifyEqualityStar(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[ResolutionResult, TypeError] = (tpe1, tpe2) match {
+
+  /**
+    * Resolves the equality between the two given types.
+    *
+    * The types must have kinds that do not have special unification rules.
+    *
+    * Θ ⊩ᵤ τ₁ = τ₂ ⤳ U; R
+    */
+  private def resolveEqualityStar(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[ResolutionResult, TypeError] = (tpe1, tpe2) match {
     // varU
     case (x: Type.Var, t) if renv.isFlexible(x.sym) =>
       Result.Ok(ResolutionResult.newSubst(Substitution.singleton(x.sym, t))) // MATT throwing out prov
@@ -221,15 +228,15 @@ object ConstraintResolution {
     case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(ResolutionResult.elimination)
     case (x: Type.Var, y: Type.Var) if (x == y) => Result.Ok(ResolutionResult.elimination)
 
-    case (Type.Alias(_, _, tpe, _), _) => simplifyEquality(tpe, tpe2, prov, renv, eqEnv, loc)
+    case (Type.Alias(_, _, tpe, _), _) => resolveEquality(tpe, tpe2, prov, renv, eqEnv, loc)
 
-    case (_, Type.Alias(_, _, tpe, _)) => simplifyEquality(tpe1, tpe, prov, renv, eqEnv, loc)
+    case (_, Type.Alias(_, _, tpe, _)) => resolveEquality(tpe1, tpe, prov, renv, eqEnv, loc)
 
     // appU
     case (Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) =>
       for {
-        res1 <- simplifyEquality(t11, t21, prov, renv, eqEnv, loc)
-        res2 <- simplifyEquality(res1.subst(t12), res1.subst(t22), prov, renv, eqEnv, loc)
+        res1 <- resolveEquality(t11, t21, prov, renv, eqEnv, loc)
+        res2 <- resolveEquality(res1.subst(t12), res1.subst(t22), prov, renv, eqEnv, loc)
       } yield res2 @@ res1
 
     // reflU
@@ -445,7 +452,7 @@ object ConstraintResolution {
     case TypingConstraint.Equality(tpe1, tpe2, prov) =>
       val t1 = TypeMinimization.minimizeType(subst0(tpe1))
       val t2 = TypeMinimization.minimizeType(subst0(tpe2))
-      simplifyEquality(t1, t2, prov, renv, eqEnv, constr0.loc).map {
+      resolveEquality(t1, t2, prov, renv, eqEnv, constr0.loc).map {
         case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
       }
     case TypingConstraint.Class(sym, tpe, loc) =>
