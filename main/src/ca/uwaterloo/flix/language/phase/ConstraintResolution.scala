@@ -381,6 +381,14 @@ object ConstraintResolution {
     }
   }
 
+  /**
+    * Attempts to resolve the given type constraints under the given environments,
+    * and with the given initial substitution.
+    *
+    * The initial substitution should come from e.g., formal parameter type ascriptions.
+    *
+    * Returns a reduction result containing a substitution and any leftover constraints.
+    */
   def resolve(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, TypeError] = {
     var last = List.empty[TypingConstraint]
     var curr = constrs.sortBy(_.numVars)
@@ -399,7 +407,7 @@ object ConstraintResolution {
       )
 
       last = curr
-      reduceAll3(curr, renv, cenv, eqEnv, subst) match {
+      reduceAll(curr, renv, cenv, eqEnv, subst) match {
         case Result.Ok(ReductionResult(oldSubst, newSubst, oldConstrs, newConstrs, progress)) =>
           curr = newConstrs
           subst = newSubst
@@ -415,10 +423,10 @@ object ConstraintResolution {
     Result.Ok(ReductionResult(subst0, subst, Nil, curr, progress = true))
   }
 
-  private def reduceAll3(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, TypeError] = {
+  private def reduceAll(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, TypeError] = {
     def tryReduce(cs: List[TypingConstraint]): Result[ReductionResult, TypeError] = cs match {
       case Nil => Result.Ok(ReductionResult(oldSubst = subst0, newSubst = subst0, oldConstrs = cs, newConstrs = cs, progress = false))
-      case hd :: tl => reduceOne3(hd, renv, cenv, eqEnv, subst0).flatMap {
+      case hd :: tl => reduceOne(hd, renv, cenv, eqEnv, subst0).flatMap {
         // if we're just returning the same constraint, then have made no progress and we need to find something else to reduce
         case res if !res.progress => tryReduce(tl).map {
           // Case 1: progress made. send the head to the end
@@ -564,7 +572,7 @@ object ConstraintResolution {
   def sort(constrs: List[TypingConstraint]): List[TypingConstraint] =
     constrs.sortBy(_.index)
 
-  private def reduceOne3(constr0: TypingConstraint, renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, TypeError] = constr0 match {
+  private def reduceOne(constr0: TypingConstraint, renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, TypeError] = constr0 match {
     case TypingConstraint.Equality(tpe1, tpe2, prov) =>
       val t1 = TypeMinimization.minimizeType(subst0(tpe1))
       val t2 = TypeMinimization.minimizeType(subst0(tpe2))
@@ -578,7 +586,7 @@ object ConstraintResolution {
       }
     case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested0) =>
       // First reduce nested constraints
-      reduceAll3(nested0, renv, cenv, eqEnv, subst0).map {
+      reduceAll(nested0, renv, cenv, eqEnv, subst0).map {
         // Case 1: We have reduced everything below. Now reduce the purity constraint.
         case ReductionResult(_oldSubst, subst1, oldConstrs, newConstrs, progress) if newConstrs.isEmpty =>
           val e1 = subst1(eff1)
