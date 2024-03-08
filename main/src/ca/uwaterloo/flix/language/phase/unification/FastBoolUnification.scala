@@ -138,7 +138,7 @@ object FastBoolUnification {
     def solve(): Result[BoolSubstitution, (FastBoolUnificationException, List[Equation], BoolSubstitution)] = {
       try {
         phase0Init()
-        phase1UnitPropagation()
+        phase1ConstantPropagation()
         phase2VarPropagation()
         phase3VarAssignment()
         phase4SVE()
@@ -160,12 +160,12 @@ object FastBoolUnification {
       debugln()
     }
 
-    private def phase1UnitPropagation(): Unit = {
+    private def phase1ConstantPropagation(): Unit = {
       debugln("-".repeat(80))
-      debugln("--- Phase 1: Unit Propagation")
+      debugln("--- Phase 1: Constant Propagation")
       debugln("    (resolves all equations of the form: x = c where x is a var and c is const)")
       debugln("-".repeat(80))
-      val s = propagateUnit(currentEqns, currentSubst)
+      val s = propagateConstants(currentEqns, currentSubst)
       updateState(s)
       printEquations()
       printSubstitution()
@@ -337,7 +337,7 @@ object FastBoolUnification {
     *     x55075 ~ x112453
     * }}}
     *
-    * then after unit propagation it is:
+    * then after constant propagation it is:
     *
     * {{{
     *     c1794221043 ~ (c1794221043 ∧ x55062 ∧ x55050 ∧ x55046 ∧ x55060 ∧ x55075 ∧ x55042 ∧ x55058 ∧ x55078)
@@ -369,7 +369,7 @@ object FastBoolUnification {
     * Note: We use `subst.extended` to check for conflicts. For example, if we already know that `s = [x -> c17]` and we
     * learn that `x -> true` then we will try to extend s with the new binding which will raise a [[ConflictException]].
     */
-  private def propagateUnit(l: List[Equation], s: BoolSubstitution): (List[Equation], BoolSubstitution) = {
+  private def propagateConstants(l: List[Equation], s: BoolSubstitution): (List[Equation], BoolSubstitution) = {
     var pending = l
     var subst = s
 
