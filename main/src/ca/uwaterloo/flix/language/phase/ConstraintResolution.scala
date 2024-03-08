@@ -40,12 +40,6 @@ object ConstraintResolution {
 
   private def stopLogging(): Unit = record = false
 
-  private def log(s: => Any): Unit = {
-    if (record) {
-      println(s)
-    }
-  }
-
   private def recordGraph(s: => String, number: Int): Unit = {
     if (record) {
       val path = Path.of(s"./personal/constraint-graphs/${number.toString.reverse.padTo(4, '0').reverse}.dot")
@@ -405,9 +399,6 @@ object ConstraintResolution {
 
       count += 1
       recordGraph(Debug.toDotWithSubst(curr, subst), count)
-      log(
-        count.toString + "\n" + Debug.toDotWithSubst(curr, subst) + "\n" + "========================================="
-      )
 
       last = curr
       reduceAll(curr, renv, cenv, eqEnv, subst) match {
@@ -416,9 +407,6 @@ object ConstraintResolution {
           subst = newSubst
           prog = progress
         case res@Result.Err(_) =>
-          subst.m.toList.sortBy(_._1).foreach {
-            case pair => log(pair); log(pair._1.level)
-          }
           stopLogging()
           return res
       }
