@@ -456,6 +456,6 @@ mod TestSemiGroup {
     def operator02(): Bool = ("abc" ++ "def") == "abcdef"
 
     @test
-    def operator03(): Bool = (1 :: 2 :: Nil ++ 3 :: 4 :: Nil) == 1 :: 2 :: 3 :: 4 :: Nil
+    def operator03(): Bool = ((1 :: 2 :: Nil) ++ (3 :: 4 :: Nil)) == 1 :: 2 :: 3 :: 4 :: Nil
 
 }

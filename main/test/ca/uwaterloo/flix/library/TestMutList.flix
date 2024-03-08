@@ -589,6 +589,65 @@ mod TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // flatten                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def flatten01(): Bool = region rc {
+        MutList.flatten(rc, MutList.new(rc)) |> MutList.isEmpty
+    }
+
+    @test
+    def flatten02(): Bool = region rc {
+        let empties = List.repeat(10, MutList.new(rc)) |> List.toMutList(rc);
+        MutList.flatten(rc, empties) |> MutList.isEmpty
+    }
+
+    @test
+    def flatten03(): Bool = region rc {
+        let lists = List#{
+            List#{1, 2} |> List.toMutList(rc),
+            MutList.new(rc),
+            List#{3, 4} |> List.toMutList(rc)
+        } |> List.toMutList(rc);
+        MutList.sameElements(MutList.flatten(rc, lists), List#{1, 2, 3, 4} |> List.toMutList(rc))
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
+    // flatMap                                                             //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def flatMap01(): Bool = region rc {
+        MutList.flatMap(rc, x -> x, MutList.new(rc)) |> MutList.isEmpty
+    }
+
+    @test
+    def flatMap02(): Bool = region rc {
+        let v = MutList.range(rc, 0, 5);
+        MutList.flatMap(rc, _ -> MutList.new(rc), v) |> MutList.isEmpty
+    }
+
+    @test
+    def flatMap03(): Bool = region rc {
+        let v = MutList.range(rc, 0, 100);
+        def f(n) = List#{n} |> List.toMutList(rc);
+        let w = MutList.flatMap(rc, f, v);
+        MutList.sameElements(v, w)
+    }
+
+    @test
+    pub def flatMap04(): Bool = region rc {
+        let v = MutList.range(rc, 0, 5);
+        def f(n) = List.repeat(n, Int32.toString(n)) |> List.toMutList(rc);
+        let w = MutList.flatMap(rc, f, v);
+        let expected = List#{
+            "1", "2", "2", "3", "3", "3", "4", "4", "4", "4"
+        } |> List.toMutList(rc);
+        MutList.sameElements(expected, w)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // transform!                                                              //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1465,7 +1524,7 @@ mod TestMutList {
 
     @test
     def iterator01(): Bool = region rc {
-        let l = MutList.new(rc): MutList[Int32, rc];
+        let l = (MutList.new(rc): MutList[Int32, rc]);
         let iter = MutList.iterator(rc, l);
         match Iterator.next(iter) {
             case None => true
@@ -1874,7 +1933,7 @@ mod TestMutList {
 
     @test
     def sortWith01(): Bool = region rc {
-        let a = MutList.sortWith(rc, cmp, Array.toMutList(rc, (Array#{} @ rc): Array[Int32, rc]));
+        let a = MutList.sortWith(rc, cmp, Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])));
         a `sameElements` Array.toMutList(rc, Array#{} @ rc)
     }
 

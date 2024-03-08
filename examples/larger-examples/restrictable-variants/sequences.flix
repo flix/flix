@@ -59,7 +59,7 @@ mod Seq {
     /// Renders the list `l` to a String.
     ///
     pub def toString(l: Seq[s][a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         foreach (x <- l)
             StringBuilder.appendString!("${x} :: ", sb);
         StringBuilder.appendString!("Nil", sb);
@@ -733,7 +733,7 @@ mod Seq {
     /// Returns `l` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], l: Seq[s][a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new_(rc);
+        let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 
@@ -788,7 +788,7 @@ mod Seq {
     /// Returns the list `l` as an array.
     ///
     pub def toArray(rc: Region[r], l: Seq[s][a]): Array[a, r] \ r = {
-            let a = Array.new_(rc, length(l));
+            let a = Array.new(rc, length(l));
             forEach(match (i, b) -> Array.put(b, i, a), zipWithIndex(l));
             a
         }
@@ -797,7 +797,7 @@ mod Seq {
     /// Returns the list `l` as a vector.
     ///
     pub def toVector(l: Seq[s][a]): Vector[a] = region rc {
-        let arr = Array.new_(rc, length(l));
+        let arr = Array.new(rc, length(l));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), l);
         Array.toVector(arr)
     }

@@ -274,7 +274,7 @@ def find03(): Bool = Option.find(i -> i == 2, Some(2)) == Some(2)
 // flatten                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def flatten01(): Bool = Option.flatten(None): Option[Unit] == None
+def flatten01(): Bool = (Option.flatten(None): Option[Unit]) == None
 
 @test
 def flatten02(): Bool = Option.flatten(Some((None: Option[Unit]))) == None
@@ -356,7 +356,7 @@ def foldRightWithCont05(): Bool = Option.foldRightWithCont((i, k) -> if (i == 2 
 // sequence                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def sequence01(): Bool = Option.sequence(Nil): Option[List[Unit]] == Some(Nil)
+def sequence01(): Bool = (Option.sequence(Nil): Option[List[Unit]]) == Some(Nil)
 
 @test
 def sequence02(): Bool = Option.sequence(Some(1) :: Nil) == Some(1 :: Nil)

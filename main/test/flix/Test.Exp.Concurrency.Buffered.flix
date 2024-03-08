@@ -102,7 +102,7 @@ mod Test.Exp.Concurrency.Buffered {
     def testBufferedChannel15(): Bool \ {} = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
         Channel.unsafeSend(Array#{1, 2, 3} @ rc, tx);
-        2 == Array.get_(1, Channel.recv(rx))
+        2 == Array.get(1, Channel.recv(rx))
     }
 
     @test
@@ -216,7 +216,7 @@ mod Test.Exp.Concurrency.Buffered {
     def testBufferedChannelWithSpawn15(): Bool \ IO = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
         spawn Channel.unsafeSend(Array#{1, 2, 3} @ rc, tx) @ rc;
-        2 == Array.get_(1, Channel.recv(rx))
+        2 == Array.get(1, Channel.recv(rx))
     }
 
     @test

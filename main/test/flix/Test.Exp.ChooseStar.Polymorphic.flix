@@ -1,3 +1,12 @@
+pub restrictable enum Expr[_][t] {
+    case Cst(t)
+    case Var(String)
+    case Not(Option[t])
+    case And(t, t)
+    case Or(t, t)
+    case Xor(t, t)
+}
+
 //
 // Properties:
 //   P1) Input upper bounded by pattern case set (like normal choose)
@@ -5,15 +14,7 @@
 //   P3) Output maintains information on the absence of stable cases
 //
 
-mod Test.Exp.ChooseStar.Polymorphic {
-    pub restrictable enum Expr[_][t] {
-        case Cst(t)
-        case Var(String)
-        case Not(Option[t])
-        case And(t, t)
-        case Or(t, t)
-        case Xor(t, t)
-    }
+mod Test.Exp.ChooseStar.Simple {
 
     pub def testChooseStar01(): Bool = {
         // P2: check the lower bound by using result in a choose

@@ -47,9 +47,9 @@ mod Test.Handler.NewObject {
     def testRunnable01(): Bool \ IO =
         import java.lang.Runnable.run(): Unit \ IO;
         region rc {
-            let r = Ref.new_(rc, 0);
+            let r = Ref.new(rc, 0);
             run(newAskRunnable(r));
-            let result = Ref.get_(r);
+            let result = Ref.get(r);
             Assert.eq(42, result)
         }
 
@@ -57,9 +57,9 @@ mod Test.Handler.NewObject {
     def testRunnable02(): Bool \ IO =
         import java.lang.Runnable.run(): Unit \ IO;
         region rc {
-            let r = Ref.new_(rc, 0);
+            let r = Ref.new(rc, 0);
             run(newGenRunnable(r));
-            let result = Ref.get_(r);
+            let result = Ref.get(r);
             Assert.eq(42, result)
         }
 
@@ -67,9 +67,9 @@ mod Test.Handler.NewObject {
     def testRunnable03(): Bool \ IO =
         import java.lang.Runnable.run(): Unit \ IO;
         region rc {
-            let r = Ref.new_(rc, 0);
+            let r = Ref.new(rc, 0);
             run(newGenAskRunnable(r));
-            let result = Ref.get_(r);
+            let result = Ref.get(r);
             Assert.eq(84, result)
         }
 

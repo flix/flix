@@ -604,7 +604,7 @@ def count08(): Bool = region rc {
 def flatten01(): Bool = (Set.flatten(Set#{}): Set[Unit]) == Set#{}
 
 @test
-def flatten02(): Bool = (Set.flatten(Set#{Set#{}}: Set[Set[Unit]])) == Set#{}
+def flatten02(): Bool = Set.flatten((Set#{Set#{}}: Set[Set[Unit]])) == Set#{}
 
 @test
 def flatten03(): Bool = Set.flatten(Set#{Set#{1}}) == Set#{1}

@@ -60,4 +60,10 @@ mod Test.Exp.Instanceof {
     @test
     def testInstanceof12(): Bool = ("Hello World" instanceof ##java.lang.StringBuilder) == false
 
+    @test
+    def testInstanceof13(): Bool \ IO = {
+        let arr = Array#{"hi"} @ Static;
+        Array.get(0, arr) instanceof ##java.lang.String
+    }
+
 }

@@ -1463,7 +1463,7 @@ mod TestVector {
 
     @test
     def intercalate01(): Bool =
-        let v = Vector.intercalate((Vector#{}: Vector[Int32]), Vector#{}: Vector[Vector[Int32]]);
+        let v = Vector.intercalate((Vector#{}: Vector[Int32]), (Vector#{}: Vector[Vector[Int32]]));
         v == Vector#{}
 
     @test
@@ -2166,7 +2166,7 @@ mod TestVector {
     @test
     def partition04(): Bool =
         let (a, b) = Vector.partition(i -> i > 3, Vector#{1, 2});
-        (a ==Vector#{}) and (b == Vector#{1, 2})
+        (a == Vector#{}) and (b == Vector#{1, 2})
 
     @test
     def partition05(): Bool =
@@ -3024,7 +3024,7 @@ mod TestVector {
 
     @test
     def unzip01(): Bool =
-        let (a, b) = Vector.unzip((Vector#{}): Vector[(Unit, Unit)]);
+        let (a, b) = Vector.unzip((Vector#{}: Vector[(Unit, Unit)]));
         (a == Vector#{}) and (b == Vector#{})
 
     @test
@@ -3268,7 +3268,7 @@ mod TestVector {
 
     @test
     def toSet01(): Bool =
-        Vector.toSet(Vector#{}: Vector[Int32]) == Set#{}
+        Vector.toSet((Vector#{}: Vector[Int32])) == Set#{}
 
     @test
     def toSet02(): Bool =
@@ -4068,7 +4068,7 @@ mod TestVector {
 
     @test
     def toChain01(): Bool =
-        Vector.toChain((Vector#{}: Vector[Unit])) == Chain.empty(): Chain[Unit]
+        Vector.toChain((Vector#{}: Vector[Unit])) == (Chain.empty(): Chain[Unit])
 
     @test
     def toChain02(): Bool =

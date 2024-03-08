@@ -1,13 +1,14 @@
-mod Test.Def.ChooseStar.Simple {
-    restrictable enum Expr[_] {
-        case Cst, Var, Not, And, Or, Xor
-    }
+restrictable enum Expr[_] {
+    case Cst, Var, Not, And, Or, Xor
+}
 
-    restrictable enum Color[_] {
-        case Red
-        case Blue
-        case Green
-    }
+restrictable enum Color[_] {
+    case Red
+    case Blue
+    case Green
+}
+
+mod Test.Def.ChooseStar.Simple {
 
     pub def colorId(c: Color[s]): Color[s] = choose* c {
         case Color.Red => Color.Red

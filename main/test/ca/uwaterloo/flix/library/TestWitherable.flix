@@ -39,7 +39,7 @@ mod TestWitherable {
     @test
     def wither07(): Bool  =
         let xs = 1 :: 2 :: Nil;
-        wither(_ -> None: Option[Option[Int32]], xs) == None
+        wither(_ ->( None: Option[Option[Int32]]), xs) == None
 
     @test
     def wither08(): Bool  =
