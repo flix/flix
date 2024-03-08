@@ -360,6 +360,31 @@ mod MutList {
         }
 
     ///
+    /// Concatenates all the contained MutLists.
+    ///
+    pub def flatten(rc1: Region[r1], v: MutList[MutList[a, r], r]): MutList[a, r1] \ {r, r1}=
+        let rdestIndex = ref 0 @ rc1;
+        let size = MutList.sumWith(MutList.length, v);
+        let destArray = Array.new(rc1, Int32.max(size, minCapacity()));
+        v |> MutList.forEach(bs -> {
+            let MutList(_, rb, rbl) = bs;
+            let bl = deref rbl;
+            let destIndex = deref rdestIndex;
+            Array.patch!(destIndex, bl, deref rb, destArray);
+            rdestIndex := destIndex + bl
+         });
+         MutList(rc1, ref destArray @ rc1, ref size @ rc1)
+
+
+    ///
+    /// Apply `f` to every element in `v` and concatenate the results.
+    ///
+    /// The result is a new mutable list.
+    ///
+    pub def flatMap(rc1: Region[r1], f: a -> MutList[b, r1] \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, r, r1 } =
+        map(rc1, f, v) |> flatten(rc1)
+
+    ///
     /// Returns the result of applying `f` to every element in `v` along with that element's index.
     ///
     pub def mapWithIndex(rc1: Region[r1], f: (Int32, a) -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, r, r1 } =

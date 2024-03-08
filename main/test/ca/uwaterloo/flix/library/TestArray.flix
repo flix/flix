@@ -235,7 +235,6 @@ mod TestArray {
     def toMutDeque01(): Bool = region rc {
         let a = (Array#{} @ rc: Array[Int32, _]);
         let d = (MutDeque.new(rc): MutDeque[Int32, _]);
-
         Array.toMutDeque(rc, a) `MutDeque.sameElements` d
     }
 
