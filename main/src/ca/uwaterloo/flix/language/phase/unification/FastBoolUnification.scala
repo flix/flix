@@ -254,7 +254,8 @@ object FastBoolUnification {
 
     private def debugln(): Unit = debugln("")
 
-    private def debugln(s: String): Unit = {
+    // Note: By-name to ensure that we do not compute expensive strings.
+    private def debugln(s: => String): Unit = {
       if (Debugging) {
         Console.println(s)
       }
