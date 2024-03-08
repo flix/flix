@@ -79,6 +79,13 @@ object FastBoolUnification {
   private val Debugging: Boolean = true
 
   /**
+    * Enable verification (i.e. check that the computed most-general unifier is a solution to the original equation system.)
+    *
+    * Note: Verification is _very expensive_ and may not terminate in reasonable time.
+    */
+  private val Verify: Boolean = false
+
+  /**
     * Internal formatter. Used for debugging.
     */
   private val formatter: Formatter = Formatter.NoFormatter
@@ -135,7 +142,7 @@ object FastBoolUnification {
         phase2VarPropagation()
         phase3VarAssignment()
         phase4SVE()
-        // verifySolution() // Not enabled by default due to cost. Enable for debugging.
+        verifySolution()
         verifySolutionSize()
 
         Result.Ok(currentSubst)
@@ -220,7 +227,9 @@ object FastBoolUnification {
       * Throws a [[ConflictException]] if an equation is not solved by the current substitution.
       */
     private def verifySolution(): Unit = {
-      verify(currentSubst, l)
+      if (Verify) { // We only verify if the flag is set.
+        verify(currentSubst, l)
+      }
     }
 
     /**
