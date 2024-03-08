@@ -180,10 +180,10 @@ mod TestMonoid {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def optionEmpty01(): Bool = empty(): Option[Unit] == None
+    def optionEmpty01(): Bool = (empty(): Option[Unit]) == None
 
     @test
-    def optionCombine01(): Bool = combine(None, None): Option[Unit] == None
+    def optionCombine01(): Bool = (combine(None, None): Option[Unit]) == None
 
     @test
     def optionCombine02(): Bool = combine(Some("a"), None) == Some("a")
@@ -424,29 +424,29 @@ mod TestMonoid {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def validationEmpty01(): Bool = empty(): Validation[String, String] == Validation.Success("")
+    def validationEmpty01(): Bool = (empty(): Validation[String, String]) == Validation.Success("")
 
     @test
-    def validationCombine01(): Bool = combine(Validation.Failure(Nec.singleton("e1")), Validation.Failure(Nec.singleton("e2"))): Validation[String, String] == Validation.Failure(Nec.append(Nec.singleton("e1"), Nec.singleton("e2")))
+    def validationCombine01(): Bool = (combine(Validation.Failure(Nec.singleton("e1")), Validation.Failure(Nec.singleton("e2"))): Validation[String, String]) == Validation.Failure(Nec.append(Nec.singleton("e1"), Nec.singleton("e2")))
 
     @test
-    def validationCombine02(): Bool = combine(Validation.Success("a"), Validation.Failure(Nec.singleton("e1"))): Validation[String, String] == Validation.Failure(Nec.singleton("e1"))
+    def validationCombine02(): Bool = (combine(Validation.Success("a"), Validation.Failure(Nec.singleton("e1"))): Validation[String, String]) == Validation.Failure(Nec.singleton("e1"))
 
     @test
-    def validationCombine03(): Bool = combine(Validation.Failure(Nec.singleton("e1")), Validation.Success("1")): Validation[String, String] == Validation.Failure(Nec.singleton("e1"))
+    def validationCombine03(): Bool = (combine(Validation.Failure(Nec.singleton("e1")), Validation.Success("1")): Validation[String, String]) == Validation.Failure(Nec.singleton("e1"))
 
     @test
-    def validationCombine04(): Bool = combine(Validation.Success("a"), Validation.Success("1")): Validation[String, String] == Validation.Success("a1")
+    def validationCombine04(): Bool = (combine(Validation.Success("a"), Validation.Success("1")): Validation[String, String]) == Validation.Success("a1")
 
     /////////////////////////////////////////////////////////////////////////////
     // List                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def listEmpty01(): Bool = empty(): List[Int32] == Nil
+    def listEmpty01(): Bool = (empty(): List[Int32]) == Nil
 
     @test
-    def listCombine01(): Bool = combine(Nil, Nil): List[Int32] == Nil
+    def listCombine01(): Bool = (combine(Nil, Nil): List[Int32]) == Nil
 
     @test
     def listCombine02(): Bool = combine(1 :: Nil, Nil) == 1 :: Nil
@@ -465,10 +465,10 @@ mod TestMonoid {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def setEmpty01(): Bool = empty(): Set[Int32] == Set#{}
+    def setEmpty01(): Bool = (empty(): Set[Int32]) == Set#{}
 
     @test
-    def setCombine01(): Bool = combine(Set#{}, Set#{}): Set[Int32] == Set#{}
+    def setCombine01(): Bool = (combine(Set#{}, Set#{}): Set[Int32]) == Set#{}
 
     @test
     def setCombine02(): Bool = combine(Set#{1}, Set#{}) == Set#{1}
@@ -487,10 +487,10 @@ mod TestMonoid {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def mapEmpty01(): Bool = empty(): Map[Int32, String] == Map#{}
+    def mapEmpty01(): Bool = (empty(): Map[Int32, String]) == Map#{}
 
     @test
-    def mapCombine01(): Bool = combine(Map#{}, Map#{}): Map[Int32, String] == Map#{}
+    def mapCombine01(): Bool = (combine(Map#{}, Map#{}): Map[Int32, String]) == Map#{}
 
     @test
     def mapCombine02(): Bool = combine(Map#{1 => "A"}, Map#{}) == Map#{1 => "A"}
