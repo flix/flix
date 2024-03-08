@@ -154,7 +154,7 @@ object FastBoolUnification {
 
     private def phase0Init(): Unit = {
       debugln("-".repeat(80))
-      debugln("--- Input")
+      debugln("--- Phase 0: Input")
       debugln("-".repeat(80))
       printEquations()
       debugln()
@@ -215,7 +215,7 @@ object FastBoolUnification {
       */
     private def updateState(l: (List[Equation], BoolSubstitution)): Unit = {
       val (nextEqns, nextSubst) = l
-      currentEqns = simplify(nextEqns)
+      currentEqns = checkAndSimplify(nextEqns)
       currentSubst = nextSubst
     }
 
@@ -281,14 +281,14 @@ object FastBoolUnification {
     * -        c ~ true     (and mirrored)
     * -        c ~ false    (and mirrored)
     */
-  private def simplify(l: List[Equation]): List[Equation] = l match {
+  private def checkAndSimplify(l: List[Equation]): List[Equation] = l match {
     case Nil => Nil
     case Equation(t1, t2, loc) :: es => (t1, t2) match {
       // Trivial equations: skip them.
-      case (Term.True, Term.True) => simplify(es)
-      case (Term.False, Term.False) => simplify(es)
-      case (Term.Cst(c1), Term.Cst(c2)) if c1 == c2 => simplify(es)
-      case (Term.Var(x1), Term.Var(x2)) if x1 == x2 => simplify(es)
+      case (Term.True, Term.True) => checkAndSimplify(es)
+      case (Term.False, Term.False) => checkAndSimplify(es)
+      case (Term.Cst(c1), Term.Cst(c2)) if c1 == c2 => checkAndSimplify(es)
+      case (Term.Var(x1), Term.Var(x2)) if x1 == x2 => checkAndSimplify(es)
 
       // Unsolvable (conflicted) equations: raise an exception.
       case (Term.True, Term.False) => throw ConflictException(t1, t2, loc)
@@ -301,7 +301,7 @@ object FastBoolUnification {
       case (Term.False, Term.Cst(_)) => throw ConflictException(t1, t2, loc)
 
       // Non-trivial and non-conflicted equation: keep it.
-      case _ => Equation(t1, t2, loc) :: simplify(es)
+      case _ => Equation(t1, t2, loc) :: checkAndSimplify(es)
     }
   }
 
