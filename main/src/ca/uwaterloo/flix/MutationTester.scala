@@ -135,7 +135,8 @@ object MutationTester {
     val sym = sig.sym
 
     (sym.toString(), tpe.arrowArgTypes) match {
-      case ("Add.add", List(Int32, Int32)) | ("Sub.sub", List(Int32, Int32))| ("Div.div", List(Int32, Int32))| ("Mul.mul", List(Int32, Int32)) =>
+      case ("Add.add", List(Str, Str)) => Nil
+      case ("Add.add", _) | ("Sub.sub", _) | ("Div.div", _)| ("Mul.mul", _) =>
         val sub = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Sub"), Name.Ident(sym.loc.sp1, "sub", sym.loc.sp2)))
         val add = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Add"), Name.Ident(sym.loc.sp1, "add", sym.loc.sp2)))
         val div = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Div"), Name.Ident(sym.loc.sp1, "div", sym.loc.sp2)))
@@ -145,6 +146,15 @@ object MutationTester {
         sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Eq"),  Name.Ident(sym.loc.sp1, "neq", sym.loc.sp2))) :: Nil
       case ("Eq.neq", _) =>
         sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Eq"), Name.Ident(sym.loc.sp1, "eq", sym.loc.sp2))) :: Nil
+      case ("Order.less", _) | ("Order.lessEqual", _) | ("Order.greaterEqual", _) | ("Order.greater", _) | ("Order.compare", _) =>
+        val clazz = Symbol.mkClassSym("Order")
+        val le = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "less", sym.loc.sp2)))
+        val leq = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "lessEqual", sym.loc.sp2)))
+        val gre = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "greater", sym.loc.sp2)))
+        val greq = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "greaterEqual", sym.loc.sp2)))
+        val compare = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "compare", sym.loc.sp2)))
+        le :: leq :: gre :: greq :: compare :: Nil
+
       case _ => Nil
     }
 
