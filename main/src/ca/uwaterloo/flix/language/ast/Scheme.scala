@@ -139,11 +139,11 @@ object Scheme {
     // Attempt to unify the two instantiated types.
     flatMapN(Unification.unifyTypes(sc1.base, sc2.base, renv).toValidation) {
       case (subst, econstrs) => // TODO ASSOC-TYPES consider econstrs
-        val newTconstrs1Val = ClassEnvironment.reduce(sc1.tconstrs.map(subst.apply), classEnv, renv)
-        val newTconstrs2Val = ClassEnvironment.reduce(sc2.tconstrs.map(subst.apply), classEnv, renv)
+        val newTconstrs1Val = ClassEnvironment.reduce(sc1.tconstrs.map(subst.apply), classEnv)
+        val newTconstrs2Val = ClassEnvironment.reduce(sc2.tconstrs.map(subst.apply), classEnv)
         flatMapN(newTconstrs1Val, newTconstrs2Val) {
           case (newTconstrs1, newTconstrs2) =>
-            flatMapN(Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv, renv)))) {
+            flatMapN(Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))) {
               case _ =>
                 val newEconstrs1 = sc1.econstrs.map(subst.apply) // TODO ASSOC-TYPES reduce
                 val newEconstrs2 = sc2.econstrs.map(subst.apply).map(EqualityEnvironment.narrow) // TODO ASSOC-TYPES reduce, unsafe narrowing here
