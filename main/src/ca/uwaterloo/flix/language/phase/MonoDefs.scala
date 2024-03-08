@@ -85,19 +85,23 @@ object MonoDefs {
     * if there is no requirement on a polymorphic type, we assume it to be the default type of its
     * kind. This is safe since otherwise the type would not be polymorphic after type-inference.
     *
-    * Properties of the output types:
+    * Properties of normalized types (which is returned by apply):
+    * - No type variables
     * - No associated types
     * - No type aliases
-    * - Types are normalized (e.g. record ordering)
+    * - Equivalent types are uniquely represented (e.g. fields in records types are alphabetized)
     *
     * Notes on `s`: It is only applied to variables directly in the apply of the strict
-    * substitution. They image of `s` does not have to be normalized or even ground, but it is
-    * assumed that variables in the image are unconstrained and will be mapped to their default
-    * representation. `s` is used directly to support variables in typematch, where it is not only
-    * used on variables.
+    * substitution. They image of `s` does not have type aliases or associated types but can have
+    * type variables and non-unique types. Variables in the image are unconstrained and will be
+    * mapped to their default representation. `s` is used without the [[StrictSubstitution]] to
+    * support variables in typematch, where it is not only used on variables.
     */
   private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
 
+    /**
+      * Returns the normalized default type for the kind of `tpe0`.
+      */
     private def default(tpe0: Type): Type = tpe0.kind match {
       case Kind.Wild => Type.mkAnyType(tpe0.loc)
       case Kind.WildCaseSet => Type.mkAnyType(tpe0.loc)
@@ -114,24 +118,21 @@ object MonoDefs {
     }
 
     /**
-      * Applies `this` substitution to the given type `tpe`.
-      *
-      * Properties of the output type:
-      * - No associated types
-      * - No type aliases
-      * - Types are normalized (e.g. record ordering)
+      * Applies `this` substitution to the given type `tpe`, returning a normalized type.
       */
     def apply(tpe0: Type): Type = tpe0 match {
       case x: Type.Var =>
         // Remove variables by substitution, otherwise by default type.
         s.m.get(x.sym) match {
           case Some(t) =>
-            // The image of s might have unconstrained variables and be non-normalized.
-            // It is important to use default first, because the variables of t might be in the
-            // domain of the substitution.
-            apply(t.map(default))
+            // Use default since variables in the output of `s.m` are unconstrained.
+            // It is important to do this before apply to avoid looping on variables.
+            val t1 = t.map(default)
+            // Use apply to normalize the type, `t1` is ground.
+            apply(t1)
           case None =>
-            default(tpe0)
+            // Default types are normalized.
+            default(x)
         }
       case Type.Cst(_, _) =>
         tpe0
@@ -146,23 +147,27 @@ object MonoDefs {
           case (Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _), y) => Type.mkCaseIntersection(x, y, sym, loc)
           case (Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _), y) => Type.mkCaseUnion(x, y, sym, loc)
 
-          // Else just apply
+          // Else just apply.
           case (x, y) => Type.Apply(x, y, loc)
         }
       case Type.Alias(_, _, t, _) =>
-        // Remove the Alias
+        // Remove the Alias.
         apply(t)
       case Type.AssocType(cst, arg0, _, loc) =>
-        // Remove the associated type
+        // Remove the associated type.
         val arg = apply(arg0)
         EqualityEnvironment.reduceAssocType(cst, arg, eqEnv) match {
-          case Ok(t) => apply(t)
+          case Ok(t) =>
+            // Use apply to normalize the type, `t` is ground.
+            apply(t)
           case Err(_) => throw InternalCompilerException("unexpected associated type reduction failure", loc)
         }
     }
 
     /**
       * Adds the given mapping to the substitution.
+      *
+      * The type must be a normal type.
       */
     def +(kv: (Symbol.KindedTypeVarSym, Type)): StrictSubstitution = kv match {
       case (tvar, tpe) => StrictSubstitution(s ++ Substitution.singleton(tvar, tpe), eqEnv)
@@ -176,6 +181,9 @@ object MonoDefs {
 
     /**
       * Returns the non-strict version of this substitution.
+      *
+      * Mapping added must not contain type aliases or associated types. Variables in the image of
+      * the substitution are considered unconstrained.
       */
     def nonStrict: Substitution = s
   }
