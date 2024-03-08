@@ -612,6 +612,7 @@ object TypeInference {
           patternType <- unifyTypeM(tpe :: patternTypes, loc)
           (guardConstrs, guardTypes, guardEffs) <- traverseM(guards)(visitExp).map(_.unzip3)
           guardType <- traverseM(guardTypes.zip(guardLocs)) { case (gTpe, gLoc) => expectTypeM(expected = Type.Bool, actual = gTpe, loc = gLoc) }
+          guardEff <- traverseM(guardEffs.zip(guardLocs)) { case (gEff, gLoc) => expectEffectM(expected = Type.Pure, actual = gEff, loc = gLoc) }
           (bodyConstrs, bodyTypes, bodyEffs) <- traverseM(bodies)(visitExp).map(_.unzip3)
           resultTyp <- unifyTypeM(bodyTypes, loc)
           resultEff = Type.mkUnion(eff :: guardEffs ::: bodyEffs, loc)
@@ -848,7 +849,7 @@ object TypeInference {
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           resultTyp = Type.Bool
-          resultEff <- expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
+          resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expr.CheckedCast(cast, exp, tvar, pvar, loc) =>
