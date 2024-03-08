@@ -141,8 +141,8 @@ object EffUnification2 {
     case Term.Not(t) => Type.mkComplement(fromTerm(t, loc), loc)
     case Term.And(csts, vars, rest) =>
       val ts = csts.toList.map(fromTerm(_, loc)) ++ vars.toList.map(fromTerm(_, loc)) ++ rest.map(fromTerm(_, loc))
-      Type.mkIntersection(ts, loc)
-    case Term.Or(ts) => Type.mkUnion(ts.map(fromTerm(_, loc)), loc)
+      Type.mkUnion(ts, loc)
+    case Term.Or(ts) => Type.mkIntersection(ts.map(fromTerm(_, loc)), loc)
   }
 
 }
