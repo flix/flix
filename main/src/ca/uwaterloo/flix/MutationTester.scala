@@ -147,6 +147,7 @@ object MutationTester {
         sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Eq"), Name.Ident(sym.loc.sp1, "eq", sym.loc.sp2))) :: Nil
       case _ => Nil
     }
+
   }
 
   /**
@@ -159,7 +160,7 @@ object MutationTester {
         case original@Expr.Var(_, _, _) =>  Nil
         case original@Expr.Def(sym, _, _) => Nil
         case original@Expr.Sig(sym, tpe, loc) =>
-          mutateSig(original)
+          mutateSig(original).filter(e => e != original)
         case original@Expr.Hole(sym, _, _) => Nil
         case original@Expr.HoleWithExp(exp, _, _, _) => Nil
         case original@Expr.OpenAs(symUse, exp, _, _) => Nil
