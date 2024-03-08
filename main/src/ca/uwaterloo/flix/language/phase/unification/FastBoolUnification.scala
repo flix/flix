@@ -841,7 +841,7 @@ object FastBoolUnification {
     *
     * WARNING: Equations should be normalized. Use the smart constructor [[Equation.mk]] to create a new equation.
     */
-  case class Equation(t1: Term, t2: Term, loc: SourceLocation) {
+  case class Equation private(t1: Term, t2: Term, loc: SourceLocation) {
     /**
       * Returns the size of this equation which is the sum of its lhs and rhs.
       */
