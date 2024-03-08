@@ -20,7 +20,7 @@ mod Concurrent {
     /// A wrapper around a Java Condition.
     ///
     @Internal
-    pub enum Condition(##java.util.concurrent.locks.Condition)
+    pub enum Condition[r: Region](Region[r], ##java.util.concurrent.locks.Condition)
 
     mod Condition {
         // TODO NS-REFACTOR these imports can be removed
@@ -31,9 +31,9 @@ mod Concurrent {
         /// Causes the current thread to wait until it is signalled or interrupted.
         ///
         @Internal
-        pub def await(condition: Condition): Unit \ IO =
-            import java.util.concurrent.locks.Condition.await(): Unit \ IO;
-            let Condition(c) = condition;
+        pub def await(condition: Condition[r]): Unit \ r =
+            import java.util.concurrent.locks.Condition.await(): Unit \ r;
+            let Condition(_, c) = condition;
             await(c)
 
         ///
@@ -42,18 +42,18 @@ mod Concurrent {
         /// given the supplied nanosTimeout value upon return, or a value less than or equal to zero if it timed out.
         ///
         @Internal
-        pub def awaitTimeout(condition: Condition, timeout: Int64): Int64 \ IO =
-            import java.util.concurrent.locks.Condition.awaitNanos(Int64): Int64 \ IO;
-            let Condition(c) = condition;
+        pub def awaitTimeout(condition: Condition[r], timeout: Int64): Int64 \ r =
+            import java.util.concurrent.locks.Condition.awaitNanos(Int64): Int64 \ r;
+            let Condition(_, c) = condition;
             awaitNanos(c, timeout)
 
         ///
         /// Wakes up one waiting thread.
         ///
         @Internal
-        pub def signal(condition: Condition): Result[##java.lang.IllegalMonitorStateException, Unit] \ IO =
-            import java.util.concurrent.locks.Condition.signal(): Unit \ IO;
-            let Condition(c) = condition;
+        pub def signal(condition: Condition[r]): Result[##java.lang.IllegalMonitorStateException, Unit] \ r =
+            import java.util.concurrent.locks.Condition.signal(): Unit \ r;
+            let Condition(_, c) = condition;
             try {
                 Ok(signal(c))
             } catch {
@@ -64,9 +64,9 @@ mod Concurrent {
         /// Wakes up all waiting threads.
         ///
         @Internal
-        pub def signalAll(condition: Condition): Result[##java.lang.IllegalMonitorStateException, Unit] \ IO =
-            import java.util.concurrent.locks.Condition.signalAll(): Unit \ IO;
-            let Condition(c) = condition;
+        pub def signalAll(condition: Condition[r]): Result[##java.lang.IllegalMonitorStateException, Unit] \ r =
+            import java.util.concurrent.locks.Condition.signalAll(): Unit \ r;
+            let Condition(_, c) = condition;
             try {
                 Ok(signalAll(c))
             } catch {
