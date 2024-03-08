@@ -18,7 +18,7 @@ package ca.uwaterloo.flix
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.SemanticOp.{BoolOp, CharOp, Float32Op, Float64Op, Int16Op, Int32Op, Int64Op, Int8Op, StringOp}
-import ca.uwaterloo.flix.language.ast.Type.{Apply, False, Int32, True}
+import ca.uwaterloo.flix.language.ast.Type.{Apply, False, Int32, True, Str}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SemanticOp, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
 
