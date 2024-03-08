@@ -135,7 +135,7 @@ mod List {
     /// Renders the list `l` to a String.
     ///
     pub def toString(l: List[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         foreach (x <- l)
             StringBuilder.appendString!("${x} :: ", sb);
         StringBuilder.appendString!("Nil", sb);
@@ -1090,7 +1090,7 @@ mod List {
     /// Returns `l` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], l: List[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new_(rc);
+        let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 
@@ -1149,7 +1149,7 @@ mod List {
     pub def toArray(rc: Region[r], l: List[a]): Array[a, r] \ r = match head(l) {
         case None    => Array#{} @ rc
         case Some(_) =>
-            let a = Array.new_(rc, length(l));
+            let a = Array.new(rc, length(l));
             forEach(match (i, b) -> Array.put(b, i, a), zipWithIndex(l));
             a
         }
@@ -1158,7 +1158,7 @@ mod List {
     /// Returns the list `l` as a vector.
     ///
     pub def toVector(l: List[a]): Vector[a] = region rc {
-        let arr = Array.new_(rc, length(l));
+        let arr = Array.new(rc, length(l));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), l);
         Array.toVector(arr)
     }
@@ -1402,7 +1402,7 @@ mod List {
         def freq(ll, m) = match ll {
             case Nil   => m
             case x::xs    =>
-                match Map.get_(x,m) {
+                match Map.get(x,m) {
                     case None       => freq(xs, Map.insert(x, 1, m))
                     case Some(_)    => freq(xs, Map.update(v -> Some(v+1), x, m))
                 }

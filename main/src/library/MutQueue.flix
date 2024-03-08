@@ -34,7 +34,7 @@ mod MutQueue {
     ///
     pub def toString(mq: MutQueue[a, r]): String \ r with ToString[a] = region reg {
         let MutQueue(_, arr, s) = mq;
-        let sb = StringBuilder.new_(reg);
+        let sb = StringBuilder.new(reg);
         StringBuilder.appendString!("MutQueue {", sb);
         Array.forEachWithIndex((i, x) -> {
             if (i < deref s) {
@@ -50,8 +50,8 @@ mod MutQueue {
     ///
     /// Returns an empty MutQueue.
     ///
-    pub def new_(rc: Region[r]): MutQueue[a, r] \ r =
-        MutQueue(rc, ref Array.new_(rc, 8) @ rc, ref 0 @ rc)
+    pub def new(rc: Region[r]): MutQueue[a, r] \ r =
+        MutQueue(rc, ref Array.new(rc, 8) @ rc, ref 0 @ rc)
 
     ///
     /// Returns the number of elements in `mq`.
@@ -73,7 +73,7 @@ mod MutQueue {
     pub def peek(mq: MutQueue[a, r]): Option[a] \ r =
         let MutQueue(_, arr, s) = mq;
         if (deref s == 0) None
-        else Some(Array.get_(0, deref arr))
+        else Some(Array.get(0, deref arr))
 
     ///
     /// Enqueues an element `x` into a `mq`.
@@ -93,7 +93,7 @@ mod MutQueue {
         let MutQueue(_, arr, s) = mq;
         if (deref s > 0) {
             let top = peek(mq);
-            Array.put(Array.get_(deref s - 1, deref arr), 0, deref arr);
+            Array.put(Array.get(deref s - 1, deref arr), 0, deref arr);
             heapifyDown(0, mq);
             s := deref s - 1;
             top
@@ -116,7 +116,7 @@ mod MutQueue {
     pub def iterator(rc: Region[r1], mq: MutQueue[a, r2]): Iterator[a, r1 + r2, r1] \ {r1, r2} =
         let MutQueue(_, arr, s) = mq;
         let it1 = Iterator.range(rc, 0, deref s);
-        Iterator.map(x -> Array.get_(x, deref arr), it1)
+        Iterator.map(x -> Array.get(x, deref arr), it1)
 
     ///
     /// Returns a List representation of `mq`.
@@ -149,8 +149,8 @@ mod MutQueue {
         let MutQueue(_, arr, _) = mq;
         if (idx != 0) {
             let parentIdx = (idx - 1) / 2;
-            let cur  = Array.get_(idx, deref arr);
-            let parent = Array.get_(parentIdx, deref arr);
+            let cur  = Array.get(idx, deref arr);
+            let parent = Array.get(parentIdx, deref arr);
             if (cur > parent) {
                 Array.put(parent, idx, deref arr);
                 Array.put(cur, parentIdx, deref arr);
@@ -168,10 +168,10 @@ mod MutQueue {
         let size = deref s;
         let lChildIdx = idx * 2 + 1;
         let rChildIdx = idx * 2 + 2;
-        let cur = Array.get_(idx, deref arr);
+        let cur = Array.get(idx, deref arr);
         if (size >= rChildIdx) {
             if (size == rChildIdx) {
-                let child = Array.get_(lChildIdx, deref arr);
+                let child = Array.get(lChildIdx, deref arr);
                 if (cur < child) {
                     Array.put(child, idx, deref arr);
                     Array.put(cur, lChildIdx, deref arr)
@@ -179,8 +179,8 @@ mod MutQueue {
                 else ()
             }
             else {
-                let lChild = Array.get_(lChildIdx, deref arr);
-                let rChild = Array.get_(rChildIdx, deref arr);
+                let lChild = Array.get(lChildIdx, deref arr);
+                let rChild = Array.get(rChildIdx, deref arr);
                 if ((lChild > cur) or (rChild > cur)) {
                     if (lChild > rChild) {
                         Array.put(cur, lChildIdx, deref arr);
@@ -206,7 +206,7 @@ mod MutQueue {
         let oldCapacity = Array.length(deref arr);
         if (oldCapacity == deref s) {
             let newCapacity = 2 + (oldCapacity * 2);
-            let newArr  = Array.new_(reg, newCapacity);
+            let newArr  = Array.new(reg, newCapacity);
             Array.forEachWithIndex((idx, x) -> Array.put(x, idx, newArr), deref arr);
             arr := newArr
         }

@@ -416,6 +416,6 @@ mod GetOpt {
     /// Remove all quote marks from the list of tokens.
     ///
     def removeQuoteMarks(quoteOpen: String, quoteClose: String, args: List[String]): List[String] =
-        args |> List.map(String.replace({from_ = quoteOpen}, {to = ""}) >> String.replace({from_ = quoteClose}, {to = ""}))
+        args |> List.map(String.replace({from = quoteOpen}, {to = ""}) >> String.replace({from = quoteClose}, {to = ""}))
 
 }

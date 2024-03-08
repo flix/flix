@@ -27,7 +27,7 @@ mod MutMap {
     /// Returns a string representation of the given MutMap `m`.
     ///
     pub def toString(m: MutMap[k, v, r]): String \ r with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("MutMap#{", sb);
         forEachWithIndex((i, k, v) -> {
             if (i < 1)
@@ -42,7 +42,7 @@ mod MutMap {
     ///
     /// Returns a fresh empty mutable map.
     ///
-    pub def new_(rc: Region[r]): MutMap[k, v, r] \ r =
+    pub def new(rc: Region[r]): MutMap[k, v, r] \ r =
         MutMap(rc, ref Map.empty() @ rc)
 
     ///
@@ -173,9 +173,9 @@ mod MutMap {
     ///
     /// Otherwise returns `None`.
     ///
-    pub def get_(k: k, m: MutMap[k, v, r]): Option[v] \ r with Order[k] =
+    pub def get(k: k, m: MutMap[k, v, r]): Option[v] \ r with Order[k] =
         let MutMap(_, mm) = m;
-        Map.get_(k, deref mm)
+        Map.get(k, deref mm)
 
     ///
     /// Returns `v` if `k -> v` is in the mutable map `m`.
@@ -233,7 +233,7 @@ mod MutMap {
     ///
     pub def getOrElsePut!(k: k, d: v, m: MutMap[k, v, r]): v \ r with Order[k] =
         let MutMap(_, mm) = m;
-        match Map.get_(k, deref mm) {
+        match Map.get(k, deref mm) {
             case None    => mm := Map.insert(k, d, deref mm); d
             case Some(v) => v
         }

@@ -39,8 +39,8 @@ mod MutDisjointSets {
     ///
     /// Returns new and empty `MutDisjointSets` in the region `rc`.
     ///
-    pub def new_(rc: Region[r]): MutDisjointSets[t, r] \ r =
-        MutDisjointSets({ rc = rc, forest = MutMap.new_(rc) })
+    pub def new(rc: Region[r]): MutDisjointSets[t, r] \ r =
+        MutDisjointSets({ rc = rc, forest = MutMap.new(rc) })
 
     ///
     /// Updates `s` with a new disjoint set containing `x`
@@ -48,7 +48,7 @@ mod MutDisjointSets {
     ///
     pub def makeSet(x: t, s: MutDisjointSets[t, r]): Unit \ r with Order[t] = {
         def singleton(rc, y) = {
-            Node.Node({ rc = rc, value = y, parent = Ref.new_(rc, None), rank = Ref.new_(rc, 0) })
+            Node.Node({ rc = rc, value = y, parent = Ref.new(rc, None), rank = Ref.new(rc, 0) })
         };
         let MutDisjointSets({ rc, forest }) = s;
         if (not memberOf(x, s)) {
@@ -85,7 +85,7 @@ mod MutDisjointSets {
     def findSet(x: t, s: MutDisjointSets[t, r]): Option[Node[t, r]] \ r with Order[t] = {
         def findRoot(y) = {
             let Node.Node({ parent | _ }) = y;
-            match Ref.get_(parent) {
+            match Ref.get(parent) {
                 case Some(p) => {
                     let root = findRoot(p);
                     Ref.put(Some(root), parent);
@@ -95,7 +95,7 @@ mod MutDisjointSets {
             }
         };
         let MutDisjointSets({ forest | _ }) = s;
-        MutMap.get_(x, forest)
+        MutMap.get(x, forest)
         |> Option.map(findRoot)
     }
 
@@ -116,8 +116,8 @@ mod MutDisjointSets {
             if (not equal(x1, y1)) {
                 let Node.Node({ parent = xParent, rank = xr | _ }) = x1;
                 let Node.Node({ parent = yParent, rank = yr | _ }) = y1;
-                let xRank = Ref.get_(xr);
-                let yRank = Ref.get_(yr);
+                let xRank = Ref.get(xr);
+                let yRank = Ref.get(yr);
                 if (xRank > yRank) {
                     Ref.put(Some(x1), yParent)
                 } else {

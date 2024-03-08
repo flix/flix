@@ -37,7 +37,7 @@ mod MutList {
     /// Returns a string representation of the given MutList `l`.
     ///
     pub def toString(l: MutList[a, r]): String \ r with ToString[a] = region rc2 {
-        let sb = StringBuilder.new_(rc2);
+        let sb = StringBuilder.new(rc2);
         StringBuilder.appendString!("MutList#{", sb);
         forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -52,8 +52,8 @@ mod MutList {
     ///
     /// Returns a new empty mutable list with a default capacity.
     ///
-    pub def new_(rc: Region[r]): MutList[a, r] \ r =
-        MutList(rc, ref Array.new_(rc, minCapacity()) @ rc, ref 0 @ rc)
+    pub def new(rc: Region[r]): MutList[a, r] \ r =
+        MutList(rc, ref Array.new(rc, minCapacity()) @ rc, ref 0 @ rc)
 
     ///
     /// Returns a mutable list of all integers between `b` (inclusive) and `e` (exclusive).
@@ -161,7 +161,7 @@ mod MutList {
             if (i >= l)
                 false
             else
-                if (f(Array.get_(i, a))) true else loop(i + 1)
+                if (f(Array.get(i, a))) true else loop(i + 1)
         };
         loop(0)
 
@@ -178,7 +178,7 @@ mod MutList {
             if (i >= l)
                 true
             else
-                if (f(Array.get_(i, a))) loop(i + 1) else false
+                if (f(Array.get(i, a))) loop(i + 1) else false
         };
         loop(0)
 
@@ -202,7 +202,7 @@ mod MutList {
     pub def last(v: MutList[a, r]): Option[a] \ r =
         let MutList(_, a, l) = v;
         let len = deref l;
-        if (len > 0) Some(Array.get_(len - 1, deref a)) else None
+        if (len > 0) Some(Array.get(len - 1, deref a)) else None
 
     ///
     /// Alias for `IndexOfLeft`
@@ -222,7 +222,7 @@ mod MutList {
             if (i >= l)
                 None
             else
-                if (x == Array.get_(i, a)) Some(i) else loop(i + 1)
+                if (x == Array.get(i, a)) Some(i) else loop(i + 1)
         };
         loop(0)
 
@@ -238,7 +238,7 @@ mod MutList {
             if (i < 0)
                 None
             else
-                if (x == Array.get_(i, a)) Some(i) else loop(i - 1)
+                if (x == Array.get(i, a)) Some(i) else loop(i - 1)
         };
         loop(l - 1)
 
@@ -262,7 +262,7 @@ mod MutList {
             if (i >= l)
                 None
             else
-                if (f(Array.get_(i, a))) Some(Array.get_(i, a)) else loop(i + 1)
+                if (f(Array.get(i, a))) Some(Array.get(i, a)) else loop(i + 1)
 
         };
         loop(0)
@@ -281,7 +281,7 @@ mod MutList {
             if (i < 0)
                 None
             else
-                if (f(Array.get_(i, a))) Some(Array.get_(i, a)) else loop(i - 1)
+                if (f(Array.get(i, a))) Some(Array.get(i, a)) else loop(i - 1)
         };
         loop(l - 1)
 
@@ -304,7 +304,7 @@ mod MutList {
             if (i >= n)
                 ()
             else {
-                let s1 = f(acc, Array.get_(i - 1, a));
+                let s1 = f(acc, Array.get(i - 1, a));
                 Array.put(s1, i, b);
                 loop(i + 1, s1)
             }
@@ -325,7 +325,7 @@ mod MutList {
             if (i < 0)
                 ()
             else {
-                let s1 = f(Array.get_(i, a), acc);
+                let s1 = f(Array.get(i, a), acc);
                 Array.put(s1, i, b);
                 loop(i - 1, s1)
             }
@@ -340,18 +340,18 @@ mod MutList {
     ///
     pub def map(rc1: Region[r1], f: a -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, r, r1 } =
         if (isEmpty(v))
-            MutList.new_(rc1)
+            MutList.new(rc1)
         else {
             let MutList(_, ra, rl) = v;
             let a = deref ra;
             let l = deref rl;
-            let x = f(Array.get_(0, a));
+            let x = f(Array.get(0, a));
             let b = Array.repeat(rc1, Array.length(a), x);
             def loop(i) = {
                 if (i >= l)
                     ()
                 else {
-                    Array.put(f(Array.get_(i, a)), i, b);
+                    Array.put(f(Array.get(i, a)), i, b);
                     loop(i + 1)
                 }
             };
@@ -360,22 +360,47 @@ mod MutList {
         }
 
     ///
+    /// Concatenates all the contained MutLists.
+    ///
+    pub def flatten(rc1: Region[r1], v: MutList[MutList[a, r], r]): MutList[a, r1] \ {r, r1}=
+        let rdestIndex = ref 0 @ rc1;
+        let size = MutList.sumWith(MutList.length, v);
+        let destArray = Array.new(rc1, Int32.max(size, minCapacity()));
+        v |> MutList.forEach(bs -> {
+            let MutList(_, rb, rbl) = bs;
+            let bl = deref rbl;
+            let destIndex = deref rdestIndex;
+            Array.patch!(destIndex, bl, deref rb, destArray);
+            rdestIndex := destIndex + bl
+         });
+         MutList(rc1, ref destArray @ rc1, ref size @ rc1)
+
+
+    ///
+    /// Apply `f` to every element in `v` and concatenate the results.
+    ///
+    /// The result is a new mutable list.
+    ///
+    pub def flatMap(rc1: Region[r1], f: a -> MutList[b, r1] \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, r, r1 } =
+        map(rc1, f, v) |> flatten(rc1)
+
+    ///
     /// Returns the result of applying `f` to every element in `v` along with that element's index.
     ///
     pub def mapWithIndex(rc1: Region[r1], f: (Int32, a) -> b \ ef, v: MutList[a, r]): MutList[b, r1] \ { ef, r, r1 } =
         if (isEmpty(v))
-            MutList.new_(rc1)
+            MutList.new(rc1)
         else {
             let MutList(_, ra, rl) = v;
             let a = deref ra;
             let l = deref rl;
-            let x = f(0, Array.get_(0, a));
+            let x = f(0, Array.get(0, a));
             let b = Array.repeat(rc1, Array.length(a), x);
             def loop(i) = {
                 if (i >= l)
                     ()
                 else {
-                    Array.put(f(i, Array.get_(i, a)), i, b);
+                    Array.put(f(i, Array.get(i, a)), i, b);
                     loop(i + 1)
                 }
             };
@@ -394,7 +419,7 @@ mod MutList {
             if (i >= l)
                 ()
             else {
-                Array.put(f(Array.get_(i, a)), i, a);
+                Array.put(f(Array.get(i, a)), i, a);
                 loop(i + 1)
             }
         };
@@ -411,7 +436,7 @@ mod MutList {
             if (i >= l)
                 ()
             else {
-                Array.put(f(i, Array.get_(i, a)), i, a);
+                Array.put(f(i, Array.get(i, a)), i, a);
                 loop(i + 1)
             }
         };
@@ -430,7 +455,7 @@ mod MutList {
             if (i >= l)
                 acc
             else {
-                let s1 = f(acc, Array.get_(i, a));
+                let s1 = f(acc, Array.get(i, a));
                 loop(i + 1, s1)
             }
         };
@@ -451,7 +476,7 @@ mod MutList {
             if (i < 0)
                 acc
             else {
-                let s1 = f(Array.get_(i, a), acc);
+                let s1 = f(Array.get(i, a), acc);
                 loop(i - 1, s1)
             }
         };
@@ -471,7 +496,7 @@ mod MutList {
             if (i >= l)
                 z
             else {
-                f(Array.get_(i, a), _ -> loop(i + 1))
+                f(Array.get(i, a), _ -> loop(i + 1))
             }
         };
         loop(0)
@@ -509,7 +534,7 @@ mod MutList {
     ///
     pub def clear!(v: MutList[a, r]): Unit \ r =
         let MutList(r, a, l) = v;
-        a := Array.new_(r, Array.length(deref a));
+        a := Array.new(r, Array.length(deref a));
         l := 0
 
     ///
@@ -531,7 +556,7 @@ mod MutList {
         let MutList(_, a, l) = v;
         let len = deref l;
         if (len > 0)
-            let last = Array.get_(len - 1, deref a);
+            let last = Array.get(len - 1, deref a);
             l := len - 1;
             Array.put(Reflect.default(), len - 1, deref a);
             compress!(v);
@@ -583,7 +608,7 @@ mod MutList {
         let n = l - 1;
         def loop(i1) = {
             if (i1 < n) {
-                Array.put(Array.get_(i1 + 1, a), i1, a);
+                Array.put(Array.get(i1 + 1, a), i1, a);
                 loop(i1 + 1)
             }
             else if (i1 == n) {
@@ -617,7 +642,7 @@ mod MutList {
     ///
     pub def retain!(f: a -> Bool, v: MutList[a, r]): Unit \ r =
         let MutList(r, a1, l1) = v;
-        let l = MutList.new_(r);
+        let l = MutList.new(r);
         forEach(e -> if (f(e)) push!(e, l) else (), v);
         let MutList(_, a2, l2) = l;
         a1 := deref a2;
@@ -626,8 +651,8 @@ mod MutList {
     ///
     /// Replaces all occurrences of the `from` with `to` in the given mutable list `v`.
     ///
-    pub def replace!(from_: {from_ = a}, to: {to = a}, v: MutList[a, r]): Unit \ r with Eq[a] =
-        transform!(e -> if (e == from_.from_) to.to else e, v)
+    pub def replace!(from: {from = a}, to: {to = a}, v: MutList[a, r]): Unit \ r with Eq[a] =
+        transform!(e -> if (e == from.from) to.to else e, v)
 
     ///
     /// Reverses the order of the elements in the given mutable list `v`.
@@ -641,8 +666,8 @@ mod MutList {
             if (i >= halflen)
                 ()
             else {
-                let x = Array.get_(i, a);
-                let y = Array.get_(j, a);
+                let x = Array.get(i, a);
+                let y = Array.get(j, a);
                 Array.put(y, i, a);
                 Array.put(x, j, a);
                 loop(i + 1, j - 1)
@@ -689,7 +714,7 @@ mod MutList {
             let minCap = minCapacity();
             let c = Order.max(l, minCap);
             l0 := l;
-            Array.updateSequence!(0, deref a, Array.new_(r, c))
+            Array.updateSequence!(0, deref a, Array.new(r, c))
         }
         else
             ()
@@ -722,7 +747,7 @@ mod MutList {
     /// Returns `xs` as a vector.
     ///
     pub def toVector(xs: MutList[a, r]): Vector[a] \ r = region rc {
-        let arr = Array.new_(rc, length(xs));
+        let arr = Array.new(rc, length(xs));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), xs);
         Array.toVector(arr)
     }
@@ -737,7 +762,7 @@ mod MutList {
     /// Returns `v` as a MutDeque.
     ///
     pub def toMutDeque(rc1: Region[r1], v: MutList[a, r2]): MutDeque[a, r1] \ { r2, r1 }  =
-        let d = MutDeque.new_(rc1);
+        let d = MutDeque.new(rc1);
         forEach(x -> MutDeque.pushBack(x, d), v);
         d
 
@@ -754,7 +779,7 @@ mod MutList {
         def loop(i) = {
             if (i >= l1)
                 true
-            else if (Array.get_(i, a1) == Array.get_(i, a2))
+            else if (Array.get(i, a1) == Array.get(i, a2))
                 loop(i + 1)
             else
                 false
@@ -773,7 +798,7 @@ mod MutList {
     /// of each element in `v` according to `f` with `sep` inserted between each element.
     ///
     pub def joinWith(f: a -> String \ ef, sep: String, v: MutList[a, r]): String \ { ef, r } = region rc1 {
-        let sb = StringBuilder.new_(rc1);
+        let sb = StringBuilder.new(rc1);
         let step = (i, x) ->
             if (i == 0)
                 StringBuilder.appendString!(f(x), sb)
@@ -797,7 +822,7 @@ mod MutList {
         let next = () -> {
             let i = deref ix;
             if (i < len1) {
-                let x = Array.get_(i, deref a);
+                let x = Array.get(i, deref a);
                 ix := i + 1;
                 Some(x)
             } else {
@@ -817,7 +842,7 @@ mod MutList {
             if (i >= l)
                 ()
             else {
-                f(Array.get_(i, a));
+                f(Array.get(i, a));
                 loop(i + 1)
             }
         };
@@ -834,7 +859,7 @@ mod MutList {
             if (i >= l)
                 ()
             else {
-                f(i, Array.get_(i, a));
+                f(i, Array.get(i, a));
                 loop(i + 1)
             }
         };

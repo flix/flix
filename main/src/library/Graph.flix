@@ -245,7 +245,7 @@ mod Graph {
     /// directed graph `g`.
     ///
     pub def distance(src: { src = t }, dst: { dst = t }, g: m[(t, Int32, t)]): Option[Int32] with Foldable[m], Order[t] =
-        distancesFrom(src.src, g) |> Map.get_(dst.dst)
+        distancesFrom(src.src, g) |> Map.get(dst.dst)
 
     ///
     /// Returns a copy of the directed graph `g` where all flipped edges are
@@ -329,7 +329,7 @@ mod Graph {
                                After(x, y), Index(y; i).
         };
         let res = query edges, nodes(), topSort select (x, i) from Index(x; i);
-        let ml = MutList.new_(rc);
+        let ml = MutList.new(rc);
         // Extract nodes in fixed order.
         res |>
             Vector.sortBy(match (x, i) -> (i, x)) |>
@@ -471,7 +471,7 @@ mod Graph {
     /// up to the caller.
     ///
     pub def toGraphviz(g: m[((t, t))]): String with Foldable[m], Order[t], ToString[t] = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
         Foldable.forEach(match (x, y) -> {
@@ -487,7 +487,7 @@ mod Graph {
     /// Other than that, DOT identifier validity is up to the caller.
     ///
     pub def toGraphvizWeighted(g: m[((t, Int32, t))]): String with Foldable[m], Order[t], ToString[t] = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
         Foldable.forEach(match (x, w, y) -> {
@@ -508,7 +508,7 @@ mod Graph {
     /// with backslash.
     ///
     def graphvizId(id: t): String with ToString[t] = {
-        "\"${String.replace(from_ = "\"", to = "\\\"", "${id}")}\""
+        "\"${String.replace(from = "\"", to = "\\\"", "${id}")}\""
     }
 
     ///

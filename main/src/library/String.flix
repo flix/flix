@@ -190,7 +190,7 @@ mod String {
     /// Assumes that `len > 0`.
     ///
     def initHelper(f: Int32 -> Char \ ef, len: Int32): String \ ef = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         def loop(i) = {
             if (i >= len)
                 StringBuilder.toString(sb)
@@ -207,7 +207,7 @@ mod String {
     /// Concatenate a list of strings into a single string.
     ///
     pub def flatten(xs: List[String]): String = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         List.forEach(x -> StringBuilder.appendString!(x, sb), xs);
         StringBuilder.toString(sb)
     }
@@ -217,7 +217,7 @@ mod String {
     /// each pair of strings.
     ///
     pub def intercalate(sep: String, xs: List[String]): String = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         let arr = List.toArray(rc, xs);
         StringBuilder.intercalate!(sep, arr, sb);
         StringBuilder.toString(sb)
@@ -230,7 +230,7 @@ mod String {
     pub def intercalateChar(sep: Char, xs: List[String]): String = match xs {
         case Nil     => ""
         case x :: rs => region rc {
-            let sb = StringBuilder.new_(rc);
+            let sb = StringBuilder.new(rc);
             StringBuilder.appendString!(x, sb);
             let appendStep = s -> { StringBuilder.append!(sep, sb); StringBuilder.appendString!(s, sb) };
             List.forEach(appendStep, rs);
@@ -638,7 +638,7 @@ mod String {
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
     pub def unfold(f: b -> Option[(Char, b)] \ ef, x: b): String \ ef = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -661,7 +661,7 @@ mod String {
     /// `next` should return `None` to signal the end of building the string.
     ///
     pub def unfoldWithIter(f: Unit -> Option[Char] \ ef): String \ ef = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
@@ -680,7 +680,7 @@ mod String {
     /// This is a version of `unfold` where `f` generates substrings rather than chars.
     ///
     pub def unfoldString(f: b -> Option[(String, b)] \ ef, x: b) : String \ ef = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -703,7 +703,7 @@ mod String {
     /// `next` should return `None` to signal the end of building the string.
     ///
     pub def unfoldStringWithIter(f: Unit -> Option[String] \ ef): String \ ef = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
@@ -810,7 +810,7 @@ mod String {
         let prefix = repeat(floor, Char.toString(c));
         let postfix = repeat(ceil, Char.toString(c));
 
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         StringBuilder.appendString!(prefix, sb);
         StringBuilder.appendString!(s, sb);
         StringBuilder.appendString!(postfix, sb);
@@ -820,16 +820,16 @@ mod String {
     ///
     /// Returns `s` with every match of the substring `from` replaced by the string `to`.
     ///
-    pub def replace(from_: {from_ = String}, to: {to = String}, s: String): String =
+    pub def replace(from: {from = String}, to: {to = String}, s: String): String =
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {};
-        replace(s, checked_cast(from_.from_), checked_cast(to.to))
+        replace(s, checked_cast(from.from), checked_cast(to.to))
 
     ///
     /// Returns `s` with every match of the character `target` replaced by the character `rep`.
     ///
-    pub def replaceChar(from_: {from_ = Char}, to: {to = Char}, s: String): String =
+    pub def replaceChar(from: {from = Char}, to: {to = Char}, s: String): String =
         import java.lang.String.replace(Char, Char): String \ {};
-        replace(s, from_.from_, to.to)
+        replace(s, from.from, to.to)
 
     ///
     /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
@@ -890,7 +890,7 @@ mod String {
     /// Helper function for `indent`.
     ///
     def indentHelper(n: Int32, s: String): String = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         let prefix = repeat(n, " ");
         let step = x -> {
             StringBuilder.appendString!(prefix, sb);
@@ -920,7 +920,7 @@ mod String {
     /// Helper function for `stripIndent`.
     ///
     def stripIndentHelper(n: Int32, s: String): String = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         let limit = Int32.min(n, length(s));
         def loop(s1, ix) = {
             if (ix >= limit)
@@ -955,7 +955,7 @@ mod String {
     /// ending the result string with the system dependent line separator.
     ///
     pub def unlines(a: List[String]): String = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         List.forEach(x -> StringBuilder.appendLine!(x, sb), a);
         StringBuilder.toString(sb)
     }
@@ -976,7 +976,7 @@ mod String {
     pub def unwords(l: List[String]): String = match l {
         case Nil     => ""
         case x :: xs => region rc {
-            let sb = StringBuilder.new_(rc);
+            let sb = StringBuilder.new(rc);
             StringBuilder.appendString!(x, sb);
             let f = s -> { StringBuilder.append!(' ', sb); StringBuilder.appendString!(s, sb) };
             List.forEach(f, xs);
@@ -1127,14 +1127,14 @@ mod String {
             Array.put(i + 1, 0, v1);
             forIndex(0, n - 1, j -> {
                 let substitutionCost = if (charAt(i, s) == charAt(j, t)) 0 else 1;
-                let a = Array.get_(j, v1) + 1;
-                let b = Array.get_(j + 1, v0) + 1;
-                let c = Array.get_(j, v0) + substitutionCost;
+                let a = Array.get(j, v1) + 1;
+                let b = Array.get(j + 1, v0) + 1;
+                let c = Array.get(j, v0) + substitutionCost;
                 Array.put(Int32.min(a, Int32.min(b, c)), j + 1, v1)
             });
             arraySwap(v0, v1)
         });
-        Array.get_(n, v0)
+        Array.get(n, v0)
     }
 
     ///
@@ -1149,7 +1149,7 @@ mod String {
     /// Helper function for `levenshteinDistance`.
     ///
     def arraySwap(a: Array[Int32, r1], b : Array[Int32, r2]): Unit \ { r2, r1 } =
-        forIndex(0, Array.length(a) - 1, {i ->  Array.put(Array.get_(i, b), i, a) })
+        forIndex(0, Array.length(a) - 1, {i ->  Array.put(Array.get(i, b), i, a) })
 
     ///
     /// Returns an array where the element at index `i` is `(x, y)` where
@@ -1380,7 +1380,7 @@ mod String {
     /// Unwrap the string, replacing every newline with a space
     ///
     pub def unwrap(s: String): String =
-        Regex.replace({from_ = regex"[\r\n]+"}, {to = " "}, s)
+        Regex.replace({from = regex"[\r\n]+"}, {to = " "}, s)
 
     ///
     /// Returns an iterator over `s`.

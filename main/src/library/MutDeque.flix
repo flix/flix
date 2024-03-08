@@ -62,7 +62,7 @@ mod MutDeque {
     /// Returns a string representation of the given MutDeque `d`.
     ///
     pub def toString(d: MutDeque[a, r]): String \ r with ToString[a] = region rc2 {
-        let sb = StringBuilder.new_(rc2);
+        let sb = StringBuilder.new(rc2);
         StringBuilder.appendString!("MutDeque#{", sb);
         forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -77,8 +77,8 @@ mod MutDeque {
     ///
     /// Returns an empty MutDeque.
     ///
-    pub def new_(rc: Region[r]): MutDeque[a, r] \ r =
-        MutDeque(rc, ref Array.new_(rc, minCapacity()) @ rc, ref 0 @ rc, ref 0 @ rc)
+    pub def new(rc: Region[r]): MutDeque[a, r] \ r =
+        MutDeque(rc, ref Array.new(rc, minCapacity()) @ rc, ref 0 @ rc, ref 0 @ rc)
 
     ///
     /// Returns the number of elements in `d`.
@@ -130,7 +130,7 @@ mod MutDeque {
             if (i == e)
                 acc
             else
-                loop(Int32.bitwiseAnd(i + 1, c), e, f(acc, Array.get_(i, ar)));
+                loop(Int32.bitwiseAnd(i + 1, c), e, f(acc, Array.get(i, ar)));
         loop(front, back, s)
 
     ///
@@ -149,7 +149,7 @@ mod MutDeque {
                 acc
             else {
                 let j = Int32.bitwiseAnd(i - 1, c);
-                loop(j, e, f(Array.get_(j, ar), acc))
+                loop(j, e, f(Array.get(j, ar), acc))
             };
         loop(back, front, s)
 
@@ -169,7 +169,7 @@ mod MutDeque {
             if (i == e)
                 s
             else {
-                f(Array.get_(i, ar), _ -> loop(Int32.bitwiseAnd(i + 1, c), e))
+                f(Array.get(i, ar), _ -> loop(Int32.bitwiseAnd(i + 1, c), e))
             };
         loop(front, back)
 
@@ -190,7 +190,7 @@ mod MutDeque {
             let MutDeque(_, a, f, _) = d;
             let a1 = deref a;
             let f1 = deref f;
-            let x = Array.get_(f1, a1);
+            let x = Array.get(f1, a1);
             f := (f1 + 1) `Int32.modulo` capacity(d);
             compress!(d);
             Some(x)
@@ -207,7 +207,7 @@ mod MutDeque {
             let MutDeque(_, a, _, b) = d;
             let a1 = deref a;
             let b1 = (deref b - 1) `Int32.modulo` capacity(d);
-            let x = Array.get_(b1, a1);
+            let x = Array.get(b1, a1);
             b := b1;
             compress!(d);
             Some(x)
@@ -245,7 +245,7 @@ mod MutDeque {
         if (f1 == b1)
             None
         else
-            Some(Array.get_(f1, deref a))
+            Some(Array.get(f1, deref a))
 
     ///
     /// Optionally returns the back element. Does *not* remove it.
@@ -259,7 +259,7 @@ mod MutDeque {
         else
             let c = capacity(d) - 1;
             let i = Int32.bitwiseAnd(b1 - 1, c);
-            Some(Array.get_(i, deref a))
+            Some(Array.get(i, deref a))
 
     ///
     /// Doubles the capacity of `d` if the load factor is greater than or equal to `maxLoadFactor`.
@@ -279,7 +279,7 @@ mod MutDeque {
     def grow!(d: MutDeque[a, r]): Unit \ r =
         let MutDeque(r, a, f, b) = d;
         let c = capacity(d);
-        let arr = Array.new_(r, Int32.leftShift(c, 1));    // Allocate new array `arr` with double the capacity of `a`.
+        let arr = Array.new(r, Int32.leftShift(c, 1));    // Allocate new array `arr` with double the capacity of `a`.
         copyElements!(r, deref f, deref b, deref a, arr); // Copy elements from old array `a` to new array `arr`.
         a := arr;                                         // Update references.
         b := computeSize(c, deref f, deref b);
@@ -305,7 +305,7 @@ mod MutDeque {
         let mc = minCapacity();
         let c = capacity(d);
         if (c > mc) {                                         // Prevent the backing array from shrinking below `minCapacity`.
-            let arr = Array.new_(r, Int32.rightShift(c, 1));   // Allocate new array `arr` with half the capacity of `a`.
+            let arr = Array.new(r, Int32.rightShift(c, 1));   // Allocate new array `arr` with half the capacity of `a`.
             copyElements!(r, deref f, deref b, deref a, arr); // Copy elements from old array `a` to new array `arr`.
             a := arr;                                         // Update references.
             b := computeSize(c, deref f, deref b);
@@ -349,8 +349,8 @@ mod MutDeque {
         if (aSize == bSize) {
             let MutDeque(_, aArray, aFront, aBack) = d1;
             let MutDeque(_, bArray, bFront, bBack) = d2;
-            let a1 = Array.new_(rc3, aSize);
-            let b1 = Array.new_(rc3, bSize);
+            let a1 = Array.new(rc3, aSize);
+            let b1 = Array.new(rc3, bSize);
             copyElements!(rc3, deref aFront, deref aBack, deref aArray, a1);
             copyElements!(rc3, deref bFront, deref bBack, deref bArray, b1);
             Array.sameElements(a1, b1)
@@ -383,7 +383,7 @@ mod MutDeque {
     /// Returns `d` as a vector.
     ///
     pub def toVector(d: MutDeque[a, r]): Vector[a] \ r = region rc {
-        let arr = Array.new_(rc, size(d));
+        let arr = Array.new(rc, size(d));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), d);
         Array.toVector(arr)
     }
@@ -402,7 +402,7 @@ mod MutDeque {
     pub def joinWith(f: a -> String \ ef, sep: String, d: MutDeque[a, r]): String \ { ef, r } = region rc1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new_(rc1);
+        let sb = StringBuilder.new(rc1);
         forEach(x -> { append!(f(x), sb); append!(sep, sb) }, d);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
@@ -417,7 +417,7 @@ mod MutDeque {
         let i = ref (deref f) @ rc;
         let next = () -> {
             if (deref i < deref b) {
-                let x = Array.get_(deref i, deref a);
+                let x = Array.get(deref i, deref a);
                 i := deref i + Int32.bitwiseAnd(1, capacity(d) - 1);
                 Some(x)
             } else {

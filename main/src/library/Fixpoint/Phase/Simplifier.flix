@@ -119,14 +119,14 @@ mod Fixpoint.Phase.Simplifier {
                 newBody <- simplifyOp(stratum, body);
                 res <- f(newBody)
             ) yield res
-        case RelOp.Query(rowVar, ramSym, query_, body) =>
+        case RelOp.Query(rowVar, ramSym, query, body) =>
             let f = nb -> match ramSym {
                 case RamSym.Delta(_) =>
                     if (Set.memberOf(ramSym, stratum))
-                        Some(RelOp.Query(rowVar, ramSym, query_, nb))
+                        Some(RelOp.Query(rowVar, ramSym, query, nb))
                     else
                         None
-                case _ => Some(RelOp.Query(rowVar, ramSym, query_, nb))
+                case _ => Some(RelOp.Query(rowVar, ramSym, query, nb))
             };
             forM (
                 newBody <- simplifyOp(stratum, body);

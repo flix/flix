@@ -55,7 +55,7 @@ mod DelayMap {
     ///
     @Experimental
     pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         let _ = parallelForce(m);
         StringBuilder.appendString!("DelayMap#{", sb);
         forEachWithIndex((i, k, v) -> {
@@ -130,9 +130,9 @@ mod DelayMap {
     /// Otherwise returns `None`.
     ///
     @Experimental
-    pub def get_(k: k, m: DelayMap[k, v]): Option[v] with Order[k] =
+    pub def get(k: k, m: DelayMap[k, v]): Option[v] with Order[k] =
         let DMap(t) = m;
-        match RedBlackTree.get_(k, t) {
+        match RedBlackTree.get(k, t) {
             case None    => None
             case Some(x) => Some(force x)
         }
@@ -144,7 +144,7 @@ mod DelayMap {
     ///
     @Experimental
     pub def getWithDefault(k: k, d: v, m: DelayMap[k, v]): v with Order[k] =
-        Option.getWithDefault(d, get_(k, m))
+        Option.getWithDefault(d, get(k, m))
 
     ///
     /// Returns the number of mappings `k => v` in `m` that satisfy the predicate `f`.

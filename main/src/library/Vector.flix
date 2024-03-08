@@ -115,7 +115,7 @@ mod Vector {
         let len = Int32.min(length(a), length(b));
         def loop(i) = {
             if (i < len) {
-                let cmp = get_(i, a) <=> get_(i, b);
+                let cmp = get(i, a) <=> get(i, b);
                 if (cmp == Comparison.EqualTo)
                     loop(i + 1)
                 else
@@ -134,7 +134,7 @@ mod Vector {
     /// Returns a string representation of the given vector `v`.
     ///
     pub def toString(v: Vector[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         let first = ref true @ rc;
 
         StringBuilder.appendString!("Vector#{", sb);
@@ -162,7 +162,7 @@ mod Vector {
             else if (wi < 0)
                 loop(ri+1, wi+1)
             else {
-                let x = get_(ri, sub);
+                let x = get(ri, sub);
                 Array.put(x, wi, arr);
                 loop(ri+1, wi+1)
             }
@@ -186,14 +186,14 @@ mod Vector {
     ///
     /// Retrieves the value at position `i` in the vector `v`.
     ///
-    pub def get_(i: Int32, v: Vector[a]): a = $VECTOR_GET$(v, i)
+    pub def get(i: Int32, v: Vector[a]): a = $VECTOR_GET$(v, i)
 
     ///
     /// Optionally returns the element at position `i` in the vector `v`.
     ///
     pub def nth(i: Int32, v: Vector[a]): Option[a] =
         if (0 <= i and i < length(v))
-            Some(get_(i, v))
+            Some(get(i, v))
         else
             None
 
@@ -219,7 +219,7 @@ mod Vector {
     /// Returns the vector `v` as an array.
     ///
     pub def toArray(rc: Region[r], v: Vector[a]): Array[a, r] \ r =
-        let arr = Array.new_(rc, length(v));
+        let arr = Array.new(rc, length(v));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), v);
         arr
 
@@ -270,7 +270,7 @@ mod Vector {
     /// Returns `v` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], v: Vector[a]): MutDeque[a, r] \ r   =
-        let d = MutDeque.new_(rc);
+        let d = MutDeque.new(rc);
         forEach(x -> MutDeque.pushBack(x, d), v);
         d
 
@@ -294,7 +294,7 @@ mod Vector {
     /// Return a new vector, appending the elements `v2` after elements of `v1`.
     ///
     pub def append(v1: Vector[a], v2: Vector[a]): Vector[a] = region rc {
-        let arr = Array.new_(rc, length(v1) + length(v2));
+        let arr = Array.new(rc, length(v1) + length(v2));
         arrayUpdateSeqV!(0, v1, arr);
         arrayUpdateSeqV!(length(v1), v2, arr);
         Array.toVector(arr)
@@ -353,7 +353,7 @@ mod Vector {
         def loop(i) = {
             if (i >= length(v))
                 -1
-            else if (get_(i, v) == a)
+            else if (get(i, v) == a)
                 i
             else
                 loop(i + 1)
@@ -369,7 +369,7 @@ mod Vector {
         def loop(i) = {
             if (i < 0)
                 -1
-            else if (get_(i, v) == a)
+            else if (get(i, v) == a)
                 i
             else
                 loop(i - 1)
@@ -395,7 +395,7 @@ mod Vector {
     pub def findLeft(f: a -> Bool \ ef, v: Vector[a]): Option[a] \ ef =
         match findIndexOfLeft(f, v) {
             case None    => None
-            case Some(i) => Some(get_(i, v))
+            case Some(i) => Some(get(i, v))
         }
 
     ///
@@ -404,7 +404,7 @@ mod Vector {
     pub def findRight(f: a -> Bool \ ef, v: Vector[a]): Option[a] \ ef =
         match findIndexOfRight(x -> f(x), v) {
             case None    => None
-            case Some(i) => Some(get_(i, v))
+            case Some(i) => Some(get(i, v))
         }
 
     ///
@@ -436,7 +436,7 @@ mod Vector {
     /// That is, the result is of the form: `[s , f(s, x1), f(f(s, x1), x2),  ...]`.
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
-        let arr = Array.new_(rc, length(v) + 1);
+        let arr = Array.new(rc, length(v) + 1);
         let acc = ref s @ rc;
         Array.put(s, 0, arr);
         let step = (i, x) -> {
@@ -455,14 +455,14 @@ mod Vector {
     ///
     pub def scanRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
         let len = length(v);
-        let arr = Array.new_(rc, len + 1);
+        let arr = Array.new(rc, len + 1);
         let acc = ref s @ rc;
         Array.put(s, len, arr);
         def loop(i) = {
             if (i < 0)
                 ()
             else {
-                let s1 = f(get_(i, v), deref acc);
+                let s1 = f(get(i, v), deref acc);
                 acc := s1;
                 Array.put(s1, i, arr);
                 loop(i - 1)
@@ -478,7 +478,7 @@ mod Vector {
     /// The result is a new vector.
     ///
     pub def map(f: a -> b \ ef, v: Vector[a]): Vector[b] \ ef =
-        init(i -> f(get_(i, v)), length(v))
+        init(i -> f(get(i, v)), length(v))
 
     ///
     /// Returns the result of applying `f` to every element in `v` along with that element's index.
@@ -486,7 +486,7 @@ mod Vector {
     /// That is, the result is of the form: `[ f(a[0], 0), f(a[1], 1), ... ]`.
     ///
     pub def mapWithIndex(f: (Int32, a) -> b \ ef, v: Vector[a]): Vector[b] \ ef =
-        init(i -> f(i, get_(i, v)), length(v))
+        init(i -> f(i, get(i, v)), length(v))
 
     ///
     /// Returns the result of running all the actions in the list `v` going from left
@@ -494,12 +494,12 @@ mod Vector {
     ///
     pub def sequence(v: Vector[m[a]]): m[Vector[a]] with Applicative[m] = region rc {
         let len = length(v);
-        let arr = Array.new_(rc, len);
+        let arr = Array.new(rc, len);
         def loop(i, k) = {
             if (i == len)
                 k(Applicative.point(arr))
             else {
-                let mx = get_(i, v);
+                let mx = get(i, v);
                 loop(i+1, karr -> k(putA!(mx, i, karr)))
             }
         };
@@ -512,12 +512,12 @@ mod Vector {
     ///
     pub def traverse(f: a -> m[b] \ ef, v: Vector[a]): m[Vector[b]] \ ef with Applicative[m] = region rc {
         let len = length(v);
-        let arr = Array.new_(rc, len);
+        let arr = Array.new(rc, len);
         def loop(i, k) = {
             if (i == len)
                 k(Applicative.point(arr))
             else {
-                let x = get_(i, v);
+                let x = get(i, v);
                 loop(i+1, karr -> k(putA!(f(x), i, karr)))
             }
         };
@@ -537,13 +537,13 @@ mod Vector {
     ///
     pub def zipWithA(f: (a, b) -> m[c] \ ef, v1: Vector[a], v2: Vector[b]): m[Vector[c]] \ ef with Applicative[m] = region rc {
         let len = Int32.min(length(v1), length(v2));
-        let arr = Array.new_(rc, len);
+        let arr = Array.new(rc, len);
         def loop(i, k) = {
             if (i == len)
                 k(Applicative.point(arr))
             else {
-                let x = get_(i, v1);
-                let y = get_(i, v2);
+                let x = get(i, v1);
+                let y = get(i, v2);
                 loop(i+1, karr -> k(putA!(f(x, y), i, karr)))
             }
         };
@@ -562,14 +562,14 @@ mod Vector {
     /// Returns the result of applying `f` to every element in `v` and concatenating the results.
     ///
     pub def flatMap(f: a -> Vector[b] \ ef, v: Vector[a]): Vector[b] \ ef =
-        init(i -> f(get_(i, v)), length(v)) |> flatten
+        init(i -> f(get(i, v)), length(v)) |> flatten
 
     ///
     /// Returns the reverse of `v`.
     ///
     pub def reverse(v: Vector[a]): Vector[a] =
         let len = length(v);
-        init(ix -> get_(len - (ix+1), v), len)
+        init(ix -> get(len - (ix+1), v), len)
 
     ///
     /// Rotate the contents of vector `v` by `n` steps to the left.
@@ -593,7 +593,7 @@ mod Vector {
     ///
     def rotateLeftHelper(n: Int32, v: Vector[a]): Vector[a] =
         let len = length(v);
-        let f = ix -> {let readIx = Int32.modulo(ix + n, len); get_(readIx, v)};
+        let f = ix -> {let readIx = Int32.modulo(ix + n, len); get(readIx, v)};
         init(f, len)
 
 
@@ -618,7 +618,7 @@ mod Vector {
     ///
     def rotateRightHelper(n: Int32, v: Vector[a]): Vector[a] =
         let len = length(v);
-        let f = ix -> {let readIx = Int32.modulo(ix - n, len); get_(readIx, v)};
+        let f = ix -> {let readIx = Int32.modulo(ix - n, len); get(readIx, v)};
         init(f, len)
 
     ///
@@ -627,7 +627,7 @@ mod Vector {
     /// Returns a copy of `v` if `i < 0` or `i > length(xs)-1`.
     ///
     pub def update(i: Int32, x: a, v: Vector[a]): Vector[a] =
-        let f = ix -> if (ix == i) x else get_(ix, v);
+        let f = ix -> if (ix == i) x else get(ix, v);
         init(f, length(v))
 
     ///
@@ -650,9 +650,9 @@ mod Vector {
         let len1 = length(v);
         let len2 = len1 + len1 - 1;
         let f = ix -> match ix {
-            case 0                         => get_(0, v)
+            case 0                         => get(0, v)
             case n if Int32.remainder(n, 2) != 0 => sep
-            case n                         => {let i = n / 2; get_(i, v)}
+            case n                         => {let i = n / 2; get(i, v)}
         };
         init(f, len2)
 
@@ -666,7 +666,7 @@ mod Vector {
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(vs) + (sepCount * sepLength);
         let pos = ref 0 @ rc;
-        let arr = Array.new_(rc, len);
+        let arr = Array.new(rc, len);
         let f = (i, v) -> {
             if (i == 0) {
                 arrayUpdateSeqV!(0, v, arr);
@@ -701,12 +701,12 @@ mod Vector {
         if (ilen == 0)
             empty()
         else {
-            let jlen = length(get_(0, vs));
+            let jlen = length(get(0, vs));
             if (jlen == 0 or nonUniform(jlen, vs))
                 // Non-transposing nested copy
-                init(i -> slice(start = 0, end = length(get_(i, vs)), get_(i, vs)), ilen)
+                init(i -> slice(start = 0, end = length(get(i, vs)), get(i, vs)), ilen)
             else
-                init(i -> init(j -> get_(i, get_(j, vs)), ilen), jlen)
+                init(i -> init(j -> get(i, get(j, vs)), ilen), jlen)
         }
 
     ///
@@ -718,8 +718,8 @@ mod Vector {
     ///
     /// Returns a copy of `v` with every occurrence of `from` replaced by `to`.
     ///
-    pub def replace(from_: {from_ = a}, to: {to = a}, v: Vector[a]): Vector[a] with Eq[a] =
-        map(e -> if (e == from_.from_) to.to else e, v)
+    pub def replace(from: {from = a}, to: {to = a}, v: Vector[a]): Vector[a] with Eq[a] =
+        map(e -> if (e == from.from) to.to else e, v)
 
     ///
     /// Returns `true` if and only if `a` is a prefix of `b`.
@@ -732,7 +732,7 @@ mod Vector {
             def loop(i) = {
                 if (i >= len1)
                     true
-                else if (get_(i, a) != get_(i, b))
+                else if (get(i, a) != get(i, b))
                     false
                 else
                     loop(i + 1)
@@ -760,7 +760,7 @@ mod Vector {
     def isInfixOfSearch(a: Vector[a], b: Vector[a], len1: Int32, len2: Int32, j: Int32): Bool with Eq[a] =
         if (j >= len2)
             false
-        else if (get_(0, a) == get_(j, b))
+        else if (get(0, a) == get(j, b))
             isInfixOfCheck(a, b, len1, len2, 1, j+1)
         else
             isInfixOfSearch(a, b, len1, len2, j+1)
@@ -775,7 +775,7 @@ mod Vector {
         else if (j >= len2)
             // `b` exhausted, `a` still trying to match, so failure
             false
-        else if(get_(i, a) == get_(j, b))
+        else if(get(i, a) == get(j, b))
             isInfixOfCheck(a, b, len1, len2, i+1, j+1)
         else
             isInfixOfSearch(a, b, len1, len2, j+1)
@@ -792,7 +792,7 @@ mod Vector {
             def loop(i, j) = {
                 if (i < 0)
                     true
-                else if (get_(i, a) != get_(j, b))
+                else if (get(i, a) != get(j, b))
                     false
                 else
                     loop(i - 1, j - 1)
@@ -815,7 +815,7 @@ mod Vector {
             if (i >= len)
                 acc
             else
-                loop(i + 1, f(acc, get_(i, v)))
+                loop(i + 1, f(acc, get(i, v)))
         };
         loop(0, s)
 
@@ -829,7 +829,7 @@ mod Vector {
             if (i < 0)
                 acc
             else
-                loop(i - 1, f(get_(i, v), acc))
+                loop(i - 1, f(get(i, v), acc))
         };
         loop(length(v) - 1, s)
 
@@ -844,7 +844,7 @@ mod Vector {
             if (i == length(v))
                 z
             else
-                f(get_(i, v), _ -> loop(i + 1))
+                f(get(i, v), _ -> loop(i + 1))
         };
         loop(0)
 
@@ -865,12 +865,12 @@ mod Vector {
             if (i >= len)
                 acc
             else
-                loop(i + 1, f(acc, get_(i, v)))
+                loop(i + 1, f(acc, get(i, v)))
         };
         if (len == 0)
             None
         else
-            Some(loop(1, get_(0, v)))
+            Some(loop(1, get(0, v)))
 
     ///
     /// Applies `f` to all elements in `v` going from right to left until a single value `v` is obtained.  Returns `Some(v)`.
@@ -883,12 +883,12 @@ mod Vector {
             if (i < 0)
                 acc
             else
-                loop(i - 1, f(get_(i, v), acc))
+                loop(i - 1, f(get(i, v), acc))
         };
         if (len == 0)
             None
         else
-            Some(loop(len - 2, get_(len - 1, v)))
+            Some(loop(len - 2, get(len - 1, v)))
 
     ///
     /// Returns the number of elements in `v` that satisfy the predicate `f`.
@@ -914,7 +914,7 @@ mod Vector {
     pub def flatten(vs: Vector[Vector[a]]): Vector[a] = region rc {
         let len = sumLengths(vs);
         let pos = ref 0 @ rc;
-        let arr = Array.new_(rc, len);
+        let arr = Array.new(rc, len);
         forEach(v -> {
             let i = deref pos;
             pos := i + length(v);
@@ -933,7 +933,7 @@ mod Vector {
         def loop(i) = {
             if (i >= len)
                 false
-            else if (f(get_(i, v)))
+            else if (f(get(i, v)))
                 true
             else
                 loop(i + 1)
@@ -950,7 +950,7 @@ mod Vector {
         def loop(i) = {
             if (i >= len)
                 true
-            else if (f(get_(i, v)))
+            else if (f(get(i, v)))
                 loop(i + 1)
             else
                 false
@@ -961,7 +961,7 @@ mod Vector {
     /// Returns an array of every element in `arr` that satisfies the predicate `f`.
     ///
     pub def filter(f: a -> Bool \ ef, v: Vector[a]): Vector[a] \ ef = region rc {
-        let m = MutList.new_(rc);
+        let m = MutList.new(rc);
         forEach(a -> if (f(a)) MutList.push!(a, m) else (), v);
         MutList.toVector(m)
     }
@@ -1177,7 +1177,7 @@ mod Vector {
     ///
     pub def zip(a: Vector[a], b: Vector[b]): Vector[(a, b)] =
         let len = Int32.min(length(a), length(b));
-        init(i -> (get_(i, a), get_(i, b)), len)
+        init(i -> (get(i, a), get(i, b)), len)
 
     ///
     /// Returns a vector where the element at index `i` is `f(x, y)` where
@@ -1187,7 +1187,7 @@ mod Vector {
     ///
     pub def zipWith(f: (a, b) -> c \ ef, a: Vector[a], b: Vector[b]): Vector[c] \ ef =
         let len = Int32.min(length(a), length(b));
-        init(i -> f(get_(i, a), get_(i, b)), len)
+        init(i -> f(get(i, a), get(i, b)), len)
 
 
     ///
@@ -1196,8 +1196,8 @@ mod Vector {
     ///
     pub def unzip(v: Vector[(a, b)]): (Vector[a], Vector[b]) = region rc {
         let len = length(v);
-        let arr = Array.new_(rc, len);
-        let brr = Array.new_(rc, len);
+        let arr = Array.new(rc, len);
+        let brr = Array.new(rc, len);
         forEachWithIndex((i, x) -> {
             let (l, r) = x;
             Array.put(l, i, arr);
@@ -1223,7 +1223,7 @@ mod Vector {
             if (i >= lena or i >= lenb)
                 acc
             else
-                loop(i + 1, f(acc, get_(i, a), get_(i, b)))
+                loop(i + 1, f(acc, get(i, a), get(i, b)))
         };
         loop(0, c)
 
@@ -1236,7 +1236,7 @@ mod Vector {
             if (i < 0 or j < 0)
                 acc
             else
-                loop(i - 1, j - 1, f(get_(i, a), get_(j, b), acc))
+                loop(i - 1, j - 1, f(get(i, a), get(j, b), acc))
         };
         let starta = length(a) - 1;
         let startb = length(b) - 1;
@@ -1261,7 +1261,7 @@ mod Vector {
             if (i >= len)
                 None
             else
-                let x = f(get_(i, v));
+                let x = f(get(i, v));
                 match x {
                     case Some(a) => Some(a)
                     case None    => loop(i + 1)
@@ -1307,7 +1307,7 @@ mod Vector {
             def loop(i) = {
                 if (i >= len)
                     -1
-                else if (f(get_(i, v)))
+                else if (f(get(i, v)))
                     i
                 else
                     loop(i + 1)
@@ -1325,7 +1325,7 @@ mod Vector {
         def loop(i) = {
             if (i < 0)
                 -1
-            else if (f(get_(i, v)))
+            else if (f(get(i, v)))
                 i
             else
                 loop(i - 1)
@@ -1337,7 +1337,7 @@ mod Vector {
     /// Returns the positions of the all the elements in `v` satisfying `f`.
     ///
     pub def findIndices(f: a -> Bool \ ef, v: Vector[a]): Vector[Int32] \ ef = region rc {
-        let l = MutList.new_(rc);
+        let l = MutList.new(rc);
         forEachWithIndex((i, x) -> if (f(x)) MutList.push!(i, l) else (), v);
         MutList.toVector(l)
     }
@@ -1346,7 +1346,7 @@ mod Vector {
     /// Build an vector of length `len` by applying `f` to the successive indices.
     ///
     pub def init(f: Int32 -> a \ ef, len: Int32): Vector[a] \ ef = region rc {
-        let arr = if (len > 0) Array.new_(rc, len) else Array#{} @ rc;
+        let arr = if (len > 0) Array.new(rc, len) else Array#{} @ rc;
         def loop(i) = {
             if (i < len) {
                 Array.put(f(i), i, arr);
@@ -1366,7 +1366,7 @@ mod Vector {
         def loop(i) = {
             if (i >= alen)
                 true
-            else if (get_(i, a) != get_(i, b))
+            else if (get(i, a) != get(i, b))
                 false
             else
                 loop(i + 1)
@@ -1380,7 +1380,7 @@ mod Vector {
     /// Returns an iterator over `v`
     ///
     pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ r =
-        Iterator.range(rc, 0, length(v)) |> Iterator.map(i -> get_(i, v))
+        Iterator.range(rc, 0, length(v)) |> Iterator.map(i -> get(i, v))
 
     ///
     /// Returns an iterator over `v` zipped with the indices of the elements.
@@ -1400,7 +1400,7 @@ mod Vector {
             if (i >= len)
                 ()
             else {
-                f(get_(i, v));
+                f(get(i, v));
                 loop(i + 1)
             }
         };
@@ -1415,7 +1415,7 @@ mod Vector {
             if (i >= len)
                 ()
             else {
-                f(i, get_(i, v));
+                f(i, get(i, v));
                 loop(i + 1)
             }
         };
@@ -1427,7 +1427,7 @@ mod Vector {
     pub def updateSequence(i: Int32, sub: Vector[a], v: Vector[a]): Vector[a] =
         let end = i + length(sub);
         let len = length(v);
-        let f = ix -> if (ix >= i and ix < end) get_(ix - i, sub) else get_(ix, v);
+        let f = ix -> if (ix >= i and ix < end) get(ix - i, sub) else get(ix, v);
         init(f, len)
 
     ///
@@ -1444,7 +1444,7 @@ mod Vector {
     pub def joinWith(f: a -> String \ ef, sep: String, v: Vector[a]): String \ ef = region rc {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new_(rc);
+        let sb = StringBuilder.new(rc);
         forEach(x -> { append!(f(x), sb); append!(sep, sb) }, v);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
