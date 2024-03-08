@@ -53,52 +53,6 @@ object ConstraintResolution {
     }
   }
 
-  case class InfResult(constrs: List[TypingConstraint], tpe: Type, eff: Type, renv: RigidityEnv)
-
-  /**
-    * The result of constraint resolution.
-    *
-    * Consists of:
-    * - a substitution,
-    * - a list of leftover constraints, and
-    * - a Boolean flag indicating whether progress was made
-    */
-  case class ResolutionResult(subst: Substitution, constrs: List[TypingConstraint], progress: Boolean) {
-
-    /**
-      * Composes `this` equality result with `that` equality result.
-      *
-      * - Composes the substitution,
-      * - combines the leftover constraints, and
-      * - indicates progress if one of the two made progress.
-      */
-    def @@(that: ResolutionResult): ResolutionResult = {
-      val ResolutionResult(s1, cs1, p1) = this
-      val ResolutionResult(s2, cs2, p2) = that
-      ResolutionResult(s1 @@ s2, cs1 ++ cs2, p1 || p2)
-    }
-  }
-
-  object ResolutionResult {
-
-    /**
-      * Indicates that a constraint was eliminated.
-      */
-    val elimination: ResolutionResult = ResolutionResult(Substitution.empty, Nil, progress = true)
-
-    /**
-      * Indicates that a constraint was resolved to a substitution.
-      */
-    def newSubst(subst: Substitution): ResolutionResult = ResolutionResult(subst, Nil, progress = true)
-
-    /**
-      * Indicates that a constraint was resolved to a set of constraints.
-      *
-      * This may be the same list of constraints as was given to the solver.
-      * In this case, `progress` is `false`.
-      */
-    def constraints(constrs: List[TypingConstraint], progress: Boolean): ResolutionResult = ResolutionResult(Substitution.empty, constrs, progress)
-  }
 
   // TODO ASSOC-TYPES this is duplicated in TypeReconstruction
 
@@ -301,7 +255,17 @@ object ConstraintResolution {
       Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
   }
 
-  // Θ ⊩ τ ⤳ τ'
+  /**
+    * Simplifies the given type by reducing associated type applications.
+    *
+    * Θ ⊩ τ ⤳ τ'
+    *
+    * Applications that cannot be resolved are left as they are.
+    * These are applications to variables and applications to other unresolvable types.
+    *
+    * Applications that are illegal result in an Err.
+    * These are applications to types for which the eqEnv has no corresponding instance.
+    */
   def simplifyType(tpe: Type, renv0: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
     // A var is already simple.
     case t: Type.Var => Result.Ok((t, false))
@@ -461,7 +425,115 @@ object ConstraintResolution {
     tryReduce(sort(constrs))
   }
 
+  def sort(constrs: List[TypingConstraint]): List[TypingConstraint] =
+    constrs.sortBy(_.index)
+
+  private def reduceOne(constr0: TypingConstraint, renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
+    case TypingConstraint.Equality(tpe1, tpe2, prov) =>
+      val t1 = TypeMinimization.minimizeType(subst0(tpe1))
+      val t2 = TypeMinimization.minimizeType(subst0(tpe2))
+      simplifyEquality(t1, t2, prov, renv, eqEnv, constr0.loc).map {
+        case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
+      }
+    case TypingConstraint.Class(sym, tpe, loc) =>
+      simplifyClass(sym, subst0(tpe), cenv, eqEnv, renv, loc).map {
+        case (constrs, progress) => ResolutionResult(subst0, constrs, progress)
+      }
+    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested0) =>
+      // First reduce nested constraints
+      reduceAll(nested0, renv, cenv, eqEnv, subst0).map {
+        // Case 1: We have reduced everything below. Now reduce the purity constraint.
+        case ResolutionResult(subst1, newConstrs, progress) if newConstrs.isEmpty =>
+          val e1 = subst1(eff1)
+          // purify the inner type
+          val e2Raw = subst1(eff2)
+          val e2 = Substitution.singleton(sym, Type.Pure)(e2Raw)
+          val qvars = e2Raw.typeVars.map(_.sym).filter(_.level >= level)
+          val subst = qvars.foldLeft(subst1)(_.unbind(_))
+          val constr = TypingConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov)
+          ResolutionResult(subst, List(constr), progress = true)
+        // Case 2: Constraints remain below. Maintain the purity constraint.
+        case ResolutionResult(subst, newConstrs, progress) =>
+          val constr = TypingConstraint.Purification(sym, eff1, eff2, level, prov, newConstrs)
+          ResolutionResult(subst, List(constr), progress)
+      }
+  }
+
   /**
+    * Opens schema types `#{A(Int32) | {}}` becomes `#{A(Int32) | r}` with a fresh
+    * `r`. This only happens for if the row type is the topmost type, i.e. this
+    * doesn't happen inside tuples or other such nesting.
+    */
+  private def openOuterSchema(tpe: Type)(implicit level: Level, flix: Flix): Type = {
+    @tailrec
+    def transformRow(tpe: Type, acc: Type => Type): Type = tpe match {
+      case Type.Cst(TypeConstructor.SchemaRowEmpty, loc) =>
+        acc(Type.freshVar(TypeConstructor.SchemaRowEmpty.kind, loc))
+      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), loc1), tpe1, loc2), rest, loc3) =>
+        transformRow(rest, inner =>
+          // copy into acc, just replacing `rest` with `inner`
+          acc(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), loc1), tpe1, loc2), inner, loc3))
+        )
+      case other => acc(other)
+    }
+
+    tpe match {
+      case Type.Apply(Type.Cst(TypeConstructor.Schema, loc1), row, loc2) =>
+        Type.Apply(Type.Cst(TypeConstructor.Schema, loc1), transformRow(row, x => x), loc2)
+      case other => other
+    }
+  }
+
+  case class InfResult(constrs: List[TypingConstraint], tpe: Type, eff: Type, renv: RigidityEnv)
+
+  /**
+    * The result of constraint resolution.
+    *
+    * Consists of:
+    * - a substitution,
+    * - a list of leftover constraints, and
+    * - a Boolean flag indicating whether progress was made
+    */
+  case class ResolutionResult(subst: Substitution, constrs: List[TypingConstraint], progress: Boolean) {
+
+    /**
+      * Composes `this` equality result with `that` equality result.
+      *
+      * - Composes the substitution,
+      * - combines the leftover constraints, and
+      * - indicates progress if one of the two made progress.
+      */
+    def @@(that: ResolutionResult): ResolutionResult = {
+      val ResolutionResult(s1, cs1, p1) = this
+      val ResolutionResult(s2, cs2, p2) = that
+      ResolutionResult(s1 @@ s2, cs1 ++ cs2, p1 || p2)
+    }
+  }
+
+  object ResolutionResult {
+
+    /**
+      * Indicates that a constraint was eliminated.
+      */
+    val elimination: ResolutionResult = ResolutionResult(Substitution.empty, Nil, progress = true)
+
+    /**
+      * Indicates that a constraint was resolved to a substitution.
+      */
+    def newSubst(subst: Substitution): ResolutionResult = ResolutionResult(subst, Nil, progress = true)
+
+    /**
+      * Indicates that a constraint was resolved to a set of constraints.
+      *
+      * This may be the same list of constraints as was given to the solver.
+      * In this case, `progress` is `false`.
+      */
+    def constraints(constrs: List[TypingConstraint], progress: Boolean): ResolutionResult = ResolutionResult(Substitution.empty, constrs, progress)
+  }
+
+  /**
+    * Converts the given unification error into a type error.
+    *
     * Emulating logic from master branch
     *
     * ExpectType
@@ -586,65 +658,6 @@ object ConstraintResolution {
     case (UnificationError.UnsupportedEquality(t1, t2), _) => ??? // TypeError.UnsupportedEquality(Ast.BroadEqualityConstraint(t1, t2), loc) // MATT impossible?
     case (UnificationError.IrreducibleAssocType(sym, t), _) => ??? // TypeError.IrreducibleAssocType(sym, t, loc) // MATT impossible?
     case (UnificationError.IterationLimit(n), _) => ???
-  }
-
-  def sort(constrs: List[TypingConstraint]): List[TypingConstraint] =
-    constrs.sortBy(_.index)
-
-  private def reduceOne(constr0: TypingConstraint, renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
-    case TypingConstraint.Equality(tpe1, tpe2, prov) =>
-      val t1 = TypeMinimization.minimizeType(subst0(tpe1))
-      val t2 = TypeMinimization.minimizeType(subst0(tpe2))
-      simplifyEquality(t1, t2, prov, renv, eqEnv, constr0.loc).map {
-        case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
-      }
-    case TypingConstraint.Class(sym, tpe, loc) =>
-      simplifyClass(sym, subst0(tpe), cenv, eqEnv, renv, loc).map {
-        case (constrs, progress) => ResolutionResult(subst0, constrs, progress)
-      }
-    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested0) =>
-      // First reduce nested constraints
-      reduceAll(nested0, renv, cenv, eqEnv, subst0).map {
-        // Case 1: We have reduced everything below. Now reduce the purity constraint.
-        case ResolutionResult(subst1, newConstrs, progress) if newConstrs.isEmpty =>
-          val e1 = subst1(eff1)
-          // purify the inner type
-          val e2Raw = subst1(eff2)
-          val e2 = Substitution.singleton(sym, Type.Pure)(e2Raw)
-          val qvars = e2Raw.typeVars.map(_.sym).filter(_.level >= level)
-          val subst = qvars.foldLeft(subst1)(_.unbind(_))
-          val constr = TypingConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov)
-          ResolutionResult(subst, List(constr), progress = true)
-        // Case 2: Constraints remain below. Maintain the purity constraint.
-        case ResolutionResult(subst, newConstrs, progress) =>
-          val constr = TypingConstraint.Purification(sym, eff1, eff2, level, prov, newConstrs)
-          ResolutionResult(subst, List(constr), progress)
-      }
-  }
-
-  /**
-    * Opens schema types `#{A(Int32) | {}}` becomes `#{A(Int32) | r}` with a fresh
-    * `r`. This only happens for if the row type is the topmost type, i.e. this
-    * doesn't happen inside tuples or other such nesting.
-    */
-  private def openOuterSchema(tpe: Type)(implicit level: Level, flix: Flix): Type = {
-    @tailrec
-    def transformRow(tpe: Type, acc: Type => Type): Type = tpe match {
-      case Type.Cst(TypeConstructor.SchemaRowEmpty, loc) =>
-        acc(Type.freshVar(TypeConstructor.SchemaRowEmpty.kind, loc))
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), loc1), tpe1, loc2), rest, loc3) =>
-        transformRow(rest, inner =>
-          // copy into acc, just replacing `rest` with `inner`
-          acc(Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), loc1), tpe1, loc2), inner, loc3))
-        )
-      case other => acc(other)
-    }
-
-    tpe match {
-      case Type.Apply(Type.Cst(TypeConstructor.Schema, loc1), row, loc2) =>
-        Type.Apply(Type.Cst(TypeConstructor.Schema, loc1), transformRow(row, x => x), loc2)
-      case other => other
-    }
   }
 
 }
