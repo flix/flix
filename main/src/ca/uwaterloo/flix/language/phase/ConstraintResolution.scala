@@ -55,7 +55,7 @@ object ConstraintResolution {
 
   case class InfResult(constrs: List[TypingConstraint], tpe: Type, eff: Type, renv: RigidityEnv)
 
-  case class ReductionResult(oldSubst: Substitution, newSubst: Substitution, oldConstrs: List[TypingConstraint], newConstrs: List[TypingConstraint], progress: Boolean)
+  case class ReductionResult(newSubst: Substitution, newConstrs: List[TypingConstraint], progress: Boolean)
 
   /**
     * The result of an equality resolution.
@@ -178,7 +178,7 @@ object ConstraintResolution {
       val effConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
       val constrs = tpeConstr :: effConstr :: infConstrs
       resolve(constrs, renv, cenv, eqEnv, initialSubst).flatMap {
-        case ReductionResult(_, subst, _, deferred, _) =>
+        case ReductionResult(subst, deferred, _) =>
           stopLogging()
           // TODO here we only consider the first error
           deferred match {
@@ -429,7 +429,7 @@ object ConstraintResolution {
 
       last = curr
       reduceAll(curr, renv, cenv, eqEnv, subst) match {
-        case Result.Ok(ReductionResult(oldSubst, newSubst, oldConstrs, newConstrs, progress)) =>
+        case Result.Ok(ReductionResult(newSubst, newConstrs, progress)) =>
           curr = newConstrs
           subst = newSubst
           prog = progress
@@ -441,12 +441,12 @@ object ConstraintResolution {
           return res
       }
     }
-    Result.Ok(ReductionResult(subst0, subst, Nil, curr, progress = true))
+    Result.Ok(ReductionResult(subst, curr, progress = true))
   }
 
   private def reduceAll(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, TypeError] = {
     def tryReduce(cs: List[TypingConstraint]): Result[ReductionResult, TypeError] = cs match {
-      case Nil => Result.Ok(ReductionResult(oldSubst = subst0, newSubst = subst0, oldConstrs = cs, newConstrs = cs, progress = false))
+      case Nil => Result.Ok(ReductionResult(newSubst = subst0, newConstrs = cs, progress = false))
       case hd :: tl => reduceOne(hd, renv, cenv, eqEnv, subst0).flatMap {
         // if we're just returning the same constraint, then have made no progress and we need to find something else to reduce
         case res if !res.progress => tryReduce(tl).map {
@@ -598,17 +598,17 @@ object ConstraintResolution {
       val t1 = TypeMinimization.minimizeType(subst0(tpe1))
       val t2 = TypeMinimization.minimizeType(subst0(tpe2))
       simplifyEquality(t1, t2, prov, renv, eqEnv, constr0.loc).map {
-        case EqualityResult(subst, constrs, p) => ReductionResult(subst0, subst @@ subst0, List(constr0), constrs, progress = p)
+        case EqualityResult(subst, constrs, p) => ReductionResult(subst @@ subst0, constrs, progress = p)
       }
     case TypingConstraint.Class(sym, tpe, loc) =>
       simplifyClass(sym, subst0(tpe), cenv, eqEnv, renv, loc).map {
-        case (constrs, progress) => ReductionResult(subst0, subst0, List(constr0), constrs, progress)
+        case (constrs, progress) => ReductionResult(subst0, constrs, progress)
       }
     case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested0) =>
       // First reduce nested constraints
       reduceAll(nested0, renv, cenv, eqEnv, subst0).map {
         // Case 1: We have reduced everything below. Now reduce the purity constraint.
-        case ReductionResult(_oldSubst, subst1, oldConstrs, newConstrs, progress) if newConstrs.isEmpty =>
+        case ReductionResult(subst1, newConstrs, progress) if newConstrs.isEmpty =>
           val e1 = subst1(eff1)
           // purify the inner type
           val e2Raw = subst1(eff2)
@@ -616,11 +616,11 @@ object ConstraintResolution {
           val qvars = e2Raw.typeVars.map(_.sym).filter(_.level >= level)
           val subst = qvars.foldLeft(subst1)(_.unbind(_))
           val constr = TypingConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov)
-          ReductionResult(subst0, subst, oldConstrs, List(constr), progress = true)
+          ReductionResult(subst, List(constr), progress = true)
         // Case 2: Constraints remain below. Maintain the purity constraint.
-        case ReductionResult(_oldSubst, subst, oldConstrs, newConstrs, progress) =>
+        case ReductionResult(subst, newConstrs, progress) =>
           val constr = TypingConstraint.Purification(sym, eff1, eff2, level, prov, newConstrs)
-          ReductionResult(subst0, subst, oldConstrs, List(constr), progress)
+          ReductionResult(subst, List(constr), progress)
       }
   }
 
