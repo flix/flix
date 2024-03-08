@@ -373,7 +373,7 @@ object Weeder {
 
       mapN(annVal, modVal, tparamsVal, casesVal) {
         case (ann, mod, tparams, cases) =>
-          List(WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives, cases.values.toList, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives, cases.values.toList.sortBy(_.loc), mkSL(sp1, sp2)))
       }
   }
 
@@ -430,7 +430,7 @@ object Weeder {
 
       mapN(annVal, modVal, tparamsVal, casesVal) {
         case (ann, mod, tparams, cases) =>
-          List(WeededAst.Declaration.RestrictableEnum(doc, ann, mod, ident, index, tparams, derives, cases.values.toList, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.RestrictableEnum(doc, ann, mod, ident, index, tparams, derives, cases.values.toList.sortBy(_.loc), mkSL(sp1, sp2)))
       }
   }
 
