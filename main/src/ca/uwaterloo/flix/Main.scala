@@ -203,6 +203,7 @@ object Main {
               errors.map(_.message(formatter)).foreach(println)
               System.exit(1)
           }
+
         case Command.Run =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap =>
