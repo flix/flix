@@ -30,6 +30,8 @@ import scala.collection.mutable
 ///
 /// - We work on all the equations as one whole system.
 /// - We assume the equation system has been put into normal form. This avoids the need to mirror a lot of cases.
+///   - We move true and false to the rhs.
+///   - We move a single variable to the lhs.
 ///   - See the definition of `Equation.mk` for details.
 /// - We progress in the following order:
 ///   1. We propagate ground terms (true/false/constant) in a fixpoint.
@@ -39,9 +41,6 @@ import scala.collection.mutable
 /// - We represent a conjunction with n >= 2 terms.
 ///   - We group the terms into three: a set of constants, a set of variables, and a list of sub-terms.
 ///   - We flatten conjunctions at least one level per call to `mkAnd`.
-/// - We normalize the representation of an equation t1 ~ t2.
-///   - We try to move single variables to the lhs.
-///   - We try to move ground terms (true/false/constants) to the RHS.
 ///
 /// In the future, we could:
 /// - Explore change of basis.
@@ -818,15 +817,14 @@ object FastBoolUnification {
       *
       * The smart constructor performs normalization:
       * - We move true and false to the rhs.
-      * - We move a variable to the lhs (unconditionally).
-      * - We reorder constant/variables equations so that the smaller constant/variable is on the lhs.
+      * - We move a single variable to the lhs.
+      * - We reorder constant/variables so that the smaller constant/variable is on the lhs.
       *
       * Examples:
       * -     true ~ x7 ==> x7 ~ true
       * -       c3 ~ c2 ==> c2 ~ c3
       * -       x7 ~ x5 ==> x5 ~ x7
       * - x3 /\ x7 ~ x4 ==> x4 ~ x3 /\ x7
-      * - x1 /\ x2 ~ c5 ==> c5 ~ x1 /\ x2
       */
     def mk(t1: Term, t2: Term, loc: SourceLocation): Equation = (t1, t2) match {
       case (Term.Cst(c1), Term.Cst(c2)) => if (c1 <= c2) Equation(t1, t2, loc) else Equation(t2, t1, loc)
