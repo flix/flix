@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast
-import ca.uwaterloo.flix.language.ast.LiftedAst._
+import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MapOps
 
@@ -102,7 +102,7 @@ object Tailrec {
       case Expr.Var(_, _, _) => exp0
     }
 
-    defn.copy(exp = visitExp(defn.exp))
+    defn.copy(expr = visitExp(defn.expr))
   }
 
 }
