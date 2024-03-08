@@ -814,7 +814,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Ascribe: Rule1[ParsedAst.Expression] = rule {
-      FAppend ~ optional(optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Expression.Ascribe)
+      FAppend | atomic("(") ~ optWS ~ FAppend ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ atomic(")") ~ SP ~> ParsedAst.Expression.Ascribe
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {

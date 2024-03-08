@@ -3,7 +3,7 @@ mod Test.Exp.New {
     @test
     def testNewMutList1Region04(): Unit =
         region rc {
-            discard MutList.new(rc): MutList[String, rc];
+            discard (MutList.new(rc): MutList[String, rc]);
             ()
         }
 
@@ -21,11 +21,11 @@ mod Test.Exp.New {
     @test
     def testNewMutList2RegionsFlat04(): Bool =
         let res1 = region rc {
-            discard MutList.new(rc): MutList[String, rc];
+            discard (MutList.new(rc): MutList[String, rc]);
             ()
         };
         let res2 = region rc {
-            discard MutList.new(rc): MutList[Int32, rc];
+            discard (MutList.new(rc): MutList[Int32, rc]);
             ()
         };
         res1 == () and res1 == res2
@@ -139,7 +139,7 @@ mod Test.Exp.New {
     @test
     def testNewMutMap1Region04(): Unit =
         region rc {
-            discard MutMap.new(rc): MutMap[Int32, String, rc];
+            discard (MutMap.new(rc): MutMap[Int32, String, rc]);
             ()
         }
 
@@ -157,11 +157,11 @@ mod Test.Exp.New {
     @test
     def testNewMutMap2RegionsFlat04(): Bool =
         let res1 = region rc {
-            discard MutMap.new(rc): MutMap[Int32, String, rc];
+            discard (MutMap.new(rc): MutMap[Int32, String, rc]);
             ()
         };
         let res2 = region rc {
-            discard MutMap.new(rc): MutMap[String, Int32, rc];
+            discard (MutMap.new(rc): MutMap[String, Int32, rc]);
             ()
         };
         res1 == () and res1 == res2
