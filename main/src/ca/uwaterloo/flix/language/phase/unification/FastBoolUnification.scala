@@ -383,12 +383,12 @@ object FastBoolUnification {
         e match {
           // Case 1: x ~ true
           case Equation(Term.Var(x), Term.True, loc) =>
-            subst = subst.extended(x, Term.True, loc)
+            subst = subst.extended(x, Term.True, loc) // Note: the extended function will check that `x` is not already mapped to another constant.
             changed = true
 
           // Case 2: x ~ c
           case Equation(Term.Var(x), Term.Cst(c), loc) =>
-            subst = subst.extended(x, Term.Cst(c), loc)
+            subst = subst.extended(x, Term.Cst(c), loc) // Note: the extended function will check that `x` is not already mapped to another constant.
             changed = true
 
           // Case 3: x /\ y /\ z /\... ~ true
