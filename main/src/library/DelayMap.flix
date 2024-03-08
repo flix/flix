@@ -29,23 +29,40 @@ instance Order[DelayMap[k, v]] with Order[k], Order[v] {
 }
 
 instance ToString[DelayMap[k, v]] with ToString[k], ToString[v] {
-    pub def toString(m: DelayMap[k, v]): String = DelayMap.toString(m)
+    type Aef = ToString.Aef[k] + ToString.Aef[v]
+
+    pub def toString(m: DelayMap[k, v]): String \ ToString.Aef[k] + ToString.Aef[v] = DelayMap.toString(m)
 }
 
 instance Functor[DelayMap[k]] {
     pub def map(f: v1 -> v2 \ ef, m: DelayMap[k, v1]): DelayMap[k, v2] \ ef = DelayMap.map(f, m)
 }
 
-instance Foldable[DelayMap[k]] {
+instance Foldable[DelayMap[k, v]] {
+    type Elm = v
+    type Aef = Pure
+
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldLeft(f, s, m)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRight(f, s, m)
     pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, m: DelayMap[k, v]): b \ ef = DelayMap.foldRightWithCont(f, s, m)
 
 }
 
-instance Iterable[DelayMap[k]] {
-    pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[v, r, r] \ r =
-        DelayMap.iterator(rc, m) |> Iterator.map(snd)
+instance UnorderedFoldable[DelayMap[k, v]] {
+    type Elm = v
+    type Aef = Pure
+
+    pub def foldMap(f: v -> b \ ef, arr: DelayMap[k, v]): b \ ef with CommutativeMonoid[b] = {
+        arr |> DelayMap.toMap |> Map.foldMap(f)
+    }
+}
+
+instance Iterable[DelayMap[k, v]] {
+    type Elm = (k, v)
+    type Aef = Pure
+
+    pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[(k, v), r, r] \ r =
+        DelayMap.iterator(rc, m)
 }
 
 mod DelayMap {
@@ -54,7 +71,7 @@ mod DelayMap {
     /// Returns a string representation of the given `DelayMap` `m`.
     ///
     @Experimental
-    pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region rc {
+    pub def toString(m: DelayMap[k, v]): String \ ToString.Aef[k] + ToString.Aef[v] with ToString[k], ToString[v] = region rc {
         let sb = StringBuilder.new(rc);
         let _ = parallelForce(m);
         StringBuilder.appendString!("DelayMap#{", sb);
@@ -857,7 +874,7 @@ mod DelayMap {
     /// in `m` with `sep` inserted between each element.
     ///
     @Experimental
-    pub def joinKeys(sep: String, m: DelayMap[k, v]): String with ToString[k] =
+    pub def joinKeys(sep: String, m: DelayMap[k, v]): String \ ToString.Aef[k] with ToString[k] =
         let DMap(t) = m;
         RedBlackTree.joinKeys(sep, t)
 
@@ -866,7 +883,7 @@ mod DelayMap {
     /// in `m` with `sep` inserted between each element.
     ///
     @Experimental
-    pub def joinValues(sep: String, m: DelayMap[k, v]): String with ToString[v] =
+    pub def joinValues(sep: String, m: DelayMap[k, v]): String \ ToString.Aef[v] with ToString[v] =
         joinWith((_, v) -> ToString.toString(v), sep, m)
 
     ///

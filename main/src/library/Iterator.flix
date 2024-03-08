@@ -647,7 +647,7 @@ mod Iterator {
     ///
     /// The original iterators `sep` and `iter` should not be reused.
     ///
-    pub def intercalate(sep: t[a], iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef + r, r] \ r with Foldable[t] =
+    pub def intercalate(sep: t, iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef + r, r] \ Foldable.Aef[t] + r with Foldable[t] where Foldable.Elm[t] ~ a =
         let Iterator(rc, _) = iter;
         let start = ref true @ rc;
         let sepL = Foldable.toList(sep);
@@ -683,7 +683,7 @@ mod Iterator {
     ///
     /// Consumes the entire iterator.
     ///
-    pub def join(sep: String, iter: Iterator[a, ef, r]): String \ { ef, r } with ToString[a] =
+    pub def join(sep: String, iter: Iterator[a, ef, r]): String \ ToString.Aef[a] + ef + r with ToString[a] =
         joinWith(ToString.toString, sep, iter)
 
     ///

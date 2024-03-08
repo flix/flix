@@ -50,7 +50,9 @@ object Options {
     xsummary = false,
     xparser = false,
     XPerfN = None,
-    XPerfFrontend = false
+    XPerfFrontend = false,
+    xtyper = true,
+    xprintconstraints = false,
   )
 
   /**
@@ -126,6 +128,8 @@ case class Options(lib: LibLevel,
                    xparser: Boolean,
                    XPerfFrontend: Boolean,
                    XPerfN: Option[Int],
+                   xtyper: Boolean,
+                   xprintconstraints: Boolean,
                   )
 
 /**

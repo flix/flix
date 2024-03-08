@@ -26,7 +26,7 @@ mod MutSet {
     ///
     /// Returns a string representation of the given mutable set `s`.
     ///
-    pub def toString(s: MutSet[a, r]): String \r with ToString[a] = region rc {
+    pub def toString(s: MutSet[a, r]): String \ ToString.Aef[a] + r with ToString[a] = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("MutSet#{", sb);
         forEachWithIndex((i, x) -> {
@@ -61,7 +61,7 @@ mod MutSet {
     ///
     /// Adds all elements in the collection `m` to the mutable set `s`.
     ///
-    pub def addAll!(m: m[a], s: MutSet[a, r]): Unit \ r with Order[a], Foldable[m] =
+    pub def addAll!(m: m, s: MutSet[a, r]): Unit \ Foldable.Aef[m] + r with Order[a], Foldable[m] where Foldable.Elm[m] ~ a =
         Foldable.forEach(x -> add!(x, s), m)
 
     ///
@@ -81,7 +81,7 @@ mod MutSet {
     ///
     /// Removes all elements in the collection `m` from the mutable set `s`.
     ///
-    pub def removeAll!(m: m[a], s: MutSet[a, r]): Unit \ r with Order[a], Foldable[m] =
+    pub def removeAll!(m: m, s: MutSet[a, r]): Unit \ Foldable.Aef[m] + r with Order[a], Foldable[m] where Foldable.Elm[m] ~ a =
         let MutSet(_, ms) = s;
         let s2 = Foldable.toSet(m);
         ms := Set.difference(deref ms, s2)
@@ -89,7 +89,7 @@ mod MutSet {
     ///
     /// Removes all elements from the mutable set `s` that are not in collection `m`.
     ///
-    pub def retainAll!(m: m[a], s: MutSet[a, r]): Unit \ r with Order[a], Foldable[m] =
+    pub def retainAll!(m: m, s: MutSet[a, r]): Unit \ Foldable.Aef[m] + r with Order[a], Foldable[m] where Foldable.Elm[m] ~ a =
         let MutSet(_, ms) = s;
         let s2 = Foldable.toSet(m);
         ms := Set.intersection(s2, deref ms)
@@ -390,14 +390,23 @@ mod MutSet {
     ///
     /// Returns an iterator over `s`.
     ///
-    pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 + r2, r1] \ r1 =
         let MutSet(_, ms) = s;
-        Set.iterator(rc, deref ms) |> Iterator.map(x -> {discard deref ms; x})
+        let iterOptRef = ref None @ rc;
+        let next = () -> {
+            let iter = match deref iterOptRef {
+                case None => Set.iterator(rc, deref ms)
+                case Some(x) => x
+            };
+            iterOptRef := Some(iter);
+            Iterator.next(iter)
+        };
+        Iterator.iterate(rc, next)
 
     ///
     /// Returns an enumerator over `s`.
     ///
-    pub def enumerator(rc: Region[r1], s: MutSet[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ { r1, r2 } =
+    pub def enumerator(rc: Region[r1], s: MutSet[a, r2]): Iterator[(Int32, a), r1 + r2, r1] \ r1 =
         iterator(rc, s) |> Iterator.zipWithIndex
 
     ///
@@ -410,7 +419,7 @@ mod MutSet {
     /// Returns the concatenation of the string representation
     /// of each element in `s` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, s: MutSet[a, r]): String \ r with ToString[a] =
+    pub def join(sep: String, s: MutSet[a, r]): String \ ToString.Aef[a] + r with ToString[a] =
         let MutSet(_, ms) = s;
         Set.join(sep, deref ms)
 

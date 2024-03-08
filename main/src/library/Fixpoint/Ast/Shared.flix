@@ -85,6 +85,8 @@ mod Fixpoint.Ast.Shared {
     }
 
     instance ToString[PredSym] {
+        type Aef = Pure
+
         pub def toString(predSym: PredSym): String = match predSym {
             case PredSym.PredSym(name, id) => if (id == 0i64) name else "${name}%${id}"
         }

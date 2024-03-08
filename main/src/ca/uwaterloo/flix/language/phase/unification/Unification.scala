@@ -48,7 +48,7 @@ object Unification {
     */
   def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
 
-    Level.equalizeR(x, tpe, renv)
+    Level.equalizeR(x.sym, tpe, renv)
 
     tpe match {
 
@@ -208,8 +208,8 @@ object Unification {
         case Result.Err(UnificationError.NonSchemaType(tpe)) =>
           Err(TypeError.NonSchemaType(tpe, renv, loc))
 
-        case Result.Err(UnificationError.TooComplex(tpe1, tpe2)) =>
-          Err(TypeError.TooComplex(tpe1, tpe2, renv, loc))
+        case Result.Err(UnificationError.TooComplex(_, loc)) =>
+          Err(TypeError.TooComplex(loc))
 
         case Result.Err(err: UnificationError.NoMatchingInstance) =>
           throw InternalCompilerException(s"Unexpected unification error: $err", loc)
@@ -218,6 +218,9 @@ object Unification {
           throw InternalCompilerException(s"Unexpected unification error: $err", loc)
 
         case Result.Err(err: UnificationError.UnsupportedEquality) =>
+          throw InternalCompilerException(s"Unexpected unification error: $err", loc)
+
+        case Result.Err(err: UnificationError.IterationLimit) =>
           throw InternalCompilerException(s"Unexpected unification error: $err", loc)
       }
     })
@@ -308,7 +311,7 @@ object Unification {
   /**
     * Returns a [[TypeError.OverApplied]] or [[TypeError.UnderApplied]] type error, if applicable.
     */
-  private def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+  def getUnderOrOverAppliedError(arrowType: Type, argType: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
     val default = TypeError.MismatchedTypes(arrowType, argType, fullType1, fullType2, renv, loc)
 
     arrowType match {
@@ -606,9 +609,9 @@ object Unification {
     */
   def unifiesWith(tpe1: Type, tpe2: Type, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
     Unification.unifyTypes(tpe1, tpe2, renv) match {
-      case Result.Ok((_, econstrs)) =>
+      case Result.Ok((subst, econstrs)) =>
         // check that all econstrs hold under the environment
-        econstrs.forall {
+        econstrs.map(subst.apply).forall {
           econstr =>
             EqualityEnvironment.entail(Nil, econstr, renv, eqEnv).toHardResult match {
               case Result.Ok(_) => true

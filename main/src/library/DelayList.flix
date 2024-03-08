@@ -63,18 +63,26 @@ instance Order[DelayList[a]] with Order[a] {
 }
 
 instance ToString[DelayList[a]] with ToString[a] {
-    pub def toString(l: DelayList[a]): String = DelayList.toString(l)
+    type Aef = ToString.Aef[a]
+
+    pub def toString(l: DelayList[a]): String \ ToString.Aef[a] = DelayList.toString(l)
 }
 
 
-instance Foldable[DelayList] {
+instance Foldable[DelayList[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
     override pub def toDelayList(l: DelayList[a]): DelayList[a] = l
 }
 
-instance UnorderedFoldable[DelayList] {
+instance UnorderedFoldable[DelayList[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldMap(f: a -> b \ ef, l: DelayList[a]): b \ ef with CommutativeMonoid[b] = DelayList.foldMap(f, l)
     override pub def isEmpty(l: DelayList[a]): Bool = DelayList.isEmpty(l)
     override pub def exists(f: a -> Bool \ ef, l: DelayList[a]): Bool \ ef = DelayList.exists(f, l)
@@ -99,17 +107,10 @@ instance MonadZero[DelayList] {
     pub def empty(): DelayList[a] = DelayList.empty()
 }
 
-instance Traversable[DelayList] {
-    pub def traverse(f: a -> m[b] \ ef, l: DelayList[a]): m[DelayList[b]] \ ef with Applicative[m] = DelayList.traverse(f, l)
-    pub override def sequence(l: DelayList[m[a]]): m[DelayList[a]] with Applicative[m] = DelayList.sequence(l)
-}
-
 instance Filterable[DelayList] {
     pub def filterMap(f: a -> Option[b] \ ef, x: DelayList[a]): DelayList[b] \ ef = DelayList.filterMap(f, x)
     pub override def filter(f: a -> Bool \ ef, x: DelayList[a]): DelayList[a] \ ef = DelayList.filter(f, x)
 }
-
-instance Witherable[DelayList]
 
 instance SemiGroup[DelayList[a]] {
     pub def combine(l1: DelayList[a], l2: DelayList[a]): DelayList[a] = DelayList.append(l1, l2)
@@ -119,7 +120,9 @@ instance Monoid[DelayList[a]] {
     pub def empty(): DelayList[a] = DelayList.ENil
 }
 
-instance Iterable[DelayList] {
+instance Iterable[DelayList[a]] {
+    type Elm = a
+    type Aef = Pure
     pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r = DelayList.iterator(rc, l)
 }
 
@@ -131,7 +134,7 @@ mod DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def toString(l: DelayList[a]): String with ToString[a] = region rc {
+    pub def toString(l: DelayList[a]): String \ ToString.Aef[a] with ToString[a] = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("DelayList(", sb);
         forEachWithIndex((i, x) -> {
@@ -1279,7 +1282,7 @@ mod DelayList {
     /// Forces the entire list `l`.
     ///
     @Experimental
-    pub def join(sep: String, l: DelayList[a]): String with ToString[a] =
+    pub def join(sep: String, l: DelayList[a]): String \ ToString.Aef[a] with ToString[a] =
         Foldable.join(sep, l)
 
     ///

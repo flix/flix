@@ -34,13 +34,16 @@ instance Coerce[Down] {
 }
 
 instance ToString[Down[a]] with ToString[a] {
-    pub def toString(x: Down[a]): String = match x {
+    type Aef = ToString.Aef[a]
+
+    pub def toString(x: Down[a]): String \ ToString.Aef[a] = match x {
         case Down.Down(xx) => ToString.toString(xx)
     }
 }
 
 instance Add[Down[a]] with Add[a] {
-    pub def add(x: Down[a], y: Down[a]): Down[a] = match (x, y) {
+    type Aef = Add.Aef[a]
+    pub def add(x: Down[a], y: Down[a]): Down[a] \ Add.Aef[a] = match (x, y) {
         case (Down.Down(xx), Down.Down(yy)) => Down.Down(xx + yy) // no consideration for overflow
     }
 }

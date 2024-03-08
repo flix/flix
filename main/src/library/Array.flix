@@ -1,5 +1,4 @@
-/*
- * Copyright 2019 Magnus Madsen, Stephen Tetley
+/* * Copyright 2019 Magnus Madsen, Stephen Tetley
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +40,7 @@ mod Array {
     ///
     /// Returns a string representation of the given array `a`.
     ///
-    pub def toString(a: Array[a, r]): String \ r with ToString[a] = region rc2 {
+    pub def toString(a: Array[a, r]): String \ ToString.Aef[a] + r with ToString[a] = region rc2 {
         let sb = StringBuilder.new(rc2);
         let first = ref true @ rc2;
 
@@ -1445,7 +1444,7 @@ mod Array {
     /// Returns the concatenation of the string representation
     /// of each element in `a` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, a: Array[a, r]): String \ r with ToString[a] =
+    pub def join(sep: String, a: Array[a, r]): String \ ToString.Aef[a] + r with ToString[a] =
         joinWith(ToString.toString, sep, a)
 
     ///

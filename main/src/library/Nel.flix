@@ -22,7 +22,9 @@ pub enum Nel[a] with Sendable {
 }
 
 instance ToString[Nel[a]] with ToString[a] {
-    pub def toString(l: Nel[a]): String = Nel.toString(l)
+    type Aef = ToString.Aef[a]
+
+    pub def toString(l: Nel[a]): String \ ToString.Aef[a] = Nel.toString(l)
 }
 
 instance Hash[Nel[a]] with Hash[a] {
@@ -68,23 +70,24 @@ instance MonadZip[Nel] {
     pub override def unzip(xs: Nel[(a, b)]): (Nel[a], Nel[b]) = Nel.unzip(xs)
 }
 
-instance Foldable[Nel] {
+instance Foldable[Nel[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: Nel[a]): b \ ef = Nel.foldRightWithCont(f, s, l)
 }
 
-instance UnorderedFoldable[Nel] {
+instance UnorderedFoldable[Nel[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldMap(f: a -> b \ ef, l: Nel[a]): b \ ef with CommutativeMonoid[b] = Nel.foldMap(f, l)
     override pub def isEmpty(_: Nel[a]): Bool = false
     override pub def exists(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.exists(f, l)
     override pub def forAll(f: a -> Bool \ ef, l: Nel[a]): Bool \ ef = Nel.forAll(f, l)
     override pub def memberOf(x: a, l: Nel[a]): Bool with Eq[a] = Nel.memberOf(x, l)
-}
-
-instance Traversable[Nel] {
-    pub def traverse(f: a -> m[b] \ ef, t: Nel[a]): m[Nel[b]] \ ef with Applicative[m] = Nel.traverse(f, t)
-    pub override def sequence(t: Nel[m[a]]): m[Nel[a]] with Applicative[m] = Nel.sequence(t)
 }
 
 instance Reducible[Nel] {
@@ -111,7 +114,9 @@ instance SemiGroup[Nel[a]] {
     pub def combine(x: Nel[a], y: Nel[a]): Nel[a] = Nel.append(x, y)
 }
 
-instance Iterable[Nel] {
+instance Iterable[Nel[a]] {
+    type Elm = a
+    type Aef = Pure
     pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r = Nel.iterator(rc, l)
 }
 
@@ -125,7 +130,7 @@ mod Nel {
     ///
     /// Returns a string representation of the given non-empty list `l`.
     ///
-    pub def toString(l: Nel[a]): String with ToString[a] = region rc {
+    pub def toString(l: Nel[a]): String \ ToString.Aef[a] with ToString[a] = region rc {
         let Nel(x, xs) = l;
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Nel(${x}, ", sb);
@@ -652,7 +657,7 @@ mod Nel {
     ///
     pub def sequence(l: Nel[m[a]]): m[Nel[a]] with Applicative[m] =
         match l {
-            case Nel(x, xs) => (((y, ys) -> Nel(y, ys)) `Functor.map` x) `Applicative.ap` Traversable.sequence(xs)
+            case Nel(x, xs) => (((y, ys) -> Nel(y, ys)) `Functor.map` x) `Applicative.ap` List.sequence(xs)
         }
 
     ///
@@ -660,7 +665,7 @@ mod Nel {
     ///
     pub def traverse(f: a -> m[b] \ ef, l: Nel[a]): m[Nel[b]] \ ef with Applicative[m] =
         match l {
-            case Nel(x, xs) => (((y, ys) -> Nel(y, ys)) `Functor.map` f(x)) `Applicative.ap` Traversable.traverse(f, xs)
+            case Nel(x, xs) => (((y, ys) -> Nel(y, ys)) `Functor.map` f(x)) `Applicative.ap` List.traverse(f, xs)
         }
 
     ///
@@ -676,7 +681,7 @@ mod Nel {
     /// Returns the concatenation of the string representation
     /// of each element in `l` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, l: Nel[a]): String with ToString[a] =
+    pub def join(sep: String, l: Nel[a]): String \ ToString.Aef[a] with ToString[a] =
         Foldable.join(sep, l)
 
     ///

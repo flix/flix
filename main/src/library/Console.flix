@@ -58,7 +58,7 @@ mod Console {
     ///
     /// See also `System/StdOut.print`.
     ///
-    pub def print(x: a): Unit \ IO with ToString[a] =
+    pub def print(x: a): Unit \ ToString.Aef[a] + IO with ToString[a] =
         import java.io.Console.writer(): ##java.io.PrintWriter \ IO;
         import java.io.PrintWriter.print(String): Unit \ IO as printWriterPrint;
         console() |> Option.forEach(c -> printWriterPrint(writer(c), ToString.toString(x)))
@@ -74,7 +74,7 @@ mod Console {
     ///
     /// See also `System/StdOut.println`.
     ///
-    pub def println(x: a): Unit \ IO with ToString[a] =
+    pub def println(x: a): Unit \ ToString.Aef[a] + IO with ToString[a] =
         import java.io.Console.writer(): ##java.io.PrintWriter \ IO;
         import java.io.PrintWriter.println(String): Unit \ IO as printWriterPrintln;
         console() |> Option.forEach(c -> printWriterPrintln(writer(c), ToString.toString(x)))
@@ -95,49 +95,49 @@ mod Console {
     ///
     /// Returns `s` formatted as bold.
     ///
-    pub def bold(s: a): String with ToString[a] =
+    pub def bold(s: a): String \ ToString.Aef[a] with ToString[a] =
         let bold = ("[1m","[38;2;1m");
         applyFontStyle(s, bold)
 
     ///
     /// Returns `s` formatted as blink.
     ///
-    pub def italic(s: a): String with ToString[a] =
+    pub def italic(s: a): String \ ToString.Aef[a] with ToString[a] =
         let italic = ("[3m","[38;2;3m");
         applyFontStyle(s, italic)
 
     ///
     /// Returns `s` formatted as underline.
     ///
-    pub def underline(s: a): String with ToString[a] =
+    pub def underline(s: a): String \ ToString.Aef[a] with ToString[a] =
         let underline = ("[4m","[38;2;4m");
         applyFontStyle(s, underline)
 
     ///
     /// Returns `s` formatted as blink.
     ///
-    pub def blink(s: a): String with ToString[a] =
+    pub def blink(s: a): String \ ToString.Aef[a] with ToString[a] =
         let blink = ("[5m","[38;2;5m");
         applyFontStyle(s, blink)
 
     ///
     /// Returns `s` formatted as reversed.
     ///
-    pub def reversed(s: a): String with ToString[a] =
+    pub def reversed(s: a): String \ ToString.Aef[a] with ToString[a] =
         let reversed = ("[7m","[38;2;7m");
         applyFontStyle(s, reversed)
 
     ///
     /// Returns `s` formatted as reversed.
     ///
-    pub def invisible(s: a): String with ToString[a] =
+    pub def invisible(s: a): String \ ToString.Aef[a] with ToString[a] =
         let invisible = ("[8m","[38;2;8m");
         applyFontStyle(s, invisible)
 
     ///
     /// Helper to apply the font style to the string `s` related to the terminal color supports
     ///
-    def applyFontStyle(s: a , style: (String, String)): String with ToString[a] =
+    def applyFontStyle(s: a , style: (String, String)): String \ ToString.Aef[a] with ToString[a] =
         let esc = escape();
         let reset = reset();
         match colorSupport() {
@@ -154,7 +154,7 @@ mod Console {
     /// Expected format of `hexCode`: "#" + "--" + "--" + "--"
     /// where each -- is a hex number between 00 and FF.
     ///
-    pub def hex(hexCode: String, s: a): String with ToString[a] =
+    pub def hex(hexCode: String, s: a): String \ ToString.Aef[a] with ToString[a] =
         let text = ToString.toString(s);
         let hexOpt: Option[String] = {
             forM (
@@ -204,193 +204,193 @@ mod Console {
     ///
     /// Returns the string `s` formatted with the default blue color.
     ///
-    pub def blue(s: a): String with ToString[a] =
+    pub def blue(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.Blue |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default cyan color.
     ///
-    pub def cyan(s: a): String with ToString[a] =
+    pub def cyan(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.Cyan |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default green color.
     ///
-    pub def green(s: a): String with ToString[a] =
+    pub def green(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.Green |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default magenta color.
     ///
-    pub def magenta(s: a): String with ToString[a] =
+    pub def magenta(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.Magenta |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default red color.
     ///
-    pub def red(s: a): String with ToString[a] =
+    pub def red(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.Red |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default yellow color.
     ///
-    pub def yellow(s: a): String with ToString[a] =
+    pub def yellow(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.Yellow |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default white color.
     ///
-    pub def white(s: a): String with ToString[a] =
+    pub def white(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.White |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default black color.
     ///
-    pub def black(s: a): String with ToString[a] =
+    pub def black(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.Black |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright black color.
     ///
-    pub def blackBright(s: a): String with ToString[a] =
+    pub def blackBright(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BrightBlack |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright red color.
     ///
-    pub def redBright(s: a): String with ToString[a] =
+    pub def redBright(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BrightRed |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright green color.
     ///
-    pub def greenBright(s: a): String with ToString[a] =
+    pub def greenBright(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BrightGreen |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright yellow color.
     ///
-    pub def yellowBright(s: a): String with ToString[a] =
+    pub def yellowBright(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BrightYellow |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright blue color.
     ///
-    pub def blueBright(s: a): String with ToString[a] =
+    pub def blueBright(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BrightBlue |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright magenta color.
     ///
-    pub def magentaBright(s: a): String with ToString[a] =
+    pub def magentaBright(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BrightMagenta |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright cyan color.
     ///
-    pub def cyanBright(s: a): String with ToString[a] =
+    pub def cyanBright(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BrightCyan |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` formatted with the default bright white color.
     ///
-    pub def whiteBright(s: a): String with ToString[a] =
+    pub def whiteBright(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BrightWhite |> toRGB, ToString.toString(s), isFg = true)
 
     ///
     /// Returns the string `s` with background color of the default black color.
     ///
-    pub def bgBlack(s: a): String with ToString[a] =
+    pub def bgBlack(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BackgroundBlack |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default red color.
     ///
-    pub def bgRed(s: a): String with ToString[a] =
+    pub def bgRed(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BackgroundRed |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default green color.
     ///
-    pub def bgGreen(s: a): String with ToString[a] =
+    pub def bgGreen(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BackgroundGreen |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default yellow color.
     ///
-    pub def bgYellow(s: a): String with ToString[a] =
+    pub def bgYellow(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BackgroundYellow |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default blue color.
     ///
-    pub def bgBlue(s: a): String with ToString[a] =
+    pub def bgBlue(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BackgroundBlue |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default magenta color.
     ///
-    pub def bgMagenta(s: a): String with ToString[a] =
+    pub def bgMagenta(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BackgroundMagenta |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default cyan color.
     ///
-    pub def bgCyan(s: a): String with ToString[a] =
+    pub def bgCyan(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BackgroundCyan |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default white color.
     ///
-    pub def bgWhite(s: a): String with ToString[a] =
+    pub def bgWhite(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BackgroundWhite |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default black color.
     ///
-    pub def bgBlackBright(s: a): String with ToString[a] =
+    pub def bgBlackBright(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BackgroundBrightBlack |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default red color.
     ///
-    pub def bgRedBright(s: a): String with ToString[a] =
+    pub def bgRedBright(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BackgroundBrightRed |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default green color.
     ///
-    pub def bgGreenBright(s: a): String with ToString[a] =
+    pub def bgGreenBright(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BackgroundBrightGreen |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default yellow color.
     ///
-    pub def bgYellowBright(s: a): String with ToString[a] =
+    pub def bgYellowBright(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BackgroundBrightYellow |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default blue color.
     ///
-    pub def bgBlueBright(s: a): String with ToString[a] =
+    pub def bgBlueBright(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BackgroundBrightBlue |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default magenta color.
     ///
-    pub def bgMagentaBright(s: a): String with ToString[a] =
+    pub def bgMagentaBright(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BackgroundBrightMagenta |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default cyan color.
     ///
-    pub def bgCyanBright(s: a): String with ToString[a] =
+    pub def bgCyanBright(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BackgroundBrightCyan |> toRGB, ToString.toString(s), isFg = false)
 
     ///
     /// Returns the string `s` with background color of the default white color.
     ///
-    pub def bgWhiteBright(s: a): String with ToString[a] =
+    pub def bgWhiteBright(s: a): String \ ToString.Aef[a] with ToString[a] =
         rgb(Ansi.BackgroundBrightWhite |> toRGB, ToString.toString(s), isFg = false)
 
     ///

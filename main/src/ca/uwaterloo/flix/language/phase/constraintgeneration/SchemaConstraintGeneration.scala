@@ -144,29 +144,34 @@ object SchemaConstraintGeneration {
     implicit def level: Level = c.getLevel
 
     e match {
-      case KindedAst.Expr.FixpointInject(exp, pred, tvar, loc) =>
+      case KindedAst.Expr.FixpointInject(exp, pred, tvar, evar, loc) =>
         //
-        //  exp : F[freshElmType] where F is Foldable
+        //  exp : tpe \ eff with Foldable[tpe], Order[a] where Foldable.Elm[tpe] ~ a
         //  -------------------------------------------
-        //  project exp into A: #{A(freshElmType) | freshRestSchemaType}
+        //  project exp into A: #{A(Foldable.Elm[m]) | freshRestSchemaType} \ Foldable.Aef[m] + eff
         //
-        val freshTypeConstructorVar = Type.freshVar(Kind.Star ->: Kind.Star, loc)
         val freshElmTypeVar = Type.freshVar(Kind.Star, loc)
         val freshRestSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc)
 
         // Require Order and Foldable instances.
         val orderSym = PredefinedClasses.lookupClassSym("Order", root)
         val foldableSym = PredefinedClasses.lookupClassSym("Foldable", root)
+        val foldableAefSym = new Symbol.AssocTypeSym(foldableSym, "Aef", SourceLocation.Unknown)
+        val foldableElmSym = new Symbol.AssocTypeSym(foldableSym, "Elm", SourceLocation.Unknown)
         val order = Ast.TypeConstraint(Ast.TypeConstraint.Head(orderSym, loc), freshElmTypeVar, loc)
-        val foldable = Ast.TypeConstraint(Ast.TypeConstraint.Head(foldableSym, loc), freshTypeConstructorVar, loc)
-
-        c.addClassConstraintsM(List(order, foldable), loc)
 
         val (tpe, eff) = visitExp(exp)
-        c.unifyTypeM(tpe, Type.mkApply(freshTypeConstructorVar, List(freshElmTypeVar), loc), loc)
+        val foldable = Ast.TypeConstraint(Ast.TypeConstraint.Head(foldableSym, loc), tpe, loc)
+        val foldableAef = Type.AssocType(Ast.AssocTypeConstructor(foldableAefSym, loc), tpe, Kind.Eff, loc)
+        val foldableElm = Type.AssocType(Ast.AssocTypeConstructor(foldableElmSym, loc), tpe, Kind.Star, loc)
+
+        c.unifyTypeM(foldableElm, freshElmTypeVar, loc)
+        c.addClassConstraintsM(List(order, foldable), loc)
+
         c.unifyTypeM(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkRelation(List(freshElmTypeVar), loc), freshRestSchemaTypeVar, loc), loc), loc)
+        c.unifyTypeM(evar, Type.mkUnion(eff, foldableAef, loc), loc)
         val resTpe = tvar
-        val resEff = eff
+        val resEff = evar
         (resTpe, resEff)
     }
   }

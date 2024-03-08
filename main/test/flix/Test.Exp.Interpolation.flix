@@ -243,6 +243,7 @@ mod Test.Exp.Interpolation {
 ///}
 
 instance ToString[Test.Exp.Interpolation.Color] {
+    type Aef = Pure
     pub def toString(c: Test.Exp.Interpolation.Color): String =
         use Test.Exp.Interpolation.Color.Red;
         use Test.Exp.Interpolation.Color.Green;

@@ -40,7 +40,9 @@ instance Hash[Set[a]] with Hash[a] {
 }
 
 instance ToString[Set[a]] with ToString[a] {
-    pub def toString(s: Set[a]): String = Set.toString(s)
+    type Aef = ToString.Aef[a]
+
+    pub def toString(s: Set[a]): String \ ToString.Aef[a] = Set.toString(s)
 }
 
 instance LowerBound[Set[a]] {
@@ -59,13 +61,19 @@ instance MeetLattice[Set[a]] with Order[a] {
     pub def greatestLowerBound(s1: Set[a], s2: Set[a]): Set[a] = s1 `Set.intersection` s2
 }
 
-instance Foldable[Set] {
+instance Foldable[Set[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldLeft(f, s, s1)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRight(f, s, s1)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, s1: Set[a]): b \ ef = Set.foldRightWithCont(f, s, s1)
 }
 
-instance UnorderedFoldable[Set] {
+instance UnorderedFoldable[Set[a]] {
+    type Elm = a
+    type Aef = Pure
+
     pub def foldMap(f: a -> b \ ef, s: Set[a]): b \ ef with CommutativeMonoid[b] = Set.foldMap(f, s)
     override pub def isEmpty(s: Set[a]): Bool = Set.isEmpty(s)
     override pub def exists(f: a -> Bool \ ef, s: Set[a]): Bool \ ef = Set.exists(f, s)
@@ -91,7 +99,9 @@ instance Collectable[Set] {
     pub def collect(iter: Iterator[a, ef, r]): Set[a] \ { ef, r } with Order[a] = Iterator.toSet(iter)
 }
 
-instance Iterable[Set] {
+instance Iterable[Set[a]] {
+    type Elm = a
+    type Aef = Pure
     pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r = Set.iterator(rc, s)
 }
 
@@ -105,7 +115,7 @@ mod Set {
     ///
     /// Returns a string representation of the given set `s`.
     ///
-    pub def toString(s: Set[a]): String with ToString[a] = region rc {
+    pub def toString(s: Set[a]): String \ ToString.Aef[a] with ToString[a] = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("Set#{", sb);
         forEachWithIndex((i, x) -> {
@@ -603,7 +613,7 @@ mod Set {
     /// Returns the concatenation of the string representation
     /// of each element in `s` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, s: Set[a]): String with ToString[a] =
+    pub def join(sep: String, s: Set[a]): String \ ToString.Aef[a] with ToString[a] =
         Foldable.join(sep, s)
 
     ///

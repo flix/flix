@@ -64,6 +64,8 @@ mod Fixpoint.Ast.Datalog {
     }
 
     instance ToString[Datalog[v]] {
+        type Aef = Pure
+
         pub def toString(cs: Datalog[v]): String = match cs {
             case Datalog.Datalog(facts, rules) => region rc {
                 let sb = StringBuilder.new(rc);
@@ -124,6 +126,8 @@ mod Fixpoint.Ast.Datalog {
     }
 
     instance ToString[Constraint[v]] {
+        type Aef = Pure
+
         pub def toString(c: Constraint[v]): String =
             match c {
                 case Constraint.Constraint(head, body) =>
@@ -158,6 +162,8 @@ mod Fixpoint.Ast.Datalog {
     }
 
     instance ToString[HeadPredicate[v]] {
+        type Aef = Pure
+
         pub def toString(head: HeadPredicate[v]): String =
             match head {
                 case HeadPredicate.HeadAtom(predSym, Denotation.Relational, terms) => "${predSym}(${terms |> Vector.join(", ")})"
@@ -203,6 +209,8 @@ mod Fixpoint.Ast.Datalog {
     }
 
     instance ToString[BodyPredicate[v]] {
+        type Aef = Pure
+
         pub def toString(body: BodyPredicate[v]): String =
             def polarityPrefix(p) = match p {
                 case Polarity.Negative => "not "
@@ -249,6 +257,8 @@ mod Fixpoint.Ast.Datalog {
     }
 
     instance ToString[HeadTerm[v]] {
+        type Aef = Pure
+
         pub def toString(term: HeadTerm[v]): String = match term {
             case HeadTerm.Var(varSym) => "${varSym}"
             case HeadTerm.Lit(v) => "%{v}"
@@ -273,6 +283,8 @@ mod Fixpoint.Ast.Datalog {
     }
 
     instance ToString[BodyTerm[v]] {
+        type Aef = Pure
+
         pub def toString(term: BodyTerm[v]): String = match term {
             case BodyTerm.Wild => "_"
             case BodyTerm.Var(varSym) => ToString.toString(varSym)

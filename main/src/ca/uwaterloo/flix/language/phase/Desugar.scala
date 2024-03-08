@@ -22,6 +22,8 @@ import ca.uwaterloo.flix.language.ast.WeededAst.Predicate
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, DesugaredAst, Name, SourceLocation, Type, WeededAst}
 import ca.uwaterloo.flix.util.ParOps
 
+import scala.List
+
 object Desugar {
 
   /**
@@ -475,6 +477,17 @@ object Desugar {
 
     case WeededAst.Expr.Cst(cst, loc) =>
       Expr.Cst(cst, loc)
+
+    case WeededAst.Expr.IndexGet(exp1, exp2, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      mkApplyFqn("Index.get", List(e1, e2), loc)
+
+    case WeededAst.Expr.IndexPut(exp1, exp2, exp3, loc) =>
+      val e1 = visitExp(exp1)
+      val e2 = visitExp(exp2)
+      val e3 = visitExp(exp3)
+      mkApplyFqn("IndexMut.put", List(e1, e2, e3), loc)
 
     case WeededAst.Expr.Apply(exp, exps, loc) =>
       val e = visitExp(exp)

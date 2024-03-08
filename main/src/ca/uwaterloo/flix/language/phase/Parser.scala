@@ -683,7 +683,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Assign: Rule1[ParsedAst.Expression] = rule {
-      InstanceOf ~ optional(optWS ~ operatorX(":=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Assign)
+      IndexPut ~ optional(optWS ~ operatorX(":=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.Assign)
+    }
+
+    def IndexPut: Rule1[ParsedAst.Expression] = rule {
+      InstanceOf ~ optional(optWS ~ operatorX("=") ~ optWS ~ LogicalOr ~ SP ~> ParsedAst.Expression.IndexPut)
     }
 
     def InstanceOf: Rule1[ParsedAst.Expression] = rule {
@@ -1045,7 +1049,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def RecordSelect: Rule1[ParsedAst.Expression] = rule {
-      Apply ~ zeroOrMore(optWS ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelect)
+      Index ~ zeroOrMore(optWS ~ "." ~ Names.Field ~ SP ~> ParsedAst.Expression.RecordSelect)
     }
 
     def SelectChannel: Rule1[ParsedAst.Expression.SelectChannel] = {
@@ -1087,6 +1091,10 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Intrinsic: Rule1[ParsedAst.Expression.Intrinsic] = rule {
       SP ~ "$" ~ Names.Intrinsic ~ "$" ~ ArgumentList ~ SP ~> ParsedAst.Expression.Intrinsic
+    }
+
+    def Index: Rule1[ParsedAst.Expression] = rule {
+      Apply ~ zeroOrMore("[" ~ Expression ~ "]" ~ SP ~> ParsedAst.Expression.Index)
     }
 
     def Apply: Rule1[ParsedAst.Expression] = rule {

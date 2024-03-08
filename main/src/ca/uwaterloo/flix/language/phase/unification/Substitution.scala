@@ -16,6 +16,7 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -133,6 +134,16 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
   }
 
   /**
+    * Applies `this` substitution to the given typing constraint.
+    */
+  def apply(tc: TypingConstraint): TypingConstraint = if (isEmpty) tc else tc match {
+    case TypingConstraint.Equality(tpe1, tpe2, prov) => TypingConstraint.Equality(apply(tpe1), apply(tpe2), prov)
+    case TypingConstraint.Class(sym, tpe, loc) => TypingConstraint.Class(sym, apply(tpe), loc)
+    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested) =>
+      TypingConstraint.Purification(sym, apply(eff1), apply(eff2), level, prov, nested.map(apply))
+  }
+
+  /**
     * Removes the binding for the given type variable `tvar` (if it exists).
     */
   def unbind(tvar: Symbol.KindedTypeVarSym): Substitution = Substitution(m - tvar)
@@ -177,6 +188,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
       // minimize case set formulas if present
       val tpe = x.kind match {
         case Kind.CaseSet(sym) => SetFormula.minimizeType(this.apply(t), sym, sym.universe, SourceLocation.Unknown)
+        case Kind.Eff => TypeMinimization.minimizeType(this.apply(t))
         case _ => this.apply(t)
       }
       newTypeMap.update(x, tpe)

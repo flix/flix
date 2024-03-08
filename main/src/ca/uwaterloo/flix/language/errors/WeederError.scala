@@ -1074,4 +1074,18 @@ object WeederError {
          |""".stripMargin
     }
   }
+
+  // TODO ASSOC-TYPES docs
+  case class IllegalAssignment(loc: SourceLocation) extends WeederError with Recoverable {
+
+    /**
+      * Returns a short description of the error message.
+      */
+    override def summary: String = "TODO" // TODO ASSOC-TYPES
+
+    /**
+      * Returns the formatted error message.
+      */
+    override def message(formatter: Formatter): String = "TODO" // TODO ASSOC-TYPES
+  }
 }

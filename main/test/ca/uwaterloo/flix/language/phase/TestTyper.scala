@@ -1145,6 +1145,20 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("TestAssocType.03") {
+    val input =
+      """
+        |class C[a] {
+        |    type Aef: Eff
+        |    pub def f(x: a): Unit \ C.Aef[a]
+        |}
+        |
+        |def g(x: a): Unit with C[a] = C.f(x)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
   test("TestRecordPattern.01") {
     val input =
       """

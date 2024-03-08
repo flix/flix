@@ -50,7 +50,7 @@ pub enum RedBlackTree[k, v] with Sendable {
 }
 
 instance Eq[RedBlackTree[k, v]] with Eq[k], Eq[v] {
-    pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool with Eq[v] =
+    pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool =
         RedBlackTree.toList(t1) == RedBlackTree.toList(t2)
 }
 
@@ -58,25 +58,23 @@ instance Functor[RedBlackTree[k]] {
     pub def map(f: a -> b \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, b] \ ef = RedBlackTree.mapWithKey((_, v) -> f(v), t)
 }
 
-instance Foldable[RedBlackTree[k]] {
+instance Foldable[RedBlackTree[k, v]] {
+    type Elm = v
+    type Aef = Pure
+
     pub def foldLeft(f: (b, v) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldLeft((acc, _, v) -> f(acc, v), s, t)
     pub def foldRight(f: (v, b) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldRight((_, v, acc) -> f(v, acc), s, t)
     pub def foldRightWithCont(f: (v, Unit -> b \ ef) -> b \ ef, s: b, t: RedBlackTree[k, v]): b \ ef = RedBlackTree.foldRightWithCont((_, v, acc) -> f(v, acc), s, t)
 }
 
-instance UnorderedFoldable[RedBlackTree[k]] {
+instance UnorderedFoldable[RedBlackTree[k, v]] {
+    type Elm = v
+    type Aef = Pure
+
     pub def foldMap(f: v -> b \ ef, t: RedBlackTree[k, v]): b \ ef with CommutativeMonoid[b] = RedBlackTree.foldMap(_ -> f, t)
     override pub def isEmpty(t: RedBlackTree[k, v]): Bool = RedBlackTree.isEmpty(t)
     override pub def exists(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.exists(_ -> f, t)
     override pub def forAll(f: v -> Bool \ ef, t: RedBlackTree[k, v]): Bool \ ef = RedBlackTree.forAll(_ -> f, t)
-}
-
-instance Traversable[RedBlackTree[k]] {
-    pub def traverse(f: a -> m[b] \ ef, t: RedBlackTree[k, a]): m[RedBlackTree[k, b]] \ ef with Applicative[m] =
-        RedBlackTree.mapAWithKey((_, v) -> f(v), t)
-
-    pub override def sequence(t: RedBlackTree[k, m[a]]): m[RedBlackTree[k, a]] with Applicative[m] =
-        RedBlackTree.mapAWithKey((_, v) -> v, t)
 }
 
 instance Filterable[RedBlackTree[k]] with Order[k] {
@@ -84,11 +82,12 @@ instance Filterable[RedBlackTree[k]] with Order[k] {
     pub override def filter(f: a -> Bool \ ef, t: RedBlackTree[k, a]): RedBlackTree[k, a] \ ef = RedBlackTree.filter(f, t)
 }
 
-instance Witherable[RedBlackTree[k]] with Order[k]
+instance Iterable[RedBlackTree[k, v]] {
+    type Elm = (k, v)
+    type Aef = Pure
 
-instance Iterable[RedBlackTree[k]] {
-    pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[v, r, r] \ r =
-            RedBlackTree.iterator(rc, t) |> Iterator.map(snd)
+    pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r, r] \ r =
+            RedBlackTree.iterator(rc, t)
 }
 
 mod RedBlackTree {
@@ -903,14 +902,14 @@ mod RedBlackTree {
     /// Returns the concatenation of the string representation of each key `k`
     /// in `t` with `sep` inserted between each element.
     ///
-    pub def joinKeys(sep: String, t: RedBlackTree[k, v]): String with ToString[k] =
+    pub def joinKeys(sep: String, t: RedBlackTree[k, v]): String \ ToString.Aef[k] with ToString[k] =
         joinWith((k, _) -> ToString.toString(k), sep, t)
 
     ///
     /// Returns the concatenation of the string representation of each value `v`
     /// in `t` with `sep` inserted between each element.
     ///
-    pub def joinValues(sep: String, t: RedBlackTree[k, v]): String with ToString[v] =
+    pub def joinValues(sep: String, t: RedBlackTree[k, v]): String \ ToString.Aef[v] with ToString[v] =
         joinWith((_, v) -> ToString.toString(v), sep, t)
 
     ///

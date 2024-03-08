@@ -182,6 +182,7 @@ mod BooleanFormulas {
 }
 
 instance ToString[BooleanFormulas.Exp[s]] {
+    type Aef = Pure
     pub def toString(x: BooleanFormulas.Exp[s]): String =
         BooleanFormulas.toString(x)
 }

@@ -104,7 +104,9 @@ object Main {
       xsummary = cmdOpts.xsummary,
       xparser = cmdOpts.xparser,
       XPerfFrontend = cmdOpts.XPerfFrontend,
-      XPerfN = cmdOpts.XPerfN
+      XPerfN = cmdOpts.XPerfN,
+      xtyper = cmdOpts.xtyper,
+      xprintconstraints = cmdOpts.xprintconstraints,
     )
 
     // Don't use progress bar if benchmarking.
@@ -363,6 +365,8 @@ object Main {
                      xparser: Boolean = false,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
+                     xtyper: Boolean = false,
+                     xprintconstraints: Boolean = false,
                      files: Seq[File] = Seq())
 
   /**
@@ -569,6 +573,14 @@ object Main {
       // Xparser
       opt[Unit]("Xparser").action((_, c) => c.copy(xparser = true)).
         text("[experimental] disables new experimental lexer and parser.")
+
+      // Xtyper
+      opt[Unit]("Xtyper").action((_, c) => c.copy(xtyper = true)).
+        text("[experimental] enables new experimental typer.")
+
+      // Xprintconstraints
+      opt[Unit]("Xprintconstraints").action((_, c) => c.copy(xprintconstraints = true)).
+        text("[experimental] prints generated type constraints.")
 
       note("")
 

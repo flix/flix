@@ -26,7 +26,7 @@ mod MutMap {
     ///
     /// Returns a string representation of the given MutMap `m`.
     ///
-    pub def toString(m: MutMap[k, v, r]): String \ r with ToString[k], ToString[v] = region rc {
+    pub def toString(m: MutMap[k, v, r]): String \ ToString.Aef[k] + ToString.Aef[v] + r with ToString[k], ToString[v] = region rc {
         let sb = StringBuilder.new(rc);
         StringBuilder.appendString!("MutMap#{", sb);
         forEachWithIndex((i, k, v) -> {
@@ -567,9 +567,18 @@ mod MutMap {
     ///
     /// Returns an iterator over all key-value pairs in `m`.
     ///
-    pub def iterator(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[(k, v), r1 + r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[(k, v), r1 + r2, r1] \ r1 =
         let MutMap(_, mm) = m;
-        Map.iterator(rc, deref mm) |> Iterator.map(x -> {discard deref mm; x})
+        let iterOptRef = ref None @ rc;
+        let next = () -> {
+            let iter = match deref iterOptRef {
+                case None => Map.iterator(rc, deref mm)
+                case Some(x) => x
+            };
+            iterOptRef := Some(iter);
+            Iterator.next(iter)
+        };
+        Iterator.iterate(rc, next)
 
     ///
     /// Returns an iterator over keys in `m`.
@@ -611,7 +620,7 @@ mod MutMap {
     /// Returns the concatenation of the string representation of each key `k`
     /// in `m` with `sep` inserted between each element.
     ///
-    pub def joinKeys(sep: String, m: MutMap[k, v, r]): String \ r with ToString[k] =
+    pub def joinKeys(sep: String, m: MutMap[k, v, r]): String \ ToString.Aef[k] + r with ToString[k] =
         let MutMap(_, mm) = m;
         Map.joinKeys(sep, deref mm)
 
@@ -619,7 +628,7 @@ mod MutMap {
     /// Returns the concatenation of the string representation of each value `v`
     /// in `m` with `sep` inserted between each element.
     ///
-    pub def joinValues(sep: String, m: MutMap[k, v, r]): String \ r with ToString[v] =
+    pub def joinValues(sep: String, m: MutMap[k, v, r]): String \ ToString.Aef[v] + r with ToString[v] =
         let MutMap(_, mm) = m;
         Map.joinValues(sep, deref mm)
 

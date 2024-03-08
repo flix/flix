@@ -31,7 +31,7 @@ mod StringBuilder {
     ///
     /// Append `x` to the StringBuilder `sb`.
     ///
-    pub def append!(x: a, sb: StringBuilder[r]): Unit \ r with ToString[a] =
+    pub def append!(x: a, sb: StringBuilder[r]): Unit \ ToString.Aef[a] + r with ToString[a] =
         let s = ToString.toString(x);
         s `appendString!` sb;
         ()
@@ -83,7 +83,7 @@ mod StringBuilder {
     ///
     /// Appends `f(x)` for each x in the foldable collection `t` to the string builder `sb`.
     ///
-    pub def appendLinesWith(f: a -> String \ ef, t: t[a], sb: StringBuilder[r]): Unit \ { ef, r } with Foldable[t] =
+    pub def appendLinesWith(f: a -> String \ ef, t: t, sb: StringBuilder[r]): Unit \ Foldable.Aef[t] + ef + r with Foldable[t] where Foldable.Elm[t] ~ a =
         Foldable.forEach(x -> appendLineWith!(f, x, sb), t)
 
     ///

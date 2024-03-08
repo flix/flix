@@ -23,6 +23,7 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.fmt._
+import ca.uwaterloo.flix.language.phase.unification.UnificationError
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
@@ -684,13 +685,11 @@ object TypeError {
   }
 
   /**
-    * Unification equation was too complex to solve.
+    * A unification equation system was too complex to solve.
     *
-    * @param tpe1 the lhs of the unification equation.
-    * @param tpe2 the rhs of the unification equation.
-    * @param loc  the location where the error occurred.
+    * @param loc the location where the error occurred.
     */
-  case class TooComplex(tpe1: Type, tpe2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class TooComplex(loc: SourceLocation) extends TypeError {
     def summary: String = s"Type inference too complex."
 
     def message(formatter: Formatter): String = {
@@ -699,9 +698,6 @@ object TypeError {
          |>> ${red("Type inference failed due to too complex unification.")}'.
          |
          |Try to break your function into smaller functions.
-         |
-         |Type One: ${formatType(tpe1, Some(renv))}
-         |Type Two: ${formatType(tpe2, Some(renv))}
          |
          |${code(loc, "too complex constraints")}
          |
@@ -874,5 +870,24 @@ object TypeError {
     override def explain(formatter: Formatter): Option[String] = Some({
       "Tip: Add an equality constraint to the function."
     })
+  }
+
+  // MATT temp hack to get things compiling again
+  case class HackError(e: UnificationError) extends TypeError {
+
+    /**
+      * Returns the primary source location of the error.
+      */
+    override def loc: SourceLocation = SourceLocation.Unknown
+
+    /**
+      * Returns a short description of the error message.
+      */
+    override def summary: String = e.toString
+
+    /**
+      * Returns the formatted error message.
+      */
+    override def message(formatter: Formatter): String = e.toString
   }
 }

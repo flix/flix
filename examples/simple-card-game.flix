@@ -20,6 +20,7 @@ enum Card(Rank, Suit) with Eq
 
 // An instance of ToString for Ranks
 instance ToString[Rank] {
+    type Aef = Pure
     pub def toString(x: Rank): String = match x {
         case Rank.Number(n) => "${n}"
         case Rank.Jack      => "Jack"
@@ -31,6 +32,7 @@ instance ToString[Rank] {
 
 // An instance of ToString for Cards
 instance ToString[Card] {
+    type Aef = Pure
     pub def toString(x: Card): String = match x {
         case Card.Card(r, s) => "${r} of ${s}"
     }

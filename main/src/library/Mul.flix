@@ -18,43 +18,52 @@
 /// A trait for multiplication.
 ///
 pub trait Mul[a] {
+    type Aef: Eff
     ///
     /// Returns `x` multiplied by `y`.
     ///
-    pub def mul(x: a, y: a): a
+    pub def mul(x: a, y: a): a \ Mul.Aef[a]
 }
 
 instance Mul[Float32] {
+    type Aef = Pure
     pub def mul(x: Float32, y: Float32): Float32 = $FLOAT32_MUL$(x, y)
 }
 
 instance Mul[Float64] {
+    type Aef = Pure
     pub def mul(x: Float64, y: Float64): Float64 = $FLOAT64_MUL$(x, y)
 }
 
 instance Mul[BigDecimal] {
+    type Aef = Pure
     pub def mul(x: BigDecimal, y: BigDecimal): BigDecimal =
         import java.math.BigDecimal.multiply(BigDecimal): BigDecimal \ {};
         x `multiply` y
 }
 
 instance Mul[Int8] {
+    type Aef = Pure
     pub def mul(x: Int8, y: Int8): Int8 = $INT8_MUL$(x, y)
 }
 
 instance Mul[Int16] {
+    type Aef = Pure
     pub def mul(x: Int16, y: Int16): Int16 = $INT16_MUL$(x, y)
 }
 
 instance Mul[Int32] {
+    type Aef = Pure
     pub def mul(x: Int32, y: Int32): Int32 = $INT32_MUL$(x, y)
 }
 
 instance Mul[Int64] {
+    type Aef = Pure
     pub def mul(x: Int64, y: Int64): Int64 = $INT64_MUL$(x, y)
 }
 
 instance Mul[BigInt] {
+    type Aef = Pure
     pub def mul(x: BigInt, y: BigInt): BigInt =
         import java.math.BigInteger.multiply(BigInt): BigInt \ {};
         x `multiply` y

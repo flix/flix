@@ -36,7 +36,7 @@ mod MutList {
     ///
     /// Returns a string representation of the given MutList `l`.
     ///
-    pub def toString(l: MutList[a, r]): String \ r with ToString[a] = region rc2 {
+    pub def toString(l: MutList[a, r]): String \ ToString.Aef[a] + r with ToString[a] = region rc2 {
         let sb = StringBuilder.new(rc2);
         StringBuilder.appendString!("MutList#{", sb);
         forEachWithIndex((i, x) -> {
@@ -628,13 +628,13 @@ mod MutList {
     ///
     /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
     ///
-    pub def pushAll!(m: m[a], v: MutList[a, r]): Unit \ r with Foldable[m] =
+    pub def pushAll!(m: m, v: MutList[a, r]): Unit \ Foldable.Aef[m] + r with Foldable[m] where Foldable.Elm[m] ~ a =
         Foldable.forEach(x -> MutList.push!(x, v), m)
 
     ///
     /// Appends `m` to `v` i.e. inserts all elements from `m` into the end of `v`.
     ///
-    pub def append!(m: m[a], v: MutList[a, r]): Unit \ r with Foldable[m] =
+    pub def append!(m: m, v: MutList[a, r]): Unit \ Foldable.Aef[m] + r with Foldable[m] where Foldable.Elm[m] ~ a =
         pushAll!(m, v)
 
     ///
@@ -790,7 +790,7 @@ mod MutList {
     /// Returns the concatenation of the string representation
     /// of each element in `v` with `sep` inserted between each element.
     ///
-    pub def join(sep: String, v: MutList[a, r]): String \ r with ToString[a] =
+    pub def join(sep: String, v: MutList[a, r]): String \ ToString.Aef[a] + r with ToString[a] =
         joinWith(ToString.toString, sep, v)
 
     ///
@@ -815,11 +815,11 @@ mod MutList {
     ///
     /// Modifying `l` while using an iterator has undefined behavior and is dangerous.
     ///
-    pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
+    pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r1 + r2, r1] \ r1 =
         let MutList(_, a, len) = l;
-        let len1 = deref len;
         let ix = ref 0 @ rc;
         let next = () -> {
+            let len1 = deref len;
             let i = deref ix;
             if (i < len1) {
                 let x = Array.get(i, deref a);

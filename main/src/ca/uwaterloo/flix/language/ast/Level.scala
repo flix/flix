@@ -37,13 +37,13 @@ object Level {
   val Default: Level = Level(0)
 
   /**
-    * Assigns to every variable `x` in `tpe` the minimum level of `tvar` and `x` itself.
+    * Assigns to every variable `x` in `tpe` the minimum level of `sym` and `x` itself.
     *
     * Note: This function is *NOT* commutative.
     */
-  def equalizeR(tvar: Type.Var, tpe: Type, renv: RigidityEnv): Unit = {
+  def equalizeR(sym: Symbol.KindedTypeVarSym, tpe: Type, renv: RigidityEnv): Unit = {
     tpe.typeVars.foreach {
-      t => t.sym.level = Level(Math.min(t.sym.level.i, tvar.sym.level.i))
+      t => t.sym.level = Level(Math.min(t.sym.level.i, sym.level.i))
     }
   }
 
