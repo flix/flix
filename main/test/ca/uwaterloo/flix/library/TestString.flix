@@ -3163,15 +3163,15 @@ def levenshteinDistance07(): Bool =
 
 @test
 def zip01(): Bool =
-    String.zip("", "") == Nil: List[(Char,Char)]
+    String.zip("", "") == (Nil: List[(Char,Char)])
 
 @test
 def zip02(): Bool =
-    String.zip("a", "") == Nil: List[(Char, Char)]
+    String.zip("a", "") == (Nil: List[(Char, Char)])
 
 @test
 def zip03(): Bool =
-    String.zip("", "1") == Nil: List[(Char, Char)]
+    String.zip("", "1") == (Nil: List[(Char, Char)])
 
 @test
 def zip04(): Bool =

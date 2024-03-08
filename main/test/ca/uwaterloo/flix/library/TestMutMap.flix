@@ -50,8 +50,8 @@ mod TestMutMap {
 
     @test
     def sameElements01(): Bool = region rc {
-        let m1 = MutMap.new(rc): MutMap[Int32, Int32, _];
-        let m2 = MutMap.new(rc): MutMap[Int32, Int32, _];
+        let m1 = (MutMap.new(rc): MutMap[Int32, Int32, _]);
+        let m2 = (MutMap.new(rc): MutMap[Int32, Int32, _]);
         MutMap.sameElements(m1, m2)
     }
 
@@ -123,8 +123,8 @@ mod TestMutMap {
 
     @test
     def merge01(): Bool = region rc {
-        let m1 = MutMap.new(rc): MutMap[Int32, Int32, _];
-        let m2 = MutMap.new(rc): MutMap[Int32, Int32, _];
+        let m1 = (MutMap.new(rc): MutMap[Int32, Int32, _]);
+        let m2 = (MutMap.new(rc): MutMap[Int32, Int32, _]);
         MutMap.mergeWithKey!((_, v, _) -> v, m1, m2);
         MutMap.isEmpty(m2)
     }
@@ -266,7 +266,7 @@ mod TestMutMap {
 
     @test
     def joinKeys01(): Bool = region rc {
-        MutMap.new(rc): MutMap[Int32, Int32, _] |> MutMap.joinKeys(",") == ""
+        (MutMap.new(rc): MutMap[Int32, Int32, _]) |> MutMap.joinKeys(",") == ""
     }
 
     @test
@@ -291,7 +291,7 @@ mod TestMutMap {
 
     @test
     def joinValues01(): Bool = region rc {
-        MutMap.new(rc): MutMap[Int32, Int32, _] |> MutMap.joinValues(",") == ""
+        (MutMap.new(rc): MutMap[Int32, Int32, _]) |> MutMap.joinValues(",") == ""
     }
 
     @test
@@ -316,7 +316,7 @@ mod TestMutMap {
 
     @test
     def joinWith01(): Bool = region rc {
-        MutMap.new(rc): MutMap[Int32, Int32, _] |>
+        (MutMap.new(rc): MutMap[Int32, Int32, _]) |>
             MutMap.joinWith((k, v) -> "${k} => ${v}", ",") == ""
     }
 

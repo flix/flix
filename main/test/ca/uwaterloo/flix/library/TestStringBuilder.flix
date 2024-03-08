@@ -491,7 +491,7 @@ def appendLinesWith04(): Bool = region rc {
 @test
 def appendLinesWith01!(): Bool = region rc {
     let sb = StringBuilder.new(rc);
-    StringBuilder.appendLinesWith!(Int32.toString, (Array#{} @ rc): Array[Int32, _], sb);
+    StringBuilder.appendLinesWith!(Int32.toString, ((Array#{} @ rc): Array[Int32, _]), sb);
     StringBuilder.toString(sb) == ""
 }
 

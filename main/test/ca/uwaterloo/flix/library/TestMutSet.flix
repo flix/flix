@@ -50,8 +50,8 @@ mod TestMutSet {
 
     @test
     def sameElements01(): Bool = region rc {
-        let s1 = MutSet.new(rc): MutSet[Int32, _];
-        let s2 = MutSet.new(rc): MutSet[Int32, _];
+        let s1 = (MutSet.new(rc): MutSet[Int32, _]);
+        let s2 = (MutSet.new(rc): MutSet[Int32, _]);
         MutSet.sameElements(s1, s2)
     }
 
@@ -133,8 +133,8 @@ mod TestMutSet {
 
     @test
     def addAll01(): Bool = region rc {
-        let s1 = MutSet.new(rc): MutSet[Int32, _];
-        let s2 = MutSet.new(rc): MutSet[Int32, _];
+        let s1 = (MutSet.new(rc): MutSet[Int32, _]);
+        let s2 = (MutSet.new(rc): MutSet[Int32, _]);
         MutSet.addAll!(MutSet.toSet(s1), s2);
         MutSet.isEmpty(s2)
     }
@@ -415,7 +415,7 @@ mod TestMutSet {
 
     @test
     def foldMap01(): Bool = region rc {
-        MutSet.foldMap(x -> 2 * x, MutSet.new(rc): MutSet[Int32, _]) == 0
+        MutSet.foldMap(x -> 2 * x, (MutSet.new(rc): MutSet[Int32, _])) == 0
     }
 
     @test
