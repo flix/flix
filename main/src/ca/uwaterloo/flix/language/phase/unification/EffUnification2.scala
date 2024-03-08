@@ -114,11 +114,13 @@ object EffUnification2 {
   }
 
   /**
-    * Returns a Boolean substitution as a regular type substitution.
+    * Returns a regular type substitution obtained from the given Boolean substitution `s`.
     */
   private def fromBoolSubst(s: FastBoolUnification.BoolSubstitution)(implicit m: Bimap[Type.Var, Int]): Substitution = {
     Substitution(s.m.foldLeft(Map.empty[Symbol.KindedTypeVarSym, Type]) {
-      case (macc, (k, v)) => macc + (m.getBackward(k).get.sym -> fromTerm(v, SourceLocation.Unknown))
+      case (macc, (k, v)) =>
+        val tvar = m.getBackward(k).get.sym
+        macc + (tvar -> fromTerm(v, tvar.loc))
     })
   }
 
