@@ -62,14 +62,14 @@ object FastBoolUnification {
   private val Threshold: Int = 1_000
 
   /**
-   * The maximum number of permutations to try while solving a system of unification equations using SVE.
-   *
-   * Recall that for a list of length
-   *    0, 1, 2, 3,  4,   5,   6,    7,      8
-   * there are
-   *    1, 1, 2, 6, 24, 120, 720, 5040, 40,320
-   * permutations.
-   */
+    * The maximum number of permutations to try while solving a system of unification equations using SVE.
+    *
+    * Recall that for a list of length
+    * 0, 1, 2, 3,  4,   5,   6,    7,      8
+    * there are
+    * 1, 1, 2, 6, 24, 120, 720, 5040, 40,320
+    * permutations.
+    */
   private val PermutationLimit: Int = 3
 
   /**
@@ -545,10 +545,10 @@ object FastBoolUnification {
   }
 
   /**
-   * Given a unification equation system `l` computes a most-general unifier for all its equations.
-   *
-   * If multiple equations are involved then we try to solve them in different order to find a small substitution.
-   */
+    * Given a unification equation system `l` computes a most-general unifier for all its equations.
+    *
+    * If multiple equations are involved then we try to solve them in different order to find a small substitution.
+    */
   private def boolUnifyAllPickSmallest(l: List[Equation]): BoolSubstitution = {
     // Case 1: We have at most one equation to solve: just solve immediately.
     if (l.length <= 1) {
@@ -567,10 +567,10 @@ object FastBoolUnification {
       case (_, s) => s.size
     }
 
-//    println("Permutations:")
-//    for ((p, s) <- results) {
-//      println(s"  $p -- ${s.size}")
-//    }
+    //    println("Permutations:")
+    //    for ((p, s) <- results) {
+    //      println(s"  $p -- ${s.size}")
+    //    }
 
     // Pick the smallest substitution.
     results.head._2
@@ -686,6 +686,9 @@ object FastBoolUnification {
   }
 
   /**
+    * Returns `true` if `t` can evaluate to `true` under the assumption that `fvs` are the free variables in `t`
+    * (which can be assigned freely) and that `trueVars` are variables assigned the TRUE value.
+    *
     * Evaluates the given term `t` under all valuations of the free variables `fvs` where `trueVars` are assumed to be true.
     *
     * For each variable `x`, the function recursively explores both when `x` is true and when `x` is false.
@@ -886,16 +889,14 @@ object FastBoolUnification {
     }
 
     /**
-      * Returns the size of `this` term.
+      * Returns the number of connectives in `this` term.
       *
-      * The size is the number of constants, variables, and connectives in the term.
-      *
-      * For example, `size(x /\ y) = 1` and `size(x /\ not y) = 2`.
+      * For example, `size(x) = 0`, `size(x /\ y) = 1`, and `size(x /\ not y) = 2`.
       */
     final def size: Int = this match {
       case Term.True => 0
       case Term.False => 0
-      case Term.Cst(_) => 1
+      case Term.Cst(_) => 0
       case Term.Var(_) => 0
       case Term.Not(t) => t.size + 1
       case Term.And(csts, vars, rest) =>
