@@ -380,12 +380,6 @@ object ConstraintResolution {
         }
     }
   }
-  //
-  //  private def simplify(constr: TypingConstraint, renv: RigidityEnv, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[List[SimpleTypingConstraint], UnificationError] = constr match {
-  //    case TypingConstraint.Equality(tpe1, tpe2, prov, loc) => simplifyEquality(tpe1, tpe2, renv, loc, eqEnv)
-  //    case TypingConstraint.Class(sym, tpe, loc) => simplifyClass(sym, tpe, classEnv, eqEnv, renv, loc)
-  //    case TypingConstraint.Purification(tpe1, tpe2, sym, level, prov, loc) => SimpleTypingConstraint.Pure(tpe1, tpe2, sym, loc)
-  //  }
 
   def resolve(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ReductionResult, TypeError] = {
     var last = List.empty[TypingConstraint]
