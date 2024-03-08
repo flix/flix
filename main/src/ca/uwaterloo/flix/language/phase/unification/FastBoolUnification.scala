@@ -1187,7 +1187,7 @@ object FastBoolUnification {
     /**
       * Extends `this` substitution with a new binding from the variable `x` to the term `t`.
       *
-      * If the variable `x` already occurs in `this` substitution then it must be bound to the same term as `t`.
+      * Throws a [[ConflictException]] if `x` is already bound to a term different from `t`.
       */
     def extended(x: Int, t: Term, loc: SourceLocation): BoolSubstitution = m.get(x) match {
       case None => BoolSubstitution(m + (x -> t))
