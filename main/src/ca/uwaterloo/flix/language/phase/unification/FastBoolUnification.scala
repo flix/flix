@@ -364,7 +364,7 @@ object FastBoolUnification {
     *
     * Note that several equations were simplified.
     *
-    * Note: We do not propagate false. This extended can be added, if needed.
+    * Note: We do not propagate false. This extension can be added, if needed.
     *
     * Note: We use `subst.extended` to check for conflicts. For example, if we already know that `s = [x -> c17]` and we
     * learn that `x -> true` then we will try to extend s with the new binding which will raise a [[ConflictException]].
