@@ -394,7 +394,7 @@ object FastBoolUnification {
           // Case 3: x /\ y /\ z /\... ~ true
           case Equation(Term.And(csts, vars, rest), Term.True, loc) if csts.isEmpty && rest.isEmpty =>
             for (Term.Var(x) <- vars) {
-              subst = subst.extended(x, Term.True, loc)
+              subst = subst.extended(x, Term.True, loc) // Note: the extended function will check that `x` is not already mapped to another constant.
               changed = true
             }
 
