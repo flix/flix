@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Herluf Baggesen
+ * Copyright 2024 Herluf Baggesen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,6 @@ sealed trait TokenKind
  */
 object TokenKind {
   case object Ampersand extends TokenKind
-
-  case object AmpersandAmpersand extends TokenKind
 
   case object AngledEqual extends TokenKind
 
@@ -131,7 +129,13 @@ object TokenKind {
 
   case object KeywordChoose extends TokenKind
 
+  case object KeywordChooseStar extends TokenKind
+
   case object KeywordDebug extends TokenKind
+
+  case object KeywordDebugBang extends TokenKind
+
+  case object KeywordDebugBangBang extends TokenKind
 
   case object KeywordDef extends TokenKind
 
@@ -201,9 +205,9 @@ object TokenKind {
 
   case object KeywordNull extends TokenKind
 
-  case object KeywordOpen extends TokenKind
+  case object KeywordOpenVariant extends TokenKind
 
-  case object KeywordOpenAs extends TokenKind
+  case object KeywordOpenVariantAs extends TokenKind
 
   case object KeywordOr extends TokenKind
 
@@ -215,6 +219,8 @@ object TokenKind {
 
   case object KeywordPure extends TokenKind
 
+  case object KeywordProject extends TokenKind
+
   case object KeywordQuery extends TokenKind
 
   case object KeywordRef extends TokenKind
@@ -222,6 +228,14 @@ object TokenKind {
   case object KeywordRegion extends TokenKind
 
   case object KeywordRestrictable extends TokenKind
+
+  case object KeywordRvadd extends TokenKind
+
+  case object KeywordRvand extends TokenKind
+
+  case object KeywordRvnot extends TokenKind
+
+  case object KeywordRvsub extends TokenKind
 
   case object KeywordSealed extends TokenKind
 
@@ -299,8 +313,6 @@ object TokenKind {
 
   case object Minus extends TokenKind
 
-  case object MinusMinus extends TokenKind
-
   case object NameGreek extends TokenKind
 
   case object NameJava extends TokenKind
@@ -317,8 +329,6 @@ object TokenKind {
 
   case object Plus extends TokenKind
 
-  case object PlusPlus extends TokenKind
-
   case object Semi extends TokenKind
 
   case object SetHash extends TokenKind
@@ -330,8 +340,6 @@ object TokenKind {
   case object StarStar extends TokenKind
 
   case object Tilde extends TokenKind
-
-  case object TildeTilde extends TokenKind
 
   case object TripleAmpersand extends TokenKind
 
