@@ -29,9 +29,11 @@ import scala.collection.mutable
 /// A Fast Boolean Unification Solver based on the following ideas:
 ///
 /// - We work on all the equations as one whole system.
+/// - We assume the equation system has been put into normal form. This avoids the need to mirror a lot of cases.
+///   - See the definition of `Equation.mk` for details.
 /// - We progress in the following order:
 ///   1. We propagate ground terms (true/false/constant) in a fixpoint.
-///   2. We propagate variables.
+///   2. We propagate variables (i.e. resolving constraints of the form x = y).
 ///   3. We perform trivial assignments where the left-hand variables does not occur in the RHS.
 ///   4. We do full-blown Boolean unification with SVE.
 /// - We represent a conjunction with n >= 2 terms.
