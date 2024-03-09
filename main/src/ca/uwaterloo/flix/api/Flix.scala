@@ -28,7 +28,6 @@ import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.Chain
-import ca.uwaterloo.flix.tools.pkg.Manifest
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
@@ -419,7 +418,7 @@ class Flix {
       throw new IllegalArgumentException(s"'$p' must be a readable file.")
     if (!p.getFileName.toString.endsWith(".fpkg"))
       throw new IllegalArgumentException(s"'$p' must be a *.pkg file.")
-    // TODO: get manifest as a parameter and check the safety of the package.
+
     addInput(p.toString, Input.PkgFile(p))
     this
   }

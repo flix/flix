@@ -80,6 +80,17 @@ object FlixPackageManager {
     Ok(flixPaths)
   }
 
+
+  /**
+   *  If the current package is safe, checks if all the dependencies are also marked as safe.
+   */
+  def checkPackageSafety(manifest: Manifest, depManifest: List[Manifest]): Result[Boolean, PackageError] = {
+    depManifest.foreach { m =>
+      if (manifest.safe > m.safe) return Err(PackageError.ManifestSafetyError(manifest.name, m.name))
+    }
+    Ok(true)
+  }
+
   /**
     * Installs a flix package from the Github `project`.
     *
@@ -135,13 +146,6 @@ object FlixPackageManager {
     }
   }
 
-  private def checkPackageSafety(manifest: Manifest, depManifests: List[Manifest]): Boolean = {
-    depManifests.forall(_.safe) match {
-      case manifest.safe => true
-      case _ => false
-    }
-  }
-
   /**
     * Recursively finds all transitive dependencies of `manifest`.
     * Downloads any missing toml files for found dependencies and
@@ -188,5 +192,4 @@ object FlixPackageManager {
       case Err(e) => Err(PackageError.ManifestParseError(e))
     }
   }
-
 }

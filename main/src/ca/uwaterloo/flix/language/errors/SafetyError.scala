@@ -504,27 +504,14 @@ object SafetyError {
   }
 
   case class IncorrectSafetySignature(loc: SourceLocation) extends SafetyError with Recoverable {
-    override def summary: String = s"Flix package is unsafe but it was stated as safe"
+    override def summary: String = s"The Flix package '${loc.source.name}' was marked as safe, despite being unsafe."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Flix package is unsafe but it was stated as safe
+         |>> The Flix package '${loc.source.name}' was marked as safe, despite being unsafe.
          |
          |${code(loc, s"makes the package unsafe")}
-         |""".stripMargin
-    }
-  }
-
-  case class NotAllowedEffect(eff: String, loc: SourceLocation = SourceLocation.Unknown) extends SafetyError with Recoverable {
-    override def summary: String = s"Flix package has unsafe effects but it was stated as safe"
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Flix package has unsafe effects but it was stated as safe
-         |
-         |The '${eff}' effect makes the package unsafe.
          |""".stripMargin
     }
   }

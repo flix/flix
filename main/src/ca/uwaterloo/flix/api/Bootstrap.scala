@@ -359,7 +359,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   // The `flix.toml` manifest if in project mode, otherwise `None`
   private var optManifest: Option[Manifest] = None
 
-  private var safe: Boolean = true
+  private var safe: Boolean = true //Right now it is unused
 
   // Timestamps at the point the sources were loaded
   private var timestamps: Map[Path, Long] = Map.empty
@@ -401,9 +401,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Ok(l) => jarPackagePaths = l
       case Err(e) => return Validation.toHardFailure(BootstrapError.JarPackageError(e))
     }
-    manifests.forall(_.safe) match {
-      case manifest.safe => safe = manifest.safe
-      case _ => return Validation.toHardFailure(BootstrapError.FlixPackageError(ManifestSafetyError(projectPath.getFileName.toString)))
+    FlixPackageManager.checkPackageSafety(manifest, manifests) match {
+      case Ok(isSafe) => safe = isSafe
+      case Err(e) => return Validation.toHardFailure(BootstrapError.FlixPackageError(e))
     }
     out.println("Dependency resolution completed.")
 
