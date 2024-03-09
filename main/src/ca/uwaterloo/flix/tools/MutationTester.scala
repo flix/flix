@@ -25,6 +25,14 @@ import java.io.IOException
 
 object MutationTester {
 
+  private sealed trait MutantStatus
+
+  private case object Killed extends MutantStatus
+
+  private case object Survived extends MutantStatus
+
+  private case object CompilationFailed extends MutantStatus
+
   private val mutators: List[ExprMutator] = List(
     ExprMutator.Incrementer,
     ExprMutator.Decrementer,
@@ -35,8 +43,12 @@ object MutationTester {
     ExprMutator.ConditionalBoundaryMutator,
   )
 
-  def run(root: Root)(implicit flix: Flix): Result[(Int, Int, Int), Int] = {
-    var all, killed, compilationFailed = 0 // TODO: refactor
+  def run(root: Root)(implicit flix: Flix): Result[MutationReporter, Int] = {
+    val reporter = new MutationReporter()
+
+    // todo: move prints to reporter
+    val formatter = flix.getFormatter
+    import formatter._
 
     // don't want to mutate library defs and tests
     val defs = root.defs.values.filter(defn => !isLibDef(defn) && !isTestDef(defn))
@@ -45,40 +57,52 @@ object MutationTester {
       defn =>
         mutators.foreach {
           mutator =>
-            mutator.mutate(root, defn) match {
-              case Some(mutant) =>
-                all += 1
+            mutator.mutateExpr(defn.exp).map { mutatedExp =>
+              val mutatedDef = defn.copy(exp = mutatedExp)
+              root.copy(defs = root.defs + (mutatedDef.sym -> mutatedDef))
+            }.foreach { mutant =>
+              reporter.all += 1
 
-                val formatter = flix.getFormatter
-                import formatter._
+              println("mutant created for " + blue(defn.sym.toString))
 
-                println("mutant created for " + blue(defn.sym.toString))
+              checkMutant(mutant) match {
+                case Killed =>
+                  reporter.killed += 1
+                  println(green("mutant killed"))
+                case CompilationFailed =>
+                  reporter.compilationFailed += 1
+                  println(yellow("mutant compilation failed"))
+                case Survived =>
+                  println(red("mutant survived"))
+              }
 
-                flix.codeGen(mutant).toSoftResult match {
-                  case Result.Ok(t) => if (!checkMutant(t._1)) {
-                    killed += 1
-                    println(green("mutant killed"))
-                  } else {
-                    println(red("mutant survived"))
-                  }
-                  case Result.Err(_) =>
-                    compilationFailed += 1
-                    println(yellow("mutant compilation failed"))
-                }
-
-                println("-" * 80)
-              case None => // do nothing
+              println("-" * 80)
             }
         }
+
     }
 
-    Result.Ok(all, killed, compilationFailed)
+    Result.Ok(reporter)
   }
+
+  private def isLibDef(defn: Def): Boolean = defn.exp.loc.source.input match {
+    case Input.Text(_, _, _) => true
+    case Input.TxtFile(_) => false
+    case Input.PkgFile(_) => false
+  }
+
+  private def isTestDef(defn: Def): Boolean = defn.spec.ann.isTest
+
+  private def checkMutant(mutant: Root)(implicit flix: Flix): MutantStatus =
+    flix.codeGen(mutant).toSoftResult match {
+      case Result.Ok(c) => if (!testMutant(c._1)) Killed else Survived
+      case Result.Err(_) => CompilationFailed
+    }
 
   /**
     * returns true if all tests passed, false otherwise
     */
-  private def checkMutant(compilationResult: CompilationResult)(implicit flix: Flix): Boolean = {
+  private def testMutant(compilationResult: CompilationResult): Boolean = {
     val tests = compilationResult.getTests.values.filter(!_.skip)
 
     for (test <- tests) {
@@ -105,23 +129,16 @@ object MutationTester {
     true
   }
 
-  private def isLibDef(defn: Def): Boolean = defn.exp.loc.source.input match {
-    case Input.Text(_, _, _) => true
-    case Input.TxtFile(_) => false
-    case Input.PkgFile(_) => false
+  private def mutateToList(exp: Expr)(implicit flix: Flix): List[Expr] = exp match {
+    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+      mutateToList(exp1).map(Expr.IfThenElse(_, exp2, exp3, tpe, eff, loc)) :::
+        mutateToList(exp2).map(Expr.IfThenElse(exp1, _, exp3, tpe, eff, loc)) :::
+        mutateToList(exp3).map(Expr.IfThenElse(exp1, exp2, _, tpe, eff, loc))
+    case _ => List.empty
   }
-
-  private def isTestDef(defn: Def): Boolean = defn.spec.ann.isTest
 
   private sealed trait ExprMutator {
     def mutateExpr(exp: Expr)(implicit flix: Flix): Option[Expr]
-
-    def mutate(root: Root, defn: Def)(implicit flix: Flix): Option[Root] = {
-      mutateExpr(defn.exp).map { mutatedExp =>
-        val mutatedDef = defn.copy(exp = mutatedExp)
-        root.copy(defs = root.defs + (mutatedDef.sym -> mutatedDef))
-      }
-    }
   }
 
   private object ExprMutator {
@@ -500,5 +517,9 @@ object MutationTester {
     } catch {
       case _: IOException => None // todo: refactor ?
     }
+  }
+
+  class MutationReporter {
+    var all, killed, compilationFailed = 0 // TODO: refactor
   }
 }
