@@ -503,6 +503,10 @@ object SafetyError {
     }
   }
 
+  /**
+   * An error raised to indicate that a safe package has unsafe functionalities.
+   * @param loc   The source location of the method.
+   */
   case class IncorrectSafetySignature(loc: SourceLocation) extends SafetyError with Recoverable {
     override def summary: String = s"The Flix package '${loc.source.name}' was marked as safe, despite being unsafe."
 
