@@ -38,8 +38,7 @@ object Regions {
     val errors = ParOps.parMap(root.defs)(kv => visitDef(kv._2)).flatten
 
     // TODO: Instances
-    Validation.toSuccessOrSoftFailure((), errors.asInstanceOf[Iterable[Recoverable]])
-      .asInstanceOf[Validation[Unit, CompilationMessage]]
+    Validation.toSuccessOrSoftFailure((), errors)
   }
 
   private def visitDef(def0: Def)(implicit flix: Flix): List[TypeError.RegionVarEscapes] =
