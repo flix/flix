@@ -1090,7 +1090,7 @@ object Desugar {
       case Nil => // Case 1: No arguments.
         val fparam = DesugaredAst.FormalParam(Name.Ident(loc0.sp1, "_", loc0.sp2), Ast.Modifiers.Empty, Some(DesugaredAst.Type.Unit(loc0)), loc0)
         val call = DesugaredAst.Expr.InvokeConstructor(className, Nil, Nil, loc0)
-        val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc0)
+        val lambdaBody = jvmCast(call, tpe, eff, loc0)
         val e1 = DesugaredAst.Expr.Lambda(fparam, lambdaBody, loc0)
         DesugaredAst.Expr.Let(ident0, Ast.Modifiers.Empty, e1, e, loc0)
 
@@ -1111,10 +1111,24 @@ object Desugar {
 
         // Assemble the lambda expression.
         val call = DesugaredAst.Expr.InvokeConstructor(className, as, ts, loc0)
-        val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc0)
+        val lambdaBody = jvmCast(call, tpe, eff, loc0)
         val e1 = mkCurried(fs, lambdaBody, loc0)
         DesugaredAst.Expr.Let(ident0, Ast.Modifiers.Empty, e1, e, loc0)
     }
+  }
+
+  /**
+    * Returns an unchecked cast to the given type and effect, avoiding redundant
+    * effect casts to syntactic IO.
+    */
+  private def jvmCast(exp: Expr, tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], loc0: SourceLocation): Expr = {
+    // ignore redundant effect casts to IO
+    val correctedEff = eff match {
+      case None => None
+      case Some(DesugaredAst.Type.Ambiguous(Name.QName(_, Name.NName(_, Nil, _), Name.Ident(_, "IO", _), _), _)) => None
+      case Some(v) => Some(v)
+    }
+    DesugaredAst.Expr.UncheckedCast(exp, Some(tpe), correctedEff, loc0)
   }
 
   /**
@@ -1156,7 +1170,7 @@ object Desugar {
 
     // Assemble the lambda expression.
     val call = DesugaredAst.Expr.InvokeMethod(className, methodName, as.head, as.tail, ts, tpe, loc0)
-    val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc0)
+    val lambdaBody = jvmCast(call, tpe, eff, loc0)
     val e1 = mkCurried(fs, lambdaBody, loc0)
     DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e, loc0)
   }
@@ -1181,7 +1195,7 @@ object Desugar {
       case Nil => // Case 1: No arguments.
         val fparam = DesugaredAst.FormalParam(Name.Ident(loc0.sp1, "_", loc0.sp2), Ast.Modifiers.Empty, Some(DesugaredAst.Type.Unit(loc0)), loc0)
         val call = DesugaredAst.Expr.InvokeStaticMethod(className, methodName, Nil, Nil, tpe, loc0)
-        val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc0)
+        val lambdaBody = jvmCast(call, tpe, eff, loc0)
         val e1 = DesugaredAst.Expr.Lambda(fparam, lambdaBody, loc0)
         DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e, loc0)
 
@@ -1202,7 +1216,7 @@ object Desugar {
 
         // Assemble the lambda expression.
         val call = DesugaredAst.Expr.InvokeStaticMethod(className, methodName, as, ts, tpe, loc0)
-        val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc0)
+        val lambdaBody = jvmCast(call, tpe, eff, loc0)
         val e1 = mkCurried(fs, lambdaBody, loc0)
         DesugaredAst.Expr.Let(ident, Ast.Modifiers.Empty, e1, e, loc0)
     }
@@ -1224,7 +1238,7 @@ object Desugar {
     val objectExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(objectId), loc0)
     val objectParam = DesugaredAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc0)
     val call = DesugaredAst.Expr.GetField(className, fieldName, objectExp, loc0)
-    val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc0)
+    val lambdaBody = jvmCast(call, tpe, eff, loc0)
     val e1 = DesugaredAst.Expr.Lambda(objectParam, lambdaBody, loc0)
     DesugaredAst.Expr.Let(ident0, Ast.Modifiers.Empty, e1, e, loc0)
   }
@@ -1248,7 +1262,7 @@ object Desugar {
     val objectParam = DesugaredAst.FormalParam(objectId, Ast.Modifiers.Empty, None, loc0)
     val valueParam = DesugaredAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc0)
     val call = DesugaredAst.Expr.PutField(className, fieldName, objectExp, valueExp, loc0)
-    val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc0)
+    val lambdaBody = jvmCast(call, tpe, eff, loc0)
     val e1 = mkCurried(objectParam :: valueParam :: Nil, lambdaBody, loc0)
     DesugaredAst.Expr.Let(ident0, Ast.Modifiers.Empty, e1, e, loc0)
   }
@@ -1268,7 +1282,7 @@ object Desugar {
     val unitId = Name.Ident(loc0.sp1, "_", loc0.sp2)
     val unitParam = DesugaredAst.FormalParam(unitId, Ast.Modifiers.Empty, Some(DesugaredAst.Type.Unit(loc0)), loc0)
     val call = DesugaredAst.Expr.GetStaticField(className, fieldName, loc0)
-    val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc0)
+    val lambdaBody = jvmCast(call, tpe, eff, loc0)
     val e1 = DesugaredAst.Expr.Lambda(unitParam, lambdaBody, loc0)
     DesugaredAst.Expr.Let(ident0, Ast.Modifiers.Empty, e1, e, loc0)
   }
@@ -1289,7 +1303,7 @@ object Desugar {
     val valueExp = DesugaredAst.Expr.Ambiguous(Name.mkQName(valueId), loc0)
     val valueParam = DesugaredAst.FormalParam(valueId, Ast.Modifiers.Empty, None, loc0)
     val call = DesugaredAst.Expr.PutStaticField(className, fieldName, valueExp, loc0)
-    val lambdaBody = DesugaredAst.Expr.UncheckedCast(call, Some(tpe), eff, loc0)
+    val lambdaBody = jvmCast(call, tpe, eff, loc0)
     val e1 = DesugaredAst.Expr.Lambda(valueParam, lambdaBody, loc0)
     DesugaredAst.Expr.Let(ident0, Ast.Modifiers.Empty, e1, e, loc0)
   }

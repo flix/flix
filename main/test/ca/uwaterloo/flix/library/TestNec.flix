@@ -1424,10 +1424,10 @@ mod TestNec {
     def traverse02(): Bool = Nec.traverse(x -> Some(x+1), necOf2(1, 2)) == Some(necOf2(2, 3))
 
     @test
-    def traverse03(): Bool = Nec.traverse(_ -> None: Option[Int32], singleton(1)) == None
+    def traverse03(): Bool = Nec.traverse(_ -> (None: Option[Int32]), singleton(1)) == None
 
     @test
-    def traverse04(): Bool = Nec.traverse(_ -> None: Option[Int32], necOf2(1, 2)) == None
+    def traverse04(): Bool = Nec.traverse(_ -> (None: Option[Int32]), necOf2(1, 2)) == None
 
     @test
     def traverse05(): Bool = region rc {

@@ -218,7 +218,7 @@ mod TestRedBlackTree {
 
     @test
     def mapWithKey01(): Bool =
-        let Map.Map(t) = Map#{}: Map[Unit, Unit];
+        let Map.Map(t) = (Map#{}: Map[Unit, Unit]);
         let m = Map.Map(RedBlackTree.mapWithKey((_, v) -> v, t));
         m == Map#{}
 
@@ -326,11 +326,11 @@ mod TestRedBlackTree {
 
     @test
     def eq01(): Bool =
-        RedBlackTree.empty(): RedBlackTree[Int32, Int32] == RedBlackTree.empty(): RedBlackTree[Int32, Int32]
+        (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) == (RedBlackTree.empty(): RedBlackTree[Int32, Int32])
 
     @test
     def eq02(): Bool =
-        toRedBlackTree(Nil): RedBlackTree[Int32, Int32] == toRedBlackTree(Nil): RedBlackTree[Int32, Int32]
+        (toRedBlackTree(Nil): RedBlackTree[Int32, Int32]) == (toRedBlackTree(Nil): RedBlackTree[Int32, Int32])
 
     @test
     def eq03(): Bool =
@@ -586,7 +586,7 @@ mod TestRedBlackTree {
 
     @test
     def joinKeys01(): Bool =
-        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.joinKeys(",") == ""
+        (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |> RedBlackTree.joinKeys(",") == ""
 
     @test
     def joinKeys02(): Bool =
@@ -610,7 +610,7 @@ mod TestRedBlackTree {
 
     @test
     def joinValues01(): Bool =
-        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.joinValues(",") == ""
+        (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |> RedBlackTree.joinValues(",") == ""
 
     @test
     def joinValues02(): Bool =
@@ -634,7 +634,7 @@ mod TestRedBlackTree {
 
     @test
     def joinWith01(): Bool =
-        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ",") == ""
+        (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |> RedBlackTree.joinWith((k, v) -> "${k} => ${v}", ",") == ""
 
     @test
     def joinWith02(): Bool =
@@ -657,7 +657,7 @@ mod TestRedBlackTree {
 
     @test
     def filter01(): Bool =
-        RedBlackTree.filter(x -> x > 1, RedBlackTree.empty(): RedBlackTree[Int32, Int32]) == RedBlackTree.empty()
+        RedBlackTree.filter(x -> x > 1, (RedBlackTree.empty(): RedBlackTree[Int32, Int32])) == RedBlackTree.empty()
 
     @test
     def filter02(): Bool =
@@ -674,7 +674,7 @@ mod TestRedBlackTree {
 
     @test
     def filterMap01(): Bool =
-        RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, RedBlackTree.empty(): RedBlackTree[Int32, Int32])
+        RedBlackTree.filterMap(x -> if (x > 1) Some("${x}") else None, (RedBlackTree.empty(): RedBlackTree[Int32, Int32]))
             == RedBlackTree.empty()
 
     @test
@@ -693,7 +693,7 @@ mod TestRedBlackTree {
 
     @test
     def toMutDeque01(): Bool = region rc {
-        let t = RedBlackTree.empty(): RedBlackTree[Int32, Int32];
+        let t = (RedBlackTree.empty(): RedBlackTree[Int32, Int32]);
         let d1 = RedBlackTree.toMutDeque(rc, t);
 
         let d2 = MutDeque.empty(rc);
@@ -787,7 +787,7 @@ mod TestRedBlackTree {
 
     @test
     def iterator01(): Bool = region rc {
-        RedBlackTree.empty(): RedBlackTree[Int32, Int32] |> RedBlackTree.iterator(rc) |> Iterator.toList == Nil
+        (RedBlackTree.empty(): RedBlackTree[Int32, Int32]) |> RedBlackTree.iterator(rc) |> Iterator.toList == Nil
     }
 
     @test
