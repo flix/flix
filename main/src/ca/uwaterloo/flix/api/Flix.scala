@@ -106,10 +106,10 @@ class Flix {
   private var cachedSimplifierAst: SimplifiedAst.Root = SimplifiedAst.empty
   private var cachedClosureConvAst: SimplifiedAst.Root = SimplifiedAst.empty
   private var cachedLambdaLiftAst: LiftedAst.Root = LiftedAst.empty
-  private var cachedTailrecAst: LiftedAst.Root = LiftedAst.empty
   private var cachedOptimizerAst: LiftedAst.Root = LiftedAst.empty
   private var cachedTreeShaker2Ast: LiftedAst.Root = LiftedAst.empty
   private var cachedEffectBinderAst: ReducedAst.Root = ReducedAst.empty
+  private var cachedTailrecAst: ReducedAst.Root = ReducedAst.empty
   private var cachedEraserAst: ReducedAst.Root = ReducedAst.empty
   private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
   private var cachedVarOffsetsAst: ReducedAst.Root = ReducedAst.empty
@@ -128,13 +128,13 @@ class Flix {
 
   def getLambdaLiftAst: LiftedAst.Root = cachedLambdaLiftAst
 
-  def getTailrecAst: LiftedAst.Root = cachedTailrecAst
-
   def getOptimizerAst: LiftedAst.Root = cachedOptimizerAst
 
   def getTreeShaker2Ast: LiftedAst.Root = cachedTreeShaker2Ast
 
   def getEffectBinderAst: ReducedAst.Root = cachedEffectBinderAst
+
+  def getTailrecAst: ReducedAst.Root = cachedTailrecAst
 
   def getEraserAst: ReducedAst.Root = cachedEraserAst
 
@@ -611,11 +611,11 @@ class Flix {
     cachedSimplifierAst = Simplifier.run(cachedMonoTypesAst)
     cachedClosureConvAst = ClosureConv.run(cachedSimplifierAst)
     cachedLambdaLiftAst = LambdaLift.run(cachedClosureConvAst)
-    cachedTailrecAst = Tailrec.run(cachedLambdaLiftAst)
-    cachedOptimizerAst = Optimizer.run(cachedTailrecAst)
+    cachedOptimizerAst = Optimizer.run(cachedLambdaLiftAst)
     cachedTreeShaker2Ast = TreeShaker2.run(cachedOptimizerAst)
     cachedEffectBinderAst = EffectBinder.run(cachedTreeShaker2Ast)
-    cachedEraserAst = Eraser.run(cachedEffectBinderAst)
+    cachedTailrecAst = Tailrec.run(cachedEffectBinderAst)
+    cachedEraserAst = Eraser.run(cachedTailrecAst)
     cachedReducerAst = Reducer.run(cachedEraserAst)
     cachedVarOffsetsAst = VarOffsets.run(cachedReducerAst)
     val result = JvmBackend.run(cachedVarOffsetsAst)
