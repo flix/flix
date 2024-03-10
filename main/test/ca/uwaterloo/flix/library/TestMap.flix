@@ -2515,7 +2515,7 @@ def rangeQuery18(): Bool =
     def traverseWithKey01(): Bool = region rc {
         let st = ref (0, '#') @ rc;
         let m: Map[Int32, Char] = Map#{};
-        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity.Identity(v)}, m);
+        let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
         ans == Identity.Identity(Map#{}) and deref st == (0, '#')
     }
 
@@ -2523,7 +2523,7 @@ def rangeQuery18(): Bool =
     def traverseWithKey02(): Bool = region rc {
         let st = ref (0, '#') @ rc;
         let m = Map#{1 => 'a'};
-        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity.Identity(v)}, m);
+        let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
         ans == Identity.Identity(Map#{1 => 'a'}) and deref st == (1, 'a')
     }
 
@@ -2531,7 +2531,7 @@ def rangeQuery18(): Bool =
     def traverseWithKey03(): Bool = region rc {
         let st = ref (0, '#') @ rc;
         let m = Map#{1 => 'a', 2 => 'b'};
-        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity.Identity(v)}, m);
+        let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
         ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}) and deref st == (2, 'b')
     }
 
@@ -2539,7 +2539,7 @@ def rangeQuery18(): Bool =
     def traverseWithKey04(): Bool = region rc {
         let st = ref (0, '#') @ rc;
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
-        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity.Identity(v)}, m);
+        let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
         ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and deref st == (3, 'c')
     }
 
