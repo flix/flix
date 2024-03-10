@@ -272,7 +272,7 @@ mod Files {
                 let stream = newInputStream(javaFile);
                 match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
                     case Ok(_)    => {
-                        let bytes = Array.new(rc, opts.count);
+                        let bytes = Array.empty(rc, opts.count);
                         discard read(stream, bytes, 0, opts.count);
                         let charSet = forName(opts.charSet);
                         let returnString = newString(bytes, charSet);
@@ -472,7 +472,7 @@ mod Files {
                 let stream = newInputStream(javaFile);
                 match skip((opts.offset / 10_000i64), opts.offset, stream, f) {
                     case Ok(_)    => {
-                        let bytes = Array.new(rc, opts.count);
+                        let bytes = Array.empty(rc, opts.count);
                         let numberRead = read(stream, bytes, 0, opts.count);
                         let res = readBytesWithHelper(rc, bytes, numberRead, opts.count);
                         Ok(res)
@@ -519,13 +519,13 @@ mod Files {
 
                 let javaFile = newFile(f);
                 let stream = newInputStream(javaFile);
-                let bytes = ref Array.new(rc, chunkSize) @ rc;
+                let bytes = ref Array.empty(rc, chunkSize) @ rc;
                 let numberRead = ref read(stream, deref bytes) @ rc;
                 let next = () -> checked_ecast({
                     if (deref numberRead >= 0) {
                         try {
                             let chunk = deref bytes;
-                            bytes := Array.new(rc, chunkSize);
+                            bytes := Array.empty(rc, chunkSize);
                             let accRead = deref numberRead;
                             numberRead := read(stream, deref bytes);
                             Some(Ok(readBytesWithHelper(rc, chunk, accRead, chunkSize)))
