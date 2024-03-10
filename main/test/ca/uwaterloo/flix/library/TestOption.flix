@@ -102,7 +102,7 @@ def map03(): Bool = Option.map(i -> 2*i, Some(2)) == Some(4)
 @test
 def map04(): Bool = region rc {
     let n = ref 2 @ rc;
-    discard Option.map(i -> n := i, Some(4));
+    discard Option.map(i -> Ref.put(i, n), Some(4));
     4 == deref n
 }
 
