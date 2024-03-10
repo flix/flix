@@ -50,9 +50,9 @@ sealed trait Type {
     */
   lazy val typeVars: SortedSet[Type.Var] = this match {
     case x: Type.Var => SortedSet(x)
-   
+
     case Type.Cst(tc, _) => SortedSet.empty
-   
+
     case Type.Apply(tpe1, tpe2, _) => tpe1.typeVars ++ tpe2.typeVars
     case Type.Alias(_, args, _, _) => args.foldLeft(SortedSet.empty[Type.Var])((acc, t) => acc ++ t.typeVars)
     case Type.AssocType(_, arg, _, _) => arg.typeVars // TODO ASSOC-TYPES throw error?
@@ -77,7 +77,7 @@ sealed trait Type {
     */
   def cases: SortedSet[Symbol.RestrictableCaseSym] = this match {
     case Type.Cst(TypeConstructor.CaseSet(syms, _), _) => syms
-   
+
     case _: Type.Var => SortedSet.empty
     case _: Type.Cst => SortedSet.empty
 
@@ -508,6 +508,11 @@ object Type {
     val sym = Symbol.freshKindedTypeVarSym(text, k, isRegion, loc)
     Type.Var(sym, loc)
   }
+
+  /**
+    * Returns the AnyType type with given source location `loc`.
+    */
+  def mkAnyType(loc: SourceLocation): Type = Type.Cst(TypeConstructor.AnyType, loc)
 
   /**
     * Returns the Unit type with given source location `loc`.

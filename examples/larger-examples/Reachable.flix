@@ -18,22 +18,22 @@ mod Reachable.Imperative {
     pub def reachable(origin: n, edges: f[(n, n)]): Set[n] with Iterable[f], Order[n] =
         region rc {
             // collect edge lists
-            let edgeMap = MutMap.new(rc);
+            let edgeMap = MutMap.empty(rc);
             foreach((start, end) <- edges) {
-                let startEdges = MutMap.getOrElsePut!(start, MutList.new(rc), edgeMap);
+                let startEdges = MutMap.getOrElsePut!(start, MutList.empty(rc), edgeMap);
                 MutList.push!(end, startEdges)
             };
             // define the reachable set
-            let reachable = MutSet.new(rc);
+            let reachable = MutSet.empty(rc);
             // explore graph depth first by task list
-            let taskList = MutDeque.new(rc);
+            let taskList = MutDeque.empty(rc);
             taskList |> MutDeque.pushFront(origin);
             def whileLoop() = {
                 MutDeque.popFront(taskList) |> Option.forEach(node -> {
                     // this node has now been reached
                     reachable |> MutSet.add!(node);
                     // add all non-reached end points to tasklist
-                    let endPoints = MutMap.getWithDefault(node, MutList.new(rc), edgeMap);
+                    let endPoints = MutMap.getWithDefault(node, MutList.empty(rc), edgeMap);
                     MutList.forEach(nextNode -> {
                         let alreadyReached = MutSet.memberOf(nextNode, reachable);
                         if (not alreadyReached)

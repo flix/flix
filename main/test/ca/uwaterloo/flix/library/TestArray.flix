@@ -47,33 +47,33 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testNew01(): Bool = region rc {
-        Array.get(0, Array.new(rc, 10)) == 0
+    def testEmpty01(): Bool = region rc {
+        Array.get(0, Array.empty(rc, 10)) == 0
     }
 
     @test
-    def testNew02(): Bool = region rc {
-        Array.get(5, Array.new(rc, 10)) == 0
+    def testEmpty02(): Bool = region rc {
+        Array.get(5, Array.empty(rc, 10)) == 0
     }
 
     @test
-    def testNew03(): Bool = region rc {
-        Array.get(9, Array.new(rc, 10)) == 0
+    def testEmpty03(): Bool = region rc {
+        Array.get(9, Array.empty(rc, 10)) == 0
     }
 
     @test
-    def testNew04(): Bool = region rc {
-        Array.get(0, Array.new(rc, 10)) == false
+    def testEmpty04(): Bool = region rc {
+        Array.get(0, Array.empty(rc, 10)) == false
     }
 
     @test
-    def testNew05(): Bool = region rc {
-        Array.get(5, Array.new(rc, 10)) == false
+    def testEmpty05(): Bool = region rc {
+        Array.get(5, Array.empty(rc, 10)) == false
     }
 
     @test
-    def testNew06(): Bool = region rc {
-        Array.get(9, Array.new(rc, 10)) == false
+    def testEmpty06(): Bool = region rc {
+        Array.get(9, Array.empty(rc, 10)) == false
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -233,8 +233,8 @@ mod TestArray {
 
     @test
     def toMutDeque01(): Bool = region rc {
-        let a = (Array#{} @ rc): Array[Int32, _];
-        let d = MutDeque.new(rc): MutDeque[Int32, _];
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
 
         Array.toMutDeque(rc, a) `MutDeque.sameElements` d
     }
@@ -243,7 +243,7 @@ mod TestArray {
     def toMutDeque02(): Bool = region rc {
         let a = (Array#{1} @ rc);
 
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
 
         Array.toMutDeque(rc, a) `MutDeque.sameElements` d
@@ -253,7 +253,7 @@ mod TestArray {
     def toMutDeque03(): Bool = region rc {
         let a = (Array#{1, 2, 3} @ rc);
 
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -265,7 +265,7 @@ mod TestArray {
     def toMutDeque04(): Bool = region rc {
         let a = (Array#{1, 2, 3, 4, 5} @ rc);
 
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         MutDeque.pushBack(3, d);
         MutDeque.pushBack(4, d);
         MutDeque.pushBack(5, d);
@@ -279,7 +279,7 @@ mod TestArray {
     def toMutDeque05(): Bool = region rc {
         let a = (Array#{'a', 'b', 'c'} @ rc);
 
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         MutDeque.pushFront('c', d);
         MutDeque.pushFront('b', d);
         MutDeque.pushFront('a', d);
@@ -312,7 +312,7 @@ mod TestArray {
 
     @test
     def head01(): Bool = region rc {
-        Array.head((Array#{} @ rc): Array[Int32, _]) == None
+        Array.head(((Array#{} @ rc): Array[Int32, _])) == None
     }
 
     @test
@@ -336,7 +336,7 @@ mod TestArray {
 
     @test
     def last01(): Bool = region rc {
-        Array.last(Array#{} @ rc): Option[Unit] == None
+        (Array.last(Array#{} @ rc): Option[Unit]) == None
     }
 
     @test
@@ -360,31 +360,31 @@ mod TestArray {
 
     @test
     def append01(): Bool = region rc {
-        let a = Array.append(rc, (Array#{} @ rc): Array[Int32, _], (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.append(rc, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def append02(): Bool = region rc {
-        let a = Array.append(rc, (Array#{} @ rc): Array[Int32, _], Array#{1} @ rc);
+        let a = Array.append(rc, ((Array#{} @ rc): Array[Int32, _]), Array#{1} @ rc);
         Array.sameElements(a, Array#{1} @ rc)
     }
 
     @test
     def append03(): Bool = region rc {
-        let a = Array.append(rc, (Array#{} @ rc): Array[Int32, _], Array#{1,2} @ rc);
+        let a = Array.append(rc, ((Array#{} @ rc): Array[Int32, _]), Array#{1,2} @ rc);
         Array.sameElements(a, Array#{1,2} @ rc)
     }
 
     @test
     def append04(): Bool = region rc {
-        let a = Array.append(rc, Array#{1} @ rc, (Array#{} @ rc): Array[Int32, _]);
+        let a = Array.append(rc, Array#{1} @ rc, ((Array#{} @ rc): Array[Int32, _]));
         Array.sameElements(a, Array#{1} @ rc)
     }
 
     @test
     def append05(): Bool = region rc {
-        let a = Array.append(rc, Array#{1,2} @ rc, (Array#{} @ rc): Array[Int32, _]);
+        let a = Array.append(rc, Array#{1,2} @ rc, ((Array#{} @ rc): Array[Int32, _]));
         Array.sameElements(a, Array#{1,2} @ rc)
     }
 
@@ -412,7 +412,7 @@ mod TestArray {
 
     @test
     def memberOf01(): Bool = region rc {
-        Array.memberOf(0, (Array#{} @ rc): Array[Int32, _]) == false
+        Array.memberOf(0, ((Array#{} @ rc): Array[Int32, _])) == false
     }
 
     @test
@@ -451,7 +451,7 @@ mod TestArray {
 
     @test
     def indexOf01(): Bool = region rc {
-        Array.indexOf(0, (Array#{} @ rc): Array[Int32, _]) == None
+        Array.indexOf(0, ((Array#{} @ rc): Array[Int32, _])) == None
     }
 
     @test
@@ -485,7 +485,7 @@ mod TestArray {
 
     @test
     def indexOfLeft01(): Bool = region rc {
-        Array.indexOfLeft(0, (Array#{} @ rc): Array[Int32, _]) == None
+        Array.indexOfLeft(0, ((Array#{} @ rc): Array[Int32, _])) == None
     }
 
     @test
@@ -524,7 +524,7 @@ mod TestArray {
 
     @test
     def indexOfRight01(): Bool = region rc {
-        Array.indexOfRight(0, (Array#{} @ rc): Array[Int32, _]) == None
+        Array.indexOfRight(0, ((Array#{} @ rc): Array[Int32, _])) == None
     }
 
     @test
@@ -563,14 +563,14 @@ mod TestArray {
 
     @test
     def indices01(): Bool = region rc {
-        let a = Array.indices(rc, 0, (Array#{} @ rc): Array[Int32, rc]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, rc])
+        let a = Array.indices(rc, 0, ((Array#{} @ rc): Array[Int32, rc]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc]))
     }
 
     @test
     def indices02(): Bool = region rc {
         let a = Array.indices(rc, 0, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, rc])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc]))
     }
 
     @test
@@ -582,7 +582,7 @@ mod TestArray {
     @test
     def indices04(): Bool = region rc {
         let a = Array.indices(rc, 0, Array#{1,2} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, rc])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc]))
     }
 
     @test
@@ -726,13 +726,13 @@ mod TestArray {
     @test
     def range01(): Bool = region rc {
         let a = Array.range(rc, 1, 0);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def range02(): Bool = region rc {
         let a = Array.range(rc, 1, 1);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -766,13 +766,13 @@ mod TestArray {
     @test
     def repeat01(): Bool = region rc {
         let a = Array.repeat(rc, -1, 1);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def repeat02(): Bool = region rc {
         let a = Array.repeat(rc, 0, 1);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -845,7 +845,7 @@ mod TestArray {
 
     @test
     def scanLeft01(): Bool = region rc {
-        let a = Array.scanLeft(rc, (i, b) -> if (b) i + 1 else i + 2, 1, (Array#{} @ rc): Array[Bool, _]);
+        let a = Array.scanLeft(rc, (i, b) -> if (b) i + 1 else i + 2, 1, ((Array#{} @ rc): Array[Bool, _]));
         Array.sameElements(a, Array#{1} @ rc)
     }
 
@@ -938,7 +938,7 @@ mod TestArray {
     @test
     def map01(): Bool = region rc {
         let a = Array.map(rc, i -> i > 2, Array#{} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Bool, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Bool, _]))
     }
 
     @test
@@ -985,7 +985,7 @@ mod TestArray {
     def transform01!(): Bool = region rc {
         let a: Array[Int32, _] = Array#{} @ rc;
         Array.transform!(x -> x+1, a);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -1016,7 +1016,7 @@ mod TestArray {
     @test
     def mapWithIndex01(): Bool = region rc {
         let a = Array.mapWithIndex(rc, (i, e) -> if (i < 1) e > 2 else e <= 2, Array#{} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Bool, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Bool, _]))
     }
 
     @test
@@ -1061,9 +1061,9 @@ mod TestArray {
 
     @test
     def transformWithIndex01!(): Bool = region rc {
-        let a = (Array#{} @ rc): Array[Int32, _];
+        let a = ((Array#{} @ rc): Array[Int32, _]);
         Array.transformWithIndex!((i, e) -> if (i < 1) e + 10 else e, a);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -1117,13 +1117,13 @@ mod TestArray {
     @test
     def flatMap01(): Bool = region rc {
         let a = Array.flatMap(rc, i -> Array.repeat(rc, i, i), Array#{} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def flatMap02(): Bool = region rc {
         let a = Array.flatMap(rc, i -> Array.repeat(rc, i, i), Array#{0} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -1156,8 +1156,8 @@ mod TestArray {
 
     @test
     def reverse01(): Bool = region rc {
-        let a = Array.reverse(rc, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.reverse(rc, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -1198,7 +1198,7 @@ mod TestArray {
     def reverse01!(): Bool = region rc {
         let a: Array[Int32, _] = Array#{} @ rc;
         Array.reverse!(a);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -1242,14 +1242,14 @@ mod TestArray {
 
     @test
     def rotateLeft01(): Bool = region rc {
-        let a = Array.rotateLeft(rc, 0, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.rotateLeft(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def rotateLeft02(): Bool = region rc {
-        let a = Array.rotateLeft(rc, 1, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.rotateLeft(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -1312,14 +1312,14 @@ mod TestArray {
 
     @test
     def rotateRight01(): Bool = region rc {
-        let a = Array.rotateRight(rc, 0, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.rotateRight(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def rotateRight02(): Bool = region rc {
-        let a = Array.rotateRight(rc, 1, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.rotateRight(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -1382,8 +1382,8 @@ mod TestArray {
 
     @test
     def update01(): Bool = region rc {
-        let a = Array.update(rc, 0, 2, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.update(rc, 0, 2, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -1429,7 +1429,7 @@ mod TestArray {
     @test
     def replace01(): Bool = region rc {
         let a = Array.replace(rc, from = 3, to = 4, Array#{} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -1482,7 +1482,7 @@ mod TestArray {
     def replace01!(): Bool = region rc {
         let a: Array[Int32, _] = Array#{} @ rc;
         Array.replace!(from = 3, to = 4, a);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -1540,14 +1540,14 @@ mod TestArray {
 
     @test
     def patch01(): Bool = region rc {
-        let a = Array.patch(rc, 0, 0, (Array#{} @ rc): Array[Int32, _], (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.patch(rc, 0, 0, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def patch02(): Bool = region rc {
         let a = Array.patch(rc, 0, 2, Array#{1,2} @ rc, Array#{} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -1712,16 +1712,16 @@ mod TestArray {
 
     @test
     def patch01!(): Bool = region rc {
-        let a = (Array#{} @ rc): Array[Int32, _];
-        Array.patch!(0, 0, (Array#{} @ rc): Array[Int32, _], a);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        Array.patch!(0, 0, ((Array#{} @ rc): Array[Int32, _]), a);
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def patch02!(): Bool = region rc {
-        let a = (Array#{} @ rc): Array[Int32, _];
+        let a = ((Array#{} @ rc): Array[Int32, _]);
         Array.patch!(0, 2, Array#{1,2} @ rc, a);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -1913,7 +1913,7 @@ mod TestArray {
     @test
     def intersperse01(): Bool = region rc {
         let a = Array.intersperse(rc, 11, Array#{} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -1947,25 +1947,25 @@ mod TestArray {
 
     @test
     def intercalate01(): Bool = region rc {
-        let a = Array.intercalate(rc, (Array#{} @ rc): Array[Int32, rc], (Array#{} @ rc): Array[Array[Int32, rc], rc]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, rc])
+        let a = Array.intercalate(rc, ((Array#{} @ rc): Array[Int32, rc]), ((Array#{} @ rc): Array[Array[Int32, rc], rc]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc]))
     }
 
     @test
     def intercalate02(): Bool = region rc {
-        let a = Array.intercalate(rc, (Array#{} @ rc): Array[Int32, rc], Array#{Array#{1} @ rc} @ rc);
+        let a = Array.intercalate(rc, ((Array#{} @ rc): Array[Int32, rc]), Array#{Array#{1} @ rc} @ rc);
         Array.sameElements(a, Array#{1} @ rc)
     }
 
     @test
     def intercalate03(): Bool = region rc {
-        let a = Array.intercalate(rc, Array#{11,12,13} @ rc, (Array#{} @ rc): Array[Array[Int32, rc], rc]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, rc])
+        let a = Array.intercalate(rc, Array#{11,12,13} @ rc, ((Array#{} @ rc): Array[Array[Int32, rc], rc]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc]))
     }
 
     @test
     def intercalate04(): Bool = region rc {
-        let a = Array.intercalate(rc, (Array#{} @ rc): Array[Int32, rc], Array#{Array#{1} @ rc, Array#{2,3} @ rc} @ rc);
+        let a = Array.intercalate(rc, ((Array#{} @ rc): Array[Int32, rc]), Array#{Array#{1} @ rc, Array#{2,3} @ rc} @ rc);
         Array.sameElements(a, Array#{1,2,3} @ rc)
     }
 
@@ -1977,7 +1977,7 @@ mod TestArray {
 
     @test
     def intercalate06(): Bool = region rc {
-        let a = Array.intercalate(rc, (Array#{} @ rc): Array[Int32, rc], Array#{Array#{1} @ rc, Array#{2,3} @ rc, Array#{4} @ rc} @ rc);
+        let a = Array.intercalate(rc, ((Array#{} @ rc): Array[Int32, rc]), Array#{Array#{1} @ rc, Array#{2,3} @ rc, Array#{4} @ rc} @ rc);
         Array.sameElements(a, Array#{1,2,3,4} @ rc)
     }
 
@@ -1995,7 +1995,7 @@ mod TestArray {
     def transpose01(): Bool = region rc {
         let a = Array.transpose(rc, Array#{} @ rc);
         let b = Array.toList(a) |> List.map(Array.toList);
-        b: List[List[Unit]] == Nil
+        (b: List[List[Unit]]) == Nil
     }
 
     @test
@@ -2151,17 +2151,17 @@ mod TestArray {
 
     @test
     def isPrefixOf01(): Bool = region rc {
-        Array.isPrefixOf((Array#{} @ rc): Array[Int32, _], (Array#{} @ rc): Array[Int32, _])
+        Array.isPrefixOf(((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def isPrefixOf02(): Bool = region rc {
-        Array.isPrefixOf(Array#{1} @ rc, (Array#{} @ rc): Array[Int32, _]) == false
+        Array.isPrefixOf(Array#{1} @ rc, ((Array#{} @ rc): Array[Int32, _])) == false
     }
 
     @test
     def isPrefixOf03(): Bool = region rc {
-        Array.isPrefixOf((Array#{} @ rc): Array[Int32, _], Array#{1} @ rc)
+        Array.isPrefixOf(((Array#{} @ rc): Array[Int32, _]), Array#{1} @ rc)
     }
 
     @test
@@ -2181,7 +2181,7 @@ mod TestArray {
 
     @test
     def isPrefixOf07(): Bool = region rc {
-        Array.isPrefixOf((Array#{} @ rc): Array[Int32, _], Array#{1,2} @ rc)
+        Array.isPrefixOf(((Array#{} @ rc): Array[Int32, _]), Array#{1,2} @ rc)
     }
 
     @test
@@ -2220,17 +2220,17 @@ mod TestArray {
 
     @test
     def isInfixOf01(): Bool = region rc {
-        Array.isInfixOf((Array#{} @ rc): Array[Int32, _], (Array#{} @ rc): Array[Int32, _])
+        Array.isInfixOf(((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def isInfixOf02(): Bool = region rc {
-        Array.isInfixOf(Array#{1} @ rc, (Array#{} @ rc): Array[Int32, _]) == false
+        Array.isInfixOf(Array#{1} @ rc, ((Array#{} @ rc): Array[Int32, _])) == false
     }
 
     @test
     def isInfixOf03(): Bool = region rc {
-        Array.isInfixOf((Array#{} @ rc): Array[Int32, _], Array#{1} @ rc)
+        Array.isInfixOf(((Array#{} @ rc): Array[Int32, _]), Array#{1} @ rc)
     }
 
     @test
@@ -2250,7 +2250,7 @@ mod TestArray {
 
     @test
     def isInfixOf07(): Bool = region rc {
-        Array.isInfixOf((Array#{} @ rc): Array[Int32, _], Array#{1,2} @ rc)
+        Array.isInfixOf(((Array#{} @ rc): Array[Int32, _]), Array#{1,2} @ rc)
     }
 
     @test
@@ -2289,17 +2289,17 @@ mod TestArray {
 
     @test
     def isSuffixOf01(): Bool = region rc {
-        Array.isSuffixOf((Array#{} @ rc): Array[Int32, _], (Array#{} @ rc): Array[Int32, _])
+        Array.isSuffixOf(((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def isSuffixOf02(): Bool = region rc {
-        Array.isSuffixOf(Array#{1} @ rc, (Array#{} @ rc): Array[Int32, _]) == false
+        Array.isSuffixOf(Array#{1} @ rc, ((Array#{} @ rc): Array[Int32, _])) == false
     }
 
     @test
     def isSuffixOf03(): Bool = region rc {
-        Array.isSuffixOf((Array#{} @ rc): Array[Int32, _], Array#{1} @ rc)
+        Array.isSuffixOf(((Array#{} @ rc): Array[Int32, _]), Array#{1} @ rc)
     }
 
     @test
@@ -2319,7 +2319,7 @@ mod TestArray {
 
     @test
     def isSuffixOf07(): Bool = region rc {
-        Array.isSuffixOf((Array#{} @ rc): Array[Int32, _], Array#{1,2} @ rc)
+        Array.isSuffixOf(((Array#{} @ rc): Array[Int32, _]), Array#{1,2} @ rc)
     }
 
     @test
@@ -2358,7 +2358,7 @@ mod TestArray {
 
     @test
     def testSameElements01(): Bool = region rc {
-        ((Array#{} @ rc): Array[Int32, _]) `sameElements` ((Array#{} @ rc): Array[Int32, _])
+        (((Array#{} @ rc): Array[Int32, _])) `sameElements` (((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -2402,7 +2402,7 @@ mod TestArray {
 
     @test
     def testCompare01(): Bool = region rc {
-        ((Array#{} @ rc): Array[Int32, _]) `Array.compare` ((Array#{} @ rc): Array[Int32, _]) == Comparison.EqualTo
+        (((Array#{} @ rc): Array[Int32, _])) `Array.compare` (((Array#{} @ rc): Array[Int32, _])) == Comparison.EqualTo
     }
 
     @test
@@ -2471,7 +2471,7 @@ mod TestArray {
 
     @test
     def fold01(): Bool = region rc {
-        Array.fold((Array#{} @ rc): Array[Unit, _]) == ()
+        Array.fold(((Array#{} @ rc): Array[Unit, _])) == ()
     }
 
     @test
@@ -2596,7 +2596,7 @@ mod TestArray {
 
     @test
     def reduceLeft01(): Bool = region rc {
-        Array.reduceLeft((a, b) -> a - b, (Array#{} @ rc): Array[Int32, _]) == None
+        Array.reduceLeft((a, b) -> a - b, ((Array#{} @ rc): Array[Int32, _])) == None
     }
 
     @test
@@ -2625,7 +2625,7 @@ mod TestArray {
 
     @test
     def reduceRight01(): Bool = region rc {
-        Array.reduceRight((a, b) -> a - b, (Array#{} @ rc): Array[Int32, _]) == None
+        Array.reduceRight((a, b) -> a - b, ((Array#{} @ rc): Array[Int32, _])) == None
     }
 
     @test
@@ -2694,14 +2694,14 @@ mod TestArray {
 
     @test
     def flatten01(): Bool = region rc {
-        let a = Array.flatten(rc, (Array#{} @ rc): Array[Array[Int32, rc], rc]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, rc])
+        let a = Array.flatten(rc, ((Array#{} @ rc): Array[Array[Int32, rc], rc]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc]))
     }
 
     @test
     def flatten02(): Bool = region rc {
-        let a = Array.flatten(rc, (Array#{Array#{} @ rc} @ rc): Array[Array[Int32, rc], rc]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, rc])
+        let a = Array.flatten(rc, ((Array#{Array#{} @ rc} @ rc): Array[Array[Int32, rc], rc]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc]))
     }
 
     @test
@@ -2718,8 +2718,8 @@ mod TestArray {
 
     @test
     def flatten05(): Bool = region rc {
-        let a = Array.flatten(rc, (Array#{Array#{} @ rc,Array#{} @ rc} @ rc): Array[Array[Int32, rc], rc]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, rc])
+        let a = Array.flatten(rc, ((Array#{Array#{} @ rc,Array#{} @ rc} @ rc): Array[Array[Int32, rc], rc]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc]))
     }
 
     @test
@@ -2757,7 +2757,7 @@ mod TestArray {
 
     @test
     def exists01(): Bool = region rc {
-        Array.exists(i -> i > 3, (Array#{} @ rc): Array[Int32, _]) == false
+        Array.exists(i -> i > 3, ((Array#{} @ rc): Array[Int32, _])) == false
     }
 
     @test
@@ -2806,7 +2806,7 @@ mod TestArray {
 
     @test
     def forAll01(): Bool = region rc {
-        Array.forAll(i -> i > 3, (Array#{} @ rc): Array[Int32, _]) == true
+        Array.forAll(i -> i > 3, ((Array#{} @ rc): Array[Int32, _])) == true
     }
 
     @test
@@ -2860,14 +2860,14 @@ mod TestArray {
 
     @test
     def filter01(): Bool = region rc {
-        let a = Array.filter(rc, i -> i > 3, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.filter(rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def filter02(): Bool = region rc {
         let a = Array.filter(rc, i -> i > 3, Array#{2} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -2879,7 +2879,7 @@ mod TestArray {
     @test
     def filter04(): Bool = region rc {
         let a = Array.filter(rc, i -> i > 3, Array#{1,3} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -2912,26 +2912,26 @@ mod TestArray {
 
     @test
     def partition01(): Bool = region rc {
-        let (a,b) = Array.partition(rc, rc, i -> i > 3, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _]) and Array.sameElements(b, (Array#{} @ rc): Array[Int32, _])
+        let (a,b) = Array.partition(rc, rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])) and Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def partition02(): Bool = region rc {
         let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _]) and Array.sameElements(b, Array#{1} @ rc)
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])) and Array.sameElements(b, Array#{1} @ rc)
     }
 
     @test
     def partition03(): Bool = region rc {
         let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{4} @ rc);
-        Array.sameElements(a, Array#{4} @ rc) and Array.sameElements(b, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, Array#{4} @ rc) and Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def partition04(): Bool = region rc {
         let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{1,2} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _]) and Array.sameElements(b, Array#{1,2} @ rc)
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])) and Array.sameElements(b, Array#{1,2} @ rc)
     }
 
     @test
@@ -2949,7 +2949,7 @@ mod TestArray {
     @test
     def partition07(): Bool = region rc {
         let (a,b) = Array.partition(rc, rc, i -> i > 3, Array#{5,8} @ rc);
-        Array.sameElements(a, Array#{5,8} @ rc) and Array.sameElements(b, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, Array#{5,8} @ rc) and Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -2964,32 +2964,32 @@ mod TestArray {
 
     @test
     def span01(): Bool = region rc {
-        let (a,b) = Array.span(rc, rc, i -> i > 3, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _]) and Array.sameElements(b, (Array#{} @ rc): Array[Int32, _])
+        let (a,b) = Array.span(rc, rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])) and Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def span02(): Bool = region rc {
         let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{1} @ rc);
-        Array.sameElements(a,(Array#{} @ rc): Array[Int32, _]) and Array.sameElements(b, Array#{1} @ rc)
+        Array.sameElements(a,((Array#{} @ rc): Array[Int32, _])) and Array.sameElements(b, Array#{1} @ rc)
     }
 
     @test
     def span03(): Bool = region rc {
         let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{4} @ rc);
-        Array.sameElements(a, Array#{4} @ rc) and Array.sameElements(b, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, Array#{4} @ rc) and Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def span04(): Bool = region rc {
         let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{1,2} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _]) and Array.sameElements(b, Array#{1,2} @ rc)
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])) and Array.sameElements(b, Array#{1,2} @ rc)
     }
 
     @test
     def span05(): Bool = region rc {
         let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{1,5} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _]) and Array.sameElements(b, Array#{1,5} @ rc)
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _])) and Array.sameElements(b, Array#{1,5} @ rc)
     }
 
     @test
@@ -3001,7 +3001,7 @@ mod TestArray {
     @test
     def span07(): Bool = region rc {
         let (a,b) = Array.span(rc, rc, i -> i > 3, Array#{5,8} @ rc);
-        Array.sameElements(a, Array#{5,8} @ rc) and Array.sameElements(b, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, Array#{5,8} @ rc) and Array.sameElements(b, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3016,20 +3016,20 @@ mod TestArray {
 
     @test
     def drop01(): Bool = region rc {
-        let a = Array.drop(rc, -1, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.drop(rc, -1, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def drop02(): Bool = region rc {
-        let a = Array.drop(rc, 0, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.drop(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def drop03(): Bool = region rc {
-        let a = Array.drop(rc, 1, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.drop(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3047,13 +3047,13 @@ mod TestArray {
     @test
     def drop06(): Bool = region rc {
         let a = Array.drop(rc, 1, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def drop07(): Bool = region rc {
         let a = Array.drop(rc, 2, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3071,7 +3071,7 @@ mod TestArray {
     @test
     def drop10(): Bool = region rc {
         let a = Array.drop(rc, 2, Array#{1,2} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3092,20 +3092,20 @@ mod TestArray {
 
     @test
     def dropLeft01(): Bool = region rc {
-        let a = Array.dropLeft(rc, -1, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.dropLeft(rc, -1, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def dropLeft02(): Bool = region rc {
-        let a = Array.dropLeft(rc, 0, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.dropLeft(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def dropLeft03(): Bool = region rc {
-        let a = Array.dropLeft(rc, 1, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.dropLeft(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3123,13 +3123,13 @@ mod TestArray {
     @test
     def dropLeft06(): Bool = region rc {
         let a = Array.dropLeft(rc, 1, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def dropLeft07(): Bool = region rc {
         let a = Array.dropLeft(rc, 2, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3147,7 +3147,7 @@ mod TestArray {
     @test
     def dropLeft10(): Bool = region rc {
         let a = Array.dropLeft(rc, 2, Array#{1,2} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3168,20 +3168,20 @@ mod TestArray {
 
     @test
     def dropRight01(): Bool = region rc {
-        let a = Array.dropRight(rc, -1, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.dropRight(rc, -1, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def dropRight02(): Bool = region rc {
-        let a = Array.dropRight(rc, 0, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.dropRight(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def dropRight03(): Bool = region rc {
-        let a = Array.dropRight(rc, 1, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.dropRight(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3199,13 +3199,13 @@ mod TestArray {
     @test
     def dropRight06(): Bool = region rc {
         let a = Array.dropRight(rc, 1, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def dropRight07(): Bool = region rc {
         let a = Array.dropRight(rc, 2, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3223,7 +3223,7 @@ mod TestArray {
     @test
     def dropRight10(): Bool = region rc {
         let a = Array.dropRight(rc, 2, Array#{1,2} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3245,7 +3245,7 @@ mod TestArray {
     @test
     def dropWhile01(): Bool = region rc {
         let a = Array.dropWhile(rc, i -> i > 3, Array#{} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3257,7 +3257,7 @@ mod TestArray {
     @test
     def dropWhile03(): Bool = region rc {
         let a = Array.dropWhile(rc, i -> i > 3, Array#{4} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3281,7 +3281,7 @@ mod TestArray {
     @test
     def dropWhile07(): Bool = region rc {
         let a = Array.dropWhile(rc, i -> i > 3, Array#{5,8} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3297,7 +3297,7 @@ mod TestArray {
     @test
     def dropWhileLeft01(): Bool = region rc {
         let a = Array.dropWhileLeft(rc, i -> i > 3, Array#{} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3309,7 +3309,7 @@ mod TestArray {
     @test
     def dropWhileLeft03(): Bool = region rc {
         let a = Array.dropWhileLeft(rc, i -> i > 3, Array#{4} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3333,7 +3333,7 @@ mod TestArray {
     @test
     def dropWhileLeft07(): Bool = region rc {
         let a = Array.dropWhileLeft(rc, i -> i > 3, Array#{5,8} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3349,7 +3349,7 @@ mod TestArray {
     @test
     def dropWhileRight01(): Bool = region rc {
         let a = Array.dropWhileRight(rc, i -> i > 3, Array#{} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3361,7 +3361,7 @@ mod TestArray {
     @test
     def dropWhileRight03(): Bool = region rc {
         let a = Array.dropWhileRight(rc, i -> i > 3, Array#{4} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3385,7 +3385,7 @@ mod TestArray {
     @test
     def dropWhileRight07(): Bool = region rc {
         let a = Array.dropWhileRight(rc, i -> i > 3, Array#{5,8} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3400,32 +3400,32 @@ mod TestArray {
 
     @test
     def take01(): Bool = region rc {
-        let a = Array.take(rc, -1, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.take(rc, -1, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def take02(): Bool = region rc {
-        let a = Array.take(rc, 0, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.take(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def take03(): Bool = region rc {
-        let a = Array.take(rc, 1, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.take(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def take04(): Bool = region rc {
         let a = Array.take(rc, -1, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def take05(): Bool = region rc {
         let a = Array.take(rc, 0, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
 
     }
     @test
@@ -3443,7 +3443,7 @@ mod TestArray {
     @test
     def take08(): Bool = region rc {
         let a = Array.take(rc, 0, Array#{1,2} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3476,32 +3476,32 @@ mod TestArray {
 
     @test
     def takeLeft01(): Bool = region rc {
-        let a = Array.takeLeft(rc, -1, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.takeLeft(rc, -1, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def takeLeft02(): Bool = region rc {
-        let a = Array.takeLeft(rc, 0, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.takeLeft(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def takeLeft03(): Bool = region rc {
-        let a = Array.takeLeft(rc, 1, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.takeLeft(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def takeLeft04(): Bool = region rc {
         let a = Array.takeLeft(rc, -1, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def takeLeft05(): Bool = region rc {
         let a = Array.takeLeft(rc, 0, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3519,7 +3519,7 @@ mod TestArray {
     @test
     def takeLeft08(): Bool = region rc {
         let a = Array.takeLeft(rc, 0, Array#{1,2} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3552,32 +3552,32 @@ mod TestArray {
 
     @test
     def takeRight01(): Bool = region rc {
-        let a = Array.takeRight(rc, -1, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.takeRight(rc, -1, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def takeRight02(): Bool = region rc {
-        let a = Array.takeRight(rc, 0, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.takeRight(rc, 0, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def takeRight03(): Bool = region rc {
-        let a = Array.takeRight(rc, 1, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.takeRight(rc, 1, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def takeRight04(): Bool = region rc {
         let a = Array.takeRight(rc, -1, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def takeRight05(): Bool = region rc {
         let a = Array.takeRight(rc, 0, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3595,7 +3595,7 @@ mod TestArray {
     @test
     def takeRight08(): Bool = region rc {
         let a = Array.takeRight(rc, 0, Array#{1,2} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3628,14 +3628,14 @@ mod TestArray {
 
     @test
     def takeWhile01(): Bool = region rc {
-        let a = Array.takeWhile(rc, i -> i > 3, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.takeWhile(rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def takeWhile02(): Bool = region rc {
         let a = Array.takeWhile(rc, i -> i > 3, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3647,13 +3647,13 @@ mod TestArray {
     @test
     def takeWhile04(): Bool = region rc {
         let a = Array.takeWhile(rc, i -> i > 3, Array#{1,2} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def takeWhile05(): Bool = region rc {
         let a = Array.takeWhile(rc, i -> i > 3, Array#{1,5} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3680,14 +3680,14 @@ mod TestArray {
 
     @test
     def takeWhileLeft01(): Bool = region rc {
-        let a = Array.takeWhileLeft(rc, i -> i > 3, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.takeWhileLeft(rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def takeWhileLeft02(): Bool = region rc {
         let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3699,13 +3699,13 @@ mod TestArray {
     @test
     def takeWhileLeft04(): Bool = region rc {
         let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{1,2} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def takeWhileLeft05(): Bool = region rc {
         let a = Array.takeWhileLeft(rc, i -> i > 3, Array#{1,5} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3732,14 +3732,14 @@ mod TestArray {
 
     @test
     def takeWhileRight01(): Bool = region rc {
-        let a = Array.takeWhileRight(rc, i -> i > 3, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.takeWhileRight(rc, i -> i > 3, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def takeWhileRight02(): Bool = region rc {
         let a = Array.takeWhileRight(rc, i -> i > 3, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3751,7 +3751,7 @@ mod TestArray {
     @test
     def takeWhileRight04(): Bool = region rc {
         let a = Array.takeWhileRight(rc, i -> i > 3, Array#{1,2} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3763,7 +3763,7 @@ mod TestArray {
     @test
     def takeWhileRight06(): Bool = region rc {
         let a = Array.takeWhileRight(rc, i -> i > 3, Array#{5,1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3784,7 +3784,7 @@ mod TestArray {
 
     @test
     def groupBy01(): Bool = region rc {
-        let arr = Array.groupBy(rc, (a, b) -> a > 3 or b > 8, (Array#{} @ rc): Array[Int32, rc]);
+        let arr = Array.groupBy(rc, (a, b) -> a > 3 or b > 8, ((Array#{} @ rc): Array[Int32, rc]));
         let xs = Array.toList(arr) |> List.map(Array.toList);
         xs == Nil
     }
@@ -3837,20 +3837,20 @@ mod TestArray {
 
     @test
     def zip01(): Bool = region rc {
-        let a = Array.zip(rc, (Array#{} @ rc): Array[Int32, _], (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[(Int32, Int32), _])
+        let a = Array.zip(rc, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[(Int32, Int32), _]))
     }
 
     @test
     def zip02(): Bool = region rc {
-        let a = Array.zip(rc, Array#{1} @ rc, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[(Int32, Int32), _])
+        let a = Array.zip(rc, Array#{1} @ rc, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[(Int32, Int32), _]))
     }
 
     @test
     def zip03(): Bool = region rc {
-        let a = Array.zip(rc, (Array#{} @ rc): Array[Int32, _], Array#{2} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[(Int32, Int32), _])
+        let a = Array.zip(rc, ((Array#{} @ rc): Array[Int32, _]), Array#{2} @ rc);
+        Array.sameElements(a, ((Array#{} @ rc): Array[(Int32, Int32), _]))
     }
 
     @test
@@ -3883,20 +3883,20 @@ mod TestArray {
 
     @test
     def zipWith01(): Bool = region rc {
-        let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a, (Array#{} @ rc): Array[Int32, _], (Array#{} @ rc): Array[Bool, _]);
-        Array.sameElements(arr, (Array#{} @ rc): Array[Int32, _])
+        let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Bool, _]));
+        Array.sameElements(arr, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def zipWith02(): Bool = region rc {
-        let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a, Array#{1} @ rc, (Array#{} @ rc): Array[Bool, _]);
-        Array.sameElements(arr, (Array#{} @ rc): Array[Int32, _])
+        let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a, Array#{1} @ rc, ((Array#{} @ rc): Array[Bool, _]));
+        Array.sameElements(arr, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def zipWith03(): Bool = region rc {
-        let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a, (Array#{} @ rc): Array[Int32, _], Array#{true} @ rc);
-        Array.sameElements(arr, (Array#{} @ rc): Array[Int32, _])
+        let arr = Array.zipWith(rc, (a, b) -> if (b) a + 1 else a, ((Array#{} @ rc): Array[Int32, _]), Array#{true} @ rc);
+        Array.sameElements(arr, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -3925,7 +3925,7 @@ mod TestArray {
 
     @test
     def unzip01(): Bool = region rc {
-        let (a,b) = Array.unzip(rc, rc, (Array#{} @ rc): Array[(Unit, Unit), _]);
+        let (a,b) = Array.unzip(rc, rc, ((Array#{} @ rc): Array[(Unit, Unit), _]));
         Array.sameElements(a, Array#{} @ rc) and Array.sameElements(b, Array#{} @ rc)
     }
 
@@ -3964,7 +3964,7 @@ mod TestArray {
 
     @test
     def fold201(): Bool = region rc {
-        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, (Array#{} @ rc): Array[Int32, _], (Array#{} @ rc): Array[Bool, _]) == 4
+        Array.fold2((c, a, b) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Bool, _])) == 4
     }
 
     @test
@@ -4019,17 +4019,17 @@ mod TestArray {
 
     @test
     def foldLeft201(): Bool = region rc {
-        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, (Array#{} @ rc): Array[Int32, _], (Array#{} @ rc): Array[Bool, _]) == 4
+        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Bool, _])) == 4
     }
 
     @test
     def foldLeft202(): Bool = region rc {
-        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{1} @ rc, (Array#{} @ rc): Array[Bool, _]) == 4
+        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, Array#{1} @ rc, ((Array#{} @ rc): Array[Bool, _])) == 4
     }
 
     @test
     def foldLeft203(): Bool = region rc {
-        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, (Array#{} @ rc): Array[Int32, _], Array#{true} @ rc) == 4
+        Array.foldLeft2((c, a, b) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), Array#{true} @ rc) == 4
     }
 
     @test
@@ -4074,17 +4074,17 @@ mod TestArray {
 
     @test
     def foldRight201(): Bool = region rc {
-        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, (Array#{} @ rc): Array[Int32, _], (Array#{} @ rc): Array[Bool, _]) == 4
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Bool, _])) == 4
     }
 
     @test
     def foldRight202(): Bool = region rc {
-        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{1} @ rc, (Array#{} @ rc): Array[Bool, _]) == 4
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, Array#{1} @ rc, ((Array#{} @ rc): Array[Bool, _])) == 4
     }
 
     @test
     def foldRight203(): Bool = region rc {
-        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, (Array#{} @ rc): Array[Int32, _], Array#{true} @ rc) == 4
+        Array.foldRight2((a, b, c) -> if (b) a + c else a * c, 4, ((Array#{} @ rc): Array[Int32, _]), Array#{true} @ rc) == 4
     }
 
     @test
@@ -4129,14 +4129,14 @@ mod TestArray {
 
     @test
     def filterMap01(): Bool = region rc {
-        let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, (Array#{} @ rc): Array[Int32, _]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, ((Array#{} @ rc): Array[Int32, _]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def filterMap02(): Bool = region rc {
         let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -4148,7 +4148,7 @@ mod TestArray {
     @test
     def filterMap04(): Bool = region rc {
         let a = Array.filterMap(rc, i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, Array#{1,3} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -4181,7 +4181,7 @@ mod TestArray {
 
     @test
     def findMap01(): Bool = region rc {
-        Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, (Array#{} @ rc): Array[Int32, _]) == None
+        Array.findMap(i -> if (i `Int32.remainder` 2 == 0) Some(i/2) else None, ((Array#{} @ rc): Array[Int32, _])) == None
     }
 
     @test
@@ -4225,7 +4225,7 @@ mod TestArray {
 
     @test
     def toSet01(): Bool = region rc {
-        Array.toSet((Array#{} @ rc): Array[Int32, _]) == Set#{}
+        Array.toSet(((Array#{} @ rc): Array[Int32, _])) == Set#{}
     }
 
     @test
@@ -4269,7 +4269,7 @@ mod TestArray {
 
     @test
     def toMap01(): Bool = region rc {
-        Array.toMap((Array#{} @ rc): Array[(Int32, Bool), _]) == Map#{}
+        Array.toMap(((Array#{} @ rc): Array[(Int32, Bool), _])) == Map#{}
     }
 
     @test
@@ -4293,7 +4293,7 @@ mod TestArray {
 
     @test
     def findIndexOf01(): Bool = region rc {
-        Array.findIndexOf(i -> i > 2, (Array#{} @ rc): Array[Int32, _]) == None
+        Array.findIndexOf(i -> i > 2, ((Array#{} @ rc): Array[Int32, _])) == None
     }
 
     @test
@@ -4332,7 +4332,7 @@ mod TestArray {
 
     @test
     def findIndexOfLeft01(): Bool = region rc {
-        Array.findIndexOfLeft(i -> i > 2, (Array#{} @ rc): Array[Int32, _]) == None
+        Array.findIndexOfLeft(i -> i > 2, ((Array#{} @ rc): Array[Int32, _])) == None
     }
 
     @test
@@ -4371,7 +4371,7 @@ mod TestArray {
 
     @test
     def findIndexOfRight01(): Bool = region rc {
-        Array.findIndexOfRight(i -> i > 2, (Array#{} @ rc): Array[Int32, _]) == None
+        Array.findIndexOfRight(i -> i > 2, ((Array#{} @ rc): Array[Int32, _])) == None
     }
 
     @test
@@ -4410,14 +4410,14 @@ mod TestArray {
 
     @test
     def findIndices01(): Bool = region rc {
-        let a = Array.findIndices(rc, i -> i > 2, (Array#{} @ rc): Array[Int32, rc]);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, rc])
+        let a = Array.findIndices(rc, i -> i > 2, ((Array#{} @ rc): Array[Int32, rc]));
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc]))
     }
 
     @test
     def findIndices02(): Bool = region rc {
         let a = Array.findIndices(rc, i -> i > 2, Array#{1} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, rc])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc]))
     }
 
     @test
@@ -4429,7 +4429,7 @@ mod TestArray {
     @test
     def findIndices04(): Bool = region rc {
         let a = Array.findIndices(rc, i -> i > 2, Array#{1,2} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, rc])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, rc]))
     }
 
     @test
@@ -4457,13 +4457,13 @@ mod TestArray {
     @test
     def init01(): Bool = region rc {
         let a = Array.init(rc, x -> x, 0);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def init02(): Bool = region rc {
         let a = Array.init(rc, x -> x, -1);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -4490,50 +4490,50 @@ mod TestArray {
 
     @test
     def sameElements01(): Bool = region rc {
-        let a = (Array#{} @ rc): Array[Int32, _];
-        let b = (Array#{} @ rc): Array[Int32, _];
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        let b = ((Array#{} @ rc): Array[Int32, _]);
         Array.sameElements(a,b) == true
     }
 
     @test
     def sameElements02(): Bool = region rc {
         let a = (Array#{1} @ rc): Array[Int32, _];
-        let b = (Array#{} @ rc): Array[Int32, _];
+        let b = ((Array#{} @ rc): Array[Int32, _]);
         Array.sameElements(a,b) == false
     }
 
     @test
     def sameElements03(): Bool = region rc {
-        let a = (Array#{} @ rc): Array[Int32, _];
-        let b = (Array#{1} @ rc): Array[Int32, _];
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        let b = ((Array#{1} @ rc): Array[Int32, _]);
         Array.sameElements(a,b) == false
     }
 
     @test
     def sameElements04(): Bool = region rc {
-        let a = (Array#{1} @ rc): Array[Int32, _];
-        let b = (Array#{1} @ rc): Array[Int32, _];
+        let a = ((Array#{1} @ rc): Array[Int32, _]);
+        let b = ((Array#{1} @ rc): Array[Int32, _]);
         Array.sameElements(a,b) == true
     }
 
     @test
     def sameElements05(): Bool = region rc {
-        let a = (Array#{1} @ rc): Array[Int32, _];
-        let b = (Array#{0} @ rc): Array[Int32, _];
+        let a = ((Array#{1} @ rc): Array[Int32, _]);
+        let b = ((Array#{0} @ rc): Array[Int32, _]);
         Array.sameElements(a,b) == false
     }
 
     @test
     def sameElements06(): Bool = region rc {
-        let a = (Array#{1,2} @ rc): Array[Int32, _];
-        let b = (Array#{1,2} @ rc): Array[Int32, _];
+        let a = ((Array#{1,2} @ rc): Array[Int32, _]);
+        let b = ((Array#{1,2} @ rc): Array[Int32, _]);
         Array.sameElements(a,b) == true
     }
 
     @test
     def sameElements07(): Bool = region rc {
-        let a = (Array#{1,2} @ rc): Array[Int32, _];
-        let b = (Array#{2,1} @ rc): Array[Int32, _];
+        let a = ((Array#{1,2} @ rc): Array[Int32, _]);
+        let b = ((Array#{2,1} @ rc): Array[Int32, _]);
         Array.sameElements(a,b) == false
     }
 
@@ -4543,8 +4543,8 @@ mod TestArray {
 
     @test
     def forEach01(): Bool = region rc {
-        let a = (Array#{} @ rc): Array[Int32, _];
-        let sb = StringBuilder.new(rc);
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == ""
@@ -4553,7 +4553,7 @@ mod TestArray {
     @test
     def forEach02(): Bool = region rc {
         let a = Array#{0} @ rc;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == "F"
@@ -4562,7 +4562,7 @@ mod TestArray {
     @test
     def forEach03(): Bool = region rc {
         let a = Array#{1} @ rc;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == "T"
@@ -4571,7 +4571,7 @@ mod TestArray {
     @test
     def forEach04(): Bool = region rc {
         let a = Array#{0,1} @ rc;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == "FT"
@@ -4583,8 +4583,8 @@ mod TestArray {
 
     @test
     def forEachWithIndex01(): Bool = region rc {
-        let a = (Array#{} @ rc): Array[Float32, _];
-        let sb = StringBuilder.new(rc);
+        let a = ((Array#{} @ rc): Array[Float32, _]);
+        let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == ""
@@ -4593,7 +4593,7 @@ mod TestArray {
     @test
     def forEachWithIndex02(): Bool = region rc {
         let a = Array#{0.0} @ rc;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "F"
@@ -4602,7 +4602,7 @@ mod TestArray {
     @test
     def forEachWithIndex03(): Bool = region rc {
         let a = Array#{0.0, 0.1} @ rc;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FT"
@@ -4611,7 +4611,7 @@ mod TestArray {
     @test
     def forEachWithIndex04(): Bool = region rc {
         let a = Array#{0.0, 0.1, 0.2} @ rc;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FTT"
@@ -4620,7 +4620,7 @@ mod TestArray {
     @test
     def forEachWithIndex05(): Bool = region rc {
         let a = Array#{0.0, 0.1, 0.2, 0.3} @ rc;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FTTT"
@@ -4632,14 +4632,14 @@ mod TestArray {
 
     @test
     def updateSequence01(): Bool = region rc {
-         let a = Array.updateSequence(rc, 0, (Array#{} @ rc): Array[Int32, _], (Array#{} @ rc): Array[Int32, _]);
-         Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+         let a = Array.updateSequence(rc, 0, ((Array#{} @ rc): Array[Int32, _]), ((Array#{} @ rc): Array[Int32, _]));
+         Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
      }
 
     @test
     def updateSequence02(): Bool = region rc {
         let a = Array.updateSequence(rc, 0, Array#{1,2} @ rc, Array#{} @ rc);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -4804,16 +4804,16 @@ mod TestArray {
 
     @test
     def updateSequence01!(): Bool = region rc {
-         let a = (Array#{} @ rc): Array[Int32, _];
-         Array.updateSequence!(0, (Array#{} @ rc): Array[Int32, _], a);
-         Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+         let a = ((Array#{} @ rc): Array[Int32, _]);
+         Array.updateSequence!(0, ((Array#{} @ rc): Array[Int32, _]), a);
+         Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
      }
 
     @test
     def updateSequence02!(): Bool = region rc {
-        let a = (Array#{} @ rc): Array[Int32, _];
+        let a = ((Array#{} @ rc): Array[Int32, _]);
         Array.updateSequence!(0, Array#{1,2} @ rc, a);
-        Array.sameElements(a, (Array#{} @ rc): Array[Int32, _])
+        Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -5010,8 +5010,8 @@ mod TestArray {
 
     @test
     def sortWith01(): Bool = region rc {
-        let a = Array.sortWith(rc, cmp, (Array#{} @ rc): Array[Int32, _]);
-        a `sameElements` (Array#{} @ rc): Array[Int32, _]
+        let a = Array.sortWith(rc, cmp, ((Array#{} @ rc): Array[Int32, _]));
+        a `sameElements` ((Array#{} @ rc): Array[Int32, _])
     }
 
     @test
@@ -5096,7 +5096,7 @@ mod TestArray {
 
     @test
     def sort01(): Bool = region rc {
-        testSortVsSortWith((Array#{} @ rc): Array[Int32, _])
+        testSortVsSortWith(((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -5145,9 +5145,9 @@ mod TestArray {
 
     @test
     def sortWith01!(): Bool = region rc {
-        let a = (Array#{} @ rc): Array[Int32, _];
+        let a = ((Array#{} @ rc): Array[Int32, _]);
         Array.sortWith!(cmp, a);
-        a `sameElements` (Array#{} @ rc): Array[Int32, _]
+        a `sameElements` ((Array#{} @ rc): Array[Int32, _])
     }
 
     @test
@@ -5248,7 +5248,7 @@ mod TestArray {
 
     @test
     def sort!01(): Bool = region rc {
-        testSort!VsSortWith!((Array#{} @ rc): Array[Int32, _])
+        testSort!VsSortWith!(((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -5303,7 +5303,7 @@ mod TestArray {
 
     @test
     def sortBy01(): Bool = region rc {
-        testSortByVsSort((Array#{} @ rc): Array[Int32, _])
+        testSortByVsSort(((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -5378,7 +5378,7 @@ mod TestArray {
 
     @test
     def sortBy!01(): Bool = region rc {
-        testSortBy!VsSortBy((Array#{} @ rc): Array[Int32, _])
+        testSortBy!VsSortBy(((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
@@ -5427,7 +5427,7 @@ mod TestArray {
 
     @test
     def minimumBy01(): Bool = region rc {
-        Array.minimumBy((x, y) -> x <=> y, (Array#{} @ rc): Array[Int32, _]) == None
+        Array.minimumBy((x, y) -> x <=> y, ((Array#{} @ rc): Array[Int32, _])) == None
     }
 
     @test
@@ -5453,7 +5453,7 @@ mod TestArray {
 
     @test
     def maximumBy01(): Bool = region rc {
-        Array.maximumBy((x, y) -> x <=> y, (Array#{} @ rc): Array[Int32, _]) == None
+        Array.maximumBy((x, y) -> x <=> y, ((Array#{} @ rc): Array[Int32, _])) == None
     }
 
     @test
@@ -5554,12 +5554,12 @@ mod TestArray {
 
     @test
     def toDelayList01(): Bool = region rc {
-        (Array#{} @ rc): Array[Unit, _] |> Array.toDelayList == DelayList.empty()
+        ((Array#{} @ rc): Array[Unit, _]) |> Array.toDelayList == DelayList.empty()
     }
 
     @test
     def toDelayList02(): Bool = region rc {
-        (Array.new(rc, 0): Array[String, rc]) |> Array.toDelayList == DelayList.empty()
+        (Array.empty(rc, 0): Array[String, rc]) |> Array.toDelayList == DelayList.empty()
     }
 
     @test
@@ -5578,7 +5578,7 @@ mod TestArray {
 
     @test
     def toChain01(): Bool = region rc {
-        Array.toChain((Array#{} @ rc): Array[Unit, _]) == Chain.empty(): Chain[Unit]
+        Array.toChain(((Array#{} @ rc): Array[Unit, _])) == (Chain.empty(): Chain[Unit])
     }
 
     @test
@@ -5602,7 +5602,7 @@ mod TestArray {
 
     @test
     def toNec01(): Bool = region rc {
-        Array.toNec((Array#{} @ rc): Array[Unit, _]) == None
+        Array.toNec(((Array#{} @ rc): Array[Unit, _])) == None
     }
 
     @test
@@ -5804,7 +5804,7 @@ mod TestArray {
 
     @test
     def iterator01(): Bool = region rc {
-        (Array#{} @ rc): Array[Int32, rc] |> Array.iterator(rc) |> Iterator.toList == Nil
+        ((Array#{} @ rc): Array[Int32, rc]) |> Array.iterator(rc) |> Iterator.toList == Nil
     }
 
     @test
@@ -5829,7 +5829,7 @@ mod TestArray {
 
     @test
     def join01(): Bool = region rc {
-        Array.join(",", (Array#{} @ rc): Array[Int32, _]) == ""
+        Array.join(",", ((Array#{} @ rc): Array[Int32, _])) == ""
     }
 
     @test
@@ -5921,19 +5921,19 @@ mod TestArray {
 
     @test
     def toMutList01(): Bool = region rc {
-        MutList.sameElements(Array.toMutList(rc, (Array#{} @ rc): Array[Int32, rc]), MutList.new(rc))
+        MutList.sameElements(Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])), MutList.empty(rc))
     }
 
     @test
     def toMutList02(): Bool = region rc {
-        let v = MutList.new(rc);
+        let v = MutList.empty(rc);
         MutList.push!(1, v);
         MutList.sameElements(Array.toMutList(rc, Array#{1} @ rc), v)
     }
 
     @test
     def toMutList03(): Bool = region rc {
-        let v = MutList.new(rc);
+        let v = MutList.empty(rc);
         MutList.push!(1, v);
         MutList.push!(2, v);
         MutList.push!(3, v);
@@ -5969,29 +5969,29 @@ mod TestArray {
 
     @test
     def shuffle01(): Bool \ IO = region rc {
-        let a = (Array#{} @ rc): Array[Int32, _];
-        Array.shuffle(Random.new(), a);
+        let a = ((Array#{} @ rc): Array[Int32, _]);
+        Array.shuffle(Random.fresh(), a);
         Array.length(a) == 0 and Array.toSet(a) == Set#{}
     }
 
     @test
     def shuffle02(): Bool \ IO = region rc {
         let a = (Array#{0} @ rc);
-        Array.shuffle(Random.new(), a);
+        Array.shuffle(Random.fresh(), a);
         Array.length(a) == 1 and Array.toSet(a) == Set#{0}
     }
 
     @test
     def shuffle03(): Bool \ IO = region rc {
         let a = (Array#{0, 1, 2, 3} @ rc);
-        Array.shuffle(Random.new(), a);
+        Array.shuffle(Random.fresh(), a);
         Array.length(a) == 4 and Array.toSet(a) == Set#{0, 1, 2, 3}
     }
 
     @test
     def shuffle04(): Bool \ IO = region rc {
         let a = (Array#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9} @ rc);
-        Array.shuffle(Random.new(), a);
+        Array.shuffle(Random.fresh(), a);
         Array.length(a) == 10 and Array.toSet(a) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
     }
 

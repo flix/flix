@@ -6,7 +6,7 @@ mod Debug {
     ///
     @Internal
     pub def debugWithPrefix(prefix: String, x: a): a \ IO =
-        import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
+        import static java_get_field java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
         import java.io.PrintStream.println(String): Unit \ IO;
         println(getOut(), "${prefix}%{x}");
         x
@@ -37,7 +37,7 @@ mod Debug {
         typematch x {
             case _: Unit => "()"
             case b: Bool =>  if (b) "true" else "false"
-            case c: Char => "\'" + escape("${c: Char}") + "\'"
+            case c: Char => "\'" + escape("${(c: Char)}") + "\'"
             case y: Float32 =>
                 import static java.lang.Float.toString(Float32): String \ {};
                 toString(y) + "f32"
