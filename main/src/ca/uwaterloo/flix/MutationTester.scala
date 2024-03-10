@@ -54,7 +54,7 @@ object MutationTester {
                 mutantCounter += 1
                 val start = System.nanoTime()
                 val n = defs + (mut._1 -> mDef)
-                //println(s"mutation: $mDef")
+                println(s"mutation: $mDef")
                 val newRoot = root.copy(defs = n)
                 val cRes = flix.codeGen(newRoot).unsafeGet
                 val testsFromTester = cRes.getTests.filter{case (s, _) => s.toString.contains(tester)}.toList
@@ -95,6 +95,7 @@ object MutationTester {
         defs.toList.map(d => (d._1, d._2) match {
             case (s, fun) =>
                 if (defSyms.contains(s)) {
+                    println(s,fun.exp)
                     val mutExps = mutateExpr(fun.exp)
                     val mutDefs = mutExps.map(mexp => fun.copy(exp = mexp))
                     Some(d._1 -> mutDefs)
@@ -346,6 +347,60 @@ object MutationTester {
             case original@TypedAst.Pattern.Cst(cst, _, _) => mutateCst(cst).map(m => original.copy(m))
             case _ => Nil
         }
+    }
+    private def mutateConstantByType(constType: Type):List[Expr.Cst] = constType match {
+        case Type.Cst(tc, loc) => tc match {
+            case TypeConstructor.Bool =>
+                val mut = Constant.Bool(true)
+                val mutations = mut :: mutateCst(mut)
+                mutations.map(m => Expr.Cst(m, Type.Bool, loc))
+            case TypeConstructor.Char =>
+                val mut = Constant.Char(0)
+                val mutations = mut :: mutateCst(mut)
+                mutations.map(m => Expr.Cst(m, Type.Bool, loc))
+            case TypeConstructor.Float32 =>
+                val mut = Constant.Float32(0)
+                val mutations = mut :: mutateCst(mut)
+                mutations.map(m => Expr.Cst(m, Type.Float32, loc))
+            case TypeConstructor.Float64 =>
+                val mut = Constant.Float64(0)
+                val mutations = mut :: mutateCst(mut)
+                mutations.map(m => Expr.Cst(m, Type.Float64, loc))
+            case TypeConstructor.BigDecimal =>
+                val mut = Constant.BigDecimal(java.math.BigDecimal.ZERO)
+                val mutations = mut :: mutateCst(mut)
+                mutations.map(m => Expr.Cst(m, Type.BigDecimal, loc))
+            case TypeConstructor.Int8 =>
+                val mut = Constant.Int8(0)
+                val mutations = mut :: mutateCst(mut)
+                mutations.map(m => Expr.Cst(m, Type.Int8, loc))
+            case TypeConstructor.Int16 =>
+                val mut = Constant.Int16(0)
+                val mutations = mut :: mutateCst(mut)
+                mutations.map(m => Expr.Cst(m, Type.Int16, loc))
+            case TypeConstructor.Int32 =>
+                val mut = Constant.Int32(0)
+                val mutations = mut :: mutateCst(mut)
+                mutations.map(m => Expr.Cst(m, Type.Int32, loc))
+            case TypeConstructor.Int64 =>
+                val mut = Constant.Int64(0)
+                val mutations = mut :: mutateCst(mut)
+                mutations.map(m => Expr.Cst(m, Type.Int64, loc))
+            case TypeConstructor.BigInt =>
+                val mut = Constant.BigInt(BigInteger.ZERO)
+                val mutations = mut :: mutateCst(mut)
+                mutations.map(m => Expr.Cst(m, Type.BigInt, loc))
+            case TypeConstructor.Str =>
+                val mut = Constant.Str("")
+                val mutations = mut :: mutateCst(mut)
+                mutations.map(m => Expr.Cst(m, Type.BigInt, loc))
+            case TypeConstructor.Regex =>
+                val mut = Constant.Regex(java.util.regex.Pattern.compile("b"))
+                val mutations = mut :: mutateCst(mut)
+                mutations.map(m => Expr.Cst(m, Type.Regex, loc))
+            case e => println(s"$e not implemented in mutateConstantByType"); Nil
+        }
+        case _ => Nil
     }
 
     /**
