@@ -411,7 +411,7 @@ mod Int16 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int16): BigDecimal =
-        import new java.math.BigDecimal(Int32): BigDecimal \ {} as fromInt32;
+        import java_new java.math.BigDecimal(Int32): BigDecimal \ {} as fromInt32;
         Int16.toInt32(x) |> fromInt32
 
     ///

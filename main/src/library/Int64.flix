@@ -440,7 +440,7 @@ mod Int64 {
     /// Warning: The numeric value of `x` may lose precision.
     ///
     pub def toBigDecimal(x: Int64): BigDecimal =
-        import new java.math.BigDecimal(Int64): BigDecimal \ {} as fromInt64;
+        import java_new java.math.BigDecimal(Int64): BigDecimal \ {} as fromInt64;
         fromInt64(x)
 
     ///
