@@ -30,7 +30,7 @@ object MutationTester {
         val end = System.nanoTime() - start
         val timeSec = end.toFloat / 1_000_000_000.0
         println(s"time to generate mutations: $timeSec")
-        runMutations(flix, root, root1)
+        runMutations(flix,tester, root, root1)
 
         /**
           * val result = root1.map(r => flix.codeGen(r).unsafeGet)
@@ -38,7 +38,7 @@ object MutationTester {
           */
     }
 
-    private def runMutations(flix: Flix, root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[TypedAst.Def])]): Unit = {
+    private def runMutations(flix: Flix,tester: String,  root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[TypedAst.Def])]): Unit = {
         val totalStartTime = System.nanoTime()
         var timeTemp = 0.0
         var survivorCount = 0
@@ -55,9 +55,10 @@ object MutationTester {
                 //println(s"mutation: $mDef")
                 val newRoot = root.copy(defs = n)
                 val cRes = flix.codeGen(newRoot).unsafeGet
-                val testResults = cRes.getTests.values.forall(c =>
+                val testsFromTester = cRes.getTests.filter{case (s, _) => s.toString.contains(tester)}.toList
+                val testResults = testsFromTester.forall(c =>
                     try {
-                        c.run() match {
+                        c._2.run() match {
                             case java.lang.Boolean.TRUE => true
                             case _ => false
                         }
