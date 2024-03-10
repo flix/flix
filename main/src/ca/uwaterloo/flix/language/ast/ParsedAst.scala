@@ -952,16 +952,7 @@ object ParsedAst {
       * @param sp2 the position of the last character in the expression.
       */
     case class Deref(sp1: SourcePosition, exp: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
-    /**
-      * Assignment expression.
-      *
-      * @param exp1 the expression to reference.
-      * @param exp2 the expression to assign.
-      * @param sp2  the position of the last character in the expression.
-      */
-    case class Assign(exp1: ParsedAst.Expression, exp2: ParsedAst.Expression, sp2: SourcePosition) extends ParsedAst.Expression
-
+    
     /**
       * Ascribe Expression.
       *
