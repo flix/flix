@@ -18,9 +18,11 @@ package ca.uwaterloo.flix
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.SemanticOp.{BoolOp, CharOp, Float32Op, Float64Op, Int16Op, Int32Op, Int64Op, Int8Op, StringOp}
-import ca.uwaterloo.flix.language.ast.Type.{Apply, False, Int32, True, Str}
+import ca.uwaterloo.flix.language.ast.Type.{Apply, False, Int32, Str, True, mkBigInt}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SemanticOp, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
+
+import java.math.BigInteger
 
 object MutationTester {
     def run(flix: Flix, tester: String, testee: String): Unit = {
@@ -139,8 +141,9 @@ object MutationTester {
     private def mutateExpr(e: TypedAst.Expr): List[TypedAst.Expr] = e match {
         case Expr.Cst(cst, tpe, loc) =>
             mutateCst(cst).map(m => Expr.Cst(m, tpe, loc))
-        case original@Expr.Var(_, _, _) =>  Nil
-        case original@Expr.Def(sym, _, _) => Nil
+        case original@Expr.Var(_, tpe, loc) =>
+            mutateConstantByType(tpe)
+        case original@Expr.Def(_, _, _) => Nil
         case original@Expr.Sig(sym, tpe, loc) =>
           mutateSig(original).filter(e => e != original)
         case original@Expr.Hole(sym, _, _) => Nil
