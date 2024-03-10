@@ -97,7 +97,7 @@ mod Test.Exp.Apply.Tail {
     }
 
     def stmtRecursion(n: Ref[Int32, r]): Bool \ r = {
-        Ref.put(Ref.get(n) + 1, n);
+        Ref.put(Ref.get(n) - 1, n);
         if (Reg.get(n) == 0) true else stmtRecursion(n)
     }
 
