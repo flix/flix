@@ -11,7 +11,7 @@ mod Test.Handler.NewObject {
     }
 
     def newAskRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
-        def run(_this: Runnable): Unit \ { IO , rc } =
+        def run(_this: Runnable): Unit \ { rc } =
             try {
               do Ask.ask(42)
             } with Ask {
