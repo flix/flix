@@ -444,7 +444,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): ##java.io.Serializable \ IO =
-        |    import new java.lang.Object(): ##java.lang.Object as mkObj;
+        |    import java_new java.lang.Object(): ##java.lang.Object as mkObj;
         |    checked_cast(mkObj())
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -455,7 +455,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): ##java.lang.Boolean \ IO =
-        |    import new java.lang.Object(): ##java.lang.Object as mkObj;
+        |    import java_new java.lang.Object(): ##java.lang.Object as mkObj;
         |    checked_cast(mkObj())
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -540,7 +540,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): ##java.lang.String \ IO =
-        |    import new java.lang.Object(): ##java.lang.Object as mkObj;
+        |    import java_new java.lang.Object(): ##java.lang.Object as mkObj;
         |    checked_cast(mkObj())
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -551,7 +551,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): String \ IO =
-        |    import new java.lang.Object(): ##java.lang.Object as mkObj;
+        |    import java_new java.lang.Object(): ##java.lang.Object as mkObj;
         |    checked_cast(mkObj())
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -573,7 +573,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Bool \ IO =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
+        |    import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
         |    checked_cast(newSb())
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -585,7 +585,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |enum Boolean(Bool)
         |def f(): Boolean \ IO =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
+        |    import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
         |    checked_cast(newSb())
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -608,7 +608,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): String \ IO =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
+        |    import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder as newSb;
         |    checked_cast(newSb())
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)

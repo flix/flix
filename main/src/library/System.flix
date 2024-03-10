@@ -31,9 +31,9 @@ mod System {
         /// See also `Console.readLine` for reading from the console.
         ///
         pub def readLines(rc: Region[r]): Iterator[String, IO + r, r] \ { r, IO } =
-            import static get java.lang.System.in: ##java.io.InputStream \ IO as getSystemIn;
-            import new java.io.InputStreamReader(##java.io.InputStream): ##java.io.InputStreamReader \ IO as newInputStream;
-            import new java.io.BufferedReader(##java.io.Reader): ##java.io.BufferedReader \ IO as newBufferedReader;
+            import static java_get_field java.lang.System.in: ##java.io.InputStream \ IO as getSystemIn;
+            import java_new java.io.InputStreamReader(##java.io.InputStream): ##java.io.InputStreamReader \ IO as newInputStream;
+            import java_new java.io.BufferedReader(##java.io.Reader): ##java.io.BufferedReader \ IO as newBufferedReader;
             // note: BufferedReader.readLine can block
             import java.io.BufferedReader.readLine(): String \ IO as brReadLine;
 
@@ -91,7 +91,7 @@ mod System {
         /// Returns the standard output stream.
         ///
         def getOutputStream(): ##java.io.PrintStream \ IO =
-            import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
+            import static java_get_field java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
             getOut()
 
     }
@@ -133,7 +133,7 @@ mod System {
         /// Returns the standard error stream.
         ///
         def getErrorStream(): ##java.io.PrintStream \ IO =
-            import static get java.lang.System.err: ##java.io.PrintStream \ IO as getErr;
+            import static java_get_field java.lang.System.err: ##java.io.PrintStream \ IO as getErr;
             getErr()
 
     }

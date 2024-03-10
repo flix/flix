@@ -1046,7 +1046,7 @@ object Namer {
     case DesugaredAst.Expr.Error(m) =>
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
-      Validation.SoftFailure(NamedAst.Expr.Error(m), Chain.empty)
+      Validation.success(NamedAst.Expr.Error(m))
 
   }
 

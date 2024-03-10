@@ -25,7 +25,7 @@ object ImportNewCompleter extends Completer {
     * Returns a List of Completion for importNew (java constructors).
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[ImportNewCompletion] = {
-    val regex = raw"\s*import\s+new\s+(.*)".r
+    val regex = raw"\s*import\s+java_new\s+(.*)".r
     context.prefix match {
       case regex(clazz) => CompletionUtils.classFromString(clazz) match {
         case Some((clazzObject, clazz)) =>
