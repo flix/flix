@@ -1319,11 +1319,11 @@ mod List {
     /// Returns an iterator over `l`.
     ///
     pub def iterator(rc: Region[r], xs: List[a]): Iterator[a, r, r] \ r =
-        let ls = ref xs @ rc;
+        let ls = Ref.fresh(rc, xs);
         let next = () -> {
-            match (deref ls) {
+            match (Ref.get(ls)) {
                 case Nil     => None
-                case x :: rs => ls := rs; Some(x)
+                case x :: rs => Ref.put(rs, ls); Some(x)
             }
         };
         Iterator.iterate(rc, next)
