@@ -58,7 +58,7 @@ mod Array {
     }
 
     ///
-    /// Returns an empty uninitialized array of length `l` in the region `r`.
+    /// Returns a new uninitialized array of length `l` in the region `r`.
     ///
     pub def empty(rc: Region[r], l: Int32): Array[a, r] \ r =
         $ARRAY_NEW$(rc, Reflect.default(), l)
@@ -216,7 +216,7 @@ mod Array {
         if (len > 0) Some(get(len - 1, a)) else None
 
     ///
-    /// Return an empty array, appending the elements `b` to elements of `a`.
+    /// Return a new array, appending the elements `b` to elements of `a`.
     ///
     pub def append(rc3: Region[r3], a: Array[a, r1], b: Array[a, r2]): Array[a, r3] \ { r1, r2, r3 } =
         let len1 = length(a);
