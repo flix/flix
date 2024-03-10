@@ -38,6 +38,24 @@ mod Test.Exp.Apply.Tail {
 
     @test
     def testApplyTail13(): Int32 = region rc {
+        let n = ref 1 @ rc;
+        stmtRecursion(n)
+    }
+
+    @test
+    def testApplyTail14(): Int32 = region rc {
+        let n = ref 12 @ rc;
+        stmtRecursion(n)
+    }
+
+    @test
+    def testApplyTail15(): Int32 = region rc {
+        let n = ref 1234 @ rc;
+        stmtRecursion(n)
+    }
+
+    @test
+    def testApplyTail16(): Int32 = region rc {
         let n = ref 1234567 @ rc;
         stmtRecursion(n)
     }
