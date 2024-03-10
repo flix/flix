@@ -10,7 +10,7 @@ def deduplicate(l: List[a]): List[a] with Order[a] =
         /// Create a new `MutSet` at region `rc`.
         /// This will be used to keep track of
         /// unique elements in `l`.
-        let s = MutSet.new(rc);
+        let s = MutSet.empty(rc);
 
         /// The lambda used in the call to `filter`
         /// would be impure without a region.

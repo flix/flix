@@ -22,20 +22,20 @@ mod TestMutQueue {
 
     @Test
     def testToString01(): Bool = region rc {
-        let mq = (MutQueue.new(rc) : MutQueue[Char, rc]);
+        let mq = (MutQueue.empty(rc) : MutQueue[Char, rc]);
         MutQueue.toString(mq) == "MutQueue {}"
     }
 
     @Test
     def testToString02(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueue(mq, 3);
         MutQueue.toString(mq) == "MutQueue {3}"
     }
 
     @Test
     def testToString03(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         MutQueue.dequeue(mq);
         MutQueue.dequeue(mq);
@@ -47,8 +47,8 @@ mod TestMutQueue {
     /////////////////////////////////////////////////////////////////////////////
 
     @Test
-    def testNew01(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+    def testEmpty01(): Bool = region rc {
+        let mq = MutQueue.empty(rc);
         MutQueue.size(mq) == 0
     }
 
@@ -58,20 +58,20 @@ mod TestMutQueue {
 
     @Test
     def testSize01(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.size(mq) == 0
     }
 
     @Test
     def testSize02(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, "a" :: "b" :: "c" :: "d" :: "e" :: Nil);
         MutQueue.size(mq) == 5
     }
 
     @Test
     def testSize03(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         MutQueue.dequeue(mq);
         MutQueue.size(mq) == 7
@@ -83,20 +83,20 @@ mod TestMutQueue {
 
     @Test
     def testIsEmpty01(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.isEmpty(mq)
     }
 
     @Test
     def testIsEmpty02(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueue(mq, "a");
         not MutQueue.isEmpty(mq)
     }
 
     @Test
     def testIsEmpty03(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: Nil);
         MutQueue.dequeue(mq);
         MutQueue.dequeue(mq);
@@ -105,7 +105,7 @@ mod TestMutQueue {
     }
 
     @Test def testIsEmpty04(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, 1 :: 2 :: Nil);
         MutQueue.dequeue(mq);
         MutQueue.dequeue(mq);
@@ -119,7 +119,7 @@ mod TestMutQueue {
 
     @Test
     def testPeek01(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueue(mq, 3);
         MutQueue.dequeue(mq);
         MutQueue.peek(mq) == None
@@ -127,14 +127,14 @@ mod TestMutQueue {
 
     @Test
     def testPeek02(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueue(mq, 1);
         MutQueue.peek(mq) == Some(1)
     }
 
     @Test
     def testPeek03(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, 1 :: 9 :: 2 :: 8 :: 3 :: 7 :: Nil);
         MutQueue.dequeue(mq);
         MutQueue.peek(mq) == Some(8)
@@ -142,13 +142,13 @@ mod TestMutQueue {
 
     @Test
     def testPeek04(): Bool = region rc {
-        let mq = (MutQueue.new(rc) : MutQueue[Int32, rc]);
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         MutQueue.peek(mq) == None
     }
 
     @Test
     def testPeek05(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueue(mq, 5);
         MutQueue.enqueue(mq, 5);
         MutQueue.dequeue(mq);
@@ -161,14 +161,14 @@ mod TestMutQueue {
 
     @Test
     def testEnqueue01(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueue(mq, "a");
         MutQueue.size(mq) == 1
     }
 
     @Test
     def testEnqueue02(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueue(mq, 3);
         MutQueue.enqueue(mq, 2);
         MutQueue.toString(mq) == "MutQueue {3, 2}"
@@ -176,7 +176,7 @@ mod TestMutQueue {
 
     @Test
     def testEnqueue03(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueue(mq, 2);
         MutQueue.enqueue(mq, 3);
         MutQueue.toString(mq) == "MutQueue {3, 2}"
@@ -184,7 +184,7 @@ mod TestMutQueue {
 
     @Test
     def testEnqueue04(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueue(mq, "a");
         MutQueue.enqueue(mq, "b");
         MutQueue.enqueue(mq, "c");
@@ -195,7 +195,7 @@ mod TestMutQueue {
 
     @Test
     def testEnqueue05(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueue(mq, 3);
         MutQueue.enqueue(mq, 4);
         MutQueue.enqueue(mq, 5);
@@ -214,20 +214,20 @@ mod TestMutQueue {
 
     @Test
     def testDequeue01(): Bool = region rc {
-        let mq = (MutQueue.new(rc) : MutQueue[Int32, rc]);
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         MutQueue.dequeue(mq);
         MutQueue.size(mq) == 0
     }
 
     @Test
     def testDequeue02(): Bool = region rc {
-        let mq = (MutQueue.new(rc) : MutQueue[Int32, rc]);
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         MutQueue.dequeue(mq) == None
     }
 
     @Test
     def testDequeue03(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: Nil);
         MutQueue.dequeue(mq);
         MutQueue.dequeue(mq);
@@ -236,7 +236,7 @@ mod TestMutQueue {
 
     @Test
     def testDequeue04(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: Nil);
         MutQueue.dequeue(mq);
         MutQueue.dequeue(mq) == Some(4)
@@ -244,7 +244,7 @@ mod TestMutQueue {
 
     @Test
     def testDequeue05(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: Nil);
         MutQueue.dequeue(mq);
         MutQueue.dequeue(mq);
@@ -258,14 +258,14 @@ mod TestMutQueue {
 
     @Test
     def testEnqueueAll01(): Bool = region rc {
-        let mq = (MutQueue.new(rc) : MutQueue[Int32, rc]);
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         MutQueue.enqueueAll(mq, Nil);
         MutQueue.toString(mq) == "MutQueue {}"
     }
 
     @Test
     def testEnqueueAll02(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, Nil);
         MutQueue.enqueueAll(mq, 1 :: Nil);
         MutQueue.toString(mq) == "MutQueue {1}"
@@ -273,7 +273,7 @@ mod TestMutQueue {
 
     @Test
     def testEnqueueAll03(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, Nil);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: Nil);
         MutQueue.enqueueAll(mq, 4 :: 5 :: 6 :: Nil);
@@ -282,7 +282,7 @@ mod TestMutQueue {
 
     @Test
     def testEnqueueAll04(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, Nil);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         MutQueue.enqueueAll(mq, Nil);
@@ -295,7 +295,7 @@ mod TestMutQueue {
 
     @Test
     def testIterator01(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         let it = MutQueue.iterator(rc, mq);
         let sum = ref 0 @ rc;
         Iterator.forEach(x -> sum := deref sum + x, it);
@@ -304,7 +304,7 @@ mod TestMutQueue {
 
     @Test
     def testIterator02(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, 1 :: Nil);
         let it = MutQueue.iterator(rc, mq);
         Iterator.toList(it) == 1 :: Nil
@@ -312,7 +312,7 @@ mod TestMutQueue {
 
     @Test
     def testIterator03(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, "a" :: "c" :: "g" :: "t" :: Nil);
         let it = MutQueue.iterator(rc, mq);
         let str = ref "" @ rc;
@@ -326,41 +326,41 @@ mod TestMutQueue {
 
     @Test
     def testToList01(): Bool = region rc {
-        let mq = (MutQueue.new(rc) : MutQueue[Int32, rc]);
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         MutQueue.toList(mq) == Nil
     }
 
     @Test
     def testToList02(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueue(mq, 1);
         MutQueue.toList(mq) == 1 :: Nil
     }
 
     @Test
     def testToList03(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, 1 :: 2 :: Nil);
         MutQueue.toList(mq) == 2 :: 1 :: Nil
     }
 
     @Test
     def testToList04(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, 1 :: 2 :: Nil);
         MutQueue.toList(mq) == 2 :: 1 :: Nil
     }
 
     @Test
     def testToList05(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         MutQueue.toList(mq) == 8 :: 7 :: 6 :: 4 :: 3 :: 2 :: 5 :: 1 :: Nil
     }
 
     @Test
     def testToList06(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         MutQueue.dequeue(mq);
         MutQueue.dequeue(mq);
@@ -373,34 +373,34 @@ mod TestMutQueue {
 
     @Test
     def testToNel01(): Bool = region rc {
-        let mq = (MutQueue.new(rc) : MutQueue[Int32, rc]);
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         MutQueue.toNel(mq) == None
     }
 
     @Test
     def testToNel02(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueue(mq, 1);
         MutQueue.toNel(mq) == Some(Nel.Nel(1, Nil))
     }
 
     @Test
     def testToNel03(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: Nil);
         MutQueue.toNel(mq) == Some(Nel.Nel(3, 1 :: 2 :: Nil))
     }
 
     @Test
     def testToNel04(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         MutQueue.toNel(mq) == Some(Nel.Nel(8, 7 :: 6 :: 4 :: 3 :: 2 :: 5 :: 1 :: Nil))
     }
 
     @Test
     def testToNel05(): Bool = region rc {
-        let mq = MutQueue.new(rc);
+        let mq = MutQueue.empty(rc);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         MutQueue.dequeue(mq);
         MutQueue.dequeue(mq);
@@ -413,41 +413,41 @@ mod TestMutQueue {
 
     @Test
     def testArray01(): Bool = region rc {
-        let mq = (MutQueue.new(rc) : MutQueue[Int32, rc]);
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         Array.toString(MutQueue.toArray(rc, mq)) == "Array#{}"
     }
 
     @Test
     def testArray02(): Bool = region rc {
-        let mq = (MutQueue.new(rc) : MutQueue[Int32, rc]);
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         MutQueue.enqueue(mq, 1);
         Array.toString(MutQueue.toArray(rc, mq)) == "Array#{1}"
     }
 
     @Test
     def testArray03(): Bool = region rc {
-        let mq = (MutQueue.new(rc) : MutQueue[Int32, rc]);
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         MutQueue.enqueueAll(mq, 1 :: 2 :: Nil);
         Array.toString(MutQueue.toArray(rc, mq)) == "Array#{2, 1}"
     }
 
     @Test
     def testArray04(): Bool = region rc {
-        let mq = (MutQueue.new(rc) : MutQueue[Int32, rc]);
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         MutQueue.enqueueAll(mq, 2 :: 1 :: Nil);
         Array.toString(MutQueue.toArray(rc, mq)) == "Array#{2, 1}"
     }
 
     @Test
     def testArray05(): Bool = region rc {
-        let mq = (MutQueue.new(rc) : MutQueue[Int32, rc]);
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         Array.toString(MutQueue.toArray(rc, mq)) == "Array#{8, 7, 6, 4, 3, 2, 5, 1}"
     }
 
     @Test
     def testArray06(): Bool = region rc {
-        let mq = (MutQueue.new(rc) : MutQueue[Int32, rc]);
+        let mq = (MutQueue.empty(rc) : MutQueue[Int32, rc]);
         MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: Nil);
         MutQueue.dequeue(mq);
         MutQueue.dequeue(mq);

@@ -348,7 +348,7 @@ mod TestAdaptor {
 
     @test
     def toArrayList01(): Bool \ IO =
-        import new java.util.ArrayList(##java.util.Collection): ##java.util.ArrayList \ {} as newArrayList;
+        import java_new java.util.ArrayList(##java.util.Collection): ##java.util.ArrayList \ {} as newArrayList;
         import static java.util.List.of(): ##java.util.List \ {};
         import java.util.ArrayList.equals(##java.lang.Object): Bool \ {};
         let l = Adaptor.toArrayList(Nil);
@@ -356,7 +356,7 @@ mod TestAdaptor {
 
     @test
     def toArrayList02(): Bool \ IO =
-        import new java.util.ArrayList(##java.util.Collection): ##java.util.ArrayList \ {} as newArrayList;
+        import java_new java.util.ArrayList(##java.util.Collection): ##java.util.ArrayList \ {} as newArrayList;
         import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
         import java.util.ArrayList.equals(##java.lang.Object): Bool \ {};
         let l = Adaptor.toArrayList(List#{"hello"});
@@ -364,7 +364,7 @@ mod TestAdaptor {
 
     @test
     def toArrayList03(): Bool \ IO =
-        import new java.util.ArrayList(##java.util.Collection): ##java.util.ArrayList \ {} as newArrayList;
+        import java_new java.util.ArrayList(##java.util.Collection): ##java.util.ArrayList \ {} as newArrayList;
         import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
         import java.util.ArrayList.equals(##java.lang.Object): Bool \ {};
         let l = Adaptor.toArrayList(List#{"hello", "world"});
@@ -376,7 +376,7 @@ mod TestAdaptor {
 
     @test
     def toLinkedList01(): Bool \ IO =
-        import new java.util.LinkedList(##java.util.Collection): ##java.util.LinkedList \ {} as newLinkedList;
+        import java_new java.util.LinkedList(##java.util.Collection): ##java.util.LinkedList \ {} as newLinkedList;
         import static java.util.List.of(): ##java.util.List \ {};
         import java.util.LinkedList.equals(##java.lang.Object): Bool \ {};
         let l = Adaptor.toLinkedList(Nil);
@@ -384,7 +384,7 @@ mod TestAdaptor {
 
     @test
     def toLinkedList02(): Bool \ IO =
-        import new java.util.LinkedList(##java.util.Collection): ##java.util.LinkedList \ {} as newLinkedList;
+        import java_new java.util.LinkedList(##java.util.Collection): ##java.util.LinkedList \ {} as newLinkedList;
         import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
         import java.util.LinkedList.equals(##java.lang.Object): Bool \ {};
         let l = Adaptor.toLinkedList(List#{"hello"});
@@ -392,7 +392,7 @@ mod TestAdaptor {
 
     @test
     def toLinkedList03(): Bool \ IO =
-        import new java.util.LinkedList(##java.util.Collection): ##java.util.LinkedList \ {} as newLinkedList;
+        import java_new java.util.LinkedList(##java.util.Collection): ##java.util.LinkedList \ {} as newLinkedList;
         import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
         import java.util.LinkedList.equals(##java.lang.Object): Bool \ {};
         let l = Adaptor.toLinkedList(List#{"hello", "world"});
@@ -429,7 +429,7 @@ mod TestAdaptor {
 
     @test
     def toTreeSet01(): Bool \ IO =
-        import new java.util.TreeSet(##java.util.Collection): ##java.util.TreeSet \ {} as newTreeSet;
+        import java_new java.util.TreeSet(##java.util.Collection): ##java.util.TreeSet \ {} as newTreeSet;
         import static java.util.List.of(): ##java.util.List \ {};
         import java.util.TreeSet.equals(##java.lang.Object): Bool \ {};
         let s = Adaptor.toTreeSet((Set#{} : Set[String]));
@@ -437,7 +437,7 @@ mod TestAdaptor {
 
     @test
     def toTreeSet02(): Bool \ IO =
-        import new java.util.TreeSet(##java.util.Collection): ##java.util.TreeSet \ {} as newTreeSet;
+        import java_new java.util.TreeSet(##java.util.Collection): ##java.util.TreeSet \ {} as newTreeSet;
         import static java.util.List.of(##java.lang.Object): ##java.util.List \ {};
         import java.util.TreeSet.equals(##java.lang.Object): Bool \ {};
         let s = Adaptor.toTreeSet(Set#{"hello"});
@@ -445,7 +445,7 @@ mod TestAdaptor {
 
     @test
     def toTreeSet03(): Bool \ IO =
-        import new java.util.TreeSet(##java.util.Collection): ##java.util.TreeSet \ {} as newTreeSet;
+        import java_new java.util.TreeSet(##java.util.Collection): ##java.util.TreeSet \ {} as newTreeSet;
         import static java.util.List.of(##java.lang.Object, ##java.lang.Object): ##java.util.List \ {};
         import java.util.TreeSet.equals(##java.lang.Object): Bool \ {};
         let s = Adaptor.toTreeSet(Set#{"hello", "world"});
@@ -482,7 +482,7 @@ mod TestAdaptor {
 
     @test
     def toTreeMap01(): Bool \ IO =
-        import new java.util.TreeMap(##java.util.Map): ##java.util.TreeMap \ {} as newTreeMap;
+        import java_new java.util.TreeMap(##java.util.Map): ##java.util.TreeMap \ {} as newTreeMap;
         import static java.util.Map.of(): ##java.util.Map \ {};
         import java.util.TreeMap.equals(##java.lang.Object): Bool \ {};
         let m = Adaptor.toTreeMap((Map#{} : Map[String, String]));
@@ -490,7 +490,7 @@ mod TestAdaptor {
 
     @test
     def toTreeMap02(): Bool \ IO =
-        import new java.util.TreeMap(##java.util.Map): ##java.util.TreeMap \ {} as newTreeMap;
+        import java_new java.util.TreeMap(##java.util.Map): ##java.util.TreeMap \ {} as newTreeMap;
         import static java.util.Map.of(##java.lang.Object, ##java.lang.Object): ##java.util.Map \ {};
         import java.util.TreeMap.equals(##java.lang.Object): Bool \ {};
         let m = Adaptor.toTreeMap(Map#{"a" => "hello"});
@@ -498,7 +498,7 @@ mod TestAdaptor {
 
     @test
     def toTreeMap03(): Bool \ IO =
-        import new java.util.TreeMap(##java.util.Map): ##java.util.TreeMap \ {} as newTreeMap;
+        import java_new java.util.TreeMap(##java.util.Map): ##java.util.TreeMap \ {} as newTreeMap;
         import static java.util.Map.of(##java.lang.Object, ##java.lang.Object, ##java.lang.Object, ##java.lang.Object): ##java.util.Map \ {};
         import java.util.TreeMap.equals(##java.lang.Object): Bool \ {};
         let m = Adaptor.toTreeMap(Map#{"a" => "hello", "b" => "world"});

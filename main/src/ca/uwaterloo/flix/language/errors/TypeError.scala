@@ -660,7 +660,7 @@ object TypeError {
     * @param tpe  the type wherein the region variable escapes.
     * @param loc  the location where the error occurred.
     */
-  case class RegionVarEscapes(rvar: Type.Var, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class RegionVarEscapes(rvar: Type.Var, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Recoverable {
     def summary: String = s"Region variable '${formatType(rvar)}' escapes its scope."
 
     def message(formatter: Formatter): String = {
