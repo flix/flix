@@ -647,7 +647,7 @@ object ConstraintResolution {
       TypeError.MismatchedArity(tpe1, tpe2, RigidityEnv.empty, loc) // MATT renv
 
     case (UnificationError.TooComplex(tpe1, tpe2), Provenance.Match(_, _, loc)) =>
-      TypeError.TooComplex(tpe1, tpe2, RigidityEnv.empty, loc) // MATT renv
+      TypeError.TooComplex(loc) // MATT renv
 
     case (UnificationError.RigidVar(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
       TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc) // MATT renv
