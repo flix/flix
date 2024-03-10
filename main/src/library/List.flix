@@ -143,6 +143,11 @@ mod List {
     }
 
     ///
+    /// Returns the empty list `Nil`.
+    ///
+    pub def empty(): List[a] = Nil
+
+    ///
     /// Returns true if and only if `l` is the empty list, i.e. `Nil`.
     ///
     pub def isEmpty(l: List[a]): Bool = match l {
