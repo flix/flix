@@ -102,35 +102,6 @@ object MutationTester {
     }
 
 
-    private def mutationPermutations[A](exps: List[A], mutationFunc: (A => List[A])): List[List[A]] = {
-        def mutate(exps: List[A], index: Int): List[A] = (exps, index) match {
-            case (x :: Nil, 0) => mutationFunc(x)
-            case (x :: xs, 0) => mutationFunc(x)
-            case (x :: xs, n) => mutate(xs, n - 1)
-            case (_, _) => Nil
-        }
-
-        def replace(index: Int, mutation: A, exps: List[A]): List[A] =
-            (index, exps) match {
-                case (0, _ :: Nil) => mutation :: Nil
-                case (0, x :: xs) => mutation :: xs
-                case (n, x :: xs) => x :: replace(n - 1, mutation, xs)
-                case (_, _) => Nil
-            }
-
-        var perms: List[List[A]] = Nil
-
-        for (i <- exps.indices) {
-            val mutations = mutate(exps, i)
-            for (m <- mutations) {
-                perms = replace(i, m, exps) :: perms
-            }
-
-        }
-        perms
-
-    }
-
   def mutateSig(sig: Expr.Sig): List[TypedAst.Expr.Sig]= {
     val tpe = sig.tpe
     val sym = sig.sym
@@ -307,7 +278,11 @@ object MutationTester {
         case original@Expr.TryCatch(exp, rules, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.TryWith(exp, effUse, rules, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.Do(op, exps, _, _, _) =>
-            mutationPermutations(exps, mutateExpr).map(mp => original.copy(exps = mp))
+            exps.zipWithIndex.flatMap {
+                case (exp, index) =>
+                    val mutations = mutateExpr(exp)
+                    mutations.map(m => original.copy(exps = exps.updated(index, m)))
+            }
         case original@Expr.InvokeConstructor(constructor, exps, _, _, _) =>
             val mutateExps = exps.map(e => mutateExpr(e))
             mutateExps.map(m => original.copy(exps = m))
