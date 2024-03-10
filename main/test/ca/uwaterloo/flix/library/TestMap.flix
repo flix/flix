@@ -1818,14 +1818,14 @@ def eq25(): Bool = Map#{1 => 2, 3 => 4, 5 => 6, 7 => 8, 9 => 10} == Map#{7 => 8,
 @test
 def forEach01(): Bool = region rc {
     let ri = ref 21 @ rc;
-    Map.forEach((k, _) -> ri := k, Map#{});
+    Map.forEach((k, _) -> Ref.put(k, ri), Map#{});
     21 == deref ri
 }
 
 @test
 def forEach02(): Bool = region rc {
     let ri = ref 21 @ rc;
-    Map.forEach((k, _) -> ri := k, Map#{1 => "Hello World!"});
+    Map.forEach((k, _) -> Ref.put(k, ri), Map#{1 => "Hello World!"});
     1 == deref ri
 }
 

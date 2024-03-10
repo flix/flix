@@ -398,7 +398,7 @@ mod TestMutMap {
     def forEach01(): Bool = region rc {
         let m = MutMap.empty(rc);
         let ri = ref 21 @ rc;
-        MutMap.forEach((k, v) -> ri := k+v, m);
+        MutMap.forEach((k, v) -> Ref.put(k+v, ri), m);
         21 == deref ri
     }
 
@@ -407,7 +407,7 @@ mod TestMutMap {
         let m = MutMap.empty(rc);
         let ri = ref 21 @ rc;
         MutMap.put!(0, 100, m);
-        MutMap.forEach((k, v) -> ri := k+v, m);
+        MutMap.forEach((k, v) -> Ref.put(k+v, ri), m);
         100 == deref ri
     }
 
@@ -418,7 +418,7 @@ mod TestMutMap {
         MutMap.put!(0, 100, m);
         MutMap.put!(1, 101, m);
         MutMap.put!(2, 102, m);
-        MutMap.forEach((k, v) -> ri := k+v, m);
+        MutMap.forEach((k, v) -> Ref.put(k+v, ri), m);
         104 == deref ri
     }
 
