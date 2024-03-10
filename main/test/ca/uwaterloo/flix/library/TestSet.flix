@@ -1345,7 +1345,7 @@ def unfoldWithIter01(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 1;
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{}
@@ -1359,7 +1359,7 @@ def unfoldWithIter02(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 1;
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{48}
@@ -1373,7 +1373,7 @@ def unfoldWithIter03(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 1;
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{48, 49}
@@ -1387,7 +1387,7 @@ def unfoldWithIter04(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 1;
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{48, 49, 50, 51, 52, 53, 54, 55, 56, 57}
@@ -1401,7 +1401,7 @@ def unfoldWithIter05(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 1;
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{53, 54, 55, 56, 57}

@@ -2329,7 +2329,7 @@ def unfoldWithIter01(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 1;
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     List.unfoldWithIter(step) == Nil
@@ -2343,7 +2343,7 @@ def unfoldWithIter02(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 1;
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     List.unfoldWithIter(step) == 48 :: Nil
@@ -2357,7 +2357,7 @@ def unfoldWithIter03(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 1;
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     List.unfoldWithIter(step) == 48 :: 49 :: Nil
@@ -2371,7 +2371,7 @@ def unfoldWithIter04(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 1;
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     List.unfoldWithIter(step) == 48 :: 49 :: 50 :: 51 :: 52 :: 53 :: 54 :: 55 :: 56 :: 57 :: Nil
@@ -2385,7 +2385,7 @@ def unfoldWithIter05(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 1;
+            Ref.put(Ref.get(x) + 1, x);
             c
         };
     List.unfoldWithIter(step) == 53 :: 54 :: 55 :: 56 :: 57 :: Nil
@@ -2439,7 +2439,7 @@ def unfoldWithOkIter03(): Bool = region rc {
     let step = () ->
         if (deref x `Int32.remainder` 5 > 0) {
             let c = deref x;
-            x := deref x + 1;
+            Ref.put(Ref.get(x) + 1, x);
             Ok(Some(c))
         } else {
             Ok(None)
