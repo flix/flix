@@ -33,7 +33,7 @@ mod Concurrent.CyclicBarrier {
   ///
   @Internal
   pub def newCyclicBarrier(parties: Int32): CyclicBarrier \ IO =
-    import new java.util.concurrent.CyclicBarrier(Int32): ##java.util.concurrent.CyclicBarrier \ IO as newBarrier;
+    import java_new java.util.concurrent.CyclicBarrier(Int32): ##java.util.concurrent.CyclicBarrier \ IO as newBarrier;
     CyclicBarrier(newBarrier(parties))
 
   ///

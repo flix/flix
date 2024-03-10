@@ -10,14 +10,14 @@ mod Random {
     /// Returns a fresh random number generator.
     ///
     pub def new(): Random \ IO =
-        import new java.util.Random(): ##java.util.Random \ IO as newRandom;
+        import java_new java.util.Random(): ##java.util.Random \ IO as newRandom;
         Random(newRandom())
 
     ///
     /// Returns a fresh random number generator initialized with the given seed `s`.
     ///
     pub def newWithSeed(s: Int64): Random \ IO =
-        import new java.util.Random(Int64): ##java.util.Random \ IO as newRandom;
+        import java_new java.util.Random(Int64): ##java.util.Random \ IO as newRandom;
         Random(newRandom(s))
 
     ///
