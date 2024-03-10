@@ -25,7 +25,7 @@ mod StringBuilder {
     /// Returns a new mutable StringBuilder.
     ///
     pub def empty(_: Region[r]): StringBuilder[r] \ r =
-        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ r as newStringBuilder;
+        import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder \ r as newStringBuilder;
         StringBuilder(newStringBuilder())
 
     ///

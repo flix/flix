@@ -228,7 +228,7 @@ mod Float64 {
     /// If `x` is NaN or infinity return `None`.
     ///
     pub def tryToBigDecimal(x: Float64): Option[BigDecimal] =
-        import new java.math.BigDecimal(Float64): BigDecimal \ {} as fromFloat64;
+        import java_new java.math.BigDecimal(Float64): BigDecimal \ {} as fromFloat64;
         try {
             Some(fromFloat64(x))
         } catch {
