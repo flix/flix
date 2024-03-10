@@ -751,7 +751,7 @@ mod TestRedBlackTree {
     def mapAWithKey01(): Bool = region rc {
         let st = ref '#' @ rc;
         let t: RedBlackTree[Int32, Char] = RedBlackTree.empty();
-        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity.Identity(x)}, t);
+        let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
         ans == Identity.Identity(RedBlackTree.empty()) and deref st == '#'
     }
 
@@ -759,7 +759,7 @@ mod TestRedBlackTree {
     def mapAWithKey02(): Bool = region rc {
         let st = ref '#' @ rc;
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a');
-        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity.Identity(x)}, t);
+        let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
         ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a')) and deref st == 'a'
     }
 
@@ -767,7 +767,7 @@ mod TestRedBlackTree {
     def mapAWithKey03(): Bool = region rc {
         let st = ref '#' @ rc;
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b');
-        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity.Identity(x)}, t);
+        let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
         ans == Identity.Identity(RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b')) and deref st == 'b'
     }
 
@@ -775,7 +775,7 @@ mod TestRedBlackTree {
     def mapAWithKey04(): Bool = region rc {
         let st = ref '#' @ rc;
         let t = RedBlackTree.empty() |> RedBlackTree.insert(1, 'a') |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c');
-        let ans = RedBlackTree.mapAWithKey((_, x) -> {st := x; Identity.Identity(x)}, t);
+        let ans = RedBlackTree.mapAWithKey((_, x) -> {Ref.put(x, st); Identity.Identity(x)}, t);
         ans == Identity.Identity(RedBlackTree.empty()
                             |> RedBlackTree.insert(1, 'a')
                             |> RedBlackTree.insert(2, 'b') |> RedBlackTree.insert(3, 'c')) and deref st == 'c'

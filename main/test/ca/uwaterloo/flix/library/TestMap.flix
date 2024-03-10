@@ -2479,7 +2479,7 @@ def rangeQuery18(): Bool =
     def traverse01(): Bool = region rc {
         let st = ref '#' @ rc;
         let m: Map[Int32, Char] = Map#{};
-        let ans = Map.traverse(x -> {st := x; Identity.Identity(x)}, m);
+        let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
         ans == Identity.Identity(Map#{}) and deref st == '#'
     }
 
@@ -2487,7 +2487,7 @@ def rangeQuery18(): Bool =
     def traverse02(): Bool = region rc {
         let st = ref '#' @ rc;
         let m = Map#{1 => 'a'};
-        let ans = Map.traverse(x -> {st := x; Identity.Identity(x)}, m);
+        let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
         ans == Identity.Identity(Map#{1 => 'a'}) and deref st == 'a'
     }
 
@@ -2495,7 +2495,7 @@ def rangeQuery18(): Bool =
     def traverse03(): Bool = region rc {
         let st = ref '#' @ rc;
         let m = Map#{1 => 'a', 2 => 'b'};
-        let ans = Map.traverse(x -> {st := x; Identity.Identity(x)}, m);
+        let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
         ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}) and deref st == 'b'
     }
 
@@ -2503,7 +2503,7 @@ def rangeQuery18(): Bool =
     def traverse04(): Bool = region rc {
         let st = ref '#' @ rc;
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
-        let ans = Map.traverse(x -> {st := x; Identity.Identity(x)}, m);
+        let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
         ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and deref st == 'c'
     }
 

@@ -1058,7 +1058,7 @@ mod TestNel {
     def traverse01(): Bool = region rc {
         let st = ref 0 @ rc;
         let l = Nel.singleton(1);
-        let ans = Nel.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        let ans = Nel.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
         ans == Identity.Identity(Nel.singleton(1)) and deref st == 1
     }
 
@@ -1066,7 +1066,7 @@ mod TestNel {
     def traverse02(): Bool = region rc {
         let st = ref 0 @ rc;
         let l = Nel.cons(1, Nel.singleton(2));
-        let ans = Nel.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        let ans = Nel.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
         ans == Identity.Identity(Nel.cons(1, Nel.singleton(2))) and deref st == 2
     }
 
@@ -1074,7 +1074,7 @@ mod TestNel {
     def traverse03(): Bool = region rc {
         let st = ref 0 @ rc;
         let l = Nel.cons(1, Nel.cons(2, Nel.singleton(3)));
-        let ans = Nel.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        let ans = Nel.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
         ans == Identity.Identity(Nel.cons(1, Nel.cons(2, Nel.singleton(3)))) and deref st == 3
     }
 

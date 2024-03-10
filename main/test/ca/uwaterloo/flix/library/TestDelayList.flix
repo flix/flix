@@ -2997,7 +2997,7 @@ mod TestDelayList {
     def traverse01(): Bool = region rc {
         let st = ref 0 @ rc;
         let l = ENil;
-        let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        let ans = DelayList.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
         ans == Identity.Identity(ENil) and deref st == 0
     }
 
@@ -3005,7 +3005,7 @@ mod TestDelayList {
     def traverse02(): Bool = region rc {
         let st = ref 0 @ rc;
         let l = List.toDelayList(1 :: Nil);
-        let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        let ans = DelayList.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
         ans == Identity.Identity(List.toDelayList(1 :: Nil)) and deref st == 1
     }
 
@@ -3013,7 +3013,7 @@ mod TestDelayList {
     def traverse03(): Bool = region rc {
         let st = ref 0 @ rc;
         let l = List.toDelayList(1 :: 2 :: Nil);
-        let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        let ans = DelayList.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
         ans == Identity.Identity(List.toDelayList(1 :: 2 :: Nil)) and deref st == 2
     }
 
@@ -3021,7 +3021,7 @@ mod TestDelayList {
     def traverse04(): Bool = region rc {
         let st = ref 0 @ rc;
         let l = List.toDelayList(1 :: 2 :: 3 :: Nil);
-        let ans = DelayList.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        let ans = DelayList.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
         ans == Identity.Identity(List.toDelayList(1 :: 2 :: 3 :: Nil)) and deref st == 3
     }
 
