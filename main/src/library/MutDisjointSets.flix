@@ -48,7 +48,7 @@ mod MutDisjointSets {
     ///
     pub def makeSet(x: t, s: MutDisjointSets[t, r]): Unit \ r with Order[t] = {
         def singleton(rc, y) = {
-            Node.Node({ rc = rc, value = y, parent = Ref.to(rc, None), rank = Ref.to(rc, 0) })
+            Node.Node({ rc = rc, value = y, parent = Ref.fresh(rc, None), rank = Ref.fresh(rc, 0) })
         };
         let MutDisjointSets({ rc, forest }) = s;
         if (not memberOf(x, s)) {
