@@ -132,7 +132,7 @@ mod DelayList {
     ///
     @Experimental
     pub def toString(l: DelayList[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         StringBuilder.appendString!("DelayList(", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)
@@ -1167,7 +1167,7 @@ mod DelayList {
     ///
     @Experimental
     pub def toArray(rc: Region[r], l: DelayList[a]): Array[a, r] \ r =
-        let a = Array.new(rc, length(l));
+        let a = Array.empty(rc, length(l));
         forEach(match (i, y) -> Array.put(y, i, a), zipWithIndex(l));
         a
 
@@ -1178,7 +1178,7 @@ mod DelayList {
     ///
     @Experimental
     pub def toVector(l: DelayList[a]): Vector[a] = region rc {
-        let arr = Array.new(rc, length(l));
+        let arr = Array.empty(rc, length(l));
         forEach(match (i, x) -> Array.put(x, i, arr), zipWithIndex(l));
         Array.toVector(arr)
     }
@@ -1235,7 +1235,7 @@ mod DelayList {
     /// Returns `l` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], l: DelayList[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 

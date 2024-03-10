@@ -578,7 +578,7 @@ mod RedBlackTree {
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
     pub def rangeQuery(p: k -> Comparison \ ef1, f: (k, v) -> a \ ef2, t: RedBlackTree[k, v]): List[a] \ { ef1, ef2 } = region rc {
-        let buffer = MutList.new(rc);
+        let buffer = MutList.empty(rc);
         let g = k -> v -> MutList.push!(f(k, v), buffer);
         rangeQueryWith(p, g, t);
         MutList.toList(buffer)
@@ -799,7 +799,7 @@ mod RedBlackTree {
     /// Returns the tree `t` as a MutDeque. Elements are ordered from smallest (left) to largest (right).
     ///
     pub def toMutDeque(rc: Region[r], t: RedBlackTree[k, v]): MutDeque[(k, v), r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach((k, v) -> let x = (k, v); MutDeque.pushBack(x, d), t);
         d
 
@@ -920,7 +920,7 @@ mod RedBlackTree {
     pub def joinWith(f: (k, v) -> String \ ef, sep: String, t: RedBlackTree[k, v]): String \ ef = region rc {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         forEach((k, v) -> { append!(f(k, v), sb); append!(sep, sb) }, t);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }

@@ -19,7 +19,7 @@ mod Ref {
     ///
     /// Returns a new reference to `x` in the region `rc`.
     ///
-    pub def new(rc: Region[r], x: a): Ref[a, r] \ r =
+    pub def to(rc: Region[r], x: a): Ref[a, r] \ r =
         ref x @ rc
 
     ///

@@ -64,15 +64,15 @@ mod Regex {
     /// and can be summed to make a bit mask.
     ///
     def toInt(flag: Flag): Int32 =
-        import static get java.util.regex.Pattern.CANON_EQ: Int32 \ {} as get_CANON_EQ;
-        import static get java.util.regex.Pattern.CASE_INSENSITIVE: Int32 \ {} as get_CASE_INSENSITIVE;
-        import static get java.util.regex.Pattern.COMMENTS: Int32 \ {} as get_COMMENTS;
-        import static get java.util.regex.Pattern.DOTALL: Int32 \ {} as get_DOTALL;
-        import static get java.util.regex.Pattern.LITERAL: Int32 \ {} as get_LITERAL;
-        import static get java.util.regex.Pattern.MULTILINE: Int32 \ {} as get_MULTILINE;
-        import static get java.util.regex.Pattern.UNICODE_CASE: Int32 \ {} as get_UNICODE_CASE;
-        import static get java.util.regex.Pattern.UNICODE_CHARACTER_CLASS: Int32 \ {} as get_UNICODE_CHARACTER_CLASS;
-        import static get java.util.regex.Pattern.UNIX_LINES: Int32 \ {} as get_UNIX_LINES;
+        import static java_get_field java.util.regex.Pattern.CANON_EQ: Int32 \ {} as get_CANON_EQ;
+        import static java_get_field java.util.regex.Pattern.CASE_INSENSITIVE: Int32 \ {} as get_CASE_INSENSITIVE;
+        import static java_get_field java.util.regex.Pattern.COMMENTS: Int32 \ {} as get_COMMENTS;
+        import static java_get_field java.util.regex.Pattern.DOTALL: Int32 \ {} as get_DOTALL;
+        import static java_get_field java.util.regex.Pattern.LITERAL: Int32 \ {} as get_LITERAL;
+        import static java_get_field java.util.regex.Pattern.MULTILINE: Int32 \ {} as get_MULTILINE;
+        import static java_get_field java.util.regex.Pattern.UNICODE_CASE: Int32 \ {} as get_UNICODE_CASE;
+        import static java_get_field java.util.regex.Pattern.UNICODE_CHARACTER_CLASS: Int32 \ {} as get_UNICODE_CHARACTER_CLASS;
+        import static java_get_field java.util.regex.Pattern.UNIX_LINES: Int32 \ {} as get_UNIX_LINES;
         match flag {
             case CanonEq                => get_CANON_EQ()
             case CaseInsenstive         => get_CASE_INSENSITIVE()

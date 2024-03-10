@@ -116,7 +116,7 @@ mod Map {
     /// Returns a string representation of the given map `m`.
     ///
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         StringBuilder.appendString!("Map#{", sb);
         forEachWithIndex((i, k, v) -> {
             if (i < 1)
@@ -802,7 +802,7 @@ mod Map {
     /// Returns `m` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach((k, v) -> MutDeque.pushBack((k, v), d), m);
         d
 
