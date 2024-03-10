@@ -135,10 +135,6 @@ object MutationTester {
 
   }
 
-  /**
-      * // var doesn't contain a subtree, and we don't mutate them so we don't need to return them
-      * case Expr.Var(_, _, _) => Nil
-      */
     private def mutateExpr(e: TypedAst.Expr): List[TypedAst.Expr] = e match {
         case Expr.Cst(cst, tpe, loc) =>
             mutateCst(cst).map(m => Expr.Cst(m, tpe, loc))
@@ -153,7 +149,6 @@ object MutationTester {
         case original@Expr.Use(sym, alias, exp, _) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.Lambda(fparam, exp, _, _) =>
             mutateExpr(exp).map(m => original.copy(exp = m))
-
         case original@Expr.Apply(exp, exps, _, _, _) =>
             val mut = mutateExpr(exp).map(m => original.copy(exp = m))
             val mutateExps = exps.zipWithIndex.flatMap {
@@ -403,14 +398,6 @@ object MutationTester {
         case _ => Nil
     }
 
-    /**
-      * private def mutateSig(sig: Expr.Sig): List[Expr.Sig] = (sig.sym, sig.tpe) match {
-      * case ("Add.add", t) => t match {
-      * case Apply()
-      * }
-      *
-      * }
-      */
     private def mutateSop(sop: SemanticOp): List[SemanticOp] = {
         def helper(sop: SemanticOp): List[SemanticOp] = sop match {
             case op: SemanticOp.BoolOp => op match {
