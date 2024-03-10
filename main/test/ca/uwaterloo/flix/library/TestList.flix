@@ -2399,7 +2399,7 @@ def unfoldWithIter06(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 2;
+            Ref.put(Ref.get(x) + 2, x);
             c
         };
     List.unfoldWithIter(step) == 48 :: 50 :: 52 :: 54 :: 56 :: Nil

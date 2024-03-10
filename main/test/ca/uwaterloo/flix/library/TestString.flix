@@ -1735,7 +1735,7 @@ def unfoldWithIter06(): Bool = region rc {
             None
         else {
             let c = Some(toChar(deref x + 97));
-            x := deref x + 2;
+            Ref.put(Ref.get(x) + 2, x);
             c
         };
     String.unfoldWithIter(step) == "acegi"
@@ -1872,7 +1872,7 @@ def unfoldStringWithIter06(): Bool = region rc {
             let c1 = toChar(deref x + 65);
             let c2 = toChar(deref x + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            x := deref x + 2;
+            Ref.put(Ref.get(x) + 2, x);
             Some(s)
         };
     String.unfoldStringWithIter(step) == "Aa.Cc.Ee.Gg.Ii."

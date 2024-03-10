@@ -1963,7 +1963,7 @@ def unfoldWithIter06(): Bool = region rc {
         else {
             let k = deref x;
             let v = k + 48;
-            x := deref x + 2;
+            Ref.put(Ref.get(x) + 2, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{0 => 48, 2 => 50, 4 => 52, 6 => 54, 8 => 56}
