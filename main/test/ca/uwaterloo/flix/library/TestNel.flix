@@ -793,14 +793,14 @@ mod TestNel {
     @test
     def forEach01(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Nel.forEach(x -> ri := x, Nel.singleton(1));
+        Nel.forEach(x -> Ref.put(x, ri), Nel.singleton(1));
         1 == deref ri
     }
 
     @test
     def forEach02(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Nel.forEach(x -> ri := x, Nel(1, 2 :: 3 :: Nil));
+        Nel.forEach(x -> Ref.put(x, ri), Nel(1, 2 :: 3 :: Nil));
         3 == deref ri
     }
 
@@ -811,14 +811,14 @@ mod TestNel {
     @test
     def forEachWithIndex01(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Nel.forEachWithIndex((i, _) -> ri := i, Nel.singleton(1));
+        Nel.forEachWithIndex((i, _) -> Ref.put(i, ri), Nel.singleton(1));
         0 == deref ri
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Nel.forEachWithIndex((i, _) -> ri := i, Nel(1, List#{2, 3}));
+        Nel.forEachWithIndex((i, _) -> Ref.put(i, ri), Nel(1, List#{2, 3}));
         2 == deref ri
     }
 

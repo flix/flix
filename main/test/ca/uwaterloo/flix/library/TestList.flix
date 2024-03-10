@@ -2062,14 +2062,14 @@ def forEach02(): Bool = region rc {
 @test
 def forEachWithIndex01(): Bool = region rc {
     let ri = ref 21 @ rc;
-    List.forEachWithIndex((i, _) -> ri := i, Nil);
+    List.forEachWithIndex((i, _) -> Ref.put(i, ri), Nil);
     21 == deref ri
 }
 
 @test
 def forEachWithIndex02(): Bool = region rc {
     let ri = ref 21 @ rc;
-    List.forEachWithIndex((i, _) -> ri := i, 1 :: 2 :: 3 :: Nil);
+    List.forEachWithIndex((i, _) -> Ref.put(i, ri), 1 :: 2 :: 3 :: Nil);
     2 == deref ri
 }
 

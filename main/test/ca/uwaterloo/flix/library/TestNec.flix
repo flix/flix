@@ -1021,14 +1021,14 @@ mod TestNec {
     @test
     def forEachWithIndex01(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Nec.forEachWithIndex((i, _) -> ri := i, singleton(1));
+        Nec.forEachWithIndex((i, _) -> Ref.put(i, ri), singleton(1));
         0 == deref ri
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Nec.forEachWithIndex((i, _) -> ri := i, necOf3(1, 2, 3));
+        Nec.forEachWithIndex((i, _) -> Ref.put(i, ri), necOf3(1, 2, 3));
         2 == deref ri
     }
 

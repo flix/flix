@@ -1155,7 +1155,7 @@ mod TestMutDeque {
     def forEachWithIndex01(): Bool = region rc {
         let d = MutDeque.empty(rc);
         let ri = ref 21 @ rc;
-        MutDeque.forEachWithIndex((i, _) -> ri := i, d);
+        MutDeque.forEachWithIndex((i, _) -> Ref.put(i, ri), d);
         21 == deref ri
     }
 
@@ -1164,7 +1164,7 @@ mod TestMutDeque {
         let d = MutDeque.empty(rc);
         let ri = ref 21 @ rc;
         MutDeque.pushBack(0, d);
-        MutDeque.forEachWithIndex((i, _) -> ri := i, d);
+        MutDeque.forEachWithIndex((i, _) -> Ref.put(i, ri), d);
         0 == deref ri
     }
 
@@ -1174,7 +1174,7 @@ mod TestMutDeque {
         let ri = ref 21 @ rc;
         MutDeque.pushBack(0, d);
         MutDeque.pushBack(1, d);
-        MutDeque.forEachWithIndex((i, _) -> ri := i, d);
+        MutDeque.forEachWithIndex((i, _) -> Ref.put(i, ri), d);
         1 == deref ri
     }
 

@@ -1294,14 +1294,14 @@ def forEach02(): Bool = region rc {
 @test
 def forEachWithIndex01(): Bool = region rc {
     let ri = ref 21 @ rc;
-    Set.forEachWithIndex((i, _) -> ri := i, Set#{});
+    Set.forEachWithIndex((i, _) -> Ref.put(i, ri), Set#{});
     21 == deref ri
 }
 
 @test
 def forEachWithIndex02(): Bool = region rc {
     let ri = ref 21 @ rc;
-    Set.forEachWithIndex((i, _) -> ri := i, Set#{42});
+    Set.forEachWithIndex((i, _) -> Ref.put(i, ri), Set#{42});
     0 == deref ri
 }
 

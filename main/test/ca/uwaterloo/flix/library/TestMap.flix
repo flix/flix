@@ -1836,14 +1836,14 @@ def forEach02(): Bool = region rc {
 @test
 def forEachWithIndex01(): Bool = region rc {
     let ri = ref 21 @ rc;
-    Map.forEachWithIndex((i, _, _) -> ri := i, Map#{});
+    Map.forEachWithIndex((i, _, _) -> Ref.put(i, ri), Map#{});
     21 == deref ri
 }
 
 @test
 def forEachWithIndex02(): Bool = region rc {
     let ri = ref 21 @ rc;
-    Map.forEachWithIndex((i, _, _) -> ri := i, Map#{1 => "Hello World!"});
+    Map.forEachWithIndex((i, _, _) -> Ref.put(i, ri), Map#{1 => "Hello World!"});
     0 == deref ri
 }
 

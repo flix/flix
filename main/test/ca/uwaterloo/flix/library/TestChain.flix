@@ -1361,14 +1361,14 @@ mod TestChain {
     @test
     def forEachWithIndex01(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Chain.forEachWithIndex((i, _) -> ri := i, Chain.empty());
+        Chain.forEachWithIndex((i, _) -> Ref.put(i, ri), Chain.empty());
         21 == deref ri
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Chain.forEachWithIndex((i, _) -> ri := i, List.toChain(1 :: 2 :: 3 :: Nil));
+        Chain.forEachWithIndex((i, _) -> Ref.put(i, ri), List.toChain(1 :: 2 :: 3 :: Nil));
         2 == deref ri
     }
 

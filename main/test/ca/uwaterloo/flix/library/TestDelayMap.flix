@@ -1423,7 +1423,7 @@ mod TestDelayMap {
     def forEachWithIndex01(): Bool = region rc {
         let ri = ref 21 @ rc;
         Map#{} |> Map.toDelayMap |>
-            DelayMap.forEachWithIndex((i, _, _) -> ri := i);
+            DelayMap.forEachWithIndex((i, _, _) -> Ref.put(i, ri));
         21 == deref ri
     }
 
@@ -1431,7 +1431,7 @@ mod TestDelayMap {
     def forEachWithIndex02(): Bool = region rc {
         let ri = ref 21 @ rc;
         Map#{1 => "Hello World!"} |> Map.toDelayMap |>
-            DelayMap.forEachWithIndex((i, _, _) -> ri := i);
+            DelayMap.forEachWithIndex((i, _, _) -> Ref.put(i, ri));
         0 == deref ri
     }
 
