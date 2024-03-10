@@ -1343,14 +1343,14 @@ mod TestChain {
     @test
     def forEach01(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Chain.forEach(x -> ri := x, Chain.empty());
+        Chain.forEach(x -> Ref.put(x, ri), Chain.empty());
         21 == deref ri
     }
 
     @test
     def forEach02(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Chain.forEach(x -> ri := x, List.toChain(1 :: 2 :: 3 :: Nil));
+        Chain.forEach(x -> Ref.put(x, ri), List.toChain(1 :: 2 :: 3 :: Nil));
         3 == deref ri
     }
 

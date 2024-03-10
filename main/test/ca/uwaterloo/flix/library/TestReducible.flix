@@ -509,14 +509,14 @@ mod TestReducible {
     @test
     def forEach01(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Reducible.forEach(x -> ri := x, Nel.Nel(1, Nil));
+        Reducible.forEach(x -> Ref.put(x, ri), Nel.Nel(1, Nil));
         1 == deref ri
     }
 
     @test
     def forEach02(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Reducible.forEach(x -> ri := x, Nel.Nel(1, 2 :: 3 :: Nil));
+        Reducible.forEach(x -> Ref.put(x, ri), Nel.Nel(1, 2 :: 3 :: Nil));
         3 == deref ri
     }
 

@@ -2044,14 +2044,14 @@ def toMapWith05(): Bool =
 @test
 def forEach01(): Bool = region rc {
     let ri = ref 21 @ rc;
-    List.forEach(x -> ri := x, Nil);
+    List.forEach(x -> Ref.put(x, ri), Nil);
     21 == deref ri
 }
 
 @test
 def forEach02(): Bool = region rc {
     let ri = ref 21 @ rc;
-    List.forEach(x -> ri := x, 1 :: 2 :: 3 :: Nil);
+    List.forEach(x -> Ref.put(x, ri), 1 :: 2 :: 3 :: Nil);
     3 == deref ri
 }
 

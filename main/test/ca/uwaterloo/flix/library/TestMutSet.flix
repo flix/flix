@@ -512,7 +512,7 @@ mod TestMutSet {
     def forEach01(): Bool = region rc {
         let s = MutSet.empty(rc);
         let ri = ref 21 @ rc;
-        MutSet.forEach(x -> ri := x, s);
+        MutSet.forEach(x -> Ref.put(x, ri), s);
         21 == deref ri
     }
 
@@ -521,7 +521,7 @@ mod TestMutSet {
         let s = MutSet.empty(rc);
         let ri = ref 21 @ rc;
         MutSet.add!(0, s);
-        MutSet.forEach(x -> ri := x, s);
+        MutSet.forEach(x -> Ref.put(x, ri), s);
         0 == deref ri
     }
 
@@ -532,7 +532,7 @@ mod TestMutSet {
         MutSet.add!(0, s);
         MutSet.add!(1, s);
         MutSet.add!(2, s);
-        MutSet.forEach(x -> ri := x, s);
+        MutSet.forEach(x -> Ref.put(x, ri), s);
         2 == deref ri
     }
 

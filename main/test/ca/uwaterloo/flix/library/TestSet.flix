@@ -1276,14 +1276,14 @@ def eq19(): Bool = Set#{1, 2, 3} == Set#{2, 1, 3}
 @test
 def forEach01(): Bool = region rc {
     let ri = ref 21 @ rc;
-    Set.forEach(x -> ri := x, Set#{});
+    Set.forEach(x -> Ref.put(x, ri), Set#{});
     21 == deref ri
 }
 
 @test
 def forEach02(): Bool = region rc {
     let ri = ref 21 @ rc;
-    Set.forEach(x -> ri := x, Set#{42});
+    Set.forEach(x -> Ref.put(x, ri), Set#{42});
     42 == deref ri
 }
 
