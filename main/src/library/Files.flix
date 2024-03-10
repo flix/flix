@@ -378,11 +378,11 @@ mod Files {
                 if (not Object.isNull(deref line)) {
                     try {
                         let l = deref line;
-                        line := readLine(reader);
+                        Ref.put(readLine(reader), line);
                         Some(Ok(l))
                     } catch {
                         case ex: ##java.io.IOException => {
-                            line := checked_cast(null);
+                            Ref.put(checked_cast(null), line);
                             import java.lang.Throwable.getMessage(): String \ {};
                             Some(Err(Generic(getMessage(ex))))
                         }
