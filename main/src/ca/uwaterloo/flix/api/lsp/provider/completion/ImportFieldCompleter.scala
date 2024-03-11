@@ -25,10 +25,10 @@ object ImportFieldCompleter extends Completer {
     * Returns a List of Completion for importField.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[ImportFieldCompletion] = {
-    val static_get = raw"\s*import\s+static\s+get\s+(.*)".r
-    val static_set = raw"\s*import\s+static\s+set\s+(.*)".r
-    val get = raw"\s*import\s+get\s+(.*)".r
-    val set = raw"\s*import\s+set\s+(.*)".r
+    val static_get = raw"\s*import\s+static\s+java_get_field\s+(.*)".r
+    val static_set = raw"\s*import\s+static\s+java_set_field\s+(.*)".r
+    val get = raw"\s*import\s+java_get_field\s+(.*)".r
+    val set = raw"\s*import\s+java_set_field\s+(.*)".r
     context.prefix match {
       case static_get(clazz) => importFieldCompletions(clazz, isStatic = true, isGet = true)
       case static_set(clazz) => importFieldCompletions(clazz, isStatic = true, isGet = false)

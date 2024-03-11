@@ -106,7 +106,7 @@ mod Set {
     /// Returns a string representation of the given set `s`.
     ///
     pub def toString(s: Set[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         StringBuilder.appendString!("Set#{", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)
@@ -527,7 +527,7 @@ mod Set {
     /// Returns `s` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], s: Set[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach(x -> MutDeque.pushBack(x, d), s);
         d
 

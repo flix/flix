@@ -164,7 +164,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(x: String, y: Int32): Bool = true
-        |def under(): String = f("hello"): String
+        |def under(): String = (f("hello"): String)
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -175,7 +175,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(x: String, y: Int32, z: Bool): Bool = true
-        |def under(): String = f("hello"): String
+        |def under(): String = (f("hello"): String)
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -520,6 +520,25 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("Test.UnexpectedEffect.08") {
+    val input =
+      """
+        |eff IO
+        |
+        |def impureX(): String \ IO = checked_ecast("x")
+        |
+        |def f(): ##java.lang.Object \ IO = {
+        |    let x = new ##java.lang.Object {
+        |        def toString(_this: ##java.lang.Object): String = impureX()
+        |    };
+        |    x
+        |}
+        |
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
   test("Test.EffectGeneralizationError.01") {
     val input =
       """
@@ -717,7 +736,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): ##dev.flix.test.TestClassWithDefaultConstructor \ IO =
-        |    import new dev.flix.test.TestClassWithInheritedMethod(): ##dev.flix.test.TestClassWithInheritedMethod as newObj;
+        |    import java_new dev.flix.test.TestClassWithInheritedMethod(): ##dev.flix.test.TestClassWithInheritedMethod as newObj;
         |    let x: ##dev.flix.test.TestClassWithDefaultConstructor = newObj();
         |    x
       """.stripMargin

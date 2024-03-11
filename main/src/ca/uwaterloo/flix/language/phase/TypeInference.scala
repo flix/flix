@@ -1069,6 +1069,7 @@ object TypeInference {
               _ <- traverseM(fparams)(inferParam)
               (constrs, bodyTpe, bodyEff) <- visitExp(exp)
               _ <- expectTypeM(expected = returnTpe, actual = bodyTpe, exp.loc)
+              _ <- expectEffectM(expected = eff , actual = bodyEff, exp.loc)
             } yield (constrs, returnTpe, bodyEff)
         }
 

@@ -23,6 +23,11 @@ object RigidityEnv {
     * The empty rigidity environment.
     */
   val empty: RigidityEnv = RigidityEnv(SortedSet.empty)
+
+  /**
+    * Returns the rigidity environment where only the given variables are marked rigid.
+    */
+  def ofRigidVars(tvars: Iterable[Symbol.KindedTypeVarSym]) = RigidityEnv(tvars.to(SortedSet))
 }
 
 /**

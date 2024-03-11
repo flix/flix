@@ -101,7 +101,7 @@ class Flix {
     */
   private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
   private var cachedTreeShaker1Ast: LoweredAst.Root = LoweredAst.empty
-  private var cachedMonoDefsAst: MonoAst.Root = MonoAst.empty
+  private var cachedMonomorpherAst: MonoAst.Root = MonoAst.empty
   private var cachedMonoTypesAst: MonoAst.Root = MonoAst.empty
   private var cachedSimplifierAst: SimplifiedAst.Root = SimplifiedAst.empty
   private var cachedClosureConvAst: SimplifiedAst.Root = SimplifiedAst.empty
@@ -118,7 +118,7 @@ class Flix {
 
   def getTreeShaker1Ast: LoweredAst.Root = cachedTreeShaker1Ast
 
-  def getMonoDefsAst: MonoAst.Root = cachedMonoDefsAst
+  def getMonomorpherAst: MonoAst.Root = cachedMonomorpherAst
 
   def getMonoTypesAst: MonoAst.Root = cachedMonoTypesAst
 
@@ -606,8 +606,8 @@ class Flix {
     /** Remember to update [[AstPrinter]] about the list of phases. */
     cachedLoweringAst = Lowering.run(typedAst)
     cachedTreeShaker1Ast = TreeShaker1.run(cachedLoweringAst)
-    cachedMonoDefsAst = MonoDefs.run(cachedTreeShaker1Ast)
-    cachedMonoTypesAst = MonoTypes.run(cachedMonoDefsAst)
+    cachedMonomorpherAst = Monomorpher.run(cachedTreeShaker1Ast)
+    cachedMonoTypesAst = MonoTypes.run(cachedMonomorpherAst)
     cachedSimplifierAst = Simplifier.run(cachedMonoTypesAst)
     cachedClosureConvAst = ClosureConv.run(cachedSimplifierAst)
     cachedLambdaLiftAst = LambdaLift.run(cachedClosureConvAst)

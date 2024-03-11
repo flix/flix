@@ -3,7 +3,7 @@ mod Test.Handler.ZeroShot.AtomicInteger {
     type alias AtomicInteger = ##java.util.concurrent.atomic.AtomicInteger
 
     def newAtomicInteger(n: Int32): AtomicInteger =
-        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInteger \ {} as mk;
+        import java_new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInteger \ {} as mk;
         mk(n)
 
     def toInt(n: AtomicInteger): Int32 =
