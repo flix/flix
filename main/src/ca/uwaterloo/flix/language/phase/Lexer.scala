@@ -47,19 +47,22 @@ object Lexer {
   /**
    * The characters allowed in a user defined operator mapped to their `TokenKind`s
    */
-  private val ValidUserOpTokens = Map(
-    '+' -> TokenKind.Plus,
-    '-' -> TokenKind.Minus,
-    '*' -> TokenKind.Star,
-    '<' -> TokenKind.AngleL,
-    '>' -> TokenKind.AngleR,
-    '=' -> TokenKind.Equal,
-    '!' -> TokenKind.Bang,
-    '&' -> TokenKind.Ampersand,
-    '|' -> TokenKind.Bar,
-    '^' -> TokenKind.Caret,
-    '$' -> TokenKind.Dollar,
-  )
+  private def isUserOp(c: Char): Option[TokenKind] = {
+    c match {
+      case '+' => Some(TokenKind.Plus)
+      case '-' => Some(TokenKind.Minus)
+      case '*' => Some(TokenKind.Star)
+      case '<' => Some(TokenKind.AngleL)
+      case '>' => Some(TokenKind.AngleR)
+      case '=' => Some(TokenKind.Equal)
+      case '!' => Some(TokenKind.Bang)
+      case '&' => Some(TokenKind.Ampersand)
+      case '|' => Some(TokenKind.Bar)
+      case '^' => Some(TokenKind.Caret)
+      case '$' => Some(TokenKind.Dollar)
+      case _ => None
+    }
+  }
 
   /**
    * Since Flix support hex decimals, a 'digit' can also be some select characters.
@@ -334,8 +337,8 @@ object Lexer {
           advance();
           acceptMathName()
         }
-        else if (ValidUserOpTokens.contains(p)) {
-          advance();
+        else if (isUserOp(p).isDefined) {
+          advance()
           acceptUserDefinedOp()
         }
         else TokenKind.Underscore
@@ -370,22 +373,22 @@ object Lexer {
       }
       case _ if isMatch("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
-      case _ if isKeyword("**") => TokenKind.StarStar
-      case _ if isKeyword("<-") => TokenKind.ArrowThinL
-      case _ if isKeyword("->") => TokenKind.ArrowThinR
-      case _ if isKeyword("=>") => TokenKind.ArrowThickR
-      case _ if isKeyword("<=") => TokenKind.AngleLEqual
-      case _ if isKeyword(">=") => TokenKind.AngleREqual
-      case _ if isKeyword("==") => TokenKind.EqualEqual
-      case _ if isKeyword("!=") => TokenKind.BangEqual
-      case _ if isKeyword("&&&") => TokenKind.TripleAmpersand
-      case _ if isKeyword("<<<") => TokenKind.TripleAngleL
-      case _ if isKeyword(">>>") => TokenKind.TripleAngleR
-      case _ if isKeyword("^^^") => TokenKind.TripleCaret
-      case _ if isKeyword("|||") => TokenKind.TripleBar
-      case _ if isKeyword("~~~") => TokenKind.TripleTilde
+      case _ if isMatch("**") => TokenKind.StarStar
+      case _ if isMatch("<-") => TokenKind.ArrowThinL
+      case _ if isMatch("->") => TokenKind.ArrowThinR
+      case _ if isMatch("=>") => TokenKind.ArrowThickR
+      case _ if isMatch("<=") => TokenKind.AngleLEqual
+      case _ if isMatch(">=") => TokenKind.AngleREqual
+      case _ if isMatch("==") => TokenKind.EqualEqual
+      case _ if isMatch("!=") => TokenKind.BangEqual
+      case _ if isMatch("<+>") => TokenKind.AngledPlus
+      case _ if isMatch("&&&") => TokenKind.TripleAmpersand
+      case _ if isMatch("<<<") => TokenKind.TripleAngleL
+      case _ if isMatch(">>>") => TokenKind.TripleAngleR
+      case _ if isMatch("^^^") => TokenKind.TripleCaret
+      case _ if isMatch("|||") => TokenKind.TripleBar
+      case _ if isMatch("~~~") => TokenKind.TripleTilde
       case '~' => TokenKind.Tilde
-      case _ if isKeyword("<+>") => TokenKind.AngledPlus
       case _ if isKeyword("alias") => TokenKind.KeywordAlias
       case _ if isKeyword("and") => TokenKind.KeywordAnd
       case _ if isKeyword("as") => TokenKind.KeywordAs
@@ -479,12 +482,12 @@ object Lexer {
       case c if c.isLetter => acceptName(c.isUpper)
       case c if isDigit(c) => acceptNumber()
       // User defined operators.
-      case _ if ValidUserOpTokens.contains(c) =>
+      case _ if isUserOp(c).isDefined =>
         val p = peek()
-        if (ValidUserOpTokens.contains(p)) {
+        if (isUserOp(p).isDefined) {
           acceptUserDefinedOp()
         } else {
-          ValidUserOpTokens.apply(c)
+          isUserOp(c).get
         }
       case c => TokenKind.Err(LexerError.UnexpectedChar(c.toString, sourceLocationAtStart()))
     }
@@ -497,7 +500,11 @@ object Lexer {
    */
   private def isSeparated(keyword: String)(implicit s: State): Boolean = {
     def isSep(c: Char) = !(c.isWhitespace || c.isLetter || c.isDigit || c == '_')
-    s.src.data.lift(s.current.offset - 2).forall(isSep) && s.src.data.lift(s.current.offset + keyword.length - 1).forall(isSep)
+    val leftIndex = s.current.offset - 2
+    val rightIndex = s.current.offset + keyword.length - 1
+    val isSeperatedLeft = leftIndex >= 0 && isSep(s.src.data(leftIndex))
+    val isSeperatedRight = rightIndex <= s.src.data.length - 1 && isSep(s.src.data(rightIndex))
+    isSeperatedLeft && isSeperatedRight
   }
 
   /**
@@ -533,8 +540,6 @@ object Lexer {
 
   /**
    * Checks whether the following substring matches a keyword.
-   * Can be used to check for a string match internal to another string by passing [[mustBeSeparated]] = true.
-   * IE. match ''i32'' within ''-123i32''.
    * Note that __comparison includes current__.
    * Also note that this will advance the current position past the keyword if there is a match.
    */
@@ -720,11 +725,11 @@ object Lexer {
   /**
    * Moves current position past a user defined operator. IE. "<*>".
    * A user defined operator may be any combination of length 2 or more
-   * of the characters in `validUserOpTokens`.
+   * of the characters in [[isUserOp]].
    */
   private def acceptUserDefinedOp()(implicit s: State): TokenKind = {
     while (!eof()) {
-      if (!ValidUserOpTokens.contains(peek())) {
+      if (isUserOp(peek()).isEmpty) {
         return TokenKind.UserDefinedOperator
       } else {
         advance()
