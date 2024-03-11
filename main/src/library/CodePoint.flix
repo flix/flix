@@ -27,14 +27,14 @@ mod CodePoint {
     /// Returns the minimum integer value of a Unicode code point.
     ///
     pub def minValue(): Int32 =
-        import static get java.lang.Character.MIN_CODE_POINT: Int32 \ {} as get_MIN_CODE_POINT;
+        import static java_get_field java.lang.Character.MIN_CODE_POINT: Int32 \ {} as get_MIN_CODE_POINT;
         get_MIN_CODE_POINT()
 
     ///
     /// Returns the maximum integer value of a Unicode code point.
     ///
     pub def maxValue(): Int32 =
-        import static get java.lang.Character.MAX_CODE_POINT: Int32 \ {} as get_MAX_CODE_POINT;
+        import static java_get_field java.lang.Character.MAX_CODE_POINT: Int32 \ {} as get_MAX_CODE_POINT;
         get_MAX_CODE_POINT()
 
     ///
@@ -253,7 +253,7 @@ mod CodePoint {
     pub def toChars(cp: Int32): Option[Vector[Char]] = try {
         region rc {
             import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
-            let arr = Array.new(rc, 2);
+            let arr = Array.empty(rc, 2);
             let size = toChars(cp, arr, 0);
             Array.toVector(arr) |> Vector.takeLeft(size) |> Some
         }
@@ -268,7 +268,7 @@ mod CodePoint {
     pub def toBmpChar(cp: Int32): Option[Char] = try {
         region rc {
             import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
-            let arr = Array.new(rc, 2);
+            let arr = Array.empty(rc, 2);
             let i = toChars(cp, arr, 0);
             if (i == 1)
                 Array.nth(0, arr)
@@ -286,7 +286,7 @@ mod CodePoint {
     pub def toSupplementaryChars(cp: Int32): Option[(Char, Char)] = try {
         region rc {
             import static java.lang.Character.toChars(Int32, Array[Char, rc], Int32): Int32 \ rc;
-            let arr = Array.new(rc, 2);
+            let arr = Array.empty(rc, 2);
             let i = toChars(cp, arr, 0);
             if (i == 2)
                 Some(Array.get(0, arr), Array.get(1, arr))

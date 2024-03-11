@@ -44,7 +44,7 @@ mod Test.Exp.Jvm.InvokeMethod {
 
     @test
     def testInvokeInheritedMethod01(): Bool \ IO =
-        import new dev.flix.test.TestClassWithInheritedMethod(): ##dev.flix.test.TestClassWithInheritedMethod as newObj;
+        import java_new dev.flix.test.TestClassWithInheritedMethod(): ##dev.flix.test.TestClassWithInheritedMethod as newObj;
         import dev.flix.test.TestClassWithInheritedMethod.concreteMethod(String): String \ {};
         let obj = newObj();
         concreteMethod(obj, "bar") == "foobar"

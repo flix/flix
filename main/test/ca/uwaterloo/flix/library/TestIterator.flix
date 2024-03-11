@@ -298,14 +298,14 @@ mod TestIterator {
     @test
     def toMutDeque01(): Bool = region rc {
         let iter = (Iterator.empty(rc): Iterator[Int32, rc, rc]);
-        let d = (MutDeque.new(rc): MutDeque[Int32, _]);
+        let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }
 
     @test
     def toMutDeque02(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: Nil);
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), 1 :: Nil);
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }
@@ -313,7 +313,7 @@ mod TestIterator {
     @test
     def toMutDeque03(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: Nil);
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: Nil);
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }
@@ -321,7 +321,7 @@ mod TestIterator {
     @test
     def toMutDeque04(): Bool = region rc {
         let iter = List.iterator(rc, 1 :: 2 :: 3 :: Nil);
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         List.forEach(x -> MutDeque.pushBack(x, d), 1 :: 2 :: 3 :: Nil);
         Iterator.toMutDeque(rc, iter) `MutDeque.sameElements` d
     }
