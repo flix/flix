@@ -547,18 +547,18 @@ mod TestIterator {
 
     @test
     def forEach01(): Bool = region rc {
-        let res = Ref.fresh(rc, 21);
+        let res = ref 21 @ rc;
         Nil |> List.iterator(rc) |>
             Iterator.forEach(x -> Ref.put(x, res));
-        21 == Ref.get(res)
+        21 == deref res
     }
 
     @test
     def forEach02(): Bool = region rc {
-        let res = Ref.fresh(rc, 21);
+        let res = ref 21 @ rc;
         (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
             Iterator.forEach(x -> Ref.put(x, res));
-        3 == Ref.get(res)
+        3 == deref res
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -567,18 +567,18 @@ mod TestIterator {
 
     @test
     def forEachWithIndex01(): Bool = region rc {
-        let res = Ref.fresh(rc, 21);
+        let res = ref 21 @ rc;
         Nil |> List.iterator(rc) |>
             Iterator.forEachWithIndex((i, _) -> Ref.put(i, res));
-        21 == Ref.get(res)
+        21 == deref res
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
-        let res = Ref.fresh(rc, 21);
+        let res = ref 21 @ rc;
         (1 :: 2 :: 3 :: Nil) |> List.iterator(rc) |>
             Iterator.forEachWithIndex((i, _) -> Ref.put(i, res));
-        2 == Ref.get(res)
+        2 == deref res
     }
 
     /////////////////////////////////////////////////////////////////////////////
