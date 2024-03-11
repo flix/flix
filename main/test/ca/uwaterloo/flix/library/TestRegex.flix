@@ -332,27 +332,27 @@ mod TestRegex {
 
     @test
     def replace01(): Bool =
-        Regex.replace(from = regex"\\p{Blank}+", to = "_", "") == ""
+        Regex.replace(src = regex"\\p{Blank}+", dst = "_", "") == ""
 
     @test
     def replace02(): Bool =
-        Regex.replace(from = regex"\\p{Blank}+", to = "_", "A B C") == "A_B_C"
+        Regex.replace(src = regex"\\p{Blank}+", dst = "_", "A B C") == "A_B_C"
 
     @test
     def replace03(): Bool =
-        Regex.replace(from = regex"\\p{Blank}+", to = "_", "A  B   C") == "A_B_C"
+        Regex.replace(src = regex"\\p{Blank}+", dst = "_", "A  B   C") == "A_B_C"
 
     @test
     def replace04(): Bool =
-        Regex.replace(from = regex"\\p{Blank}+", to = "_", "ABC") == "ABC"
+        Regex.replace(src = regex"\\p{Blank}+", dst = "_", "ABC") == "ABC"
 
     @test
     def replace05(): Bool =
-        Regex.replace(from = regex"\\p{Blank}+", to = "__", "A B  C") == "A__B__C"
+        Regex.replace(src = regex"\\p{Blank}+", dst = "__", "A B  C") == "A__B__C"
 
     @test
     def replace06(): Bool =
-        Regex.replace(from = regex"\\p{Blank}+", to = "__", " A B  C  ") == "__A__B__C__"
+        Regex.replace(src = regex"\\p{Blank}+", dst = "__", " A B  C  ") == "__A__B__C__"
 
     /////////////////////////////////////////////////////////////////////////////
     // replaceFirst                                                            //
@@ -360,27 +360,27 @@ mod TestRegex {
 
     @test
     def replaceFirst01(): Bool =
-        Regex.replaceFirst(from = regex"\\p{Blank}+", to = "_", "") == ""
+        Regex.replaceFirst(src = regex"\\p{Blank}+", dst = "_", "") == ""
 
     @test
     def replaceFirst02(): Bool =
-        Regex.replaceFirst(from = regex"\\p{Blank}+", to = "_", "A B C") == "A_B C"
+        Regex.replaceFirst(src = regex"\\p{Blank}+", dst = "_", "A B C") == "A_B C"
 
     @test
     def replaceFirst03(): Bool =
-        Regex.replaceFirst(from = regex"\\p{Blank}+", to = "_", "A  B   C") == "A_B   C"
+        Regex.replaceFirst(src = regex"\\p{Blank}+", dst = "_", "A  B   C") == "A_B   C"
 
     @test
     def replaceFirst04(): Bool =
-        Regex.replaceFirst(from = regex"\\p{Blank}+", to = "_", "ABC")  == "ABC"
+        Regex.replaceFirst(src = regex"\\p{Blank}+", dst = "_", "ABC")  == "ABC"
 
     @test
     def replaceFirst05(): Bool =
-        Regex.replaceFirst(from = regex"\\p{Blank}+", to = "__", "A B  C") == "A__B  C"
+        Regex.replaceFirst(src = regex"\\p{Blank}+", dst = "__", "A B  C") == "A__B  C"
 
     @test
     def replaceFirst06(): Bool =
-        Regex.replaceFirst(from = regex"\\p{Blank}+", to = "__", " A B  C  ") == "__A B  C  "
+        Regex.replaceFirst(src = regex"\\p{Blank}+", dst = "__", " A B  C  ") == "__A B  C  "
 
     /////////////////////////////////////////////////////////////////////////////
     // startsWith                                                              //
