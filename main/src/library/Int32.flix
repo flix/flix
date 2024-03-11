@@ -436,7 +436,7 @@ mod Int32 {
     /// The numeric value of `x` is preserved exactly.
     ///
     pub def toBigDecimal(x: Int32): BigDecimal =
-        import new java.math.BigDecimal(Int32): BigDecimal \ {} as fromInt32;
+        import java_new java.math.BigDecimal(Int32): BigDecimal \ {} as fromInt32;
         fromInt32(x)
 
     ///

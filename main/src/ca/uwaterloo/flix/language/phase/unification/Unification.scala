@@ -208,8 +208,8 @@ object Unification {
         case Result.Err(UnificationError.NonSchemaType(tpe)) =>
           Err(TypeError.NonSchemaType(tpe, renv, loc))
 
-        case Result.Err(UnificationError.TooComplex(tpe1, tpe2)) =>
-          Err(TypeError.TooComplex(tpe1, tpe2, renv, loc))
+        case Result.Err(UnificationError.TooComplex(_, loc)) =>
+          Err(TypeError.TooComplex(loc))
 
         case Result.Err(err: UnificationError.NoMatchingInstance) =>
           throw InternalCompilerException(s"Unexpected unification error: $err", loc)

@@ -188,7 +188,7 @@ object Validation {
   /**
     * Represents a success that contains a value and non-critical `errors`.
     */
-  case class SoftFailure[T, E](t: T, errors: Chain[E]) extends Validation[T, E]
+  private case class SoftFailure[T, E](t: T, errors: Chain[E]) extends Validation[T, E]
 
   /**
     * Represents a failure with no value and `errors`.

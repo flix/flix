@@ -27,7 +27,7 @@ mod MutMap {
     /// Returns a string representation of the given MutMap `m`.
     ///
     pub def toString(m: MutMap[k, v, r]): String \ r with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         StringBuilder.appendString!("MutMap#{", sb);
         forEachWithIndex((i, k, v) -> {
             if (i < 1)
@@ -42,7 +42,7 @@ mod MutMap {
     ///
     /// Returns a fresh empty mutable map.
     ///
-    pub def new(rc: Region[r]): MutMap[k, v, r] \ r =
+    pub def empty(rc: Region[r]): MutMap[k, v, r] \ r =
         MutMap(rc, ref Map.empty() @ rc)
 
     ///

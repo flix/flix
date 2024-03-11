@@ -83,14 +83,14 @@ mod Environment {
     ///  Returns the file separator
     ///
     pub def getFileSeparator(): String =
-        import static get java.io.File.separator: String \ {} as sep;
+        import static java_get_field java.io.File.separator: String \ {} as sep;
         sep()
 
     ///
     /// Returns the path separator
     ///
     pub def getPathSeparator(): String =
-        import static get java.io.File.pathSeparator: String \ {} as pathSep;
+        import static java_get_field java.io.File.pathSeparator: String \ {} as pathSep;
         pathSep()
 
     ///

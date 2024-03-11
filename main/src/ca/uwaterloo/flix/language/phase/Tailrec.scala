@@ -63,6 +63,12 @@ object Tailrec {
         val e2 = visitExp(exp2)
         Expr.LetRec(varSym, index, defSym, exp1, e2, tpe, purity, loc)
 
+      case Expr.Stmt(exp1, exp2, tpe, purity, loc) =>
+        // The body expression is in tail position.
+        // (The dicarded expression is *not* in tail position
+        val e2 = visitExp(exp2)
+        Expr.Stmt(exp1, e2, tpe, purity, loc)
+
       case Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
         // Consequent and alternative are both in tail position.
         // (The condition is *not* in tail position).
@@ -96,7 +102,6 @@ object Tailrec {
       case Expr.JumpTo(_, _, _, _) => exp0
       case Expr.NewObject(_, _, _, _, _, _) => exp0
       case Expr.Scope(_, _, _, _, _) => exp0
-      case Expr.Stmt(_, _, _, _, _) => exp0
       case Expr.TryCatch(_, _, _, _, _) => exp0
       case Expr.TryWith(_, _, _, _, _, _) => exp0
       case Expr.Var(_, _, _) => exp0
