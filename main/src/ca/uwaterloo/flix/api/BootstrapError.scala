@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.errors.Unrecoverable
 import ca.uwaterloo.flix.tools.pkg.{ManifestError, PackageError}
 import ca.uwaterloo.flix.util.Formatter
 
-sealed trait BootstrapError {
+sealed trait BootstrapError extends Unrecoverable {
   /**
     * Returns a human-readable and formatted string representation of this error.
     */

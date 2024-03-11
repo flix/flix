@@ -17,12 +17,13 @@ package ca.uwaterloo.flix.api
 
 import ca.uwaterloo.flix.api.Bootstrap.{getArtifactDirectory, getManifestFile, getPkgFile}
 import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.errors.Unrecoverable
 import ca.uwaterloo.flix.language.phase.HtmlDocumentor
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.pkg.Dependency.FlixDependency
 import ca.uwaterloo.flix.tools.pkg.FlixPackageManager.findFlixDependencies
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{FlixPackageManager, PackageModules, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, ReleaseError, Dependency}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, FlixPackageManager, JarPackageManager, Manifest, ManifestParser, MavenPackageManager, PackageModules, ReleaseError}
 import ca.uwaterloo.flix.tools.{Benchmarker, Tester}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.Validation.flatMapN
@@ -766,7 +767,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val buildResult = buildPkg()
     buildResult.toHardResult match {
       case Result.Ok(_) => // Continue
-      case Result.Err(e) => return Validation.toHardFailure(e)
+      case Result.Err(e) => return Validation.toHardFailures(e)
     }
 
     // Publish to GitHub

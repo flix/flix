@@ -36,7 +36,7 @@ object NameError {
     * @param loc1 the location of the first name.
     * @param loc2 the location of the second name.
     */
-  case class DuplicateLowerName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+  case class DuplicateLowerName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError with Unrecoverable {
     def summary: String = s"Duplicate definition of '$name'."
 
     def message(formatter: Formatter): String = {
@@ -71,7 +71,7 @@ object NameError {
     * @param loc1 the location of the first name.
     * @param loc2 the location of the second name.
     */
-  case class DuplicateUpperName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError {
+  case class DuplicateUpperName(name: String, loc1: SourceLocation, loc2: SourceLocation) extends NameError with Unrecoverable {
     def summary: String = s"Duplicate definition of '$name'."
 
     def message(formatter: Formatter): String = {

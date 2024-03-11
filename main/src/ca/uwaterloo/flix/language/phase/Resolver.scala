@@ -284,11 +284,11 @@ object Resolver {
   /**
     * Create a list of CyclicTypeAliases errors, one for each type alias.
     */
-  def mkCycleErrors[T](cycle: List[Symbol.TypeAliasSym]): Validation.HardFailure[T, ResolutionError] = {
+  def mkCycleErrors[T](cycle: List[Symbol.TypeAliasSym]): Validation[T, ResolutionError] = {
     val errors = cycle.map {
       sym => ResolutionError.CyclicTypeAliases(cycle, sym.loc)
     }
-    Validation.HardFailure(Chain.from(errors))
+    Validation.toHardFailures(Chain.from(errors))
   }
 
   /**
@@ -398,11 +398,11 @@ object Resolver {
     /**
       * Create a list of CyclicClassHierarchy errors, one for each class.
       */
-    def mkCycleErrors[T](cycle: List[Symbol.ClassSym]): Validation.HardFailure[T, ResolutionError] = {
+    def mkCycleErrors[T](cycle: List[Symbol.ClassSym]): Validation[T, ResolutionError] = {
       val errors = cycle.map {
         sym => ResolutionError.CyclicClassHierarchy(cycle, sym.loc)
       }
-      Validation.HardFailure(Chain.from(errors))
+      Validation.toHardFailures(Chain.from(errors))
     }
 
     val classSyms = classes.values.map(_.sym)
