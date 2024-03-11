@@ -193,7 +193,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |pub def f(): #{ A(Int32), B(Int32; Int32) } = #{
-        |    A(x: Int32) :- B(12; x).
+        |    A((x: Int32)) :- B(12; x).
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)

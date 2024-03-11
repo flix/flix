@@ -51,9 +51,9 @@ mod TestGetOpt {
 
     def colour(x: Option[String]): Option[Flag] = Some(Flag.Colour(x))
 
-    def width(x: String): Option[Flag] = Option.map(x1 -> Flag.Width(x1), FromString.fromString(x) : Option[Int32])
+    def width(x: String): Option[Flag] = Option.map(x1 -> Flag.Width(x1), (FromString.fromString(x) : Option[Int32]))
 
-    def height(x: String): Option[Flag] = Option.map(x1 -> Flag.Height(x1), FromString.fromString(x) : Option[Int32])
+    def height(x: String): Option[Flag] = Option.map(x1 -> Flag.Height(x1), (FromString.fromString(x) : Option[Int32]))
 
 
     def options(): List[OptionDescr[Flag]] =

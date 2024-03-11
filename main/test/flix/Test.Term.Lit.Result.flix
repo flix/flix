@@ -3,8 +3,8 @@ mod Test.Term.Lit.Result {
     @test
     def testLitResult01(): Bool =
         let p = #{
-            A(Ok(123): Result[Int32, Int32]).
-            B(Ok(123): Result[Int32, Int32]).
+            A((Ok(123): Result[Int32, Int32])).
+            B((Ok(123): Result[Int32, Int32])).
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
@@ -13,8 +13,8 @@ mod Test.Term.Lit.Result {
     @test
     def testLitResult02(): Bool =
         let p = #{
-            A(Ok("Hello World"): Result[Int32, String]).
-            B(Ok("Hello World"): Result[Int32, String]).
+            A((Ok("Hello World"): Result[Int32, String])).
+            B((Ok("Hello World"): Result[Int32, String])).
             R(x) :- A(x), B(x).
         };
         let r = query p select x from R(x);
