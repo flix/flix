@@ -279,7 +279,7 @@ mod Iterator {
         let Iterator(rc, iterF) = iter;
         let ix = ref 0 @ rc;
         let step = x -> match x {
-            case Ans(a) => { let i = Ref.get(ix); Ref.put(i + 1, ix); Ans(f(i, a)) }
+            case Ans(a) => { let i = deref ix; Ref.put(i + 1, ix); Ans(f(i, a)) }
             case Skip   => Skip
             case Done   => Done
         };
@@ -387,7 +387,7 @@ mod Iterator {
     pub def zipWithIndex(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef + r, r] \ r =
         let Iterator(rc, _) = iter;
         let ix = ref 0 @ rc;
-        map(x -> {let i = Ref.get(ix); Ref.put(i + 1, ix); (i, x)}, iter)
+        map(x -> {let i = deref ix; Ref.put(i + 1, ix); (i, x)}, iter)
 
     ///
     /// Alias for `zipWithIndex`.
@@ -489,9 +489,9 @@ mod Iterator {
     ///
     pub def drop(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ r =
         let Iterator(rc, iterF) = iter;
-        let ix = Ref.fresh(rc, n);
+        let ix = ref n @ rc;
         def loop() = {
-            let i = Ref.get(ix);
+            let i = deref ix;
             Ref.put(i - 1, ix);
             match iterF() {
                 case Ans(a)  => if (i > 0) loop() else Ans(a)
@@ -514,9 +514,9 @@ mod Iterator {
     ///
     pub def take(n: Int32, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ r =
         let Iterator(rc, iterF) = iter;
-        let ix = Ref.fresh(rc, n);
+        let ix = ref n @ rc;
         def loop() = {
-            let i = Ref.get(ix);
+            let i = deref ix;
             if (i < 1)
                 Done
             else
@@ -555,7 +555,7 @@ mod Iterator {
     ///
     pub def dropWhile(f: a -> Bool \ ef2, iter: Iterator[a, ef1, r]): Iterator[a, r + ef1 + ef2, r] \ r =
         let Iterator(rc, iterF) = iter;
-        let start = Ref.fresh(rc, true);
+        let start = ref true @ rc;
         def loop() = match iterF() {
             case Ans(a) =>
                 if (deref start) {
@@ -578,8 +578,8 @@ mod Iterator {
     ///
     pub def flatMap(f: a -> Iterator[b, ef2, r] \ ef3, ma: Iterator[a, ef1, r]): Iterator[b, r + ef1 + ef2 + ef3, r] \ r =
         let Iterator(rc, iterF) = ma;
-        let innerIter = Ref.fresh(rc, polymorphicEmpty(rc));
-        let inside = Ref.fresh(rc, false);
+        let innerIter = ref polymorphicEmpty(rc) @ rc;
+        let inside = ref false @ rc;
         def innerLoop() = {
             let Iterator(_, innerF) = deref innerIter;
             match innerF() {
@@ -627,9 +627,9 @@ mod Iterator {
     ///
     pub def intersperse(sep: a, iter: Iterator[a, ef, r]): Iterator[a, ef + r, r] \ r =
         let Iterator(rc, _) = iter;
-        let start = Ref.fresh(rc, true);
+        let start = ref true @ rc;
         let step = x ->
-            if (Ref.get(start)) {
+            if (deref start) {
                 Ref.put(false, start);
                 singleton(rc, x)
             } else {
@@ -648,10 +648,10 @@ mod Iterator {
     ///
     pub def intercalate(sep: t[a], iter: Iterator[Iterator[a, ef, r], ef, r]): Iterator[a, ef + r, r] \ r with Foldable[t] =
         let Iterator(rc, _) = iter;
-        let start = Ref.fresh(rc, true);
+        let start = ref true @ rc;
         let sepL = Foldable.toList(sep);
         let step = innerIter -> {
-            if (Ref.get(start)) {
+            if (deref start) {
                 Ref.put(false, start);
                 innerIter
             } else {
@@ -667,9 +667,9 @@ mod Iterator {
     /// then `intercalate` fails.
     ///
     def ofList(rc: Region[r], xs: List[a]): Iterator[a, Pure, r] \ r =
-        let ls = Ref.fresh(rc, xs);
+        let ls = ref xs @ rc;
         let next = () -> {
-            match (Ref.get(ls)) {
+            match (deref ls) {
                 case Nil     => Done
                 case x :: rs => Ref.put(rs, ls); Ans(x)
             }
@@ -734,9 +734,9 @@ mod Iterator {
     ///
     pub def cons(x: a, iter: Iterator[a, ef, r]): Iterator[a, ef, r] \ r =
         let Iterator(rc, iterF) = iter;
-        let first = Ref.fresh(rc, true);
+        let first = ref true @ rc;
         let f = () ->  {
-            if (Ref.get(first)) {
+            if (deref first) {
                 Ref.put(false, first);
                 Ans(x)
             }
