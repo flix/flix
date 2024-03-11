@@ -21,7 +21,7 @@ mod Test.Handler.Gen.Float32 {
 
     def getAndInc(r: Ref[Float32, r]): Float32 \ r =
         let i = deref r;
-        r := (i + 1.0f32);
+        Ref.put(i + 1.0f32, r);
         i
 
     def range(a: Float32, b: Float32): List[Float32] =
