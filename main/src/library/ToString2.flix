@@ -133,7 +133,7 @@ instance ToString2[Array[a, r]] with ToString2[a] {
     type Aef = r + ToString2.Aef[a]
 
     pub def toString(a: Array[a, r]): String \ r + ToString2.Aef[a] = region rc2 {
-        let sb = StringBuilder.new(rc2);
+        let sb = StringBuilder.empty(rc2);
         let first = ref true @ rc2;
 
         StringBuilder.appendString!("Array#{", sb);
