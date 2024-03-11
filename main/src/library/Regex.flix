@@ -206,8 +206,8 @@ mod Regex {
     ///
     pub def replace(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
         import java.util.regex.Matcher.replaceAll(String): String \ rc;
-        let Matcher(m1) = newMatcher(rc, from.from, s);
-        replaceAll(m1, to.to)
+        let Matcher(m1) = newMatcher(rc, src.src, s);
+        replaceAll(m1, dst.dst)
     }
 
     ///
@@ -215,8 +215,8 @@ mod Regex {
     ///
     pub def replaceFirst(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
         import java.util.regex.Matcher.replaceFirst(String): String \ rc;
-        let Matcher(m1) = newMatcher(rc, from.from, s);
-        replaceFirst(m1, to.to)
+        let Matcher(m1) = newMatcher(rc, src.src, s);
+        replaceFirst(m1, dst.dst)
     }
 
     ///

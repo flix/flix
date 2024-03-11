@@ -719,7 +719,7 @@ mod Vector {
     /// Returns a copy of `v` with every occurrence of `from` replaced by `to`.
     ///
     pub def replace(src: {src = a}, dst: {dst = a}, v: Vector[a]): Vector[a] with Eq[a] =
-        map(e -> if (e == from.from) to.to else e, v)
+        map(e -> if (e == src.src) dst.dst else e, v)
 
     ///
     /// Returns `true` if and only if `a` is a prefix of `b`.

@@ -110,7 +110,7 @@ mod MutSet {
     ///
     pub def replace!(src: {src = a}, dst: {dst = a}, s: MutSet[a, r]): Unit \ r with Order[a] =
         let MutSet(_, ms) = s;
-        ms := Set.replace(src = from.from, dst = to.to, deref ms)
+        ms := Set.replace(src = src.src, dst = dst.dst, deref ms)
 
     ///
     /// Applies the function `f` to every element in the mutable set `s`.

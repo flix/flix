@@ -822,28 +822,28 @@ mod String {
     ///
     pub def replace(src: {src = String}, dst: {dst = String}, s: String): String =
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {};
-        replace(s, checked_cast(from.from), checked_cast(to.to))
+        replace(s, checked_cast(src.src), checked_cast(dst.dst))
 
     ///
     /// Returns `s` with every match of the character `target` replaced by the character `rep`.
     ///
     pub def replaceChar(src: {src = Char}, dst: {dst = Char}, s: String): String =
         import java.lang.String.replace(Char, Char): String \ {};
-        replace(s, from.from, to.to)
+        replace(s, src.src, dst.dst)
 
     ///
     /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
     ///
     pub def replaceMatches(regex: {regex = String}, dst: {dst = String}, s: String): String =
         import java.lang.String.replaceAll(String, String): String \ {};
-        replaceAll(s, regex.regex, to.to)
+        replaceAll(s, regex.regex, dst.dst)
 
     ///
     /// Returns `s` with the first match of the regular expression `regex` replaced by the string `to`.
     ///
     pub def replaceFirstMatch(regex: {regex = String}, dst: {dst = String}, s: String): String =
         import java.lang.String.replaceFirst(String, String): String \ {};
-        replaceFirst(s, regex.regex, to.to)
+        replaceFirst(s, regex.regex, dst.dst)
 
     ///
     /// Returns `s` with the element at index `i` replaced by `a`.
