@@ -850,7 +850,7 @@ object Weeder {
         case e => visitUnaryOperator(op) match {
           case OperatorResult.BuiltIn(name) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(name, name.loc), List(e), loc)
           case OperatorResult.UnaryOperator(o) => WeededAst.Expr.Unary(o, e, loc)
-          case OperatorResult.BinaryOperator(_) => throw InternalCompilerException("Impossible result from visitUnaryOperator", loc)
+          case OperatorResult.BinaryOperator(_) => throw InternalCompilerException(s"Unexpected BinaryOperator ${op.op} from visitUnaryOperator", loc)
           case OperatorResult.Unrecognized(ident) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e), loc)
         }
       }
@@ -861,7 +861,7 @@ object Weeder {
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => visitBinaryOperator(op) match {
           case OperatorResult.BuiltIn(name) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(name, name.loc), List(e1, e2), loc)
-          case OperatorResult.UnaryOperator(_) => throw InternalCompilerException("Impossible result from visitBinaryOperator", loc)
+          case OperatorResult.UnaryOperator(_) => throw InternalCompilerException(s"Unexpected UnaryOperator ${op.op} from visitBinaryOperator", loc)
           case OperatorResult.BinaryOperator(o) => WeededAst.Expr.Binary(o, e1, e2, loc)
           case OperatorResult.Unrecognized(ident) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e1, e2), loc)
         }
