@@ -413,7 +413,9 @@ object Lexer {
       case _ if isKeyword("foreach") => TokenKind.KeywordForeach
       case _ if isKeyword("forM") => TokenKind.KeywordForM
       case _ if isKeyword("from") => TokenKind.KeywordFrom
-      case _ if isKeyword("get") => TokenKind.KeywordGet
+      case _ if isKeyword("java_get_field") => TokenKind.KeywordJavaGetField
+      case _ if isKeyword("java_set_field") => TokenKind.KeywordJavaSetField
+      case _ if isKeyword("java_new") => TokenKind.KeywordJavaNew
       case _ if isKeyword("if") => TokenKind.KeywordIf
       case _ if isKeyword("import") => TokenKind.KeywordImport
       case _ if isKeyword("inject") => TokenKind.KeywordInject
@@ -449,7 +451,6 @@ object Lexer {
       case _ if isKeyword("rvnot") => TokenKind.KeywordRvnot
       case _ if isKeyword("sealed") => TokenKind.KeywordSealed
       case _ if isKeyword("select") => TokenKind.KeywordSelect
-      case _ if isKeyword("set") => TokenKind.KeywordSet
       case _ if isKeyword("solve") => TokenKind.KeywordSolve
       case _ if isKeyword("spawn") => TokenKind.KeywordSpawn
       case _ if isKeyword("static") => TokenKind.KeywordStatic
