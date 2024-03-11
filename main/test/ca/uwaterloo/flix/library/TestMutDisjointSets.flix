@@ -22,7 +22,7 @@ mod TestMutDisjointSets {
 
     @Test
     def makeSet01(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         foreach (x <- List.range(0, 10)) {
             MutDisjointSets.makeSet(x, s)
         };
@@ -34,7 +34,7 @@ mod TestMutDisjointSets {
 
     @Test
     def makeSet02(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         foreach (x <- List.range(0, 10)) {
             MutDisjointSets.makeSet(x, s)
         };
@@ -50,7 +50,7 @@ mod TestMutDisjointSets {
 
     @Test
     def makeSets01(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         let actual =
             List.range(0, 10)
@@ -60,7 +60,7 @@ mod TestMutDisjointSets {
 
     @Test
     def makeSets02(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         let MutDisjointSets.MutDisjointSets({ forest | _ }) = s;
         let actual = MutMap.size(forest);
@@ -69,7 +69,7 @@ mod TestMutDisjointSets {
 
     @Test
     def makeSets03(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets("a" :: "b" :: "c" :: Nil, s);
         let MutDisjointSets.MutDisjointSets({ forest | _ }) = s;
         let actual = MutMap.size(forest);
@@ -83,7 +83,7 @@ mod TestMutDisjointSets {
 
     @Test
     def find01(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(-10, 20), s);
         let actual = foreach (
             x <- List.range(-10, 20)
@@ -93,7 +93,7 @@ mod TestMutDisjointSets {
 
     @Test
     def find02(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets("x" :: "y" :: "z" :: Nil, s);
         let actual = foreach (
             x <- "x" :: "y" :: "z" :: Nil
@@ -103,7 +103,7 @@ mod TestMutDisjointSets {
 
     @Test
     def find03(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(0, 1, s);
         MutDisjointSets.union(2, 3, s);
@@ -118,7 +118,7 @@ mod TestMutDisjointSets {
 
     @Test
     def find04(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(0, 1, s);
         MutDisjointSets.union(2, 3, s);
@@ -133,7 +133,7 @@ mod TestMutDisjointSets {
 
     @Test
     def find05(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets("a" :: "b" :: "c" :: "d" :: Nil, s);
         let actual = MutDisjointSets.find("A", s);
         Assert.eq(None, actual)
@@ -146,7 +146,7 @@ mod TestMutDisjointSets {
 
     @Test
     def union01(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(0, 1, s);
         let actual = MutDisjointSets.find(0, s);
@@ -155,7 +155,7 @@ mod TestMutDisjointSets {
 
     @Test
     def union02(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(0, 1, s);
         MutDisjointSets.union(0, 1, s);
@@ -166,7 +166,7 @@ mod TestMutDisjointSets {
 
     @Test
     def union03(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(1, 1, s);
         let actual = MutDisjointSets.find(1, s);
@@ -175,7 +175,7 @@ mod TestMutDisjointSets {
 
     @Test
     def union04(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(0, 1, s);
         MutDisjointSets.union(1, 1, s);
@@ -185,7 +185,7 @@ mod TestMutDisjointSets {
 
     @Test
     def union05(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(0, 1, s);
         MutDisjointSets.union(1, 1, s);
@@ -196,7 +196,7 @@ mod TestMutDisjointSets {
 
     @Test
     def union06(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(0, 1, s);
         MutDisjointSets.union(1, 1, s);
@@ -207,7 +207,7 @@ mod TestMutDisjointSets {
 
     @Test
     def union07(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(1, 0, s);
         MutDisjointSets.union(0, 1, s);
@@ -218,7 +218,7 @@ mod TestMutDisjointSets {
 
     @Test
     def union08(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(1, 0, s);
         MutDisjointSets.union(0, 1, s);
@@ -229,7 +229,7 @@ mod TestMutDisjointSets {
 
     @Test
     def union09(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(0, 1, s);
         MutDisjointSets.union(1, 3, s);
@@ -239,7 +239,7 @@ mod TestMutDisjointSets {
 
     @Test
     def union10(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets("a" :: "b" :: "c" :: "d" :: Nil, s);
         MutDisjointSets.union("c", "d", s);
         let actual = MutDisjointSets.find("a", s);
@@ -248,7 +248,7 @@ mod TestMutDisjointSets {
 
     @Test
     def union11(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets("a" :: "b" :: "c" :: "d" :: Nil, s);
         MutDisjointSets.union("c", "d", s);
         MutDisjointSets.union("b", "c", s);
@@ -259,7 +259,7 @@ mod TestMutDisjointSets {
 
     @Test
     def union12(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(7, 4, s);
         MutDisjointSets.union(7, 9, s);
@@ -269,7 +269,7 @@ mod TestMutDisjointSets {
 
     @Test
     def union13(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(7, 4, s);
         MutDisjointSets.union(7, 9, s);
@@ -280,7 +280,7 @@ mod TestMutDisjointSets {
 
     @Test
     def union14(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(7, 4, s);
         MutDisjointSets.union(7, 9, s);
@@ -292,7 +292,7 @@ mod TestMutDisjointSets {
 
     @Test
     def union15(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(7, 4, s);
         MutDisjointSets.union(7, 9, s);
@@ -306,14 +306,14 @@ mod TestMutDisjointSets {
 
     @Test
     def union16(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.union(20, 21, s);
         Assert.eq(true, MutDisjointSets.memberOf(20, s))
     }
 
     @Test
     def union17(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.union(20, 21, s);
         Assert.eq(true, MutDisjointSets.memberOf(21, s))
     }
@@ -324,7 +324,7 @@ mod TestMutDisjointSets {
 
     @Test
     def equivalent01(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(-10, 20), s);
         let actual = MutDisjointSets.equivalent(-10, -10, s);
         Assert.eq(true, actual)
@@ -332,7 +332,7 @@ mod TestMutDisjointSets {
 
     @Test
     def equivalent02(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(-10, 20), s);
         let actual = MutDisjointSets.equivalent(-10, 10, s);
         Assert.eq(false, actual)
@@ -340,7 +340,7 @@ mod TestMutDisjointSets {
 
     @Test
     def equivalent03(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(-10, 20), s);
         let actual = MutDisjointSets.equivalent(-10, 200, s);
         Assert.eq(false, actual)
@@ -348,7 +348,7 @@ mod TestMutDisjointSets {
 
     @Test
     def equivalent04(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(7, 4, s);
         MutDisjointSets.union(7, 9, s);
@@ -358,7 +358,7 @@ mod TestMutDisjointSets {
 
     @Test
     def equivalent05(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(7, 4, s);
         MutDisjointSets.union(7, 9, s);
@@ -368,7 +368,7 @@ mod TestMutDisjointSets {
 
     @Test
     def equivalent06(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(7, 4, s);
         MutDisjointSets.union(7, 9, s);
@@ -379,7 +379,7 @@ mod TestMutDisjointSets {
 
     @Test
     def equivalent07(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(7, 4, s);
         MutDisjointSets.union(7, 9, s);
@@ -391,7 +391,7 @@ mod TestMutDisjointSets {
 
     @Test
     def equivalent08(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         let actual = MutDisjointSets.equivalent(20, 30, s);
         Assert.eq(false, actual)
@@ -399,7 +399,7 @@ mod TestMutDisjointSets {
 
     @Test
     def equivalent09(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(-100, 100), s);
         let actual =
             List.range(0, 10)
@@ -418,21 +418,21 @@ mod TestMutDisjointSets {
 
     @Test
     def size01(): Bool = region rc {
-        let s: MutDisjointSets[String, rc] = MutDisjointSets.new(rc);
+        let s: MutDisjointSets[String, rc] = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(Nil, s);
         Assert.eq(0, MutDisjointSets.size(s))
     }
 
     @Test
     def size02(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         Assert.eq(10, MutDisjointSets.size(s))
     }
 
     @Test
     def size03(): Bool = region rc {
-        let s = MutDisjointSets.new(rc);
+        let s = MutDisjointSets.empty(rc);
         MutDisjointSets.makeSets(List.range(0, 10), s);
         MutDisjointSets.union(0, 1, s);
         Assert.eq(10, MutDisjointSets.size(s))

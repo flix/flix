@@ -123,7 +123,7 @@ instance Reducible[Nec] {
 
 instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         StringBuilder.appendString!("Nec#{", sb);
         Nec.forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -752,7 +752,7 @@ mod Nec {
     /// Returns `c` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], c: Nec[a]): MutDeque[a, r] \ r  =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach(x -> MutDeque.pushBack(x, d), c);
         d
 
@@ -798,7 +798,7 @@ mod Nec {
     /// Returns the Nec `c` as a vector.
     ///
     pub def toVector(c: Nec[a]): Vector[a] = region rc {
-        let arr = Array.new(rc, length(c));
+        let arr = Array.empty(rc, length(c));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), c);
         Array.toVector(arr)
     }
