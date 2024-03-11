@@ -180,7 +180,7 @@ mod Concurrent.Channel {
 
         // Insert the new element and update size
         MutDeque.pushBack(e, elementDeque);
-        Ref.put(Ref.get(size) + 1, size);
+        Ref.put(deref size + 1, size);
 
         // Signal the waiting getters that an element has arrived
         signalGetters(admin);
@@ -229,7 +229,7 @@ mod Concurrent.Channel {
 
             case Some(element) =>
                 // Signal waiting setters that the channel has space
-                Ref.put(Ref.get(size) - 1, size);
+                Ref.put(deref size - 1, size);
                 onGetComplete(admin);
                 // channelLock is now unlocked
                 element
@@ -329,7 +329,7 @@ mod Concurrent.Channel {
 
             case Some(e) =>
                 // Signal waiting setters that the channel has space
-                Ref.put(Ref.get(size) - 1, size);
+                Ref.put(deref size - 1, size);
                 onGetComplete(admin);
                 // channelLock is now unlocked
                 e
