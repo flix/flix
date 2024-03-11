@@ -43,7 +43,7 @@ mod Array {
     ///
     pub def toString(a: Array[a, r]): String \ r with ToString[a] = region rc2 {
         let sb = StringBuilder.empty(rc2);
-        let first = true @ rc2;
+        let first = ref true @ rc2;
 
         StringBuilder.appendString!("Array#{", sb);
 
