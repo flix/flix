@@ -497,7 +497,7 @@ object Stratifier {
     case Expr.Error(m, tpe, eff) =>
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
-      Validation.SoftFailure(Expr.Error(m, tpe, eff), Chain.empty)
+      Validation.success(Expr.Error(m, tpe, eff))
 
   }
 

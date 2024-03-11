@@ -470,7 +470,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import new java.io.File(): ##java.io.File \ IO as _;
+           |    import java_new java.io.File(): ##java.io.File \ IO as _;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -481,7 +481,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import new java.io.File(Int32): ##java.io.File \ IO as _;
+           |    import java_new java.io.File(Int32): ##java.io.File \ IO as _;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -492,7 +492,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import new java.lang.String(Bool): ##java.lang.String \ IO as _;
+           |    import java_new java.lang.String(Bool): ##java.lang.String \ IO as _;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -503,7 +503,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import new java.lang.String(Bool, Char, String): ##java.lang.String \ IO as _;
+           |    import java_new java.lang.String(Bool, Char, String): ##java.lang.String \ IO as _;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -514,7 +514,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import new foo.bar.Baz(): Unit \ IO as newObject;
+           |    import java_new foo.bar.Baz(): Unit \ IO as newObject;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -547,7 +547,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import get foo.bar.Baz.f: Unit \ IO as getF;
+           |    import java_get_field foo.bar.Baz.f: Unit \ IO as getF;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -558,7 +558,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import set foo.bar.Baz.f: Unit \ IO as setF;
+           |    import java_set_field foo.bar.Baz.f: Unit \ IO as setF;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -569,7 +569,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import static get foo.bar.Baz.f: Unit \ IO as getF;
+           |    import static java_get_field foo.bar.Baz.f: Unit \ IO as getF;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -580,7 +580,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import static set foo.bar.Baz.f: Unit \ IO as setF;
+           |    import static java_set_field foo.bar.Baz.f: Unit \ IO as setF;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -691,7 +691,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import get java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
+           |    import java_get_field java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
            |    ()
            |
        """.stripMargin
@@ -703,7 +703,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import set java.lang.Character.foo: ##java.lang.Character \ IO as setFoo;
+           |    import java_set_field java.lang.Character.foo: ##java.lang.Character \ IO as setFoo;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -714,7 +714,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import static get java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
+           |    import static java_get_field java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -725,7 +725,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import static set java.lang.Character.foo: Unit \ IO as setFoo;
+           |    import static java_set_field java.lang.Character.foo: Unit \ IO as setFoo;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)

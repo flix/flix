@@ -51,8 +51,6 @@ object DocAst {
 
     sealed trait RecordOp extends Atom
 
-    case class InRegion(d1: Expression, d2: Expression) extends Composite
-
     case object Unit extends Atom
 
     case class Tuple(elms: List[Expression]) extends Atom
@@ -76,6 +74,9 @@ object DocAst {
     case class DoubleKeyword(word1: String, d1: Expression, word2: String, d2: Either[Expression, Type]) extends Composite
 
     case class Unary(op: String, d: Expression) extends Composite
+
+    /** e.g. `arr?` */
+    case class UnaryRightAfter(d: Expression, op: String) extends Atom
 
     case class Binary(d1: Expression, op: String, d2: Expression) extends Composite
 
@@ -137,6 +138,9 @@ object DocAst {
     def Hole(sym: Symbol.HoleSym): Expression =
       AsIs("?" + sym.toString)
 
+    def HoleWithExp(exp: Expression): Expression =
+      UnaryRightAfter(exp, "?")
+
     def HoleError(sym: Symbol.HoleSym): Expression =
       AsIs(sym.toString)
 
@@ -146,6 +150,10 @@ object DocAst {
 
     val MatchError: Expression =
       AsIs("?matchError")
+
+    /** represents the error ast node when compiling partial programs */
+    val Error: Expression =
+      AsIs("?astError")
 
     def Untag(sym: Symbol.CaseSym, d: Expression): Expression =
       Keyword("untag", d)
@@ -172,6 +180,10 @@ object DocAst {
     def Sig(sym: Symbol.SigSym): Expression =
       AsIs(sym.toString)
 
+    /** e.g. `something @ rc` */
+    def InRegion(d1: Expression, d2: Expression): Expression =
+      Binary(d1, "@", d2)
+
     def ArrayNew(d1: Expression, d2: Expression): Expression =
       SquareApp(AsIs(""), List(Binary(d1, ";", d2)))
 
@@ -192,6 +204,9 @@ object DocAst {
 
     def VectorLoad(d1: Expression, index: Expression): Expression =
       DoubleSquareApp(d1, List(index))
+
+    def VectorLength(d: Expression): Expression =
+      DoubleDot(d, AsIs("length"))
 
     def Lazy(d: Expression): Expression =
       Keyword("lazy", d)

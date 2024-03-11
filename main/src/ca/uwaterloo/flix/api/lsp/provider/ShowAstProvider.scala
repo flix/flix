@@ -40,8 +40,9 @@ object ShowAstProvider {
       // We have to compile the program to obtain the relevant AST.
       flix.codeGen(r)
 
-      val closestPrettyPrinter = Similarity.closestMatch(phase, AstPrinter.allPhases())
-      astObject(phase, closestPrettyPrinter())
+      val phasesWithNames = AstPrinter.allPhases().map { case (name, printer) => (name, (name, printer)) }
+      val (closestPhase, closestPrettyPrinter) = Similarity.closestMatch(phase, phasesWithNames)
+      astObject(closestPhase, closestPrettyPrinter())
   }
 
   private def astObject(phase: String, text: String): JObject = {

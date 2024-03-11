@@ -484,8 +484,8 @@ object Namer {
     * Performs naming on the given signature declaration `sig`.
     */
   private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, classSym: Symbol.ClassSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
-    case DesugaredAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, loc) =>
-      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, eff0)
+    case DesugaredAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
+      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, eff0, econstrs0)
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
@@ -493,10 +493,10 @@ object Namer {
       val tpeVal = visitType(tpe0)
       val effVal = traverseOpt(eff0)(visitType)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
+      val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, ns0))
 
-      flatMapN(fparamsVal, tpeVal, effVal, tconstrsVal) {
-        case (fparams, tpe, eff, tconstrs) =>
-          val econstrs = Nil // TODO ASSOC-TYPES allow eq-constrs here
+      flatMapN(fparamsVal, tpeVal, effVal, tconstrsVal, econstrsVal) {
+        case (fparams, tpe, eff, tconstrs, econstrs) =>
 
           // Then visit the parts depending on the parameters
           val expVal = traverseOpt(exp0)(visitExp(_, ns0)(Level.Top, flix))
@@ -518,7 +518,7 @@ object Namer {
     case DesugaredAst.Declaration.Def(doc, ann, mod0, ident, tparams0, fparams0, exp, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       flix.subtask(ident.name, sample = true)
 
-      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, eff0)
+      val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, eff0, econstrs0)
 
       // First visit all the top-level information
       val mod = visitModifiers(mod0, ns0)
@@ -1046,7 +1046,7 @@ object Namer {
     case DesugaredAst.Expr.Error(m) =>
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
-      Validation.SoftFailure(NamedAst.Expr.Error(m), Chain.empty)
+      Validation.success(NamedAst.Expr.Error(m))
 
   }
 
@@ -1478,9 +1478,9 @@ object Namer {
   /**
     * Performs naming on the given type parameters `tparams0` from the given formal params `fparams` and overall type `tpe`.
     */
-  private def getTypeParamsFromFormalParams(tparams0: DesugaredAst.TypeParams, fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type])(implicit flix: Flix): NamedAst.TypeParams = {
+  private def getTypeParamsFromFormalParams(tparams0: DesugaredAst.TypeParams, fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): NamedAst.TypeParams = {
     tparams0 match {
-      case DesugaredAst.TypeParams.Elided => getImplicitTypeParamsFromFormalParams(fparams, tpe, eff)
+      case DesugaredAst.TypeParams.Elided => getImplicitTypeParamsFromFormalParams(fparams, tpe, eff, econstrs)
       case DesugaredAst.TypeParams.Unkinded(tparams) => getExplicitTypeParams(tparams)
       case DesugaredAst.TypeParams.Kinded(tparams) => getExplicitKindedTypeParams(tparams)
 
@@ -1523,7 +1523,7 @@ object Namer {
   /**
     * Returns the implicit type parameters constructed from the given formal parameters and type.
     */
-  private def getImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type])(implicit flix: Flix): NamedAst.TypeParams = {
+  private def getImplicitTypeParamsFromFormalParams(fparams: List[DesugaredAst.FormalParam], tpe: DesugaredAst.Type, eff: Option[DesugaredAst.Type], econstrs: List[DesugaredAst.EqualityConstraint])(implicit flix: Flix): NamedAst.TypeParams = {
     // Compute the type variables that occur in the formal parameters.
     val fparamTvars = fparams.flatMap {
       case DesugaredAst.FormalParam(_, _, Some(tpe), _) => freeTypeVars(tpe)
@@ -1534,7 +1534,12 @@ object Namer {
 
     val effTvars = eff.toList.flatMap(freeTypeVars)
 
-    val tparams = (fparamTvars ::: tpeTvars ::: effTvars).distinct.map {
+    val econstrTvars = econstrs.flatMap {
+      // We only infer vars from the right-hand-side of the constraint.
+      case DesugaredAst.EqualityConstraint(_, _, tpe2, _) => freeTypeVars(tpe2)
+    }
+
+    val tparams = (fparamTvars ::: tpeTvars ::: effTvars ::: econstrTvars).distinct.map {
       ident => NamedAst.TypeParam.Implicit(ident, mkTypeVarSym(ident)(Level.Top, flix), ident.loc)
     }
 
