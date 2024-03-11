@@ -12,7 +12,7 @@ mod BenchmarkMap {
     ///
     @benchmark
     pub def benchmark02(): Bool =
-        Map.get_(12, range(0, 12)) == Some(12)
+        Map.get(12, range(0, 12)) == Some(12)
 
     ///
     /// create a map of `Int32 -> Int32` and check if it contains a low-valued mapping.
