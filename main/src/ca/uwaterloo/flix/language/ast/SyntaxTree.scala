@@ -408,13 +408,13 @@ object SyntaxTree {
       /**
        * A marker kind used to wrap nested patterns.
        */
-       // For instance on cons pattern "0 :: xs" you would do
-       // Pattern
-       //   FCons
-       //     Pattern
-       //       Literal
-       //     Pattern
-       //       Ident
+      // For instance on cons pattern "0 :: xs" you would do
+      // Pattern
+      //   FCons
+      //     Pattern
+      //       Literal
+      //     Pattern
+      //       Ident
       case object Pattern extends Pattern
 
       case object FCons extends Pattern

@@ -78,7 +78,7 @@ mod Test.Kind.Class {
 
             mod Exp {
                 class CStar1[a] {
-                    law star: forall(x: a) . { ???: a; ??? }
+                    law star: forall(x: a) . { (???: a); ??? }
                 }
             }
         }
@@ -197,7 +197,7 @@ mod Test.Kind.Class {
 
             mod Exp {
                 class CStar1[a: Type] {
-                    law star: forall(x: a) . { ???: a; ??? }
+                    law star: forall(x: a) . { (???: a); ??? }
                 }
             }
         }
