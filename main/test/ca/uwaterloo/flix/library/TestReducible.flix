@@ -50,7 +50,7 @@ mod TestReducible {
 
     @test
     def reduceLeft08(): Bool = region rc {
-        let l = Ref.fresh(rc, Nil);
+        let l = ref Nil @ rc;
         // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
         let f = (acc, a) -> {
             if (acc == 0)
@@ -97,7 +97,7 @@ mod TestReducible {
 
     @test
     def reduceRight08(): Bool = region rc {
-        let l = Ref.fresh(rc, Nil);
+        let l = ref Nil @ rc;
         // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
         let f = (a, acc) -> {
             if (acc == 0)
@@ -174,7 +174,7 @@ mod TestReducible {
 
     @test
     def foldLeft07(): Bool = region rc {
-        let l = Ref.fresh(rc, Nil);
+        let l = ref Nil @ rc;
         discard Reducible.foldLeft((_, x) -> { Ref.put(x :: Ref.get(l), l); x == 1 }, false, Nel.Nel(3, 2 :: 1 :: Nil));
         Ref.get(l) == 1 :: 2 :: 3 :: Nil
     }
@@ -209,7 +209,7 @@ mod TestReducible {
 
     @test
     def foldRight07(): Bool = region rc {
-        let l = Ref.fresh(rc, Nil);
+        let l = ref Nil @ rc;
         discard Reducible.foldRight((x, _) -> { Ref.put(x :: Ref.get(l), l); x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
         Ref.get(l) == 1 :: 2 :: 3 :: Nil
     }
@@ -244,7 +244,7 @@ mod TestReducible {
 
     @test
     def foldRightWithCont07(): Bool = region rc {
-        let l = Ref.fresh(rc, Nil);
+        let l = ref Nil @ rc;
         discard Reducible.foldRightWithCont((x, _) -> { Ref.put(x :: Ref.get(l), l); x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
         Ref.get(l) == 1 :: 2 :: 3 :: Nil
     }
@@ -508,14 +508,14 @@ mod TestReducible {
 
     @test
     def forEach01(): Bool = region rc {
-        let ri = Ref.fresh(rc, 21);
+        let ri = ref 21 @ rc;
         Reducible.forEach(x -> Ref.put(x, ri), Nel.Nel(1, Nil));
         1 == Ref.get(ri)
     }
 
     @test
     def forEach02(): Bool = region rc {
-        let ri = Ref.fresh(rc, 21);
+        let ri = ref 21 @ rc;
         Reducible.forEach(x -> Ref.put(x, ri), Nel.Nel(1, 2 :: 3 :: Nil));
         3 == Ref.get(ri)
     }
@@ -550,7 +550,7 @@ mod TestReducible {
 
     @test
     def findLeft07(): Bool = region rc {
-        let l = Ref.fresh(rc, Nil);
+        let l = ref Nil @ rc;
         discard Reducible.findLeft(x -> { Ref.put(x :: Ref.get(l), l); x == 1 }, Nel.Nel(3, 2 :: 1 :: Nil));
         Ref.get(l) == 1 :: 2 :: 3 :: Nil
     }
@@ -585,7 +585,7 @@ mod TestReducible {
 
     @test
     def findRight07(): Bool = region rc {
-        let l = Ref.fresh(rc, Nil);
+        let l = ref Nil @ rc;
         discard Reducible.findRight(x -> { Ref.put(x :: Ref.get(l), l); x == 1 }, Nel.Nel(1, 2 :: 3 :: Nil));
         Ref.get(l) == 1 :: 2 :: 3 :: Nil
     }
