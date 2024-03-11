@@ -394,7 +394,7 @@ object ConstraintResolution {
     var prog = true
     while (prog) {
       if (count >= MaxIterations) {
-        return Result.Err(HackError(UnificationError.IterationLimit(MaxIterations)))
+        return Result.Err(TypeError.TooComplex(SourceLocation.Unknown))
       }
 
       count += 1

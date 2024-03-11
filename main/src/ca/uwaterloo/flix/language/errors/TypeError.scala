@@ -871,23 +871,4 @@ object TypeError {
       "Tip: Add an equality constraint to the function."
     })
   }
-
-  // MATT temp hack to get things compiling again
-  case class HackError(e: UnificationError) extends TypeError {
-
-    /**
-      * Returns the primary source location of the error.
-      */
-    override def loc: SourceLocation = SourceLocation.Unknown
-
-    /**
-      * Returns a short description of the error message.
-      */
-    override def summary: String = e.toString
-
-    /**
-      * Returns the formatted error message.
-      */
-    override def message(formatter: Formatter): String = e.toString
-  }
 }
