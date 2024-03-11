@@ -144,11 +144,4 @@ object UnificationError {
     */
   case class TooComplex(msg: String, loc: SourceLocation) extends UnificationError
 
-  /**
-    * A unification error resulting from too many resolution iterations.
-    *
-    * @param n the number of iterations conducted.
-    */
-  case class IterationLimit(n: Int) extends UnificationError
-
 }

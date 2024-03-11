@@ -219,9 +219,6 @@ object Unification {
 
         case Result.Err(err: UnificationError.UnsupportedEquality) =>
           throw InternalCompilerException(s"Unexpected unification error: $err", loc)
-
-        case Result.Err(err: UnificationError.IterationLimit) =>
-          throw InternalCompilerException(s"Unexpected unification error: $err", loc)
       }
     })
   }

@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.errors.TypeError.HackError
 import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.constraintgeneration.{Debug, TypingConstraint}
 import ca.uwaterloo.flix.language.phase.unification.Unification.getUnderOrOverAppliedError
@@ -665,7 +664,6 @@ object ConstraintResolution {
       TypeError.MissingInstance(tconstr.head.sym, tconstr.arg, RigidityEnv.empty, loc) // MATT renv
     case (UnificationError.UnsupportedEquality(t1, t2), _) => ??? // TypeError.UnsupportedEquality(Ast.BroadEqualityConstraint(t1, t2), loc) // MATT impossible?
     case (UnificationError.IrreducibleAssocType(sym, t), _) => ??? // TypeError.IrreducibleAssocType(sym, t, loc) // MATT impossible?
-    case (UnificationError.IterationLimit(n), _) => ???
   }
 
 }
