@@ -549,16 +549,16 @@ mod Array {
         init(rc1, f, len)
 
     ///
-    /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
+    /// Returns a copy of `a` with every occurrence of `src` replaced by `dst`.
     ///
-    pub def replace(rc1: Region[r1], from: {from = a}, to: {to = a}, a: Array[a, r]): Array[a, r1] \ { r, r1 } with Eq[a] =
-        map(rc1, e -> if (e == from.from) to.to else e, a)
+    pub def replace(rc1: Region[r1], src: {src = a}, dst: {dst = a}, a: Array[a, r]): Array[a, r1] \ { r, r1 } with Eq[a] =
+        map(rc1, e -> if (e == src.src) dst.dst else e, a)
 
     ///
-    /// Replace every occurrence of `from` by `to` in the array `a`, mutating it in place.
+    /// Replace every occurrence of `src` by `dst` in the array `a`, mutating it in place.
     ///
-    pub def replace!(from: {from = a}, to: {to = a}, a: Array[a, r]): Unit \ r with Eq[a] =
-        transform!(e -> if (e == from.from) to.to else e, a)
+    pub def replace!(src: {src = a}, dst: {dst = a}, a: Array[a, r]): Unit \ r with Eq[a] =
+        transform!(e -> if (e == src.src) dst.dst else e, a)
 
     ///
     /// Returns `b` with the `n` elements starting at index `i` replaced with the elements of `a`.

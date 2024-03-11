@@ -1427,49 +1427,49 @@ mod TestArray {
 
     @test
     def replace01(): Bool = region rc {
-        let a = Array.replace(rc, from = 3, to = 4, Array#{} @ rc);
+        let a = Array.replace(rc, src = 3, dst =  4, Array#{} @ rc);
         Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def replace02(): Bool = region rc {
-        let a = Array.replace(rc, from = 3, to = 4, Array#{1} @ rc);
+        let a = Array.replace(rc, src = 3, dst =  4, Array#{1} @ rc);
         Array.sameElements(a, Array#{1} @ rc)
     }
 
     @test
     def replace03(): Bool = region rc {
-        let a = Array.replace(rc, from = 3, to = 4, Array#{3} @ rc);
+        let a = Array.replace(rc, src = 3, dst =  4, Array#{3} @ rc);
         Array.sameElements(a, Array#{4} @ rc)
     }
 
     @test
     def replace04(): Bool = region rc {
-        let a = Array.replace(rc, from = 3, to = 4, Array#{4} @ rc);
+        let a = Array.replace(rc, src = 3, dst =  4, Array#{4} @ rc);
         Array.sameElements(a, Array#{4} @ rc)
     }
 
     @test
     def replace05(): Bool = region rc {
-        let a = Array.replace(rc, from = 3, to = 4, Array#{1, 2} @ rc);
+        let a = Array.replace(rc, src = 3, dst =  4, Array#{1, 2} @ rc);
         Array.sameElements(a, Array#{1,2} @ rc)
     }
 
     @test
     def replace06(): Bool = region rc {
-        let a = Array.replace(rc, from = 3, to = 4, Array#{1,3} @ rc);
+        let a = Array.replace(rc, src = 3, dst =  4, Array#{1,3} @ rc);
         Array.sameElements(a, Array#{1,4} @ rc)
     }
 
     @test
     def replace07(): Bool = region rc {
-        let a = Array.replace(rc, from = 3, to = 4, Array#{3,4} @ rc);
+        let a = Array.replace(rc, src = 3, dst =  4, Array#{3,4} @ rc);
         Array.sameElements(a, Array#{4,4} @ rc)
     }
 
     @test
     def replace08(): Bool = region rc {
-        let a = Array.replace(rc, from = 3, to = 4, Array#{3,3} @ rc);
+        let a = Array.replace(rc, src = 3, dst =  4, Array#{3,3} @ rc);
         Array.sameElements(a, Array#{4,4} @ rc)
     }
 
@@ -1480,56 +1480,56 @@ mod TestArray {
     @test
     def replace01!(): Bool = region rc {
         let a: Array[Int32, _] = Array#{} @ rc;
-        Array.replace!(from = 3, to = 4, a);
+        Array.replace!(src = 3, dst =  4, a);
         Array.sameElements(a, ((Array#{} @ rc): Array[Int32, _]))
     }
 
     @test
     def replace02!(): Bool = region rc {
         let a = Array#{1} @ rc;
-        Array.replace!(from = 3, to = 4, a);
+        Array.replace!(src = 3, dst =  4, a);
         Array.sameElements(a, Array#{1} @ rc)
     }
 
     @test
     def replace03!(): Bool = region rc {
         let a = Array#{3} @ rc;
-        Array.replace!(from = 3, to = 4, a);
+        Array.replace!(src = 3, dst =  4, a);
         Array.sameElements(a, Array#{4} @ rc)
     }
 
     @test
     def replace04!(): Bool = region rc {
         let a = Array#{4} @ rc;
-        Array.replace!(from = 3, to = 4, a);
+        Array.replace!(src = 3, dst =  4, a);
         Array.sameElements(a, Array#{4} @ rc)
     }
 
     @test
     def replace05!(): Bool = region rc {
         let a = Array#{1, 2} @ rc;
-        Array.replace!(from = 3, to = 4, a);
+        Array.replace!(src = 3, dst =  4, a);
         Array.sameElements(a, Array#{1,2} @ rc)
     }
 
     @test
     def replace06!(): Bool = region rc {
         let a = Array#{1,3} @ rc;
-        Array.replace!(from = 3, to = 4, a);
+        Array.replace!(src = 3, dst =  4, a);
         Array.sameElements(a, Array#{1,4} @ rc)
     }
 
     @test
     def replace07!(): Bool = region rc {
         let a = Array#{3,4} @ rc;
-        Array.replace!(from = 3, to = 4, a);
+        Array.replace!(src = 3, dst =  4, a);
         Array.sameElements(a, Array#{4,4} @ rc)
     }
 
     @test
     def replace08!(): Bool = region rc {
         let a = Array#{3,3} @ rc;
-        Array.replace!(from = 3, to = 4, a);
+        Array.replace!(src = 3, dst =  4, a);
         Array.sameElements(a, Array#{4,4} @ rc)
     }
 

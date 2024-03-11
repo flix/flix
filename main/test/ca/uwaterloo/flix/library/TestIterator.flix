@@ -588,49 +588,49 @@ mod TestIterator {
     @test
     def replace01(): Bool = region rc {
         List.iterator(rc, Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == Nil
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == Nil
     }
 
     @test
     def replace02(): Bool = region rc {
         List.iterator(rc, 1 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: Nil
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 1 :: Nil
     }
 
     @test
     def replace03(): Bool = region rc {
         List.iterator(rc, 3 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: Nil
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 4 :: Nil
     }
 
     @test
     def replace04(): Bool = region rc {
         List.iterator(rc, 4 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: Nil
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 4 :: Nil
     }
 
     @test
     def replace05(): Bool = region rc {
         List.iterator(rc, 1 :: 2 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: 2 :: Nil
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 1 :: 2 :: Nil
     }
 
     @test
     def replace06(): Bool = region rc {
         List.iterator(rc, 1 :: 3 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 1 :: 4 :: Nil
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 1 :: 4 :: Nil
     }
 
     @test
     def replace07(): Bool = region rc {
         List.iterator(rc, 3 :: 4 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: 4 :: Nil
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 4 :: 4 :: Nil
     }
 
     @test
     def replace08(): Bool = region rc {
         List.iterator(rc, 3 :: 3 :: Nil) |>
-            Iterator.replace(from = 3, to = 4) |> Iterator.toList == 4 :: 4 :: Nil
+            Iterator.replace(src =  3, dst =  4) |> Iterator.toList == 4 :: 4 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////
