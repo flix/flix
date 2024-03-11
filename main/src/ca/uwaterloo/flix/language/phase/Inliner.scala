@@ -464,10 +464,10 @@ object Inliner {
     * Performs boolean folding on a given unary expression with the logic:
     * Folds not-true => false and not-false => true.
     */
-  private def unaryFold(sop: SemanticOp, e: LiftedAst.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation): LiftedAst.Expr = {
+  private def unaryFold(sop: SemanticOp.UnaryOp, e: LiftedAst.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation): LiftedAst.Expr = {
     (sop, e) match {
       case (SemanticOp.BoolOp.Not, LiftedAst.Expr.Cst(Ast.Constant.Bool(b), _, _)) => LiftedAst.Expr.Cst(Ast.Constant.Bool(!b), tpe, loc)
-      case _ => LiftedAst.Expr.ApplyAtomic(AtomicOp.Unary(SemanticOp.BoolOp.Not), List(e), tpe, purity, loc)
+      case _ => LiftedAst.Expr.ApplyAtomic(AtomicOp.Unary(sop), List(e), tpe, purity, loc)
     }
   }
 
