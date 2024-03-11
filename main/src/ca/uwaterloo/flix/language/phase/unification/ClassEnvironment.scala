@@ -18,9 +18,8 @@ package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.ClassContext
-import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, Symbol, Type}
+import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Symbol, Type}
 import ca.uwaterloo.flix.util.{Result, Validation}
-import ca.uwaterloo.flix.util.collection.ListMap
 
 import scala.annotation.tailrec
 
@@ -110,34 +109,36 @@ object ClassEnvironment {
   /**
     * Returns the list of constraints that hold if the given constraint `tconstr` holds, using the constraints on available instances.
     */
-  private def byInst(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = {
-    val matchingInstances = classEnv.get(tconstr.head.sym).map(_.instances).getOrElse(Nil)
-    val tconstrSc = Scheme.generalize(Nil, Nil, tconstr.arg, RigidityEnv.empty) // TODO ASSOC-TYPES Nil right?
+  private def byInst(tconstr: Ast.TypeConstraint, classEnv: Map[Symbol.ClassSym, Ast.ClassContext])(implicit flix: Flix): Validation[List[Ast.TypeConstraint], UnificationError] = tconstr match {
+    case Ast.TypeConstraint(head, arg, loc) =>
+      val matchingInstances = classEnv.get(head.sym).map(_.instances).getOrElse(Nil)
 
-    def tryInst(inst: Ast.Instance): Validation[List[Ast.TypeConstraint], UnificationError] = {
-      val instSc = Scheme.generalize(Nil, Nil, inst.tpe, RigidityEnv.empty) // TODO ASSOC-TYPES Nil right?
+      val renv = RigidityEnv.ofRigidVars(arg.typeVars.map(_.sym))
 
-      // NB: This is different from the THIH implementation.
-      // We also check `leq` instead of just `unifies` in order to support complex types in instances.
-      val substVal = Scheme.checkLessThanEqual(instSc, tconstrSc, Map.empty, ListMap.empty) // TODO ASSOC-TYPES ListMap.empty right?
-      Validation.mapN(substVal)(subst => inst.tconstrs.map(subst(_)))
-    }
+      def tryInst(inst: Ast.Instance): Validation[List[Ast.TypeConstraint], UnificationError] = {
+        val substVal = Unification.unifyTypes(inst.tpe, arg, renv).toValidation
+        Validation.flatMapN(substVal) {
+          case (subst, Nil) => Validation.success(inst.tconstrs.map(subst.apply))
+          // if there are leftover constraints, then we can't be sure that this is the right instance
+          case (_, _ :: _) => Validation.toHardFailure(UnificationError.MismatchedTypes(inst.tpe, arg))
+        }
+      }
 
-    val tconstrGroups = matchingInstances.map(tryInst).map(_.toHardResult).collect {
-      case Result.Ok(tconstrs) => tconstrs
-    }
+      val tconstrGroups = matchingInstances.map(tryInst).map(_.toHardResult).collect {
+        case Result.Ok(tconstrs) => tconstrs
+      }
 
-    tconstrGroups match {
-      case Nil => Validation.toHardFailure(UnificationError.NoMatchingInstance(tconstr))
-      case tconstrs :: Nil =>
-        // apply the base tconstr location to the new tconstrs
-        Validation.success(tconstrs.map(_.copy(loc = tconstr.loc)))
-      case _ :: _ :: _ =>
-        // Multiple matching instances: This will be caught in the Instances phase.
-        // We return Nil here because there is no canonical set of constraints,
-        // so we stop adding constraints and let the later phase take care of it.
-        Validation.success(Nil)
-    }
+      tconstrGroups match {
+        case Nil => Validation.toHardFailure(UnificationError.NoMatchingInstance(tconstr))
+        case tconstrs :: Nil =>
+          // apply the base tconstr location to the new tconstrs
+          Validation.success(tconstrs.map(_.copy(loc = tconstr.loc)))
+        case _ :: _ :: _ =>
+          // Multiple matching instances: This will be caught in the Instances phase.
+          // We return Nil here because there is no canonical set of constraints,
+          // so we stop adding constraints and let the later phase take care of it.
+          Validation.success(Nil)
+      }
   }
 
   /**

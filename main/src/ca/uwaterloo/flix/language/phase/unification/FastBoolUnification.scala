@@ -175,7 +175,7 @@ object FastBoolUnification {
       debugln("--- Phase 1: Constant Propagation")
       debugln("    (resolves all equations of the form: x = c where x is a var and c is const)")
       debugln("-".repeat(80))
-      val s = propagateConstants(currentEqns, currentSubst)
+      val s = propagateConstants(currentEqns)
       updateState(s)
       printEquations()
       printSubstitution()
@@ -187,7 +187,7 @@ object FastBoolUnification {
       debugln("--- Phase 2: Variable Propagation")
       debugln("    (resolves all equations of the form: x = y where x and y are vars)")
       debugln("-".repeat(80))
-      val s = propagateVars(currentEqns, currentSubst)
+      val s = propagateVars(currentEqns)
       updateState(s)
       printEquations()
       printSubstitution()
@@ -199,7 +199,7 @@ object FastBoolUnification {
       debugln("--- Phase 3: Variable Assignment")
       debugln("    (resolves all equations of the form: x = t where x is free in t)")
       debugln("-".repeat(80))
-      val s = varAssignment(currentEqns, currentSubst)
+      val s = varAssignment(currentEqns)
       updateState(s)
       printEquations()
       printSubstitution()
@@ -212,8 +212,7 @@ object FastBoolUnification {
       debugln("    (resolves all remaining equations using SVE.)")
       debugln("-".repeat(80))
       val newSubst = boolUnifyAllPickSmallest(currentEqns)
-      currentEqns = Nil
-      currentSubst = newSubst @@ currentSubst
+      updateState(Nil, newSubst) // Note: We pass Nil because SVE will have solved all equations.
       printSubstitution()
       debugln()
     }
@@ -226,7 +225,7 @@ object FastBoolUnification {
     private def updateState(l: (List[Equation], BoolSubstitution)): Unit = {
       val (nextEqns, nextSubst) = l
       currentEqns = checkAndSimplify(nextEqns)
-      currentSubst = nextSubst
+      currentSubst = nextSubst @@ currentSubst
     }
 
     /**
@@ -379,9 +378,9 @@ object FastBoolUnification {
     * Note: We use `subst.extended` to check for conflicts. For example, if we already know that `s = [x -> c17]` and we
     * learn that `x -> true` then we will try to extend s with the new binding which will raise a [[ConflictException]].
     */
-  private def propagateConstants(l: List[Equation], s: BoolSubstitution): (List[Equation], BoolSubstitution) = {
+  private def propagateConstants(l: List[Equation]): (List[Equation], BoolSubstitution) = {
     var pending = l
-    var subst = s
+    var subst = BoolSubstitution.empty
 
     // We iterate until no changes are detected.
     var changed = true
@@ -456,9 +455,9 @@ object FastBoolUnification {
     *
     * Returns a list of unsolved equations and a partial substitution.
     */
-  private def propagateVars(l: List[Equation], s: BoolSubstitution): (List[Equation], BoolSubstitution) = {
+  private def propagateVars(l: List[Equation]): (List[Equation], BoolSubstitution) = {
     var pending = l
-    var subst = s
+    var subst = BoolSubstitution.empty
 
     var unsolved: List[Equation] = Nil
 
@@ -520,9 +519,9 @@ object FastBoolUnification {
     *     (c1498 ∧ c1500 ∧ c1501) ~ (x127248 ∧ x127244 ∧ x127254 ∧ x127252 ∧ x127249 ∧ x127247)
     * }}}
     */
-  private def varAssignment(l: List[Equation], subst0: BoolSubstitution): (List[Equation], BoolSubstitution) = {
-    var subst = subst0
+  private def varAssignment(l: List[Equation]): (List[Equation], BoolSubstitution) = {
     var pending = l
+    var subst = BoolSubstitution.empty
 
     var unsolved: List[Equation] = Nil
 
