@@ -177,12 +177,13 @@ object TypeInference {
                   } else {
                     // Case 3: instance error
                     return Validation.sequence(instanceErrs.map(Validation.toHardFailure))
+                  }
               }
 
               // create a new substitution combining the econstr substitution and the base type substitution
               Validation.success((eqSubst @@ subst0))
 
-                case Err(e) => Validation.toHardFailure(Chain(e))
+            case Err(e) => Validation.toHardFailure(Chain(e))
           }
       }
   }
@@ -1068,7 +1069,7 @@ object TypeInference {
               _ <- traverseM(fparams)(inferParam)
               (constrs, bodyTpe, bodyEff) <- visitExp(exp)
               _ <- expectTypeM(expected = returnTpe, actual = bodyTpe, exp.loc)
-              _ <- expectEffectM(expected = eff , actual = bodyEff, exp.loc)
+              _ <- expectEffectM(expected = eff, actual = bodyEff, exp.loc)
             } yield (constrs, returnTpe, bodyEff)
         }
 
