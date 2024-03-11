@@ -835,9 +835,9 @@ mod Seq {
     /// Returns an iterator over `l`.
     ///
     pub def iterator(rc: Region[r], xs: Seq[s][a]): Iterator[a, r, r] \ r =
-        let ls = Ref.fresh(rc, open_variant_as Seq xs);
+        let ls = ref open_variant_as Seq xs @ rc;
         let next = () -> {
-            choose (Ref.get(ls)) {
+            choose (deref ls) {
                 case Seq.Nil            => None
                 case Seq.One(x)         => Ref.put(open_variant Seq.Nil, ls); Some(x)
                 case Seq.Cons(x, rs)    => Ref.put(rs, ls); Some(x)
