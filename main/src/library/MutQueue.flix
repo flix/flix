@@ -37,12 +37,12 @@ mod MutQueue {
         let sb = StringBuilder.empty(reg);
         StringBuilder.appendString!("MutQueue {", sb);
         Array.forEachWithIndex((i, x) -> {
-            if (i < deref s) {
+            if (i < Ref.get(s)) {
                 if (i == 0) StringBuilder.appendString!("${x}", sb)
                 else        StringBuilder.appendString!(", ${x}", sb)
             }
             else ()
-        }, deref arr);
+        }, Ref.get(arr));
         StringBuilder.appendString!("}", sb);
         StringBuilder.toString(sb)
     }
@@ -81,9 +81,9 @@ mod MutQueue {
     pub def enqueue(mq: MutQueue[a, r], x: a): Unit \ r with Order[a] = {
         let MutQueue(_, arr, s) = mq;
         expand(mq);
-        Array.put(x, deref s, deref arr);
-        heapifyUp(deref s, mq);
-        s := deref s + 1
+        Array.put(x, Ref.get(s), Ref.get(arr));
+        heapifyUp(Ref.get(s), mq);
+        Ref.put(Ref.get(s) + 1, s)
     }
 
     ///
@@ -91,11 +91,11 @@ mod MutQueue {
     ///
     pub def dequeue(mq: MutQueue[a, r]): Option[a] \ r with Order[a] =
         let MutQueue(_, arr, s) = mq;
-        if (deref s > 0) {
+        if (Ref.get(s) > 0) {
             let top = peek(mq);
-            Array.put(Array.get(deref s - 1, deref arr), 0, deref arr);
+            Array.put(Array.get(Ref.get(s) - 1, Ref.get(arr)), 0, Ref.get(arr));
             heapifyDown(0, mq);
-            s := deref s - 1;
+            Ref.put(Ref.get(s) - 1, s);
             top
         }
         else None
@@ -203,12 +203,12 @@ mod MutQueue {
     ///
     def expand(mq: MutQueue[a, r]): Unit \ r =
         let MutQueue(reg, arr, s) = mq;
-        let oldCapacity = Array.length(deref arr);
-        if (oldCapacity == deref s) {
+        let oldCapacity = Array.length(Ref.get(arr));
+        if (oldCapacity == Ref.get(s)) {
             let newCapacity = 2 + (oldCapacity * 2);
             let newArr  = Array.empty(reg, newCapacity);
-            Array.forEachWithIndex((idx, x) -> Array.put(x, idx, newArr), deref arr);
-            arr := newArr
+            Array.forEachWithIndex((idx, x) -> Array.put(x, idx, newArr), Ref.get(arr));
+            Ref.put(newArr, arr)
         }
         else ()
 
