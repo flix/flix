@@ -22,7 +22,7 @@ mod TestRef {
 
     @test
     def to01(): Ref[Int32, Static] \ IO =
-        Ref.to(Static, 1)
+        Ref.fresh(Static, 1)
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -31,22 +31,22 @@ mod TestRef {
 
     @test
     def get01(): Bool = region rc {
-        Assert.eq(1, Ref.get(Ref.to(rc, 1)))
+        Assert.eq(1, Ref.get(Ref.fresh(rc, 1)))
     }
 
     @test
     def get02(): Bool = region rc {
-        Assert.eq("a", Ref.get(Ref.to(rc, "a")))
+        Assert.eq("a", Ref.get(Ref.fresh(rc, "a")))
     }
 
     @test
     def get03(): Bool = region rc {
-        Ref.get(Ref.to(rc, "A")) != "b"
+        Ref.get(Ref.fresh(rc, "A")) != "b"
     }
 
     @test
     def get04(): Bool = region rc {
-        Assert.eq("A", Ref.get(Ref.get(Ref.to(rc, Ref.to(rc, "A")))))
+        Assert.eq("A", Ref.get(Ref.get(Ref.fresh(rc, Ref.fresh(rc, "A")))))
     }
 
 
@@ -56,22 +56,22 @@ mod TestRef {
 
     @test
     def put01(): Bool = region rc {
-        let rf = Ref.to(rc, 1);
+        let rf = Ref.fresh(rc, 1);
         Ref.put(2, rf);
         Assert.eq(2, Ref.get(rf))
     }
 
     @test
     def put02(): Bool = region rc {
-        let rf = Ref.to(rc, "a");
+        let rf = Ref.fresh(rc, "a");
         Ref.put("A", rf);
         Assert.eq("A", Ref.get(rf))
     }
 
     @test
     def put03(): Bool = region rc {
-        let rf = Ref.to(rc, Ref.to(rc, "a"));
-        Ref.put(Ref.to(rc, "A"), rf);
+        let rf = Ref.fresh(rc, Ref.fresh(rc, "a"));
+        Ref.put(Ref.fresh(rc, "A"), rf);
         Assert.eq("A", Ref.get(Ref.get(rf)))
     }
 
@@ -82,21 +82,21 @@ mod TestRef {
 
     @test
     def transform01(): Bool = region rc {
-        let rf = Ref.to(rc, 1);
+        let rf = Ref.fresh(rc, 1);
         Ref.transform(x -> x + 1, rf);
         Assert.eq(2, Ref.get(rf))
     }
 
     @test
     def transform02(): Bool = region rc {
-        let rf = Ref.to(rc, "a");
+        let rf = Ref.fresh(rc, "a");
         Ref.transform(_ -> "A", rf);
         Assert.eq("A", Ref.get(rf))
     }
 
     @test
     def transform03(): Bool = region rc {
-        let rf = Ref.to(rc, Ref.to(rc, "a"));
+        let rf = Ref.fresh(rc, Ref.fresh(rc, "a"));
         Ref.transform(rf1 -> { Ref.transform(_ -> "A", rf1) ; rf1 }, rf);
         Assert.eq("A", Ref.get(Ref.get(rf)))
     }
