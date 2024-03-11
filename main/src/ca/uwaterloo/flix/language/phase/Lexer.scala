@@ -65,7 +65,7 @@ object Lexer {
   /**
    * Since Flix support hex decimals, a 'digit' can also be some select characters.
    */
-  private val DIGITS = List('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'a', 'b', 'c', 'd', 'e', 'f')
+  private def isDigit(c: Char): Boolean = '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
 
   /**
    * The internal state of the lexer as it tokenizes a single source.
@@ -334,8 +334,14 @@ object Lexer {
       case '_' =>
         val p = peek()
         if (p.isLetterOrDigit) acceptName(p.isUpper)
-        else if (isMathNameChar(p)) { advance(); acceptMathName() }
-        else if (ValidUserOpTokens.contains(p)) { advance(); acceptUserDefinedOp() }
+        else if (isMathNameChar(p)) {
+          advance();
+          acceptMathName()
+        }
+        else if (ValidUserOpTokens.contains(p)) {
+          advance();
+          acceptUserDefinedOp()
+        }
         else TokenKind.Underscore
       case '\\' => TokenKind.Backslash
       case '$' if peek().isUpper => acceptBuiltIn()
@@ -474,7 +480,7 @@ object Lexer {
       case _ if isMathNameChar(c) => acceptMathName()
       case _ if isGreekNameChar(c) => acceptGreekName()
       case c if c.isLetter => acceptName(c.isUpper)
-      case c if DIGITS.contains(c) => acceptNumber()
+      case c if isDigit(c) => acceptNumber()
       // User defined operators.
       case _ if ValidUserOpTokens.contains(c) =>
         val p = peek()
@@ -489,13 +495,11 @@ object Lexer {
 
   /**
    * Check that the potential keyword is sufficiently separated, taking care not to go out-of-bounds.
-   * A keyword is separated if it is surrounded by whitespace, parenthesis, brackets or curlies.
+   * A keyword is separated if it is surrounded by anything __but__ a character, digit or underscore.
    * Note that __comparison includes current__.
    */
   private def isSeparated(keyword: String)(implicit s: State): Boolean = {
-    // TODO: We can be smarter!
-    val VALID_SEPARATORS =  List('(', ')', '[', ']', '{', '}', ',', ';', '~', '+', '-')
-    def isSep(c: Char) = c.isWhitespace || VALID_SEPARATORS.contains(c)
+    def isSep(c: Char) = !(c.isWhitespace || c.isLetter || c.isDigit || c == '_')
     s.src.data.lift(s.current.offset - 2).forall(isSep) && s.src.data.lift(s.current.offset + keyword.length - 1).forall(isSep)
   }
 
