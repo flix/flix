@@ -657,7 +657,7 @@ mod DelayList {
     @Experimental
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, l: DelayList[a]): Unit \ ef = region rc {
         let ix = ref 0 @ rc;
-        let f1 = x -> { let i = Ref.get(ix); f(i, x); Ref.put(i + 1, ix) };
+        let f1 = x -> { let i = deref ix; f(i, x); Ref.put(i + 1, ix) };
         forEach(f1, l)
     }
 
@@ -1194,7 +1194,7 @@ mod DelayList {
         let next = () -> match head(deref cursor) {
             case None    => None
             case Some(x) =>
-                Ref.put(tail(Ref.get(cursor)), cursor);
+                Ref.put(tail(deref cursor), cursor);
                 Some(x)
         };
         Iterator.iterate(rc, next)
