@@ -766,7 +766,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     val buildResult = buildPkg()
     buildResult.toHardResult match {
       case Result.Ok(_) => // Continue
-      case Result.Err(e) => return Validation.HardFailure(e)
+      case Result.Err(e) => return Validation.toHardFailure(e)
     }
 
     // Publish to GitHub
