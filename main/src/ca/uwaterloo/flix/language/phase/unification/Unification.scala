@@ -48,7 +48,7 @@ object Unification {
     */
   def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
 
-    Level.equalizeR(x.sym, tpe, renv)
+    Level.equalizeR(x, tpe, renv)
 
     tpe match {
 
