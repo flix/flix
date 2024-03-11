@@ -1888,7 +1888,7 @@ def unfoldWithIter01(): Bool = region rc {
         else {
             let k = deref x;
             let v = k + 48;
-            Ref.put(Ref.get(x) + 1, x);
+            Ref.put(deref x + 1, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{}
@@ -1903,7 +1903,7 @@ def unfoldWithIter02(): Bool = region rc {
         else {
             let k = deref x;
             let v = k + 48;
-            Ref.put(Ref.get(x) + 1, x);
+            Ref.put(deref x + 1, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{0 => 48}
@@ -1918,7 +1918,7 @@ def unfoldWithIter03(): Bool = region rc {
         else {
             let k = deref x;
             let v = k + 48;
-            Ref.put(Ref.get(x) + 1, x);
+            Ref.put(deref x + 1, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{0 => 48, 1 => 49}
@@ -1933,7 +1933,7 @@ def unfoldWithIter04(): Bool = region rc {
         else {
             let k = deref x;
             let v = k + 48;
-            Ref.put(Ref.get(x) + 1, x);
+            Ref.put(deref x + 1, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{0 => 48, 1 => 49, 2 => 50, 3 => 51, 4 => 52, 5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
@@ -1948,7 +1948,7 @@ def unfoldWithIter05(): Bool = region rc {
         else {
             let k = deref x;
             let v = k + 48;
-            Ref.put(Ref.get(x) + 1, x);
+            Ref.put(deref x + 1, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
@@ -1963,7 +1963,7 @@ def unfoldWithIter06(): Bool = region rc {
         else {
             let k = deref x;
             let v = k + 48;
-            Ref.put(Ref.get(x) + 2, x);
+            Ref.put(deref x + 2, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{0 => 48, 2 => 50, 4 => 52, 6 => 54, 8 => 56}
