@@ -6,7 +6,7 @@
 
 **Flix** is a statically typed functional, imperative, and logic programming language.
 
-We refer you to the [official Flix website (flix.dev)](https://flix.dev/) for more information about Flix.
+We refer you to the [official Flix website (flix.dev)](https://flix.dev/) for more information about Flix. 
 
 [![Gitter](https://badges.gitter.im/gitterHQ/gitter.svg)](https://gitter.im/flix/Lobby)
 
@@ -27,7 +27,7 @@ Flix is available under the Apache 2.0 license.
 
 ## Sponsors
 
-We kindly thank [EJ Technologies](https://www.ej-technologies.com/) for providing us with
+We kindly thank [EJ Technologies](https://www.ej-technologies.com/) for providing us with 
 [JProfiler](http://www.ej-technologies.com/products/jprofiler/overview.html)
-and [JetBrains](https://www.jetbrains.com/) for providing us with
+and [JetBrains](https://www.jetbrains.com/) for providing us with 
 [IntelliJ IDEA](https://www.jetbrains.com/idea/).
