@@ -193,7 +193,7 @@ object Validation {
   /**
     * Represents a failure with no value and `errors`.
     */
-  case class HardFailure[T, E](errors: Chain[E]) extends Validation[T, E]
+  private case class HardFailure[T, E](errors: Chain[E]) extends Validation[T, E]
 
   /**
     * Sequences the given list of validations `xs`.
