@@ -54,9 +54,9 @@ def main(): Unit \ IO = region rc {
     /// expression in the foreach loop must be
     /// of type unit.
     ///
-    let z = Ref.fresh(rc, Nil);
+    let z = ref Nil @ rc;
     foreach (x <- l)
-        Ref.put(x :: Ref.get(z), z);
+        Ref.put(x :: deref z, z);
 
     ///
     /// The loop above is actually equivalent to
@@ -65,20 +65,20 @@ def main(): Unit \ IO = region rc {
     /// However, foreach-loops can be much easier
     /// to read than `foreach` function calls.
     ///
-    let q = Ref.fresh(rc, Nil);
+    let q = ref Nil @ rc;
     List.iterator(rc, l) |>
-    Iterator.forEach(match x -> Ref.put(x :: Ref.get(q), q));
+    Iterator.forEach(match x -> Ref.put(x :: deref q, q));
 
     ///
     /// This is true in particular for nested
     /// foreach-loops.
     ///
     let k = 4 :: 5 :: 6 :: Nil;
-    let w = Ref.fresh(rc, Nil);
+    let w = ref Nil @ rc;
     foreach (a <- l) {
-        Ref.put(a :: Ref.get(w), w);
+        Ref.put(a :: deref w, w);
         foreach (b <- k)
-            Ref.put(b :: Ref.get(w), w)
+            Ref.put(b :: deref w, w)
     };
 
     ///
@@ -86,12 +86,12 @@ def main(): Unit \ IO = region rc {
     /// to the functional style expression
     /// below.
     ///
-    let v = Ref.fresh(rc, Nil);
+    let v = ref Nil @ rc;
     List.iterator(rc, l) |>
     Iterator.forEach(match a -> {
-        Ref.put(a :: Ref.get(v), v);
+        Ref.put(a :: deref v, v);
         List.iterator(rc, k) |>
-        Iterator.forEach(match b -> Ref.put(b :: Ref.get(v), v))
+        Iterator.forEach(match b -> Ref.put(b :: deref v, v))
     });
 
     ///
@@ -104,20 +104,20 @@ def main(): Unit \ IO = region rc {
     /// This may be familiar to you if you have
     /// some experience with Scala's for-loops.
     ///
-    let e = Ref.fresh(rc, Nil);
+    let e = ref Nil @ rc;
     foreach (a <- l;
              b <- k)
-                Ref.put((a, b) :: Ref.get(e), e);
+                Ref.put((a, b) :: deref e, e);
 
     ///
     /// The equivalent functional style expression
     /// has a bit more visual noise.
     ///
-    let e1 = Ref.fresh(rc, Nil);
+    let e1 = ref Nil @ rc;
     List.iterator(rc, l) |>
     Iterator.forEach(match a -> {
         List.iterator(rc, k) |>
-        Iterator.forEach(match b -> Ref.put((a, b) :: Ref.get(e1), e1))
+        Iterator.forEach(match b -> Ref.put((a, b) :: deref e1, e1))
     });
 
     ///
@@ -134,22 +134,22 @@ def main(): Unit \ IO = region rc {
     /// Again, this is similar to Scala's
     /// for-loops.
     ///
-    let c = Ref.fresh(rc, Nil);
+    let c = ref Nil @ rc;
     foreach (a <- l;
              if a > 1;
              b <- k;
              if b < 6)
-                Ref.put((a, b) :: Ref.get(c), c);
+                Ref.put((a, b) :: deref c, c);
 
     ///
     /// Alternatively, we can put a single guard
     /// at the end of the parenthesis.
     ///
-    let d = Ref.fresh(rc, Nil);
+    let d = ref Nil @ rc;
     foreach (a <- l;
              b <- k;
              if a > 1 and b < 6)
-                Ref.put((a, b) :: Ref.get(d), d);
+                Ref.put((a, b) :: deref d, d);
 
     ///
     /// Here's the equivalent functional expression
@@ -167,12 +167,12 @@ def main(): Unit \ IO = region rc {
     /// the same parenthesis, match on the exact pattern
     /// and include guards.
     ///
-    let cf = Ref.fresh(rc, Nil);
+    let cf = ref Nil @ rc;
     List.iterator(rc, l) |>
     Iterator.forEach(match a -> {
         List.iterator(rc, k) |>
         Iterator.forEach(match b -> {
-            if (a > 1 and b < 6) Ref.put((a, b) :: Ref.get(cf), cf) else ()
+            if (a > 1 and b < 6) Ref.put((a, b) :: deref cf, cf) else ()
         })
     });
 
