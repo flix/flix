@@ -24,7 +24,7 @@ mod TestArray {
 
     @test
     def toString01(): Bool = region rc {
-        Array.toString((Array#{} @ rc): Array[Int32, _]) == "Array#{}"
+        Array.toString((Array#{} @ rc: Array[Int32, _])) == "Array#{}"
     }
 
     @test
@@ -190,7 +190,7 @@ mod TestArray {
 
     @test
     def testToList01(): Bool = region rc {
-        Array.toList((Array#{} @ rc): Array[Unit, _]) == Nil
+        Array.toList((Array#{} @ rc: Array[Unit, _])) == Nil
     }
 
     @test
@@ -209,7 +209,7 @@ mod TestArray {
 
     @test
     def toNel01(): Bool = region rc {
-        Array.toNel((Array#{} @ rc): Array[Unit, _]) == None
+        Array.toNel((Array#{} @ rc: Array[Unit, _])) == None
     }
 
     @test
@@ -233,9 +233,8 @@ mod TestArray {
 
     @test
     def toMutDeque01(): Bool = region rc {
-        let a = ((Array#{} @ rc): Array[Int32, _]);
+        let a = (Array#{} @ rc: Array[Int32, _]);
         let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
-
         Array.toMutDeque(rc, a) `MutDeque.sameElements` d
     }
 
@@ -293,17 +292,17 @@ mod TestArray {
 
     @test
     def toVector01(): Bool = region rc {
-        Array.toVector((Array#{} @ rc) : Array[Int32, _]) `Vector.equals` Vector.empty()
+        Array.toVector((Array#{} @ rc : Array[Int32, _])) `Vector.equals` Vector.empty()
     }
 
     @test
     def toVector02(): Bool = region rc {
-        Array.toVector((Array#{0} @ rc) : Array[Int32, _]) `Vector.equals` Vector.singleton(0)
+        Array.toVector((Array#{0} @ rc : Array[Int32, _])) `Vector.equals` Vector.singleton(0)
     }
 
     @test
     def toVector03(): Bool = region rc {
-        Array.toVector((Array#{1, 2, 3} @ rc) : Array[Int32, _]) `Vector.equals` List.toVector(1 :: 2 :: 3 :: Nil)
+        Array.toVector((Array#{1, 2, 3} @ rc : Array[Int32, _])) `Vector.equals` List.toVector(1 :: 2 :: 3 :: Nil)
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -312,7 +311,7 @@ mod TestArray {
 
     @test
     def head01(): Bool = region rc {
-        Array.head(((Array#{} @ rc): Array[Int32, _])) == None
+        Array.head((Array#{} @ rc: Array[Int32, _])) == None
     }
 
     @test
@@ -2471,7 +2470,7 @@ mod TestArray {
 
     @test
     def fold01(): Bool = region rc {
-        Array.fold(((Array#{} @ rc): Array[Unit, _])) == ()
+        Array.fold(((Array#{} @ rc: Array[Unit, _]))) == ()
     }
 
     @test
@@ -4497,8 +4496,8 @@ mod TestArray {
 
     @test
     def sameElements02(): Bool = region rc {
-        let a = (Array#{1} @ rc): Array[Int32, _];
-        let b = ((Array#{} @ rc): Array[Int32, _]);
+        let a = (Array#{1} @ rc: Array[Int32, _]);
+        let b = (Array#{} @ rc: Array[Int32, _]);
         Array.sameElements(a,b) == false
     }
 
@@ -5554,7 +5553,7 @@ mod TestArray {
 
     @test
     def toDelayList01(): Bool = region rc {
-        ((Array#{} @ rc): Array[Unit, _]) |> Array.toDelayList == DelayList.empty()
+        ((Array#{} @ rc: Array[Unit, _])) |> Array.toDelayList == DelayList.empty()
     }
 
     @test
@@ -5578,7 +5577,7 @@ mod TestArray {
 
     @test
     def toChain01(): Bool = region rc {
-        Array.toChain(((Array#{} @ rc): Array[Unit, _])) == (Chain.empty(): Chain[Unit])
+        Array.toChain(((Array#{} @ rc: Array[Unit, _]))) == (Chain.empty(): Chain[Unit])
     }
 
     @test
@@ -5602,7 +5601,7 @@ mod TestArray {
 
     @test
     def toNec01(): Bool = region rc {
-        Array.toNec(((Array#{} @ rc): Array[Unit, _])) == None
+        Array.toNec(((Array#{} @ rc: Array[Unit, _]))) == None
     }
 
     @test

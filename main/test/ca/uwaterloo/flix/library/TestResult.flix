@@ -111,10 +111,10 @@ mod TestResult {
     def replace02(): Bool = (Result.replace(from = 3, to = 4, (Ok(2): Result[Unit, Int32]))) == Ok(2)
 
     @test
-    def replace03(): Bool = (Result.replace(from = 3, to = 4, (Ok(3)): Result[Unit, Int32])) == Ok(4)
+    def replace03(): Bool = (Result.replace(from = 3, to = 4, (Ok(3): Result[Unit, Int32]))) == Ok(4)
 
     @test
-    def replace04(): Bool = (Result.replace(from = 3, to = 4, (Ok(4)): Result[Unit, Int32])) == Ok(4)
+    def replace04(): Bool = (Result.replace(from = 3, to = 4, (Ok(4): Result[Unit, Int32]))) == Ok(4)
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
