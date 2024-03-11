@@ -135,12 +135,12 @@ mod Vector {
     ///
     pub def toString(v: Vector[a]): String with ToString[a] = region rc {
         let sb = StringBuilder.empty(rc);
-        let first = Ref.fresh(rc, true);
+        let first = ref true @ rc;
 
         StringBuilder.appendString!("Vector#{", sb);
 
         let f = x -> {
-            if (not Ref.get(first)) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
+            if (not deref first) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
             StringBuilder.appendString!("${x}", sb)
         };
         forEach(f, v);
@@ -437,10 +437,10 @@ mod Vector {
     ///
     pub def scanLeft(f: (b, a) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
         let arr = Array.empty(rc, length(v) + 1);
-        let acc = Ref.fresh(rc, s);
+        let acc = ref s @ rc;
         Array.put(s, 0, arr);
         let step = (i, x) -> {
-            let s1 = f(Ref.get(acc), x);
+            let s1 = f(deref acc, x);
             Ref.put(s1, acc);
             Array.put(s1, i+1, arr)
         };
@@ -456,13 +456,13 @@ mod Vector {
     pub def scanRight(f: (a, b) -> b \ ef, s: b, v: Vector[a]): Vector[b] \ ef = region rc {
         let len = length(v);
         let arr = Array.empty(rc, len + 1);
-        let acc = Ref.fresh(rc, s);
+        let acc = ref s @ rc;
         Array.put(s, len, arr);
         def loop(i) = {
             if (i < 0)
                 ()
             else {
-                let s1 = f(get(i, v), Ref.get(acc));
+                let s1 = f(get(i, v), deref acc);
                 Ref.put(s1, acc);
                 Array.put(s1, i, arr);
                 loop(i - 1)
@@ -665,14 +665,14 @@ mod Vector {
         let sepLength = length(sep);
         let sepCount = if (count < 2) 0 else count - 1;
         let len = sumLengths(vs) + (sepCount * sepLength);
-        let pos = Ref.fresh(rc, 0);
+        let pos = ref 0 @ rc;
         let arr = Array.empty(rc, len);
         let f = (i, v) -> {
             if (i == 0) {
                 arrayUpdateSeqV!(0, v, arr);
                 Ref.put(length(v), pos)
             } else {
-                let ix = Ref.get(pos);
+                let ix = deref pos;
                 arrayUpdateSeqV!(ix, sep, arr);
                 let ix1 = ix + sepLength;
                 arrayUpdateSeqV!(ix1, v, arr);
@@ -913,10 +913,10 @@ mod Vector {
     ///
     pub def flatten(vs: Vector[Vector[a]]): Vector[a] = region rc {
         let len = sumLengths(vs);
-        let pos = Ref.fresh(rc, 0);
+        let pos = ref 0 @ rc;
         let arr = Array.empty(rc, len);
         forEach(v -> {
-            let i = Ref.get(pos);
+            let i = deref pos;
             Ref.put(i + length(v), pos);
             arrayUpdateSeqV!(i, v, arr)
         }, vs);
