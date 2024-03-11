@@ -124,24 +124,31 @@ object EffUnification {
         case (_, Type.Cst(TypeConstructor.Error(_), _)) =>
           return Ok((Substitution.empty, Nil))
 
-//        case (t1@Type.Var(x, _), t2) if renv0.isFlexible(x) && !t2.typeVars.contains(t1) =>
-//          return Ok(Substitution.singleton(x, t2), Nil)
-//
-//        case (t1, t2@Type.Var(x, _)) if renv0.isFlexible(x) && !t1.typeVars.contains(t2) =>
-//          return Ok(Substitution.singleton(x, t1), Nil)
-
         case _ => // nop
       }
 
     }
 
+    //
+    // We handle associated types by:
+    // 1. replacing each associated type with a fresh rigid variable
+    // 2. performing unification
+    // 3. replacing the variables with the types they represent
+    //    - we do this by composing a substitution back to the associated types
+    //      with the substitution from unification
+    //
     // First clear any associated types from the types, temporarily replacing simple associated types with variables
     clearAssocs(tpe1, tpe2, renv0) match {
+      // Case 1: There were non-reduced associated types. Give up and defer them.
       case None => Ok((Substitution.empty, List(Ast.BroadEqualityConstraint(tpe1, tpe2))))
 
+      // Case 2: All associated types were reduced. Continue with unification.
       case Some((t1, t2, back)) =>
+
         // add the associated type marker variables to the rigidity environment
         val renv = back.keys.foldLeft(renv0)(_.markRigid(_))
+
+        // build a substitution from the variable mapping
         val backSubst = back.map {
           case (sym, (assoc, tvar)) =>
             val tpe = Type.AssocType(Ast.AssocTypeConstructor(assoc, SourceLocation.Unknown), Type.Var(tvar, SourceLocation.Unknown), sym.kind, SourceLocation.Unknown)
@@ -169,9 +176,10 @@ object EffUnification {
             // remove the temporary variables from the substitution
             val subst = backSubst.keys.foldLeft(subst1)(_.unbind(_))
             (subst, Nil)
-        }.mapErr { // TODO ASSOC-TYPES clean
-          case UnificationError.MismatchedEffects(tpe1, tpe2) =>
-            UnificationError.MismatchedEffects(Substitution(backSubst)(tpe1), Substitution(backSubst)(tpe2))
+        }.mapErr {
+          // If there is an error, apply the back-substitution to get the right types in the message.
+          case UnificationError.MismatchedEffects(eff1, eff2) =>
+            UnificationError.MismatchedEffects(Substitution(backSubst)(eff1), Substitution(backSubst)(eff2))
           case _ => throw InternalCompilerException("unexpected error", SourceLocation.Unknown)
         }
     }
@@ -179,6 +187,7 @@ object EffUnification {
 
   /**
     * Replaces all associated types with fresh type variables.
+    *
     * Returns the two types and a map from the fresh type variables to the associated types they represent.
     *
     * If any associated type is not fully reduced (i.e. is not of the form T[α] where α is rigid)
@@ -207,6 +216,7 @@ object EffUnification {
       t1 <- visit(tpe1)
       t2 <- visit(tpe2)
     } yield {
+      // build the backward map by reversing the cache
       val map = cache.map {
         case (assoc, tvar) => tvar -> assoc
       }.toMap
