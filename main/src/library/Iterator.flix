@@ -492,7 +492,7 @@ mod Iterator {
         let ix = Ref.fresh(rc, n);
         def loop() = {
             let i = Ref.get(ix);
-            Ref.get(i - 1, ix);
+            Ref.put(i - 1, ix);
             match iterF() {
                 case Ans(a)  => if (i > 0) loop() else Ans(a)
                 case Skip    => loop()
