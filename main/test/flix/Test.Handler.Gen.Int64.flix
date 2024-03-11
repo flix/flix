@@ -21,7 +21,7 @@ mod Test.Handler.Gen.Int64 {
 
     def getAndInc(r: Ref[Int64, r]): Int64 \ r =
         let i = deref r;
-        r := (i + 1i64);
+        Ref.put(i + 1i64, r);
         i
 
     def range(a: Int64, b: Int64): List[Int64] =

@@ -51,7 +51,7 @@ mod Test.Handler.Gen.String {
 
     def getAndInc(r: Ref[String, r]): String \ r =
         let c = deref r;
-        r := next(c);
+        Ref.put(next(c), r);
         c
 
     def range(a: String, b: String): List[String] =
