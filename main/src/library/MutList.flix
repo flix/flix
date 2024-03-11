@@ -363,17 +363,17 @@ mod MutList {
     /// Concatenates all the contained MutLists.
     ///
     pub def flatten(rc1: Region[r1], v: MutList[MutList[a, r], r]): MutList[a, r1] \ {r, r1}=
-        let rdestIndex = ref 0 @ rc1;
+        let rdestIndex = Ref.fresh(rc1, 0);
         let size = MutList.sumWith(MutList.length, v);
         let destArray = Array.empty(rc1, Int32.max(size, minCapacity()));
         v |> MutList.forEach(bs -> {
             let MutList(_, rb, rbl) = bs;
-            let bl = deref rbl;
-            let destIndex = deref rdestIndex;
-            Array.patch!(destIndex, bl, deref rb, destArray);
-            rdestIndex := destIndex + bl
+            let bl = Ref.get(rbl);
+            let destIndex = Ref.get(rdestIndex);
+            Array.patch!(destIndex, bl, Ref.get(rb), destArray);
+            Ref.put(destIndex + bl, rdestIndex)
          });
-         MutList(rc1, ref destArray @ rc1, ref size @ rc1)
+         MutList(rc1, Ref.fresh(rc1, destArray), Ref.fresh(rc1, size))
 
 
     ///
@@ -534,8 +534,8 @@ mod MutList {
     ///
     pub def clear!(v: MutList[a, r]): Unit \ r =
         let MutList(r, a, l) = v;
-        a := Array.empty(r, Array.length(deref a));
-        l := 0
+        Ref.put(Array.empty(r, Array.length(Ref.get(a))), a);
+        Ref.put(0, l)
 
     ///
     /// Returns a shallow copy of the given mutable list `v`.
@@ -554,11 +554,11 @@ mod MutList {
     ///
     pub def pop!(v: MutList[a, r]): Option[a] \ r =
         let MutList(_, a, l) = v;
-        let len = deref l;
+        let len = Ref.get(l);
         if (len > 0)
-            let last = Array.get(len - 1, deref a);
-            l := len - 1;
-            Array.put(Reflect.default(), len - 1, deref a);
+            let last = Array.get(len - 1, Ref.get(a));
+            Ref.put(len - 1, l);
+            Array.put(Reflect.default(), len - 1, Ref.get(a));
             compress!(v);
             Some(last)
         else
@@ -569,12 +569,12 @@ mod MutList {
     ///
     pub def push!(x: a, v: MutList[a, r]): Unit \ r =
         let MutList(_, a, l) = v;
-        let len = deref l;
+        let len = Ref.get(l);
         if (capacity(v) - len == 0)
             reserve!(len, v)
         else ();
-        Array.put(x, len, deref a);
-        l := len + 1
+        Array.put(x, len, Ref.get(a));
+        Ref.put(len + 1, l)
 
     ///
     /// Inserts the given element `x` at the given position `i` in the given mutable list `v`.
@@ -585,14 +585,14 @@ mod MutList {
     ///
     pub def insert!(x: a, i: Int32, v: MutList[a, r]): Unit \ r =
         let MutList(r, a, l) = v;
-        let len = deref l;
+        let len = Ref.get(l);
         if (capacity(v) - len == 0)
             reserve!(len, v)
         else ();
-        let sub = Array.copyOfRange(r, i, len, deref a);
-        Array.updateSequence!(i + 1, sub, deref a);
-        Array.put(x, i, deref a);
-        l := len + 1
+        let sub = Array.copyOfRange(r, i, len, Ref.get(a));
+        Array.updateSequence!(i + 1, sub, Ref.get(a));
+        Array.put(x, i, Ref.get(a));
+        Ref.put(len + 1, l)
 
     ///
     /// Removes the element at the given position `i` in the given mutable list `v`.
@@ -603,8 +603,8 @@ mod MutList {
     ///
     pub def remove!(i: Int32, v: MutList[a, r]): Unit \ r =
         let MutList(_, ra, rl) = v;
-        let a = deref ra;
-        let l = deref rl;
+        let a = Ref.get(ra);
+        let l = Ref.get(rl);
         let n = l - 1;
         def loop(i1) = {
             if (i1 < n) {
@@ -619,7 +619,7 @@ mod MutList {
         };
         if (i < l) {
             loop(i);
-            rl := n;
+            Ref.put(n, rl);
             compress!(v)
         }
         else
@@ -645,8 +645,8 @@ mod MutList {
         let l = MutList.empty(r);
         forEach(e -> if (f(e)) push!(e, l) else (), v);
         let MutList(_, a2, l2) = l;
-        a1 := deref a2;
-        l1 := deref l2
+        Ref.put(Ref.get(a2), a1);
+        Ref.put(Ref.get(l2), l1)
 
     ///
     /// Replaces all occurrences of the `from` with `to` in the given mutable list `v`.
@@ -685,10 +685,10 @@ mod MutList {
         let capv = capacity(v);
         let MutList(r, a, l) = v;
         if (n < capv and capv != minCap) {
-            let len = deref l;
+            let len = Ref.get(l);
             let newCap = Order.max(n, minCap);
-            a := Array.copyOfRange(r, 0, newCap, deref a);
-            l := Order.min(len, newCap)
+            Ref.put(Array.copyOfRange(r, 0, newCap, deref a), a);
+            Ref.put(Order.min(len, newCap), l)
         }
         else
             ()
@@ -713,7 +713,7 @@ mod MutList {
             let MutList(r, a, l0) = v;
             let minCap = minCapacity();
             let c = Order.max(l, minCap);
-            l0 := l;
+            Ref.put(l, l0);
             Array.updateSequence!(0, deref a, Array.empty(r, c))
         }
         else
@@ -728,7 +728,7 @@ mod MutList {
     ///
     pub def reserve!(n: Int32, v: MutList[a, r]): Unit \ r =
         let MutList(r, a, l) = v;
-        a := Array.copyOfRange(r, 0, (deref l) + n, deref a)
+        Ref.put(Array.copyOfRange(r, 0, Ref.get(l) + n, Ref.get(a)), a)
 
     ///
     /// Returns `v` as an immutable list.
@@ -817,13 +817,13 @@ mod MutList {
     ///
     pub def iterator(rc: Region[r1], l: MutList[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
         let MutList(_, a, len) = l;
-        let len1 = deref len;
+        let len1 = Ref.get(len);
         let ix = ref 0 @ rc;
         let next = () -> {
-            let i = deref ix;
+            let i = Ref.get(ix);
             if (i < len1) {
-                let x = Array.get(i, deref a);
-                ix := i + 1;
+                let x = Array.get(i, Ref.get(a));
+                Ref.put(i + 1, ix);
                 Some(x)
             } else {
                 None
