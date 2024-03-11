@@ -11,7 +11,7 @@ mod Test.Handler.NewObject {
     }
 
     def newAskRunnable(r: Ref[Int32, rc]): Runnable \ IO = new Runnable {
-        def run(_this: Runnable): Unit \ { IO , rc } =
+        def run(_this: Runnable): Unit \ { rc } =
             try {
               do Ask.ask(42)
             } with Ask {
@@ -47,7 +47,7 @@ mod Test.Handler.NewObject {
     def testRunnable01(): Bool \ IO =
         import java.lang.Runnable.run(): Unit \ IO;
         region rc {
-            let r = Ref.to(rc, 0);
+            let r = Ref.fresh(rc, 0);
             run(newAskRunnable(r));
             let result = Ref.get(r);
             Assert.eq(42, result)
@@ -57,7 +57,7 @@ mod Test.Handler.NewObject {
     def testRunnable02(): Bool \ IO =
         import java.lang.Runnable.run(): Unit \ IO;
         region rc {
-            let r = Ref.to(rc, 0);
+            let r = Ref.fresh(rc, 0);
             run(newGenRunnable(r));
             let result = Ref.get(r);
             Assert.eq(42, result)
@@ -67,7 +67,7 @@ mod Test.Handler.NewObject {
     def testRunnable03(): Bool \ IO =
         import java.lang.Runnable.run(): Unit \ IO;
         region rc {
-            let r = Ref.to(rc, 0);
+            let r = Ref.fresh(rc, 0);
             run(newGenAskRunnable(r));
             let result = Ref.get(r);
             Assert.eq(84, result)
