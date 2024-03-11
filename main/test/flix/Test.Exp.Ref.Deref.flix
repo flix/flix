@@ -80,7 +80,7 @@ mod Test.Exp.Ref.Deref {
 
     @test
     def testDeref14(): Bool = region rc {
-        let l = ref None: Option[Int32] @ rc;
+        let l = ref (None: Option[Int32]) @ rc;
         deref l == None
     }
 
@@ -93,13 +93,13 @@ mod Test.Exp.Ref.Deref {
     @test
     def testDeref16(): Bool = region rc {
         let l = ref Ok(42) @ rc;
-        deref l: Ref[Result[Unit, _], _] == Ok(42)
+        deref (l: Ref[Result[Unit, _], _]) == Ok(42)
     }
 
     @test
     def testDeref17(): Bool = region rc {
         let l = ref Err("Goodbye World!") @ rc;
-        deref l: Ref[Result[_, Unit], _] == Err("Goodbye World!")
+        deref (l: Ref[Result[_, Unit], _]) == Err("Goodbye World!")
     }
 
     @test
