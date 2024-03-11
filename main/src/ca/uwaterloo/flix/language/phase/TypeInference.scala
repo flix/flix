@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Denotation}
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.errors.TypeError
+import ca.uwaterloo.flix.language.errors.{TypeError, Unrecoverable}
 import ca.uwaterloo.flix.language.phase.inference.RestrictableChooseInference
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.{seqM, traverseM}
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeScheme
@@ -125,7 +125,7 @@ object TypeInference {
                 // Case 1: no errors, continue
                 case Result.Ok(s) => s
                 case Result.Err(errors) =>
-                  val instanceErrs = errors.toList.collect {
+                  val instanceErrs: List[TypeError with Unrecoverable] = errors.toList.collect {
                     case UnificationError.NoMatchingInstance(tconstr) =>
                       tconstr.arg.typeConstructor match {
                         case Some(tc: TypeConstructor.Arrow) =>
@@ -176,14 +176,13 @@ object TypeInference {
                     }
                   } else {
                     // Case 3: instance error
-                    return Validation.HardFailure(Chain.from(instanceErrs))
-                  }
+                    return Validation.sequence(instanceErrs.map(Validation.toHardFailure))
               }
 
               // create a new substitution combining the econstr substitution and the base type substitution
               Validation.success((eqSubst @@ subst0))
 
-            case Err(e) => Validation.HardFailure(Chain(e))
+                case Err(e) => Validation.toHardFailure(Chain(e))
           }
       }
   }
