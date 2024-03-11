@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Denotation}
 import ca.uwaterloo.flix.language.ast.Type.getFlixType
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.errors.{TypeError, Unrecoverable}
+import ca.uwaterloo.flix.language.errors.{Recoverable, TypeError, Unrecoverable}
 import ca.uwaterloo.flix.language.phase.inference.RestrictableChooseInference
 import ca.uwaterloo.flix.language.phase.unification.InferMonad.{seqM, traverseM}
 import ca.uwaterloo.flix.language.phase.unification.TypeMinimization.minimizeScheme
@@ -183,7 +183,7 @@ object TypeInference {
               // create a new substitution combining the econstr substitution and the base type substitution
               Validation.success((eqSubst @@ subst0))
 
-            case Err(e) => Validation.toHardFailure(e)
+            case Err(e) => Validation.toHardFailure(e.asInstanceOf[TypeError with Unrecoverable]): Validation[Substitution, TypeError]
           }
       }
   }

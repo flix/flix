@@ -1353,7 +1353,7 @@ object Resolver {
           val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, className, body) =>
               val env = env0 ++ mkVarEnv(sym)
-              val clazzVal = lookupJvmClass(className, sym.loc).toValidation
+              val clazzVal = Result.toValidation(lookupJvmClass(className, sym.loc))
               val bVal = visitExp(body, env)
               mapN(clazzVal, bVal) {
                 case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b)
@@ -2342,7 +2342,7 @@ object Resolver {
         }
 
       case NamedAst.Type.Native(fqn, loc) =>
-        mapN(lookupJvmClass(fqn, loc).toValidation) {
+        mapN(Result.toValidation(lookupJvmClass(fqn, loc))) {
           case clazz => flixifyType(clazz, loc)
         }
 

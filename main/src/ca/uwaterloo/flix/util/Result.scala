@@ -65,14 +65,6 @@ sealed trait Result[+T, +E] {
   }
 
   /**
-    * Returns `this` result as a [[Validation]].
-    */
-  final def toValidation[R <: Unrecoverable]: Validation[T, E] = this match {
-    case Result.Ok(t) => Validation.success(t)
-    case Result.Err(e) => Validation.toHardFailure(e): Validation[T, E]
-  }
-
-  /**
     * Returns `this` result as an [[Option]].
     */
   final def toOption: Option[T] = this match {
@@ -169,6 +161,14 @@ object Result {
     }
 
     Ok(res.toList)
+  }
+
+  /**
+    * Returns `r` result as a [[Validation]].
+    */
+  def toValidation[T, E <: Unrecoverable](r: Result[T, E]): Validation[T, E] = r match {
+    case Ok(t) => Validation.success(t)
+    case Err(e) => Validation.toHardFailure(e)
   }
 
   /**

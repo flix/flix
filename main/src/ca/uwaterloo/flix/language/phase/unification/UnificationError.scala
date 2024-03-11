@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.errors.Unrecoverable
 /**
   * A common super-type for unification errors.
   */
-sealed trait UnificationError
+sealed trait UnificationError extends Unrecoverable
 
 object UnificationError {
 
