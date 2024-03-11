@@ -414,7 +414,7 @@ mod MutDeque {
     ///
     pub def iterator(rc: Region[r1], d: MutDeque[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
         let MutDeque(_, a, f, b) = d;
-        let i = ref deref f @ rc;
+        let i = ref (deref f) @ rc;
         let next = () -> {
             if (deref i < deref b) {
                 let x = Array.get(deref i, deref a);
