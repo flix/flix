@@ -884,7 +884,7 @@ mod TestMutDeque {
         let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
 
         let a = MutDeque.toArray(rc, d);
-        Array.sameElements(a, Ref.fresh(rc, Array#{})
+        Array.sameElements(a, Ref.fresh(rc, Array#{}))
     }
 
     @test
