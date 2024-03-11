@@ -857,7 +857,7 @@ mod Chain {
             case (NoneLeft, NoneLeft)               => Comparison.EqualTo
             case (NoneLeft, SomeLeft(_, _))         => Comparison.LessThan
             case (SomeLeft(l, ls), SomeLeft(r, rs)) => match (l <=> r) {
-                case Comparison.EqualTo => loop(viewLeft(ls), viewLeft(rs))
+                case Comparison.Equaldst => loop(viewLeft(ls), viewLeft(rs))
                 case cmp                => cmp
             }
         };

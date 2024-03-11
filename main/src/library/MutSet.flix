@@ -108,9 +108,9 @@ mod MutSet {
     ///
     /// The mutable set `s` is unchanged if the element `from` is not in it.
     ///
-    pub def replace!(from: {from = a}, to: {to = a}, s: MutSet[a, r]): Unit \ r with Order[a] =
+    pub def replace!(src: {src = a}, dst: {dst = a}, s: MutSet[a, r]): Unit \ r with Order[a] =
         let MutSet(_, ms) = s;
-        ms := Set.replace(from = from.from, to = to.to, deref ms)
+        ms := Set.replace(src = from.from, dst = to.to, deref ms)
 
     ///
     /// Applies the function `f` to every element in the mutable set `s`.

@@ -41,11 +41,11 @@ instance Order[Nec[a]] with Order[a] {
         match (Nec.viewLeft(c1), Nec.viewLeft(c2)) {
             case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => x <=> y
             case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _))       => match (x <=> y) {
-                case Comparison.EqualTo => Comparison.LessThan
+                case Comparison.Equaldst => Comparison.LessThan
                 case cmp     => cmp
             }
             case (ViewLeft.SomeLeft(x, _), ViewLeft.OneLeft(y))       => match (x <=> y) {
-                case Comparison.EqualTo => Comparison.GreaterThan
+                case Comparison.Equaldst => Comparison.GreaterThan
                 case cmp     => cmp
             }
             case (ViewLeft.SomeLeft(x, xs), ViewLeft.SomeLeft(y, ys)) =>
@@ -426,7 +426,7 @@ mod Nec {
     ///
     /// Returns `l` with every occurrence of `from` replaced by `to`.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, l: Nec[a]): Nec[a] with Eq[a] =
+    pub def replace(src: {src = a}, dst: {dst = a}, l: Nec[a]): Nec[a] with Eq[a] =
         map(e -> if (e == from.from) to.to else e, l)
 
     ///

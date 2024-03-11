@@ -291,7 +291,7 @@ mod Iterator {
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, iter: Iterator[a, ef, r]): Iterator[a, ef, r] with Eq[a] =
+    pub def replace(src: {src = a}, dst: {dst = a}, iter: Iterator[a, ef, r]): Iterator[a, ef, r] with Eq[a] =
         map(a -> if (a == from.from) to.to else a, iter)
 
     ///

@@ -478,7 +478,7 @@ mod Set {
     ///
     /// Note: The returned set may be smaller than `s`.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, s: Set[a]): Set[a] with Order[a] =
+    pub def replace(src: {src = a}, dst: {dst = a}, s: Set[a]): Set[a] with Order[a] =
         if (memberOf(from.from, s)) insert(to.to, remove(from.from, s)) else s
 
     ///

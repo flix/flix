@@ -204,7 +204,7 @@ mod Regex {
     ///
     /// Returns string `s` with every match of the Regex `from` replaced by the string `to`.
     ///
-    pub def replace(from: {from = Regex}, to: {to = String}, s: String): String = region rc {
+    pub def replace(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
         import java.util.regex.Matcher.replaceAll(String): String \ rc;
         let Matcher(m1) = newMatcher(rc, from.from, s);
         replaceAll(m1, to.to)
@@ -213,7 +213,7 @@ mod Regex {
     ///
     /// Returns string `s` with the first match of the regular expression `from` replaced by the string `to`.
     ///
-    pub def replaceFirst(from: {from = Regex}, to: {to = String}, s: String): String = region rc {
+    pub def replaceFirst(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
         import java.util.regex.Matcher.replaceFirst(String): String \ rc;
         let Matcher(m1) = newMatcher(rc, from.from, s);
         replaceFirst(m1, to.to)

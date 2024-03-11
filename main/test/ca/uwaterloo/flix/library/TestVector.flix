@@ -1246,42 +1246,42 @@ mod TestVector {
 
     @test
     def replace01(): Bool =
-        let v = Vector.replace(from = 3, to = 4, (Vector#{}: Vector[Int32]));
+        let v = Vector.replace(src = 3, dst = 4, (Vector#{}: Vector[Int32]));
         v == Vector#{}
 
     @test
     def replace02(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{1});
+        let v = Vector.replace(src = 3, dst = 4, Vector#{1});
         v == Vector#{1}
 
     @test
     def replace03(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{3});
+        let v = Vector.replace(src = 3, dst = 4, Vector#{3});
         v == Vector#{4}
 
     @test
     def replace04(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{4});
+        let v = Vector.replace(src = 3, dst = 4, Vector#{4});
         v == Vector#{4}
 
     @test
     def replace05(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{1, 2});
+        let v = Vector.replace(src = 3, dst = 4, Vector#{1, 2});
         v == Vector#{1, 2}
 
     @test
     def replace06(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{1, 3});
+        let v = Vector.replace(src = 3, dst = 4, Vector#{1, 3});
         v == Vector#{1, 4}
 
     @test
     def replace07(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{3, 4});
+        let v = Vector.replace(src = 3, dst = 4, Vector#{3, 4});
         v == Vector#{4, 4}
 
     @test
     def replace08(): Bool =
-        let v = Vector.replace(from = 3, to = 4, Vector#{3, 3});
+        let v = Vector.replace(src = 3, dst = 4, Vector#{3, 3});
         v == Vector#{4, 4}
 
     /////////////////////////////////////////////////////////////////////////////

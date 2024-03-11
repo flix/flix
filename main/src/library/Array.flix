@@ -551,13 +551,13 @@ mod Array {
     ///
     /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
     ///
-    pub def replace(rc1: Region[r1], from: {from = a}, to: {to = a}, a: Array[a, r]): Array[a, r1] \ { r, r1 } with Eq[a] =
+    pub def replace(rc1: Region[r1], src: {src = a}, dst: {dst = a}, a: Array[a, r]): Array[a, r1] \ { r, r1 } with Eq[a] =
         map(rc1, e -> if (e == from.from) to.to else e, a)
 
     ///
     /// Replace every occurrence of `from` by `to` in the array `a`, mutating it in place.
     ///
-    pub def replace!(from: {from = a}, to: {to = a}, a: Array[a, r]): Unit \ r with Eq[a] =
+    pub def replace!(src: {src = a}, dst: {dst = a}, a: Array[a, r]): Unit \ r with Eq[a] =
         transform!(e -> if (e == from.from) to.to else e, a)
 
     ///

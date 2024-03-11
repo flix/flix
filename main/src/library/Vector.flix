@@ -718,7 +718,7 @@ mod Vector {
     ///
     /// Returns a copy of `v` with every occurrence of `from` replaced by `to`.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, v: Vector[a]): Vector[a] with Eq[a] =
+    pub def replace(src: {src = a}, dst: {dst = a}, v: Vector[a]): Vector[a] with Eq[a] =
         map(e -> if (e == from.from) to.to else e, v)
 
     ///
