@@ -50,11 +50,6 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
   def isSingleLine: Boolean = beginLine == endLine
 
   /**
-    * Returns `true` if this source location spans more than one line.
-    */
-  def isMultiLine: Boolean = !isSingleLine
-
-  /**
     * Returns `true` if this source location is synthetic.
     */
   def isSynthetic: Boolean = locationKind == SourceKind.Synthetic
@@ -111,13 +106,13 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
     * Returns the source text of the source location.
     */
   def text: Option[String] = {
-    if (isMultiLine) {
-      None
-    } else {
+    if (isSingleLine) {
       val line = lineAt(beginLine)
       val b = Math.min(beginCol - 1, line.length)
       val e = Math.min(endCol - 1, line.length)
       Some(line.substring(b, e))
+    } else {
+      None
     }
   }
 
