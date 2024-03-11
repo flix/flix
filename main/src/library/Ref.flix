@@ -40,6 +40,6 @@ mod Ref {
     /// I.e. if `rf` references `x` then `rf` is updated to reference `f(x)`.
     ///
     pub def transform(f: a -> a \ ef, rf: Ref[a, r]): Unit \ { r, ef } =
-        rf := f(Ref.get(rf))
+        put(f(Ref.get(rf)), rf)
 
 }
