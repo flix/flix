@@ -149,34 +149,34 @@ mod Test.Exp.Ref.Assign {
     @test
     def testAssignAssign04(): Bool = region rc {
         let l = ref 1 @ rc;
-        Ref.put(deref l) + 1, l);
+        Ref.put(deref l + 1, l);
         deref l == 2
     }
 
     @test
     def testAssignAssign05(): Bool = region rc {
         let l = ref 1 @ rc;
-        Ref.put(deref l) + 1, l);
-        Ref.put(deref l) + 1, l);
+        Ref.put(deref l + 1, l);
+        Ref.put(deref l + 1, l);
         deref l == 3
     }
 
     @test
     def testAssignAssign06(): Bool = region rc {
         let l = ref 1 @ rc;
-        Ref.put(deref l) + 1, l);
-        Ref.put(deref l) + 1, l);
-        Ref.put(deref l) + 1, l);
+        Ref.put(deref l + 1, l);
+        Ref.put(deref l + 1, l);
+        Ref.put(deref l + 1, l);
         deref l == 4
     }
 
     @test
     def testAssignAssign07(): Bool = region rc {
         let l = ref 1 @ rc;
-        Ref.put(deref l) + 1, l);
-        Ref.put(deref l) + 1, l);
-        Ref.put(deref l) + 1, l);
-        Ref.put(deref l) + 1, l);
+        Ref.put(deref l + 1, l);
+        Ref.put(deref l + 1, l);
+        Ref.put(deref l + 1, l);
+        Ref.put(deref l + 1, l);
         deref l == 5
     }
 
@@ -190,7 +190,7 @@ mod Test.Exp.Ref.Assign {
     @test
     def testRefRef02(): Bool = region rc {
         let l = ref (ref (ref 123 @ rc) @ rc) @ rc;
-        Ref.put(456, deref deref l);
+        Ref.put(456, deref (deref l));
         deref (deref (deref l)) == 456
     }
 
