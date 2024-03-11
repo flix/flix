@@ -41,11 +41,11 @@ instance Order[Nec[a]] with Order[a] {
         match (Nec.viewLeft(c1), Nec.viewLeft(c2)) {
             case (ViewLeft.OneLeft(x), ViewLeft.OneLeft(y))           => x <=> y
             case (ViewLeft.OneLeft(x), ViewLeft.SomeLeft(y, _))       => match (x <=> y) {
-                case Comparison.Equaldst => Comparison.LessThan
+                case Comparison.EqualTo => Comparison.LessThan
                 case cmp     => cmp
             }
             case (ViewLeft.SomeLeft(x, _), ViewLeft.OneLeft(y))       => match (x <=> y) {
-                case Comparison.Equaldst => Comparison.GreaterThan
+                case Comparison.EqualTo => Comparison.GreaterThan
                 case cmp     => cmp
             }
             case (ViewLeft.SomeLeft(x, xs), ViewLeft.SomeLeft(y, ys)) =>

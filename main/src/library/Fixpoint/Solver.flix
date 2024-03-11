@@ -101,7 +101,7 @@ mod Fixpoint.Solver {
         case Model(db) =>
             Map.rangeQuery(ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
-                    case Comparison.Equaldst => Comparison.EqualTo
+                    case Comparison.EqualTo => Comparison.EqualTo
                     case cmp => cmp
                 }
                 case _ => Comparison.LessThan
@@ -713,7 +713,7 @@ mod Fixpoint.Solver {
             let pFacts = MutList.empty(rc);
             let qquery = ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
-                    case Comparison.Equaldst => Comparison.EqualTo
+                    case Comparison.EqualTo => Comparison.EqualTo
                     case cmp => cmp
                 }
                 case _ => Comparison.LessThan

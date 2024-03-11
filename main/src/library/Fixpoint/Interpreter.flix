@@ -122,7 +122,7 @@ mod Fixpoint.Interpreter {
         match query {
             case Nil => Comparison.EqualTo
             case (j, t) :: tl => match Vector.get(j, tuple) <=> evalTerm(env, t) {
-                case Comparison.Equaldst => evalQuery(env, tl, tuple)
+                case Comparison.EqualTo => evalQuery(env, tl, tuple)
                 case cmp => cmp
             }
         }

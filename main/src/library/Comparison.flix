@@ -31,7 +31,7 @@ mod Comparison {
     ///
     pub def toInt(c: Comparison): Int32 = match c {
         case LessThan => -1
-        case Equaldst => 0
+        case EqualTo => 0
         case GreaterThan => +1
     }
 
