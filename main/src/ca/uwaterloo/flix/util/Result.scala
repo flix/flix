@@ -16,6 +16,7 @@
 
 package ca.uwaterloo.flix.util
 
+import ca.uwaterloo.flix.language.errors.Unrecoverable
 import ca.uwaterloo.flix.util.collection.Chain
 
 import scala.annotation.tailrec
@@ -66,9 +67,9 @@ sealed trait Result[+T, +E] {
   /**
     * Returns `this` result as a [[Validation]].
     */
-  final def toValidation: Validation[T, E] = this match {
+  final def toValidation[R <: Unrecoverable]: Validation[T, E] = this match {
     case Result.Ok(t) => Validation.success(t)
-    case Result.Err(e) => Validation.HardFailure(Chain(e))
+    case Result.Err(e) => Validation.toHardFailure(e)
   }
 
   /**
