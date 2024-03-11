@@ -189,8 +189,6 @@ object GenExpression {
             mv.visitInsn(ICONST_M1)
             mv.visitInsn(I2L)
             mv.visitInsn(LXOR)
-
-          case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", exp.loc)
         }
 
       case AtomicOp.Binary(sop) =>
@@ -532,9 +530,6 @@ object GenExpression {
             compileExpr(exp1)
             compileExpr(exp2)
             mv.visitInsn(LREM)
-
-          case _ => InternalCompilerException(s"Unexpected semantic operator: $sop.", exp1.loc)
-
         }
 
       case AtomicOp.Region =>
