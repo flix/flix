@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst, Type => AstType}
-import ca.uwaterloo.flix.language.errors.{Parse2Error, WeederError}
+import ca.uwaterloo.flix.language.errors.{WeederError, Parser2Error}
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation.{traverse, _}
 import ca.uwaterloo.flix.util.collection.Chain
@@ -731,7 +731,7 @@ object Weeder2 {
         traverseOpt(maybeExpression)(visitExpression)
       ) {
         case Some(expr) => Validation.success(expr)
-        case None => softFailWith(Expr.Error(Parse2Error.DevErr(tree.loc, "expected expression")))
+        case None => softFailWith(Expr.Error(Parser2Error.DevErr(tree.loc, "expected expression")))
       }
     }
 
@@ -1095,14 +1095,14 @@ object Weeder2 {
         traverse(maybeWith)(visitTryWithBody),
       ) {
         // Bad case: try expr
-        case (expr, Nil, Nil) => Validation.SoftFailure(
+        case (expr, Nil, Nil) => Validation.toSoftFailure(
           Expr.TryCatch(expr, List.empty, tree.loc),
-          Chain(Parse2Error.DevErr(tree.loc, s"Missing `catch` on try-catch expression"))
+          Parser2Error.DevErr(tree.loc, s"Missing `catch` on try-catch expression")
         )
         // Bad case: try expr catch { rules... } with eff { handlers... }
-        case (expr, _ :: _, _ :: _) => Validation.SoftFailure(
+        case (expr, _ :: _, _ :: _) => Validation.toSoftFailure(
           Expr.TryCatch(expr, List.empty, tree.loc),
-          Chain(Parse2Error.DevErr(tree.loc, s"Cannot use both `catch` and `with` on try-catch expression"))
+          Parser2Error.DevErr(tree.loc, s"Cannot use both `catch` and `with` on try-catch expression")
         )
         // Case: try expr catch { rules... }
         case (expr, catches, Nil) => Validation.success(Expr.TryCatch(expr, catches.flatten, tree.loc))
@@ -1215,10 +1215,10 @@ object Weeder2 {
         case (ident, channel :: body :: Nil) =>
           Validation.success(SelectChannelRule(ident, channel, body))
         case (ident, channel :: Nil) =>
-          val err = Parse2Error.DevErr(tree.loc, "Missing body in select rule")
-          Validation.SoftFailure(SelectChannelRule(ident, channel, Expr.Error(err)), Chain(err))
+          val err = Parser2Error.DevErr(tree.loc, "Missing body in select rule")
+          Validation.toSoftFailure(SelectChannelRule(ident, channel, Expr.Error(err)), err)
         case _ =>
-          val err = Parse2Error.DevErr(tree.loc, "Malformed select rule")
+          val err = Parser2Error.DevErr(tree.loc, "Malformed select rule")
           Validation.HardFailure(Chain(err))
       }
     }
@@ -1232,8 +1232,8 @@ object Weeder2 {
       ) {
         case (expr1, Some(expr2)) => Validation.success(Expr.Ref(expr1, expr2, tree.loc))
         case (expr1, None) =>
-          val err = Parse2Error.DevErr(tree.loc, "Missing scope in ref")
-          Validation.SoftFailure(Expr.Ref(expr1, Expr.Error(err), tree.loc), Chain(err))
+          val err = Parser2Error.DevErr(tree.loc, "Missing scope in ref")
+          Validation.toSoftFailure(Expr.Ref(expr1, Expr.Error(err), tree.loc), err)
       }
     }
 
@@ -1246,8 +1246,8 @@ object Weeder2 {
       ) {
         case (expr1, Some(expr2)) => Validation.success(Expr.Spawn(expr1, expr2, tree.loc))
         case (expr1, None) =>
-          val err = Parse2Error.DevErr(tree.loc, "Missing scope in spawn")
-          Validation.SoftFailure(Expr.Spawn(expr1, Expr.Error(err), tree.loc), Chain(err))
+          val err = Parser2Error.DevErr(tree.loc, "Missing scope in spawn")
+          Validation.toSoftFailure(Expr.Spawn(expr1, Expr.Error(err), tree.loc), err)
       }
     }
 
@@ -1331,8 +1331,8 @@ object Weeder2 {
       ) {
         case (exprs, Some(scope)) => Validation.success(Expr.ArrayLit(exprs, scope, tree.loc))
         case (exprs, None) =>
-          val err = Parse2Error.DevErr(tree.loc, "Missing scope in array literal")
-          Validation.SoftFailure(Expr.ArrayLit(exprs, Expr.Error(err), tree.loc), Chain(err))
+          val err = Parser2Error.DevErr(tree.loc, "Missing scope in array literal")
+          Validation.toSoftFailure(Expr.ArrayLit(exprs, Expr.Error(err), tree.loc), err)
       }
     }
 
@@ -1350,8 +1350,8 @@ object Weeder2 {
         case k :: v :: Nil => Validation.success((k, v))
         // case: k =>
         case k :: Nil =>
-          val err = Parse2Error.DevErr(tree.loc, "Missing value in key-value pair")
-          Validation.SoftFailure((k, Expr.Error(err)), Chain(err))
+          val err = Parser2Error.DevErr(tree.loc, "Missing value in key-value pair")
+          Validation.toSoftFailure((k, Expr.Error(err)), err)
         case xs => throw InternalCompilerException(s"Malformed KeyValue pair, found ${xs.length} expressions", tree.loc)
       }
     }
@@ -1426,7 +1426,7 @@ object Weeder2 {
 
       val exprs = flatMapN(pickExpression(tree)) {
         case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
-        case e => softFailWith(e, Expr.Error(Parse2Error.DevErr(tree.loc, "A internal definition must be followed by an expression")))
+        case e => softFailWith(e, Expr.Error(Parser2Error.DevErr(tree.loc, "A internal definition must be followed by an expression")))
       }
 
       mapN(
@@ -1460,7 +1460,7 @@ object Weeder2 {
             case e =>
               softFailWith(
                 e,
-                Expr.Error(Parse2Error.DevErr(tree.loc, "A let-binding must be followed by an expression"))
+                Expr.Error(Parser2Error.DevErr(tree.loc, "A let-binding must be followed by an expression"))
               )
           }
           mapN(exprs)(exprs => Expr.LetMatch(pattern, Ast.Modifiers.Empty, tpe, exprs._1, exprs._2, tree.loc))
@@ -1479,7 +1479,7 @@ object Weeder2 {
           ) {
             case (condition, tthen, eelse) => Expr.IfThenElse(condition, tthen, eelse, tree.loc)
           }
-        case _ => softFailWith(Expr.Error(Parse2Error.DevErr(tree.loc, "Malformed if-then-else expression")))
+        case _ => softFailWith(Expr.Error(Parser2Error.DevErr(tree.loc, "Malformed if-then-else expression")))
       }
     }
 
@@ -1783,12 +1783,12 @@ object Weeder2 {
             case Expr.Ambiguous(qname, loc) =>
               Validation.success(Expr.RecordExtend(Name.mkLabel(qname.ident), e2, Expr.RecordEmpty(tree.loc), tree.loc))
             case _ =>
-              val err = Parse2Error.DevErr(tree.loc, s"NamedArgument does not have a name")
-              Validation.SoftFailure(Expr.Error(err), Chain(err))
+              val err = Parser2Error.DevErr(tree.loc, s"NamedArgument does not have a name")
+              Validation.toSoftFailure(Expr.Error(err), err)
           }
         case exprs =>
-          val err = Parse2Error.DevErr(tree.loc, s"Found ${exprs.length} expressions under NamedArgument")
-          Validation.SoftFailure(WeededAst.Expr.Error(err), Chain(err))
+          val err = Parser2Error.DevErr(tree.loc, s"Found ${exprs.length} expressions under NamedArgument")
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
       }
     }
 
@@ -1958,9 +1958,9 @@ object Weeder2 {
                | TokenKind.NameUpperCase
                | TokenKind.NameMath
                | TokenKind.NameGreek => mapN(pickNameIdent(tree))(ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc))
-          case _ => softFailWith(Expr.Error(Parse2Error.DevErr(tree.loc, "expected literal")))
+          case _ => softFailWith(Expr.Error(Parser2Error.DevErr(tree.loc, "expected literal")))
         }
-        case _ => softFailWith(Expr.Error(Parse2Error.DevErr(tree.loc, "expected literal")))
+        case _ => softFailWith(Expr.Error(Parser2Error.DevErr(tree.loc, "expected literal")))
       }
     }
   }
@@ -2956,11 +2956,13 @@ object Weeder2 {
   }
 
   private def failWith[T](message: String, loc: SourceLocation = SourceLocation.Unknown): Validation[T, CompilationMessage] = {
-    Validation.HardFailure(Chain(Parse2Error.DevErr(loc, message)))
+    // TODO: Remove this function
+    Validation.HardFailure(Chain(Parser2Error.DevErr(loc, message)))
   }
 
   private def softFailWith[T](result: T): Validation[T, CompilationMessage] = {
-    Validation.SoftFailure(result, Chain())
+    // TODO: Remove this function
+    Validation.toSoftFailure(result, Parser2Error.DevErr(SourceLocation.Unknown, "TODO: Missing error message"))
   }
 
   /**

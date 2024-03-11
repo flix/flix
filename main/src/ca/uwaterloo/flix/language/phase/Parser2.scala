@@ -171,7 +171,8 @@ object Parser2 {
     source()
     val tree = buildTree()
     if (s.errors.length > 0) {
-      Validation.SoftFailure(tree, Chain.from(s.errors))
+      // TODO How to do soft failure with all of these errors?
+      Validation.toSoftFailure(tree, s.errors.head)
     } else {
       Validation.success(tree)
     }
@@ -636,12 +637,7 @@ object Parser2 {
      */
     private def definition(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       expect(TokenKind.KeywordDef)
-      // TODO: Remove this special handling. Something goes very wrong when I do!
-      if (s.src.name == "Concurrent/Channel.flix") {
-        name(NAME_DEFINITION ++ List(TokenKind.KeywordGet))
-      } else {
-        name(NAME_DEFINITION)
-      }
+      name(NAME_DEFINITION)
 
       if (at(TokenKind.BracketL)) {
         Type.parameters()
@@ -2118,12 +2114,12 @@ object Parser2 {
       expect(TokenKind.KeywordImport)
       val markJvmOp = open()
       nth(0) match {
-        case TokenKind.KeywordNew => JvmOp.constructor()
-        case TokenKind.KeywordGet => JvmOp.getField()
-        case TokenKind.KeywordSet => JvmOp.putField()
+        case TokenKind.KeywordJavaNew => JvmOp.constructor()
+        case TokenKind.KeywordJavaGetField => JvmOp.getField()
+        case TokenKind.KeywordJavaSetField => JvmOp.putField()
         case TokenKind.KeywordStatic => nth(1) match {
-          case TokenKind.KeywordGet => JvmOp.staticGetField()
-          case TokenKind.KeywordSet => JvmOp.staticPutField()
+          case TokenKind.KeywordJavaGetField => JvmOp.staticGetField()
+          case TokenKind.KeywordJavaSetField => JvmOp.staticPutField()
           case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.staticMethod()
           case _ => advanceWithError(Parser2Error.DevErr(currentSourceLocation(), "expected static java import"))
         }
@@ -2779,9 +2775,9 @@ object Parser2 {
     }
 
     def constructor()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordNew))
+      assert(at(TokenKind.KeywordJavaNew))
       val mark = open()
-      expect(TokenKind.KeywordNew)
+      expect(TokenKind.KeywordJavaNew)
       name(NAME_JAVA, allowQualified = true)
       signature()
       ascription()
@@ -2814,7 +2810,7 @@ object Parser2 {
     }
 
     private def getBody()(implicit s: State): Unit = {
-      expect(TokenKind.KeywordGet)
+      expect(TokenKind.KeywordJavaGetField)
       name(NAME_JAVA, allowQualified = true)
       ascription()
       expect(TokenKind.KeywordAs)
@@ -2822,7 +2818,7 @@ object Parser2 {
     }
 
     private def putBody()(implicit s: State): Unit = {
-      expect(TokenKind.KeywordSet)
+      expect(TokenKind.KeywordJavaSetField)
       name(NAME_JAVA, allowQualified = true)
       ascription()
       expect(TokenKind.KeywordAs)

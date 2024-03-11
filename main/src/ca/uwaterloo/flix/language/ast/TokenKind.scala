@@ -167,8 +167,6 @@ object TokenKind {
 
   case object KeywordFrom extends TokenKind
 
-  case object KeywordGet extends TokenKind
-
   case object KeywordIf extends TokenKind
 
   case object KeywordImport extends TokenKind
@@ -184,6 +182,12 @@ object TokenKind {
   case object KeywordInstanceOf extends TokenKind
 
   case object KeywordInto extends TokenKind
+
+  case object KeywordJavaGetField extends TokenKind
+
+  case object KeywordJavaNew extends TokenKind
+
+  case object KeywordJavaSetField extends TokenKind
 
   case object KeywordLaw extends TokenKind
 
@@ -240,8 +244,6 @@ object TokenKind {
   case object KeywordSealed extends TokenKind
 
   case object KeywordSelect extends TokenKind
-
-  case object KeywordSet extends TokenKind
 
   case object KeywordSolve extends TokenKind
 

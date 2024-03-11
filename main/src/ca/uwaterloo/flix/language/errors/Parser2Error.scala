@@ -20,34 +20,11 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.language.ast.TokenKind
 
-sealed trait Parser2Error extends CompilationMessage {
+sealed trait Parser2Error extends CompilationMessage with Recoverable {
   val kind = "Parse Error"
 }
 
 object Parser2Error {
-  /**
-   * An error raised when an unexpected token is encountered.
-   *
-   * @param loc      The source location where the erroneous token was found.
-   * @param expected The kind of token that was expected.
-   */
-  case class UnexpectedToken(loc: SourceLocation, expected: TokenKind) extends Parser2Error {
-    override def summary: String = s"Expected $expected"
-
-    override def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Expected $expected
-         |
-         |${code(loc, s"Expected $expected here")}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = None
-  }
-
-
   /**
    * A temporary general error to speed up development
    *
@@ -56,7 +33,7 @@ object Parser2Error {
    * @param loc     The source location where the issue is.
    * @param message The error message.
    */
-  case class DevErr(loc: SourceLocation, message: String) extends Parser2Error {
+  case class DevErr(loc: SourceLocation, message: String) extends Parser2Error with Recoverable {
     override def summary: String = message
 
     override def message(formatter: Formatter): String = {
