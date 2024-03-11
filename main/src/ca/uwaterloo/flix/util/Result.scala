@@ -69,7 +69,7 @@ sealed trait Result[+T, +E] {
     */
   final def toValidation[R <: Unrecoverable]: Validation[T, E] = this match {
     case Result.Ok(t) => Validation.success(t)
-    case Result.Err(e) => Validation.toHardFailure(e)
+    case Result.Err(e) => Validation.toHardFailure(e): Validation[T, E]
   }
 
   /**
