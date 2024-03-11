@@ -36,7 +36,7 @@ mod Concurrent {
         ///
         @Internal
         pub def newLock(fair: Bool): ReentrantLock \ IO =
-            import new java.util.concurrent.locks.ReentrantLock(Bool): ##java.util.concurrent.locks.ReentrantLock \ IO as reentrantLock;
+            import java_new java.util.concurrent.locks.ReentrantLock(Bool): ##java.util.concurrent.locks.ReentrantLock \ IO as reentrantLock;
             ReentrantLock(reentrantLock(fair))
 
         ///
@@ -94,7 +94,7 @@ mod Concurrent {
         @Internal
         pub def tryLockNanos(lock: ReentrantLock, nanosTimeout: Int64): Result[##java.lang.InterruptedException, Bool] \ IO =
             import java.util.concurrent.locks.ReentrantLock.tryLock(Int64, ##java.util.concurrent.TimeUnit): Bool \ IO;
-            import static get java.util.concurrent.TimeUnit.NANOSECONDS: ##java.util.concurrent.TimeUnit \ IO as nano;
+            import static java_get_field java.util.concurrent.TimeUnit.NANOSECONDS: ##java.util.concurrent.TimeUnit \ IO as nano;
             let ReentrantLock(l) = lock;
             try {
                 Ok(tryLock(l, nanosTimeout, nano()))

@@ -47,33 +47,33 @@ mod TestArray {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def testNew01(): Bool = region rc {
-        Array.get(0, Array.new(rc, 10)) == 0
+    def testEmpty01(): Bool = region rc {
+        Array.get(0, Array.empty(rc, 10)) == 0
     }
 
     @test
-    def testNew02(): Bool = region rc {
-        Array.get(5, Array.new(rc, 10)) == 0
+    def testEmpty02(): Bool = region rc {
+        Array.get(5, Array.empty(rc, 10)) == 0
     }
 
     @test
-    def testNew03(): Bool = region rc {
-        Array.get(9, Array.new(rc, 10)) == 0
+    def testEmpty03(): Bool = region rc {
+        Array.get(9, Array.empty(rc, 10)) == 0
     }
 
     @test
-    def testNew04(): Bool = region rc {
-        Array.get(0, Array.new(rc, 10)) == false
+    def testEmpty04(): Bool = region rc {
+        Array.get(0, Array.empty(rc, 10)) == false
     }
 
     @test
-    def testNew05(): Bool = region rc {
-        Array.get(5, Array.new(rc, 10)) == false
+    def testEmpty05(): Bool = region rc {
+        Array.get(5, Array.empty(rc, 10)) == false
     }
 
     @test
-    def testNew06(): Bool = region rc {
-        Array.get(9, Array.new(rc, 10)) == false
+    def testEmpty06(): Bool = region rc {
+        Array.get(9, Array.empty(rc, 10)) == false
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -242,7 +242,7 @@ mod TestArray {
     def toMutDeque02(): Bool = region rc {
         let a = (Array#{1} @ rc);
 
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
 
         Array.toMutDeque(rc, a) `MutDeque.sameElements` d
@@ -252,7 +252,7 @@ mod TestArray {
     def toMutDeque03(): Bool = region rc {
         let a = (Array#{1, 2, 3} @ rc);
 
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.pushBack(2, d);
         MutDeque.pushBack(3, d);
@@ -264,7 +264,7 @@ mod TestArray {
     def toMutDeque04(): Bool = region rc {
         let a = (Array#{1, 2, 3, 4, 5} @ rc);
 
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         MutDeque.pushBack(3, d);
         MutDeque.pushBack(4, d);
         MutDeque.pushBack(5, d);
@@ -278,7 +278,7 @@ mod TestArray {
     def toMutDeque05(): Bool = region rc {
         let a = (Array#{'a', 'b', 'c'} @ rc);
 
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         MutDeque.pushFront('c', d);
         MutDeque.pushFront('b', d);
         MutDeque.pushFront('a', d);
@@ -4543,7 +4543,7 @@ mod TestArray {
     @test
     def forEach01(): Bool = region rc {
         let a = ((Array#{} @ rc): Array[Int32, _]);
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == ""
@@ -4552,7 +4552,7 @@ mod TestArray {
     @test
     def forEach02(): Bool = region rc {
         let a = Array#{0} @ rc;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == "F"
@@ -4561,7 +4561,7 @@ mod TestArray {
     @test
     def forEach03(): Bool = region rc {
         let a = Array#{1} @ rc;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == "T"
@@ -4570,7 +4570,7 @@ mod TestArray {
     @test
     def forEach04(): Bool = region rc {
         let a = Array#{0,1} @ rc;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = x -> if (x > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEach(fn, a);
         StringBuilder.toString(sb) == "FT"
@@ -4583,7 +4583,7 @@ mod TestArray {
     @test
     def forEachWithIndex01(): Bool = region rc {
         let a = ((Array#{} @ rc): Array[Float32, _]);
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == ""
@@ -4592,7 +4592,7 @@ mod TestArray {
     @test
     def forEachWithIndex02(): Bool = region rc {
         let a = Array#{0.0} @ rc;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "F"
@@ -4601,7 +4601,7 @@ mod TestArray {
     @test
     def forEachWithIndex03(): Bool = region rc {
         let a = Array#{0.0, 0.1} @ rc;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FT"
@@ -4610,7 +4610,7 @@ mod TestArray {
     @test
     def forEachWithIndex04(): Bool = region rc {
         let a = Array#{0.0, 0.1, 0.2} @ rc;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FTT"
@@ -4619,7 +4619,7 @@ mod TestArray {
     @test
     def forEachWithIndex05(): Bool = region rc {
         let a = Array#{0.0, 0.1, 0.2, 0.3} @ rc;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let fn = (ix, _) -> if (ix > 0) StringBuilder.append!('T', sb) else StringBuilder.append!('F', sb);
         Array.forEachWithIndex(fn, a);
         StringBuilder.toString(sb) == "FTTT"
@@ -5558,7 +5558,7 @@ mod TestArray {
 
     @test
     def toDelayList02(): Bool = region rc {
-        (Array.new(rc, 0): Array[String, rc]) |> Array.toDelayList == DelayList.empty()
+        (Array.empty(rc, 0): Array[String, rc]) |> Array.toDelayList == DelayList.empty()
     }
 
     @test
@@ -5920,19 +5920,19 @@ mod TestArray {
 
     @test
     def toMutList01(): Bool = region rc {
-        MutList.sameElements(Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])), MutList.new(rc))
+        MutList.sameElements(Array.toMutList(rc, ((Array#{} @ rc): Array[Int32, rc])), MutList.empty(rc))
     }
 
     @test
     def toMutList02(): Bool = region rc {
-        let v = MutList.new(rc);
+        let v = MutList.empty(rc);
         MutList.push!(1, v);
         MutList.sameElements(Array.toMutList(rc, Array#{1} @ rc), v)
     }
 
     @test
     def toMutList03(): Bool = region rc {
-        let v = MutList.new(rc);
+        let v = MutList.empty(rc);
         MutList.push!(1, v);
         MutList.push!(2, v);
         MutList.push!(3, v);
@@ -5969,28 +5969,28 @@ mod TestArray {
     @test
     def shuffle01(): Bool \ IO = region rc {
         let a = ((Array#{} @ rc): Array[Int32, _]);
-        Array.shuffle(Random.new(), a);
+        Array.shuffle(Random.fresh(), a);
         Array.length(a) == 0 and Array.toSet(a) == Set#{}
     }
 
     @test
     def shuffle02(): Bool \ IO = region rc {
         let a = (Array#{0} @ rc);
-        Array.shuffle(Random.new(), a);
+        Array.shuffle(Random.fresh(), a);
         Array.length(a) == 1 and Array.toSet(a) == Set#{0}
     }
 
     @test
     def shuffle03(): Bool \ IO = region rc {
         let a = (Array#{0, 1, 2, 3} @ rc);
-        Array.shuffle(Random.new(), a);
+        Array.shuffle(Random.fresh(), a);
         Array.length(a) == 4 and Array.toSet(a) == Set#{0, 1, 2, 3}
     }
 
     @test
     def shuffle04(): Bool \ IO = region rc {
         let a = (Array#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9} @ rc);
-        Array.shuffle(Random.new(), a);
+        Array.shuffle(Random.fresh(), a);
         Array.length(a) == 10 and Array.toSet(a) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
     }
 

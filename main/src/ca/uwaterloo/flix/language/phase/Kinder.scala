@@ -943,7 +943,7 @@ object Kinder {
       val pvar = Type.freshVar(Kind.Eff, m.loc)
       // Note: We must NOT use [[Validation.toSoftFailure]] because
       // that would duplicate the error inside the Validation.
-      Validation.SoftFailure(KindedAst.Expr.Error(m, tvar, pvar), Chain.empty)
+      Validation.success(KindedAst.Expr.Error(m, tvar, pvar))
   }
 
   /**

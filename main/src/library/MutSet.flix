@@ -27,7 +27,7 @@ mod MutSet {
     /// Returns a string representation of the given mutable set `s`.
     ///
     pub def toString(s: MutSet[a, r]): String \r with ToString[a] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         StringBuilder.appendString!("MutSet#{", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)
@@ -42,7 +42,7 @@ mod MutSet {
     ///
     /// Returns a fresh empty set.
     ///
-    pub def new(rc: Region[r]): MutSet[a, r] \ r =
+    pub def empty(rc: Region[r]): MutSet[a, r] \ r =
         MutSet(rc, ref Set.empty() @ rc)
 
     ///
