@@ -884,7 +884,7 @@ mod TestMutDeque {
         let d = (MutDeque.empty(rc): MutDeque[Int32, _]);
 
         let a = MutDeque.toArray(rc, d);
-        Array.sameElements(a, Ref.fresh(rc, Array#{}))
+        Array.sameElements(a, Ref.fresh(rc, Array.empty(rc)))
     }
 
     @test
@@ -893,7 +893,7 @@ mod TestMutDeque {
         MutDeque.pushBack(1, d);
 
         let a = MutDeque.toArray(rc, d);
-        Array.sameElements(a, Ref.fresh(rc, Array#{1}))
+        Array.sameElements(a, Ref.fresh(rc, Array#{1} @ rc))
     }
 
     @test
@@ -903,7 +903,7 @@ mod TestMutDeque {
         MutDeque.pushBack(2, d);
 
         let a = MutDeque.toArray(rc, d);
-        Array.sameElements(a, Ref.fresh(rc, Array#{1, 2}))
+        Array.sameElements(a, Ref.fresh(rc, Array#{1, 2} @ rc))
     }
 
     @test
@@ -915,7 +915,7 @@ mod TestMutDeque {
         MutDeque.pushFront(4, d);
 
         let a = MutDeque.toArray(rc, d);
-        Array.sameElements(a, Ref.fresh(rc, Array#{4, 3, 1, 2}))
+        Array.sameElements(a, Ref.fresh(rc, Array#{4, 3, 1, 2} @ rc))
     }
 
     /////////////////////////////////////////////////////////////////////////////

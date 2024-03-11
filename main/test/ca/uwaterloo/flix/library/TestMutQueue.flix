@@ -297,7 +297,7 @@ mod TestMutQueue {
     def testIterator01(): Bool = region rc {
         let mq = MutQueue.empty(rc);
         let it = MutQueue.iterator(rc, mq);
-        let sum = Ref(rc, 0);
+        let sum = Ref.fresh(rc, 0);
         Iterator.forEach(x -> Ref.put(Ref.get(sum) + x, sum), it);
         Ref.get(sum) == 0
     }
