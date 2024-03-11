@@ -118,9 +118,9 @@ mod Test.Exp.Discard {
 
     @test
     def testBuilderDiscard01(): Bool = region rc {
-        let counter = Ref.fresh(rc, 0);
+        let counter = ref 0 @ rc;
         def increaseBy(i, c) = {
-            Ref.put(Ref.get(c) + i, c);
+            Ref.put(deref c + i, c);
             c
         };
         discard counter |> increaseBy(2) |> increaseBy(5);
