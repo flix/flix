@@ -23,7 +23,6 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.language.fmt._
-import ca.uwaterloo.flix.language.phase.unification.UnificationError
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
