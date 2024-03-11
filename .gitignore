@@ -13,10 +13,6 @@ target
 .vscode
 .bloop
 crash_report_*.txt
-flix.toml
-src
-test
-lib
-README.md
+
 # local development files
 **/personal/**
