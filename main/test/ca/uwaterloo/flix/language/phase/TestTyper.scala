@@ -639,10 +639,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let m = ref None @ Static;
+        |    let m = Ref.fresh(Static, None);
         |    region rc {
-        |        let x = ref 123 @ rc;
-        |        m := Some(x);
+        |        let x = Ref.fresh(rc, 123);
+        |        Ref.put(Some(x), m);
         |        ()
         |    }
     """.stripMargin
@@ -659,10 +659,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |}
         |
         |pub def f(): Unit \ IO =
-        |    let m = ref None @ Static;
+        |    let m = Ref.fresh(Static, None);
         |    region rc {
-        |        let x = ref 123 @ rc;
-        |        m := Some(_ -> x);
+        |        let x = Ref.fresh(rc, 123);
+        |        Ref.put(Some(_ -> x), m);
         |        ()
         |    }
     """.stripMargin
