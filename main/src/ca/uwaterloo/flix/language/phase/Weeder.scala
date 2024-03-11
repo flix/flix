@@ -846,12 +846,12 @@ object Weeder {
 
     case ParsedAst.Expression.Unary(sp1, op, exp, sp2) =>
       val loc = mkSL(sp1, sp2)
-      flatMapN(visitExp(exp)) {
+      mapN(visitExp(exp)) {
         case e => visitUnaryOperator(op) match {
-          case OperatorResult.BuiltIn(name) => Validation.success(WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(name, name.loc), List(e), loc))
-          case OperatorResult.UnaryOperator(o) => Validation.success(WeededAst.Expr.Unary(o, e, loc))
-          case OperatorResult.BinaryOperator(_) => throw InternalCompilerException("", loc) // TODO: Unrecoverable hard failure
-          case OperatorResult.Unrecognized(ident) => Validation.success(WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e), loc))
+          case OperatorResult.BuiltIn(name) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(name, name.loc), List(e), loc)
+          case OperatorResult.UnaryOperator(o) => WeededAst.Expr.Unary(o, e, loc)
+          case OperatorResult.BinaryOperator(_) => throw InternalCompilerException("Impossible result from visitUnaryOperator", loc)
+          case OperatorResult.Unrecognized(ident) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e), loc)
         }
       }
 
@@ -861,7 +861,7 @@ object Weeder {
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => visitBinaryOperator(op) match {
           case OperatorResult.BuiltIn(name) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(name, name.loc), List(e1, e2), loc)
-          case OperatorResult.UnaryOperator(_) => throw InternalCompilerException("", loc) // TODO: Unrecoverable hard failure
+          case OperatorResult.UnaryOperator(_) => throw InternalCompilerException("Impossible result from visitBinaryOperator", loc)
           case OperatorResult.BinaryOperator(o) => WeededAst.Expr.Binary(o, e1, e2, loc)
           case OperatorResult.Unrecognized(ident) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e1, e2), loc)
         }
