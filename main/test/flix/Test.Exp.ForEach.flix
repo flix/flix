@@ -22,7 +22,7 @@ mod Test.Exp.Foreach {
     @test
     def testForeach03(): Bool = region rc {
         let z = ref 0 @ rc;
-        foreach ((x, y) <- (1, 2) :: (3, 4) :: Nil) Ref.put(z + x + y, z); // Iterator.foreach(match (x, y) -> Ref.put(z + x + y, z), Iterable.iterator(List.iterator(rc, (1, 2) :: (3, 4) :: Nil)))
+        foreach ((x, y) <- (1, 2) :: (3, 4) :: Nil) Ref.put(Ref.get(z) + x + y, z); // Iterator.foreach(match (x, y) -> Ref.put(Ref.get(z) + x + y, z), Iterable.iterator(List.iterator(rc, (1, 2) :: (3, 4) :: Nil)))
         Ref.get(z) == 10
     }
 
@@ -30,7 +30,7 @@ mod Test.Exp.Foreach {
     def testForeach04(): Bool = region rc {
         let z = ref 0 @ rc;
         foreach ((x, y) <- (1, 2) :: (3, 4) :: Nil)
-            Ref.put(z + x + y, z); // Iterator.foreach(match (x, y) -> Ref.put(z + x + y, z), Iterable.iterator(List.iterator(rc, (1, 2) :: (3, 4) :: Nil)))
+            Ref.put(Ref.get(z) + x + y, z); // Iterator.foreach(match (x, y) -> Ref.put(Ref.get(z) + x + y, z), Iterable.iterator(List.iterator(rc, (1, 2) :: (3, 4) :: Nil)))
         Ref.get(z) == 10
     }
 
@@ -39,7 +39,7 @@ mod Test.Exp.Foreach {
         let z = ref 0 @ rc;
         let l = (1, 2) :: (3, 4) :: Nil;
         foreach ((x, y) <- l)
-            Ref.put(z + x + y, z); // Iterator.foreach(match (x, y) -> Ref.put(z + x + y, z), Iterable.iterator(List.iterator(rc, l)))
+            Ref.put(Ref.get(z) + x + y, z); // Iterator.foreach(match (x, y) -> Ref.put(Ref.get(z) + x + y, z), Iterable.iterator(List.iterator(rc, l)))
         Ref.get(z) == 10
     }
 
@@ -48,7 +48,7 @@ mod Test.Exp.Foreach {
         let z = ref 0 @ rc;
         let l = (1, 2) :: (3, 4) :: Nil;
         foreach ((x, _) <- l)
-            Ref.put(z + x, z); // Iterator.foreach(match (x, _) -> Ref.put(z + x, z), Iterable.iterator(List.iterator(rc, l)))
+            Ref.put(Ref.get(z) + x, z); // Iterator.foreach(match (x, _) -> Ref.put(Ref.get(z) + x, z), Iterable.iterator(List.iterator(rc, l)))
         Ref.get(z) == 4
     }
 
@@ -59,7 +59,7 @@ mod Test.Exp.Foreach {
         let l = (1, 2) :: (3, 4) :: Nil;
         foreach ((x, y) <- l) {
             Ref.put(Ref.get(q) + x, q);
-            Ref.put(z + x + y, z)
+            Ref.put(Ref.get(z) + x + y, z)
         };
         Ref.get(z) + Ref.get(q) == 15
     }
@@ -69,7 +69,7 @@ mod Test.Exp.Foreach {
         let z = ref 0 @ rc;
         foreach (x <- 1 :: 2 :: Nil)
             foreach(y <- 3 :: 4 :: Nil)
-                Ref.put(z + x + y, z);
+                Ref.put(Ref.get(z) + x + y, z);
         Ref.get(z) == (3 + 1) + (4 + 1) + (3 + 2) + (4 + 2)
     }
 
@@ -199,7 +199,7 @@ mod Test.Exp.Foreach {
     @test
     def testForeach22(): Bool = region rc {
         let z = ref "" @ rc;
-        foreach (x <- "1" :: "2" :: Nil; y <- "3" :: "4" :: Nil) Ref.Put(Ref.get(z) + "(${x} * ${y}) + ", z);
+        foreach (x <- "1" :: "2" :: Nil; y <- "3" :: "4" :: Nil) Ref.put(Ref.get(z) + "(${x} * ${y}) + ", z);
         Ref.get(z) == "(1 * 3) + (1 * 4) + (2 * 3) + (2 * 4) + "
     }
 
@@ -367,7 +367,7 @@ mod Test.Exp.Foreach {
     @test
     def testForeach43(): Bool = region rc {
         let z = ref 0 @ rc;
-        foreach ((x, y) <- (1, 2) :: (3, 4) :: Nil) Ref.put(z + x + y, z);
+        foreach ((x, y) <- (1, 2) :: (3, 4) :: Nil) Ref.put(Ref.get(z) + x + y, z);
         Ref.get(z) == 10
     }
 
