@@ -18,10 +18,12 @@ package ca.uwaterloo.flix
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.SemanticOp.{BoolOp, CharOp, Float32Op, Float64Op, Int16Op, Int32Op, Int64Op, Int8Op, StringOp}
-import ca.uwaterloo.flix.language.ast.Type.{Apply, False, Int32, Str, True, mkBigInt}
+import ca.uwaterloo.flix.language.ast.Type.{Apply, False, Int32, Null, Str, True, mkBigInt}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SemanticOp, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
 
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.math.BigInteger
 
 object MutationTester {
@@ -40,16 +42,32 @@ object MutationTester {
           */
     }
 
-    private def runMutations(flix: Flix,tester: String,  root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[TypedAst.Def])]): Unit = {
+    private def progressUpdate(message: String, timePassed: Long) : Long = {
+        var temp = timePassed
+        val now = System.nanoTime()
+        // print update if a minute has passed since last print
+        if (now - temp > 60_000_000_000.0) {
+            println(message)
+            temp = now
+        }
+        temp
+    }
+
+    private def runMutations(flix: Flix, tester: String, root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[TypedAst.Def])]): Unit = {
         val totalStartTime = System.nanoTime()
         var timeTemp = 0.0
         var survivorCount = 0
         var mutantCounter = 0
+        var temp = totalStartTime
+        var message = ""
+        var date = LocalDateTime.now()
+        val f = DateTimeFormatter.ofPattern("yyyy-MM-dd: HH:mm")
         mutatedDefs.foreach(mut => {
             val defName = mut._1.toString
             val mutationAmount = mut._2.length
             println(s"testing $defName with $mutationAmount mutations")
             val defs = root.defs
+
             mut._2.foreach(mDef => {
                 mutantCounter += 1
                 val start = System.nanoTime()
@@ -74,6 +92,12 @@ object MutationTester {
                     val sym = mDef.sym.toString
                     //println(s"mutation in $sym survived")
                 }
+
+                date = LocalDateTime.now()
+                message = s"[${f.format(date)}] Mutants: $mutantCounter, Killed: ${mutantCounter - survivorCount}, Survived: $survivorCount"
+
+                temp = progressUpdate(message, temp)
+
             })
         })
         val totalEndTime = System.nanoTime() - totalStartTime
