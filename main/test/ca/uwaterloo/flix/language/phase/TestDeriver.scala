@@ -46,7 +46,7 @@ class TestDeriver extends AnyFunSuite with TestUtils {
   test("IllegalDerivation.01") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
         |enum E with C {
         |    case E
