@@ -1384,7 +1384,7 @@ object GenExpression {
       // Add the label after both the try and catch rules.
       mv.visitLabel(afterTryAndCatch)
 
-    case Expr.TryWith(exp, effUse, rules, _, _, _) =>
+    case Expr.TryWith(exp, effUse, rules, ct, _, _, _) =>
       // exp is a Unit -> exp.tpe closure
       val effectJvmName = JvmOps.getEffectDefinitionClassType(effUse.sym).name
       val ins = {
@@ -1410,19 +1410,22 @@ object GenExpression {
         INVOKESTATIC(BackendObjType.Handler.InstallHandlerMethod)
       }
       ins(new BytecodeInstructions.F(mv))
-      // handle value/suspend/thunk
-      val pcPoint = ctx.pcCounter(0) + 1
-      val pcPointLabel = ctx.pcLabels(pcPoint)
-      val afterUnboxing = new Label()
-      ctx.pcCounter(0) += 1
-      BackendObjType.Result.unwindThunkToValue(pcPoint, ctx.newFrame, ctx.setPc)(new BytecodeInstructions.F(mv))
-      mv.visitJumpInsn(GOTO, afterUnboxing)
+      // handle value/suspend/thunk if in non-tail position
+      if (ct == ExpPosition.NonTail) {
+        val pcPoint = ctx.pcCounter(0) + 1
+        val pcPointLabel = ctx.pcLabels(pcPoint)
+        val afterUnboxing = new Label()
+        ctx.pcCounter(0) += 1
+        BackendObjType.Result.unwindThunkToValue(pcPoint, ctx.newFrame, ctx.setPc)(new BytecodeInstructions.F(mv))
+        mv.visitJumpInsn(GOTO, afterUnboxing)
 
-      mv.visitLabel(pcPointLabel)
-      printPc(mv, pcPoint)
-      mv.visitVarInsn(ALOAD, 1)
-
-      mv.visitLabel(afterUnboxing)
+        mv.visitLabel(pcPointLabel)
+        printPc(mv, pcPoint)
+        mv.visitVarInsn(ALOAD, 1)
+        mv.visitLabel(afterUnboxing)
+      } else {
+        mv.visitInsn(ARETURN)
+      }
 
     case Expr.Do(op, exps, tpe, _, _) =>
       val pcPoint = ctx.pcCounter(0) + 1

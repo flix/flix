@@ -52,7 +52,7 @@ object EffUnification2 {
         Result.Err(UnificationError.MismatchedEffects(tpe1, tpe2))
 
       case Result.Err((ex: TooComplexException, _, _)) =>
-        Result.Err(UnificationError.TooComplex(ex.size, loc))
+        Result.Err(UnificationError.TooComplex(ex.msg, loc))
     }
   }
 

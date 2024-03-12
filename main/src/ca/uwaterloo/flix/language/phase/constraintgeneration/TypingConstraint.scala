@@ -66,7 +66,7 @@ object TypingConstraint {
     * }}}
     */
   case class Equality(tpe1: Type, tpe2: Type, prov: Provenance) extends TypingConstraint {
-    def loc = prov.loc
+    def loc: SourceLocation = prov.loc
   }
 
   /**
@@ -91,7 +91,7 @@ object TypingConstraint {
     * }}}
     */
   case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, level: Level, prov: Provenance, nested: List[TypingConstraint]) extends TypingConstraint {
-    def loc = prov.loc
+    def loc: SourceLocation = prov.loc
   }
 
   sealed trait Provenance {

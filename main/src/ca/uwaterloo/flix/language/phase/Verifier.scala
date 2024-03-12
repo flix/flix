@@ -305,7 +305,7 @@ object Verifier {
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)
 
-    case Expr.TryWith(_, _, _, tpe, _, _) =>
+    case Expr.TryWith(_, _, _, _, tpe, _, _) =>
       // TODO: VERIFIER: Add support for TryWith.
       tpe
 
