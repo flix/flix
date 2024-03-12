@@ -89,7 +89,7 @@ object AstPrinter {
       Some(("Optimizer", () => formatLiftedAst(flix.getOptimizerAst))),
       Some(("TreeShaker2", () => formatLiftedAst(flix.getTreeShaker2Ast))),
       Some(("EffectBinder", () => formatReducedAst(flix.getEffectBinderAst))),
-      Some(("Tailrec", () => formatReducedAst(flix.getTailrecAst))),
+      Some(("TailPos", () => formatReducedAst(flix.getTailPosAst))),
       Some(("Eraser", () => formatReducedAst(flix.getEraserAst))),
       Some(("Reducer", () => formatReducedAst(flix.getReducerAst))),
       Some(("VarOffsets", () => formatReducedAst(flix.getVarOffsetsAst))),

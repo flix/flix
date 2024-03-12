@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MapOps
 
 /**
-  * The Tailrec phase identifies function calls that are in tail position and tail-recursive calls.
+  * The TailPos phase identifies function calls that are in tail position and tail-recursive calls.
   *
   * Specifically, it replaces [[Expr.ApplyDef]] AST nodes with [[Expr.ApplySelfTail]] AST nodes
   * when the [[Expr.ApplyDef]] node calls the enclosing function and occurs in tail position.
@@ -31,12 +31,12 @@ import ca.uwaterloo.flix.util.collection.MapOps
   * For correctness it is assumed that all calls in the given AST have [[Ast.ExpPosition.NonTail]]
   * and there are no [[Expr.ApplySelfTail]] nodes present.
   */
-object Tailrec {
+object TailPos {
 
   /**
     * Identifies tail recursive calls in the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Tailrec") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("TailPos") {
     val defns = ParOps.parMapValues(root.defs)(visitDef)
     root.copy(defs = defns)
   }
