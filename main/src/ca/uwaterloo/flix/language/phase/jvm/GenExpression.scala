@@ -1423,6 +1423,8 @@ object GenExpression {
         printPc(mv, pcPoint)
         mv.visitVarInsn(ALOAD, 1)
         mv.visitLabel(afterUnboxing)
+      } else {
+        mv.visitInsn(ARETURN)
       }
 
     case Expr.Do(op, exps, tpe, _, _) =>
