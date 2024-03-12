@@ -173,7 +173,6 @@ class TypeContext {
     * }}}
     */
   def expectTypeArguments(sym: Symbol, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation], loc: SourceLocation)(implicit flix: Flix): Unit = {
-    // shouldn't we have a crashing version of zip? i feel this could lead to sneaky bugs
     expectedTypes.zip(actualTypes).zip(actualLocs).zipWithIndex.foreach {
       case (((expectedType, actualType), loc), index) =>
         val argNum = index + 1
