@@ -96,7 +96,6 @@ object Main {
       xbddthreshold = cmdOpts.xbddthreshold,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
-      xnobooltable = cmdOpts.xnobooltable,
       xnoboolunif = cmdOpts.xnoboolunif,
       xnoqmc = cmdOpts.xnoqmc,
       xnooptimizer = cmdOpts.xnooptimizer,
@@ -354,7 +353,6 @@ object Main {
                      xlib: LibLevel = LibLevel.All,
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
-                     xnobooltable: Boolean = false,
                      xnoboolunif: Boolean = false,
                      xnoqmc: Boolean = false,
                      xnooptimizer: Boolean = false,
@@ -549,10 +547,6 @@ object Main {
       // Xno-bool-specialcases
       opt[Unit]("Xno-bool-specialcases").action((_, c) => c.copy(xnoboolspecialcases = true)).
         text("[experimental] disables hardcoded Boolean unification special cases.")
-
-      // Xno-bool-table
-      opt[Unit]("Xno-bool-table").action((_, c) => c.copy(xnobooltable = true)).
-        text("[experimental] disables Boolean minimization via tabling.")
 
       // Xno-bool-unif
       opt[Unit]("Xno-bool-unif").action((_, c) => c.copy(xnoboolunif = true)).
