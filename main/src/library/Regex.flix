@@ -202,21 +202,21 @@ mod Regex {
 
 
     ///
-    /// Returns string `s` with every match of the Regex `from` replaced by the string `to`.
+    /// Returns string `s` with every match of the Regex `src` replaced by the string `dst`.
     ///
-    pub def replace(from: {from = Regex}, to: {to = String}, s: String): String = region rc {
+    pub def replace(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
         import java.util.regex.Matcher.replaceAll(String): String \ rc;
-        let Matcher(m1) = newMatcher(rc, from.from, s);
-        replaceAll(m1, to.to)
+        let Matcher(m1) = newMatcher(rc, src.src, s);
+        replaceAll(m1, dst.dst)
     }
 
     ///
-    /// Returns string `s` with the first match of the regular expression `from` replaced by the string `to`.
+    /// Returns string `s` with the first match of the regular expression `src` replaced by the string `dst`.
     ///
-    pub def replaceFirst(from: {from = Regex}, to: {to = String}, s: String): String = region rc {
+    pub def replaceFirst(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
         import java.util.regex.Matcher.replaceFirst(String): String \ rc;
-        let Matcher(m1) = newMatcher(rc, from.from, s);
-        replaceFirst(m1, to.to)
+        let Matcher(m1) = newMatcher(rc, src.src, s);
+        replaceFirst(m1, dst.dst)
     }
 
     ///

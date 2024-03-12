@@ -474,12 +474,12 @@ mod Set {
         foldLeft(step, empty(), s)
 
     ///
-    /// Replaces the element `from` with `to` if `from` is in `s`. Otherwise, returns `s`.
+    /// Replaces the element `src` with `dst` if `src` is in `s`. Otherwise, returns `s`.
     ///
     /// Note: The returned set may be smaller than `s`.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, s: Set[a]): Set[a] with Order[a] =
-        if (memberOf(from.from, s)) insert(to.to, remove(from.from, s)) else s
+    pub def replace(src: {src = a}, dst: {dst = a}, s: Set[a]): Set[a] with Order[a] =
+        if (memberOf(src.src, s)) insert(dst.dst, remove(src.src, s)) else s
 
     ///
     /// Returns a pair of sets `(s1, s2)`.

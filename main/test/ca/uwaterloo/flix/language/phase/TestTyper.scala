@@ -164,7 +164,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(x: String, y: Int32): Bool = true
-        |def under(): String = f("hello"): String
+        |def under(): String = (f("hello"): String)
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -175,7 +175,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(x: String, y: Int32, z: Bool): Bool = true
-        |def under(): String = f("hello"): String
+        |def under(): String = (f("hello"): String)
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
