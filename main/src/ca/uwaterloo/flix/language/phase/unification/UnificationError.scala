@@ -137,11 +137,11 @@ object UnificationError {
   case class IrreducibleAssocType(sym: Symbol.AssocTypeSym, t: Type) extends UnificationError
 
   /**
-    * A unification error resulting from a unification equation system that is too complex to solve.
+    * A unification error resulting from an equation system that is too complex to solve.
     *
-    * @param size the size of the unification equation system.
-    * @param loc  the source location of the entire unification equation system, e.g. the entire function body.
+    * @param msg the error message.
+    * @param loc the source location of the entire equation system, e.g. the function body.
     */
-  case class TooComplex(size: Int, loc: SourceLocation) extends UnificationError
+  case class TooComplex(msg: String, loc: SourceLocation) extends UnificationError
 
 }
