@@ -656,7 +656,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.TypeConstraint.01") {
     val input =
       """
-        |class C[a: Type -> Type]
+        |trait C[a: Type -> Type]
 
         |def f[a: Type](): a with C[a] = ???
         |""".stripMargin
@@ -676,7 +676,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.Mismatch.02") {
     val input =
       """
-        |class C[a: Type -> Type]
+        |trait C[a: Type -> Type]
         |
         |def f(x: a): Int32 with C[a] = ???
         |""".stripMargin
@@ -775,7 +775,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Instance.Def.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |  pub def f(x: a): a
         |}
         |
@@ -792,9 +792,9 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Instance.TypeConstraint.01") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a: Type -> Type]
+        |trait D[a: Type -> Type]
         |
         |enum E[a]
         |
@@ -807,7 +807,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Instance.TypeParameter.01") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
         |enum E[a]
         |
@@ -844,7 +844,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Class.Law.01") {
     val input =
       """
-        |class C[a: Type -> Type] {
+        |trait C[a: Type -> Type] {
         |  law l: forall (x: a) . ???
         |}
         |""".stripMargin
@@ -855,7 +855,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Class.Sig.01") {
     val input =
       """
-        |class C[a: Type -> Type] {
+        |trait C[a: Type -> Type] {
         |  pub def f(x: a): Int32 = ???
         |}
         |""".stripMargin
@@ -866,7 +866,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Class.Sig.02") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |  pub def f(x: {l =  Int32 | a}): Int32 = ???
         |}
         |""".stripMargin
@@ -877,9 +877,9 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Class.TypeConstraint.01") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a: Type -> Type] with C[a]
+        |trait D[a: Type -> Type] with C[a]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -1018,7 +1018,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.MissingConstraint.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    type T
         |}
         |
