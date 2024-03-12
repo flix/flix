@@ -193,7 +193,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
     val input =
       """
         |pub def f(): #{ A(Int32), B(Int32; Int32) } = #{
-        |    A(x: Int32) :- B(12; x).
+        |    A((x: Int32)) :- B(12; x).
         |}
       """.stripMargin
     val result = compile(input, Options.TestWithLibAll)
@@ -249,7 +249,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |def f(): ##java.lang.Runnable \ IO =
         |  new ##java.lang.Runnable {
-        |    def run(): Unit \ IO = ()
+        |    def run(): Unit = ()
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -261,7 +261,7 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |def f(): ##java.lang.Runnable \ IO =
         |  new ##java.lang.Runnable {
-        |    def run(_this: Int32): Unit \ IO = ()
+        |    def run(_this: Int32): Unit = ()
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -282,8 +282,8 @@ class TestSafety extends AnyFunSuite with TestUtils {
       """
         |def f(): ##java.lang.Runnable \ IO =
         |  new ##java.lang.Runnable {
-        |    def run(_this: ##java.lang.Runnable): Unit \ IO = ()
-        |    def anExtraMethod(_this: ##java.lang.Runnable): Unit \ IO = ()
+        |    def run(_this: ##java.lang.Runnable): Unit = ()
+        |    def anExtraMethod(_this: ##java.lang.Runnable): Unit = ()
         |  }
       """.stripMargin
     val result = compile(input, Options.TestWithLibMin)

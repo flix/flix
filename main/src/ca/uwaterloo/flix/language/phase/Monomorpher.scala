@@ -77,7 +77,7 @@ import scala.collection.mutable
   * - Case set formulas are a single CaseSet literal.
   *
   */
-object MonoDefs {
+object Monomorpher {
 
   /**
     * A strict substitution is similar to a regular substitution except that free type variables are
@@ -288,7 +288,7 @@ object MonoDefs {
   /**
     * Performs monomorphization of the given AST `root`.
     */
-  def run(root: LoweredAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("MonoDefs") {
+  def run(root: LoweredAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Monomorpher") {
 
     implicit val r: LoweredAst.Root = root
     implicit val ctx: Context = new Context()

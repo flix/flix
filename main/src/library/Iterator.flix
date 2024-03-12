@@ -287,12 +287,12 @@ mod Iterator {
         Iterator(rc, iterF1)
 
     ///
-    /// Returns an iterator with every occurrence of `from` replaced by `to` in `iter`.
+    /// Returns an iterator with every occurrence of `src` replaced by `dst` in `iter`.
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, iter: Iterator[a, ef, r]): Iterator[a, ef, r] with Eq[a] =
-        map(a -> if (a == from.from) to.to else a, iter)
+    pub def replace(src: {src = a}, dst: {dst = a}, iter: Iterator[a, ef, r]): Iterator[a, ef, r] with Eq[a] =
+        map(a -> if (a == src.src) dst.dst else a, iter)
 
     ///
     /// Returns `iterB` appended to (the end of) `iterA`.

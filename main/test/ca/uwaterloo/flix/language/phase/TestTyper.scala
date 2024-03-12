@@ -164,7 +164,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(x: String, y: Int32): Bool = true
-        |def under(): String = f("hello"): String
+        |def under(): String = (f("hello"): String)
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -175,7 +175,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(x: String, y: Int32, z: Bool): Bool = true
-        |def under(): String = f("hello"): String
+        |def under(): String = (f("hello"): String)
         |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
@@ -515,6 +515,25 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |        case _ => 1
         |    }
         |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("Test.UnexpectedEffect.08") {
+    val input =
+      """
+        |eff IO
+        |
+        |def impureX(): String \ IO = checked_ecast("x")
+        |
+        |def f(): ##java.lang.Object \ IO = {
+        |    let x = new ##java.lang.Object {
+        |        def toString(_this: ##java.lang.Object): String = impureX()
+        |    };
+        |    x
+        |}
+        |
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
