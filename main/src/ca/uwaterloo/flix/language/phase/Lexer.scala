@@ -334,7 +334,7 @@ object Lexer {
         val p = peek()
         if (p.isLetterOrDigit) acceptName(p.isUpper)
         else if (isMathNameChar(p)) {
-          advance();
+          advance()
           acceptMathName()
         }
         else if (isUserOp(p).isDefined) {
@@ -373,21 +373,21 @@ object Lexer {
       }
       case _ if isMatch("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
-      case _ if isMatch("**") => TokenKind.StarStar
-      case _ if isMatch("<-") => TokenKind.ArrowThinL
-      case _ if isMatch("->") => TokenKind.ArrowThinR
-      case _ if isMatch("=>") => TokenKind.ArrowThickR
-      case _ if isMatch("<=") => TokenKind.AngleLEqual
-      case _ if isMatch(">=") => TokenKind.AngleREqual
-      case _ if isMatch("==") => TokenKind.EqualEqual
-      case _ if isMatch("!=") => TokenKind.BangEqual
-      case _ if isMatch("<+>") => TokenKind.AngledPlus
-      case _ if isMatch("&&&") => TokenKind.TripleAmpersand
-      case _ if isMatch("<<<") => TokenKind.TripleAngleL
-      case _ if isMatch(">>>") => TokenKind.TripleAngleR
-      case _ if isMatch("^^^") => TokenKind.TripleCaret
-      case _ if isMatch("|||") => TokenKind.TripleBar
-      case _ if isMatch("~~~") => TokenKind.TripleTilde
+      case _ if isOperator("**") => TokenKind.StarStar
+      case _ if isOperator("<-") => TokenKind.ArrowThinL
+      case _ if isOperator("->") => TokenKind.ArrowThinR
+      case _ if isOperator("=>") => TokenKind.ArrowThickR
+      case _ if isOperator("<=") => TokenKind.AngleLEqual
+      case _ if isOperator(">=") => TokenKind.AngleREqual
+      case _ if isOperator("==") => TokenKind.EqualEqual
+      case _ if isOperator("!=") => TokenKind.BangEqual
+      case _ if isOperator("<+>") => TokenKind.AngledPlus
+      case _ if isOperator("&&&") => TokenKind.TripleAmpersand
+      case _ if isOperator("<<<") => TokenKind.TripleAngleL
+      case _ if isOperator(">>>") => TokenKind.TripleAngleR
+      case _ if isOperator("^^^") => TokenKind.TripleCaret
+      case _ if isOperator("|||") => TokenKind.TripleBar
+      case _ if isOperator("~~~") => TokenKind.TripleTilde
       case '~' => TokenKind.Tilde
       case _ if isKeyword("alias") => TokenKind.KeywordAlias
       case _ if isKeyword("and") => TokenKind.KeywordAnd
@@ -495,15 +495,28 @@ object Lexer {
 
   /**
    * Check that the potential keyword is sufficiently separated, taking care not to go out-of-bounds.
-   * A keyword is separated if it is surrounded by anything __but__ a character, digit or underscore.
+   * A keyword is separated if it is surrounded by anything __but__ a character, digit a dot or underscore.
    * Note that __comparison includes current__.
    */
   private def isSeparated(keyword: String)(implicit s: State): Boolean = {
-    def isSep(c: Char) = !(c.isWhitespace || c.isLetter || c.isDigit || c == '_')
+    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_' || c == '.')
     val leftIndex = s.current.offset - 2
     val rightIndex = s.current.offset + keyword.length - 1
-    val isSeperatedLeft = leftIndex >= 0 && isSep(s.src.data(leftIndex))
-    val isSeperatedRight = rightIndex <= s.src.data.length - 1 && isSep(s.src.data(rightIndex))
+    val isSeperatedLeft = leftIndex < 0 || isSep(s.src.data(leftIndex))
+    val isSeperatedRight = rightIndex > s.src.data.length - 1 || isSep(s.src.data(rightIndex))
+    isSeperatedLeft && isSeperatedRight
+  }
+
+  /**
+   * Check that the potential operator is sufficiently separated, taking care not to go out-of-bounds.
+   * An operator is separated if it is surrounded by anything __but__ another valid user operator character.
+   * Note that __comparison includes current__.
+   */
+  private def isSeparatedOperator(keyword: String)(implicit s: State): Boolean = {
+    val leftIndex = s.current.offset - 2
+    val rightIndex = s.current.offset + keyword.length - 1
+    val isSeperatedLeft = leftIndex < 0 || isUserOp(s.src.data(leftIndex)).isEmpty
+    val isSeperatedRight = rightIndex > s.src.data.length - 1 || isUserOp(s.src.data(rightIndex)).isEmpty
     isSeperatedLeft && isSeperatedRight
   }
 
@@ -536,6 +549,15 @@ object Lexer {
     }
 
     matches
+  }
+
+  /**
+   * Checks whether the following substring matches a operator.
+   * Note that __comparison includes current__.
+   * Also note that this will advance the current position past the keyword if there is a match.
+   */
+  private def isOperator(op: String)(implicit s: State): Boolean = {
+    isSeparatedOperator(op) && isMatch(op)
   }
 
   /**

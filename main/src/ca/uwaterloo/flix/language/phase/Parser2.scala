@@ -71,6 +71,7 @@ object Parser2 {
                        afterReader: ReadAst.Root,
                        afterLexer: Map[Ast.Source, Array[Token]],
                        entryPoint: Option[Symbol.DefnSym],
+                       oldRoot: WeededAst.Root,
                        changeSet: ChangeSet
                      )(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
     if (flix.options.xparser) {
@@ -78,7 +79,11 @@ object Parser2 {
       return Validation.HardFailure(Chain.empty)
     }
 
+
     flix.phase("Parser2") {
+      // Compute the stale and fresh sources.
+      val (stale, fresh) = changeSet.partition(afterLexer, oldRoot.units)
+
       // The file that is the current focus of development
       val DEBUG_FOCUS = flix.options.lib match {
         case LibLevel.Nix => "main/foo.flix"
@@ -97,7 +102,7 @@ object Parser2 {
         formatWeededAst(oldAst, matchingWithOldParser = true) == formatWeededAst(newAst, matchingWithOldParser = true)
       }
 
-      val results = ParOps.parMap(afterLexer) {
+      val results = ParOps.parMap(stale) {
         case (src, tokens) =>
           val afterParser2 = parse(src, tokens)
           val p = afterParser2.toSoftResult.toOption
@@ -145,24 +150,27 @@ object Parser2 {
 
           mapN(weededAst)(src -> _)
       }
-      val resultMap = mapN(sequence(results))(_.toMap)
+      val resultMap = mapN(sequence(results))(_.toMap ++ fresh)
       mapN(resultMap)(m => WeededAst.Root(m, entryPoint, afterReader.names))
     }
   }
 
-  def run(root: Map[Ast.Source, Array[Token]])(implicit flix: Flix): Validation[Map[Ast.Source, SyntaxTree.Tree], CompilationMessage] = {
+  def run(root: Map[Ast.Source, Array[Token]], oldRoot: Map[Ast.Source, SyntaxTree.Tree], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Ast.Source, SyntaxTree.Tree], CompilationMessage] = {
     if (flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
       return Validation.HardFailure(Chain.empty)
     }
 
     flix.phase("Parser2") {
+      // Compute the stale and fresh sources.
+      val (stale, fresh) = changeSet.partition(root, oldRoot)
+
       // Parse each source file in parallel and join them into a WeededAst.Root
-      val results = ParOps.parMap(root) {
+      val refreshed = ParOps.parMap(stale) {
         case (src, tokens) => mapN(parse(src, tokens))(trees => src -> trees)
       }
 
-      mapN(sequence(results))(_.toMap)
+      mapN(sequence(refreshed))(_.toMap ++ fresh)
     }
   }
 
@@ -264,7 +272,8 @@ object Parser2 {
       s.events.append(
         Event.Open(TreeKind.ErrorTree(Parser2Error.DevErr(currentSourceLocation(), "Unclosed parser mark")))
       )
-      while (atAny(List(TokenKind.CommentLine, TokenKind.CommentBlock)) && !eof()) {
+      // Note: This loop will also consume doc-comments that are preceeded or surrounded by either line or block comments.
+      while (atAny(List(TokenKind.CommentLine, TokenKind.CommentBlock, TokenKind.CommentDoc)) && !eof()) {
         advance()
       }
       close(mark, TreeKind.CommentList)
@@ -558,10 +567,8 @@ object Parser2 {
   private object Decl {
     def declaration()(implicit s: State): Mark.Closed = {
       val mark = open()
-      // TODO: Find better way to handle "DocComment LineComment DocComment"
-      while (at(TokenKind.CommentDoc) && !eof()) {
-        docComment()
-      }
+      docComment()
+
       if (at(TokenKind.KeywordMod)) {
         return module(mark)
       }
@@ -574,6 +581,7 @@ object Parser2 {
         case TokenKind.KeywordInstance => instance(mark)
         case TokenKind.KeywordType => typeAlias(mark)
         case TokenKind.KeywordEff => effect(mark)
+        // TODO: Law
         case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumeration(mark)
         case _ =>
           advance()
@@ -1963,9 +1971,7 @@ object Parser2 {
           expect(TokenKind.Colon)
           Type.ttype()
           expect(TokenKind.ParenR)
-          var lhs = close(mark, TreeKind.Expr.Ascribe)
-          lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-          close(openBefore(lhs), TreeKind.Expr.Paren)
+          close(mark, TreeKind.Expr.Ascribe)
         // Tuple
         case TokenKind.Equal | TokenKind.Comma =>
           if (eat(TokenKind.Equal)) {
@@ -1974,7 +1980,7 @@ object Parser2 {
           } else {
             close(openBefore(markExpr), TreeKind.Argument)
           }
-          while(!at(TokenKind.ParenR) && !eof()) {
+          while (!at(TokenKind.ParenR) && !eof()) {
             eat(TokenKind.Comma)
             argument()
           }

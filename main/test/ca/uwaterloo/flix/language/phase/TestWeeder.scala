@@ -1001,7 +1001,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("IllegalPrivateDeclaration.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    def f(): a
         |}
         |""".stripMargin
@@ -1090,7 +1090,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("IllegalTypeConstraintParameter.01") {
     val input =
       """
-        |class C[a] with D[Int32]
+        |trait C[a] with D[Int32]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalTypeConstraintParameter](result)
@@ -1513,7 +1513,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("MissingTypeParamKind.02") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    def f[b](x: b): a = ???
         |}
         |""".stripMargin
@@ -1524,7 +1524,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("MissingTypeParamKind.03") {
     val input =
       """
-        |class A[a: Type] {
+        |trait A[a: Type] {
         |    pub def f[a](x: a): Int32 = ???
         |}
         |""".stripMargin
@@ -1625,7 +1625,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("NonUnaryAssocType.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    type T[a, b]: Type
         |}
         |""".stripMargin
@@ -1685,7 +1685,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("ReservedName.Law.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    law **: forall (x: a) . true
         |}
         |""".stripMargin
@@ -1696,7 +1696,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("ReservedName.Law.02") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    law law: forall (x: a) . true
         |}
         |""".stripMargin
@@ -1707,7 +1707,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("ReservedName.Sig.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    pub def <+>(x: a): a
         |}
         |""".stripMargin
@@ -1718,7 +1718,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
   test("ReservedName.Sig.02") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    pub def pub(x: a): a
         |}
         |""".stripMargin

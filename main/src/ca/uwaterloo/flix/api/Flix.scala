@@ -592,7 +592,7 @@ class Flix {
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
 
       // Debugging pipeline
-      afterParser2 <- Parser2.runWithFallback(afterReader, afterLexer, entryPoint, changeSet)
+      afterParser2 <- Parser2.runWithFallback(afterReader, afterLexer, entryPoint, cachedWeederAst, changeSet)
       afterDesugar = Desugar.run(afterParser2, cachedDesugarAst, changeSet)
 
       // TODO: Use these instead
@@ -617,6 +617,7 @@ class Flix {
       // Update caches for incremental compilation.
       if (options.incremental) {
         this.cachedLexerTokens = afterLexer
+        this.cachedWeederAst = afterParser2 // TODO: Remove this.
         this.cachedDesugarAst = afterDesugar
         this.cachedKinderAst = afterKinder
         this.cachedResolverAst = afterResolver
