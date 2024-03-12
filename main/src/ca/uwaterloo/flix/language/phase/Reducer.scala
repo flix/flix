@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.CallType
+import ca.uwaterloo.flix.language.ast.Ast.ExpPosition
 import ca.uwaterloo.flix.language.ast.{MonoType, Purity}
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.util.ParOps
@@ -84,13 +84,13 @@ object Reducer {
         Expr.ApplyAtomic(op, es, tpe, purity, loc)
 
       case Expr.ApplyClo(exp, exps, ct, tpe, purity, loc) =>
-        if (ct == CallType.NonTailCall && Purity.isControlImpure(purity)) lctx.pcPoints += 1
+        if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.pcPoints += 1
         val e = visitExpr(exp)
         val es = exps.map(visitExpr)
         Expr.ApplyClo(e, es, ct, tpe, purity, loc)
 
       case Expr.ApplyDef(sym, exps, ct, tpe, purity, loc) =>
-        if (ct == CallType.NonTailCall && Purity.isControlImpure(purity)) lctx.pcPoints += 1
+        if (ct == ExpPosition.NonTail && Purity.isControlImpure(purity)) lctx.pcPoints += 1
         val es = exps.map(visitExpr)
         Expr.ApplyDef(sym, es, ct, tpe, purity, loc)
 
