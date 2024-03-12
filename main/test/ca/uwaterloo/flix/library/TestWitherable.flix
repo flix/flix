@@ -14,12 +14,12 @@ mod TestWitherable {
     @test
     def wither02(): Bool  =
         let xs = Nil;
-        wither(_ -> Some(None: Option[Int32]), xs) == Some(Nil)
+        wither(_ -> Some((None: Option[Int32])), xs) == Some(Nil)
 
     @test
     def wither03(): Bool  =
         let xs = Nil;
-        wither(_ -> None: Option[Option[Int32]], xs) == Some(Nil)
+        wither(_ -> (None: Option[Option[Int32]]), xs) == Some(Nil)
 
     @test
     def wither04(): Bool  =
@@ -29,7 +29,7 @@ mod TestWitherable {
     @test
     def wither05(): Bool  =
         let xs = 1 :: Nil;
-        wither(_ -> Some(None: Option[Int32]), xs) == Some(Nil)
+        wither(_ -> Some((None: Option[Int32])), xs) == Some(Nil)
 
     @test
     def wither06(): Bool  =
@@ -39,12 +39,12 @@ mod TestWitherable {
     @test
     def wither07(): Bool  =
         let xs = 1 :: 2 :: Nil;
-        wither(_ -> None: Option[Option[Int32]], xs) == None
+        wither(_ ->( None: Option[Option[Int32]]), xs) == None
 
     @test
     def wither08(): Bool  =
         let xs = 1 :: 2 :: 3 :: Nil;
-        wither(_ -> Some(None: Option[Int32]), xs) == Some(Nil)
+        wither(_ -> Some((None: Option[Int32])), xs) == Some(Nil)
 
 
     /////////////////////////////////////////////////////////////////////////////

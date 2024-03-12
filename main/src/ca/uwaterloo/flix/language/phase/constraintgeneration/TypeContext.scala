@@ -107,6 +107,11 @@ class TypeContext {
   def getTypingConstraints: List[TypingConstraint] = currentScopeConstraints.getConstraints
 
   /**
+    * Returns the current level.
+    */
+  def getLevel: Level = level
+
+  /**
     * Generates constraints unifying the given types.
     *
     * {{{

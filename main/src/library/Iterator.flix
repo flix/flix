@@ -133,7 +133,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toArray(rc: Region[r1], iter: Iterator[a, ef, r2]): Array[a, r1] \ { ef, r2, r1 } = region rc1 {
-        let m = MutList.new(rc1);
+        let m = MutList.empty(rc1);
         forEach(a -> MutList.push!(a, m), iter);
         MutList.toArray(rc, m)
     }
@@ -144,7 +144,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toVector(iter: Iterator[a, ef, r]): Vector[a] \ { ef, r } = region rc {
-        let m = MutList.new(rc);
+        let m = MutList.empty(rc);
         forEach(a -> MutList.push!(a, m), iter);
         MutList.toVector(m)
     }
@@ -198,7 +198,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toMutDeque(rc: Region[r1], iter: Iterator[a, ef, r2]): MutDeque[a, r1] \ { ef, r2, r1 } =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach(x -> MutDeque.pushBack(x, d), iter);
         d
 
@@ -287,12 +287,12 @@ mod Iterator {
         Iterator(rc, iterF1)
 
     ///
-    /// Returns an iterator with every occurrence of `from` replaced by `to` in `iter`.
+    /// Returns an iterator with every occurrence of `src` replaced by `dst` in `iter`.
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, iter: Iterator[a, ef, r]): Iterator[a, ef, r] with Eq[a] =
-        map(a -> if (a == from.from) to.to else a, iter)
+    pub def replace(src: {src = a}, dst: {dst = a}, iter: Iterator[a, ef, r]): Iterator[a, ef, r] with Eq[a] =
+        map(a -> if (a == src.src) dst.dst else a, iter)
 
     ///
     /// Returns `iterB` appended to (the end of) `iterA`.
@@ -693,7 +693,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def joinWith(f: a -> String \ ef2, sep: String, iter: Iterator[a, ef1, r]): String \ { ef1, ef2, r } = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         match next(iter) {
             case Some(a) => {
                 StringBuilder.append!(f(a), sb);

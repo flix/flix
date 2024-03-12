@@ -27,7 +27,7 @@ mod MutSet {
     /// Returns a string representation of the given mutable set `s`.
     ///
     pub def toString(s: MutSet[a, r]): String \r with ToString[a] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         StringBuilder.appendString!("MutSet#{", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)
@@ -42,7 +42,7 @@ mod MutSet {
     ///
     /// Returns a fresh empty set.
     ///
-    pub def new(rc: Region[r]): MutSet[a, r] \ r =
+    pub def empty(rc: Region[r]): MutSet[a, r] \ r =
         MutSet(rc, ref Set.empty() @ rc)
 
     ///
@@ -104,13 +104,13 @@ mod MutSet {
         ms := Set.filter(f, deref ms)
 
     ///
-    /// Replaces the element `from` with the element `to` if `from` is in the mutable set `s`.
+    /// Replaces the element `src` with the element `dst` if `from` is in the mutable set `s`.
     ///
     /// The mutable set `s` is unchanged if the element `from` is not in it.
     ///
-    pub def replace!(from: {from = a}, to: {to = a}, s: MutSet[a, r]): Unit \ r with Order[a] =
+    pub def replace!(src: {src = a}, dst: {dst = a}, s: MutSet[a, r]): Unit \ r with Order[a] =
         let MutSet(_, ms) = s;
-        ms := Set.replace(from = from.from, to = to.to, deref ms)
+        ms := Set.replace(src = src.src, dst = dst.dst, deref ms)
 
     ///
     /// Applies the function `f` to every element in the mutable set `s`.

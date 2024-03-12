@@ -121,7 +121,7 @@ mod TestMonadZip {
 
     @test
     def zipOption01(): Bool =
-        MonadZip.zip(Some(1), None: Option[Int32]) == None
+        MonadZip.zip(Some(1), (None: Option[Int32])) == None
 
     @test
     def zipOption02(): Bool =
@@ -134,7 +134,7 @@ mod TestMonadZip {
 
     @test
     def unzipOption01(): Bool =
-        MonadZip.unzip(None: Option[(Int32, Int32)]) == (None, None)
+        MonadZip.unzip((None: Option[(Int32, Int32)])) == (None, None)
 
     @test
     def unzipOption02(): Bool =

@@ -203,7 +203,7 @@ object TypeInference {
 
       case KindedAst.Expr.Def(sym, tvar, loc) =>
         val defn = root.defs(sym)
-        val (tconstrs0, defType) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
+        val (tconstrs0, _, defType) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
         for {
           resultTyp <- unifyTypeM(tvar, defType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
@@ -212,7 +212,7 @@ object TypeInference {
       case KindedAst.Expr.Sig(sym, tvar, loc) =>
         // find the declared signature corresponding to this symbol
         val sig = root.classes(sym.clazz).sigs(sym)
-        val (tconstrs0, sigType) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
+        val (tconstrs0, _, sigType) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
         for {
           resultTyp <- unifyTypeM(tvar, sigType, loc)
           tconstrs = tconstrs0.map(_.copy(loc = loc))
@@ -294,14 +294,14 @@ object TypeInference {
           case KindedAst.Expr.Def(sym, tvar2, loc2) =>
             // Case 1: Lookup the sym and instantiate its scheme.
             val defn = root.defs(sym)
-            val (tconstrs1, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
+            val (tconstrs1, _, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
             Some((sym, tvar2, constrs1, declaredType))
 
           case KindedAst.Expr.Sig(sym, tvar2, loc2) =>
             // Case 2: Lookup the sym and instantiate its scheme.
             val sig = root.classes(sym.clazz).sigs(sym)
-            val (tconstrs1, declaredType) = Scheme.instantiate(sig.spec.sc, loc2.asSynthetic)
+            val (tconstrs1, _, declaredType) = Scheme.instantiate(sig.spec.sc, loc2.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
             Some((sym, tvar2, constrs1, declaredType))
 
@@ -393,8 +393,6 @@ object TypeInference {
             resultTyp <- expectTypeM(expected = Type.Int64, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
-
-        case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", loc)
       }
 
       case KindedAst.Expr.Binary(sop, exp1, exp2, tvar, loc) => sop match {
@@ -531,8 +529,6 @@ object TypeInference {
             resultTyp <- unifyTypeM(tvar, Type.Str, loc)
             resultEff = Type.mkUnion(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-        case _ => throw InternalCompilerException(s"Unexpected binary operator: '$sop'.", loc)
       }
 
       case KindedAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
@@ -612,6 +608,7 @@ object TypeInference {
           patternType <- unifyTypeM(tpe :: patternTypes, loc)
           (guardConstrs, guardTypes, guardEffs) <- traverseM(guards)(visitExp).map(_.unzip3)
           guardType <- traverseM(guardTypes.zip(guardLocs)) { case (gTpe, gLoc) => expectTypeM(expected = Type.Bool, actual = gTpe, loc = gLoc) }
+          guardEff <- traverseM(guardEffs.zip(guardLocs)) { case (gEff, gLoc) => expectEffectM(expected = Type.Pure, actual = gEff, loc = gLoc) }
           (bodyConstrs, bodyTypes, bodyEffs) <- traverseM(bodies)(visitExp).map(_.unzip3)
           resultTyp <- unifyTypeM(bodyTypes, loc)
           resultEff = Type.mkUnion(eff :: guardEffs ::: bodyEffs, loc)
@@ -641,7 +638,7 @@ object TypeInference {
         val caze = decl.cases(symUse.sym)
 
         // Instantiate the type scheme of the case.
-        val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+        val (_, _, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         //
         // The tag type is a function from the type of variant to the type of the enum.
@@ -848,7 +845,7 @@ object TypeInference {
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           resultTyp = Type.Bool
-          resultEff <- expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
+          resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expr.CheckedCast(cast, exp, tvar, pvar, loc) =>
@@ -1068,6 +1065,7 @@ object TypeInference {
               _ <- traverseM(fparams)(inferParam)
               (constrs, bodyTpe, bodyEff) <- visitExp(exp)
               _ <- expectTypeM(expected = returnTpe, actual = bodyTpe, exp.loc)
+              _ <- expectEffectM(expected = eff , actual = bodyEff, exp.loc)
             } yield (constrs, returnTpe, bodyEff)
         }
 
@@ -1386,7 +1384,7 @@ object TypeInference {
         val caze = decl.cases(symUse.sym)
 
         // Instantiate the type scheme of the case.
-        val (_, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
+        val (_, _, tagType) = Scheme.instantiate(caze.sc, loc.asSynthetic)
 
         //
         // The tag type is a function from the type of variant to the type of the enum.

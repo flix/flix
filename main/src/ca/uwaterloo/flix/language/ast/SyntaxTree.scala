@@ -38,7 +38,7 @@ object SyntaxTree {
    * @param loc      The location that the node spans in the source file.
    * @param children The children of the node.
    */
-  case class Tree(kind: TreeKind, children: Array[Child], loc: SourceLocation)
+  case class Tree(kind: TreeKind, var children: Array[Child], var loc: SourceLocation)
 
   sealed trait Child
 
@@ -128,6 +128,10 @@ object SyntaxTree {
 
       case object Enum extends Decl
 
+      case object EqualityConstraintList extends Decl
+
+      case object EqualityConstraintFragment extends Decl
+
       case object Instance extends Decl
 
       case object Law extends Decl
@@ -177,9 +181,13 @@ object SyntaxTree {
 
       case object Do extends Expr
 
+      case object Debug extends Expr
+
       case object FixpointConstraint extends Expr
 
       case object FixpointConstraintSet extends Expr
+
+      case object FixpointLambda extends Expr
 
       case object FixpointFromFragment extends Expr
 
@@ -189,7 +197,7 @@ object SyntaxTree {
 
       case object FixpointSelect extends Expr
 
-      case object FixpointSolve extends Expr
+      case object FixpointSolveWithProject extends Expr
 
       case object FixpointWhere extends Expr
 
@@ -201,9 +209,11 @@ object SyntaxTree {
 
       case object ForMonadic extends Expr
 
-      case object Generator extends Expr
+      case object ForFragmentGenerator extends Expr
 
-      case object Guard extends Expr
+      case object ForFragmentGuard extends Expr
+
+      case object ForFragmentLet extends Expr
 
       case object Hole extends Expr
 
@@ -273,9 +283,19 @@ object SyntaxTree {
 
       case object Ref extends Expr
 
+      case object RestrictableChoose extends Expr
+
+      case object RestrictableChooseStar extends Expr
+
       case object Scope extends Expr
 
       case object ScopeName extends Expr
+
+      case object Select extends Expr
+
+      case object SelectRuleFragment extends Expr
+
+      case object SelectRuleDefaultFragment extends Expr
 
       case object Spawn extends Expr
 
@@ -388,13 +408,13 @@ object SyntaxTree {
       /**
        * A marker kind used to wrap nested patterns.
        */
-       // For instance on cons pattern "0 :: xs" you would do
-       // Pattern
-       //   FCons
-       //     Pattern
-       //       Literal
-       //     Pattern
-       //       Ident
+      // For instance on cons pattern "0 :: xs" you would do
+      // Pattern
+      //   FCons
+      //     Pattern
+      //       Literal
+      //     Pattern
+      //       Ident
       case object Pattern extends Pattern
 
       case object FCons extends Pattern
@@ -433,6 +453,12 @@ object SyntaxTree {
       case object LatticeTerm extends Predicate
 
       case object PatternList extends Predicate
+
+      case object ParamList extends  Predicate
+
+      case object Param extends Predicate
+
+      case object ParamUntyped extends Predicate
 
       case object TermList extends Predicate
 

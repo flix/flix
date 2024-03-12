@@ -24,7 +24,7 @@ mod TestSet {
 /////////////////////////////////////////////////////////////////////////////
 @test
 def collect01(): Bool = region rc {
-    Collectable.collect(Iterator.empty(rc): Iterator[Int32, rc, rc]) == Set.empty()
+    Collectable.collect((Iterator.empty(rc): Iterator[Int32, rc, rc])) == Set.empty()
 }
 
 @test
@@ -59,7 +59,7 @@ def size05(): Bool = Set.size(Set#{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14}) =
 // empty                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def empty01(): Bool = Set.empty(): Set[Unit] == Set#{}
+def empty01(): Bool = (Set.empty(): Set[Unit]) == Set#{}
 
 /////////////////////////////////////////////////////////////////////////////
 // singleton                                                               //
@@ -146,7 +146,7 @@ def remove12(): Bool = Set.remove(8, Set#{1, 2, 3, 4, 5, 6, 7}) == Set#{1, 2, 3,
 // isEmpty                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def isEmpty01(): Bool = Set.isEmpty(Set#{}: Set[Unit]) == true
+def isEmpty01(): Bool = Set.isEmpty((Set#{}: Set[Unit])) == true
 
 @test
 def isEmpty02(): Bool = Set.isEmpty(Set#{1}) == false
@@ -275,7 +275,7 @@ def findRight07(): Bool = Set.findRight(i -> i > 2, Set#{7, 6}) == Some(7)
 // isSubsetOf                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def isSubsetOf01(): Bool = Set.isSubsetOf(Set#{}: Set[Unit], Set#{}) == true
+def isSubsetOf01(): Bool = Set.isSubsetOf((Set#{}: Set[Unit]), Set#{}) == true
 
 @test
 def isSubsetOf02(): Bool = Set.isSubsetOf(Set#{}, Set#{1}) == true
@@ -326,7 +326,7 @@ def isSubsetOf16(): Bool = Set.isSubsetOf(Set#{10, 2, 3, 6, -1, 4}, Set#{1, 2, 3
 // isProperSubsetOf                                                        //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def isProperSubsetOf01(): Bool = Set.isProperSubsetOf(Set#{}: Set[Unit], Set#{}) == false
+def isProperSubsetOf01(): Bool = Set.isProperSubsetOf((Set#{}: Set[Unit]), Set#{}) == false
 
 @test
 def isProperSubsetOf02(): Bool = Set.isProperSubsetOf(Set#{}, Set#{1}) == true
@@ -381,10 +381,10 @@ def isProperSubsetOf17(): Bool = Set.isProperSubsetOf(Set#{10, 2, 3, 6, 1, 4, 5,
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def fold01(): Bool = Set.fold(Set#{}: Set[String]) == ""
+    def fold01(): Bool = Set.fold((Set#{}: Set[String])) == ""
 
     @test
-    def fold02(): Bool = Set.fold(Set#{}: Set[Unit]) == ()
+    def fold02(): Bool = Set.fold((Set#{}: Set[Unit])) == ()
 
     @test
     def fold03(): Bool = Set.fold(Set#{"a", "b", "c"}) == "abc"
@@ -460,7 +460,7 @@ def foldMap05(): Bool = Set.foldMap(Int32.toString, Set#{1, 2, 3}) == "123"
 // reduceLeft                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def reduceLeft01(): Bool = Set.reduceLeft((a, b) -> a-b, Set#{}: Set[Int32]) == None
+def reduceLeft01(): Bool = Set.reduceLeft((a, b) -> a-b, (Set#{}: Set[Int32])) == None
 
 @test
 def reduceLeft02(): Bool = Set.reduceLeft((a, b) -> a-b, Set#{1}) == Some(1)
@@ -478,7 +478,7 @@ def reduceLeft05(): Bool = Set.reduceLeft((a, b) -> a-b, Set#{4, 3, 2, 1}) == So
 // reduceRight                                                             //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def reduceRight01(): Bool = Set.reduceRight((a, b) -> a-b, Set#{}: Set[Int32]) == None
+def reduceRight01(): Bool = Set.reduceRight((a, b) -> a-b, (Set#{}: Set[Int32])) == None
 
 @test
 def reduceRight02(): Bool = Set.reduceRight((a, b) -> a-b, Set#{1}) == Some(1)
@@ -520,8 +520,8 @@ def count07(): Bool = Set.count(i -> i > 3, Set#{7, 6}) == 2
 def count08(): Bool = region rc {
     let range = List.range(0, 2000);
     let s = range |> List.toSet;
-    let a = MutList.new(rc);
-    discard Set.count(x -> { let b = MutList.new(rc); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); true }, s);
+    let a = MutList.empty(rc);
+    discard Set.count(x -> { let b = MutList.empty(rc); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); true }, s);
     MutList.toList(a) == range
 }
 
@@ -591,8 +591,8 @@ def count08(): Bool = region rc {
     def sumWith08(): Bool = region rc {
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
-        let a = MutList.new(rc);
-        discard Set.sumWith(k -> { let b = MutList.new(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        let a = MutList.empty(rc);
+        discard Set.sumWith(k -> { let b = MutList.empty(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
     }
 
@@ -601,10 +601,10 @@ def count08(): Bool = region rc {
 // flatten                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def flatten01(): Bool = Set.flatten(Set#{}): Set[Unit] == Set#{}
+def flatten01(): Bool = (Set.flatten(Set#{}): Set[Unit]) == Set#{}
 
 @test
-def flatten02(): Bool = Set.flatten(Set#{Set#{}}: Set[Set[Unit]]) == Set#{}
+def flatten02(): Bool = Set.flatten((Set#{Set#{}}: Set[Set[Unit]])) == Set#{}
 
 @test
 def flatten03(): Bool = Set.flatten(Set#{Set#{1}}) == Set#{1}
@@ -613,7 +613,7 @@ def flatten03(): Bool = Set.flatten(Set#{Set#{1}}) == Set#{1}
 def flatten04(): Bool = Set.flatten(Set#{Set#{1, 2}}) == Set#{1, 2}
 
 @test
-def flatten05(): Bool = Set.flatten(Set#{Set#{}, Set#{}}): Set[Unit] == Set#{}
+def flatten05(): Bool = (Set.flatten(Set#{Set#{}, Set#{}}): Set[Unit]) == Set#{}
 
 @test
 def flatten06(): Bool = Set.flatten(Set#{Set#{1}, Set#{}}) == Set#{1}
@@ -718,7 +718,7 @@ def forAll11(): Bool = Set.forAll(x -> x `Int32.remainder` 8 == 7, Set#{7, 15, 2
 // union                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def union01(): Bool = Set.union(Set#{}: Set[Unit], Set#{}) == Set#{}
+def union01(): Bool = Set.union((Set#{}: Set[Unit]), Set#{}) == Set#{}
 
 @test
 def union02(): Bool = Set.union(Set#{1}, Set#{}) == Set#{1}
@@ -763,7 +763,7 @@ def union14(): Bool = Set.union(Set#{-2, -3, -4}, Set#{6, 5, -1, 9, 43, 7, 8, -9
 // intersection                                                            //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def intersection01(): Bool = Set.intersection(Set#{}: Set[Unit], Set#{}) == Set#{}
+def intersection01(): Bool = Set.intersection((Set#{}: Set[Unit]), Set#{}) == Set#{}
 
 @test
 def intersection02(): Bool = Set.intersection(Set#{1}, Set#{}) == Set#{}
@@ -811,7 +811,7 @@ def intersection15(): Bool = Set.intersection(Set#{3, 55, 11, 87, 22, 34, -87, 2
 // difference                                                              //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def difference01(): Bool = Set.difference(Set#{}: Set[Unit], Set#{}) == Set#{}
+def difference01(): Bool = Set.difference((Set#{}: Set[Unit]), Set#{}) == Set#{}
 
 @test
 def difference02(): Bool = Set.difference(Set#{}, Set#{2}) == Set#{}
@@ -853,7 +853,7 @@ def difference13(): Bool = Set.difference(Set#{1, 2, 87, 4, 5, 6, 86, 92, 111, -
 // subsets                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def subsets01(): Bool = Set.subsets(Set#{}: Set[Unit]) == Set#{Set#{}}
+def subsets01(): Bool = Set.subsets((Set#{}: Set[Unit])) == Set#{Set#{}}
 
 @test
 def subsets02(): Bool = Set.subsets(Set#{1}) == Set#{Set#{1}, Set#{}}
@@ -946,8 +946,8 @@ def map15(): Bool = Set.map(x -> x `Int32.remainder` 9, Set#{0, 5, 1, 10, 7, 19,
 def map16(): Bool = region rc {
     let range = List.range(0, 2000);
     let s = List.toSet(range);
-    let a = MutList.new(rc);
-    discard Set.map(x -> { let b = MutList.new(rc); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x }, s);
+    let a = MutList.empty(rc);
+    discard Set.map(x -> { let b = MutList.empty(rc); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x }, s);
     MutList.toList(a) == range
 }
 
@@ -1027,28 +1027,28 @@ def filterMap08(): Bool =
 // replace                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def replace01(): Bool = Set.replace(from = 3, to = 4, Set#{}) == Set#{}
+def replace01(): Bool = Set.replace(src = 3, dst = 4, Set#{}) == Set#{}
 
 @test
-def replace02(): Bool = Set.replace(from = 3, to = 4, Set#{1}) == Set#{1}
+def replace02(): Bool = Set.replace(src = 3, dst = 4, Set#{1}) == Set#{1}
 
 @test
-def replace03(): Bool = Set.replace(from = 3, to = 4, Set#{3}) == Set#{4}
+def replace03(): Bool = Set.replace(src = 3, dst = 4, Set#{3}) == Set#{4}
 
 @test
-def replace04(): Bool = Set.replace(from = 3, to = 4, Set#{4}) == Set#{4}
+def replace04(): Bool = Set.replace(src = 3, dst = 4, Set#{4}) == Set#{4}
 
 @test
-def replace05(): Bool = Set.replace(from = 3, to = 4, Set#{1, 2}) == Set#{1, 2}
+def replace05(): Bool = Set.replace(src = 3, dst = 4, Set#{1, 2}) == Set#{1, 2}
 
 @test
-def replace06(): Bool = Set.replace(from = 3, to = 4, Set#{1, 3}) == Set#{1, 4}
+def replace06(): Bool = Set.replace(src = 3, dst = 4, Set#{1, 3}) == Set#{1, 4}
 
 @test
-def replace07(): Bool = Set.replace(from = 3, to = 4, Set#{3, 2}) == Set#{4, 2}
+def replace07(): Bool = Set.replace(src = 3, dst = 4, Set#{3, 2}) == Set#{4, 2}
 
 @test
-def replace08(): Bool = Set.replace(from = 3, to = 4, Set#{3, 4}) == Set#{4}
+def replace08(): Bool = Set.replace(src = 3, dst = 4, Set#{3, 4}) == Set#{4}
 
 /////////////////////////////////////////////////////////////////////////////
 // partition                                                               //
@@ -1087,7 +1087,7 @@ def partition10(): Bool = Set.partition(x -> x `Int32.remainder` 2 == 0, Set#{1,
 // toList                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toList01(): Bool = Set.toList(Set#{}: Set[Unit]) == Nil
+def toList01(): Bool = Set.toList((Set#{}: Set[Unit])) == Nil
 
 @test
 def toList02(): Bool = Set.toList(Set#{1}) == 1 :: Nil
@@ -1104,7 +1104,7 @@ def toList04(): Bool = Set.toList(Set#{1, 2, 3}) == 1 :: 2 :: 3 :: Nil
 
 @test
 def toChain01(): Bool =
-    Set.toChain(Set#{}: Set[Int32]) == Chain.empty(): Chain[Int32]
+    Set.toChain((Set#{}: Set[Int32])) == (Chain.empty(): Chain[Int32])
 
 @test
 def toChain02(): Bool =
@@ -1122,7 +1122,7 @@ def toChain04(): Bool =
 // toMap                                                                   //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def toMap01(): Bool = Set.toMap(Set#{}: Set[(Unit, Unit)]) == Map#{}
+def toMap01(): Bool = Set.toMap((Set#{}: Set[(Unit, Unit)])) == Map#{}
 
 @test
 def toMap02(): Bool = Set.toMap(Set#{(1, true)}) == Map#{1 => true}
@@ -1166,7 +1166,7 @@ def toMutDeque01(): Bool = region rc {
     let s: Set[Int32] = Set#{};
     let d1 = Set.toMutDeque(rc, s);
 
-    let d2 = MutDeque.new(rc);
+    let d2 = MutDeque.empty(rc);
 
     d1 `MutDeque.sameElements` d2
 }
@@ -1176,7 +1176,7 @@ def toMutDeque02(): Bool = region rc {
     let s = Set#{1};
     let d1 = Set.toMutDeque(rc, s);
 
-    let d2 = MutDeque.new(rc);
+    let d2 = MutDeque.empty(rc);
     MutDeque.pushBack(1, d2);
 
     d1 `MutDeque.sameElements` d2
@@ -1187,7 +1187,7 @@ def toMutDeque03(): Bool = region rc {
     let s = Set#{1, 3, 6};
     let d1 = Set.toMutDeque(rc, s);
 
-    let d2 = MutDeque.new(rc);
+    let d2 = MutDeque.empty(rc);
     MutDeque.pushBack(3, d2);
     MutDeque.pushBack(6, d2);
     MutDeque.pushFront(1, d2);
@@ -1200,7 +1200,7 @@ def toMutDeque04(): Bool = region rc {
     let s = Set#{7, 1, 3, 6};
     let d1 = Set.toMutDeque(rc, s);
 
-    let d2 = MutDeque.new(rc);
+    let d2 = MutDeque.empty(rc);
     MutDeque.pushFront(7, d2);
     MutDeque.pushFront(6, d2);
     MutDeque.pushFront(3, d2);
@@ -1213,7 +1213,7 @@ def toMutDeque04(): Bool = region rc {
 // eq                                                                      //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def eq01(): Bool = Set#{}: Set[Unit] == Set#{}
+def eq01(): Bool = (Set#{}: Set[Unit]) == Set#{}
 
 @test
 def eq02(): Bool = Set#{1} != Set#{}
@@ -1450,7 +1450,7 @@ def unfoldWithIter06(): Bool = region rc {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def hash01(): Bool = hash(Set#{}: Set[Unit]) == hash(Set#{}: Set[Unit])
+    def hash01(): Bool = hash((Set#{}: Set[Unit])) == hash((Set#{}: Set[Unit]))
 
     @test
     def hash02(): Bool = hash(Set#{1, 2}) == hash(Set#{1, 2})
@@ -1469,7 +1469,7 @@ def unfoldWithIter06(): Bool = region rc {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def minimum01(): Bool = Set.minimum(Set#{}: Set[Int32]) == None
+    def minimum01(): Bool = Set.minimum((Set#{}: Set[Int32])) == None
 
     @test
     def minimum02(): Bool = Set.minimum(Set#{1}) == Some(1)
@@ -1485,7 +1485,7 @@ def unfoldWithIter06(): Bool = region rc {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def minimumBy01(): Bool = Set.minimumBy((x, y) -> x <=> y, Set#{}: Set[Int32]) == None
+    def minimumBy01(): Bool = Set.minimumBy((x, y) -> x <=> y, (Set#{}: Set[Int32])) == None
 
     @test
     def minimumBy02(): Bool = Set.minimumBy((x, y) -> x <=> y, Set#{1}) == Some(1)
@@ -1499,8 +1499,8 @@ def unfoldWithIter06(): Bool = region rc {
     @test
     def minimumBy05(): Bool = region rc {
         let s = List.range(0, 2000) |> List.toSet;
-        let a = MutList.new(rc);
-        discard Set.minimumBy((x, y) -> { let b = MutList.new(rc); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, s);
+        let a = MutList.empty(rc);
+        discard Set.minimumBy((x, y) -> { let b = MutList.empty(rc); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, s);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
     }
 
@@ -1510,7 +1510,7 @@ def unfoldWithIter06(): Bool = region rc {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def maximum01(): Bool = Set.maximum(Set#{}: Set[Int32]) == None
+    def maximum01(): Bool = Set.maximum((Set#{}: Set[Int32])) == None
 
     @test
     def maximum02(): Bool = Set.maximum(Set#{1}) == Some(1)
@@ -1526,7 +1526,7 @@ def unfoldWithIter06(): Bool = region rc {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def maximumBy01(): Bool = Set.maximumBy((x, y) -> x <=> y, Set#{}: Set[Int32]) == None
+    def maximumBy01(): Bool = Set.maximumBy((x, y) -> x <=> y, (Set#{}: Set[Int32])) == None
 
     @test
     def maximumBy02(): Bool = Set.maximumBy((x, y) -> x <=> y, Set#{1}) == Some(1)
@@ -1544,7 +1544,7 @@ def unfoldWithIter06(): Bool = region rc {
 
     @test
     def toDelayList01(): Bool =
-        Set.empty(): Set[Unit] |> Set.toDelayList == DelayList.empty()
+        (Set.empty(): Set[Unit]) |> Set.toDelayList == DelayList.empty()
 
     @test
     def toDelayList02(): Bool =
@@ -1561,7 +1561,7 @@ def unfoldWithIter06(): Bool = region rc {
 
     @test
     def iterator01(): Bool = region rc {
-        Set.empty(): Set[Int32] |> Set.iterator(rc) |> Iterator.toSet == Set.empty()
+        (Set.empty(): Set[Int32]) |> Set.iterator(rc) |> Iterator.toSet == Set.empty()
     }
 
     @test
@@ -1581,7 +1581,7 @@ def unfoldWithIter06(): Bool = region rc {
 
     @test
     def join01(): Bool =
-        Set.join(",", Set.empty(): Set[Int32]) == ""
+        Set.join(",", (Set.empty(): Set[Int32])) == ""
 
     @test
     def join02(): Bool =
