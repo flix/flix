@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.collection.MapOps
   * Specifically, it replaces [[Expr.ApplyDef]] AST nodes with [[Expr.ApplySelfTail]] AST nodes
   * when the [[Expr.ApplyDef]] node calls the enclosing function and occurs in tail position.
   *
-  * For correctness it is assumed that all calls in the given AST have [[Ast.CallType.NonTailCall]]
+  * For correctness it is assumed that all calls in the given AST have [[Ast.ExpPosition.NonTail]]
   * and there are no [[Expr.ApplySelfTail]] nodes present.
   */
 object Tailrec {
@@ -82,13 +82,13 @@ object Tailrec {
         Expr.Branch(e0, br, tpe, purity, loc)
 
       case Expr.ApplyClo(exp, exps, _, tpe, purity, loc) =>
-        Expr.ApplyClo(exp, exps, Ast.CallType.TailCall, tpe, purity, loc)
+        Expr.ApplyClo(exp, exps, Ast.ExpPosition.Tail, tpe, purity, loc)
 
       case Expr.ApplyDef(sym, exps, _, tpe, purity, loc) =>
         // Check whether this is a self recursive call.
         if (defn.sym != sym) {
           // Tail call.
-          Expr.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc)
+          Expr.ApplyDef(sym, exps, Ast.ExpPosition.Tail, tpe, purity, loc)
         } else {
           // Self recursive tail call.
           Expr.ApplySelfTail(sym, exps, tpe, purity, loc)
