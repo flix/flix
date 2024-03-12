@@ -10,7 +10,7 @@ mod Test.Exp.Unary.Arithmetic {
     def testUnaryMinus03(): Bool = -(-36000) == 36000
 
     @test
-    def testUnaryMinus04(): Bool = --2147483648 == -2147483648
+    def testUnaryMinus04(): Bool = -(-2147483648) == -2147483648
 
     @test
     def testUnaryMinus05(): Int32 = -2147483648
@@ -25,7 +25,7 @@ mod Test.Exp.Unary.Arithmetic {
     def testUnaryMinus08(): Bool = -(-36i8) == 36i8
 
     @test
-    def testUnaryMinus09(): Bool = --128i8 == -128i8
+    def testUnaryMinus09(): Bool = -(-128i8) == -128i8
 
     @test
     def testUnaryMinus10(): Int8 = -127i8
@@ -43,7 +43,7 @@ mod Test.Exp.Unary.Arithmetic {
     def testUnaryMinus14(): Int16 = -32767i16
 
     @test
-    def testUnaryMinus15(): Bool = --32768i16 == -32768i16
+    def testUnaryMinus15(): Bool = -(-32768i16) == -32768i16
 
     @test
     def testUnaryMinus16(): Bool = -0i32 == 0i32
@@ -58,7 +58,7 @@ mod Test.Exp.Unary.Arithmetic {
     def testUnaryMinus19(): Int32 = -2147483647i32
 
     @test
-    def testUnaryMinus20(): Bool = --2147483648i32 == -2147483648i32
+    def testUnaryMinus20(): Bool = -(-2147483648i32) == -2147483648i32
 
     @test
     def testUnaryMinus21(): Bool = -0i64 == 0i64
@@ -73,7 +73,7 @@ mod Test.Exp.Unary.Arithmetic {
     def testUnaryMinus24(): Int64 = -9223372036854775807i64
 
     @test
-    def testUnaryMinus25(): Bool = --9223372036854775808i64 == -9223372036854775808i64
+    def testUnaryMinus25(): Bool = -(-9223372036854775808i64) == -9223372036854775808i64
 
     @test
     def testUnaryMinus26(): Bool = -0.0 == 0.0

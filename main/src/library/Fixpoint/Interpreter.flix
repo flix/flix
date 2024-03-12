@@ -75,9 +75,9 @@ mod Fixpoint.Interpreter {
                     Array.put(l, i, latEnv);
                     evalOp(rc1, db, env, body)
                 }, MutMap.getWithDefault(ramSym, MutMap.empty(rc1), db))
-            case RelOp.Query(RowVar.Index(i), ramSym, query, body) =>
+            case RelOp.Query(RowVar.Index(i), ramSym, qry, body) =>
                 let (tupleEnv, latEnv) = env;
-                MutMap.rangeQueryWith(evalQuery(env, Vector.toList(query)), t -> l -> {
+                MutMap.rangeQueryWith(evalQuery(env, Vector.toList(qry)), t -> l -> {
                     Array.put(t, i, tupleEnv);
                     Array.put(l, i, latEnv);
                     evalOp(rc1, db, env, body)
@@ -118,8 +118,8 @@ mod Fixpoint.Interpreter {
             case _ => ()
         }
 
-    def evalQuery(env: SearchEnv[v, r], query: List[(Int32, RamTerm[v])], tuple: Vector[v]): Comparison \ r with Order[v] =
-        match query {
+    def evalQuery(env: SearchEnv[v, r], qry: List[(Int32, RamTerm[v])], tuple: Vector[v]): Comparison \ r with Order[v] =
+        match qry {
             case Nil => Comparison.EqualTo
             case (j, t) :: tl => match Vector.get(j, tuple) <=> evalTerm(env, t) {
                 case Comparison.EqualTo => evalQuery(env, tl, tuple)
