@@ -247,7 +247,7 @@ object FastBoolUnification {
     private def verifySolutionSize(): Unit = {
       val size = currentSubst.size
       if (size > SizeThreshold) {
-        throw TooComplexException(size)
+        throw TooComplexException(s"Too large a substitution (threshold: $SizeThreshold, found: $size)")
       }
     }
 
@@ -567,7 +567,7 @@ object FastBoolUnification {
 
     // Case 2: Check that there are not too many complex equations.
     if (l.length > ComplexThreshold) {
-      throw TooComplexException(l.length)
+      throw TooComplexException(s"Too many complex equations (threshold: $ComplexThreshold, found: ${l.length})")
     }
 
     // Case 3: We solve the first [[PermutationLimit]] permutations and pick the one that gives rise to the smallest substitution.
@@ -1333,9 +1333,11 @@ object FastBoolUnification {
   case class ConflictException(x: Term, y: Term, loc: SourceLocation) extends FastBoolUnificationException
 
   /**
-    * Represents a solution that is too complex (i.e. too large according to the threshold).
+    * Represents a solution that is too complex.
+    *
+    * @param msg the specific error message.
     */
-  case class TooComplexException(size: Int) extends FastBoolUnificationException
+  case class TooComplexException(msg: String) extends FastBoolUnificationException
 
   /////////////////////////////////////////////////////////////////////////////
   /// Testing                                                               ///
