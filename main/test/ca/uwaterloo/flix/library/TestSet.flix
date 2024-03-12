@@ -1027,28 +1027,28 @@ def filterMap08(): Bool =
 // replace                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def replace01(): Bool = Set.replace(from = 3, to = 4, Set#{}) == Set#{}
+def replace01(): Bool = Set.replace(src = 3, dst = 4, Set#{}) == Set#{}
 
 @test
-def replace02(): Bool = Set.replace(from = 3, to = 4, Set#{1}) == Set#{1}
+def replace02(): Bool = Set.replace(src = 3, dst = 4, Set#{1}) == Set#{1}
 
 @test
-def replace03(): Bool = Set.replace(from = 3, to = 4, Set#{3}) == Set#{4}
+def replace03(): Bool = Set.replace(src = 3, dst = 4, Set#{3}) == Set#{4}
 
 @test
-def replace04(): Bool = Set.replace(from = 3, to = 4, Set#{4}) == Set#{4}
+def replace04(): Bool = Set.replace(src = 3, dst = 4, Set#{4}) == Set#{4}
 
 @test
-def replace05(): Bool = Set.replace(from = 3, to = 4, Set#{1, 2}) == Set#{1, 2}
+def replace05(): Bool = Set.replace(src = 3, dst = 4, Set#{1, 2}) == Set#{1, 2}
 
 @test
-def replace06(): Bool = Set.replace(from = 3, to = 4, Set#{1, 3}) == Set#{1, 4}
+def replace06(): Bool = Set.replace(src = 3, dst = 4, Set#{1, 3}) == Set#{1, 4}
 
 @test
-def replace07(): Bool = Set.replace(from = 3, to = 4, Set#{3, 2}) == Set#{4, 2}
+def replace07(): Bool = Set.replace(src = 3, dst = 4, Set#{3, 2}) == Set#{4, 2}
 
 @test
-def replace08(): Bool = Set.replace(from = 3, to = 4, Set#{3, 4}) == Set#{4}
+def replace08(): Bool = Set.replace(src = 3, dst = 4, Set#{3, 4}) == Set#{4}
 
 /////////////////////////////////////////////////////////////////////////////
 // partition                                                               //
