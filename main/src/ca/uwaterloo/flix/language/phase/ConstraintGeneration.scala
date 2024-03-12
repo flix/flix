@@ -221,8 +221,6 @@ object ConstraintGeneration {
           val resTpe = tvar
           val resEff = eff
           (resTpe, resEff)
-
-        case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", loc)
       }
 
       case KindedAst.Expr.Binary(sop, exp1, exp2, tvar, loc) => sop match {
@@ -359,8 +357,6 @@ object ConstraintGeneration {
           val resTpe = tvar
           val resEff = Type.mkUnion(eff1, eff2, loc)
           (resTpe, resEff)
-
-        case _ => throw InternalCompilerException(s"Unexpected binary operator: '$sop'.", loc)
       }
 
       case Expr.IfThenElse(exp1, exp2, exp3, loc) =>

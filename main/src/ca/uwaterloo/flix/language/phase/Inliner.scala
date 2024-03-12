@@ -464,7 +464,7 @@ object Inliner {
     * Performs boolean folding on a given unary expression with the logic:
     * Folds not-true => false and not-false => true.
     */
-  private def unaryFold(sop: SemanticOp, e: LiftedAst.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation): LiftedAst.Expr = {
+  private def unaryFold(sop: SemanticOp.UnaryOp, e: LiftedAst.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation): LiftedAst.Expr = {
     (sop, e) match {
       case (SemanticOp.BoolOp.Not, LiftedAst.Expr.Cst(Ast.Constant.Bool(b), _, _)) => LiftedAst.Expr.Cst(Ast.Constant.Bool(!b), tpe, loc)
       case _ => LiftedAst.Expr.ApplyAtomic(AtomicOp.Unary(sop), List(e), tpe, purity, loc)
@@ -481,7 +481,7 @@ object Inliner {
     * fold into false, if either the left or right expression is false.
     * if either the left or right expression is true, fold into the other expression.
     */
-  private def binaryFold(sop: SemanticOp, e1: LiftedAst.Expr, e2: LiftedAst.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation): LiftedAst.Expr = {
+  private def binaryFold(sop: SemanticOp.BinaryOp, e1: LiftedAst.Expr, e2: LiftedAst.Expr, tpe: MonoType, purity: Purity, loc: SourceLocation): LiftedAst.Expr = {
     (sop, e1, e2) match {
       case (SemanticOp.BoolOp.And, LiftedAst.Expr.Cst(Ast.Constant.Bool(true), _, _), _) => e2
       case (SemanticOp.BoolOp.And, _, LiftedAst.Expr.Cst(Ast.Constant.Bool(true), _, _)) => e1
