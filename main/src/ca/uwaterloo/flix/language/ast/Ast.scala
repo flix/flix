@@ -36,11 +36,21 @@ object Ast {
       *
       * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
       */
-    case class Text(name: String, text: String, stable: Boolean) extends Input {
+
+    case class StdLib(name: String, text: String, stable: Boolean) extends Input {
       override def hashCode(): Int = name.hashCode
 
       override def equals(obj: Any): Boolean = obj match {
-        case that: Text => this.name == that.name
+        case that: StdLib => this.name == that.name
+        case _ => false
+      }
+    }
+
+    case class Shell(name: String, text: String, stable: Boolean) extends Input {
+      override def hashCode(): Int = name.hashCode
+
+      override def equals(obj: Any): Boolean = obj match {
+        case that: Shell => this.name == that.name
         case _ => false
       }
     }
@@ -70,7 +80,8 @@ object Ast {
   case class Source(input: Input, data: Array[Char], stable: Boolean) extends Sourceable {
 
     def name: String = input match {
-      case Input.Text(name, _, _) => name
+      case Input.StdLib(name, _, _) => name
+      case Input.Shell(name, _, _) => name
       case Input.TxtFile(path) => path.toString
       case Input.PkgFile(path) => path.toString
       case Input.PkgTxtFile(path, _) => path.toString

@@ -371,7 +371,7 @@ class Flix {
       throw new IllegalArgumentException("'name' must be non-null.")
     if (text == null)
       throw new IllegalArgumentException("'text' must be non-null.")
-    addInput(name, Input.Text(name, text, stable = false))
+    addInput(name, Input.Shell(name, text, stable = false))
     this
   }
 
@@ -381,7 +381,7 @@ class Flix {
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.Text(name, "", stable = false))
+    remInput(name, Input.Shell(name, "", stable = false))
     this
   }
 
@@ -471,7 +471,7 @@ class Flix {
     case None => // nop
     case Some(_) =>
       changeSet = changeSet.markChanged(input)
-      inputs += name -> Input.Text(name, "", stable = false)
+      inputs += name -> Input.Shell(name, "", stable = false)
   }
 
   /**
@@ -728,7 +728,7 @@ class Flix {
     * Returns the inputs for the given list of (path, text) pairs.
     */
   private def getLibraryInputs(xs: List[(String, String)]): List[Input] = xs.foldLeft(List.empty[Input]) {
-    case (xs, (name, text)) => Input.Text(name, text, stable = true) :: xs
+    case (xs, (name, text)) => Input.StdLib(name, text, stable = true) :: xs
   }
 
   /**

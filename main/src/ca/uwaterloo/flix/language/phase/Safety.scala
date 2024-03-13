@@ -710,7 +710,8 @@ object Safety {
    *  If not it will return an 'IncorrectSafetySignature'
    */
   private def isUncheckedCastAllowed(loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = loc.source.input match {
-    case _: Input.Text => Nil
+    case _: Input.Shell => Nil
+    case _: Input.StdLib => Nil
     case _: Input.PkgFile => Nil
     case _: Input.TxtFile => if (flix.safe) IncorrectSafetySignature(loc) :: Nil else Nil
     case Input.PkgTxtFile(_, true) => IncorrectSafetySignature(loc) :: Nil
