@@ -207,6 +207,14 @@ object WeededAst {
 
     case class PutStaticField(className: String, fieldName: String, exp: Expr, loc: SourceLocation) extends Expr
 
+    case class InvokeMethod2(methodName: String, exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class InvokeStaticMethod2(methodName: String, exps: List[Expr], loc: SourceLocation) extends Expr
+
+    case class GetField2(fieldName: String, exp: Expr, loc: SourceLocation) extends Expr
+
+    case class PutField2(fieldName: String, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+
     case class NewObject(tpe: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class Static(loc: SourceLocation) extends Expr

@@ -243,6 +243,50 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represents the _return type_ of a Java method.
+    *
+    * A method return type can be resolved when the receiver object and argument types are known.
+    *
+    * A few examples:
+    *
+    * - The type: `Apply(InvokeMethod("length", 0), String)` is equivalent to `Int32`.
+    * - The type: `Apply(Apply(InvokeMethod("startsWith", 1), String), String)` is equivalent to `Bool`.
+    * - The type: `Apply(Apply(Apply(InvokeMethod("substring", 2), String), Int32), Int32)` is equivalent to `String`.
+    *
+    * The type constructor always at least one type argument: the type of the receiver object.
+    */
+  case class MethodReturnType(methodName: Name.Ident, arity: Int) extends TypeConstructor {
+    def kind: Kind = Kind.mkArrow(arity + 1)
+  }
+
+  /**
+    * A type constructor that represents the _return type_ of a Java static method.
+    *
+    * A static method return type can be resolved when the argument types are known.
+    *
+    * A few examples:
+    *
+    * - The type: `Apply(InvokeStaticMethod("valueOf", 1), Bool)` is equivalent to `String`.
+    * - The type: `Apply(InvokeStaticMethod("valueOf", 1), Char)` is equivalent to `String`.
+    *
+    * The type constructor does not require any arguments.
+    */
+  case class StaticMethodReturnType(methodName: Name.Ident, arity: Int) extends TypeConstructor {
+    def kind: Kind = Kind.mkArrow(arity)
+  }
+
+  /**
+    * A type constructor that represents the type of Java field.
+    *
+    * A field access can be resolved once the receiver object type is known.
+    *
+    * The type constructor needs exactly one type argument: the type of the receiver object.
+    */
+  case class FieldType(fieldName: Name.Ident) extends TypeConstructor {
+    def kind: Kind = Kind.Star ->: Kind.Star
+  }
+
+  /**
     * A type constructor that represent the type of arrays.
     */
   case object Array extends TypeConstructor {
