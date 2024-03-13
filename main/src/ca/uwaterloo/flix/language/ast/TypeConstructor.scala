@@ -253,7 +253,7 @@ object TypeConstructor {
     * - The type: `Apply(Apply(InvokeMethod("startsWith", 1), String), String)` is equivalent to `Bool`.
     * - The type: `Apply(Apply(Apply(InvokeMethod("substring", 2), String), Int32), Int32)` is equivalent to `String`.
     *
-    * The type constructor always at least one type argument: the type of the receiver object.
+    * The type constructor requires at least one type argument: the type of the receiver object.
     */
   case class MethodReturnType(methodName: Name.Ident, arity: Int) extends TypeConstructor {
     def kind: Kind = Kind.mkArrow(arity + 1)
@@ -280,7 +280,7 @@ object TypeConstructor {
     *
     * A field access can be resolved once the receiver object type is known.
     *
-    * The type constructor needs exactly one type argument: the type of the receiver object.
+    * The type constructor requires exactly one type argument: the type of the receiver object.
     */
   case class FieldType(fieldName: Name.Ident) extends TypeConstructor {
     def kind: Kind = Kind.Star ->: Kind.Star
