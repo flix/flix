@@ -17,8 +17,8 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.runtime.TestFn
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.api.lsp.Location
 import ca.uwaterloo.flix.language.ast.Ast.Constant
-import ca.uwaterloo.flix.language.ast.SemanticOp.{BoolOp, CharOp, Float32Op, Float64Op, Int16Op, Int32Op, Int64Op, Int8Op, StringOp}
 import ca.uwaterloo.flix.language.ast.Type.{Apply, False, Int32, Null, Str, True, mkBigInt}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
@@ -176,9 +176,9 @@ object MutationTester {
     private def mutateExpr(e: TypedAst.Expr): List[TypedAst.Expr] = e match {
         case Expr.Cst(cst, tpe, loc) =>
             mutateCst(cst).map(m => Expr.Cst(m, tpe, loc))
-        case original@Expr.Var(_, tpe, loc) =>
-            mutateConstantByType(tpe)
-        case original@Expr.Def(_, _, _) => Nil
+        case exp@Expr.Var(sym, tpe, loc) =>
+            mutateVar(exp)
+        case Expr.Def(_, _, _) => Nil
         case original@Expr.Sig(sym, tpe, loc) =>
             mutateSig(original)
         case Expr.Hole(sym, _, _) => Nil
@@ -204,10 +204,9 @@ object MutationTester {
             mut1 :: mutateExpr(exp).map(m => original.copy(exp = m))
 
         case original@Expr.Binary(sop, exp1, exp2, _, _, _) =>
-            val mut1 = mutateSop(sop).map(m => original.copy(sop = m))
             val mut2 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut3 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1 ::: mut2 ::: mut3
+            mut2 ::: mut3
         case original@Expr.Let(sym, mod, exp1, exp2, _, _, _) =>
             val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
             val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
@@ -375,7 +374,50 @@ object MutationTester {
             case _ => Nil
         }
     }
-    private def mutateConstantByType(constType: Type):List[Expr.Cst] = constType match {
+
+
+    private def mutateVar(varexp: Expr.Var): List[Expr] = varexp match {
+        case Expr.Var(_, tpe, loc) =>
+            val typ = if (tpe.size > 1) tpe.arrowResultType else tpe
+            println(s"before mutating var: $typ")
+            val newtpe = Type.mkApply(typ, typ :: Nil, loc)
+            print(s"after mutating var: $newtpe")
+            val one = tpe match {
+                case Type.Cst(tc, _) => tc match {
+                    case TypeConstructor.Char =>
+                        Expr.Cst(Constant.Char(1), tpe, loc) :: Nil
+                    case TypeConstructor.Float32 =>
+                        Expr.Cst(Constant.Float32(1), tpe, loc) :: Nil
+                    case TypeConstructor.Float64 =>
+                        Expr.Cst(Constant.Float64(1), tpe, loc) :: Nil
+                    case TypeConstructor.BigDecimal =>
+                        Expr.Cst(Constant.BigDecimal(java.math.BigDecimal.valueOf(1)), tpe, loc) :: Nil
+                    case TypeConstructor.Int8 =>
+                        Expr.Cst(Constant.Int8(1), tpe, loc) :: Nil
+                    case TypeConstructor.Int16 =>
+                        Expr.Cst(Constant.Int16(1), tpe, loc) :: Nil
+                    case TypeConstructor.Int32 =>
+                        Expr.Cst(Constant.Int32(1), tpe, loc) :: Nil
+                    case TypeConstructor.Int64 =>
+                        Expr.Cst(Constant.Int64(1), tpe, loc) :: Nil
+                    case TypeConstructor.BigInt =>
+                        Expr.Cst(Constant.BigInt(java.math.BigInteger.valueOf(1)), tpe, loc) :: Nil
+                    case _ => Nil
+                }
+                case _ => Nil
+            }
+
+            val sub = Expr.Sig(sym = Symbol.mkSigSym(Symbol.mkClassSym("Sub"), Name.Ident(loc.sp1, "sub", loc.sp2)), newtpe, loc)
+            val add = Expr.Sig(sym = Symbol.mkSigSym(Symbol.mkClassSym("Add"), Name.Ident(loc.sp1, "add", loc.sp2)), newtpe, loc)
+            val appSub = Expr.Apply(sub, varexp :: one, tpe, Type.Pure, loc)
+            val appAdd = Expr.Apply(add, varexp :: one, tpe, Type.Pure, loc)
+            val ret = appSub :: appAdd :: Nil
+            ret ::: mutateVarToConstantByType(tpe)
+        case _ => Nil
+    }
+
+
+    private def mutateVarToConstantByType(constType: Type): List[Expr.Cst] = constType match {
         case Type.Cst(tc, loc) => tc match {
             case TypeConstructor.Bool =>
                 val mut = Constant.Bool(true)
@@ -420,7 +462,7 @@ object MutationTester {
             case TypeConstructor.Str =>
                 val mut = Constant.Str("")
                 val mutations = mut :: mutateCst(mut)
-                mutations.map(m => Expr.Cst(m, Type.BigInt, loc))
+                mutations.map(m => Expr.Cst(m, Type.Str, loc))
             case TypeConstructor.Regex =>
                 val mut = Constant.Regex(java.util.regex.Pattern.compile("b"))
                 val mutations = mut :: mutateCst(mut)
@@ -430,115 +472,58 @@ object MutationTester {
         case _ => Nil
     }
 
-    private def mutateSop(sop: SemanticOp): List[SemanticOp] = {
-        def helper(sop: SemanticOp): List[SemanticOp] = sop match {
-            case op: SemanticOp.BoolOp => op match {
-                case BoolOp.Not => BoolOp.Not :: Nil
-                case _ => BoolOp.Or :: BoolOp.And :: BoolOp.Neq :: BoolOp.Eq :: Nil
-            }
-            case op: SemanticOp.CharOp => op match {
-                case _ => CharOp.Neq :: CharOp.Eq :: CharOp.Neq :: CharOp.Ge :: CharOp.Le :: CharOp.Lt :: CharOp.Gt :: Nil
-            }
-            case op: SemanticOp.Float32Op => op match {
-                case Float32Op.Neg => Float32Op.Neg :: Nil
-                case Float32Op.Add | Float32Op.Sub | Float32Op.Mul |
-                     Float32Op.Sub | Float32Op.Div | Float32Op.Exp =>
-                    Float32Op.Add :: Float32Op.Sub :: Float32Op.Mul :: Float32Op.Sub :: Float32Op.Div :: Float32Op.Exp :: Nil
-                case _ => Float32Op.Eq :: Float32Op.Neq :: Float32Op.Lt :: Float32Op.Le :: Float32Op.Gt :: Float32Op.Ge :: Nil
-            }
-            case op: SemanticOp.Float64Op => op match {
-                case Float64Op.Neg | Float64Op.Add | Float64Op.Sub | Float64Op.Mul | Float64Op.Div | Float64Op.Exp =>
-                    Float64Op.Neq :: Float64Op.Add :: Float64Op.Sub :: Float64Op.Mul :: Float64Op.Div :: Float64Op.Exp :: Nil
-                case _ => Float64Op.Eq :: Float64Op.Neq :: Float64Op.Lt :: Float64Op.Le :: Float64Op.Gt :: Float64Op.Ge :: Nil
-            }
-            case op: SemanticOp.Int8Op => op match {
-                case Int8Op.Neg => Int8Op.Neg :: Nil
-                case Int8Op.Not => Int8Op.Not :: Nil
-                case Int8Op.Add | Int8Op.Div | Int8Op.Sub | Int8Op.Mul | Int8Op.Rem | Int8Op.Exp | Int8Op.Shl | Int8Op.Shr =>
-                    Int8Op.Add :: Int8Op.Div :: Int8Op.Sub :: Int8Op.Mul :: Int8Op.Rem :: Int8Op.Exp :: Int8Op.Shl :: Int8Op.Shr :: Nil
-                case Int8Op.And | Int8Op.Or | Int8Op.Xor => Int8Op.And :: Int8Op.Or :: Int8Op.Xor :: Nil
-                case _ => Int8Op.Eq :: Int8Op.Neq :: Int8Op.Lt :: Int8Op.Le :: Int8Op.Gt :: Int8Op.Ge :: Nil
-            }
-            case op: SemanticOp.Int16Op => op match {
-                case Int16Op.Neg => Int16Op.Neg :: Nil
-                case Int16Op.Not => Int16Op.Not :: Nil
-                case Int16Op.Add | Int16Op.Sub | Int16Op.Mul | Int16Op.Div | Int16Op.Rem | Int16Op.Exp | Int16Op.Shr | Int16Op.Shl =>
-                    Int16Op.Sub :: Int16Op.Sub :: Int16Op.Mul :: Int16Op.Div :: Int16Op.Rem :: Int16Op.Exp :: Int16Op.Shr :: Int16Op.Shl :: Nil
-                case Int16Op.And | Int16Op.Or | Int16Op.Xor => Int16Op.And :: Int16Op.Or :: Int16Op.Xor :: Nil
-                case _ => Int16Op.Eq :: Int16Op.Neq :: Int16Op.Lt :: Int16Op.Le :: Int16Op.Gt :: Int16Op.Ge :: Nil
-            }
-            case op: SemanticOp.Int32Op => op match {
-                case Int32Op.Neg => Int32Op.Neg :: Nil
-                case Int32Op.Not => Int32Op.Not :: Nil
-                case Int32Op.Add | Int32Op.Sub | Int32Op.Mul | Int32Op.Div | Int32Op.Rem | Int32Op.Exp | Int32Op.Shr | Int32Op.Shl =>
-                    Int32Op.Add :: Int32Op.Sub :: Int32Op.Mul :: Int32Op.Div :: Int32Op.Rem :: Int32Op.Exp :: Int32Op.Shr :: Int32Op.Shl :: Nil
-                case Int32Op.And | Int32Op.Or | Int32Op.Xor => Int32Op.And :: Int32Op.Or :: Int32Op.Xor :: Nil
-                case _ => Int32Op.Eq :: Int32Op.Neq :: Int32Op.Lt :: Int32Op.Le :: Int32Op.Gt :: Int32Op.Ge :: Nil
-            }
-            case op: SemanticOp.Int64Op => op match {
-                case Int64Op.Neg => Int64Op.Neg :: Nil
-                case Int64Op.Not => Int64Op.Not :: Nil
-                case Int64Op.Add | Int64Op.Sub | Int64Op.Shl | Int64Op.Shr | Int64Op.Mul | Int64Op.Div | Int64Op.Rem | Int64Op.Exp =>
-                    Int64Op.Add :: Int64Op.Sub :: Int64Op.Mul :: Int64Op.Shl :: Int64Op.Shr :: Int64Op.Div :: Int64Op.Rem :: Int64Op.Exp :: Nil
-                case Int64Op.And | Int64Op.Or | Int64Op.Xor => Int64Op.And :: Int64Op.Or :: Int64Op.Xor :: Nil
-                case _ => Int64Op.Eq :: Int64Op.Neq :: Int64Op.Lt :: Int64Op.Le :: Int64Op.Gt :: Int64Op.Ge :: Nil
-            }
-            case op: SemanticOp.StringOp => op match {
-                case StringOp.Concat => StringOp.Concat :: Nil
-            }
-        }
-        helper(sop).filter(e => e != sop)
-    }
-
     private def mutateCst(cst: Ast.Constant): List[Ast.Constant] = {
-        def helper(cst: Ast.Constant): List[Ast.Constant] = {
-            cst match {
-                case Constant.Unit => Nil
-                case Constant.Null => Nil
-                case Constant.Bool(lit) => Constant.Bool(!lit) :: Nil
-                case Constant.Char(lit) => Constant.Char((lit ^ Char.MaxValue).toChar) :: Nil
-                case original@Constant.Float32(lit) =>
-                  Constant.Float32(lit + 1) :: Constant.Float32(lit - 1) :: Constant.Float32(1) ::
-                        Constant.Float32(-1) :: Constant.Float32(0) :: Constant.Float32(2) :: Constant.Float32(4) :: Constant.Float32(8) ::
-                        Constant.Float32(16) :: Constant.Float32(Float.MaxValue) :: Constant.Float32(Float.MinValue) :: Nil
-
-                case Constant.Float64(lit) =>
-                    Constant.Float64(lit + 1) :: Constant.Float64(lit - 1) ::
-                        Constant.Float64(1) :: Constant.Float64(-1) :: Constant.Float64(0) ::
-                        Constant.Float64(2) :: Constant.Float64(4) :: Constant.Float64(8) :: Constant.Float64(16) ::
-                        Constant.Float64(Double.MaxValue) :: Constant.Float64(Double.MinValue) :: Nil
-                case Constant.BigDecimal(lit) =>
-                    Constant.BigDecimal(lit.add(java.math.BigDecimal.ONE)) :: Constant.BigDecimal(java.math.BigDecimal.ONE) ::
-                        Constant.BigDecimal(lit.subtract(java.math.BigDecimal.ONE)) :: Constant.BigDecimal(java.math.BigDecimal.ZERO) ::
-                        Constant.BigDecimal(java.math.BigDecimal.ZERO.subtract(java.math.BigDecimal.ONE)) :: Nil
-                case Constant.Int8(lit) =>
-                    (Constant.Int8(lit.+(1).toByte) :: Constant.Int8(lit.-(1).toByte)
-                        :: Constant.Int8((-1).toByte) :: Constant.Int8((0.toByte))
-                        :: Constant.Int8((1).toByte) :: Constant.Int8((2).toByte)
-                        :: Constant.Int8((4).toByte) :: Constant.Int8((8).toByte) :: Constant.Int8((16).toByte)
-                        :: Constant.Int8(Byte.MaxValue) :: Constant.Int8(Byte.MinValue) :: Nil)
-                case Constant.Int16(lit) =>
-                    (Constant.Int16(lit.+(1).toShort) :: Constant.Int16(lit.+(1).toShort)
-                        :: Constant.Int16((-1).toShort) :: Constant.Int16((0).toShort)
-                        :: Constant.Int16((1).toShort) :: Constant.Int16((2).toByte)
-                        :: Constant.Int16((4).toShort) :: Constant.Int16((8).toShort) :: Constant.Int16((16).toShort)
-                        :: Constant.Int16(Short.MaxValue) :: Constant.Int16(Short.MinValue) :: Nil)
-                case Constant.Int32(lit) =>
-                    (Constant.Int32(lit + 1) :: Constant.Int32(lit - 1)
-                        :: Constant.Int32(-1) :: Constant.Int32(0) :: Constant.Int32(1)
-                        :: Constant.Int32(2) :: Constant.Int32(4) :: Constant.Int32(8) :: Constant.Int32(16)
-                        :: Constant.Int32(Int.MaxValue) :: Constant.Int32(Int.MinValue) :: Nil)
-                case Constant.Int64(lit) =>
-                    (Constant.Int64(lit + 1) :: Constant.Int64(lit - 1)
-                        :: Constant.Int64(-1) :: Constant.Int64(0)
-                        :: Constant.Int64(2) :: Constant.Int64(4) :: Constant.Int64(8) :: Constant.Int64(16)
-                        :: Constant.Int64(1) :: Constant.Int64(Long.MaxValue)
-                        :: Constant.Int64(Long.MinValue) :: Nil)
-                case Constant.BigInt(lit) => Constant.BigInt(lit.add(lit)) :: Nil
-                case Constant.Str(lit) => Constant.Str(lit + "\b") :: Nil
-                case Constant.Regex(_) => Constant.Regex(java.util.regex.Pattern.compile("a")) :: Nil
-            }
+        cst match {
+            case Constant.Unit => Nil
+            case Constant.Null => Nil
+            case Constant.Bool(lit) => Constant.Bool(!lit) :: Nil
+            case Constant.Char(lit) => Constant.Char((lit ^ Char.MaxValue).toChar) :: Nil
+            case Constant.Float32(lit) =>
+                val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Float.MinValue, Float.MaxValue, lit + 1, lit - 1).filter(i => lit != i)
+                litCand.toList.map(i => Constant.Float32(i))
+            case Constant.Float64(lit) =>
+                val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Double.MaxValue, Double.MinValue, lit + 1, lit - 1).filter(i => lit != i)
+                litCand.toList.map(i => Constant.Float64(i))
+            case Constant.BigDecimal(lit) =>
+                val litCand = Set(java.math.BigDecimal.ZERO,
+                    java.math.BigDecimal.valueOf(-1),
+                    java.math.BigDecimal.ONE,
+                    lit.subtract(java.math.BigDecimal.ONE),
+                    java.math.BigDecimal.valueOf(2),
+                    java.math.BigDecimal.valueOf(4),
+                    java.math.BigDecimal.valueOf(6),
+                    java.math.BigDecimal.valueOf(8),
+                    java.math.BigDecimal.valueOf(16),
+                    lit.add(java.math.BigDecimal.ONE),
+                    lit.subtract(java.math.BigDecimal.ONE)).filter(i => lit != i)
+                litCand.toList.map(i => Constant.BigDecimal(i))
+            case Constant.Int8(lit) =>
+                val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Byte.MaxValue, Byte.MinValue, lit + 1, lit - 1).map(i => i.toByte).filter(i => lit != i)
+                litCand.toList.map(i => Constant.Int8(i))
+            case Constant.Int16(lit) =>
+                val litCand = Set(0, -1, 1, 2, 4, 6, 8, Short.MinValue, Short.MaxValue, lit + 1, lit - 1).map(i => i.toShort).filter(i => lit != i)
+                litCand.toList.map(i => Constant.Int16(i))
+            case Constant.Int32(lit) =>
+                val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Int.MaxValue, Int.MinValue, lit + 1, lit - 1).filter(i => lit != i)
+                litCand.toList.map(i => Constant.Int32(i))
+            case Constant.Int64(lit) =>
+                val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Long.MaxValue, Long.MinValue, lit + 1, lit - 1).filter(i => lit != i)
+                litCand.toList.map(i => Constant.Int64(i))
+            case Constant.BigInt(lit) =>
+                val litCand = Set(java.math.BigInteger.ZERO,
+                    java.math.BigInteger.valueOf(-1),
+                    java.math.BigInteger.ONE,
+                    lit.subtract(java.math.BigInteger.ONE),
+                    java.math.BigInteger.TWO,
+                    java.math.BigInteger.valueOf(4),
+                    java.math.BigInteger.valueOf(6),
+                    java.math.BigInteger.valueOf(8),
+                    java.math.BigInteger.valueOf(16),
+                    lit.add(java.math.BigInteger.ONE),
+                    lit.subtract(java.math.BigInteger.ONE)).filter(i => lit != i)
+                litCand.toList.map(i => Constant.BigInt(i))
+            case Constant.Str(lit) => Constant.Str(lit + "\b") :: Nil
+            case Constant.Regex(reg) => Constant.Regex(java.util.regex.Pattern.compile(".*")) :: Nil
         }
-        helper(cst).filter(c => c != cst)
     }
 }
