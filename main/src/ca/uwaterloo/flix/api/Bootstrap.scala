@@ -497,9 +497,9 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     // Add sources and packages.
     reconfigureFlix(flix)
     flix.check().toHardResult match {
-        case Result.Ok(_) => Validation.success(())
-        case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
-      }
+      case Result.Ok(_) => Validation.success(())
+      case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
+    }
   }
 
   /**
