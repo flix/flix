@@ -16,13 +16,14 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{Bootstrap, Flix}
+import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Input, Source}
 import ca.uwaterloo.flix.language.ast.{Ast, ReadAst}
+import ca.uwaterloo.flix.language.errors.ReaderError
 import ca.uwaterloo.flix.tools.pkg.ManifestParser
-import ca.uwaterloo.flix.util.Result.Ok
-import ca.uwaterloo.flix.util.{StreamOps, Validation}
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
+import ca.uwaterloo.flix.util.{Result, StreamOps, Validation}
 import ca.uwaterloo.flix.util.collection.MultiMap
 
 import java.io.IOException
@@ -62,7 +63,7 @@ object Reader {
               result += (src -> ())
             }
 
-          case _ => Validation.success(()) //This case should never happen. Otherwise it should be handled correctly.
+          case _ => Validation.success(())
         }
       }
 
@@ -104,18 +105,15 @@ object Reader {
    * Returns the package's safety signature.
    */
   private def isZipPkgSafe(zipFile: ZipFile, zipPath: Path): Boolean = {
-    zipFile.entries().asScala.find(_.getName.endsWith(".toml")) match {
+    zipFile.entries().asScala.find(_.getName == "flix.toml") match {
       case Some(tomlEntry) =>
         val s = new String(zipFile.getInputStream(tomlEntry).readAllBytes())
-
         val p = zipPath.toString.stripSuffix(".fpkg") + "/" + tomlEntry.getName
         ManifestParser.parse(s, Paths.get(p)) match {
           case Ok(m) => m.safe
-          // If the manifest is not correct we return the default safety value.
-          case _  => true
+          case Err(_)  => throw new RuntimeException(s"The flix.toml file in the package '$zipPath' has been modified during the execution.")
         }
-      // if the zip file doesn't contain "flix.toml" we return the default safety value
-      case _ => true
+      case None => throw new RuntimeException(s"The package '$zipPath' has been modified during the execution.")
     }
   }
 

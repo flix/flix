@@ -402,6 +402,10 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       case Err(e) => return Validation.toHardFailure(BootstrapError.FlixPackageError(e))
       case Ok(_) =>
     }
+    FlixPackageManager.checkManifestEquality(flixPackagePaths) match {
+      case Err(e) => return Validation.toHardFailure(BootstrapError.FlixPackageError(e))
+      case Ok(_) =>
+    }
     out.println("Dependency resolution completed.")
 
     // 3. Add *.flix, src/**.flix and test/**.flix
@@ -491,6 +495,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     */
   def check(flix: Flix): Validation[Unit, BootstrapError] = {
     // Add sources and packages.
+    reconfigureFlix(flix)
     flix.check().toHardResult match {
         case Result.Ok(_) => Validation.success(())
         case Result.Err(errors) => Validation.toHardFailure(BootstrapError.GeneralError(flix.mkMessages(errors)))
