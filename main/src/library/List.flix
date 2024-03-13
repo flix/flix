@@ -272,6 +272,8 @@ mod List {
             if (i < b)
                 acc
             else
+                //loop(Sub.sub(i, 1), i :: acc);
+                //loop({decAndCheck();Sub.sub(i, 1)}, i :: acc);
                 loop(i - 1, i :: acc);
         loop(e - 1, Nil)
 
