@@ -15,12 +15,13 @@
  */
 package ca.uwaterloo.flix
 
+import ca.uwaterloo.flix.runtime.TestFn
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.SemanticOp.{BoolOp, CharOp, Float32Op, Float64Op, Int16Op, Int32Op, Int64Op, Int8Op, StringOp}
 import ca.uwaterloo.flix.language.ast.Type.{Apply, False, Int32, Null, Str, True, mkBigInt}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, SemanticOp, Symbol, Type, TypeConstructor, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.Expr
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -34,7 +35,7 @@ object MutationTester {
         val end = System.nanoTime() - start
         val timeSec = end.toFloat / 1_000_000_000.0
         println(s"time to generate mutations: $timeSec")
-        runMutations(flix,tester, root, root1)
+        runMutations2(flix, tester, root, root1)
 
         /**
           * val result = root1.map(r => flix.codeGen(r).unsafeGet)
@@ -42,7 +43,7 @@ object MutationTester {
           */
     }
 
-    private def progressUpdate(message: String, timePassed: Long) : Long = {
+    private def progressUpdate(message: String, timePassed: Long): Long = {
         var temp = timePassed
         val now = System.nanoTime()
         // print update if a minute has passed since last print
@@ -53,60 +54,69 @@ object MutationTester {
         temp
     }
 
-    private def runMutations(flix: Flix, tester: String, root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[TypedAst.Def])]): Unit = {
+    private case class TestKit(flix: Flix, root: Root, testModule: String)
+
+    private def runMutations2(flix: Flix, tester: String, root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[TypedAst.Def])]): Unit = {
         val totalStartTime = System.nanoTime()
-        var timeTemp = 0.0
-        var survivorCount = 0
-        var mutantCounter = 0
-        var temp = totalStartTime
-        var message = ""
-        var date = LocalDateTime.now()
+        val date = LocalDateTime.now()
+        val temp = totalStartTime
+        val amountOfMutants = mutatedDefs.map(m => m._2.length).sum
         val f = DateTimeFormatter.ofPattern("yyyy-MM-dd: HH:mm")
-        mutatedDefs.foreach(mut => {
-            val defName = mut._1.toString
-            val mutationAmount = mut._2.length
-            println(s"testing $defName with $mutationAmount mutations")
-            val defs = root.defs
-
-            mut._2.foreach(mDef => {
-                mutantCounter += 1
-                val start = System.nanoTime()
-                val n = defs + (mut._1 -> mDef)
-                println(s"mutation: $mDef")
-                val newRoot = root.copy(defs = n)
-                val cRes = flix.codeGen(newRoot).unsafeGet
-                val testsFromTester = cRes.getTests.filter{case (s, _) => s.toString.contains(tester)}.toList
-                val testResults = testsFromTester.forall(c =>
-                    try {
-                        c._2.run() match {
-                            case java.lang.Boolean.TRUE => true
-                            case _ => false
-                        }
-                    } catch {
-                        case _: Throwable => false
-                    }
-                )
-                timeTemp += (System.nanoTime() - start).toFloat / 1_000_000_000
-                if (testResults) {
-                    survivorCount += 1
-                    val sym = mDef.sym.toString
-                    //println(s"mutation in $sym survived")
-                }
-
-                date = LocalDateTime.now()
-                message = s"[${f.format(date)}] Mutants: $mutantCounter, Killed: ${mutantCounter - survivorCount}, Survived: $survivorCount"
-
-                temp = progressUpdate(message, temp)
-
-            })
+        // (survivorCount, startTime, tempTime for progress updates, date for progress updates, amount of mutants currently tested)
+        val localAcc = (0, totalStartTime.toDouble, temp, date, 0)
+        val (totalSurvivorCount, timeTemp, _, _, _) = mutatedDefs.foldLeft(localAcc)((acc, mut) => {
+            val kit = TestKit(flix, root, tester)
+            testMutantsAndUpdateProgress(acc, mut, kit, f)
         })
         val totalEndTime = System.nanoTime() - totalStartTime
-        println(s"there where $survivorCount surviving mutations, out of $mutantCounter mutations")
-        val average = timeTemp / mutantCounter
+        println(s"there where $totalSurvivorCount surviving mutations, out of $amountOfMutants mutations")
+        val average = timeTemp / amountOfMutants
         println(s"average time to test a mutant:  $average sec")
         val time = totalEndTime.toFloat / 1_000_000_000
         println(s"total time to test all mutants: $time sec")
     }
+
+    private def testMutantsAndUpdateProgress(acc: (Int, Double, Long, LocalDateTime, Int), mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit, f: DateTimeFormatter) = {
+        //println(s"testing ${mut._1.toString} with $mutationAmount mutations")
+        mut._2.foldLeft(acc)((acc2, mDef) => {
+            val (survivorCount, time, accTemp, accDate, mAmount) = acc2
+            val mutationAmount = mAmount + 1
+            val start = System.nanoTime()
+            val testResults = testMutant(mDef, mut, testKit)
+            val newTime = time + (System.nanoTime() - start).toDouble / 1_000_000_000
+            val newSurvivorCount = if (testResults) survivorCount + 1 else survivorCount
+            val newDate = LocalDateTime.now()
+            val message = s"[${f.format(newDate)}] Mutants: $mutationAmount, Killed: ${mutationAmount - survivorCount}, Survived: $survivorCount"
+            val newTemp = progressUpdate(message, accTemp)
+            (newSurvivorCount, newTime, newTemp, newDate, mutationAmount)
+            //val sym = mDef.sym.toString
+            //println(s"mutation in $sym survived")
+        })
+    }
+
+    private def testMutant(mDef: TypedAst.Def, mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit): Boolean = {
+        val defs = testKit.root.defs
+        val n = defs + (mut._1 -> mDef)
+        println(s"mutation: $mDef")
+        val newRoot = testKit.root.copy(defs = n)
+        val cRes = testKit.flix.codeGen(newRoot).unsafeGet
+        val testsFromTester = cRes.getTests.filter { case (s, _) => s.toString.contains(testKit.testModule) }.toList
+        runTest(testsFromTester)
+    }
+
+    private def runTest(testsFromTester: List[(Symbol.DefnSym, TestFn)]): Boolean = {
+        testsFromTester.forall(c =>
+            try {
+                c._2.run() match {
+                    case java.lang.Boolean.TRUE => true
+                    case _ => false
+                }
+            } catch {
+                case _: Throwable => false
+            }
+        )
+    }
+
 
     private def mutateRoot(root: TypedAst.Root, testee: String): List[(Symbol.DefnSym, List[TypedAst.Def])] = {
         val defs = root.defs
