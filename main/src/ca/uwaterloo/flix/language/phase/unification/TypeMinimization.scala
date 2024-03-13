@@ -31,7 +31,7 @@ object TypeMinimization {
   /**
     * Minimizes the given type, reducing it to a more concise equivalent form.
     */
-  def minimizeType(t: Type)(implicit flix: Flix): Type = t.kind match {
+  def minimizeType(t: Type): Type = t.kind match {
     case Kind.Eff => minimizeBoolAlg(t)
     case Kind.Bool => minimizeBoolAlg(t)
     case _ => t match {
@@ -46,7 +46,7 @@ object TypeMinimization {
   /**
     * Minimizes the given scheme, reducing it to a more concise equivalent form.
     */
-  def minimizeScheme(sc: Scheme)(implicit flix: Flix): Scheme = sc match {
+  def minimizeScheme(sc: Scheme): Scheme = sc match {
     case Scheme(quantifiers, tconstrs, econstrs, base) =>
       val newBase = minimizeType(base)
       val tvars = newBase.typeVars.map(_.sym)
