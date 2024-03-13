@@ -31,6 +31,9 @@ import scala.annotation.tailrec
 
 object ConstraintResolution {
 
+  /**
+    * The maximum number of resolution iterations before we throw an error.
+    */
   private val MaxIterations = 1000
 
   private var record = false
@@ -91,15 +94,24 @@ object ConstraintResolution {
     }
   }
 
+  /**
+    * Resolves constraints in the given definition.
+    */
   def visitDef(defn: KindedAst.Def, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root, infResult: InfResult)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
     case KindedAst.Def(_, spec, _) => visitSpec(spec, renv0, tconstrs0, cenv0, eqEnv0, root, infResult)
   }
 
+  /**
+    * Resolves constraints in the given signature.
+    */
   def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root, infResult: InfResult)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
     case KindedAst.Sig(_, _, None) => Validation.success(Substitution.empty)
     case KindedAst.Sig(_, spec, Some(_)) => visitSpec(spec, renv0, tconstrs0, cenv0, eqEnv0, root, infResult)
   }
 
+  /**
+    * Resolves constraints in the given spec.
+    */
   def visitSpec(spec: KindedAst.Spec, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root, infResult: InfResult)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
     case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs, loc) =>
 
@@ -135,6 +147,11 @@ object ConstraintResolution {
       }.toValidation
   }
 
+  /**
+    * Resolves the equality between the two given types.
+    *
+    * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
+    */
   private def resolveEquality(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[ResolutionResult, TypeError] = (tpe1.kind, tpe2.kind) match {
     case (Kind.Eff, Kind.Eff) =>
       // first simplify the types to get rid of assocs if we can
@@ -170,8 +187,8 @@ object ConstraintResolution {
     case (Kind.RecordRow, Kind.RecordRow) =>
       // first simplify the types to get rid of assocs if we can
       for {
-        (t1, p1) <- simplifyType(tpe1, renv, eqEnv, loc)
-        (t2, p2) <- simplifyType(tpe2, renv, eqEnv, loc)
+        (t1, _) <- simplifyType(tpe1, renv, eqEnv, loc)
+        (t2, _) <- simplifyType(tpe2, renv, eqEnv, loc)
         res0 <- RecordUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
         // If eff unification has any constrs in output, then we know it failed so the subst is empty
         res = if (res0._2.isEmpty) ResolutionResult.newSubst(res0._1) else throw InternalCompilerException("can't handle complex record stuff", SourceLocation.Unknown)
@@ -180,15 +197,15 @@ object ConstraintResolution {
     case (Kind.SchemaRow, Kind.SchemaRow) =>
       // first simplify the types to get rid of assocs if we can
       for {
-        (t1, p1) <- simplifyType(tpe1, renv, eqEnv, loc)
-        (t2, p2) <- simplifyType(tpe2, renv, eqEnv, loc)
+        (t1, _) <- simplifyType(tpe1, renv, eqEnv, loc)
+        (t2, _) <- simplifyType(tpe2, renv, eqEnv, loc)
         res <- SchemaUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
       } yield ResolutionResult.newSubst(res)
 
-    case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) => // MATT maybe need to compare sym1 and sym2
+    case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
       for {
-        (t1, p1) <- simplifyType(tpe1, renv, eqEnv, loc)
-        (t2, p2) <- simplifyType(tpe2, renv, eqEnv, loc)
+        (t1, _) <- simplifyType(tpe1, renv, eqEnv, loc)
+        (t2, _) <- simplifyType(tpe2, renv, eqEnv, loc)
         res <- CaseSetUnification.unify(t1, t2, renv, sym1.universe, sym1).mapErr(toTypeError(_, prov))
       } yield ResolutionResult.newSubst(res)
 
@@ -203,7 +220,7 @@ object ConstraintResolution {
     *
     * The types must have kinds that do not have special unification rules.
     *
-    * Θ ⊩ᵤ τ₁ = τ₂ ⤳ U; R
+    * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
     */
   private def resolveEqualityStar(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[ResolutionResult, TypeError] = (tpe1, tpe2) match {
     // varU
@@ -305,7 +322,7 @@ object ConstraintResolution {
                 // If it's an associated type, it's ok. It may be reduced later to a concrete type.
                 case _: Type.AssocType => Result.Ok((Type.AssocType(cst, t, kind, loc), p))
                 // Otherwise it's a problem.
-                case baseTpe => Result.Err(TypeError.MissingInstance(cst.sym.clazz, baseTpe, renv, loc)) // MATT must pipe in loc
+                case baseTpe => Result.Err(TypeError.MissingInstance(cst.sym.clazz, baseTpe, renv, loc))
               }
             // We could reduce! Simplify further if possible.
             case Some(t) => simplifyType(t, renv0, eqEnv, loc).map { case (res, _) => (res, true) }
@@ -419,6 +436,7 @@ object ConstraintResolution {
       case hd :: tl => reduceOne(hd, renv, cenv, eqEnv, subst0).flatMap {
         // if we're just returning the same constraint, then have made no progress and we need to find something else to reduce
         case res if !res.progress => tryReduce(tl).map {
+          // TODO ASSOC-TYPES does this make a difference since we sort anyway?
           // Case 1: progress made. send the head to the end
           case res if res.progress => res.copy(constrs = res.constrs :+ hd)
           // Case 2: no progress. Keep the order
