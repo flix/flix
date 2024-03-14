@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.phase.constraintgeneration.{Debug, TypingConst
 import ca.uwaterloo.flix.language.phase.unification.Unification.getUnderOrOverAppliedError
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.util.Result.Err
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 import java.nio.file.{Files, Path}
@@ -300,14 +300,16 @@ object ConstraintResolution {
           // we mark t's tvars as rigid so we get the substitution in the right direction
           val renv = t.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
           val insts = eqEnv(cst.sym)
+
           // find the first (and only) instance that matches
-          insts.iterator.flatMap { // TODO ASSOC-TYPES generalize this pattern (also in monomorph)
+          val simplifiedOpt = ListOps.findMap(insts) {
             inst =>
               Unification.unifyTypes(t, inst.arg, renv).toOption.flatMap {
                 case (subst, Nil) => Some(subst(inst.ret))
                 case (_, _ :: _) => None // if we have leftover constraints then it didn't actually unify
               }
-          }.nextOption() match {
+          }
+          simplifiedOpt match {
             // Can't reduce. Check what the original type was.
             case None =>
               t.baseType match {
@@ -357,13 +359,14 @@ object ConstraintResolution {
             val renv = t.typeVars.map(_.sym).foldLeft(renv0)(_.markRigid(_))
             val insts = classEnv(clazz).instances
             // find the first (and only) instance that matches
-            insts.iterator.flatMap { // TODO ASSOC-TYPES generalize this pattern (also in monomorph)
+            val tconstrsOpt = ListOps.findMap(insts) {
               inst =>
                 Unification.unifyTypes(t, inst.tpe, renv).toOption.flatMap {
                   case (subst, Nil) => Some(inst.tconstrs.map(subst.apply))
                   case (_, _ :: _) => None // if we have leftover constraints then it didn't actually unify
                 }
-            }.nextOption() match {
+            }
+            tconstrsOpt match {
               case None =>
                 t.baseType match {
                   // If it's a var, it's ok. It may be substituted later to a type we can reduce.
