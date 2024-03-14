@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst, Type => AstType}
-import ca.uwaterloo.flix.language.errors.{WeederError, Parser2Error}
+import ca.uwaterloo.flix.language.errors.{Parser2Error, WeederError}
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation.{traverse, _}
 import ca.uwaterloo.flix.util.collection.Chain
@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
 
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
-import java.util.regex.{PatternSyntaxException, Pattern => JPattern}
+import java.util.regex.{Matcher, PatternSyntaxException, Pattern => JPattern}
 import scala.collection.immutable.{::, List, Nil}
 import scala.math.Ordered.orderingToOrdered
 
@@ -2253,7 +2253,14 @@ object Weeder2 {
 
     def toStringCst(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
-      val lit = token.text.stripPrefix("\"").stripSuffix("\"")
+      val lit = token.text
+        .stripPrefix("\"")
+        .stripSuffix("\"")
+        // Process special escapes '\${' and '\%{' by replacing them with '${' and '%{'.
+        // Otherwise the call to StringContext.processEscapes throws.
+        .replaceAll(java.util.regex.Pattern.quote("\\${"), Matcher.quoteReplacement("${"))
+        .replaceAll(java.util.regex.Pattern.quote("\\%{"), Matcher.quoteReplacement("%{"))
+
       try {
         val unescapedLit = StringContext.processEscapes(lit)
         Validation.success(Expr.Cst(Ast.Constant.Str(unescapedLit), loc))
@@ -2262,7 +2269,6 @@ object Weeder2 {
           // Scala will throw when trying to process an unknown escape such as '\1'.
           // In that case we can just remove the backslashes.
           // TODO: Should this be a SoftFailure, pointing to the unecessary escape? That is probably something the lexer should handle though.
-          // Actually we probably should not use processEscapes, but rather make our own function. We want to allow \$ and \%.
           Validation.success(Expr.Cst(Ast.Constant.Str(lit.replaceAll("\\\\", "")), loc))
         }
       }
