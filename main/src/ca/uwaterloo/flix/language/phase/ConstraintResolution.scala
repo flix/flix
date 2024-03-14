@@ -95,24 +95,24 @@ object ConstraintResolution {
   }
 
   /**
-    * Resolves constraints in the given definition.
+    * Resolves constraints in the given definition using the given inference result.
     */
-  def visitDef(defn: KindedAst.Def, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root, infResult: InfResult)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
-    case KindedAst.Def(_, spec, _) => visitSpec(spec, renv0, tconstrs0, cenv0, eqEnv0, root, infResult)
+  def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
+    case KindedAst.Def(_, spec, _) => visitSpec(spec, infResult, renv0, tconstrs0, cenv0, eqEnv0, root)
   }
 
   /**
-    * Resolves constraints in the given signature.
+    * Resolves constraints in the given signature using the given inference result.
     */
-  def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root, infResult: InfResult)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
+  def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
     case KindedAst.Sig(_, _, None) => Validation.success(Substitution.empty)
-    case KindedAst.Sig(_, spec, Some(_)) => visitSpec(spec, renv0, tconstrs0, cenv0, eqEnv0, root, infResult)
+    case KindedAst.Sig(_, spec, Some(_)) => visitSpec(spec, infResult, renv0, tconstrs0, cenv0, eqEnv0, root)
   }
 
   /**
-    * Resolves constraints in the given spec.
+    * Resolves constraints in the given spec using the given inference result.
     */
-  def visitSpec(spec: KindedAst.Spec, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root, infResult: InfResult)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
+  def visitSpec(spec: KindedAst.Spec, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
     case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs, loc) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
