@@ -49,9 +49,6 @@ object ConstraintResolution {
     }
   }
 
-
-  // TODO ASSOC-TYPES this is duplicated in TypeReconstruction
-
   /**
     * Adds the given type constraints as assumptions to the class environment.
     */
