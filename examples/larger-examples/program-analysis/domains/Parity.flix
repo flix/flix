@@ -178,7 +178,7 @@ mod Domain.Parity {
     ///
 //    #safe2((x, y) -> x &&& y)
 //    #strict2 #monotone2 #commutative #associative
-    pub def and(e1: Parity, e2: Parity): Parity = match (e1, e2) {
+    pub def band(e1: Parity, e2: Parity): Parity = match (e1, e2) {
        case (_, Parity.Bot)            => Parity.Bot
        case (Parity.Bot, _)            => Parity.Bot
        case (Parity.Odd, Parity.Odd)   => Parity.Odd
@@ -193,7 +193,7 @@ mod Domain.Parity {
     ///
 //    #safe2((x, y) -> x ||| y)
 //    #strict2 #monotone2 #commutative #associative
-    pub def or(e1: Parity, e2: Parity): Parity = match (e1, e2) {
+    pub def bor(e1: Parity, e2: Parity): Parity = match (e1, e2) {
       case (_, Parity.Bot)            => Parity.Bot
       case (Parity.Bot, _)            => Parity.Bot
       case (Parity.Odd, Parity.Odd)   => Parity.Odd
@@ -208,7 +208,7 @@ mod Domain.Parity {
     ///
 //    #safe2((x, y) -> x ^^^ y)
 //    #strict2 #monotone2 #commutative #associative
-    pub def xor(e1: Parity, e2: Parity): Parity = match (e1, e2) {
+    pub def bxor(e1: Parity, e2: Parity): Parity = match (e1, e2) {
       case (_, Parity.Bot)            => Parity.Bot
       case (Parity.Bot, _)            => Parity.Bot
       case (Parity.Odd, Parity.Odd)   => Parity.Even
