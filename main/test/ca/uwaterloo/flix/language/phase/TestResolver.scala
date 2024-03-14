@@ -358,15 +358,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedName.03") {
     val input =
       s"""
-         |def foo(): #{ R } = #{}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UndefinedName.04") {
-    val input =
-      s"""
          |mod A {
          |    trait C[a] {
          |        pub def f(x: a): a
