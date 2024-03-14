@@ -86,7 +86,7 @@ object FastBoolUnification {
   /**
     * Enable debugging (prints information during Boolean unification).
     */
-  private val Debugging: Boolean = true
+  private val Debugging: Boolean = false
 
   /**
     * Enable verification (i.e. check that the computed most-general unifier is a solution to the original equation system.)
