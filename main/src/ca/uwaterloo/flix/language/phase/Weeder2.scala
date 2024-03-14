@@ -32,8 +32,6 @@ import java.util.regex.{PatternSyntaxException, Pattern => JPattern}
 import scala.collection.immutable.{::, List, Nil}
 import scala.math.Ordered.orderingToOrdered
 
-// TODO: Add change set support
-
 /**
  * Weeder2 produces a [[WeededAst.Root]] by transforming [[SyntaxTree.Tree]]s into [[WeededAst.CompilationUnit]]s.
  * [[SyntaxTree.Tree]] provides few guarantees, which must be kept in mind when reading/modifying Weeder2:
@@ -1081,7 +1079,7 @@ object Weeder2 {
         traverse(pickAll(TreeKind.ArgumentNamed, tree.children))(visitArgumentNamed)
       )((unnamed, named) => unnamed ++ named match {
         // TODO: sort by SourceLocation is only used for comparison with Weeder
-        case args =>  Expr.Tuple(args.sortBy(_.loc), tree.loc)
+        case args => Expr.Tuple(args.sortBy(_.loc), tree.loc)
       })
     }
 
@@ -1363,7 +1361,6 @@ object Weeder2 {
     }
 
     private def tryPickNumberLiteralToken(tree: Tree)(implicit s: State): Option[Token] = {
-      assert(tree.kind == TreeKind.Expr.Expr)
       val NumberLiteralKinds = List(TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
       val maybeTree = tryPick(TreeKind.Expr.Literal, tree.children)
       maybeTree.flatMap(_.children(0) match {
@@ -1978,6 +1975,7 @@ object Weeder2 {
           case TreeKind.Pattern.Variable => visitVariable(tree, seen)
           case TreeKind.Pattern.Tag => visitTag(tree, seen)
           case TreeKind.Pattern.Literal => visitLiteral(tree)
+          case TreeKind.Pattern.Unary => visitUnary(tree)
           case TreeKind.Pattern.Tuple => visitTuple(tree, seen)
           case TreeKind.Pattern.Record => visitRecord(tree, seen)
           case kind => throw InternalCompilerException(s"Invalid Pattern kind '$kind'", tree.loc)
@@ -2038,6 +2036,31 @@ object Weeder2 {
             case Some(pat) => Pattern.Tag(qname, pat, tree.loc)
           }
       }
+    }
+
+
+    private def visitUnary(tree: Tree)(implicit s: State): Validation[Pattern, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Pattern.Unary)
+      val NumberLiteralKinds = List(TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
+      val literalToken = tree.children(1) match {
+        case Child.TokenChild(t) if NumberLiteralKinds.contains(t.kind) => Some(t)
+        case _ => None
+      }
+      flatMapN(pick(TreeKind.Operator, tree.children))(_.children(0) match {
+        case Child.TokenChild(opToken) => {
+          literalToken match {
+            // fold unary minus into a constant, and visit it like any other constant
+            case Some(lit) if opToken.text == "-" =>
+              // Construct a synthetic literal tree with the unary minus and visit that like any other literal expression
+              val syntheticToken = Token(lit.kind, lit.src, opToken.start, lit.end, lit.beginLine, lit.beginCol, lit.endLine, lit.endCol)
+              val syntheticLiteral = Tree(TreeKind.Pattern.Literal, Array(Child.TokenChild(syntheticToken)), tree.loc.asSynthetic)
+              visitLiteral(syntheticLiteral)
+            case _ => throw InternalCompilerException(s"no number literal found for unary '-'", tree.loc)
+          }
+        }
+        case _ => throw InternalCompilerException(s"expected unary operator but found tree", tree.loc)
+      }
+      )
     }
 
     private def visitLiteral(tree: Tree)(implicit s: State): Validation[Pattern, CompilationMessage] = {

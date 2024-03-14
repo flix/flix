@@ -27,8 +27,6 @@ import org.parboiled2.ParserInput
 
 import scala.collection.mutable.ArrayBuffer
 
-// TODO: Add change set support
-
 /**
  * Errors reside both within the produced `Tree` but are also kept in an array in `state.errors`
  * to make it easy to return them as a `CompilationMessage` after parsing.
@@ -2172,6 +2170,7 @@ object Parser2 {
              | TokenKind.NameMath
              | TokenKind.Underscore
              | TokenKind.KeywordQuery => variable()
+        case TokenKind.Minus => unary()
         case TokenKind.LiteralString
              | TokenKind.LiteralChar
              | TokenKind.LiteralFloat32
@@ -2203,6 +2202,15 @@ object Parser2 {
       val mark = open()
       advance()
       close(mark, TreeKind.Pattern.Literal)
+    }
+
+    private def unary()(implicit s: State): Mark.Closed = {
+      val mark = open()
+      val opMark = open()
+      advance()
+      close(opMark, TreeKind.Operator)
+      advance()
+      close(mark, TreeKind.Pattern.Unary)
     }
 
     private def variable()(implicit s: State): Mark.Closed = {

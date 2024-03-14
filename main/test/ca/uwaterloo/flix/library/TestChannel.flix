@@ -67,7 +67,7 @@
             case (0, locks) =>
                 let _ = unsafeGetAndUnlock(c, locks);
                 false
-            case (1, _) =>
+            case (-1, _) =>
                 true
             case _ => unreachable!()
         }

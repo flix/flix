@@ -431,6 +431,8 @@ object SyntaxTree {
 
       case object Variable extends Pattern
 
+      case object Unary extends Pattern
+
     }
 
     //////////////////////////////////////////////////////////////////////////////////////////
