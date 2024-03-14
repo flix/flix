@@ -258,14 +258,16 @@ object Parser2 {
     SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, line, column, line, column + token.text.length)
   }
 
-  private def comments()(implicit s: State): Unit = {
-    // Note: [[atAny]] is deliberately __not__ used here, since comments is called with every open.
-    // Using [[atAny]] calls [[nth]] many times which depletes the parsers fuel unnecessarily.
-    val atComment = s.tokens.lift(s.position) match {
-      case Some(Token(k, _, _, _, _, _, _, _)) => k == TokenKind.CommentLine || k == TokenKind.CommentBlock
-      case None => false
+  private def comments(canStartOnDoc: Boolean = false)(implicit s: State): Unit = {
+    // Note: In case of a misplaced CommentDoc, we would just like to consume it into the comment list.
+    // This is forgiving in the common case of accidentally inserting an extra '/'.
+    val starters = if (canStartOnDoc) {
+      List(TokenKind.CommentLine, TokenKind.CommentBlock, TokenKind.CommentDoc)
+    } else {
+      List(TokenKind.CommentLine, TokenKind.CommentBlock)
     }
-    if (atComment) {
+
+    if (atAny(starters)) {
       val mark = Mark.Opened(s.events.length)
       s.events.append(
         Event.Open(TreeKind.ErrorTree(Parser2Error.DevErr(currentSourceLocation(), "Unclosed parser mark")))
@@ -278,13 +280,13 @@ object Parser2 {
     }
   }
 
-  private def open()(implicit s: State): Mark.Opened = {
+  private def open(consumeDocComments: Boolean = true)(implicit s: State): Mark.Opened = {
     val mark = Mark.Opened(s.events.length)
     s.events.append(
       Event.Open(TreeKind.ErrorTree(Parser2Error.DevErr(currentSourceLocation(), "Unclosed parser mark")))
     )
     // Consume any comments just before opening a new mark
-    comments()
+    comments(canStartOnDoc = consumeDocComments)
     mark
   }
 
@@ -564,7 +566,7 @@ object Parser2 {
 
   private object Decl {
     def declaration()(implicit s: State): Mark.Closed = {
-      val mark = open()
+      val mark = open(consumeDocComments = false)
       docComment()
 
       if (at(TokenKind.KeywordMod)) {
@@ -605,7 +607,7 @@ object Parser2 {
     }
 
     private def operation()(implicit s: State): Mark.Closed = {
-      val mark = open()
+      val mark = open(consumeDocComments = false)
       docComment()
       annotations()
       modifiers()
@@ -714,7 +716,7 @@ object Parser2 {
 
     private def enumCases()(implicit s: State): Unit = {
       while (!eof() && atAny(List(TokenKind.CommentDoc, TokenKind.KeywordCase, TokenKind.Comma))) {
-        val mark = open()
+        val mark = open(consumeDocComments = false)
         docComment()
         if (at(TokenKind.KeywordCase)) {
           expect(TokenKind.KeywordCase)
@@ -751,7 +753,7 @@ object Parser2 {
       if (at(TokenKind.CurlyL)) {
         expect(TokenKind.CurlyL)
         while (!at(TokenKind.CurlyR) && !eof()) {
-          val mark = open()
+          val mark = open(consumeDocComments = false)
           docComment()
           annotations() // TODO: associated types cant have annotations
           modifiers()
@@ -783,12 +785,9 @@ object Parser2 {
       if (at(TokenKind.CurlyL)) {
         expect(TokenKind.CurlyL)
         while (!at(TokenKind.CurlyR) && !eof()) {
-          val mark = open()
+          val mark = open(consumeDocComments = false)
+          docComment()
 
-          // TODO: Find better way to handle "DocComment LineComment DocComment"
-          while (at(TokenKind.CommentDoc) && !eof()) {
-            docComment()
-          }
           annotations() // TODO: associated types cant have annotations
           modifiers()
           nth(0) match {
@@ -1754,16 +1753,12 @@ object Parser2 {
 
     private def letRecDef()(implicit s: State): Mark.Closed = {
       assert(atAny(List(TokenKind.Annotation, TokenKind.KeywordDef, TokenKind.CommentDoc)))
-      val mark = open()
-      Decl.annotations()
+      val mark = open(consumeDocComments = false)
       Decl.docComment()
+      Decl.annotations()
       expect(TokenKind.KeywordDef)
       name(NAME_DEFINITION)
       val markParams = open()
-
-      if (!at(TokenKind.ParenL)) {
-        println(s"${currentSourceLocation()}")
-      }
       separated(() => {
         val mark = open()
         name(NAME_PARAMETER)

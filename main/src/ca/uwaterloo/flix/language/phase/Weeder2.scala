@@ -2038,7 +2038,6 @@ object Weeder2 {
       }
     }
 
-
     private def visitUnary(tree: Tree)(implicit s: State): Validation[Pattern, CompilationMessage] = {
       assert(tree.kind == TreeKind.Pattern.Unary)
       val NumberLiteralKinds = List(TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
