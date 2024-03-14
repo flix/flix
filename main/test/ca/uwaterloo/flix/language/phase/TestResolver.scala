@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
+import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -155,7 +155,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleTypeAlias](result)
   }
 
-  test("InaccessibleClass.01") {
+  test("InaccessibleTrait.01") {
     val input =
       s"""
          |mod A {
@@ -169,10 +169,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleClass](result)
+    expectError[ResolutionError.InaccessibleTrait](result)
   }
 
-  test("InaccessibleClass.02") {
+  test("InaccessibleTrait.02") {
     val input =
       s"""
          |mod A {
@@ -186,10 +186,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleClass](result)
+    expectError[ResolutionError.InaccessibleTrait](result)
   }
 
-  test("InaccessibleClass.03") {
+  test("InaccessibleTrait.03") {
     val input =
       """
         |mod N {
@@ -201,10 +201,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleClass](result)
+    expectError[ResolutionError.InaccessibleTrait](result)
   }
 
-  test("InaccessibleClass.04") {
+  test("InaccessibleTrait.04") {
     val input =
       """
         |mod N {
@@ -216,10 +216,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleClass](result)
+    expectError[ResolutionError.InaccessibleTrait](result)
   }
 
-  test("SealedClass.01") {
+  test("SealedTrait.01") {
     val input =
       """
         |mod N {
@@ -231,10 +231,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.SealedClass](result)
+    expectError[ResolutionError.SealedTrait](result)
   }
 
-  test("SealedClass.02") {
+  test("SealedTrait.02") {
     val input =
       """
         |mod N {
@@ -246,10 +246,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.SealedClass](result)
+    expectError[ResolutionError.SealedTrait](result)
   }
 
-  test("SealedClass.03") {
+  test("SealedTrait.03") {
     val input =
       """
         |mod N {
@@ -261,7 +261,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.SealedClass](result)
+    expectError[ResolutionError.SealedTrait](result)
   }
 
   test("CyclicTypeAliases.01") {
@@ -426,25 +426,25 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedOp](result)
   }
 
-  test("UndefinedClass.01") {
+  test("UndefinedTrait.01") {
     val input =
       """
         |instance C[Int32]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedClass](result)
+    expectError[ResolutionError.UndefinedTrait](result)
   }
 
-  test("UndefinedClass.02") {
+  test("UndefinedTrait.02") {
     val input =
       """
         |def f(x: a): a with C[a] = x
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedClass](result)
+    expectError[ResolutionError.UndefinedTrait](result)
   }
 
-  test("UndefinedClass.03") {
+  test("UndefinedTrait.03") {
     val input =
       """
         |trait K[a]
@@ -452,10 +452,10 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |def f(x: a): a with K[a], U[a] = x
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedClass](result)
+    expectError[ResolutionError.UndefinedTrait](result)
   }
 
-  test("UndefinedClass.04") {
+  test("UndefinedTrait.04") {
     val input =
       """
         |trait K[a]
@@ -463,7 +463,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |instance K[a] with U[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedClass](result)
+    expectError[ResolutionError.UndefinedTrait](result)
   }
 
   test("UndefinedJvmConstructor.01") {
@@ -1047,7 +1047,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |mod A {
-        |    pub class X[a]
+        |    pub trait X[a]
         |    mod B {
         |        enum Y
         |        instance X[Y]
@@ -1055,7 +1055,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedClass](result)
+    expectError[ResolutionError.UndefinedTrait](result)
   }
 
   test("ParentNamespaceNotVisible.04") {

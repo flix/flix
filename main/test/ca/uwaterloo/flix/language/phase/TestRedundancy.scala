@@ -1614,10 +1614,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantTypeConstraint](result)
   }
 
-  test("UnusedFormalParam.Class.01") {
+  test("UnusedFormalParam.Trait.01") {
     val input =
       """
-        |pub class C[a] {
+        |pub trait C[a] {
         |  pub def f(x: a): String = "Hello!"
         |}
         |""".stripMargin
