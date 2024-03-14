@@ -417,7 +417,7 @@ object ConstraintResolution {
       recordGraph(Debug.toDotWithSubst(curr, subst), count)
 
       last = curr
-      reduceAll(curr, renv, cenv, eqEnv, subst) match {
+      resolveOneOf(curr, renv, cenv, eqEnv, subst) match {
         case Result.Ok(ResolutionResult(newSubst, newConstrs, progress)) =>
           curr = newConstrs
           subst = newSubst
@@ -430,12 +430,15 @@ object ConstraintResolution {
     Result.Ok(ResolutionResult(subst, curr, progress = true))
   }
 
-  private def reduceAll(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ResolutionResult, TypeError] = {
-    def tryReduce(cs: List[TypingConstraint]): Result[ResolutionResult, TypeError] = cs match {
+  /**
+    * Tries to resolve one of the given constraints.
+    */
+  private def resolveOneOf(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ResolutionResult, TypeError] = {
+    def tryResolve(cs: List[TypingConstraint]): Result[ResolutionResult, TypeError] = cs match {
       case Nil => Result.Ok(ResolutionResult(subst0, cs, progress = false))
-      case hd :: tl => reduceOne(hd, renv, cenv, eqEnv, subst0).flatMap {
+      case hd :: tl => resolveOne(hd, renv, cenv, eqEnv, subst0).flatMap {
         // if we're just returning the same constraint, then have made no progress and we need to find something else to reduce
-        case res if !res.progress => tryReduce(tl).map {
+        case res if !res.progress => tryResolve(tl).map {
           // TODO ASSOC-TYPES does this make a difference since we sort anyway?
           // Case 1: progress made. send the head to the end
           case res if res.progress => res.copy(constrs = res.constrs :+ hd)
@@ -447,13 +450,16 @@ object ConstraintResolution {
       }
     }
 
-    tryReduce(sort(constrs))
+    tryResolve(sort(constrs))
   }
 
   def sort(constrs: List[TypingConstraint]): List[TypingConstraint] =
     constrs.sortBy(_.index)
 
-  private def reduceOne(constr0: TypingConstraint, renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
+  /**
+    * Tries to resolve the given constraint.
+    */
+  private def resolveOne(constr0: TypingConstraint, renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
     case TypingConstraint.Equality(tpe1, tpe2, prov) =>
       val t1 = TypeMinimization.minimizeType(subst0(tpe1))
       val t2 = TypeMinimization.minimizeType(subst0(tpe2))
@@ -466,7 +472,7 @@ object ConstraintResolution {
       }
     case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested0) =>
       // First reduce nested constraints
-      reduceAll(nested0, renv, cenv, eqEnv, subst0).map {
+      resolveOneOf(nested0, renv, cenv, eqEnv, subst0).map {
         // Case 1: We have reduced everything below. Now reduce the purity constraint.
         case ResolutionResult(subst1, newConstrs, progress) if newConstrs.isEmpty =>
           val e1 = subst1(eff1)
