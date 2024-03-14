@@ -408,7 +408,7 @@ object Lexer {
       case _ if isKeyword("eff") => TokenKind.KeywordEff
       case _ if isKeyword("else") => TokenKind.KeywordElse
       case _ if isKeyword("enum") => TokenKind.KeywordEnum
-      case _ if isKeyword("false") => TokenKind.KeywordFalse
+      case _ if isKeywordLiteral("false") => TokenKind.KeywordFalse
       case _ if isKeyword("fix") => TokenKind.KeywordFix
       case _ if isKeyword("forall") => TokenKind.KeywordForall
       case _ if isKeyword("forA") => TokenKind.KeywordForA
@@ -435,7 +435,7 @@ object Lexer {
       case _ if isKeyword("mod") => TokenKind.KeywordMod
       case _ if isKeyword("new") => TokenKind.KeywordNew
       case _ if isKeyword("not") => TokenKind.KeywordNot
-      case _ if isKeyword("null") => TokenKind.KeywordNull
+      case _ if isKeywordLiteral("null") => TokenKind.KeywordNull
       case _ if isKeyword("open_variant") => TokenKind.KeywordOpenVariant
       case _ if isKeyword("open_variant_as") => TokenKind.KeywordOpenVariantAs
       case _ if isKeyword("or") => TokenKind.KeywordOr
@@ -459,7 +459,7 @@ object Lexer {
       case _ if isKeyword("static") => TokenKind.KeywordStatic
       case _ if isKeyword("Static") => TokenKind.KeywordStaticUppercase
       case _ if isKeyword("trait") => TokenKind.KeywordTrait
-      case _ if isKeyword("true") => TokenKind.KeywordTrue
+      case _ if isKeywordLiteral("true") => TokenKind.KeywordTrue
       case _ if isKeyword("try") => TokenKind.KeywordTry
       case _ if isKeyword("type") => TokenKind.KeywordType
       case _ if isKeyword("typematch") => TokenKind.KeywordTypeMatch
@@ -498,8 +498,8 @@ object Lexer {
    * A keyword is separated if it is surrounded by anything __but__ a character, digit a dot or underscore.
    * Note that __comparison includes current__.
    */
-  private def isSeparated(keyword: String)(implicit s: State): Boolean = {
-    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_' || c == '.')
+  private def isSeparated(keyword: String, allowDot: Boolean = false)(implicit s: State): Boolean = {
+    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_' || !allowDot && c == '.')
     val leftIndex = s.current.offset - 2
     val rightIndex = s.current.offset + keyword.length - 1
     val isSeperatedLeft = leftIndex < 0 || isSep(s.src.data(leftIndex))
@@ -558,6 +558,20 @@ object Lexer {
    */
   private def isOperator(op: String)(implicit s: State): Boolean = {
     isSeparatedOperator(op) && isMatch(op)
+  }
+
+  /**
+   * Checks whether the following substring matches a keyword literal. IE. "true" or "null"
+   * Note that __comparison includes current__.
+   * Also note that this will advance the current position past the keyword if there is a match.
+   */
+  private def isKeywordLiteral(keyword: String)(implicit s: State): Boolean = {
+    // Allow dot here means that the literal gets recognized even when it is followed by a '.'.
+    // We want this for literals like 'true', but not for keywords like 'not'.
+    // This is because a symbol like 'not' can be imported from Java in a qualified path.
+    // For instance `import java.math.BigInteger.not(): BigInt \ {} as bNot;`. <- 'not' needs to be read as a name here.
+    // We are assuming no literal keyword needs to be imported. So no importing something called 'true' from java.
+    isSeparated(keyword, allowDot = true) && isMatch(keyword)
   }
 
   /**
