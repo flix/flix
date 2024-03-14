@@ -52,7 +52,7 @@ object ConstraintResolution {
   /**
     * Adds the given type constraints as assumptions to the class environment.
     */
-  def expandClassEnv(cenv: Map[Symbol.ClassSym, Ast.ClassContext], tconstrs: List[Ast.TypeConstraint]): Map[Symbol.ClassSym, Ast.ClassContext] = {
+  private def expandClassEnv(cenv: Map[Symbol.ClassSym, Ast.ClassContext], tconstrs: List[Ast.TypeConstraint]): Map[Symbol.ClassSym, Ast.ClassContext] = {
 
     tconstrs.flatMap(withSupers(_, cenv)).foldLeft(cenv) {
       case (acc, Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, _), arg, loc)) =>
@@ -83,7 +83,7 @@ object ConstraintResolution {
   /**
     * Adds the given equality constraints as assumptions to the equality environment.
     */
-  def expandEqualityEnv(eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], econstrs: List[Ast.EqualityConstraint]): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = {
+  private def expandEqualityEnv(eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], econstrs: List[Ast.EqualityConstraint]): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = {
     econstrs.foldLeft(eqEnv) {
       case (acc, Ast.EqualityConstraint(Ast.AssocTypeConstructor(sym, _), tpe1, tpe2, _)) =>
         val assoc = Ast.AssocTypeDef(tpe1, tpe2)
