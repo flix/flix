@@ -454,7 +454,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
   test("Test.UnlawfulSignature.01") {
     val input =
       """
-        |lawful class C[a] {
+        |lawful trait C[a] {
         |    pub def f(): a
         |}
         |""".stripMargin
@@ -470,7 +470,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |    pub def g(x: Int32): Bool = true
         |}
         |
-        |lawful class C[a] {
+        |lawful trait C[a] {
         |  pub def f(x: a): Bool
         |  pub def g(x: a): Bool
         |

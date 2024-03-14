@@ -39,7 +39,7 @@ object CodeActionProvider {
         mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
       else
         Nil
-    case ResolutionError.UndefinedClass(qn, _, loc) if onSameLine(range, loc) =>
+    case ResolutionError.UndefinedTrait(qn, _, loc) if onSameLine(range, loc) =>
       if (qn.namespace.isRoot)
         mkUseClass(qn.ident, uri)
       else
