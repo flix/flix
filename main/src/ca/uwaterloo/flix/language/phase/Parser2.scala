@@ -1762,6 +1762,10 @@ object Parser2 {
       expect(TokenKind.KeywordDef)
       name(NAME_DEFINITION)
       val markParams = open()
+
+      if (!at(TokenKind.ParenL)) {
+        println(s"${currentSourceLocation()}")
+      }
       separated(() => {
         val mark = open()
         name(NAME_PARAMETER)
