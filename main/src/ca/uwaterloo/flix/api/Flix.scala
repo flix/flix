@@ -28,6 +28,7 @@ import ca.uwaterloo.flix.tools.Summary
 import ca.uwaterloo.flix.util.Formatter.NoFormatter
 import ca.uwaterloo.flix.util._
 import ca.uwaterloo.flix.util.collection.Chain
+import ca.uwaterloo.flix.tools.pkg.Manifest
 
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path}
@@ -364,9 +365,33 @@ class Flix {
   val jarLoader = new ExternalJarLoader
 
   /**
-    * Adds the given string `text` with the given `name`.
+    * Adds the given string `text` with the given `name` as standard library input.
     */
-  def addSourceCode(name: String, text: String): Flix = {
+  def addStdLibSourceCode(name: String, text: String): Flix = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    addInput(name, Input.StdLib(name, text, stable = false))
+    this
+  }
+
+  /**
+   * Adds the given string `text` with the given `name` as LSP input.
+   */
+  def addLspSourceCode(name: String, text: String): Flix = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    addInput(name, Input.Lsp(name, text, stable = false))
+    this
+  }
+
+  /**
+   * Adds the given string `text` with the given `name` as shell input.
+   */
+  def addShellSourceCode(name: String, text: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
     if (text == null)
@@ -376,19 +401,32 @@ class Flix {
   }
 
   /**
+   * Adds the given string `text` with the given `name` as Socket Servlet.
+   */
+  def addSocketServletSourceCode(name: String, text: String): Flix = {
+    if (name == null)
+      throw new IllegalArgumentException("'name' must be non-null.")
+    if (text == null)
+      throw new IllegalArgumentException("'text' must be non-null.")
+    addInput(name, Input.Shell(name, text, stable = false))
+    this
+  }
+
+
+  /**
     * Removes the source code with the given `name`.
     */
   def remSourceCode(name: String): Flix = {
     if (name == null)
       throw new IllegalArgumentException("'name' must be non-null.")
-    remInput(name, Input.Shell(name, "", stable = false))
+    remInput(name)
     this
   }
 
   /**
     * Adds the given path `p` as Flix source file.
     */
-  def addFlix(p: Path): Flix = {
+  def addFlix(p: Path, optManifest: Option[Manifest]): Flix = {
     if (p == null)
       throw new IllegalArgumentException(s"'p' must be non-null.")
     if (!Files.exists(p))
@@ -399,8 +437,10 @@ class Flix {
       throw new IllegalArgumentException(s"'$p' must be a readable file.")
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
-
-    addInput(p.toString, Input.TxtFile(p))
+    optManifest match {
+      case Some(m) => addInput(p.toString, Input.FlixProjectFile(p, m))
+      case None => addInput(p.toString, Input.FlixFolderFile(p, safe = false))
+    }
     this
   }
 
@@ -419,7 +459,7 @@ class Flix {
     if (!p.getFileName.toString.endsWith(".fpkg"))
       throw new IllegalArgumentException(s"'$p' must be a *.pkg file.")
 
-    addInput(p.toString, Input.PkgFile(p))
+    addInput(p.toString, Input.Pkg(p))
     this
   }
 
@@ -430,7 +470,7 @@ class Flix {
     if (!p.getFileName.toString.endsWith(".flix"))
       throw new IllegalArgumentException(s"'$p' must be a *.flix file.")
 
-    remInput(p.toString, Input.TxtFile(p))
+    remInput(p.toString)
     this
   }
 
@@ -467,11 +507,11 @@ class Flix {
     *
     * Note: Removing an input means to replace it by the empty string.
     */
-  private def remInput(name: String, input: Input): Unit = inputs.get(name) match {
+  private def remInput(name: String): Unit = inputs.get(name) match {
     case None => // nop
-    case Some(_) =>
+    case Some(input) =>
       changeSet = changeSet.markChanged(input)
-      inputs += name -> Input.Shell(name, "", stable = false)
+      inputs += name -> Input.Empty()
   }
 
   /**

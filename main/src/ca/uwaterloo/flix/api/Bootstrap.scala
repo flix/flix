@@ -458,7 +458,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
     }
 
     for (path <- sourcePaths if hasChanged(path)) {
-      flix.addFlix(path)
+      flix.addFlix(path, optManifest)
     }
 
     for (path <- flixPackagePaths if hasChanged(path)) {
