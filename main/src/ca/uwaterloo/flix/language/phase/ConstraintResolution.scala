@@ -221,14 +221,12 @@ object ConstraintResolution {
     */
   private def resolveEqualityStar(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[ResolutionResult, TypeError] = (tpe1, tpe2) match {
     // varU
-    case (x: Type.Var, t) if renv.isFlexible(x.sym) =>
-      Result.Ok(ResolutionResult.newSubst(Substitution.singleton(x.sym, t))) // MATT throwing out prov
-    // MATT need to consider occurs, levels
+    case (x: Type.Var, t) if renv.isFlexible(x.sym) && !t.typeVars.contains(x) =>
+      Result.Ok(ResolutionResult.newSubst(Substitution.singleton(x.sym, t)))
 
     // varU
-    case (t, x: Type.Var) if renv.isFlexible(x.sym) =>
-      Result.Ok(ResolutionResult.newSubst(Substitution.singleton(x.sym, t))) // MATT throwing out prov
-    // MATT need to consider occurs, levels
+    case (t, x: Type.Var) if renv.isFlexible(x.sym) && t.typeVars.contains(x) =>
+      Result.Ok(ResolutionResult.newSubst(Substitution.singleton(x.sym, t)))
 
 
     // reflU
@@ -282,7 +280,7 @@ object ConstraintResolution {
     * Applications that are illegal result in an Err.
     * These are applications to types for which the eqEnv has no corresponding instance.
     */
-  def simplifyType(tpe: Type, renv0: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
+  private def simplifyType(tpe: Type, renv0: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
     // A var is already simple.
     case t: Type.Var => Result.Ok((t, false))
     // A constant is already simple
@@ -399,7 +397,7 @@ object ConstraintResolution {
     *
     * Returns a reduction result containing a substitution and any leftover constraints.
     */
-  def resolve(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ResolutionResult, TypeError] = {
+  private def resolve(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ResolutionResult, TypeError] = {
     var last = List.empty[TypingConstraint]
     var curr = constrs.sortBy(_.numVars)
     var subst = subst0
@@ -447,11 +445,8 @@ object ConstraintResolution {
       }
     }
 
-    tryResolve(sort(constrs))
+    tryResolve(constrs.sortBy(_.index))
   }
-
-  def sort(constrs: List[TypingConstraint]): List[TypingConstraint] =
-    constrs.sortBy(_.index)
 
   /**
     * Tries to resolve the given constraint.
@@ -522,7 +517,7 @@ object ConstraintResolution {
     * - a list of leftover constraints, and
     * - a Boolean flag indicating whether progress was made
     */
-  case class ResolutionResult(subst: Substitution, constrs: List[TypingConstraint], progress: Boolean) {
+  private case class ResolutionResult(subst: Substitution, constrs: List[TypingConstraint], progress: Boolean) {
 
     /**
       * Composes `this` equality result with `that` equality result.
@@ -538,7 +533,7 @@ object ConstraintResolution {
     }
   }
 
-  object ResolutionResult {
+  private object ResolutionResult {
 
     /**
       * Indicates that a constraint was eliminated.
@@ -604,7 +599,10 @@ object ConstraintResolution {
     *     - ?
     *       - (other cases should be impossible on this branch)
     */
-  def toTypeError(err0: UnificationError, prov: Provenance)(implicit flix: Flix): TypeError = (err0, prov) match {
+  // TODO ASSOC-TYPES This translation does not work well
+  // TODO ASSOC-TYPES because provenance is not propogated properly.
+  // TODO ASSOC-TYPES We also need to track the renv for use in these errors.
+  private def toTypeError(err0: UnificationError, prov: Provenance)(implicit flix: Flix): TypeError = (err0, prov) match {
     case (err, Provenance.ExpectType(expected, actual, loc)) =>
       toTypeError(err, Provenance.Match(expected, actual, loc)) match {
         case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, _) =>
@@ -620,13 +618,8 @@ object ConstraintResolution {
     case (err, Provenance.ExpectEffect(expected, actual, loc)) =>
       toTypeError(err, Provenance.Match(expected, actual, loc)) match {
         case TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, _) =>
-          // MATT bad
-          //          val upcast = Type.mkUnion(actual, Type.freshVar(Kind.Eff, SourceLocation.Unknown)(Level.Default, flix), SourceLocation.Unknown) // level is irrelevant here
-          //          if (unifiesWith(expected, upcast, renv, ListMap.empty)) { // TODO level env in error // TODO eqenv?
-          //            TypeError.PossibleCheckedEffectCast(expected, actual, renv, loc)
-          //          } else {
+          // TODO ASSOC-TYPES restore possible upcast error
           TypeError.UnexpectedEffect(baseType1, baseType2, renv, loc)
-        //          }
         case e => e
       }
 
@@ -645,46 +638,48 @@ object ConstraintResolution {
 
     case (UnificationError.MismatchedTypes(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
       (baseType1.typeConstructor, baseType2.typeConstructor) match {
-        case (Some(TypeConstructor.Arrow(_)), _) => getUnderOrOverAppliedError(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc) // MATT renv
-        case (_, Some(TypeConstructor.Arrow(_))) => getUnderOrOverAppliedError(baseType2, baseType1, type2, type1, RigidityEnv.empty, loc) // MATT renv
-        case _ => TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc) // MATT renv
+        case (Some(TypeConstructor.Arrow(_)), _) => getUnderOrOverAppliedError(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+        case (_, Some(TypeConstructor.Arrow(_))) => getUnderOrOverAppliedError(baseType2, baseType1, type2, type1, RigidityEnv.empty, loc)
+        case _ => TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
       }
 
     case (UnificationError.MismatchedBools(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      TypeError.MismatchedBools(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc) // MATT renv
+      TypeError.MismatchedBools(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
 
     case (UnificationError.MismatchedEffects(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
       (type1.typeConstructor, type2.typeConstructor) match {
         case (Some(TypeConstructor.Arrow(_)), _) => TypeError.MismatchedArrowEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
         case (_, Some(TypeConstructor.Arrow(_))) => TypeError.MismatchedArrowEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
-        case _ => TypeError.MismatchedEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc) // MATT renv
+        case _ => TypeError.MismatchedEffects(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
       }
 
     case (UnificationError.MismatchedCaseSets(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      TypeError.MismatchedCaseSets(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc) // MATT renv
+      TypeError.MismatchedCaseSets(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
 
     case (UnificationError.MismatchedArity(ts1, ts2), Provenance.Match(tpe1, tpe2, loc)) =>
-      TypeError.MismatchedArity(tpe1, tpe2, RigidityEnv.empty, loc) // MATT renv
+      TypeError.MismatchedArity(tpe1, tpe2, RigidityEnv.empty, loc)
 
     case (UnificationError.TooComplex(tpe1, tpe2), Provenance.Match(_, _, loc)) =>
-      TypeError.TooComplex(loc) // MATT renv
+      TypeError.TooComplex(loc)
 
     case (UnificationError.RigidVar(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc) // MATT renv
+      TypeError.MismatchedTypes(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
     case (UnificationError.OccursCheck(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
-      TypeError.OccursCheck(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc) // MATT renv
+      TypeError.OccursCheck(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
     case (UnificationError.UndefinedLabel(label, labelType, recordType), Provenance.Match(type1, type2, loc)) =>
-      TypeError.UndefinedLabel(label, labelType, recordType, RigidityEnv.empty, loc) // MATT renv
+      TypeError.UndefinedLabel(label, labelType, recordType, RigidityEnv.empty, loc)
     case (UnificationError.UndefinedPredicate(pred, predType, schemaType), Provenance.Match(type1, type2, loc)) =>
-      TypeError.UndefinedPred(pred, predType, schemaType, RigidityEnv.empty, loc) // MATT renv
+      TypeError.UndefinedPred(pred, predType, schemaType, RigidityEnv.empty, loc)
     case (UnificationError.NonRecordType(nonRecordType), Provenance.Match(type1, type2, loc)) =>
-      TypeError.NonRecordType(nonRecordType, RigidityEnv.empty, loc) // MATT renv
+      TypeError.NonRecordType(nonRecordType, RigidityEnv.empty, loc)
     case (UnificationError.NonSchemaType(nonSchemaType), Provenance.Match(type1, type2, loc)) =>
-      TypeError.NonSchemaType(nonSchemaType, RigidityEnv.empty, loc) // MATT renv
+      TypeError.NonSchemaType(nonSchemaType, RigidityEnv.empty, loc)
     case (UnificationError.NoMatchingInstance(tconstr), Provenance.Match(type1, type2, loc)) =>
-      TypeError.MissingInstance(tconstr.head.sym, tconstr.arg, RigidityEnv.empty, loc) // MATT renv
-    case (UnificationError.UnsupportedEquality(t1, t2), _) => ??? // TypeError.UnsupportedEquality(Ast.BroadEqualityConstraint(t1, t2), loc) // MATT impossible?
-    case (UnificationError.IrreducibleAssocType(sym, t), _) => ??? // TypeError.IrreducibleAssocType(sym, t, loc) // MATT impossible?
+      TypeError.MissingInstance(tconstr.head.sym, tconstr.arg, RigidityEnv.empty, loc)
+
+    // TODO ASSOC-TYPES these errors are relics of the old type system and should be removed
+    case (UnificationError.UnsupportedEquality(t1, t2), _) => throw InternalCompilerException("unexpected error: " + err0, SourceLocation.Unknown)
+    case (UnificationError.IrreducibleAssocType(sym, t), _) => throw InternalCompilerException("unexpected error: " + err0, SourceLocation.Unknown)
   }
 
 }
