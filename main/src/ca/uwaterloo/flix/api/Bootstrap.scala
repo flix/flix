@@ -452,11 +452,6 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   def reconfigureFlix(flix: Flix): Unit = {
     val previousSources = timestamps.keySet
 
-    optManifest match {
-      case Some(m) => flix.safe = m.safe
-      case _ => flix.safe = true
-    }
-
     for (path <- sourcePaths if hasChanged(path)) {
       flix.addFlix(path, optManifest)
     }

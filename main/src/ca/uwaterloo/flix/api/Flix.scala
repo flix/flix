@@ -340,11 +340,6 @@ class Flix {
   var options: Options = Options.Default
 
   /**
-   *  The current Flix safety signature.
-   */
-  var safe: Boolean = true
-
-  /**
     * The thread pool executor service for `this` Flix instance.
     */
   var threadPool: java.util.concurrent.ForkJoinPool = _
