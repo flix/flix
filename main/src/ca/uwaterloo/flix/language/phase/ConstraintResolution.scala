@@ -126,7 +126,7 @@ object ConstraintResolution {
       }
 
       val cenv = expandClassEnv(cenv0, tconstrs ++ tconstrs0)
-      val eqEnv = expandEqualityEnv(eqEnv0, econstrs) // MATT need instance eq stuff
+      val eqEnv = expandEqualityEnv(eqEnv0, econstrs) // TODO ASSOC-TYPES allow econstrs on instances
 
       val tpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
       val effConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
@@ -372,7 +372,7 @@ object ConstraintResolution {
                   // If it's an associated type, it's ok. It may be reduced later to a concrete type.
                   case _: Type.AssocType => Result.Ok(List(TypingConstraint.Class(clazz, t, loc)), progress)
                   // Otherwise it's a problem.
-                  case _ => Result.Err(TypeError.MissingInstance(clazz, tpe0, renv, loc)) // MATT loc??
+                  case _ => Result.Err(TypeError.MissingInstance(clazz, tpe0, renv, loc))
                 }
               case Some(tconstrs) =>
                 // simplify all the implied constraints
