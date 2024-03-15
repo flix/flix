@@ -31,6 +31,7 @@ object MutationTester {
     def run(flix: Flix, tester: String, testee: String): Unit = {
         val root = flix.check().unsafeGet
         val start = System.nanoTime()
+        println(root.sigs.filter(t => t._1.toString.equals("Add.add")))
         val root1 = mutateRoot(root, testee)
         val end = System.nanoTime() - start
         val timeSec = end.toFloat / 1_000_000_000.0
@@ -389,8 +390,7 @@ object MutationTester {
             //val typ = if (tpe.size > 1) tpe.arrowResultType else tpe
             val typ= tpe
             println(s"before mutating var: $typ")
-            val newtpe = Type.mkPureCurriedArrow(tpe :: tpe :: Nil, tpe, loc)
-            println(s"after mutating var: $newtpe")
+            //val newtpe = Type.mkPureCurriedArrow(tpe :: tpe :: Nil, tpe, loc)
             val one = tpe match {
                 case Type.Cst(tc, _) => tc match {
                     case TypeConstructor.Char =>
@@ -416,11 +416,15 @@ object MutationTester {
                 case _ => Nil
             }
             if (one == Nil) return mutateVarToConstantByType(tpe)
-            val sub = Expr.Sig(sym = Symbol.mkSigSym(Symbol.mkClassSym("Sub"), Name.Ident(loc.sp1, "sub", loc.sp2)), newtpe, loc)
-            val add = Expr.Sig(sym = Symbol.mkSigSym(Symbol.mkClassSym("Add"), Name.Ident(loc.sp1, "add", loc.sp2)), newtpe, loc)
+
+            val newtpe = Type.mkPureUncurriedArrow(tpe :: tpe :: Nil, tpe, loc)
+            println(s"after mutating var: $newtpe")
+            val sub = Expr.Sig(Symbol.mkSigSym(Symbol.mkClassSym("Sub"), Name.Ident(loc.sp1, "sub", loc.sp2)), newtpe, loc)
+            val add = Expr.Sig(Symbol.mkSigSym(Symbol.mkClassSym("Add"), Name.Ident(loc.sp1, "add", loc.sp2)), newtpe, loc)
+
             val appSub = Expr.Apply(sub, varexp :: one, tpe, Type.Pure, loc)
             val appAdd = Expr.Apply(add, varexp :: one, tpe, Type.Pure, loc)
-            val ret = appSub :: appAdd :: Nil
+            val ret = appSub ::  appAdd :: Nil
             println(s"ret: $ret")
             ret ::: mutateVarToConstantByType(tpe)
         case _ => Nil
