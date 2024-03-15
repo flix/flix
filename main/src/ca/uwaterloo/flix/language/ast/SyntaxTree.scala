@@ -385,8 +385,6 @@ object SyntaxTree {
 
       case object RecordRow extends Type
 
-      case object RecordVariable extends Type
-
       case object Schema extends Type
 
       case object SchemaRow extends Type

@@ -569,6 +569,11 @@ object Parser2 {
       val mark = open(consumeDocComments = false)
       docComment()
 
+      // Handle case where the last thing in a file is a doc-comment
+      if (eof()) {
+        return close(mark, TreeKind.CommentList)
+      }
+
       if (at(TokenKind.KeywordMod)) {
         return module(mark)
       }
@@ -581,7 +586,6 @@ object Parser2 {
         case TokenKind.KeywordInstance => instance(mark)
         case TokenKind.KeywordType => typeAlias(mark)
         case TokenKind.KeywordEff => effect(mark)
-        // TODO: Law
         case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumeration(mark)
         case _ =>
           advance()
@@ -715,6 +719,8 @@ object Parser2 {
     }
 
     private def enumCases()(implicit s: State): Unit = {
+      // Clear non-doc comments that appear before any cases.
+      comments()
       while (!eof() && atAny(List(TokenKind.CommentDoc, TokenKind.KeywordCase, TokenKind.Comma))) {
         val mark = open(consumeDocComments = false)
         docComment()
@@ -959,14 +965,6 @@ object Parser2 {
     def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false, allowQualified: Boolean = true)(implicit s: State): Mark.Closed = {
       var lhs = exprDelimited()
 
-      // Handle calls
-      while (at(TokenKind.ParenL)) {
-        val mark = openBefore(lhs)
-        arguments()
-        lhs = close(mark, TreeKind.Expr.Apply)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      }
-
       // Handle record select
       if (at(TokenKind.Dot) && nth(1) == TokenKind.NameLowerCase) {
         val mark = openBefore(lhs)
@@ -976,6 +974,14 @@ object Parser2 {
           name(NAME_FIELD)
         }
         lhs = close(mark, TreeKind.Expr.RecordSelect)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      }
+
+      // Handle calls
+      while (at(TokenKind.ParenL)) {
+        val mark = openBefore(lhs)
+        arguments()
+        lhs = close(mark, TreeKind.Expr.Apply)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
 
@@ -1696,8 +1702,7 @@ object Parser2 {
         if (eat(TokenKind.CurlyL)) {
           while (at(TokenKind.KeywordCase) && !eof()) {
             matchRule()
-            // TODO: These two calls should be removed
-            comments()
+            eat(TokenKind.Comma)
           }
           expect(TokenKind.CurlyR)
         }
@@ -1966,7 +1971,7 @@ object Parser2 {
         // Type ascription
         case TokenKind.Colon =>
           expect(TokenKind.Colon)
-          Type.ttype()
+          Type.typeAndEffect()
           expect(TokenKind.ParenR)
           close(mark, TreeKind.Expr.Ascribe)
         // Tuple
@@ -2567,17 +2572,17 @@ object Parser2 {
       expect(TokenKind.ParenL)
       while (!atAny(List(TokenKind.ParenR, TokenKind.Bar)) && !eof()) {
         recordField()
+        if (!atAny(List(TokenKind.ParenR, TokenKind.Bar))) {
+          expect(TokenKind.Comma)
+        }
       }
 
       if (at(TokenKind.Comma)) {
         advanceWithError(Parser2Error.DevErr(currentSourceLocation(), "Trailing comma."))
       }
 
-      if (at(TokenKind.Bar)) {
-        val mark = open()
-        expect(TokenKind.Bar)
-        name(NAME_VARIABLE)
-        close(mark, TreeKind.Type.RecordVariable)
+      if (eat(TokenKind.Bar)) {
+        variable()
       }
 
       expect(TokenKind.ParenR)
@@ -2605,6 +2610,9 @@ object Parser2 {
       expect(TokenKind.CurlyL)
       while (!atAny(List(TokenKind.CurlyR, TokenKind.Bar)) && !eof()) {
         recordField()
+        if (!atAny(List(TokenKind.CurlyR, TokenKind.Bar))) {
+          expect(TokenKind.Comma)
+        }
       }
 
       if (at(TokenKind.Comma)) {
@@ -2628,9 +2636,6 @@ object Parser2 {
       name(NAME_FIELD)
       expect(TokenKind.Equal)
       ttype()
-      if (!atAny(List(TokenKind.CurlyR, TokenKind.Bar))) {
-        expect(TokenKind.Comma)
-      }
       close(mark, TreeKind.Type.RecordFieldFragment)
     }
 
