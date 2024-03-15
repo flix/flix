@@ -139,7 +139,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateTag](result)
   }
 
-  // TODO: Keep
   test("EmptyForFragment.01") {
     val input =
       """
@@ -149,7 +148,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyForFragment](result)
   }
 
-  // TODO: Keep
   test("EmptyForFragment.02") {
     val input =
       """
@@ -159,7 +157,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyForFragment](result)
   }
 
-  // TODO: Keep
   test("EmptyForFragment.03") {
     val input =
       """
@@ -169,7 +166,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyForFragment](result)
   }
 
-  // TODO: Keep
   test("EmptyForFragment.04") {
     val input =
       """
@@ -179,7 +175,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyForFragment](result)
   }
 
-  // TODO: Keep
+  // TODO: remove 'for' is no longer a keyword
   test("EmptyForFragment.05") {
     val input =
       """
@@ -231,7 +227,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyInterpolatedExpression](result)
   }
 
-  // TODO: Keep.
   test("EmptyRecordExtensionPattern.01") {
     val input =
       """
@@ -243,7 +238,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyRecordExtensionPattern](result)
   }
 
-  // TODO: Keep.
   test("EmptyRecordExtensionPattern.02") {
     val input =
       """
@@ -255,7 +249,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyRecordExtensionPattern](result)
   }
 
-  // TODO: Keep
   test("EmptyRecordExtensionPattern.03") {
     val input =
       """
@@ -280,7 +273,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalAnnotation](result)
   }
 
-  // TODO: Keep
   test("IllegalAnnotation.02") {
     val input =
       """
@@ -294,7 +286,6 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalAnnotation](result)
   }
 
-  // TODO: Keep
   test("IllegalAnnotation.03") {
     val input =
       """
@@ -308,7 +299,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalAnnotation](result)
   }
 
-  // TODO: Keep
+  // TODO: Move, this should be a Parse error
   test("IllegalEffectTypeParams.01") {
     val input =
       """
@@ -318,7 +309,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectTypeParams](result)
   }
 
-  // TODO: Keep
+  // TODO: Move, this should be a Parse error
   test("IllegalEffectTypeParams.02") {
     val input =
       """
@@ -330,7 +321,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectTypeParams](result)
   }
 
-  // TODO: Keep
+  // TODO: Move, this should be a Parse error
   test("IllegalEffectTypeParams.03") {
     val input =
       """
@@ -342,7 +333,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectTypeParams](result)
   }
 
-  // TODO: Keep
+  // TODO: Move, This is a parse error, did not expect effect on an operation
   test("IllegalEffectfulOperation.01") {
     val input =
       """
@@ -354,7 +345,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectfulOperation](result)
   }
 
-  // TODO: Keep
+  // TODO: Move, This is a parse error, did not expect effect on an operation
   test("IllegalEffectfulOperation.02") {
     val input =
       """
@@ -366,7 +357,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectfulOperation](result)
   }
 
-  // TODO: Keep
+  // TODO: Move, This is a parse error, did not expect effect on an operation
   test("IllegalEffectfulOperation.03") {
     val input =
       """
@@ -378,7 +369,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectfulOperation](result)
   }
 
-  // TODO: Keep
+  // TODO: Move, This is a parse error, did not expect effect on an operation
   test("IllegalEffectfulOperation.04") {
     val input =
       """
@@ -404,7 +395,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
-  // TODO: Keep
+  // TODO: This is a parser error
   test("IllegalEnum.02") {
     val input =
       """
@@ -414,7 +405,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
-  // TODO: Keep
+  // TODO: This is a parser error
   test("IllegalEnum.03") {
     val input =
       """

@@ -598,10 +598,6 @@ object Parser2 {
       assert(at(TokenKind.KeywordEff))
       expect(TokenKind.KeywordEff)
       name(NAME_EFFECT)
-      if (at(TokenKind.BracketL)) {
-        Type.parameters()
-      }
-
       if (eat(TokenKind.CurlyL)) {
         while (!at(TokenKind.CurlyR) && !eof()) {
           operation()
@@ -618,12 +614,12 @@ object Parser2 {
       modifiers()
       expect(TokenKind.KeywordDef)
       name(NAME_DEFINITION)
-      if (at(TokenKind.BracketL)) {
-        Type.parameters()
+      if (at(TokenKind.ParenL)) {
+        parameters()
       }
-      parameters()
-      expect(TokenKind.Colon)
-      Type.typeAndEffect()
+      if (eat(TokenKind.Colon)) {
+        Type.ttype()
+      }
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
@@ -651,15 +647,15 @@ object Parser2 {
     private def definition(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       expect(TokenKind.KeywordDef)
       name(NAME_DEFINITION)
-
       if (at(TokenKind.BracketL)) {
         Type.parameters()
       }
       if (at(TokenKind.ParenL)) {
         parameters()
       }
-      expect(TokenKind.Colon)
-      Type.typeAndEffect()
+      if (eat(TokenKind.Colon)) {
+        Type.typeAndEffect()
+      }
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
@@ -2254,16 +2250,15 @@ object Parser2 {
       assert(at(TokenKind.CurlyL))
       val mark = open()
       expect(TokenKind.CurlyL)
-      var continue = true
-      while (continue && !atAny(List(TokenKind.CurlyR, TokenKind.Bar)) && !eof()) {
+      while (!atAny(List(TokenKind.CurlyR, TokenKind.Bar)) && !eof()) {
         recordField()
         if (!atAny(List(TokenKind.CurlyR, TokenKind.Bar))) {
           expect(TokenKind.Comma)
         }
-        if (eat(TokenKind.Bar)) {
-          pattern()
-          continue = false
-        }
+      }
+
+      if (eat(TokenKind.Bar)) {
+        pattern()
       }
 
       expect(TokenKind.CurlyR)

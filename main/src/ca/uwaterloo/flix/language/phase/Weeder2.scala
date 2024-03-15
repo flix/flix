@@ -30,6 +30,7 @@ import org.parboiled2.ParserInput
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
 import java.util.regex.{Matcher, PatternSyntaxException, Pattern => JPattern}
 import scala.collection.immutable.{::, List, Nil}
+import scala.collection.mutable.ArrayBuffer
 import scala.math.Ordered.orderingToOrdered
 
 /**
@@ -135,7 +136,7 @@ object Weeder2 {
         val qname = Name.QName(tree.loc.sp1, namespace, ident, tree.loc.sp2)
         Validation.success(UseOrImport.Use(qname, alias, tree.loc))
       // recover from missing alias by using ident
-      case ident :: _ => softFailWith(UseOrImport.Use(Name.mkQName(ident), ident, ident.loc))
+      case ident :: _ => Validation.toSoftFailure(UseOrImport.Use(Name.mkQName(ident), ident, ident.loc), Parser2Error.DevErr(tree.loc, "missing alias"))
       case _ => failWith("Malformed alias", tree.loc)
     }
   }
@@ -174,7 +175,11 @@ object Weeder2 {
         val jname = Name.JavaName(tree.loc.sp1, namespace ++ Seq(ident.name), tree.loc.sp2)
         Validation.success(UseOrImport.Import(jname, alias, tree.loc))
       // recover from missing alias by using ident
-      case ident :: _ => softFailWith(UseOrImport.Import(Name.JavaName(tree.loc.sp1, Seq(ident.name), tree.loc.sp2), ident, ident.loc))
+      case ident :: _ =>
+        Validation.toSoftFailure(
+          UseOrImport.Import(Name.JavaName(tree.loc.sp1, Seq(ident.name), tree.loc.sp2), ident, ident.loc),
+          Parser2Error.DevErr(tree.loc, "missing alias")
+        )
       case _ => failWith("Malformed alias", tree.loc)
     }
   }
@@ -256,12 +261,11 @@ object Weeder2 {
         pickAnnotations(tree),
         pickModifiers(tree),
         pickNameIdent(tree),
-        Types.pickParameters(tree),
         pickFormalParameters(tree),
         Types.pickType(tree),
-        Types.pickConstraints(tree)
+        Types.pickConstraints(tree),
       ) {
-        (doc, ann, mods, ident, tparams, fparams, tpe, tconstrs) => Declaration.Op(doc, ann, mods, ident, fparams, tpe, tconstrs, loc = tree.loc)
+        (doc, ann, mods, ident, fparams, tpe, tconstrs) => Declaration.Op(doc, ann, mods, ident, fparams, tpe, tconstrs, tree.loc)
       }
     }
 
@@ -595,7 +599,7 @@ object Weeder2 {
         case "@Skip" => Validation.success(Skip(loc))
         case "@Test" | "@test" => Validation.success(Test(loc))
         case "@TailRec" => Validation.success(TailRecursive(loc))
-        case other => softFailWith(Ast.Annotation.Error(other.stripPrefix("@"), loc))
+        case other => Validation.toSoftFailure(Ast.Annotation.Error(other.stripPrefix("@"), loc), IllegalAnnotation(loc))
       }
     }
 
@@ -699,7 +703,8 @@ object Weeder2 {
         }
       ).getOrElse(
         // Soft fail by pretending there were no arguments
-        softFailWith(List(unitFormalParameter(SourceLocation.Unknown)))
+        // TODO: Parser should just emit empty ParameterList and this can be a throw instead.
+        Validation.toSoftFailure(List(unitFormalParameter(SourceLocation.Unknown)), Parser2Error.DevErr(tree.loc, "Missing formal parameters"))
       )
     }
 
@@ -729,7 +734,9 @@ object Weeder2 {
         traverseOpt(maybeExpression)(visitExpression)
       ) {
         case Some(expr) => Validation.success(expr)
-        case None => softFailWith(Expr.Error(Parser2Error.DevErr(tree.loc, "expected expression")))
+        case None =>
+          val err = Parser2Error.DevErr(tree.loc, "expected expression")
+          Validation.toSoftFailure(Expr.Error(err), err)
       }
     }
 
@@ -961,43 +968,56 @@ object Weeder2 {
 
     private def visitForeach(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Foreach)
-      mapN(
+      flatMapN(
         pickForFragments(tree),
         pickExpression(tree)
-      )((fragments, expr) => {
-        Expr.ForEach(fragments, expr, tree.loc)
-      })
+      ) {
+        case (Nil, expr) =>
+          val err = EmptyForFragment(tree.loc)
+          Validation.toSoftFailure(Expr.Error(err), err)
+        case (fragments, expr) => Validation.success(Expr.ForEach(fragments, expr, tree.loc))
+      }
     }
 
     private def visitForeachYield(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.ForeachYield)
-      mapN(
+      flatMapN(
         pickForFragments(tree),
         pickExpression(tree)
-      )((fragments, expr) => {
-        Expr.ForEachYield(fragments, expr, tree.loc)
-      })
+      ) {
+        case (Nil, _) =>
+          val err = EmptyForFragment(tree.loc)
+          Validation.toSoftFailure(Expr.Error(err), err)
+        case (fragments, expr) => Validation.success(Expr.ForEachYield(fragments, expr, tree.loc))
+      }
     }
 
     private def visitForMonadic(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.ForMonadic)
-      mapN(
+      flatMapN(
         pickForFragments(tree),
         pickExpression(tree)
-      )((fragments, expr) => {
-        Expr.MonadicFor(fragments, expr, tree.loc)
-      })
+      ) {
+        case (Nil, _) =>
+          val err = EmptyForFragment(tree.loc)
+          Validation.toSoftFailure(Expr.Error(err), err)
+        case (fragments, expr) => Validation.success(Expr.MonadicFor(fragments, expr, tree.loc))
+      }
     }
 
     private def visitForApplicative(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.ForApplicative)
       val generators = pickAll(TreeKind.Expr.ForFragmentGenerator, tree.children)
-      mapN(
+      flatMapN(
         traverse(generators)(visitForFragmentGenerator),
         pickExpression(tree)
-      )((fragments, expr) => Expr.ApplicativeFor(fragments, expr, tree.loc))
+      ) {
+        case (Nil, _) =>
+          val err = EmptyForFragment(tree.loc)
+          Validation.toSoftFailure(Expr.Error(err), err)
+        case (fragments, expr) => Validation.success(Expr.ApplicativeFor(fragments, expr, tree.loc))
+      }
     }
-
 
     private def forFragmentLoc(frag: ForFragment): SourceLocation = frag match {
       case ForFragment.Generator(_, _, loc) => loc
@@ -1411,7 +1431,7 @@ object Weeder2 {
       val annVal = flatMapN(Decls.pickAnnotations(tree)) {
         case Ast.Annotations(as) =>
           // Check for [[IllegalAnnotation]]
-          val errors = collection.mutable.ArrayBuffer.empty[IllegalAnnotation]
+          val errors = ArrayBuffer.empty[IllegalAnnotation]
           for (a <- as) {
             a match {
               case Ast.Annotation.TailRecursive(_) => // OK
@@ -1423,7 +1443,9 @@ object Weeder2 {
 
       val exprs = flatMapN(pickExpression(tree)) {
         case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
-        case e => softFailWith(e, Expr.Error(Parser2Error.DevErr(tree.loc, "A internal definition must be followed by an expression")))
+        case e =>
+          val err = Parser2Error.DevErr(tree.loc, "An internal definition must be followed by an expression")
+          Validation.toSoftFailure((e, Expr.Error(err)), err)
       }
 
       mapN(
@@ -1455,10 +1477,8 @@ object Weeder2 {
           val exprs = expr match {
             case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
             case e =>
-              softFailWith(
-                e,
-                Expr.Error(Parser2Error.DevErr(tree.loc, "A let-binding must be followed by an expression"))
-              )
+              val err = Parser2Error.DevErr(tree.loc, "A let-binding must be followed by an expression")
+              Validation.toSoftFailure((e, Expr.Error(err)), err)
           }
           mapN(exprs)(exprs => Expr.LetMatch(pattern, Ast.Modifiers.Empty, tpe, exprs._1, exprs._2, tree.loc))
       }
@@ -1476,7 +1496,9 @@ object Weeder2 {
           ) {
             case (condition, tthen, eelse) => Expr.IfThenElse(condition, tthen, eelse, tree.loc)
           }
-        case _ => softFailWith(Expr.Error(Parser2Error.DevErr(tree.loc, "Malformed if-then-else expression")))
+        case _ =>
+          val err = Parser2Error.DevErr(tree.loc, "Malformed if-then-else expression")
+          Validation.toSoftFailure(Expr.Error(err), err)
       }
     }
 
@@ -1955,9 +1977,13 @@ object Weeder2 {
                | TokenKind.NameUpperCase
                | TokenKind.NameMath
                | TokenKind.NameGreek => mapN(pickNameIdent(tree))(ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc))
-          case _ => softFailWith(Expr.Error(Parser2Error.DevErr(tree.loc, "expected literal")))
+          case _ =>
+            val err = Parser2Error.DevErr(tree.loc, "expected literal")
+            Validation.toSoftFailure(Expr.Error(err), err)
         }
-        case _ => softFailWith(Expr.Error(Parser2Error.DevErr(tree.loc, "expected literal")))
+        case _ =>
+          val err = Parser2Error.DevErr(tree.loc, "expected literal")
+          Validation.toSoftFailure(Expr.Error(err), err)
       }
     }
   }
@@ -3003,11 +3029,6 @@ object Weeder2 {
   private def failWith[T](message: String, loc: SourceLocation = SourceLocation.Unknown): Validation[T, CompilationMessage] = {
     // TODO: Remove this function
     Validation.HardFailure(Chain(Parser2Error.DevErr(loc, message)))
-  }
-
-  private def softFailWith[T](result: T): Validation[T, CompilationMessage] = {
-    // TODO: Remove this function
-    Validation.toSoftFailure(result, Parser2Error.DevErr(SourceLocation.Unknown, "TODO: Missing error message"))
   }
 
   /**
