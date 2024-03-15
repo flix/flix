@@ -75,11 +75,11 @@ mod Belnap {
     pub def alpha(b: Bool): Belnap = if (b) Belnap.True else Belnap.False
 
     ///
-    /// Over-approximates the logical `not` operator.
+    /// Over-approximates logical negation.
     ///
-//    #safe1(x -> not x)
+//    #safe1(x -> neg x)
 //    #strict1 #monotone1
-    pub def not(e: Belnap): Belnap =
+    pub def neg(e: Belnap): Belnap =
         use Belnap.{Top, True, False, Bot};
         match e {
             case Bot    => Bot
