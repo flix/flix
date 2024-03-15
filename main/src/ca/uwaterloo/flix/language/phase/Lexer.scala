@@ -324,55 +324,30 @@ object Lexer {
       case ']' => TokenKind.BracketR
       case ';' => TokenKind.Semi
       case ',' => TokenKind.Comma
-      case '.' => if (peek() == '{') {
-        advance()
-        TokenKind.DotCurlyL
-      } else {
-        TokenKind.Dot
-      }
-      case '_' =>
-        val p = peek()
-        if (p.isLetterOrDigit) acceptName(p.isUpper)
-        else if (isMathNameChar(p)) {
-          advance()
-          acceptMathName()
-        }
-        else if (isUserOp(p).isDefined) {
-          advance()
-          acceptUserDefinedOp()
-        }
-        else TokenKind.Underscore
       case '\\' => TokenKind.Backslash
+      case _ if isMatch(".{") => TokenKind.DotCurlyL
+      case '.' => TokenKind.Dot
       case '$' if peek().isUpper => acceptBuiltIn()
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case '#' => peek() match {
-        case '#' => acceptJavaName()
-        case '{' => advance(); TokenKind.HashCurlyL
-        case '(' => advance(); TokenKind.HashParenL
-        case _ => TokenKind.Hash
-      }
-      case _ if isKeyword("///") => acceptDocComment()
-      case '/' => peek() match {
-        case '/' => acceptLineComment()
-        case '*' => acceptBlockComment()
-        case _ => TokenKind.Slash
-      }
-      case ':' => (peek(), peekPeek()) match {
-        case (':', Some(':')) => advance(); advance(); TokenKind.TripleColon
-        case (':', _) => advance(); TokenKind.ColonColon
-        case ('=', _) => advance(); TokenKind.ColonEqual
-        case ('-', _) => advance(); TokenKind.ColonMinus
-        case (_, _) => TokenKind.Colon
-      }
-      case '@' => if (peek().isLetter) {
-        acceptAnnotation()
-      } else {
-        TokenKind.At
-      }
+      case _ if isMatch("##") => acceptJavaName()
+      case _ if isMatch("#{") => TokenKind.HashCurlyL
+      case _ if isMatch("#(") => TokenKind.HashParenL
+      case '#' => TokenKind.Hash
+      case _ if isMatch("///") => acceptDocComment()
+      case _ if isMatch("//") => acceptLineComment()
+      case _ if isMatch("/*") => acceptBlockComment()
+      case '/' => TokenKind.Slash
+      case '@' if peek().isLetter => acceptAnnotation()
+      case '@' => TokenKind.At
       case _ if isMatch("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
+      case _ if isOperator(":::") => TokenKind.TripleColon
+      case _ if isOperator("::") => TokenKind.ColonColon
+      case _ if isOperator(":=") => TokenKind.ColonEqual
+      case _ if isOperator(":-") => TokenKind.ColonMinus
+      case _ if isOperator(":") => TokenKind.Colon
       case _ if isOperator("**") => TokenKind.StarStar
       case _ if isOperator("<-") => TokenKind.ArrowThinL
       case _ if isOperator("->") => TokenKind.ArrowThinR
@@ -479,12 +454,26 @@ object Lexer {
       case _ if isMatch("regex\"") => acceptRegex()
       case _ if isMathNameChar(c) => acceptMathName()
       case _ if isGreekNameChar(c) => acceptGreekName()
+      case '_' =>
+        val p = peek()
+        if (p.isLetterOrDigit) {
+          acceptName(p.isUpper)
+        } else if (isMathNameChar(p)) {
+          advance()
+          acceptMathName()
+        } else if (isUserOp(p).isDefined) {
+          advance()
+          acceptUserDefinedOp()
+        } else TokenKind.Underscore
       case c if c.isLetter => acceptName(c.isUpper)
       case c if isDigit(c) => acceptNumber()
       // User defined operators.
       case _ if isUserOp(c).isDefined =>
         val p = peek()
-        if (isUserOp(p).isDefined) {
+        if (c == '<' && p == '>') {
+          // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
+          TokenKind.AngleL
+        } else if (isUserOp(p).isDefined) {
           acceptUserDefinedOp()
         } else {
           isUserOp(c).get
@@ -500,6 +489,7 @@ object Lexer {
    */
   private def isSeparated(keyword: String, allowDot: Boolean = false)(implicit s: State): Boolean = {
     def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_' || !allowDot && c == '.')
+
     val leftIndex = s.current.offset - 2
     val rightIndex = s.current.offset + keyword.length - 1
     val isSeperatedLeft = leftIndex < 0 || isSep(s.src.data(leftIndex))

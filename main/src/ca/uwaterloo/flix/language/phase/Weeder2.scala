@@ -2398,6 +2398,7 @@ object Weeder2 {
       // Visit first child and match its kind to know what to to
       val inner = unfold(tree)
       inner.kind match {
+        case TreeKind.Type.Ascribe => visitAscribe(inner)
         case TreeKind.Type.Variable => visitVariable(inner)
         case TreeKind.Type.Binary => visitBinary(inner)
         case TreeKind.Type.Unary => visitUnary(inner)
@@ -2422,6 +2423,13 @@ object Weeder2 {
 
     private def visitName(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
       mapN(visitQName(tree))(Type.Ambiguous(_, tree.loc))
+    }
+
+    private def visitAscribe(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Type.Ascribe)
+      mapN(pickType(tree), pickKind(tree)) {
+        (tpe, kind) => Type.Ascribe(tpe, kind, tree.loc)
+      }
     }
 
     private def visitBinary(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
@@ -2738,17 +2746,26 @@ object Weeder2 {
       }
     }
 
+    def visitKind(tree: Tree)(implicit s: State): Validation[Kind, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Kind)
+      mapN(pickNameIdent(tree)) {
+        ident => {
+          val kind = Kind.Ambiguous(Name.mkQName(ident), ident.loc)
+          tryPick(TreeKind.Kind, tree.children)
+          tryPickKind(tree)
+            .map(Kind.Arrow(kind, _, tree.loc))
+            .getOrElse(kind)
+        }
+      }
+    }
+
+    def pickKind(tree: Tree)(implicit s: State): Validation[Kind, CompilationMessage] = {
+      flatMapN(pick(TreeKind.Kind, tree.children))(visitKind)
+    }
+
     def tryPickKind(tree: Tree)(implicit s: State): Option[Kind] = {
-      tryPick(TreeKind.Kind, tree.children).flatMap(
-        kindTree => {
-          val ident = pickNameIdent(kindTree).toHardResult.toOption
-          ident.map(ident => {
-            val k = Kind.Ambiguous(Name.mkQName(ident), ident.loc)
-            tryPickKind(kindTree)
-              .map(Kind.Arrow(k, _, kindTree.loc))
-              .getOrElse(k)
-          })
-        })
+      // Cast a missing kind to None because 'tryPick' means that it's okay not to find a kind here.
+      tryPick(TreeKind.Kind, tree.children).flatMap(visitKind(_).toHardResult.toOption)
     }
   }
 

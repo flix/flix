@@ -17,8 +17,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{SyntaxTree, Ast, ChangeSet, ParsedAst, ReadAst, SourceKind, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ParsedAst, ReadAst, SourceKind, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
+import ca.uwaterloo.flix.language.ast.TokenKind.ParenR
 import ca.uwaterloo.flix.language.errors.Parser2Error
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.Chain
@@ -761,7 +762,7 @@ object Parser2 {
         while (!at(TokenKind.CurlyR) && !eof()) {
           val mark = open(consumeDocComments = false)
           docComment()
-          annotations() // TODO: associated types cant have annotations
+          annotations()
           modifiers()
           nth(0) match {
             case TokenKind.KeywordDef => definition(mark)
@@ -2326,7 +2327,6 @@ object Parser2 {
       List(TokenKind.KeywordXor), // xor
       List(TokenKind.KeywordOr), // or
       List(TokenKind.KeywordAnd), // and
-      List(TokenKind.Colon), // :
       // UNARY OPS
       List(TokenKind.KeywordRvnot, TokenKind.Tilde, TokenKind.KeywordNot) // rvnot, ~, not
     )
@@ -2657,18 +2657,21 @@ object Parser2 {
     }
 
     def kind()(implicit s: State): Mark.Closed = {
-      val mark = open()
-      if (eat(TokenKind.ParenL)) {
-        kind()
-        expect(TokenKind.ParenR)
-      } else {
+      def kindFragment(): Unit = {
+        val inParens = eat(TokenKind.ParenL)
         name(NAME_KIND)
+        // Check for arrow kind
+        if (eat(TokenKind.ArrowThinR)) {
+          kind()
+        }
+        // consume ')' is necessary
+        if (inParens) {
+          expect(TokenKind.ParenR)
+        }
       }
 
-      if (eat(TokenKind.ArrowThinR)) {
-        kind()
-      }
-
+      val mark = open()
+      kindFragment()
       close(mark, TreeKind.Kind)
     }
   }
