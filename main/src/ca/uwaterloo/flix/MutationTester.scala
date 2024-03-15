@@ -139,39 +139,47 @@ object MutationTester {
     }
 
 
-    def mutateSig(sig: Expr.Sig): List[TypedAst.Expr.Sig] = {
-        val tpe = sig.tpe
-        val sym = sig.sym
+  def mutateSig(sig: Expr.Sig): List[TypedAst.Expr.Sig] = {
+    val tpe = sig.tpe
+    val sym = sig.sym
+    val sub = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Sub"), Name.Ident(sym.loc.sp1, "sub", sym.loc.sp2)))
+    val mul = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Mul"), Name.Ident(sym.loc.sp1, "mul", sym.loc.sp2)))
+    val div = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Div"), Name.Ident(sym.loc.sp1, "div", sym.loc.sp2)))
+    val add = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Add"), Name.Ident(sym.loc.sp1, "add", sym.loc.sp2)))
+    val clazz = Symbol.mkClassSym("Order")
+    val le = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "less", sym.loc.sp2)))
+    val leq = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "lessEqual", sym.loc.sp2)))
+    val gre = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "greater", sym.loc.sp2)))
+    val greq = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "greaterEqual", sym.loc.sp2)))
+    val compare = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "compare", sym.loc.sp2)))
 
-        (sym.toString(), tpe.arrowArgTypes) match {
-            case ("Add.add", List(Str, Str)) => Nil
-            case ("Add.add", _) =>
-                val sub = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Sub"), Name.Ident(sym.loc.sp1, "sub", sym.loc.sp2)))
-                sub :: Nil
-            case ("Sub.sub", _) =>
-                val add = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Add"), Name.Ident(sym.loc.sp1, "add", sym.loc.sp2)))
-                add :: Nil
-            case ("Div.div", _) =>
-                val mul = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Mul"), Name.Ident(sym.loc.sp1, "mul", sym.loc.sp2)))
-                mul :: Nil
-            case ("Mul.mul", _) =>
-                val div = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Div"), Name.Ident(sym.loc.sp1, "div", sym.loc.sp2)))
-                div :: Nil
-            case ("Eq.eq", _) =>
-                sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Eq"), Name.Ident(sym.loc.sp1, "neq", sym.loc.sp2))) :: Nil
-            case ("Eq.neq", _) =>
-                sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Eq"), Name.Ident(sym.loc.sp1, "eq", sym.loc.sp2))) :: Nil
-            case ("Order.less", _) | ("Order.lessEqual", _) | ("Order.greaterEqual", _) | ("Order.greater", _) | ("Order.compare", _) =>
-                val clazz = Symbol.mkClassSym("Order")
-                val le = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "less", sym.loc.sp2)))
-                val leq = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "lessEqual", sym.loc.sp2)))
-                val gre = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "greater", sym.loc.sp2)))
-                val greq = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "greaterEqual", sym.loc.sp2)))
-                val compare = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "compare", sym.loc.sp2)))
-                le :: leq :: gre :: greq :: compare :: Nil
-            case _ => Nil
-        }
+    (sym.toString(), tpe.arrowArgTypes) match {
+      case ("Add.add", List(Str, Str)) => Nil
+      case ("Add.add", _) =>
+        sub :: div :: mul :: Nil
+      case ("Sub.sub", _) =>
+        add :: div :: mul :: Nil
+      case ("Div.div", _) =>
+        mul :: add :: sub :: Nil
+      case ("Mul.mul", _) =>
+        div :: add :: sub :: Nil
+      case ("Eq.eq", _) =>
+        sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Eq"), Name.Ident(sym.loc.sp1, "neq", sym.loc.sp2))) :: Nil
+      case ("Eq.neq", _) =>
+        sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Eq"), Name.Ident(sym.loc.sp1, "eq", sym.loc.sp2))) :: Nil
+      case ("Order.less", _) =>
+        leq :: gre :: greq :: compare :: Nil
+      case("Order.lessEqual",_ ) =>
+        le :: gre :: greq :: compare :: Nil
+      case("Order.greaterEqual",_ ) =>
+        leq :: le :: gre :: compare :: Nil
+      case ("Order.greater", _ ) =>
+        leq :: le :: greq :: compare :: Nil
+      case ("Order.compare",_) =>
+        leq :: le :: greq :: gre :: Nil
+      case _ => Nil
     }
+  }
 
     private def mutateExpr(e: TypedAst.Expr): List[TypedAst.Expr] = e match {
         case Expr.Cst(cst, tpe, loc) =>
@@ -378,10 +386,11 @@ object MutationTester {
 
     private def mutateVar(varexp: Expr.Var): List[Expr] = varexp match {
         case Expr.Var(_, tpe, loc) =>
-            val typ = if (tpe.size > 1) tpe.arrowResultType else tpe
+            //val typ = if (tpe.size > 1) tpe.arrowResultType else tpe
+            val typ= tpe
             println(s"before mutating var: $typ")
-            val newtpe = Type.mkApply(typ, typ :: Nil, loc)
-            print(s"after mutating var: $newtpe")
+            val newtpe = Type.mkPureCurriedArrow(tpe :: tpe :: Nil, tpe, loc)
+            println(s"after mutating var: $newtpe")
             val one = tpe match {
                 case Type.Cst(tc, _) => tc match {
                     case TypeConstructor.Char =>
@@ -406,12 +415,13 @@ object MutationTester {
                 }
                 case _ => Nil
             }
-
+            if (one == Nil) return mutateVarToConstantByType(tpe)
             val sub = Expr.Sig(sym = Symbol.mkSigSym(Symbol.mkClassSym("Sub"), Name.Ident(loc.sp1, "sub", loc.sp2)), newtpe, loc)
             val add = Expr.Sig(sym = Symbol.mkSigSym(Symbol.mkClassSym("Add"), Name.Ident(loc.sp1, "add", loc.sp2)), newtpe, loc)
             val appSub = Expr.Apply(sub, varexp :: one, tpe, Type.Pure, loc)
             val appAdd = Expr.Apply(add, varexp :: one, tpe, Type.Pure, loc)
             val ret = appSub :: appAdd :: Nil
+            println(s"ret: $ret")
             ret ::: mutateVarToConstantByType(tpe)
         case _ => Nil
     }
