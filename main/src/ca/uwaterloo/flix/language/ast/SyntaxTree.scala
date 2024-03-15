@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.errors.Parser2Error
  * A [[SyntaxTree]] is unstructured: it allows much more flexibility than later
  * abstract syntax trees. This flexibility is used to capture source code that may
  * contain faulty syntax. The tree has nodes that hold a [[TreeKind]] and zero or
- * more children. Each child is either a [[TokenChild]] or a [[TreeChild]].
+ * more children. Each child is either a [[Child.TokenChild]] or a [[Child.TreeChild]].
  *
  * Note that [[SyntaxTree]] offers few guarantees. In particular:
  *     - There is no guarantee that a specific node is present or absent as a child.
@@ -385,8 +385,6 @@ object SyntaxTree {
 
       case object RecordRow extends Type
 
-      case object RecordVariable extends Type
-
       case object Schema extends Type
 
       case object SchemaRow extends Type
@@ -430,6 +428,8 @@ object SyntaxTree {
       case object Tuple extends Pattern
 
       case object Variable extends Pattern
+
+      case object Unary extends Pattern
 
     }
 
