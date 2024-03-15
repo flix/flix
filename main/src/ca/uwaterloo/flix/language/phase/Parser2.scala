@@ -1893,10 +1893,24 @@ object Parser2 {
     private def interpolatedString()(implicit s: State): Mark.Closed = {
       assert(atAny(List(TokenKind.LiteralStringInterpolationL, TokenKind.LiteralDebugStringL)))
       val mark = open()
-      var continue = eatAny(List(TokenKind.LiteralStringInterpolationL, TokenKind.LiteralDebugStringL))
-      while (continue && !eof()) {
-        expression()
-        continue = eatAny(List(TokenKind.LiteralStringInterpolationL, TokenKind.LiteralDebugStringL))
+      def atTerminator(kind: Option[TokenKind]) = kind match {
+        case Some(TokenKind.LiteralStringInterpolationL) => at(TokenKind.LiteralStringInterpolationR)
+        case Some(TokenKind.LiteralDebugStringL) => at(TokenKind.LiteralDebugStringR)
+        case _ => false
+      }
+      def getOpener(): Option[TokenKind] = nth(0) match {
+        case TokenKind.LiteralStringInterpolationL =>  advance(); Some(TokenKind.LiteralStringInterpolationL)
+        case TokenKind.LiteralDebugStringL => advance(); Some(TokenKind.LiteralDebugStringR)
+        case _ => None
+      }
+      var lastOpener = getOpener()
+      while (lastOpener.isDefined && !eof()) {
+        if (atTerminator(lastOpener)) {
+          lastOpener = None // Terminate the loop
+        } else {
+          expression()
+          lastOpener = getOpener() // Try to get nested interpolation
+        }
       }
       expectAny(List(TokenKind.LiteralStringInterpolationR, TokenKind.LiteralDebugStringR))
       close(mark, TreeKind.Expr.StringInterpolation)

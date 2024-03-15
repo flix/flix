@@ -21,6 +21,8 @@ import ca.uwaterloo.flix.language.errors.WeederError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
+// NOTE: Weeder2 already passes many of these. All tests that don't have a 'TODO' pass.
+
 class TestWeeder extends AnyFunSuite with TestUtils {
 
   test("DuplicateAnnotation.01") {
@@ -137,6 +139,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.DuplicateTag](result)
   }
 
+  // TODO: Keep
   test("EmptyForFragment.01") {
     val input =
       """
@@ -146,6 +149,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyForFragment](result)
   }
 
+  // TODO: Keep
   test("EmptyForFragment.02") {
     val input =
       """
@@ -155,6 +159,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyForFragment](result)
   }
 
+  // TODO: Keep
   test("EmptyForFragment.03") {
     val input =
       """
@@ -164,6 +169,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyForFragment](result)
   }
 
+  // TODO: Keep
   test("EmptyForFragment.04") {
     val input =
       """
@@ -173,6 +179,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyForFragment](result)
   }
 
+  // TODO: Keep
   test("EmptyForFragment.05") {
     val input =
       """
@@ -182,42 +189,49 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyForFragment](result)
   }
 
+  // TODO: Remove: This is fine, it is just a noop.
   test("EmptyInterpolatedExpression.01") {
     val input = "def f(): String = \"${}\""
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.EmptyInterpolatedExpression](result)
   }
 
+  // TODO: Remove: This is fine, it is just a noop.
   test("EmptyInterpolatedExpression.02") {
     val input = "def f(): String = \"abc${}\""
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.EmptyInterpolatedExpression](result)
   }
 
+  // TODO: Remove: This is fine, it is just a noop.
   test("EmptyInterpolatedExpression.03") {
     val input = "def f(): String = \"${}xyz\""
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.EmptyInterpolatedExpression](result)
   }
 
+  // TODO: Remove: This is fine, it is just a noop.
   test("EmptyInterpolatedExpression.04") {
     val input = "def f(): String = \"abc${}xyz\""
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.EmptyInterpolatedExpression](result)
   }
 
+  // TODO: Remove: This is fine, it is just a noop.
   test("EmptyInterpolatedExpression.05") {
     val input = "def f(): String = \"${}${}\""
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.EmptyInterpolatedExpression](result)
   }
 
+  // TODO: Remove: This is fine, it is just a noop.
   ignore("EmptyInterpolatedExpression.06") {
     val input = """def f(): String = "${"${}"}" """
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.EmptyInterpolatedExpression](result)
   }
 
+  // TODO: Keep.
   test("EmptyRecordExtensionPattern.01") {
     val input =
       """
@@ -229,6 +243,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyRecordExtensionPattern](result)
   }
 
+  // TODO: Keep.
   test("EmptyRecordExtensionPattern.02") {
     val input =
       """
@@ -240,6 +255,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.EmptyRecordExtensionPattern](result)
   }
 
+  // TODO: Keep
   test("EmptyRecordExtensionPattern.03") {
     val input =
       """
@@ -264,6 +280,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalAnnotation](result)
   }
 
+  // TODO: Keep
   test("IllegalAnnotation.02") {
     val input =
       """
@@ -277,6 +294,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalAnnotation](result)
   }
 
+  // TODO: Keep
   test("IllegalAnnotation.03") {
     val input =
       """
@@ -290,6 +308,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalAnnotation](result)
   }
 
+  // TODO: Keep
   test("IllegalEffectTypeParams.01") {
     val input =
       """
@@ -299,6 +318,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectTypeParams](result)
   }
 
+  // TODO: Keep
   test("IllegalEffectTypeParams.02") {
     val input =
       """
@@ -310,6 +330,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectTypeParams](result)
   }
 
+  // TODO: Keep
   test("IllegalEffectTypeParams.03") {
     val input =
       """
@@ -321,6 +342,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectTypeParams](result)
   }
 
+  // TODO: Keep
   test("IllegalEffectfulOperation.01") {
     val input =
       """
@@ -332,6 +354,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectfulOperation](result)
   }
 
+  // TODO: Keep
   test("IllegalEffectfulOperation.02") {
     val input =
       """
@@ -343,6 +366,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectfulOperation](result)
   }
 
+  // TODO: Keep
   test("IllegalEffectfulOperation.03") {
     val input =
       """
@@ -354,6 +378,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEffectfulOperation](result)
   }
 
+  // TODO: Keep
   test("IllegalEffectfulOperation.04") {
     val input =
       """
@@ -379,6 +404,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
+  // TODO: Keep
   test("IllegalEnum.02") {
     val input =
       """
@@ -388,6 +414,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
+  // TODO: Keep
   test("IllegalEnum.03") {
     val input =
       """
@@ -397,6 +424,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
+  // TODO: Keep
   test("IllegalEqualityConstraint.01") {
     val input =
       """
@@ -406,6 +434,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEqualityConstraint](result)
   }
 
+  // TODO: Keep
   test("IllegalEqualityConstraint.02") {
     val input =
       """
@@ -415,6 +444,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEqualityConstraint](result)
   }
 
+  // TODO: Keep
   test("IllegalEqualityConstraint.03") {
     val input =
       """
@@ -424,12 +454,14 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEqualityConstraint](result)
   }
 
+  // TODO: Remove. This is a legal escape that should give "\$$ {".
   test("IllegalEscapeSequence.01") {
     val input = s"""pub def foo(): String = "\\$$ {""""
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalEscapeSequence](result)
   }
 
+  // TODO: Keep.
   test("IllegalEscapeSequence.Char.01") {
     val input =
       """
@@ -439,6 +471,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEscapeSequence](result)
   }
 
+  // TODO: Keep.
   test("IllegalEscapeSequence.Interpolation.01") {
     val input =
       """
@@ -448,7 +481,8 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEscapeSequence](result)
   }
 
-  test("IllegalEscapeSequence.Patten.Char.01") {
+  // TODO: Keep
+  test("IllegalEscapeSequence.Pattern.Char.01") {
     val input =
       """
         |def f(x: Char): Bool = match x {
@@ -460,7 +494,8 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEscapeSequence](result)
   }
 
-  test("IllegalEscapeSequence.Patten.String.01") {
+  // TODO: Keep
+  test("IllegalEscapeSequence.Pattern.String.01") {
     val input =
       """
         |def f(x: String): Bool = match x {
@@ -472,6 +507,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEscapeSequence](result)
   }
 
+  // TODO: Keep
   test("IllegalEscapeSequence.String.01") {
     val input =
       """
@@ -493,6 +529,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalFixedAtom](result)
   }
 
+  // TODO: Keep.
   test("IllegalForAFragment.01") {
     val input =
       """
@@ -504,6 +541,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForAFragment](result)
   }
 
+  // TODO: Keep.
   test("IllegalForAFragment.02") {
     val input =
       """
@@ -515,6 +553,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForAFragment](result)
   }
 
+  // TODO: Keep.
   test("IllegalForAFragment.03") {
     val input =
       """
@@ -526,6 +565,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForAFragment](result)
   }
 
+  // TODO: Keep.
   test("IllegalForFragment.01") {
     val input =
       """
@@ -537,6 +577,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForFragment](result)
   }
 
+  // TODO: Keep.
   test("IllegalForFragment.02") {
     val input =
       """
@@ -548,6 +589,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForFragment](result)
   }
 
+  // TODO: Keep.
   test("IllegalForFragment.03") {
     val input =
       """
@@ -559,6 +601,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForFragment](result)
   }
 
+  // TODO: Keep.
   test("IllegalForFragment.04") {
     val input =
       """
@@ -570,6 +613,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForFragment](result)
   }
 
+  // TODO: Keep.
   test("IllegalForFragment.05") {
     val input =
       """
@@ -581,6 +625,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForFragment](result)
   }
 
+  // TODO: Keep.
   test("IllegalForFragment.06") {
     val input =
       """
@@ -592,6 +637,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForFragment](result)
   }
 
+  // TODO: Keep.
   test("IllegalForFragment.07") {
     val input =
       """
@@ -603,6 +649,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForFragment](result)
   }
 
+  // TODO: Keep.
   test("IllegalForFragment.08") {
     val input =
       """
@@ -614,6 +661,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForFragment](result)
   }
 
+  // TODO: Keep.
   test("IllegalForFragment.09") {
     val input =
       """
@@ -625,6 +673,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForFragment](result)
   }
 
+  // TODO: Keep.
   test("IllegalForFragment.10") {
     val input =
       """
@@ -636,6 +685,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForFragment](result)
   }
 
+  // TODO: Keep.
   test("IllegalForFragment.11") {
     val input =
       """
@@ -647,6 +697,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalForFragment](result)
   }
 
+  // TODO: Keep.
   test("IllegalForFragment.12") {
     val input =
       """
@@ -724,6 +775,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModifier](result)
   }
 
+  // TODO: Keep.
   test("IllegalModifier.04") {
     val input =
       """pub instance Sub[String] {
@@ -734,6 +786,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModifier](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.01") {
     val input =
       """
@@ -744,6 +797,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.02") {
     val input =
       """
@@ -754,6 +808,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.03") {
     val input =
       """
@@ -764,6 +819,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.04") {
     val input =
       """
@@ -774,6 +830,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.05") {
     val input =
       """
@@ -784,6 +841,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.06") {
     val input =
       """
@@ -796,6 +854,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.07") {
     val input =
       """
@@ -808,6 +867,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.08") {
     val input =
       """
@@ -820,6 +880,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.09") {
     val input =
       """
@@ -832,6 +893,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.10") {
     val input =
       """
@@ -844,6 +906,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.11") {
     val input =
       """
@@ -856,6 +919,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.12") {
     val input =
       """
@@ -868,6 +932,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.13") {
     val input =
       """
@@ -880,6 +945,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.14") {
     val input =
       """
@@ -892,6 +958,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.15") {
     val input =
       """
@@ -904,6 +971,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.16") {
     val input =
       """
@@ -915,7 +983,8 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.IllegalModuleName](result)
   }
-
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
+  // NOTE: Maybe there is a little too many IllegalModuleName tests?
   test("IllegalModuleName.17") {
     val input =
       """
@@ -928,6 +997,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.18") {
     val input =
       """
@@ -940,6 +1010,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalModuleName](result)
   }
 
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
   test("IllegalModuleName.19") {
     val input =
       """
@@ -987,6 +1058,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalNullPattern](result)
   }
 
+  // TODO: Keep.
   test("IllegalNullPattern.04") {
     val input =
       s"""
@@ -1009,6 +1081,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalPrivateDeclaration](result)
   }
 
+  // TODO: Keep.
   test("IllegalPrivateDeclaration.02") {
     val input =
       """
@@ -1020,6 +1093,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalPrivateDeclaration](result)
   }
 
+  // TODO: Keep.
   test("IllegalPrivateDeclaration.03") {
     val input =
       """
@@ -1087,6 +1161,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalRecordExtensionPattern](result)
   }
 
+  // TODO: Keep.
   test("IllegalTypeConstraintParameter.01") {
     val input =
       """
@@ -1096,6 +1171,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalTypeConstraintParameter](result)
   }
 
+  // TODO: Keep.
   test("IllegalTypeConstraintParameter.02") {
     val input =
       """
@@ -1105,6 +1181,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalTypeConstraintParameter](result)
   }
 
+  // TODO: Keep.
   test("IllegalTypeConstraintParameter.03") {
     val input =
       """
@@ -1114,6 +1191,8 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalTypeConstraintParameter](result)
   }
 
+  // TODO: Move: Parse error "Expected NameLowerCase found NameUpperCase".
+  // Testing that the casing of 'foo' and 'Foo' should match
   test("IllegalUse.Alias.01") {
     val input =
       """
@@ -1129,6 +1208,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalUse](result)
   }
 
+  // TODO: Move: Parse error "Expected NameLowerCase found NameUpperCase".
   test("IllegalUse.Alias.02") {
     val input =
       """
@@ -1145,6 +1225,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalUse](result)
   }
 
+  // TODO: Move: Parse error "Expected NameLowerCase found NameUpperCase".
   test("IllegalUse.Alias.03") {
     val input =
       """
@@ -1156,6 +1237,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalUse](result)
   }
 
+  // TODO: Move: Parse error "Expected NameLowerCase found NameUpperCase".
   test("IllegalUse.Alias.04") {
     val input =
       """
@@ -1167,6 +1249,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalUse](result)
   }
 
+  // TODO: Move. This is a lexer thing
   test("MalformedChar.Char.01") {
     val input =
       """
@@ -1176,6 +1259,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedChar](result)
   }
 
+  // TODO: Move. This is a lexer thing
   test("MalformedChar.Char.02") {
     val input =
       """
@@ -1185,6 +1269,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedChar](result)
   }
 
+  // TODO: Move. This is a lexer thing
   test("MalformedChar.Patten.Char.01") {
     val input =
       """
@@ -1197,36 +1282,42 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedChar](result)
   }
 
+  // TODO: Still ignore or remove?
   ignore("MalformedFloat32.01") {
     val input = "def f(): Float32 = 3402823700000000000000000000000000000000.0f32"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedFloat](result)
   }
 
+  // TODO: Still ignore or remove?
   ignore("MalformedFloat32.02") {
     val input = "def f(): Float32 = -117549400000000000000000000000000000000.0f32"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedFloat](result)
   }
 
+  // TODO: Still ignore or remove?
   ignore("MalformedFloat32.03") {
     val input = "def f(): Float32 = -3402823700000000000000000000000000000000.0f32"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedFloat](result)
   }
 
+  // TODO: Still ignore or remove?
   ignore("MalformedFloat64.01") {
     val input = "def f(): Float64 = 1.7976931348623158e+308"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedFloat](result)
   }
 
+  // TODO: Still ignore or remove?
   ignore("MalformedFloat64.02") {
     val input = "def f(): Float64 = -1.7976931348623158e+308"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedFloat](result)
   }
 
+  // TODO: Keep.
   test("MalformedIdentifier.01") {
     val input =
       """
@@ -1236,6 +1327,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedIdentifier](result)
   }
 
+  // TODO: Keep, and unignore?
   ignore("MalformedIdentifier.02") {
     val input =
       """
@@ -1245,6 +1337,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedIdentifier](result)
   }
 
+  // TODO: Keep, and unignore?
   ignore("MalformedIdentifier.03") {
     val input =
       """
@@ -1338,6 +1431,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedRegex](result)
   }
 
+  // TODO: Move, This is Lexer stuff
   test("MalformedUnicodeEscapeSequence.Char.01") {
     val input =
       """
@@ -1347,6 +1441,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
+  // TODO: Move, This is Lexer stuff
   test("MalformedUnicodeEscapeSequence.Char.02") {
     val input =
       """
@@ -1356,6 +1451,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
+  // TODO: Move, This is Lexer stuff
   test("MalformedUnicodeEscapeSequence.Interpolation.01") {
     val input =
       """
@@ -1365,6 +1461,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
+  // TODO: Move, This is Lexer stuff
   test("MalformedUnicodeEscapeSequence.Interpolation.02") {
     val input =
       """
@@ -1374,7 +1471,8 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
-  test("MalformedUnicodeEscapeSequence.Patten.Char.01") {
+  // TODO: Move, This is Lexer stuff
+  test("MalformedUnicodeEscapeSequence.Pattern.Char.01") {
     val input =
       """
         |def f(x: Char): Bool = match x {
@@ -1386,7 +1484,8 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
-  test("MalformedUnicodeEscapeSequence.Patten.Char.02") {
+  // TODO: Move, This is Lexer stuff
+  test("MalformedUnicodeEscapeSequence.Pattern.Char.02") {
     val input =
       """
         |def f(x: Char): Bool = match x {
@@ -1398,7 +1497,8 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
-  test("MalformedUnicodeEscapeSequence.Patten.String.01") {
+  // TODO: Move, This is Lexer stuff
+  test("MalformedUnicodeEscapeSequence.Pattern.String.01") {
     val input =
       """
         |def f(x: String): Bool = match x {
@@ -1410,7 +1510,8 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
-  test("MalformedUnicodeEscapeSequence.Patten.String.02") {
+  // TODO: Move, This is Lexer stuff
+  test("MalformedUnicodeEscapeSequence.Pattern.String.02") {
     val input =
       """
         |def f(x: String): Bool = match x {
@@ -1422,6 +1523,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
+  // TODO: Move, This is Lexer stuff
   test("MalformedUnicodeEscapeSequence.String.01") {
     // In scala, unicode escapes are preprocessed,
     // and other escapes are not processed in triple-quoted strings.
@@ -1434,6 +1536,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.MalformedUnicodeEscapeSequence](result)
   }
 
+  // TODO: Move, This is Lexer stuff
   test("MalformedUnicodeEscapeSequence.String.02") {
     val input =
       """
@@ -1633,6 +1736,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.NonUnaryAssocType](result)
   }
 
+  // TODO: Keep
   test("NonUnaryAssocType.02") {
     val input =
       """
@@ -1644,6 +1748,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.NonUnaryAssocType](result)
   }
 
+  // TODO: Keep
   test("NonUnaryAssocType.03") {
     val input =
       """
@@ -1655,6 +1760,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.NonUnaryAssocType](result)
   }
 
+  // TODO: Remove (yay!)
   test("ReservedName.Def.01") {
     val input =
       """
@@ -1664,6 +1770,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.ReservedName](result)
   }
 
+  // TODO: Remove (yay!)
   test("ReservedName.Def.02") {
     val input =
       """
@@ -1673,6 +1780,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.ReservedName](result)
   }
 
+  // TODO: Remove (yay!)
   test("ReservedName.Effect.01") {
     val input =
       """
@@ -1682,6 +1790,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.ReservedName](result)
   }
 
+  // TODO: Remove (yay!)
   test("ReservedName.Law.01") {
     val input =
       """
@@ -1693,6 +1802,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.ReservedName](result)
   }
 
+  // TODO: Remove (yay!)
   test("ReservedName.Law.02") {
     val input =
       """
@@ -1704,6 +1814,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.ReservedName](result)
   }
 
+  // TODO: Remove (yay!)
   test("ReservedName.Sig.01") {
     val input =
       """
@@ -1715,6 +1826,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.ReservedName](result)
   }
 
+  // TODO: Remove (yay!)
   test("ReservedName.Sig.02") {
     val input =
       """
@@ -1726,6 +1838,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.ReservedName](result)
   }
 
+  // TODO: Keep.
   test("UndefinedAnnotation.01") {
     val input =
       """@abc
@@ -1735,6 +1848,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.UndefinedAnnotation](result)
   }
 
+  // TODO: Keep.
   test("UndefinedAnnotation.02") {
     val input =
       """@foobarbaz
@@ -1744,6 +1858,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.UndefinedAnnotation](result)
   }
 
+  // TODO: Keep.
   test("UndefinedAnnotation.03") {
     val input =
       """@Tests
@@ -1780,6 +1895,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.UndefinedIntrinsic](result)
   }
 
+  // TODO: Keep.
   test("UnqualifiedUse.01") {
     val input =
       """
@@ -1791,6 +1907,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.UnqualifiedUse](result)
   }
 
+  // TODO: Keep.
   test("UnqualifiedUse.02") {
     val input =
       """
@@ -1803,6 +1920,7 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.UnqualifiedUse](result)
   }
 
+  // TODO: Keep.
   test("UnqualifiedUse.03") {
     val input =
       """
