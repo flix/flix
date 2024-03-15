@@ -324,70 +324,45 @@ object Lexer {
       case ']' => TokenKind.BracketR
       case ';' => TokenKind.Semi
       case ',' => TokenKind.Comma
-      case '.' => if (peek() == '{') {
-        advance()
-        TokenKind.DotCurlyL
-      } else {
-        TokenKind.Dot
-      }
-      case '_' =>
-        val p = peek()
-        if (p.isLetterOrDigit) acceptName(p.isUpper)
-        else if (isMathNameChar(p)) {
-          advance();
-          acceptMathName()
-        }
-        else if (isUserOp(p).isDefined) {
-          advance()
-          acceptUserDefinedOp()
-        }
-        else TokenKind.Underscore
       case '\\' => TokenKind.Backslash
+      case _ if isMatch(".{") => TokenKind.DotCurlyL
+      case '.' => TokenKind.Dot
       case '$' if peek().isUpper => acceptBuiltIn()
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case '#' => peek() match {
-        case '#' => acceptJavaName()
-        case '{' => advance(); TokenKind.HashCurlyL
-        case '(' => advance(); TokenKind.HashParenL
-        case _ => TokenKind.Hash
-      }
-      case _ if isKeyword("///") => acceptDocComment()
-      case '/' => peek() match {
-        case '/' => acceptLineComment()
-        case '*' => acceptBlockComment()
-        case _ => TokenKind.Slash
-      }
-      case ':' => (peek(), peekPeek()) match {
-        case (':', Some(':')) => advance(); advance(); TokenKind.TripleColon
-        case (':', _) => advance(); TokenKind.ColonColon
-        case ('=', _) => advance(); TokenKind.ColonEqual
-        case ('-', _) => advance(); TokenKind.ColonMinus
-        case (_, _) => TokenKind.Colon
-      }
-      case '@' => if (peek().isLetter) {
-        acceptAnnotation()
-      } else {
-        TokenKind.At
-      }
+      case _ if isMatch("##") => acceptJavaName()
+      case _ if isMatch("#{") => TokenKind.HashCurlyL
+      case _ if isMatch("#(") => TokenKind.HashParenL
+      case '#' => TokenKind.Hash
+      case _ if isMatch("///") => acceptDocComment()
+      case _ if isMatch("//") => acceptLineComment()
+      case _ if isMatch("/*") => acceptBlockComment()
+      case '/' => TokenKind.Slash
+      case '@' if peek().isLetter => acceptAnnotation()
+      case '@' => TokenKind.At
       case _ if isMatch("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
-      case _ if isMatch("**") => TokenKind.StarStar
-      case _ if isMatch("<-") => TokenKind.ArrowThinL
-      case _ if isMatch("->") => TokenKind.ArrowThinR
-      case _ if isMatch("=>") => TokenKind.ArrowThickR
-      case _ if isMatch("<=") => TokenKind.AngleLEqual
-      case _ if isMatch(">=") => TokenKind.AngleREqual
-      case _ if isMatch("==") => TokenKind.EqualEqual
-      case _ if isMatch("!=") => TokenKind.BangEqual
-      case _ if isMatch("<+>") => TokenKind.AngledPlus
-      case _ if isMatch("&&&") => TokenKind.TripleAmpersand
-      case _ if isMatch("<<<") => TokenKind.TripleAngleL
-      case _ if isMatch(">>>") => TokenKind.TripleAngleR
-      case _ if isMatch("^^^") => TokenKind.TripleCaret
-      case _ if isMatch("|||") => TokenKind.TripleBar
-      case _ if isMatch("~~~") => TokenKind.TripleTilde
+      case _ if isOperator(":::") => TokenKind.TripleColon
+      case _ if isOperator("::") => TokenKind.ColonColon
+      case _ if isOperator(":=") => TokenKind.ColonEqual
+      case _ if isOperator(":-") => TokenKind.ColonMinus
+      case _ if isOperator(":") => TokenKind.Colon
+      case _ if isOperator("**") => TokenKind.StarStar
+      case _ if isOperator("<-") => TokenKind.ArrowThinL
+      case _ if isOperator("->") => TokenKind.ArrowThinR
+      case _ if isOperator("=>") => TokenKind.ArrowThickR
+      case _ if isOperator("<=") => TokenKind.AngleLEqual
+      case _ if isOperator(">=") => TokenKind.AngleREqual
+      case _ if isOperator("==") => TokenKind.EqualEqual
+      case _ if isOperator("!=") => TokenKind.BangEqual
+      case _ if isOperator("<+>") => TokenKind.AngledPlus
+      case _ if isOperator("&&&") => TokenKind.TripleAmpersand
+      case _ if isOperator("<<<") => TokenKind.TripleAngleL
+      case _ if isOperator(">>>") => TokenKind.TripleAngleR
+      case _ if isOperator("^^^") => TokenKind.TripleCaret
+      case _ if isOperator("|||") => TokenKind.TripleBar
+      case _ if isOperator("~~~") => TokenKind.TripleTilde
       case '~' => TokenKind.Tilde
       case _ if isKeyword("alias") => TokenKind.KeywordAlias
       case _ if isKeyword("and") => TokenKind.KeywordAnd
@@ -408,7 +383,7 @@ object Lexer {
       case _ if isKeyword("eff") => TokenKind.KeywordEff
       case _ if isKeyword("else") => TokenKind.KeywordElse
       case _ if isKeyword("enum") => TokenKind.KeywordEnum
-      case _ if isKeyword("false") => TokenKind.KeywordFalse
+      case _ if isKeywordLiteral("false") => TokenKind.KeywordFalse
       case _ if isKeyword("fix") => TokenKind.KeywordFix
       case _ if isKeyword("forall") => TokenKind.KeywordForall
       case _ if isKeyword("forA") => TokenKind.KeywordForA
@@ -435,7 +410,7 @@ object Lexer {
       case _ if isKeyword("mod") => TokenKind.KeywordMod
       case _ if isKeyword("new") => TokenKind.KeywordNew
       case _ if isKeyword("not") => TokenKind.KeywordNot
-      case _ if isKeyword("null") => TokenKind.KeywordNull
+      case _ if isKeywordLiteral("null") => TokenKind.KeywordNull
       case _ if isKeyword("open_variant") => TokenKind.KeywordOpenVariant
       case _ if isKeyword("open_variant_as") => TokenKind.KeywordOpenVariantAs
       case _ if isKeyword("or") => TokenKind.KeywordOr
@@ -459,7 +434,7 @@ object Lexer {
       case _ if isKeyword("static") => TokenKind.KeywordStatic
       case _ if isKeyword("Static") => TokenKind.KeywordStaticUppercase
       case _ if isKeyword("trait") => TokenKind.KeywordTrait
-      case _ if isKeyword("true") => TokenKind.KeywordTrue
+      case _ if isKeywordLiteral("true") => TokenKind.KeywordTrue
       case _ if isKeyword("try") => TokenKind.KeywordTry
       case _ if isKeyword("type") => TokenKind.KeywordType
       case _ if isKeyword("typematch") => TokenKind.KeywordTypeMatch
@@ -479,12 +454,26 @@ object Lexer {
       case _ if isMatch("regex\"") => acceptRegex()
       case _ if isMathNameChar(c) => acceptMathName()
       case _ if isGreekNameChar(c) => acceptGreekName()
+      case '_' =>
+        val p = peek()
+        if (p.isLetterOrDigit) {
+          acceptName(p.isUpper)
+        } else if (isMathNameChar(p)) {
+          advance()
+          acceptMathName()
+        } else if (isUserOp(p).isDefined) {
+          advance()
+          acceptUserDefinedOp()
+        } else TokenKind.Underscore
       case c if c.isLetter => acceptName(c.isUpper)
       case c if isDigit(c) => acceptNumber()
       // User defined operators.
       case _ if isUserOp(c).isDefined =>
         val p = peek()
-        if (isUserOp(p).isDefined) {
+        if (c == '<' && p == '>') {
+          // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
+          TokenKind.AngleL
+        } else if (isUserOp(p).isDefined) {
           acceptUserDefinedOp()
         } else {
           isUserOp(c).get
@@ -495,15 +484,29 @@ object Lexer {
 
   /**
    * Check that the potential keyword is sufficiently separated, taking care not to go out-of-bounds.
-   * A keyword is separated if it is surrounded by anything __but__ a character, digit or underscore.
+   * A keyword is separated if it is surrounded by anything __but__ a character, digit a dot or underscore.
    * Note that __comparison includes current__.
    */
-  private def isSeparated(keyword: String)(implicit s: State): Boolean = {
-    def isSep(c: Char) = !(c.isWhitespace || c.isLetter || c.isDigit || c == '_')
+  private def isSeparated(keyword: String, allowDot: Boolean = false)(implicit s: State): Boolean = {
+    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_' || !allowDot && c == '.')
+
     val leftIndex = s.current.offset - 2
     val rightIndex = s.current.offset + keyword.length - 1
-    val isSeperatedLeft = leftIndex >= 0 && isSep(s.src.data(leftIndex))
-    val isSeperatedRight = rightIndex <= s.src.data.length - 1 && isSep(s.src.data(rightIndex))
+    val isSeperatedLeft = leftIndex < 0 || isSep(s.src.data(leftIndex))
+    val isSeperatedRight = rightIndex > s.src.data.length - 1 || isSep(s.src.data(rightIndex))
+    isSeperatedLeft && isSeperatedRight
+  }
+
+  /**
+   * Check that the potential operator is sufficiently separated, taking care not to go out-of-bounds.
+   * An operator is separated if it is surrounded by anything __but__ another valid user operator character.
+   * Note that __comparison includes current__.
+   */
+  private def isSeparatedOperator(keyword: String)(implicit s: State): Boolean = {
+    val leftIndex = s.current.offset - 2
+    val rightIndex = s.current.offset + keyword.length - 1
+    val isSeperatedLeft = leftIndex < 0 || isUserOp(s.src.data(leftIndex)).isEmpty
+    val isSeperatedRight = rightIndex > s.src.data.length - 1 || isUserOp(s.src.data(rightIndex)).isEmpty
     isSeperatedLeft && isSeperatedRight
   }
 
@@ -536,6 +539,29 @@ object Lexer {
     }
 
     matches
+  }
+
+  /**
+   * Checks whether the following substring matches a operator.
+   * Note that __comparison includes current__.
+   * Also note that this will advance the current position past the keyword if there is a match.
+   */
+  private def isOperator(op: String)(implicit s: State): Boolean = {
+    isSeparatedOperator(op) && isMatch(op)
+  }
+
+  /**
+   * Checks whether the following substring matches a keyword literal. IE. "true" or "null"
+   * Note that __comparison includes current__.
+   * Also note that this will advance the current position past the keyword if there is a match.
+   */
+  private def isKeywordLiteral(keyword: String)(implicit s: State): Boolean = {
+    // Allow dot here means that the literal gets recognized even when it is followed by a '.'.
+    // We want this for literals like 'true', but not for keywords like 'not'.
+    // This is because a symbol like 'not' can be imported from Java in a qualified path.
+    // For instance `import java.math.BigInteger.not(): BigInt \ {} as bNot;`. <- 'not' needs to be read as a name here.
+    // We are assuming no literal keyword needs to be imported. So no importing something called 'true' from java.
+    isSeparated(keyword, allowDot = true) && isMatch(keyword)
   }
 
   /**
