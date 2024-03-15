@@ -77,14 +77,14 @@ class Flix {
    * A cache of ASTs for incremental compilation.
    */
   private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
-  private var cachedParserAst: ParsedAst.Root = ParsedAst.empty
+  private var cachedParserCst:  Map[Ast.Source, SyntaxTree.Tree] = Map.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
   private var cachedDesugarAst: DesugaredAst.Root = DesugaredAst.empty
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
   private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.empty
   private var cachedTyperAst: TypedAst.Root = TypedAst.empty
 
-  def getParserAst: ParsedAst.Root = cachedParserAst
+  def getParserCst: Map[Ast.Source, SyntaxTree.Tree]  = cachedParserCst
 
   def getWeederAst: WeededAst.Root = cachedWeederAst
 
@@ -310,57 +310,7 @@ class Flix {
     "Vector.flix" -> LocalResource.get("/src/library/Vector.flix"),
     "Regex.flix" -> LocalResource.get("/src/library/Regex.flix"),
     "Adaptor.flix" -> LocalResource.get("/src/library/Adaptor.flix"),
-    "ToJava.flix" -> LocalResource.get("/src/library/ToJava.flix"),
-
-    // TODO: REMOVE BELOW
-//    "TestAdaptor.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestAdaptor.flix"),
-//    "TestApplicative.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestApplicative.flix"),
-//    "TestArray.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestArray.flix"),
-//    "TestChain.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestChain.flix"),
-//    "TestChannel.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestChannel.flix"),
-//    "TestDebug.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestDebug.flix"),
-//    "TestDelayList.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestDelayList.flix"),
-//    "TestDelayMap.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestDelayMap.flix"),
-//    "TestFilterable.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestFilterable.flix"),
-//    "TestFoldable.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestFoldable.flix"),
-//    "TestFromString.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestFromString.flix"),
-//    "TestIdentity.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestIdentity.flix"),
-//    "TestIterator.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestIterator.flix"),
-//    "TestList.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestList.flix"),
-//    "TestMap.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestMap.flix"),
-//    "TestMonad.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestMonad.flix"),
-//    "TestMonadZip.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestMonadZip.flix"),
-//    "TestMonoid.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestMonoid.flix"),
-//    "TestMultiMap.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestMultiMap.flix"),
-//    "TestMutDeque.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutDeque.flix"),
-//    "TestMutList.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutList.flix"),
-//    "TestMutMap.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutMap.flix"),
-//    "TestMutQueue.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutQueue.flix"),
-//    "TestMutSet.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestMutSet.flix"),
-//    "TestNec.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestNec.flix"),
-//    "TestOption.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestOption.flix"),
-//    "TestRedBlackTree.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestRedBlackTree.flix"),
-//    "TestReflect.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestReflect.flix"),
-//    "TestResult.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestResult.flix"),
-//    "TestSemiGroup.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestSemiGroup.flix"),
-//    "TestSet.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestSet.flix"),
-//    "TestString.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestString.flix"),
-//    "TestStringBuilder.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestStringBuilder.flix"),
-//    "TestToJava.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestToJava.flix"),
-//    "TestTraversable.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestTraversable.flix"),
-//    "TestUnorderedFoldable.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestUnorderedFoldable.flix"),
-//    "TestValidation.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestValidation.flix"),
-//    "TestVector.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestVector.flix"),
-//    "TestWitherable.flix" -> LocalResource.get("/test/ca/uwaterloo/flix/library/TestWitherable.flix"),
-
-    // TODO: Run through above and fix
-      // Ascriptions
-      // project, from keywords
-      // dont change get, new, set etc.
-
-    // TODO: due to 'true.' and 'false.'. Changed to 'true .' is that fine? no!
-//    "Test.Predicate.Guard.flix" -> LocalResource.get("/test/flix/Test.Predicate.Guard.flix"),
-
+    "ToJava.flix" -> LocalResource.get("/src/library/ToJava.flix")
   )
 
   /**
@@ -590,16 +540,9 @@ class Flix {
     val result = for {
       afterReader <- Reader.run(getInputs)
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
-
-      // Debugging pipeline
-      afterParser2 <- Parser2.runWithFallback(afterReader, afterLexer, entryPoint, cachedWeederAst, changeSet)
-      afterDesugar = Desugar.run(afterParser2, cachedDesugarAst, changeSet)
-
-      // TODO: Use these instead
-      //      afterParser2 <- Parser2.run(afterLexer)
-      //      afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2)
-      //      afterDesugar = Desugar.run(afterWeeder2, cachedDesugarAst, changeSet)
-
+      afterParser2 <- Parser2.run(afterLexer, cachedParserCst, changeSet)
+      afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2)
+      afterDesugar = Desugar.run(afterWeeder2, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
@@ -617,7 +560,8 @@ class Flix {
       // Update caches for incremental compilation.
       if (options.incremental) {
         this.cachedLexerTokens = afterLexer
-        this.cachedWeederAst = afterParser2 // TODO: Remove this.
+        this.cachedParserCst = afterParser2
+        this.cachedWeederAst = afterWeeder2
         this.cachedDesugarAst = afterDesugar
         this.cachedKinderAst = afterKinder
         this.cachedResolverAst = afterResolver
