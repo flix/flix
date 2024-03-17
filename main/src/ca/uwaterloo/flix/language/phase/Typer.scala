@@ -196,7 +196,7 @@ object Typer {
           TypedAst.AssocTypeSig(doc, mod, sym, tp, kind, loc) // TODO ASSOC-TYPES trivial
       }
       val tconstr = Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
-      val sigsVal = traverse(sigs0.values)(visitSig(_, renv, List(tconstr), root, classEnv, eqEnv)) // MATT need renv?
+      val sigsVal = traverse(sigs0.values)(visitSig(_, renv, List(tconstr), root, classEnv, eqEnv))
       val lawsVal = traverse(laws0)(visitDef(_, List(tconstr), renv, root, classEnv, eqEnv))
       mapN(sigsVal, lawsVal) {
         case (sigs, laws) => TypedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc)
