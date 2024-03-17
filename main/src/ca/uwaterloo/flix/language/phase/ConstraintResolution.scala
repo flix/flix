@@ -401,7 +401,6 @@ object ConstraintResolution {
     * Returns a reduction result containing a substitution and any leftover constraints.
     */
   private def resolve(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ResolutionResult, TypeError] = {
-    var last = List.empty[TypingConstraint]
     var curr = constrs.sortBy(_.numVars)
     var subst = subst0
     var count = 0
@@ -414,7 +413,6 @@ object ConstraintResolution {
       count += 1
       recordGraph(Debug.toDotWithSubst(curr, subst), count)
 
-      last = curr
       resolveOneOf(curr, renv, cenv, eqEnv, subst) match {
         case Result.Ok(ResolutionResult(newSubst, newConstrs, progress)) =>
           curr = newConstrs
