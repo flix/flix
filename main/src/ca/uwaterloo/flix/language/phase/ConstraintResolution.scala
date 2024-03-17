@@ -413,7 +413,7 @@ object ConstraintResolution {
       count += 1
       recordGraph(Debug.toDotWithSubst(curr, subst), count)
 
-      resolveOneOf(curr, renv, cenv, eqEnv, subst) match {
+      resolveOneOf(curr, subst, renv, cenv, eqEnv) match {
         case Result.Ok(ResolutionResult(newSubst, newConstrs, progress)) =>
           curr = newConstrs
           subst = newSubst
@@ -468,7 +468,7 @@ object ConstraintResolution {
       }
     case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested0) =>
       // First reduce nested constraints
-      resolveOneOf(nested0, renv, cenv, eqEnv, subst0).map {
+      resolveOneOf(nested0, subst0, renv, cenv, eqEnv).map {
         // Case 1: We have reduced everything below. Now reduce the purity constraint.
         case ResolutionResult(subst1, newConstrs, progress) if newConstrs.isEmpty =>
           val e1 = subst1(eff1)
