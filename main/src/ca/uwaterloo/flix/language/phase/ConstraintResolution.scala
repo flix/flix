@@ -225,7 +225,7 @@ object ConstraintResolution {
       Result.Ok(ResolutionResult.newSubst(Substitution.singleton(x.sym, t)))
 
     // varU
-    case (t, x: Type.Var) if renv.isFlexible(x.sym) && t.typeVars.contains(x) =>
+    case (t, x: Type.Var) if renv.isFlexible(x.sym) && !t.typeVars.contains(x) =>
       Result.Ok(ResolutionResult.newSubst(Substitution.singleton(x.sym, t)))
 
 
