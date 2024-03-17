@@ -89,7 +89,7 @@ object ConstraintResolution {
       val tpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
       val effConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
       val constrs = tpeConstr :: effConstr :: infConstrs
-      resolve(constrs, renv, cenv, eqEnv, initialSubst).flatMap {
+      resolve(constrs, initialSubst, renv, cenv, eqEnv).flatMap {
         case ResolutionResult(subst, deferred, _) =>
           stopLogging()
           // TODO here we only consider the first error
@@ -400,7 +400,7 @@ object ConstraintResolution {
     *
     * Returns a reduction result containing a substitution and any leftover constraints.
     */
-  private def resolve(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ResolutionResult, TypeError] = {
+  private def resolve(constrs: List[TypingConstraint], subst0: Substitution, renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[ResolutionResult, TypeError] = {
     var curr = constrs.sortBy(_.numVars)
     var subst = subst0
     var count = 0
@@ -428,18 +428,21 @@ object ConstraintResolution {
 
   /**
     * Tries to resolve one of the given constraints.
+    *
+    * Applies the initial substitution `subst0` before attempting to resolve.
     */
-  private def resolveOneOf(constrs: List[TypingConstraint], renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ResolutionResult, TypeError] = {
+  private def resolveOneOf(constrs: List[TypingConstraint], subst0: Substitution, renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[ResolutionResult, TypeError] = {
     def tryResolve(cs: List[TypingConstraint]): Result[ResolutionResult, TypeError] = cs match {
       case Nil => Result.Ok(ResolutionResult(subst0, cs, progress = false))
       case hd :: tl => resolveOne(hd, renv, cenv, eqEnv, subst0).flatMap {
         // if we're just returning the same constraint, then have made no progress and we need to find something else to reduce
         case res if !res.progress => tryResolve(tl).map {
-          // TODO ASSOC-TYPES does this make a difference since we sort anyway?
-          // Case 1: progress made. send the head to the end
-          case res if res.progress => res.copy(constrs = res.constrs :+ hd)
-          // Case 2: no progress. Keep the order
-          case res => res.copy(constrs = hd :: res.constrs)
+          case res => res.copy(constrs = hd :: res.constrs) // MATT testing
+//          // TODO ASSOC-TYPES does this make a difference since we sort anyway?
+//          // Case 1: progress made. send the head to the end
+//          case res if res.progress => res.copy(constrs = res.constrs :+ hd)
+//          // Case 2: no progress. Keep the order
+//          case res => res.copy(constrs = hd :: res.constrs)
         }
         // otherwise we have made progress so we're happy
         case res => Result.Ok(res.copy(constrs = tl ::: res.constrs))
