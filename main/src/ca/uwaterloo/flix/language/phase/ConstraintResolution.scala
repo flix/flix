@@ -50,48 +50,6 @@ object ConstraintResolution {
   }
 
   /**
-    * Adds the given type constraints as assumptions to the class environment.
-    */
-  private def expandClassEnv(cenv: Map[Symbol.ClassSym, Ast.ClassContext], tconstrs: List[Ast.TypeConstraint]): Map[Symbol.ClassSym, Ast.ClassContext] = {
-
-    tconstrs.flatMap(withSupers(_, cenv)).foldLeft(cenv) {
-      case (acc, Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, _), arg, loc)) =>
-        val inst = Ast.Instance(arg, Nil)
-        val context = acc.get(sym) match {
-          case Some(Ast.ClassContext(supers, insts)) => Ast.ClassContext(supers, inst :: insts)
-          case None => throw InternalCompilerException(s"unexpected unknown class sym: $sym", loc)
-        }
-        acc + (sym -> context)
-    }
-  }
-
-  /**
-    * Gets the list of type constraints implied by this type constraint due to a superclass relationship,
-    * including the type constraint itself.
-    *
-    * For example, `Order[a]` implies `Order[a]` and `Eq[a]`
-    */
-  private def withSupers(tconstr: Ast.TypeConstraint, cenv: Map[Symbol.ClassSym, Ast.ClassContext]): List[Ast.TypeConstraint] = {
-    val superSyms = cenv(tconstr.head.sym).superClasses
-    val directSupers = superSyms.map {
-      case sym => Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, SourceLocation.Unknown), tconstr.arg, tconstr.loc)
-    }
-    val allSupers = directSupers.flatMap(withSupers(_, cenv))
-    tconstr :: allSupers
-  }
-
-  /**
-    * Adds the given equality constraints as assumptions to the equality environment.
-    */
-  private def expandEqualityEnv(eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], econstrs: List[Ast.EqualityConstraint]): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = {
-    econstrs.foldLeft(eqEnv) {
-      case (acc, Ast.EqualityConstraint(Ast.AssocTypeConstructor(sym, _), tpe1, tpe2, _)) =>
-        val assoc = Ast.AssocTypeDef(tpe1, tpe2)
-        acc + (sym -> assoc)
-    }
-  }
-
-  /**
     * Resolves constraints in the given definition using the given inference result.
     */
   def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
@@ -142,6 +100,48 @@ object ConstraintResolution {
             case TypingConstraint.Purification(_, _, _, _, _, _) :: _ => throw InternalCompilerException("unexpected purificaiton error", loc)
           }
       }.toValidation
+  }
+
+  /**
+    * Adds the given type constraints as assumptions to the class environment.
+    */
+  private def expandClassEnv(cenv: Map[Symbol.ClassSym, Ast.ClassContext], tconstrs: List[Ast.TypeConstraint]): Map[Symbol.ClassSym, Ast.ClassContext] = {
+
+    tconstrs.flatMap(withSupers(_, cenv)).foldLeft(cenv) {
+      case (acc, Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, _), arg, loc)) =>
+        val inst = Ast.Instance(arg, Nil)
+        val context = acc.get(sym) match {
+          case Some(Ast.ClassContext(supers, insts)) => Ast.ClassContext(supers, inst :: insts)
+          case None => throw InternalCompilerException(s"unexpected unknown class sym: $sym", loc)
+        }
+        acc + (sym -> context)
+    }
+  }
+
+  /**
+    * Gets the list of type constraints implied by this type constraint due to a superclass relationship,
+    * including the type constraint itself.
+    *
+    * For example, `Order[a]` implies `Order[a]` and `Eq[a]`
+    */
+  private def withSupers(tconstr: Ast.TypeConstraint, cenv: Map[Symbol.ClassSym, Ast.ClassContext]): List[Ast.TypeConstraint] = {
+    val superSyms = cenv(tconstr.head.sym).superClasses
+    val directSupers = superSyms.map {
+      case sym => Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, SourceLocation.Unknown), tconstr.arg, tconstr.loc)
+    }
+    val allSupers = directSupers.flatMap(withSupers(_, cenv))
+    tconstr :: allSupers
+  }
+
+  /**
+    * Adds the given equality constraints as assumptions to the equality environment.
+    */
+  private def expandEqualityEnv(eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], econstrs: List[Ast.EqualityConstraint]): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = {
+    econstrs.foldLeft(eqEnv) {
+      case (acc, Ast.EqualityConstraint(Ast.AssocTypeConstructor(sym, _), tpe1, tpe2, _)) =>
+        val assoc = Ast.AssocTypeDef(tpe1, tpe2)
+        acc + (sym -> assoc)
+    }
   }
 
   /**
@@ -510,6 +510,9 @@ object ConstraintResolution {
     }
   }
 
+  /**
+    * A result of performing type inference.
+    */
   case class InfResult(constrs: List[TypingConstraint], tpe: Type, eff: Type, renv: RigidityEnv)
 
   /**
