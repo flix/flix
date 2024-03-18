@@ -51,6 +51,7 @@ object MutationTester {
 
     defs.foreach {
       defn =>
+        // todo: move generation to separated thread or ExecutorService
         Mutator.mutateExpr(defn.exp).foreach { mutatedExp =>
           queue.add(defn.copy(exp = mutatedExp))
         }
@@ -602,14 +603,14 @@ object MutationTester {
     private def findSig(clazz: String, sig: String, tpe: Type)(implicit flix: Flix): Option[Expr.Sig] = try {
       Some(Expr.Sig(PredefinedClasses.lookupSigSym(clazz, sig, flix.getKinderAst), tpe, SourceLocation.Unknown))
     } catch {
-      case _: IOException => None // todo: refactor ?
+      case _: IOException => None // todo: refactor to return info that mutant creation failed ?
     }
 
     // todo: do we need to verify namespace ? For example: MyNotNumberType.bitwiseAnd()
     private def findDef(namespace: List[String], name: String, tpe: Type)(implicit flix: Flix): Option[Expr.Def] = try {
       Some(Expr.Def(PredefinedClasses.lookupDefSym(namespace, name, flix.getKinderAst), tpe, SourceLocation.Unknown))
     } catch {
-      case _: IOException => None // todo: refactor ?
+      case _: IOException => None // todo: refactor to return info that mutant creation failed ?
     }
   }
 
