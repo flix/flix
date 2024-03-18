@@ -32,7 +32,7 @@ mod Ref {
     /// Updates `rf` to reference `x`.
     ///
     pub def put(x: a, rf: Ref[a, r]): Unit \ r =
-        $REF_ASSIGN$(rf, x)
+        rf := x
 
     ///
     /// Updates `rf` to reference `f` applied to the value referenced by `rf`.

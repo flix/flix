@@ -801,8 +801,6 @@ object Weeder {
           case ("VECTOR_GET", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.VectorLoad(e1, e2, loc))
           case ("VECTOR_LENGTH", e1 :: Nil) => Validation.success(WeededAst.Expr.VectorLength(e1, loc))
 
-          case ("REF_ASSIGN", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Assign(e1, e2, loc))
-
           case _ =>
             val err = UndefinedIntrinsic(loc)
             Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
@@ -1272,6 +1270,14 @@ object Weeder {
       val e = visitExp(exp)
       mapN(e) {
         case e1 => WeededAst.Expr.Deref(e1, loc)
+      }
+
+    case ParsedAst.Expression.Assign(exp1, exp2, sp2) =>
+      val sp1 = leftMostSourcePosition(exp1)
+      val exp1Val = visitExp(exp1)
+      val exp2Val = visitExp(exp2)
+      mapN(exp1Val, exp2Val) {
+        case (e1, e2) => WeededAst.Expr.Assign(e1, e2, mkSL(sp1, sp2))
       }
 
     case ParsedAst.Expression.Ascribe(exp, expectedType, expectedEff, sp2) =>
@@ -3010,6 +3016,7 @@ object Weeder {
     case ParsedAst.Expression.Interpolation(sp1, _, _) => sp1
     case ParsedAst.Expression.Ref(sp1, _, _, _) => sp1
     case ParsedAst.Expression.Deref(sp1, _, _) => sp1
+    case ParsedAst.Expression.Assign(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.Ascribe(e1, _, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.InstanceOf(e1, _, _) => leftMostSourcePosition(e1)
     case ParsedAst.Expression.UncheckedCast(sp1, _, _, _, _) => sp1
