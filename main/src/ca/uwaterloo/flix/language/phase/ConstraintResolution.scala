@@ -437,8 +437,9 @@ object ConstraintResolution {
       case hd :: tl => resolveOne(hd, renv, cenv, eqEnv, subst0).flatMap {
         // if we're just returning the same constraint, then have made no progress and we need to find something else to reduce
         case res if !res.progress => tryResolve(tl).map {
-          // Case 1: progress made. send the head to the end
-          case res if res.progress => res.copy(constrs = res.constrs :+ hd)
+                    // MATT trying again to avoid needless reordering
+//          // Case 1: progress made. send the head to the end
+//          case res if res.progress => res.copy(constrs = res.constrs :+ hd)
           // Case 2: no progress. Keep the order
           case res => res.copy(constrs = hd :: res.constrs)
         }
