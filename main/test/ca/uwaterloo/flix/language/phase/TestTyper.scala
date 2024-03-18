@@ -1392,4 +1392,21 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("TestTryCatch.01") {
+    val input =
+      """
+        |enum Res { case Err(String), case Ok }
+        |
+        |pub def catchIO(f: Unit -> Unit \ ef): Res = {
+        |    try {f(); Res.Ok} catch {
+        |        case ex: ##java.io.IOError =>
+        |            import java.lang.Throwable.getMessage(): String;
+        |            Res.Err(getMessage(ex))
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
 }

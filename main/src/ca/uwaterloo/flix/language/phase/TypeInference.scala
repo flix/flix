@@ -889,7 +889,10 @@ object TypeInference {
       case KindedAst.Expr.TryCatch(exp, rules, loc) =>
         val rulesType = rules map {
           case KindedAst.CatchRule(sym, clazz, body) =>
-            visitExp(body)
+            for {
+              _ <- unifyTypeM(sym.tvar, Type.mkNative(clazz, sym.loc), sym.loc)
+              tpe <- visitExp(body)
+            } yield tpe
         }
 
         for {
