@@ -825,6 +825,7 @@ object BackendObjType {
       cm.mkConstructor(Constructor)
       cm.mkStaticConstructor(StaticConstructor)
 
+      cm.mkField(StepCounterField)
       cm.mkField(CounterField)
       cm.mkStaticMethod(NewIdMethod)
 
@@ -855,6 +856,21 @@ object BackendObjType {
           LRETURN()
       ))
 
+    /*
+    def decAndCheck: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "decAndCheck",
+      mkDescriptor()(BackendType.Int64), Some(_ =>
+        GETSTATIC(StepCounterField) ~
+          INVOKEVIRTUAL(JvmName.AtomicLong, "getAndDecrement",
+            MethodDescriptor(Nil, BackendType.Int64)) ~
+          ICONST_0() ~
+          ifCondition(Condition.EQ) {
+            thisLoad() ~ GETFIELD(TooManyStepsException) ~
+            ATHROW()
+          } ~
+          LRETURN()
+        ))
+      */
+
     def GetArgsMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "getArgs",
       mkDescriptor()(BackendType.Array(String.toTpe)), Some(_ =>
         GETSTATIC(ArgsField) ~ ARRAYLENGTH() ~ ANEWARRAY(String.jvmName) ~ ASTORE(0) ~
@@ -882,6 +898,10 @@ object BackendObjType {
 
     def CounterField: StaticField =
       StaticField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "counter", JvmName.AtomicLong.toTpe)
+
+
+    def StepCounterField: StaticField =
+      StaticField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "stepCounter", JvmName.AtomicLong.toTpe)
 
     def ArgsField: StaticField =
       StaticField(this.jvmName, IsPrivate, NotFinal, NotVolatile, "args", BackendType.Array(String.toTpe))

@@ -131,7 +131,7 @@ object MutationTester {
             case (s, fun) =>
                 if (defSyms.contains(s)) {
                     println(s, fun.exp)
-                    val mutExps = mutateExpr(fun.exp)
+                    val mutExps = mutateExpr(fun.exp)//.map(m => addDecAndCheck(m))
                     val mutDefs = mutExps.map(mexp => fun.copy(exp = mexp))
                     Some(d._1 -> mutDefs)
                 } else None
@@ -181,6 +181,11 @@ object MutationTester {
       case _ => Nil
     }
   }
+    private def addDecAndCheck(expr: Expr) : Expr = {
+        val decAndCheck = Expr.Def(Symbol.mkDefnSym("decAndCheck"), Type.Unit, expr.loc)
+        val apply = Expr.Apply(decAndCheck, Nil, Type.Unit, Type.Pure, expr.loc)
+        Expr.Stm(apply, expr, expr.tpe, expr.eff, expr.loc)
+    }
 
     private def mutateExpr(e: TypedAst.Expr): List[TypedAst.Expr] = e match {
         case Expr.Cst(cst, tpe, loc) =>

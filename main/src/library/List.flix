@@ -269,6 +269,7 @@ mod List {
     ///
     pub def range(b: Int32, e: Int32): List[Int32] =
         def loop(i, acc) =
+            //decAndCheck();
             if (i < b)
                 acc
             else
