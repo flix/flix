@@ -187,7 +187,7 @@ object Tester {
 
         // Redirect std out and std err.
         val redirect = new ConsoleRedirection
-        redirect.redirect()
+        redirect.redirectWithOld()
 
         // Start the clock.
         val start = System.nanoTime()
@@ -288,6 +288,21 @@ object Tester {
     def stdErr: List[String] = bytesErr.toString().linesIterator.toList
 
     /**
+      * Direct std out and std err with saving old.
+      *
+      * @see TeeOutputStream
+      */
+    def redirectWithOld(): Unit = {
+      // Store the old streams.
+      oldStreamOut = System.out
+      oldStreamErr = System.err
+
+      // Set the new streams.
+      System.setOut(new TeeOutputStream(streamOut, oldStreamOut))
+      System.setErr(new TeeOutputStream(streamErr, oldStreamErr))
+    }
+
+    /**
       * Redirect std out and std err.
       */
     def redirect(): Unit = {
@@ -296,8 +311,8 @@ object Tester {
       oldStreamErr = System.err
 
       // Set the new streams.
-      System.setOut(new TeeOutputStream(streamOut, oldStreamOut))
-      System.setErr(new TeeOutputStream(streamErr, oldStreamErr))
+      System.setOut(streamOut)
+      System.setErr(streamErr)
     }
 
     /**

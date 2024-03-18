@@ -11,6 +11,8 @@ import ca.uwaterloo.flix.tools.Tester.ConsoleRedirection
 import ca.uwaterloo.flix.util.Result
 
 import java.io.IOException
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.{ConcurrentLinkedQueue, Executors}
 
 /* TODO: think also:
  * Check mutant compilation. Create 'MutantStatus' enum
@@ -33,54 +35,58 @@ object MutationTester {
 
   private case object CompilationFailed extends MutantStatus
 
-  private val mutators: List[ExprMutator] = List(
-    ExprMutator.Incrementer,
-    ExprMutator.Decrementer,
-    ExprMutator.BooleanMutator,
-    ExprMutator.ArithmeticUnaryMutator,
-    ExprMutator.ArithmeticBinaryMutator,
-    ExprMutator.ConditionalNegateMutator,
-    ExprMutator.ConditionalBoundaryMutator,
-  )
-
   def run(root: Root)(implicit flix: Flix): Result[MutationReporter, Int] = {
-    val reporter = new MutationReporter()
+    val queue = new ConcurrentLinkedQueue[Def]()
 
-    // todo: move prints to reporter
-    val formatter = flix.getFormatter
-    import formatter._
+    val executor = Executors.newSingleThreadExecutor()
+
+//    val numThreads = 1 // fixme: compiler crashes with more than 1 threads
+//    val executor = Executors.newFixedThreadPool(numThreads)
+//    val fjPool = new ForkJoinPool(numThreads)
+
+    val reporter = new MutationReporter()
 
     // don't want to mutate library defs and tests
     val defs = root.defs.values.filter(defn => !isLibDef(defn) && !isTestDef(defn))
 
     defs.foreach {
       defn =>
-        mutators.foreach {
-          mutator =>
-            mutator.mutateExpr(defn.exp).map { mutatedExp =>
-              val mutatedDef = defn.copy(exp = mutatedExp)
-              root.copy(defs = root.defs + (mutatedDef.sym -> mutatedDef))
-            }.foreach { mutant =>
-              reporter.all += 1
+        Mutator.mutateExpr(defn.exp).foreach { mutatedExp =>
+          queue.add(defn.copy(exp = mutatedExp))
+        }
+    }
 
-              println("mutant created for " + blue(defn.sym.toString))
+    // todo: move prints to reporter
+    val formatter = flix.getFormatter
+    import formatter._
 
-              checkMutant(mutant) match {
-                case Killed =>
-                  reporter.killed += 1
-                  println(green("mutant killed"))
-                case CompilationFailed =>
-                  reporter.compilationFailed += 1
-                  println(yellow("mutant compilation failed"))
-                case Survived =>
-                  println(red("mutant survived"))
-              }
+    while (!queue.isEmpty) {
+      val mutatedDef = queue.poll()
 
-              println("-" * 80)
-            }
+      executor.execute(() => {
+        val mutant = root.copy(defs = root.defs + (mutatedDef.sym -> mutatedDef))
+
+        reporter.all.getAndIncrement()
+
+        println("mutant created for " + blue(mutatedDef.sym.toString))
+
+        checkMutant(mutant) match {
+          case Killed =>
+            reporter.killed.getAndIncrement()
+            println(green("mutant killed"))
+          case CompilationFailed =>
+            reporter.compilationFailed.getAndIncrement()
+            println(yellow("mutant compilation failed"))
+          case Survived =>
+            println(red("mutant survived"))
         }
 
+        println("-" * 80)
+      })
     }
+
+    executor.shutdown()
+    while (!executor.isTerminated) {}
 
     Result.Ok(reporter)
   }
@@ -129,12 +135,100 @@ object MutationTester {
     true
   }
 
-  private def mutateToList(exp: Expr)(implicit flix: Flix): List[Expr] = exp match {
-    case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-      mutateToList(exp1).map(Expr.IfThenElse(_, exp2, exp3, tpe, eff, loc)) :::
-        mutateToList(exp2).map(Expr.IfThenElse(exp1, _, exp3, tpe, eff, loc)) :::
-        mutateToList(exp3).map(Expr.IfThenElse(exp1, exp2, _, tpe, eff, loc))
-    case _ => List.empty
+  private object Mutator {
+    private val mutators: LazyList[ExprMutator] = LazyList(
+      ExprMutator.Incrementer,
+      ExprMutator.Decrementer,
+      ExprMutator.BooleanMutator,
+      ExprMutator.ArithmeticUnaryMutator,
+      ExprMutator.ArithmeticBinaryMutator,
+      ExprMutator.ConditionalNegateMutator,
+      ExprMutator.ConditionalBoundaryMutator,
+    )
+
+    def mutateExpr(expr: Expr)(implicit flix: Flix): LazyList[Expr] = {
+      expr match {
+        case Expr.Cst(cst, tpe, loc) => mutateByMutators(expr)
+        case Expr.Var(sym, tpe, loc) => ???
+        case Expr.Def(sym, tpe, loc) => ???
+        case Expr.Sig(sym, tpe, loc) => ???
+        case Expr.Hole(sym, tpe, loc) => ???
+        case Expr.HoleWithExp(exp, tpe, eff, loc) => ???
+        case Expr.OpenAs(symUse, exp, tpe, loc) => ???
+        case Expr.Use(sym, alias, exp, loc) => ???
+        case Expr.Lambda(fparam, exp, tpe, loc) => ???
+        case Expr.Apply(exp, exps, tpe, eff, loc) => mutateByMutators(expr)
+        case Expr.Unary(sop, exp, tpe, eff, loc) => mutateByMutators(expr)
+        case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => mutateByMutators(expr)
+        case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) => ???
+        case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => ???
+        case Expr.Region(tpe, loc) => ???
+        case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => ???
+        case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+          mutateExpr(exp1).map(Expr.IfThenElse(_, exp2, exp3, tpe, eff, loc)) #:::
+            mutateExpr(exp2).map(Expr.IfThenElse(exp1, _, exp3, tpe, eff, loc)) #:::
+            mutateExpr(exp3).map(Expr.IfThenElse(exp1, exp2, _, tpe, eff, loc))
+        case Expr.Stm(exp1, exp2, tpe, eff, loc) => ???
+        case Expr.Discard(exp, eff, loc) => ???
+        case Expr.Match(exp, rules, tpe, eff, loc) => ???
+        case Expr.TypeMatch(exp, rules, tpe, eff, loc) => ???
+        case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => ???
+        case Expr.Tag(sym, exp, tpe, eff, loc) => ???
+        case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => ???
+        case Expr.Tuple(elms, tpe, eff, loc) => ???
+        case Expr.RecordEmpty(tpe, loc) => ???
+        case Expr.RecordSelect(exp, label, tpe, eff, loc) => ???
+        case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => ???
+        case Expr.RecordRestrict(label, exp, tpe, eff, loc) => ???
+        case Expr.ArrayLit(exps, exp, tpe, eff, loc) => ???
+        case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => ???
+        case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) => ???
+        case Expr.ArrayLength(exp, eff, loc) => ???
+        case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) => ???
+        case Expr.VectorLit(exps, tpe, eff, loc) => ???
+        case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => ???
+        case Expr.VectorLength(exp, loc) => ???
+        case Expr.Ref(exp1, exp2, tpe, eff, loc) => ???
+        case Expr.Deref(exp, tpe, eff, loc) => ???
+        case Expr.Assign(exp1, exp2, tpe, eff, loc) => ???
+        case Expr.Ascribe(exp, tpe, eff, loc) => ???
+        case Expr.InstanceOf(exp, clazz, loc) => ???
+        case Expr.CheckedCast(cast, exp, tpe, eff, loc) => ???
+        case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => ???
+        case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) => ???
+        case Expr.Without(exp, effUse, tpe, eff, loc) => ???
+        case Expr.TryCatch(exp, rules, tpe, eff, loc) => ???
+        case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => ???
+        case Expr.Do(op, exps, tpe, eff, loc) => ???
+        case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => ???
+        case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => ???
+        case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => ???
+        case Expr.GetField(field, exp, tpe, eff, loc) => ???
+        case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => ???
+        case Expr.GetStaticField(field, tpe, eff, loc) => ???
+        case Expr.PutStaticField(field, exp, tpe, eff, loc) => ???
+        case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => ???
+        case Expr.NewChannel(exp1, exp2, tpe, eff, loc) => ???
+        case Expr.GetChannel(exp, tpe, eff, loc) => ???
+        case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => ???
+        case Expr.SelectChannel(rules, default, tpe, eff, loc) => ???
+        case Expr.Spawn(exp1, exp2, tpe, eff, loc) => ???
+        case Expr.ParYield(frags, exp, tpe, eff, loc) => ???
+        case Expr.Lazy(exp, tpe, loc) => ???
+        case Expr.Force(exp, tpe, eff, loc) => ???
+        case Expr.FixpointConstraintSet(cs, tpe, loc) => ???
+        case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => ???
+        case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => ???
+        case Expr.FixpointSolve(exp, tpe, eff, loc) => ???
+        case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => ???
+        case Expr.FixpointInject(exp, pred, tpe, eff, loc) => ???
+        case Expr.FixpointProject(pred, exp, tpe, eff, loc) => ???
+        case Expr.Error(m, tpe, eff) => ???
+      }
+    }
+
+    // todo: try refactor and optimize structure
+    private def mutateByMutators(exp: Expr)(implicit flix: Flix): LazyList[Expr] = mutators.flatMap(_.mutateExpr(exp))
   }
 
   private sealed trait ExprMutator {
@@ -520,6 +614,6 @@ object MutationTester {
   }
 
   class MutationReporter {
-    var all, killed, compilationFailed = 0 // TODO: refactor
+    var all, killed, compilationFailed: AtomicInteger = new AtomicInteger(0) // TODO: refactor
   }
 }
