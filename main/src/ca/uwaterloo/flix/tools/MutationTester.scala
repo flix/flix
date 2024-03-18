@@ -40,9 +40,9 @@ object MutationTester {
 
     val executor = Executors.newSingleThreadExecutor()
 
-//    val numThreads = 1 // fixme: compiler crashes with more than 1 threads
-//    val executor = Executors.newFixedThreadPool(numThreads)
-//    val fjPool = new ForkJoinPool(numThreads)
+    //    val numThreads = 1 // fixme: compiler crashes with more than 1 threads
+    //    val executor = Executors.newFixedThreadPool(numThreads)
+    //    val fjPool = new ForkJoinPool(numThreads)
 
     val reporter = new MutationReporter()
 
@@ -101,14 +101,14 @@ object MutationTester {
 
   private def checkMutant(mutant: Root)(implicit flix: Flix): MutantStatus =
     flix.codeGen(mutant).toSoftResult match {
-      case Result.Ok(c) => if (!testMutant(c._1)) Killed else Survived
+      case Result.Ok(c) => testMutant(c._1)
       case Result.Err(_) => CompilationFailed
     }
 
   /**
     * returns true if all tests passed, false otherwise
     */
-  private def testMutant(compilationResult: CompilationResult): Boolean = {
+  private def testMutant(compilationResult: CompilationResult): MutantStatus = {
     val tests = compilationResult.getTests.values.filter(!_.skip)
 
     for (test <- tests) {
@@ -121,18 +121,18 @@ object MutationTester {
         redirect.restore()
 
         result match {
-          case java.lang.Boolean.FALSE => return false
-          case _ => if (redirect.stdErr.nonEmpty) return false
+          case java.lang.Boolean.FALSE => return Killed
+          case _ => if (redirect.stdErr.nonEmpty) return Killed
         }
       } catch {
         case _: Throwable =>
           redirect.restore()
 
-          return false
+          return Killed
       }
     }
 
-    true
+    Survived
   }
 
   private object Mutator {
