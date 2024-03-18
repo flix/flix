@@ -42,7 +42,7 @@ mod TestFile {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
-                Err(Generic(getMessage(ex)))
+                Err(Generic(getMessage(checked_cast(ex))))
         }
     }
 
