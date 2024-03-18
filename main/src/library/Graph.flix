@@ -508,7 +508,7 @@ mod Graph {
     /// with backslash.
     ///
     def graphvizId(id: t): String with ToString[t] = {
-        "\"${String.replace(from = "\"", to = "\\\"", "${id}")}\""
+        "\"${String.replace(src = "\"", dst = "\\\"", "${id}")}\""
     }
 
     ///

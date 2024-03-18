@@ -23,32 +23,37 @@ import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MapOps
 
 /**
-  * The Tailrec phase identifies function calls that are in tail position and tail-recursive calls.
+  * The TailPos phase identifies function calls and try-with expressions that are in tail position,
+  * and marks tail-recursive calls.
   *
   * Specifically, it replaces [[Expr.ApplyDef]] AST nodes with [[Expr.ApplySelfTail]] AST nodes
   * when the [[Expr.ApplyDef]] node calls the enclosing function and occurs in tail position.
   *
-  * For correctness it is assumed that all calls in the given AST have [[Ast.CallType.NonTailCall]]
+  * Otherwise, it adds [[Ast.ExpPosition.Tail]] to function calls and try-with expressions in tail
+  * position.
+  *
+  * For correctness it is assumed that all calls in the given AST have [[Ast.ExpPosition.NonTail]]
   * and there are no [[Expr.ApplySelfTail]] nodes present.
   */
-object Tailrec {
+object TailPos {
 
   /**
-    * Identifies tail recursive calls in the given AST `root`.
+    * Identifies expressions in tail position in the given AST `root`.
     */
-  def run(root: Root)(implicit flix: Flix): Root = flix.phase("Tailrec") {
+  def run(root: Root)(implicit flix: Flix): Root = flix.phase("TailPos") {
     val defns = ParOps.parMapValues(root.defs)(visitDef)
     root.copy(defs = defns)
   }
 
   /**
-    * Identifies tail recursive calls in the given definition `defn`.
+    * Identifies expressions in tail position in the given definition `defn`.
     */
   private def visitDef(defn: Def): Def = {
     /**
-      * Introduces tail recursive calls in the given expression `exp0`.
+      * Introduces expressions in tail position in the given expression `exp0`.
       *
-      * Replaces every [[Expr.ApplyDef]], which calls the enclosing function and occurs in tail position, with [[Expr.ApplySelfTail]].
+      * Replaces every [[Expr.ApplyDef]], which calls the enclosing function and occurs in tail
+      * position, with [[Expr.ApplySelfTail]].
       */
     def visitExp(exp0: Expr): Expr = exp0 match {
       case Expr.Let(sym, exp1, exp2, tpe, purity, loc) =>
@@ -82,28 +87,32 @@ object Tailrec {
         Expr.Branch(e0, br, tpe, purity, loc)
 
       case Expr.ApplyClo(exp, exps, _, tpe, purity, loc) =>
-        Expr.ApplyClo(exp, exps, Ast.CallType.TailCall, tpe, purity, loc)
+        // Mark expression as tail position.
+        Expr.ApplyClo(exp, exps, Ast.ExpPosition.Tail, tpe, purity, loc)
 
       case Expr.ApplyDef(sym, exps, _, tpe, purity, loc) =>
         // Check whether this is a self recursive call.
         if (defn.sym != sym) {
-          // Tail call.
-          Expr.ApplyDef(sym, exps, Ast.CallType.TailCall, tpe, purity, loc)
+          // Mark expression as tail position.
+          Expr.ApplyDef(sym, exps, Ast.ExpPosition.Tail, tpe, purity, loc)
         } else {
           // Self recursive tail call.
           Expr.ApplySelfTail(sym, exps, tpe, purity, loc)
         }
 
+      case Expr.TryWith(exp, effUse, rules, _, tpe, purity, loc) =>
+        // Mark expression as tail position.
+        Expr.TryWith(exp, effUse, rules, Ast.ExpPosition.Tail, tpe, purity, loc)
+
       // Non-tail expressions
       case Expr.ApplyAtomic(_, _, _, _, _) => exp0
       case Expr.ApplySelfTail(_, _, _, _, _) => exp0
       case Expr.Cst(_, _, _) => exp0
-      case Expr.Do(_, _, _, _, _) => exp0
       case Expr.JumpTo(_, _, _, _) => exp0
       case Expr.NewObject(_, _, _, _, _, _) => exp0
       case Expr.Scope(_, _, _, _, _) => exp0
       case Expr.TryCatch(_, _, _, _, _) => exp0
-      case Expr.TryWith(_, _, _, _, _, _) => exp0
+      case Expr.Do(_, _, _, _, _) => exp0
       case Expr.Var(_, _, _) => exp0
     }
 

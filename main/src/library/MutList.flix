@@ -649,10 +649,10 @@ mod MutList {
         Ref.put(deref l2, l1)
 
     ///
-    /// Replaces all occurrences of the `from` with `to` in the given mutable list `v`.
+    /// Replaces all occurrences of the `src` with `dst` in the given mutable list `v`.
     ///
-    pub def replace!(from: {from = a}, to: {to = a}, v: MutList[a, r]): Unit \ r with Eq[a] =
-        transform!(e -> if (e == from.from) to.to else e, v)
+    pub def replace!(src: {src = a}, dst: {dst = a}, v: MutList[a, r]): Unit \ r with Eq[a] =
+        transform!(e -> if (e == src.src) dst.dst else e, v)
 
     ///
     /// Reverses the order of the elements in the given mutable list `v`.

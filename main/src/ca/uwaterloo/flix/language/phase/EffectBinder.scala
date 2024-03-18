@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, CallType}
+import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, ExpPosition}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
 import ca.uwaterloo.flix.language.ast.{AtomicOp, Level, LiftedAst, Purity, ReducedAst, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression
@@ -186,7 +186,7 @@ object EffectBinder {
           val exp = visitExpr(exp0)
           ReducedAst.HandlerRule(op, fparams, exp)
       }
-      ReducedAst.Expr.TryWith(e, effUse, rules1, tpe, purity, loc)
+      ReducedAst.Expr.TryWith(e, effUse, rules1, ExpPosition.NonTail, tpe, purity, loc)
 
     case LiftedAst.Expr.Do(_, _, _, _, _) =>
       val binders = mutable.ArrayBuffer.empty[Binder]
@@ -228,11 +228,11 @@ object EffectBinder {
     case LiftedAst.Expr.ApplyClo(exp, exps, tpe, purity, loc) =>
       val e = visitExprWithBinders(binders)(exp)
       val es = exps.map(visitExprWithBinders(binders))
-      ReducedAst.Expr.ApplyClo(e, es, CallType.NonTailCall, tpe, purity, loc)
+      ReducedAst.Expr.ApplyClo(e, es, ExpPosition.NonTail, tpe, purity, loc)
 
     case LiftedAst.Expr.ApplyDef(sym, exps, tpe, purity, loc) =>
       val es = exps.map(visitExprWithBinders(binders))
-      ReducedAst.Expr.ApplyDef(sym, es, CallType.NonTailCall, tpe, purity, loc)
+      ReducedAst.Expr.ApplyDef(sym, es, ExpPosition.NonTail, tpe, purity, loc)
 
     case LiftedAst.Expr.IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
       val e1 = visitExprInnerWithBinders(binders)(exp1)
@@ -287,7 +287,7 @@ object EffectBinder {
           val exp = visitExpr(exp0)
           ReducedAst.HandlerRule(op, fparams, exp)
       }
-      ReducedAst.Expr.TryWith(e, effUse, rs, tpe, purity, loc)
+      ReducedAst.Expr.TryWith(e, effUse, rs, ExpPosition.NonTail, tpe, purity, loc)
 
     case LiftedAst.Expr.Do(op, exps, tpe, purity, loc) =>
       val es = exps.map(visitExprWithBinders(binders))
@@ -335,7 +335,7 @@ object EffectBinder {
         bind(exp2)
       case ReducedAst.Expr.Scope(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.TryCatch(_, _, _, _, _) => letBindExpr(binders)(e)
-      case ReducedAst.Expr.TryWith(_, _, _, _, _, _) => letBindExpr(binders)(e)
+      case ReducedAst.Expr.TryWith(_, _, _, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.Do(_, _, _, _, _) => letBindExpr(binders)(e)
       case ReducedAst.Expr.NewObject(_, _, _, _, _, _) => letBindExpr(binders)(e)
     }

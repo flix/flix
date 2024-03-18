@@ -17,7 +17,7 @@ mod Debug {
     @Internal
     def escape(s: String): String = {
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {} as jReplace;
-        def replace(from: String, to: String, subject: String): String = jReplace(subject, checked_cast(from), checked_cast(to));
+        def replace(src: String, dst: String, subject: String): String = jReplace(subject, checked_cast(src), checked_cast(dst));
         s
             // NB: \\ must come first to avoid clobbering other cases
             |> replace("\\", "\\\\")

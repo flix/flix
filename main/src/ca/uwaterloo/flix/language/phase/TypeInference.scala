@@ -393,8 +393,6 @@ object TypeInference {
             resultTyp <- expectTypeM(expected = Type.Int64, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
-
-        case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", loc)
       }
 
       case KindedAst.Expr.Binary(sop, exp1, exp2, tvar, loc) => sop match {
@@ -531,8 +529,6 @@ object TypeInference {
             resultTyp <- unifyTypeM(tvar, Type.Str, loc)
             resultEff = Type.mkUnion(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-        case _ => throw InternalCompilerException(s"Unexpected binary operator: '$sop'.", loc)
       }
 
       case KindedAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
@@ -893,7 +889,10 @@ object TypeInference {
       case KindedAst.Expr.TryCatch(exp, rules, loc) =>
         val rulesType = rules map {
           case KindedAst.CatchRule(sym, clazz, body) =>
-            visitExp(body)
+            for {
+              _ <- unifyTypeM(sym.tvar, Type.mkNative(clazz, sym.loc), sym.loc)
+              tpe <- visitExp(body)
+            } yield tpe
         }
 
         for {

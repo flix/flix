@@ -109,7 +109,7 @@ class Flix {
   private var cachedOptimizerAst: LiftedAst.Root = LiftedAst.empty
   private var cachedTreeShaker2Ast: LiftedAst.Root = LiftedAst.empty
   private var cachedEffectBinderAst: ReducedAst.Root = ReducedAst.empty
-  private var cachedTailrecAst: ReducedAst.Root = ReducedAst.empty
+  private var cachedTailPosAst: ReducedAst.Root = ReducedAst.empty
   private var cachedEraserAst: ReducedAst.Root = ReducedAst.empty
   private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
   private var cachedVarOffsetsAst: ReducedAst.Root = ReducedAst.empty
@@ -134,7 +134,7 @@ class Flix {
 
   def getEffectBinderAst: ReducedAst.Root = cachedEffectBinderAst
 
-  def getTailrecAst: ReducedAst.Root = cachedTailrecAst
+  def getTailPosAst: ReducedAst.Root = cachedTailPosAst
 
   def getEraserAst: ReducedAst.Root = cachedEraserAst
 
@@ -614,8 +614,8 @@ class Flix {
     cachedOptimizerAst = Optimizer.run(cachedLambdaLiftAst)
     cachedTreeShaker2Ast = TreeShaker2.run(cachedOptimizerAst)
     cachedEffectBinderAst = EffectBinder.run(cachedTreeShaker2Ast)
-    cachedTailrecAst = Tailrec.run(cachedEffectBinderAst)
-    cachedEraserAst = Eraser.run(cachedTailrecAst)
+    cachedTailPosAst = TailPos.run(cachedEffectBinderAst)
+    cachedEraserAst = Eraser.run(cachedTailPosAst)
     cachedReducerAst = Reducer.run(cachedEraserAst)
     cachedVarOffsetsAst = VarOffsets.run(cachedReducerAst)
     val result = JvmBackend.run(cachedVarOffsetsAst)

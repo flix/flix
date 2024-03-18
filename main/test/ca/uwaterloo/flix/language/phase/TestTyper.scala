@@ -209,7 +209,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("NoMatchingInstance.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |  pub def foo(x: a): String
         |}
         |def foo(x: a): String = C.foo(x)
@@ -221,7 +221,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("NoMatchingInstance.02") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |  pub def foo(x: a): String
         |}
         |def foo(x: Int32): String = C.foo(x)
@@ -237,7 +237,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case Box(a)
         |}
         |
-        |class C[a] {
+        |trait C[a] {
         |    pub def foo(x: a): String
         |}
         |
@@ -264,7 +264,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    case Box(a)
         |}
         |
-        |class C[a] {
+        |trait C[a] {
         |    pub def foo(x: a): String
         |}
         |
@@ -287,7 +287,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("NoMatchingInstance.05") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    pub def foo(x: a): Int32
         |}
         |
@@ -305,7 +305,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
     // missing constraint on C[b]
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    pub def foo(x: a): Int32
         |}
         |
@@ -318,7 +318,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("NoMatchingInstance.07") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    pub def foo(x: a): Int32
         |}
         |
@@ -834,9 +834,10 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("Test.UnexpectedArgument.04") {
     val input =
       """
-        |def f(x: Bool, y: Bool): Bool = ???
-        |
-        |law l: forall (x: Int32, y: Bool) . f(x, y)
+        |trait A[a] {
+        |    pub def f(x: Bool, y: a): Bool
+        |    law l: forall (x: Int32, y: Bool) . A.f(x, y)
+        |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
@@ -1139,7 +1140,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestAssocType.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    type T: Type
         |    pub def f(x: a): C.T[a]
         |}
@@ -1153,7 +1154,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestAssocType.02") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    type T: Type
         |    pub def f(x: a): C.T[a]
         |}
@@ -1388,6 +1389,23 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestTryCatch.01") {
+    val input =
+      """
+        |enum Res { case Err(String), case Ok }
+        |
+        |pub def catchIO(f: Unit -> Unit \ ef): Res = {
+        |    try {f(); Res.Ok} catch {
+        |        case ex: ##java.io.IOError =>
+        |            import java.lang.Throwable.getMessage(): String;
+        |            Res.Err(getMessage(ex))
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 

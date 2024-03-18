@@ -42,7 +42,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(ex)))
+                Err(Generic(getMessage(checked_cast(ex))))
         }
 
     ///
@@ -60,7 +60,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(ex)))
+                Err(Generic(getMessage(checked_cast(ex))))
         }
 
     ///
@@ -78,7 +78,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(ex)))
+                Err(Generic(getMessage(checked_cast(ex))))
         }
 
     ///
@@ -95,7 +95,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(ex)))
+                Err(Generic(getMessage(checked_cast(ex))))
         }
 
     ///
@@ -283,7 +283,7 @@ mod Files {
             } catch {
                 case ex: ##java.io.IOException =>
                     import java.lang.Throwable.getMessage(): String \ IO;
-                    Err(Generic(getMessage(ex)))
+                    Err(Generic(getMessage(checked_cast(ex))))
             }
         } else if (opts.count == 0) {
             Ok("")
@@ -311,7 +311,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(ex)))
+                Err(Generic(getMessage(checked_cast(ex))))
         }
 
     ///
@@ -384,7 +384,7 @@ mod Files {
                         case ex: ##java.io.IOException => {
                             Ref.put(checked_cast(null), line);
                             import java.lang.Throwable.getMessage(): String \ {};
-                            Some(Err(Generic(getMessage(ex))))
+                            Some(Err(Generic(getMessage(checked_cast(ex)))))
                         }
                     }
                 } else {
@@ -395,7 +395,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
-                Iterator.iterate(rc, constant(Some(Err(Generic(getMessage(ex))))))
+                Iterator.iterate(rc, constant(Some(Err(Generic(getMessage(checked_cast(ex)))))))
         }
 
     ///
@@ -425,7 +425,7 @@ mod Files {
                         case ex: ##java.io.IOException => {
                             Ref.put(checked_cast(null), line);
                             import java.lang.Throwable.getMessage(): String \ {};
-                            Some(Err(Generic(getMessage(ex))))
+                            Some(Err(Generic(getMessage(checked_cast(ex)))))
                         }
                     }
                 } else {
@@ -436,7 +436,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ {};
-                Iterator.iterate(rc, constant(Some(Err(Generic(getMessage(ex))))))
+                Iterator.iterate(rc, constant(Some(Err(Generic(getMessage(checked_cast(ex)))))))
         }
 
     ///
@@ -482,7 +482,7 @@ mod Files {
             } catch {
                 case ex: ##java.io.IOException =>
                     import java.lang.Throwable.getMessage(): String \ IO;
-                    Err(Generic(getMessage(ex)))
+                    Err(Generic(getMessage(checked_cast(ex))))
             }
         } else if (opts.count == 0) {
             Ok(Array#{} @ rc)
@@ -533,7 +533,7 @@ mod Files {
                             case ex: ##java.io.IOException => {
                                 Ref.put(-1, numberRead);
                                 import java.lang.Throwable.getMessage(): String \ {};
-                                Some(Err(Generic(getMessage(ex))))
+                                Some(Err(Generic(getMessage(checked_cast(ex)))))
                             }
                         }
                     } else {
@@ -544,7 +544,7 @@ mod Files {
             } catch {
                 case ex: ##java.io.IOException =>
                     import java.lang.Throwable.getMessage(): String \ {};
-                    Iterator.iterate(rc, constant(Some(Err(Generic(getMessage(ex))))))
+                    Iterator.iterate(rc, constant(Some(Err(Generic(getMessage(checked_cast(ex)))))))
             }
         } else {
             Iterator.iterate(rc, constant(Some(Err(Generic("The argument `chunkSize` has to be a non negative number when calling `File.readChunks`.")))))
@@ -582,7 +582,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(ex)))
+                Err(Generic(getMessage(checked_cast(ex))))
         }
 
     ///
@@ -617,7 +617,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(ex)))
+                Err(Generic(getMessage(checked_cast(ex))))
         }
 
     ///
@@ -653,7 +653,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(ex)))
+                Err(Generic(getMessage(checked_cast(ex))))
         }
 
     ///
@@ -689,7 +689,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(ex)))
+                Err(Generic(getMessage(checked_cast(ex))))
         }
 
     ///
@@ -727,7 +727,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(ex)))
+                Err(Generic(getMessage(checked_cast(ex))))
         }
     }
 
@@ -766,7 +766,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(ex)))
+                Err(Generic(getMessage(checked_cast(ex))))
         }
     }
 
@@ -796,7 +796,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(ex)))
+                Err(Generic(getMessage(checked_cast(ex))))
         }
 
     ///
@@ -855,7 +855,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(ex)))
+                Err(Generic(getMessage(checked_cast(ex))))
         }
     }
 
@@ -975,7 +975,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(ex)))
+                Err(Generic(getMessage(checked_cast(ex))))
         }
 
     ///
@@ -1055,7 +1055,7 @@ mod Files {
         } catch {
             case ex: ##java.io.IOException =>
                 import java.lang.Throwable.getMessage(): String \ IO;
-                Err(Generic(getMessage(ex)))
+                Err(Generic(getMessage(checked_cast(ex))))
         }
 
     ///

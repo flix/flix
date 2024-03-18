@@ -1288,7 +1288,7 @@ mod TestMutList {
         MutList.push!(2, l1);
         MutList.push!(1, l1);
         MutList.push!(1, l1);
-        MutList.replace!(from = 1, to = 42, l1);
+        MutList.replace!(src = 1, dst = 42, l1);
         let l2 = MutList.empty(rc);
         let xs = 42 :: 2 :: 2 :: 42 :: 42 :: Nil;
         List.forEach(x -> MutList.push!(x, l2), xs);
@@ -1298,7 +1298,7 @@ mod TestMutList {
     @test
     def replace!02(): Bool = region rc {
         let l1 = MutList.range(rc, 4, 7);
-        MutList.replace!(from = 4, to = 0, l1);
+        MutList.replace!(src = 4, dst = 0, l1);
         let l2 = MutList.empty(rc);
         let xs = 0 :: 5 :: 6 :: Nil;
         List.forEach(x -> MutList.push!(x, l2), xs);
@@ -1308,7 +1308,7 @@ mod TestMutList {
     @test
     def replace!03(): Bool = region rc {
         let l1 = MutList.range(rc, 4, 7);
-        MutList.replace!(from = 5, to = 0, l1);
+        MutList.replace!(src = 5, dst = 0, l1);
         let l2 = MutList.empty(rc);
         let xs = 4 :: 0 :: 6 :: Nil;
         List.forEach(x -> MutList.push!(x, l2), xs);
@@ -1318,7 +1318,7 @@ mod TestMutList {
     @test
     def replace!04(): Bool = region rc {
         let l1 = MutList.range(rc, 4, 7);
-        MutList.replace!(from = 6, to = 0, l1);
+        MutList.replace!(src = 6, dst = 0, l1);
         let l2 = MutList.empty(rc);
         let xs = 4 :: 5 :: 0 :: Nil;
         List.forEach(x -> MutList.push!(x, l2), xs);
@@ -1330,7 +1330,7 @@ mod TestMutList {
         let l1 = MutList.empty(rc);
         let xs1 = List.repeat(97, 'a');
         List.forEach(x -> MutList.push!(x, l1), xs1);
-        MutList.replace!(from = 'a', to = 'z', l1);
+        MutList.replace!(src = 'a', dst = 'z', l1);
         let l2 = MutList.empty(rc);
         let xs2 = List.repeat(97, 'z');
         List.forEach(x -> MutList.push!(x, l2), xs2);

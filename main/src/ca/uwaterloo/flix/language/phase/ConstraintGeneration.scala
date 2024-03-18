@@ -221,8 +221,6 @@ object ConstraintGeneration {
           val resTpe = tvar
           val resEff = eff
           (resTpe, resEff)
-
-        case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", loc)
       }
 
       case KindedAst.Expr.Binary(sop, exp1, exp2, tvar, loc) => sop match {
@@ -359,8 +357,6 @@ object ConstraintGeneration {
           val resTpe = tvar
           val resEff = Type.mkUnion(eff1, eff2, loc)
           (resTpe, resEff)
-
-        case _ => throw InternalCompilerException(s"Unexpected binary operator: '$sop'.", loc)
       }
 
       case Expr.IfThenElse(exp1, exp2, exp3, loc) =>
@@ -1013,7 +1009,9 @@ object ConstraintGeneration {
     * Returns the the body's type and the body's effect
     */
   private def visitCatchRule(rule: KindedAst.CatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
-    case KindedAst.CatchRule(_, _, exp) => visitExp(exp)
+    case KindedAst.CatchRule(sym, clazz, exp) =>
+      c.expectTypeM(expected = Type.mkNative(clazz, sym.loc), sym.tvar, sym.loc)
+      visitExp(exp)
   }
 
   /**

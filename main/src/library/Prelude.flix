@@ -114,30 +114,6 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 
 ///
-/// Prints the stringified representation of `x`.
-///
-/// WARNING: The debug function is pure hence if the
-/// result is unused it may be removed by the compiler!
-///
-def debug(x: a): a = masked_cast(Debug.debugWithPrefix("", x))
-
-///
-/// Prints the stringified representation of `x`.
-///
-/// WARNING: The debug function is pure hence if the
-/// result is unused it may be removed by the compiler!
-///
-def debug!(x: a): a = masked_cast(Debug.debugWithPrefix("", x))
-
-///
-/// Prints the stringified representation of `x`.
-///
-/// WARNING: The debug function is pure hence if the
-/// result is unused it may be removed by the compiler!
-///
-def debug!!(x: a): a = masked_cast(Debug.debugWithPrefix("", x))
-
-///
 /// Crashes the current process with the given message `m`.
 ///
 pub def bug!(m: String): a = masked_cast({

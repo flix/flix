@@ -306,7 +306,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |    case E2
         |}
         |
-        |class C[a] {
+        |trait C[a] {
         |    pub def f(x: a): Int32
         |}
         |
@@ -328,7 +328,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |    case E2
         |}
         |
-        |class C[a] {
+        |trait C[a] {
         |    pub def f(_x: a): Int32 = match E.E1 {
         |        case E.E1 => 1
         |    }

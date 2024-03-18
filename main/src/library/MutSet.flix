@@ -104,13 +104,13 @@ mod MutSet {
         Ref.put(Set.filter(f, deref ms), ms)
 
     ///
-    /// Replaces the element `from` with the element `to` if `from` is in the mutable set `s`.
+    /// Replaces the element `src` with the element `dst` if `from` is in the mutable set `s`.
     ///
     /// The mutable set `s` is unchanged if the element `from` is not in it.
     ///
-    pub def replace!(from: {from = a}, to: {to = a}, s: MutSet[a, r]): Unit \ r with Order[a] =
+    pub def replace!(src: {src = a}, dst: {dst = a}, s: MutSet[a, r]): Unit \ r with Order[a] =
         let MutSet(_, ms) = s;
-        Ref.put(Set.replace(from, to, deref ms), ms)
+        Ref.put(Set.replace(src = src.src, dst = dst.dst, deref ms), ms)
 
     ///
     /// Applies the function `f` to every element in the mutable set `s`.

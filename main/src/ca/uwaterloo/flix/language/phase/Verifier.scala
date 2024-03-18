@@ -98,7 +98,6 @@ object Verifier {
             case SemanticOp.Int32Op.Not => MonoType.Int32
             case SemanticOp.Int64Op.Neg => MonoType.Int64
             case SemanticOp.Int64Op.Not => MonoType.Int64
-            case _ => throw InternalCompilerException(s"Invalid unary operator: '$sop'", loc)
           }
           check(expected = opTpe)(actual = t, loc)
           check(expected = tpe)(actual = opTpe, loc)
@@ -215,8 +214,6 @@ object Verifier {
             case SemanticOp.Int64Op.Shr => (MonoType.Int64, MonoType.Int32, MonoType.Int64)
 
             case SemanticOp.StringOp.Concat => (MonoType.String, MonoType.String, MonoType.String)
-
-            case _ => throw InternalCompilerException(s"Invalid binary operator: '$sop'", loc)
           }
           check(expected = argTpe1)(t1, loc)
           check(expected = argTpe2)(t2, loc)
@@ -308,7 +305,7 @@ object Verifier {
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)
 
-    case Expr.TryWith(_, _, _, tpe, _, _) =>
+    case Expr.TryWith(_, _, _, _, tpe, _, _) =>
       // TODO: VERIFIER: Add support for TryWith.
       tpe
 

@@ -818,18 +818,18 @@ mod String {
     }
 
     ///
-    /// Returns `s` with every match of the substring `from` replaced by the string `to`.
+    /// Returns `s` with every match of the substring `src` replaced by the string `dst`.
     ///
-    pub def replace(from: {from = String}, to: {to = String}, s: String): String =
+    pub def replace(src: {src = String}, dst: {dst = String}, s: String): String =
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {};
-        replace(s, checked_cast(from.from), checked_cast(to.to))
+        replace(s, checked_cast(src.src), checked_cast(dst.dst))
 
     ///
-    /// Returns `s` with every match of the character `target` replaced by the character `rep`.
+    /// Returns `s` with every match of the character `src` replaced by the character `dst`.
     ///
-    pub def replaceChar(from: {from = Char}, to: {to = Char}, s: String): String =
+    pub def replaceChar(src: {src = Char}, dst: {dst = Char}, s: String): String =
         import java.lang.String.replace(Char, Char): String \ {};
-        replace(s, from.from, to.to)
+        replace(s, src.src, dst.dst)
 
     ///
     /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
@@ -1380,7 +1380,7 @@ mod String {
     /// Unwrap the string, replacing every newline with a space
     ///
     pub def unwrap(s: String): String =
-        Regex.replace({from = regex"[\r\n]+"}, {to = " "}, s)
+        Regex.replace({src = regex"[\r\n]+"}, {dst = " "}, s)
 
     ///
     /// Returns an iterator over `s`.

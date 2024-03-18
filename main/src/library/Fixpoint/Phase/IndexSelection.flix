@@ -113,16 +113,16 @@ mod Fixpoint.Phase.IndexSelection {
                     let search = RelOp.Search(var, ramSym, RelOp.If(test, innerOp));
                     (search, ground)
             else
-                let query =
+                let qry =
                     Vector.map(x -> match x {
                         case Eq(RamTerm.RowLoad(_, j), rhs) => (j, rhs)
                         case _ => ???
                     }, prefixQuery);
                 if (Vector.isEmpty(test))
-                    let search = RelOp.Query(var, ramSym, query, innerOp);
+                    let search = RelOp.Query(var, ramSym, qry, innerOp);
                     (search, ground)
                 else
-                    let search = RelOp.Query(var, ramSym, query, RelOp.If(test, innerOp));
+                    let search = RelOp.Query(var, ramSym, qry, RelOp.If(test, innerOp));
                     (search, ground)
         case RelOp.Query(_) => (op, Vector.empty())
         case RelOp.Functional(_) => (op, Vector.empty())

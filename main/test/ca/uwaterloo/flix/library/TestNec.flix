@@ -553,16 +553,16 @@ mod TestNec {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def replace01(): Bool = Nec.replace(from = 1, to = 42, singleton(1)) == singleton(42)
+    def replace01(): Bool = Nec.replace(src =  1, dst =  42, singleton(1)) == singleton(42)
 
     @test
-    def replace02(): Bool = Nec.replace(from = 7, to = 42, singleton(1)) == singleton(1)
+    def replace02(): Bool = Nec.replace(src =  7, dst =  42, singleton(1)) == singleton(1)
 
     @test
-    def replace03(): Bool = Nec.replace(from = 2, to = 42, necOf2(1, 2)) == necOf2(1, 42)
+    def replace03(): Bool = Nec.replace(src =  2, dst =  42, necOf2(1, 2)) == necOf2(1, 42)
 
     @test
-    def replace04(): Bool = Nec.replace(from = 7, to = 42, necOf2(1, 2)) == necOf2(1, 2)
+    def replace04(): Bool = Nec.replace(src =  7, dst =  42, necOf2(1, 2)) == necOf2(1, 2)
 
     /////////////////////////////////////////////////////////////////////////////
     // permutations                                                            //
