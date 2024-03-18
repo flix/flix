@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, RigidityEnv, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
 
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -487,7 +487,7 @@ object Monomorpher {
       val renv = expTpe.typeVars.foldLeft(RigidityEnv.empty) {
         case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
       }
-      rules.iterator.flatMap {
+      ListOps.findMap(rules) {
         case LoweredAst.TypeMatchRule(sym, t, body0) =>
           // try to unify
           Unification.unifyTypes(expTpe, subst.nonStrict(t), renv) match {
@@ -506,7 +506,7 @@ object Monomorpher {
               val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
               Some(MonoAst.Expr.Let(freshSym, Modifiers.Empty, e, body, StrictSubstitution(subst1, root.eqEnv).apply(tpe), subst1(eff), loc))
           }
-      }.next() // We are safe to get next() because the last case will always match
+      }.get // We are safe to call get because the last case will always match
 
     case LoweredAst.Expr.VectorLit(exps, tpe, eff, loc) =>
       val es = exps.map(visitExp(_, env0, subst))
