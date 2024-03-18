@@ -325,9 +325,6 @@ object Parser2 {
     * Checks if the parser is at a token of a specific `kind`.
     */
   private def at(kind: TokenKind)(implicit s: State): Boolean = {
-    // TODO: Can we remove comments here?
-    // Consume any comments before checking for the expected [[Tokenkind]]
-    comments()
     nth(0) == kind
   }
 
@@ -335,9 +332,6 @@ object Parser2 {
     * Checks if the parser is at a token of kind in `kinds`.
     */
   private def atAny(kinds: List[TokenKind])(implicit s: State): Boolean = {
-    // TODO: Can we remove comments here?
-    // Consume any comments before checking for the expected Tokenkind
-    comments()
     kinds.contains(nth(0))
   }
 
@@ -440,11 +434,14 @@ object Parser2 {
 
     def zeroOrMore(followedBy: Option[(TokenKind, () => Unit)] = None)(implicit s: State): Unit = {
       def isAtEnd(): Boolean = at(rightDelim) || followedBy.exists { case (delim, _) => at(delim) }
-
+      if (!at(leftDelim)) {
+        println(currentSourceLocation())
+      }
       assert(at(leftDelim))
       expect(leftDelim)
       var continue = true
       while (continue && !isAtEnd() && !eof()) {
+        comments()
         if (checkForItem()) {
           getItem()
           if (!isAtEnd()) {
@@ -1497,6 +1494,7 @@ object Parser2 {
       expect(TokenKind.KeywordSelect)
 
       expect(TokenKind.CurlyL)
+      comments()
       var continue = true
       while (continue && at(TokenKind.KeywordCase) && !eof()) {
         val ruleMark = open()
@@ -1717,6 +1715,7 @@ object Parser2 {
       } else {
         expression()
         if (eat(TokenKind.CurlyL)) {
+          comments()
           while (at(TokenKind.KeywordCase) && !eof()) {
             matchRule()
             eat(TokenKind.Comma)
@@ -1780,18 +1779,7 @@ object Parser2 {
       Decl.annotations()
       expect(TokenKind.KeywordDef)
       name(NAME_DEFINITION)
-      val markParams = open()
-      separated(() => {
-        val mark = open()
-        name(NAME_PARAMETER)
-        if (eat(TokenKind.Colon)) {
-          Type.ttype()
-        }
-        close(mark, TreeKind.Parameter)
-      }, checkForItem = () => atAny(NAME_PARAMETER))
-        .zeroOrMore()
-      close(markParams, TreeKind.ParameterList)
-
+      Decl.parameters()
       if (eat(TokenKind.Colon)) {
         Type.typeAndEffect()
       }
@@ -1815,6 +1803,7 @@ object Parser2 {
       expect(TokenKind.KeywordTypeMatch)
       expression()
       if (eat(TokenKind.CurlyL)) {
+        comments()
         while (at(TokenKind.KeywordCase) && !eof()) {
           typematchRule()
         }
@@ -1857,6 +1846,7 @@ object Parser2 {
       }
       expression()
       expect(TokenKind.CurlyL)
+      comments()
       while (at(TokenKind.KeywordCase) && !eof()) {
         matchRule()
       }
@@ -2034,18 +2024,7 @@ object Parser2 {
 
     private def lambda()(implicit s: State): Mark.Closed = {
       val mark = open()
-      val markParams = open()
-      separated(() => {
-        val mark = open()
-        name(NAME_PARAMETER)
-        if (eat(TokenKind.Colon)) {
-          Type.ttype()
-        }
-        close(mark, TreeKind.Parameter)
-      }, checkForItem = () => atAny(NAME_PARAMETER))
-        .zeroOrMore()
-
-      close(markParams, TreeKind.ParameterList)
+      Decl.parameters()
       expect(TokenKind.ArrowThinR)
       expression()
       close(mark, TreeKind.Expr.Lambda)
@@ -2305,7 +2284,12 @@ object Parser2 {
       var continue = true
       while (continue) {
         val right = nth(0)
-        if (rightBindsTighter(left, right)) {
+        if (right == TokenKind.Tilde) {
+          // This branch is hit when tilde is used like a binary operator.
+          // That only happens in equality constraints, an in that case,
+          // we want to let that rule continue instead of producing a binary type expression.
+          continue = false
+        } else if (rightBindsTighter(left, right)) {
           val mark = openBefore(lhs)
           val markOp = open()
           advance()
@@ -2326,7 +2310,7 @@ object Parser2 {
       lhs
     }
 
-    // A precedence table for binary operators in types, lower is higher precedence
+    // A precedence table for type operators, lower is higher precedence
     private def TYPE_OP_PRECEDENCE: List[List[TokenKind]] = List(
       // BINARY OPS
       List(TokenKind.ArrowThinR), // ->

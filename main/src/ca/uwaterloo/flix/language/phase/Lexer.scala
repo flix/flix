@@ -470,7 +470,7 @@ object Lexer {
       // User defined operators.
       case _ if isUserOp(c).isDefined =>
         val p = peek()
-        if (c == '<' && p == '>') {
+        if (c == '<' && p == '>' && peekPeek().flatMap(isUserOp).isEmpty) {
           // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
           TokenKind.AngleL
         } else if (isUserOp(p).isDefined) {
