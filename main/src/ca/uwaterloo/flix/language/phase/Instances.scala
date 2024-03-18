@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
 import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
+import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
 object Instances {
@@ -196,12 +197,12 @@ object Instances {
   def findInstanceForType(tpe: Type, clazz: Symbol.ClassSym, root: TypedAst.Root)(implicit flix: Flix): Option[(Ast.Instance, Substitution)] = {
     val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
     // lazily find the instance whose type unifies and save the substitution
-    superInsts.iterator.flatMap {
+    ListOps.findMap(superInsts) {
       superInst =>
         Unification.unifyTypes(tpe, superInst.tpe, RigidityEnv.empty).toOption.map {
           case (subst, _) => (superInst, subst) // TODO ASSOC-TYPES consider econstrs
         }
-    }.nextOption()
+    }
   }
 
   /**
