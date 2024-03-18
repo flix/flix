@@ -26,7 +26,6 @@ import ca.uwaterloo.flix.util.Result.Err
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
-import java.nio.file.{Files, Path}
 import scala.annotation.tailrec
 
 object ConstraintResolution {
@@ -36,18 +35,6 @@ object ConstraintResolution {
     */
   private val MaxIterations = 1000
 
-  private var record = false
-
-  private def startLogging(): Unit = record = true
-
-  private def stopLogging(): Unit = record = false
-
-  private def recordGraph(s: => String, number: Int): Unit = {
-    if (record) {
-      val path = Path.of(s"./personal/constraint-graphs/${number.toString.reverse.padTo(4, '0').reverse}.dot")
-      Files.writeString(path, s)
-    }
-  }
 
   /**
     * Resolves constraints in the given definition using the given inference result.
@@ -91,7 +78,7 @@ object ConstraintResolution {
       val constrs = tpeConstr :: effConstr :: infConstrs
       resolve(constrs, initialSubst, renv, cenv, eqEnv).flatMap {
         case ResolutionResult(subst, deferred, _) =>
-          stopLogging()
+          Debug.stopLogging()
           // TODO here we only consider the first error
           deferred match {
             case Nil => Result.Ok(subst)
@@ -411,7 +398,8 @@ object ConstraintResolution {
       }
 
       count += 1
-      recordGraph(Debug.toDotWithSubst(curr, subst), count)
+
+      Debug.recordGraph(curr, subst)
 
       resolveOneOf(curr, subst, renv, cenv, eqEnv) match {
         case Result.Ok(ResolutionResult(newSubst, newConstrs, progress)) =>
@@ -419,7 +407,7 @@ object ConstraintResolution {
           subst = newSubst
           prog = progress
         case res@Result.Err(_) =>
-          stopLogging()
+          Debug.stopLogging()
           return res
       }
     }
