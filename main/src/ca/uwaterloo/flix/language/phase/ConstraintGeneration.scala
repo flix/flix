@@ -1009,7 +1009,9 @@ object ConstraintGeneration {
     * Returns the the body's type and the body's effect
     */
   private def visitCatchRule(rule: KindedAst.CatchRule)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = rule match {
-    case KindedAst.CatchRule(_, _, exp) => visitExp(exp)
+    case KindedAst.CatchRule(sym, clazz, exp) =>
+      c.expectTypeM(expected = Type.mkNative(clazz, sym.loc), sym.tvar, sym.loc)
+      visitExp(exp)
   }
 
   /**
