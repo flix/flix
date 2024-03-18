@@ -598,7 +598,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
+      s"""
          |>> Expected effect: '${red(formatType(expected, Some(renv)))}' but found effect: '${red(formatType(inferred, Some(renv)))}'.
          |
          |${code(loc, "expression has unexpected effect.")}
@@ -632,7 +632,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
+      s"""
          |>> Expected type: '${red(formatType(expected, Some(renv)))}' but found type: '${red(formatType(inferred, Some(renv)))}'.
          |
          |${code(loc, "expression has unexpected type.")}
