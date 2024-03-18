@@ -43,7 +43,7 @@ mod Console {
         } catch {
             case e: ##java.io.IOError =>
                 import java.lang.Throwable.getMessage(): String;
-                Err(getMessage(e))
+                Err(getMessage(checked_cast(e)))
         }
     }
 
