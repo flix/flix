@@ -17,12 +17,11 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ParsedAst, ReadAst, SourceKind, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, SourceKind, SourceLocation, SyntaxTree, Token, TokenKind}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.language.errors.Parser2Error
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.Chain
-import ca.uwaterloo.flix.util.{InternalCompilerException, LibLevel, ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
 import scala.collection.mutable.ArrayBuffer
 
@@ -162,8 +161,7 @@ object Parser2 {
       case _ => false
     })
 
-    // NB, make a synthetic token to begin with, to make the SourceLocations
-    // generated below be correct.
+    // Make a synthetic token to begin with, to make the SourceLocations generated below be correct.
     var lastAdvance = Token(TokenKind.Eof, s.src.data, 0, 0, 0, 0, 0, 0)
     for (event <- s.events) {
       event match {
@@ -238,7 +236,7 @@ object Parser2 {
   }
 
   /**
-    * Closes a group and marks it with [[kind]].
+    * Closes a group and marks it with `kind`.
     * [[close]] consumes comments into the group before closing.
     */
   private def close(mark: Mark.Opened, kind: TreeKind)(implicit s: State): Mark.Closed = {
@@ -308,7 +306,7 @@ object Parser2 {
   }
 
   /**
-    * Look-ahead [[lookahead]] tokens.
+    * Look-ahead `lookahead` tokens.
     * Consumes one fuel and throws [[InternalCompilerException]] if the parser is out of fuel.
     */
   private def nth(lookahead: Int)(implicit s: State): TokenKind = {
@@ -324,7 +322,7 @@ object Parser2 {
   }
 
   /**
-    * Checks if the parser is at a token of a specific [[kind]].
+    * Checks if the parser is at a token of a specific `kind`.
     */
   private def at(kind: TokenKind)(implicit s: State): Boolean = {
     // TODO: Can we remove comments here?
@@ -334,17 +332,17 @@ object Parser2 {
   }
 
   /**
-    * Checks if the parser is at a token of kind in [[kinds]].
+    * Checks if the parser is at a token of kind in `kinds`.
     */
   private def atAny(kinds: List[TokenKind])(implicit s: State): Boolean = {
     // TODO: Can we remove comments here?
-    // Consume any comments before checking for the expected [[Tokenkind]]
+    // Consume any comments before checking for the expected Tokenkind
     comments()
     kinds.contains(nth(0))
   }
 
   /**
-    * Checks if the parser is at a token of a specific [[kind]] and advances past it if it is.
+    * Checks if the parser is at a token of a specific `kind` and advances past it if it is.
     */
   private def eat(kind: TokenKind)(implicit s: State): Boolean = {
     if (at(kind)) {
@@ -356,7 +354,7 @@ object Parser2 {
   }
 
   /**
-    * Checks if the parser is at a token of kind in [[kinds]] and advances past it if it is.
+    * Checks if the parser is at a token of kind in `kinds` and advances past it if it is.
     */
   private def eatAny(kinds: List[TokenKind])(implicit s: State): Boolean = {
     if (atAny(kinds)) {
@@ -368,7 +366,7 @@ object Parser2 {
   }
 
   /**
-    * Advance past current token if it is of kind [[kind]]. Otherwise wrap it in an error.
+    * Advance past current token if it is of kind `kind`. Otherwise wrap it in an error.
     */
   private def expect(kind: TokenKind)(implicit s: State): Unit = {
     if (!eat(kind)) {
@@ -379,7 +377,7 @@ object Parser2 {
   }
 
   /**
-    * Advance past current token if it is of kind in [[kinds]]. Otherwise wrap it in an error.
+    * Advance past current token if it is of kind in `kinds`. Otherwise wrap it in an error.
     */
   private def expectAny(kinds: List[TokenKind])(implicit s: State): Unit = {
     if (!eatAny(kinds)) {
@@ -390,7 +388,7 @@ object Parser2 {
   }
 
   /**
-    * Checks if a token of kind [[needle]] can be found before any token of a kind in [[before]].
+    * Checks if a token of kind `needle` can be found before any token of a kind in `before`.
     * This is useful for detecting which grammar rule to use, when language constructs share a prefix.
     * For instance, when sitting on a '{' it's not clear if a block or a record is to come.
     * But if we can find a '|' before either '{' or '}' we know it is a record.
@@ -413,7 +411,7 @@ object Parser2 {
    * A helper class for the common case of "zero or more occurrences of a grammar rule separated by something and wrapped in delimiters".
    * Examples:
    *  Tuples "(1, 2, 3)".
-   *  Records "{ -y, +z = 3 | r }" <- Note the '| r' part. That can be handled by the [[followedBy]] argument on [[zeroOrMore]].
+   *  Records "{ -y, +z = 3 | r }" <- Note the '| r' part. That can be handled by the `followedBy` argument on `zeroOrMore`.
    *  ParYieldFragments "par (x <- e1; y <- e2; z <- e3) yield ...".
    *  and many many more...
    *
@@ -499,7 +497,7 @@ object Parser2 {
   private val NAME_PREDICATE = List(TokenKind.NameUpperCase)
 
   /**
-   * Consumes a token if kind is in [[kinds]]. If [[allowQualified] is passed also consume subsequent dot-separated tokens with kind in [[kinds]].
+   * Consumes a token if kind is in `kinds`. If `allowQualified` is passed also consume subsequent dot-separated tokens with kind in `kinds`.
    */
   private def name(kinds: List[TokenKind], allowQualified: Boolean = false)(implicit s: State): Mark.Closed = {
     val mark = open()
@@ -525,7 +523,7 @@ object Parser2 {
   /**
     * Consumes subsequent comments.
     * In cases where doc-comments cannot occur (above expressions for instance), we would like to treat them as regular comments.
-    * This is achieved by passing [[canStartOnDoc]] = true.
+    * This is achieved by passing `canStartOnDoc = true`.
     */
   private def comments(canStartOnDoc: Boolean = false)(implicit s: State): Unit = {
     // Note: In case of a misplaced CommentDoc, we would just like to consume it into the comment list.
@@ -952,7 +950,7 @@ object Parser2 {
       close(mark, TreeKind.ParameterList)
     }
 
-    def parameter()(implicit s: State): Mark.Closed = {
+    private def parameter()(implicit s: State): Mark.Closed = {
       val mark = open()
       name(NAME_PARAMETER)
       if (eat(TokenKind.Colon)) {
@@ -961,7 +959,7 @@ object Parser2 {
       close(mark, TreeKind.Parameter)
     }
 
-    def equalityConstraints(terminator: TokenKind)(implicit s: State): Mark.Closed = {
+    private def equalityConstraints(terminator: TokenKind)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordWhere))
       val mark = open()
       expect(TokenKind.KeywordWhere)
@@ -1099,7 +1097,7 @@ object Parser2 {
       if (lt == rt && rightAssoc.contains(left)) true else rt > lt
     }
 
-    def arguments()(implicit s: State): Mark.Closed = {
+    private def arguments()(implicit s: State): Mark.Closed = {
       val mark = open()
       separated(argument).zeroOrMore()
       close(mark, TreeKind.ArgumentList)
@@ -2367,7 +2365,7 @@ object Parser2 {
       close(mark, TreeKind.Type.ArgumentList)
     }
 
-    def argument()(implicit s: State): Mark.Closed = {
+    private def argument()(implicit s: State): Mark.Closed = {
       val mark = open()
       ttype()
       close(mark, TreeKind.Type.Argument)
@@ -2381,7 +2379,7 @@ object Parser2 {
       close(mark, TreeKind.TypeParameterList)
     }
 
-    def parameter()(implicit s: State): Mark.Closed = {
+    private def parameter()(implicit s: State): Mark.Closed = {
       val mark = open()
       name(NAME_VARIABLE ++ NAME_TYPE)
       if (at(TokenKind.Colon)) {
@@ -2547,7 +2545,7 @@ object Parser2 {
       close(mark, TreeKind.Type.Native)
     }
 
-    def tupleOrRecordRow()(implicit s: State): Mark.Closed = {
+    private def tupleOrRecordRow()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.ParenL))
       // Record rows follow the rule '(' (name '=' type)* ('|' name)? )
       // So the prefix is always "( name '='" or "'|'"
@@ -2568,7 +2566,7 @@ object Parser2 {
       close(mark, TreeKind.Type.Tuple)
     }
 
-    def recordRow()(implicit s: State): Mark.Closed = {
+    private def recordRow()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.ParenL))
       val mark = open()
       expect(TokenKind.ParenL)
@@ -2751,7 +2749,7 @@ object Parser2 {
       close(mark, TreeKind.Predicate.ParamList)
     }
 
-    def param()(implicit s: State): Mark.Closed = {
+    private def param()(implicit s: State): Mark.Closed = {
       var kind: TreeKind = TreeKind.Predicate.ParamUntyped
       val mark = open()
       name(NAME_PREDICATE)
