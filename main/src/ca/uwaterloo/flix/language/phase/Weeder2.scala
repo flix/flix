@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Herluf Baggesen
+ * Copyright 2024 Herluf Baggesen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst, Type => AstType}
-import ca.uwaterloo.flix.language.errors.{Parser2Error, WeederError}
+import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
+import ca.uwaterloo.flix.language.errors.Parser2Error
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation.{traverse, _}
 import ca.uwaterloo.flix.util.collection.Chain
@@ -31,11 +31,10 @@ import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort
 import java.util.regex.{Matcher, PatternSyntaxException, Pattern => JPattern}
 import scala.collection.immutable.{::, List, Nil}
 import scala.collection.mutable.ArrayBuffer
-import scala.math.Ordered.orderingToOrdered
 
 /**
- * Weeder2 produces a [[WeededAst.Root]] by transforming [[SyntaxTree.Tree]]s into [[WeededAst.CompilationUnit]]s.
- * [[SyntaxTree.Tree]] provides few guarantees, which must be kept in mind when reading/modifying Weeder2:
+ * Weeder2 produces a [[WeededAst.Root]] by transforming [[Tree]]s into [[WeededAst.CompilationUnit]]s.
+ * [[Tree]] provides few guarantees, which must be kept in mind when reading/modifying Weeder2:
  * 1. Each Tree node will have a [[TreeKind]], [[SourceLocation]] and a list of __zero or more__ children.
  * 2. Each child may be a token or another tree.
  * 3. There is __no__ guarantee on the presence of children, and therefore no guarantee on the amount either.
@@ -61,7 +60,7 @@ object Weeder2 {
   def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], trees: Map[Ast.Source, Tree])(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
     if (flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
-      return Validation.HardFailure(Chain.empty)
+      return Validation.success(WeededAst.empty)
     }
 
     flix.phase("Weeder2") {
@@ -74,7 +73,7 @@ object Weeder2 {
     }
   }
 
-  def weed(src: Ast.Source, tree: Tree): Validation[CompilationUnit, CompilationMessage] = {
+  private def weed(src: Ast.Source, tree: Tree): Validation[CompilationUnit, CompilationMessage] = {
     implicit val s: State = new State(src)
     mapN(
       pickAllUsesAndImports(tree),
@@ -163,7 +162,7 @@ object Weeder2 {
   }
 
   private def visitImportIdent(tree: Tree, namespace: Seq[String])(implicit s: State): Validation[UseOrImport.Import, CompilationMessage] = {
-    mapN(tokenToJavaName(tree)) {
+    mapN(tokenToIdent(tree)) {
       ident => UseOrImport.Import(Name.JavaName(tree.loc.sp1, namespace ++ Seq(ident.name), tree.loc.sp2), ident, ident.loc)
     }
   }
@@ -623,14 +622,14 @@ object Weeder2 {
       }
     }
 
-    val ALL_MODIFIERS: Set[TokenKind] = Set(
+    private val ALL_MODIFIERS: Set[TokenKind] = Set(
       TokenKind.KeywordSealed,
       TokenKind.KeywordLawful,
       TokenKind.KeywordPub,
       TokenKind.KeywordOverride,
       TokenKind.KeywordInline)
 
-    def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false)(implicit s: State): Validation[Ast.Modifiers, CompilationMessage] = {
+    private def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false)(implicit s: State): Validation[Ast.Modifiers, CompilationMessage] = {
       tryPick(TreeKind.ModifierList, tree.children) match {
         case None => Validation.success(Ast.Modifiers(List.empty))
         case Some(modTree) =>
@@ -803,7 +802,9 @@ object Weeder2 {
         case TreeKind.Expr.RecordSelect => visitRecordSelect(tree)
         case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
         case TreeKind.QName => visitExprQname(tree)
-        case kind => failWith(s"TODO: implement expression of kind '$kind'", tree.loc)
+        case _ =>
+          val err = Parser2Error.DevErr(tree.loc, "Expected expression")
+          Validation.toSoftFailure(Expr.Error(err), err)
       }
     }
 
@@ -1629,9 +1630,15 @@ object Weeder2 {
             case ":::" => Validation.success(Expr.FAppend(e1, e2, tree.loc))
             case "<+>" => Validation.success(Expr.FixpointMerge(e1, e2, tree.loc))
             case "instanceof" =>
-              val classname = mapN(pickQName(exprs(1)))(javaQnameToFqn)
-              mapN(classname)(Expr.InstanceOf(e1, _, tree.loc))
-
+              exprs(1).kind match {
+                case TreeKind.Expr.Expr =>
+                  // A bad java name was found.
+                  val err = Parser2Error.DevErr(exprs(1).loc, "Expected a java name starting with '##'.")
+                  Validation.toSoftFailure(Expr.Error(err), err)
+                case _ =>
+                  val classname = mapN(pickQName(exprs(1)))(javaQnameToFqn)
+                  mapN(classname)(Expr.InstanceOf(e1, _, tree.loc))
+              }
             // UNRECOGNIZED
             case id =>
               val ident = Name.Ident(tree.loc.sp1, id, tree.loc.sp2)
@@ -1678,7 +1685,8 @@ object Weeder2 {
             val str = Expr.Apply(Expr.Ambiguous(Name.mkQName(funcName), loc), List(expr), loc)
             Expr.Binary(SemanticOp.StringOp.Concat, acc, str, loc)
           })
-        case (_, Child.TreeChild(t)) => throw InternalCompilerException(s"Parser placed child of kind '${t.kind}' in string interpolation", tree.loc)
+        // Skip anything else (Parser will have produced an error.)
+        case (acc, _) => Validation.success(acc)
       }
     }
 
@@ -2004,7 +2012,9 @@ object Weeder2 {
           case TreeKind.Pattern.Unary => visitUnary(tree)
           case TreeKind.Pattern.Tuple => visitTuple(tree, seen)
           case TreeKind.Pattern.Record => visitRecord(tree, seen)
-          case kind => throw InternalCompilerException(s"Invalid Pattern kind '$kind'", tree.loc)
+          case _ =>
+            val err = Parser2Error.DevErr(tree.loc, "Expected to find a pattern")
+            Validation.toSoftFailure(Pattern.Error(tree.loc), err)
         }
         case _ => throw InternalCompilerException(s"Pattern.Pattern had token child", tree.loc)
       }
@@ -2443,7 +2453,7 @@ object Weeder2 {
           case ident if ident.isWild => Type.Var(ident, tree.loc)
           case ident => Type.Ambiguous(Name.mkQName(ident), inner.loc)
         }
-        case kind => failWith(s"TODO: implement type of kind '$kind'", tree.loc)
+        case kind => failWith(s"Expected type but found '$kind'", tree.loc)
       }
     }
 
@@ -2649,7 +2659,7 @@ object Weeder2 {
       traverseOpt(maybeEffectSet)(visitEffect)
     }
 
-    def visitEffect(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+    private def visitEffect(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
       assert(tree.kind == TreeKind.Type.EffectSet)
       val effects = traverse(pickAll(TreeKind.Type.Type, tree.children))(visitType)
       mapN(effects) {
@@ -2772,7 +2782,7 @@ object Weeder2 {
       }
     }
 
-    def visitKind(tree: Tree)(implicit s: State): Validation[Kind, CompilationMessage] = {
+    private def visitKind(tree: Tree)(implicit s: State): Validation[Kind, CompilationMessage] = {
       assert(tree.kind == TreeKind.Kind)
       mapN(pickNameIdent(tree)) {
         ident => {
@@ -2785,7 +2795,7 @@ object Weeder2 {
       }
     }
 
-    def pickKind(tree: Tree)(implicit s: State): Validation[Kind, CompilationMessage] = {
+    private def pickKind(tree: Tree)(implicit s: State): Validation[Kind, CompilationMessage] = {
       flatMapN(pick(TreeKind.Kind, tree.children))(visitKind)
     }
 
@@ -2796,7 +2806,7 @@ object Weeder2 {
   }
 
   private object JvmOp {
-    def pickQNameIdents(tree: Tree)(implicit s: State): Validation[List[String], CompilationMessage] = {
+    private def pickQNameIdents(tree: Tree)(implicit s: State): Validation[List[String], CompilationMessage] = {
       flatMapN(pick(TreeKind.QName, tree.children)) {
         qname => mapN(traverse(pickAll(TreeKind.Ident, qname.children))(t => Validation.success(text(t))))(_.flatten)
       }
@@ -2907,17 +2917,6 @@ object Weeder2 {
 
   ////////// HELPERS //////////////////
   private def tokenToIdent(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
-    tree.children.headOption match {
-      case Some(Child.TokenChild(token)) => Validation.success(Name.Ident(
-        token.mkSourcePosition(s.src, Some(s.parserInput)),
-        token.text,
-        token.mkSourcePositionEnd(s.src, Some(s.parserInput))
-      ))
-      case _ => failWith(s"expected first child of '${tree.kind}' to be Child.Token", tree.loc)
-    }
-  }
-
-  private def tokenToJavaName(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
     tree.children.headOption match {
       case Some(Child.TokenChild(token)) => Validation.success(Name.Ident(
         token.mkSourcePosition(s.src, Some(s.parserInput)),
