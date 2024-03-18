@@ -67,8 +67,38 @@ mod Subtyping {
         @Test
         def testSubtypes02(): Bool =
             let result = Subtyping.subtypes(facts());
-            let expected = Vector#{("java.lang.String", "java.io.Serializable"), ("java.lang.String", "java.lang.Object"), ("java.util.ArrayList", "java.lang.Object"), ("java.util.ArrayList", "java.util.List"), ("java.util.ArrayList", "java.util.Collection"), ("java.util.List", "java.util.Collection")} |> Vector.sort;
+            let expected = Vector#{("java.lang.String", "java.io.Serializable"), ("java.lang.String", "java.lang.Object"), ("java.util.ArrayList", "java.lang.Object"), ("java.util.ArrayList", "java.util.List"), ("java.util.ArrayList", "java.util.Collection"), ("java.util.List", "java.util.Collection"), ("au.content.SpecialArrayList", "java.util.ArrayList")} |> Vector.sort;
             Assert.eq(expected, result)
+
+        @Test
+        def testIsSubtype01(): Bool =
+            let result = Subtyping.isSubtype("java.lang.String", "java.lang.Object", #{});
+            Assert.eq(false, result)
+
+        @Test
+        def testIsSubtype02(): Bool =
+            let result = Subtyping.isSubtype("java.lang.String", "java.lang.Object", facts());
+            Assert.eq(true, result)
+
+        @Test
+        def testIsSubtype03(): Bool =
+            let result = Subtyping.isSubtype("java.lang.Object", "java.lang.Object", facts());
+            Assert.eq(false, result)
+
+        @Test
+        def testIsSubtype04(): Bool =
+            let result = Subtyping.isSubtype("java.lang.Object", "java.lang.String", facts());
+            Assert.eq(false, result)
+
+        @Test
+        def testIsSubtype05(): Bool =
+            let result = Subtyping.isSubtype("java.util.ArrayList", "java.util.Collection", facts());
+            Assert.eq(true, result)
+
+        @Test
+        def testIsSubtype06(): Bool =
+            let result = Subtyping.isSubtype("au.content.SpecialArrayList", "java.util.Collection", facts());
+            Assert.eq(true, result)
 
         def facts(): Subtyping.Types[r] = #{
             Class("java.lang.Object").
