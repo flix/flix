@@ -14,7 +14,8 @@ mod Subtyping {
     }
 
     pub def subtypes(types: Types[#()]): Vector[(String, String)] = {
-        query subtypeRules(), open(types) select (sub, super) from IsSubtype(sub, super)
+        let result = query subtypeRules(), open(types) select (sub, super) from IsSubtype(sub, super);
+        result |> Vector.filter(match (x, y) -> x != y)
     }
 
     pub def methodsOf(tpe: String, types: Types[#()]): Vector[String] =
@@ -55,5 +56,38 @@ mod Subtyping {
 
     pub def extendsOnlyObject(tpe: String, types: Types[#()]): Bool =
         not (objectOnlyExtensions(types) |> Vector.filter(Eq.eq(tpe)) |> Vector.isEmpty)
+
+    mod Test {
+
+        @Test
+        def testSubtypes01(): Bool =
+            let result = Subtyping.subtypes(#{});
+            Assert.eq(Vector#{}, result)
+
+        @Test
+        def testSubtypes02(): Bool =
+            let result = Subtyping.subtypes(facts());
+            let expected = Vector#{("java.lang.String", "java.io.Serializable"), ("java.lang.String", "java.lang.Object"), ("java.util.ArrayList", "java.lang.Object"), ("java.util.ArrayList", "java.util.List"), ("java.util.ArrayList", "java.util.Collection"), ("java.util.List", "java.util.Collection")} |> Vector.sort;
+            Assert.eq(expected, result)
+
+        def facts(): Subtyping.Types[r] = #{
+            Class("java.lang.Object").
+            Class("java.lang.String").
+            Class("java.util.ArrayList").
+            Interface("java.io.Serializable").
+            Interface("java.util.List").
+            Interface("java.util.Collection").
+            ClassExtends("java.lang.String", "java.lang.Object").
+            ClassExtends("java.util.ArrayList", "java.lang.Object").
+            ClassExtends("au.content.SpecialArrayList", "java.util.ArrayList").
+            ClassImplements("java.lang.String", "java.io.Serializable").
+            ClassImplements("java.util.ArrayList", "java.util.List").
+            InterfaceExtends("java.util.List", "java.util.Collection").
+            Method("java.lang.Object", "toString").
+            Method("java.util.List", "add").
+            Method("java.lang.String", "contains").
+            Method("java.lang.String", "isEmpty").
+        }
+    }
 
 }
