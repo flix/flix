@@ -245,10 +245,9 @@ object Verifier {
         case AtomicOp.ArrayLength =>
           val List(arrt) = ts
           arrt match {
-            case MonoType.Array(_) => // fine
+            case MonoType.Array(_) => check(expected = MonoType.Int32)(actual = tpe, loc)
             case _ => throw MismatchedShape(tpe, s"An Array", loc)
           }
-          check(expected = MonoType.Int32)(actual = tpe, loc)
 
         case AtomicOp.ArrayNew =>
           val List(elmt, lent) = ts
@@ -280,6 +279,30 @@ object Verifier {
             case _ => throw MismatchedShape(tpe, s"An Array", loc)
           }
           check(expected = MonoType.Unit)(actual = tpe, loc)
+
+        case AtomicOp.Ref =>
+          val List(elm) = ts
+          check(expected = MonoType.Ref(elm))(actual = tpe, loc)
+
+        case AtomicOp.Deref =>
+          val List(ref) = ts
+          ref match {
+            case MonoType.Ref(elm) => check(expected = elm)(actual = tpe, loc)
+            case _ => throw MismatchedShape(tpe, s"Ref", loc)
+          }
+
+        case AtomicOp.Lazy =>
+          val List(elm) = ts
+          check(expected = MonoType.Lazy(elm))(actual = tpe, loc)
+
+        case AtomicOp.Force =>
+          val List(laz) = ts
+          laz match {
+            case MonoType.Lazy(elm) => check(expected = elm)(actual = tpe, loc)
+            case _ => throw MismatchedShape(tpe, s"Lazy", loc)
+          }
+
+        case AtomicOp.Tuple => check(expected = MonoType.Tuple(ts))(actual = tpe, loc)
 
         case _ => tpe // TODO: VERIFIER: Add rest
       }
