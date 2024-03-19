@@ -10,11 +10,10 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Tester.ConsoleRedirection
 import ca.uwaterloo.flix.util.Result
 
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.{ConcurrentLinkedQueue, Executors}
 
 /* TODO: think also:
- * Separate mutations by kind
  * Check mutant compilation. Create 'MutantStatus' enum
  * Add statistics
  * Add reporter
@@ -25,6 +24,8 @@ import java.util.concurrent.{ConcurrentLinkedQueue, Executors}
  * Run tests on mutant with timeout (calculate it by time spent to run tests on source)
  * Mutate Root.instances.defs (?)
  * Are mutants SourceLocations correct ?
+ * Separate mutations by kind
+ * is it necessary to mutate SemanticOp other than BoolOp.Not, BoolOp.And, BoolOp.Or ??
 */
 
 object MutationTester {
@@ -135,7 +136,7 @@ object MutationTester {
           case _ => if (redirect.stdErr.nonEmpty) return Killed
         }
       } catch {
-        case ex: Throwable =>
+        case _: Throwable =>
           redirect.restore()
 
           return Killed
@@ -146,16 +147,9 @@ object MutationTester {
   }
 
   private object Mutator {
-    private val mutators: LazyList[ExprMutator] = LazyList(
-      ExprMutator.CstMutator,
-      ExprMutator.BooleanMutator,
-      ExprMutator.ArithmeticUnaryMutator,
-      ExprMutator.ApplyMutator,
-    )
-
     def mutateExpr(expr: Expr)(implicit flix: Flix): LazyList[Expr] = {
       expr match {
-        case Expr.Cst(cst, tpe, loc) => mutateByMutators(expr)
+        case Expr.Cst(cst, tpe, loc) => mutateExprCst(expr)
         case Expr.Var(sym, tpe, loc) => LazyList.empty
         case Expr.Def(sym, tpe, loc) => LazyList.empty
         case Expr.Sig(sym, tpe, loc) => LazyList.empty
@@ -164,10 +158,10 @@ object MutationTester {
         case Expr.OpenAs(symUse, exp, tpe, loc) => LazyList.empty
         case Expr.Use(sym, alias, exp, loc) => LazyList.empty
         case Expr.Lambda(fparam, exp, tpe, loc) => LazyList.empty
-        case Expr.Apply(exp, exps, tpe, eff, loc) => mutateByMutators(expr)
-        // if success mutate exp -> not mutate exps
-        case Expr.Unary(sop, exp, tpe, eff, loc) => mutateByMutators(expr)
-        case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => mutateByMutators(expr)
+        case Expr.Apply(exp, exps, tpe, eff, loc) => ApplyMutator.mutateExpr(expr)
+        // if success mutate(exp) -> not mutate exps
+        case Expr.Unary(sop, exp, tpe, eff, loc) => mutateExprUnary(expr)
+        case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => mutateExprBinary(expr)
         case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
           mutateExpr(exp1).map(Expr.Let(sym, mod, _, exp2, tpe, eff, loc)) #:::
             mutateExpr(exp2).map(Expr.Let(sym, mod, exp1, _, tpe, eff, loc))
@@ -239,185 +233,153 @@ object MutationTester {
       }
     }
 
-    // todo: try refactor and optimize structure
-    private def mutateByMutators(exp: Expr)(implicit flix: Flix): LazyList[Expr] =
-      mutators.flatMap(_.mutateExpr(exp))
+    private def mutateExprCst(exp: Expr): LazyList[Expr] = exp match {
+      case Expr.Cst(cst, tpe, loc) => cst match {
+        case Constant.Bool(lit) => LazyList(Expr.Cst(Constant.Bool(!lit), tpe, loc))
+        case Constant.Float32(lit) => LazyList(
+          Expr.Cst(Constant.Float32(lit + 1), tpe, loc),
+          Expr.Cst(Constant.Float32(lit - 1), tpe, loc)
+        )
+        case Constant.Float64(lit) => LazyList(
+          Expr.Cst(Constant.Float64(lit + 1), tpe, loc),
+          Expr.Cst(Constant.Float64(lit - 1), tpe, loc)
+        )
+        case Constant.BigDecimal(lit) => LazyList(
+          Expr.Cst(Constant.BigDecimal(lit.add(java.math.BigDecimal.ONE)), tpe, loc),
+          Expr.Cst(Constant.BigDecimal(lit.subtract(java.math.BigDecimal.ONE)), tpe, loc)
+        )
+        case Constant.Int8(lit) => LazyList(
+          Expr.Cst(Constant.Int8((lit + 1).toByte), tpe, loc),
+          Expr.Cst(Constant.Int8((lit - 1).toByte), tpe, loc)
+        )
+        case Constant.Int16(lit) => LazyList(
+          Expr.Cst(Constant.Int16((lit + 1).toShort), tpe, loc),
+          Expr.Cst(Constant.Int16((lit - 1).toShort), tpe, loc)
+        )
+        case Constant.Int32(lit) => LazyList(
+          Expr.Cst(Constant.Int32(lit + 1), tpe, loc),
+          Expr.Cst(Constant.Int32(lit - 1), tpe, loc)
+        )
+        case Constant.Int64(lit) => LazyList(
+          Expr.Cst(Constant.Int64(lit + 1), tpe, loc),
+          Expr.Cst(Constant.Int64(lit - 1), tpe, loc)
+        )
+        case Constant.BigInt(lit) => LazyList(
+          Expr.Cst(Constant.BigInt(lit.add(java.math.BigInteger.ONE)), tpe, loc),
+          Expr.Cst(Constant.BigInt(lit.subtract(java.math.BigInteger.ONE)), tpe, loc)
+        )
+        case _ => LazyList.empty
+      }
+      case _ => LazyList.empty
+    }
+
+    private def mutateExprUnary(exp: Expr): LazyList[Expr] = exp match {
+      case Expr.Unary(BoolOp.Not, exp, _, _, _) => LazyList(exp)
+      case _ => LazyList.empty
+    }
+
+    private def mutateExprBinary(exp: Expr): LazyList[Expr] = exp match {
+      case Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc) => LazyList(Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc))
+      case Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc) => LazyList(Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc))
+      case _ => LazyList.empty
+    }
   }
 
-  private sealed trait ExprMutator {
-    def mutateExpr(exp: Expr)(implicit flix: Flix): LazyList[Expr]
-  }
+  private object ApplyMutator {
 
-  private object ExprMutator {
-    case object CstMutator extends ExprMutator {
+    // def foo(): Int32 = -baz() compiles to Sig(Neg.neg)
+    private val ArithmeticSigToSig: Map[String, (String, String)] = Map(
+      // todo: crashes for add string. Allow there only number types
+      "Add.add" -> ("Sub", "sub"),
+      "Sub.sub" -> ("Add", "add"),
+      "Mul.mul" -> ("Div", "div"),
+      "Div.div" -> ("Mul", "mul"),
+    )
 
-      override def mutateExpr(exp: Expr)(implicit flix: Flix): LazyList[Expr] = exp match {
-        case Expr.Cst(cst, tpe, loc) => cst match {
-          case Constant.Bool(lit) => LazyList(Expr.Cst(Constant.Bool(!lit), tpe, loc))
-          case Constant.Float32(lit) => LazyList(
-            Expr.Cst(Constant.Float32(lit + 1), tpe, loc),
-            Expr.Cst(Constant.Float32(lit - 1), tpe, loc)
-          )
-          case Constant.Float64(lit) => LazyList(
-            Expr.Cst(Constant.Float64(lit + 1), tpe, loc),
-            Expr.Cst(Constant.Float64(lit - 1), tpe, loc)
-          )
-          case Constant.BigDecimal(lit) => LazyList(
-            Expr.Cst(Constant.BigDecimal(lit.add(java.math.BigDecimal.ONE)), tpe, loc),
-            Expr.Cst(Constant.BigDecimal(lit.subtract(java.math.BigDecimal.ONE)), tpe, loc)
-          )
-          case Constant.Int8(lit) => LazyList(
-            Expr.Cst(Constant.Int8((lit + 1).toByte), tpe, loc),
-            Expr.Cst(Constant.Int8((lit - 1).toByte), tpe, loc)
-          )
-          case Constant.Int16(lit) => LazyList(
-            Expr.Cst(Constant.Int16((lit + 1).toShort), tpe, loc),
-            Expr.Cst(Constant.Int16((lit - 1).toShort), tpe, loc)
-          )
-          case Constant.Int32(lit) => LazyList(
-            Expr.Cst(Constant.Int32(lit + 1), tpe, loc),
-            Expr.Cst(Constant.Int32(lit - 1), tpe, loc)
-          )
-          case Constant.Int64(lit) => LazyList(
-            Expr.Cst(Constant.Int64(lit + 1), tpe, loc),
-            Expr.Cst(Constant.Int64(lit - 1), tpe, loc)
-          )
-          case Constant.BigInt(lit) => LazyList(
-            Expr.Cst(Constant.BigInt(lit.add(java.math.BigInteger.ONE)), tpe, loc),
-            Expr.Cst(Constant.BigInt(lit.subtract(java.math.BigInteger.ONE)), tpe, loc)
-          )
+    private val ConditionalNegateSigToSig: Map[String, (String, String)] = Map(
+      "Eq.eq" -> ("Eq", "neq"),
+      "Eq.neq" -> ("Eq", "eq"),
+      "Order.less" -> ("Order", "greaterEqual"),
+      "Order.lessEqual" -> ("Order", "greater"),
+      "Order.greater" -> ("Order", "lessEqual"),
+      "Order.greaterEqual" -> ("Order", "less"),
+    )
+
+    private val ConditionalBoundarySigToSig: Map[String, (String, String)] = Map(
+      "Order.less" -> ("Order", "lessEqual"),
+      "Order.lessEqual" -> ("Order", "less"),
+      "Order.greater" -> ("Order", "greaterEqual"),
+      "Order.greaterEqual" -> ("Order", "greater"),
+    )
+
+    private val defnToSig: Map[String, (String, String)] = Map(
+      "modulo" -> ("Mul", "mul"),
+      "remainder" -> ("Mul", "mul"),
+    )
+
+    private val defnToDefn: Map[String, String] = Map(
+      "bitwiseAnd" -> "bitwiseOr",
+      "bitwiseOr" -> "bitwiseAnd",
+      "bitwiseXor" -> "bitwiseAnd",
+      "leftShift" -> "rightShift",
+      "rightShift" -> "leftShift",
+    )
+
+    def mutateExpr(exp: TypedAst.Expr)(implicit flix: Flix): LazyList[TypedAst.Expr] = exp match {
+      case Expr.Apply(exp, exps, tpe, eff, loc) =>
+        exp match {
+          case Expr.Sig(sym, _, _) =>
+            if (sym.toString == "Neg.neg") LazyList(exps.head)
+            else mutateExprSig(exp).map(Expr.Apply(_, exps, tpe, eff, loc))
+          case Expr.Def(sym, _, _) =>
+            if (sym.text == "bitwiseNot") LazyList(exps.head)
+            else mutateExprDef(exp).map(Expr.Apply(_, exps, tpe, eff, loc))
           case _ => LazyList.empty
         }
-        case _ => LazyList.empty
-      }
+      case _ => LazyList.empty
     }
 
-    case object BooleanMutator extends ExprMutator {
-
-      override def mutateExpr(exp: Expr)(implicit flix: Flix): LazyList[Expr] = exp match {
-        case Expr.Unary(BoolOp.Not, exp, _, _, _) => LazyList(exp)
-        case Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc) => LazyList(Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc))
-        case Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc) => LazyList(Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc))
+    def mutateExprSig(exp: Expr)(implicit flix: Flix): LazyList[Expr] =
+      exp match {
+        case Expr.Sig(sym, tpe, _) =>
+          List(ArithmeticSigToSig, ConditionalNegateSigToSig, ConditionalBoundarySigToSig)
+            .foldLeft(LazyList.empty[Expr.Sig]) { (acc, sigMap) =>
+              acc #::: sigMap.get(sym.toString)
+                .flatMap(p => findSig(p._1, p._2))
+                .map(s => LazyList(Expr.Sig(s, tpe, SourceLocation.Unknown)))
+                .getOrElse(LazyList.empty)
+            }
         case _ => LazyList.empty
       }
-    }
 
-    case object ArithmeticUnaryMutator extends ExprMutator {
-
-      private val ops: Set[SemanticOp] = Set(
-        Float32Op.Neg,
-        Float64Op.Neg,
-        Int8Op.Neg,
-        Int16Op.Neg,
-        Int32Op.Neg,
-        Int64Op.Neg,
-        Int8Op.Not,
-        Int16Op.Not,
-        Int32Op.Not,
-        Int64Op.Not,
-      )
-
-      override def mutateExpr(exp: Expr)(implicit flix: Flix): LazyList[Expr] = exp match {
-        case Expr.Apply(exp, exps, _, _, _) => exp match {
-          case Expr.Def(sym, _, _) => if (sym.text == "bitwiseNot") LazyList(exps.head) else LazyList.empty
-          case _ => LazyList.empty
-        }
-        case Expr.Unary(sop: SemanticOp, exp, _, _, _) => if (ops.contains(sop)) LazyList(exp) else LazyList.empty
-        case _ => LazyList.empty
-      }
-    }
-
-    case object ApplyMutator extends ExprMutator {
-
-      private val ArithmeticSigToSig: Map[String, (String, String)] = Map(
-        // todo: crashes for add string. Allow there only number types
-        "Add.add" -> ("Sub", "sub"),
-        "Sub.sub" -> ("Add", "add"),
-        "Mul.mul" -> ("Div", "div"),
-        "Div.div" -> ("Mul", "mul"),
-      )
-
-      private val ConditionalNegateSigToSig: Map[String, (String, String)] = Map(
-        "Eq.eq" -> ("Eq", "neq"),
-        "Eq.neq" -> ("Eq", "eq"),
-        "Order.less" -> ("Order", "greaterEqual"),
-        "Order.lessEqual" -> ("Order", "greater"),
-        "Order.greater" -> ("Order", "lessEqual"),
-        "Order.greaterEqual" -> ("Order", "less"),
-      )
-
-      private val ConditionalBoundarySigToSig: Map[String, (String, String)] = Map(
-        "Order.less" -> ("Order", "lessEqual"),
-        "Order.lessEqual" -> ("Order", "less"),
-        "Order.greater" -> ("Order", "greaterEqual"),
-        "Order.greaterEqual" -> ("Order", "greater"),
-      )
-
-      private val defnToSig: Map[String, (String, String)] = Map(
-        "modulo" -> ("Mul", "mul"),
-        "remainder" -> ("Mul", "mul"),
-      )
-
-      private val defnToDefn: Map[String, String] = Map(
-        "bitwiseAnd" -> "bitwiseOr",
-        "bitwiseOr" -> "bitwiseAnd",
-        "bitwiseXor" -> "bitwiseAnd",
-        "leftShift" -> "rightShift",
-        "rightShift" -> "leftShift",
-      )
-
-      override def mutateExpr(exp: TypedAst.Expr)(implicit flix: Flix): LazyList[TypedAst.Expr] = exp match {
-        case Expr.Apply(exp, exps, tpe, eff, loc) =>
-          exp match {
-            case Expr.Sig(_, _, _) => mutateExprSig(exp).map(Expr.Apply(_, exps, tpe, eff, loc))
-            case Expr.Def(_, _, _) => mutateExprDef(exp).map(Expr.Apply(_, exps, tpe, eff, loc))
-            case _ => LazyList.empty
+    def mutateExprDef(exp: Expr)(implicit flix: Flix): LazyList[Expr] =
+      exp match {
+        case Expr.Def(sym, tpe, _) =>
+          defnToDefn.get(sym.text)
+            .flatMap(findDef(sym.namespace, _))
+            .map(s => Expr.Def(s, tpe, SourceLocation.Unknown))
+            .orElse {
+              defnToSig.get(sym.text)
+                .flatMap(p => findSig(p._1, p._2))
+                .map(s => Expr.Sig(s, tpe, SourceLocation.Unknown))
+            } match {
+            case Some(value) => LazyList(value)
+            case None => LazyList.empty
           }
         case _ => LazyList.empty
       }
 
-      def mutateExprSig(exp: Expr)(implicit flix: Flix): LazyList[Expr] =
-        exp match {
-          case Expr.Sig(sym, tpe, _) =>
-            List(ArithmeticSigToSig, ConditionalNegateSigToSig, ConditionalBoundarySigToSig)
-              .foldLeft(LazyList.empty[Expr.Sig]) { (acc, sigMap) =>
-                acc #::: sigMap.get(sym.toString)
-                  .flatMap(p => findSig(p._1, p._2))
-                  .map(s => LazyList(Expr.Sig(s, tpe, SourceLocation.Unknown)))
-                  .getOrElse(LazyList.empty)
-              }
-          case _ => LazyList.empty
-        }
+    def findSig(clazz: String, sig: String)(implicit flix: Flix): Option[Symbol.SigSym] = try {
+      Some(PredefinedClasses.lookupSigSym(clazz, sig, flix.getKinderAst))
+    } catch {
+      case _: Exception => None // todo: refactor to return info that mutant creation failed ?
+    }
 
-      def mutateExprDef(exp: Expr)(implicit flix: Flix): LazyList[Expr] =
-        exp match {
-          case Expr.Def(sym, tpe, _) =>
-            defnToDefn.get(sym.text)
-              .flatMap(findDef(sym.namespace, _))
-              .map(s => Expr.Def(s, tpe, SourceLocation.Unknown))
-              .orElse {
-                defnToSig.get(sym.text)
-                  .flatMap(p => findSig(p._1, p._2))
-                  .map(s => Expr.Sig(s, tpe, SourceLocation.Unknown))
-              } match {
-              case Some(value) => LazyList(value)
-              case None => LazyList.empty
-            }
-          case _ => LazyList.empty
-        }
-
-      def findSig(clazz: String, sig: String)(implicit flix: Flix): Option[Symbol.SigSym] = try {
-        Some(PredefinedClasses.lookupSigSym(clazz, sig, flix.getKinderAst))
-      } catch {
-        case _: Exception => None // todo: refactor to return info that mutant creation failed ?
-      }
-
-      // todo: do we need to verify namespace ? For example: MyNotNumberType.bitwiseAnd()
-      def findDef(namespace: List[String], name: String)(implicit flix: Flix): Option[Symbol.DefnSym] = try {
-        Some(PredefinedClasses.lookupDefSym(namespace, name, flix.getKinderAst))
-      } catch {
-        case _: Exception => None // todo: refactor to return info that mutant creation failed ?
-      }
+    // todo: do we need to verify namespace ? For example: MyNotNumberType.bitwiseAnd()
+    def findDef(namespace: List[String], name: String)(implicit flix: Flix): Option[Symbol.DefnSym] = try {
+      Some(PredefinedClasses.lookupDefSym(namespace, name, flix.getKinderAst))
+    } catch {
+      case _: Exception => None // todo: refactor to return info that mutant creation failed ?
     }
   }
 
