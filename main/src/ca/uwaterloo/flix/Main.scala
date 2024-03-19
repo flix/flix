@@ -99,6 +99,7 @@ object Main {
       xnoboolunif = cmdOpts.xnoboolunif,
       xnoqmc = cmdOpts.xnoqmc,
       xnooptimizer = cmdOpts.xnooptimizer,
+      xverify = cmdOpts.xverify,
       xprintphase = cmdOpts.xprintphase,
       xsummary = cmdOpts.xsummary,
       xparser = cmdOpts.xparser,
@@ -356,6 +357,7 @@ object Main {
                      xnoboolunif: Boolean = false,
                      xnoqmc: Boolean = false,
                      xnooptimizer: Boolean = false,
+                     xverify: Boolean = false,
                      xprintphase: Set[String] = Set.empty,
                      xsummary: Boolean = false,
                      xparser: Boolean = false,
@@ -531,6 +533,10 @@ object Main {
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
         text("[experimental] disables compiler optimizations.")
+
+      // Xverify
+      opt[Unit]("Xverify").action((_, c) => c.copy(xverify = true)).
+        text("[experimental] enables verification of the last AST.")
 
       // Xprint-phase
       opt[Seq[String]]("Xprint-phase").action((m, c) => c.copy(xprintphase = m.toSet)).
