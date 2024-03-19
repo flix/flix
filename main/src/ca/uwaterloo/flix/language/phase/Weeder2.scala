@@ -1629,13 +1629,7 @@ object Weeder2 {
             case "::" => Validation.success(Expr.FCons(e1, e2, tree.loc))
             case ":::" => Validation.success(Expr.FAppend(e1, e2, tree.loc))
             case "<+>" => Validation.success(Expr.FixpointMerge(e1, e2, tree.loc))
-            case "instanceof" =>
-              flatMapN(tryPickQName(exprs(1))) {
-                case Some(qname) => Validation.success(Expr.InstanceOf(e1, javaQnameToFqn(qname), tree.loc))
-                case None =>
-                  val err = Parser2Error.DevErr(exprs(1).loc, "Expected a java name.")
-                  Validation.toSoftFailure(Expr.Error(err), err)
-              }
+            case "instanceof" => mapN(tryPickJavaName(exprs(1)))(Expr.InstanceOf(e1, _, tree.loc))
             // UNRECOGNIZED
             case id =>
               val ident = Name.Ident(tree.loc.sp1, id, tree.loc.sp2)
@@ -2887,8 +2881,18 @@ object Weeder2 {
     }
   }
 
-  private def tryPickQName(tree: Tree)(implicit s: State): Validation[Option[Name.QName], CompilationMessage] = {
-    traverseOpt(tryPick(TreeKind.QName, tree.children))(visitQName)
+  private def tryPickJavaName(tree: Tree)(implicit s: State): Validation[String, CompilationMessage] = {
+    val maybeQname = traverseOpt(tryPick(TreeKind.QName, tree.children))(visitQName)
+    flatMapN(maybeQname) {
+      // Qname starting with '##'
+      case Some(qname) if qname.namespace.idents.headOption.exists(_.name.startsWith("##")) => Validation.success(javaQnameToFqn(qname))
+      case Some(qname) =>
+        val err = Parser2Error.DevErr(tree.loc, "Expected a java name.")
+        Validation.toSoftFailure(javaQnameToFqn(qname), err)
+      case None =>
+        val err = Parser2Error.DevErr(tree.loc, "Expected a java name.")
+        Validation.toSoftFailure("Err", err)
+    }
   }
 
   private def pickQName(tree: Tree)(implicit s: State): Validation[Name.QName, CompilationMessage] = {
