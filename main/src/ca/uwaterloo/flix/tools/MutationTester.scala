@@ -236,38 +236,20 @@ object MutationTester {
     private def mutateExprCst(exp: Expr): LazyList[Expr] = exp match {
       case Expr.Cst(cst, tpe, loc) => cst match {
         case Constant.Bool(lit) => LazyList(Expr.Cst(Constant.Bool(!lit), tpe, loc))
-        case Constant.Float32(lit) => LazyList(
-          Expr.Cst(Constant.Float32(lit + 1), tpe, loc),
-          Expr.Cst(Constant.Float32(lit - 1), tpe, loc)
-        )
-        case Constant.Float64(lit) => LazyList(
-          Expr.Cst(Constant.Float64(lit + 1), tpe, loc),
-          Expr.Cst(Constant.Float64(lit - 1), tpe, loc)
-        )
+        case Constant.Float32(lit) => LazyList(lit + 1, lit - 1).map(value => Expr.Cst(Constant.Float32(value), tpe, loc))
+        case Constant.Float64(lit) => LazyList(lit + 1, lit - 1).map(value => Expr.Cst(Constant.Float64(value), tpe, loc))
         case Constant.BigDecimal(lit) => LazyList(
-          Expr.Cst(Constant.BigDecimal(lit.add(java.math.BigDecimal.ONE)), tpe, loc),
-          Expr.Cst(Constant.BigDecimal(lit.subtract(java.math.BigDecimal.ONE)), tpe, loc)
-        )
-        case Constant.Int8(lit) => LazyList(
-          Expr.Cst(Constant.Int8((lit + 1).toByte), tpe, loc),
-          Expr.Cst(Constant.Int8((lit - 1).toByte), tpe, loc)
-        )
-        case Constant.Int16(lit) => LazyList(
-          Expr.Cst(Constant.Int16((lit + 1).toShort), tpe, loc),
-          Expr.Cst(Constant.Int16((lit - 1).toShort), tpe, loc)
-        )
-        case Constant.Int32(lit) => LazyList(
-          Expr.Cst(Constant.Int32(lit + 1), tpe, loc),
-          Expr.Cst(Constant.Int32(lit - 1), tpe, loc)
-        )
-        case Constant.Int64(lit) => LazyList(
-          Expr.Cst(Constant.Int64(lit + 1), tpe, loc),
-          Expr.Cst(Constant.Int64(lit - 1), tpe, loc)
-        )
+          lit.add(java.math.BigDecimal.ONE),
+          lit.subtract(java.math.BigDecimal.ONE)
+        ).map(value => Expr.Cst(Constant.BigDecimal(value), tpe, loc))
+        case Constant.Int8(lit) => LazyList(lit + 1, lit - 1).map(value => Expr.Cst(Constant.Int8(value.toByte), tpe, loc))
+        case Constant.Int16(lit) => LazyList(lit + 1, lit - 1).map(value => Expr.Cst(Constant.Int16(value.toShort), tpe, loc))
+        case Constant.Int32(lit) => LazyList(lit + 1, lit - 1).map(value => Expr.Cst(Constant.Int32(value), tpe, loc))
+        case Constant.Int64(lit) => LazyList(lit + 1, lit - 1).map(value => Expr.Cst(Constant.Int64(value), tpe, loc))
         case Constant.BigInt(lit) => LazyList(
-          Expr.Cst(Constant.BigInt(lit.add(java.math.BigInteger.ONE)), tpe, loc),
-          Expr.Cst(Constant.BigInt(lit.subtract(java.math.BigInteger.ONE)), tpe, loc)
-        )
+          lit.add(java.math.BigInteger.ONE),
+          lit.subtract(java.math.BigInteger.ONE)
+        ).map(value => Expr.Cst(Constant.BigInt(value), tpe, loc))
         case _ => LazyList.empty
       }
       case _ => LazyList.empty
