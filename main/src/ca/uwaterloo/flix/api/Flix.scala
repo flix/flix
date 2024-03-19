@@ -615,6 +615,7 @@ class Flix {
     cachedTreeShaker2Ast = TreeShaker2.run(cachedOptimizerAst)
     cachedEffectBinderAst = EffectBinder.run(cachedTreeShaker2Ast)
     cachedTailPosAst = TailPos.run(cachedEffectBinderAst)
+    Verifier.run(cachedTailPosAst)
     cachedEraserAst = Eraser.run(cachedTailPosAst)
     cachedReducerAst = Reducer.run(cachedEraserAst)
     cachedVarOffsetsAst = VarOffsets.run(cachedReducerAst)
