@@ -1630,14 +1630,11 @@ object Weeder2 {
             case ":::" => Validation.success(Expr.FAppend(e1, e2, tree.loc))
             case "<+>" => Validation.success(Expr.FixpointMerge(e1, e2, tree.loc))
             case "instanceof" =>
-              exprs(1).kind match {
-                case TreeKind.Expr.Expr =>
-                  // A bad java name was found.
-                  val err = Parser2Error.DevErr(exprs(1).loc, "Expected a java name starting with '##'.")
+              flatMapN(tryPickQName(exprs(1))) {
+                case Some(qname) => Validation.success(Expr.InstanceOf(e1, javaQnameToFqn(qname), tree.loc))
+                case None =>
+                  val err = Parser2Error.DevErr(exprs(1).loc, "Expected a java name.")
                   Validation.toSoftFailure(Expr.Error(err), err)
-                case _ =>
-                  val classname = mapN(pickQName(exprs(1)))(javaQnameToFqn)
-                  mapN(classname)(Expr.InstanceOf(e1, _, tree.loc))
               }
             // UNRECOGNIZED
             case id =>
@@ -2888,6 +2885,10 @@ object Weeder2 {
         case kind => throw InternalCompilerException(s"child of kind '$kind' under JvmOp.JvmOp", tree.loc)
       }
     }
+  }
+
+  private def tryPickQName(tree: Tree)(implicit s: State): Validation[Option[Name.QName], CompilationMessage] = {
+    traverseOpt(tryPick(TreeKind.QName, tree.children))(visitQName)
   }
 
   private def pickQName(tree: Tree)(implicit s: State): Validation[Name.QName, CompilationMessage] = {

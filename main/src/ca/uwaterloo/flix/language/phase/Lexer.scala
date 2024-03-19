@@ -916,10 +916,11 @@ object Lexer {
           isScientificNotation = true
           advance()
         // Dots mark a decimal
-        case '.' if peekPeek().exists(_.isDigit) =>
-          if (isDecimal) {
-            error = Some(TokenKind.Err(LexerError.DoubleDottedNumber(sourceLocationAtCurrent())))
-          }
+        case '.' if isDecimal =>
+          val loc = sourceLocationAtCurrent()
+          advance()
+          error = Some(TokenKind.Err(LexerError.DoubleDottedNumber(loc)))
+        case '.' if peekPeek().exists(c => c.isDigit || c == '.') =>
           isDecimal = true
           advance()
         // '_' that is not in tail-position
@@ -962,6 +963,11 @@ object Lexer {
     }
   }
 
+  /**
+   * Moves current position past a hex number literal. IE. "0x123i32" or "0xAB21CD"
+   * It is optional to have a trailing type indicator on number literals.
+   * If it is missing Flix defaults to `i32`.
+   * */
   private def acceptHexNumber()(implicit s: State): TokenKind = {
     advance() // consume 'x'
     var error: Option[TokenKind] = if (peek() == '_') {
@@ -973,10 +979,9 @@ object Lexer {
     }
     while (!eof()) {
       peek() match {
-        case c if c.isDigit => advance()
-        case 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' => advance()
+        case c if isDigit(c) => advance()
         // '_' that is not in tail-position
-        case '_' if peekPeek().exists(_.isDigit) => advance()
+        case '_' if peekPeek().exists(isDigit) => advance()
         // sequence of underscores
         case '_' if peekPeek().contains('_') =>
           // Consume the whole sequence of '_'
@@ -990,7 +995,21 @@ object Lexer {
         case '_' =>
           advance()
           return TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
-        case _ => return error.getOrElse(TokenKind.LiteralInt32)
+        // If this is reached an explicit number type might occur next
+        case _ => return advance() match {
+          case '_' => TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
+          case _ if isMatch("f32") => error.getOrElse(TokenKind.LiteralFloat32)
+          case _ if isMatch("f64") => error.getOrElse(TokenKind.LiteralFloat64)
+          case _ if isMatch("i8") => error.getOrElse(TokenKind.LiteralInt8)
+          case _ if isMatch("i16") => error.getOrElse(TokenKind.LiteralInt16)
+          case _ if isMatch("i32") => error.getOrElse(TokenKind.LiteralInt32)
+          case _ if isMatch("i64") => error.getOrElse(TokenKind.LiteralInt64)
+          case _ if isMatch("ii") => error.getOrElse(TokenKind.LiteralBigInt)
+          case _ if isMatch("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
+          case _ =>
+            retreat()
+            error.getOrElse(TokenKind.LiteralInt32)
+        }
       }
     }
     // The very last char of the file was a digit so return the appropriate token.

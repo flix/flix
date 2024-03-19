@@ -36,10 +36,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.DoubleDottedNumber.01") {
-    val input =
-      s"""
-         |def main(): Int32 = 1.2.3
-       """.stripMargin
+    val input = "1.2.3"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.DoubleDottedNumber](result)
   }
