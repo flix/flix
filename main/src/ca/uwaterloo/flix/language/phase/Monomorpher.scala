@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, RigidityEnv, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
@@ -120,7 +120,9 @@ object Monomorpher {
     /**
       * Applies `this` substitution to the given type `tpe`, returning a normalized type.
       */
-    def apply(tpe0: Type): Type = tpe0 match {
+    def apply(tpe: Type): Type = applyAcc(tpe, Nil)
+
+    private def applyAcc(tpe0: Type, acc: List[(Name.Label, Type, SourceLocation)]): Type = tpe0 match {
       case x: Type.Var =>
         // Remove variables by substitution, otherwise by default type.
         s.m.get(x.sym) match {
@@ -129,37 +131,49 @@ object Monomorpher {
             // It is important to do this before apply to avoid looping on variables.
             val t1 = t.map(default)
             // Use apply to normalize the type, `t1` is ground.
-            apply(t1)
+            applyAcc(t1, acc)
           case None =>
-            // Default types are normalized.
-            default(x)
+            // Use apply to reach RecordRowEmpty base case
+            applyAcc(default(x), acc)
         }
+      case Type.Cst(TypeConstructor.RecordRowEmpty, _) =>
+        // OBS this sorting is stable which is required.
+        // acc is collected with cons (so first field is last in acc)
+        val sortedFields = acc.reverse.sortBy { case (label, _, _) => label.name }
+        Type.mkRecordRow(sortedFields, tpe0)
       case Type.Cst(_, _) =>
         tpe0
-      case Type.Apply(t1, t2, loc) =>
-        (apply(t1), apply(t2)) match {
-          // Simplify boolean equations.
-          case (Type.Cst(TypeConstructor.Complement, _), y) => Type.mkComplement(y, loc)
-          case (Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y) => Type.mkUnion(x, y, loc)
-          case (Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y) => Type.mkIntersection(x, y, loc)
+      case Type.Apply(tpe1, tpe2, loc) =>
+        val t1 = applyAcc(tpe1, Nil)
+        t1 match {
+          case Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), extendType, loc) =>
+            applyAcc(tpe2, (label, extendType, loc) :: acc)
+          case _ =>
+            val t2 = applyAcc(tpe2, Nil)
+            (t1, t2) match {
+              // Simplify boolean equations.
+              case (Type.Cst(TypeConstructor.Complement, _), y) => Type.mkComplement(y, loc)
+              case (Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y) => Type.mkUnion(x, y, loc)
+              case (Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y) => Type.mkIntersection(x, y, loc)
 
-          case (Type.Cst(TypeConstructor.CaseComplement(sym), _), y) => Type.mkCaseComplement(y, sym, loc)
-          case (Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _), y) => Type.mkCaseIntersection(x, y, sym, loc)
-          case (Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _), y) => Type.mkCaseUnion(x, y, sym, loc)
+              case (Type.Cst(TypeConstructor.CaseComplement(sym), _), y) => Type.mkCaseComplement(y, sym, loc)
+              case (Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _), y) => Type.mkCaseIntersection(x, y, sym, loc)
+              case (Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _), y) => Type.mkCaseUnion(x, y, sym, loc)
 
-          // Else just apply.
-          case (x, y) => Type.Apply(x, y, loc)
+              // Else just apply.
+              case (x, y) => Type.Apply(x, y, loc)
+            }
         }
       case Type.Alias(_, _, t, _) =>
         // Remove the Alias.
-        apply(t)
+        applyAcc(t, acc)
       case Type.AssocType(cst, arg0, _, loc) =>
         // Remove the associated type.
-        val arg = apply(arg0)
+        val arg = applyAcc(arg0, Nil)
         EqualityEnvironment.reduceAssocType(cst, arg, eqEnv) match {
           case Ok(t) =>
             // Use apply to normalize the type, `t` is ground.
-            apply(t)
+            applyAcc(t, acc)
           case Err(_) => throw InternalCompilerException("unexpected associated type reduction failure", loc)
         }
     }

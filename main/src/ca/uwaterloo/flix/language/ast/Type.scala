@@ -755,6 +755,13 @@ object Type {
   }
 
   /**
+    * Constructs nested [[TypeConstructor.RecordRowExtend]] for each field in `fields`.
+    */
+  def mkRecordRow(fields: List[(Name.Label, Type, SourceLocation)], rest: Type): Type = {
+    fields.foldRight(rest){case ((label, tpe, loc), acc) => Type.mkRecordRowExtend(label, tpe, acc, loc)}
+  }
+
+  /**
     * Constructs a SchemaExtend type.
     */
   def mkSchemaRowExtend(pred: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation): Type = {
