@@ -2683,7 +2683,9 @@ object Parser2 {
     def head()(implicit s: State): Mark.Closed = {
       val mark = open()
       name(NAME_PREDICATE)
-      termList()
+      if (at(TokenKind.ParenL)) {
+        termList()
+      }
       close(mark, TreeKind.Predicate.Head)
     }
 

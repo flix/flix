@@ -916,7 +916,7 @@ object Lexer {
           isScientificNotation = true
           advance()
         // Dots mark a decimal
-        case '.' =>
+        case '.' if peekPeek().exists(_.isDigit) =>
           if (isDecimal) {
             error = Some(TokenKind.Err(LexerError.DoubleDottedNumber(sourceLocationAtCurrent())))
           }
