@@ -56,7 +56,7 @@ object Verifier {
         println(s"Mismatched shape near ${loc.format}")
         println()
         println(s"  tpe      = $tpe")
-        println(s"  expected = \'${exp}\'")
+        println(s"  expected = \'$exp\'")
         println()
     }
   }
