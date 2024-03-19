@@ -233,6 +233,8 @@ object Verifier {
           check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
           tpe
 
+        case AtomicOp.ArrayLength => tpe
+
         case _ => tpe // TODO: VERIFIER: Add rest
       }
 
