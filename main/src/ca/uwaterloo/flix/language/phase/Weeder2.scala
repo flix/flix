@@ -976,7 +976,15 @@ object Weeder2 {
         case (Nil, _) =>
           val err = EmptyForFragment(tree.loc)
           Validation.toSoftFailure(Expr.Error(err), err)
-        case (fragments, expr) => Validation.success(Expr.ForEach(fragments, expr, tree.loc))
+        case (fragments, expr) =>
+          // It's okay to do head rather than headOption here because we check for Nil above.
+          fragments.head match {
+            // Check that fragments start with a generator.
+            case _: ForFragment.Generator => Validation.success(Expr.ForEach(fragments, expr, tree.loc))
+            case f =>
+              val error = IllegalForFragment(forFragmentLoc(f))
+              Validation.toSoftFailure(Expr.Error(error), error)
+          }
       }
     }
 
@@ -989,68 +997,74 @@ object Weeder2 {
         case (Nil, _) =>
           val err = EmptyForFragment(tree.loc)
           Validation.toSoftFailure(Expr.Error(err), err)
-        case (fragments, expr) => Validation.success(Expr.ForEachYield(fragments, expr, tree.loc))
+        case (fragments, expr) =>
+          // It's okay to do head rather than headOption here because we check for Nil above.
+          fragments.head match {
+            // Check that fragments start with a generator.
+            case _: ForFragment.Generator => Validation.success(Expr.ForEachYield(fragments, expr, tree.loc))
+            case f =>
+              val error = IllegalForFragment(forFragmentLoc(f))
+              Validation.toSoftFailure(Expr.Error(error), error)
+          }
       }
     }
 
     private def visitForMonadic(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.ForMonadic)
       flatMapN(
-        pickForFragments(tree, mustStartWithGenerator = false),
+        pickForFragments(tree),
         pickExpression(tree)
       ) {
         case (Nil, _) =>
           val err = EmptyForFragment(tree.loc)
           Validation.toSoftFailure(Expr.Error(err), err)
-        case (fragments, expr) => Validation.success(Expr.MonadicFor(fragments, expr, tree.loc))
+        case (fragments, expr) =>
+          // It's okay to do head rather than headOption here because we check for Nil above.
+          fragments.head match {
+            // Check that fragments start with a generator.
+            case _: ForFragment.Generator => Validation.success(Expr.MonadicFor(fragments, expr, tree.loc))
+            case f =>
+              val error = IllegalForFragment(forFragmentLoc(f))
+              Validation.toSoftFailure(Expr.Error(error), error)
+          }
       }
     }
 
     private def visitForApplicative(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.ForApplicative)
       flatMapN(
-        onlyGeneratorForFragments(tree),
+        pickForFragments(tree),
         pickExpression(tree)
       ) {
-        case (Nil, expr) =>
+        case (Nil, _) =>
           val err = EmptyForFragment(tree.loc)
           Validation.toSoftFailure(Expr.Error(err), err)
-        case (generators, expr) => Validation.success(Expr.ApplicativeFor(generators, expr, tree.loc))
-      }
-    }
-
-    private def onlyGeneratorForFragments(tree: Tree)(implicit s: State): Validation[List[ForFragment.Generator], CompilationMessage] = {
-      flatMapN(
-        // Passing false here to avoid double errors. Below we check that there are _only_ generators.
-        pickForFragments(tree, mustStartWithGenerator = false)
-      ) {
-        fragments =>
+        case (fragments, expr) =>
+          // Check that there are only generators
           val (generators, nonGeneratorFragments) = fragments.partition {
             case _: ForFragment.Generator => true
             case _ => false
           }
-          // Check that there are only generators
-          val res = Validation.success(generators.asInstanceOf[List[ForFragment.Generator]])
-          res.withSoftFailures(nonGeneratorFragments.map(f => IllegalForAFragment(forFragmentLoc(f))))
+          if (nonGeneratorFragments.nonEmpty) {
+            val err = IllegalForAFragment(forFragmentLoc(nonGeneratorFragments.head))
+            Validation.success(Expr.Error(err)).withSoftFailures(nonGeneratorFragments.map(f => IllegalForAFragment(forFragmentLoc(f))))
+          } else {
+            Validation.success(Expr.ApplicativeFor(generators.asInstanceOf[List[ForFragment.Generator]], expr, tree.loc))
+          }
       }
     }
 
-    private def pickForFragments(tree: Tree, mustStartWithGenerator: Boolean = true)(implicit s: State): Validation[List[ForFragment], CompilationMessage] = {
+    private def pickForFragments(tree: Tree)(implicit s: State): Validation[List[ForFragment], CompilationMessage] = {
       val guards = pickAll(TreeKind.Expr.ForFragmentGuard, tree.children)
       val generators = pickAll(TreeKind.Expr.ForFragmentGenerator, tree.children)
       val lets = pickAll(TreeKind.Expr.ForFragmentLet, tree.children)
-      flatMapN(
+      mapN(
         traverse(guards)(visitForFragmentGuard),
         traverse(generators)(visitForFragmentGenerator),
         traverse(lets)(visitForFragmentLet),
-      )((guards, generators, lets) => {
-        val fragments = (generators ++ guards ++ lets).sortBy(forFragmentLoc)
-        fragments.headOption match {
-          case Some(_: ForFragment.Generator) => Validation.success(fragments)
-          case Some(f) if mustStartWithGenerator => Validation.toSoftFailure(fragments, IllegalForFragment(forFragmentLoc(f)))
-          case _ => Validation.success(fragments)
-        }
-      })
+      ) {
+        (guards, generators, lets) => (generators ++ guards ++ lets).sortBy(forFragmentLoc)
+      }
     }
 
     private def forFragmentLoc(frag: ForFragment): SourceLocation = frag match {
