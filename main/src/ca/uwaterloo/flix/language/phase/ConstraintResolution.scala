@@ -28,6 +28,16 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 import scala.annotation.tailrec
 
+/**
+  * Constraint resolution works by iteratively building up a substitution from the constraints.
+  *
+  * Given a constraint set, we
+  * 1. select a constraint from the set,
+  * 2. attempt to resolve it, yielding a substitution and new constraints
+  * 3. apply the substitution to the accumulated substitution and add the new constraints to our set
+  *
+  * We repeat this until we cannot make any more progress or we discover an invalid constraint.
+  */
 object ConstraintResolution {
 
   /**
@@ -59,6 +69,7 @@ object ConstraintResolution {
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
 
+      // The initial substitution maps from formal parameters to their types
       val initialSubst = fparams.foldLeft(Substitution.empty) {
         case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(tpe)(Level.Top, flix))
       }
@@ -66,16 +77,26 @@ object ConstraintResolution {
       // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
       val allTparams = tpe.typeVars ++ eff.typeVars ++ fparams.flatMap(_.tpe.typeVars) ++ econstrs.flatMap(_.tpe2.typeVars)
 
+      // The rigidity environment is made up of:
+      // 1. rigid variables from the context (e.g. from instance type parameters)
+      // 2. rigid variables from type inference (e.g. regions)
+      // 3. rigid variables from declared function type parameters
       val renv = allTparams.foldLeft(infRenv ++ renv0) {
         case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
       }
 
+      // The class and equality environments are made up of:
+      // 1. constraints from the context (e.g. constraints on instances and classes, plus global constraints)
+      // 2. constraints from the function signature
       val cenv = expandClassEnv(cenv0, tconstrs ++ tconstrs0)
       val eqEnv = expandEqualityEnv(eqEnv0, econstrs) // TODO ASSOC-TYPES allow econstrs on instances
 
+      // We add extra constraints for the declared type and effect
       val tpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
       val effConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
       val constrs = tpeConstr :: effConstr :: infConstrs
+
+
       resolve(constrs, initialSubst, renv, cenv, eqEnv).flatMap {
         case ResolutionResult(subst, deferred, _) =>
           Debug.stopLogging()
@@ -266,6 +287,14 @@ object ConstraintResolution {
     *
     * Applications that are illegal result in an Err.
     * These are applications to types for which the eqEnv has no corresponding instance.
+    *
+    * For example:
+    * {{{
+    *   Int           ~> Int
+    *   Elm[List[a]]  ~> a
+    *   Elm[Int]      ~> <ERROR>
+    *   Elm[Elm[a]]   ~> Elm[Elm[a]]
+    * }}}
     */
   private def simplifyType(tpe: Type, renv0: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
     // A var is already simple.
@@ -323,10 +352,19 @@ object ConstraintResolution {
     * Returns a list of resulting constraints and a Boolean flag to indicate whether progress was made.
     *
     * Constraints that cannot be resolved are left as they are.
-    * These are applications to variables and applications to other unresolvable types.
+    * These are constraints on associated types applied to variables and applied to other unresolvable types.
     *
     * Constraints that are illegal result in an Err.
-    * These are applications to types for which the classEnv has no corresponding instance.
+    * These are constraints applied to types for which the classEnv has no corresponding instance.
+    *
+    * For example:
+    * {{{
+    *   ToString[Int32]       ~> []
+    *   ToString[(a, b)]      ~> [ToString[a], ToString[b]]
+    *   ToString[a]           ~> ToString[a]
+    *   ToString[Elm[a]]      ~> ToString[Elm[a]]
+    *   ToString[a -> b \ ef] ~> <ERROR>
+    * }}}
     */
   private def resolveClassConstraint(clazz: Symbol.ClassSym, tpe0: Type, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], renv0: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): Result[(List[TypingConstraint], Boolean), TypeError] = {
     // redE
