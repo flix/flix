@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.errors.Parser2Error
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation.{traverse, _}
@@ -51,25 +51,25 @@ object Weeder2 {
   import WeededAst._
 
   private class State(val src: Ast.Source) {
-    // Compute a `ParserInput` when initializing a state for lexing a source.
     // This is necessary to display source code in error messages.
-    // See `sourceLocationAtStart` for usage and `SourceLocation` for more information.
     val parserInput: ParserInput = ParserInput.apply(src.data)
   }
 
-  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], trees: Map[Ast.Source, Tree])(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
+  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], trees: Map[Ast.Source, Tree], oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
     if (flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
       return Validation.success(WeededAst.empty)
     }
 
     flix.phase("Weeder2") {
+      val (stale, fresh) = changeSet.partition(trees, oldRoot.units)
       // Parse each source file in parallel and join them into a WeededAst.Root
-      val results = ParOps.parMap(trees) {
+      val refreshed = ParOps.parMap(trees) {
         case (src, tree) => mapN(weed(src, tree))(tree => src -> tree)
       }
 
-      mapN(mapN(sequence(results))(_.toMap))(m => WeededAst.Root(m, entryPoint, readRoot.names))
+      val compilationUnits = mapN(sequence(refreshed))(_.toMap ++ fresh)
+      mapN(compilationUnits)(WeededAst.Root(_, entryPoint, readRoot.names))
     }
   }
 
@@ -973,7 +973,7 @@ object Weeder2 {
         pickForFragments(tree),
         pickExpression(tree)
       ) {
-        case (Nil, expr) =>
+        case (Nil, _) =>
           val err = EmptyForFragment(tree.loc)
           Validation.toSoftFailure(Expr.Error(err), err)
         case (fragments, expr) => Validation.success(Expr.ForEach(fragments, expr, tree.loc))
@@ -996,7 +996,7 @@ object Weeder2 {
     private def visitForMonadic(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.ForMonadic)
       flatMapN(
-        pickForFragments(tree),
+        pickForFragments(tree, mustStartWithGenerator = false),
         pickExpression(tree)
       ) {
         case (Nil, _) =>
@@ -1008,16 +1008,49 @@ object Weeder2 {
 
     private def visitForApplicative(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.ForApplicative)
-      val generators = pickAll(TreeKind.Expr.ForFragmentGenerator, tree.children)
       flatMapN(
-        traverse(generators)(visitForFragmentGenerator),
+        onlyGeneratorForFragments(tree),
         pickExpression(tree)
       ) {
-        case (Nil, _) =>
+        case (Nil, expr) =>
           val err = EmptyForFragment(tree.loc)
           Validation.toSoftFailure(Expr.Error(err), err)
-        case (fragments, expr) => Validation.success(Expr.ApplicativeFor(fragments, expr, tree.loc))
+        case (generators, expr) => Validation.success(Expr.ApplicativeFor(generators, expr, tree.loc))
       }
+    }
+
+    private def onlyGeneratorForFragments(tree: Tree)(implicit s: State): Validation[List[ForFragment.Generator], CompilationMessage] = {
+      flatMapN(
+        // Passing false here to avoid double errors. Below we check that there are _only_ generators.
+        pickForFragments(tree, mustStartWithGenerator = false)
+      ) {
+        fragments =>
+          val (generators, nonGeneratorFragments) = fragments.partition {
+            case _: ForFragment.Generator => true
+            case _ => false
+          }
+          // Check that there are only generators
+          val res = Validation.success(generators.asInstanceOf[List[ForFragment.Generator]])
+          res.withSoftFailures(nonGeneratorFragments.map(f => IllegalForAFragment(forFragmentLoc(f))))
+      }
+    }
+
+    private def pickForFragments(tree: Tree, mustStartWithGenerator: Boolean = true)(implicit s: State): Validation[List[ForFragment], CompilationMessage] = {
+      val guards = pickAll(TreeKind.Expr.ForFragmentGuard, tree.children)
+      val generators = pickAll(TreeKind.Expr.ForFragmentGenerator, tree.children)
+      val lets = pickAll(TreeKind.Expr.ForFragmentLet, tree.children)
+      flatMapN(
+        traverse(guards)(visitForFragmentGuard),
+        traverse(generators)(visitForFragmentGenerator),
+        traverse(lets)(visitForFragmentLet),
+      )((guards, generators, lets) => {
+        val fragments = (generators ++ guards ++ lets).sortBy(forFragmentLoc)
+        fragments.headOption match {
+          case Some(_: ForFragment.Generator) => Validation.success(fragments)
+          case Some(f) if mustStartWithGenerator => Validation.toSoftFailure(fragments, IllegalForFragment(forFragmentLoc(f)))
+          case _ => Validation.success(fragments)
+        }
+      })
     }
 
     private def forFragmentLoc(frag: ForFragment): SourceLocation = frag match {
@@ -1026,18 +1059,6 @@ object Weeder2 {
       case ForFragment.Let(_, _, loc) => loc
     }
 
-    private def pickForFragments(tree: Tree)(implicit s: State): Validation[List[ForFragment], CompilationMessage] = {
-      val guards = pickAll(TreeKind.Expr.ForFragmentGuard, tree.children)
-      val generators = pickAll(TreeKind.Expr.ForFragmentGenerator, tree.children)
-      val lets = pickAll(TreeKind.Expr.ForFragmentLet, tree.children)
-      mapN(
-        traverse(guards)(visitForFragmentGuard),
-        traverse(generators)(visitForFragmentGenerator),
-        traverse(lets)(visitForFragmentLet),
-      )((guards, generators, lets) => {
-        (generators ++ guards ++ lets).sortBy(forFragmentLoc)
-      })
-    }
 
     private def visitForFragmentGuard(tree: Tree)(implicit s: State): Validation[ForFragment.Guard, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.ForFragmentGuard)

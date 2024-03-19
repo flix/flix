@@ -1443,13 +1443,8 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordForA)
       if (at(TokenKind.ParenL)) {
-        separated(() => {
-          val mark = open()
-          Pattern.pattern()
-          expect(TokenKind.ArrowThinL)
-          expression()
-          close(mark, TreeKind.Expr.ForFragmentGenerator)
-        }).by(TokenKind.Semi).zeroOrMore()
+        // Note: Only generator patterns are allowed here. Weeder verifies this.
+        forFragments()
       }
       expect(TokenKind.KeywordYield)
       expression()

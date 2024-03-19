@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.{LexerError, Parser2Error}
+import ca.uwaterloo.flix.language.errors.{LexerError, Parser2Error, WeederError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -88,5 +88,203 @@ class TestParser extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[Parser2Error](result)
+  }
+
+  // TODO: Move, this should be a Parse error
+  test("IllegalEffectTypeParams.01") {
+    val input =
+      """
+        |eff MyEffect[a]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectTypeParams](result)
+  }
+
+  // TODO: Move, this should be a Parse error
+  test("IllegalEffectTypeParams.02") {
+    val input =
+      """
+        |eff MyEffect {
+        |    def op[a](x: a): Unit
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectTypeParams](result)
+  }
+
+  // TODO: Move, this should be a Parse error
+  test("IllegalEffectTypeParams.03") {
+    val input =
+      """
+        |eff MyEffect[a] {
+        |    def op[b](x: a, y: b): Unit
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectTypeParams](result)
+  }
+
+  // TODO: Move, This is a parse error, did not expect effect on an operation
+  test("IllegalEffectfulOperation.01") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit \ IO
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[WeederError.IllegalEffectfulOperation](result)
+  }
+
+  // TODO: Move, This is a parse error, did not expect effect on an operation
+  test("IllegalEffectfulOperation.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit \ E
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectfulOperation](result)
+  }
+
+  // TODO: Move, This is a parse error, did not expect effect on an operation
+  test("IllegalEffectfulOperation.03") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit \ ef
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectfulOperation](result)
+  }
+
+  // TODO: Move, This is a parse error, did not expect effect on an operation
+  test("IllegalEffectfulOperation.04") {
+    val input =
+      """
+        |eff A {
+        |    pub def op(): Unit
+        |}
+        |eff E {
+        |    def op(): Unit \ A
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectfulOperation](result)
+  }
+
+  // TODO: This is a parser error
+  test("IllegalEnum.02") {
+    val input =
+      """
+        |enum E(Int32) { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEnum](result)
+  }
+
+  // TODO: This is a parser error
+  test("IllegalEnum.03") {
+    val input =
+      """
+        |enum E(a) { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEnum](result)
+  }
+
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
+  test("IllegalModuleName.01") {
+    val input =
+      """
+        |mod mymod {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
+  test("IllegalModuleName.05") {
+    val input =
+      """
+        |mod Mymod.othermod {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
+  test("IllegalModuleName.06") {
+    val input =
+      """
+        |mod Mymod {
+        |    mod othermod {
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalModuleName](result)
+  }
+
+  // TODO: Move: Parse error "Expected NameLowerCase found NameUpperCase".
+  // Testing that the casing of 'foo' and 'Foo' should match
+  test("IllegalUse.Alias.01") {
+    val input =
+      """
+        |mod M {
+        |    def foo(): Int32 = ???
+        |}
+        |
+        |mod N {
+        |    use M.{foo => Foo}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUse](result)
+  }
+
+  // TODO: Move: Parse error "Expected NameLowerCase found NameUpperCase".
+  test("IllegalUse.Alias.02") {
+    val input =
+      """
+        |mod M {
+        |    enum Enum1
+        |    def foo(): Int32 = ???
+        |}
+        |
+        |mod N {
+        |    use M.{Enum1 => enum1}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUse](result)
+  }
+
+  // TODO: Move: Parse error "Expected NameLowerCase found NameUpperCase".
+  test("IllegalUse.Alias.03") {
+    val input =
+      """
+        |mod N {
+        |    use M.{E => e}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUse](result)
+  }
+
+  // TODO: Move: Parse error "Expected NameLowerCase found NameUpperCase".
+  test("IllegalUse.Alias.04") {
+    val input =
+      """
+        |mod B {
+        |    use M.{e => A}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUse](result)
   }
 }
