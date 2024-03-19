@@ -21,9 +21,6 @@ import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 
-
-// TODO: Remove Parser2ERror in favor of this one
-
 /**
   * An error raised to indicate a parse error.
   *
@@ -31,7 +28,7 @@ import ca.uwaterloo.flix.util.Formatter
   * @param ctx the syntactic context.
   * @param loc the source location.
   */
-case class ParseError(msg: String, ctx: SyntacticContext, loc: SourceLocation) extends CompilationMessage with Unrecoverable {
+case class ParseError(msg: String, ctx: SyntacticContext, loc: SourceLocation) extends CompilationMessage with Recoverable {
   val kind = "Parse Error"
 
   def summary: String = msg
@@ -41,6 +38,7 @@ case class ParseError(msg: String, ctx: SyntacticContext, loc: SourceLocation) e
     s"""${line(kind, source.name)}
        |>> Parse Error: ${red(msg)}
        |
+       |${code(loc, s"Here")}
        |Syntactic Context: $ctx.
        |""".stripMargin
   }

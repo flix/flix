@@ -1,8 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors
-import ca.uwaterloo.flix.language.errors.{LexerError, Parser2Error, WeederError}
+import ca.uwaterloo.flix.language.errors.{LexerError, ParseError, WeederError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -16,14 +15,14 @@ class TestParser extends AnyFunSuite with TestUtils {
   ignore("ParseError.Interpolation.01") {
     val input = s"""pub def foo(): String = "$${""""
     val result = compile(input, Options.TestWithLibNix)
-    expectError[Parser2Error](result)
+    expectError[ParseError](result)
   }
 
   // Produces ResolutionError with no SourceLocation, which fails the test.
   ignore("ParseError.Interpolation.02") {
     val input = s"""pub def foo(): String = "$${1 + }""""
     val result = compile(input, Options.TestWithLibNix)
-    expectError[Parser2Error](result)
+    expectError[ParseError](result)
   }
 
   // Produces ResolutionError with no SourceLocation, which fails the test.
@@ -41,7 +40,7 @@ class TestParser extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[Parser2Error](result)
+    expectError[ParseError](result)
   }
 
   test("ParseError.ParYield.01") {
@@ -50,7 +49,7 @@ class TestParser extends AnyFunSuite with TestUtils {
         |def f(): Int32 = par () yield 1
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[Parser2Error](result)
+    expectError[ParseError](result)
   }
 
   test("ParseError.ParYield.02") {
@@ -59,7 +58,7 @@ class TestParser extends AnyFunSuite with TestUtils {
         |def f(): Int32 = par a <- 1 yield a
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[Parser2Error](result)
+    expectError[ParseError](result)
   }
 
   test("ParseError.ParYield.03") {
@@ -68,7 +67,7 @@ class TestParser extends AnyFunSuite with TestUtils {
         |def f(): (Int32, Int32) = par (a <- let b = 1; b; c <- 2) yield (a, c)
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[Parser2Error](result)
+    expectError[ParseError](result)
   }
 
   test("ParseError.InstanceOf.01") {
@@ -78,7 +77,7 @@ class TestParser extends AnyFunSuite with TestUtils {
         |    1000ii instanceof java.math.BigInteger
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[Parser2Error](result)
+    expectError[ParseError](result)
   }
 
   test("ParseError.InstanceOf.02") {
@@ -88,7 +87,7 @@ class TestParser extends AnyFunSuite with TestUtils {
         |    1000ii instanceof BigInt
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[Parser2Error](result)
+    expectError[ParseError](result)
   }
 
   // TODO: Move, this should be a Parse error
@@ -204,7 +203,7 @@ class TestParser extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[Parser2Error](result)
+    expectError[ParseError](result)
   }
 
   // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
