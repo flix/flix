@@ -21,7 +21,7 @@ mod Test.Handler.Gen.Bool {
 
     def getAndInc(r: Ref[(Int32, Bool), r]): (Int32, Bool) \ r =
         let (i, b) = deref r;
-        r := (i + 1, not b);
+        Ref.put((i + 1, not b), r);
         (i, b)
 
     def range(a: Int32, b: Int32): List[Bool] =

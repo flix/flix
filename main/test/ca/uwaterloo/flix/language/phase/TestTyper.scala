@@ -642,7 +642,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    let m = ref None @ Static;
         |    region rc {
         |        let x = ref 123 @ rc;
-        |        m := Some(x);
+        |        Ref.put(Some(x), m);
         |        ()
         |    }
     """.stripMargin
@@ -662,7 +662,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    let m = ref None @ Static;
         |    region rc {
         |        let x = ref 123 @ rc;
-        |        m := Some(_ -> x);
+        |        Ref.put(Some(_ -> x), m);
         |        ()
         |    }
     """.stripMargin

@@ -1818,14 +1818,14 @@ def eq25(): Bool = Map#{1 => 2, 3 => 4, 5 => 6, 7 => 8, 9 => 10} == Map#{7 => 8,
 @test
 def forEach01(): Bool = region rc {
     let ri = ref 21 @ rc;
-    Map.forEach((k, _) -> ri := k, Map#{});
+    Map.forEach((k, _) -> Ref.put(k, ri), Map#{});
     21 == deref ri
 }
 
 @test
 def forEach02(): Bool = region rc {
     let ri = ref 21 @ rc;
-    Map.forEach((k, _) -> ri := k, Map#{1 => "Hello World!"});
+    Map.forEach((k, _) -> Ref.put(k, ri), Map#{1 => "Hello World!"});
     1 == deref ri
 }
 
@@ -1836,14 +1836,14 @@ def forEach02(): Bool = region rc {
 @test
 def forEachWithIndex01(): Bool = region rc {
     let ri = ref 21 @ rc;
-    Map.forEachWithIndex((i, _, _) -> ri := i, Map#{});
+    Map.forEachWithIndex((i, _, _) -> Ref.put(i, ri), Map#{});
     21 == deref ri
 }
 
 @test
 def forEachWithIndex02(): Bool = region rc {
     let ri = ref 21 @ rc;
-    Map.forEachWithIndex((i, _, _) -> ri := i, Map#{1 => "Hello World!"});
+    Map.forEachWithIndex((i, _, _) -> Ref.put(i, ri), Map#{1 => "Hello World!"});
     0 == deref ri
 }
 
@@ -1888,7 +1888,7 @@ def unfoldWithIter01(): Bool = region rc {
         else {
             let k = deref x;
             let v = k + 48;
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{}
@@ -1903,7 +1903,7 @@ def unfoldWithIter02(): Bool = region rc {
         else {
             let k = deref x;
             let v = k + 48;
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{0 => 48}
@@ -1918,7 +1918,7 @@ def unfoldWithIter03(): Bool = region rc {
         else {
             let k = deref x;
             let v = k + 48;
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{0 => 48, 1 => 49}
@@ -1933,7 +1933,7 @@ def unfoldWithIter04(): Bool = region rc {
         else {
             let k = deref x;
             let v = k + 48;
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{0 => 48, 1 => 49, 2 => 50, 3 => 51, 4 => 52, 5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
@@ -1948,7 +1948,7 @@ def unfoldWithIter05(): Bool = region rc {
         else {
             let k = deref x;
             let v = k + 48;
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{5 => 53, 6 => 54, 7 => 55, 8 => 56, 9 => 57}
@@ -1963,7 +1963,7 @@ def unfoldWithIter06(): Bool = region rc {
         else {
             let k = deref x;
             let v = k + 48;
-            x := deref x + 2;
+            Ref.put(deref x + 2, x);
             Some(k, v)
         };
     Map.unfoldWithIter(step) == Map#{0 => 48, 2 => 50, 4 => 52, 6 => 54, 8 => 56}
@@ -2479,7 +2479,7 @@ def rangeQuery18(): Bool =
     def traverse01(): Bool = region rc {
         let st = ref '#' @ rc;
         let m: Map[Int32, Char] = Map#{};
-        let ans = Map.traverse(x -> {st := x; Identity.Identity(x)}, m);
+        let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
         ans == Identity.Identity(Map#{}) and deref st == '#'
     }
 
@@ -2487,7 +2487,7 @@ def rangeQuery18(): Bool =
     def traverse02(): Bool = region rc {
         let st = ref '#' @ rc;
         let m = Map#{1 => 'a'};
-        let ans = Map.traverse(x -> {st := x; Identity.Identity(x)}, m);
+        let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
         ans == Identity.Identity(Map#{1 => 'a'}) and deref st == 'a'
     }
 
@@ -2495,7 +2495,7 @@ def rangeQuery18(): Bool =
     def traverse03(): Bool = region rc {
         let st = ref '#' @ rc;
         let m = Map#{1 => 'a', 2 => 'b'};
-        let ans = Map.traverse(x -> {st := x; Identity.Identity(x)}, m);
+        let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
         ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}) and deref st == 'b'
     }
 
@@ -2503,7 +2503,7 @@ def rangeQuery18(): Bool =
     def traverse04(): Bool = region rc {
         let st = ref '#' @ rc;
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
-        let ans = Map.traverse(x -> {st := x; Identity.Identity(x)}, m);
+        let ans = Map.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, m);
         ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and deref st == 'c'
     }
 
@@ -2515,7 +2515,7 @@ def rangeQuery18(): Bool =
     def traverseWithKey01(): Bool = region rc {
         let st = ref (0, '#') @ rc;
         let m: Map[Int32, Char] = Map#{};
-        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity.Identity(v)}, m);
+        let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
         ans == Identity.Identity(Map#{}) and deref st == (0, '#')
     }
 
@@ -2523,7 +2523,7 @@ def rangeQuery18(): Bool =
     def traverseWithKey02(): Bool = region rc {
         let st = ref (0, '#') @ rc;
         let m = Map#{1 => 'a'};
-        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity.Identity(v)}, m);
+        let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
         ans == Identity.Identity(Map#{1 => 'a'}) and deref st == (1, 'a')
     }
 
@@ -2531,7 +2531,7 @@ def rangeQuery18(): Bool =
     def traverseWithKey03(): Bool = region rc {
         let st = ref (0, '#') @ rc;
         let m = Map#{1 => 'a', 2 => 'b'};
-        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity.Identity(v)}, m);
+        let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
         ans == Identity.Identity(Map#{1 => 'a', 2 => 'b'}) and deref st == (2, 'b')
     }
 
@@ -2539,7 +2539,7 @@ def rangeQuery18(): Bool =
     def traverseWithKey04(): Bool = region rc {
         let st = ref (0, '#') @ rc;
         let m = Map#{1 => 'a', 2 => 'b', 3 => 'c'};
-        let ans = Map.traverseWithKey((k, v) -> {st := (k, v); Identity.Identity(v)}, m);
+        let ans = Map.traverseWithKey((k, v) -> {Ref.put((k, v), st); Identity.Identity(v)}, m);
         ans == Identity.Identity(Map#{1 => 'a', 2 => 'b', 3 => 'c'}) and deref st == (3, 'c')
     }
 

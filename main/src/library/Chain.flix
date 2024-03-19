@@ -804,10 +804,9 @@ mod Chain {
         let cursor = ref viewLeft(c) @ rc;
         let next = () -> match (deref cursor) {
             case ViewLeft.NoneLeft        => None
-            case ViewLeft.SomeLeft(x, xs) => {
-                cursor := viewLeft(xs);
+            case ViewLeft.SomeLeft(x, xs) =>
+                Ref.put(viewLeft(xs), cursor);
                 Some(x)
-            }
         };
         Iterator.iterate(rc, next)
 

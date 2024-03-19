@@ -43,7 +43,7 @@ mod Test.Java.Function {
         };
         let st = ref "<none>" @ Static;
         let stream = of(mkObject(8));
-        let _ = forEach(stream, obj -> let s1 = toString(obj); st := s1);
+        let _ = forEach(stream, obj -> let s1 = toString(obj); Ref.put(s1, st));
         deref st == "8"
     }
 
@@ -83,7 +83,7 @@ mod Test.Java.Function {
         import java.util.stream.IntStream.forEach(IntConsumer): Unit \ IO;
         let st = ref 0 @ Static;
         let stream = range(0, 9);
-        let _ = forEach(stream, i -> st := i);
+        let _ = forEach(stream, i -> Ref.put(i, st));
         deref st == 8
     }
 
@@ -128,7 +128,7 @@ mod Test.Java.Function {
         import java.util.stream.LongStream.forEach(LongConsumer): Unit \ IO;
         let st = ref 0i64 @ Static;
         let stream = range(0i64, 9i64);
-        let _ = forEach(stream, i -> st := i);
+        let _ = forEach(stream, i -> Ref.put(i, st));
         deref st == 8i64
     }
 
@@ -176,7 +176,7 @@ mod Test.Java.Function {
         import java.util.stream.DoubleStream.forEach(DoubleConsumer): Unit \ IO;
         let st = ref 0.0f64 @ Static;
         let stream = of(Array#{0.0f64, 1.0f64, 2.0f64, 3.0f64, 4.0f64, 5.0f64, 6.0f64, 7.0f64, 8.0f64} @ Static);
-        let _ = forEach(stream, i -> st := i);
+        let _ = forEach(stream, i -> Ref.put(i, st));
         let last = deref st;
         Float64.tryToInt32(last) == Some(8)
     }

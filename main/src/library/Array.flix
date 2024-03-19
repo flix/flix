@@ -47,8 +47,8 @@ mod Array {
 
         StringBuilder.appendString!("Array#{", sb);
 
-        let f = (x) -> {
-            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
+        let f = x -> {
+            if (not deref first) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
             StringBuilder.appendString!("${x}", sb)
         };
         forEach(f, a);

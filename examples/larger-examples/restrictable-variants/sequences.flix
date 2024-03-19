@@ -839,8 +839,8 @@ mod Seq {
         let next = () -> {
             choose (deref ls) {
                 case Seq.Nil            => None
-                case Seq.One(x)         => ls := open_variant Seq.Nil; Some(x)
-                case Seq.Cons(x, rs)    => ls := rs; Some(x)
+                case Seq.One(x)         => Ref.put(open_variant Seq.Nil, ls); Some(x)
+                case Seq.Cons(x, rs)    => Ref.put(rs, ls); Some(x)
             }
         };
         Iterator.iterate(rc, next)

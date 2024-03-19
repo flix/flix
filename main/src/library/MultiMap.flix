@@ -541,7 +541,7 @@ mod MultiMap {
     ///
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MultiMap[k, v]): Unit \ ef = region rc {
         let ix = ref 0 @ rc;
-        let f1 = (k , v) -> {let i = deref ix; f(i, k, v); ix := i + 1};
+        let f1 = (k , v) -> { let i = deref ix; f(i, k, v); Ref.put(i + 1, ix) };
         forEach(f1, m)
     }
 

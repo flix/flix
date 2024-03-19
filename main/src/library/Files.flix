@@ -378,11 +378,11 @@ mod Files {
                 if (not Object.isNull(deref line)) {
                     try {
                         let l = deref line;
-                        line := readLine(reader);
+                        Ref.put(readLine(reader), line);
                         Some(Ok(l))
                     } catch {
                         case ex: ##java.io.IOException => {
-                            line := checked_cast(null);
+                            Ref.put(checked_cast(null), line);
                             import java.lang.Throwable.getMessage(): String \ {};
                             Some(Err(Generic(getMessage(checked_cast(ex)))))
                         }
@@ -419,11 +419,11 @@ mod Files {
                 if (not Object.isNull(deref line)) {
                     try {
                         let l = deref line;
-                        line := readLine(reader);
+                        Ref.put(readLine(reader), line);
                         Some(Ok(l))
                     } catch {
                         case ex: ##java.io.IOException => {
-                            line := checked_cast(null);
+                            Ref.put(checked_cast(null), line);
                             import java.lang.Throwable.getMessage(): String \ {};
                             Some(Err(Generic(getMessage(checked_cast(ex)))))
                         }
@@ -525,13 +525,13 @@ mod Files {
                     if (deref numberRead >= 0) {
                         try {
                             let chunk = deref bytes;
-                            bytes := Array.empty(rc, chunkSize);
+                            Ref.put(Array.empty(rc, chunkSize), bytes);
                             let accRead = deref numberRead;
-                            numberRead := read(stream, deref bytes);
+                            Ref.put(read(stream, deref bytes), numberRead);
                             Some(Ok(readBytesWithHelper(rc, chunk, accRead, chunkSize)))
                         } catch {
                             case ex: ##java.io.IOException => {
-                                numberRead := -1;
+                                Ref.put(-1, numberRead);
                                 import java.lang.Throwable.getMessage(): String \ {};
                                 Some(Err(Generic(getMessage(checked_cast(ex)))))
                             }

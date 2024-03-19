@@ -1343,14 +1343,14 @@ mod TestChain {
     @test
     def forEach01(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Chain.forEach(x -> ri := x, Chain.empty());
+        Chain.forEach(x -> Ref.put(x, ri), Chain.empty());
         21 == deref ri
     }
 
     @test
     def forEach02(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Chain.forEach(x -> ri := x, List.toChain(1 :: 2 :: 3 :: Nil));
+        Chain.forEach(x -> Ref.put(x, ri), List.toChain(1 :: 2 :: 3 :: Nil));
         3 == deref ri
     }
 
@@ -1361,14 +1361,14 @@ mod TestChain {
     @test
     def forEachWithIndex01(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Chain.forEachWithIndex((i, _) -> ri := i, Chain.empty());
+        Chain.forEachWithIndex((i, _) -> Ref.put(i, ri), Chain.empty());
         21 == deref ri
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Chain.forEachWithIndex((i, _) -> ri := i, List.toChain(1 :: 2 :: 3 :: Nil));
+        Chain.forEachWithIndex((i, _) -> Ref.put(i, ri), List.toChain(1 :: 2 :: 3 :: Nil));
         2 == deref ri
     }
 
@@ -1869,7 +1869,7 @@ mod TestChain {
     def traverse01(): Bool = region rc {
         let st = ref 0 @ rc;
         let c = Chain.empty();
-        let ans = Chain.traverse(x -> {st := x; Identity.Identity(x)}, c);
+        let ans = Chain.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, c);
         ans == Identity.Identity(Chain.empty()) and deref st == 0
     }
 
@@ -1877,7 +1877,7 @@ mod TestChain {
     def traverse02(): Bool = region rc {
         let st = ref 0 @ rc;
         let c = Chain.singleton(1);
-        let ans = Chain.traverse(x -> {st := x; Identity.Identity(x)}, c);
+        let ans = Chain.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, c);
         ans == Identity.Identity(Chain.singleton(1)) and deref st == 1
     }
 
@@ -1885,7 +1885,7 @@ mod TestChain {
     def traverse03(): Bool = region rc {
         let st = ref 0 @ rc;
         let c = List.toChain(1 :: 2 :: Nil);
-        let ans = Chain.traverse(x -> {st := x; Identity.Identity(x)}, c);
+        let ans = Chain.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, c);
         ans == Identity.Identity(List.toChain(1 :: 2 :: Nil)) and deref st == 2
     }
 
@@ -1893,7 +1893,7 @@ mod TestChain {
     def traverse04(): Bool = region rc {
         let st = ref 0 @ rc;
         let c = List.toChain(1 :: 2 :: 3 :: Nil);
-        let ans = Chain.traverse(x -> {st := x; Identity.Identity(x)}, c);
+        let ans = Chain.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, c);
         ans == Identity.Identity(List.toChain(1 :: 2 :: 3 :: Nil)) and deref st == 3
     }
 

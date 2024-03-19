@@ -83,7 +83,7 @@ mod MutQueue {
         expand(mq);
         Array.put(x, deref s, deref arr);
         heapifyUp(deref s, mq);
-        s := deref s + 1
+        Ref.put(deref s + 1, s)
     }
 
     ///
@@ -95,7 +95,7 @@ mod MutQueue {
             let top = peek(mq);
             Array.put(Array.get(deref s - 1, deref arr), 0, deref arr);
             heapifyDown(0, mq);
-            s := deref s - 1;
+            Ref.put(deref s - 1, s);
             top
         }
         else None
@@ -208,7 +208,7 @@ mod MutQueue {
             let newCapacity = 2 + (oldCapacity * 2);
             let newArr  = Array.empty(reg, newCapacity);
             Array.forEachWithIndex((idx, x) -> Array.put(x, idx, newArr), deref arr);
-            arr := newArr
+            Ref.put(newArr, arr)
         }
         else ()
 

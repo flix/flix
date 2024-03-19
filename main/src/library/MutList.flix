@@ -371,7 +371,7 @@ mod MutList {
             let bl = deref rbl;
             let destIndex = deref rdestIndex;
             Array.patch!(destIndex, bl, deref rb, destArray);
-            rdestIndex := destIndex + bl
+            Ref.put(destIndex + bl, rdestIndex)
          });
          MutList(rc1, ref destArray @ rc1, ref size @ rc1)
 
@@ -534,8 +534,8 @@ mod MutList {
     ///
     pub def clear!(v: MutList[a, r]): Unit \ r =
         let MutList(r, a, l) = v;
-        a := Array.empty(r, Array.length(deref a));
-        l := 0
+        Ref.put(Array.empty(r, Array.length(deref a)), a);
+        Ref.put(0, l)
 
     ///
     /// Returns a shallow copy of the given mutable list `v`.
@@ -557,7 +557,7 @@ mod MutList {
         let len = deref l;
         if (len > 0)
             let last = Array.get(len - 1, deref a);
-            l := len - 1;
+            Ref.put(len - 1, l);
             Array.put(Reflect.default(), len - 1, deref a);
             compress!(v);
             Some(last)
@@ -574,7 +574,7 @@ mod MutList {
             reserve!(len, v)
         else ();
         Array.put(x, len, deref a);
-        l := len + 1
+        Ref.put(len + 1, l)
 
     ///
     /// Inserts the given element `x` at the given position `i` in the given mutable list `v`.
@@ -592,7 +592,7 @@ mod MutList {
         let sub = Array.copyOfRange(r, i, len, deref a);
         Array.updateSequence!(i + 1, sub, deref a);
         Array.put(x, i, deref a);
-        l := len + 1
+        Ref.put(len + 1, l)
 
     ///
     /// Removes the element at the given position `i` in the given mutable list `v`.
@@ -619,7 +619,7 @@ mod MutList {
         };
         if (i < l) {
             loop(i);
-            rl := n;
+            Ref.put(n, rl);
             compress!(v)
         }
         else
@@ -645,8 +645,8 @@ mod MutList {
         let l = MutList.empty(r);
         forEach(e -> if (f(e)) push!(e, l) else (), v);
         let MutList(_, a2, l2) = l;
-        a1 := deref a2;
-        l1 := deref l2
+        Ref.put(deref a2, a1);
+        Ref.put(deref l2, l1)
 
     ///
     /// Replaces all occurrences of the `src` with `dst` in the given mutable list `v`.
@@ -687,8 +687,8 @@ mod MutList {
         if (n < capv and capv != minCap) {
             let len = deref l;
             let newCap = Order.max(n, minCap);
-            a := Array.copyOfRange(r, 0, newCap, deref a);
-            l := Order.min(len, newCap)
+            Ref.put(Array.copyOfRange(r, 0, newCap, deref a), a);
+            Ref.put(Order.min(len, newCap), l)
         }
         else
             ()
@@ -713,7 +713,7 @@ mod MutList {
             let MutList(r, a, l0) = v;
             let minCap = minCapacity();
             let c = Order.max(l, minCap);
-            l0 := l;
+            Ref.put(l, l0);
             Array.updateSequence!(0, deref a, Array.empty(r, c))
         }
         else
@@ -728,7 +728,7 @@ mod MutList {
     ///
     pub def reserve!(n: Int32, v: MutList[a, r]): Unit \ r =
         let MutList(r, a, l) = v;
-        a := Array.copyOfRange(r, 0, (deref l) + n, deref a)
+        Ref.put(Array.copyOfRange(r, 0, deref l + n, deref a), a)
 
     ///
     /// Returns `v` as an immutable list.
@@ -823,7 +823,7 @@ mod MutList {
             let i = deref ix;
             if (i < len1) {
                 let x = Array.get(i, deref a);
-                ix := i + 1;
+                Ref.put(i + 1, ix);
                 Some(x)
             } else {
                 None
@@ -957,7 +957,7 @@ mod MutList {
     ///
     pub def sortWith!(cmp: (a,a) -> Comparison, v: MutList[a, r]): Unit \ r =
         let MutList(_, a, l) = v;
-        Array.sortWithin!(cmp, 0, (deref l) - 1, deref a)
+        Array.sortWithin!(cmp, 0, deref l - 1, deref a)
 
     ///
     /// Shuffles `v` using the Fisher–Yates shuffle.

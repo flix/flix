@@ -816,14 +816,12 @@ mod Nec {
         let cursor = ref vl @ rc;
         let next = () -> match (deref cursor) {
             case None             => None
-            case Some(OneLeft(x)) => {
-                cursor := None;
+            case Some(OneLeft(x)) =>
+                Ref.put(None, cursor);
                 Some(x)
-            }
-            case Some(SomeLeft(x, xs)) => {
-                cursor := Some(viewLeft(xs));
+            case Some(SomeLeft(x, xs)) =>
+                Ref.put(Some(viewLeft(xs)), cursor);
                 Some(x)
-            }
         };
         Iterator.iterate(rc, next)
 

@@ -139,8 +139,8 @@ mod Vector {
 
         StringBuilder.appendString!("Vector#{", sb);
 
-        let f = (x) -> {
-            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
+        let f = x -> {
+            if (not deref first) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
             StringBuilder.appendString!("${x}", sb)
         };
         forEach(f, v);
@@ -441,7 +441,7 @@ mod Vector {
         Array.put(s, 0, arr);
         let step = (i, x) -> {
             let s1 = f(deref acc, x);
-            acc := s1;
+            Ref.put(s1, acc);
             Array.put(s1, i+1, arr)
         };
         forEachWithIndex(step, v);
@@ -463,7 +463,7 @@ mod Vector {
                 ()
             else {
                 let s1 = f(get(i, v), deref acc);
-                acc := s1;
+                Ref.put(s1, acc);
                 Array.put(s1, i, arr);
                 loop(i - 1)
             }
@@ -670,13 +670,13 @@ mod Vector {
         let f = (i, v) -> {
             if (i == 0) {
                 arrayUpdateSeqV!(0, v, arr);
-                pos := length(v)
+                Ref.put(length(v), pos)
             } else {
                 let ix = deref pos;
                 arrayUpdateSeqV!(ix, sep, arr);
                 let ix1 = ix + sepLength;
                 arrayUpdateSeqV!(ix1, v, arr);
-                pos := ix1 + length(v)
+                Ref.put(ix1 + length(v), pos)
             }
         };
         forEachWithIndex(f, vs);
@@ -917,7 +917,7 @@ mod Vector {
         let arr = Array.empty(rc, len);
         forEach(v -> {
             let i = deref pos;
-            pos := i + length(v);
+            Ref.put(i + length(v), pos);
             arrayUpdateSeqV!(i, v, arr)
         }, vs);
         Array.toVector(arr)

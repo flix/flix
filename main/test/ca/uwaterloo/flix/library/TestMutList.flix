@@ -1656,7 +1656,7 @@ mod TestMutList {
         let f = _ -> {
             if (deref i < 76) {
                 discard MutList.pop!(v);
-                i := deref i + 1
+                Ref.put(deref i + 1, i)
             }
             else ()
         };

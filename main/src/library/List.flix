@@ -1323,7 +1323,7 @@ mod List {
         let next = () -> {
             match (deref ls) {
                 case Nil     => None
-                case x :: rs => ls := rs; Some(x)
+                case x :: rs => Ref.put(rs, ls); Some(x)
             }
         };
         Iterator.iterate(rc, next)
