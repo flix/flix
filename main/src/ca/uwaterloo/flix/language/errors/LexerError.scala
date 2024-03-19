@@ -90,6 +90,69 @@ object LexerError {
   }
 
   /**
+   * An error raised when a number contains a sequence of underscores.
+   *
+   * @param loc The location of the number literal.
+   */
+  case class DoubleUnderscoreInNumber(loc: SourceLocation) extends LexerError with Recoverable {
+    override def summary: String = s"Number has sequence of '_'"
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Number has sequence of '_'.
+         |
+         |${code(loc, "Ending here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+   * An error raised when a number ends on an underscore.
+   *
+   * @param loc The location of the number literal.
+   */
+  case class TrailingUnderscoreInNumber(loc: SourceLocation) extends LexerError with Recoverable {
+    override def summary: String = s"Number ends on a '_'."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Number ends on a '_'.
+         |
+         |${code(loc, "Here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
+   * An error raised when the digits of a hex literal starts with an '_'
+   *
+   * @param loc The location of the number literal.
+   */
+  case class HexLiteralStartsOnUnderscore(loc: SourceLocation) extends LexerError with Recoverable {
+    override def summary: String = s"Hex literal starts on a '_'."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Hex literal starts on a '_'.
+         |
+         |${code(loc, "Here")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = None
+  }
+
+  /**
     * An error raised when block-comments are nested too deep.
     *
     * @param loc The location of the opening "${".

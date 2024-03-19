@@ -293,10 +293,15 @@ object Parser2 {
   /**
    * Wrap the next token in an error.
    */
-  private def advanceWithError(error: Parser2Error)(implicit s: State): Mark.Closed = {
-    val mark = open()
+  private def advanceWithError(error: Parser2Error, mark: Option[Mark.Opened] = None)(implicit s: State): Mark.Closed = {
+    val m = mark.getOrElse(open())
+    nth(0) match {
+      // Avoid double reporting lexer errors.
+      case TokenKind.Err(_) =>
+      case _ => s.errors.append(error)
+    }
     advance()
-    closeWithError(mark, error)
+    close(m, TreeKind.ErrorTree(error))
   }
 
   /**
@@ -365,14 +370,7 @@ object Parser2 {
    */
   private def expect(kind: TokenKind)(implicit s: State): Unit = {
     if (!eat(kind)) {
-      nth(0) match {
-        // Don't produce more errors on top of lexer errors
-        case TokenKind.Err(_) =>
-        case t =>
-          val mark = open()
-          val error = Parser2Error.DevErr(currentSourceLocation(), s"Expected $kind, but found $t")
-          closeWithError(mark, error)
-      }
+      advanceWithError(Parser2Error.DevErr(currentSourceLocation(), s"Expected $kind, but found ${nth(0)}"))
     }
   }
 
@@ -381,14 +379,7 @@ object Parser2 {
    */
   private def expectAny(kinds: List[TokenKind])(implicit s: State): Unit = {
     if (!eatAny(kinds)) {
-      nth(0) match {
-        // Don't produce more errors on top of lexer errors
-        case TokenKind.Err(_) =>
-        case t =>
-          val mark = open()
-          val error = Parser2Error.DevErr(currentSourceLocation(), s"Expected one of ${kinds.mkString(", ")} but found $t")
-          closeWithError(mark, error)
-      }
+      advanceWithError(Parser2Error.DevErr(currentSourceLocation(), s"Expected one of ${kinds.mkString(", ")} but found ${nth(0)}"))
     }
   }
 
@@ -450,6 +441,7 @@ object Parser2 {
 
     private def run()(implicit s: State): Int = {
       def isAtEnd(): Boolean = at(rightDelim) || optionallyWith.exists { case (indicator, _) => at(indicator) }
+
       if (!at(leftDelim)) {
         return 0
       }
@@ -666,9 +658,7 @@ object Parser2 {
         case TokenKind.KeywordType => typeAlias(mark)
         case TokenKind.KeywordEff => effect(mark)
         case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumeration(mark)
-        case _ =>
-          advance()
-          closeWithError(mark, Parser2Error.DevErr(currentSourceLocation(), s"Expected declaration but found ${nth(0)}"))
+        case at => advanceWithError(Parser2Error.DevErr(currentSourceLocation(), s"Expected declaration but found $at"), Some(mark))
       }
     }
 
@@ -730,9 +720,7 @@ object Parser2 {
             case TokenKind.KeywordLaw => law(mark)
             case TokenKind.KeywordDef => signature(mark)
             case TokenKind.KeywordType => associatedTypeSig(mark)
-            case _ =>
-              advance()
-              closeWithError(mark, Parser2Error.DevErr(currentSourceLocation(), s"Expected associated type, signature or law"))
+            case at => advanceWithError(Parser2Error.DevErr(currentSourceLocation(), s"Expected associated type, signature or law but found $at"), Some(mark))
           }
         }
         expect(TokenKind.CurlyR)
@@ -760,9 +748,7 @@ object Parser2 {
           nth(0) match {
             case TokenKind.KeywordDef => definition(mark)
             case TokenKind.KeywordType => associatedTypeDef(mark)
-            case _ =>
-              advance()
-              closeWithError(mark, Parser2Error.DevErr(currentSourceLocation(), s"Expected associated type or definition"))
+            case at => advanceWithError(Parser2Error.DevErr(currentSourceLocation(), s"Expected associated type or definition, found $at"), Some(mark))
           }
         }
         expect(TokenKind.CurlyR)
@@ -1611,7 +1597,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordWith)
       name(NAME_EFFECT, allowQualified = true)
-      if (at(TokenKind.CurlyL)){
+      if (at(TokenKind.CurlyL)) {
         separated(withRule)
           .by(TokenKind.Comma, optional = true)
           .within(TokenKind.CurlyL, TokenKind.CurlyR)
@@ -2132,7 +2118,7 @@ object Parser2 {
           expect(TokenKind.Equal)
           expression()
           close(mark, TreeKind.Expr.RecordOpUpdate)
-        case k => advanceWithError(Parser2Error.DevErr(currentSourceLocation(), s"Expected record operation but found $k"))
+        case k => advanceWithError(Parser2Error.DevErr(currentSourceLocation(), s"Expected record operation but found $k"), Some(mark))
       }
     }
 
@@ -2702,9 +2688,6 @@ object Parser2 {
     }
 
     private def termList()(implicit s: State): Mark.Closed = {
-      if (!at(TokenKind.ParenL)) {
-        println(currentSourceLocation())
-      }
       assert(at(TokenKind.ParenL))
       val mark = open()
       separated(() => Expr.expression())
