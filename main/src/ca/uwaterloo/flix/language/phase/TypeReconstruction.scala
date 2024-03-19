@@ -660,6 +660,10 @@ object TypeReconstruction {
       val ts = terms.map(t => visitPattern(t))
       TypedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, ts, subst(tvar), loc)
 
+    case KindedAst.Predicate.Body.Spread(pred, den0, polarity, fixity, exp, tvar, loc) =>
+      val e = visitExp(exp)
+      TypedAst.Predicate.Body.Spread(pred, den0, polarity, fixity, e, subst(tvar), loc)
+
     case KindedAst.Predicate.Body.Functional(outVars, exp, loc) =>
       val e = visitExp(exp)
       TypedAst.Predicate.Body.Functional(outVars, e, loc)

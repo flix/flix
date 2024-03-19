@@ -1118,6 +1118,12 @@ object Kinder {
         terms => KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, Type.freshVar(Kind.Predicate, loc.asSynthetic), loc)
       }
 
+    case ResolvedAst.Predicate.Body.Spread(pred, den, polarity, fixity, exp0, loc) =>
+      val expVal = visitExp(exp0, kenv, taenv, henv, root)
+      mapN(expVal) {
+        exp => KindedAst.Predicate.Body.Spread(pred, den, polarity, fixity, exp, Type.freshVar(Kind.Predicate, loc.asSynthetic), loc)
+      }
+
     case ResolvedAst.Predicate.Body.Functional(outVars, exp0, loc) =>
       val expVal = visitExp(exp0, kenv, taenv, henv, root)
       mapN(expVal) {

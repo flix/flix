@@ -291,6 +291,7 @@ object Namer {
       // Introduce a symbol for every unique ident in the body, removing wildcards
       val idents = bs.flatMap {
         case DesugaredAst.Predicate.Body.Atom(_, _, _, _, terms, _) => terms.flatMap(freeVars)
+        case DesugaredAst.Predicate.Body.Spread(_, _, _, _, _, _) => Nil
         case DesugaredAst.Predicate.Body.Functional(idents, _, _) => idents
         case DesugaredAst.Predicate.Body.Guard(_, _) => Nil
       }.distinct.filterNot(_.isWild)
@@ -1124,6 +1125,12 @@ object Namer {
     case DesugaredAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, loc) =>
       val ts = terms.map(visitPattern)
       Validation.success(NamedAst.Predicate.Body.Atom(pred, den, polarity, fixity, ts, loc))
+
+    case DesugaredAst.Predicate.Body.Spread(pred, den, polarity, fixity, exp, loc) =>
+      val expVal = visitExp(exp, ns0)
+      mapN(expVal) {
+        case e => NamedAst.Predicate.Body.Spread(pred, den, polarity, fixity, e, loc)
+      }
 
     case DesugaredAst.Predicate.Body.Functional(idents, exp, loc) =>
       val expVal = visitExp(exp, ns0)

@@ -587,6 +587,10 @@ object Safety {
       // Combine the messages
       err1 ++ err2
 
+    case Predicate.Body.Spread(_, _, _, _, exp, _, _) =>
+      // A predicate spread does not bind any variables.
+      visitExp(exp, renv)
+
     case Predicate.Body.Functional(_, exp, loc) =>
       // check for non-positively in variables (free variables in exp).
       val inVars = freeVars(exp).keySet intersect quantVars
@@ -624,6 +628,10 @@ object Safety {
         // Case 2: A negative atom does not positively define any variables.
         Set.empty
     }
+
+    case Predicate.Body.Spread(_, _, _, _, _, _, _) =>
+      // A predicate spread cannot contain variables, hence cannot bind any variables.
+      Set.empty
 
     case Predicate.Body.Functional(_, _, _) =>
       // A functional does not positively bind any variables. Not even its outVars.
