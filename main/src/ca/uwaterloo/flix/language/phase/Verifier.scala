@@ -51,6 +51,13 @@ object Verifier {
         println(s"  tpe1 = $tpe1")
         println(s"  tpe2 = $tpe2")
         println()
+
+      case MismatchedShape(tpe, exp, loc) =>
+        println(s"Mismatched shape near ${loc.format}")
+        println()
+        println(s"  tpe      = $tpe")
+        println(s"  expected = \'${exp}\'")
+        println()
     }
   }
 
@@ -237,7 +244,7 @@ object Verifier {
           val List(arrt) = ts
           arrt match {
             case MonoType.Array(_) => // fine
-            case _ => fail(s"AtomicOp.ArrayLength: expected array type, got: $arrt", loc)
+            case _ => throw MismatchedShape(tpe, s"An Array", loc)
           }
           check(expected = MonoType.Int32)(actual = tpe, loc)
 
@@ -250,7 +257,7 @@ object Verifier {
           tpe match {
             case MonoType.Array(elmt) =>
               ts.foreach(t => check(expected = elmt)(actual = t, loc))
-            case _ => fail(s"AtomicOp.ArrayLit: expected array type, got: $tpe", loc)
+            case _ => throw MismatchedShape(tpe, s"An Array", loc)
           }
           tpe
 
@@ -259,7 +266,7 @@ object Verifier {
           check(expected = MonoType.Int32)(actual = idxt, loc)
           arrt match {
             case MonoType.Array(elmt) => check(expected = elmt)(actual = tpe, loc)
-            case _ => fail(s"AtomicOp.ArrayLoad: expected array type, got $arrt", loc)
+            case _ => throw MismatchedShape(tpe, s"An Array", loc)
           }
           tpe
 
@@ -268,7 +275,7 @@ object Verifier {
           check(expected = MonoType.Int32)(actual = idxt, loc)
           arrt match {
             case MonoType.Array(elmt) => check(expected = elmt)(actual = expt, loc)
-            case _ => fail(s"AtomicOp.ArrayStore: expected array type, got $arrt", loc)
+            case _ => throw MismatchedShape(tpe, s"An Array", loc)
           }
           check(expected = MonoType.Unit)(actual = tpe, loc)
 
@@ -379,10 +386,9 @@ object Verifier {
   }
 
   /**
-   * Report verifier error with description `desc`
+   * An exception raised because `tpe` did not match an expected shape
    */
-  private def fail(desc: String, loc: SourceLocation): Unit =
-    throw InternalCompilerException(s"Verifier failed: $desc", loc)
+  private case class MismatchedShape(tpe: MonoType, expected: String, loc: SourceLocation) extends RuntimeException
 
   /**
    * An exception raised because the `expected` type does not match the `found` type.
