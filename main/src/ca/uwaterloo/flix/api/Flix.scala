@@ -540,8 +540,14 @@ class Flix {
     val result = for {
       afterReader <- Reader.run(getInputs)
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
+
+      // TODO: Readd old pipeline.
+
+      // TODO: wrap parser2 and weeder2 in tryRuns and throw out result and errors.
+      // We just want hard throws to surface.
       afterParser2 <- Parser2.run(afterLexer, cachedParserCst, changeSet)
       afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2, cachedWeederAst, changeSet)
+
       afterDesugar = Desugar.run(afterWeeder2, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)

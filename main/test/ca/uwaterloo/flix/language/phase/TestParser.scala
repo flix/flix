@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
+import ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.language.errors.{LexerError, Parser2Error, WeederError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
@@ -203,11 +204,11 @@ class TestParser extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[WeederError.IllegalModuleName](result)
+    expectError[Parser2Error](result)
   }
 
   // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
-  test("IllegalModuleName.05") {
+  test("IllegalModuleName.02") {
     val input =
       """
         |mod Mymod.othermod {
@@ -218,7 +219,7 @@ class TestParser extends AnyFunSuite with TestUtils {
   }
 
   // TODO: Move. Parse error "Expected UppercaseName found LowerCaseName"
-  test("IllegalModuleName.06") {
+  test("IllegalModuleName.03") {
     val input =
       """
         |mod Mymod {

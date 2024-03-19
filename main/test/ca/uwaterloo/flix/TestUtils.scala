@@ -47,12 +47,17 @@ trait TestUtils {
 
     case Result.Err(errors) =>
       val expected = classTag.runtimeClass
-      val actuals = errors.map(_.getClass).toList
+      val actuals = errors.map(e => (e, e.getClass)).toList
+      actuals.find(p => expected.isAssignableFrom(p._2)) match {
+        case Some((actual, _)) =>
+          // Require known source location on the expected error.
+          if (actual.loc == SourceLocation.Unknown) {
+            fail("Error contains unknown source location.")
+          }
+        case None => fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${actuals.map(p => p._2.getName)}.")
+      }
 
-      if (!actuals.exists(expected.isAssignableFrom(_)))
-        fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${actuals.map(_.getName)}.")
-      else if (errors.exists(e => e.loc == SourceLocation.Unknown))
-        fail("Error contains unknown source location.")
+
   }
 
   /**

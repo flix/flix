@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.errors.Parser2Error
 import ca.uwaterloo.flix.language.errors.WeederError._
-import ca.uwaterloo.flix.util.Validation.{traverse, _}
+import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
@@ -1685,6 +1685,15 @@ object Weeder2 {
       assert(tree.kind == TreeKind.Expr.StringInterpolation)
       val init = WeededAst.Expr.Cst(Ast.Constant.Str(""), tree.loc)
       var isDebug = false
+
+      println(Parser2.syntaxTreeToDebugString(tree))
+
+      // Check for empty interpolation
+      if (tryPick(TreeKind.Expr.Expr, tree.children).isEmpty) {
+        val error = EmptyInterpolatedExpression(tree.loc)
+        return Validation.toSoftFailure(Expr.Error(error), error)
+      }
+
       Validation.fold(tree.children, init: WeededAst.Expr) {
         // A string part: Concat it onto the result
         case (acc, Child.TokenChild(token)) =>

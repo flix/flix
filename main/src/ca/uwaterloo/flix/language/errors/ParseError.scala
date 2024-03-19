@@ -21,6 +21,9 @@ import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 
+
+// TODO: Remove Parser2ERror in favor of this one
+
 /**
   * An error raised to indicate a parse error.
   *
