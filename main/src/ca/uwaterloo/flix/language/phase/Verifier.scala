@@ -22,8 +22,8 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, ReducedAst, SemanticO
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
-  * Verify the AST before bytecode generation.
-  */
+ * Verify the AST before bytecode generation.
+ */
 object Verifier {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Verifier") {
@@ -233,6 +233,45 @@ object Verifier {
           check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
           tpe
 
+        case AtomicOp.ArrayLength =>
+          val List(arrt) = ts
+          arrt match {
+            case MonoType.Array(_) => // fine
+            case _ => fail(s"AtomicOp.ArrayLength: expected array type, got: $arrt", loc)
+          }
+          check(expected = MonoType.Int32)(actual = tpe, loc)
+
+        case AtomicOp.ArrayNew =>
+          val List(elmt, lent) = ts
+          check(expected = MonoType.Int32)(actual = lent, loc)
+          check(expected = MonoType.Array(elmt))(actual = tpe, loc)
+
+        case AtomicOp.ArrayLit =>
+          tpe match {
+            case MonoType.Array(elmt) =>
+              ts.foreach(t => check(expected = elmt)(actual = t, loc))
+            case _ => fail(s"AtomicOp.ArrayLit: expected array type, got: $tpe", loc)
+          }
+          tpe
+
+        case AtomicOp.ArrayLoad =>
+          val List(arrt, idxt) = ts
+          check(expected = MonoType.Int32)(actual = idxt, loc)
+          arrt match {
+            case MonoType.Array(elmt) => check(expected = elmt)(actual = tpe, loc)
+            case _ => fail(s"AtomicOp.ArrayLoad: expected array type, got $arrt", loc)
+          }
+          tpe
+
+        case AtomicOp.ArrayStore =>
+          val List(arrt, idxt, expt) = ts
+          check(expected = MonoType.Int32)(actual = idxt, loc)
+          arrt match {
+            case MonoType.Array(elmt) => check(expected = elmt)(actual = expt, loc)
+            case _ => fail(s"AtomicOp.ArrayStore: expected array type, got $arrt", loc)
+          }
+          check(expected = MonoType.Unit)(actual = tpe, loc)
+
         case _ => tpe // TODO: VERIFIER: Add rest
       }
 
@@ -320,8 +359,8 @@ object Verifier {
   }
 
   /**
-    * Asserts that the the given type `expected` is equal to the `actual` type.
-    */
+   * Asserts that the the given type `expected` is equal to the `actual` type.
+   */
   private def check(expected: MonoType)(actual: MonoType, loc: SourceLocation): MonoType = {
     if (expected == actual)
       expected
@@ -330,8 +369,8 @@ object Verifier {
   }
 
   /**
-    * Asserts that the two given types `tpe1` and `tpe2` are the same.
-    */
+   * Asserts that the two given types `tpe1` and `tpe2` are the same.
+   */
   private def checkEq(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): MonoType = {
     if (tpe1 == tpe2)
       tpe1
@@ -340,13 +379,19 @@ object Verifier {
   }
 
   /**
-    * An exception raised because the `expected` type does not match the `found` type.
-    */
+   * Report verifier error with description `desc`
+   */
+  private def fail(desc: String, loc: SourceLocation): Unit =
+    throw InternalCompilerException(s"Verifier failed: $desc", loc)
+
+  /**
+   * An exception raised because the `expected` type does not match the `found` type.
+   */
   private case class UnexpectedType(expected: MonoType, found: MonoType, loc: SourceLocation) extends RuntimeException
 
   /**
-    * An exception raised because `tpe1` is not equal to `tpe2`.
-    */
+   * An exception raised because `tpe1` is not equal to `tpe2`.
+   */
   private case class MismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation) extends RuntimeException
 
 }
