@@ -22,8 +22,8 @@ import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, ReducedAst, SemanticO
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
- * Verify the AST before bytecode generation.
- */
+  * Verify the AST before bytecode generation.
+  */
 object Verifier {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Verifier") {
@@ -368,8 +368,8 @@ object Verifier {
   }
 
   /**
-   * Asserts that the the given type `expected` is equal to the `actual` type.
-   */
+    * Asserts that the the given type `expected` is equal to the `actual` type.
+    */
   private def check(expected: MonoType)(actual: MonoType, loc: SourceLocation): MonoType = {
     if (expected == actual)
       expected
@@ -378,8 +378,8 @@ object Verifier {
   }
 
   /**
-   * Asserts that the two given types `tpe1` and `tpe2` are the same.
-   */
+    * Asserts that the two given types `tpe1` and `tpe2` are the same.
+    */
   private def checkEq(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): MonoType = {
     if (tpe1 == tpe2)
       tpe1
@@ -388,18 +388,18 @@ object Verifier {
   }
 
   /**
-   * An exception raised because `tpe` did not match an expected shape
-   */
+    * An exception raised because `tpe` did not match an expected shape
+    */
   private case class MismatchedShape(tpe: MonoType, expected: String, loc: SourceLocation) extends RuntimeException
 
   /**
-   * An exception raised because the `expected` type does not match the `found` type.
-   */
+    * An exception raised because the `expected` type does not match the `found` type.
+    */
   private case class UnexpectedType(expected: MonoType, found: MonoType, loc: SourceLocation) extends RuntimeException
 
   /**
-   * An exception raised because `tpe1` is not equal to `tpe2`.
-   */
+    * An exception raised because `tpe1` is not equal to `tpe2`.
+    */
   private case class MismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation) extends RuntimeException
 
 }
