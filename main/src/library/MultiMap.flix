@@ -110,6 +110,11 @@ mod MultiMap {
         Map.isEmpty(m1)
 
     ///
+    /// Returns `true` if and only if `m` is a non-empty MultiMap.
+    ///
+    pub def nonEmpty(m: MultiMap[k, v]): Bool = not isEmpty(m)
+
+    ///
     /// Returns `Some(vs)` if `k => vs` is in `m`.
     ///
     /// Otherwise returns `Nil`.

@@ -66,6 +66,11 @@ mod MutMap {
         Map.isEmpty(deref mm)
 
     ///
+    /// Returns `true` if and only if `m` is a non-empty map.
+    ///
+    pub def nonEmpty(m: MutMap[k, v, r]): Bool \ r = not isEmpty(m)
+
+    ///
     /// Optionally finds `k -> v` where `k` is the smallest key according to the `Order` instance of `k`.
     ///
     /// Returns `None` if `m` is empty.

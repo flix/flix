@@ -174,6 +174,11 @@ mod Chain {
     }
 
     ///
+    /// Returns true if and only if `c` is a non-empty chain.
+    ///
+    pub def nonEmpty(c: Chain[a]): Bool = not isEmpty(c)
+
+    ///
     /// Add element `x` to the left end of chain `c`.
     ///
     pub def cons(x: a, c: Chain[a]): Chain[a] = match c {

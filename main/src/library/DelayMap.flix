@@ -117,6 +117,12 @@ mod DelayMap {
         RedBlackTree.isEmpty(t)
 
     ///
+    /// Returns `true` if and only if `m` is a non-empty map.
+    ///
+    @Experimental
+    pub def nonEmpty(m: DelayMap[k, v]): Bool = not isEmpty(m)
+
+    ///
     /// Returns `m` with `k => v`.
     ///
     @Experimental

@@ -172,6 +172,11 @@ mod Set {
         RedBlackTree.isEmpty(t)
 
     ///
+    /// Returns true if and only if `s` is a non-empty set.
+    ///
+    pub def nonEmpty(s: Set[a]): Bool = not isEmpty(s)
+
+    ///
     /// Returns the singleton set containing `x`.
     ///
     /// `Set#{x}` is syntactic sugar for `singleton` i.e. `Set#{x} == singleton(x)`.

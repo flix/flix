@@ -127,6 +127,11 @@ mod MutSet {
         Set.isEmpty(deref ms)
 
     ///
+    /// Returns true if and only if `s` is a non-empty set.
+    ///
+    pub def nonEmpty(s: MutSet[a, r]): Bool \ r = not isEmpty(s)
+
+    ///
     /// Returns true if and only if `x` is a member of the mutable set `s`.
     ///
     pub def memberOf(x: a, s: MutSet[a, r]): Bool \ r with Order[a] =

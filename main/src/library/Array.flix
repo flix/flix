@@ -90,6 +90,11 @@ mod Array {
     pub def isEmpty(a: Array[a, r]): Bool = length(a) == 0
 
     ///
+    /// Returns `true` if the given array `a` is non-empty.
+    ///
+    pub def nonEmpty(a: Array[a, r]): Bool = not isEmpty(a)
+
+    ///
     /// Returns the length of the array `a`.
     ///
     pub def length(a: Array[a, r]): Int32 = $ARRAY_LENGTH$(a)

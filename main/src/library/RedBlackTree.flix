@@ -149,6 +149,11 @@ mod RedBlackTree {
     }
 
     ///
+    /// Returns `true` if and only if `t` is a non-empty tree.
+    ///
+    pub def nonEmpty(t: RedBlackTree[k, v]): Bool = not isEmpty(t)
+
+    ///
     /// Updates `t` with `k => v` if `k => v1` is in `t`.
     ///
     /// Otherwise, updates `t` with `k => v`.

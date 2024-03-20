@@ -151,6 +151,11 @@ mod List {
     }
 
     ///
+    /// Returns true if and only if `l` is a non-empty list.
+    ///
+    pub def nonEmpty(l: List[a]): Bool = not isEmpty(l)
+
+    ///
     /// Returns `Some(x)` if `x` is the first element of `l`.
     ///
     /// Returns `None` if `l` is empty.
