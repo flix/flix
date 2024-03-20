@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object Verifier {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Verifier") {
-    if (flix.options.xverify) {
+    if (true) {
       root.defs.values.foreach(d => visitDef(d)(root))
     }
     root
