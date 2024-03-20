@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.api.lsp.{CodeAction, CodeActionContext, CodeActionKind,
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
-import ca.uwaterloo.flix.language.errors.{RedundancyError, ResolutionError, TypeError}
+import ca.uwaterloo.flix.language.errors.{InstanceError, RedundancyError, ResolutionError, TypeError}
 import ca.uwaterloo.flix.util.Similarity
 
 object CodeActionProvider {
@@ -39,7 +39,7 @@ object CodeActionProvider {
         mkUseDef(qn.ident, uri) ++ mkFixMisspelling(qn, loc, env, uri)
       else
         Nil
-    case ResolutionError.UndefinedClass(qn, _, loc) if onSameLine(range, loc) =>
+    case ResolutionError.UndefinedTrait(qn, _, loc) if onSameLine(range, loc) =>
       if (qn.namespace.isRoot)
         mkUseClass(qn.ident, uri)
       else
@@ -78,7 +78,8 @@ object CodeActionProvider {
       mkDeriveMissingOrder(tpe, uri)
     case TypeError.MissingInstanceToString(tpe, _, loc) if onSameLine(range, loc) =>
       mkDeriveMissingToString(tpe, uri)
-
+    case InstanceError.MissingSuperClassInstance(tpe, sub, sup, loc) if onSameLine(range, loc) =>
+      mkDeriveMissingSuperClass(tpe, sup, uri)
     case _ => Nil
   }
 
@@ -369,6 +370,12 @@ object CodeActionProvider {
     */
   private def mkDeriveMissingToString(tpe: Type, uri: String)(implicit root: Root): Option[CodeAction] =
     mkDeriveMissing(tpe, "ToString", uri)
+
+  /**
+   * Returns a quickfix code action to derive the missing superclass for the given subclass.
+   */
+  private def mkDeriveMissingSuperClass(tpe: Type, superClass: Symbol.ClassSym, uri: String)(implicit root: Root): Option[CodeAction] =
+    mkDeriveMissing(tpe, superClass.name, uri)
 
   /**
     * Internal helper function for all `mkDeriveMissingX`.

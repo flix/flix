@@ -753,7 +753,7 @@ mod TestNel {
         let l = Nel(1, 2 :: Nil);
         let d1 = Nel.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushBack(1, d2);
         MutDeque.pushBack(2, d2);
 
@@ -765,7 +765,7 @@ mod TestNel {
         let l = Nel(3, 1 :: 2 :: Nil);
         let d1 = Nel.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushBack(1, d2);
         MutDeque.pushBack(2, d2);
         MutDeque.pushFront(3, d2);
@@ -778,7 +778,7 @@ mod TestNel {
         let l = Nel('a', 'b' :: 'c' :: Nil);
         let d1 = Nel.toMutDeque(rc, l);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushFront('c', d2);
         MutDeque.pushFront('b', d2);
         MutDeque.pushFront('a', d2);
@@ -793,14 +793,14 @@ mod TestNel {
     @test
     def forEach01(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Nel.forEach(x -> ri := x, Nel.singleton(1));
+        Nel.forEach(x -> Ref.put(x, ri), Nel.singleton(1));
         1 == deref ri
     }
 
     @test
     def forEach02(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Nel.forEach(x -> ri := x, Nel(1, 2 :: 3 :: Nil));
+        Nel.forEach(x -> Ref.put(x, ri), Nel(1, 2 :: 3 :: Nil));
         3 == deref ri
     }
 
@@ -811,14 +811,14 @@ mod TestNel {
     @test
     def forEachWithIndex01(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Nel.forEachWithIndex((i, _) -> ri := i, Nel.singleton(1));
+        Nel.forEachWithIndex((i, _) -> Ref.put(i, ri), Nel.singleton(1));
         0 == deref ri
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Nel.forEachWithIndex((i, _) -> ri := i, Nel(1, List#{2, 3}));
+        Nel.forEachWithIndex((i, _) -> Ref.put(i, ri), Nel(1, List#{2, 3}));
         2 == deref ri
     }
 
@@ -1058,7 +1058,7 @@ mod TestNel {
     def traverse01(): Bool = region rc {
         let st = ref 0 @ rc;
         let l = Nel.singleton(1);
-        let ans = Nel.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        let ans = Nel.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
         ans == Identity.Identity(Nel.singleton(1)) and deref st == 1
     }
 
@@ -1066,7 +1066,7 @@ mod TestNel {
     def traverse02(): Bool = region rc {
         let st = ref 0 @ rc;
         let l = Nel.cons(1, Nel.singleton(2));
-        let ans = Nel.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        let ans = Nel.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
         ans == Identity.Identity(Nel.cons(1, Nel.singleton(2))) and deref st == 2
     }
 
@@ -1074,7 +1074,7 @@ mod TestNel {
     def traverse03(): Bool = region rc {
         let st = ref 0 @ rc;
         let l = Nel.cons(1, Nel.cons(2, Nel.singleton(3)));
-        let ans = Nel.traverse(x -> {st := x; Identity.Identity(x)}, l);
+        let ans = Nel.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, l);
         ans == Identity.Identity(Nel.cons(1, Nel.cons(2, Nel.singleton(3)))) and deref st == 3
     }
 
@@ -1139,7 +1139,7 @@ mod TestNel {
     @test
     def shuffle01(): Bool \ IO =
         let l = Nel.singleton(1);
-        match Nel.shuffle(Random.new(), l) {
+        match Nel.shuffle(Random.fresh(), l) {
             case Some(ll) => Nel.length(ll) == 1 and (ll |> Nel.toList |> List.toSet) == Set#{1}
             case _        => false
         }
@@ -1147,7 +1147,7 @@ mod TestNel {
     @test
     def shuffle02(): Bool \ IO =
         let l = Nel.cons(1, Nel.cons(2, Nel.singleton(3)));
-        match Nel.shuffle(Random.new(), l) {
+        match Nel.shuffle(Random.fresh(), l) {
             case Some(ll) => Nel.length(ll) == 3 and (ll |> Nel.toList |> List.toSet) == Set#{1, 2, 3}
             case _        => false
         }
@@ -1155,7 +1155,7 @@ mod TestNel {
     @test
     def shuffle03(): Bool \ IO =
         let l = Nel.cons(1, Nel.cons(2, Nel.cons(3, Nel.cons(4, Nel.cons(5, Nel.cons(6, Nel.cons(7, Nel.singleton(8))))))));
-        match Nel.shuffle(Random.new(), l) {
+        match Nel.shuffle(Random.fresh(), l) {
             case Some(ll) => Nel.length(ll) == 8 and
                                 (ll |> Nel.toList |> List.toSet) == Set#{1, 2, 3, 4, 5, 6, 7, 8}
             case _        => false

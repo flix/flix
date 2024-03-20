@@ -127,7 +127,7 @@ mod Nel {
     ///
     pub def toString(l: Nel[a]): String with ToString[a] = region rc {
         let Nel(x, xs) = l;
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         StringBuilder.appendString!("Nel(${x}, ", sb);
 
         let list = List.toString(xs);
@@ -558,7 +558,7 @@ mod Nel {
     /// Returns `l` as a vector.
     ///
     pub def toVector(l: Nel[a]): Vector[a] = region rc {
-        let arr = Array.new(rc, length(l));
+        let arr = Array.empty(rc, length(l));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), l);
         Array.toVector(arr)
     }
@@ -567,7 +567,7 @@ mod Nel {
     /// Returns `l` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], l: Nel[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 

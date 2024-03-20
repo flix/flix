@@ -104,7 +104,7 @@ pub def coerce(x: t[a]): a with Coerce[t] = Coerce.coerce(x)
 /// Converts `x` to a string and prints it to standard out followed by a new line.
 ///
 pub def println(x: a): Unit \ IO with ToString[a] =
-    import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
+    import static java_get_field java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
     import java.io.PrintStream.println(String): Unit \ IO;
     x |> ToString.toString |> println(getOut())
 
@@ -114,34 +114,10 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
 
 ///
-/// Prints the stringified representation of `x`.
-///
-/// WARNING: The debug function is pure hence if the
-/// result is unused it may be removed by the compiler!
-///
-def debug(x: a): a = masked_cast(Debug.debugWithPrefix("", x))
-
-///
-/// Prints the stringified representation of `x`.
-///
-/// WARNING: The debug function is pure hence if the
-/// result is unused it may be removed by the compiler!
-///
-def debug!(x: a): a = masked_cast(Debug.debugWithPrefix("", x))
-
-///
-/// Prints the stringified representation of `x`.
-///
-/// WARNING: The debug function is pure hence if the
-/// result is unused it may be removed by the compiler!
-///
-def debug!!(x: a): a = masked_cast(Debug.debugWithPrefix("", x))
-
-///
 /// Crashes the current process with the given message `m`.
 ///
 pub def bug!(m: String): a = masked_cast({
-    import static get java.lang.System.err: ##java.io.PrintStream \ {} as getErr;
+    import static java_get_field java.lang.System.err: ##java.io.PrintStream \ {} as getErr;
     import java.io.PrintStream.println(String): Unit \ IO;
     import java.lang.String.repeat(Int32): ##java.lang.String \ {};
     let prt = println(getErr());

@@ -53,7 +53,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
            |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
-         |pub class C[a] {
+         |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
          |    pub def cd(x: a): L[a] = D.DA(x)
          |    pub def cda(l: L[a]): a = match l {
@@ -84,7 +84,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileH,
       s"""
-         |pub class H[a] with C[a] {
+         |pub trait H[a] with C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = C.cf(x, y, z)
          |}
          |""".stripMargin)
@@ -105,7 +105,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
            |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
-         |pub class C[a] {
+         |pub trait C[a] {
          |    pub def cf(x: Int32, y: a, z: a): a = if (f(x) == x) y else z
          |    pub def cg(x: a): a
          |}
@@ -131,13 +131,13 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
            |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
-         |pub class C[a] {
+         |pub trait C[a] {
          |    pub def cf(x: String, y: a, z: a): a = if (f(x) == x) y else z
          |}
          |""".stripMargin)
     flix.addSourceCode(FileH,
       s"""
-         |pub class H[a] with C[a] {
+         |pub trait H[a] with C[a] {
          |    pub def cf(x: String, y: a, z: a): a = C.cf(x, y, z)
          |}
          |""".stripMargin)
@@ -147,7 +147,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   test("Incremental.03") {
     flix.addSourceCode(FileA,
       s"""
-         |pub class C[a] {
+         |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
          |    pub def cd(x: a): D[a] = D.DA(x)
          |    pub def cda(d: D[a]): a = match d {
@@ -186,7 +186,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
            |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
-         |pub class C[a] {
+         |pub trait C[a] {
          |    pub def cf(x: Int64, b: Int64, y: a, z: a): a = if (f(x, b)) y else z
          |    pub def cd(x: a): D[a]
          |    pub def cda(d: D[a]): a = match d {
@@ -215,7 +215,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
          |""".stripMargin)
     flix.addSourceCode(FileH,
       s"""
-         |pub class H[a] with C[a] {
+         |pub trait H[a] with C[a] {
          |    pub def cf(x: Int64, b: Int64, y: a, z: a): a = C.cf(x, b, y, z)
          |}
          |""".stripMargin)
@@ -237,7 +237,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
            |""".stripMargin)
     flix.addSourceCode(FileC,
       s"""
-         |pub class C[a] {
+         |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (F.f(x) == x) y else z
          |    pub def cd(x: a): DDD.D[a] =
          |        use DDD.D;
@@ -272,7 +272,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   test("Incremental.07") {
     flix.addSourceCode(FileC,
       s"""
-         |pub class C[a] {
+         |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
          |    pub def cd(x: a): L[a] = { x = x }
          |    pub def cda(l: L[a]): a = l.x
@@ -289,7 +289,7 @@ class TestIncremental extends AnyFunSuite with BeforeAndAfter with TestUtils {
   test("Incremental.08") {
     flix.addSourceCode(FileC,
       s"""
-         |pub class C[a] {
+         |pub trait C[a] {
          |    pub def cf(x: Bool, y: a, z: a): a = if (f(x) == x) y else z
          |    pub def cd(x: a): L[a] = D.DA(x)
          |    pub def cda(l: L[a]): a = match l {

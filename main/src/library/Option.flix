@@ -156,6 +156,11 @@ instance Iterable[Option] {
 mod Option {
 
     ///
+    /// Returns the empty option variant `None`.
+    ///
+    pub def empty(): Option[a] = None
+
+    ///
     /// Returns `true` iff `o` is `None`.
     ///
     pub def isEmpty(o: Option[a]): Bool = match o {

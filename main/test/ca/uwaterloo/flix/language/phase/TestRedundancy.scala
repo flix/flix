@@ -1462,7 +1462,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("UnusedFormalParam.Instance.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    pub def f(x: a): a
         |}
         |
@@ -1509,9 +1509,9 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("RedundantTypeConstraint.Class.01") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a] with C[a], C[a]
+        |trait D[a] with C[a], C[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantTypeConstraint](result)
@@ -1520,11 +1520,11 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("RedundantTypeConstraint.Class.02") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a] with C[a]
+        |trait D[a] with C[a]
         |
-        |class E[a] with C[a], D[a]
+        |trait E[a] with C[a], D[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[RedundancyError.RedundantTypeConstraint](result)
@@ -1533,7 +1533,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("RedundantTypeConstraint.Def.01") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
         |pub def f(x: a): Bool with C[a], C[a] = ???
         |""".stripMargin
@@ -1544,9 +1544,9 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("RedundantTypeConstraint.Def.02") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a] with C[a]
+        |trait D[a] with C[a]
         |
         |pub def f(x: a): Bool with C[a], D[a] = ???
         |""".stripMargin
@@ -1557,9 +1557,9 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("RedundantTypeConstraint.Sig.01") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a] {
+        |trait D[a] {
         |  pub def f(x: a): Bool with C[a], C[a]
         |}
         |""".stripMargin
@@ -1570,11 +1570,11 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("RedundantTypeConstraint.Sig.02") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a] with C[a]
+        |trait D[a] with C[a]
         |
-        |class E[a] {
+        |trait E[a] {
         |  pub def f(x: a): Bool with C[a], D[a]
         |}
         |""".stripMargin
@@ -1587,9 +1587,9 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       """
         |enum Box[a](a)
         |
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a]
+        |trait D[a]
         |
         |instance D[Box[a]] with C[a], C[a]
         |""".stripMargin
@@ -1602,11 +1602,11 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
       """
         |enum Box[a](a)
         |
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a] with C[a]
+        |trait D[a] with C[a]
         |
-        |class E[a]
+        |trait E[a]
         |
         |instance E[Box[a]] with C[a], C[a]
         |""".stripMargin
@@ -1614,10 +1614,10 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantTypeConstraint](result)
   }
 
-  test("UnusedFormalParam.Class.01") {
+  test("UnusedFormalParam.Trait.01") {
     val input =
       """
-        |pub class C[a] {
+        |pub trait C[a] {
         |  pub def f(x: a): String = "Hello!"
         |}
         |""".stripMargin
@@ -1835,8 +1835,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit \ IO =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ IO as newStringBuilder;
-        |    import new java.lang.Object(): ##java.lang.Object \ IO as newObject;
+        |    import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder \ IO as newStringBuilder;
+        |    import java_new java.lang.Object(): ##java.lang.Object \ IO as newObject;
         |    let _ =
         |        if (true)
         |            checked_cast((newObject(), newObject()))
@@ -1927,8 +1927,8 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     val input =
       """
         |def f(): Unit \ IO =
-        |    import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ IO as newStringBuilder;
-        |    import new java.lang.Object(): ##java.lang.Object \ IO as newObject;
+        |    import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder \ IO as newStringBuilder;
+        |    import java_new java.lang.Object(): ##java.lang.Object \ IO as newObject;
         |    let _ =
         |        if (true)
         |            checked_cast((newObject(), newObject()))

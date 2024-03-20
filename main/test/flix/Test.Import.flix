@@ -8,7 +8,7 @@ mod Test.Import {
 
   @test
   def testImport01(): Bool \ IO =
-    import new java.lang.StringBuffer(String): StringBuffer as newStringBuffer;
+    import java_new java.lang.StringBuffer(String): StringBuffer as newStringBuffer;
     import java.lang.StringBuffer.subSequence(Int32, Int32): ASeqOfChars;
     let sb = newStringBuffer("Hello world");
     let subStr = unchecked_cast(subSequence(sb, 6, 11) as String);
@@ -16,7 +16,7 @@ mod Test.Import {
 
   @test
   def testImport02(): Bool \ IO =
-    import new java.lang.StringBuffer(String): RenamedBuffer2 as newStringBuffer;
+    import java_new java.lang.StringBuffer(String): RenamedBuffer2 as newStringBuffer;
     import java.lang.StringBuffer.subSequence(Int32, Int32): CharSequence;
     let sb = newStringBuffer("Hello world");
     let subStr = unchecked_cast(subSequence(sb, 6, 11) as String);
@@ -30,7 +30,7 @@ mod Test.Import {
 
   @test
   def testImport03(): Bool \ IO =
-    import new java.lang.StringBuffer(String): RenamedBuffer1 as newStringBuffer;
+    import java_new java.lang.StringBuffer(String): RenamedBuffer1 as newStringBuffer;
     import java.lang.StringBuffer.subSequence(Int32, Int32): CharSequence;
     let sb = newStringBuffer("Hello world");
     let subStr = unchecked_cast(subSequence(sb, 6, 11) as String);
@@ -38,7 +38,7 @@ mod Test.Import {
 
   @test
   def testImport04(): ##java.sql.Time \ IO =
-    import new java.sql.Time(Int64): ##java.sql.Time \ IO as newTime;
+    import java_new java.sql.Time(Int64): ##java.sql.Time \ IO as newTime;
     newTime(1000i64)
   }
 

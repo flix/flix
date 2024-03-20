@@ -1356,14 +1356,14 @@ mod TestChain {
     @test
     def forEach01(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Chain.forEach(x -> ri := x, Chain.empty());
+        Chain.forEach(x -> Ref.put(x, ri), Chain.empty());
         21 == deref ri
     }
 
     @test
     def forEach02(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Chain.forEach(x -> ri := x, List.toChain(1 :: 2 :: 3 :: Nil));
+        Chain.forEach(x -> Ref.put(x, ri), List.toChain(1 :: 2 :: 3 :: Nil));
         3 == deref ri
     }
 
@@ -1374,14 +1374,14 @@ mod TestChain {
     @test
     def forEachWithIndex01(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Chain.forEachWithIndex((i, _) -> ri := i, Chain.empty());
+        Chain.forEachWithIndex((i, _) -> Ref.put(i, ri), Chain.empty());
         21 == deref ri
     }
 
     @test
     def forEachWithIndex02(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Chain.forEachWithIndex((i, _) -> ri := i, List.toChain(1 :: 2 :: 3 :: Nil));
+        Chain.forEachWithIndex((i, _) -> Ref.put(i, ri), List.toChain(1 :: 2 :: 3 :: Nil));
         2 == deref ri
     }
 
@@ -1438,7 +1438,7 @@ mod TestChain {
         let c = (Chain.empty(): Chain[Int32]);
         let d1 = Chain.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
 
         d1 `MutDeque.sameElements` d2
     }
@@ -1448,7 +1448,7 @@ mod TestChain {
         let c = Chain.singleton(1);
         let d1 = Chain.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushBack(1, d2);
 
         d1 `MutDeque.sameElements` d2
@@ -1459,7 +1459,7 @@ mod TestChain {
         let c = List.toChain(1 :: 2 :: Nil);
         let d1 = Chain.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushFront(1, d2);
         MutDeque.pushBack(2, d2);
 
@@ -1471,7 +1471,7 @@ mod TestChain {
         let c = List.toChain('a' :: 'b' :: 'c' :: Nil);
         let d1 = Chain.toMutDeque(rc, c);
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushFront('b', d2);
         MutDeque.pushBack('c', d2);
         MutDeque.pushFront('a', d2);
@@ -1882,7 +1882,7 @@ mod TestChain {
     def traverse01(): Bool = region rc {
         let st = ref 0 @ rc;
         let c = Chain.empty();
-        let ans = Chain.traverse(x -> {st := x; Identity.Identity(x)}, c);
+        let ans = Chain.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, c);
         ans == Identity.Identity(Chain.empty()) and deref st == 0
     }
 
@@ -1890,7 +1890,7 @@ mod TestChain {
     def traverse02(): Bool = region rc {
         let st = ref 0 @ rc;
         let c = Chain.singleton(1);
-        let ans = Chain.traverse(x -> {st := x; Identity.Identity(x)}, c);
+        let ans = Chain.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, c);
         ans == Identity.Identity(Chain.singleton(1)) and deref st == 1
     }
 
@@ -1898,7 +1898,7 @@ mod TestChain {
     def traverse03(): Bool = region rc {
         let st = ref 0 @ rc;
         let c = List.toChain(1 :: 2 :: Nil);
-        let ans = Chain.traverse(x -> {st := x; Identity.Identity(x)}, c);
+        let ans = Chain.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, c);
         ans == Identity.Identity(List.toChain(1 :: 2 :: Nil)) and deref st == 2
     }
 
@@ -1906,7 +1906,7 @@ mod TestChain {
     def traverse04(): Bool = region rc {
         let st = ref 0 @ rc;
         let c = List.toChain(1 :: 2 :: 3 :: Nil);
-        let ans = Chain.traverse(x -> {st := x; Identity.Identity(x)}, c);
+        let ans = Chain.traverse(x -> {Ref.put(x, st); Identity.Identity(x)}, c);
         ans == Identity.Identity(List.toChain(1 :: 2 :: 3 :: Nil)) and deref st == 3
     }
 
@@ -1981,28 +1981,28 @@ mod TestChain {
     @test
     def shuffle01(): Bool \ IO =
         let l: List[Int32] = Nil;
-        let c = List.toChain(l) |> Chain.shuffle(Random.new());
+        let c = List.toChain(l) |> Chain.shuffle(Random.fresh());
 
         Chain.length(c) == 0 and Chain.toSet(c) == Set#{}
 
     @test
     def shuffle02(): Bool \ IO =
         let l = 1 :: Nil;
-        let c = List.toChain(l) |> Chain.shuffle(Random.new());
+        let c = List.toChain(l) |> Chain.shuffle(Random.fresh());
 
         Chain.length(c) == 1 and Chain.toSet(c) == Set#{1}
 
     @test
     def shuffle03(): Bool \ IO =
         let l = 1 :: 2 :: 3 :: Nil;
-        let c = List.toChain(l) |> Chain.shuffle(Random.new());
+        let c = List.toChain(l) |> Chain.shuffle(Random.fresh());
 
         Chain.length(c) == 3 and Chain.toSet(c) == Set#{1, 2, 3}
 
     @test
     def shuffle04(): Bool \ IO =
         let l = 0 :: 1 :: 2 :: 3 :: 4 :: 5 :: 6 :: 7 :: 8 :: 9 :: Nil;
-        let c = List.toChain(l) |> Chain.shuffle(Random.new());
+        let c = List.toChain(l) |> Chain.shuffle(Random.fresh());
 
         Chain.length(c) == 10 and Chain.toSet(c) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 

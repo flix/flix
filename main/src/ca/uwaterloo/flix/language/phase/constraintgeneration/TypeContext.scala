@@ -149,7 +149,7 @@ class TypeContext {
     * }}}
     */
   def unifyAllTypesM(tpes: List[Type], kind: Kind, loc: SourceLocation)(implicit level: Level, flix: Flix): Type = {
-    // For performance, avoid creating a fresh type var if the list is empty
+    // For performance, avoid creating a fresh type var if the list is non-empty
     tpes match {
       // Case 1: Nonempty list. Unify everything with the first type.
       case tpe1 :: rest =>
@@ -215,7 +215,8 @@ class TypeContext {
   /**
     * Replaces every occurrence of the effect symbol `sym` with pure in `eff`.
     *
-    * Note: Does not work for polymorphic effects.
+    * Note: Does not work for polymorphic effects. This should conceptually work
+    * like exiting a region or instead use set subtraction.
     */
   // TODO ASSOC-TYPES remove this once we introduce set effects
   def purifyEff(sym: Symbol.EffectSym, eff: Type): Type = {
@@ -226,7 +227,7 @@ class TypeContext {
         case _ => t
       }
       case Type.Apply(tpe1, tpe2, loc) => Type.Apply(visit(tpe1), visit(tpe2), loc)
-      case Type.Alias(cst, _, tpe, _) => visit(tpe)
+      case Type.Alias(_, _, tpe, _) => visit(tpe)
       case Type.AssocType(cst, arg, kind, loc) => Type.AssocType(cst, visit(arg), kind, loc)
     }
 

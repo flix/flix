@@ -105,16 +105,16 @@ mod TestResult {
     // replace                                                                 //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def replace01(): Bool = Result.replace(from = 3, to = 4, Err(false)) == Err(false)
+    def replace01(): Bool = Result.replace(src =  3, dst =  4, Err(false)) == Err(false)
 
     @test
-    def replace02(): Bool = (Result.replace(from = 3, to = 4, (Ok(2): Result[Unit, Int32]))) == Ok(2)
+    def replace02(): Bool = (Result.replace(src =  3, dst =  4, (Ok(2): Result[Unit, Int32]))) == Ok(2)
 
     @test
-    def replace03(): Bool = (Result.replace(from = 3, to = 4, (Ok(3)): Result[Unit, Int32])) == Ok(4)
+    def replace03(): Bool = (Result.replace(src =  3, dst =  4, (Ok(3): Result[Unit, Int32]))) == Ok(4)
 
     @test
-    def replace04(): Bool = (Result.replace(from = 3, to = 4, (Ok(4)): Result[Unit, Int32])) == Ok(4)
+    def replace04(): Bool = (Result.replace(src =  3, dst =  4, (Ok(4): Result[Unit, Int32]))) == Ok(4)
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
@@ -510,14 +510,14 @@ mod TestResult {
     @test
     def forEach01(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Result.forEach(x -> ri := x, (Ok(42): Result[Int32, Int32]));
+        Result.forEach(x -> Ref.put(x, ri), (Ok(42): Result[Int32, Int32]));
         42 == deref ri
     }
 
     @test
     def forEach02(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Result.forEach(x -> ri := x, (Err(42): Result[Int32, Int32]));
+        Result.forEach(x -> Ref.put(x, ri), (Err(42): Result[Int32, Int32]));
         21 == deref ri
     }
 

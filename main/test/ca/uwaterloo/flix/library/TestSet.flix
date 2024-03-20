@@ -538,8 +538,8 @@ def count07(): Bool = Set.count(i -> i > 3, Set#{7, 6}) == 2
 def count08(): Bool = region rc {
     let range = List.range(0, 2000);
     let s = range |> List.toSet;
-    let a = MutList.new(rc);
-    discard Set.count(x -> { let b = MutList.new(rc); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); true }, s);
+    let a = MutList.empty(rc);
+    discard Set.count(x -> { let b = MutList.empty(rc); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); true }, s);
     MutList.toList(a) == range
 }
 
@@ -609,8 +609,8 @@ def count08(): Bool = region rc {
     def sumWith08(): Bool = region rc {
         let range = List.range(0, 2000);
         let m = range |> List.toSet;
-        let a = MutList.new(rc);
-        discard Set.sumWith(k -> { let b = MutList.new(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
+        let a = MutList.empty(rc);
+        discard Set.sumWith(k -> { let b = MutList.empty(rc); MutList.push!(k, b); MutList.append!(MutList.toList(b), a); 1 }, m);
         MutList.toList(a) == range
     }
 
@@ -964,8 +964,8 @@ def map15(): Bool = Set.map(x -> x `Int32.remainder` 9, Set#{0, 5, 1, 10, 7, 19,
 def map16(): Bool = region rc {
     let range = List.range(0, 2000);
     let s = List.toSet(range);
-    let a = MutList.new(rc);
-    discard Set.map(x -> { let b = MutList.new(rc); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x }, s);
+    let a = MutList.empty(rc);
+    discard Set.map(x -> { let b = MutList.empty(rc); MutList.push!(x, b); MutList.append!(MutList.toList(b), a); x }, s);
     MutList.toList(a) == range
 }
 
@@ -1045,28 +1045,28 @@ def filterMap08(): Bool =
 // replace                                                                 //
 /////////////////////////////////////////////////////////////////////////////
 @test
-def replace01(): Bool = Set.replace(from = 3, to = 4, Set#{}) == Set#{}
+def replace01(): Bool = Set.replace(src = 3, dst = 4, Set#{}) == Set#{}
 
 @test
-def replace02(): Bool = Set.replace(from = 3, to = 4, Set#{1}) == Set#{1}
+def replace02(): Bool = Set.replace(src = 3, dst = 4, Set#{1}) == Set#{1}
 
 @test
-def replace03(): Bool = Set.replace(from = 3, to = 4, Set#{3}) == Set#{4}
+def replace03(): Bool = Set.replace(src = 3, dst = 4, Set#{3}) == Set#{4}
 
 @test
-def replace04(): Bool = Set.replace(from = 3, to = 4, Set#{4}) == Set#{4}
+def replace04(): Bool = Set.replace(src = 3, dst = 4, Set#{4}) == Set#{4}
 
 @test
-def replace05(): Bool = Set.replace(from = 3, to = 4, Set#{1, 2}) == Set#{1, 2}
+def replace05(): Bool = Set.replace(src = 3, dst = 4, Set#{1, 2}) == Set#{1, 2}
 
 @test
-def replace06(): Bool = Set.replace(from = 3, to = 4, Set#{1, 3}) == Set#{1, 4}
+def replace06(): Bool = Set.replace(src = 3, dst = 4, Set#{1, 3}) == Set#{1, 4}
 
 @test
-def replace07(): Bool = Set.replace(from = 3, to = 4, Set#{3, 2}) == Set#{4, 2}
+def replace07(): Bool = Set.replace(src = 3, dst = 4, Set#{3, 2}) == Set#{4, 2}
 
 @test
-def replace08(): Bool = Set.replace(from = 3, to = 4, Set#{3, 4}) == Set#{4}
+def replace08(): Bool = Set.replace(src = 3, dst = 4, Set#{3, 4}) == Set#{4}
 
 /////////////////////////////////////////////////////////////////////////////
 // partition                                                               //
@@ -1184,7 +1184,7 @@ def toMutDeque01(): Bool = region rc {
     let s: Set[Int32] = Set#{};
     let d1 = Set.toMutDeque(rc, s);
 
-    let d2 = MutDeque.new(rc);
+    let d2 = MutDeque.empty(rc);
 
     d1 `MutDeque.sameElements` d2
 }
@@ -1194,7 +1194,7 @@ def toMutDeque02(): Bool = region rc {
     let s = Set#{1};
     let d1 = Set.toMutDeque(rc, s);
 
-    let d2 = MutDeque.new(rc);
+    let d2 = MutDeque.empty(rc);
     MutDeque.pushBack(1, d2);
 
     d1 `MutDeque.sameElements` d2
@@ -1205,7 +1205,7 @@ def toMutDeque03(): Bool = region rc {
     let s = Set#{1, 3, 6};
     let d1 = Set.toMutDeque(rc, s);
 
-    let d2 = MutDeque.new(rc);
+    let d2 = MutDeque.empty(rc);
     MutDeque.pushBack(3, d2);
     MutDeque.pushBack(6, d2);
     MutDeque.pushFront(1, d2);
@@ -1218,7 +1218,7 @@ def toMutDeque04(): Bool = region rc {
     let s = Set#{7, 1, 3, 6};
     let d1 = Set.toMutDeque(rc, s);
 
-    let d2 = MutDeque.new(rc);
+    let d2 = MutDeque.empty(rc);
     MutDeque.pushFront(7, d2);
     MutDeque.pushFront(6, d2);
     MutDeque.pushFront(3, d2);
@@ -1294,14 +1294,14 @@ def eq19(): Bool = Set#{1, 2, 3} == Set#{2, 1, 3}
 @test
 def forEach01(): Bool = region rc {
     let ri = ref 21 @ rc;
-    Set.forEach(x -> ri := x, Set#{});
+    Set.forEach(x -> Ref.put(x, ri), Set#{});
     21 == deref ri
 }
 
 @test
 def forEach02(): Bool = region rc {
     let ri = ref 21 @ rc;
-    Set.forEach(x -> ri := x, Set#{42});
+    Set.forEach(x -> Ref.put(x, ri), Set#{42});
     42 == deref ri
 }
 
@@ -1312,14 +1312,14 @@ def forEach02(): Bool = region rc {
 @test
 def forEachWithIndex01(): Bool = region rc {
     let ri = ref 21 @ rc;
-    Set.forEachWithIndex((i, _) -> ri := i, Set#{});
+    Set.forEachWithIndex((i, _) -> Ref.put(i, ri), Set#{});
     21 == deref ri
 }
 
 @test
 def forEachWithIndex02(): Bool = region rc {
     let ri = ref 21 @ rc;
-    Set.forEachWithIndex((i, _) -> ri := i, Set#{42});
+    Set.forEachWithIndex((i, _) -> Ref.put(i, ri), Set#{42});
     0 == deref ri
 }
 
@@ -1363,7 +1363,7 @@ def unfoldWithIter01(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{}
@@ -1377,7 +1377,7 @@ def unfoldWithIter02(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{48}
@@ -1391,7 +1391,7 @@ def unfoldWithIter03(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{48, 49}
@@ -1405,7 +1405,7 @@ def unfoldWithIter04(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{48, 49, 50, 51, 52, 53, 54, 55, 56, 57}
@@ -1419,7 +1419,7 @@ def unfoldWithIter05(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{53, 54, 55, 56, 57}
@@ -1433,7 +1433,7 @@ def unfoldWithIter06(): Bool = region rc {
             None
         else {
             let c = Some(deref x + 48);
-            x := deref x + 2;
+            Ref.put(deref x + 2, x);
             c
         };
     Set.unfoldWithIter(step) == Set#{48, 50, 52, 54, 56}
@@ -1517,8 +1517,8 @@ def unfoldWithIter06(): Bool = region rc {
     @test
     def minimumBy05(): Bool = region rc {
         let s = List.range(0, 2000) |> List.toSet;
-        let a = MutList.new(rc);
-        discard Set.minimumBy((x, y) -> { let b = MutList.new(rc); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, s);
+        let a = MutList.empty(rc);
+        discard Set.minimumBy((x, y) -> { let b = MutList.empty(rc); MutList.push!(y, b); MutList.append!(MutList.toList(b), a); x <=> y }, s);
         MutList.toList(a) == List.range(1, 2000) // The first / left most value is ignored
     }
 

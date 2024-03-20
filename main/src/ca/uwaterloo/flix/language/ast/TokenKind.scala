@@ -29,8 +29,6 @@ sealed trait TokenKind
 object TokenKind {
   case object Ampersand extends TokenKind
 
-  case object AmpersandAmpersand extends TokenKind
-
   case object AngledEqual extends TokenKind
 
   case object AngledPlus extends TokenKind
@@ -131,7 +129,13 @@ object TokenKind {
 
   case object KeywordChoose extends TokenKind
 
+  case object KeywordChooseStar extends TokenKind
+
   case object KeywordDebug extends TokenKind
+
+  case object KeywordDebugBang extends TokenKind
+
+  case object KeywordDebugBangBang extends TokenKind
 
   case object KeywordDef extends TokenKind
 
@@ -163,8 +167,6 @@ object TokenKind {
 
   case object KeywordFrom extends TokenKind
 
-  case object KeywordGet extends TokenKind
-
   case object KeywordIf extends TokenKind
 
   case object KeywordImport extends TokenKind
@@ -180,6 +182,12 @@ object TokenKind {
   case object KeywordInstanceOf extends TokenKind
 
   case object KeywordInto extends TokenKind
+
+  case object KeywordJavaGetField extends TokenKind
+
+  case object KeywordJavaNew extends TokenKind
+
+  case object KeywordJavaSetField extends TokenKind
 
   case object KeywordLaw extends TokenKind
 
@@ -201,9 +209,9 @@ object TokenKind {
 
   case object KeywordNull extends TokenKind
 
-  case object KeywordOpen extends TokenKind
+  case object KeywordOpenVariant extends TokenKind
 
-  case object KeywordOpenAs extends TokenKind
+  case object KeywordOpenVariantAs extends TokenKind
 
   case object KeywordOr extends TokenKind
 
@@ -215,6 +223,8 @@ object TokenKind {
 
   case object KeywordPure extends TokenKind
 
+  case object KeywordProject extends TokenKind
+
   case object KeywordQuery extends TokenKind
 
   case object KeywordRef extends TokenKind
@@ -223,11 +233,17 @@ object TokenKind {
 
   case object KeywordRestrictable extends TokenKind
 
+  case object KeywordRvadd extends TokenKind
+
+  case object KeywordRvand extends TokenKind
+
+  case object KeywordRvnot extends TokenKind
+
+  case object KeywordRvsub extends TokenKind
+
   case object KeywordSealed extends TokenKind
 
   case object KeywordSelect extends TokenKind
-
-  case object KeywordSet extends TokenKind
 
   case object KeywordSolve extends TokenKind
 
@@ -299,8 +315,6 @@ object TokenKind {
 
   case object Minus extends TokenKind
 
-  case object MinusMinus extends TokenKind
-
   case object NameGreek extends TokenKind
 
   case object NameJava extends TokenKind
@@ -317,8 +331,6 @@ object TokenKind {
 
   case object Plus extends TokenKind
 
-  case object PlusPlus extends TokenKind
-
   case object Semi extends TokenKind
 
   case object SetHash extends TokenKind
@@ -330,8 +342,6 @@ object TokenKind {
   case object StarStar extends TokenKind
 
   case object Tilde extends TokenKind
-
-  case object TildeTilde extends TokenKind
 
   case object TripleAmpersand extends TokenKind
 

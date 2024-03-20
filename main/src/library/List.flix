@@ -135,12 +135,17 @@ mod List {
     /// Renders the list `l` to a String.
     ///
     pub def toString(l: List[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         foreach (x <- l)
             StringBuilder.appendString!("${x} :: ", sb);
         StringBuilder.appendString!("Nil", sb);
         StringBuilder.toString(sb)
     }
+
+    ///
+    /// Returns the empty list `Nil`.
+    ///
+    pub def empty(): List[a] = Nil
 
     ///
     /// Returns true if and only if `l` is the empty list, i.e. `Nil`.
@@ -1095,7 +1100,7 @@ mod List {
     /// Returns `l` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], l: List[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 
@@ -1154,7 +1159,7 @@ mod List {
     pub def toArray(rc: Region[r], l: List[a]): Array[a, r] \ r = match head(l) {
         case None    => Array#{} @ rc
         case Some(_) =>
-            let a = Array.new(rc, length(l));
+            let a = Array.empty(rc, length(l));
             forEach(match (i, b) -> Array.put(b, i, a), zipWithIndex(l));
             a
         }
@@ -1163,7 +1168,7 @@ mod List {
     /// Returns the list `l` as a vector.
     ///
     pub def toVector(l: List[a]): Vector[a] = region rc {
-        let arr = Array.new(rc, length(l));
+        let arr = Array.empty(rc, length(l));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), l);
         Array.toVector(arr)
     }
@@ -1323,7 +1328,7 @@ mod List {
         let next = () -> {
             match (deref ls) {
                 case Nil     => None
-                case x :: rs => ls := rs; Some(x)
+                case x :: rs => Ref.put(rs, ls); Some(x)
             }
         };
         Iterator.iterate(rc, next)

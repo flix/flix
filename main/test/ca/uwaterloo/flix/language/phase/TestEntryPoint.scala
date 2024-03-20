@@ -44,7 +44,7 @@ class TestEntryPoint extends AnyFunSuite with TestUtils {
   test("Test.IllegalEntryPointArg.Main.03") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
         |def main(blah: Array[a, _]): Unit \ IO with C[a] = checked_ecast(())
         |""".stripMargin

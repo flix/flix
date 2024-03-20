@@ -27,7 +27,7 @@ mod MutMap {
     /// Returns a string representation of the given MutMap `m`.
     ///
     pub def toString(m: MutMap[k, v, r]): String \ r with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         StringBuilder.appendString!("MutMap#{", sb);
         forEachWithIndex((i, k, v) -> {
             if (i < 1)
@@ -42,7 +42,7 @@ mod MutMap {
     ///
     /// Returns a fresh empty mutable map.
     ///
-    pub def new(rc: Region[r]): MutMap[k, v, r] \ r =
+    pub def empty(rc: Region[r]): MutMap[k, v, r] \ r =
         MutMap(rc, ref Map.empty() @ rc)
 
     ///
@@ -196,7 +196,7 @@ mod MutMap {
     ///
     pub def put!(k: k, v: v, m: MutMap[k, v, r]): Unit \ r with Order[k] =
         let MutMap(_, mm) = m;
-        mm := Map.insert(k, v, deref mm)
+        Ref.put(Map.insert(k, v, deref mm), mm)
 
     ///
     /// Updates the mutable map `m` with the binding `k -> f(v, v1)` if `k -> v1` is in `m`.
@@ -205,7 +205,7 @@ mod MutMap {
     ///
     pub def putWith!(f: (v, v) -> v \ ef, k: k, v: v, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
         let MutMap(_, mm) = m;
-        mm := Map.insertWith(f, k, v, deref mm)
+        Ref.put(Map.insertWith(f, k, v, deref mm), mm)
 
     ///
     /// Updates the mutable map `m` with `k -> f(v)` if `k -> v` is in `m`.
@@ -222,14 +222,14 @@ mod MutMap {
     ///
     pub def adjustWithKey!(f: (k, v) -> v \ ef, k: k, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
         let MutMap(_, mm) = m;
-        mm := Map.adjustWithKey(f, k, deref mm)
+        Ref.put(Map.adjustWithKey(f, k, deref mm), mm)
 
     ///
     /// Removes all mappings from the mutable map `m`.
     ///
     pub def clear!(m: MutMap[k, v, r]): Unit \ r =
         let MutMap(_, mm) = m;
-        mm := Map.empty()
+        Ref.put(Map.empty(), mm)
 
     ///
     /// Returns `v` if `k -> v` is in the mutable map `m`.
@@ -239,7 +239,7 @@ mod MutMap {
     pub def getOrElsePut!(k: k, d: v, m: MutMap[k, v, r]): v \ r with Order[k] =
         let MutMap(_, mm) = m;
         match Map.get(k, deref mm) {
-            case None    => mm := Map.insert(k, d, deref mm); d
+            case None    => Ref.put(Map.insert(k, d, deref mm), mm); d
             case Some(v) => v
         }
 
@@ -263,7 +263,7 @@ mod MutMap {
     pub def mergeWithKey!(f: (k, v, v) -> v \ ef, m1: MutMap[k, v, r1], m2: MutMap[k, v, r2]): Unit \ { ef, r1, r2 } with Order[k] =
         let MutMap(_, mm1) = m1;
         let MutMap(_, mm2) = m2;
-        mm2 := Map.unionWithKey(f, deref mm1, deref mm2)
+        Ref.put(Map.unionWithKey(f, deref mm1, deref mm2), mm2)
 
     ///
     /// Removes all mappings `k -> v` from the mutable map `m` where `v` does not satisfy the predicate function `f`.
@@ -280,7 +280,7 @@ mod MutMap {
     ///
     pub def refineWithKey!(f: (k, v) -> Bool, m: MutMap[k, v, r]): Unit \ r with Order[k] =
         let MutMap(_, mm) = m;
-        mm := Map.filterWithKey(f, deref mm)
+        Ref.put(Map.filterWithKey(f, deref mm), mm)
 
     ///
     /// Removes the mapping `k` from the mutable map `m`.
@@ -289,21 +289,21 @@ mod MutMap {
     ///
     pub def remove!(k: k, m: MutMap[k, v, r]): Unit \ r with Order[k] =
         let MutMap(_, mm) = m;
-        mm := Map.remove(k, deref mm)
+        Ref.put(Map.remove(k, deref mm), mm)
 
     ///
     /// Applies the function `f` to every value in the mutable map `m`.
     ///
     pub def transform!(f: v -> v \ ef, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
         let MutMap(_, mm) = m;
-        mm := Map.map(f, deref mm)
+        Ref.put(Map.map(f, deref mm), mm)
 
     ///
     /// Applies the function `f` to every value in the mutable map `m`.
     ///
     pub def transformWithKey!(f: (k, v) -> v \ ef, m: MutMap[k, v, r]): Unit \ { ef, r } with Order[k] =
         let MutMap(_, mm) = m;
-        mm := Map.mapWithKey(f, deref mm)
+        Ref.put(Map.mapWithKey(f, deref mm), mm)
 
     ///
     /// Returns `true` if and only if all mappings in the mutable map `m1` occur in the mutable map `m2`.
@@ -566,7 +566,7 @@ mod MutMap {
     ///
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: MutMap[k, v, r]): Unit \ { ef, r } = region rc {
         let ix = ref 0 @ rc;
-        forEach((k, v) -> {let i = deref ix; f(i, k, v); ix := i+1}, m)
+        forEach((k, v) -> { let i = deref ix; f(i, k, v); Ref.put(i + 1, ix) }, m)
     }
 
     ///
@@ -574,21 +574,21 @@ mod MutMap {
     ///
     pub def iterator(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[(k, v), r1 + r2, r1] \ { r1, r2 } =
         let MutMap(_, mm) = m;
-        Map.iterator(rc, deref mm) |> Iterator.map(x -> {discard deref mm; x})
+        Map.iterator(rc, deref mm) |> Iterator.map(x -> { discard deref mm; x })
 
     ///
     /// Returns an iterator over keys in `m`.
     ///
     pub def iteratorKeys(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[k, r1 + r2, r1] \ { r1, r2 } =
         let MutMap(_, mm) = m;
-        Map.iteratorKeys(rc, deref mm) |> Iterator.map(x -> {discard deref mm; x})
+        Map.iteratorKeys(rc, deref mm) |> Iterator.map(x -> { discard deref mm; x })
 
     ///
     /// Returns an iterator over values in `m`.
     ///
     pub def iteratorValues(rc: Region[r1], m: MutMap[k, v, r2]): Iterator[v, r1 + r2, r1] \ { r1, r2 } =
         let MutMap(_, mm) = m;
-        Map.iteratorValues(rc, deref mm) |> Iterator.map(x -> {discard deref mm; x})
+        Map.iteratorValues(rc, deref mm) |> Iterator.map(x -> { discard deref mm; x })
 
     ///
     /// Extracts a range of key-value pairs from the mutable map `m`.

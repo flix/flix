@@ -24,9 +24,9 @@ object ImportCompleter {
   def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
     val importKeywords = List(
       Completion.KeywordCompletion("import"),
-      Completion.KeywordCompletion("new"),
-      Completion.KeywordCompletion("get"),
-      Completion.KeywordCompletion("set"),
+      Completion.KeywordCompletion("java_new"),
+      Completion.KeywordCompletion("java_get_field"),
+      Completion.KeywordCompletion("java_set_field"),
       Completion.KeywordCompletion("static")
     )
 

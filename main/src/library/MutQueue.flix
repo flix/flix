@@ -34,7 +34,7 @@ mod MutQueue {
     ///
     pub def toString(mq: MutQueue[a, r]): String \ r with ToString[a] = region reg {
         let MutQueue(_, arr, s) = mq;
-        let sb = StringBuilder.new(reg);
+        let sb = StringBuilder.empty(reg);
         StringBuilder.appendString!("MutQueue {", sb);
         Array.forEachWithIndex((i, x) -> {
             if (i < deref s) {
@@ -50,8 +50,8 @@ mod MutQueue {
     ///
     /// Returns an empty MutQueue.
     ///
-    pub def new(rc: Region[r]): MutQueue[a, r] \ r =
-        MutQueue(rc, ref Array.new(rc, 8) @ rc, ref 0 @ rc)
+    pub def empty(rc: Region[r]): MutQueue[a, r] \ r =
+        MutQueue(rc, ref Array.empty(rc, 8) @ rc, ref 0 @ rc)
 
     ///
     /// Returns the number of elements in `mq`.
@@ -88,7 +88,7 @@ mod MutQueue {
         expand(mq);
         Array.put(x, deref s, deref arr);
         heapifyUp(deref s, mq);
-        s := deref s + 1
+        Ref.put(deref s + 1, s)
     }
 
     ///
@@ -100,7 +100,7 @@ mod MutQueue {
             let top = peek(mq);
             Array.put(Array.get(deref s - 1, deref arr), 0, deref arr);
             heapifyDown(0, mq);
-            s := deref s - 1;
+            Ref.put(deref s - 1, s);
             top
         }
         else None
@@ -211,9 +211,9 @@ mod MutQueue {
         let oldCapacity = Array.length(deref arr);
         if (oldCapacity == deref s) {
             let newCapacity = 2 + (oldCapacity * 2);
-            let newArr  = Array.new(reg, newCapacity);
+            let newArr  = Array.empty(reg, newCapacity);
             Array.forEachWithIndex((idx, x) -> Array.put(x, idx, newArr), deref arr);
-            arr := newArr
+            Ref.put(newArr, arr)
         }
         else ()
 
