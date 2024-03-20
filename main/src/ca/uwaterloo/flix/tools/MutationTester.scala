@@ -158,7 +158,7 @@ object MutationTester {
         case Expr.OpenAs(symUse, exp, tpe, loc) => LazyList.empty
         case Expr.Use(sym, alias, exp, loc) => LazyList.empty
         case Expr.Lambda(fparam, exp, tpe, loc) => LazyList.empty
-        case Expr.Apply(exp, exps, tpe, eff, loc) => ApplyMutator.mutateExpr(expr)
+        case Expr.Apply(exp, exps, tpe, eff, loc) => ApplyMutator.mutateExprApply(expr)
         // if success mutate(exp) -> not mutate exps
         case Expr.Unary(sop, exp, tpe, eff, loc) => mutateExprUnary(expr)
         case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => mutateExprBinary(expr)
@@ -181,7 +181,7 @@ object MutationTester {
         case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => LazyList.empty
         case Expr.Tag(sym, exp, tpe, eff, loc) => LazyList.empty
         case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => LazyList.empty
-        case Expr.Tuple(elms, tpe, eff, loc) => LazyList.empty
+        case Expr.Tuple(elms, tpe, eff, loc) => mutateExprTuple(expr)
         case Expr.RecordEmpty(tpe, loc) => LazyList.empty
         case Expr.RecordSelect(exp, label, tpe, eff, loc) => LazyList.empty
         case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => LazyList.empty
@@ -265,6 +265,14 @@ object MutationTester {
       case Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc) => LazyList(Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc))
       case _ => LazyList.empty
     }
+
+    private def mutateExprTuple(exp: Expr)(implicit flix: Flix): LazyList[Expr] = exp match {
+      case Expr.Tuple(elms, tpe, eff, loc) =>
+        LazyList.tabulate(elms.length)(i =>
+          mutateExpr(elms(i)).map(e => Expr.Tuple(elms.updated(i, e), tpe, eff, loc))
+        ).flatten
+      case _ => LazyList.empty
+    }
   }
 
   private object ApplyMutator {
@@ -307,7 +315,7 @@ object MutationTester {
       "rightShift" -> "leftShift",
     )
 
-    def mutateExpr(exp: TypedAst.Expr)(implicit flix: Flix): LazyList[TypedAst.Expr] = exp match {
+    def mutateExprApply(exp: TypedAst.Expr)(implicit flix: Flix): LazyList[TypedAst.Expr] = exp match {
       case Expr.Apply(exp, exps, tpe, eff, loc) =>
         exp match {
           case Expr.Sig(sym, _, _) =>

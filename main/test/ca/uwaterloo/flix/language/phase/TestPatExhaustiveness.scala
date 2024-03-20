@@ -71,7 +71,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](result)
   }
 
-  test("Pattern.Literal.Tuples.01") {
+  test("Pattern.Literal.Tuples.flix.01") {
     val input =
       """enum Color {
         |  case Red,
@@ -87,7 +87,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](result)
   }
 
-  test("Pattern.Literal.Tuples.02") {
+  test("Pattern.Literal.Tuples.flix.02") {
     val input =
       """def f(x: (Int8, (String, String))): Int32 = match x {
         |  case (5i8, ("five", _)) => 5
@@ -99,7 +99,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](result)
   }
 
-  test("Pattern.Literal.Tuples.03") {
+  test("Pattern.Literal.Tuples.flix.03") {
     val input =
       """def f(x: (Int32, Int32, Int32, Int32, Int32)): Int32 = match x {
         |  case (1,2,3,4,5) => 1
