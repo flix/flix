@@ -54,10 +54,10 @@ object Verifier {
         println(s"  tpe2 = $tpe2")
         println()
 
-      case MismatchedShape(tpe, exp, loc) =>
+      case MismatchedShape(tpe, expected, loc) =>
         println(s"Mismatched shape near ${loc.format}")
         println()
-        println(s"  expected = \'$exp\'")
+        println(s"  expected = \'$expected\'")
         println(s"  found    = $tpe")
         println()
     }
