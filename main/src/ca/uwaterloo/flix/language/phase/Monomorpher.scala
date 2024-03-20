@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, RigidityEnv, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
@@ -146,6 +146,9 @@ object Monomorpher {
           case (Type.Cst(TypeConstructor.CaseComplement(sym), _), y) => Type.mkCaseComplement(y, sym, loc)
           case (Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _), y) => Type.mkCaseIntersection(x, y, sym, loc)
           case (Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _), y) => Type.mkCaseUnion(x, y, sym, loc)
+
+          // Put records in alphabetical order
+          case (Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), tpe, _), rest) => mkRecordExtendSorted(label, tpe, rest, loc)
 
           // Else just apply.
           case (x, y) => Type.Apply(x, y, loc)
@@ -283,6 +286,25 @@ object Monomorpher {
     def toMap: Map[Symbol.DefnSym, MonoAst.Def] = synchronized {
       specializedDefns.toMap
     }
+  }
+
+  /**
+    * Returns a sorted record, assuming that `rest` is sorted.
+    * Sorting is stable on duplicate fields.
+    *
+    * Assumes that rest does not contain variables, aliases, or associated types.
+    */
+  private def mkRecordExtendSorted(label: Name.Label, tpe: Type, rest: Type, loc: SourceLocation): Type = rest match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(l), loc1), t, loc2), r, loc3) if l.name < label.name =>
+      // Push extend further.
+      val newRest = mkRecordExtendSorted(label, tpe, r, loc)
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(l), loc1), t, loc2), newRest, loc3)
+    case Type.Cst(_, _) | Type.Apply(_, _, _) =>
+      // Non-record related types or a record in correct order.
+      Type.mkRecordRowExtend(label, tpe, rest, loc)
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type variable '$rest'", rest.loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
   }
 
   /**
