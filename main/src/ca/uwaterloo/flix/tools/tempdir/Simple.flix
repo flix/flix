@@ -1,14 +1,11 @@
-def f1(): Bool = false
+def f1(): String = "hello, " + "world!"
 
-def f2(a: Int32, b: Int32): Int32 = a + b
+def f2(): Int32 = 2 + 3
 
-def f3(n: Int64): Bool = n >= 18i64
-
-@Test
-def test01(): Bool = Assert.eq(false, f1())
+def f3(): BigInt = Int32.toBigInt(2) + Int32.toBigInt(3)
 
 @Test
-def test02(): Bool = Assert.eq(5, f2(3, 2))
+def test01(): Bool = Assert.eq("hello, world!", f1())
 
 @Test
-def test03(): Bool = Assert.eq(true, f3(18i64))
+def test02(): Bool = Assert.eq(5, f2())
