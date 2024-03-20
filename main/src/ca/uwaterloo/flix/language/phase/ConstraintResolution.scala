@@ -100,7 +100,9 @@ object ConstraintResolution {
       resolve(constrs, initialSubst, renv, cenv, eqEnv).flatMap {
         case ResolutionResult(subst, deferred, _) =>
           Debug.stopLogging()
-          // TODO here we only consider the first error
+
+          // If there are any constraints we could not resolve, then we report an error.
+          // TODO ASSOC-TYPES here we only consider the first error
           deferred match {
             case Nil => Result.Ok(subst)
             case TypingConstraint.Equality(tpe1, tpe2, prov) :: _ => Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
@@ -477,9 +479,10 @@ object ConstraintResolution {
     * Tries to resolve the given constraint.
     */
   private def resolveOne(constr0: TypingConstraint, renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], subst0: Substitution)(implicit flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
-    case TypingConstraint.Equality(tpe1, tpe2, prov) =>
+    case TypingConstraint.Equality(tpe1, tpe2, prov0) =>
       val t1 = TypeMinimization.minimizeType(subst0(tpe1))
       val t2 = TypeMinimization.minimizeType(subst0(tpe2))
+      val prov = subst0(prov0)
       resolveEquality(t1, t2, prov, renv, eqEnv, constr0.loc).map {
         case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
       }
