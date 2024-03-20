@@ -251,7 +251,7 @@ object ConstraintResolution {
     case (Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) =>
       for {
         res1 <- resolveEquality(t11, t21, prov, renv, eqEnv, loc)
-        res2 <- resolveEquality(res1.subst(t12), res1.subst(t22), prov, renv, eqEnv, loc)
+        res2 <- resolveEquality(res1.subst(t12), res1.subst(t22), res1.subst(prov), renv, eqEnv, loc)
       } yield res2 @@ res1
 
     // reflU
