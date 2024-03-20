@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.Type.{Apply, False, Int32, Null, Str, True, mkBigInt}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
+import dev.flix.runtime.Global
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -32,6 +33,7 @@ object MutationTester {
         val root = flix.check().unsafeGet
         val start = System.nanoTime()
         println(root.sigs.filter(t => t._1.toString.equals("Add.add")))
+        val _ = insertDeckAndCheckInAllDefs(root)
         val root1 = mutateRoot(root, testee)
         val end = System.nanoTime() - start
         val timeSec = end.toFloat / 1_000_000_000.0
@@ -42,6 +44,13 @@ object MutationTester {
           * val result = root1.map(r => flix.codeGen(r).unsafeGet)
           * val tests = result.map(res => res.getTests)
           */
+    }
+
+
+    private def insertDeckAndCheckInAllDefs(root: Root): Root ={
+        val methodName = classOf[Global].getMethods.apply(3).getName
+        println(s"name of function $methodName")
+        root
     }
 
     private def progressUpdate(message: String, timePassed: Long): Long = {

@@ -856,20 +856,19 @@ object BackendObjType {
           LRETURN()
       ))
 
-    /*
     def decAndCheck: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "decAndCheck",
-      mkDescriptor()(BackendType.Int64), Some(_ =>
+      mkDescriptor()(BackendType.Int32), Some(_ =>
         GETSTATIC(StepCounterField) ~
           INVOKEVIRTUAL(JvmName.AtomicLong, "getAndDecrement",
             MethodDescriptor(Nil, BackendType.Int64)) ~
-          ICONST_0() ~
-          ifCondition(Condition.EQ) {
-            thisLoad() ~ GETFIELD(TooManyStepsException) ~
+          LCONST_0() ~
+          LCMP() ~
+          ifCondition(Condition.GT) {
+            thisLoad() ~ ACONST_NULL() ~
             ATHROW()
           } ~
-          LRETURN()
+          ICONST_M1() ~ LRETURN()
         ))
-      */
 
     def GetArgsMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "getArgs",
       mkDescriptor()(BackendType.Array(String.toTpe)), Some(_ =>
