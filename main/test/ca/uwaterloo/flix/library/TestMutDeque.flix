@@ -199,19 +199,19 @@ mod TestMutDeque {
 
     @test
     def nonEmpty01(): Bool = region rc {
-        not (MutDeque.nonEmpty(MutDeque.new(rc)))
+        not (MutDeque.nonEmpty(MutDeque.empty(rc)))
     }
 
     @test
     def nonEmpty02(): Bool = region rc {
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         MutDeque.nonEmpty(d)
     }
 
     @test
     def nonEmpty03(): Bool = region rc {
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         MutDeque.pushBack(1, d);
         discard MutDeque.popBack(d);
         not (MutDeque.nonEmpty(d))
@@ -219,14 +219,14 @@ mod TestMutDeque {
 
     @test
     def nonEmpty04(): Bool = region rc {
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
         MutDeque.nonEmpty(d)
     }
 
     @test
     def nonEmpty05(): Bool = region rc {
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         MutDeque.pushFront(1, d);
         discard MutDeque.popFront(d);
         not (MutDeque.nonEmpty(d))

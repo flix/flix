@@ -228,7 +228,7 @@ mod TestMutList {
 
     @test
     def nonEmpty01(): Bool = region rc {
-        MutList.nonEmpty(MutList.new(rc)) == false
+        MutList.nonEmpty(MutList.empty(rc)) == false
     }
 
     @test
