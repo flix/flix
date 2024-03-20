@@ -57,8 +57,8 @@ object Verifier {
       case MismatchedShape(tpe, exp, loc) =>
         println(s"Mismatched shape near ${loc.format}")
         println()
-        println(s"  tpe      = $tpe")
         println(s"  expected = \'$exp\'")
+        println(s"  found    = $tpe")
         println()
     }
   }
@@ -243,66 +243,85 @@ object Verifier {
           tpe
 
         case AtomicOp.ArrayLength =>
-          val List(arrt) = ts
-          arrt match {
+          val List(t1) = ts
+          t1 match {
             case MonoType.Array(_) => check(expected = MonoType.Int32)(actual = tpe, loc)
-            case _ => throw MismatchedShape(tpe, s"An Array", loc)
+            case _ => throw MismatchedShape(t1, "Array", loc)
           }
 
         case AtomicOp.ArrayNew =>
-          val List(elmt, lent) = ts
-          check(expected = MonoType.Int32)(actual = lent, loc)
-          check(expected = MonoType.Array(elmt))(actual = tpe, loc)
+          val List(t1, t2) = ts
+          val arrType = MonoType.Array(t1)
+          checkEq(arrType, tpe, loc)
+          check(expected = MonoType.Int32)(actual = t2, loc)
+          tpe
 
         case AtomicOp.ArrayLit =>
           tpe match {
             case MonoType.Array(elmt) =>
-              ts.foreach(t => check(expected = elmt)(actual = t, loc))
-            case _ => throw MismatchedShape(tpe, s"An Array", loc)
+              ts.foreach(t => checkEq(elmt, t, loc))
+              tpe
+            case _ => throw MismatchedShape(tpe, "Array", loc)
           }
-          tpe
 
         case AtomicOp.ArrayLoad =>
-          val List(arrt, idxt) = ts
-          check(expected = MonoType.Int32)(actual = idxt, loc)
-          arrt match {
-            case MonoType.Array(elmt) => check(expected = elmt)(actual = tpe, loc)
-            case _ => throw MismatchedShape(tpe, s"An Array", loc)
+          val List(t1, t2) = ts
+          t1 match {
+            case MonoType.Array(elmt) =>
+              check(expected = MonoType.Int32)(actual = t2, loc)
+              checkEq(elmt, tpe, loc)
+            case _ => throw MismatchedShape(t1, "Array", loc)
           }
-          tpe
 
         case AtomicOp.ArrayStore =>
-          val List(arrt, idxt, expt) = ts
-          check(expected = MonoType.Int32)(actual = idxt, loc)
-          arrt match {
-            case MonoType.Array(elmt) => check(expected = elmt)(actual = expt, loc)
-            case _ => throw MismatchedShape(tpe, s"An Array", loc)
+          val List(t1, t2, t3) = ts
+          t1 match {
+            case MonoType.Array(elmt) =>
+              check(expected = MonoType.Int32)(actual = t2, loc)
+              checkEq(elmt, t3, loc)
+              check(expected = MonoType.Unit)(actual = tpe, loc)
+            case _ => throw MismatchedShape(t1, "Array", loc)
           }
-          check(expected = MonoType.Unit)(actual = tpe, loc)
 
         case AtomicOp.Ref =>
-          val List(elm) = ts
-          check(expected = MonoType.Ref(elm))(actual = tpe, loc)
+          val List(t1) = ts
+          val refType = MonoType.Ref(t1)
+          checkEq(refType, tpe, loc)
 
         case AtomicOp.Deref =>
-          val List(ref) = ts
-          ref match {
-            case MonoType.Ref(elm) => check(expected = elm)(actual = tpe, loc)
-            case _ => throw MismatchedShape(tpe, s"Ref", loc)
+          val List(t1) = ts
+          t1 match {
+            case MonoType.Ref(elm) => checkEq(elm, tpe, loc)
+            case _ => throw MismatchedShape(t1, "Ref", loc)
           }
 
         case AtomicOp.Lazy =>
-          val List(elm) = ts
-          check(expected = MonoType.Lazy(elm))(actual = tpe, loc)
-
-        case AtomicOp.Force =>
-          val List(laz) = ts
-          laz match {
-            case MonoType.Lazy(elm) => check(expected = elm)(actual = tpe, loc)
-            case _ => throw MismatchedShape(tpe, s"Lazy", loc)
+          val List(t1) = ts
+          tpe match {
+            case MonoType.Lazy(elmt) =>
+              val fun = MonoType.Arrow(List(MonoType.Unit), elmt)
+              checkEq(t1, fun, loc)
+              tpe
+            case _ => throw MismatchedShape(tpe, "Lazy", loc)
           }
 
-        case AtomicOp.Tuple => check(expected = MonoType.Tuple(ts))(actual = tpe, loc)
+        case AtomicOp.Force =>
+          val List(t1) = ts
+          t1 match {
+            case MonoType.Lazy(elm) => checkEq(elm, tpe, loc)
+            case _ => throw MismatchedShape(t1, "Lazy", loc)
+          }
+
+        case AtomicOp.Tuple =>
+          val tup = MonoType.Tuple(ts)
+          checkEq(tup, tpe, loc)
+
+        case AtomicOp.Index(idx: Int) =>
+          val List(t1) = ts
+          t1 match {
+            case MonoType.Tuple(elms) => checkEq(elms(idx), tpe, loc)
+            case _ => throw MismatchedShape(t1, "Tuple", loc)
+          }
 
         case _ => tpe // TODO: VERIFIER: Add rest
       }
