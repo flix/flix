@@ -136,7 +136,7 @@ object FormatType {
       * delimiting it as appropriate for display as a function argument.
       */
     def delimitFunctionArg(arg: SimpleType): String = arg match {
-      // Tuples.flix get an extra set of parentheses
+      // Tuples get an extra set of parentheses
       case tuple: SimpleType.Tuple => parenthesize(visit(tuple, Mode.Type))
       case tpe => delimit(tpe, Mode.Type)
     }

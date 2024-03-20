@@ -43,7 +43,7 @@ object PatMatch {
   /**
     * An ADT to make matching Type Constructors easier. We need to
     * support both user created constructors and the implicit built in
-    * types. This allows us to handle True, False, Tuples.flix etc in the same
+    * types. This allows us to handle True, False, Tuples etc in the same
     * way we would a user defined enum.
     */
   private sealed trait TyCon
