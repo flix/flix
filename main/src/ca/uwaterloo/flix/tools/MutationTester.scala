@@ -8,9 +8,9 @@ import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Tester.ConsoleRedirection
-import ca.uwaterloo.flix.util.Result
+import ca.uwaterloo.flix.util.{Formatter, Result}
 
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
 /* TODO: think also:
@@ -35,64 +35,58 @@ object MutationTester {
   private case object CompilationFailed extends MutantStatus
 
   def run(root: Root)(implicit flix: Flix): Result[MutationReporter, Int] = {
-    val queue = new ConcurrentLinkedQueue[Def]()
-
-    //    val executor = Executors.newSingleThreadExecutor()
-
-    //    val numThreads = 1 // fixme: compiler crashes with more than 1 threads
-    //    val executor = Executors.newFixedThreadPool(numThreads)
-    //    val fjPool = new ForkJoinPool(numThreads)
-
-    val reporter = new MutationReporter()
-
     // don't want to mutate library defs and tests
     val defs = root.defs.values.filter(defn => !isLibDef(defn) && !isTestDef(defn))
 
+    // todo: configure by defs count (?)
+    val numThreads = 2
+    val executor = Executors.newFixedThreadPool(numThreads)
+
+    val reporter = new MutationReporter()
+
+    /*
+     * Idea:
+     *
+     * Mutants can also be created by a separate thread and pushed into a separate queue,
+     * which will be processed by the thread performing the compilation
+     *
+     * flix.codeGen can evaluates in only single thread, because implicit flix
+     *
+     * One thread compiles mutatedExps to compilationResults and push to ConcurrentLinkedQueue
+     * Other thread takes them and run tests by executorService
+     * Queue should have limited size to avoid memory problems
+     *
+     * I'm not sure if this will be effective, since compilation may take longer than testing (?)
+     *
+     * I would like to achieve full parallelism at all stages, including compilation,
+     * but I'm not sure what will be achieved
+     */
     defs.foreach {
       defn =>
         // todo: move generation to separated thread or ExecutorService
         Mutator.mutateExpr(defn.exp).foreach { mutatedExp =>
-          queue.add(defn.copy(exp = mutatedExp))
+          val mutatedDef = defn.copy(exp = mutatedExp)
+          val mutant = root.copy(defs = root.defs + (mutatedDef.sym -> mutatedDef))
+
+          //    val redirect = new ConsoleRedirection
+          //    redirect.redirect()
+          val codeGenResult = flix.codeGen(mutant) // todo: is it possible to parallelize it ??
+          //    if (redirect.stdErr.nonEmpty) return CompilationFailed
+          //    redirect.restore()
+
+          executor.execute(() => {
+            codeGenResult.toSoftResult match {
+              case Result.Ok(c) =>
+                val status = testMutant(c._1)
+                reporter.report(status, mutatedDef.sym.toString)
+              case Result.Err(_) => reporter.report(CompilationFailed, mutatedDef.sym.toString)
+            }
+          })
         }
     }
 
-    // todo: move prints to reporter
-    val formatter = flix.getFormatter
-    import formatter._
-
-    while (!queue.isEmpty) {
-      val mutatedDef = queue.poll()
-
-      //      executor.execute(() => {
-      val mutant = root.copy(defs = root.defs + (mutatedDef.sym -> mutatedDef))
-
-      reporter.all.getAndIncrement()
-
-      println("mutant created for " + blue(mutatedDef.sym.toString))
-
-      try {
-        checkMutant(mutant) match {
-          case Killed =>
-            reporter.killed.getAndIncrement()
-            println(green("mutant killed"))
-          case CompilationFailed =>
-            reporter.compilationFailed.getAndIncrement()
-            println(yellow("mutant compilation failed"))
-          case Survived =>
-            println(red("mutant survived"))
-        }
-
-        println("-" * 80)
-      } catch {
-        case _: Exception =>
-          reporter.compilationFailed.getAndIncrement()
-          println(yellow("mutant compilation failed"))
-      }
-      //      })
-    }
-
-    //    executor.shutdown()
-    //    while (!executor.isTerminated) {}
+    executor.shutdown()
+    while (!executor.isTerminated) {}
 
     Result.Ok(reporter)
   }
@@ -105,24 +99,6 @@ object MutationTester {
 
   private def isTestDef(defn: Def): Boolean = defn.spec.ann.isTest
 
-  private def checkMutant(mutant: Root)(implicit flix: Flix): MutantStatus = {
-    //    val redirect = new ConsoleRedirection
-    //    redirect.redirect()
-
-    val compRes = flix.codeGen(mutant)
-
-    //    if (redirect.stdErr.nonEmpty) return CompilationFailed
-    //    redirect.restore()
-
-    compRes.toSoftResult match {
-      case Result.Ok(c) => testMutant(c._1)
-      case Result.Err(_) => CompilationFailed
-    }
-  }
-
-  /**
-    * returns true if all tests passed, false otherwise
-    */
   private def testMutant(compilationResult: CompilationResult): MutantStatus = {
     val tests = compilationResult.getTests.values.filter(!_.skip)
 
@@ -151,6 +127,7 @@ object MutationTester {
   }
 
   private object Mutator {
+    // todo: collections: for example, Set constructor
     def mutateExpr(expr: Expr)(implicit flix: Flix): LazyList[Expr] = {
       if (expr.tpe.toString == "Unit") {
         LazyList.empty
@@ -171,9 +148,9 @@ object MutationTester {
           case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
             mutateExpr(exp1).map(Expr.Let(sym, mod, _, exp2, tpe, eff, loc)) #:::
               mutateExpr(exp2).map(Expr.Let(sym, mod, exp1, _, tpe, eff, loc))
-          case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => LazyList.empty
-          case Expr.Region(tpe, loc) => LazyList.empty
-          case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => LazyList.empty
+          case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => LazyList.empty // todo
+          case Expr.Region(tpe, loc) => LazyList.empty // todo
+          case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => LazyList.empty // todo
           case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
             mutateExpr(exp1).map(Expr.IfThenElse(_, exp2, exp3, tpe, eff, loc)) #:::
               mutateExpr(exp2).map(Expr.IfThenElse(exp1, _, exp3, tpe, eff, loc)) #:::
@@ -402,7 +379,40 @@ object MutationTester {
     }
   }
 
-  class MutationReporter {
-    var all, killed, compilationFailed: AtomicInteger = new AtomicInteger(0) // TODO: refactor
+  class MutationReporter(implicit flix: Flix) {
+    private var all: AtomicInteger = new AtomicInteger(0)
+    private var killed: AtomicInteger = new AtomicInteger(0)
+    private var survived: AtomicInteger = new AtomicInteger(0)
+    private var compilationFailed: AtomicInteger = new AtomicInteger(0)
+    private val formatter: Formatter = flix.getFormatter
+
+    import formatter._
+
+    def report(status: MutantStatus, defName: String): Unit = {
+      val sb = new StringBuilder()
+      sb.append("mutant created for " + blue(defName) + System.lineSeparator())
+
+      all.getAndIncrement()
+      status match {
+        case Killed =>
+          killed.getAndIncrement()
+          sb.append(green("killed") + System.lineSeparator())
+        case Survived =>
+          survived.getAndIncrement()
+          sb.append(red("survived") + System.lineSeparator())
+        case CompilationFailed =>
+          compilationFailed.getAndIncrement()
+          sb.append(yellow("compilation failed") + System.lineSeparator())
+      }
+
+      sb.append("-" * 50)
+      println(sb.toString())
+    }
+
+    def printStats(): String = new StringBuilder()
+      .append(blue("Mutation testing:"))
+      .append(System.lineSeparator())
+      .append(blue(s"All = $all, Killed = $killed, Survived = $survived, CompilationFailed = $compilationFailed."))
+      .toString()
   }
 }
