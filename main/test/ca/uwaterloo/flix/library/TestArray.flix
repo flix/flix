@@ -147,6 +147,25 @@ mod TestArray {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def testNonEmpty01(): Bool = region rc {
+        not Array.nonEmpty(Array#{} @ rc)
+    }
+
+    @test
+    def testNonEmpty02(): Bool = region rc {
+        Array.nonEmpty(Array#{1} @ rc)
+    }
+
+    @test
+    def testNonEmpty03(): Bool = region rc {
+        Array.nonEmpty(Array#{1, 2, 3} @ rc)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // length                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

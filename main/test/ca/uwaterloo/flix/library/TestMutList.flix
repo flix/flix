@@ -223,6 +223,36 @@ mod TestMutList {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def nonEmpty01(): Bool = region rc {
+        MutList.nonEmpty(MutList.new(rc)) == false
+    }
+
+    @test
+    def nonEmpty02(): Bool = region rc {
+        MutList.nonEmpty(MutList.range(rc, 0, 0)) == false
+    }
+
+    @test
+    def nonEmpty03(): Bool = region rc {
+        MutList.nonEmpty(MutList.range(rc, 0, 1)) == true
+    }
+
+    @test
+    def nonEmpty04(): Bool = region rc {
+        MutList.nonEmpty(MutList.range(rc, 0, 2)) == true
+    }
+
+    @test
+    def nonEmpty05(): Bool = region rc {
+        MutList.nonEmpty(MutList.range(rc, 3, 4)) == true
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // memberOf                                                                //
     /////////////////////////////////////////////////////////////////////////////
 

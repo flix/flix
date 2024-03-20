@@ -1147,6 +1147,31 @@ mod TestDelayMap {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def nonEmpty01(): Bool =
+        not ((Map#{}: Map[Unit, Unit]) |> Map.toDelayMap |> DelayMap.nonEmpty)
+
+    @test
+    def nonEmpty02(): Bool =
+        Map#{1 => 2} |> Map.toDelayMap |> DelayMap.nonEmpty
+
+    @test
+    def nonEmpty03(): Bool =
+        Map#{1 => 2, 2 => 4} |> Map.toDelayMap |> DelayMap.nonEmpty
+
+    @test
+    def nonEmpty04(): Bool =
+        Map#{1 => 2, 2 => 4, 3 => 6} |> Map.toDelayMap |> DelayMap.nonEmpty
+
+    @test
+    def nonEmpty05(): Bool =
+        Map#{1 => 2, 2 => 4, 3 => 6, 4 => 8} |> Map.toDelayMap |> DelayMap.nonEmpty
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // foldLeft                                                                //
     /////////////////////////////////////////////////////////////////////////////
 

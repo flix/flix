@@ -161,6 +161,24 @@ def isEmpty04(): Bool = Set.isEmpty(Set#{1, 2, 3}) == false
 def isEmpty05(): Bool = Set.isEmpty(Set#{1, 2, 3, 4, 5, 6, 7, 8}) == false
 
 /////////////////////////////////////////////////////////////////////////////
+// nonEmpty                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def nonEmpty01(): Bool = Set.nonEmpty((Set#{}: Set[Unit])) == false
+
+@test
+def nonEmpty02(): Bool = Set.nonEmpty(Set#{1}) == true
+
+@test
+def nonEmpty03(): Bool = Set.nonEmpty(Set#{1, 2}) == true
+
+@test
+def nonEmpty04(): Bool = Set.nonEmpty(Set#{1, 2, 3}) == true
+
+@test
+def nonEmpty05(): Bool = Set.nonEmpty(Set#{1, 2, 3, 4, 5, 6, 7, 8}) == true
+
+/////////////////////////////////////////////////////////////////////////////
 // memberOf                                                                //
 /////////////////////////////////////////////////////////////////////////////
 @test

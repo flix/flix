@@ -66,6 +66,31 @@ mod TestUnorderedFoldable {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def nonEmpty01(): Bool =
+        UnorderedFoldable.nonEmpty((Set#{}: Set[Unit])) == false
+
+    @test
+    def nonEmpty02(): Bool =
+        UnorderedFoldable.nonEmpty(Set#{1}) == true
+
+    @test
+    def nonEmpty03(): Bool =
+        UnorderedFoldable.nonEmpty(Set#{1, 2}) == true
+
+    @test
+    def nonEmpty04(): Bool =
+        UnorderedFoldable.nonEmpty(Set#{1, 2, 3}) == true
+
+    @test
+    def nonEmpty05(): Bool =
+        UnorderedFoldable.nonEmpty(Set#{1, 2, 3, 4, 5, 6, 7, 8}) == true
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 

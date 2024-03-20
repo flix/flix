@@ -114,6 +114,43 @@ mod TestMutQueue {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testNonEmpty01(): Bool = region rc {
+        let mq = MutQueue.new(rc);
+        not MutQueue.nonEmpty(mq)
+    }
+
+    @Test
+    def testNonEmpty02(): Bool = region rc {
+        let mq = MutQueue.new(rc);
+        MutQueue.enqueue(mq, "a");
+        MutQueue.nonEmpty(mq)
+    }
+
+    @Test
+    def testNonEmpty03(): Bool = region rc {
+        let mq = MutQueue.new(rc);
+        MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: Nil);
+        MutQueue.dequeue(mq);
+        MutQueue.dequeue(mq);
+        MutQueue.dequeue(mq);
+        not MutQueue.nonEmpty(mq)
+    }
+
+    @Test
+    def testNonEmpty04(): Bool = region rc {
+        let mq = MutQueue.new(rc);
+        MutQueue.enqueueAll(mq, 1 :: 2 :: Nil);
+        MutQueue.dequeue(mq);
+        MutQueue.dequeue(mq);
+        MutQueue.enqueue(mq, 1);
+        MutQueue.nonEmpty(mq)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // peek                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 

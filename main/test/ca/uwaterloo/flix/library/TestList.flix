@@ -50,6 +50,18 @@ def isEmpty02(): Bool = List.isEmpty(1 :: Nil) == false
 def isEmpty03(): Bool = List.isEmpty(1 :: 2 :: Nil) == false
 
 /////////////////////////////////////////////////////////////////////////////
+// nonEmpty                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def nonEmpty01(): Bool = List.nonEmpty(Nil) == false
+
+@test
+def nonEmpty02(): Bool = List.nonEmpty(1 :: Nil) == true
+
+@test
+def nonEmpty03(): Bool = List.nonEmpty(1 :: 2 :: Nil) == true
+
+/////////////////////////////////////////////////////////////////////////////
 // head                                                                    //
 /////////////////////////////////////////////////////////////////////////////
 @test
