@@ -141,8 +141,8 @@ mod BigInt {
     /// Returns the bitwise NOT of `x`.
     ///
     pub def bitwiseNot(x: BigInt): BigInt =
-        import java.math.BigInteger.not(): BigInt \ {};
-        not(x)
+        import java.math.BigInteger.not(): BigInt \ {} as bNot;
+        bNot(x)
 
     ///
     /// Returns the bitwise OR of `x` and `y`.
@@ -169,7 +169,7 @@ mod BigInt {
     ///
     pub def fromString(s: String): Option[BigInt] = try {
         import java.lang.String.strip(): String \ {};
-        import new java.math.BigInteger(String): BigInt \ {} as parseBigInt;
+        import java_new java.math.BigInteger(String): BigInt \ {} as parseBigInt;
         Some(s |> strip |> parseBigInt)
     } catch {
         case _: ##java.lang.NumberFormatException => None
@@ -250,7 +250,7 @@ mod BigInt {
     /// (i.e. 1.4E-45 to 3.4028235E38).
     ///
     pub def tryToFloat32(x: BigInt): Option[Float32] =
-        import new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
+        import java_new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
         import java.math.BigDecimal.floatValue(): Float32 \ {};
         let xd = newBigDecimal(x);
         let d = floatValue(xd);
@@ -271,7 +271,7 @@ mod BigInt {
     /// (i.e 4.9E-324 to 1.7976931348623157E308).
     ///
     pub def tryToFloat64(x: BigInt): Option[Float64] =
-        import new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
+        import java_new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
         import java.math.BigDecimal.doubleValue(): Float64 \ {};
         let xd = newBigDecimal(x);
         let d = doubleValue(xd);
@@ -285,7 +285,7 @@ mod BigInt {
     /// Convert `x` to an `BigDecimal`.
     ///
     pub def toBigDecimal(x: BigInt): BigDecimal =
-        import new java.math.BigDecimal(BigInt): BigDecimal \ {} as fromBigInteger;
+        import java_new java.math.BigDecimal(BigInt): BigDecimal \ {} as fromBigInteger;
         fromBigInteger(x)
 
     ///
@@ -370,7 +370,7 @@ mod BigInt {
     /// Returns `x` clamped within the Float32 range `minimum` to `maximum`.
     ///
     pub def clampToFloat32(x: BigInt, minimum: Float32, maximum: Float32): Float32 =
-        import new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
+        import java_new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
         import java.math.BigDecimal.floatValue(): Float32 \ {};
         let step = () -> {
             forM (
@@ -393,7 +393,7 @@ mod BigInt {
     /// Returns `x` clamped within the Float64 range `minimum` to `maximum`.
     ///
     pub def clampToFloat64(x: BigInt, minimum: Float64, maximum: Float64): Float64 =
-        import new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
+        import java_new java.math.BigDecimal(BigInt): BigDecimal \ {} as newBigDecimal;
         import java.math.BigDecimal.doubleValue(): Float64 \ {};
         let step = () -> {
             forM (

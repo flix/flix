@@ -291,7 +291,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   }
 
   test("IllegalUninhabitedType.10") {
-    val input = "def f(): Int32 = 1: Pure"
+    val input = "def f(): Int32 = (1: Pure)"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -303,7 +303,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |  case C(a, b)
         |}
         |
-        |def f(): Int32 = 1: E[Int32]""".stripMargin
+        |def f(): Int32 = (1: E[Int32])""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -321,13 +321,13 @@ class TestKinder extends AnyFunSuite with TestUtils {
   }
 
   test("IllegalEffect.03") {
-    val input = raw"def f(): Int32 = 1: _ \ Int32"
+    val input = raw"def f(): Int32 = (1: _ \ Int32)"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
 
   test("IllegalEffect.04") {
-    val input = raw"def f(): Int32 = 1: Int32 \ Int32"
+    val input = raw"def f(): Int32 = (1: Int32 \ Int32)"
     val result = compile(input, DefaultOptions)
     expectError[KindError](result)
   }
@@ -418,7 +418,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.Expression.Ascribe.01") {
     val input =
       """
-        |def f(): Int32 = 1: Pure
+        |def f(): Int32 = (1: Pure)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -427,7 +427,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.Expression.Ascribe.02") {
     val input =
       """
-        |def f(): Int32 = 1: _ \ Unit
+        |def f(): Int32 = (1: _ \ Unit)
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -656,7 +656,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.TypeConstraint.01") {
     val input =
       """
-        |class C[a: Type -> Type]
+        |trait C[a: Type -> Type]
 
         |def f[a: Type](): a with C[a] = ???
         |""".stripMargin
@@ -676,7 +676,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Def.Mismatch.02") {
     val input =
       """
-        |class C[a: Type -> Type]
+        |trait C[a: Type -> Type]
         |
         |def f(x: a): Int32 with C[a] = ???
         |""".stripMargin
@@ -775,7 +775,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Instance.Def.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |  pub def f(x: a): a
         |}
         |
@@ -792,9 +792,9 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Instance.TypeConstraint.01") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a: Type -> Type]
+        |trait D[a: Type -> Type]
         |
         |enum E[a]
         |
@@ -807,7 +807,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Instance.TypeParameter.01") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
         |enum E[a]
         |
@@ -844,7 +844,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Class.Law.01") {
     val input =
       """
-        |class C[a: Type -> Type] {
+        |trait C[a: Type -> Type] {
         |  law l: forall (x: a) . ???
         |}
         |""".stripMargin
@@ -855,7 +855,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Class.Sig.01") {
     val input =
       """
-        |class C[a: Type -> Type] {
+        |trait C[a: Type -> Type] {
         |  pub def f(x: a): Int32 = ???
         |}
         |""".stripMargin
@@ -866,7 +866,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Class.Sig.02") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |  pub def f(x: {l =  Int32 | a}): Int32 = ???
         |}
         |""".stripMargin
@@ -877,9 +877,9 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.Class.TypeConstraint.01") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
-        |class D[a: Type -> Type] with C[a]
+        |trait D[a: Type -> Type] with C[a]
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
@@ -1009,7 +1009,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |    case D2
         |}
         |
-        |def f(x: F[s ++ d], y: E[~~d]): String = ???
+        |def f(x: F[s rvadd d], y: E[rvnot d]): String = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.MismatchedKinds](result)
@@ -1018,7 +1018,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   test("KindError.MissingConstraint.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    type T
         |}
         |

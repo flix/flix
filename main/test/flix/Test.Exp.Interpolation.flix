@@ -162,7 +162,7 @@ mod Test.Exp.Interpolation {
 
     @test
     def interpolation30(): Bool =
-        let x = None : Option[Int32];
+        let x = (None : Option[Int32]);
         "${x}" == "None"
 
     @test
@@ -177,17 +177,17 @@ mod Test.Exp.Interpolation {
 
     @test
     def interpolation33(): Bool =
-        let x = Ok(123): Result[Int32, Int32];
+        let x = (Ok(123): Result[Int32, Int32]);
         "${x}" == "Ok(123)"
 
     @test
     def interpolation34(): Bool =
-        let x = Err(123): Result[Int32, Int32];
+        let x = (Err(123): Result[Int32, Int32]);
         "${x}" == "Err(123)"
 
     @test
     def interpolation35(): Bool =
-        let x = Ok(Some(123)): Result[Int32, Option[Int32]];
+        let x = (Ok(Some(123)): Result[Int32, Option[Int32]]);
         "${x}" == "Ok(Some(123))"
 
     @test

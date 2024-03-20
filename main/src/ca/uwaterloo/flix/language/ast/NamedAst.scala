@@ -105,9 +105,9 @@ object NamedAst {
 
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Unary(sop: SemanticOp, exp: Expr, loc: SourceLocation) extends Expr
+    case class Unary(sop: SemanticOp.UnaryOp, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Binary(sop: SemanticOp, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class Binary(sop: SemanticOp.BinaryOp, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
@@ -177,13 +177,13 @@ object NamedAst {
 
     case class TryWith(exp: Expr, eff: Name.QName, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
-    case class Do(op: Name.QName, args: List[Expr], loc: SourceLocation) extends Expr
+    case class Do(op: Name.QName, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor(className: String, args: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
+    case class InvokeConstructor(className: String, exps: List[Expr], sig: List[Type], loc: SourceLocation) extends Expr
 
-    case class InvokeMethod(className: String, methodName: String, exp: Expr, args: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
+    case class InvokeMethod(className: String, methodName: String, exp: Expr, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
 
-    case class InvokeStaticMethod(className: String, methodName: String, args: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
+    case class InvokeStaticMethod(className: String, methodName: String, exps: List[Expr], sig: List[Type], retTpe: Type, loc: SourceLocation) extends Expr
 
     case class GetField(className: String, fieldName: String, exp: Expr, loc: SourceLocation) extends Expr
 

@@ -132,7 +132,7 @@ mod DelayList {
     ///
     @Experimental
     pub def toString(l: DelayList[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         StringBuilder.appendString!("DelayList(", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)
@@ -386,7 +386,7 @@ mod DelayList {
     /// Returns an infinite sequence of integers starting from and including `n`.
     ///
     @Experimental @Lazy
-    pub def from(n: Int32): DelayList[Int32] =
+    pub def startFrom(n: Int32): DelayList[Int32] =
         def loop(i) = LCons(i, lazy loop(i + 1));
         LList(lazy loop(n))
 
@@ -571,13 +571,13 @@ mod DelayList {
         LList(lazy loop(l, ENil))
 
     ///
-    /// Returns `l` with every occurrence of `from` replaced by `to`.
+    /// Returns `l` with every occurrence of `src` replaced by `dst`.
     ///
     /// Does not force the tail of `l`.
     ///
     @Experimental @Lazy
-    pub def replace(from: {from = a}, to: {to = a}, l: DelayList[a]): DelayList[a] with Eq[a] =
-        map(e -> if (from.from == e) to.to else e, l)
+    pub def replace(src: {src = a}, dst: {dst = a}, l: DelayList[a]): DelayList[a] with Eq[a] =
+        map(e -> if (src.src == e) dst.dst else e, l)
 
     ///
     /// Applies `f` to a start value `s` and all elements in `l` going from left to right.
@@ -657,7 +657,7 @@ mod DelayList {
     @Experimental
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, l: DelayList[a]): Unit \ ef = region rc {
         let ix = ref 0 @ rc;
-        let f1 = x -> {let i = deref ix; f(i, x); ix := i+1};
+        let f1 = x -> { let i = deref ix; f(i, x); Ref.put(i + 1, ix) };
         forEach(f1, l)
     }
 
@@ -1167,7 +1167,7 @@ mod DelayList {
     ///
     @Experimental
     pub def toArray(rc: Region[r], l: DelayList[a]): Array[a, r] \ r =
-        let a = Array.new(rc, length(l));
+        let a = Array.empty(rc, length(l));
         forEach(match (i, y) -> Array.put(y, i, a), zipWithIndex(l));
         a
 
@@ -1178,7 +1178,7 @@ mod DelayList {
     ///
     @Experimental
     pub def toVector(l: DelayList[a]): Vector[a] = region rc {
-        let arr = Array.new(rc, length(l));
+        let arr = Array.empty(rc, length(l));
         forEach(match (i, x) -> Array.put(x, i, arr), zipWithIndex(l));
         Array.toVector(arr)
     }
@@ -1193,10 +1193,9 @@ mod DelayList {
         let cursor = ref l @ rc;
         let next = () -> match head(deref cursor) {
             case None    => None
-            case Some(x) => {
-                cursor := tail(deref cursor);
+            case Some(x) =>
+                Ref.put(tail(deref cursor), cursor);
                 Some(x)
-            }
         };
         Iterator.iterate(rc, next)
 
@@ -1235,7 +1234,7 @@ mod DelayList {
     /// Returns `l` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], l: DelayList[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach(x -> MutDeque.pushBack(x, d), l);
         d
 

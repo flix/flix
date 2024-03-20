@@ -301,7 +301,7 @@ mod GetOpt {
     def findOptionByName(optname: String, optDescrs: List[OptionDescr[a]]): Result[GetOptionFailure[a], OptionDescr[a]] =
         let getWith     = p -> List.filterMap(o -> { let xs = o.optionNames; if (List.exists(p(optname), xs)) Some(o) else None}, optDescrs);
         // Exact match of `optname` ...
-        let exact       = (getWith((x,y) -> x == y): List[OptionDescr[a]]);
+        let exact       = getWith((x,y) -> x == y);
         // Otherwise use `optname` as a prefix...
         let options     = if (List.isEmpty(exact)) getWith((sub, s1) -> String.startsWith({prefix = sub}, s1)) else exact;
         match options {
@@ -416,6 +416,6 @@ mod GetOpt {
     /// Remove all quote marks from the list of tokens.
     ///
     def removeQuoteMarks(quoteOpen: String, quoteClose: String, args: List[String]): List[String] =
-        args |> List.map(String.replace({from = quoteOpen}, {to = ""}) >> String.replace({from = quoteClose}, {to = ""}))
+        args |> List.map(String.replace({src = quoteOpen}, {dst = ""}) >> String.replace({src = quoteClose}, {dst = ""}))
 
 }

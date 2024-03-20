@@ -43,16 +43,16 @@ mod Test.Exp.Ref.Ref {
     def testRef14(): Unit = region rc { discard ref (1, 2, 3) @ rc }
 
     @test
-    def testRef15(): Unit = region rc { discard ref None : Option[Int32] @ rc }
+    def testRef15(): Unit = region rc { discard ref (None : Option[Int32]) @ rc }
 
     @test
     def testRef16(): Unit = region rc { discard ref Some(42) @ rc }
 
     @test
-    def testRef17(): Unit = region rc { discard ref Ok(42): Result[String, Int32] @ rc }
+    def testRef17(): Unit = region rc { discard ref (Ok(42): Result[String, Int32]) @ rc }
 
     @test
-    def testRef18(): Unit = region rc { discard ref Err("Goodbye World!"): Result[String, Int32] @ rc }
+    def testRef18(): Unit = region rc { discard ref (Err("Goodbye World!"): Result[String, Int32]) @ rc }
 
     @test
     def testRefRegion01(): Unit = // Pure

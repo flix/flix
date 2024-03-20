@@ -54,13 +54,13 @@ mod TestReducible {
         // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
         let f = (acc, a) -> {
             if (acc == 0)
-                l := a :: deref l
+                Ref.put(a :: deref l, l)
             else
-                l := a :: acc :: deref l;
+                Ref.put(a :: acc :: deref l, l);
             0
         };
         discard Reducible.reduceLeft(f, Nel.Nel(3, 2 :: 1 :: Nil));
-        (deref l) == 1 :: 2 :: 3 :: Nil
+        deref l == 1 :: 2 :: 3 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -101,13 +101,13 @@ mod TestReducible {
         // `f` uses 0 as a control value, since the first element of a `reduce` is located in `acc`.
         let f = (a, acc) -> {
             if (acc == 0)
-                l := a :: deref l
+                Ref.put(a :: deref l, l)
             else
-                l := a :: acc :: deref l;
+                Ref.put(a :: acc :: deref l, l);
             0
         };
         discard Reducible.reduceRight(f, Nel.Nel(1, 2 :: 3 :: Nil));
-        (deref l) == 1 :: 2 :: 3 :: Nil
+        deref l == 1 :: 2 :: 3 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -175,8 +175,8 @@ mod TestReducible {
     @test
     def foldLeft07(): Bool = region rc {
         let l = ref Nil @ rc;
-        discard Reducible.foldLeft((_, x) -> { l := x :: deref l; x == 1 }, false, Nel.Nel(3, 2 :: 1 :: Nil));
-        (deref l) == 1 :: 2 :: 3 :: Nil
+        discard Reducible.foldLeft((_, x) -> { Ref.put(x :: deref l, l); x == 1 }, false, Nel.Nel(3, 2 :: 1 :: Nil));
+        deref l == 1 :: 2 :: 3 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -210,8 +210,8 @@ mod TestReducible {
     @test
     def foldRight07(): Bool = region rc {
         let l = ref Nil @ rc;
-        discard Reducible.foldRight((x, _) -> { l := x :: deref l; x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
-        (deref l) == 1 :: 2 :: 3 :: Nil
+        discard Reducible.foldRight((x, _) -> { Ref.put(x :: deref l, l); x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
+        deref l == 1 :: 2 :: 3 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -245,8 +245,8 @@ mod TestReducible {
     @test
     def foldRightWithCont07(): Bool = region rc {
         let l = ref Nil @ rc;
-        discard Reducible.foldRightWithCont((x, _) -> { l := x :: deref l; x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
-        (deref l) == 1 :: 2 :: 3 :: Nil
+        discard Reducible.foldRightWithCont((x, _) -> { Ref.put(x :: deref l, l); x == 1 }, false, Nel.Nel(1, 2 :: 3 :: Nil));
+        deref l == 1 :: 2 :: 3 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -509,14 +509,14 @@ mod TestReducible {
     @test
     def forEach01(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Reducible.forEach(x -> ri := x, Nel.Nel(1, Nil));
+        Reducible.forEach(x -> Ref.put(x, ri), Nel.Nel(1, Nil));
         1 == deref ri
     }
 
     @test
     def forEach02(): Bool = region rc {
         let ri = ref 21 @ rc;
-        Reducible.forEach(x -> ri := x, Nel.Nel(1, 2 :: 3 :: Nil));
+        Reducible.forEach(x -> Ref.put(x, ri), Nel.Nel(1, 2 :: 3 :: Nil));
         3 == deref ri
     }
 
@@ -551,8 +551,8 @@ mod TestReducible {
     @test
     def findLeft07(): Bool = region rc {
         let l = ref Nil @ rc;
-        discard Reducible.findLeft(x -> { l := x :: deref l; x == 1 }, Nel.Nel(3, 2 :: 1 :: Nil));
-        (deref l) == 1 :: 2 :: 3 :: Nil
+        discard Reducible.findLeft(x -> { Ref.put(x :: deref l, l); x == 1 }, Nel.Nel(3, 2 :: 1 :: Nil));
+        deref l == 1 :: 2 :: 3 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -586,8 +586,8 @@ mod TestReducible {
     @test
     def findRight07(): Bool = region rc {
         let l = ref Nil @ rc;
-        discard Reducible.findRight(x -> { l := x :: deref l; x == 1 }, Nel.Nel(1, 2 :: 3 :: Nil));
-        (deref l) == 1 :: 2 :: 3 :: Nil
+        discard Reducible.findRight(x -> { Ref.put(x :: deref l, l); x == 1 }, Nel.Nel(1, 2 :: 3 :: Nil));
+        deref l == 1 :: 2 :: 3 :: Nil
     }
 
     /////////////////////////////////////////////////////////////////////////////

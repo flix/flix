@@ -64,15 +64,15 @@ mod Regex {
     /// and can be summed to make a bit mask.
     ///
     def toInt(flag: Flag): Int32 =
-        import static get java.util.regex.Pattern.CANON_EQ: Int32 \ {} as get_CANON_EQ;
-        import static get java.util.regex.Pattern.CASE_INSENSITIVE: Int32 \ {} as get_CASE_INSENSITIVE;
-        import static get java.util.regex.Pattern.COMMENTS: Int32 \ {} as get_COMMENTS;
-        import static get java.util.regex.Pattern.DOTALL: Int32 \ {} as get_DOTALL;
-        import static get java.util.regex.Pattern.LITERAL: Int32 \ {} as get_LITERAL;
-        import static get java.util.regex.Pattern.MULTILINE: Int32 \ {} as get_MULTILINE;
-        import static get java.util.regex.Pattern.UNICODE_CASE: Int32 \ {} as get_UNICODE_CASE;
-        import static get java.util.regex.Pattern.UNICODE_CHARACTER_CLASS: Int32 \ {} as get_UNICODE_CHARACTER_CLASS;
-        import static get java.util.regex.Pattern.UNIX_LINES: Int32 \ {} as get_UNIX_LINES;
+        import static java_get_field java.util.regex.Pattern.CANON_EQ: Int32 \ {} as get_CANON_EQ;
+        import static java_get_field java.util.regex.Pattern.CASE_INSENSITIVE: Int32 \ {} as get_CASE_INSENSITIVE;
+        import static java_get_field java.util.regex.Pattern.COMMENTS: Int32 \ {} as get_COMMENTS;
+        import static java_get_field java.util.regex.Pattern.DOTALL: Int32 \ {} as get_DOTALL;
+        import static java_get_field java.util.regex.Pattern.LITERAL: Int32 \ {} as get_LITERAL;
+        import static java_get_field java.util.regex.Pattern.MULTILINE: Int32 \ {} as get_MULTILINE;
+        import static java_get_field java.util.regex.Pattern.UNICODE_CASE: Int32 \ {} as get_UNICODE_CASE;
+        import static java_get_field java.util.regex.Pattern.UNICODE_CHARACTER_CLASS: Int32 \ {} as get_UNICODE_CHARACTER_CLASS;
+        import static java_get_field java.util.regex.Pattern.UNIX_LINES: Int32 \ {} as get_UNIX_LINES;
         match flag {
             case CanonEq                => get_CANON_EQ()
             case CaseInsenstive         => get_CASE_INSENSITIVE()
@@ -202,21 +202,21 @@ mod Regex {
 
 
     ///
-    /// Returns string `s` with every match of the Regex `from` replaced by the string `to`.
+    /// Returns string `s` with every match of the Regex `src` replaced by the string `dst`.
     ///
-    pub def replace(from: {from = Regex}, to: {to = String}, s: String): String = region rc {
+    pub def replace(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
         import java.util.regex.Matcher.replaceAll(String): String \ rc;
-        let Matcher(m1) = newMatcher(rc, from.from, s);
-        replaceAll(m1, to.to)
+        let Matcher(m1) = newMatcher(rc, src.src, s);
+        replaceAll(m1, dst.dst)
     }
 
     ///
-    /// Returns string `s` with the first match of the regular expression `from` replaced by the string `to`.
+    /// Returns string `s` with the first match of the regular expression `src` replaced by the string `dst`.
     ///
-    pub def replaceFirst(from: {from = Regex}, to: {to = String}, s: String): String = region rc {
+    pub def replaceFirst(src: {src = Regex}, dst: {dst = String}, s: String): String = region rc {
         import java.util.regex.Matcher.replaceFirst(String): String \ rc;
-        let Matcher(m1) = newMatcher(rc, from.from, s);
-        replaceFirst(m1, to.to)
+        let Matcher(m1) = newMatcher(rc, src.src, s);
+        replaceFirst(m1, dst.dst)
     }
 
     ///

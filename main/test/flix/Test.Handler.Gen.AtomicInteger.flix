@@ -3,7 +3,7 @@ mod Test.Handler.Gen.AtomicInteger {
     type alias AtomicInteger = ##java.util.concurrent.atomic.AtomicInteger
 
     def newAtomicInteger(n: Int32): AtomicInteger =
-        import new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInteger \ {} as mk;
+        import java_new java.util.concurrent.atomic.AtomicInteger(Int32): AtomicInteger \ {} as mk;
         mk(n)
 
     def toInt(n: AtomicInteger): Int32 =
@@ -31,7 +31,7 @@ mod Test.Handler.Gen.AtomicInteger {
 
     def getAndInc(r: Ref[AtomicInteger, r]): AtomicInteger \ r =
         let i = toInt(deref r);
-        r := newAtomicInteger(i + 1);
+        Ref.put(newAtomicInteger(i + 1), r);
         newAtomicInteger(i)
 
     def range(a: AtomicInteger, b: AtomicInteger): List[AtomicInteger] =

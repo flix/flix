@@ -393,8 +393,6 @@ object TypeInference {
             resultTyp <- expectTypeM(expected = Type.Int64, actual = tpe, bind = tvar, exp.loc)
             resultEff = eff
           } yield (constrs, resultTyp, resultEff)
-
-        case _ => throw InternalCompilerException(s"Unexpected unary operator: '$sop'.", loc)
       }
 
       case KindedAst.Expr.Binary(sop, exp1, exp2, tvar, loc) => sop match {
@@ -531,8 +529,6 @@ object TypeInference {
             resultTyp <- unifyTypeM(tvar, Type.Str, loc)
             resultEff = Type.mkUnion(eff1, eff2, loc)
           } yield (constrs1 ++ constrs2, resultTyp, resultEff)
-
-        case _ => throw InternalCompilerException(s"Unexpected binary operator: '$sop'.", loc)
       }
 
       case KindedAst.Expr.IfThenElse(exp1, exp2, exp3, loc) =>
@@ -612,6 +608,7 @@ object TypeInference {
           patternType <- unifyTypeM(tpe :: patternTypes, loc)
           (guardConstrs, guardTypes, guardEffs) <- traverseM(guards)(visitExp).map(_.unzip3)
           guardType <- traverseM(guardTypes.zip(guardLocs)) { case (gTpe, gLoc) => expectTypeM(expected = Type.Bool, actual = gTpe, loc = gLoc) }
+          guardEff <- traverseM(guardEffs.zip(guardLocs)) { case (gEff, gLoc) => expectEffectM(expected = Type.Pure, actual = gEff, loc = gLoc) }
           (bodyConstrs, bodyTypes, bodyEffs) <- traverseM(bodies)(visitExp).map(_.unzip3)
           resultTyp <- unifyTypeM(bodyTypes, loc)
           resultEff = Type.mkUnion(eff :: guardEffs ::: bodyEffs, loc)
@@ -848,7 +845,7 @@ object TypeInference {
         for {
           (constrs, tpe, eff) <- visitExp(exp)
           resultTyp = Type.Bool
-          resultEff <- expectTypeM(expected = Type.Pure, actual = eff, exp.loc)
+          resultEff = eff
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expr.CheckedCast(cast, exp, tvar, pvar, loc) =>
@@ -892,7 +889,10 @@ object TypeInference {
       case KindedAst.Expr.TryCatch(exp, rules, loc) =>
         val rulesType = rules map {
           case KindedAst.CatchRule(sym, clazz, body) =>
-            visitExp(body)
+            for {
+              _ <- unifyTypeM(sym.tvar, Type.mkNative(clazz, sym.loc), sym.loc)
+              tpe <- visitExp(body)
+            } yield tpe
         }
 
         for {
@@ -1068,6 +1068,7 @@ object TypeInference {
               _ <- traverseM(fparams)(inferParam)
               (constrs, bodyTpe, bodyEff) <- visitExp(exp)
               _ <- expectTypeM(expected = returnTpe, actual = bodyTpe, exp.loc)
+              _ <- expectEffectM(expected = eff , actual = bodyEff, exp.loc)
             } yield (constrs, returnTpe, bodyEff)
         }
 

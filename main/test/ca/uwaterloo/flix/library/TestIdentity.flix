@@ -32,7 +32,7 @@ mod TestIdentity {
 
     @test
     def empty01(): Bool =
-        Identity(Monoid.empty() : List[Int32]) == Identity(Nil): Identity[List[Int32]]
+        Identity((Monoid.empty() : List[Int32])) == (Identity(Nil): Identity[List[Int32]])
 
     /////////////////////////////////////////////////////////////////////////////
     // Functor                                                                 //
@@ -48,7 +48,7 @@ mod TestIdentity {
 
     @test
     def point01(): Bool =
-        Applicative.point(1) : Identity[Int32] == Identity(1)
+        (Applicative.point(1) : Identity[Int32]) == Identity(1)
 
     @test
     def ap01(): Bool =

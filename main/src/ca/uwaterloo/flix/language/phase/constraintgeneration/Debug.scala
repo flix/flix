@@ -18,10 +18,51 @@ package ca.uwaterloo.flix.language.phase.constraintgeneration
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
+import java.nio.file.{Files, Path}
+
 /**
   * Debugging utilities for typing constraints.
+  * Not thread-safe.
   */
-class Debug {
+object Debug {
+
+  /**
+    * The directory in which to store the constraint graphs.
+    */
+  private val GraphDir: String = "./personal/constraint-graphs/"
+
+  /**
+    * Indicates whether we are currently recording constraint resolution.
+    */
+  private var record: Boolean = false
+
+  /**
+    * The number of the next graph to record.
+    */
+  private var index = 0
+
+
+  /**
+    * Activates recording of constraint resolution.
+    */
+  def startRecording(): Unit = record = true
+
+  /**
+    * Deactivates recording of constraint resolution.
+    */
+  def stopLogging(): Unit = record = false
+
+  /**
+    * Records the given typing constraints and substitution as a dot graph.
+    */
+  def recordGraph(tconstrs: List[TypingConstraint], subst: Substitution): Unit = {
+    if (record) {
+      val dot = toDotWithSubst(tconstrs, subst)
+      val path = Path.of(GraphDir, s"${index.toString.reverse.padTo(4, '0').reverse}.dot")
+      Files.writeString(path, dot)
+      index += 1
+    }
+  }
 
   /**
     * Generates a GraphViz (dot) string representing the given constraints.
