@@ -40,8 +40,7 @@ instance ToString[Down[a]] with ToString[a] {
 }
 
 instance Add[Down[a]] with Add[a] {
-    type Aef = Add.Aef[a]
-    pub def add(x: Down[a], y: Down[a]): Down[a] \ Add.Aef[a] = match (x, y) {
+    pub def add(x: Down[a], y: Down[a]): Down[a] = match (x, y) {
         case (Down.Down(xx), Down.Down(yy)) => Down.Down(xx + yy) // no consideration for overflow
     }
 }

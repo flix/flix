@@ -18,25 +18,21 @@
 /// A trait for division.
 ///
 pub trait Div[a] {
-    type Aef: Eff
     ///
     /// Returns `x` divided by `y`.
     ///
-    pub def div(x: a, y: a): a \ Div.Aef[a]
+    pub def div(x: a, y: a): a
 }
 
 instance Div[Float32] {
-    type Aef = Pure
     pub def div(x: Float32, y: Float32): Float32 = $FLOAT32_DIV$(x, y)
 }
 
 instance Div[Float64] {
-    type Aef = Pure
     pub def div(x: Float64, y: Float64): Float64 = $FLOAT64_DIV$(x, y)
 }
 
 instance Div[BigDecimal] {
-    type Aef = Pure
     pub def div(x: BigDecimal, y: BigDecimal): BigDecimal =
         import java.math.BigDecimal.divide(BigDecimal): BigDecimal \ {};
         if (y == 0ff)
@@ -46,7 +42,6 @@ instance Div[BigDecimal] {
 }
 
 instance Div[Int8] {
-    type Aef = Pure
     pub def div(x: Int8, y: Int8): Int8 =
         if (y == 0i8)
             0i8
@@ -55,7 +50,6 @@ instance Div[Int8] {
 }
 
 instance Div[Int16] {
-    type Aef = Pure
     pub def div(x: Int16, y: Int16): Int16 =
         if (y == 0i16)
             0i16
@@ -64,7 +58,6 @@ instance Div[Int16] {
 }
 
 instance Div[Int32] {
-    type Aef = Pure
     pub def div(x: Int32, y: Int32): Int32 =
         if (y == 0i32)
             0i32
@@ -73,7 +66,6 @@ instance Div[Int32] {
 }
 
 instance Div[Int64] {
-    type Aef = Pure
     pub def div(x: Int64, y: Int64): Int64 =
         if (y == 0i64)
             0i64
@@ -82,7 +74,6 @@ instance Div[Int64] {
 }
 
 instance Div[BigInt] {
-    type Aef = Pure
     pub def div(x: BigInt, y: BigInt): BigInt =
         import java.math.BigInteger.divide(BigInt): BigInt \ {};
         if (y == 0ii)
@@ -92,7 +83,6 @@ instance Div[BigInt] {
 }
 
 instance Div[String] {
-    type Aef = Pure
     pub def div(x: String, y: String): String =
         import static java_get_field java.io.File.separator: String \ {} as separator;
         (x + separator() + y)
