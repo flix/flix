@@ -8,24 +8,24 @@ mod Test.Dec.AssocEff {
     // Arithmetic //
     ////////////////
 
-    class Add[a] {
+    trait Add[a] {
         pub def add(x: a, y: a): a
     }
 
-    class Sub[a] {
+    trait Sub[a] {
         pub def sub(x: a, y: a): a
     }
 
-    class Mul[a] {
+    trait Mul[a] {
         pub def mul(x: a, y: a): a
     }
 
-    class Div[a] {
+    trait Div[a] {
         type Aef: Eff
         pub def div(x: a, y: a): a \ Div.Aef[a]
     }
 
-    class FromInt32[a] {
+    trait FromInt32[a] {
         pub def fromInt32(x: Int32): a
     }
 
@@ -52,7 +52,7 @@ mod Test.Dec.AssocEff {
     // Iterator //
     //////////////
 
-    class Iterable[t: Type] {
+    trait Iterable[t: Type] {
         type Elm: Type
         type Aef: Eff
         pub def iterator(rc: Region[r], t: t): Iterator[Iterable.Elm[t], r + Iterable.Aef[t], r] \ r + Iterable.Aef[t]
@@ -103,7 +103,7 @@ mod Test.Dec.AssocEff {
             do Console.println("${fruit} topped with ${cream}")
     }
 
-    class DeepIterable[a] {
+    trait DeepIterable[a] {
         type Elm
         type Aef: Eff
         pub def iterator(rc: Region[r], x: a): Iterator[DeepIterable.Elm[a], r + DeepIterable.Aef[a], r] \ r + DeepIterable.Aef[a]
@@ -176,7 +176,7 @@ mod Test.Dec.AssocEff {
     // Logging //
     /////////////
 
-    class Logger[a] {
+    trait Logger[a] {
         type Aef: Eff
         pub def log(s: String, x: a): Unit \ Logger.Aef[a]
     }
