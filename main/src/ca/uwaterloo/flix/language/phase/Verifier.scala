@@ -27,12 +27,11 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object Verifier {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Verifier") {
-    if (flix.options.noverify) {
-      root
-    } else {
+    if (!flix.options.noverify) {
       root.defs.values.foreach(d => visitDef(d)(root))
-      root
     }
+
+    root
   }
 
   private def visitDef(decl: Def)(implicit root: Root): Unit = {
