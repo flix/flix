@@ -163,6 +163,14 @@ mod DelayList {
     }
 
     ///
+    /// Returns true if and only if `l` is a non-empty DelayList.
+    ///
+    /// Does not force the tail of `l`.
+    ///
+    @Experimental
+    pub def nonEmpty(l: DelayList[a]): Bool = not isEmpty(l)
+
+    ///
     /// Returns `Some(x)` if `x` is the first element of `l`.
     ///
     /// Returns `None` if `l` is empty.

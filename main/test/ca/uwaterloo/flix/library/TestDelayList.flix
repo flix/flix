@@ -163,6 +163,18 @@ mod TestDelayList {
     def isEmpty02(): Bool =
         not (DelayList.range(0, 1000) |> DelayList.isEmpty)
 
+    /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def nonEmpty01(): Bool =
+        not ((DelayList.empty(): DelayList[Int32]) |> DelayList.nonEmpty)
+
+    @test
+    def nonEmpty02(): Bool =
+        DelayList.range(0, 1000) |> DelayList.nonEmpty
+
 
     /////////////////////////////////////////////////////////////////////////////
     // range                                                                   //

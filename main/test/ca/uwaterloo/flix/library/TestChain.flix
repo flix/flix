@@ -94,6 +94,19 @@ mod TestChain {
     def isEmpty03(): Bool = Chain.isEmpty(List.toChain(1 :: 2 :: Nil)) == false
 
     /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def nonEmpty01(): Bool = Chain.nonEmpty(Chain.empty()) == false
+
+    @test
+    def nonEmpty02(): Bool = Chain.nonEmpty(Chain.singleton(1)) == true
+
+    @test
+    def nonEmpty03(): Bool = Chain.nonEmpty(List.toChain(1 :: 2 :: Nil)) == true
+
+    /////////////////////////////////////////////////////////////////////////////
     // cons                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 

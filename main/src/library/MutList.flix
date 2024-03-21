@@ -91,6 +91,11 @@ mod MutList {
         length(v) == 0
 
     ///
+    /// Returns `true` if the given mutable list `v` is non-empty.
+    ///
+    pub def nonEmpty(v: MutList[a, r]): Bool \ r = not isEmpty(v)
+
+    ///
     /// Returns `true` if the given element `x` is a member of the given mutable list `v`.
     ///
     pub def memberOf(x: a, v: MutList[a, r]): Bool \ r with Eq[a] =

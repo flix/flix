@@ -37,6 +37,18 @@ def isEmpty02(): Bool = Option.isEmpty(Some(0)) == false
 def isEmpty03(): Bool = Option.isEmpty(Some(22ii)) == false
 
 /////////////////////////////////////////////////////////////////////////////
+// nonEmpty                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def nonEmpty01(): Bool = Option.nonEmpty(None) == false
+
+@test
+def nonEmpty02(): Bool = Option.nonEmpty(Some(0)) == true
+
+@test
+def nonEmpty03(): Bool = Option.nonEmpty(Some(22ii)) == true
+
+/////////////////////////////////////////////////////////////////////////////
 // getWithDefault                                                          //
 /////////////////////////////////////////////////////////////////////////////
 @test
