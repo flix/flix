@@ -77,6 +77,24 @@ def isEmpty04(): Bool = not Map.isEmpty(Map#{1 => 2, 2 => 4, 3 => 6})
 def isEmpty05(): Bool = not Map.isEmpty(Map#{1 => 2, 2 => 4, 3 => 6, 4 => 8})
 
 /////////////////////////////////////////////////////////////////////////////
+// nonEmpty                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def nonEmpty01(): Bool = not Map.nonEmpty((Map#{}: Map[Unit, Unit]))
+
+@test
+def nonEmpty02(): Bool = Map.nonEmpty(Map#{1 => 2})
+
+@test
+def nonEmpty03(): Bool = Map.nonEmpty(Map#{1 => 2, 2 => 4})
+
+@test
+def nonEmpty04(): Bool = Map.nonEmpty(Map#{1 => 2, 2 => 4, 3 => 6})
+
+@test
+def nonEmpty05(): Bool = Map.nonEmpty(Map#{1 => 2, 2 => 4, 3 => 6, 4 => 8})
+
+/////////////////////////////////////////////////////////////////////////////
 // get                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test

@@ -175,6 +175,11 @@ mod Map {
         RedBlackTree.isEmpty(t)
 
     ///
+    /// Returns `true` if and only if `m` is a non-empty map.
+    ///
+    pub def nonEmpty(m: Map[k, v]): Bool = not isEmpty(m)
+
+    ///
     /// Returns `Some(v)` if `k => v` is in `m`.
     ///
     /// Otherwise returns `None`.

@@ -104,6 +104,11 @@ mod MutDeque {
         deref f == deref b
 
     ///
+    /// Returns `true` if `d` is non-empty.
+    ///
+    pub def nonEmpty(d: MutDeque[a, r]): Bool \ r = not isEmpty(d)
+
+    ///
     /// Returns the sum of all elements in the deque `d`.
     ///
     pub def sum(d: MutDeque[Int32, r]): Int32 \ r =

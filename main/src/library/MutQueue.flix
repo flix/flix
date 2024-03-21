@@ -68,6 +68,11 @@ mod MutQueue {
         deref s == 0
 
     ///
+    /// Returns whether `mq` is non-empty.
+    ///
+    pub def nonEmpty(mq: MutQueue[a, r]): Bool \ r = not isEmpty(mq)
+
+    ///
     /// Optionally returns the top element of `mq`.
     ///
     pub def peek(mq: MutQueue[a, r]): Option[a] \ r =

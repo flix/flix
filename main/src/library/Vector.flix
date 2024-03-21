@@ -203,6 +203,11 @@ mod Vector {
     pub def isEmpty(v: Vector[a]): Bool = length(v) == 0
 
     ///
+    /// Returns `true` if the given vector `v` is non-empty.
+    ///
+    pub def nonEmpty(v: Vector[a]): Bool = not isEmpty(v)
+
+    ///
     /// Returns the length of the vector `v`.
     ///
     pub def length(v: Vector[a]): Int32 = $VECTOR_LENGTH$(v)

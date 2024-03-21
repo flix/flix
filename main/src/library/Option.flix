@@ -169,6 +169,11 @@ mod Option {
     }
 
     ///
+    /// Returns `true` iff `o` is `Some`.
+    ///
+    pub def nonEmpty(o: Option[a]): Bool = not isEmpty(o)
+
+    ///
     /// Returns `v` if `o` is `Some(v).` Otherwise returns `d`.
     ///
     pub def getWithDefault(d: a, o: Option[a]): a = match o {
