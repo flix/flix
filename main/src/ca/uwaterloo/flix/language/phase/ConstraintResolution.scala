@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Matthew Lutze
+ * Copyright 2024 Matthew Lutze
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,6 +114,30 @@ object ConstraintResolution {
 
   /**
     * Adds the given type constraints as assumptions to the class environment.
+    *
+    * Transitively adds the superclasses of the constraints.
+    * For example, given the class environment:
+    *
+    * {{{
+    *   class Order[a] with Eq[a]
+    *   instance Eq[String]
+    *   instance Order[String]
+    * }}}
+    *
+    * If we add
+    * {{{
+    *   instance Order[b]
+    * }}}
+    *
+    * then we get
+    * {{{
+    *   class Order[a] with Eq[a]
+    *   instance Eq[String]
+    *   instance Order[String]
+    *
+    *   instance Eq[b]
+    *   instance Order[b]
+    * }}}
     */
   private def expandClassEnv(cenv: Map[Symbol.ClassSym, Ast.ClassContext], tconstrs: List[Ast.TypeConstraint]): Map[Symbol.ClassSym, Ast.ClassContext] = {
 
@@ -145,6 +169,22 @@ object ConstraintResolution {
 
   /**
     * Adds the given equality constraints as assumptions to the equality environment.
+    *
+    * For example, given the equality environment:
+    * {{{
+    *   Elm[List[a]] ~ a
+    * }}}
+    *
+    * If we add
+    * {{{
+    *   Elm[b] ~ String
+    * }}}
+    *
+    * then we get
+    * {{{
+    *   Elm[List[a]] ~ a
+    *   Elm[b] ~ String
+    * }}}
     */
   private def expandEqualityEnv(eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], econstrs: List[Ast.EqualityConstraint]): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = {
     econstrs.foldLeft(eqEnv) {
@@ -431,8 +471,8 @@ object ConstraintResolution {
     var curr = constrs.sortBy(_.numVars)
     var subst = subst0
     var count = 0
-    var prog = true
-    while (prog) {
+    var progress = true
+    while (progress) {
       if (count >= MaxIterations) {
         return Result.Err(TypeError.TooComplex(SourceLocation.Unknown))
       }
@@ -442,10 +482,13 @@ object ConstraintResolution {
       Debug.recordGraph(curr, subst)
 
       resolveOneOf(curr, subst, renv, cenv, eqEnv) match {
-        case Result.Ok(ResolutionResult(newSubst, newConstrs, progress)) =>
+        // Case 1: Success. Update the tracking variables.
+        case Result.Ok(ResolutionResult(newSubst, newConstrs, newProgress)) =>
           curr = newConstrs
           subst = newSubst
-          prog = progress
+          progress = newProgress
+
+        // Case 2: Error. Break out of the loop and return the error.
         case res@Result.Err(_) =>
           Debug.stopLogging()
           return res
@@ -587,8 +630,6 @@ object ConstraintResolution {
 
   /**
     * Converts the given unification error into a type error.
-    *
-    * Emulating logic from master branch
     *
     * ExpectType
     * - pretend it's just unifyType
