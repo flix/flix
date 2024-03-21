@@ -324,6 +324,18 @@ object Verifier {
             case _ => throw MismatchedShape(t1, "Tuple", loc)
           }
 
+        case AtomicOp.Assign =>
+          val List(t1, t2) = ts
+          t1 match {
+            case MonoType.Ref(elm) =>
+              checkEq(t2, elm, loc)
+              check(expected = MonoType.Unit)(actual = tpe, loc)
+            case _ => throw MismatchedShape(t1, "Ref", loc)
+          }
+
+        // Match- and Hole-errors match with any type
+        case AtomicOp.HoleError(_) | AtomicOp.MatchError => tpe
+
         case _ => tpe // TODO: VERIFIER: Add rest
       }
 
