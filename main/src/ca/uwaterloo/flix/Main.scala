@@ -345,7 +345,7 @@ object Main {
                      listen: Option[Int] = None,
                      threads: Option[Int] = None,
                      assumeYes: Boolean = false,
-                     noverify: Boolean = true,
+                     noverify: Boolean = false,
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,

@@ -39,7 +39,7 @@ object Options {
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
     assumeYes = false,
-    noverify = true,
+    noverify = false,
     xbddthreshold = None,
     xnoboolcache = false,
     xnoboolspecialcases = false,
