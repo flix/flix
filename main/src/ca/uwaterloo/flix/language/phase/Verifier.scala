@@ -393,8 +393,7 @@ object Verifier {
   private def check(expected: MonoType)(actual: MonoType, loc: SourceLocation): MonoType = {
     if (expected == actual)
       expected
-    else
-      throw failUnexpectedType(expected, actual, loc)
+    else failUnexpectedType(expected, actual, loc)
   }
 
   /**
@@ -403,8 +402,7 @@ object Verifier {
   private def checkEq(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): MonoType = {
     if (tpe1 == tpe2)
       tpe1
-    else
-      throw failMismatchedTypes(tpe1, tpe2, loc)
+    else failMismatchedTypes(tpe1, tpe2, loc)
   }
 
   /**
