@@ -93,13 +93,13 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
+      xnoverify = cmdOpts.xnoverify,
       xbddthreshold = cmdOpts.xbddthreshold,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
       xnoboolunif = cmdOpts.xnoboolunif,
       xnoqmc = cmdOpts.xnoqmc,
       xnooptimizer = cmdOpts.xnooptimizer,
-      xverify = cmdOpts.xverify,
       xprintphase = cmdOpts.xprintphase,
       xsummary = cmdOpts.xsummary,
       xparser = cmdOpts.xparser,
@@ -345,6 +345,7 @@ object Main {
                      listen: Option[Int] = None,
                      threads: Option[Int] = None,
                      assumeYes: Boolean = false,
+                     xnoverify: Boolean = false,
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
@@ -357,7 +358,6 @@ object Main {
                      xnoboolunif: Boolean = false,
                      xnoqmc: Boolean = false,
                      xnooptimizer: Boolean = false,
-                     xverify: Boolean = false,
                      xprintphase: Set[String] = Set.empty,
                      xsummary: Boolean = false,
                      xparser: Boolean = false,
@@ -506,6 +506,10 @@ object Main {
       note("")
       note("The following options are experimental:")
 
+      // Xnoverify
+      opt[Unit]("Xnoverify").action((_, c) => c.copy(xnoverify = true)).
+        text("disables verification of the last AST.")
+
       // Xbenchmark-code-size
       opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
         text("[experimental] benchmarks the size of the generated JVM files.")
@@ -533,10 +537,6 @@ object Main {
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
         text("[experimental] disables compiler optimizations.")
-
-      // Xverify
-      opt[Unit]("Xverify").action((_, c) => c.copy(xverify = true)).
-        text("[experimental] enables verification of the last AST.")
 
       // Xprint-phase
       opt[Seq[String]]("Xprint-phase").action((m, c) => c.copy(xprintphase = m.toSet)).
