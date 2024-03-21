@@ -500,7 +500,7 @@ object Main {
       opt[Unit]("yes").action((_, c) => c.copy(assumeYes = true)).
         text("automatically answer yes to all prompts.")
 
-      opt[Unit]("noverify").action((_, c) => c.copy(noverify = false)).
+      opt[Unit]("noverify").action((_, c) => c.copy(noverify = true)).
         text("disables verification of the last AST.")
 
       version("version").text("prints the version number.")
