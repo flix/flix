@@ -33,24 +33,34 @@ object MutationTester {
         val root = flix.check().unsafeGet
         val start = System.nanoTime()
         println(root.sigs.filter(t => t._1.toString.equals("Add.add")))
-        val _ = insertDeckAndCheckInAllDefs(root)
-        val root1 = mutateRoot(root, testee)
+        val mutations = mutateRoot(root, testee)
         val end = System.nanoTime() - start
         val timeSec = end.toFloat / 1_000_000_000.0
         println(s"time to generate mutations: $timeSec")
-        runMutations2(flix, tester, root, root1)
+        val lastRoot = insertDeckAndCheckIntoRoot(root)
+        runMutations2(flix, tester, lastRoot, mutations)
 
         /**
           * val result = root1.map(r => flix.codeGen(r).unsafeGet)
           * val tests = result.map(res => res.getTests)
           */
     }
+    private def insertDeckAndCheckIntoRoot(root: Root): Root = {
+        val newDefs = root.defs.map({
+          case (sym, fun) =>
+            sym -> insertDeckAndCheckInDef(fun)
+        })
+        root.copy(defs = newDefs)
+    }
 
-
-    private def insertDeckAndCheckInAllDefs(root: Root): Root ={
-        val methodName = classOf[Global].getMethods.apply(3).getName
-        println(s"name of function $methodName")
-        root
+    private def insertDeckAndCheckInDef(d: TypedAst.Def): TypedAst.Def ={
+        val loc = d.exp.loc
+        val method = classOf[Global].getMethods.apply(3)
+        val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Int64, Type.IO, loc)
+        val mask = Expr.UncheckedMaskingCast(InvokeMethod, Type.Int64, Type.Pure, loc)
+        val statement = Expr.Stm(mask, d.exp, d.exp.tpe, d.exp.eff, d.exp.loc)
+        //println(s"name of function ${method.getName}")
+        d.copy(exp = statement)
     }
 
     private def progressUpdate(message: String, timePassed: Long): Long = {
@@ -107,7 +117,7 @@ object MutationTester {
     private def testMutant(mDef: TypedAst.Def, mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit): Boolean = {
         val defs = testKit.root.defs
         val n = defs + (mut._1 -> mDef)
-        println(s"mutation: $mDef")
+        //println(s"mutation: $mDef")
         val newRoot = testKit.root.copy(defs = n)
         val cRes = testKit.flix.codeGen(newRoot).unsafeGet
         val testsFromTester = cRes.getTests.filter { case (s, _) => s.toString.contains(testKit.testModule) }.toList
@@ -122,7 +132,9 @@ object MutationTester {
                     case _ => false
                 }
             } catch {
-                case _: Throwable => false
+                case _: Throwable =>
+                  println("nonterminating mutation")
+                  false
             }
         )
     }
@@ -139,9 +151,12 @@ object MutationTester {
         defs.toList.map(d => (d._1, d._2) match {
             case (s, fun) =>
                 if (defSyms.contains(s)) {
-                    println(s, fun.exp)
+                    //println(s, fun.exp)
                     val mutExps = mutateExpr(fun.exp)//.map(m => addDecAndCheck(m))
-                    val mutDefs = mutExps.map(mexp => fun.copy(exp = mexp))
+                    val mutDefs = mutExps.map(mexp =>{
+                      val mutatedDef = fun.copy(exp = mexp)
+                      insertDeckAndCheckInDef(mutatedDef)
+                    })
                     Some(d._1 -> mutDefs)
                 } else None
             case _ => None

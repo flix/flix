@@ -842,6 +842,8 @@ object BackendObjType {
       NEW(JvmName.AtomicLong) ~
         DUP() ~ invokeConstructor(JvmName.AtomicLong, MethodDescriptor.NothingToVoid) ~
         PUTSTATIC(CounterField) ~
+        DUP() ~ invokeConstructor(JvmName.AtomicLong, MethodDescriptor.NothingToVoid) ~
+        PUTSTATIC(StepCounterField) ~
         ICONST_0() ~
         ANEWARRAY(String.jvmName) ~
         PUTSTATIC(ArgsField) ~
