@@ -156,6 +156,11 @@ mod List {
     }
 
     ///
+    /// Returns true if and only if `l` is a non-empty list.
+    ///
+    pub def nonEmpty(l: List[a]): Bool = not isEmpty(l)
+
+    ///
     /// Returns `Some(x)` if `x` is the first element of `l`.
     ///
     /// Returns `None` if `l` is empty.
@@ -1323,7 +1328,7 @@ mod List {
         let next = () -> {
             match (deref ls) {
                 case Nil     => None
-                case x :: rs => ls := rs; Some(x)
+                case x :: rs => Ref.put(rs, ls); Some(x)
             }
         };
         Iterator.iterate(rc, next)

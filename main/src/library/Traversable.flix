@@ -71,7 +71,7 @@ mod Traversable {
             let Identity.Identity(tb) = t |> Traversable.traverse(x -> {
                 let st = deref acc;
                 let (acc1, b) = f(st, x);
-                acc := acc1;
+                Ref.put(acc1, acc);
                 Identity.Identity(b)
             });
             (deref acc, tb)
