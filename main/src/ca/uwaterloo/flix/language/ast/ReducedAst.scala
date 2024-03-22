@@ -18,7 +18,6 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.Purity.Pure
-import ca.uwaterloo.flix.util.collection.Chain
 
 import java.lang.reflect.Method
 
