@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.errors.ParseError
+import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
@@ -90,7 +90,7 @@ object Parser2 {
      * Note that there is data-duplication, but not in the happy case.
      * An alternative could be to collect errors as part of [[buildTree]] and return them in a list there.
      */
-    val errors: ArrayBuffer[ParseError] = ArrayBuffer.empty
+    val errors: ArrayBuffer[CompilationMessage] = ArrayBuffer.empty
     /*
      * This is necessary to display source code in error messages.
      * But since it comes from parboiled we probably want to get rid of it some day.
@@ -145,6 +145,8 @@ object Parser2 {
     root()
     // Build the syntax tree using events in state.
     val tree = buildTree()
+
+    syntaxTreeToDebugString(tree)
     // Return with errors as soft failures to run subsequent phases for more validations.
     Validation.success(tree).withSoftFailures(s.errors)
   }
@@ -280,10 +282,19 @@ object Parser2 {
     s.position += 1
   }
 
+  private def closeWithError(mark: Mark.Opened, error: CompilationMessage)(implicit s: State): Mark.Closed = {
+    nth(0) match {
+      // Avoid double reporting lexer errors.
+      case TokenKind.Err(_) =>
+      case _ => s.errors.append(error)
+    }
+    close(mark, TreeKind.ErrorTree(error))
+  }
+
   /**
    * Wrap the next token in an error.
    */
-  private def advanceWithError(error: ParseError, mark: Option[Mark.Opened] = None)(implicit s: State): Mark.Closed = {
+  private def advanceWithError(error: CompilationMessage, mark: Option[Mark.Opened] = None)(implicit s: State): Mark.Closed = {
     val m = mark.getOrElse(open())
     nth(0) match {
       // Avoid double reporting lexer errors.
@@ -844,6 +855,15 @@ object Parser2 {
       assert(at(TokenKind.KeywordEff))
       expect(TokenKind.KeywordEff)
       name(NAME_EFFECT)
+
+      // Check for illegal type parameters.
+      if (at(TokenKind.BracketL)) {
+        val mark = open()
+        val loc = currentSourceLocation()
+        Type.parameters()
+        closeWithError(mark, WeederError.IllegalEffectTypeParams(loc))
+      }
+
       if (eat(TokenKind.CurlyL)) {
         while (!at(TokenKind.CurlyR) && !eof()) {
           operation()
@@ -860,11 +880,28 @@ object Parser2 {
       modifiers()
       expect(TokenKind.KeywordDef)
       name(NAME_DEFINITION)
+
+      // Check for illegal type parameters.
+      if (at(TokenKind.BracketL)) {
+        val mark = open()
+        val loc = currentSourceLocation()
+        Type.parameters()
+        closeWithError(mark, WeederError.IllegalEffectTypeParams(loc))
+      }
+
       if (at(TokenKind.ParenL)) {
         parameters()
       }
       if (eat(TokenKind.Colon)) {
+        val typeLoc = currentSourceLocation()
         Type.ttype()
+        // Check for illegal effect
+        if (at(TokenKind.Backslash)) {
+          val mark = open()
+          eat(TokenKind.Backslash)
+          Type.effectSet()
+          closeWithError(mark, WeederError.IllegalEffectfulOperation(typeLoc))
+        }
       }
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
@@ -876,6 +913,7 @@ object Parser2 {
       assert(atAny(List(TokenKind.KeywordRestrictable, TokenKind.KeywordEnum)))
       val isRestrictable = eat(TokenKind.KeywordRestrictable)
       expect(TokenKind.KeywordEnum)
+      val nameLoc = currentSourceLocation()
       name(NAME_TYPE)
       if (isRestrictable) {
         expect(TokenKind.BracketL)
@@ -888,7 +926,8 @@ object Parser2 {
         Type.parameters()
       }
       // Singleton short-hand
-      if (at(TokenKind.ParenL)) {
+      val isShorthand = at(TokenKind.ParenL)
+      if (isShorthand) {
         val markType = open()
         Type.tuple()
         close(markType, TreeKind.Type.Type)
@@ -897,6 +936,15 @@ object Parser2 {
       if (at(TokenKind.KeywordWith)) {
         Type.derivations()
       }
+
+      // Check for illegal enum using both shorthand and body
+      if (isShorthand && eat(TokenKind.CurlyL)) {
+        val mark = open()
+        enumCases()
+        expect(TokenKind.CurlyR)
+        closeWithError(mark, WeederError.IllegalEnum(nameLoc))
+      }
+
       // enum body
       if (eat(TokenKind.CurlyL)) {
         enumCases()
@@ -2340,6 +2388,7 @@ object Parser2 {
         lhs = close(openBefore(lhs), TreeKind.Type.Ascribe)
         lhs = close(openBefore(lhs), TreeKind.Type.Type)
       }
+
       lhs
     }
 
@@ -2657,7 +2706,7 @@ object Parser2 {
       close(mark, TreeKind.Type.RecordFieldFragment)
     }
 
-    private def effectSet()(implicit s: State): Mark.Closed = {
+    def effectSet()(implicit s: State): Mark.Closed = {
       if (at(TokenKind.CurlyL)) {
         val mark = open()
         separated(() => ttype())
@@ -2733,7 +2782,7 @@ object Parser2 {
         case TokenKind.KeywordLet => functional()
         case TokenKind.KeywordNot | TokenKind.KeywordFix | TokenKind.NameUpperCase => atom()
         case k =>
-          val error =  ParseError(s"Expected predicate body but found $k", SyntacticContext.Unknown, currentSourceLocation())
+          val error = ParseError(s"Expected predicate body but found $k", SyntacticContext.Unknown, currentSourceLocation())
           advanceWithError(error)
       }
       close(mark, TreeKind.Predicate.Body)

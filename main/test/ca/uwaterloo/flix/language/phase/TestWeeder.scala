@@ -1195,6 +1195,60 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.UndefinedIntrinsic](result)
   }
 
+  // Testing that the casing of 'foo' and 'Foo' should match
+  test("IllegalUse.Alias.01") {
+    val input =
+      """
+        |mod M {
+        |    def foo(): Int32 = ???
+        |}
+        |
+        |mod N {
+        |    use M.{foo => Foo}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUse](result)
+  }
+
+  test("IllegalUse.Alias.02") {
+    val input =
+      """
+        |mod M {
+        |    enum Enum1
+        |    def foo(): Int32 = ???
+        |}
+        |
+        |mod N {
+        |    use M.{Enum1 => enum1}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUse](result)
+  }
+
+  test("IllegalUse.Alias.03") {
+    val input =
+      """
+        |mod N {
+        |    use M.{E => e}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUse](result)
+  }
+
+  test("IllegalUse.Alias.04") {
+    val input =
+      """
+        |mod B {
+        |    use M.{e => A}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalUse](result)
+  }
+
   test("UnqualifiedUse.01") {
     val input =
       """

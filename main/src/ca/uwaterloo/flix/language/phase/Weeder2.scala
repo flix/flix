@@ -134,7 +134,11 @@ object Weeder2 {
     flatMapN(idents) {
       case ident :: alias :: _ =>
         val qname = Name.QName(tree.loc.sp1, namespace, ident, tree.loc.sp2)
-        Validation.success(UseOrImport.Use(qname, alias, tree.loc))
+        val res = Validation.success(UseOrImport.Use(qname, alias, tree.loc))
+        // Check for illegal alias
+        if (ident.name.charAt(0).isUpper != alias.name.charAt(0).isUpper) {
+          res.withSoftFailure(IllegalUse(ident.name, alias.name, tree.loc))
+        } else res
       // recover from missing alias by using ident
       case ident :: _ =>
         val error = ParseError("Missing alias.", SyntacticContext.Use, tree.loc)
@@ -702,9 +706,7 @@ object Weeder2 {
             }
           }
         }
-      ).getOrElse(
-        throw InternalCompilerException("Parser omitted formal parameters", tree.loc)
-      )
+      ).getOrElse(Validation.toSoftFailure(List(unitFormalParameter(tree.loc)), ParseError("Expected formal parameters.", SyntacticContext.Decl.OtherDecl, tree.loc)))
     }
 
     private def visitParameter(tree: Tree, presence: Presence)(implicit s: State): Validation[FormalParam, CompilationMessage] = {
@@ -2949,6 +2951,7 @@ object Weeder2 {
         token.text,
         token.mkSourcePositionEnd(s.src, Some(s.parserInput))
       ))
+      // TODO: If child is an ErrorTree we are double reporting errors.
       case _ => failWith(s"expected first child of '${tree.kind}' to be Child.Token", tree.loc)
     }
   }

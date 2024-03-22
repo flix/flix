@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast
 
+import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.errors.ParseError
 
 /**
@@ -72,7 +73,7 @@ object SyntaxTree {
     /**
      * A special error kind wrapping a [[ParseError]].
      */
-    case class ErrorTree(error: ParseError) extends TreeKind
+    case class ErrorTree(error: CompilationMessage) extends TreeKind
 
     case object AnnotationList extends TreeKind
 
