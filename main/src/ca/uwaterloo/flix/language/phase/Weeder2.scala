@@ -2140,6 +2140,8 @@ object Weeder2 {
             Validation.toSoftFailure(WeededAst.Pattern.Error(tree.loc), IllegalRegexPattern(tree.loc))
           case c => Validation.success(Pattern.Cst(c, tree.loc))
         }
+        // Avoid double reporting errors
+        case Expr.Error(_) => Validation.success(Pattern.Error(tree.loc))
         case e => throw InternalCompilerException(s"Malformed Pattern.Literal. Expected literal but found $e", e.loc)
       }
     }
@@ -2358,11 +2360,11 @@ object Weeder2 {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
       val text = token.text.stripPrefix("\'").stripSuffix("\'")
       val (processed, errors) = visitChars(text, loc)
-      processed.headOption match {
-        case Some(c) => Validation.success(Expr.Cst(Ast.Constant.Char(c), loc)).withSoftFailures(errors)
-        case None =>
-          val error = MalformedChar("", loc)
-          Validation.toSoftFailure(Expr.Error(error), error)
+      if (processed.length != 1) {
+        val error = MalformedChar(processed, loc)
+        Validation.toSoftFailure(Expr.Error(error), error).withSoftFailures(errors)
+      } else {
+        Validation.success(Expr.Cst(Ast.Constant.Char(processed.head), loc)).withSoftFailures(errors)
       }
     }
 
