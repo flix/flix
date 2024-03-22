@@ -27,11 +27,11 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 object Verifier {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Verifier") {
-    if (!flix.options.xnoverify) {
+    if (flix.options.xnoverify) {
+      root
+    } else {
       ParOps.parMap(root.defs.values)(visitDef(_)(root))
     }
-
-    root
   }
 
   private def visitDef(decl: Def)(implicit root: Root): Unit = {
