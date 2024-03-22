@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, ReducedAst, SemanticOp, SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
   * Verify the AST before bytecode generation.
@@ -28,7 +28,7 @@ object Verifier {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Verifier") {
     if (!flix.options.xnoverify) {
-      root.defs.values.foreach(d => visitDef(d)(root))
+      ParOps.parMap(root.defs.values)(visitDef(_)(root))
     }
 
     root
