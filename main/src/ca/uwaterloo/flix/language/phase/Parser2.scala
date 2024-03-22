@@ -119,6 +119,20 @@ object Parser2 {
     case class Closed(index: Int) extends Mark
   }
 
+  /**
+   * Runs the parser silently, throwing out results and errors. Used for migrating to the new parser, can be deleted afterwards.
+   */
+  def runSilent(root: Map[Ast.Source, Array[Token]], oldRoot: Map[Ast.Source, SyntaxTree.Tree], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Ast.Source, SyntaxTree.Tree], CompilationMessage] = {
+    try {
+      val _ = run(root, oldRoot, changeSet)
+      Validation.success(Map.empty)
+    } catch {
+      case except: Throwable =>
+        except.printStackTrace()
+        Validation.success(Map.empty)
+    }
+  }
+
   def run(root: Map[Ast.Source, Array[Token]], oldRoot: Map[Ast.Source, SyntaxTree.Tree], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Ast.Source, SyntaxTree.Tree], CompilationMessage] = {
     if (flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.

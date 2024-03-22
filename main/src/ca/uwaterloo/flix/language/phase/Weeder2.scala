@@ -56,6 +56,20 @@ object Weeder2 {
     val parserInput: ParserInput = ParserInput.apply(src.data)
   }
 
+  /**
+   * Runs the parser silently, throwing out results and errors. Used for migrating to the new parser, can be deleted afterwards.
+   */
+  def runSilent(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], trees: Map[Ast.Source, Tree], oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
+    try {
+      val _ = run(readRoot, entryPoint, trees, oldRoot, changeSet)
+      Validation.success(WeededAst.empty)
+    } catch {
+      case except: Throwable =>
+        except.printStackTrace()
+        Validation.success(WeededAst.empty)
+    }
+  }
+
   def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], trees: Map[Ast.Source, Tree], oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
     if (flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
