@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Valida
 import org.parboiled2.ParserInput
 
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
-import java.util.regex.{Matcher, PatternSyntaxException, Pattern => JPattern}
+import java.util.regex.{PatternSyntaxException, Pattern => JPattern}
 import scala.annotation.tailrec
 import scala.collection.immutable.{::, List, Nil}
 import scala.collection.mutable.ArrayBuffer
@@ -86,11 +86,11 @@ object Weeder2 {
 
   private def pickAllUsesAndImports(tree: Tree)(implicit s: State): Validation[List[UseOrImport], CompilationMessage] = {
     assert(tree.kind == TreeKind.Root || tree.kind == TreeKind.Decl.Module)
-    val maybeTree = tryPick(TreeKind.UsesOrImports.UseOrImportList, tree.children)
+    val maybeTree = tryPick(TreeKind.UsesOrImports.UseOrImportList, tree)
     maybeTree
       .map(tree => {
-        val uses = pickAll(TreeKind.UsesOrImports.Use, tree.children)
-        val imports = pickAll(TreeKind.UsesOrImports.Import, tree.children)
+        val uses = pickAll(TreeKind.UsesOrImports.Use, tree)
+        val imports = pickAll(TreeKind.UsesOrImports.Import, tree)
         mapN(
           traverse(uses)(visitUse),
           traverse(imports)(visitImport)
@@ -101,7 +101,7 @@ object Weeder2 {
 
   private def visitUse(tree: Tree)(implicit s: State): Validation[List[UseOrImport], CompilationMessage] = {
     assert(tree.kind == TreeKind.UsesOrImports.Use)
-    val maybeUseMany = tryPick(TreeKind.UsesOrImports.UseMany, tree.children)
+    val maybeUseMany = tryPick(TreeKind.UsesOrImports.UseMany, tree)
     flatMapN(pickQName(tree))(qname => {
       if (qname.namespace.idents.isEmpty && maybeUseMany.isEmpty) {
         return Validation.toSoftFailure(Nil, UnqualifiedUse(qname.loc))
@@ -118,8 +118,8 @@ object Weeder2 {
 
   private def visitUseMany(tree: Tree, namespace: Name.NName)(implicit s: State): Validation[List[UseOrImport], CompilationMessage] = {
     assert(tree.kind == TreeKind.UsesOrImports.UseMany)
-    val identUses = traverse(pickAll(TreeKind.Ident, tree.children))(visitUseIdent(_, namespace))
-    val aliasedUses = traverse(pickAll(TreeKind.UsesOrImports.Alias, tree.children))(tree => visitUseAlias(tree, namespace))
+    val identUses = traverse(pickAll(TreeKind.Ident, tree))(visitUseIdent(_, namespace))
+    val aliasedUses = traverse(pickAll(TreeKind.UsesOrImports.Alias, tree))(tree => visitUseAlias(tree, namespace))
     mapN(identUses, aliasedUses) {
       (identUses, aliasedUses) => (identUses ++ aliasedUses).sortBy(_.loc)
     }
@@ -134,7 +134,7 @@ object Weeder2 {
   }
 
   private def visitUseAlias(tree: Tree, namespace: Name.NName)(implicit s: State): Validation[UseOrImport.Use, CompilationMessage] = {
-    val idents = traverse(pickAll(TreeKind.Ident, tree.children))(tokenToIdent)
+    val idents = traverse(pickAll(TreeKind.Ident, tree))(tokenToIdent)
     flatMapN(idents) {
       case ident :: alias :: _ =>
         val qname = Name.QName(tree.loc.sp1, namespace, ident, tree.loc.sp2)
@@ -147,13 +147,13 @@ object Weeder2 {
       case ident :: _ =>
         val error = ParseError("Missing alias.", SyntacticContext.Use, tree.loc)
         Validation.toSoftFailure(UseOrImport.Use(Name.mkQName(ident), ident, ident.loc), error)
-      case _ => failWith("Malformed alias", tree.loc)
+      case _ => throw InternalCompilerException("Parser passed malformed use with alias", tree.loc)
     }
   }
 
   private def visitImport(tree: Tree)(implicit s: State): Validation[List[UseOrImport], CompilationMessage] = {
     assert(tree.kind == TreeKind.UsesOrImports.Import)
-    val maybeImportMany = tryPick(TreeKind.UsesOrImports.ImportMany, tree.children)
+    val maybeImportMany = tryPick(TreeKind.UsesOrImports.ImportMany, tree)
     flatMapN(JvmOp.pickJavaName(tree))(jname => {
       mapN(traverseOpt(maybeImportMany)(tree => visitImportMany(tree, jname.fqn))) {
         // case: import one, use the java name
@@ -166,8 +166,8 @@ object Weeder2 {
 
   private def visitImportMany(tree: Tree, namespace: Seq[String])(implicit s: State): Validation[List[UseOrImport.Import], CompilationMessage] = {
     assert(tree.kind == TreeKind.UsesOrImports.ImportMany)
-    val identImports = traverse(pickAll(TreeKind.Ident, tree.children))(visitImportIdent(_, namespace))
-    val aliasedImports = traverse(pickAll(TreeKind.UsesOrImports.Alias, tree.children))(tree => visitImportAlias(tree, namespace))
+    val identImports = traverse(pickAll(TreeKind.Ident, tree))(visitImportIdent(_, namespace))
+    val aliasedImports = traverse(pickAll(TreeKind.UsesOrImports.Alias, tree))(tree => visitImportAlias(tree, namespace))
     mapN(identImports, aliasedImports) {
       (identImports, aliasedImports) => (identImports ++ aliasedImports).sortBy(_.loc)
     }
@@ -180,7 +180,7 @@ object Weeder2 {
   }
 
   private def visitImportAlias(tree: Tree, namespace: Seq[String])(implicit s: State): Validation[UseOrImport.Import, CompilationMessage] = {
-    val idents = traverse(pickAll(TreeKind.Ident, tree.children))(tokenToIdent)
+    val idents = traverse(pickAll(TreeKind.Ident, tree))(tokenToIdent)
     flatMapN(idents) {
       case ident :: alias :: _ =>
         val jname = Name.JavaName(tree.loc.sp1, namespace ++ Seq(ident.name), tree.loc.sp2)
@@ -192,21 +192,21 @@ object Weeder2 {
           UseOrImport.Import(Name.JavaName(tree.loc.sp1, Seq(ident.name), tree.loc.sp2), ident, ident.loc),
           error
         )
-      case _ => failWith("Malformed alias", tree.loc)
+      case _ => throw InternalCompilerException("Parser passed malformed use with alias", tree.loc)
     }
   }
 
   private object Decls {
     def pickAllDeclarations(tree: Tree)(implicit s: State): Validation[List[Declaration], CompilationMessage] = {
       assert(tree.kind == TreeKind.Root || tree.kind == TreeKind.Decl.Module)
-      val modules = pickAll(TreeKind.Decl.Module, tree.children)
-      val definitions = pickAll(TreeKind.Decl.Def, tree.children)
-      val classes = pickAll(TreeKind.Decl.Class, tree.children)
-      val instances = pickAll(TreeKind.Decl.Instance, tree.children)
-      val enums = pickAll(TreeKind.Decl.Enum, tree.children)
-      val restrictabeEnums = pickAll(TreeKind.Decl.RestrictableEnum, tree.children)
-      val typeAliases = pickAll(TreeKind.Decl.TypeAlias, tree.children)
-      val effects = pickAll(TreeKind.Decl.Effect, tree.children)
+      val modules = pickAll(TreeKind.Decl.Module, tree)
+      val definitions = pickAll(TreeKind.Decl.Def, tree)
+      val classes = pickAll(TreeKind.Decl.Class, tree)
+      val instances = pickAll(TreeKind.Decl.Instance, tree)
+      val enums = pickAll(TreeKind.Decl.Enum, tree)
+      val restrictabeEnums = pickAll(TreeKind.Decl.RestrictableEnum, tree)
+      val typeAliases = pickAll(TreeKind.Decl.TypeAlias, tree)
+      val effects = pickAll(TreeKind.Decl.Effect, tree)
       mapN(
         traverse(modules)(visitModule),
         traverse(definitions)(visitDefinition(_)),
@@ -253,7 +253,7 @@ object Weeder2 {
 
     private def visitEffect(tree: Tree)(implicit s: State): Validation[Declaration.Effect, CompilationMessage] = {
       assert(tree.kind == TreeKind.Decl.Effect)
-      val ops = pickAll(TreeKind.Decl.Op, tree.children)
+      val ops = pickAll(TreeKind.Decl.Op, tree)
       mapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
@@ -297,8 +297,8 @@ object Weeder2 {
 
     private def visitEnum(tree: Tree)(implicit s: State): Validation[Declaration.Enum, CompilationMessage] = {
       assert(tree.kind == TreeKind.Decl.Enum)
-      val shorthandTuple = tryPick(TreeKind.Type.Type, tree.children)
-      val cases = pickAll(TreeKind.Case, tree.children)
+      val shorthandTuple = tryPick(TreeKind.Type.Type, tree)
+      val cases = pickAll(TreeKind.Case, tree)
       flatMapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
@@ -333,7 +333,7 @@ object Weeder2 {
 
     private def visitEnumCase(tree: Tree)(implicit s: State): Validation[Case, CompilationMessage] = {
       assert(tree.kind == TreeKind.Case)
-      val maybeType = tryPick(TreeKind.Type.Type, tree.children)
+      val maybeType = tryPick(TreeKind.Type.Type, tree)
       mapN(
         pickNameIdent(tree),
         traverseOpt(maybeType)(Types.visitType),
@@ -358,9 +358,9 @@ object Weeder2 {
 
     private def visitRestrictableEnum(tree: Tree)(implicit s: State): Validation[Declaration.RestrictableEnum, CompilationMessage] = {
       assert(tree.kind == TreeKind.Decl.RestrictableEnum)
-      val shorthandTuple = tryPick(TreeKind.Type.Type, tree.children)
-      val restrictionParam = flatMapN(pick(TreeKind.Parameter, tree.children))(Types.visitParameter)
-      val cases = pickAll(TreeKind.Case, tree.children)
+      val shorthandTuple = tryPick(TreeKind.Type.Type, tree)
+      val restrictionParam = flatMapN(pick(TreeKind.Parameter, tree))(Types.visitParameter)
+      val cases = pickAll(TreeKind.Case, tree)
       flatMapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
@@ -396,7 +396,7 @@ object Weeder2 {
 
     private def visitRestrictableEnumCase(tree: Tree)(implicit s: State): Validation[RestrictableCase, CompilationMessage] = {
       assert(tree.kind == TreeKind.Case)
-      val maybeType = tryPick(TreeKind.Type.Type, tree.children)
+      val maybeType = tryPick(TreeKind.Type.Type, tree)
       mapN(
         pickNameIdent(tree),
         traverseOpt(maybeType)(Types.visitType),
@@ -412,8 +412,8 @@ object Weeder2 {
 
     private def visitTypeClass(tree: Tree)(implicit s: State): Validation[Declaration.Class, CompilationMessage] = {
       assert(tree.kind == TreeKind.Decl.Class)
-      val sigs = pickAll(TreeKind.Decl.Signature, tree.children)
-      val laws = pickAll(TreeKind.Decl.Law, tree.children)
+      val sigs = pickAll(TreeKind.Decl.Signature, tree)
+      val laws = pickAll(TreeKind.Decl.Law, tree)
       flatMapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
@@ -425,7 +425,7 @@ object Weeder2 {
         traverse(laws)(visitLaw)
       ) {
         (doc, annotations, modifiers, ident, tparam, tconstr, sigs, laws) =>
-          val assocs = pickAll(TreeKind.Decl.AssociatedTypeSig, tree.children)
+          val assocs = pickAll(TreeKind.Decl.AssociatedTypeSig, tree)
           mapN(traverse(assocs)(visitAssociatedTypeSig(_, tparam))) {
             assocs => Declaration.Class(doc, annotations, modifiers, ident, tparam, tconstr, assocs, sigs, laws, tree.loc)
           }
@@ -441,10 +441,10 @@ object Weeder2 {
         pickQName(tree),
         Types.pickType(tree),
         Types.pickConstraints(tree),
-        traverse(pickAll(TreeKind.Decl.Def, tree.children))(visitDefinition(_, allowedModifiers = Set(TokenKind.KeywordPub, TokenKind.KeywordOverride), mustBePublic = true)),
+        traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinition(_, allowedModifiers = Set(TokenKind.KeywordPub, TokenKind.KeywordOverride), mustBePublic = true)),
       ) {
         (doc, annotations, modifiers, clazz, tpe, tconstrs, defs) =>
-          val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree.children)
+          val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree)
           mapN(traverse(assocs)(visitAssociatedTypeDef(_, tpe))) {
             assocs => Declaration.Instance(doc, annotations, modifiers, clazz, tpe, tconstrs, assocs, defs, tree.loc)
           }
@@ -542,7 +542,7 @@ object Weeder2 {
 
     private def visitSignature(tree: Tree)(implicit s: State): Validation[Declaration.Sig, CompilationMessage] = {
       assert(tree.kind == TreeKind.Decl.Signature)
-      val maybeExpression = tryPick(TreeKind.Expr.Expr, tree.children)
+      val maybeExpression = tryPick(TreeKind.Expr.Expr, tree)
       mapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
@@ -562,7 +562,7 @@ object Weeder2 {
     }
 
     private def pickDocumentation(tree: Tree): Validation[Ast.Doc, CompilationMessage] = {
-      val docTree = tryPick(TreeKind.Doc, tree.children)
+      val docTree = tryPick(TreeKind.Doc, tree)
       val loc = docTree.map(_.loc).getOrElse(SourceLocation.Unknown)
       val comments = docTree
         // strip prefixing `///` and trim
@@ -575,7 +575,7 @@ object Weeder2 {
     }
 
     def pickAnnotations(tree: Tree)(implicit s: State): Validation[Ast.Annotations, CompilationMessage] = {
-      val maybeAnnotations = tryPick(TreeKind.AnnotationList, tree.children)
+      val maybeAnnotations = tryPick(TreeKind.AnnotationList, tree)
       val annotations = maybeAnnotations.map(
           tree => {
             val tokens = pickAllTokens(tree)
@@ -614,9 +614,9 @@ object Weeder2 {
     }
 
     private def pickEqualityConstraints(tree: Tree)(implicit s: State): Validation[List[EqualityConstraint], CompilationMessage] = {
-      val maybeContraintList = tryPick(TreeKind.Decl.EqualityConstraintList, tree.children)
+      val maybeContraintList = tryPick(TreeKind.Decl.EqualityConstraintList, tree)
       val constraints = traverseOpt(maybeContraintList)(t => {
-        val constraintTrees = pickAll(TreeKind.Decl.EqualityConstraintFragment, t.children)
+        val constraintTrees = pickAll(TreeKind.Decl.EqualityConstraintFragment, t)
         traverse(constraintTrees)(visitEqualityConstraint)
       })
 
@@ -624,7 +624,7 @@ object Weeder2 {
     }
 
     private def visitEqualityConstraint(tree: Tree)(implicit s: State): Validation[EqualityConstraint, CompilationMessage] = {
-      flatMapN(traverse(pickAll(TreeKind.Type.Type, tree.children))(Types.visitType)) {
+      flatMapN(traverse(pickAll(TreeKind.Type.Type, tree))(Types.visitType)) {
         case t1 :: t2 :: Nil => t1 match {
           case Type.Apply(Type.Ambiguous(qname, _), t11, _) => Validation.success(EqualityConstraint(qname, t11, t2, tree.loc))
           case _ => Validation.toHardFailure(IllegalEqualityConstraint(tree.loc))
@@ -641,7 +641,7 @@ object Weeder2 {
       TokenKind.KeywordInline)
 
     private def pickModifiers(tree: Tree, allowed: Set[TokenKind] = ALL_MODIFIERS, mustBePublic: Boolean = false)(implicit s: State): Validation[Ast.Modifiers, CompilationMessage] = {
-      tryPick(TreeKind.ModifierList, tree.children) match {
+      tryPick(TreeKind.ModifierList, tree) match {
         case None => Validation.success(Ast.Modifiers(List.empty))
         case Some(modTree) =>
           var errors: List[CompilationMessage] = List.empty
@@ -673,8 +673,7 @@ object Weeder2 {
         case TokenKind.KeywordLawful => Validation.success(Ast.Modifier.Lawful)
         case TokenKind.KeywordPub => Validation.success(Ast.Modifier.Public)
         case TokenKind.KeywordOverride => Validation.success(Ast.Modifier.Override)
-        // TODO: This could be a SoftFailure if we had Ast.Modifier.Error
-        case kind => failWith(s"unsupported modifier $kind")
+        case kind => throw InternalCompilerException(s"Parser passed unknown modifier '$kind'", token.mkSourceLocation(s.src, Some(s.parserInput)))
       }
       if (!allowed.contains(token.kind)) {
         mod.withSoftFailure(IllegalModifier(token.mkSourceLocation(s.src, Some(s.parserInput))))
@@ -691,10 +690,10 @@ object Weeder2 {
     )
 
     def pickFormalParameters(tree: Tree, presence: Presence = Presence.Required)(implicit s: State): Validation[List[FormalParam], CompilationMessage] = {
-      val paramTree = tryPick(TreeKind.ParameterList, tree.children)
+      val paramTree = tryPick(TreeKind.ParameterList, tree)
       paramTree.map(
         t => {
-          val params = pickAll(TreeKind.Parameter, t.children)
+          val params = pickAll(TreeKind.Parameter, t)
           if (params.isEmpty) {
             Validation.success(List(unitFormalParameter(t.loc)))
           } else {
@@ -720,7 +719,7 @@ object Weeder2 {
         pickModifiers(tree)
       ) {
         case (ident, mods) =>
-          val maybeType = tryPick(TreeKind.Type.Type, tree.children)
+          val maybeType = tryPick(TreeKind.Type.Type, tree)
           // Check for missing or illegal type ascription
           (maybeType, presence) match {
             case (None, Presence.Required) => Validation.toHardFailure(MissingFormalParamAscription(ident.name, tree.loc))
@@ -734,7 +733,7 @@ object Weeder2 {
 
   private object Exprs {
     def pickExpression(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      val maybeExpression = tryPick(TreeKind.Expr.Expr, tree.children)
+      val maybeExpression = tryPick(TreeKind.Expr.Expr, tree)
       flatMapN(
         traverseOpt(maybeExpression)(visitExpression)
       ) {
@@ -824,14 +823,14 @@ object Weeder2 {
         case Some(Child.TokenChild(t)) if t.kind == TokenKind.KeywordDebug => Validation.success(DebugKind.Debug)
         case Some(Child.TokenChild(t)) if t.kind == TokenKind.KeywordDebugBang => Validation.success(DebugKind.DebugWithLoc)
         case Some(Child.TokenChild(t)) if t.kind == TokenKind.KeywordDebugBangBang => Validation.success(DebugKind.DebugWithLocAndSrc)
-        case _ => failWith(s"Malformed debug expression, could not find debug kind", tree.loc)
+        case _ => throw InternalCompilerException(s"Malformed debug expression, could not find debug kind", tree.loc)
       }
     }
 
     private def visitWithout(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Without)
-      val effectSet = pick(TreeKind.Type.EffectSet, tree.children)
-      val effects = flatMapN(effectSet)(effectSetTree => traverse(pickAll(TreeKind.QName, effectSetTree.children))(visitQName))
+      val effectSet = pick(TreeKind.Type.EffectSet, tree)
+      val effects = flatMapN(effectSet)(effectSetTree => traverse(pickAll(TreeKind.QName, effectSetTree))(visitQName))
       mapN(pickExpression(tree), effects) {
         (expr, effects) =>
           val base = Expr.Without(expr, effects.head, tree.loc)
@@ -858,8 +857,8 @@ object Weeder2 {
 
     private def visitFixpointInject(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.FixpointInject)
-      val expressions = pickAll(TreeKind.Expr.Expr, tree.children)
-      val idents = pickAll(TreeKind.Ident, tree.children)
+      val expressions = pickAll(TreeKind.Expr.Expr, tree)
+      val idents = pickAll(TreeKind.Ident, tree)
       flatMapN(
         traverse(expressions)(visitExpression),
         traverse(idents)(tokenToIdent)
@@ -875,8 +874,8 @@ object Weeder2 {
 
     private def visitFixpointLambda(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.FixpointLambda)
-      val params = mapN(pick(TreeKind.Predicate.ParamList, tree.children))(t =>
-        (pickAll(TreeKind.Predicate.ParamUntyped, t.children) ++ pickAll(TreeKind.Predicate.Param, t.children)).sortBy(_.loc)
+      val params = mapN(pick(TreeKind.Predicate.ParamList, tree))(t =>
+        (pickAll(TreeKind.Predicate.ParamUntyped, t) ++ pickAll(TreeKind.Predicate.Param, t)).sortBy(_.loc)
       )
       mapN(
         flatMapN(params)(ps => traverse(ps)(Predicates.visitParam)),
@@ -886,8 +885,8 @@ object Weeder2 {
 
     private def visitFixpointSolve(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.FixpointSolveWithProject)
-      val expressions = pickAll(TreeKind.Expr.Expr, tree.children)
-      val idents = pickAll(TreeKind.Ident, tree.children)
+      val expressions = pickAll(TreeKind.Expr.Expr, tree)
+      val idents = pickAll(TreeKind.Ident, tree)
       mapN(
         traverse(expressions)(visitExpression),
         traverse(idents)(tokenToIdent)
@@ -900,14 +899,14 @@ object Weeder2 {
 
     private def visitFixpointQuery(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.FixpointQuery)
-      val expressions = traverse(pickAll(TreeKind.Expr.Expr, tree.children))(visitExpression)
-      val selects = flatMapN(pick(TreeKind.Expr.FixpointSelect, tree.children))(
-        selectTree => traverse(pickAll(TreeKind.Expr.Expr, selectTree.children))(visitExpression)
+      val expressions = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpression)
+      val selects = flatMapN(pick(TreeKind.Expr.FixpointSelect, tree))(
+        selectTree => traverse(pickAll(TreeKind.Expr.Expr, selectTree))(visitExpression)
       )
-      val froms = flatMapN(pick(TreeKind.Expr.FixpointFromFragment, tree.children))(
-        fromTree => traverse(pickAll(TreeKind.Predicate.Atom, fromTree.children))(Predicates.visitAtom)
+      val froms = flatMapN(pick(TreeKind.Expr.FixpointFromFragment, tree))(
+        fromTree => traverse(pickAll(TreeKind.Predicate.Atom, fromTree))(Predicates.visitAtom)
       )
-      val where = traverseOpt(tryPick(TreeKind.Expr.FixpointWhere, tree.children))(pickExpression)
+      val where = traverseOpt(tryPick(TreeKind.Expr.FixpointWhere, tree))(pickExpression)
       mapN(expressions, selects, froms, where) {
         (expressions, selects, froms, where) =>
           val whereList = where.map(w => List(w)).getOrElse(List.empty)
@@ -917,7 +916,7 @@ object Weeder2 {
 
     private def visitFixpointConstraintSet(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.FixpointConstraintSet)
-      val constraints = pickAll(TreeKind.Expr.FixpointConstraint, tree.children)
+      val constraints = pickAll(TreeKind.Expr.FixpointConstraint, tree)
       mapN(traverse(constraints)(visitFixpointConstraint)) {
         constraints => Expr.FixpointConstraintSet(constraints, tree.loc)
       }
@@ -925,7 +924,7 @@ object Weeder2 {
 
     private def visitFixpointConstraint(tree: Tree)(implicit s: State): Validation[Constraint, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.FixpointConstraint)
-      val bodyItems = pickAll(TreeKind.Predicate.Body, tree.children)
+      val bodyItems = pickAll(TreeKind.Predicate.Body, tree)
       mapN(
         Predicates.pickHead(tree),
         traverse(bodyItems)(Predicates.visitBody),
@@ -936,7 +935,7 @@ object Weeder2 {
 
     private def visitNewObject(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.NewObject)
-      val methods = pickAll(TreeKind.Expr.JvmMethod, tree.children)
+      val methods = pickAll(TreeKind.Expr.JvmMethod, tree)
       mapN(
         Types.pickType(tree),
         traverse(methods)(visitJvmMethod),
@@ -956,7 +955,7 @@ object Weeder2 {
 
     private def visitParYield(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.ParYield)
-      val fragments = pickAll(TreeKind.Expr.ParYieldFragment, tree.children)
+      val fragments = pickAll(TreeKind.Expr.ParYieldFragment, tree)
       mapN(
         traverse(fragments)(visitParYieldFragment),
         pickExpression(tree)
@@ -1059,9 +1058,9 @@ object Weeder2 {
     }
 
     private def pickForFragments(tree: Tree)(implicit s: State): Validation[List[ForFragment], CompilationMessage] = {
-      val guards = pickAll(TreeKind.Expr.ForFragmentGuard, tree.children)
-      val generators = pickAll(TreeKind.Expr.ForFragmentGenerator, tree.children)
-      val lets = pickAll(TreeKind.Expr.ForFragmentLet, tree.children)
+      val guards = pickAll(TreeKind.Expr.ForFragmentGuard, tree)
+      val generators = pickAll(TreeKind.Expr.ForFragmentGenerator, tree)
+      val lets = pickAll(TreeKind.Expr.ForFragmentLet, tree)
       mapN(
         traverse(guards)(visitForFragmentGuard),
         traverse(generators)(visitForFragmentGenerator),
@@ -1101,7 +1100,7 @@ object Weeder2 {
 
     private def visitExprQname(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.QName)
-      val idents = pickAll(TreeKind.Ident, tree.children)
+      val idents = pickAll(TreeKind.Ident, tree)
       flatMapN(traverse(idents)(tokenToIdent)) {
         idents =>
           val first = idents.head
@@ -1135,15 +1134,15 @@ object Weeder2 {
     private def visitTuple(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Tuple)
       mapN(
-        traverse(pickAll(TreeKind.Argument, tree.children))(pickExpression),
-        traverse(pickAll(TreeKind.ArgumentNamed, tree.children))(visitArgumentNamed)
+        traverse(pickAll(TreeKind.Argument, tree))(pickExpression),
+        traverse(pickAll(TreeKind.ArgumentNamed, tree))(visitArgumentNamed)
       )((unnamed, named) => Expr.Tuple((unnamed ++ named).sortBy(_.loc), tree.loc))
     }
 
     private def visitTry(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Try)
-      val maybeCatch = pickAll(TreeKind.Expr.TryCatchBodyFragment, tree.children)
-      val maybeWith = pickAll(TreeKind.Expr.TryWithBodyFragment, tree.children)
+      val maybeCatch = pickAll(TreeKind.Expr.TryCatchBodyFragment, tree)
+      val maybeWith = pickAll(TreeKind.Expr.TryWithBodyFragment, tree)
       flatMapN(
         pickExpression(tree),
         traverse(maybeCatch)(visitTryCatchBody),
@@ -1168,7 +1167,7 @@ object Weeder2 {
 
     private def visitTryCatchBody(tree: Tree)(implicit s: State): Validation[List[CatchRule], CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.TryCatchBodyFragment)
-      val rules = pickAll(TreeKind.Expr.TryCatchRuleFragment, tree.children)
+      val rules = pickAll(TreeKind.Expr.TryCatchRuleFragment, tree)
       traverse(rules)(visitTryCatchRule)
     }
 
@@ -1183,7 +1182,7 @@ object Weeder2 {
 
     private def visitTryWithBody(tree: Tree)(implicit s: State): Validation[WithHandler, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.TryWithBodyFragment)
-      val rules = pickAll(TreeKind.Expr.TryWithRuleFragment, tree.children)
+      val rules = pickAll(TreeKind.Expr.TryWithRuleFragment, tree)
       mapN(
         pickQName(tree), // This qname is an effect
         traverse(rules)(visitTryWithRule)
@@ -1206,7 +1205,7 @@ object Weeder2 {
 
     private def visitRecordSelect(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.RecordSelect)
-      val idents = pickAll(TreeKind.Ident, tree.children)
+      val idents = pickAll(TreeKind.Ident, tree)
       mapN(pickExpression(tree), traverse(idents)(tokenToIdent))(
         (expr, idents) =>
           idents.foldLeft(expr) {
@@ -1218,7 +1217,7 @@ object Weeder2 {
     private def visitRestrictableChoose(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.RestrictableChoose || tree.kind == TreeKind.Expr.RestrictableChooseStar)
       val isStar = tree.kind == TreeKind.Expr.RestrictableChooseStar
-      val rules = pickAll(TreeKind.Expr.MatchRuleFragment, tree.children)
+      val rules = pickAll(TreeKind.Expr.MatchRuleFragment, tree)
       mapN(
         pickExpression(tree),
         traverse(rules)(t => visitRestrictableChooseRule(isStar, t))
@@ -1258,14 +1257,14 @@ object Weeder2 {
 
     private def visitSelect(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Select)
-      val rules = traverse(pickAll(TreeKind.Expr.SelectRuleFragment, tree.children))(visitSelectRule)
-      val maybeDefault = traverseOpt(tryPick(TreeKind.Expr.SelectRuleDefaultFragment, tree.children))(pickExpression)
+      val rules = traverse(pickAll(TreeKind.Expr.SelectRuleFragment, tree))(visitSelectRule)
+      val maybeDefault = traverseOpt(tryPick(TreeKind.Expr.SelectRuleDefaultFragment, tree))(pickExpression)
       mapN(rules, maybeDefault)((rules, maybeDefault) => Expr.SelectChannel(rules, maybeDefault, tree.loc))
     }
 
     private def visitSelectRule(tree: Tree)(implicit s: State): Validation[SelectChannelRule, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.SelectRuleFragment)
-      val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree.children))(visitExpression)
+      val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpression)
       flatMapN(pickNameIdent(tree), exprs) {
         case (ident, channel :: body :: Nil) =>
           Validation.success(SelectChannelRule(ident, channel, body))
@@ -1280,7 +1279,7 @@ object Weeder2 {
 
     private def visitReference(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Ref)
-      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree.children)
+      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree)
       flatMapN(
         pickExpression(tree),
         traverseOpt(scopeName)(visitScopeName)
@@ -1294,7 +1293,7 @@ object Weeder2 {
 
     private def visitSpawn(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Spawn)
-      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree.children)
+      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree)
       flatMapN(
         pickExpression(tree),
         traverseOpt(scopeName)(visitScopeName)
@@ -1318,9 +1317,9 @@ object Weeder2 {
 
     private def visitRecordOperation(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.RecordOperation)
-      val updates = pickAll(TreeKind.Expr.RecordOpUpdate, tree.children)
-      val eextends = pickAll(TreeKind.Expr.RecordOpExtend, tree.children)
-      val restricts = pickAll(TreeKind.Expr.RecordOpRestrict, tree.children)
+      val updates = pickAll(TreeKind.Expr.RecordOpUpdate, tree)
+      val eextends = pickAll(TreeKind.Expr.RecordOpExtend, tree)
+      val restricts = pickAll(TreeKind.Expr.RecordOpRestrict, tree)
       val ops = (updates ++ eextends ++ restricts).sortBy(_.loc)
       Validation.foldRight(ops)(pickExpression(tree))((op, acc) =>
         op.kind match {
@@ -1343,7 +1342,7 @@ object Weeder2 {
 
     private def visitLiteralRecord(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.LiteralRecord)
-      val fields = pickAll(TreeKind.Expr.LiteralRecordFieldFragment, tree.children)
+      val fields = pickAll(TreeKind.Expr.LiteralRecordFieldFragment, tree)
       mapN(
         traverse(fields)(visitLiteralRecordField)
       )(fields => fields.foldRight(Expr.RecordEmpty(tree.loc.asSynthetic): Expr) {
@@ -1360,26 +1359,26 @@ object Weeder2 {
 
     private def visitLiteralList(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.LiteralList)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree)
       mapN(traverse(exprs)(visitExpression))(Expr.ListLit(_, tree.loc))
     }
 
     private def visitLiteralSet(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.LiteralSet)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree)
       mapN(traverse(exprs)(visitExpression))(Expr.SetLit(_, tree.loc))
     }
 
     private def visitLiteralVector(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.LiteralVector)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree)
       mapN(traverse(exprs)(visitExpression))(Expr.VectorLit(_, tree.loc))
     }
 
     private def visitLiteralArray(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.LiteralArray)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
-      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree.children)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree)
+      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree)
       flatMapN(
         traverse(exprs)(visitExpression),
         traverseOpt(scopeName)(visitScopeName)
@@ -1393,13 +1392,13 @@ object Weeder2 {
 
     private def visitLiteralMap(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.LiteralMap)
-      val pairs = pickAll(TreeKind.Expr.LiteralMapKeyValueFragment, tree.children)
+      val pairs = pickAll(TreeKind.Expr.LiteralMapKeyValueFragment, tree)
       mapN(traverse(pairs)(visitKeyValuePair))(Expr.MapLit(_, tree.loc))
     }
 
     private def visitKeyValuePair(tree: Tree)(implicit s: State): Validation[(Expr, Expr), CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.LiteralMapKeyValueFragment)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree)
       flatMapN(traverse(exprs)(visitExpression)) {
         // case: k => v
         case k :: v :: Nil => Validation.success((k, v))
@@ -1413,13 +1412,13 @@ object Weeder2 {
 
     private def visitScope(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Scope)
-      val block = flatMapN(pick(TreeKind.Expr.Block, tree.children))(visitBlock)
+      val block = flatMapN(pick(TreeKind.Expr.Block, tree))(visitBlock)
       mapN(pickNameIdent(tree), block)((ident, block) => Expr.Scope(ident, block, tree.loc))
     }
 
     private def tryPickNumberLiteralToken(tree: Tree)(implicit s: State): Option[Token] = {
       val NumberLiteralKinds = List(TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
-      val maybeTree = tryPick(TreeKind.Expr.Literal, tree.children)
+      val maybeTree = tryPick(TreeKind.Expr.Literal, tree)
       maybeTree.flatMap(_.children(0) match {
         case Child.TokenChild(t) if NumberLiteralKinds.contains(t.kind) => Some(t)
         case _ => None
@@ -1428,10 +1427,10 @@ object Weeder2 {
 
     private def visitUnary(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Unary)
-      flatMapN(pick(TreeKind.Operator, tree.children), pick(TreeKind.Expr.Expr, tree.children))(
+      flatMapN(pick(TreeKind.Operator, tree), pick(TreeKind.Expr.Expr, tree))(
         (opTree, exprTree) => {
           opTree.children(0) match {
-            case Child.TokenChild(opToken) => {
+            case Child.TokenChild(opToken) =>
               val sp1 = tree.loc.sp1
               val sp2 = tree.loc.sp2
               val literalToken = tryPickNumberLiteralToken(exprTree)
@@ -1455,7 +1454,6 @@ object Weeder2 {
                   }
                 })
               }
-            }
             case _ => throw InternalCompilerException(s"expected unary operator but found tree", tree.loc)
           }
 
@@ -1523,7 +1521,7 @@ object Weeder2 {
 
     private def visitIfThenElse(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.IfThenElse)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree)
       exprs match {
         case exprCondition :: exprThen :: exprElse :: Nil =>
           mapN(
@@ -1573,7 +1571,7 @@ object Weeder2 {
 
     private def visitMatch(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Match)
-      val rules = pickAll(TreeKind.Expr.MatchRuleFragment, tree.children)
+      val rules = pickAll(TreeKind.Expr.MatchRuleFragment, tree)
       mapN(
         pickExpression(tree),
         traverse(rules)(visitMatchRule)
@@ -1584,7 +1582,7 @@ object Weeder2 {
 
     private def visitMatchRule(tree: Tree)(implicit s: State): Validation[MatchRule, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.MatchRuleFragment)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree)
       mapN(
         Patterns.pickPattern(tree),
         traverse(exprs)(visitExpression)
@@ -1600,7 +1598,7 @@ object Weeder2 {
 
     private def visitTypeMatch(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.TypeMatch)
-      val rules = pickAll(TreeKind.Expr.TypeMatchRuleFragment, tree.children)
+      val rules = pickAll(TreeKind.Expr.TypeMatchRuleFragment, tree)
       mapN(
         pickExpression(tree),
         traverse(rules)(visitTypeMatchRule)
@@ -1622,8 +1620,8 @@ object Weeder2 {
 
     private def visitBinary(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Binary)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
-      val op = pick(TreeKind.Operator, tree.children)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree)
+      val op = pick(TreeKind.Operator, tree)
       flatMapN(op, traverse(exprs)(visitExpression)) {
         case (op, e1 :: e2 :: Nil) =>
           val isInfix = op.children.head match {
@@ -1687,7 +1685,7 @@ object Weeder2 {
       val init = WeededAst.Expr.Cst(Ast.Constant.Str(""), tree.loc)
       var isDebug = false
       // Check for empty interpolation
-      if (tryPick(TreeKind.Expr.Expr, tree.children).isEmpty) {
+      if (tryPick(TreeKind.Expr.Expr, tree).isEmpty) {
         val error = EmptyInterpolatedExpression(tree.loc)
         return Validation.toSoftFailure(Expr.Error(error), error)
       }
@@ -1777,7 +1775,7 @@ object Weeder2 {
 
     private def visitExprUse(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Use)
-      val use = flatMapN(pick(TreeKind.UsesOrImports.Use, tree.children))(visitUse)
+      val use = flatMapN(pick(TreeKind.UsesOrImports.Use, tree))(visitUse)
       val expr = pickExpression(tree)
       mapN(use, expr)((use, expr) => Expr.Use(use, expr, tree.loc))
     }
@@ -1789,7 +1787,7 @@ object Weeder2 {
 
     private def visitStatement(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Statement)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree.children)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree)
       mapN(traverse(exprs)(visitExpression)) {
         case ex1 :: ex2 :: Nil => Expr.Stm(ex1, ex2, tree.loc)
         case exprs => throw InternalCompilerException(s"Parser error. Expected 2 expressions in statement but found '${exprs.length}'.", tree.loc)
@@ -1798,7 +1796,7 @@ object Weeder2 {
 
     private def visitLetImport(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.LetImport)
-      val jvmOp = flatMapN(pick(TreeKind.JvmOp.JvmOp, tree.children))(JvmOp.visitJvmOp)
+      val jvmOp = flatMapN(pick(TreeKind.JvmOp.JvmOp, tree))(JvmOp.visitJvmOp)
       val expr = pickExpression(tree)
       mapN(jvmOp, expr) {
         (jvmOp, expr) => Expr.LetImport(jvmOp, expr, tree.loc)
@@ -1807,9 +1805,9 @@ object Weeder2 {
 
     private def visitCall(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Apply)
-      flatMapN(pick(TreeKind.Expr.Expr, tree.children), pickArguments(tree)) {
+      flatMapN(pick(TreeKind.Expr.Expr, tree), pickArguments(tree)) {
         case (expr, args) =>
-          val maybeIntrinsic = tryPick(TreeKind.Expr.Intrinsic, expr.children)
+          val maybeIntrinsic = tryPick(TreeKind.Expr.Intrinsic, expr)
           maybeIntrinsic match {
             case Some(intrinsic) => visitIntrinsic(intrinsic, args)
             case None => mapN(visitExpression(expr))(Expr.Apply(_, args, tree.loc))
@@ -1818,13 +1816,13 @@ object Weeder2 {
     }
 
     private def pickArguments(tree: Tree)(implicit s: State): Validation[List[Expr], CompilationMessage] = {
-      flatMapN(pick(TreeKind.ArgumentList, tree.children))(visitArguments)
+      flatMapN(pick(TreeKind.ArgumentList, tree))(visitArguments)
     }
 
     private def visitArguments(tree: Tree)(implicit s: State): Validation[List[Expr], CompilationMessage] = {
       mapN(
-        traverse(pickAll(TreeKind.Argument, tree.children))(pickExpression),
-        traverse(pickAll(TreeKind.ArgumentNamed, tree.children))(visitArgumentNamed)
+        traverse(pickAll(TreeKind.Argument, tree))(pickExpression),
+        traverse(pickAll(TreeKind.ArgumentNamed, tree))(visitArgumentNamed)
       )((unnamed, named) => unnamed ++ named match {
         // Add synthetic unit arguments if there are none
         case Nil => List(Expr.Cst(Ast.Constant.Unit, tree.loc))
@@ -1835,7 +1833,7 @@ object Weeder2 {
     private def visitArgumentNamed(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.ArgumentNamed)
       flatMapN(
-        traverse(pickAll(TreeKind.Expr.Expr, tree.children))(visitExpression)
+        traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpression)
       ) {
         case e1 :: e2 :: Nil =>
           // First expression must be a name
@@ -2019,7 +2017,7 @@ object Weeder2 {
 
   private object Patterns {
     def pickPattern(tree: Tree)(implicit s: State): Validation[Pattern, CompilationMessage] = {
-      flatMapN(pick(TreeKind.Pattern.Pattern, tree.children))(visitPattern(_))
+      flatMapN(pick(TreeKind.Pattern.Pattern, tree))(visitPattern(_))
     }
 
     def visitPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit s: State): Validation[Pattern, CompilationMessage] = {
@@ -2044,7 +2042,7 @@ object Weeder2 {
     private def visitFCons(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit s: State): Validation[Pattern, CompilationMessage] = {
       assert(tree.kind == TreeKind.Pattern.FCons)
       // FCons are rewritten into tag patterns
-      val patterns = pickAll(TreeKind.Pattern.Pattern, tree.children)
+      val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
       mapN(
         traverse(patterns)(visitPattern(_, seen))
       ) {
@@ -2079,7 +2077,7 @@ object Weeder2 {
 
     private def visitTag(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit s: State): Validation[Pattern, CompilationMessage] = {
       assert(tree.kind == TreeKind.Pattern.Tag)
-      val maybePat = tryPick(TreeKind.Pattern.Tuple, tree.children)
+      val maybePat = tryPick(TreeKind.Pattern.Tuple, tree)
       mapN(
         pickQName(tree),
         traverseOpt(maybePat)(visitTuple(_, seen))
@@ -2102,8 +2100,8 @@ object Weeder2 {
         case Child.TokenChild(t) if NumberLiteralKinds.contains(t.kind) => Some(t)
         case _ => None
       }
-      flatMapN(pick(TreeKind.Operator, tree.children))(_.children(0) match {
-        case Child.TokenChild(opToken) => {
+      flatMapN(pick(TreeKind.Operator, tree))(_.children(0) match {
+        case Child.TokenChild(opToken) =>
           literalToken match {
             // fold unary minus into a constant, and visit it like any other constant
             case Some(lit) if opToken.text == "-" =>
@@ -2113,7 +2111,6 @@ object Weeder2 {
               visitLiteral(syntheticLiteral)
             case _ => throw InternalCompilerException(s"no number literal found for unary '-'", tree.loc)
           }
-        }
         case _ => throw InternalCompilerException(s"expected unary operator but found tree", tree.loc)
       }
       )
@@ -2135,7 +2132,7 @@ object Weeder2 {
 
     private def visitTuple(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit s: State): Validation[Pattern, CompilationMessage] = {
       assert(tree.kind == TreeKind.Pattern.Tuple)
-      val patterns = pickAll(TreeKind.Pattern.Pattern, tree.children)
+      val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
       mapN(traverse(patterns)(visitPattern(_, seen))) {
         case Nil => Pattern.Cst(Ast.Constant.Unit, tree.loc)
         case x :: Nil => x
@@ -2145,8 +2142,8 @@ object Weeder2 {
 
     private def visitRecord(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit s: State): Validation[Pattern, CompilationMessage] = {
       assert(tree.kind == TreeKind.Pattern.Record)
-      val fields = pickAll(TreeKind.Pattern.RecordFieldFragment, tree.children)
-      val maybePattern = tryPick(TreeKind.Pattern.Pattern, tree.children)
+      val fields = pickAll(TreeKind.Pattern.RecordFieldFragment, tree)
+      val maybePattern = tryPick(TreeKind.Pattern.Pattern, tree)
       flatMapN(
         traverse(fields)(visitRecordField(_, seen)),
         traverseOpt(maybePattern)(visitPattern(_, seen))
@@ -2166,7 +2163,7 @@ object Weeder2 {
 
     private def visitRecordField(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit s: State): Validation[Pattern.Record.RecordLabelPattern, CompilationMessage] = {
       assert(tree.kind == TreeKind.Pattern.RecordFieldFragment)
-      val maybePattern = tryPick(TreeKind.Pattern.Pattern, tree.children)
+      val maybePattern = tryPick(TreeKind.Pattern.Pattern, tree)
       flatMapN(pickNameIdent(tree), traverseOpt(maybePattern)(visitPattern(_, seen))) {
         case (ident, None) =>
           seen.get(ident.name) match {
@@ -2366,14 +2363,14 @@ object Weeder2 {
   private object Predicates {
     def pickHead(tree: Tree)(implicit s: State): Validation[Predicate.Head.Atom, CompilationMessage] = {
       flatMapN(
-        pick(TreeKind.Predicate.Head, tree.children)
+        pick(TreeKind.Predicate.Head, tree)
       )(tree => {
         flatMapN(
           pickNameIdent(tree),
-          pick(TreeKind.Predicate.TermList, tree.children)
+          pick(TreeKind.Predicate.TermList, tree)
         )(
           (ident, tree) => {
-            val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree.children))(Exprs.visitExpression)
+            val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(Exprs.visitExpression)
             val maybeLatTerm = tryPickLatticeTermExpr(tree)
             mapN(exprs, maybeLatTerm) {
               case (exprs, None) => Predicate.Head.Atom(Name.mkPred(ident), Denotation.Relational, exprs, tree.loc)
@@ -2402,10 +2399,10 @@ object Weeder2 {
 
       flatMapN(
         pickNameIdent(tree),
-        pick(TreeKind.Predicate.PatternList, tree.children)
+        pick(TreeKind.Predicate.PatternList, tree)
       )(
         (ident, tree) => {
-          val exprs = traverse(pickAll(TreeKind.Pattern.Pattern, tree.children))(tree => Patterns.visitPattern(tree))
+          val exprs = traverse(pickAll(TreeKind.Pattern.Pattern, tree))(tree => Patterns.visitPattern(tree))
           val maybeLatTerm = tryPickLatticeTermPattern(tree)
           flatMapN(exprs, maybeLatTerm) {
             case (pats, None) =>
@@ -2429,7 +2426,7 @@ object Weeder2 {
 
     private def visitFunctional(tree: Tree)(implicit s: State): Validation[Predicate.Body.Functional, CompilationMessage] = {
       assert(tree.kind == TreeKind.Predicate.Functional)
-      val idents = pickAll(TreeKind.Ident, tree.children)
+      val idents = pickAll(TreeKind.Ident, tree)
       mapN(
         traverse(idents)(tokenToIdent),
         Exprs.pickExpression(tree)
@@ -2440,7 +2437,7 @@ object Weeder2 {
 
     def visitParam(tree: Tree)(implicit s: State): Validation[PredicateParam, CompilationMessage] = {
       assert(tree.kind == TreeKind.Predicate.Param || tree.kind == TreeKind.Predicate.ParamUntyped)
-      val types = pickAll(TreeKind.Type.Type, tree.children)
+      val types = pickAll(TreeKind.Type.Type, tree)
       val maybeLatTerm = tryPickLatticeTermType(tree)
       mapN(pickNameIdent(tree), traverse(types)(Types.visitType), maybeLatTerm) {
         case (ident, Nil, _) => PredicateParam.PredicateParamUntyped(Name.mkPred(ident), tree.loc)
@@ -2450,22 +2447,22 @@ object Weeder2 {
     }
 
     private def tryPickLatticeTermExpr(tree: Tree)(implicit s: State): Validation[Option[Expr], CompilationMessage] = {
-      traverseOpt(tryPick(TreeKind.Predicate.LatticeTerm, tree.children))(Exprs.pickExpression)
+      traverseOpt(tryPick(TreeKind.Predicate.LatticeTerm, tree))(Exprs.pickExpression)
     }
 
     private def tryPickLatticeTermType(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {
-      traverseOpt(tryPick(TreeKind.Predicate.LatticeTerm, tree.children))(Types.pickType)
+      traverseOpt(tryPick(TreeKind.Predicate.LatticeTerm, tree))(Types.pickType)
     }
 
     private def tryPickLatticeTermPattern(tree: Tree)(implicit s: State): Validation[Option[Pattern], CompilationMessage] = {
-      traverseOpt(tryPick(TreeKind.Predicate.LatticeTerm, tree.children))(Patterns.pickPattern(_))
+      traverseOpt(tryPick(TreeKind.Predicate.LatticeTerm, tree))(Patterns.pickPattern(_))
     }
 
   }
 
   private object Types {
     def pickType(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      flatMapN(pick(TreeKind.Type.Type, tree.children))(visitType)
+      flatMapN(pick(TreeKind.Type.Type, tree))(visitType)
     }
 
     def tryPickTypeNoWild(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {
@@ -2476,7 +2473,7 @@ object Weeder2 {
     }
 
     def tryPickType(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {
-      val maybeType = tryPick(TreeKind.Type.Type, tree.children)
+      val maybeType = tryPick(TreeKind.Type.Type, tree)
       traverseOpt(maybeType)(visitType)
     }
 
@@ -2504,7 +2501,7 @@ object Weeder2 {
           case ident if ident.isWild => Type.Var(ident, tree.loc)
           case ident => Type.Ambiguous(Name.mkQName(ident), inner.loc)
         }
-        case kind => failWith(s"Expected type but found '$kind'", tree.loc)
+        case kind => throw InternalCompilerException(s"Parser passed unknown type '$kind'", tree.loc)
       }
     }
 
@@ -2521,8 +2518,8 @@ object Weeder2 {
 
     private def visitBinary(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
       assert(tree.kind == TreeKind.Type.Binary)
-      val types = traverse(pickAll(TreeKind.Type.Type, tree.children))(visitType)
-      val op = pick(TreeKind.Operator, tree.children)
+      val types = traverse(pickAll(TreeKind.Type.Type, tree))(visitType)
+      val op = pick(TreeKind.Operator, tree)
       flatMapN(op, types) {
         case (op, t1 :: t2 :: Nil) =>
           text(op).head match {
@@ -2533,8 +2530,8 @@ object Weeder2 {
                 // Normally singleton tuples `((a, b))` are treated as `(a, b)`. That's fine unless we are doing an arrow type!
                 // In this case we need t1 "unflattened" so we redo the visit.
                 case Type.Tuple(_, _) =>
-                  val t1Tree = flatMapN(pick(TreeKind.Type.Type, tree.children))(t => pick(TreeKind.Type.Tuple, t.children))
-                  val params = flatMapN(t1Tree)(t => traverse(pickAll(TreeKind.Type.Type, t.children))(visitType))
+                  val t1Tree = flatMapN(pick(TreeKind.Type.Type, tree))(t => pick(TreeKind.Type.Tuple, t))
+                  val params = flatMapN(t1Tree)(t => traverse(pickAll(TreeKind.Type.Type, t))(visitType))
                   mapN(params)(params => (params.last, params.init))
                 case t => Validation.success((t, List.empty))
               }
@@ -2559,8 +2556,7 @@ object Weeder2 {
             case "and" => Validation.success(Type.And(t1, t2, tree.loc))
             case "or" => Validation.success(Type.Or(t1, t2, tree.loc))
             // UNRECOGNIZED
-            // TODO: Use Type.Error here
-            case op => failWith(s"Unrecognized type operator '$op' ", tree.loc)
+            case kind => throw InternalCompilerException(s"Parser passed unknown type operator '$kind'", tree.loc)
           }
 
         case (op, operands) => throw InternalCompilerException(s"Type.Binary tree with ${operands.length} operands", tree.loc)
@@ -2569,8 +2565,8 @@ object Weeder2 {
 
     private def visitUnary(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
       assert(tree.kind == TreeKind.Type.Unary)
-      val types = traverse(pickAll(TreeKind.Type.Type, tree.children))(visitType)
-      val op = pick(TreeKind.Operator, tree.children)
+      val types = traverse(pickAll(TreeKind.Type.Type, tree))(visitType)
+      val op = pick(TreeKind.Operator, tree)
       flatMapN(op, types) {
         case (op, t :: Nil) =>
           text(op).head match {
@@ -2578,8 +2574,7 @@ object Weeder2 {
             case "rvnot" => Validation.success(Type.CaseComplement(t, tree.loc))
             case "not" => Validation.success(Type.Not(t, tree.loc))
             // UNRECOGNIZED
-            // TODO: Use Type.Error here
-            case op => failWith(s"Unrecognized type operator '$op' ", tree.loc)
+            case kind => throw InternalCompilerException(s"Parser passed unknown type operator '$kind'", tree.loc)
           }
 
         case (_, operands) => throw InternalCompilerException(s"Type.Unary tree with ${operands.length} operands", tree.loc)
@@ -2594,12 +2589,12 @@ object Weeder2 {
 
     private def visitCaseSet(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
       assert(tree.kind == TreeKind.Type.CaseSet)
-      val cases = traverse(pickAll(TreeKind.QName, tree.children))(visitQName)
+      val cases = traverse(pickAll(TreeKind.QName, tree))(visitQName)
       mapN(cases)(Type.CaseSet(_, tree.loc))
     }
 
     private def visitSchemaRow(parentTree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      val maybeRest = tryPick(TreeKind.Ident, parentTree.children)
+      val maybeRest = tryPick(TreeKind.Ident, parentTree)
       flatMapN(
         traverseOpt(maybeRest)(tokenToIdent)
       ) { maybeRest =>
@@ -2618,8 +2613,8 @@ object Weeder2 {
             }
 
           case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithTypes =>
-            val types = pickAll(TreeKind.Type.Type, tree.children)
-            val maybeLatTerm = tryPick(TreeKind.Predicate.LatticeTerm, tree.children)
+            val types = pickAll(TreeKind.Type.Type, tree)
+            val maybeLatTerm = tryPick(TreeKind.Predicate.LatticeTerm, tree)
             mapN(
               pickQName(tree),
               traverse(types)(Types.visitType),
@@ -2650,7 +2645,7 @@ object Weeder2 {
     private def visitTuple(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
       assert(tree.kind == TreeKind.Type.Tuple)
       mapN(
-        traverse(pickAll(TreeKind.Type.Type, tree.children))(visitType)
+        traverse(pickAll(TreeKind.Type.Type, tree))(visitType)
       ) {
         case tpe :: Nil => tpe // flatten singleton tuple types
         case types => Type.Tuple(types, tree.loc)
@@ -2664,8 +2659,8 @@ object Weeder2 {
     }
 
     private def visitRecordRow(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      val maybeVar = tryPick(TreeKind.Type.Variable, tree.children)
-      val fields = pickAll(TreeKind.Type.RecordFieldFragment, tree.children)
+      val maybeVar = tryPick(TreeKind.Type.Variable, tree)
+      val fields = pickAll(TreeKind.Type.RecordFieldFragment, tree)
       mapN(traverseOpt(maybeVar)(visitVariable), traverse(fields)(visitRecordField)) {
         (maybeVar, fields) =>
           val variable = maybeVar.getOrElse(Type.RecordRowEmpty(tree.loc))
@@ -2695,10 +2690,10 @@ object Weeder2 {
 
     private def visitApply(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
       assert(tree.kind == TreeKind.Type.Apply)
-      flatMapN(pickType(tree), pick(TreeKind.Type.ArgumentList, tree.children)) {
+      flatMapN(pickType(tree), pick(TreeKind.Type.ArgumentList, tree)) {
         (tpe, argsTree) =>
           // Curry type arguments
-          val arguments = pickAll(TreeKind.Type.Argument, argsTree.children)
+          val arguments = pickAll(TreeKind.Type.Argument, argsTree)
           mapN(traverse(arguments)(pickType)) {
             args => args.foldLeft(tpe) { case (acc, t2) => Type.Apply(acc, t2, tree.loc) }
           }
@@ -2706,13 +2701,13 @@ object Weeder2 {
     }
 
     def tryPickEffect(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {
-      val maybeEffectSet = tryPick(TreeKind.Type.EffectSet, tree.children)
+      val maybeEffectSet = tryPick(TreeKind.Type.EffectSet, tree)
       traverseOpt(maybeEffectSet)(visitEffect)
     }
 
     private def visitEffect(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
       assert(tree.kind == TreeKind.Type.EffectSet)
-      val effects = traverse(pickAll(TreeKind.Type.Type, tree.children))(visitType)
+      val effects = traverse(pickAll(TreeKind.Type.Type, tree))(visitType)
       mapN(effects) {
         // Default to Pure
         case Nil => Type.Pure(tree.loc)
@@ -2724,26 +2719,26 @@ object Weeder2 {
     }
 
     def pickArguments(tree: Tree)(implicit s: State): Validation[List[Type], CompilationMessage] = {
-      tryPick(TreeKind.Type.ArgumentList, tree.children)
-        .map(argTree => traverse(pickAll(TreeKind.Type.Argument, argTree.children))(pickType))
+      tryPick(TreeKind.Type.ArgumentList, tree)
+        .map(argTree => traverse(pickAll(TreeKind.Type.Argument, argTree))(pickType))
         .getOrElse(Validation.success(List.empty))
     }
 
     def pickDerivations(tree: Tree)(implicit s: State): Validation[Derivations, CompilationMessage] = {
-      val maybeDerivations = tryPick(TreeKind.DerivationList, tree.children)
+      val maybeDerivations = tryPick(TreeKind.DerivationList, tree)
       val loc = maybeDerivations.map(_.loc).getOrElse(SourceLocation.Unknown)
       val derivations = maybeDerivations
-        .map(tree => traverse(pickAll(TreeKind.QName, tree.children))(visitQName))
+        .map(tree => traverse(pickAll(TreeKind.QName, tree))(visitQName))
         .getOrElse(Validation.success(List.empty))
 
       mapN(derivations)(Derivations(_, loc))
     }
 
     def pickParameters(tree: Tree)(implicit s: State): Validation[TypeParams, CompilationMessage] = {
-      tryPick(TreeKind.TypeParameterList, tree.children) match {
+      tryPick(TreeKind.TypeParameterList, tree) match {
         case None => Validation.success(TypeParams.Elided)
         case Some(tparamsTree) =>
-          val parameters = pickAll(TreeKind.Parameter, tparamsTree.children)
+          val parameters = pickAll(TreeKind.Parameter, tparamsTree)
           flatMapN(traverse(parameters)(visitParameter)) {
             tparams =>
               val kinded = tparams.collect { case t: TypeParam.Kinded => t }
@@ -2768,10 +2763,10 @@ object Weeder2 {
     }
 
     def pickKindedParameters(tree: Tree)(implicit s: State): Validation[KindedTypeParams, CompilationMessage] = {
-      tryPick(TreeKind.TypeParameterList, tree.children) match {
+      tryPick(TreeKind.TypeParameterList, tree) match {
         case None => Validation.success(TypeParams.Elided)
         case Some(tparamsTree) =>
-          val parameters = pickAll(TreeKind.Parameter, tparamsTree.children)
+          val parameters = pickAll(TreeKind.Parameter, tparamsTree)
           flatMapN(traverse(parameters)(visitParameter)) {
             tparams =>
               val kinded = tparams.collect { case t: TypeParam.Kinded => t }
@@ -2798,9 +2793,9 @@ object Weeder2 {
     }
 
     def pickSingleParameter(tree: Tree)(implicit s: State): Validation[TypeParam, CompilationMessage] = {
-      val tparams = pick(TreeKind.TypeParameterList, tree.children)
+      val tparams = pick(TreeKind.TypeParameterList, tree)
       flatMapN(tparams) {
-        tparams => flatMapN(pick(TreeKind.Parameter, tparams.children))(visitParameter)
+        tparams => flatMapN(pick(TreeKind.Parameter, tparams))(visitParameter)
       }
     }
 
@@ -2815,10 +2810,10 @@ object Weeder2 {
     }
 
     def pickConstraints(tree: Tree)(implicit s: State): Validation[List[TypeConstraint], CompilationMessage] = {
-      val maybeWithClause = tryPick(TreeKind.Type.ConstraintList, tree.children)
+      val maybeWithClause = tryPick(TreeKind.Type.ConstraintList, tree)
       maybeWithClause
         .map(withClauseTree => {
-          val constraints = pickAll(TreeKind.Type.Constraint, withClauseTree.children)
+          val constraints = pickAll(TreeKind.Type.Constraint, withClauseTree)
           traverse(constraints)(visitConstraint)
         }).getOrElse(Validation.success(List.empty))
     }
@@ -2850,7 +2845,7 @@ object Weeder2 {
       mapN(pickNameIdent(tree)) {
         ident => {
           val kind = Kind.Ambiguous(Name.mkQName(ident), ident.loc)
-          tryPick(TreeKind.Kind, tree.children)
+          tryPick(TreeKind.Kind, tree)
           tryPickKind(tree)
             .map(Kind.Arrow(kind, _, tree.loc))
             .getOrElse(kind)
@@ -2859,19 +2854,19 @@ object Weeder2 {
     }
 
     private def pickKind(tree: Tree)(implicit s: State): Validation[Kind, CompilationMessage] = {
-      flatMapN(pick(TreeKind.Kind, tree.children))(visitKind)
+      flatMapN(pick(TreeKind.Kind, tree))(visitKind)
     }
 
     def tryPickKind(tree: Tree)(implicit s: State): Option[Kind] = {
       // Cast a missing kind to None because 'tryPick' means that it's okay not to find a kind here.
-      tryPick(TreeKind.Kind, tree.children).flatMap(visitKind(_).toHardResult.toOption)
+      tryPick(TreeKind.Kind, tree).flatMap(visitKind(_).toHardResult.toOption)
     }
   }
 
   private object JvmOp {
     private def pickQNameIdents(tree: Tree)(implicit s: State): Validation[List[String], CompilationMessage] = {
-      flatMapN(pick(TreeKind.QName, tree.children)) {
-        qname => mapN(traverse(pickAll(TreeKind.Ident, qname.children))(t => Validation.success(text(t))))(_.flatten)
+      flatMapN(pick(TreeKind.QName, tree)) {
+        qname => mapN(traverse(pickAll(TreeKind.Ident, qname))(t => Validation.success(text(t))))(_.flatten)
       }
     }
 
@@ -2891,13 +2886,13 @@ object Weeder2 {
     }
 
     private def pickSignature(tree: Tree)(implicit s: State): Validation[List[Type], CompilationMessage] = {
-      flatMapN(pick(TreeKind.JvmOp.Sig, tree.children)) {
-        sig => traverse(pickAll(TreeKind.Type.Type, sig.children))(Types.visitType)
+      flatMapN(pick(TreeKind.JvmOp.Sig, tree)) {
+        sig => traverse(pickAll(TreeKind.Type.Type, sig))(Types.visitType)
       }
     }
 
     private def pickAscription(tree: Tree)(implicit s: State): Validation[(Type, Option[Type]), CompilationMessage] = {
-      val ascription = pick(TreeKind.JvmOp.Ascription, tree.children)
+      val ascription = pick(TreeKind.JvmOp.Ascription, tree)
       flatMapN(ascription)(
         ascTree => mapN(Types.pickType(ascTree), Types.tryPickEffect(ascTree))((tpe, eff) => (tpe, eff))
       )
@@ -2954,7 +2949,7 @@ object Weeder2 {
   }
 
   private def tryPickJavaName(tree: Tree)(implicit s: State): Validation[String, CompilationMessage] = {
-    val maybeQname = traverseOpt(tryPick(TreeKind.QName, tree.children))(visitQName)
+    val maybeQname = traverseOpt(tryPick(TreeKind.QName, tree))(visitQName)
     flatMapN(maybeQname) {
       // Qname starting with '##'
       case Some(qname) if qname.namespace.idents.headOption.exists(_.name.startsWith("##")) => Validation.success(javaQnameToFqn(qname))
@@ -2965,12 +2960,12 @@ object Weeder2 {
   }
 
   private def pickQName(tree: Tree)(implicit s: State): Validation[Name.QName, CompilationMessage] = {
-    flatMapN(pick(TreeKind.QName, tree.children))(visitQName)
+    flatMapN(pick(TreeKind.QName, tree))(visitQName)
   }
 
   private def visitQName(tree: Tree)(implicit s: State): Validation[Name.QName, CompilationMessage] = {
     assert(tree.kind == TreeKind.QName)
-    val idents = pickAll(TreeKind.Ident, tree.children)
+    val idents = pickAll(TreeKind.Ident, tree)
     mapN(traverse(idents)(tokenToIdent)) {
       idents =>
         val first = idents.head
@@ -2982,11 +2977,11 @@ object Weeder2 {
   }
 
   private def pickNameIdent(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
-    flatMapN(pick(TreeKind.Ident, tree.children))(tokenToIdent)
+    flatMapN(pick(TreeKind.Ident, tree))(tokenToIdent)
   }
 
   private def tryPickNameIdent(tree: Tree)(implicit s: State): Validation[Option[Name.Ident], CompilationMessage] = {
-    traverseOpt(tryPick(TreeKind.Ident, tree.children))(tokenToIdent)
+    traverseOpt(tryPick(TreeKind.Ident, tree))(tokenToIdent)
   }
 
   ////////// HELPERS //////////////////
@@ -2998,8 +2993,13 @@ object Weeder2 {
           token.text,
           token.mkSourcePositionEnd(s.src, Some(s.parserInput))
         ))
-      // TODO: If child is an ErrorTree we are double reporting errors.
-      case _ => failWith(s"expected first child of '${tree.kind}' to be Child.Token", tree.loc)
+      // If child is an ErrorTree, that means the parse already reported and error.
+      // We can avoid double reporting by returning a success here.
+      // Doing it this way is most resilient, but phases down the line might have trouble with this sort of thing.
+      case Some(Child.TreeChild(t)) if t.kind.isInstanceOf[TreeKind.ErrorTree] =>
+        val name = text(tree).mkString("")
+        Validation.success(Name.Ident(tree.loc.sp1, name, tree.loc.sp2))
+      case _ => throw InternalCompilerException(s"Parse failure: expected first child of '${tree.kind}' to be Child.Token", tree.loc)
     }
   }
 
@@ -3064,14 +3064,17 @@ object Weeder2 {
   }
 
   // A helper that picks out the first tree of a specific kind from a list of children
-  private def pick(kind: TreeKind, children: Array[Child]): Validation[Tree, CompilationMessage] = {
-    tryPick(kind, children)
-      .map(Validation.success(_))
-      .getOrElse(failWith(s"expected to find at least one '$kind'"))
+  private def pick(kind: TreeKind, tree: Tree): Validation[Tree, CompilationMessage] = {
+    tryPick(kind, tree) match {
+      case Some(t) => Validation.success(t)
+      case None =>
+        val error = ParseError(s"expected to find at least one '$kind'", SyntacticContext.Unknown, tree.loc)
+        Validation.toSoftFailure(tree, error)
+    }
   }
 
-  private def tryPick(kind: TreeKind, children: Array[Child]): Option[Tree] = {
-    children.find {
+  private def tryPick(kind: TreeKind, tree: Tree): Option[Tree] = {
+    tree.children.find {
       case Child.TreeChild(tree) if tree.kind == kind => true
       case _ => false
     } match {
@@ -3081,8 +3084,8 @@ object Weeder2 {
   }
 
   // A helper that picks out trees of a specific kind from a list of children
-  private def pickAll(kind: TreeKind, children: Array[Child]): List[Tree] = {
-    children.foldLeft[List[Tree]](List.empty)((acc, child) => child match {
+  private def pickAll(kind: TreeKind, tree: Tree): List[Tree] = {
+    tree.children.foldLeft[List[Tree]](List.empty)((acc, child) => child match {
       case Child.TreeChild(tree) if tree.kind == kind => acc.appended(tree)
       case _ => acc
     })
@@ -3099,11 +3102,6 @@ object Weeder2 {
       } yield (x, y)
     })
     List.from(pairs.flatten)
-  }
-
-  private def failWith[T](message: String, loc: SourceLocation = SourceLocation.Unknown): Validation[T, CompilationMessage] = {
-    // TODO: Remove this function
-    Validation.HardFailure(Chain(ParseError(message, SyntacticContext.Unknown, loc)))
   }
 
   /**
