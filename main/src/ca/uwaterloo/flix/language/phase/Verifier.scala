@@ -31,6 +31,7 @@ object Verifier {
       root
     } else {
       ParOps.parMap(root.defs.values)(visitDef(_)(root))
+      root
     }
   }
 
