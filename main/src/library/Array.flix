@@ -47,8 +47,8 @@ mod Array {
 
         StringBuilder.appendString!("Array#{", sb);
 
-        let f = (x) -> {
-            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
+        let f = x -> {
+            if (not deref first) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
             StringBuilder.appendString!("${x}", sb)
         };
         forEach(f, a);
@@ -88,6 +88,11 @@ mod Array {
     /// Returns `true` if the given array `a` is empty.
     ///
     pub def isEmpty(a: Array[a, r]): Bool = length(a) == 0
+
+    ///
+    /// Returns `true` if the given array `a` is non-empty.
+    ///
+    pub def nonEmpty(a: Array[a, r]): Bool = not isEmpty(a)
 
     ///
     /// Returns the length of the array `a`.

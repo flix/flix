@@ -65,6 +65,11 @@ mod String {
         isEmpty(s)
 
     ///
+    /// Returns `true` if the string `s` is non-empty.
+    ///
+    pub def nonEmpty(s: String): Bool = not isEmpty(s)
+
+    ///
     /// Returns the length of the string `s`.
     ///
     pub def length(s: String): Int32 =

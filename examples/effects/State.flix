@@ -28,7 +28,7 @@ mod StateExample {
         } with State {
             def get(k) = k(deref n)
             def put(value, k) = {
-                n := value;
+                Ref.put(value, n);
                 k()
             }
         }

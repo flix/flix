@@ -144,13 +144,13 @@ def imperativePipe02(): Bool = region rc {
 @test
 def imperativePipe03(): Bool = region rc {
     let a = ref 8 @ rc;
-    let f = (x) -> a := x;
+    let f = x -> Ref.put(x, a);
     (2 !> f) == 2 and deref a == 2
 }
 
 @test
 def imperativePipe04(): Bool = region rc {
     let a = ref 8 @ rc;
-    let f = (x) -> a := x;
+    let f = x -> Ref.put(x, a);
     (2 !> f) == 2 and (4 !> f) == 4 and deref a == 4
 }
