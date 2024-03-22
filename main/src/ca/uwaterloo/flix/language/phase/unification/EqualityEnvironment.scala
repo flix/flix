@@ -37,7 +37,7 @@ object EqualityEnvironment {
     val newTpe2 = subst(tpe2)
 
     // check that econstr becomes tautological (according to global instance map)
-    for {
+    val r = for {
       res1 <- reduceType(newTpe1, eqEnv)
       res2 <- reduceType(newTpe2, eqEnv)
       res <- Unification.unifyTypes(res1, res2, renv) match {
@@ -47,7 +47,9 @@ object EqualityEnvironment {
       }
       // TODO ASSOC-TYPES weird typing hack
     } yield res
-  }.toValidation
+
+    Result.toValidation(r)
+  }
 
   /**
     * Converts the given EqualityConstraint into a BroadEqualityConstraint.

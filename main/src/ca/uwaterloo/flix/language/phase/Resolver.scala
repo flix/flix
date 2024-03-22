@@ -284,11 +284,11 @@ object Resolver {
   /**
     * Create a list of CyclicTypeAliases errors, one for each type alias.
     */
-  def mkCycleErrors[T](cycle: List[Symbol.TypeAliasSym]): Validation.HardFailure[T, ResolutionError] = {
+  def mkCycleErrors[T](cycle: List[Symbol.TypeAliasSym]): Validation[T, ResolutionError] = {
     val errors = cycle.map {
       sym => ResolutionError.CyclicTypeAliases(cycle, sym.loc)
     }
-    Validation.HardFailure(Chain.from(errors))
+    Validation.toHardFailures(Chain.from(errors))
   }
 
   /**
@@ -398,11 +398,11 @@ object Resolver {
     /**
       * Create a list of CyclicClassHierarchy errors, one for each class.
       */
-    def mkCycleErrors[T](cycle: List[Symbol.ClassSym]): Validation.HardFailure[T, ResolutionError] = {
+    def mkCycleErrors[T](cycle: List[Symbol.ClassSym]): Validation[T, ResolutionError] = {
       val errors = cycle.map {
         sym => ResolutionError.CyclicClassHierarchy(cycle, sym.loc)
       }
-      Validation.HardFailure(Chain.from(errors))
+      Validation.toHardFailures(Chain.from(errors))
     }
 
     val classSyms = classes.values.map(_.sym)
@@ -1353,7 +1353,7 @@ object Resolver {
           val rulesVal = traverse(rules) {
             case NamedAst.CatchRule(sym, className, body) =>
               val env = env0 ++ mkVarEnv(sym)
-              val clazzVal = lookupJvmClass(className, sym.loc).toValidation
+              val clazzVal = Result.toValidation(lookupJvmClass(className, sym.loc))
               val bVal = visitExp(body, env)
               mapN(clazzVal, bVal) {
                 case (clazz, b) => ResolvedAst.CatchRule(sym, clazz, b)
@@ -2342,7 +2342,7 @@ object Resolver {
         }
 
       case NamedAst.Type.Native(fqn, loc) =>
-        mapN(lookupJvmClass(fqn, loc).toValidation) {
+        mapN(Result.toValidation(lookupJvmClass(fqn, loc))) {
           case clazz => flixifyType(clazz, loc)
         }
 

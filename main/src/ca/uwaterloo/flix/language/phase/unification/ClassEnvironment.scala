@@ -116,7 +116,7 @@ object ClassEnvironment {
       val renv = RigidityEnv.ofRigidVars(arg.typeVars.map(_.sym))
 
       def tryInst(inst: Ast.Instance): Validation[List[Ast.TypeConstraint], UnificationError] = {
-        val substVal = Unification.unifyTypes(inst.tpe, arg, renv).toValidation
+        val substVal = Result.toValidation(Unification.unifyTypes(inst.tpe, arg, renv))
         Validation.flatMapN(substVal) {
           case (subst, Nil) => Validation.success(inst.tconstrs.map(subst.apply))
           // if there are leftover constraints, then we can't be sure that this is the right instance
