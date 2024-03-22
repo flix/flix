@@ -2885,13 +2885,8 @@ object Weeder2 {
 
     def pickJavaName(tree: Tree)(implicit s: State): Validation[Name.JavaName, CompilationMessage] = {
       val idents = pickQNameIdents(tree)
-      flatMapN(idents) {
-        idents =>
-          val res = Validation.success(Name.JavaName(tree.loc.sp1, idents, tree.loc.sp2))
-          val errors = idents.collect {
-            case ident if ident.contains("$") => MalformedIdentifier(ident, tree.loc)
-          }
-          res.withSoftFailures(errors)
+      mapN(idents) {
+        idents => Name.JavaName(tree.loc.sp1, idents, tree.loc.sp2)
       }
     }
 
@@ -2998,14 +2993,11 @@ object Weeder2 {
   private def tokenToIdent(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
     tree.children.headOption match {
       case Some(Child.TokenChild(token)) =>
-        val ident = Validation.success(Name.Ident(
+        Validation.success(Name.Ident(
           token.mkSourcePosition(s.src, Some(s.parserInput)),
           token.text,
           token.mkSourcePositionEnd(s.src, Some(s.parserInput))
         ))
-        if (token.text.contains("$")) {
-          ident.withSoftFailure(MalformedIdentifier(token.text, tree.loc))
-        } else ident
       // TODO: If child is an ErrorTree we are double reporting errors.
       case _ => failWith(s"expected first child of '${tree.kind}' to be Child.Token", tree.loc)
     }

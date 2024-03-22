@@ -2525,7 +2525,7 @@ object Parser2 {
         case TokenKind.KeywordNot
              | TokenKind.Tilde
              | TokenKind.KeywordRvnot => unary()
-        // TODO: Static is used as a type name in std.lib but that should be an error since 'Static' is a reserved keyword
+        // TODO: Static is used as a type name in Prelude.flix. That requires special handling here.
         case TokenKind.KeywordStaticUppercase => name(List(TokenKind.KeywordStaticUppercase))
         case t =>
           val error = ParseError(s"Expected type found $t.", SyntacticContext.Type.OtherType, currentSourceLocation())
