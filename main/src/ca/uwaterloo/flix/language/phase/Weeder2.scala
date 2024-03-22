@@ -24,11 +24,12 @@ import ca.uwaterloo.flix.language.errors.ParseError
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.Chain
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 import org.parboiled2.ParserInput
 
 import java.lang.{Byte => JByte, Integer => JInt, Long => JLong, Short => JShort}
 import java.util.regex.{Matcher, PatternSyntaxException, Pattern => JPattern}
+import scala.annotation.tailrec
 import scala.collection.immutable.{::, List, Nil}
 import scala.collection.mutable.ArrayBuffer
 
@@ -228,7 +229,7 @@ object Weeder2 {
             case Declaration.RestrictableEnum(_, _, _, _, _, _, _, _, loc) => loc
             case Declaration.TypeAlias(_, _, _, _, _, _, loc) => loc
             case Declaration.Effect(_, _, _, _, _, loc) => loc
-            case d => throw InternalCompilerException(s"TODO: handle $d", tree.loc)
+            case d => throw InternalCompilerException(s"Cannot find source position of '$d'", tree.loc)
           }
 
           all.sortBy(getLoc)
@@ -1701,10 +1702,11 @@ object Weeder2 {
           if (lit == "") {
             Validation.success(acc)
           } else {
-            // TODO: Can we do Constants.string here?
-            val unescapedLit = StringContext.processEscapes(lit)
-            val cst = Expr.Cst(Ast.Constant.Str(unescapedLit), loc)
-            Validation.success(Expr.Binary(SemanticOp.StringOp.Concat, acc, cst, tree.loc.asSynthetic))
+            val (processed, errors) = Constants.visitChars(lit, loc)
+            val cst = Validation.success(Expr.Cst(Ast.Constant.Str(processed), loc)).withSoftFailures(errors)
+            mapN(cst) {
+              cst => Expr.Binary(SemanticOp.StringOp.Concat, acc, cst, tree.loc.asSynthetic)
+            }
           }
         // An expression part: Apply 'toString' to it and concat the result
         case (acc, Child.TreeChild(tree)) if tree.kind == TreeKind.Expr.Expr =>
@@ -1826,7 +1828,6 @@ object Weeder2 {
       )((unnamed, named) => unnamed ++ named match {
         // Add synthetic unit arguments if there are none
         case Nil => List(Expr.Cst(Ast.Constant.Unit, tree.loc))
-        // TODO: sort by SourceLocation is only used for comparison with Weeder
         case args => args.sortBy(_.loc)
       })
     }
@@ -2211,27 +2212,17 @@ object Weeder2 {
      * Attempts to parse the given tree to a float32.
      */
     def toFloat32(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
-      tryParseFloat(token, (text, loc) => {
-        text.stripSuffix("f32").toFloat match {
-          case Float.PositiveInfinity | Float.NegativeInfinity =>
-            val error = MalformedFloat(loc)
-            Validation.toSoftFailure(Expr.Error(error), error)
-          case f => Validation.success(Expr.Cst(Ast.Constant.Float32(f), loc))
-        }
-      })
+      tryParseFloat(token,
+        (text, loc) => Validation.success(Expr.Cst(Ast.Constant.Float32(text.stripSuffix("f32").toFloat), loc))
+      )
 
     /**
      * Attempts to parse the given tree to a float32.
      */
     def toFloat64(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
-      tryParseFloat(token, (text, loc) => {
-        text.stripSuffix("f64").toDouble match {
-          case Double.PositiveInfinity | Double.NegativeInfinity =>
-            val error = MalformedFloat(loc)
-            Validation.toSoftFailure(Expr.Error(error), error)
-          case f => Validation.success(Expr.Cst(Ast.Constant.Float64(f), loc))
-        }
-      })
+      tryParseFloat(token,
+        (text, loc) => Validation.success(Expr.Cst(Ast.Constant.Float64(text.stripSuffix("f64").toDouble), loc))
+      )
 
     /**
      * Attempts to parse the given tree to a big decimal.
@@ -2289,11 +2280,11 @@ object Weeder2 {
      */
     def toRegex(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
+      val text = token.text.stripPrefix("regex\"").stripSuffix("\"")
+      val (processed, errors) = visitChars(text, loc)
       try {
-        val lit = token.text.stripPrefix("regex\"").stripSuffix("\"")
-        val unescapedLit = StringContext.processEscapes(lit)
-        val pattern = JPattern.compile(unescapedLit)
-        Validation.success(Expr.Cst(Ast.Constant.Regex(pattern), loc))
+        val pattern = JPattern.compile(processed)
+        Validation.success(Expr.Cst(Ast.Constant.Regex(pattern), loc)).withSoftFailures(errors)
       } catch {
         case ex: PatternSyntaxException =>
           val err = MalformedRegex(token.text, ex.getMessage, loc)
@@ -2301,48 +2292,74 @@ object Weeder2 {
       }
     }
 
-    def toChar(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
-      val lit = token.text.stripPrefix("\'").stripSuffix("\'")
-      if (lit.startsWith("\\u")) {
-        // Translate hex code
-        try {
-          val c = Integer.parseInt(lit.stripPrefix("\\u"), 16).toChar
-          Validation.success(Expr.Cst(Ast.Constant.Char(c), loc))
-        } catch {
-          case _: NumberFormatException =>
-            val err = MalformedUnicodeEscapeSequence(token.text, loc)
-            Validation.toSoftFailure(Expr.Error(err), err)
+    def visitChars(str: String, loc: SourceLocation): (String, List[CompilationMessage]) = {
+      @tailrec
+      def visit(chars: List[Char], acc: List[Char], accErr: List[CompilationMessage]): (String, List[CompilationMessage]) = {
+        chars match {
+          // Case 1: End of the sequence
+          case Nil => (acc.reverse.mkString, accErr)
+          // Case 2: Escaped character literal
+          case esc :: c :: rest if esc == '\\' =>
+            c match {
+              case 'n' => visit(rest, '\n' :: acc, accErr)
+              case 'r' => visit(rest, '\r' :: acc, accErr)
+              case '\\' => visit(rest, '\\' :: acc, accErr)
+              case '\"' => visit(rest, '\"' :: acc, accErr)
+              case '\'' => visit(rest, '\'' :: acc, accErr)
+              case 't' => visit(rest, '\t' :: acc, accErr)
+              // Special flix escapes for string interpolations
+              case '$' => visit(rest, '$' :: acc, accErr)
+              case '%' => visit(rest, '%' :: acc, accErr)
+              // Case unicode escape "\u1234".
+              case 'u' => rest match {
+                case d1 :: d2 :: d3 :: d4 :: rest2 =>
+                  // Doing manual flatMap here to keep recursive call in tail-position
+                  visitHex(d1, d2, d3, d4) match {
+                    case Result.Ok(c) => visit(rest2, c :: acc, accErr)
+                    case Result.Err(error) => visit(rest2, d1 :: d2 :: d3 :: d4 :: acc, error :: accErr)
+                  }
+                // less than 4 chars were left in the string
+                case rest2 =>
+                  val malformedCode = rest2.takeWhile(_ != '\\').mkString("")
+                  val err = MalformedUnicodeEscapeSequence(malformedCode, loc)
+                  visit(rest2, malformedCode.toList ++ acc, err :: accErr)
+              }
+              case c => visit(rest, c :: acc, IllegalEscapeSequence(c, loc) :: accErr)
+            }
+          // Case 2: Simple character literal
+          case c :: rest => visit(rest, c :: acc, accErr)
         }
-      } else {
-        val unescapedLit = StringContext.processEscapes(lit)
-        Validation.success(Expr.Cst(Ast.Constant.Char(unescapedLit.head), loc))
       }
 
+      def visitHex(d1: Char, d2: Char, d3: Char, d4: Char): Result[Char, CompilationMessage] = {
+        try {
+          Result.Ok(Integer.parseInt(s"$d1$d2$d3$d4", 16).toChar)
+        } catch {
+          // Case: the four characters following "\u" does not make up a number
+          case _: NumberFormatException => Result.Err(MalformedUnicodeEscapeSequence(s"$d1$d2$d3$d4", loc))
+        }
+      }
+
+      visit(str.toList, Nil, Nil)
+    }
+
+    def toChar(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
+      val text = token.text.stripPrefix("\'").stripSuffix("\'")
+      val (processed, errors) = visitChars(text, loc)
+      processed.headOption match {
+        case Some(c) => Validation.success(Expr.Cst(Ast.Constant.Char(c), loc)).withSoftFailures(errors)
+        case None =>
+          val error = MalformedChar("", loc)
+          Validation.toSoftFailure(Expr.Error(error), error)
+      }
     }
 
     def toStringCst(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
-      val lit = token.text
-        .stripPrefix("\"")
-        .stripSuffix("\"")
-        // Process special escapes '\${' and '\%{' by replacing them with '${' and '%{'.
-        // Otherwise the call to StringContext.processEscapes throws.
-        .replaceAll(java.util.regex.Pattern.quote("\\${"), Matcher.quoteReplacement("${"))
-        .replaceAll(java.util.regex.Pattern.quote("\\%{"), Matcher.quoteReplacement("%{"))
-
-      try {
-        val unescapedLit = StringContext.processEscapes(lit)
-        Validation.success(Expr.Cst(Ast.Constant.Str(unescapedLit), loc))
-      } catch {
-        case e: StringContext.InvalidEscapeException => {
-          // Scala will throw when trying to process an unknown escape such as '\1'.
-          // In that case we can just remove the backslashes.
-          // TODO: Should this be a SoftFailure, pointing to the unecessary escape? That is probably something the lexer should handle though.
-          Validation.success(Expr.Cst(Ast.Constant.Str(lit.replaceAll("\\\\", "")), loc))
-        }
-      }
-
+      val text = token.text.stripPrefix("\"").stripSuffix("\"")
+      val (processed, errors) = visitChars(text, loc)
+      Validation.success(Expr.Cst(Ast.Constant.Str(processed), loc)).withSoftFailures(errors)
     }
   }
 
@@ -2868,8 +2885,13 @@ object Weeder2 {
 
     def pickJavaName(tree: Tree)(implicit s: State): Validation[Name.JavaName, CompilationMessage] = {
       val idents = pickQNameIdents(tree)
-      mapN(idents) {
-        idents => Name.JavaName(tree.loc.sp1, idents, tree.loc.sp2)
+      flatMapN(idents) {
+        idents =>
+          val res = Validation.success(Name.JavaName(tree.loc.sp1, idents, tree.loc.sp2))
+          val errors = idents.collect {
+            case ident if ident.contains("$") => MalformedIdentifier(ident, tree.loc)
+          }
+          res.withSoftFailures(errors)
       }
     }
 
@@ -2975,11 +2997,15 @@ object Weeder2 {
   ////////// HELPERS //////////////////
   private def tokenToIdent(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
     tree.children.headOption match {
-      case Some(Child.TokenChild(token)) => Validation.success(Name.Ident(
-        token.mkSourcePosition(s.src, Some(s.parserInput)),
-        token.text,
-        token.mkSourcePositionEnd(s.src, Some(s.parserInput))
-      ))
+      case Some(Child.TokenChild(token)) =>
+        val ident = Validation.success(Name.Ident(
+          token.mkSourcePosition(s.src, Some(s.parserInput)),
+          token.text,
+          token.mkSourcePositionEnd(s.src, Some(s.parserInput))
+        ))
+        if (token.text.contains("$")) {
+          ident.withSoftFailure(MalformedIdentifier(token.text, tree.loc))
+        } else ident
       // TODO: If child is an ErrorTree we are double reporting errors.
       case _ => failWith(s"expected first child of '${tree.kind}' to be Child.Token", tree.loc)
     }
