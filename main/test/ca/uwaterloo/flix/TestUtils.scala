@@ -30,8 +30,8 @@ trait TestUtils {
   this: AnyFunSuite =>
 
   /**
-    * Compiles the given input string `s` with the given compilation options `o`.
-    */
+   * Compiles the given input string `s` with the given compilation options `o`.
+   */
   def compile(s: String, o: Options): Validation[CompilationResult, CompilationMessage] =
     new Flix().setOptions(o).addSourceCode("<test>", s).compile()
 
@@ -40,24 +40,29 @@ trait TestUtils {
   }
 
   /**
-    * Asserts that the validation is a failure with a value of the parametric type `T`.
-    */
+   * Asserts that the validation is a failure with a value of the parametric type `T`.
+   */
   def expectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result.toHardResult match {
     case Result.Ok(_) => fail(s"Expected Failure, but got Success.")
 
     case Result.Err(errors) =>
       val expected = classTag.runtimeClass
-      val actuals = errors.map(_.getClass).toList
+      val actuals = errors.map(e => (e, e.getClass)).toList
+      actuals.find(p => expected.isAssignableFrom(p._2)) match {
+        case Some((actual, _)) =>
+          // Require known source location only on the expected error.
+          if (actual.loc == SourceLocation.Unknown) {
+            fail("Error contains unknown source location.")
+          }
+        case None => fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${actuals.map(p => p._2.getName)}.")
+      }
 
-      if (!actuals.exists(expected.isAssignableFrom(_)))
-        fail(s"Expected an error of type ${expected.getSimpleName}, but found:\n\n${actuals.map(_.getName)}.")
-      else if (errors.exists(e => e.loc == SourceLocation.Unknown))
-        fail("Error contains unknown source location.")
+
   }
 
   /**
-    * Asserts that the validation does not contain a value of the parametric type `T`.
-    */
+   * Asserts that the validation does not contain a value of the parametric type `T`.
+   */
   def rejectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = result.toHardResult match {
     case Result.Ok(_) => ()
 
@@ -70,8 +75,8 @@ trait TestUtils {
   }
 
   /**
-    * Asserts that the validation is successful.
-    */
+   * Asserts that the validation is successful.
+   */
   def expectSuccess(result: Validation[CompilationResult, CompilationMessage]): Unit = result.toHardResult match {
     case Result.Ok(_) => ()
     case Result.Err(errors) =>
