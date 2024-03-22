@@ -102,6 +102,9 @@ object Weeder2 {
     assert(tree.kind == TreeKind.UsesOrImports.Use)
     val maybeUseMany = tryPick(TreeKind.UsesOrImports.UseMany, tree.children)
     flatMapN(pickQName(tree))(qname => {
+      if (qname.namespace.idents.isEmpty && maybeUseMany.isEmpty) {
+        return Validation.toSoftFailure(Nil, UnqualifiedUse(qname.loc))
+      }
       val nname = Name.NName(qname.sp1, qname.namespace.idents :+ qname.ident, qname.sp2)
       mapN(traverseOpt(maybeUseMany)(tree => visitUseMany(tree, nname))) {
         // case: use one, use the qname
@@ -205,7 +208,7 @@ object Weeder2 {
       val effects = pickAll(TreeKind.Decl.Effect, tree.children)
       mapN(
         traverse(modules)(visitModule),
-        traverse(definitions)(visitDefinition),
+        traverse(definitions)(visitDefinition(_)),
         traverse(classes)(visitTypeClass),
         traverse(instances)(visitInstance),
         traverse(enums)(visitEnum),
@@ -253,7 +256,7 @@ object Weeder2 {
       mapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
-        pickModifiers(tree),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub)),
         pickNameIdent(tree),
         traverse(ops)(visitOperation)
       ) {
@@ -266,7 +269,7 @@ object Weeder2 {
       mapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
-        pickModifiers(tree),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub)),
         pickNameIdent(tree),
         pickFormalParameters(tree),
         Types.pickType(tree),
@@ -281,7 +284,7 @@ object Weeder2 {
       assert(tree.kind == TreeKind.Decl.TypeAlias)
       mapN(
         pickDocumentation(tree),
-        pickModifiers(tree),
+        pickModifiers(tree, Set(TokenKind.KeywordPub)),
         pickAnnotations(tree),
         pickNameIdent(tree),
         Types.pickParameters(tree),
@@ -413,7 +416,7 @@ object Weeder2 {
       flatMapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
-        pickModifiers(tree),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordLawful, TokenKind.KeywordPub, TokenKind.KeywordSealed)),
         pickNameIdent(tree),
         Types.pickSingleParameter(tree),
         Types.pickConstraints(tree),
@@ -433,11 +436,11 @@ object Weeder2 {
       flatMapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
-        pickModifiers(tree),
+        pickModifiers(tree, allowed = Set.empty),
         pickQName(tree),
         Types.pickType(tree),
         Types.pickConstraints(tree),
-        traverse(pickAll(TreeKind.Decl.Def, tree.children))(visitDefinition),
+        traverse(pickAll(TreeKind.Decl.Def, tree.children))(visitDefinition(_, allowedModifiers = Set(TokenKind.KeywordPub, TokenKind.KeywordOverride), mustBePublic = true)),
       ) {
         (doc, annotations, modifiers, clazz, tpe, tconstrs, defs) =>
           val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree.children)
@@ -447,12 +450,12 @@ object Weeder2 {
       }
     }
 
-    private def visitDefinition(tree: Tree)(implicit s: State): Validation[Declaration.Def, CompilationMessage] = {
+    private def visitDefinition(tree: Tree, allowedModifiers: Set[TokenKind] = Set(TokenKind.KeywordPub), mustBePublic: Boolean = false)(implicit s: State): Validation[Declaration.Def, CompilationMessage] = {
       assert(tree.kind == TreeKind.Decl.Def)
       mapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
-        pickModifiers(tree),
+        pickModifiers(tree, allowed = allowedModifiers, mustBePublic),
         pickNameIdent(tree),
         Types.pickKindedParameters(tree),
         pickFormalParameters(tree),
@@ -490,7 +493,7 @@ object Weeder2 {
       assert(tree.kind == TreeKind.Decl.AssociatedTypeDef)
       flatMapN(
         pickDocumentation(tree),
-        pickModifiers(tree),
+        pickModifiers(tree, Set(TokenKind.KeywordPub)),
         pickNameIdent(tree),
         Types.pickArguments(tree),
         Types.pickType(tree)
@@ -514,7 +517,7 @@ object Weeder2 {
       assert(tree.kind == TreeKind.Decl.AssociatedTypeSig)
       flatMapN(
         pickDocumentation(tree),
-        pickModifiers(tree),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub)),
         pickNameIdent(tree),
         Types.pickParameters(tree),
       ) {
@@ -542,7 +545,7 @@ object Weeder2 {
       mapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
-        pickModifiers(tree, allowed = Set(TokenKind.KeywordSealed, TokenKind.KeywordLawful, TokenKind.KeywordPub), mustBePublic = true),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub), mustBePublic = true),
         pickNameIdent(tree),
         Types.pickKindedParameters(tree),
         pickFormalParameters(tree),
@@ -605,7 +608,7 @@ object Weeder2 {
         case "@Skip" => Validation.success(Skip(loc))
         case "@Test" | "@test" => Validation.success(Test(loc))
         case "@TailRec" => Validation.success(TailRecursive(loc))
-        case other => Validation.toSoftFailure(Ast.Annotation.Error(other.stripPrefix("@"), loc), IllegalAnnotation(loc))
+        case other => Validation.toSoftFailure(Ast.Annotation.Error(other.stripPrefix("@"), loc), UndefinedAnnotation(other, loc))
       }
     }
 
@@ -2180,10 +2183,10 @@ object Weeder2 {
   }
 
   private object Constants {
-    private def tryParseFloat(token: Token, after: (String, SourceLocation) => Expr)(implicit s: State): Validation[Expr, CompilationMessage] = {
+    private def tryParseFloat(token: Token, after: (String, SourceLocation) => Validation[Expr, CompilationMessage])(implicit s: State): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
       try {
-        Validation.success(after(token.text.filterNot(_ == '_'), loc))
+        after(token.text.filterNot(_ == '_'), loc)
       } catch {
         case _: NumberFormatException =>
           val err = MalformedFloat(loc)
@@ -2208,13 +2211,27 @@ object Weeder2 {
      * Attempts to parse the given tree to a float32.
      */
     def toFloat32(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
-      tryParseFloat(token, (text, loc) => Expr.Cst(Ast.Constant.Float32(text.stripSuffix("f32").toFloat), loc))
+      tryParseFloat(token, (text, loc) => {
+        text.stripSuffix("f32").toFloat match {
+          case Float.PositiveInfinity | Float.NegativeInfinity =>
+            val error = MalformedFloat(loc)
+            Validation.toSoftFailure(Expr.Error(error), error)
+          case f => Validation.success(Expr.Cst(Ast.Constant.Float32(f), loc))
+        }
+      })
 
     /**
      * Attempts to parse the given tree to a float32.
      */
     def toFloat64(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
-      tryParseFloat(token, (text, loc) => Expr.Cst(Ast.Constant.Float64(text.stripSuffix("f64").toDouble), loc))
+      tryParseFloat(token, (text, loc) => {
+        text.stripSuffix("f64").toDouble match {
+          case Double.PositiveInfinity | Double.NegativeInfinity =>
+            val error = MalformedFloat(loc)
+            Validation.toSoftFailure(Expr.Error(error), error)
+          case f => Validation.success(Expr.Cst(Ast.Constant.Float64(f), loc))
+        }
+      })
 
     /**
      * Attempts to parse the given tree to a big decimal.
@@ -2222,7 +2239,7 @@ object Weeder2 {
     def toBigDecimal(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
       tryParseFloat(token, (text, loc) => {
         val bigDecimal = new java.math.BigDecimal(text.stripSuffix("ff"))
-        Expr.Cst(Ast.Constant.BigDecimal(bigDecimal), loc)
+        Validation.success(Expr.Cst(Ast.Constant.BigDecimal(bigDecimal), loc))
       })
 
     /**
@@ -2691,7 +2708,7 @@ object Weeder2 {
 
     def pickArguments(tree: Tree)(implicit s: State): Validation[List[Type], CompilationMessage] = {
       tryPick(TreeKind.Type.ArgumentList, tree.children)
-        .map(argTree => traverse(pickAll(TreeKind.Argument, argTree.children))(pickType))
+        .map(argTree => traverse(pickAll(TreeKind.Type.Argument, argTree.children))(pickType))
         .getOrElse(Validation.success(List.empty))
     }
 
@@ -2791,12 +2808,24 @@ object Weeder2 {
 
     private def visitConstraint(tree: Tree)(implicit s: State): Validation[TypeConstraint, CompilationMessage] = {
       assert(tree.kind == TreeKind.Type.Constraint)
-      mapN(
+      flatMapN(
         pickQName(tree),
         Types.pickType(tree)
       ) {
-        (qname, tpe) => TypeConstraint(qname, tpe, tree.loc)
+        (qname, tpe) =>
+          // Check for illegal type constraint parameter
+          if (!isAllVariables(tpe)) {
+            Validation.toHardFailure(IllegalTypeConstraintParameter(tree.loc))
+          } else {
+            Validation.success(TypeConstraint(qname, tpe, tree.loc))
+          }
       }
+    }
+
+    private def isAllVariables(tpe: Type): Boolean = tpe match {
+      case _: Type.Var => true
+      case Type.Apply(t1, ts, _) => isAllVariables(t1) && isAllVariables(ts)
+      case _ => false
     }
 
     private def visitKind(tree: Tree)(implicit s: State): Validation[Kind, CompilationMessage] = {
