@@ -29,18 +29,17 @@ object Optimizer {
     * Returns an optimized version of the given AST `root`.
     */
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Optimizer") {
-    var result = root
-
-    // only perform optimization if it is not disabled
-    if (!flix.options.xnooptimizer) {
+    if (flix.options.xnooptimizer) {
+      root
+    } else {
+      var result = root
       for (_ <- 1 to 2) {
         val afterOccurrenceAnalyzer = OccurrenceAnalyzer.run(result)
         val afterInliner = Inliner.run(afterOccurrenceAnalyzer.unsafeGet)
         result = afterInliner.unsafeGet
       }
+      result
     }
-
-    result
   }
 
   /**
