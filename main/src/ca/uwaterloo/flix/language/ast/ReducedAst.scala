@@ -18,6 +18,7 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import ca.uwaterloo.flix.language.ast.Purity.Pure
+import ca.uwaterloo.flix.util.collection.Chain
 
 import java.lang.reflect.Method
 
@@ -43,6 +44,7 @@ object ReducedAst {
   case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[FormalParam], fparams: List[FormalParam], lparams: List[LocalParam], pcPoints: Int, expr: Expr, tpe: MonoType, unboxedType: UnboxedType, purity: Purity, loc: SourceLocation) {
     var method: Method = _
     val arrowType: MonoType.Arrow = MonoType.Arrow(fparams.map(_.tpe), tpe)
+    val args: Iterable[FormalParam] = LazyList.from(cparams) ++ LazyList.from(fparams)
   }
 
   /** Remember the unboxed return type for test function generation. */

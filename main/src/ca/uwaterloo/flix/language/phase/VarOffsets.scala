@@ -50,7 +50,7 @@ object VarOffsets {
   private def visitDef(defn: Def): Unit = {
     // Compute the stack offset for each formal parameter.
     var offset = 0
-    for (FormalParam(sym, _, tpe, _) <- (defn.cparams ++ defn.fparams)) {
+    for (FormalParam(sym, _, tpe, _) <- defn.args) {
       offset += setStackOffset(sym, tpe, offset)
     }
 
