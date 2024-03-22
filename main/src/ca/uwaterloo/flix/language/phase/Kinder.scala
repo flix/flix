@@ -238,7 +238,7 @@ object Kinder {
         kenv =>
           val tpeVal = visitType(tpe0, kind, kenv, taenv, root)
           val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, kenv, taenv, root))
-          val assocsVal = traverse(assocs0)(visitAssocTypeDef(_, kenv, taenv, root))
+          val assocsVal = traverse(assocs0)(visitAssocTypeDef(_, kind, kenv, taenv, root))
           flatMapN(tpeVal, tconstrsVal, assocsVal) {
             case (tpe, tconstrs, assocs) =>
               val defsVal = traverse(defs0)(visitDef(_, tconstrs, kenv, taenv, root))
@@ -403,13 +403,16 @@ object Kinder {
   /**
     * Performs kinding on the given associated type definition under the given kind environment.
     */
-  private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssocTypeDef, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.AssocTypeDef, KindError] = d0 match {
-    case ResolvedAst.Declaration.AssocTypeDef(doc, mod, sym, arg0, tpe0, loc) =>
-      val argVal = visitType(arg0, Kind.Wild, kenv, taenv, root) // TODO ASSOC-TYPES use expected from signature
-      val tpeVal = visitType(tpe0, Kind.Wild, kenv, taenv, root) // TODO ASSOC-TYPES use expected from signature
+  private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssocTypeDef, clazzKind: Kind, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.AssocTypeDef, KindError] = d0 match {
+    case ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg0, tpe0, loc) =>
+      val clazz = root.classes(symUse.sym.clazz)
+      val assocSig = clazz.assocs.find(assoc => assoc.sym == symUse.sym).get
+      val tpeKind = assocSig.kind
+      val argVal = visitType(arg0, clazzKind, kenv, taenv, root)
+      val tpeVal = visitType(tpe0, tpeKind, kenv, taenv, root)
 
       mapN(argVal, tpeVal) {
-        case (args, tpe) => KindedAst.AssocTypeDef(doc, mod, sym, args, tpe, loc)
+        case (args, tpe) => KindedAst.AssocTypeDef(doc, mod, symUse, args, tpe, loc)
       }
   }
 
