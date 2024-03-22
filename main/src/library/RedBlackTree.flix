@@ -149,6 +149,11 @@ mod RedBlackTree {
     }
 
     ///
+    /// Returns `true` if and only if `t` is a non-empty tree.
+    ///
+    pub def nonEmpty(t: RedBlackTree[k, v]): Bool = not isEmpty(t)
+
+    ///
     /// Updates `t` with `k => v` if `k => v1` is in `t`.
     ///
     /// Otherwise, updates `t` with `k => v`.
@@ -466,7 +471,10 @@ mod RedBlackTree {
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = region rc {
         let ix = ref 0 @ rc;
         def loop(tt) = match tt {
-            case Node(_, a, k, v, b) => loop(a); let i = deref ix; f(i, k, v); ix := i+1; loop(b)
+            case Node(_, a, k, v, b) =>
+                loop(a);
+                let i = deref ix; f(i, k, v);
+                Ref.put(i + 1, ix); loop(b)
             case _                   => ()
         };
         loop(t)
@@ -965,12 +973,11 @@ mod RedBlackTree {
     pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r, r] \ r =
         let stack1 = leftmost(t, Nil);
         let state = ref stack1 @ rc;
-        let next = () -> match (deref state) {
+        let next = () -> match deref state {
             case Nil                 => None
-            case (k, v, rtree) :: es => {
-                state := leftmost(rtree, es);
+            case (k, v, rtree) :: es =>
+                Ref.put(leftmost(rtree, es), state);
                 Some((k, v))
-            }
         };
         Iterator.iterate(rc, next)
 

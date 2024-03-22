@@ -31,7 +31,7 @@ mod Test.Handler.Gen.AtomicInteger {
 
     def getAndInc(r: Ref[AtomicInteger, r]): AtomicInteger \ r =
         let i = toInt(deref r);
-        r := newAtomicInteger(i + 1);
+        Ref.put(newAtomicInteger(i + 1), r);
         newAtomicInteger(i)
 
     def range(a: AtomicInteger, b: AtomicInteger): List[AtomicInteger] =

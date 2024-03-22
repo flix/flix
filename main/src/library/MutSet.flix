@@ -56,7 +56,7 @@ mod MutSet {
     ///
     pub def add!(x: a, s: MutSet[a, r]): Unit \ r with Order[a] =
         let MutSet(_, ms) = s;
-        ms := Set.insert(x, deref ms)
+        Ref.put(Set.insert(x, deref ms), ms)
 
     ///
     /// Adds all elements in the collection `m` to the mutable set `s`.
@@ -69,14 +69,14 @@ mod MutSet {
     ///
     pub def clear!(s: MutSet[a, r]): Unit \ r =
         let MutSet(_, ms) = s;
-        ms := Set.empty()
+        Ref.put(Set.empty(), ms)
 
     ///
     /// Removes the element `x` from the mutable set `s`.
     ///
     pub def remove!(x: a, s: MutSet[a, r]): Unit \ r with Order[a] =
         let MutSet(_, ms) = s;
-        ms := Set.remove(x, deref ms)
+        Ref.put(Set.remove(x, deref ms), ms)
 
     ///
     /// Removes all elements in the collection `m` from the mutable set `s`.
@@ -84,7 +84,7 @@ mod MutSet {
     pub def removeAll!(m: m[a], s: MutSet[a, r]): Unit \ r with Order[a], Foldable[m] =
         let MutSet(_, ms) = s;
         let s2 = Foldable.toSet(m);
-        ms := Set.difference(deref ms, s2)
+        Ref.put(Set.difference(deref ms, s2), ms)
 
     ///
     /// Removes all elements from the mutable set `s` that are not in collection `m`.
@@ -92,7 +92,7 @@ mod MutSet {
     pub def retainAll!(m: m[a], s: MutSet[a, r]): Unit \ r with Order[a], Foldable[m] =
         let MutSet(_, ms) = s;
         let s2 = Foldable.toSet(m);
-        ms := Set.intersection(s2, deref ms)
+        Ref.put(Set.intersection(s2, deref ms), ms)
 
     ///
     /// Removes all elements from the mutable set `s` that do not satisfy the predicate function `f`.
@@ -101,7 +101,7 @@ mod MutSet {
     ///
     pub def refine!(f: a -> Bool, s: MutSet[a, r]): Unit \ r with Order[a] =
         let MutSet(_, ms) = s;
-        ms := Set.filter(f, deref ms)
+        Ref.put(Set.filter(f, deref ms), ms)
 
     ///
     /// Replaces the element `src` with the element `dst` if `from` is in the mutable set `s`.
@@ -110,14 +110,14 @@ mod MutSet {
     ///
     pub def replace!(src: {src = a}, dst: {dst = a}, s: MutSet[a, r]): Unit \ r with Order[a] =
         let MutSet(_, ms) = s;
-        ms := Set.replace(src = src.src, dst = dst.dst, deref ms)
+        Ref.put(Set.replace(src = src.src, dst = dst.dst, deref ms), ms)
 
     ///
     /// Applies the function `f` to every element in the mutable set `s`.
     ///
     pub def transform!(f: a -> a \ ef, s: MutSet[a, r]): Unit \ { ef, r } with Order[a] =
         let MutSet(_, ms) = s;
-        ms := Set.map(f, deref ms)
+        Ref.put(Set.map(f, deref ms), ms)
 
     ///
     /// Returns true if and only if `s` is the empty set.
@@ -125,6 +125,11 @@ mod MutSet {
     pub def isEmpty(s: MutSet[a, r]): Bool \ r =
         let MutSet(_, ms) = s;
         Set.isEmpty(deref ms)
+
+    ///
+    /// Returns true if and only if `s` is a non-empty set.
+    ///
+    pub def nonEmpty(s: MutSet[a, r]): Bool \ r = not isEmpty(s)
 
     ///
     /// Returns true if and only if `x` is a member of the mutable set `s`.
@@ -384,7 +389,7 @@ mod MutSet {
     ///
     pub def forEachWithIndex(f: (Int32, a) -> Unit \ ef, s: MutSet[a, r]): Unit \ { ef, r } = region rc {
         let ix = ref 0 @ rc;
-        forEach(x -> {let i = deref ix; f(i, x); ix := i+1}, s)
+        forEach(x -> { let i = deref ix; f(i, x); Ref.put(i + 1, ix) }, s)
     }
 
     ///
@@ -392,7 +397,7 @@ mod MutSet {
     ///
     pub def iterator(rc: Region[r1], s: MutSet[a, r2]): Iterator[a, r1 + r2, r1] \ { r1, r2 } =
         let MutSet(_, ms) = s;
-        Set.iterator(rc, deref ms) |> Iterator.map(x -> {discard deref ms; x})
+        Set.iterator(rc, deref ms) |> Iterator.map(x -> { discard deref ms; x })
 
     ///
     /// Returns an enumerator over `s`.

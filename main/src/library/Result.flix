@@ -437,7 +437,7 @@ mod Result {
         } catch {
             case e: ##java.lang.Exception =>
                 import java.lang.Throwable.getMessage(): String \ {};
-                Err(getMessage(e))
+                Err(getMessage(checked_cast(e)))
         }
 
 }

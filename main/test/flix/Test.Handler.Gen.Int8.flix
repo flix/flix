@@ -21,7 +21,7 @@ mod Test.Handler.Gen.Int8 {
 
     def getAndInc(r: Ref[Int8, r]): Int8 \ r =
         let i = deref r;
-        r := (i + 1i8);
+        Ref.put(i + 1i8, r);
         i
 
     def range(a: Int8, b: Int8): List[Int8] =

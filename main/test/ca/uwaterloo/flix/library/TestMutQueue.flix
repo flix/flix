@@ -114,6 +114,43 @@ mod TestMutQueue {
     }
 
     /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @Test
+    def testNonEmpty01(): Bool = region rc {
+        let mq = MutQueue.empty(rc);
+        not MutQueue.nonEmpty(mq)
+    }
+
+    @Test
+    def testNonEmpty02(): Bool = region rc {
+        let mq = MutQueue.empty(rc);
+        MutQueue.enqueue(mq, "a");
+        MutQueue.nonEmpty(mq)
+    }
+
+    @Test
+    def testNonEmpty03(): Bool = region rc {
+        let mq = MutQueue.empty(rc);
+        MutQueue.enqueueAll(mq, 1 :: 2 :: 3 :: Nil);
+        MutQueue.dequeue(mq);
+        MutQueue.dequeue(mq);
+        MutQueue.dequeue(mq);
+        not MutQueue.nonEmpty(mq)
+    }
+
+    @Test
+    def testNonEmpty04(): Bool = region rc {
+        let mq = MutQueue.empty(rc);
+        MutQueue.enqueueAll(mq, 1 :: 2 :: Nil);
+        MutQueue.dequeue(mq);
+        MutQueue.dequeue(mq);
+        MutQueue.enqueue(mq, 1);
+        MutQueue.nonEmpty(mq)
+    }
+
+    /////////////////////////////////////////////////////////////////////////////
     // peek                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -298,7 +335,7 @@ mod TestMutQueue {
         let mq = MutQueue.empty(rc);
         let it = MutQueue.iterator(rc, mq);
         let sum = ref 0 @ rc;
-        Iterator.forEach(x -> sum := deref sum + x, it);
+        Iterator.forEach(x -> Ref.put(deref sum + x, sum), it);
         deref sum == 0
     }
 
@@ -316,7 +353,7 @@ mod TestMutQueue {
         MutQueue.enqueueAll(mq, "a" :: "c" :: "g" :: "t" :: Nil);
         let it = MutQueue.iterator(rc, mq);
         let str = ref "" @ rc;
-        Iterator.forEach(x -> str := String.concat(x, deref str), it);
+        Iterator.forEach(x -> Ref.put(String.concat(x, deref str), str), it);
         deref str == "acgt"
     }
 

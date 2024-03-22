@@ -44,10 +44,10 @@ mod System {
                     case Some(line) => if (Object.isNull(line)) None else Some(line)
                     case None =>
                         let n = brReadLine(br);
-                        nextLine := Some(n);
+                        Ref.put(Some(n), nextLine);
                         if (Object.isNull(n)) None else Some(n)
                 };
-                nextLine := None;
+                Ref.put(None, nextLine);
                 l
             };
             Iterator.iterate(rc, next)

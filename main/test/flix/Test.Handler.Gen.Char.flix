@@ -51,7 +51,7 @@ mod Test.Handler.Gen.Char {
 
     def getAndInc(r: Ref[Char, r]): Char \ r =
         let c = deref r;
-        r := next(c);
+        Ref.put(next(c), r);
         c
 
     def range(a: Char, b: Char): List[Char] =

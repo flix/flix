@@ -93,6 +93,7 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
+      xnoverify = cmdOpts.xnoverify,
       xbddthreshold = cmdOpts.xbddthreshold,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
@@ -344,6 +345,7 @@ object Main {
                      listen: Option[Int] = None,
                      threads: Option[Int] = None,
                      assumeYes: Boolean = false,
+                     xnoverify: Boolean = false,
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
@@ -503,6 +505,10 @@ object Main {
       // Experimental options:
       note("")
       note("The following options are experimental:")
+
+      // Xnoverify
+      opt[Unit]("Xnoverify").action((_, c) => c.copy(xnoverify = true)).
+        text("disables verification of the last AST.")
 
       // Xbenchmark-code-size
       opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).

@@ -174,6 +174,11 @@ mod Chain {
     }
 
     ///
+    /// Returns true if and only if `c` is a non-empty chain.
+    ///
+    pub def nonEmpty(c: Chain[a]): Bool = not isEmpty(c)
+
+    ///
     /// Add element `x` to the left end of chain `c`.
     ///
     pub def cons(x: a, c: Chain[a]): Chain[a] = match c {
@@ -804,10 +809,9 @@ mod Chain {
         let cursor = ref viewLeft(c) @ rc;
         let next = () -> match (deref cursor) {
             case ViewLeft.NoneLeft        => None
-            case ViewLeft.SomeLeft(x, xs) => {
-                cursor := viewLeft(xs);
+            case ViewLeft.SomeLeft(x, xs) =>
+                Ref.put(viewLeft(xs), cursor);
                 Some(x)
-            }
         };
         Iterator.iterate(rc, next)
 

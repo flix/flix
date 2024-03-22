@@ -36,7 +36,7 @@ mod IOError {
         } catch {
             case e: ##java.lang.Exception =>
                 import java.lang.Throwable.getMessage(): String \ {};
-                Err(Generic(getMessage(e)))
+                Err(Generic(getMessage(checked_cast(e))))
         }
 
 }

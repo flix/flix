@@ -111,6 +111,18 @@ mod TestMultiMap {
         MultiMap.isEmpty(singleton(1, 'a')) == false
 
     /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def nonEmpty01(): Bool =
+        MultiMap.nonEmpty(empty()) == false
+
+    @test
+    def nonEmpty02(): Bool =
+        MultiMap.nonEmpty(singleton(1, 'a')) == true
+
+    /////////////////////////////////////////////////////////////////////////////
     // get                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
@@ -1305,7 +1317,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = (empty(): MultiMap[Int32, Int32]);
-            MultiMap.forEach((k, v) -> {rk := k; rv := v}, m);
+            MultiMap.forEach((k, v) -> { Ref.put(k, rk); Ref.put(v, rv) }, m);
             deref rk == 0 and deref rv == 0
         }
 
@@ -1315,7 +1327,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = singleton(1, 4);
-            MultiMap.forEach((k, v) -> {rk := k; rv := v}, m);
+            MultiMap.forEach((k, v) -> {Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref rk == 1 and deref rv == 4
         }
 
@@ -1325,7 +1337,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = singleton(1, 4) |> insert(2, 4);
-            MultiMap.forEach((k, v) -> {rk := k; rv := v}, m);
+            MultiMap.forEach((k, v) -> {Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref rk == 2 and deref rv == 4
         }
 
@@ -1335,7 +1347,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = singleton(1, 4) |> insert(2, 4) |> insert(1, 1);
-            MultiMap.forEach((k, v) -> {rk := k; rv := v}, m);
+            MultiMap.forEach((k, v) -> {Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref rk == 2 and deref rv == 4
         }
 
@@ -1345,7 +1357,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3);
-            MultiMap.forEach((k, v) -> {rk := k; rv := v}, m);
+            MultiMap.forEach((k, v) -> {Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref rk == 3 and deref rv == 3
         }
 
@@ -1360,7 +1372,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = (empty(): MultiMap[Int32, Int32]);
-            MultiMap.forEachWithIndex((i, k, v) -> {ri := i; rk := k; rv := v}, m);
+            MultiMap.forEachWithIndex((i, k, v) -> {Ref.put(i, ri); Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref ri == 0 and deref rk == 0 and deref rv == 0
         }
 
@@ -1371,7 +1383,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = singleton(1, 4);
-            MultiMap.forEachWithIndex((i, k, v) -> {ri := i; rk := k; rv := v}, m);
+            MultiMap.forEachWithIndex((i, k, v) -> {Ref.put(i, ri); Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref ri == 0 and deref rk == 1 and deref rv == 4
         }
 
@@ -1382,7 +1394,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = singleton(1, 4) |> insert(2, 4);
-            MultiMap.forEachWithIndex((i, k, v) -> {ri := i; rk := k; rv := v}, m);
+            MultiMap.forEachWithIndex((i, k, v) -> {Ref.put(i, ri); Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref ri == 1 and deref rk == 2 and deref rv == 4
         }
 
@@ -1393,7 +1405,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = singleton(1, 4) |> insert(2, 4) |> insert(1, 1);
-            MultiMap.forEachWithIndex((i, k, v) -> {ri := i; rk := k; rv := v}, m);
+            MultiMap.forEachWithIndex((i, k, v) -> {Ref.put(i, ri); Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref ri == 2 and deref rk == 2 and deref rv == 4
         }
 
@@ -1404,7 +1416,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3);
-            MultiMap.forEachWithIndex((i, k, v) -> {ri := i; rk := k; rv := v}, m);
+            MultiMap.forEachWithIndex((i, k, v) -> {Ref.put(i, ri); Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref ri == 3 and deref rk == 3 and deref rv == 3
         }
 

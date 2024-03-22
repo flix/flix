@@ -642,7 +642,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    let m = ref None @ Static;
         |    region rc {
         |        let x = ref 123 @ rc;
-        |        m := Some(x);
+        |        Ref.put(Some(x), m);
         |        ()
         |    }
     """.stripMargin
@@ -662,7 +662,7 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    let m = ref None @ Static;
         |    region rc {
         |        let x = ref 123 @ rc;
-        |        m := Some(_ -> x);
+        |        Ref.put(Some(_ -> x), m);
         |        ()
         |    }
     """.stripMargin
@@ -1389,6 +1389,23 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |    ()
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
+    expectError[TypeError](result)
+  }
+
+  test("TestTryCatch.01") {
+    val input =
+      """
+        |enum Res { case Err(String), case Ok }
+        |
+        |pub def catchIO(f: Unit -> Unit \ ef): Res = {
+        |    try {f(); Res.Ok} catch {
+        |        case ex: ##java.io.IOError =>
+        |            import java.lang.Throwable.getMessage(): String;
+        |            Res.Err(getMessage(ex))
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
     expectError[TypeError](result)
   }
 
