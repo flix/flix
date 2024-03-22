@@ -4,17 +4,22 @@ mod Subtyping {
 
     def open(types: #{ Class(String), Interface(String), ClassExtends(String, String), ClassImplements(String, String), InterfaceExtends(String, String), Method(String, String) }): Types[r] = types
 
-    def subtypeRules(): #{ IsSubtype(String, String), Class(String), Interface(String), ClassExtends(String, String), ClassImplements(String, String), InterfaceExtends(String, String) | r } = #{
-        IsSubtype(sub, super) :- Class(sub), Class(super), if sub == super.
-        IsSubtype(sub, super) :- Interface(sub), Interface(super), if sub == super.
-        IsSubtype(sub, super) :- Class(sub), Class(super), ClassExtends(sub, super).
-        IsSubtype(sub, super) :- Class(sub), Interface(super), ClassImplements(sub, super).
-        IsSubtype(sub, super) :- Interface(sub), Interface(super), InterfaceExtends(sub, super).
-        IsSubtype(sub, super) :- IsSubtype(sub, a), IsSubtype(a, super).
-    }
-
-    pub def subtypes(types: Types[#()]): Vector[(String, String)] =
-        query subtypeRules(), open(types) select (sub, super) from IsSubtype(sub, super)
+    pub def subtypes(classes: List[String], interfaces: List[String], classExtensions: List[(String, String)], implementations: List[(String, String)], interfaceExtensions: List[(String, String)], methods: List[String]): #{ IsSubtype(String, String)| r } =
+        let cs    = inject classes             into Class;
+        let is    = inject interfaces          into Interface;
+        let ce    = inject classExtensions     into ClassExtends;
+        let impls = inject implementations     into ClassImplements;
+        let ies   = inject interfaceExtensions into InterfaceExtends;
+        let ms    = inject methods             into Method;
+        let rules = #(IsSubtype) -> #{
+            IsSubtype(sub, super) :- Class(sub), Class(super), if sub == super.
+            IsSubtype(sub, super) :- Interface(sub), Interface(super), if sub == super.
+            IsSubtype(sub, super) :- Class(sub), Class(super), ClassExtends(sub, super).
+            IsSubtype(sub, super) :- Class(sub), Interface(super), ClassImplements(sub, super).
+            IsSubtype(sub, super) :- Interface(sub), Interface(super), InterfaceExtends(sub, super).
+            IsSubtype(sub, super) :- IsSubtype(sub, a), IsSubtype(a, super).
+        };
+        solve cs, is, ce, impls, ies, ms, rules project IsSubtype
 
     pub def subtypesDistinct(types: Types[#()]): Vector[(String, String)] =
         subtypes(types) |> Vector.filter(match (x, y) -> x != y)
@@ -117,6 +122,15 @@ mod Subtyping {
             let result = Subtyping.methodsOf("java.util.ArrayList", facts());
             let expected = Vector#{"toString", "add"} |> Vector.sort;
             Assert.eq(expected, result)
+
+        def classes(): List[String] =
+            List#{"java.lang.Object", "java.lang.String", "java.util.ArrayList", "au.content.Marker", "au.content.SpecialArrayList"}
+
+        def interfaces(): List[String] =
+            List#{"java.io.Serializable", "java.util.List", "java.util.Collection"}
+
+        def classExtensions(): List[(String, String)] =
+            List#{("java.lang.String", "java.lang.Object"), ("java.util.ArrayList", "java.lang.Object"), ("au.content.SpecialArrayList", "java.util.ArrayList"), ("au.content.Marker", "java.lang.Object")}
 
         def facts(): Subtyping.Types[r] = #{
             Class("java.lang.Object").
