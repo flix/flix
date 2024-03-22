@@ -34,29 +34,19 @@ mod Channel {
     ///
     /// Blocks until a message is dequeued.
     ///
-    pub def recv(receiver: Receiver[t, r]): t \ r = $CHANNEL_GET$(receiver)
+    pub def recv(receiver: Receiver[t, r]): t \ {r, NonDet, Blocking} = $CHANNEL_GET$(receiver)
 
     ///
     /// Sends the message `m` on the given channel `s`.
     ///
     /// Blocks until the message is enqueued.
     ///
-    pub def send(m: t, sender: Sender[t, r]): Unit \ r with Sendable[t] = $CHANNEL_PUT$(sender, m)
-
-    ///
-    /// Sends the message `m` on the given channel `s`.
-    ///
-    /// Blocks until the message is enqueued.
-    ///
-    /// Identical to `send` but doesn't require `Sendable`.
-    /// It is up to programmer to ensure that race conditions cannot arise due to concurrent access to `m`.
-    ///
-    pub def unsafeSend(m: t, sender: Sender[t, r]): Unit \ r = $CHANNEL_PUT$(sender, m)
+    pub def send(m: t, sender: Sender[t, r]): Unit \ {r, Blocking} with Sendable[t] = $CHANNEL_PUT$(sender, m)
 
     ///
     /// Returns a channel that receives the `Unit` message after duration `d`.
     ///
-    pub def timeout(rc: Region[r], d: Duration): Receiver[Unit, r] \ { r, IO } =
+    pub def timeout(rc: Region[r], d: Duration): Receiver[Unit, r] \ { r, Blocking, IO } =
         let (tx, rx) = Channel.unbuffered(rc);
         spawn { Thread.sleep(d); send((), tx) } @ rc;
         rx

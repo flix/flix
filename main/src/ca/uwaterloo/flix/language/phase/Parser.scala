@@ -1028,7 +1028,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def WithHandlerBody: Rule1[ParsedAst.TryHandler.WithHandler] = rule {
-        keyword("with") ~ optWS ~ Names.QualifiedEffect ~ optWS ~ "{" ~ optWS ~ oneOrMore(WithHandlerRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.TryHandler.WithHandler
+        keyword("with") ~ optWS ~ Names.QualifiedEffect ~ optWS ~ "{" ~ optWS ~ zeroOrMore(WithHandlerRule).separatedBy(CaseSeparator) ~ optWS ~ "}" ~> ParsedAst.TryHandler.WithHandler
       }
 
       def CatchHandlerList: Rule1[ParsedAst.HandlerList.CatchHandlerList] = rule {

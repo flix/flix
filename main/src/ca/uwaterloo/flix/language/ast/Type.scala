@@ -343,14 +343,24 @@ object Type {
   val Pure: Type = Type.Cst(TypeConstructor.Pure, SourceLocation.Unknown)
 
   /**
-    * Represents the IO effect.
-    */
-  val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)
-
-  /**
     * Represents the universal effect set.
     */
   val Univ: Type = Type.Cst(TypeConstructor.Univ, SourceLocation.Unknown)
+
+  /**
+   * Represents the IO effect.
+   */
+  val IO: Type = Type.Cst(TypeConstructor.Effect(Symbol.IO), SourceLocation.Unknown)
+
+  /**
+   * Represents the NonDet effect.
+   */
+  val NonDet: Type = Type.Cst(TypeConstructor.Effect(Symbol.NonDet), SourceLocation.Unknown)
+
+  /**
+   * Represents the IO effect.
+   */
+  val Blocking: Type = Type.Cst(TypeConstructor.Effect(Symbol.Blocking), SourceLocation.Unknown)
 
   /**
     * Represents the Complement type constructor.
