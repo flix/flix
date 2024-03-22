@@ -411,12 +411,7 @@ object Verifier {
     */
   private def failMismatchedShape(found: MonoType, expected: String, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
-      s"""Mismatched shape near ${loc.format}
-         |
-         |  expected = \'$expected\'
-         |  found    = $found
-         |""".stripMargin,
-      loc
+      s"Mismatched shape near ${loc.format}: expected = \'$expected\', found = $found", loc
     )
 
   /**
@@ -424,12 +419,7 @@ object Verifier {
     */
   private def failUnexpectedType(found: MonoType, expected: MonoType, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
-      s"""Unexpected type near ${loc.format}
-         |
-         |  expected = $expected
-         |  found    = $found
-         |""".stripMargin,
-      loc
+      s"Unexpected type near ${loc.format}: expected = $expected, found = $found", loc
     )
 
   /**
@@ -437,11 +427,6 @@ object Verifier {
     */
   private def failMismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
-      s"""Mismatched types near ${loc.format}
-         |
-         |  tpe1 = $tpe1
-         |  tpe2 = $tpe2
-         |""".stripMargin,
-      loc
+      s"Mismatched types near ${loc.format}: tpe1 = $tpe1, tpe2 = $tpe2", loc
     )
 }
