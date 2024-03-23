@@ -304,18 +304,13 @@ object Verifier {
 
         case AtomicOp.Closure(sym) =>
           val defn = root.defs(sym)
-          if (defn.cparams.length != ts.length)
-            failMismatchedShape(ts, s"List of types matching closure parameters of $sym", loc)
+          val signature = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
 
-          val ctps = defn.cparams.map(cp => cp.tpe)
-          ctps.zip(ts).foreach { case (p, t) => checkEq(p, t, loc) }
+          val decl = MonoType.Arrow(defn.cparams.map(_.tpe), signature)
+          val actual = MonoType.Arrow(ts, tpe)
 
-          val signature = MonoType.Arrow(
-            defn.fparams.map(f => f.tpe),
-            defn.tpe
-          )
-
-          checkEq(signature, tpe, loc)
+          checkEq(decl, actual, loc)
+          tpe
 
         case _ => tpe // TODO: VERIFIER: Add rest
       }
