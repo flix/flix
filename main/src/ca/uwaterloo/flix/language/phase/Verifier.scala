@@ -419,7 +419,7 @@ object Verifier {
   /**
     * Throw `InternalCompilerException` because the `found` does not match the shape specified by `expected`
     */
-  private def failMismatchedShape[T](found: T, expected: String, loc: SourceLocation): Nothing =
+  private def failMismatchedShape(found: MonoType, expected: String, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
       s"Mismatched shape near ${loc.format}: expected = \'$expected\', found = $found", loc
     )
