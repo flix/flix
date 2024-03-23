@@ -103,13 +103,21 @@ object ConstraintResolution {
 
           // If there are any constraints we could not resolve, then we report an error.
           // TODO ASSOC-TYPES here we only consider the first error
-          deferred match {
-            case Nil => Result.Ok(subst)
-            case TypingConstraint.Equality(tpe1, tpe2, prov) :: _ => Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
-            case TypingConstraint.Class(sym, tpe, loc) :: _ => Err(TypeError.MissingInstance(sym, tpe, renv, loc))
-            case TypingConstraint.Purification(_, _, _, _, _, _) :: _ => throw InternalCompilerException("unexpected purificaiton error", loc)
+          getFirstError(deferred, renv) match {
+            case None => Result.Ok(subst)
+            case Some(err) => Result.Err(err)
           }
       }.toValidation
+  }
+
+  /**
+    * Gets an error from the list of unresolved constraints.
+    */
+  private def getFirstError(deferred: List[TypingConstraint], renv: RigidityEnv)(implicit flix: Flix): Option[TypeError] = deferred match {
+    case Nil => None
+    case TypingConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
+    case TypingConstraint.Class(sym, tpe, loc) :: _ => Some(TypeError.MissingInstance(sym, tpe, renv, loc))
+    case TypingConstraint.Purification(_, _, _, _, _, nested) :: _ => getFirstError(nested, renv)
   }
 
   /**
