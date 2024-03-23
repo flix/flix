@@ -147,7 +147,7 @@ object ConstraintResolution {
     *   instance Order[b]
     * }}}
     */
-  private def expandClassEnv(cenv: Map[Symbol.ClassSym, Ast.ClassContext], tconstrs: List[Ast.TypeConstraint]): Map[Symbol.ClassSym, Ast.ClassContext] = {
+  def expandClassEnv(cenv: Map[Symbol.ClassSym, Ast.ClassContext], tconstrs: List[Ast.TypeConstraint]): Map[Symbol.ClassSym, Ast.ClassContext] = {
 
     tconstrs.flatMap(withSupers(_, cenv)).foldLeft(cenv) {
       case (acc, Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, _), arg, loc)) =>
@@ -194,7 +194,7 @@ object ConstraintResolution {
     *   Elm[b] ~ String
     * }}}
     */
-  private def expandEqualityEnv(eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], econstrs: List[Ast.EqualityConstraint]): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = {
+  def expandEqualityEnv(eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], econstrs: List[Ast.EqualityConstraint]): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] = {
     econstrs.foldLeft(eqEnv) {
       case (acc, Ast.EqualityConstraint(Ast.AssocTypeConstructor(sym, _), tpe1, tpe2, _)) =>
         val assoc = Ast.AssocTypeDef(tpe1, tpe2)
@@ -346,7 +346,7 @@ object ConstraintResolution {
     *   Elm[Elm[a]]   ~> Elm[Elm[a]]
     * }}}
     */
-  private def simplifyType(tpe: Type, renv0: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
+  def simplifyType(tpe: Type, renv0: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[(Type, Boolean), TypeError] = tpe match {
     // A var is already simple.
     case t: Type.Var => Result.Ok((t, false))
     // A constant is already simple
@@ -475,7 +475,7 @@ object ConstraintResolution {
     *
     * Returns a reduction result containing a substitution and any leftover constraints.
     */
-  private def resolve(constrs: List[TypingConstraint], subst0: Substitution, renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[ResolutionResult, TypeError] = {
+  def resolve(constrs: List[TypingConstraint], subst0: Substitution, renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[ResolutionResult, TypeError] = {
     var curr = constrs.sortBy(_.numVars)
     var subst = subst0
     var count = 0
@@ -599,7 +599,7 @@ object ConstraintResolution {
     * - a list of leftover constraints, and
     * - a Boolean flag indicating whether progress was made
     */
-  private case class ResolutionResult(subst: Substitution, constrs: List[TypingConstraint], progress: Boolean) {
+  case class ResolutionResult(subst: Substitution, constrs: List[TypingConstraint], progress: Boolean) {
 
     /**
       * Composes `this` equality result with `that` equality result.
@@ -615,7 +615,7 @@ object ConstraintResolution {
     }
   }
 
-  private object ResolutionResult {
+  object ResolutionResult {
 
     /**
       * Indicates that a constraint was eliminated.
