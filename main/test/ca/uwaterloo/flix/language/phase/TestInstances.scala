@@ -343,6 +343,37 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.MismatchedSignatures](result)
   }
 
+  test("Test.MismatchedSignatures.07") {
+    val input =
+      """
+        |trait Foo[t] {
+        |    type K: Type -> Type
+        |    type E: Type
+
+        |    pub def f(x: t): Foo.K[t][Foo.E[t]]
+        |}
+        |
+        |enum List[_]
+        |enum Set[_]
+        |
+        |instance Foo[Int32] {
+        |    type K = List
+        |    type E = String
+        |    pub def f(x: Int32): List[String] = ???
+        |}
+        |
+        |
+        |instance Foo[Int64] {
+        |    type K = Set
+        |    type E = Char // OOPS
+        |    pub def f(x: Int64): Set[String] = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[InstanceError.MismatchedSignatures](result)
+
+  }
+
   test("Test.ExtraneousDefinition.01") {
     val input =
       """
