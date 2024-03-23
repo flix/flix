@@ -1089,7 +1089,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |mod Foo {
         |    trait Add[t] {
         |        type Aef: Eff
-        |        pub def add(lhs: t, rhs: rhs: t): t \ Add.Aef[t]
+        |        pub def add(lhs: t, rhs: t): t \ Add.Aef[t]
         |    }
         |    instance Add[String] {
         |        type Aef = {}
