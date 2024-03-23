@@ -32,6 +32,7 @@ class TestAll extends Suites(
   new LanguageSuite,
   new LibrarySuite,
   new TestMain,
+  new TestStreaming,
   new ToolsSuite,
   new UtilSuite,
 )
