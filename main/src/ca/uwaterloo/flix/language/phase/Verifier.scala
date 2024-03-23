@@ -302,6 +302,21 @@ object Verifier {
             case _ => failMismatchedShape(t1, "Tuple", loc)
           }
 
+        case AtomicOp.Closure(sym) =>
+          val defn = root.defs(sym)
+          if (defn.cparams.length != ts.length)
+            failMismatchedShape(ts, s"List of types matching closure parameters of $sym", loc)
+
+          val ctps = defn.cparams.map(cp => cp.tpe)
+          ctps.zip(ts).foreach { case (p, t) => checkEq(p, t, loc) }
+
+          val signature = MonoType.Arrow(
+            defn.fparams.map(f => f.tpe),
+            defn.tpe
+          )
+
+          checkEq(signature, tpe, loc)
+
         case _ => tpe // TODO: VERIFIER: Add rest
       }
 
@@ -407,9 +422,9 @@ object Verifier {
   }
 
   /**
-    * Throw `InternalCompilerException` because the `found` type does not match the shape specified by `expected`
+    * Throw `InternalCompilerException` because the `found` does not match the shape specified by `expected`
     */
-  private def failMismatchedShape(found: MonoType, expected: String, loc: SourceLocation): Nothing =
+  private def failMismatchedShape[T](found: T, expected: String, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
       s"Mismatched shape near ${loc.format}: expected = \'$expected\', found = $found", loc
     )
