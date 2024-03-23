@@ -1064,6 +1064,8 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |mod Foo {
         |    enum Set[_]
         |
+        |    trait Order[a]
+        |
         |    trait Add[t] {
         |        type Rhs: Type
         |        pub def add(lhs: t, rhs: Add.Rhs[t]): t
@@ -1086,8 +1088,8 @@ class TestKinder extends AnyFunSuite with TestUtils {
       """
         |mod Foo {
         |    trait Add[t] {
-        |        type Rhs: Type
-        |        pub def add(lhs: t, rhs: Add.Rhs[t]): t
+        |        type Aef: Eff
+        |        pub def add(lhs: t, rhs: rhs: t): t \ Add.Aef[t]
         |    }
         |    instance Add[String] {
         |        type Aef = {}
