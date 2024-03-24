@@ -40,9 +40,9 @@ class FuzzLines extends AnyFunSuite with TestUtils {
   }
 
   /**
-    * We compile the given program omitting a single line.
+    * We compile all variants of the given program where we omit a single line.
     *
-    * For example, we compile the program without the 1st, 2nd, 3rd and so forth line.
+    * For example, we omit line 1 and compile the program. Then we omit line 2 and compile the program. And so forth.
     *
     * The program may not be valid: We just care that it does not crash the compiler.
     */
