@@ -18,5 +18,6 @@ package flix.fuzzers
 import org.scalatest.Suites
 
 class FuzzerSuite extends Suites(
-  new FuzzPrefixes()
+  new FuzzPrefixes,
+  new FuzzLines
 )

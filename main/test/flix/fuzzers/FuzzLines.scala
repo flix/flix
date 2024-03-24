@@ -17,49 +17,47 @@ package flix.fuzzers
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
+import scala.jdk.CollectionConverters._
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
 
-class FuzzPrefixes extends AnyFunSuite with TestUtils {
-
-  /**
-    * The number of prefixes to compile for each program.
-    */
-  private val N: Int = 100
+class FuzzLines extends AnyFunSuite with TestUtils {
 
   test("Prefixes.simple-card-game") {
-    val input = Files.readString(Paths.get("examples/simple-card-game.flix"))
-    compilePrefixes(input)
+    val input = Files.lines(Paths.get("examples/simple-card-game.flix"))
+    compileAllLinesLessOne(input)
   }
 
   test("Prefixes.the-ast-typing-problem-with-polymorphic-records") {
-    val input = Files.readString(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix"))
-    compilePrefixes(input)
+    val input = Files.lines(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix"))
+    compileAllLinesLessOne(input)
   }
 
   test("Prefixes.using-channels-and-select") {
-    val input = Files.readString(Paths.get("examples/using-channels-and-select.flix"))
-    compilePrefixes(input)
+    val input = Files.lines(Paths.get("examples/using-channels-and-select.flix"))
+    compileAllLinesLessOne(input)
   }
 
   /**
-    * We break the given string `input` down into N prefixes and compile each of them.
+    * We compile the given program omitting a single line.
     *
-    * For example, if N is 100 and the input has length 300 then we create prefixes of length 3, 6, 9, ...
+    * For example, we compile the program without the 1st, 2nd, 3rd and so forth line.
     *
     * The program may not be valid: We just care that it does not crash the compiler.
     */
-  private def compilePrefixes(input: String): Unit = {
-    val length = input.length
-    val step = length / N
+  private def compileAllLinesLessOne(stream: java.util.stream.Stream[String]): Unit = {
+    val lines = stream.iterator().asScala.toList
+    val numberOfLines = lines.length
 
     val flix = new Flix()
     flix.compile()
-    for (i <- 1 until N) {
-      val e = Math.min(i * step, length)
-      val prefix = input.substring(0, e)
-      flix.addSourceCode("<input>", prefix)
+    for (i <- 0 until numberOfLines) {
+      val (before, after) = lines.splitAt(i)
+      val src = (before ::: after.drop(1)).mkString("\n")
+      println(src)
+      println("---" * 20)
+      flix.addSourceCode("<input>", src)
       flix.compile() // We simply care that this does not crash.
     }
   }
