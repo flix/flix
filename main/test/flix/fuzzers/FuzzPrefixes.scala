@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix
+package flix.fuzzers
 
+import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
 
-class FuzzyPrefixes extends AnyFunSuite with TestUtils {
+class FuzzPrefixes extends AnyFunSuite with TestUtils {
 
   /**
     * The number of prefixes to compile for each program.
