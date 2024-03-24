@@ -302,6 +302,16 @@ object Verifier {
             case _ => failMismatchedShape(t1, "Tuple", loc)
           }
 
+        case AtomicOp.Closure(sym) =>
+          val defn = root.defs(sym)
+          val signature = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
+
+          val decl = MonoType.Arrow(defn.cparams.map(_.tpe), signature)
+          val actual = MonoType.Arrow(ts, tpe)
+
+          checkEq(decl, actual, loc)
+          tpe
+
         case _ => tpe // TODO: VERIFIER: Add rest
       }
 
@@ -407,7 +417,7 @@ object Verifier {
   }
 
   /**
-    * Throw `InternalCompilerException` because the `found` type does not match the shape specified by `expected`
+    * Throw `InternalCompilerException` because the `found` does not match the shape specified by `expected`
     */
   private def failMismatchedShape(found: MonoType, expected: String, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
