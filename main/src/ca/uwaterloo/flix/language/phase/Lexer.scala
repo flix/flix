@@ -127,6 +127,7 @@ object Lexer {
       lex(src)
     } catch {
       case except: Throwable =>
+        println(src.data.mkString)
         except.printStackTrace()
         Validation.success(Array.empty[Token])
     }

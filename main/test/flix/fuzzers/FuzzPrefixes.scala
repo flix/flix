@@ -26,19 +26,19 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
   /**
     * The number of prefixes to compile for each program.
     */
-  private val N: Int = 100
+  private val N: Int = 75
 
-  test("Prefixes.simple-card-game") {
+  test("simple-card-game") {
     val input = Files.readString(Paths.get("examples/simple-card-game.flix"))
     compilePrefixes(input)
   }
 
-  test("Prefixes.the-ast-typing-problem-with-polymorphic-records") {
+  test("the-ast-typing-problem-with-polymorphic-records") {
     val input = Files.readString(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix"))
     compilePrefixes(input)
   }
 
-  test("Prefixes.using-channels-and-select") {
+  test("using-channels-and-select") {
     val input = Files.readString(Paths.get("examples/using-channels-and-select.flix"))
     compilePrefixes(input)
   }

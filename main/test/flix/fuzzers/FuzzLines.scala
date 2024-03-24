@@ -24,17 +24,17 @@ import java.nio.file.{Files, Paths}
 
 class FuzzLines extends AnyFunSuite with TestUtils {
 
-  test("Prefixes.simple-card-game") {
+  test("simple-card-game") {
     val input = Files.lines(Paths.get("examples/simple-card-game.flix"))
     compileAllLinesLessOne(input)
   }
 
-  test("Prefixes.the-ast-typing-problem-with-polymorphic-records") {
+  test("the-ast-typing-problem-with-polymorphic-records") {
     val input = Files.lines(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix"))
     compileAllLinesLessOne(input)
   }
 
-  test("Prefixes.using-channels-and-select") {
+  test("using-channels-and-select") {
     val input = Files.lines(Paths.get("examples/using-channels-and-select.flix"))
     compileAllLinesLessOne(input)
   }
