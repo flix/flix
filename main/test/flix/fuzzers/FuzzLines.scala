@@ -55,8 +55,6 @@ class FuzzLines extends AnyFunSuite with TestUtils {
     for (i <- 0 until numberOfLines) {
       val (before, after) = lines.splitAt(i)
       val src = (before ::: after.drop(1)).mkString("\n")
-      println(src)
-      println("---" * 20)
       flix.addSourceCode("<input>", src)
       flix.compile() // We simply care that this does not crash.
     }
