@@ -20,43 +20,45 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
 
-class TestStreaming extends AnyFunSuite with TestUtils {
+class FuzzyPrefixes extends AnyFunSuite with TestUtils {
 
   /**
-    * The number of pieces each input is broken down into.
+    * The number of prefixes to compile for each program.
     */
-  private val Chunks: Int = 100
+  private val N: Int = 100
 
-  test("Stream01.simple-card-game") {
+  test("Prefixes.simple-card-game") {
     val input = Files.readString(Paths.get("examples/simple-card-game.flix"))
-    compile(input)
+    compilePrefixes(input)
   }
 
-  test("Stream02.the-ast-typing-problem-with-polymorphic-records") {
+  test("Prefixes.the-ast-typing-problem-with-polymorphic-records") {
     val input = Files.readString(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix"))
-    compile(input)
+    compilePrefixes(input)
   }
 
-  test("Stream03.using-channels-and-select") {
+  test("Prefixes.using-channels-and-select") {
     val input = Files.readString(Paths.get("examples/using-channels-and-select.flix"))
-    compile(input)
+    compilePrefixes(input)
   }
 
   /**
-    * We break the given string `input` down into a number of chunks and compile each of them.
+    * We break the given string `input` down into N prefixes and compile each of them.
     *
-    * We simply test that compilation does not crash with an unexpected exception.
+    * For example, if N is 100 and the input has length 300 then we create prefixes of length 3, 6, 9, ...
+    *
+    * A prefix might not be a valid program: What we care about is that the compiler must not crash.
     */
-  private def compile(input: String): Unit = {
+  private def compilePrefixes(input: String): Unit = {
     val length = input.length
-    val step = length / Chunks
+    val step = length / N
 
     val flix = new Flix()
     flix.compile()
-    for (i <- 0 until Chunks) {
+    for (i <- 1 until N) {
       val e = Math.min(i * step, length)
-      val s = input.substring(0, e)
-      flix.addSourceCode("<input>", s)
+      val prefix = input.substring(0, e)
+      flix.addSourceCode("<input>", prefix)
       flix.compile() // We simply care that this does not crash.
     }
   }
