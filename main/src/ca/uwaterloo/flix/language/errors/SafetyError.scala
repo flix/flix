@@ -508,12 +508,12 @@ object SafetyError {
    * @param loc   The source location of the method.
    */
   case class IncorrectSafetySignature(loc: SourceLocation) extends SafetyError with Recoverable {
-    override def summary: String = s"The Flix package '${loc.source.name}' was marked as safe, despite being unsafe."
+    override def summary: String = s"The following file '${loc.source.name}' was marked as safe, despite being unsafe."
 
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> The Flix package '${loc.source.name}' was marked as safe, despite being unsafe.
+         |>> The following file '${loc.source.name}' was marked as safe, despite being unsafe.
          |
          |${code(loc, s"makes the package unsafe")}
          |""".stripMargin

@@ -283,7 +283,7 @@ object Safety {
         }
 
       case e@Expr.UncheckedCast(exp, _, _, _, _, loc) =>
-        val errors = isUncheckedCastAllowed(loc) ++ verifyUncheckedCast(e)
+        val errors = isMethodAllowed(loc) ++ verifyUncheckedCast(e)
         visit(exp) ++ errors
 
       case Expr.UncheckedMaskingCast(exp, _, _, _) =>
@@ -303,14 +303,14 @@ object Safety {
       case Expr.Do(_, exps, _, _, _) =>
         exps.flatMap(visit)
 
-      case Expr.InvokeConstructor(_, args, _, _, _) =>
-        args.flatMap(visit)
+      case Expr.InvokeConstructor(_, args, _, _, loc) =>
+        args.flatMap(visit) ++ isMethodAllowed(loc)
 
-      case Expr.InvokeMethod(_, exp, args, _, _, _) =>
-        visit(exp) ++ args.flatMap(visit)
+      case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
+        visit(exp) ++ args.flatMap(visit) ++ isMethodAllowed(loc)
 
-      case Expr.InvokeStaticMethod(_, args, _, _, _) =>
-        args.flatMap(visit)
+      case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
+        args.flatMap(visit) ++ isMethodAllowed(loc)
 
       case Expr.GetField(_, exp, _, _, _) =>
         visit(exp)
@@ -709,7 +709,7 @@ object Safety {
    *  Checks whether an unchecked cast is allowed to use or not
    *  If not it will return an 'IncorrectSafetySignature'
    */
-  private def isUncheckedCastAllowed(loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = loc.source.input match {
+  private def isMethodAllowed(loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = loc.source.input match {
     case _: Input.Shell => Nil
     case _: Input.StdLib => Nil
     case _: Input.Pkg => Nil
