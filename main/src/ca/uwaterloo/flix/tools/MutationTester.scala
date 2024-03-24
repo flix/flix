@@ -10,8 +10,8 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Tester.ConsoleRedirection
 import ca.uwaterloo.flix.util.{Formatter, Result}
 
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+import scala.collection.mutable
 
 /* TODO: think also:
  * Check mutant compilation. Create 'MutantStatus' enum
@@ -21,7 +21,8 @@ import java.util.concurrent.atomic.AtomicInteger
  * Mutate Root.instances.defs (?)
  * Are mutants SourceLocations correct ?
  * Separate mutations by kind (?)
- * is it necessary to mutate SemanticOp other than BoolOp.Not, BoolOp.And, BoolOp.Or ??
+ * Is it necessary to mutate SemanticOp other than BoolOp.Not, BoolOp.And, BoolOp.Or ??
+ * Helper functions for tests without @Test annotation.
 */
 
 object MutationTester {
@@ -34,15 +35,16 @@ object MutationTester {
 
   private case object CompilationFailed extends MutantStatus
 
-  def run(root: Root)(implicit flix: Flix): Result[MutationReporter, Int] = {
+  def run(root: Root)(implicit flix: Flix): Result[(MutationReporter, Double), Int] = {
     // don't want to mutate library defs and tests
     val defs = root.defs.values.filter(defn => !isLibDef(defn) && !isTestDef(defn))
 
-    // todo: configure by defs count (?)
-    val numThreads = 2
-    val executor = Executors.newFixedThreadPool(numThreads)
+    //     todo: configure by defs count (?)
+    //    val numThreads = 2
+    //    val executor = Executors.newFixedThreadPool(numThreads)
 
     val reporter = new MutationReporter()
+    val startTime = System.currentTimeMillis()
 
     /*
      * Idea:
@@ -64,8 +66,8 @@ object MutationTester {
     defs.foreach {
       defn =>
         // todo: move generation to separated thread or ExecutorService
-        Mutator.mutateExpr(defn.exp).foreach { mutatedExp =>
-          val mutatedDef = defn.copy(exp = mutatedExp)
+        Mutator.mutateExpr(defn.exp).foreach { mutation =>
+          val mutatedDef = defn.copy(exp = mutation.expr)
           val mutant = root.copy(defs = root.defs + (mutatedDef.sym -> mutatedDef))
 
           //    val redirect = new ConsoleRedirection
@@ -74,21 +76,25 @@ object MutationTester {
           //    if (redirect.stdErr.nonEmpty) return CompilationFailed
           //    redirect.restore()
 
-          executor.execute(() => {
-            codeGenResult.toSoftResult match {
-              case Result.Ok(c) =>
-                val status = testMutant(c._1)
-                reporter.report(status, mutatedDef.sym.toString)
-              case Result.Err(_) => reporter.report(CompilationFailed, mutatedDef.sym.toString)
-            }
-          })
+          //          executor.execute(() => {
+          codeGenResult.toSoftResult match {
+            case Result.Ok(c) =>
+              val status = testMutant(c._1)
+              reporter.report(status, mutatedDef.sym.toString, mutation.loc, mutation.newStr)
+            case Result.Err(_) => reporter.report(CompilationFailed, mutatedDef.sym.toString, mutation.loc, mutation.newStr)
+          }
+          //          })
         }
     }
 
-    executor.shutdown()
-    while (!executor.isTerminated) {}
+    //    executor.shutdown()
+    //    while (!executor.isTerminated) {}
 
-    Result.Ok(reporter)
+    val finishTime = System.currentTimeMillis()
+    val elapsedTimeInSeconds = (finishTime - startTime) / 1000.0
+
+
+    Result.Ok(reporter, elapsedTimeInSeconds)
   }
 
   private def isLibDef(defn: Def): Boolean = defn.exp.loc.source.input match {
@@ -128,7 +134,7 @@ object MutationTester {
 
   private object Mutator {
     // todo: collections: for example, Set constructor
-    def mutateExpr(expr: Expr)(implicit flix: Flix): LazyList[Expr] = {
+    def mutateExpr(expr: Expr)(implicit flix: Flix): LazyList[Mutation] = {
       if (expr.tpe.toString == "Unit") {
         LazyList.empty
       } else {
@@ -146,18 +152,21 @@ object MutationTester {
           case Expr.Unary(sop, exp, tpe, eff, loc) => mutateExprUnary(expr)
           case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => mutateExprBinary(expr)
           case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
-            mutateExpr(exp1).map(Expr.Let(sym, mod, _, exp2, tpe, eff, loc)) #:::
-              mutateExpr(exp2).map(Expr.Let(sym, mod, exp1, _, tpe, eff, loc))
-          case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => LazyList.empty // todo
-          case Expr.Region(tpe, loc) => LazyList.empty // todo
-          case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => LazyList.empty // todo
+            mutateExpr(exp1).map(m => Mutation(Expr.Let(sym, mod, m.expr, exp2, tpe, eff, loc), m.loc, m.newStr)) #:::
+              mutateExpr(exp2).map(m => Mutation(Expr.Let(sym, mod, exp1, m.expr, tpe, eff, loc), m.loc, m.newStr))
+          case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => // find example code
+            mutateExpr(exp1).map(m => Mutation(Expr.LetRec(sym, ann, mod, m.expr, exp2, tpe, eff, loc), m.loc, m.newStr)) #:::
+              mutateExpr(exp2).map(m => Mutation(Expr.LetRec(sym, ann, mod, exp1, m.expr, tpe, eff, loc), m.loc, m.newStr))
+          case Expr.Region(tpe, loc) => LazyList.empty
+          case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+            mutateExpr(exp).map(m => Mutation(Expr.Scope(sym, regionVar, m.expr, tpe, eff, loc), m.loc, m.newStr))
           case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-            mutateExpr(exp1).map(Expr.IfThenElse(_, exp2, exp3, tpe, eff, loc)) #:::
-              mutateExpr(exp2).map(Expr.IfThenElse(exp1, _, exp3, tpe, eff, loc)) #:::
-              mutateExpr(exp3).map(Expr.IfThenElse(exp1, exp2, _, tpe, eff, loc))
+            mutateExpr(exp1).map(m => Mutation(Expr.IfThenElse(m.expr, exp2, exp3, tpe, eff, loc), m.loc, m.newStr)) #:::
+              mutateExpr(exp2).map(m => Mutation(Expr.IfThenElse(exp1, m.expr, exp3, tpe, eff, loc), m.loc, m.newStr)) #:::
+              mutateExpr(exp3).map(m => Mutation(Expr.IfThenElse(exp1, exp2, m.expr, tpe, eff, loc), m.loc, m.newStr))
           case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-            mutateExpr(exp1).map(Expr.Stm(_, exp2, tpe, eff, loc)) #:::
-              mutateExpr(exp2).map(Expr.Stm(exp1, _, tpe, eff, loc))
+            mutateExpr(exp1).map(m => Mutation(Expr.Stm(m.expr, exp2, tpe, eff, loc), m.loc, m.newStr)) #:::
+              mutateExpr(exp2).map(m => Mutation(Expr.Stm(exp1, m.expr, tpe, eff, loc), m.loc, m.newStr))
           case Expr.Discard(exp, eff, loc) => LazyList.empty
           case Expr.Match(exp, rules, tpe, eff, loc) => LazyList.empty
           case Expr.TypeMatch(exp, rules, tpe, eff, loc) => LazyList.empty
@@ -186,8 +195,8 @@ object MutationTester {
           case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => LazyList.empty
           case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) => LazyList.empty
           case Expr.Without(exp, effUse, tpe, eff, loc) => LazyList.empty
-          case Expr.TryCatch(exp, rules, tpe, eff, loc) => LazyList.empty
-          case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => LazyList.empty
+          case Expr.TryCatch(exp, rules, tpe, eff, loc) => LazyList.empty // Todo
+          case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => LazyList.empty // Todo
           case Expr.Do(op, exps, tpe, eff, loc) => LazyList.empty
           case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => LazyList.empty
           case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => LazyList.empty
@@ -217,43 +226,43 @@ object MutationTester {
       }
     }
 
-    private def mutateExprCst(exp: Expr): LazyList[Expr] = exp match {
+    private def mutateExprCst(exp: Expr): LazyList[Mutation] = exp match {
       case Expr.Cst(cst, tpe, loc) => cst match {
-        case Constant.Bool(lit) => LazyList(Expr.Cst(Constant.Bool(!lit), tpe, loc))
-        case Constant.Float32(lit) => LazyList(lit + 1, lit - 1).map(value => Expr.Cst(Constant.Float32(value), tpe, loc))
-        case Constant.Float64(lit) => LazyList(lit + 1, lit - 1).map(value => Expr.Cst(Constant.Float64(value), tpe, loc))
+        case Constant.Bool(lit) => LazyList(Mutation(Expr.Cst(Constant.Bool(!lit), tpe, loc), loc, (!lit).toString))
+        case Constant.Float32(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Expr.Cst(Constant.Float32(value), tpe, loc), loc, s"${value.toString}f32"))
+        case Constant.Float64(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Expr.Cst(Constant.Float64(value), tpe, loc), loc, value.toString))
         case Constant.BigDecimal(lit) => LazyList(
           lit.add(java.math.BigDecimal.ONE),
           lit.subtract(java.math.BigDecimal.ONE)
-        ).map(value => Expr.Cst(Constant.BigDecimal(value), tpe, loc))
-        case Constant.Int8(lit) => LazyList(lit + 1, lit - 1).map(value => Expr.Cst(Constant.Int8(value.toByte), tpe, loc))
-        case Constant.Int16(lit) => LazyList(lit + 1, lit - 1).map(value => Expr.Cst(Constant.Int16(value.toShort), tpe, loc))
-        case Constant.Int32(lit) => LazyList(lit + 1, lit - 1).map(value => Expr.Cst(Constant.Int32(value), tpe, loc))
-        case Constant.Int64(lit) => LazyList(lit + 1, lit - 1).map(value => Expr.Cst(Constant.Int64(value), tpe, loc))
+        ).map(value => Mutation(Expr.Cst(Constant.BigDecimal(value), tpe, loc), loc, s"${value.toString}ff"))
+        case Constant.Int8(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Expr.Cst(Constant.Int8(value.toByte), tpe, loc), loc, s"${value.toString}i8"))
+        case Constant.Int16(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Expr.Cst(Constant.Int16(value.toShort), tpe, loc), loc, s"${value.toString}i16"))
+        case Constant.Int32(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Expr.Cst(Constant.Int32(value), tpe, loc), loc, value.toString))
+        case Constant.Int64(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Expr.Cst(Constant.Int64(value), tpe, loc), loc, s"${value.toString}i64"))
         case Constant.BigInt(lit) => LazyList(
           lit.add(java.math.BigInteger.ONE),
           lit.subtract(java.math.BigInteger.ONE)
-        ).map(value => Expr.Cst(Constant.BigInt(value), tpe, loc))
+        ).map(value => Mutation(Expr.Cst(Constant.BigInt(value), tpe, loc), loc, s"${value.toString}ii"))
         case _ => LazyList.empty
       }
       case _ => LazyList.empty
     }
 
-    private def mutateExprUnary(exp: Expr): LazyList[Expr] = exp match {
-      case Expr.Unary(BoolOp.Not, exp, _, _, _) => LazyList(exp)
+    private def mutateExprUnary(exp: Expr): LazyList[Mutation] = exp match {
+      case Expr.Unary(BoolOp.Not, exp, _, _, loc) => LazyList(Mutation(exp, loc, exp.loc.text.get))
       case _ => LazyList.empty
     }
 
-    private def mutateExprBinary(exp: Expr): LazyList[Expr] = exp match {
-      case Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc) => LazyList(Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc))
-      case Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc) => LazyList(Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc))
+    private def mutateExprBinary(exp: Expr): LazyList[Mutation] = exp match {
+      case Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc) => LazyList(Mutation(Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc), loc, s"${exp1.loc.text.get} or ${exp2.loc.text.get}"))
+      case Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc) => LazyList(Mutation(Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc), loc, s"${exp1.loc.text.get} and ${exp2.loc.text.get}"))
       case _ => LazyList.empty
     }
 
-    private def mutateExprTuple(exp: Expr)(implicit flix: Flix): LazyList[Expr] = exp match {
+    private def mutateExprTuple(exp: Expr)(implicit flix: Flix): LazyList[Mutation] = exp match {
       case Expr.Tuple(elms, tpe, eff, loc) =>
         LazyList.tabulate(elms.length)(i =>
-          mutateExpr(elms(i)).map(e => Expr.Tuple(elms.updated(i, e), tpe, eff, loc))
+          mutateExpr(elms(i)).map(m => Mutation(Expr.Tuple(elms.updated(i, m.expr), tpe, eff, loc), m.loc, m.newStr))
         ).flatten
       case _ => LazyList.empty
     }
@@ -316,51 +325,57 @@ object MutationTester {
     )
 
     // what if there is an expression other than Def and Sig ?
-    def mutateExprApply(exp: TypedAst.Expr)(implicit flix: Flix): LazyList[TypedAst.Expr] = exp match {
+    // take Apply's SourceLocation and refactor Mutation.newStr creating
+    def mutateExprApply(exp: TypedAst.Expr)(implicit flix: Flix): LazyList[Mutation] = exp match {
       case Expr.Apply(exp, exps, tpe, eff, loc) =>
         exp match {
-          case Expr.Sig(sym, _, _) if sym.toString == "Neg.neg" => LazyList(exps.head)
-          case Expr.Def(sym, _, _) if defnIntNamespaces.contains(sym.namespace.mkString(".")) && sym.text == "bitwiseNot" => LazyList(exps.head)
+          case Expr.Sig(sym, _, _) if sym.toString == "Neg.neg" => LazyList(Mutation(exps.head, loc, exps.head.loc.text.get))
+          case Expr.Def(sym, _, _) if defnIntNamespaces.contains(sym.namespace.mkString(".")) && sym.text == "bitwiseNot" => LazyList(Mutation(exps.head, loc, exps.head.loc.text.get))
           case _ =>
-            val res = Mutator.mutateExpr(exp).map(Expr.Apply(_, exps, tpe, eff, loc))
-            if (res.nonEmpty) {
-              res
-            } else {
-              LazyList.tabulate(exps.length)(i =>
-                Mutator.mutateExpr(exps(i)).map(e => Expr.Apply(exp, exps.updated(i, e), tpe, eff, loc))
-              ).flatten
+            val res = Mutator.mutateExpr(exp).map { m =>
+              val str = s"${m.newStr}${exps.map(_.loc.text.get).mkString("(", ", ", ")")}"
+              Mutation(Expr.Apply(m.expr, exps, tpe, eff, loc), loc, str)
             }
+
+            if (res.nonEmpty) res
+            else LazyList.tabulate(exps.length)(i =>
+              Mutator.mutateExpr(exps(i)).map { m =>
+                val updatedExps = exps.updated(i, m.expr)
+                val str = s"${exp.loc.text.get}${updatedExps.map(_.loc.text.get).updated(i, m.newStr).mkString("(", ", ", ")")}"
+                Mutation(Expr.Apply(exp, updatedExps, tpe, eff, loc), loc, str)
+              }
+            ).flatten
         }
       case _ => LazyList.empty
     }
 
-    def mutateExprSig(exp: Expr)(implicit flix: Flix): LazyList[Expr] =
+    def mutateExprSig(exp: Expr)(implicit flix: Flix): LazyList[Mutation] =
       exp match {
-        case Expr.Sig(sym, tpe, _) =>
+        case Expr.Sig(sym, tpe, loc) =>
           var l = List(conditionalNegateSigToSig, conditionalBoundarySigToSig)
           if (arithmeticSigTypes.contains(tpe.toString)) {
             l = arithmeticSigToSig :: l
           }
 
-          l.foldLeft(LazyList.empty[Expr.Sig]) {
+          l.foldLeft(LazyList.empty[Mutation]) {
             (acc, sigMap) =>
               acc #::: sigMap.get(sym.toString)
                 .flatMap(p => findSig(p._1, p._2))
-                .map(s => LazyList(Expr.Sig(s, tpe, SourceLocation.Unknown)))
+                .map(s => LazyList(Mutation(Expr.Sig(s, tpe, loc), loc, s.toString))) // todo: refactor s.name is not correct
                 .getOrElse(LazyList.empty)
           }
         case _ => LazyList.empty
       }
 
-    def mutateExprDef(exp: Expr)(implicit flix: Flix): LazyList[Expr] = exp match {
-      case Expr.Def(sym, tpe, _) if defnIntNamespaces.contains(sym.namespace.mkString(".")) =>
+    def mutateExprDef(exp: Expr)(implicit flix: Flix): LazyList[Mutation] = exp match {
+      case Expr.Def(sym, tpe, loc) if defnIntNamespaces.contains(sym.namespace.mkString(".")) =>
         defnToDefn.get(sym.text)
           .flatMap(findDef(sym.namespace, _))
-          .map(s => LazyList(Expr.Def(s, tpe, SourceLocation.Unknown)))
+          .map(s => LazyList(Mutation(Expr.Def(s, tpe, loc), loc, s.toString)))
           .orElse {
             defnToSig.get(sym.text)
               .flatMap(p => findSig(p._1, p._2))
-              .map(s => LazyList(Expr.Sig(s, tpe, SourceLocation.Unknown)))
+              .map(s => LazyList(Mutation(Expr.Sig(s, tpe, loc), loc, s.toString)))
           }
           .getOrElse(LazyList.empty)
       case _ => LazyList.empty
@@ -379,33 +394,40 @@ object MutationTester {
     }
   }
 
+  // create MutationKind enum and ovverided toString method for this
+  private case class Mutation(expr: Expr, loc: SourceLocation, newStr: String)
+
   class MutationReporter(implicit flix: Flix) {
-    private var all: AtomicInteger = new AtomicInteger(0)
-    private var killed: AtomicInteger = new AtomicInteger(0)
-    private var survived: AtomicInteger = new AtomicInteger(0)
-    private var compilationFailed: AtomicInteger = new AtomicInteger(0)
+    private val all: AtomicInteger = new AtomicInteger(0)
+    private val killed: AtomicInteger = new AtomicInteger(0)
+    private val survived: AtomicInteger = new AtomicInteger(0)
+    private val compilationFailed: AtomicInteger = new AtomicInteger(0)
     private val formatter: Formatter = flix.getFormatter
 
     import formatter._
 
-    def report(status: MutantStatus, defName: String): Unit = {
-      val sb = new StringBuilder()
-      sb.append("mutant created for " + blue(defName) + System.lineSeparator())
+    def report(status: MutantStatus, defName: String, loc: SourceLocation, newStr: String): Unit = {
+      val sb = new mutable.StringBuilder
+
+      sb.append(s"Mutant created for ${blue(defName)}${System.lineSeparator()}")
+        .append(diff(loc, newStr))
 
       all.getAndIncrement()
       status match {
         case Killed =>
           killed.getAndIncrement()
-          sb.append(green("killed") + System.lineSeparator())
+          sb.append(green("KILLED") + System.lineSeparator())
         case Survived =>
           survived.getAndIncrement()
-          sb.append(red("survived") + System.lineSeparator())
+          sb.append(red("SURVIVED") + System.lineSeparator())
         case CompilationFailed =>
           compilationFailed.getAndIncrement()
-          sb.append(yellow("compilation failed") + System.lineSeparator())
+          sb.append(yellow("COMPILATION FAILED") + System.lineSeparator())
       }
 
       sb.append("-" * 50)
+
+      // Todo: print and clear after each N mutants. Remember, that multiple threads can perform this function at a time
       println(sb.toString())
     }
 
@@ -414,5 +436,58 @@ object MutationTester {
       .append(System.lineSeparator())
       .append(blue(s"All = $all, Killed = $killed, Survived = $survived, CompilationFailed = $compilationFailed."))
       .toString()
+
+    // todo: refactor SigSym newStr. For example, `Eq.neq(x, 5)` to `x != 5`
+    // todo: refactor hardcoded '.loc.text.get' in this file
+    // todo: refactor for multiline. Example: examples/larger-examples/Reachable.flix
+    // todo: specify a more precise location or add 2 lines of code before and after
+    // todo: move to Formatter class like Formatter.code() ??
+    private def diff(loc: SourceLocation, newStr: String): String = {
+      val beginLine = loc.beginLine
+      val beginCol = loc.beginCol
+      val endLine = loc.endLine
+      val endCol = loc.endCol
+
+      val line = loc.lineAt(beginLine)
+
+      val sb = new mutable.StringBuilder
+      //      if (beginLine - 2 > 0) {
+      //        sb.append(System.lineSeparator())
+      //          .append((beginLine - 2).toString)
+      //          .append(" | ")
+      //          .append(loc.lineAt(beginLine - 2))
+      //      }
+      //
+      //      if (beginLine - 1 > 0) {
+      //        sb.append(System.lineSeparator())
+      //          .append((beginLine - 1).toString)
+      //          .append(" | ")
+      //          .append(loc.lineAt(beginLine - 1))
+      //      }
+
+      sb.append(System.lineSeparator())
+        .append(red(beginLine.toString))
+        .append(" | ")
+        .append(line.substring(0, beginCol - 1))
+        .append(red(line.substring(beginCol - 1, endCol - 1)))
+        .append(line.substring(endCol - 1))
+        .append(System.lineSeparator())
+        .append(green(beginLine.toString))
+        .append(" | ")
+        .append(line.substring(0, beginCol - 1))
+        .append(green(newStr))
+        .append(line.substring(endCol - 1))
+        //        .append(System.lineSeparator())
+        //        .append((beginLine + 1).toString)
+        //        .append(" | ")
+        //        .append(loc.lineAt(beginLine + 1))
+        //        .append(System.lineSeparator())
+        //        .append((beginLine + 2).toString)
+        //        .append(" | ")
+        //        .append(loc.lineAt(beginLine + 2))
+        .append(System.lineSeparator())
+        .append(System.lineSeparator())
+        .toString()
+    }
   }
 }
