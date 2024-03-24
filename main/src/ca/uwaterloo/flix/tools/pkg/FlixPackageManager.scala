@@ -229,7 +229,7 @@ object FlixPackageManager {
             case Dependency.FlixDependency(Repository.GitHub, r.owner, r.repo, m.version, _, safe) if safe != m.safe => return Err(PackageError.ManifestSafetyMismatch(r.repo, safe, m.safe))
             case _ =>
           }
-        case _ => Ok(()) // So far we only check Github Packages
+        case _ => // So far we only check Github Packages
 
       }
     }
