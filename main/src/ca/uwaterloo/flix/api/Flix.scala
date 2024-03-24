@@ -403,7 +403,7 @@ class Flix {
       throw new IllegalArgumentException("'name' must be non-null.")
     if (text == null)
       throw new IllegalArgumentException("'text' must be non-null.")
-    addInput(name, Input.Shell(name, text, stable = false))
+    addInput(name, Input.SocketServlet(name, text, stable = false))
     this
   }
 

@@ -188,6 +188,13 @@ object FlixPackageManager {
       transManifests <- traverse(tomlPaths)(p => parseManifest(p))
 
     ) yield {
+
+      //check safety
+      checkDepSafetyChange(flixDeps, transManifests) match {
+        case Err(e) => return Err(e)
+        case _ =>
+      }
+
       //remove duplicates
       val newManifests = transManifests.filter(m => !res.contains(m))
       var newRes = res ++ newManifests
@@ -212,5 +219,20 @@ object FlixPackageManager {
       case Ok(t) => Ok(t)
       case Err(e) => Err(PackageError.ManifestParseError(e))
     }
+  }
+
+  private def checkDepSafetyChange(depList: List[FlixDependency], depManifests: List[Manifest]): Result[Unit, PackageError] = {
+    for (m <- depManifests) {
+      m.repository match {
+        case Some(r) if r.isInstanceOf[GitHub.Project] =>
+          depList.foreach {
+            case Dependency.FlixDependency(Repository.GitHub, r.owner, r.repo, m.version, _, safe) if safe != m.safe => return Err(PackageError.ManifestSafetyMismatch(r.repo, safe, m.safe))
+            case _ =>
+          }
+        case _ => Ok(()) // So far we only check Github Packages
+
+      }
+    }
+    Ok(())
   }
 }

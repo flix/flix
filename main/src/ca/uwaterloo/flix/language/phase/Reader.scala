@@ -16,11 +16,10 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix}
+import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Input, Source}
 import ca.uwaterloo.flix.language.ast.{Ast, ReadAst}
-import ca.uwaterloo.flix.language.errors.ReaderError
 import ca.uwaterloo.flix.tools.pkg.{ManifestParser, Manifest}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Result, StreamOps, Validation}
@@ -47,7 +46,19 @@ object Reader {
       val result = mutable.Map.empty[Source, Unit]
       for (input <- inputs) {
         input match {
-          case Input.StdLib(name, text, stable) =>
+          case Input.StdLib(_, text, stable) =>
+            val src = Source(input, text.toCharArray, stable)
+            result += (src -> ())
+
+          case Input.Shell(_, text, stable) =>
+            val src = Source(input, text.toCharArray, stable)
+            result += (src -> ())
+
+          case Input.SocketServlet(_, text, stable) =>
+            val src = Source(input, text.toCharArray, stable)
+            result += (src -> ())
+
+          case Input.Lsp(_, text, stable) =>
             val src = Source(input, text.toCharArray, stable)
             result += (src -> ())
 
@@ -64,7 +75,9 @@ object Reader {
               result += (src -> ())
             }
 
-          case _ => Validation.success(())
+          case Input.Empty() =>
+
+          case _:Input.PkgFile  =>
         }
       }
 
