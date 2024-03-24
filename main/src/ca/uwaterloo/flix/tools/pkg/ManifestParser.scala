@@ -103,26 +103,32 @@ object ManifestParser {
       authorsList <- convertTomlArrayToStringList(authors, p);
 
       deps <- getOptionalTableProperty("dependencies", parser, p);
-      depsList <- collectDependencies(deps, flixDep = true, prodDep = true, jarDep = false, p);
+      depsList <- collectDependencies(deps, flixDep = true, prodDep = true, jarDep = false, p, safe = true);
+
+      safeDeps <- getOptionalTableProperty("safe-dependencies", parser, p);
+      safeDepsList <- collectDependencies(safeDeps, flixDep = true, prodDep = true, jarDep = false, p, safe = true);
+
+      unsafeDeps <- getOptionalTableProperty("unsafe-dependencies", parser, p);
+      unSafeDepsList <- collectDependencies(unsafeDeps, flixDep = true, prodDep = true, jarDep = false, p, safe = false);
 
       devDeps <- getOptionalTableProperty("dev-dependencies", parser, p);
-      devDepsList <- collectDependencies(devDeps, flixDep = true, prodDep = false, jarDep = false, p);
+      devDepsList <- collectDependencies(devDeps, flixDep = true, prodDep = false, jarDep = false, p, safe = true);
 
       mvnDeps <- getOptionalTableProperty("mvn-dependencies", parser, p);
-      mvnDepsList <- collectDependencies(mvnDeps, flixDep = false, prodDep = true, jarDep = false, p);
+      mvnDepsList <- collectDependencies(mvnDeps, flixDep = false, prodDep = true, jarDep = false, p, safe = true);
 
       devMvnDeps <- getOptionalTableProperty("dev-mvn-dependencies", parser, p);
-      devMvnDepsList <- collectDependencies(devMvnDeps, flixDep = false, prodDep = false, jarDep = false, p);
+      devMvnDepsList <- collectDependencies(devMvnDeps, flixDep = false, prodDep = false, jarDep = false, p, safe = true);
 
       jarDeps <- getOptionalTableProperty("jar-dependencies", parser, p);
-      jarDepsList <- collectDependencies(jarDeps, flixDep = false, prodDep = false, jarDep = true, p)
+      jarDepsList <- collectDependencies(jarDeps, flixDep = false, prodDep = false, jarDep = true, p, safe = true)
 
-    ) yield Manifest(name, description, versionSemVer, githubProject, isSafe, packageModules, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
+    ) yield Manifest(name, description, versionSemVer, githubProject, isSafe, packageModules, flixSemVer, license, authorsList, depsList ++ safeDepsList ++ unSafeDepsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
   }
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
     val keySet: Set[String] = parser.keySet().asScala.toSet
-    val allowedKeys = Set("package", "dependencies", "dev-dependencies", "mvn-dependencies", "dev-mvn-dependencies", "jar-dependencies")
+    val allowedKeys = Set("package", "dependencies", "safe-dependencies", "unsafe-dependencies", "dev-dependencies", "mvn-dependencies", "dev-mvn-dependencies", "jar-dependencies")
     val illegalKeys = keySet.diff(allowedKeys)
 
     if(illegalKeys.nonEmpty) {
@@ -274,7 +280,7 @@ object ManifestParser {
     * overrides `flixDep` and `prodDep`.
     * Returns an error if anything is not as expected.
     */
-  private def collectDependencies(deps: Option[TomlTable], flixDep: Boolean, prodDep: Boolean, jarDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
+  private def collectDependencies(deps: Option[TomlTable], flixDep: Boolean, prodDep: Boolean, jarDep: Boolean, p: Path, safe: Boolean): Result[List[Dependency], ManifestError] = {
     deps match {
       case None => Ok(List.empty)
       case Some(deps) =>
@@ -285,7 +291,7 @@ object ManifestParser {
           if (jarDep) {
             createJarDep(depKey, depValue, p)
           } else if (flixDep) {
-            createFlixDep(depKey, depValue, prodDep, p)
+            createFlixDep(depKey, depValue, prodDep, p, safe)
           } else {
             createMavenDep(depKey, depValue, prodDep, p)
           }
@@ -458,7 +464,7 @@ object ManifestParser {
     * `prodDep` decides whether it is a production or development dependency.
     * `p` is for reporting errors.
     */
-  private def createFlixDep(depName: String, depVer: AnyRef, prodDep: Boolean, p: Path): Result[FlixDependency, ManifestError] = {
+  private def createFlixDep(depName: String, depVer: AnyRef, prodDep: Boolean, p: Path, safe: Boolean): Result[FlixDependency, ManifestError] = {
     for (
       repository <- getRepository(depName, p);
       username <- getUsername(depName, p);
@@ -466,9 +472,9 @@ object ManifestParser {
       version <- getFlixVersion(depVer, p)
     ) yield {
       if (prodDep) {
-        Dependency.FlixDependency(repository, username, projectName, version, DependencyKind.Production)
+        Dependency.FlixDependency(repository, username, projectName, version, DependencyKind.Production, safe)
       } else {
-        Dependency.FlixDependency(repository, username, projectName, version, DependencyKind.Development)
+        Dependency.FlixDependency(repository, username, projectName, version, DependencyKind.Development, safe)
       }
     }
   }

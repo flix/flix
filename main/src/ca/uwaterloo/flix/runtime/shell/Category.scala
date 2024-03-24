@@ -43,7 +43,7 @@ object Category {
     * Returns the syntactic category of the given source code string `s`.
     */
   def categoryOf(s: String): Category = {
-    val input = Ast.Input.Text("<shell>", s, stable = false)
+    val input = Ast.Input.Shell("<shell>", s, stable = false)
     val source = Ast.Source(input, s.toCharArray, stable = false)
     val parser = new Parser(source)
 

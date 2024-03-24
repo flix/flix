@@ -143,4 +143,12 @@ object PackageError {
          |""".stripMargin
   }
 
+  case class ManifestSafetyMismatch(packageName: String, desiredSafety: Boolean, actualSafety: Boolean) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""
+         |There is a safety mismatch between the '${f.bold(packageName)}' package's manifest.
+         |The manifest says that the package is '${f.bold( if (actualSafety) "safe" else "unsafe")}' but it is stated as a '${f.bold( if (desiredSafety) "safe" else "unsafe")}' dependency.
+         |""".stripMargin
+  }
+
 }

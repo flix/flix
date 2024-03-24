@@ -16,12 +16,11 @@
 
 package ca.uwaterloo.flix.language.phase
 
-import ca.uwaterloo.flix.api.{Bootstrap, BootstrapError, Flix}
+import ca.uwaterloo.flix.api.{Bootstrap, Flix}
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Input, Source}
 import ca.uwaterloo.flix.language.ast.{Ast, ReadAst}
-import ca.uwaterloo.flix.language.errors.ReaderError
-import ca.uwaterloo.flix.tools.pkg.ManifestParser
+import ca.uwaterloo.flix.tools.pkg.{ManifestParser, Manifest}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.{Result, StreamOps, Validation}
 import ca.uwaterloo.flix.util.collection.MultiMap
@@ -47,23 +46,38 @@ object Reader {
       val result = mutable.Map.empty[Source, Unit]
       for (input <- inputs) {
         input match {
-          case Input.Text(name, text, stable) =>
+          case Input.StdLib(_, text, stable) =>
             val src = Source(input, text.toCharArray, stable)
             result += (src -> ())
 
-          case Input.TxtFile(path) =>
-            val bytes = Files.readAllBytes(path)
-            val str = new String(bytes, flix.defaultCharset)
-            val arr = str.toCharArray
-            val src = Source(input, arr, stable = false)
+          case Input.Shell(_, text, stable) =>
+            val src = Source(input, text.toCharArray, stable)
             result += (src -> ())
 
-          case Input.PkgFile(path) =>
+          case Input.SocketServlet(_, text, stable) =>
+            val src = Source(input, text.toCharArray, stable)
+            result += (src -> ())
+
+          case Input.Lsp(_, text, stable) =>
+            val src = Source(input, text.toCharArray, stable)
+            result += (src -> ())
+
+          case Input.FlixFolderFile(path, _) =>
+            val src = processFlixFile(path, input)
+            result += (src -> ())
+
+          case Input.FlixProjectFile(path, _) =>
+            val src = processFlixFile(path, input)
+            result += (src -> ())
+
+          case Input.Pkg(path) =>
             for (src <- unpack(path)) {
               result += (src -> ())
             }
 
-          case _ => Validation.success(())
+          case Input.Empty() =>
+
+          case _:Input.PkgFile  =>
         }
       }
 
@@ -71,6 +85,13 @@ object Reader {
       val names = findClasses()
       Validation.success(ReadAst.Root(sources, names))
     }
+
+  private def processFlixFile(p: Path, input: Input)(implicit flix: Flix): Source = {
+    val bytes = Files.readAllBytes(p)
+    val str = new String(bytes, flix.defaultCharset)
+    val arr = str.toCharArray
+    Source(input, arr, stable = false)
+  }
 
   /**
     * Returns a list of sources extracted from the given flix package at path `p`.
@@ -83,7 +104,7 @@ object Reader {
     // Open the zip file.
     Using(new ZipFile(p.toFile)) { zip =>
       // Collect all source and test files.
-      val isPkgSafe = isZipPkgSafe(zip, p)
+      val pkgManifest = getPkgManifest(zip, p)
       val result = mutable.ListBuffer.empty[Source]
       val iterator = zip.entries()
       while (iterator.hasMoreElements) {
@@ -94,7 +115,7 @@ object Reader {
           val bytes = StreamOps.readAllBytes(zip.getInputStream(entry))
           val str = new String(bytes, flix.defaultCharset)
           val arr = str.toCharArray
-          result += Source(Ast.Input.PkgTxtFile(p, isPkgSafe), arr, stable = false)
+          result += Source(Ast.Input.PkgFile(Input.Pkg(p), name, pkgManifest), arr, stable = false)
         }
       }
       result.toList
@@ -104,14 +125,14 @@ object Reader {
   /**
    * Returns the package's safety signature.
    */
-  private def isZipPkgSafe(zipFile: ZipFile, zipPath: Path): Boolean = {
+  private def getPkgManifest(zipFile: ZipFile, zipPath: Path): Manifest = {
     zipFile.entries().asScala.find(_.getName == "flix.toml") match {
       case Some(tomlEntry) =>
         val s = new String(zipFile.getInputStream(tomlEntry).readAllBytes())
         val p = zipPath.toString.stripSuffix(".fpkg") + "/" + tomlEntry.getName
         ManifestParser.parse(s, Paths.get(p)) match {
-          case Ok(m) => m.safe
-          case Err(_)  => throw new RuntimeException(s"The flix.toml file in the package '$zipPath' has been modified during the execution.")
+          case Ok(m) => m
+          case Err(_) => throw new RuntimeException(s"The flix.toml file in the package '$zipPath' has been modified during the execution.")
         }
       case None => throw new RuntimeException(s"The package '$zipPath' has been modified during the execution.")
     }
