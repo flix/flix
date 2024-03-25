@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2016 Magnus Madsen
+ * Copyright 2024 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package flix.fuzzers
 
-package ca.uwaterloo.flix
-
-import ca.uwaterloo.flix.language.LanguageSuite
-import ca.uwaterloo.flix.library.LibrarySuite
-import ca.uwaterloo.flix.tools.ToolsSuite
-import ca.uwaterloo.flix.util.UtilSuite
-import flix.CompilerSuite
-import flix.experimental.ExperimentalSuite
-import flix.fuzzers.FuzzerSuite
 import org.scalatest.Suites
 
-class TestAll extends Suites(
-  new BenchmarkSuite,
-  new CompilerSuite,
-  new FuzzerSuite,
-  new ExampleSuite,
-  new ExperimentalSuite,
-  new LanguageSuite,
-  new LibrarySuite,
-  new TestMain,
-  new ToolsSuite,
-  new UtilSuite,
+class FuzzerSuite extends Suites(
+  new FuzzPrefixes,
+  new FuzzLines
 )
