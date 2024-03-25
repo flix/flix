@@ -93,7 +93,6 @@ object MutationTester {
     val finishTime = System.currentTimeMillis()
     val elapsedTimeInSeconds = (finishTime - startTime) / 1000.0
 
-
     Result.Ok(reporter, elapsedTimeInSeconds)
   }
 
@@ -186,8 +185,8 @@ object MutationTester {
           case Expr.VectorLit(exps, tpe, eff, loc) => LazyList.empty
           case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => LazyList.empty
           case Expr.VectorLength(exp, loc) => LazyList.empty
-          case Expr.Ref(exp1, exp2, tpe, eff, loc) => LazyList.empty
-          case Expr.Deref(exp, tpe, eff, loc) => LazyList.empty
+          case Expr.Ref(exp1, exp2, tpe, eff, loc) => LazyList.empty // Todo
+          case Expr.Deref(exp, tpe, eff, loc) => LazyList.empty // Todo
           case Expr.Assign(exp1, exp2, tpe, eff, loc) => LazyList.empty
           case Expr.Ascribe(exp, tpe, eff, loc) => LazyList.empty
           case Expr.InstanceOf(exp, clazz, loc) => LazyList.empty
@@ -361,7 +360,7 @@ object MutationTester {
             (acc, sigMap) =>
               acc #::: sigMap.get(sym.toString)
                 .flatMap(p => findSig(p._1, p._2))
-                .map(s => LazyList(Mutation(Expr.Sig(s, tpe, loc), loc, s.toString))) // todo: refactor s.name is not correct
+                .map(s => LazyList(Mutation(Expr.Sig(s, tpe, loc), loc, s.toString)))
                 .getOrElse(LazyList.empty)
           }
         case _ => LazyList.empty
