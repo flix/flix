@@ -1027,4 +1027,77 @@ class TestKinder extends AnyFunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[KindError.MissingTypeClassConstraint](result)
   }
+
+  test("KindError.AssocType.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |instance C[String] {
+        |    type T = Pure
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.AssocType.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |instance C[String] {
+        |    type T[Pure] = String
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.AssocType.03") {
+    val input =
+      """
+        |mod Foo {
+        |    enum Set[_]
+        |
+        |    trait Order[a]
+        |
+        |    trait Add[t] {
+        |        type Rhs: Type
+        |        pub def add(lhs: t, rhs: Add.Rhs[t]): t
+        |    }
+        |
+        |    instance Add[Set[t]] with Order[t] {
+        |        type Rhs = {Pure}
+        |        pub def add(lhs: Set[t], rhs: t): Set[t] = ???
+        |
+        |    }
+        |
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.AssocType.04") {
+    val  input =
+      """
+        |mod Foo {
+        |    trait Add[t] {
+        |        type Aef: Eff
+        |        pub def add(lhs: t, rhs: t): t \ Add.Aef[t]
+        |    }
+        |    instance Add[String] {
+        |        type Aef = {}
+        |        pub def add(x: String, y: String): String = x + y
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
 }

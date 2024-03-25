@@ -50,7 +50,7 @@ pub enum RedBlackTree[k, v] with Sendable {
 }
 
 instance Eq[RedBlackTree[k, v]] with Eq[k], Eq[v] {
-    pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool with Eq[v] =
+    pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool =
         RedBlackTree.toList(t1) == RedBlackTree.toList(t2)
 }
 
