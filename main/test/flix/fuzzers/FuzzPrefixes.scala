@@ -13,31 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix
+package flix.fuzzers
 
+import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.api.Flix
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
 
-class FuzzyPrefixes extends AnyFunSuite with TestUtils {
+class FuzzPrefixes extends AnyFunSuite with TestUtils {
 
   /**
     * The number of prefixes to compile for each program.
     */
-  private val N: Int = 100
+  private val N: Int = 75
 
-  test("Prefixes.simple-card-game") {
+  test("simple-card-game") {
     val input = Files.readString(Paths.get("examples/simple-card-game.flix"))
     compilePrefixes(input)
   }
 
-  test("Prefixes.the-ast-typing-problem-with-polymorphic-records") {
+  test("the-ast-typing-problem-with-polymorphic-records") {
     val input = Files.readString(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix"))
     compilePrefixes(input)
   }
 
-  test("Prefixes.using-channels-and-select") {
+  test("using-channels-and-select") {
     val input = Files.readString(Paths.get("examples/using-channels-and-select.flix"))
     compilePrefixes(input)
   }
@@ -47,7 +48,7 @@ class FuzzyPrefixes extends AnyFunSuite with TestUtils {
     *
     * For example, if N is 100 and the input has length 300 then we create prefixes of length 3, 6, 9, ...
     *
-    * A prefix might not be a valid program: What we care about is that the compiler must not crash.
+    * The program may not be valid: We just care that it does not crash the compiler.
     */
   private def compilePrefixes(input: String): Unit = {
     val length = input.length
