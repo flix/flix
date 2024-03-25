@@ -9,4 +9,29 @@ mod Test.Dec.AssociatedTypes.Kind {
         pub def f(x: t): Foo.K[t][String]
     }
 
+    instance Foo[Int32] {
+        type K = List
+        pub def f(x: Int32): List[String] = "${x}" :: Nil
+    }
+
+    instance Foo[Int64] {
+        type K = Set
+        pub def f(x: Int64): Set[String] = Set#{"${x}"}
+    }
+
+
+    ////////////////////////////////////////////////////////
+    // Polymorphic functions using Foo                    //
+    ////////////////////////////////////////////////////////
+
+
+    ////////////////////////////////////////////////////////
+    // Monomorphic functions using Foo                    //
+    ////////////////////////////////////////////////////////
+
+
+    ////////////////////////////////////////////////////////
+    // Tests                                              //
+    ////////////////////////////////////////////////////////
+
 }
