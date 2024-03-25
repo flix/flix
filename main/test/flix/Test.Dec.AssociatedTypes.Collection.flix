@@ -150,6 +150,12 @@ mod Test.Dec.AssociatedTypes.Collection {
     pub def toListThenAddTwiceBitSet01(e1: Int32, e2: Int32, c: BitSet): List[Int32] =
         Collection.add(e2, Collection.add(e1, Collection.toList(c)))
 
+    pub def addTwiceThenToListBitSet02(e1: Int32, e2: Int32, c: BitSet): List[Int32] =
+        addTwiceThenToList(e1, e2, c)
+
+    pub def toListThenAddTwiceBitSet02(e1: Int32, e2: Int32, c: BitSet): List[Int32] =
+        toListThenAddTwice(e1, e2, c)
+
 
     ///////////////////////////////////////////////////////////////////
     // Tests for Option                                              //
