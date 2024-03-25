@@ -18,13 +18,42 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
 import ca.uwaterloo.flix.language.errors.SafetyError
-import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalNegativelyBoundWildCard, IllegalNonPositivelyBoundVar, IllegalRelationalUseOfLatticeVar, IllegalPatternInBodyAtom}
+import ca.uwaterloo.flix.language.errors.SafetyError.{IllegalCatchType, IllegalNegativelyBoundWildCard, IllegalNonPositivelyBoundVar, IllegalPatternInBodyAtom, IllegalRelationalUseOfLatticeVar}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
 class TestSafety extends AnyFunSuite with TestUtils {
 
   val DefaultOptions: Options = Options.TestWithLibMin
+
+  test("IllegalCatchType.01") {
+    val input =
+      """
+        |pub def f(): String =
+        |    try {
+        |        "abc"
+        |    } catch {
+        |        case _s: ##java.lang.Object => "fail"
+        |    }
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[IllegalCatchType](result)
+  }
+
+  test("IllegalCatchType.02") {
+    val input =
+      """
+        |pub def f(): String =
+        |    try {
+        |        "abc"
+        |    } catch {
+        |        case _e1: ##java.lang.Exception => "ok"
+        |        case _e2: ##java.lang.String => "not ok"
+        |    }
+      """.stripMargin
+    val result = compile(input, Options.DefaultTest)
+    expectError[IllegalCatchType](result)
+  }
 
   test("UnexpectedBodyAtomPattern.01") {
     val input =

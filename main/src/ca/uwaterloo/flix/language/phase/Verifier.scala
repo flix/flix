@@ -39,30 +39,7 @@ object Verifier {
     val env = (decl.cparams ++ decl.fparams).foldLeft(Map.empty[Symbol.VarSym, MonoType]) {
       case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
     }
-    try {
-      visitExpr(decl.expr)(root, env, Map.empty)
-    } catch {
-      case UnexpectedType(expected, found, loc) =>
-        println(s"Unexpected type near ${loc.format}")
-        println()
-        println(s"  expected = $expected")
-        println(s"  found    = $found")
-        println()
-
-      case MismatchedTypes(tpe1, tpe2, loc) =>
-        println(s"Mismatched types near ${loc.format}")
-        println()
-        println(s"  tpe1 = $tpe1")
-        println(s"  tpe2 = $tpe2")
-        println()
-
-      case MismatchedShape(tpe, expected, loc) =>
-        println(s"Mismatched shape near ${loc.format}")
-        println()
-        println(s"  expected = \'$expected\'")
-        println(s"  found    = $tpe")
-        println()
-    }
+    visitExpr(decl.expr)(root, env, Map.empty)
   }
 
 
@@ -248,7 +225,7 @@ object Verifier {
           val List(t1) = ts
           t1 match {
             case MonoType.Array(_) => check(expected = MonoType.Int32)(actual = tpe, loc)
-            case _ => throw MismatchedShape(t1, "Array", loc)
+            case _ => failMismatchedShape(t1, "Array", loc)
           }
 
         case AtomicOp.ArrayNew =>
@@ -263,7 +240,7 @@ object Verifier {
             case MonoType.Array(elmt) =>
               ts.foreach(t => checkEq(elmt, t, loc))
               tpe
-            case _ => throw MismatchedShape(tpe, "Array", loc)
+            case _ => failMismatchedShape(tpe, "Array", loc)
           }
 
         case AtomicOp.ArrayLoad =>
@@ -272,7 +249,7 @@ object Verifier {
             case MonoType.Array(elmt) =>
               check(expected = MonoType.Int32)(actual = t2, loc)
               checkEq(elmt, tpe, loc)
-            case _ => throw MismatchedShape(t1, "Array", loc)
+            case _ => failMismatchedShape(t1, "Array", loc)
           }
 
         case AtomicOp.ArrayStore =>
@@ -282,7 +259,7 @@ object Verifier {
               check(expected = MonoType.Int32)(actual = t2, loc)
               checkEq(elmt, t3, loc)
               check(expected = MonoType.Unit)(actual = tpe, loc)
-            case _ => throw MismatchedShape(t1, "Array", loc)
+            case _ => failMismatchedShape(t1, "Array", loc)
           }
 
         case AtomicOp.Ref =>
@@ -294,7 +271,7 @@ object Verifier {
           val List(t1) = ts
           t1 match {
             case MonoType.Ref(elm) => checkEq(elm, tpe, loc)
-            case _ => throw MismatchedShape(t1, "Ref", loc)
+            case _ => failMismatchedShape(t1, "Ref", loc)
           }
 
         case AtomicOp.Lazy =>
@@ -304,14 +281,14 @@ object Verifier {
               val fun = MonoType.Arrow(List(MonoType.Unit), elmt)
               checkEq(t1, fun, loc)
               tpe
-            case _ => throw MismatchedShape(tpe, "Lazy", loc)
+            case _ => failMismatchedShape(tpe, "Lazy", loc)
           }
 
         case AtomicOp.Force =>
           val List(t1) = ts
           t1 match {
             case MonoType.Lazy(elm) => checkEq(elm, tpe, loc)
-            case _ => throw MismatchedShape(t1, "Lazy", loc)
+            case _ => failMismatchedShape(t1, "Lazy", loc)
           }
 
         case AtomicOp.Tuple =>
@@ -322,8 +299,18 @@ object Verifier {
           val List(t1) = ts
           t1 match {
             case MonoType.Tuple(elms) => checkEq(elms(idx), tpe, loc)
-            case _ => throw MismatchedShape(t1, "Tuple", loc)
+            case _ => failMismatchedShape(t1, "Tuple", loc)
           }
+
+        case AtomicOp.Closure(sym) =>
+          val defn = root.defs(sym)
+          val signature = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
+
+          val decl = MonoType.Arrow(defn.cparams.map(_.tpe), signature)
+          val actual = MonoType.Arrow(ts, tpe)
+
+          checkEq(decl, actual, loc)
+          tpe
 
         case _ => tpe // TODO: VERIFIER: Add rest
       }
@@ -417,8 +404,7 @@ object Verifier {
   private def check(expected: MonoType)(actual: MonoType, loc: SourceLocation): MonoType = {
     if (expected == actual)
       expected
-    else
-      throw UnexpectedType(expected, actual, loc)
+    else failUnexpectedType(expected, actual, loc)
   }
 
   /**
@@ -427,23 +413,30 @@ object Verifier {
   private def checkEq(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): MonoType = {
     if (tpe1 == tpe2)
       tpe1
-    else
-      throw MismatchedTypes(tpe1, tpe2, loc)
+    else failMismatchedTypes(tpe1, tpe2, loc)
   }
 
   /**
-    * An exception raised because `tpe` did not match an expected shape
+    * Throw `InternalCompilerException` because the `found` does not match the shape specified by `expected`
     */
-  private case class MismatchedShape(tpe: MonoType, expected: String, loc: SourceLocation) extends RuntimeException
+  private def failMismatchedShape(found: MonoType, expected: String, loc: SourceLocation): Nothing =
+    throw InternalCompilerException(
+      s"Mismatched shape near ${loc.format}: expected = \'$expected\', found = $found", loc
+    )
 
   /**
-    * An exception raised because the `expected` type does not match the `found` type.
+    * Throw `InternalCompilerException` because the `expected` type does not match the `found` type
     */
-  private case class UnexpectedType(expected: MonoType, found: MonoType, loc: SourceLocation) extends RuntimeException
+  private def failUnexpectedType(found: MonoType, expected: MonoType, loc: SourceLocation): Nothing =
+    throw InternalCompilerException(
+      s"Unexpected type near ${loc.format}: expected = $expected, found = $found", loc
+    )
 
   /**
-    * An exception raised because `tpe1` is not equal to `tpe2`.
+    * Throw `InternalCompilerException` because `tpe1` is not equal to `tpe2`
     */
-  private case class MismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation) extends RuntimeException
-
+  private def failMismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): Nothing =
+    throw InternalCompilerException(
+      s"Mismatched types near ${loc.format}: tpe1 = $tpe1, tpe2 = $tpe2", loc
+    )
 }
