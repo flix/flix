@@ -22,7 +22,10 @@ import ca.uwaterloo.flix.util.{Formatter, Result}
 import ca.uwaterloo.flix.util.Result.{Err, Ok, traverse}
 
 import java.io.{IOException, PrintStream}
-import java.nio.file.{Files, Path, StandardCopyOption}
+import java.nio.file.{Files, Path, Paths, StandardCopyOption}
+import java.util
+import java.util.zip.ZipFile
+import scala.jdk.CollectionConverters.EnumerationHasAsScala
 import scala.util.Using
 
 object FlixPackageManager {
@@ -78,6 +81,35 @@ object FlixPackageManager {
     })
 
     Ok(flixPaths)
+  }
+
+
+  /**
+   *  If the current package is safe, checks if all the dependencies are also marked as safe.
+   */
+  def checkPackageSafety(manifest: Manifest, depManifest: List[Manifest]): Result[Boolean, PackageError] = {
+    depManifest.foreach { m =>
+      if (manifest.safe > m.safe) return Err(PackageError.ManifestSafetyError(manifest.name, m.name))
+    }
+    Ok(true)
+  }
+
+  /**
+   * Check for any discrepancies between the manifest file inside the package and the one outside.
+   */
+  def checkManifestEquality(packagePaths: List[Path]): Result[Unit, PackageError] = {
+    for (p <- packagePaths) {
+      val toml1 = Files.readAllBytes(Paths.get(p.toString.stripSuffix("fpkg") + "toml"))
+      var toml2: Array[Byte] = null
+      Using(new ZipFile(p.toFile)) { zip =>
+        zip.entries().asScala.find(_.getName == "flix.toml") match {
+          case Some(tomlEntry) => toml2 = zip.getInputStream(tomlEntry).readAllBytes()
+          case None => return Err(PackageError.FlixTomlNotFound(p.toString))
+        }
+        if (!util.Arrays.equals(toml1, toml2)) return Err(PackageError.ManifestMismatchError(p.toString))
+      }
+    }
+    Ok(())
   }
 
   /**
@@ -156,6 +188,13 @@ object FlixPackageManager {
       transManifests <- traverse(tomlPaths)(p => parseManifest(p))
 
     ) yield {
+
+      //check safety
+      checkDepSafetyChange(flixDeps, transManifests) match {
+        case Err(e) => return Err(e)
+        case _ =>
+      }
+
       //remove duplicates
       val newManifests = transManifests.filter(m => !res.contains(m))
       var newRes = res ++ newManifests
@@ -182,4 +221,18 @@ object FlixPackageManager {
     }
   }
 
+  private def checkDepSafetyChange(depList: List[FlixDependency], depManifests: List[Manifest]): Result[Unit, PackageError] = {
+    for (m <- depManifests) {
+      m.repository match {
+        case Some(r) if r.isInstanceOf[GitHub.Project] =>
+          depList.foreach {
+            case Dependency.FlixDependency(Repository.GitHub, r.owner, r.repo, m.version, _, safe) if safe != m.safe => return Err(PackageError.ManifestSafetyMismatch(r.repo, safe, m.safe))
+            case _ =>
+          }
+        case _ => // So far we only check Github Packages
+
+      }
+    }
+    Ok(())
+  }
 }

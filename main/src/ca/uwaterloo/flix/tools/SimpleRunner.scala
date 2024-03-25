@@ -79,7 +79,7 @@ object SimpleRunner {
     for (file <- cmdOpts.files) {
       val ext = file.getName.split('.').last
       ext match {
-        case "flix" => flix.addFlix(file.toPath)
+        case "flix" => flix.addFlix(file.toPath, None)
         case "fpkg" => flix.addPkg(file.toPath)
         case "jar" => flix.addJar(file.toPath)
         case _ =>

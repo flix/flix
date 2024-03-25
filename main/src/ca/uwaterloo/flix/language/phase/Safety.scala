@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Input
 import ca.uwaterloo.flix.language.ast.Ast.{CheckedCastType, Denotation, Fixity, Polarity}
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.Body
 import ca.uwaterloo.flix.language.ast.TypedAst._
@@ -37,6 +38,7 @@ object Safety {
     val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef).flatten
     val sigErrs = ParOps.parMap(root.sigs.values)(visitSig).flatten
     val entryPointErrs = ParOps.parMap(root.reachable)(visitEntryPoint(_)(root)).flatten
+
     val errors = classSigErrs ++ defErrs ++ instanceDefErrs ++ sigErrs ++ entryPointErrs ++ visitSendable(root)
 
     //
@@ -280,8 +282,8 @@ object Safety {
             visit(exp)
         }
 
-      case e@Expr.UncheckedCast(exp, _, _, _, _, _) =>
-        val errors = verifyUncheckedCast(e)
+      case e@Expr.UncheckedCast(exp, _, _, _, _, loc) =>
+        val errors = isMethodAllowed(loc) ++ verifyUncheckedCast(e)
         visit(exp) ++ errors
 
       case Expr.UncheckedMaskingCast(exp, _, _, _) =>
@@ -301,14 +303,14 @@ object Safety {
       case Expr.Do(_, exps, _, _, _) =>
         exps.flatMap(visit)
 
-      case Expr.InvokeConstructor(_, args, _, _, _) =>
-        args.flatMap(visit)
+      case Expr.InvokeConstructor(_, args, _, _, loc) =>
+        args.flatMap(visit) ++ isMethodAllowed(loc)
 
-      case Expr.InvokeMethod(_, exp, args, _, _, _) =>
-        visit(exp) ++ args.flatMap(visit)
+      case Expr.InvokeMethod(_, exp, args, _, _, loc) =>
+        visit(exp) ++ args.flatMap(visit) ++ isMethodAllowed(loc)
 
-      case Expr.InvokeStaticMethod(_, args, _, _, _) =>
-        args.flatMap(visit)
+      case Expr.InvokeStaticMethod(_, args, _, _, loc) =>
+        args.flatMap(visit) ++ isMethodAllowed(loc)
 
       case Expr.GetField(_, exp, _, _, _) =>
         visit(exp)
@@ -451,7 +453,7 @@ object Safety {
     * - No primitive type can be cast to a reference type and vice-versa.
     * - No Bool type can be cast to a non-Bool type  and vice-versa.
     */
-  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit flix: Flix): List[SafetyError.ImpossibleUncheckedCast] = {
+  private def verifyUncheckedCast(cast: Expr.UncheckedCast)(implicit flix: Flix): List[SafetyError] = {
     val tpe1 = Type.eraseAliases(cast.exp.tpe).baseType
     val tpe2 = cast.declaredType.map(Type.eraseAliases).map(_.baseType)
 
@@ -487,6 +489,7 @@ object Safety {
       case (t1, Some(t2)) if primitives.contains(t2) && !primitives.contains(t1) =>
         ImpossibleUncheckedCast(cast.exp.tpe, cast.declaredType.get, cast.loc) :: Nil
 
+      // Disallow using Unchecked Cast if the package is marked safe
       case _ => Nil
     }
   }
@@ -700,6 +703,23 @@ object Safety {
     */
   private def visitPats(terms: List[Pattern], loc: SourceLocation): List[SafetyError] = {
     terms.flatMap(visitPat(_, loc))
+  }
+
+  /**
+   *  Checks whether an unchecked cast is allowed to use or not
+   *  If not it will return an 'IncorrectSafetySignature'
+   */
+  private def isMethodAllowed(loc: SourceLocation)(implicit flix: Flix): List[SafetyError] = loc.source.input match {
+    case _: Input.Shell => Nil
+    case _: Input.StdLib => Nil
+    case _: Input.Pkg => Nil
+    case _: Input.Lsp => Nil
+    case _: Input.SocketServlet => Nil
+    case _: Input.Empty => Nil
+    case Input.FlixProjectFile(_, m) => if (m.safe) IncorrectSafetySignature(loc) :: Nil else Nil
+    case Input.FlixFolderFile(_, true) => IncorrectSafetySignature(loc) :: Nil
+    case Input.FlixFolderFile(_, false) => Nil
+    case Input.PkgFile(_,_, m) => if (m.safe) IncorrectSafetySignature(loc) :: Nil else Nil
   }
 
   /**

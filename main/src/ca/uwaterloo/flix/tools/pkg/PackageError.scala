@@ -19,6 +19,7 @@ import ca.uwaterloo.flix.tools.pkg.github.GitHub.{Asset, Project}
 import ca.uwaterloo.flix.util.Formatter
 
 import java.net.URL
+import scala.reflect.io.Path
 
 sealed trait PackageError {
   /**
@@ -116,8 +117,38 @@ object PackageError {
          |""".stripMargin
   }
 
+  case class FlixTomlNotFound(project: String) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""
+         |'${f.bold(project)}' does not contain a flix.toml file.
+         |""".stripMargin
+  }
+
   case class ManifestParseError(e: ManifestError) extends PackageError {
     override def message(f: Formatter): String = e.message(f)
+  }
+
+  case class ManifestSafetyError(project: String, dep: String) extends PackageError {
+
+    override def message(f: Formatter): String =
+      s"""
+         |'${f.bold(project)}' is marked as safe but contains unsafe dependency: '${f.bold(dep)}'.
+         |""".stripMargin
+  }
+
+  case class ManifestMismatchError(packageName: String) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""
+         |There is a mismatch between the '${f.bold(packageName)}' package's manifests.
+         |""".stripMargin
+  }
+
+  case class ManifestSafetyMismatch(packageName: String, desiredSafety: Boolean, actualSafety: Boolean) extends PackageError {
+    override def message(f: Formatter): String =
+      s"""
+         |There is a safety mismatch between the '${f.bold(packageName)}' package's manifest.
+         |The manifest says that the package is '${f.bold( if (actualSafety) "safe" else "unsafe")}' but it is stated as a '${f.bold( if (desiredSafety) "safe" else "unsafe")}' dependency.
+         |""".stripMargin
   }
 
 }

@@ -15,6 +15,7 @@
  */
 
 package ca.uwaterloo.flix.language.ast
+import ca.uwaterloo.flix.tools.pkg.Manifest
 
 import java.nio.file.Path
 import java.util.Objects
@@ -36,24 +37,73 @@ object Ast {
       *
       * A source is stable if it cannot change after being loaded (e.g. the standard library, etc).
       */
-    case class Text(name: String, text: String, stable: Boolean) extends Input {
+
+    case class StdLib(name: String, text: String, stable: Boolean) extends Input {
       override def hashCode(): Int = name.hashCode
 
       override def equals(obj: Any): Boolean = obj match {
-        case that: Text => this.name == that.name
+        case that: StdLib => this.name == that.name
         case _ => false
       }
     }
 
     /**
-      * A source that is backed by a regular file.
-      */
-    case class TxtFile(path: Path) extends Input
+     * A source that is coming from the flix shell.
+     */
+    case class Shell(name: String, text: String, stable: Boolean) extends Input {
+      override def hashCode(): Int = name.hashCode
+
+      override def equals(obj: Any): Boolean = obj match {
+        case that: Shell => this.name == that.name
+        case _ => false
+      }
+    }
+
+    /**
+     *  A source that is coming from Language Server Protocol
+     */
+    case class Lsp(name: String, text: String, stable: Boolean) extends Input {
+      override def hashCode(): Int = name.hashCode
+
+      override def equals(obj: Any): Boolean = obj match {
+        case that: Lsp => this.name == that.name
+        case _ => false
+      }
+    }
+
+    /**
+     *  A source that is coming from Socket Servlet
+     */
+    case class SocketServlet(name: String, text: String, stable: Boolean) extends Input {
+      override def hashCode(): Int = name.hashCode
+
+      override def equals(obj: Any): Boolean = obj match {
+        case that: SocketServlet => this.name == that.name
+        case _ => false
+      }
+    }
+
+    /**
+     * The flix file is coming from folder mode.
+     */
+    case class FlixFolderFile(path: Path, safe: Boolean) extends Input
+
+    /**
+     *  The flix file is coming from project mode.
+     */
+    case class FlixProjectFile(path: Path, manifest: Manifest) extends Input
 
     /**
       * A source that is backed by flix package file.
       */
-    case class PkgFile(path: Path) extends Input
+    case class Pkg(path: Path) extends Input
+
+    /**
+     * A source that is backed by a flix file from a package.
+     */
+    case class PkgFile(flixPackage: Pkg, fileName: String, manifest: Manifest) extends Input
+
+    case class Empty() extends Input
 
   }
 
@@ -65,9 +115,15 @@ object Ast {
   case class Source(input: Input, data: Array[Char], stable: Boolean) extends Sourceable {
 
     def name: String = input match {
-      case Input.Text(name, _, _) => name
-      case Input.TxtFile(path) => path.toString
-      case Input.PkgFile(path) => path.toString
+      case Input.StdLib(name, _, _) => name
+      case Input.Shell(name, _, _) => name
+      case Input.SocketServlet(name, _, _) => name
+      case Input.FlixProjectFile(path, _) => path.toString
+      case Input.FlixFolderFile(path, _) => path.toString
+      case Input.Pkg(path) => path.toString
+      case Input.PkgFile(pkgPath, fileName, _) => pkgPath.toString + ":" + fileName
+      case Input.Lsp(name, _, _) => name
+      case Input.Empty() => ""
     }
 
     def src: Source = this

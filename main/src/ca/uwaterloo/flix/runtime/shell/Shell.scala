@@ -286,7 +286,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
         val name = "$" + fragments.length
 
         // Add the source code fragment to Flix.
-        flix.addSourceCode(name, s)
+        flix.addShellSourceCode(name, s)
 
         // And try to compile!
         compile(progress = false).toHardResult match {
@@ -311,7 +311,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
           s"""def ${main.name}(): Unit \\ IO =
              |unchecked_cast(println($s) as _ \\ IO)
              |""".stripMargin
-        flix.addSourceCode("<shell>", src)
+        flix.addShellSourceCode("<shell>", src)
         run(main)
         // Remove immediately so it doesn't confuse subsequent compilations (e.g. reloads or declarations)
         flix.remSourceCode("<shell>")

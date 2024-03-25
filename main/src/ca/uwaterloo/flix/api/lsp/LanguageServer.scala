@@ -204,7 +204,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     */
   private def addSourceCode(uri: String, src: String) = {
     current = false
-    flix.addSourceCode(uri, src)
+    flix.addLspSourceCode(uri, src)
     sources += (uri -> src)
   }
 

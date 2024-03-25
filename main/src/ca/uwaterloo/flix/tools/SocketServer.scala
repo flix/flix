@@ -169,7 +169,7 @@ class SocketServer(port: Int) extends WebSocketServer(new InetSocketAddress(port
   private def eval(input: String, opts: Options)(implicit ws: WebSocket): Result[(String, Long, Long), String] = {
     try {
       // Compile the program.
-      flix.addSourceCode("<input>", input)
+      flix.addSocketServletSourceCode("<input>", input)
       flix.setOptions(opts)
 
       flix.compile().toHardResult match {

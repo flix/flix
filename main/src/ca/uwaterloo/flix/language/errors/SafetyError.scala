@@ -522,6 +522,23 @@ object SafetyError {
   }
 
   /**
+   * An error raised to indicate that a safe package has unsafe functionalities.
+   * @param loc   The source location of the method.
+   */
+  case class IncorrectSafetySignature(loc: SourceLocation) extends SafetyError with Recoverable {
+    override def summary: String = s"The following file '${loc.source.name}' was marked as safe, despite being unsafe."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> The following file '${loc.source.name}' was marked as safe, despite being unsafe.
+         |
+         |${code(loc, s"makes the package unsafe")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Format a Java type suitable for method implementation.
     */
   private def formatJavaType(t: java.lang.Class[_]): String = {
