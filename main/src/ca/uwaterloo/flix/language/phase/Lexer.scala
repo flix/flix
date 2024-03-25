@@ -163,7 +163,7 @@ object Lexer {
    * This is a design choice to avoid returning an Option[Char], which would be doable but tedious to work with.
    */
   private def advance()(implicit s: State): Char = {
-    if (s.current.offset > s.src.data.length) {
+    if (s.current.offset >= s.src.data.length) {
       return s.src.data.last
     }
 
