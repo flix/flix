@@ -1,56 +1,56 @@
-mod Test.Dec.AssociatedTypes.Mul {
+mod Test.Dec.AssociatedTypes.Mult {
 
     ////////////////////////////////////////////////////////
     // Type Definitions                                   //
     ////////////////////////////////////////////////////////
 
-    trait Mul[a] {
+    trait Mult[a] {
         pub type Right: Type
         pub type Out: Type
-        pub def mul(x: a, y: Mul.Right[a]): Mul.Out[a]
+        pub def mul(x: a, y: Mult.Right[a]): Mult.Out[a]
     }
 
-    instance Mul[Int32] {
+    instance Mult[Int32] {
         pub type Right = Int32
         pub type Out = Int32
         pub def mul(x: Int32, y: Int32): Int32 = x * y
     }
 
-    instance Mul[String] {
+    instance Mult[String] {
         pub type Right = Int32
         pub type Out = String
         pub def mul(x: String, y: Int32): String = String.repeat(y, x)
     }
 
-    instance Mul[Vector[a]] with Mul[a] {
-        pub type Right = Mul.Right[a]
-        pub type Out = Vector[Mul.Out[a]]
-        pub def mul(x: Vector[a], y: Mul.Right[a]): Vector[Mul.Out[a]] = Vector.map(z -> Mul.mul(z, y), x)
+    instance Mult[Vector[a]] with Mult[a] {
+        pub type Right = Mult.Right[a]
+        pub type Out = Vector[Mult.Out[a]]
+        pub def mul(x: Vector[a], y: Mult.Right[a]): Vector[Mult.Out[a]] = Vector.map(z -> Mult.mul(z, y), x)
     }
 
 
     ////////////////////////////////////////////////////////
-    // Polymorphic functions using Mul                    //
+    // Polymorphic functions using Mult                    //
     ////////////////////////////////////////////////////////
 
-    pub def twiceLeft(f: Mul.Out[a] -> Mul.Right[a], x: a, y: Mul.Right[a]): Mul.Out[a] with Mul[a] =
-        Mul.mul(x, f(Mul.mul(x, y)))
+    pub def twiceLeft(f: Mult.Out[a] -> Mult.Right[a], x: a, y: Mult.Right[a]): Mult.Out[a] with Mult[a] =
+        Mult.mul(x, f(Mult.mul(x, y)))
 
-    pub def twiceRight(f: Mul.Out[a] -> a, x: a, y: Mul.Right[a]): Mul.Out[a] with Mul[a] =
-        Mul.mul(f(Mul.mul(x, y)), y)
+    pub def twiceRight(f: Mult.Out[a] -> a, x: a, y: Mult.Right[a]): Mult.Out[a] with Mult[a] =
+        Mult.mul(f(Mult.mul(x, y)), y)
 
 
     ////////////////////////////////////////////////////////
-    // Monomorphic functions using Mul                    //
+    // Monomorphic functions using Mult                    //
     ////////////////////////////////////////////////////////
 
     // Int32
 
     pub def twiceLeftInt3201(x: Int32, y: Int32): Int32 =
-        Mul.mul(x, Mul.mul(x, y))
+        Mult.mul(x, Mult.mul(x, y))
 
     pub def twiceRightInt3201(x: Int32, y: Int32): Int32 =
-        Mul.mul(Mul.mul(x, y), y)
+        Mult.mul(Mult.mul(x, y), y)
 
     pub def twiceLeftInt3202(x: Int32, y: Int32): Int32 =
         twiceLeft(identity, x, y)
@@ -62,10 +62,10 @@ mod Test.Dec.AssociatedTypes.Mul {
     // String
 
     pub def twiceLeftString01(x: String, y: Int32): String =
-        Mul.mul(x, String.length(Mul.mul(x, y)))
+        Mult.mul(x, String.length(Mult.mul(x, y)))
 
     pub def twiceRightString01(x: String, y: Int32): String =
-        Mul.mul(Mul.mul(x, y), y)
+        Mult.mul(Mult.mul(x, y), y)
 
     pub def twiceLeftString02(x: String, y: Int32): String =
         twiceLeft(String.length, x, y)
@@ -76,10 +76,10 @@ mod Test.Dec.AssociatedTypes.Mul {
     // Vector
 
     pub def twiceLeftVector01(x: Vector[Int32], y: Int32): Vector[Int32] =
-        Mul.mul(x, Vector.sum(Mul.mul(x, y)))
+        Mult.mul(x, Vector.sum(Mult.mul(x, y)))
 
     pub def twiceRightVector01(x: Vector[Int32], y: Int32): Vector[Int32] =
-        Mul.mul(Mul.mul(x, y), y)
+        Mult.mul(Mult.mul(x, y), y)
 
     pub def twiceLeftVector02(x: Vector[Int32], y: Int32): Vector[Int32] =
         twiceLeft(Vector.sum, x, y)
@@ -88,27 +88,37 @@ mod Test.Dec.AssociatedTypes.Mul {
         twiceRight(identity, x, y)
 
     pub def tensor(x: Vector[Int32], y: Vector[Int32]): Vector[Vector[Int32]] =
-        Vector.map(z -> Mul.mul(y, z), x)
+        Vector.map(z -> Mult.mul(y, z), x)
 
 
     ////////////////////////////////////////////////////////
     // Tests                                              //
     ////////////////////////////////////////////////////////
 
+
+    // Int32
+
     @Test
-    pub def testInt3201(): Bool = // FIXME: This test hangs
+    pub def testInt3201(): Bool =
         12 == twiceLeftInt3201(2, 3)
 
     @Test
-    pub def testInt3202(): Bool = // FIXME: This test hangs
+    pub def testInt3202(): Bool =
         12 == twiceLeftInt3202(2, 3)
 
     @Test
-    pub def testInt3203(): Bool = // FIXME: This test hangs
+    pub def testInt3203(): Bool =
         18 == twiceRightInt3201(2, 3)
 
     @Test
-    pub def testInt3204(): Bool = // FIXME: This test hangs
+    pub def testInt3204(): Bool =
         18 == twiceRightInt3202(2, 3)
+
+
+    // String
+
+    @Test
+    pub def teststring01(): Bool =
+        "abcabcabcabcabcabcabcabcabc" == twiceLeftString01("abc", 3)
 
 }
