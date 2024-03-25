@@ -107,6 +107,7 @@ mod Test.Dec.AssociatedTypes.Mul {
     pub def testTwiceRightInt3202(): Bool =
         12 == twiceRightInt3202(2, 3)
 
+    @Test
     pub def testTwiceLeftInt3202(): Bool =
         18 == twiceLeftInt3202(2, 3)
 
