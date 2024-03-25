@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import org.parboiled2._
 
@@ -85,9 +86,11 @@ object Parser {
         val possibleContexts = parseTraces(e.traces).filter(_._1 != SyntacticContext.Unknown)
         val mostLikelyContext = possibleContexts.keySet.reduceOption(SyntacticContext.join).getOrElse(SyntacticContext.Unknown)
         val loc = SourceLocation(None, source, SourceKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
-        Validation.toHardFailure(ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc))
+        // NOTE: Manually construct a hard failure here since ParseError is Recoverable, but in this parser it is not :-(
+        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc)))
       case scala.util.Failure(e) =>
-        Validation.toHardFailure(ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SyntacticContext.Unknown, SourceLocation.Unknown))
+        // NOTE: Manually construct a hard failure here since ParseError is Recoverable, but in this parser it is not :-(
+        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SyntacticContext.Unknown, SourceLocation.Unknown)))
     }
   }
 
