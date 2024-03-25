@@ -96,7 +96,7 @@ mod Test.Dec.AssociatedTypes.Mul {
     ////////////////////////////////////////////////////////
 
     @Test
-    pub def testTwiceRightInt3201(): Bool =
+    pub def testTwiceRightInt3201(): Bool = // FIXME: This test hangs
         12 == twiceRightInt3201(2, 3)
 
     @Test
