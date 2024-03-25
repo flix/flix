@@ -87,7 +87,7 @@ mod Test.Dec.AssociatedTypes.Mult {
     pub def twiceRightVector02(x: Vector[Int32], y: Int32): Vector[Int32] =
         twiceRight(identity, x, y)
 
-    pub def tensor(x: Vector[Int32], y: Vector[Int32]): Vector[Vector[Int32]] =
+    pub def outerProduct(x: Vector[Int32], y: Vector[Int32]): Vector[Vector[Int32]] =
         Vector.map(z -> Mult.mul(y, z), x)
 
 
@@ -132,5 +132,30 @@ mod Test.Dec.AssociatedTypes.Mult {
     @Test
     pub def testString04(): Bool =
         "abcabcabcabcabcabcabcabcabc" == twiceRightString02("abc", 3)
+
+
+    // Vector
+
+    @Test
+    pub def testVector01(): Bool =
+        let right = 2 * 3 + 3 * 3 + 4 * 3;
+        Vector#{2 * right, 3 * right, 4 * right} == twiceLeftVector01(Vector#{2, 3, 4}, 3)
+
+    @Test
+    pub def testVector02(): Bool =
+        let right = 2 * 3 + 3 * 3 + 4 * 3;
+        Vector#{2 * right, 3 * right, 4 * right} == twiceLeftVector02(Vector#{2, 3, 4}, 3)
+
+    @Test
+    pub def testVector03(): Bool =
+        Vector#{2 * 3 * 3, 3 * 3 * 3, 4 * 3 * 3} == twiceRightVector01(Vector#{2, 3, 4}, 3)
+
+    @Test
+    pub def testVector04(): Bool =
+        Vector#{2 * 3 * 3, 3 * 3 * 3, 4 * 3 * 3} == twiceRightVector02(Vector#{2, 3, 4}, 3)
+
+    @Test
+    pub def testVector05(): Bool =
+        Vector#{Vector#{2 * 5, 2 * 6}, Vector#{3 * 5, 3 * 6}, Vector#{4 * 5, 4 * 6}} == outerProduct(Vector#{2, 3, 4}, Vector#{5, 6})
 
 }
