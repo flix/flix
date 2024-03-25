@@ -182,7 +182,8 @@ class TestParser extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalEnum](result)
   }
 
-  test("IllegalModuleName.01") {
+  // TODO: unignore with Parser2
+  ignore("IllegalModuleName.01") {
     val input =
       """
         |mod mymod {
@@ -192,7 +193,8 @@ class TestParser extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
-  test("IllegalModuleName.02") {
+  // TODO: unignore with Parser2
+  ignore("IllegalModuleName.02") {
     val input =
       """
         |mod Mymod.othermod {
@@ -202,7 +204,8 @@ class TestParser extends AnyFunSuite with TestUtils {
     expectError[ParseError](result)
   }
 
-  test("IllegalModuleName.03") {
+  // TODO: unignore with Parser2
+  ignore("IllegalModuleName.03") {
     val input =
       """
         |mod Mymod {

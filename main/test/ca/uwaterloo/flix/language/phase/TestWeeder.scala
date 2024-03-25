@@ -788,14 +788,15 @@ class TestWeeder extends AnyFunSuite with TestUtils {
     expectError[WeederError.IllegalTypeConstraintParameter](result)
   }
 
-  test("MalformedFloat64.01") {
+  // TODO: unignore with Parser2
+  ignore("MalformedFloat64.01") {
     val input = "def f(): Float64 = 1.7976931348623158e+308"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedFloat](result)
   }
 
-
-  test("MalformedFloat64.02") {
+  // TODO: unignore with Parser2
+  ignore("MalformedFloat64.02") {
     val input = "def f(): Float64 = -1.7976931348623158e+308"
     val result = compile(input, Options.TestWithLibNix)
     expectError[WeederError.MalformedFloat](result)

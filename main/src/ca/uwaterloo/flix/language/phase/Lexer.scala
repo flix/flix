@@ -164,7 +164,7 @@ object Lexer {
    */
   private def advance()(implicit s: State): Char = {
     if (s.current.offset >= s.src.data.length) {
-      return s.src.data.last
+      return '\u0000'
     }
 
     val c = s.src.data(s.current.offset)
@@ -957,9 +957,9 @@ object Lexer {
     }
     // The very last char of the file was a digit so return the appropriate token.
     if (isDecimal) {
-      TokenKind.LiteralFloat64
+      error.getOrElse(TokenKind.LiteralFloat64)
     } else {
-      TokenKind.LiteralInt32
+      error.getOrElse(TokenKind.LiteralInt32)
     }
   }
 
@@ -991,7 +991,7 @@ object Lexer {
             advance()
           }
           error = Some(TokenKind.Err(LexerError.DoubleUnderscoreInNumber(sourceLocationAtCurrent())))
-          // underscore in tail position
+        // underscore in tail position
         case '_' =>
           advance()
           return TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
