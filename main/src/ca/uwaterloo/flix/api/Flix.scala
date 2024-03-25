@@ -546,8 +546,8 @@ class Flix {
     val result = for {
       afterReader <- Reader.run(getInputs)
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
-//      afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
-//      afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
+      afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
+      afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
 
       // Plan for migrating to new parser + weeder:
       // Stage 1 [ACTIVE]
@@ -562,7 +562,7 @@ class Flix {
       afterParser2 <- Parser2.run(afterLexer, cachedParserCst, changeSet)
       afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2, cachedWeederAst, changeSet)
 
-      afterDesugar = Desugar.run(afterWeeder2, cachedDesugarAst, changeSet)
+      afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
@@ -580,9 +580,9 @@ class Flix {
       // Update caches for incremental compilation.
       if (options.incremental) {
         this.cachedLexerTokens = afterLexer
-//        this.cachedParserAst = afterParser
+        this.cachedParserAst = afterParser
         this.cachedParserCst = afterParser2
-//        this.cachedWeederAst = afterWeeder
+        this.cachedWeederAst = afterWeeder
         this.cachedWeederAst2 = afterWeeder2
         this.cachedDesugarAst = afterDesugar
         this.cachedKinderAst = afterKinder
