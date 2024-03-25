@@ -195,4 +195,59 @@ mod Test.Dec.AssociatedTypes.Collection {
         let l = toListThenAddTwiceOption02(1, 2, None);
         List#{2, 1} == l
     }
+
+    @Test
+    def testList01(): Bool = {
+        let c: List[Int32] = Collection.empty();
+        Nil == c
+    }
+
+    @Test
+    def testList02(): Bool = {
+        let c = Collection.add(1, Collection.empty());
+        List#{1} == c
+    }
+
+    @Test
+    def testList03(): Bool = {
+        let c = Collection.add(2, Collection.add(1, Collection.empty()));
+        List#{2, 1} == c
+    }
+
+    @Test
+    def testList04(): Bool = {
+        let l = addTwiceThenToListList01(1, 2, Nil);
+        List#{2, 1} == l
+    }
+
+    @Test
+    def testList05(): Bool = {
+        let l = toListThenAddTwiceList01(2, 1, Nil);
+        List#{1, 2} == l
+    }
+
+    @Test
+    def testList06(): Bool = {
+        let l = addTwiceThenToListList02(1, 2, Nil);
+        List#{2, 1} == l
+    }
+
+    @Test
+    def testList07(): Bool = {
+        let l = addTwiceThenToListList02(1, 2, Nil);
+        List#{2, 1} == l
+    }
+
+    @Test
+    def testList08(): Bool = {
+        let l = toListThenAddTwiceList02(0, 1, Nil);
+        List#{1, 0} == l
+    }
+
+    @Test
+    def testList09(): Bool = {
+        let l = toListThenAddTwiceList02(3, 4, Nil);
+        List#{4, 3} == l
+    }
+
 }
