@@ -20,7 +20,8 @@ mod Subtyping {
             Subtype(sub, super) :- Interface(sub), Interface(super), InterfaceExtends(sub, super).
             Subtype(sub, super) :- Subtype(sub, a), Subtype(a, super).
         };
-        solve toPredicates(program), rules project Subtype
+        let relation = rules <+> toPredicates(program);
+        #(Subtype) -> relation
 
     def toPredicates(program: t[JavaType]): #{ Class(String), Interface(String), ClassExtends(String, String),  InterfaceExtends(String, String), Implementation(String, String), Method(String, String) | r } with Foldable[t] =
         // TODO: Use mutable state so we only have to traverse `program` once.
