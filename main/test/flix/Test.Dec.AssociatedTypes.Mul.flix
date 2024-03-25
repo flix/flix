@@ -100,15 +100,15 @@ mod Test.Dec.AssociatedTypes.Mul {
         12 == twiceLeftInt3201(2, 3)
 
     @Test
-    pub def testInt3202(): Bool =
+    pub def testInt3202(): Bool = // FIXME: This test hangs
         12 == twiceLeftInt3202(2, 3)
 
     @Test
-    pub def testInt3203(): Bool =
+    pub def testInt3203(): Bool = // FIXME: This test hangs
         18 == twiceRightInt3201(2, 3)
 
     @Test
-    pub def testInt3204(): Bool =
+    pub def testInt3204(): Bool = // FIXME: This test hangs
         18 == twiceRightInt3202(2, 3)
 
 }
