@@ -1,373 +1,15 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.ParseError
+import ca.uwaterloo.flix.language.errors.{LexerError, ParseError, WeederError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
+/**
+ * Note that CompilerSuite and LibrarySuite covers the positive testing of the parser well.
+ * We would like more negative tests in here though.
+ */
 class TestParser extends AnyFunSuite with TestUtils {
-
-  test("ParseError.Int.01") {
-    val input =
-      s"""
-         |def f(): Int = 1_
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int.02") {
-    val input =
-      s"""
-         |def f(): Int = 1_000_
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int.03") {
-    val input =
-      s"""
-         |def f(): Int = 0x_1
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int.04") {
-    val input =
-      s"""
-         |def f(): Int = 0x1_
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int8.01") {
-    val input =
-      s"""
-         |def f(): Int8 = 1_i8
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int8.02") {
-    val input =
-      s"""
-         |def f(): Int8 = 1_000_i8
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int8.03") {
-    val input =
-      s"""
-         |def f(): Int8 = 0x_1i8
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int8.04") {
-    val input =
-      s"""
-         |def f(): Int8 = 0x1_i8
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int16.01") {
-    val input =
-      s"""
-         |def f(): Int16 = 1_i16
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int16.02") {
-    val input =
-      s"""
-         |def f(): Int16 = 1_000_i16
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int16.03") {
-    val input =
-      s"""
-         |def f(): Int16 = 0x_1i16
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int16.04") {
-    val input =
-      s"""
-         |def f(): Int16 = 0x1_i16
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int32.01") {
-    val input =
-      s"""
-         |def f(): Int32 = 1_i32
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int32.02") {
-    val input =
-      s"""
-         |def f(): Int32 = 1_000_i32
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int32.03") {
-    val input =
-      s"""
-         |def f(): Int32 = 0x_1i32
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int32.04") {
-    val input =
-      s"""
-         |def f(): Int32 = 0x1_i32
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int64.01") {
-    val input =
-      s"""
-         |def f(): Int64 = 1_i64
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int64.02") {
-    val input =
-      s"""
-         |def f(): Int64 = 1_000_i64
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int64.03") {
-    val input =
-      s"""
-         |def f(): Int64 = 0x_1i64
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Int64.04") {
-    val input =
-      s"""
-         |def f(): Int64 = 0x1_i64
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.BigInt.01") {
-    val input =
-      s"""
-         |def f(): BigInt = 1_ii
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.BigInt.02") {
-    val input =
-      s"""
-         |def f(): BigInt = 1_000_ii
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.BigInt.03") {
-    val input =
-      s"""
-         |def f(): BigInt = 0x_1ii
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.BigInt.04") {
-    val input =
-      s"""
-         |def f(): BigInt = 0x1_ii
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Float.01") {
-    val input =
-      s"""
-         |def f(): Float = 1_.0
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Float.02") {
-    val input =
-      s"""
-         |def f(): Float = 1_000_.0
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Float.03") {
-    val input =
-      s"""
-         |def f(): Float = 1.0_
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Float32.01") {
-    val input =
-      s"""
-         |def f(): Float32 = 1_.0f32
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Float32.02") {
-    val input =
-      s"""
-         |def f(): Float32 = 1_000_.0f32
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Float32.03") {
-    val input =
-      s"""
-         |def f(): Float32 = 1.0_f32
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Float64.01") {
-    val input =
-      s"""
-         |def f(): Float64 = 1_.0f64
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Float64.02") {
-    val input =
-      s"""
-         |def f(): Float64 = 1_000_.0f64
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Float64.03") {
-    val input =
-      s"""
-         |def f(): Float64 = 1.0_f64
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.BigDecimal.01") {
-    val input =
-      s"""
-         |def f(): BigDecimal = 1_.0ff
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.BigDecimal.02") {
-    val input =
-      s"""
-         |def f(): BigDecimal = 1_000_.0ff
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.BigDecimal.03") {
-    val input =
-      s"""
-         |def f(): Float64 = 1.0_ff
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.Regression.01") {
-    val input =
-      s"""
-         |def foo(): String = "abc"
-         |def bar(): String = foo()
-         |d
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.EOI.01") {
-    val input = """def foo(): String = """"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.EOI.02") {
-    val input =
-      """def foo(): Char = '"""
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.EOI.03") {
-    val input =
-      """def foo (): String = "\"""
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.EOI.04") {
-    val input = """def foo (): Char = "\"""
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
   test("ParseError.Interpolation.01") {
     val input = s"""pub def foo(): String = "$${""""
     val result = compile(input, Options.TestWithLibNix)
@@ -381,9 +23,9 @@ class TestParser extends AnyFunSuite with TestUtils {
   }
 
   test("ParseError.Interpolation.03") {
-    val input = s"""pub def foo(): String = "$${1 + {2}""""
+    val input = s"""pub def foo(): String = "$${1 {}""""
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+    expectError[LexerError](result)
   }
 
   test("ParseError.EnumCase.01") {
@@ -439,6 +81,137 @@ class TestParser extends AnyFunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    1000ii instanceof BigInt
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("IllegalEffectTypeParams.01") {
+    val input =
+      """
+        |eff MyEffect[a]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectTypeParams](result)
+  }
+
+  test("IllegalEffectTypeParams.02") {
+    val input =
+      """
+        |eff MyEffect {
+        |    def op[a](x: a): Unit
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectTypeParams](result)
+  }
+
+  test("IllegalEffectTypeParams.03") {
+    val input =
+      """
+        |eff MyEffect[a] {
+        |    def op[b](x: a, y: b): Unit
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectTypeParams](result)
+  }
+
+  test("IllegalEffectfulOperation.01") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit \ IO
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[WeederError.IllegalEffectfulOperation](result)
+  }
+
+  test("IllegalEffectfulOperation.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit \ E
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectfulOperation](result)
+  }
+
+  test("IllegalEffectfulOperation.03") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit \ ef
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectfulOperation](result)
+  }
+
+  test("IllegalEffectfulOperation.04") {
+    val input =
+      """
+        |eff A {
+        |    pub def op(): Unit
+        |}
+        |eff E {
+        |    def op(): Unit \ A
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectfulOperation](result)
+  }
+
+  test("IllegalEnum.01") {
+    val input =
+      """
+        |enum E(Int32) { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEnum](result)
+  }
+
+  test("IllegalEnum.02") {
+    val input =
+      """
+        |enum E(a) { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEnum](result)
+  }
+
+  // TODO: unignore with Parser2
+  ignore("IllegalModuleName.01") {
+    val input =
+      """
+        |mod mymod {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  // TODO: unignore with Parser2
+  ignore("IllegalModuleName.02") {
+    val input =
+      """
+        |mod Mymod.othermod {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  // TODO: unignore with Parser2
+  ignore("IllegalModuleName.03") {
+    val input =
+      """
+        |mod Mymod {
+        |    mod othermod {
+        |    }
+        |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)
