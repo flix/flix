@@ -307,18 +307,22 @@ object ConstraintResolution {
       Result.Ok(ResolutionResult.elimination)
 
     // redU
-    case (assoc: Type.AssocType, t2) =>
+    // If either side is an associated type, we try to reduce both sides.
+    // This is to prevent erroneous no-progress reports when we actually could make progress on the non-matched side.
+    case (assoc: Type.AssocType, tpe) =>
       for {
-        (t1, progress) <- simplifyType(assoc, renv, eqEnv, loc)
+        (t1, p1) <- simplifyType(assoc, renv, eqEnv, loc)
+        (t2, p2) <- simplifyType(tpe, renv, eqEnv, loc)
       } yield {
-        ResolutionResult.constraints(List(TypingConstraint.Equality(t1, t2, prov)), progress)
+        ResolutionResult.constraints(List(TypingConstraint.Equality(t1, t2, prov)), p1 || p2)
       }
 
-    case (t1, assoc: Type.AssocType) =>
+    case (tpe, assoc: Type.AssocType) =>
       for {
-        (t2, progress) <- simplifyType(assoc, renv, eqEnv, loc)
+        (t1, p1) <- simplifyType(tpe, renv, eqEnv, loc)
+        (t2, p2) <- simplifyType(assoc, renv, eqEnv, loc)
       } yield {
-        ResolutionResult.constraints(List(TypingConstraint.Equality(t1, t2, prov)), progress)
+        ResolutionResult.constraints(List(TypingConstraint.Equality(t1, t2, prov)), p1 || p2)
       }
 
     case _ =>
