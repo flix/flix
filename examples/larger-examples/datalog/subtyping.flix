@@ -1,17 +1,16 @@
 mod Subtyping {
 
-    use JavaType.{Class, Interface, ClassExtends, InterfaceExtends, Implementation, Method};
-
-    pub enum JavaType with Order, Eq, ToString {
-        case Class(String),
-        case Interface(String),
-        case ClassExtends(String, String),
-        case InterfaceExtends(String, String),
-        case Implementation(String, String),
-        case Method(String, String)
+    type alias Program = {
+        classes = Vector[String],
+        finalClasses = Vector[String],
+        interfaces = Vector[String],
+        implementations = Vector[(String, String)],
+        classExtends = Vector[(String, String)],
+        interfaceExtends = Vector[(String, String)],
+        methods = Vector[(String, String)]
     }
 
-    def subtypes(program: t[JavaType]): #{ Subtype(String, String)| r } with Foldable[t] =
+    def subtypes(program: Program): #{ Subtype(String, String), AvailableMethod(String, String), NonSupertype(String), ExtendsFinalClass(String, String) | r } =
         let rules = #{
             Subtype(x, x)       :- Class(x).
             Subtype(x, x)       :- Interface(x).
@@ -19,118 +18,59 @@ mod Subtyping {
             Subtype(sub, super) :- Class(sub), Class(super), ClassExtends(sub, super).
             Subtype(sub, super) :- Interface(sub), Interface(super), InterfaceExtends(sub, super).
             Subtype(sub, super) :- Subtype(sub, a), Subtype(a, super).
+
+            AvailableMethod(class, method) :- Method(t, method), Subtype(class, t).
+            NonSupertype(class)            :- Class(class), Class(otherClass), not Subtype(otherClass, class), if class != otherClass.
+            ExtendsFinalClass(sub, super)  :- FinalClass(super), Subtype(sub, super), if sub != super.
         };
-        #(Subtype) -> rules <+> toPredicates(program)
+        #(Subtype, AvailableMethod, NonSupertype, ExtendsFinalClass) -> rules <+> toPredicates(program)
 
-    def toPredicates(program: t[JavaType]): #{ Class(String), Interface(String), ClassExtends(String, String),  InterfaceExtends(String, String), Implementation(String, String), Method(String, String) | r } with Foldable[t] =
-        // TODO: Use mutable state so we only have to traverse `program` once.
-        let cs    = inject program |> Foldable.filter(isClass)            |> Functor.map(extractOne) into Class;
-        let is    = inject program |> Foldable.filter(isInterface)        |> Functor.map(extractOne) into Interface;
-        let impls = inject program |> Foldable.filter(isImplementation)   |> Functor.map(extractTwo) into Implementation;
-        let ce    = inject program |> Foldable.filter(isClassExtends)     |> Functor.map(extractTwo) into ClassExtends;
-        let ies   = inject program |> Foldable.filter(isInterfaceExtends) |> Functor.map(extractTwo) into InterfaceExtends;
-        let ms    = inject program |> Foldable.filter(isMethod)           |> Functor.map(extractTwo) into Method;
-        cs <+> is <+> ce <+> impls <+> ies <+> ms
+    def toPredicates(program: Program): #{ Class(String), FinalClass(String), Interface(String), ClassExtends(String, String),  InterfaceExtends(String, String), Implementation(String, String), Method(String, String) | r } =
+        let cs    = inject program.classes          into Class;
+        let fcs   = inject program.finalClasses     into FinalClass;
+        let is    = inject program.interfaces       into Interface;
+        let impls = inject program.implementations  into Implementation;
+        let ce    = inject program.classExtends     into ClassExtends;
+        let ies   = inject program.interfaceExtends into InterfaceExtends;
+        let ms    = inject program.methods          into Method;
+        cs <+> fcs <+> is <+> ce <+> impls <+> ies <+> ms
 
-    pub def subtypesDistinct(types: t[JavaType]): Vector[(String, String)] with Foldable[t] =
+    pub def subtypesDistinct(types: Program): Vector[(String, String)] =
         let v = query subtypes(types) select (x, y) from Subtype(x, y);
         Vector.filter(match (x, y) -> x != y, v)
 
-    pub def methodsOf(tpe: String, types: t[JavaType]): Vector[String] with Foldable[t] =
-        let rules = #{
-            AvailableMethod(class, method) :- Method(t, method), Subtype(class, t).
-        };
-        query rules, subtypes(types), toPredicates(types) select m from AvailableMethod(tpe, m)
+    pub def methodsOf(tpe: String, types: Program): Vector[String] =
+        query subtypes(types) select m from AvailableMethod(tpe, m)
 
-    pub def nonSupertypes(types: t[JavaType]): Vector[String] with Foldable[t] =
-        let rules = #{
-            NonSupertype(class) :- Class(class), Class(otherClass), not Subtype(otherClass, class), if class != otherClass.
-        };
-        query rules, subtypes(types), toPredicates(types) select tpe from NonSupertype(tpe)
+    pub def nonSupertypes(types: Program): Vector[String] =
+        query subtypes(types) select tpe from NonSupertype(tpe)
 
-    pub def inheritanceCycles(types: t[JavaType]): Vector[(String, String)] with Foldable[t] =
-        let rules = #{
-            InheritanceCycle(sub, super) :- Subtype(sub, super), Subtype(super, sub), if sub != super.
-        };
-        query rules, subtypes(types), toPredicates(types) select (sub, super) from InheritanceCycle(sub, super)
+    pub def finalClassExtensions(types: Program): Vector[(String, String)] =
+        query subtypes(types) select (sub, sup) from ExtendsFinalClass(sub, sup)
 
-    pub def objectOnlyExtensions(types: t[JavaType]): Vector[String] with Foldable[t] =
-        let rules = #{
-            ExtendsOnlyObject(class) :- ClassExtends(class, "java.lang.Object"), ClassExtends(class, otherClass), if otherClass == "java.lang.Object".
-        };
-        query rules, subtypes(types), toPredicates(types) select class from ExtendsOnlyObject(class)
-
-    pub def isSubtype(subtype: String, possibleSupertype: String, types: t[JavaType]): Bool with Foldable[t] =
+    pub def isSubtype(subtype: String, possibleSupertype: String, types: Program): Bool =
         let v = query subtypes(types) select (x, y) from Subtype(x, y);
         not (Vector.filter(Eq.eq((subtype, possibleSupertype)), v) |> Vector.isEmpty)
 
-    pub def hasMethod(tpe: String, method: String, types: t[JavaType]): Bool with Foldable[t] =
+    pub def hasMethod(tpe: String, method: String, types: Program): Bool =
         not (methodsOf(tpe, types) |> Vector.filter(Eq.eq(method)) |> Vector.isEmpty)
 
-    pub def isNonSupertype(tpe: String, types: t[JavaType]): Bool with Foldable[t] =
+    pub def isNonSupertype(tpe: String, types: Program): Bool =
         not (nonSupertypes(types) |> Vector.filter(Eq.eq(tpe)) |> Vector.isEmpty)
 
-    pub def hasInheritanceCycle(types: t[JavaType]): Bool with Foldable[t] =
-        not (inheritanceCycles(types) |> Vector.isEmpty)
+    pub def extendsFinalClass(tpe: String, types: Program): Bool =
+        not (finalClassExtensions(types) |> Vector.filter(match (sub, _) -> sub == tpe) |> Vector.isEmpty)
 
-    pub def extendsOnlyObject(tpe: String, types: t[JavaType]): Bool with Foldable[t] =
-        not (objectOnlyExtensions(types) |> Vector.filter(Eq.eq(tpe)) |> Vector.isEmpty)
 
-    def isClass(tpe: JavaType): Bool = match tpe {
-        case Class(_) => true
-        case _        => false
-    }
-
-    def isInterface(tpe: JavaType): Bool = match tpe {
-        case Interface(_) => true
-        case _            => false
-    }
-
-    def isClassExtends(tpe: JavaType): Bool = match tpe {
-        case ClassExtends(_) => true
-        case _               => false
-    }
-
-    def isImplementation(tpe: JavaType): Bool = match tpe {
-        case Implementation(_) => true
-        case _                 => false
-    }
-
-    def isInterfaceExtends(tpe: JavaType): Bool = match tpe {
-        case InterfaceExtends(_) => true
-        case _                   => false
-    }
-
-    def isMethod(tpe: JavaType): Bool = match tpe {
-        case Method(_) => true
-        case _         => false
-    }
-
-    def extractOne(tpe: JavaType): String = match tpe {
-        case Class(s)               => s
-        case Interface(s)           => s
-        case ClassExtends(s, _)     => s
-        case InterfaceExtends(s, _) => s
-        case Implementation(s, _)   => s
-        case Method(s, _)           => s
-    }
-
-    def extractTwo(tpe: JavaType): (String, String) = match tpe {
-        case Class(s)                 => (s, "")
-        case Interface(s)             => (s, "")
-        case ClassExtends(s1, s2)     => (s1, s2)
-        case InterfaceExtends(s1, s2) => (s1, s2)
-        case Implementation(s1, s2)   => (s1, s2)
-        case Method(s1, s2)           => (s1, s2)
-    }
+    /////////////////////////////////////////////////
+    // Tests                                       //
+    /////////////////////////////////////////////////
 
     mod Test {
 
-        use Subtyping.JavaType.{Class, Interface, Implementation, ClassExtends, InterfaceExtends, Method};
-
         @Test
         def testSubtypes01(): Bool =
-            let result = Subtyping.subtypesDistinct(Nil);
+            let result = Subtyping.subtypesDistinct(emptyFacts());
             Assert.eq(Vector#{}, result)
 
         @Test
@@ -141,7 +81,7 @@ mod Subtyping {
 
         @Test
         def testSubtype01(): Bool =
-            let result = Subtyping.isSubtype("java.lang.String", "java.lang.Object", Nil);
+            let result = Subtyping.isSubtype("java.lang.String", "java.lang.Object", emptyFacts());
             Assert.eq(false, result)
 
         @Test
@@ -186,26 +126,51 @@ mod Subtyping {
             let expected = Vector#{"toString", "add"} |> Vector.sort;
             Assert.eq(expected, result)
 
-        def facts(): List[Subtyping.JavaType] = List#{
-            Class("java.lang.Object"),
-            Class("java.lang.String"),
-            Class("java.util.ArrayList"),
-            Class("au.content.Marker"),
-            Class("au.content.SpecialArrayList"),
-            Interface("java.io.Serializable"),
-            Interface("java.util.List"),
-            Interface("java.util.Collection"),
-            ClassExtends("java.lang.String", "java.lang.Object"),
-            ClassExtends("java.util.ArrayList", "java.lang.Object"),
-            ClassExtends("au.content.SpecialArrayList", "java.util.ArrayList"),
-            ClassExtends("au.content.Marker", "java.lang.Object"),
-            Implementation("java.lang.String", "java.io.Serializable"),
-            Implementation("java.util.ArrayList", "java.util.List"),
-            InterfaceExtends("java.util.List", "java.util.Collection"),
-            Method("java.lang.Object", "toString"),
-            Method("java.util.List", "add"),
-            Method("java.lang.String", "contains"),
-            Method("java.lang.String", "isEmpty")
+        def emptyFacts(): Subtyping.Program = {
+            classes = Vector#{},
+            finalClasses = Vector#{},
+            interfaces = Vector#{},
+            implementations = Vector#{},
+            classExtends = Vector#{},
+            interfaceExtends = Vector#{},
+            methods = Vector#{}
+        }
+
+        def facts(): Subtyping.Program = {
+            classes = Vector#{
+                "java.lang.Object",
+                "java.lang.String",
+                "java.util.ArrayList",
+                "au.content.Marker",
+                "au.content.SpecialArrayList"
+            },
+            finalClasses = Vector#{
+                "java.lang.String"
+            },
+            interfaces = Vector#{
+                "java.io.Serializable",
+                "java.util.List",
+                "java.util.Collection"
+            },
+            implementations = Vector#{
+                ("java.lang.String", "java.io.Serializable"),
+                ("java.util.ArrayList", "java.util.List")
+            },
+            classExtends = Vector#{
+                ("java.lang.String", "java.lang.Object"),
+                ("java.util.ArrayList", "java.lang.Object"),
+                ("au.content.SpecialArrayList", "java.util.ArrayList"),
+                ("au.content.Marker", "java.lang.Object")
+            },
+            interfaceExtends = Vector#{
+                ("java.util.List", "java.util.Collection")
+            },
+            methods = Vector#{
+                ("java.lang.Object", "toString"),
+                ("java.util.List", "add"),
+                ("java.lang.String", "contains"),
+                ("java.lang.String", "isEmpty")
+            }
         }
     }
 }
