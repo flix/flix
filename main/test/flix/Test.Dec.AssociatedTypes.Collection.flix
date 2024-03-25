@@ -135,6 +135,12 @@ mod Test.Dec.AssociatedTypes.Collection {
     pub def toListThenAddTwiceVector01(e1: Int32, e2: Int32, c: Vector[Int32]): List[Int32] =
         Collection.add(e2, Collection.add(e1, Collection.toList(c)))
 
+    pub def addTwiceThenToListVector02(e1: Int32, e2: Int32, c: Vector[Int32]): List[Int32] =
+        addTwiceThenToList(e1, e2, c)
+
+    pub def toListThenAddTwiceVector02(e1: Int32, e2: Int32, c: Vector[Int32]): List[Int32] =
+        toListThenAddTwice(e1, e2, c)
+
 
     // BitSet
 
@@ -144,8 +150,9 @@ mod Test.Dec.AssociatedTypes.Collection {
     pub def toListThenAddTwiceBitSet01(e1: Int32, e2: Int32, c: BitSet): List[Int32] =
         Collection.add(e2, Collection.add(e1, Collection.toList(c)))
 
+
     ///////////////////////////////////////////////////////////////////
-    // Tests                                                         //
+    // Tests for Option                                              //
     ///////////////////////////////////////////////////////////////////
 
     @Test
@@ -202,6 +209,11 @@ mod Test.Dec.AssociatedTypes.Collection {
         List#{2, 1} == l
     }
 
+
+    ///////////////////////////////////////////////////////////////////
+    // Tests for List                                                //
+    ///////////////////////////////////////////////////////////////////
+
     @Test
     def testList01(): Bool = {
         let c: List[Int32] = Collection.empty();
@@ -255,6 +267,11 @@ mod Test.Dec.AssociatedTypes.Collection {
         let l = toListThenAddTwiceList02(3, 4, Nil);
         List#{4, 3} == l
     }
+
+
+    ///////////////////////////////////////////////////////////////////
+    // Tests for Set                                                 //
+    ///////////////////////////////////////////////////////////////////
 
     @Test
     def testSet01(): Bool = {
@@ -322,4 +339,74 @@ mod Test.Dec.AssociatedTypes.Collection {
         List#{5} == l
     }
 
+
+    ///////////////////////////////////////////////////////////////////
+    // Tests for Vector                                              //
+    ///////////////////////////////////////////////////////////////////
+
+    @Test
+    def testVector01(): Bool = {
+        let c: Vector[Int32] = Collection.empty();
+        Vector#{} == c
+    }
+
+    @Test
+    def testVector02(): Bool = {
+        let c = Collection.add(1, Collection.empty());
+        Vector#{1} == c
+    }
+
+    @Test
+    def testVector03(): Bool = {
+        let c = Collection.add(2, Collection.add(1, Collection.empty()));
+        Vector#{2, 1} == c
+    }
+
+    @Test
+    def testVector04(): Bool = {
+        let l = addTwiceThenToList(1, 2, Vector#{});
+        List#{2, 1} == l
+    }
+
+    @Test
+    def testVector05(): Bool = {
+        let l = toListThenAddTwice(2, 1, Vector#{});
+        List#{1, 2} == l
+    }
+
+    @Test
+    def testVector06(): Bool = {
+        let l = addTwiceThenToListVector01(1, 2, Vector#{});
+        List#{2, 1} == l
+    }
+
+    @Test
+    def testVector07(): Bool = {
+        let l = toListThenAddTwiceVector02(100, 200, Vector#{});
+        List#{200, 100} == l
+    }
+
+    @Test
+    def testVector08(): Bool = {
+        let l = toListThenAddTwiceVector01(0, 1, Vector#{});
+        List#{1, 0} == l
+    }
+
+    @Test
+    def testVector09(): Bool = {
+        let l = toListThenAddTwiceVector02(3, 4, Vector#{});
+        List#{4, 3} == l
+    }
+
+    @Test
+    def testVector10(): Bool = {
+        let l = toListThenAddTwiceVector01(5, 5, Vector#{});
+        List#{5, 5} == l
+    }
+
+    @Test
+    def testVector11(): Bool = {
+        let l = addTwiceThenToListVector01(5, 5, Vector#{});
+        List#{5, 5} == l
+    }
 }
