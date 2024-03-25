@@ -159,8 +159,6 @@ object Parser2 {
     root()
     // Build the syntax tree using events in state.
     val tree = buildTree()
-
-    syntaxTreeToDebugString(tree)
     // Return with errors as soft failures to run subsequent phases for more validations.
     Validation.success(tree).withSoftFailures(s.errors)
   }
@@ -336,9 +334,10 @@ object Parser2 {
     }
 
     s.fuel -= 1
-    s.tokens.lift(s.position + lookahead) match {
-      case Some(t) => t.kind
-      case None => TokenKind.Eof
+    if (s.position + lookahead >= s.tokens.length) {
+      TokenKind.Eof
+    } else {
+      s.tokens(s.position + lookahead).kind
     }
   }
 
