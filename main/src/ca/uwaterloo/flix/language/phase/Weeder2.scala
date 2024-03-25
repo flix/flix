@@ -34,19 +34,14 @@ import scala.collection.immutable.{::, List, Nil}
 import scala.collection.mutable.ArrayBuffer
 
 /**
- * Weeder2 produces a [[WeededAst.Root]] by transforming [[Tree]]s into [[WeededAst.CompilationUnit]]s.
- * [[Tree]] provides few guarantees, which must be kept in mind when reading/modifying Weeder2:
- * 1. Each Tree node will have a [[TreeKind]], [[SourceLocation]] and a list of __zero or more__ children.
- * 2. Each child may be a token or another tree.
- * 3. There is __no__ guarantee on the presence of children, and therefore no guarantee on the amount either.
- * 4. There __is__ a guarantee on the order of children, so if TreeKind.Documentation and TreeKind.Annotation are expected, they will always appear in the same order.
- *
- * Function names in Weeder2 follow this pattern:
- * 1. visit* : These assume that they are called on a Tree of a specified kind and will assert that this is the case.
- * 2. pick* : These will pick __the first__ Child.Tree of a specified kind and run a visitor on it.
- * 3. tryPick* : Works like pick* but only runs the visitor if the child of kind is found. Returns an option containing the result.
- * 3. pickAll* : These will pick __all__ subtrees of a specified kind and run a visitor on it.
- */
+  * Weeder2 walks a [[Tree]], validates it and thereby transforms it into a [[WeededAst]].
+  *
+  * Function names in Weeder2 follow this pattern:
+  * 1. visit* : Visits a Tree of a known kind. These functions assert that the kind is indeed known.
+  * 2. pick* : Picks first sub-Tree of a kind and visits it.
+  * 3. tryPick* : Works like pick* but only runs the visitor if the child of kind is found. Returns an option containing the result.
+  * 3. pickAll* : These will pick all subtrees of a specified kind and run a visitor on it.
+  */
 object Weeder2 {
 
   import WeededAst._
@@ -57,8 +52,8 @@ object Weeder2 {
   }
 
   /**
-   * Runs the parser silently, throwing out results and errors. Used for migrating to the new parser, can be deleted afterwards.
-   */
+    * Runs the parser silently, throwing out results and errors. Used for migrating to the new parser, can be deleted afterwards.
+    */
   def runSilent(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], trees: Map[Ast.Source, Tree], oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
     try {
       val _ = run(readRoot, entryPoint, trees, oldRoot, changeSet)
@@ -821,9 +816,10 @@ object Weeder2 {
         case TreeKind.Expr.RecordSelect => visitRecordSelect(tree)
         case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
         case TreeKind.QName => visitExprQname(tree)
+        // TODO: We are double reporting the error here
         case _ =>
           val err = ParseError("Expected expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.toSoftFailure(Expr.Error(err), err)
+          Validation.HardFailure(Chain(err))
       }
     }
 
@@ -1597,16 +1593,16 @@ object Weeder2 {
     private def visitMatchRule(tree: Tree)(implicit s: State): Validation[MatchRule, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.MatchRuleFragment)
       val exprs = pickAll(TreeKind.Expr.Expr, tree)
-      mapN(
+      flatMapN(
         Patterns.pickPattern(tree),
         traverse(exprs)(visitExpression)
       ) {
         // case pattern => expr
-        case (pat, expr :: Nil) => MatchRule(pat, None, expr)
+        case (pat, expr :: Nil) => Validation.success(MatchRule(pat, None, expr))
         // case pattern if expr => expr
-        case (pat, expr1 :: expr2 :: Nil) => MatchRule(pat, Some(expr1), expr2)
+        case (pat, expr1 :: expr2 :: Nil) => Validation.success(MatchRule(pat, Some(expr1), expr2))
         //BAD: case pattern if => expr
-        case (pat, exprs) => throw InternalCompilerException(s"Malformed MatchRule: expected 1 or 2 expressions but found ${exprs.length}", tree.loc)
+        case (_, _) => Validation.HardFailure(Chain(ParseError("Malformed match rule.", SyntacticContext.Expr.OtherExpr, tree.loc)))
       }
     }
 
@@ -2123,9 +2119,9 @@ object Weeder2 {
               val syntheticToken = Token(lit.kind, lit.src, opToken.start, lit.end, lit.beginLine, lit.beginCol, lit.endLine, lit.endCol)
               val syntheticLiteral = Tree(TreeKind.Pattern.Literal, Array(Child.TokenChild(syntheticToken)), tree.loc.asSynthetic)
               visitLiteral(syntheticLiteral)
-            case _ => throw InternalCompilerException(s"no number literal found for unary '-'", tree.loc)
+            case _ => throw InternalCompilerException(s"No number literal found for unary '-'", tree.loc)
           }
-        case _ => throw InternalCompilerException(s"expected unary operator but found tree", tree.loc)
+        case _ => throw InternalCompilerException(s"Expected unary operator but found tree", tree.loc)
       }
       )
     }
@@ -2222,24 +2218,24 @@ object Weeder2 {
     }
 
     /**
-     * Attempts to parse the given tree to a float32.
-     */
+      * Attempts to parse the given tree to a float32.
+      */
     def toFloat32(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
       tryParseFloat(token,
         (text, loc) => Validation.success(Expr.Cst(Ast.Constant.Float32(text.stripSuffix("f32").toFloat), loc))
       )
 
     /**
-     * Attempts to parse the given tree to a float32.
-     */
+      * Attempts to parse the given tree to a float32.
+      */
     def toFloat64(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
       tryParseFloat(token,
         (text, loc) => Validation.success(Expr.Cst(Ast.Constant.Float64(text.stripSuffix("f64").toDouble), loc))
       )
 
     /**
-     * Attempts to parse the given tree to a big decimal.
-     */
+      * Attempts to parse the given tree to a big decimal.
+      */
     def toBigDecimal(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
       tryParseFloat(token, (text, loc) => {
         val bigDecimal = new java.math.BigDecimal(text.stripSuffix("ff"))
@@ -2247,16 +2243,16 @@ object Weeder2 {
       })
 
     /**
-     * Attempts to parse the given tree to a int8.
-     */
+      * Attempts to parse the given tree to a int8.
+      */
     def toInt8(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
       tryParseInt(token, "i8", (radix, digits, loc) =>
         Expr.Cst(Ast.Constant.Int8(JByte.parseByte(digits, radix)), loc)
       )
 
     /**
-     * Attempts to parse the given tree to a int16.
-     */
+      * Attempts to parse the given tree to a int16.
+      */
     def toInt16(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
       tryParseInt(token, "i16", (radix, digits, loc) =>
         Expr.Cst(Ast.Constant.Int16(JShort.parseShort(digits, radix)), loc)
@@ -2264,16 +2260,16 @@ object Weeder2 {
     }
 
     /**
-     * Attempts to parse the given tree to a int32.
-     */
+      * Attempts to parse the given tree to a int32.
+      */
     def toInt32(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
       tryParseInt(token, "i32", (radix, digits, loc) =>
         Expr.Cst(Ast.Constant.Int32(JInt.parseInt(digits, radix)), loc)
       )
 
     /**
-     * Attempts to parse the given tree to a int64.
-     */
+      * Attempts to parse the given tree to a int64.
+      */
     def toInt64(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
       tryParseInt(token, "i64", (radix, digits, loc) =>
         Expr.Cst(Ast.Constant.Int64(JLong.parseLong(digits, radix)), loc)
@@ -2281,16 +2277,16 @@ object Weeder2 {
     }
 
     /**
-     * Attempts to parse the given tree to a int64.
-     */
+      * Attempts to parse the given tree to a int64.
+      */
     def toBigInt(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
       tryParseInt(token, "ii", (radix, digits, loc) =>
         Expr.Cst(Ast.Constant.BigInt(new java.math.BigInteger(digits, radix)), loc)
       )
 
     /**
-     * Attempts to compile the given regular expression into a Pattern.
-     */
+      * Attempts to compile the given regular expression into a Pattern.
+      */
     def toRegex(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
       val text = token.text.stripPrefix("regex\"").stripSuffix("\"")
@@ -2517,6 +2513,8 @@ object Weeder2 {
           case ident if ident.isWild => Type.Var(ident, tree.loc)
           case ident => Type.Ambiguous(Name.mkQName(ident), inner.loc)
         }
+        // TODO: This double reports the same error. We should be able to handle this resiliently if we had Type.Error.
+        case TreeKind.ErrorTree(_) => Validation.HardFailure(Chain(ParseError("Expected type but found Error", SyntacticContext.Type.OtherType, tree.loc)))
         case kind => throw InternalCompilerException(s"Parser passed unknown type '$kind'", tree.loc)
       }
     }
@@ -2959,6 +2957,8 @@ object Weeder2 {
         case TreeKind.JvmOp.StaticGetField => visitField(inner, WeededAst.JvmOp.GetStaticField)
         case TreeKind.JvmOp.PutField => visitField(inner, WeededAst.JvmOp.PutField)
         case TreeKind.JvmOp.StaticPutField => visitField(inner, WeededAst.JvmOp.PutStaticField)
+        // TODO: This double reports the same error. We should be able to handle this resiliently if we had JvmOp.Error.
+        case TreeKind.ErrorTree(_) => Validation.HardFailure(Chain(ParseError("Expected JvmOp but found Error", SyntacticContext.Unknown, tree.loc)))
         case kind => throw InternalCompilerException(s"child of kind '$kind' under JvmOp.JvmOp", tree.loc)
       }
     }
@@ -3024,16 +3024,16 @@ object Weeder2 {
   }
 
   /**
-   * When kinds are elided they default to the kind `Type`.
-   */
+    * When kinds are elided they default to the kind `Type`.
+    */
   private def defaultKind(ident: Name.Ident): Kind = Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic)
 
   /**
-   * plucks the first inner tree in children.
-   * NB: This is intended to used to unfold the inner tree on special marker [[TreeKind]],
-   * such as [[TreeKind.Type.Type]] and [[TreeKind.Expr.Expr]].
-   * The parser should guarantee that these tree kinds have at least a single child.
-   */
+    * plucks the first inner tree in children.
+    * NB: This is intended to used to unfold the inner tree on special marker [[TreeKind]],
+    * such as [[TreeKind.Type.Type]] and [[TreeKind.Expr.Expr]].
+    * The parser should guarantee that these tree kinds have at least a single child.
+    */
   private def unfold(tree: Tree): Tree = {
     assert(tree.kind match {
       case TreeKind.Type.Type | TreeKind.Expr.Expr | TreeKind.JvmOp.JvmOp | TreeKind.Predicate.Body => true
@@ -3085,7 +3085,7 @@ object Weeder2 {
       case Some(t) => Validation.success(t)
       case None =>
         val error = ParseError(s"expected to find at least one '$kind'", SyntacticContext.Unknown, tree.loc)
-        Validation.toSoftFailure(tree, error)
+        Validation.HardFailure(Chain(error))
     }
   }
 
@@ -3121,24 +3121,24 @@ object Weeder2 {
   }
 
   /**
-   * Ternary enumeration of constraints on the presence of something.
-   */
+    * Ternary enumeration of constraints on the presence of something.
+    */
   private sealed trait Presence
 
   private object Presence {
     /**
-     * Indicates that the thing is required.
-     */
+      * Indicates that the thing is required.
+      */
     case object Required extends Presence
 
     /**
-     * Indicates that the thing is optional.
-     */
+      * Indicates that the thing is optional.
+      */
     case object Optional extends Presence
 
     /**
-     * Indicates that the thing is forbidden.
-     */
+      * Indicates that the thing is forbidden.
+      */
     case object Forbidden extends Presence
   }
 }

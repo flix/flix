@@ -1783,6 +1783,7 @@ object Parser2 {
             case TokenKind.ArrowThinR if parenNestingLevel == 0 => isLambda = true; continue = false
             case TokenKind.ParenL => parenNestingLevel += 1; lookAhead += 1
             case TokenKind.ParenR => parenNestingLevel -= 1; lookAhead += 1
+            case TokenKind.Eof => return closeWithError(mark, ParseError("Malformed match expression.", SyntacticContext.Expr.OtherExpr, currentSourceLocation()))
             case _ => lookAhead += 1
           }
         }
@@ -1816,6 +1817,7 @@ object Parser2 {
       if (eat(TokenKind.KeywordIf)) {
         expression()
       }
+      // TODO: It's common to type '=' instead of '=>' here. Should we make a specific error?
       if (eat(TokenKind.ArrowThickR)) {
         statement()
       }
@@ -1875,7 +1877,9 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordRegion)
       name(NAME_VARIABLE)
-      block()
+      if (at(TokenKind.CurlyL)) {
+        block()
+      }
       close(mark, TreeKind.Expr.Scope)
     }
 
@@ -2046,6 +2050,7 @@ object Parser2 {
               nth(lookAhead) match {
                 case TokenKind.ParenL => level += 1
                 case TokenKind.ParenR => level -= 1
+                case TokenKind.Eof => return advanceWithError(ParseError("Malformed tuple.", SyntacticContext.Unknown, currentSourceLocation()))
                 case _ =>
               }
             }
