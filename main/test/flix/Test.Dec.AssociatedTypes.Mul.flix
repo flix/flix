@@ -118,7 +118,19 @@ mod Test.Dec.AssociatedTypes.Mult {
     // String
 
     @Test
-    pub def teststring01(): Bool =
+    pub def testString01(): Bool =
         "abcabcabcabcabcabcabcabcabc" == twiceLeftString01("abc", 3)
+
+    @Test
+    pub def testString02(): Bool =
+        "abcabcabcabcabcabcabcabcabc" == twiceLeftString02("abc", 3)
+
+    @Test
+    pub def testString03(): Bool =
+        "abcabcabcabcabcabcabcabcabc" == twiceRightString01("abc", 3)
+
+    @Test
+    pub def testString04(): Bool =
+        "abcabcabcabcabcabcabcabcabc" == twiceRightString02("abc", 3)
 
 }
