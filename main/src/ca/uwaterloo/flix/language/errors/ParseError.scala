@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Magnus Madsen
+ * Copyright 2024 Magnus Madsen, Herluf Baggesen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,12 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 
 /**
-  * An error raised to indicate a parse error.
-  *
-  * @param msg the error message.
-  * @param ctx the syntactic context.
-  * @param loc the source location.
-  */
+ * An error raised to indicate a parse error.
+ *
+ * @param msg the error message.
+ * @param ctx the syntactic context.
+ * @param loc the source location.
+ */
 case class ParseError(msg: String, ctx: SyntacticContext, loc: SourceLocation) extends CompilationMessage with Recoverable {
   val kind = "Parse Error"
 

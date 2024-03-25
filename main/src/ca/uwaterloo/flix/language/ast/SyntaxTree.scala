@@ -16,7 +16,6 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.errors.ParseError
 
 /**
  * Represents the source code of a compilation unit.
@@ -71,7 +70,7 @@ object SyntaxTree {
    */
   object TreeKind {
     /**
-     * A special error kind wrapping a [[ParseError]].
+     * A special error kind wrapping a [[CompilationMessage]].
      */
     case class ErrorTree(error: CompilationMessage) extends TreeKind
 
