@@ -169,7 +169,7 @@ class TestLexer extends AnyFunSuite with TestUtils {
   }
 
   test("LexerError.UnterminatedBuiltIn.04") {
-    val input = "$$BUILT_IN"
+    val input = "$BUILT_IN"
     val result = compile(input, Options.TestWithLibNix)
     expectError[LexerError.UnterminatedBuiltIn](result)
   }

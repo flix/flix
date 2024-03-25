@@ -332,6 +332,7 @@ object LexerError {
     override def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
+         |>> Missing '}' in string interpolation.
          |
          |${code(loc, "Interpolation starts here.")}
          |
