@@ -28,6 +28,7 @@ mod Test.Dec.AssociatedTypes.Mul {
         pub def mul(x: Vector[a], y: Mul.Right[a]): Vector[Mul.Out[a]] = Vector.map(z -> Mul.mul(z, y), x)
     }
 
+
     ////////////////////////////////////////////////////////
     // Polymorphic functions using Mul                    //
     ////////////////////////////////////////////////////////
@@ -89,8 +90,24 @@ mod Test.Dec.AssociatedTypes.Mul {
     pub def tensor(x: Vector[Int32], y: Vector[Int32]): Vector[Vector[Int32]] =
         Vector.map(z -> Mul.mul(y, z), x)
 
+
     ////////////////////////////////////////////////////////
     // Tests                                              //
     ////////////////////////////////////////////////////////
+
+    @Test
+    pub def testTwiceRightInt3201(): Bool =
+        12 == twiceRightInt3201(2, 3)
+
+    @Test
+    pub def testTwiceLeftInt3201(): Bool =
+        18 == twiceLeftInt3201(2, 3)
+
+    @Test
+    pub def testTwiceRightInt3202(): Bool =
+        12 == twiceRightInt3202(2, 3)
+
+    pub def testTwiceLeftInt3202(): Bool =
+        18 == twiceLeftInt3202(2, 3)
 
 }
