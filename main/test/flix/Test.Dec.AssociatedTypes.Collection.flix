@@ -120,6 +120,12 @@ mod Test.Dec.AssociatedTypes.Collection {
     pub def toListThenAddTwiceSet01(e1: Int32, e2: Int32, c: Set[Int32]): List[Int32] =
         Collection.add(e2, Collection.add(e1, Collection.toList(c)))
 
+    pub def addTwiceThenToListSet02(e1: Int32, e2: Int32, c: Set[Int32]): List[Int32] =
+        addTwiceThenToList(e1, e2, c)
+
+    pub def toListThenAddTwiceSet02(e1: Int32, e2: Int32, c: Set[Int32]): List[Int32] =
+        toListThenAddTwice(e1, e2, c)
+
 
     // Vector
 
@@ -216,19 +222,19 @@ mod Test.Dec.AssociatedTypes.Collection {
 
     @Test
     def testList04(): Bool = {
-        let l = addTwiceThenToListList01(1, 2, Nil);
+        let l = addTwiceThenToList(1, 2, Nil);
         List#{2, 1} == l
     }
 
     @Test
     def testList05(): Bool = {
-        let l = toListThenAddTwiceList01(2, 1, Nil);
+        let l = toListThenAddTwice(2, 1, Nil);
         List#{1, 2} == l
     }
 
     @Test
     def testList06(): Bool = {
-        let l = addTwiceThenToListList02(1, 2, Nil);
+        let l = addTwiceThenToListList01(1, 2, Nil);
         List#{2, 1} == l
     }
 
@@ -240,7 +246,7 @@ mod Test.Dec.AssociatedTypes.Collection {
 
     @Test
     def testList08(): Bool = {
-        let l = toListThenAddTwiceList02(0, 1, Nil);
+        let l = toListThenAddTwiceList01(0, 1, Nil);
         List#{1, 0} == l
     }
 
@@ -248,6 +254,72 @@ mod Test.Dec.AssociatedTypes.Collection {
     def testList09(): Bool = {
         let l = toListThenAddTwiceList02(3, 4, Nil);
         List#{4, 3} == l
+    }
+
+    @Test
+    def testSet01(): Bool = {
+        let c: Set[Int32] = Collection.empty();
+        Set#{} == c
+    }
+
+    @Test
+    def testSet02(): Bool = {
+        let c = Collection.add(1, Collection.empty());
+        Set#{1} == c
+    }
+
+    @Test
+    def testSet03(): Bool = {
+        let c = Collection.add(2, Collection.add(1, Collection.empty()));
+        Set#{2, 1} == c
+    }
+
+    @Test
+    def testSet04(): Bool = {
+        let l = addTwiceThenToList(1, 2, Set#{});
+        List#{1, 2} == l
+    }
+
+    @Test
+    def testSet05(): Bool = {
+        let l = toListThenAddTwice(2, 1, Set#{});
+        List#{1, 2} == l
+    }
+
+    @Test
+    def testSet06(): Bool = {
+        let l = addTwiceThenToListSet01(1, 2, Set#{});
+        List#{1, 2} == l
+    }
+
+    @Test
+    def testSet07(): Bool = {
+        let l = toListThenAddTwiceSet02(100, 200, Set#{});
+        List#{200, 100} == l
+    }
+
+    @Test
+    def testSet08(): Bool = {
+        let l = toListThenAddTwiceSet01(0, 1, Set#{});
+        List#{1, 0} == l
+    }
+
+    @Test
+    def testSet09(): Bool = {
+        let l = toListThenAddTwiceSet02(3, 4, Set#{});
+        List#{4, 3} == l
+    }
+
+    @Test
+    def testSet10(): Bool = {
+        let l = toListThenAddTwiceSet01(5, 5, Set#{});
+        List#{5, 5} == l
+    }
+
+    @Test
+    def testSet11(): Bool = {
+        let l = addTwiceThenToListSet01(5, 5, Set#{});
+        List#{5} == l
     }
 
 }
