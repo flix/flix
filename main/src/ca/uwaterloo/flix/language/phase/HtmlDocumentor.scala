@@ -594,7 +594,7 @@ object HtmlDocumentor {
     docActions(None, clazz.decl.loc)
     sb.append("</div>")
     docDoc(clazz.decl.doc)
-    docSubSection("Associated Types", sortedAssocs, docAssoc, open = true)
+    docSubSection("Associated Types", sortedAssocs, docAssoc)
     docSubSection("Instances", sortedInstances, docInstance)
     sb.append("</div>")
 
@@ -897,7 +897,7 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents a collapsable subsection, (Signatures, Instances, etc.), containing a `group` of items.
+    * Documents a subsection, (Signatures, Instances, etc.), containing a `group` of items.
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
@@ -906,19 +906,18 @@ object HtmlDocumentor {
     * @param name   The name of the subsection, e.g. "Signatures".
     * @param group  The list of items in the section, in the order that they should appear.
     * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
-    * @param open   Whether or not the subsection is opened by default. Default to false.
     */
-  private def docSubSection[T](name: String, group: List[T], docElt: T => Unit, open: Boolean = false)(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (group.isEmpty) {
       return
     }
 
-    sb.append(s"<details class='subsection' ${if (open) "open" else ""}>")
-    sb.append(s"<summary><h3>${esc(name)}</h3></summary>")
+    sb.append(s"<section class='subsection'>")
+    sb.append(s"<h3>${esc(name)}</h3>")
     for (e <- group) {
       docElt(e)
     }
-    sb.append("</details>")
+    sb.append("</section>")
   }
 
   /**
