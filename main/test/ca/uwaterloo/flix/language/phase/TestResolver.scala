@@ -72,6 +72,80 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.CyclicClassHierarchy](result)
   }
 
+  test("CyclicTypeAliases.01") {
+    val input =
+      s"""
+         |type alias Foo = Foo
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+  }
+
+  test("CyclicTypeAliases.02") {
+    val input =
+      s"""
+         |type alias Foo = Bar
+         |type alias Bar = Foo
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+  }
+
+  test("CyclicTypeAliases.03") {
+    val input =
+      s"""
+         |type alias Foo = Bar
+         |type alias Bar = Baz
+         |type alias Baz = Foo
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+  }
+
+  test("CyclicTypeAliases.04") {
+    val input =
+      s"""
+         |enum Option[t] {
+         |    case None,
+         |    case Some(t)
+         |}
+         |
+         |type alias Foo = Option[Foo]
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+  }
+
+  test("CyclicTypeAliases.05") {
+    val input =
+      s"""
+         |enum Option[t] {
+         |    case None,
+         |    case Some(t)
+         |}
+         |
+         |type alias Foo = Option[Bar]
+         |type alias Bar = Option[Foo]
+         |
+         |def f(): Foo = 123
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicTypeAliases](result)
+  }
+
   test("InaccessibleDef.01") {
     val input =
       s"""
@@ -311,80 +385,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.SealedTrait](result)
-  }
-
-  test("CyclicTypeAliases.01") {
-    val input =
-      s"""
-         |type alias Foo = Foo
-         |
-         |def f(): Foo = 123
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicTypeAliases](result)
-  }
-
-  test("CyclicTypeAliases.02") {
-    val input =
-      s"""
-         |type alias Foo = Bar
-         |type alias Bar = Foo
-         |
-         |def f(): Foo = 123
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicTypeAliases](result)
-  }
-
-  test("CyclicTypeAliases.03") {
-    val input =
-      s"""
-         |type alias Foo = Bar
-         |type alias Bar = Baz
-         |type alias Baz = Foo
-         |
-         |def f(): Foo = 123
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicTypeAliases](result)
-  }
-
-  test("CyclicTypeAliases.04") {
-    val input =
-      s"""
-         |enum Option[t] {
-         |    case None,
-         |    case Some(t)
-         |}
-         |
-         |type alias Foo = Option[Foo]
-         |
-         |def f(): Foo = 123
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicTypeAliases](result)
-  }
-
-  test("CyclicTypeAliases.05") {
-    val input =
-      s"""
-         |enum Option[t] {
-         |    case None,
-         |    case Some(t)
-         |}
-         |
-         |type alias Foo = Option[Bar]
-         |type alias Bar = Option[Foo]
-         |
-         |def f(): Foo = 123
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
   test("UndefinedName.01") {
