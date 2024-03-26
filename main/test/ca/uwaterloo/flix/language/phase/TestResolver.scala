@@ -703,6 +703,19 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |eff E {
+        |    pub def op(): Unit
+        |}
+        |
+        |def foo(): Unit \ E = do E.op(123)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedOpArity](result)
+  }
+
+  test("MismatchedOpArity.InvalidOpParamCount.Do.02") {
+    val input =
+      """
+        |eff E {
         |    pub def op(x: String): Unit
         |}
         |
