@@ -332,6 +332,69 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalType](result)
   }
 
+  test("IllegalWildType.01") {
+    val input =
+      """
+        |type alias T = _
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.02") {
+    val input =
+      """
+        |type alias T = _ -> _
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.03") {
+    val input =
+      """
+        |enum E {
+        |    case C(_)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.04") {
+    val input =
+      """
+        |enum E[_]
+        |def foo(): String = unchecked_cast(123 as E[_])
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.05") {
+    val input =
+      """
+        |def foo(): String \ IO = {
+        |    import java.util.Arrays.deepToString(Array[_, _], Int32): String \ IO;
+        |    deepToString(Array#{} @ Static)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
+
+  test("IllegalWildType.06") {
+    val input =
+      """
+        |def foo(): String \ IO = {
+        |    import java.util.Arrays.deepToString(Array[Int32, Static], Int32): _ \ IO;
+        |    deepToString(Array#{} @ Static)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.IllegalWildType](result)
+  }
+
   test("InaccessibleDef.01") {
     val input =
       s"""
@@ -1323,69 +1386,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
-  }
-
-  test("IllegalWildType.01") {
-    val input =
-      """
-        |type alias T = _
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalWildType](result)
-  }
-
-  test("IllegalWildType.02") {
-    val input =
-      """
-        |type alias T = _ -> _
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalWildType](result)
-  }
-
-  test("IllegalWildType.03") {
-    val input =
-      """
-        |enum E {
-        |    case C(_)
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalWildType](result)
-  }
-
-  test("IllegalWildType.04") {
-    val input =
-      """
-        |enum E[_]
-        |def foo(): String = unchecked_cast(123 as E[_])
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalWildType](result)
-  }
-
-  test("IllegalWildType.05") {
-    val input =
-      """
-        |def foo(): String \ IO = {
-        |    import java.util.Arrays.deepToString(Array[_, _], Int32): String \ IO;
-        |    deepToString(Array#{} @ Static)
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.IllegalWildType](result)
-  }
-
-  test("IllegalWildType.06") {
-    val input =
-      """
-        |def foo(): String \ IO = {
-        |    import java.util.Arrays.deepToString(Array[Int32, Static], Int32): _ \ IO;
-        |    deepToString(Array#{} @ Static)
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.IllegalWildType](result)
   }
 
   test("UndefinedName.ForEachYield.01") {
