@@ -138,7 +138,6 @@ object ConstraintResolution {
     * }}}
     */
   def expandClassEnv(cenv: Map[Symbol.ClassSym, Ast.ClassContext], tconstrs: List[Ast.TypeConstraint]): Map[Symbol.ClassSym, Ast.ClassContext] = {
-
     tconstrs.flatMap(withSupers(_, cenv)).foldLeft(cenv) {
       case (acc, Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, _), arg, loc)) =>
         val inst = Ast.Instance(arg, Nil)
