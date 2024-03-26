@@ -807,6 +807,40 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.MissingAssocTypeDef](result)
   }
 
+  test("MissingAssocTypeDef.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |    type S: Type
+        |}
+        |
+        |instance C[Int32] {
+        |    type T = Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingAssocTypeDef](result)
+  }
+
+  test("MissingAssocTypeDef.03") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |    type S: Type
+        |    def f(): C.S[a]
+        |}
+        |
+        |instance C[Int32] {
+        |    type T = Bool
+        |    def f(): Bool = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingAssocTypeDef](result)
+  }
+
   test("SealedTrait.01") {
     val input =
       """
