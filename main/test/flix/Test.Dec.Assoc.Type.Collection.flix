@@ -1,4 +1,4 @@
-mod Test.Dec.AssociatedTypes.Collection {
+mod Test.Dec.Assoc.Type.Collection {
 
     ///////////////////////////////////////////////////////////////////
     // Type definitions                                              //
