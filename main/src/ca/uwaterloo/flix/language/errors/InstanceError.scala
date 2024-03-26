@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, MessageKind}
 import ca.uwaterloo.flix.language.ast.{Ast, Scheme, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.{FormatScheme, FormatType, FormatTypeConstraint}
 import ca.uwaterloo.flix.util.Formatter
@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.Formatter
   * All [[InstanceError]]s are [[Recoverable]].
   */
 sealed trait InstanceError extends CompilationMessage with Recoverable {
-  val kind: String = "Instance Error"
+  val kind = MessageKind("Instance Error")
 }
 
 object InstanceError {
@@ -45,8 +45,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |
+      s"""
          |>> Complex instance type '${red(FormatType.formatType(tpe))}' in '${magenta(sym.name)}'.
          |
          |${code(loc, s"complex instance type")}
@@ -68,8 +67,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |
+      s"""
          |>> Duplicate type variable '${red(FormatType.formatType(tvar))}' in '${magenta(sym.name)}'.
          |
          |${code(loc, s"The type variable '${FormatType.formatType(tvar)}' occurs more than once.")}
@@ -95,8 +93,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |
+      s"""
          |>> The signature '${red(defnSym.name)}' is not present in the '${magenta(classSym.name)}' trait.
          |
          |${code(loc, s"extraneous def")}
@@ -121,8 +118,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |
+      s"""
          |>> Illegal use of associated type '${red(assoc.name)}' in instance declaration for '${magenta(clazz.name)}'.
          |
          |${code(loc, s"illegal use of associated type")}
@@ -143,8 +139,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |
+      s"""
          |>> Illegal override of '${red(sym.name)}'.
          |
          |${code(loc, s"illegal override")}
@@ -167,8 +162,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |
+      s"""
          |>> Illegal use of type alias '${red(alias.name)}' in instance declaration for '${magenta(clazz.name)}'.
          |
          |${code(loc, s"illegal use of type alias")}
@@ -191,8 +185,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |
+      s"""
          |Mismatched signature '${red(sigSym.name)}' required by '${magenta(sigSym.clazz.name)}'.
          |
          |${code(loc, "mismatched signature.")}
@@ -219,8 +212,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |
+      s"""
          |>> Missing implementation of '${red(sig.name)}' required by '${magenta(sig.clazz.name)}'.
          |
          |${code(loc, s"missing implementation")}
@@ -246,8 +238,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |
+      s"""
          |>> Missing super class instance '${red(superClass.name)}' for type '${red(FormatType.formatType(tpe))}'.
          |
          |${code(loc, s"missing super class instance")}
@@ -276,8 +267,7 @@ object InstanceError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |
+      s"""
          |>> Missing type constraint: ${FormatTypeConstraint.formatTypeConstraint(tconstr)}
          |
          |The constraint ${FormatTypeConstraint.formatTypeConstraint(tconstr)} is required because it is a constraint on super class ${superClass.name}.
@@ -304,8 +294,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |
+      s"""
          |>> Orphan instance for type '${red(FormatType.formatType(tpe))}' in '${magenta(sym.name)}'.
          |
          |${code(loc, s"orphan instance")}
@@ -327,8 +316,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |
+      s"""
          |>> Overlapping instances for '${magenta(sym.name)}'.
          |
          |${code(loc1, "the first instance was declared here.")}
@@ -356,8 +344,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |
+      s"""
          |>> Unlawful signature '${red(sym.name)}'.
          |
          |>> Each signature of a lawful class must appear in at least one law.
@@ -380,8 +367,7 @@ object InstanceError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |
+      s"""
          |>> Unmarked override of '${red(sym.name)}'. This definition overrides a default implementation.
          |
          |${code(loc, s"unmarked override")}

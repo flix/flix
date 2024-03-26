@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, MessageKind}
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 
@@ -24,14 +24,13 @@ import ca.uwaterloo.flix.util.Formatter
   * An error raised to indicate a non-exhaustive pattern match expression.
   */
 case class NonExhaustiveMatchError(pat: String, loc: SourceLocation) extends CompilationMessage with Recoverable {
-  val kind = "Pattern Match"
+  val kind = MessageKind("Pattern Match")
 
   def summary: String = s"Non-exhaustive match. Missing case: '$pat'."
 
   def message(formatter: Formatter): String = {
     import formatter._
-    s"""${line(kind, source.name)}
-       |>> Non-Exhaustive Pattern. Missing case: ${red(pat)} in match expression.
+    s""">> Non-Exhaustive Pattern. Missing case: ${red(pat)} in match expression.
        |
        |${code(loc, "incomplete pattern.")}
        |""".stripMargin

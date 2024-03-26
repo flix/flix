@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, MessageKind}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Formatter
 
@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.Formatter
   * A common super-type for derivation errors.
   */
 sealed trait DerivationError extends CompilationMessage {
-  val kind: String = "Derivation Error"
+  val kind = MessageKind("Derivation Error")
 }
 
 object DerivationError {
@@ -41,8 +41,7 @@ object DerivationError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal derivation '${red(sym.name)}'.
+      s""">> Illegal derivation '${red(sym.name)}'.
          |
          |${code(loc, "Illegal derivation.")}
          |""".stripMargin
@@ -66,8 +65,7 @@ object DerivationError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Cannot derive '${magenta(classSym.name)}' for the empty enum '${red(sym.name)}'.
+      s""">> Cannot derive '${magenta(classSym.name)}' for the empty enum '${red(sym.name)}'.
          |
          |${code(loc, "illegal derivation")}
          |

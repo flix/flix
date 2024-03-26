@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, MessageKind}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
@@ -12,7 +12,7 @@ import ca.uwaterloo.flix.util.Formatter
   * All [[SafetyError]]s are [[Recoverable]].
   */
 sealed trait SafetyError extends CompilationMessage with Recoverable {
-  val kind: String = "Safety Error"
+  val kind = MessageKind("Safety Error")
 }
 
 object SafetyError {
@@ -29,8 +29,7 @@ object SafetyError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal checked cast.
+      s""">> Illegal checked cast.
          |
          |${code(loc, "illegal cast.")}
          |
@@ -54,8 +53,7 @@ object SafetyError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal checked cast: Attempt to cast a non-Java type to a Java type.
+      s""">> Illegal checked cast: Attempt to cast a non-Java type to a Java type.
          |
          |${code(loc, "illegal cast")}
          |
@@ -79,8 +77,7 @@ object SafetyError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal checked cast: Attempt to cast a type variable to a type.
+      s""">> Illegal checked cast: Attempt to cast a type variable to a type.
          |
          |${code(loc, "illegal cast")}
          |
@@ -104,8 +101,7 @@ object SafetyError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal checked cast: Attempt to cast a Java type to a non-Java type.
+      s""">> Illegal checked cast: Attempt to cast a Java type to a non-Java type.
          |
          |${code(loc, "illegal cast")}
          |
@@ -129,8 +125,7 @@ object SafetyError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal checked cast: Attempt to cast a type to a type variable.
+      s""">> Illegal checked cast: Attempt to cast a type to a type variable.
          |
          |${code(loc, "illegal checked cast.")}
          |
@@ -152,8 +147,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal entry point signature. An entry point must take a single Unit
+      s""">> Illegal entry point signature. An entry point must take a single Unit
          |>> argument and be pure or have the IO effect.
          |
          |${code(loc, "illegal signature.")}
@@ -174,8 +168,7 @@ object SafetyError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> $summary
+      s""">> $summary
          |
          |${code(loc, "Type should be java.lang.Throwable or a subclass.")}
          |""".stripMargin
@@ -192,8 +185,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal negatively bound wildcard '${red("_")}'.
+      s""">> Illegal negatively bound wildcard '${red("_")}'.
          |
          |${code(loc, "the wildcard occurs in this negated atom.")}
          |""".stripMargin
@@ -210,8 +202,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal negatively bound variable '${red(sym.text)}'.
+      s""">> Illegal negatively bound variable '${red(sym.text)}'.
          |
          |${code(loc, "the variable occurs in this negated atom.")}
          |""".stripMargin
@@ -228,8 +219,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal non-positively bound variable '${red(sym.text)}'.
+      s""">> Illegal non-positively bound variable '${red(sym.text)}'.
          |
          |${code(loc, "the variable occurs in this negated atom.")}
          |""".stripMargin
@@ -254,8 +244,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unexpected pattern in body atom.
+      s""">> Unexpected pattern in body atom.
          |
          |${code(loc, "pattern occurs in this body atom.")}
          |""".stripMargin
@@ -273,8 +262,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Illegal relational use of the lattice variable '${red(sym.text)}'. Use `fix`?
+      s""">> Illegal relational use of the lattice variable '${red(sym.text)}'. Use `fix`?
          |
          |${code(loc, "the illegal use occurs here.")}
          |""".stripMargin
@@ -301,8 +289,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Cannot derive 'Sendable' for type ${red(tpe.toString)}
+      s""">> Cannot derive 'Sendable' for type ${red(tpe.toString)}
          |
          |Because it takes a type parameter of kind 'Region'.
          |
@@ -332,8 +319,7 @@ object SafetyError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> The following cast is impossible and will never succeed.
+      s""">> The following cast is impossible and will never succeed.
          |
          |${code(loc, "the cast occurs here.")}
          |
@@ -355,8 +341,7 @@ object SafetyError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing default case.
+      s""">> Missing default case.
          |
          |${code(loc, "missing default case.")}
          |""".stripMargin
@@ -388,8 +373,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Invalid 'this' parameter for method '${red(name)}''.
+      s""">> Invalid 'this' parameter for method '${red(name)}''.
          |
          |Expected 'this' type is ${cyan(s"##${clazz.getName}")}, but the first argument is declared as type ${cyan(illegalThisType.toString)}
          |
@@ -416,8 +400,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> No implementation found for method '${red(method.getName)}' of superclass '${red(clazz.getName)}'.
+      s""">> No implementation found for method '${red(method.getName)}' of superclass '${red(clazz.getName)}'.
          |>> Signature: '${method.toString}'
          |
          |${code(loc, "the object occurs here.")}
@@ -446,8 +429,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Class '${red(clazz.getName)}' lacks a public zero argument constructor.
+      s""">> Class '${red(clazz.getName)}' lacks a public zero argument constructor.
          |
          |${code(loc, "missing constructor.")}
          |""".stripMargin
@@ -466,8 +448,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing 'this' parameter for method '${red(name)}''.
+      s""">> Missing 'this' parameter for method '${red(name)}''.
          |
          |The 'this' parameter should have type ${cyan(s"##${clazz.getName}")}
          |
@@ -493,8 +474,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Class '${red(clazz.getName)}' is not public.
+      s""">> Class '${red(clazz.getName)}' is not public.
          |
          |${code(loc, "non-public class.")}
          |""".stripMargin
@@ -513,8 +493,7 @@ object SafetyError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Method '${red(name)}' not found in superclass '${red(clazz.getName)}'
+      s""">> Method '${red(name)}' not found in superclass '${red(clazz.getName)}'
          |
          |${code(loc, "the method occurs here.")}
          |""".stripMargin

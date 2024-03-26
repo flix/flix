@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, MessageKind}
 import ca.uwaterloo.flix.language.ast.{Kind, RigidityEnv, SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatKind.formatKind
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
@@ -26,7 +26,7 @@ import ca.uwaterloo.flix.util.Formatter
  * A common super-type for kind errors.
  */
 sealed trait KindError extends CompilationMessage {
-  val kind: String = "Kind Error"
+  val kind = MessageKind("Kind Error")
 }
 
 object KindError {
@@ -43,8 +43,7 @@ object KindError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> This type variable was used as both kind '${red(formatKind(k1))}' and kind '${red(formatKind(k2))}'.
+      s""">> This type variable was used as both kind '${red(formatKind(k1))}' and kind '${red(formatKind(k2))}'.
          |
          |${code(loc, "mismatched kind.")}
          |
@@ -67,8 +66,7 @@ object KindError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> No constraint of the '${cyan(clazz.toString)}' class for the type '${red(formatType(tpe, Some(renv)))}'.
+      s""">> No constraint of the '${cyan(clazz.toString)}' class for the type '${red(formatType(tpe, Some(renv)))}'.
          |
          |${code(loc, s"missing constraint")}
          |
@@ -88,8 +86,7 @@ object KindError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Expected kind '${red(formatKind(expectedKind))}' here, but kind '${red(formatKind(actualKind))}' is used.
+      s""">> Expected kind '${red(formatKind(expectedKind))}' here, but kind '${red(formatKind(actualKind))}' is used.
          |
          |${code(loc, "unexpected kind.")}
          |
@@ -109,8 +106,7 @@ object KindError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unable to infer kind.
+      s""">> Unable to infer kind.
          |
          |${code(loc, "uninferred kind.")}
          |

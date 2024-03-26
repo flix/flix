@@ -15,12 +15,12 @@
  */
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, MessageKind}
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 
 sealed trait LexerError extends CompilationMessage with Recoverable {
-  val kind = "Lexer Error"
+  val kind = MessageKind("Lexer Error")
 }
 
 object LexerError {
@@ -35,8 +35,7 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Block-comment nested too deep.
+      s""">> Block-comment nested too deep.
          |
          |${code(loc, "This is nested too deep.")}
          |
@@ -57,8 +56,7 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Number has two decimal dots.
+      s""">> Number has two decimal dots.
          |
          |${code(loc, "Second decimal dot is here.")}
          |
@@ -78,8 +76,7 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Number has two scientific notation indicators.
+      s""">> Number has two scientific notation indicators.
          |
          |${code(loc, "Second 'e' is here.")}
          |
@@ -99,8 +96,7 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Number has sequence of '_'.
+      s""">> Number has sequence of '_'.
          |
          |${code(loc, "Ending here")}
          |
@@ -120,8 +116,7 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Number ends on a '_'.
+      s""">> Number ends on a '_'.
          |
          |${code(loc, "Here")}
          |
@@ -141,8 +136,7 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Hex literal starts on a '_'.
+      s""">> Hex literal starts on a '_'.
          |
          |${code(loc, "Here")}
          |
@@ -162,8 +156,7 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> String interpolation nested too deep.
+      s""">> String interpolation nested too deep.
          |
          |${code(loc, "This is nested too deep.")}
          |
@@ -184,8 +177,7 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unexpected character '${red(s)}'.
+      s""">> Unexpected character '${red(s)}'.
          |
          |${code(loc, "Unexpected character.")}
          |
@@ -205,8 +197,7 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing '*/' in block-comment.
+      s""">> Missing '*/' in block-comment.
          |
          |${code(loc, "Block-comment starts here.")}
          |
@@ -226,8 +217,7 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing '$$' in built-in.
+      s""">> Missing '$$' in built-in.
          |
          |${code(loc, "Built-in starts here.")}
          |
@@ -247,8 +237,7 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing `'` in char.
+      s""">> Missing `'` in char.
          |
          |${code(loc, "Char starts here")}
          |
@@ -268,8 +257,7 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing '`' in infix function.
+      s""">> Missing '`' in infix function.
          |
          |${code(loc, "Infix function starts here.")}
          |
@@ -289,8 +277,7 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing `"` in regex.
+      s""">> Missing `"` in regex.
          |
          |${code(loc, "Regex starts here")}
          |
@@ -310,8 +297,7 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> missing '"' in string.
+      s""">> missing '"' in string.
          |
          |${code(loc, "String starts here.")}
          |
@@ -331,8 +317,7 @@ object LexerError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Missing '}' in string interpolation.
+      s""">> Missing '}' in string interpolation.
          |
          |${code(loc, "Interpolation starts here.")}
          |

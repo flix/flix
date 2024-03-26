@@ -16,7 +16,7 @@
 
 package ca.uwaterloo.flix.language.errors
 
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, MessageKind}
 import ca.uwaterloo.flix.language.ast.Ast.SyntacticContext
 import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
@@ -29,14 +29,13 @@ import ca.uwaterloo.flix.util.Formatter
  * @param loc the source location.
  */
 case class ParseError(msg: String, ctx: SyntacticContext, loc: SourceLocation) extends CompilationMessage with Recoverable {
-  val kind = "Parse Error"
+  val kind = MessageKind("Parse Error")
 
   def summary: String = msg
 
   def message(formatter: Formatter): String = {
     import formatter._
-    s"""${line(kind, source.name)}
-       |>> Parse Error: ${red(msg)}
+    s""">> Parse Error: ${red(msg)}
        |
        |${code(loc, s"Here")}
        |Syntactic Context: $ctx.

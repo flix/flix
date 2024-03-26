@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.errors
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.CompilationMessage
+import ca.uwaterloo.flix.language.{CompilationMessage, MessageKind}
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Symbol, Type}
 import ca.uwaterloo.flix.language.fmt.FormatType
 import ca.uwaterloo.flix.util.Formatter
@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.Formatter
   * All [[EntryPointError]]s are [[Recoverable]].
   */
 sealed trait EntryPointError extends CompilationMessage {
-  val kind: String = "Entry Point Error"
+  val kind = MessageKind("Entry Point Error")
 }
 
 object EntryPointError {
@@ -70,8 +70,7 @@ object EntryPointError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Arguments to the entry point function are not permitted.
+      s""">> Arguments to the entry point function are not permitted.
          |
          |${code(loc, "unexpected entry point argument(s).")}
          |""".stripMargin
@@ -92,8 +91,7 @@ object EntryPointError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Unhandled effect: '${red(FormatType.formatType(eff))}'.
+      s""">> Unhandled effect: '${red(FormatType.formatType(eff))}'.
          |
          |${code(loc, "unhandled effect")}
          |
@@ -116,8 +114,7 @@ object EntryPointError {
 
     override def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> The result type: '${red(FormatType.formatType(tpe))}' is not a valid entry point result type.
+      s""">> The result type: '${red(FormatType.formatType(tpe))}' is not a valid entry point result type.
          |
          |${code(loc, "unexpected entry point result type.")}
          |""".stripMargin
