@@ -10,7 +10,7 @@ mod Subtyping {
         methods = Vector[(String, String)]
     }
 
-    def classHierarchyAnalysis(p: Program): #{ Subtype(String, String), AvailableField(String, String), AvailableMethod(String, String), NonSupertype(String) | r } =
+    def classHierarchyAnalysis(p: Program): #{ Subtype(String, String), AvailableField(String, String), AvailableMethod(String, String) | r } =
         let cs    = inject p.classes          into Class;
         let is    = inject p.interfaces       into Interface;
         let impls = inject p.classImplements  into ClassImplements;
@@ -28,9 +28,8 @@ mod Subtyping {
 
             AvailableField(class, field)   :- Field(t, field), Subtype(class, t).
             AvailableMethod(class, method) :- Method(t, method), Subtype(class, t).
-            NonSupertype(class)            :- Class(class), Class(otherClass), not Subtype(otherClass, class), if class != otherClass.
         };
-        #(Subtype, AvailableField, AvailableMethod, NonSupertype) -> rules <+> cs <+> is <+> ce <+> impls <+> ies <+> fs <+> ms
+        #(Subtype, AvailableField, AvailableMethod) -> rules <+> cs <+> is <+> ce <+> impls <+> ies <+> fs <+> ms
 
     pub def distinctSubtypes(p: Program): Vector[(String, String)] =
         let v = query classHierarchyAnalysis(p) select (x, y) from Subtype(x, y);
@@ -59,9 +58,6 @@ mod Subtyping {
 
     pub def hasMethod(p: Program, method: String): Vector[String] =
         query classHierarchyAnalysis(p) select tpe from AvailableMethod(tpe, method)
-
-    pub def leafTypes(p: Program): Vector[String] =
-        query classHierarchyAnalysis(p) select tpe from NonSupertype(tpe)
 
 
     /////////////////////////////////////////////////
