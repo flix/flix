@@ -1446,6 +1446,19 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
+  test("UnderAppliedAssocType.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a]: Type
+        |}
+        |
+        |def f(x: C.T): String = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnderAppliedAssocType](result)
+  }
+
   test("UnderAppliedTypeAlias.01") {
     val input =
       """
@@ -1487,18 +1500,5 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UnderAppliedTypeAlias](result)
-  }
-
-  test("UnderAppliedAssocType.01") {
-    val input =
-      """
-        |trait C[a] {
-        |    type T[a]: Type
-        |}
-        |
-        |def f(x: C.T): String = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UnderAppliedAssocType](result)
   }
 }
