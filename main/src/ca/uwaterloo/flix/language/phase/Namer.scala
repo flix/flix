@@ -1274,6 +1274,9 @@ object Namer {
         mapN(visit(tpe)) {
           t => NamedAst.Type.Ascribe(t, kind, loc)
         }
+
+      case DesugaredAst.Type.Error(loc) =>
+        Validation.success(NamedAst.Type.Error(loc))
     }
 
     visit(t0)
@@ -1384,6 +1387,7 @@ object Namer {
     case DesugaredAst.Type.CaseUnion(tpe1, tpe2, loc) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
     case DesugaredAst.Type.CaseIntersection(tpe1, tpe2, loc) => freeTypeVars(tpe1) ++ freeTypeVars(tpe2)
     case DesugaredAst.Type.Ascribe(tpe, _, _) => freeTypeVars(tpe)
+    case DesugaredAst.Type.Error(_) => Nil
   }
 
   /**
