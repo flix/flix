@@ -111,4 +111,39 @@ mod Test.Dec.AssociatedTypes.Kind {
         List#{"1"} == twiceInt3202(200)
 
 
+    // Vector
+
+    @Test
+    pub def testInt6401(): Bool =
+        Vector#{"1", "1"} == duplicateInt6401(1i64)
+
+    @Test
+    pub def testInt6402(): Bool =
+        Vector#{"1", "1"} == duplicateInt6402(1i64)
+
+    @Test
+    pub def testInt6403(): Bool =
+        Vector#{"124", "124"} == duplicateInt6401(124i64)
+
+    @Test
+    pub def testInt6404(): Bool =
+        Vector#{"124", "124"} == duplicateInt6402(124i64)
+
+    @Test
+    pub def testInt6405(): Bool =
+        Vector#{"1"} == twiceInt6401(5i64)
+
+    @Test
+    pub def testInt6406(): Bool =
+        Vector#{"1"} == twiceInt6402(5i64)
+
+    @Test
+    pub def testInt6407(): Bool =
+        Vector#{"1"} == twiceInt6401(200i64)
+
+    @Test
+    pub def testInt6408(): Bool =
+        Vector#{"1"} == twiceInt6402(200i64)
+
+
 }
