@@ -1084,7 +1084,64 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
   }
-  
+
+  test("UndefinedName.ParentNamespaceNotVisible.01") {
+    val input =
+      """
+        |mod A {
+        |    pub enum X
+        |    mod B {
+        |        def foo(): X = ???
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
+  test("UndefinedName.ParentNamespaceNotVisible.02") {
+    val input =
+      """
+        |mod A {
+        |    pub type alias X = Int32
+        |    mod B {
+        |        def foo(): X = ???
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
+  test("UndefinedName.ParentNamespaceNotVisible.03") {
+    val input =
+      """
+        |mod A {
+        |    pub trait X[a]
+        |    mod B {
+        |        enum Y
+        |        instance X[Y]
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTrait](result)
+  }
+
+  test("UndefinedName.ParentNamespaceNotVisible.04") {
+    val input =
+      """
+        |mod A {
+        |    pub def x(): Int32 = ???
+        |    mod B {
+        |        def foo(): Int32 = x()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
   test("UndefinedOp.01") {
     val input =
       """
@@ -1316,63 +1373,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UnderAppliedAssocType](result)
-  }
-
-  test("UndefinedName.ParentNamespaceNotVisible.01") {
-    val input =
-      """
-        |mod A {
-        |    pub enum X
-        |    mod B {
-        |        def foo(): X = ???
-        |    }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedType](result)
-  }
-
-  test("UndefinedName.ParentNamespaceNotVisible.02") {
-    val input =
-      """
-        |mod A {
-        |    pub type alias X = Int32
-        |    mod B {
-        |        def foo(): X = ???
-        |    }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedType](result)
-  }
-
-  test("UndefinedName.ParentNamespaceNotVisible.03") {
-    val input =
-      """
-        |mod A {
-        |    pub trait X[a]
-        |    mod B {
-        |        enum Y
-        |        instance X[Y]
-        |    }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedTrait](result)
-  }
-
-  test("UndefinedName.ParentNamespaceNotVisible.04") {
-    val input =
-      """
-        |mod A {
-        |    pub def x(): Int32 = ???
-        |    mod B {
-        |        def foo(): Int32 = x()
-        |    }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("UndefinedType.UseClearedInNamespace.01") {
