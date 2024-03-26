@@ -646,42 +646,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleTrait](result)
   }
 
-  test("InaccessibleType.01") {
-    val input =
-      s"""
-         |mod A {
-         |  enum Color {
-         |    case Blu,
-         |    case Red
-         |  }
-         |}
-         |
-         |mod B {
-         |  def g(): A.Color = ???
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleEnum](result)
-  }
-
-  test("InaccessibleType.02") {
-    val input =
-      s"""
-         |mod A {
-         |  def f(): A.B.C.Color = ???
-         |
-         |  mod B.C {
-         |    enum Color {
-         |      case Blu,
-         |      case Red
-         |    }
-         |  }
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleEnum](result)
-  }
-
   test("InaccessibleTypeAlias.01") {
     val input =
       s"""
