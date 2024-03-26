@@ -253,6 +253,21 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalAssocTypeApplication](result)
   }
 
+  test("IllegalAssocTypeApplication.03") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a]: Type -> Type
+        |}
+        |
+        |instance C[String] {
+        |    type T[String] = C.T[String][Bool]
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalAssocTypeApplication](result)
+  }
+
   test("IllegalNonJavaType.01") {
     val input =
       """
