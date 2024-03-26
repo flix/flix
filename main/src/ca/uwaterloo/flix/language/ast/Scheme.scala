@@ -171,11 +171,6 @@ object Scheme {
     val baseConstr = TypingConstraint.Equality(sc1.base, tpe2, Provenance.Match(sc1.base, tpe2, SourceLocation.Unknown))
     ConstraintResolution.resolve(baseConstr :: cconstrs ::: econstrs, subst, renv)(cenv, eenv, flix) match {
       case Result.Ok(ResolutionResult(subst, Nil, _)) => Validation.success(subst)
-      case Result.Ok(ResolutionResult(subst, leftovers, _)) =>
-        println(subst)
-        println(leftovers)
-        Validation.HardFailure(Chain(UnificationError.MismatchedTypes(sc1.base, sc2.base)))
-      // TODO ASSOC-TYPES better error stuff
       case _ => Validation.HardFailure(Chain(UnificationError.MismatchedTypes(sc1.base, sc2.base)))
     }
 
