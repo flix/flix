@@ -1142,6 +1142,54 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedName](result)
   }
 
+  test("UndefinedName.Tag.01") {
+    val input =
+      s"""
+         |enum A {
+         |  case Foo
+         |}
+         |
+         |def f(): A = A.Qux
+         |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedName.Tag.02") {
+    val input =
+      s"""
+         |mod A {
+         |  enum B {
+         |    case Foo,
+         |    case Bar
+         |  }
+         |
+         |  def f(): B = B.Qux(1 + 2)
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedName.Tag.03") {
+    val input =
+      s"""
+         |mod A {
+         |  enum B {
+         |    case Foo,
+         |    case Bar
+         |  }
+         |
+         |  def f(b: B): Int32 = match b {
+         |    case B.Qux => 42
+         |  }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTag](result)
+  }
+
   test("UndefinedOp.01") {
     val input =
       """
@@ -1213,54 +1261,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTrait](result)
-  }
-
-  test("UndefinedName.Tag.01") {
-    val input =
-      s"""
-         |enum A {
-         |  case Foo
-         |}
-         |
-         |def f(): A = A.Qux
-         |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UndefinedName.Tag.02") {
-    val input =
-      s"""
-         |mod A {
-         |  enum B {
-         |    case Foo,
-         |    case Bar
-         |  }
-         |
-         |  def f(): B = B.Qux(1 + 2)
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UndefinedName.Tag.03") {
-    val input =
-      s"""
-         |mod A {
-         |  enum B {
-         |    case Foo,
-         |    case Bar
-         |  }
-         |
-         |  def f(b: B): Int32 = match b {
-         |    case B.Qux => 42
-         |  }
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedTag](result)
   }
 
   test("UndefinedType.01") {
