@@ -1115,7 +1115,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTrait](result)
   }
 
-  test("UndefinedTag.01") {
+  test("UndefinedName.Tag.01") {
     val input =
       s"""
          |enum A {
@@ -1129,7 +1129,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedName](result)
   }
 
-  test("UndefinedTag.02") {
+  test("UndefinedName.Tag.02") {
     val input =
       s"""
          |mod A {
@@ -1145,7 +1145,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedName](result)
   }
 
-  test("UndefinedTag.03") {
+  test("UndefinedName.Tag.03") {
     val input =
       s"""
          |mod A {
