@@ -23,7 +23,6 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestResolver extends AnyFunSuite with TestUtils {
 
-
   test("CyclicClassHierarchy.01") {
     val input = "trait A[a] with A[a]"
     val result = compile(input, Options.TestWithLibNix)
