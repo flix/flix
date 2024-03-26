@@ -1416,6 +1416,18 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
+  test("UndefinedTypeVar.Expression.01") {
+    val input =
+      """
+        |def f(): Bool = typematch () {
+        |    case _: a => true
+        |    case _: _ => false
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
   test("UndefinedTypeVar.Instance.01") {
     val input = "instance C[a] with C[b]"
     val result = compile(input, Options.TestWithLibNix)
@@ -1430,18 +1442,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
 
   test("UndefinedTypeVar.Instance.03") {
     val input = "instance C[(a, b)] with D[a], D[b], D[c]"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedTypeVar](result)
-  }
-
-  test("UndefinedTypeVar.Expression.01") {
-    val input =
-      """
-        |def f(): Bool = typematch () {
-        |    case _: a => true
-        |    case _: _ => false
-        |}
-        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
