@@ -1084,7 +1084,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   }
 
   test("KindError.AssocType.04") {
-    val  input =
+    val input =
       """
         |mod Foo {
         |    trait Add[t] {
@@ -1096,6 +1096,22 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |        pub def add(x: String, y: String): String = x + y
         |    }
         |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.AssocType.05") {
+    val input =
+      """
+        |mod Test.Dec.AssociatedTypes.Negative {
+        |    trait Foo[t] {
+        |        type K: Type
+        |        type E: Type
+        |        pub def f(x: t): Foo.K[t][Foo.E[t]]
+        |    }
+        |}
+        |
         |""".stripMargin
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
