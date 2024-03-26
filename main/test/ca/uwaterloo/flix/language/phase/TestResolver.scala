@@ -162,6 +162,24 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.DuplicateAssocTypeDef](result)
   }
 
+  test("DuplicateDerivation.01") {
+    val input =
+      """
+        |enum E with Eq, Eq
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.DuplicateDerivation](result)
+  }
+
+  test("DuplicateDerivation.02") {
+    val input =
+      """
+        |enum E with ToString, Order, ToString
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.DuplicateDerivation](result)
+  }
+
   test("InaccessibleDef.01") {
     val input =
       s"""
@@ -890,24 +908,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
-  }
-
-  test("DuplicateDerivation.01") {
-    val input =
-      """
-        |enum E with Eq, Eq
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.DuplicateDerivation](result)
-  }
-
-  test("DuplicateDerivation.02") {
-    val input =
-      """
-        |enum E with ToString, Order, ToString
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.DuplicateDerivation](result)
   }
 
   test("UnderAppliedTypeAlias.01") {
