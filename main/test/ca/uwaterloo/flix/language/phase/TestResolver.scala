@@ -748,114 +748,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
-  test("UndefinedName.01") {
-    val input = "def f(): Int32 = x"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UndefinedName.02") {
-    val input =
-      s"""
-         |mod A {
-         |  def f(x: Int32, y: Int32): Int32 = x + y + z
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UndefinedName.03") {
-    val input =
-      s"""
-         |mod A {
-         |    trait C[a] {
-         |        pub def f(x: a): a
-         |    }
-         |}
-         |
-         |mod B {
-         |    use A.f
-         |    def g(): Int32 = f(1)
-         |}
-         |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UndefinedOp.01") {
-    val input =
-      """
-        |def f(): Unit = do E.op()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedOp](result)
-  }
-
-  test("UndefinedOp.02") {
-    val input =
-      """
-        |eff E
-        |
-        |def f(): Unit = do E.op()
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedOp](result)
-  }
-
-  test("UndefinedOp.03") {
-    val input =
-      """
-        |eff E
-        |
-        |def f(): Unit = try () with E {
-        |    def op() = ()
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedOp](result)
-  }
-
-  test("UndefinedTrait.01") {
-    val input =
-      """
-        |instance C[Int32]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedTrait](result)
-  }
-
-  test("UndefinedTrait.02") {
-    val input =
-      """
-        |def f(x: a): a with C[a] = x
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedTrait](result)
-  }
-
-  test("UndefinedTrait.03") {
-    val input =
-      """
-        |trait K[a]
-        |
-        |def f(x: a): a with K[a], U[a] = x
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedTrait](result)
-  }
-
-  test("UndefinedTrait.04") {
-    val input =
-      """
-        |trait K[a]
-        |
-        |instance K[a] with U[a]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedTrait](result)
-  }
-
   test("UndefinedJvmConstructor.01") {
     val input =
       raw"""
@@ -1086,6 +978,114 @@ class TestResolver extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmField](result)
+  }
+
+  test("UndefinedName.01") {
+    val input = "def f(): Int32 = x"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedName.02") {
+    val input =
+      s"""
+         |mod A {
+         |  def f(x: Int32, y: Int32): Int32 = x + y + z
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedName.03") {
+    val input =
+      s"""
+         |mod A {
+         |    trait C[a] {
+         |        pub def f(x: a): a
+         |    }
+         |}
+         |
+         |mod B {
+         |    use A.f
+         |    def g(): Int32 = f(1)
+         |}
+         |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+
+  test("UndefinedOp.01") {
+    val input =
+      """
+        |def f(): Unit = do E.op()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedOp](result)
+  }
+
+  test("UndefinedOp.02") {
+    val input =
+      """
+        |eff E
+        |
+        |def f(): Unit = do E.op()
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedOp](result)
+  }
+
+  test("UndefinedOp.03") {
+    val input =
+      """
+        |eff E
+        |
+        |def f(): Unit = try () with E {
+        |    def op() = ()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedOp](result)
+  }
+
+  test("UndefinedTrait.01") {
+    val input =
+      """
+        |instance C[Int32]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTrait](result)
+  }
+
+  test("UndefinedTrait.02") {
+    val input =
+      """
+        |def f(x: a): a with C[a] = x
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTrait](result)
+  }
+
+  test("UndefinedTrait.03") {
+    val input =
+      """
+        |trait K[a]
+        |
+        |def f(x: a): a with K[a], U[a] = x
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTrait](result)
+  }
+
+  test("UndefinedTrait.04") {
+    val input =
+      """
+        |trait K[a]
+        |
+        |instance K[a] with U[a]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTrait](result)
   }
 
   test("UndefinedTag.01") {
