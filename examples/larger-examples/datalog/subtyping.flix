@@ -2,65 +2,61 @@ mod Subtyping {
 
     type alias Program = {
         classes = Vector[String],
-        finalClasses = Vector[String],
         interfaces = Vector[String],
-        implementations = Vector[(String, String)],
+        classImplements = Vector[(String, String)],
         classExtends = Vector[(String, String)],
         interfaceExtends = Vector[(String, String)],
         methods = Vector[(String, String)]
     }
 
-    def subtypes(program: Program): #{ Subtype(String, String), AvailableMethod(String, String), NonSupertype(String), ExtendsFinalClass(String, String) | r } =
+    def classHierarchyAnalysis(p: Program): #{ Subtype(String, String), AvailableMethod(String, String), NonSupertype(String) | r } =
+        let cs    = inject p.classes          into Class;
+        let is    = inject p.interfaces       into Interface;
+        let impls = inject p.classImplements  into ClassImplements;
+        let ce    = inject p.classExtends     into ClassExtends;
+        let ies   = inject p.interfaceExtends into InterfaceExtends;
+        let ms    = inject p.methods          into Method;
         let rules = #{
             Subtype(x, x)       :- Class(x).
             Subtype(x, x)       :- Interface(x).
-            Subtype(sub, super) :- Class(sub), Interface(super), Implementation(sub, super).
+            Subtype(sub, super) :- Class(sub), Interface(super), ClassImplements(sub, super).
             Subtype(sub, super) :- Class(sub), Class(super), ClassExtends(sub, super).
             Subtype(sub, super) :- Interface(sub), Interface(super), InterfaceExtends(sub, super).
             Subtype(sub, super) :- Subtype(sub, a), Subtype(a, super).
 
             AvailableMethod(class, method) :- Method(t, method), Subtype(class, t).
             NonSupertype(class)            :- Class(class), Class(otherClass), not Subtype(otherClass, class), if class != otherClass.
-            ExtendsFinalClass(sub, super)  :- FinalClass(super), Subtype(sub, super), if sub != super.
         };
-        #(Subtype, AvailableMethod, NonSupertype, ExtendsFinalClass) -> rules <+> toPredicates(program)
-
-    def toPredicates(program: Program): #{ Class(String), FinalClass(String), Interface(String), ClassExtends(String, String),  InterfaceExtends(String, String), Implementation(String, String), Method(String, String) | r } =
-        let cs    = inject program.classes          into Class;
-        let fcs   = inject program.finalClasses     into FinalClass;
-        let is    = inject program.interfaces       into Interface;
-        let impls = inject program.implementations  into Implementation;
-        let ce    = inject program.classExtends     into ClassExtends;
-        let ies   = inject program.interfaceExtends into InterfaceExtends;
-        let ms    = inject program.methods          into Method;
-        cs <+> fcs <+> is <+> ce <+> impls <+> ies <+> ms
+        #(Subtype, AvailableMethod, NonSupertype) -> rules <+> cs <+> is <+> ce <+> impls <+> ies <+> ms
 
     pub def subtypesDistinct(types: Program): Vector[(String, String)] =
-        let v = query subtypes(types) select (x, y) from Subtype(x, y);
+        let v = query classHierarchyAnalysis(types) select (x, y) from Subtype(x, y);
         Vector.filter(match (x, y) -> x != y, v)
 
-    pub def methodsOf(tpe: String, types: Program): Vector[String] =
-        query subtypes(types) select m from AvailableMethod(tpe, m)
+    pub def extendsFinalClass(tpe: String, finalClasses: Vector[String], types: Program): Bool =
+        let fcs  = inject finalClasses into FinalClass;
+        let rule = #{
+            ExtendsFinalClass(sub, super)  :- FinalClass(super), Subtype(sub, super), if sub != super.
+        };
+        let res = query fcs, rule, classHierarchyAnalysis(types) select tpe from ExtendsFinalClass(tpe, _);
+        not Vector.isEmpty(res)
 
     pub def nonSupertypes(types: Program): Vector[String] =
-        query subtypes(types) select tpe from NonSupertype(tpe)
+        query classHierarchyAnalysis(types) select tpe from NonSupertype(tpe)
 
     pub def finalClassExtensions(types: Program): Vector[(String, String)] =
-        query subtypes(types) select (sub, sup) from ExtendsFinalClass(sub, sup)
+        query classHierarchyAnalysis(types) select (sub, sup) from ExtendsFinalClass(sub, sup)
 
     pub def isSubtype(subtype: String, possibleSupertype: String, types: Program): Bool =
-        let v = query subtypes(types) select (x, y) from Subtype(x, y);
-        not (Vector.filter(Eq.eq((subtype, possibleSupertype)), v) |> Vector.isEmpty)
+        let res = query classHierarchyAnalysis(types) select subtype from Subtype(subtype, possibleSupertype);
+        not Vector.isEmpty(res)
 
     pub def hasMethod(tpe: String, method: String, types: Program): Bool =
-        not (methodsOf(tpe, types) |> Vector.filter(Eq.eq(method)) |> Vector.isEmpty)
+        let res = query classHierarchyAnalysis(types) select tpe from AvailableMethod(tpe, method);
+        not Vector.isEmpty(res)
 
     pub def isNonSupertype(tpe: String, types: Program): Bool =
         not (nonSupertypes(types) |> Vector.filter(Eq.eq(tpe)) |> Vector.isEmpty)
-
-    pub def extendsFinalClass(tpe: String, types: Program): Bool =
-        not (finalClassExtensions(types) |> Vector.filter(match (sub, _) -> sub == tpe) |> Vector.isEmpty)
-
 
     /////////////////////////////////////////////////
     // Tests                                       //
@@ -115,22 +111,19 @@ mod Subtyping {
             Assert.eq(true, result)
 
         @Test
-        def testMethodsOf01(): Bool =
-            let result = Subtyping.methodsOf("java.lang.String", facts());
-            let expected = Vector#{"toString", "contains", "isEmpty"} |> Vector.sort;
-            Assert.eq(expected, result)
+        def testHasMethod01(): Bool =
+            let result = Subtyping.hasMethod("java.lang.String", "toString", facts());
+            Assert.eq(true, result)
 
         @Test
-        def testMethodsOf02(): Bool =
-            let result = Subtyping.methodsOf("java.util.ArrayList", facts());
-            let expected = Vector#{"toString", "add"} |> Vector.sort;
-            Assert.eq(expected, result)
+        def testHasMethod02(): Bool =
+            let result = Subtyping.hasMethod("java.util.ArrayList", "add", facts());
+            Assert.eq(true, result)
 
         def emptyFacts(): Subtyping.Program = {
             classes = Vector#{},
-            finalClasses = Vector#{},
             interfaces = Vector#{},
-            implementations = Vector#{},
+            classImplements = Vector#{},
             classExtends = Vector#{},
             interfaceExtends = Vector#{},
             methods = Vector#{}
@@ -144,15 +137,12 @@ mod Subtyping {
                 "au.content.Marker",
                 "au.content.SpecialArrayList"
             },
-            finalClasses = Vector#{
-                "java.lang.String"
-            },
             interfaces = Vector#{
                 "java.io.Serializable",
                 "java.util.List",
                 "java.util.Collection"
             },
-            implementations = Vector#{
+            classImplements = Vector#{
                 ("java.lang.String", "java.io.Serializable"),
                 ("java.util.ArrayList", "java.util.List")
             },
