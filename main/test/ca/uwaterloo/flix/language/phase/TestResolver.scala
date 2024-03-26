@@ -727,6 +727,17 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedAssocType](result)
   }
 
+  test("UndefinedEffect.01") {
+    val input =
+      """
+        |def f(): Unit = try () with E {
+        |    def op() = ()
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedEffect](result)
+  }
+
   test("UndefinedName.01") {
     val input = "def f(): Int32 = x"
     val result = compile(input, Options.TestWithLibNix)
@@ -760,17 +771,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UndefinedEffect.01") {
-    val input =
-      """
-        |def f(): Unit = try () with E {
-        |    def op() = ()
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedEffect](result)
   }
 
   test("UndefinedOp.01") {
