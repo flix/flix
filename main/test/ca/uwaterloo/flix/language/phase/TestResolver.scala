@@ -625,6 +625,20 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.MismatchedReturnType](result)
   }
 
+  test("MissingAssocTypeDef.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |}
+        |
+        |instance C[String] {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingAssocTypeDef](result)
+  }
+
   test("SealedTrait.01") {
     val input =
       """
@@ -1456,20 +1470,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedJvmClass](result)
-  }
-
-  test("MissingAssocTypeDef.01") {
-    val input =
-      """
-        |trait C[a] {
-        |    type T: Type
-        |}
-        |
-        |instance C[String] {
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.MissingAssocTypeDef](result)
   }
 
   test("Test.InvalidOpParamCount.Do.01") {
