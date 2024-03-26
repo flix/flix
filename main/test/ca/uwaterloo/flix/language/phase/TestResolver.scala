@@ -980,6 +980,33 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
+  test("UndefinedKind.01") {
+    val input =
+      """
+        |trait C[a: Blah]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedKind](result)
+  }
+
+  test("UndefinedKind.02") {
+    val input =
+      """
+        |enum E[a: Blah]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedKind](result)
+  }
+
+  test("UndefinedKind.03") {
+    val input =
+      """
+        |def f[a: Blah](x: a): String = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedKind](result)
+  }
+
   test("UndefinedName.01") {
     val input = "def f(): Int32 = x"
     val result = compile(input, Options.TestWithLibNix)
@@ -1473,32 +1500,5 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibAll)
     expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UndefinedKind.01") {
-    val input =
-      """
-        |trait C[a: Blah]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedKind](result)
-  }
-
-  test("UndefinedKind.02") {
-    val input =
-      """
-        |enum E[a: Blah]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedKind](result)
-  }
-
-  test("UndefinedKind.03") {
-    val input =
-      """
-        |def f[a: Blah](x: a): String = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedKind](result)
   }
 }
