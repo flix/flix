@@ -1377,6 +1377,27 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
+  test("UndefinedTypeVar.Class.01") {
+    val input =
+      """
+        |trait A[a]
+        |trait B[a] with A[b]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UndefinedTypeVar.Class.02") {
+    val input =
+      """
+        |trait A[a]
+        |trait B[a]
+        |trait C[a] with A[a], B[b]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
   test("UndefinedTypeVar.Def.01") {
     val input = "def f[a: Type](): b = 123"
     val result = compile(input, Options.TestWithLibNix)
@@ -1409,27 +1430,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
 
   test("UndefinedTypeVar.Instance.03") {
     val input = "instance C[(a, b)] with D[a], D[b], D[c]"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedTypeVar](result)
-  }
-
-  test("UndefinedTypeVar.Class.01") {
-    val input =
-      """
-        |trait A[a]
-        |trait B[a] with A[b]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedTypeVar](result)
-  }
-
-  test("UndefinedTypeVar.Class.02") {
-    val input =
-      """
-        |trait A[a]
-        |trait B[a]
-        |trait C[a] with A[a], B[b]
-        |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
