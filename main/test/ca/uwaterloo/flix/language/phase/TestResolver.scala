@@ -1283,7 +1283,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
-  test("ImportClearedInNamespace.01") {
+  test("UndefinedType.ImportClearedInNamespace.01") {
     val input =
       """
         |import java.lang.StringBuffer
@@ -1295,7 +1295,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
-  test("ImportClearedInNamespace.02") {
+  test("UndefinedType.ImportClearedInNamespace.02") {
     val input =
       """
         |mod A {
