@@ -920,12 +920,13 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait C[a] {
         |    type T: Type
         |    type S: Eff
-        |    def f(): Unit
+        |    pub def f(x: a): a
         |}
         |
         |instance C[Int32] {
+        |    type Q = Int64
         |    type T = Int32
-        |    def f(): Unit
+        |    pub def f(x: Int32): Int32 = x
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
