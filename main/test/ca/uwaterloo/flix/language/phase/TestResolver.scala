@@ -1492,7 +1492,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedKind](result)
   }
 
-  test("UndefinedInstanceOf.01") {
+  test("UndefinedJvmClass.01") {
     val input =
       """
         |def foo(): Bool =
