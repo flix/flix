@@ -738,7 +738,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedEffect](result)
   }
 
-  test("UndefinedJvmClass.01") {
+  test("UndefinedJvmClass.UndefinedInstanceOf.01") {
     val input =
       """
         |def foo(): Bool =
