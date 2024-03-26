@@ -714,6 +714,19 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.SealedTrait](result)
   }
 
+  test("UndefinedAssocType.01") {
+    val input =
+      """
+        |trait C[a]
+        |
+        |instance C[String] {
+        |    type T[String] = Int32
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedAssocType](result)
+  }
+
   test("UndefinedName.01") {
     val input = "def f(): Int32 = x"
     val result = compile(input, Options.TestWithLibNix)
@@ -1223,19 +1236,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UnderAppliedAssocType](result)
-  }
-
-  test("UndefinedAssocType.01") {
-    val input =
-      """
-        |trait C[a]
-        |
-        |instance C[String] {
-        |    type T[String] = Int32
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedAssocType](result)
   }
 
   test("UndefinedName.ParentNamespaceNotVisible.01") {
