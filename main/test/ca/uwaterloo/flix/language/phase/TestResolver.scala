@@ -146,6 +146,22 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.CyclicTypeAliases](result)
   }
 
+  test("DuplicateAssocTypeDef.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T = String
+        |    type T = Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.DuplicateAssocTypeDef](result)
+  }
+
   test("InaccessibleDef.01") {
     val input =
       s"""
@@ -1412,22 +1428,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedJvmClass](result)
-  }
-
-  test("DuplicateAssocTypeDef.01") {
-    val input =
-      """
-        |trait C[a] {
-        |    type T: Type
-        |}
-        |
-        |instance C[String] {
-        |    type T = String
-        |    type T = Bool
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.DuplicateAssocTypeDef](result)
   }
 
   test("MissingAssocTypeDef.01") {
