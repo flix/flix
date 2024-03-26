@@ -1472,7 +1472,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
-  test("Test.InvalidOpParamCount.Do.01") {
+  test("MismatchedOpArity.InvalidOpParamCount.Do.01") {
     val input =
       """
         |eff E {
@@ -1485,7 +1485,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.MismatchedOpArity](result)
   }
 
-  test("Test.InvalidOpParamCount.Handler.01") {
+  test("MismatchedOpArity.InvalidOpParamCount.Handler.01") {
     val input =
       """
         |eff E {
