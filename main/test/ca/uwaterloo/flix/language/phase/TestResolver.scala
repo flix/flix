@@ -1265,7 +1265,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedName](result)
   }
 
-  test("UseClearedInNamespace.01") {
+  test("UndefinedType.UseClearedInNamespace.01") {
     val input =
       """
         |use A.X
@@ -1280,7 +1280,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
-  test("UseClearedInNamespace.02") {
+  test("UndefinedType.UseClearedInNamespace.02") {
     val input =
       """
         |mod A {
