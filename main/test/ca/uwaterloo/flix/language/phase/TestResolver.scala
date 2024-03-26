@@ -942,7 +942,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmMethod](result)
   }
 
-  test("MismatchingReturnType.01") {
+  test("MismatchedReturnType.01") {
     val input =
       raw"""
            |def foo(): Unit =
@@ -953,7 +953,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.MismatchedReturnType](result)
   }
 
-  test("MismatchingReturnType.02") {
+  test("MismatchedReturnType.02") {
     val input =
       raw"""
            |def foo(): Unit =
@@ -964,7 +964,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.MismatchedReturnType](result)
   }
 
-  test("MismatchingReturnType.03") {
+  test("MismatchedReturnType.03") {
     val input =
       raw"""
            |type alias AliasedReturnType = ##java.util.Iterator
