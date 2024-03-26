@@ -918,11 +918,13 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |trait C[a] {
+        |    type T: Type
         |    type S: Eff
         |    def f(): Unit
         |}
         |
         |instance C[Int32] {
+        |    type T = Int32
         |    def f(): Unit
         |}
         |""".stripMargin
