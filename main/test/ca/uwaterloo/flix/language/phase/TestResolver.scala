@@ -748,50 +748,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmClass](result)
   }
 
-  test("UndefinedJvmConstructor.01") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java_new java.io.File(): ##java.io.File \ IO as _;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
-  }
-
-  test("UndefinedJvmConstructor.02") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java_new java.io.File(Int32): ##java.io.File \ IO as _;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
-  }
-
-  test("UndefinedJvmConstructor.03") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java_new java.lang.String(Bool): ##java.lang.String \ IO as _;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
-  }
-
-  test("UndefinedJvmConstructor.04") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java_new java.lang.String(Bool, Char, String): ##java.lang.String \ IO as _;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmConstructor](result)
-  }
-
   test("UndefinedJvmClass.01") {
     val input =
       raw"""
@@ -867,6 +823,50 @@ class TestResolver extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
+  test("UndefinedJvmConstructor.01") {
+    val input =
+      raw"""
+           |def foo(): Unit =
+           |    import java_new java.io.File(): ##java.io.File \ IO as _;
+           |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedJvmConstructor](result)
+  }
+
+  test("UndefinedJvmConstructor.02") {
+    val input =
+      raw"""
+           |def foo(): Unit =
+           |    import java_new java.io.File(Int32): ##java.io.File \ IO as _;
+           |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedJvmConstructor](result)
+  }
+
+  test("UndefinedJvmConstructor.03") {
+    val input =
+      raw"""
+           |def foo(): Unit =
+           |    import java_new java.lang.String(Bool): ##java.lang.String \ IO as _;
+           |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedJvmConstructor](result)
+  }
+
+  test("UndefinedJvmConstructor.04") {
+    val input =
+      raw"""
+           |def foo(): Unit =
+           |    import java_new java.lang.String(Bool, Char, String): ##java.lang.String \ IO as _;
+           |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedJvmConstructor](result)
   }
 
   test("UndefinedJvmMethod.01") {
