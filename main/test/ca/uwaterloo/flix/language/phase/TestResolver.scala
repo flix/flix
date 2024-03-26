@@ -240,6 +240,87 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalNonJavaType](result)
   }
 
+  test("IllegalSignature.01") {
+    // The type variable `a` does not appear in the signature of `f`
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f(): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f(): a
+        |
+        |    pub def g(): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.03") {
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f(x: {y = a}): {y = Bool}
+        |
+        |    pub def g(x: {y = Bool}): Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.04") {
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f(): a
+        |
+        |    pub def g(): Bool
+        |
+        |    pub def h(): a
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.05") {
+    val input =
+      """
+        |trait C[a] {
+        |    pub def f(): Int
+        |
+        |    pub def g(): String
+        |
+        |    pub def h(): a
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
+  test("IllegalSignature.06") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a]: Type
+        |
+        |    pub def f(x: C.T[a]): String
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalSignature](result)
+  }
+
   test("InaccessibleDef.01") {
     val input =
       s"""
@@ -1242,87 +1323,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
-  }
-
-  test("IllegalSignature.01") {
-    // The type variable `a` does not appear in the signature of `f`
-    val input =
-      """
-        |trait C[a] {
-        |    pub def f(): Bool
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalSignature](result)
-  }
-
-  test("IllegalSignature.02") {
-    val input =
-      """
-        |trait C[a] {
-        |    pub def f(): a
-        |
-        |    pub def g(): Bool
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalSignature](result)
-  }
-
-  test("IllegalSignature.03") {
-    val input =
-      """
-        |trait C[a] {
-        |    pub def f(x: {y = a}): {y = Bool}
-        |
-        |    pub def g(x: {y = Bool}): Bool
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalSignature](result)
-  }
-
-  test("IllegalSignature.04") {
-    val input =
-      """
-        |trait C[a] {
-        |    pub def f(): a
-        |
-        |    pub def g(): Bool
-        |
-        |    pub def h(): a
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalSignature](result)
-  }
-
-  test("IllegalSignature.05") {
-    val input =
-      """
-        |trait C[a] {
-        |    pub def f(): Int
-        |
-        |    pub def g(): String
-        |
-        |    pub def h(): a
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalSignature](result)
-  }
-
-  test("IllegalSignature.06") {
-    val input =
-      """
-        |trait C[a] {
-        |    type T[a]: Type
-        |
-        |    pub def f(x: C.T[a]): String
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalSignature](result)
   }
 
   test("IllegalWildType.01") {
