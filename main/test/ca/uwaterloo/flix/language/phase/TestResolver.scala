@@ -1075,6 +1075,16 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedName](result)
   }
 
+  test("UndefinedName.ParYield.01") {
+    val input =
+      """
+        |def f(): Int32 =
+        |    par (_ <- let b = 5; b) yield b
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedName](result)
+  }
+  
   test("UndefinedOp.01") {
     val input =
       """
@@ -1421,16 +1431,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
-  }
-
-  test("UndefinedName.ParYield.01") {
-    val input =
-      """
-        |def f(): Int32 =
-        |    par (_ <- let b = 5; b) yield b
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedName](result)
   }
 
   test("UndefinedTypeVar.Def.01") {
