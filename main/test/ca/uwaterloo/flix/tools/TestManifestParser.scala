@@ -176,10 +176,8 @@ class TestManifestParser extends AnyFunSuite {
   test("Ok.dependencies") {
     assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, Some(3), None, None)),
                                  Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, Some(1), None, None)),
-                                 Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, Some(3), None, None)),
                                  Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
-                                 Dependency.MavenDependency("org.junit", "junit", "1.2"),
                                  Dependency.JarDependency(new URI("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").toURL, "myJar.jar")))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.dependencies
@@ -303,115 +301,6 @@ class TestManifestParser extends AnyFunSuite {
     }
     assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
                                   Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.c")))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest.dependencies
-      case Err(e) => e.message(f)
-    })
-  }
-  test("Ok.dev-mvn-dependencies.format.01") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-mvn-dependencies]
-        |"org.junit:junit" = "12"
-        |
-        |""".stripMargin
-    }
-    assertResult(expected = List(Dependency.MavenDependency("org.junit", "junit", "12")))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest.dependencies
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Ok.dev-mvn-dependencies.format.02") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3.4.5.6"
-        |
-        |""".stripMargin
-    }
-    assertResult(expected = List(Dependency.MavenDependency("org.junit", "junit", "1.2.3.4.5.6")))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest.dependencies
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Ok.dev-mvn-dependencies.numbers.01") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-mvn-dependencies]
-        |"org.junit:junit" = "a.2.3"
-        |
-        |""".stripMargin
-    }
-    assertResult(expected = List(Dependency.MavenDependency("org.junit", "junit", "a.2.3")))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest.dependencies
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Ok.dev-mvn-dependencies.numbers.02") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.b.3"
-        |
-        |""".stripMargin
-    }
-    assertResult(expected = List(Dependency.MavenDependency("org.junit", "junit", "1.b.3")))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest.dependencies
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Ok.dev-mvn-dependencies.numbers.03") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.c"
-        |
-        |""".stripMargin
-    }
-    assertResult(expected = List(Dependency.MavenDependency("org.junit", "junit", "1.2.c")))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
@@ -1553,30 +1442,6 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(ManifestError.MavenDependencyFormatError(null, "org:eclipse:jetty:jetty-server").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
-  }
-
-
-  //Dev-mvn-dependencies
-  test("Err.dev-mvn-dependencies.type") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-mvn-dependencies]
-        |"org.junit:junit" = 123456
-        |
-        |""".stripMargin
-    }
-    assertResult(ManifestError.DependencyFormatError(null, "class java.lang.Long cannot be cast to class java.lang.String (java.lang.Long and java.lang.String are in module java.base of loader 'bootstrap')").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
