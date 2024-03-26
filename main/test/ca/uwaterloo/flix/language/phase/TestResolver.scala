@@ -403,6 +403,17 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalType](result)
   }
 
+  test("IllegalType.03") {
+    val input =
+      """
+        |def isThisThingNull(x: Lazy): Bool =
+        |    import static java.util.Objects.isNull(Lazy): Bool \ Pure;
+        |    isNull(x)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalType](result)
+  }
+
   test("IllegalWildType.01") {
     val input =
       """
