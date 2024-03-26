@@ -507,6 +507,21 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleDef](result)
   }
 
+  test("InaccessibleDef.03") {
+    val input =
+      s"""
+         |mod A {
+         |  def f(): Int32 = B.g()
+         |}
+         |
+         |mod A.B {
+         |  def g(): Int32 = A.f()
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleDef](result)
+  }
+
   test("InaccessibleEnum.01") {
     val input =
       s"""
