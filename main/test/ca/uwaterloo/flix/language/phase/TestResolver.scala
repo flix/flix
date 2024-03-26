@@ -533,7 +533,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |}
          |
          |mod B {
-         |  def g(): A.Color = A/Color.Red
+         |  def g(): A.Color = A.Color.Red
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
