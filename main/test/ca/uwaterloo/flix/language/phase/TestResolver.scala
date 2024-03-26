@@ -161,6 +161,43 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.DuplicateAssocTypeDef](result)
   }
 
+  test("DuplicateAssocTypeDef.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |    type K: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T = String
+        |    type K = Bool
+        |    type K = Bool
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.DuplicateAssocTypeDef](result)
+  }
+
+  test("DuplicateAssocTypeDef.03") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T: Type
+        |    type K: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T = String
+        |    type T = IO
+        |    type K = Bool
+        |    type K = Unit
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.DuplicateAssocTypeDef](result)
+  }
+
   test("DuplicateDerivation.01") {
     val input =
       """
