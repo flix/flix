@@ -591,6 +591,36 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleTypeAlias](result)
   }
 
+  test("MismatchedOpArity.InvalidOpParamCount.Do.01") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(x: String): Unit
+        |}
+        |
+        |def foo(): Unit \ E = do E.op("hello", "world")
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedOpArity](result)
+  }
+
+  test("MismatchedOpArity.InvalidOpParamCount.Handler.01") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(x: String): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    try checked_ecast(()) with E {
+        |        def op(x, y, cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedOpArity](result)
+  }
+
   test("MismatchedReturnType.01") {
     val input =
       raw"""
@@ -1470,35 +1500,5 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedJvmClass](result)
-  }
-
-  test("MismatchedOpArity.InvalidOpParamCount.Do.01") {
-    val input =
-      """
-        |eff E {
-        |    pub def op(x: String): Unit
-        |}
-        |
-        |def foo(): Unit \ E = do E.op("hello", "world")
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.MismatchedOpArity](result)
-  }
-
-  test("MismatchedOpArity.InvalidOpParamCount.Handler.01") {
-    val input =
-      """
-        |eff E {
-        |    pub def op(x: String): Unit
-        |}
-        |
-        |def foo(): Unit = {
-        |    try checked_ecast(()) with E {
-        |        def op(x, y, cont) = ()
-        |    }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.MismatchedOpArity](result)
   }
 }
