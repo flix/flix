@@ -39,7 +39,7 @@ object Diagnostic {
       case _ => ""
     }
     val fullMessage = compilationMessage.message(formatter) + explanation
-    Diagnostic(range, severity, Some(code), None, summary, fullMessage, Nil)
+    Diagnostic(range, severity, Some(code.value), None, summary, fullMessage, Nil)
   }
 
   def from(codeHint: CodeHint, formatter: Formatter): Diagnostic = {

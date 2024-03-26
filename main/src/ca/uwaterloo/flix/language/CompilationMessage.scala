@@ -29,7 +29,7 @@ trait CompilationMessage {
   /**
     * Returns the kind of error message, e.g. "Syntax Error" or "Type Error".
     */
-  def kind: String
+  def kind: MessageKind
 
   /**
     * Returns the input source of the error message.
@@ -57,3 +57,5 @@ trait CompilationMessage {
   def explain(formatter: Formatter): Option[String] = None
 
 }
+
+case class MessageKind(value: String)

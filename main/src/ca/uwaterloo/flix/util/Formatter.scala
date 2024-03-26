@@ -1,10 +1,15 @@
 package ca.uwaterloo.flix.util
 
-import ca.uwaterloo.flix.language.ast.SourceLocation
+import ca.uwaterloo.flix.language.MessageKind
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation}
 
 import scala.collection.mutable
 
 trait Formatter {
+
+  implicit def addErrorLine(kind: MessageKind, source: Ast.Source, s: String): String = {
+    this.line(kind.value, source.name) + System.lineSeparator() + s
+  }
 
   def line(left: String, right: String): String =
     this.blue(s"-- $left -------------------------------------------------- $right${System.lineSeparator()}")
