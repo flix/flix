@@ -1323,7 +1323,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
-  test("TestParYield.01") {
+  test("UndefinedName.ParYield.01") {
     val input =
       """
         |def f(): Int32 =
