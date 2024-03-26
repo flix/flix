@@ -1,4 +1,4 @@
-mod Test.Dec.AssociatedTypes.Mult {
+mod Test.Dec.Assoc.Type.Mult {
 
     ////////////////////////////////////////////////////////
     // Type Definitions                                   //
