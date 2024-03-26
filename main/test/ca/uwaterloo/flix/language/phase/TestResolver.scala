@@ -738,6 +738,16 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedEffect](result)
   }
 
+  test("UndefinedJvmClass.01") {
+    val input =
+      """
+        |def foo(): Bool =
+        |    1000ii instanceof ##org.undefined.BigInt
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedJvmClass](result)
+  }
+
   test("UndefinedName.01") {
     val input = "def f(): Int32 = x"
     val result = compile(input, Options.TestWithLibNix)
@@ -1490,15 +1500,5 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedKind](result)
-  }
-
-  test("UndefinedJvmClass.01") {
-    val input =
-      """
-        |def foo(): Bool =
-        |    1000ii instanceof ##org.undefined.BigInt
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedJvmClass](result)
   }
 }
