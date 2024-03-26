@@ -369,7 +369,6 @@ object ConstraintResolution {
     case (t, x: Type.Var) if renv.isFlexible(x.sym) && !t.typeVars.contains(x) =>
       Result.Ok(ResolutionResult.newSubst(Substitution.singleton(x.sym, t)))
 
-
     // reflU
     case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(ResolutionResult.elimination)
 
