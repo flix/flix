@@ -2428,6 +2428,9 @@ object Resolver {
           (t, kind) => UnkindedType.Ascribe(t, kind, loc)
         }
 
+      case NamedAst.Type.Error(loc) =>
+        Validation.success(UnkindedType.Error(loc))
+
     }
 
     visit(tpe0)
