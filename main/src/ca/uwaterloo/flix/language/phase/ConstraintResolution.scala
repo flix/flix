@@ -606,10 +606,6 @@ object ConstraintResolution {
   }
 
   /**
-    *
-    */
-
-  /**
     * Converts the given unification error into a type error.
     *
     * ExpectType
