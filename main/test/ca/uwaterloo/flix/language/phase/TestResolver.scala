@@ -1319,6 +1319,32 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
+  test("UndefinedType.ImportClearedInNamespace.01") {
+    val input =
+      """
+        |import java.lang.StringBuffer
+        |mod A {
+        |  def foo(): StringBuffer = ???
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
+  test("UndefinedType.ImportClearedInNamespace.02") {
+    val input =
+      """
+        |mod A {
+        |  import java.lang.StringBuffer
+        |  mod B {
+        |     def foo(): StringBuffer = ???
+        |  }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UndefinedType](result)
+  }
+
   test("UndefinedType.UseClearedInNamespace.01") {
     val input =
       """
@@ -1344,32 +1370,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |  use A.X
         |  mod C {
         |     def foo(): X = ???
-        |  }
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedType](result)
-  }
-
-  test("UndefinedType.ImportClearedInNamespace.01") {
-    val input =
-      """
-        |import java.lang.StringBuffer
-        |mod A {
-        |  def foo(): StringBuffer = ???
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedType](result)
-  }
-
-  test("UndefinedType.ImportClearedInNamespace.02") {
-    val input =
-      """
-        |mod A {
-        |  import java.lang.StringBuffer
-        |  mod B {
-        |     def foo(): StringBuffer = ???
         |  }
         |}
         |""".stripMargin
