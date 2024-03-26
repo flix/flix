@@ -676,6 +676,29 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleTypeAlias](result)
   }
 
+  test("InaccessibleTypeAlias.03") {
+    val input =
+      s"""
+         |mod A {
+         |  def f(): A.B.Color[Int32] = B.C.Color.Blu(255)
+         |
+         |  mod B {
+         |    type alias Color[a] = C.Color[a]
+         |
+         |    mod C {
+         |      pub enum Color[a] {
+         |        case Red(a),
+         |        case Gre(a),
+         |        case Blu(a)
+         |      }
+         |    }
+         |  }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTypeAlias](result)
+  }
+
   test("MismatchedOpArity.InvalidOpParamCount.Do.01") {
     val input =
       """
