@@ -92,9 +92,9 @@ object ConstraintResolution {
       val eqEnv = expandEqualityEnv(eqEnv0, econstrs) // TODO ASSOC-TYPES allow econstrs on instances
 
       // We add extra constraints for the declared type and effect
-      val tpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
-      val effConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
-      val constrs = tpeConstr :: effConstr :: infConstrs
+      val declaredTpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
+      val declaredEffConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
+      val constrs = declaredTpeConstr :: declaredEffConstr :: infConstrs
 
 
       resolve(constrs, initialSubst, renv, cenv, eqEnv).flatMap {
@@ -271,13 +271,14 @@ object ConstraintResolution {
 
 
   /**
-    * Resolves the equality between the two given types.
-    *
-    * The types must have kinds that do not have special unification rules.
+    * Resolves the equality between the two given types, where the types have some kind `... -> Star`
     *
     * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
     */
   private def resolveEqualityStar(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], loc: SourceLocation)(implicit flix: Flix): Result[ResolutionResult, TypeError] = (tpe1, tpe2) match {
+    // reflU
+    case (x: Type.Var, y: Type.Var) if (x == y) => Result.Ok(ResolutionResult.elimination)
+
     // varU
     case (x: Type.Var, t) if renv.isFlexible(x.sym) && !t.typeVars.contains(x) =>
       Result.Ok(ResolutionResult.newSubst(Substitution.singleton(x.sym, t)))
@@ -289,7 +290,6 @@ object ConstraintResolution {
 
     // reflU
     case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(ResolutionResult.elimination)
-    case (x: Type.Var, y: Type.Var) if (x == y) => Result.Ok(ResolutionResult.elimination)
 
     case (Type.Alias(_, _, tpe, _), _) => resolveEquality(tpe, tpe2, prov, renv, eqEnv, loc)
 
@@ -317,6 +317,7 @@ object ConstraintResolution {
         ResolutionResult.constraints(List(TypingConstraint.Equality(t1, t2, prov)), p1 || p2)
       }
 
+    // redU
     case (tpe, assoc: Type.AssocType) =>
       for {
         (t1, p1) <- simplifyType(tpe, renv, eqEnv, loc)
@@ -477,13 +478,28 @@ object ConstraintResolution {
     *
     * The initial substitution should come from e.g., formal parameter type ascriptions.
     *
-    * Returns a reduction result containing a substitution and any leftover constraints.
+    * Returns a result, either:
+    * - a substitution and leftover constraints, or
+    * - an error if resolution failed
     */
   def resolve(constrs: List[TypingConstraint], subst0: Substitution, renv: RigidityEnv, cenv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Result[ResolutionResult, TypeError] = {
-    var curr = constrs.sortBy(_.numVars)
+
+    // We track changes to the resolution state through mutable variables.
+
+    // The set of remaining type constraints.
+    var curr = constrs.sortBy(_.index)
+
+    // The current substitution.
     var subst = subst0
+
+    // The number of resolution iterations we have made.
+    // We give up if this exceeds MaxIterations.
     var count = 0
+
+    // Whether the last resolution attempt made progress.
+    // We give up if a resolution attempt does not make progress.
     var progress = true
+
     while (progress) {
       if (count >= MaxIterations) {
         return Result.Err(TypeError.TooComplex(SourceLocation.Unknown))
@@ -591,17 +607,26 @@ object ConstraintResolution {
   }
 
   /**
+    *
+    */
+
+  /**
+    *
     * A result of performing type inference.
+    *
+    * @param constrs constraints inferred for the expression
+    * @param tpe     the inferred type of the expression
+    * @param eff     the inferred effect of the expression
+    * @param renv    the inferred rigidity environment for the expression (marking region variables)
     */
   case class InfResult(constrs: List[TypingConstraint], tpe: Type, eff: Type, renv: RigidityEnv)
 
   /**
     * The result of constraint resolution.
     *
-    * Consists of:
-    * - a substitution,
-    * - a list of leftover constraints, and
-    * - a Boolean flag indicating whether progress was made
+    * @param subst    a substitution
+    * @param constrs  leftover constraints
+    * @param progress a flag indicating whether this resolution attempt made progress
     */
   case class ResolutionResult(subst: Substitution, constrs: List[TypingConstraint], progress: Boolean) {
 
