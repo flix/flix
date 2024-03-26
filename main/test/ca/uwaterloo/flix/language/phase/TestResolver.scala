@@ -1319,62 +1319,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
-  test("UnderAppliedTypeAlias.01") {
-    val input =
-      """
-        |type alias T[a] = a
-        |type alias S = T
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UnderAppliedTypeAlias](result)
-  }
-
-  test("UnderAppliedTypeAlias.02") {
-    val input =
-      """
-        |type alias T[a, b] = (a, b)
-        |type alias S = T[Int32]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UnderAppliedTypeAlias](result)
-  }
-
-  test("UnderAppliedTypeAlias.03") {
-    val input =
-      """
-        |type alias T[a] = a
-        |
-        |def f(x: T): Int32 = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UnderAppliedTypeAlias](result)
-  }
-
-  test("UnderAppliedTypeAlias.04") {
-    val input =
-      """
-        |type alias T[a] = a
-        |enum E[f: Type -> Type]
-        |
-        |def f(x: E[T]): Int32 = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UnderAppliedTypeAlias](result)
-  }
-
-  test("UnderAppliedAssocType.01") {
-    val input =
-      """
-        |trait C[a] {
-        |    type T[a]: Type
-        |}
-        |
-        |def f(x: C.T): String = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UnderAppliedAssocType](result)
-  }
-
   test("UndefinedType.UseClearedInNamespace.01") {
     val input =
       """
@@ -1500,5 +1444,61 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
+  }
+
+  test("UnderAppliedTypeAlias.01") {
+    val input =
+      """
+        |type alias T[a] = a
+        |type alias S = T
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UnderAppliedTypeAlias](result)
+  }
+
+  test("UnderAppliedTypeAlias.02") {
+    val input =
+      """
+        |type alias T[a, b] = (a, b)
+        |type alias S = T[Int32]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UnderAppliedTypeAlias](result)
+  }
+
+  test("UnderAppliedTypeAlias.03") {
+    val input =
+      """
+        |type alias T[a] = a
+        |
+        |def f(x: T): Int32 = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UnderAppliedTypeAlias](result)
+  }
+
+  test("UnderAppliedTypeAlias.04") {
+    val input =
+      """
+        |type alias T[a] = a
+        |enum E[f: Type -> Type]
+        |
+        |def f(x: E[T]): Int32 = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UnderAppliedTypeAlias](result)
+  }
+
+  test("UnderAppliedAssocType.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a]: Type
+        |}
+        |
+        |def f(x: C.T): String = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.UnderAppliedAssocType](result)
   }
 }
