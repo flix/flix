@@ -216,6 +216,15 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.DuplicateDerivation](result)
   }
 
+  test("DuplicateDerivation.03") {
+    val input =
+      """
+        |enum E with ToString, Order, ToString, Order
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.DuplicateDerivation](result)
+  }
+
   test("IllegalAssocTypeApplication.01") {
     val input =
       """
