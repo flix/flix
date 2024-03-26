@@ -869,6 +869,51 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedJvmConstructor](result)
   }
 
+  test("UndefinedJvmField.01") {
+    val input =
+      raw"""
+           |def foo(): Unit =
+           |    import java_get_field java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
+           |    ()
+           |
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedJvmField](result)
+  }
+
+  test("UndefinedJvmField.02") {
+    val input =
+      raw"""
+           |def foo(): Unit =
+           |    import java_set_field java.lang.Character.foo: ##java.lang.Character \ IO as setFoo;
+           |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedJvmField](result)
+  }
+
+  test("UndefinedJvmField.03") {
+    val input =
+      raw"""
+           |def foo(): Unit =
+           |    import static java_get_field java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
+           |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedJvmField](result)
+  }
+
+  test("UndefinedJvmField.04") {
+    val input =
+      raw"""
+           |def foo(): Unit =
+           |    import static java_set_field java.lang.Character.foo: Unit \ IO as setFoo;
+           |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.UndefinedJvmField](result)
+  }
+
   test("UndefinedJvmMethod.01") {
     val input =
       raw"""
@@ -933,51 +978,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmMethod](result)
-  }
-
-  test("UndefinedJvmField.01") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java_get_field java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
-           |    ()
-           |
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmField](result)
-  }
-
-  test("UndefinedJvmField.02") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java_set_field java.lang.Character.foo: ##java.lang.Character \ IO as setFoo;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmField](result)
-  }
-
-  test("UndefinedJvmField.03") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import static java_get_field java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmField](result)
-  }
-
-  test("UndefinedJvmField.04") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import static java_set_field java.lang.Character.foo: Unit \ IO as setFoo;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.UndefinedJvmField](result)
   }
 
   test("UndefinedName.01") {
