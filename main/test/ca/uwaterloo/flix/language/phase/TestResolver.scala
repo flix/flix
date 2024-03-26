@@ -208,6 +208,38 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalAssocTypeApplication](result)
   }
 
+  test("IllegalNonJavaType.01") {
+    val input =
+      """
+        |def f(): Unit =
+        |    new Int32 {}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalNonJavaType](result)
+  }
+
+  test("IllegalNonJavaType.02") {
+    val input =
+      """
+        |def f(): Unit =
+        |    new String {}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalNonJavaType](result)
+  }
+
+  test("IllegalNonJavaType.03") {
+    val input =
+      """
+        |type alias T = Int32
+        |
+        |def f(): Unit =
+        |    new T {}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalNonJavaType](result)
+  }
+
   test("InaccessibleDef.01") {
     val input =
       s"""
@@ -1016,38 +1048,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.IllegalType](result)
-  }
-
-  test("IllegalNonJavaType.01") {
-    val input =
-      """
-        |def f(): Unit =
-        |    new Int32 {}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalNonJavaType](result)
-  }
-
-  test("IllegalNonJavaType.02") {
-    val input =
-      """
-        |def f(): Unit =
-        |    new String {}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalNonJavaType](result)
-  }
-
-  test("IllegalNonJavaType.03") {
-    val input =
-      """
-        |type alias T = Int32
-        |
-        |def f(): Unit =
-        |    new T {}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalNonJavaType](result)
   }
 
   test("ParentNamespaceNotVisible.01") {
