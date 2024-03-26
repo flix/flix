@@ -180,6 +180,34 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.DuplicateDerivation](result)
   }
 
+  test("IllegalAssocTypeApplication.01") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T
+        |}
+        |
+        |def foo(): C.T[String] = ???
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalAssocTypeApplication](result)
+  }
+
+  test("IllegalAssocTypeApplication.02") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T[a]: Type
+        |}
+        |
+        |instance C[String] {
+        |    type T[String] = C.T[String]
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalAssocTypeApplication](result)
+  }
+
   test("InaccessibleDef.01") {
     val input =
       s"""
@@ -1442,34 +1470,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.MissingAssocTypeDef](result)
-  }
-
-  test("IllegalAssocTypeApplication.01") {
-    val input =
-      """
-        |trait C[a] {
-        |    type T
-        |}
-        |
-        |def foo(): C.T[String] = ???
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalAssocTypeApplication](result)
-  }
-
-  test("IllegalAssocTypeApplication.02") {
-    val input =
-      """
-        |trait C[a] {
-        |    type T[a]: Type
-        |}
-        |
-        |instance C[String] {
-        |    type T[String] = C.T[String]
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalAssocTypeApplication](result)
   }
 
   test("Test.InvalidOpParamCount.Do.01") {
