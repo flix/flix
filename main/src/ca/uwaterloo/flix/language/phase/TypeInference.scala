@@ -1100,7 +1100,7 @@ object TypeInference {
           (constrs, tpe, eff) <- visitExp(exp)
           _ <- expectTypeM(expected = channelType, actual = tpe, exp.loc)
           resultTyp <- unifyTypeM(tvar, elmVar, loc)
-          resultEff = Type.mkUnion(eff, regionVar, loc)
+          resultEff = Type.mkUnion(regionVar, Type.NonDet, Type.Blocking, eff, loc)
         } yield (constrs, resultTyp, resultEff)
 
       case KindedAst.Expr.PutChannel(exp1, exp2, loc) =>
@@ -1114,7 +1114,7 @@ object TypeInference {
           _ <- expectTypeM(expected = channelType, actual = tpe1, exp1.loc)
           _ <- expectTypeM(expected = elmVar, actual = tpe2, exp2.loc)
           resultTyp = Type.mkUnit(loc)
-          resultEff = Type.mkUnion(eff1, eff2, regionVar, loc)
+          resultEff = Type.mkUnion(regionVar, Type.Blocking, eff1, eff2, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expr.SelectChannel(rules, default, tvar, loc) =>
@@ -1145,23 +1145,29 @@ object TypeInference {
             case Some(exp) => visitExp(exp)
           }
 
+        // A select without a default case is nondet and blocking.
+        val defaultEff = if (default.nonEmpty) Nil else List(Type.NonDet, Type.Blocking)
+
         for {
           (ruleConstrs, ruleTypes, ruleEffs) <- traverseM(rules)(inferSelectRule).map(_.unzip3)
           (defaultConstrs, defaultType, eff2) <- inferDefaultRule(default)
           resultCon = ruleConstrs.flatten ++ defaultConstrs
           resultTyp <- unifyTypeM(tvar :: defaultType :: ruleTypes, loc)
-          resultEff = Type.mkUnion(regionVar :: eff2 :: ruleEffs, loc)
+          resultEff = Type.mkUnion(regionVar :: eff2 :: ruleEffs ::: defaultEff, loc)
         } yield (resultCon, resultTyp, resultEff)
 
       case KindedAst.Expr.Spawn(exp1, exp2, loc) =>
+        // The effect of spawn should be its region and all effects of the spawned expression less `Blocking` and `NonDet`.
+        // Note: We cannot subtract effects, so `Blocking` and `NonDet` propagate.
+        // Moreover, we should ensure that the spawned expression has no control-effects. We also cannot yet enforce that.
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val regionType = Type.mkRegion(regionVar, loc)
         for {
-          (constrs1, tpe1, _) <- visitExp(exp1)
+          (constrs1, tpe1, eff1) <- visitExp(exp1)
           (constrs2, tpe2, _) <- visitExp(exp2)
           _ <- expectTypeM(expected = regionType, actual = tpe2, exp2.loc)
           resultTyp = Type.Unit
-          resultEff = Type.mkUnion(Type.IO, regionVar, loc)
+          resultEff = Type.mkUnion(regionVar, eff1, loc)
         } yield (constrs1 ++ constrs2, resultTyp, resultEff)
 
       case KindedAst.Expr.ParYield(frags, exp, loc) =>

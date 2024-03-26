@@ -34,6 +34,16 @@ object Symbol {
   val IO: EffectSym = mkEffectSym(Name.RootNS, Ident(SourcePosition.Unknown, "IO", SourcePosition.Unknown))
 
   /**
+   * The symbol for the NonDet effect.
+   */
+  val NonDet: EffectSym = mkEffectSym(Name.RootNS, Ident(SourcePosition.Unknown, "NonDet", SourcePosition.Unknown))
+
+  /**
+   * The symbol for the Blocking effect.
+   */
+  val Blocking: EffectSym = mkEffectSym(Name.RootNS, Ident(SourcePosition.Unknown, "Blocking", SourcePosition.Unknown))
+
+  /**
     * Returns a fresh def symbol based on the given symbol.
     */
   def freshDefnSym(sym: DefnSym)(implicit flix: Flix): DefnSym = {

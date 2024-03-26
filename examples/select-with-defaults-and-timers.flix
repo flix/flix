@@ -1,5 +1,5 @@
 /// Sends the value `x` on the channel `c` after a delay.
-def slow(x: Int32, tx: Sender[Int32, r]): Unit \ { r, IO } =
+def slow(x: Int32, tx: Sender[Int32, r]): Unit \ { r, Blocking, IO } =
     use Time.Duration.fromSeconds;
     Thread.sleep(fromSeconds(10));
     Channel.send(x, tx);
@@ -15,7 +15,7 @@ def recvWithDefault(rx: Receiver[Int32, r]): Int32 \ r =
 
 /// Reads a value from the channel `c`.
 /// Returns the default value `2` if after a timeout.
-def recvWithTimeout(rc: Region[r], c: Receiver[Int32, r]): Int32 \ { r, IO } =
+def recvWithTimeout(rc: Region[r], c: Receiver[Int32, r]): Int32 \ { r, NonDet, Blocking, IO } =
     use Time.Duration.fromSeconds;
     let t = Channel.timeout(rc, fromSeconds(1));
     select {
@@ -29,7 +29,9 @@ def recvWithTimeout(rc: Region[r], c: Receiver[Int32, r]): Int32 \ { r, IO } =
 def main(): Unit \ IO = region rc {
     let (tx1, rx1) = Channel.buffered(rc, 1);
     let (tx2, rx2) = Channel.buffered(rc, 1);
-    spawn slow(123, tx1) @ rc;
-    spawn slow(456, tx2) @ rc;
-    (recvWithDefault(rx1) + recvWithTimeout(rc, rx2)) |> println
+    try {
+        spawn slow(123, tx1) @ rc;
+        spawn slow(456, tx2) @ rc;
+        (recvWithDefault(rx1) + recvWithTimeout(rc, rx2)) |> println
+    } with NonDet {} with Blocking {}
 }

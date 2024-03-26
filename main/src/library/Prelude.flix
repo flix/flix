@@ -19,6 +19,20 @@ pub enum Proxy[_] {
 pub eff IO
 
 ///
+/// The non-deterministic effect.
+///
+/// An expression which is non-deterministic may evaluate any value in its type.
+///
+pub eff NonDet
+
+///
+/// The blocking effect.
+///
+/// An expression which is blocking may fail to terminate.
+///
+pub eff Blocking
+
+///
 /// The pure identity function.
 ///
 pub def identity(x: a): a = x
