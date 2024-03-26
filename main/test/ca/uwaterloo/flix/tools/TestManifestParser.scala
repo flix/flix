@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.tools.pkg.github.GitHub
-import ca.uwaterloo.flix.tools.pkg.{Dependency, DependencyKind, PackageModules, ManifestError, ManifestParser, Repository, SemVer}
+import ca.uwaterloo.flix.tools.pkg.{Dependency, PackageModules, ManifestError, ManifestParser, Repository, SemVer}
 import ca.uwaterloo.flix.util.Formatter
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.language.ast.Symbol
@@ -31,15 +31,9 @@ class TestManifestParser extends AnyFunSuite {
       |"github:jls/tic-tac-toe" = "1.2.3"
       |"github:mlutze/flixball" = "3.2.1"
       |
-      |[dev-dependencies]
-      |"github:fuzzer/fuzzer" = "1.2.3"
-      |
       |[mvn-dependencies]
       |"org.postgresql:postgresql" = "1.2.3.4"
       |"org.eclipse.jetty:jetty-server" = "4.7.0-M1"
-      |
-      |[dev-mvn-dependencies]
-      |"org.junit:junit" = "1.2"
       |
       |[jar-dependencies]
       |"myJar.jar" = "url:https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar"
@@ -180,12 +174,10 @@ class TestManifestParser extends AnyFunSuite {
   }
 
   test("Ok.dependencies") {
-    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, Some(3), None, None), DependencyKind.Production),
-                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, Some(1), None, None), DependencyKind.Production),
-                                 Dependency.FlixDependency(Repository.GitHub, "fuzzer", "fuzzer", SemVer(1, 2, Some(3), None, None), DependencyKind.Development),
-                                 Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4", DependencyKind.Production),
-                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1", DependencyKind.Production),
-                                 Dependency.MavenDependency("org.junit", "junit", "1.2", DependencyKind.Development),
+    assertResult(expected = List(Dependency.FlixDependency(Repository.GitHub, "jls", "tic-tac-toe", SemVer(1, 2, Some(3), None, None)),
+                                 Dependency.FlixDependency(Repository.GitHub, "mlutze", "flixball", SemVer(3, 2, Some(1), None, None)),
+                                 Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3.4"),
+                                 Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.0-M1"),
                                  Dependency.JarDependency(new URI("https://repo1.maven.org/maven2/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.jar").toURL, "myJar.jar")))(actual = {
       ManifestParser.parse(tomlCorrect, null) match {
         case Ok(manifest) => manifest.dependencies
@@ -211,8 +203,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3", DependencyKind.Production),
-                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "470", DependencyKind.Production)))(ManifestParser.parse(toml, null) match {
+    assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
+                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "470")))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
@@ -235,8 +227,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3", DependencyKind.Production),
-                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "47", DependencyKind.Production)))(ManifestParser.parse(toml, null) match {
+    assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
+                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "47")))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
@@ -259,8 +251,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3", DependencyKind.Production),
-                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "a.7.0", DependencyKind.Production)))(ManifestParser.parse(toml, null) match {
+    assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
+                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "a.7.0")))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
@@ -283,8 +275,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3", DependencyKind.Production),
-                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.b.0", DependencyKind.Production)))(ManifestParser.parse(toml, null) match {
+    assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
+                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.b.0")))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
@@ -307,117 +299,8 @@ class TestManifestParser extends AnyFunSuite {
         |
         |""".stripMargin
     }
-    assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3", DependencyKind.Production),
-                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.c", DependencyKind.Production)))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest.dependencies
-      case Err(e) => e.message(f)
-    })
-  }
-  test("Ok.dev-mvn-dependencies.format.01") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-mvn-dependencies]
-        |"org.junit:junit" = "12"
-        |
-        |""".stripMargin
-    }
-    assertResult(expected = List(Dependency.MavenDependency("org.junit", "junit", "12", DependencyKind.Development)))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest.dependencies
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Ok.dev-mvn-dependencies.format.02") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.3.4.5.6"
-        |
-        |""".stripMargin
-    }
-    assertResult(expected = List(Dependency.MavenDependency("org.junit", "junit", "1.2.3.4.5.6", DependencyKind.Development)))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest.dependencies
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Ok.dev-mvn-dependencies.numbers.01") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-mvn-dependencies]
-        |"org.junit:junit" = "a.2.3"
-        |
-        |""".stripMargin
-    }
-    assertResult(expected = List(Dependency.MavenDependency("org.junit", "junit", "a.2.3", DependencyKind.Development)))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest.dependencies
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Ok.dev-mvn-dependencies.numbers.02") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.b.3"
-        |
-        |""".stripMargin
-    }
-    assertResult(expected = List(Dependency.MavenDependency("org.junit", "junit", "1.b.3", DependencyKind.Development)))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest.dependencies
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Ok.dev-mvn-dependencies.numbers.03") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-mvn-dependencies]
-        |"org.junit:junit" = "1.2.c"
-        |
-        |""".stripMargin
-    }
-    assertResult(expected = List(Dependency.MavenDependency("org.junit", "junit", "1.2.c", DependencyKind.Development)))(ManifestParser.parse(toml, null) match {
+    assertResult(expected = List(Dependency.MavenDependency("org.postgresql", "postgresql", "1.2.3"),
+                                  Dependency.MavenDependency("org.eclipse.jetty", "jetty-server", "4.7.c")))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest.dependencies
       case Err(e) => e.message(f)
     })
@@ -1424,205 +1307,6 @@ class TestManifestParser extends AnyFunSuite {
     })
   }
 
-  //Dev-dependencies
-  test("Err.dev-dependencies.type") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-dependencies]
-        |"github:fuzzer/fuzzer" = 789
-        |
-        |""".stripMargin
-    }
-    assertResult(ManifestError.DependencyFormatError(null, "class java.lang.Long cannot be cast to class java.lang.String (java.lang.Long and java.lang.String are in module java.base of loader 'bootstrap')").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Err.dev-dependencies.misspelled") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-dependences]
-        |"github:fuzzer/fuzzer" = "7.8.9"
-        |
-        |""".stripMargin
-    }
-    assertResult(ManifestError.IllegalTableFound(null, "dev-dependences").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Err.dev-dependencies.format.01") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-dependencies]
-        |"github:fuzzer/fuzzer" = "123"
-        |
-        |""".stripMargin
-    }
-    assertResult(ManifestError.FlixVersionHasWrongLength(null, "123").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Err.dev-dependencies.format.02") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-dependencies]
-        |"github:fuzzer/fuzzer" = "1.2.3.4.5"
-        |
-        |""".stripMargin
-    }
-    assertResult(ManifestError.FlixVersionHasWrongLength(null, "1.2.3.4.5").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Err.dev-dependencies.format.03") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-dependencies]
-        |"github/fuzzer/fuzzer" = "1.2.3"
-        |
-        |""".stripMargin
-    }
-    assertResult(ManifestError.FlixDependencyFormatError(null, "github/fuzzer/fuzzer").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Err.dev-dependencies.format.04") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-dependencies]
-        |"github:fuzzer-fuzzer" = "1.2.3"
-        |
-        |""".stripMargin
-    }
-    assertResult(ManifestError.FlixDependencyFormatError(null, "github:fuzzer-fuzzer").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Err.dev-dependencies.numbers.01") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-dependencies]
-        |"github:fuzzer/fuzzer" = "a.2.3"
-        |
-        |""".stripMargin
-    }
-    assertResult(ManifestError.VersionNumberWrong(null, "a.2.3", "For input string: \"a\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Err.dev-dependencies.numbers.02") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-dependencies]
-        |"github:fuzzer/fuzzer" = "1.b.3"
-        |
-        |""".stripMargin
-    }
-    assertResult(ManifestError.VersionNumberWrong(null, "1.b.3", "For input string: \"b\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Err.dev-dependencies.numbers.03") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-dependencies]
-        |"github:fuzzer/fuzzer" = "1.2.c"
-        |
-        |""".stripMargin
-    }
-    assertResult(ManifestError.VersionNumberWrong(null, "1.2.c", "For input string: \"c\"").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
-  }
-
   //Mvn-dependencies
   test("Err.mvn-dependencies.type") {
     val toml = {
@@ -1758,96 +1442,6 @@ class TestManifestParser extends AnyFunSuite {
         |""".stripMargin
     }
     assertResult(ManifestError.MavenDependencyFormatError(null, "org:eclipse:jetty:jetty-server").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
-  }
-
-
-  //Dev-mvn-dependencies
-  test("Err.dev-mvn-dependencies.type") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-mvn-dependencies]
-        |"org.junit:junit" = 123456
-        |
-        |""".stripMargin
-    }
-    assertResult(ManifestError.DependencyFormatError(null, "class java.lang.Long cannot be cast to class java.lang.String (java.lang.Long and java.lang.String are in module java.base of loader 'bootstrap')").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Err.dev-mvn-dependencies.misspelled") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[mvn-dev-dependencies]
-        |"org.junit:junit" = "12.34.56"
-        |
-        |""".stripMargin
-    }
-    assertResult(ManifestError.IllegalTableFound(null, "mvn-dev-dependencies").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Err.dev-mvn-dependencies.format.01") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-mvn-dependencies]
-        |"org/junit/junit" = "1.2.3"
-        |
-        |""".stripMargin
-    }
-    assertResult(ManifestError.MavenDependencyFormatError(null, "org/junit/junit").message(f))(ManifestParser.parse(toml, null) match {
-      case Ok(manifest) => manifest
-      case Err(e) => e.message(f)
-    })
-  }
-
-  test("Err.dev-mvn-dependencies.format.02") {
-    val toml = {
-      """
-        |[package]
-        |name = "hello-world"
-        |description = "A simple program"
-        |version = "0.1.0"
-        |flix = "0.33.0"
-        |license = "Apache-2.0"
-        |authors = ["John Doe <john@example.com>"]
-        |
-        |[dev-mvn-dependencies]
-        |"org:junit:junit" = "1.2.3"
-        |
-        |""".stripMargin
-    }
-    assertResult(ManifestError.MavenDependencyFormatError(null, "org:junit:junit").message(f))(ManifestParser.parse(toml, null) match {
       case Ok(manifest) => manifest
       case Err(e) => e.message(f)
     })
