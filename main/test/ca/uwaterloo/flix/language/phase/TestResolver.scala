@@ -591,6 +591,40 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleTypeAlias](result)
   }
 
+  test("MismatchedReturnType.01") {
+    val input =
+      raw"""
+           |def foo(): Unit =
+           |    import java.lang.String.hashCode(): Unit \ IO as _;
+           |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.MismatchedReturnType](result)
+  }
+
+  test("MismatchedReturnType.02") {
+    val input =
+      raw"""
+           |def foo(): Unit =
+           |    import java.lang.String.subSequence(Int32, Int32): ##java.util.Iterator \ IO as _;
+           |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.MismatchedReturnType](result)
+  }
+
+  test("MismatchedReturnType.03") {
+    val input =
+      raw"""
+           |type alias AliasedReturnType = ##java.util.Iterator
+           |def foo(): Unit =
+           |    import java.lang.String.subSequence(Int32, Int32): AliasedReturnType \ IO as _;
+           |    ()
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[ResolutionError.MismatchedReturnType](result)
+  }
+
   test("SealedTrait.01") {
     val input =
       """
@@ -940,40 +974,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
     expectError[ResolutionError.UndefinedJvmMethod](result)
-  }
-
-  test("MismatchedReturnType.01") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java.lang.String.hashCode(): Unit \ IO as _;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchedReturnType](result)
-  }
-
-  test("MismatchedReturnType.02") {
-    val input =
-      raw"""
-           |def foo(): Unit =
-           |    import java.lang.String.subSequence(Int32, Int32): ##java.util.Iterator \ IO as _;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchedReturnType](result)
-  }
-
-  test("MismatchedReturnType.03") {
-    val input =
-      raw"""
-           |type alias AliasedReturnType = ##java.util.Iterator
-           |def foo(): Unit =
-           |    import java.lang.String.subSequence(Int32, Int32): AliasedReturnType \ IO as _;
-           |    ()
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibMin)
-    expectError[ResolutionError.MismatchedReturnType](result)
   }
 
   test("UndefinedJvmField.01") {
