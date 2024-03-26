@@ -1,4 +1,4 @@
-mod Test.Dec.AssociatedTypes.Kind {
+mod Test.Dec.Assoc.Type.Kind {
 
     ////////////////////////////////////////////////////////
     // Type Definitions                                   //
