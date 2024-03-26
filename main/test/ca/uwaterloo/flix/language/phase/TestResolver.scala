@@ -461,6 +461,70 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleEnum](result)
   }
 
+  test("InaccessibleTrait.01") {
+    val input =
+      s"""
+         |mod A {
+         |  trait Show[a] {
+         |    pub def show(x: a): String
+         |  }
+         |}
+         |
+         |mod B {
+         |  def g(x: a): Int32 with A.Show[a] = ???
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTrait](result)
+  }
+
+  test("InaccessibleTrait.02") {
+    val input =
+      s"""
+         |mod A {
+         |  def f(x: a): Int32 with A.B.C.Show[a] = ???
+         |
+         |  mod B.C {
+         |    trait Show[a] {
+         |      pub def show(x: a): String
+         |    }
+         |  }
+         |}
+       """.stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTrait](result)
+  }
+
+  test("InaccessibleTrait.03") {
+    val input =
+      """
+        |mod N {
+        |    trait C[a]
+        |}
+        |
+        |mod O {
+        |    instance N.C[Int32]
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTrait](result)
+  }
+
+  test("InaccessibleTrait.04") {
+    val input =
+      """
+        |mod N {
+        |    trait C[a]
+        |}
+        |
+        |mod O {
+        |    trait D[a] with N.C[a]
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.InaccessibleTrait](result)
+  }
+
   test("InaccessibleType.01") {
     val input =
       s"""
@@ -525,70 +589,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.InaccessibleTypeAlias](result)
-  }
-
-  test("InaccessibleTrait.01") {
-    val input =
-      s"""
-         |mod A {
-         |  trait Show[a] {
-         |    pub def show(x: a): String
-         |  }
-         |}
-         |
-         |mod B {
-         |  def g(x: a): Int32 with A.Show[a] = ???
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleTrait](result)
-  }
-
-  test("InaccessibleTrait.02") {
-    val input =
-      s"""
-         |mod A {
-         |  def f(x: a): Int32 with A.B.C.Show[a] = ???
-         |
-         |  mod B.C {
-         |    trait Show[a] {
-         |      pub def show(x: a): String
-         |    }
-         |  }
-         |}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleTrait](result)
-  }
-
-  test("InaccessibleTrait.03") {
-    val input =
-      """
-        |mod N {
-        |    trait C[a]
-        |}
-        |
-        |mod O {
-        |    instance N.C[Int32]
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleTrait](result)
-  }
-
-  test("InaccessibleTrait.04") {
-    val input =
-      """
-        |mod N {
-        |    trait C[a]
-        |}
-        |
-        |mod O {
-        |    trait D[a] with N.C[a]
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleTrait](result)
   }
 
   test("SealedTrait.01") {
