@@ -742,6 +742,23 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.MismatchedOpArity](result)
   }
 
+  test("MismatchedOpArity.InvalidOpParamCount.Handler.02") {
+    val input =
+      """
+        |eff E {
+        |    pub def op(): Unit
+        |}
+        |
+        |def foo(): Unit = {
+        |    try checked_ecast(()) with E {
+        |        def op(x, cont) = ()
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MismatchedOpArity](result)
+  }
+
   test("MismatchedReturnType.01") {
     val input =
       raw"""
