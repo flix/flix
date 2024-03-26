@@ -352,6 +352,8 @@ object DesugaredAst {
 
     case class Ascribe(tpe: Type, kind: Kind, loc: SourceLocation) extends Type
 
+    case class Error(loc: SourceLocation) extends Type
+
   }
 
   sealed trait Kind
