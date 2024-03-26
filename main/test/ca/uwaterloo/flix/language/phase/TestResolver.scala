@@ -23,6 +23,55 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestResolver extends AnyFunSuite with TestUtils {
 
+
+  test("CyclicClassHierarchy.01") {
+    val input = "trait A[a] with A[a]"
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
+  test("CyclicClassHierarchy.02") {
+    val input =
+      """
+        |trait A[a] with B[a]
+        |trait B[a] with A[a]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
+  test("CyclicClassHierarchy.03") {
+    val input =
+      """
+        |trait A[a] with B[a]
+        |trait B[a] with C[a]
+        |trait C[a] with A[a]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
+  test("CyclicClassHierarchy.04") {
+    val input =
+      """
+        |trait A[a] with A[a], B[a]
+        |trait B[a]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
+  test("CyclicClassHierarchy.05") {
+    val input =
+      """
+        |trait A[a] with B[a]
+        |trait B[a] with A[a], C[a]
+        |trait C[a]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.CyclicClassHierarchy](result)
+  }
+
   test("InaccessibleDef.01") {
     val input =
       s"""
@@ -825,55 +874,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedType](result)
-  }
-
-
-  test("CyclicClassHierarchy.01") {
-    val input = "trait A[a] with A[a]"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
-  }
-
-  test("CyclicClassHierarchy.02") {
-    val input =
-      """
-        |trait A[a] with B[a]
-        |trait B[a] with A[a]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
-  }
-
-  test("CyclicClassHierarchy.03") {
-    val input =
-      """
-        |trait A[a] with B[a]
-        |trait B[a] with C[a]
-        |trait C[a] with A[a]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
-  }
-
-  test("CyclicClassHierarchy.04") {
-    val input =
-      """
-        |trait A[a] with A[a], B[a]
-        |trait B[a]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
-  }
-
-  test("CyclicClassHierarchy.05") {
-    val input =
-      """
-        |trait A[a] with B[a]
-        |trait B[a] with A[a], C[a]
-        |trait C[a]
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
   }
 
   test("DuplicateDerivation.01") {
