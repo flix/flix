@@ -1208,7 +1208,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedAssocType](result)
   }
 
-  test("ParentNamespaceNotVisible.01") {
+  test("UndefinedName.ParentNamespaceNotVisible.01") {
     val input =
       """
         |mod A {
@@ -1222,7 +1222,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
-  test("ParentNamespaceNotVisible.02") {
+  test("UndefinedName.ParentNamespaceNotVisible.02") {
     val input =
       """
         |mod A {
@@ -1236,7 +1236,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedType](result)
   }
 
-  test("ParentNamespaceNotVisible.03") {
+  test("UndefinedName.ParentNamespaceNotVisible.03") {
     val input =
       """
         |mod A {
@@ -1251,7 +1251,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTrait](result)
   }
 
-  test("ParentNamespaceNotVisible.04") {
+  test("UndefinedName.ParentNamespaceNotVisible.04") {
     val input =
       """
         |mod A {
