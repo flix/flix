@@ -729,12 +729,12 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |eff E {
-        |    pub def op(x: String): Unit
+        |    pub def op(): Unit
         |}
         |
         |def foo(): Unit = {
         |    try checked_ecast(()) with E {
-        |        def op(x, y, cont) = ()
+        |        def op(x, cont) = ()
         |    }
         |}
         |""".stripMargin
@@ -746,12 +746,12 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |eff E {
-        |    pub def op(): Unit
+        |    pub def op(x: String): Unit
         |}
         |
         |def foo(): Unit = {
         |    try checked_ecast(()) with E {
-        |        def op(x, cont) = ()
+        |        def op(x, y, cont) = ()
         |    }
         |}
         |""".stripMargin
