@@ -321,6 +321,17 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.IllegalSignature](result)
   }
 
+  test("IllegalType.01") {
+    val input =
+      """
+        |def isThisThingNull(x: a): Bool =
+        |    import static java.util.Objects.isNull(a): Bool \ Pure;
+        |    isNull(x)
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.IllegalType](result)
+  }
+
   test("InaccessibleDef.01") {
     val input =
       s"""
@@ -1118,17 +1129,6 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedAssocType](result)
-  }
-
-  test("IllegalType.01") {
-    val input =
-      """
-        |def isThisThingNull(x: a): Bool =
-        |    import static java.util.Objects.isNull(a): Bool \ Pure;
-        |    isNull(x)
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.IllegalType](result)
   }
 
   test("ParentNamespaceNotVisible.01") {
