@@ -471,7 +471,9 @@ object WeededAst {
   case class Derivations(classes: List[Name.QName], loc: SourceLocation)
 
 
-  sealed trait ForFragment
+  sealed trait ForFragment {
+    def loc: SourceLocation
+  }
 
   object ForFragment {
 

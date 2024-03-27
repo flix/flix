@@ -742,355 +742,70 @@ object Weeder2 {
       assert(exprTree.kind == TreeKind.Expr.Expr)
       val tree = unfold(exprTree)
       tree.kind match {
-        case TreeKind.Expr.Literal => visitLiteral(tree)
-        case TreeKind.Expr.Tuple => visitTuple(tree)
-        case TreeKind.Expr.Apply => visitApply(tree)
-        case TreeKind.Expr.Debug => visitDebug(tree)
-        case TreeKind.Expr.LetImport => visitLetImport(tree)
-        case TreeKind.Expr.Binary => visitBinary(tree)
-        case TreeKind.Expr.Unary => visitUnary(tree)
+        case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
+        case TreeKind.QName => visitExprQname(tree)
         case TreeKind.Expr.Paren => visitParen(tree)
-        case TreeKind.Expr.IfThenElse => visitIfThenElse(tree)
         case TreeKind.Expr.Block => visitBlock(tree)
-        case TreeKind.Expr.Statement => visitStatement(tree)
-        case TreeKind.Expr.Use => visitExprUse(tree)
-        case TreeKind.Expr.Try => visitTry(tree)
-        case TreeKind.Expr.Without => visitWithout(tree)
-        case TreeKind.Expr.FixpointQuery => visitFixpointQuery(tree)
-        case TreeKind.Expr.FixpointConstraintSet => visitFixpointConstraintSet(tree)
-        case TreeKind.Expr.FixpointSolveWithProject => visitFixpointSolve(tree)
-        case TreeKind.Expr.FixpointInject => visitFixpointInject(tree)
-        case TreeKind.Expr.FixpointLambda => visitFixpointLambda(tree)
-        case TreeKind.Expr.NewObject => visitNewObject(tree)
-        case TreeKind.Expr.LetRecDef => visitLetRecDef(tree)
-        case TreeKind.Expr.Ascribe => visitAscribe(tree)
-        case TreeKind.Expr.Match => visitMatch(tree)
-        case TreeKind.Expr.Do => visitDo(tree)
+        case TreeKind.Expr.StringInterpolation => visitStringInterpolation(tree)
         case TreeKind.Expr.OpenVariant => visitOpenVariant(tree)
         case TreeKind.Expr.OpenVariantAs => visitOpenVariantAs(tree)
-        case TreeKind.Expr.ParYield => visitParYield(tree)
+        case TreeKind.Expr.Hole => visitHole(tree)
+        case TreeKind.Expr.HoleVariable => visitHoleWithExp(tree)
+        case TreeKind.Expr.Use => visitExprUse(tree)
+        case TreeKind.Expr.Literal => visitLiteral(tree)
+        case TreeKind.Expr.Apply => visitApply(tree)
+        case TreeKind.Expr.Lambda => visitLambda(tree)
+        case TreeKind.Expr.LambdaMatch => visitLambdaMatch(tree)
+        case TreeKind.Expr.Unary => visitUnary(tree)
+        case TreeKind.Expr.Binary => visitBinary(tree)
+        case TreeKind.Expr.IfThenElse => visitIfThenElse(tree)
+        case TreeKind.Expr.Statement => visitStatement(tree)
+        case TreeKind.Expr.LetRecDef => visitLetRecDef(tree)
+        case TreeKind.Expr.LetImport => visitLetImport(tree)
+        case TreeKind.Expr.Scope => visitScope(tree)
+        case TreeKind.Expr.Match => visitMatch(tree)
         case TreeKind.Expr.TypeMatch => visitTypeMatch(tree)
+        case TreeKind.Expr.RestrictableChoose
+             | TreeKind.Expr.RestrictableChooseStar => visitRestrictableChoose(tree)
+        case TreeKind.Expr.ForApplicative => visitForApplicative(tree)
+        case TreeKind.Expr.Foreach => visitForeach(tree)
+        case TreeKind.Expr.ForMonadic => visitForMonadic(tree)
+        case TreeKind.Expr.ForeachYield => visitForeachYield(tree)
+        case TreeKind.Expr.LetMatch => visitLetMatch(tree)
+        case TreeKind.Expr.Tuple => visitTuple(tree)
+        case TreeKind.Expr.LiteralRecord => visitLiteralRecord(tree)
+        case TreeKind.Expr.RecordSelect => visitRecordSelect(tree)
+        case TreeKind.Expr.RecordOperation => visitRecordOperation(tree)
+        case TreeKind.Expr.LiteralArray => visitLiteralArray(tree)
+        case TreeKind.Expr.LiteralVector => visitLiteralVector(tree)
+        case TreeKind.Expr.LiteralList => visitLiteralList(tree)
+        case TreeKind.Expr.LiteralMap => visitLiteralMap(tree)
+        case TreeKind.Expr.LiteralSet => visitLiteralSet(tree)
+        case TreeKind.Expr.Ref => visitRef(tree)
+        case TreeKind.Expr.Ascribe => visitAscribe(tree)
         case TreeKind.Expr.CheckedTypeCast => visitCheckedTypeCast(tree)
         case TreeKind.Expr.CheckedEffectCast => visitCheckedEffectCast(tree)
         case TreeKind.Expr.UncheckedCast => visitUncheckedCast(tree)
         case TreeKind.Expr.UncheckedMaskingCast => visitUncheckedMaskingCast(tree)
-        case TreeKind.Expr.StringInterpolation => visitStringInterpolation(tree)
-        case TreeKind.Expr.LetMatch => visitLetMatch(tree)
-        case TreeKind.Expr.Foreach => visitForeach(tree)
-        case TreeKind.Expr.ForeachYield => visitForeachYield(tree)
-        case TreeKind.Expr.ForMonadic => visitForMonadic(tree)
-        case TreeKind.Expr.ForApplicative => visitForApplicative(tree)
-        case TreeKind.Expr.Hole => visitHole(tree)
-        case TreeKind.Expr.HoleVariable => visitHoleVariable(tree)
-        case TreeKind.Expr.Scope => visitScope(tree)
-        case TreeKind.Expr.Lambda => visitLambda(tree)
-        case TreeKind.Expr.LambdaMatch => visitLambdaMatch(tree)
-        case TreeKind.Expr.Ref => visitRef(tree)
-        case TreeKind.Expr.Select => visitSelect(tree)
-        case TreeKind.Expr.RestrictableChoose
-             | TreeKind.Expr.RestrictableChooseStar => visitRestrictableChoose(tree)
-        case TreeKind.Expr.Spawn => visitSpawn(tree)
+        case TreeKind.Expr.Without => visitWithout(tree)
+        case TreeKind.Expr.Try => visitTry(tree)
+        case TreeKind.Expr.Do => visitDo(tree)
+        case TreeKind.Expr.NewObject => visitNewObject(tree)
         case TreeKind.Expr.Static => visitStatic(tree)
-        case TreeKind.Expr.RecordOperation => visitRecordOperation(tree)
-        case TreeKind.Expr.LiteralRecord => visitLiteralRecord(tree)
-        case TreeKind.Expr.LiteralList => visitLiteralList(tree)
-        case TreeKind.Expr.LiteralSet => visitLiteralSet(tree)
-        case TreeKind.Expr.LiteralVector => visitLiteralVector(tree)
-        case TreeKind.Expr.LiteralArray => visitLiteralArray(tree)
-        case TreeKind.Expr.LiteralMap => visitLiteralMap(tree)
-        case TreeKind.Expr.RecordSelect => visitRecordSelect(tree)
-        case TreeKind.Ident => mapN(tokenToIdent(tree)) { ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc) }
-        case TreeKind.QName => visitExprQname(tree)
+        case TreeKind.Expr.Select => visitSelect(tree)
+        case TreeKind.Expr.Spawn => visitSpawn(tree)
+        case TreeKind.Expr.ParYield => visitParYield(tree)
+        case TreeKind.Expr.FixpointConstraintSet => visitFixpointConstraintSet(tree)
+        case TreeKind.Expr.FixpointLambda => visitFixpointLambda(tree)
+        case TreeKind.Expr.FixpointInject => visitFixpointInject(tree)
+        case TreeKind.Expr.FixpointSolveWithProject => visitFixpointSolve(tree)
+        case TreeKind.Expr.FixpointQuery => visitFixpointQuery(tree)
+        case TreeKind.Expr.Debug => visitDebug(tree)
         // TODO: We are double reporting the error here
         case _ =>
           val err = ParseError("Expected expression", SyntacticContext.Expr.OtherExpr, tree.loc)
           Validation.HardFailure(Chain(err))
       }
-    }
-
-    private def visitDebug(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Debug)
-      mapN(pickDebugKind(tree), pickExpr(tree))((kind, expr) => Expr.Debug(expr, kind, tree.loc))
-    }
-
-    private def pickDebugKind(tree: Tree): Validation[DebugKind, CompilationMessage] = {
-      tree.children.headOption match {
-        case Some(Child.TokenChild(t)) if t.kind == TokenKind.KeywordDebug => Validation.success(DebugKind.Debug)
-        case Some(Child.TokenChild(t)) if t.kind == TokenKind.KeywordDebugBang => Validation.success(DebugKind.DebugWithLoc)
-        case Some(Child.TokenChild(t)) if t.kind == TokenKind.KeywordDebugBangBang => Validation.success(DebugKind.DebugWithLocAndSrc)
-        case _ => throw InternalCompilerException(s"Malformed debug expression, could not find debug kind", tree.loc)
-      }
-    }
-
-    private def visitWithout(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Without)
-      val effectSet = pick(TreeKind.Type.EffectSet, tree)
-      val effects = flatMapN(effectSet)(effectSetTree => traverse(pickAll(TreeKind.QName, effectSetTree))(visitQName))
-      mapN(pickExpr(tree), effects) {
-        (expr, effects) =>
-          val base = Expr.Without(expr, effects.head, tree.loc)
-          effects.tail.foldLeft(base) {
-            case (acc, eff) => Expr.Without(acc, eff, tree.loc.asSynthetic)
-          }
-      }
-    }
-
-    private def visitOpenVariant(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.OpenVariant)
-      mapN(pickQName(tree))(Expr.Open(_, tree.loc))
-    }
-
-    private def visitOpenVariantAs(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.OpenVariantAs)
-      mapN(pickQName(tree), pickExpr(tree))((name, expr) => Expr.OpenAs(name, expr, tree.loc))
-    }
-
-    private def visitDo(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Do)
-      mapN(pickQName(tree), pickArguments(tree))((op, args) => Expr.Do(op, args, tree.loc))
-    }
-
-    private def visitFixpointInject(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.FixpointInject)
-      val expressions = pickAll(TreeKind.Expr.Expr, tree)
-      val idents = pickAll(TreeKind.Ident, tree)
-      flatMapN(
-        traverse(expressions)(visitExpr),
-        traverse(idents)(tokenToIdent)
-      ) {
-        case (exprs, idents) if exprs.length != idents.length =>
-          // Check for mismatched arity
-          val err = MismatchedArity(exprs.length, idents.length, tree.loc)
-          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
-
-        case (exprs, idents) => Validation.success(Expr.FixpointInjectInto(exprs, idents, tree.loc))
-      }
-    }
-
-    private def visitFixpointLambda(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.FixpointLambda)
-      val params = mapN(pick(TreeKind.Predicate.ParamList, tree))(t =>
-        (pickAll(TreeKind.Predicate.ParamUntyped, t) ++ pickAll(TreeKind.Predicate.Param, t)).sortBy(_.loc)
-      )
-      mapN(
-        flatMapN(params)(ps => traverse(ps)(Predicates.visitParam)),
-        pickExpr(tree)
-      )((params, expr) => Expr.FixpointLambda(params, expr, tree.loc))
-    }
-
-    private def visitFixpointSolve(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.FixpointSolveWithProject)
-      val expressions = pickAll(TreeKind.Expr.Expr, tree)
-      val idents = pickAll(TreeKind.Ident, tree)
-      mapN(
-        traverse(expressions)(visitExpr),
-        traverse(idents)(tokenToIdent)
-      ) {
-        (exprs, idents) =>
-          val optIdents = if (idents.isEmpty) None else Some(idents)
-          Expr.FixpointSolveWithProject(exprs, optIdents, tree.loc)
-      }
-    }
-
-    private def visitFixpointQuery(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.FixpointQuery)
-      val expressions = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
-      val selects = flatMapN(pick(TreeKind.Expr.FixpointSelect, tree))(
-        selectTree => traverse(pickAll(TreeKind.Expr.Expr, selectTree))(visitExpr)
-      )
-      val froms = flatMapN(pick(TreeKind.Expr.FixpointFromFragment, tree))(
-        fromTree => traverse(pickAll(TreeKind.Predicate.Atom, fromTree))(Predicates.visitAtom)
-      )
-      val where = traverseOpt(tryPick(TreeKind.Expr.FixpointWhere, tree))(pickExpr)
-      mapN(expressions, selects, froms, where) {
-        (expressions, selects, froms, where) =>
-          val whereList = where.map(w => List(w)).getOrElse(List.empty)
-          Expr.FixpointQueryWithSelect(expressions, selects, froms, whereList, tree.loc)
-      }
-    }
-
-    private def visitFixpointConstraintSet(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.FixpointConstraintSet)
-      val constraints = pickAll(TreeKind.Expr.FixpointConstraint, tree)
-      mapN(traverse(constraints)(visitFixpointConstraint)) {
-        constraints => Expr.FixpointConstraintSet(constraints, tree.loc)
-      }
-    }
-
-    private def visitFixpointConstraint(tree: Tree)(implicit s: State): Validation[Constraint, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.FixpointConstraint)
-      val bodyItems = pickAll(TreeKind.Predicate.Body, tree)
-      mapN(
-        Predicates.pickHead(tree),
-        traverse(bodyItems)(Predicates.visitBody),
-      ) {
-        (head, body) => Constraint(head, body, tree.loc)
-      }
-    }
-
-    private def visitNewObject(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.NewObject)
-      val methods = pickAll(TreeKind.Expr.JvmMethod, tree)
-      mapN(
-        Types.pickType(tree),
-        traverse(methods)(visitJvmMethod),
-      )((tpe, methods) => Expr.NewObject(tpe, methods, tree.loc))
-    }
-
-    private def visitJvmMethod(tree: Tree)(implicit s: State): Validation[JvmMethod, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.JvmMethod)
-      mapN(
-        pickNameIdent(tree),
-        pickExpr(tree),
-        Decls.pickFormalParameters(tree),
-        Types.pickType(tree),
-        Types.tryPickEffect(tree),
-      )((ident, expr, fparams, tpe, eff) => JvmMethod(ident, fparams, expr, tpe, eff, tree.loc))
-    }
-
-    private def visitParYield(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.ParYield)
-      val fragments = pickAll(TreeKind.Expr.ParYieldFragment, tree)
-      mapN(
-        traverse(fragments)(visitParYieldFragment),
-        pickExpr(tree)
-      )((fragments, expr) => Expr.ParYield(fragments, expr, tree.loc))
-    }
-
-    private def visitParYieldFragment(tree: Tree)(implicit s: State): Validation[ParYieldFragment, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.ParYieldFragment)
-      mapN(
-        Patterns.pickPattern(tree),
-        pickExpr(tree)
-      )((pat, expr) => ParYieldFragment(pat, expr, tree.loc))
-    }
-
-    private def visitForeach(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Foreach)
-      flatMapN(
-        pickForFragments(tree),
-        pickExpr(tree)
-      ) {
-        case (Nil, _) =>
-          val err = EmptyForFragment(tree.loc)
-          Validation.toSoftFailure(Expr.Error(err), err)
-        case (fragments, expr) =>
-          // It's okay to do head rather than headOption here because we check for Nil above.
-          fragments.head match {
-            // Check that fragments start with a generator.
-            case _: ForFragment.Generator => Validation.success(Expr.ForEach(fragments, expr, tree.loc))
-            case f =>
-              val error = IllegalForFragment(forFragmentLoc(f))
-              Validation.toSoftFailure(Expr.Error(error), error)
-          }
-      }
-    }
-
-    private def visitForeachYield(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.ForeachYield)
-      flatMapN(
-        pickForFragments(tree),
-        pickExpr(tree)
-      ) {
-        case (Nil, _) =>
-          val err = EmptyForFragment(tree.loc)
-          Validation.toSoftFailure(Expr.Error(err), err)
-        case (fragments, expr) =>
-          // It's okay to do head rather than headOption here because we check for Nil above.
-          fragments.head match {
-            // Check that fragments start with a generator.
-            case _: ForFragment.Generator => Validation.success(Expr.ForEachYield(fragments, expr, tree.loc))
-            case f =>
-              val error = IllegalForFragment(forFragmentLoc(f))
-              Validation.toSoftFailure(Expr.Error(error), error)
-          }
-      }
-    }
-
-    private def visitForMonadic(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.ForMonadic)
-      flatMapN(
-        pickForFragments(tree),
-        pickExpr(tree)
-      ) {
-        case (Nil, _) =>
-          val err = EmptyForFragment(tree.loc)
-          Validation.toSoftFailure(Expr.Error(err), err)
-        case (fragments, expr) =>
-          // It's okay to do head rather than headOption here because we check for Nil above.
-          fragments.head match {
-            // Check that fragments start with a generator.
-            case _: ForFragment.Generator => Validation.success(Expr.MonadicFor(fragments, expr, tree.loc))
-            case f =>
-              val error = IllegalForFragment(forFragmentLoc(f))
-              Validation.toSoftFailure(Expr.Error(error), error)
-          }
-      }
-    }
-
-    private def visitForApplicative(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.ForApplicative)
-      flatMapN(
-        pickForFragments(tree),
-        pickExpr(tree)
-      ) {
-        case (Nil, _) =>
-          val err = EmptyForFragment(tree.loc)
-          Validation.toSoftFailure(Expr.Error(err), err)
-        case (fragments, expr) =>
-          // Check that there are only generators
-          val (generators, nonGeneratorFragments) = fragments.partition {
-            case _: ForFragment.Generator => true
-            case _ => false
-          }
-          if (nonGeneratorFragments.nonEmpty) {
-            val err = IllegalForAFragment(forFragmentLoc(nonGeneratorFragments.head))
-            Validation.success(Expr.Error(err)).withSoftFailures(nonGeneratorFragments.map(f => IllegalForAFragment(forFragmentLoc(f))))
-          } else {
-            Validation.success(Expr.ApplicativeFor(generators.asInstanceOf[List[ForFragment.Generator]], expr, tree.loc))
-          }
-      }
-    }
-
-    private def pickForFragments(tree: Tree)(implicit s: State): Validation[List[ForFragment], CompilationMessage] = {
-      val guards = pickAll(TreeKind.Expr.ForFragmentGuard, tree)
-      val generators = pickAll(TreeKind.Expr.ForFragmentGenerator, tree)
-      val lets = pickAll(TreeKind.Expr.ForFragmentLet, tree)
-      mapN(
-        traverse(guards)(visitForFragmentGuard),
-        traverse(generators)(visitForFragmentGenerator),
-        traverse(lets)(visitForFragmentLet),
-      ) {
-        (guards, generators, lets) => (generators ++ guards ++ lets).sortBy(forFragmentLoc)
-      }
-    }
-
-    private def forFragmentLoc(frag: ForFragment): SourceLocation = frag match {
-      case ForFragment.Generator(_, _, loc) => loc
-      case ForFragment.Guard(_, loc) => loc
-      case ForFragment.Let(_, _, loc) => loc
-    }
-
-
-    private def visitForFragmentGuard(tree: Tree)(implicit s: State): Validation[ForFragment.Guard, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.ForFragmentGuard)
-      mapN(pickExpr(tree))(ForFragment.Guard(_, tree.loc))
-    }
-
-    private def visitForFragmentGenerator(tree: Tree)(implicit s: State): Validation[ForFragment.Generator, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.ForFragmentGenerator)
-      mapN(
-        Patterns.pickPattern(tree),
-        pickExpr(tree)
-      )((pat, expr) => ForFragment.Generator(pat, expr, tree.loc))
-    }
-
-    private def visitForFragmentLet(tree: Tree)(implicit s: State): Validation[ForFragment.Let, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.ForFragmentLet)
-      mapN(
-        Patterns.pickPattern(tree),
-        pickExpr(tree)
-      )((pat, expr) => ForFragment.Let(pat, expr, tree.loc))
     }
 
     private def visitExprQname(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -1126,298 +841,193 @@ object Weeder2 {
       }
     }
 
-    private def visitTuple(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Tuple)
-      mapN(
-        traverse(pickAll(TreeKind.Argument, tree))(pickExpr),
-        traverse(pickAll(TreeKind.ArgumentNamed, tree))(visitArgumentNamed)
-      )((unnamed, named) => Expr.Tuple((unnamed ++ named).sortBy(_.loc), tree.loc))
-    }
-
-    private def visitTry(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Try)
-      val maybeCatch = pickAll(TreeKind.Expr.TryCatchBodyFragment, tree)
-      val maybeWith = pickAll(TreeKind.Expr.TryWithBodyFragment, tree)
-      flatMapN(
-        pickExpr(tree),
-        traverse(maybeCatch)(visitTryCatchBody),
-        traverse(maybeWith)(visitTryWithBody),
-      ) {
-        // Bad case: try expr
-        case (expr, Nil, Nil) => Validation.toSoftFailure(
-          Expr.TryCatch(expr, List.empty, tree.loc),
-          ParseError(s"Missing `catch` on try-catch expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-        )
-        // Bad case: try expr catch { rules... } with eff { handlers... }
-        case (expr, _ :: _, _ :: _) => Validation.toSoftFailure(
-          Expr.TryCatch(expr, List.empty, tree.loc),
-          ParseError(s"Cannot use both `catch` and `with` on try-catch expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-        )
-        // Case: try expr catch { rules... }
-        case (expr, catches, Nil) => Validation.success(Expr.TryCatch(expr, catches.flatten, tree.loc))
-        // Case: try expr with eff { handlers... }
-        case (expr, Nil, withs) => Validation.success(Expr.TryWith(expr, withs, tree.loc))
+    private def visitParen(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Paren)
+      mapN(pickExpr(tree)) {
+        expr => Expr.Tuple(List(expr), tree.loc)
       }
     }
 
-    private def visitTryCatchBody(tree: Tree)(implicit s: State): Validation[List[CatchRule], CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.TryCatchBodyFragment)
-      val rules = pickAll(TreeKind.Expr.TryCatchRuleFragment, tree)
-      traverse(rules)(visitTryCatchRule)
-    }
-
-    private def visitTryCatchRule(tree: Tree)(implicit s: State): Validation[CatchRule, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.TryCatchRuleFragment)
-      mapN(
-        pickNameIdent(tree),
-        pickQName(tree),
-        pickExpr(tree)
-      )((ident, qname, expr) => CatchRule(ident, javaQnameToFqn(qname), expr))
-    }
-
-    private def visitTryWithBody(tree: Tree)(implicit s: State): Validation[WithHandler, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.TryWithBodyFragment)
-      val rules = pickAll(TreeKind.Expr.TryWithRuleFragment, tree)
-      mapN(
-        pickQName(tree), // This qname is an effect
-        traverse(rules)(visitTryWithRule)
-      )((eff, handlers) => WithHandler(eff, handlers))
-    }
-
-    private def visitTryWithRule(tree: Tree)(implicit s: State): Validation[HandlerRule, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.TryWithRuleFragment)
-      mapN(
-        pickNameIdent(tree),
-        Decls.pickFormalParameters(tree, Presence.Forbidden),
-        pickExpr(tree)
-      )((ident, fparams, expr) => {
-        // Add extra resumption argument as a synthetic unit parameter when there is exactly one parameter.
-        val hasSingleNonUnitParam = fparams.sizeIs == 1 && fparams.exists(_.ident.name != "_unit")
-        val syntheticUnitParam = if (hasSingleNonUnitParam) List(Decls.unitFormalParameter(tree.loc.asSynthetic)) else List.empty
-        HandlerRule(ident, (syntheticUnitParam ++ fparams).sortBy(_.loc), expr)
-      })
-    }
-
-    private def visitRecordSelect(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.RecordSelect)
-      val idents = pickAll(TreeKind.Ident, tree)
-      mapN(pickExpr(tree), traverse(idents)(tokenToIdent))(
-        (expr, idents) =>
-          idents.foldLeft(expr) {
-            case (acc, ident) => Expr.RecordSelect(acc, Name.mkLabel(ident), ident.loc)
-          }
-      )
-    }
-
-    private def visitRestrictableChoose(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.RestrictableChoose || tree.kind == TreeKind.Expr.RestrictableChooseStar)
-      val isStar = tree.kind == TreeKind.Expr.RestrictableChooseStar
-      val rules = pickAll(TreeKind.Expr.MatchRuleFragment, tree)
-      mapN(
-        pickExpr(tree),
-        traverse(rules)(t => visitRestrictableChooseRule(isStar, t))
-      )((expr, rules) => Expr.RestrictableChoose(isStar, expr, rules, tree.loc))
-    }
-
-    private def visitRestrictableChooseRule(isStar: Boolean, tree: Tree)(implicit s: State): Validation[RestrictableChooseRule, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.MatchRuleFragment)
-      flatMapN(
-        pickRestrictableChoosePattern(isStar, tree),
-        pickExpr(tree)
-      )((pat, expr) => Validation.success(RestrictableChooseRule(pat, expr)))
-    }
-
-    private def pickRestrictableChoosePattern(isStar: Boolean, tree: Tree)(implicit s: State): Validation[RestrictableChoosePattern, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.MatchRuleFragment)
-      flatMapN(Patterns.pickPattern(tree)) {
-        case Pattern.Tag(qname, pat, loc) =>
-          val inner = pat match {
-            case Pattern.Wild(loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
-            case Pattern.Var(ident, loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Var(ident, loc)))
-            case Pattern.Cst(Ast.Constant.Unit, loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
-            case Pattern.Tuple(elms, _) =>
-              traverse(elms) {
-                case Pattern.Wild(loc) => Validation.success(WeededAst.RestrictableChoosePattern.Wild(loc))
-                case Pattern.Var(ident, loc) => Validation.success(WeededAst.RestrictableChoosePattern.Var(ident, loc))
-                case Pattern.Cst(Ast.Constant.Unit, loc) => Validation.success(WeededAst.RestrictableChoosePattern.Wild(loc))
-                case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(isStar, other.loc))
-              }
-            case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(isStar, other.loc))
-          }
-          mapN(inner)(RestrictableChoosePattern.Tag(qname, _, loc))
-
-        case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(isStar, other.loc))
-      }
-    }
-
-    private def visitSelect(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Select)
-      val rules = traverse(pickAll(TreeKind.Expr.SelectRuleFragment, tree))(visitSelectRule)
-      val maybeDefault = traverseOpt(tryPick(TreeKind.Expr.SelectRuleDefaultFragment, tree))(pickExpr)
-      mapN(rules, maybeDefault)((rules, maybeDefault) => Expr.SelectChannel(rules, maybeDefault, tree.loc))
-    }
-
-    private def visitSelectRule(tree: Tree)(implicit s: State): Validation[SelectChannelRule, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.SelectRuleFragment)
-      val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
-      flatMapN(pickNameIdent(tree), exprs) {
-        case (ident, channel :: body :: Nil) =>
-          Validation.success(SelectChannelRule(ident, channel, body))
-        case (ident, channel :: Nil) =>
-          val err = ParseError("Missing body in select rule.", SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.toSoftFailure(SelectChannelRule(ident, channel, Expr.Error(err)), err)
-        case _ =>
-          val err = ParseError("Malformed select rule.", SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.HardFailure(Chain(err))
-      }
-    }
-
-    private def visitRef(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Ref)
-      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree)
-      flatMapN(
-        pickExpr(tree),
-        traverseOpt(scopeName)(visitScopeName)
-      ) {
-        case (expr1, Some(expr2)) => Validation.success(Expr.Ref(expr1, expr2, tree.loc))
-        case (expr1, None) =>
-          val err = ParseError("Missing scope in ref.", SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.toSoftFailure(Expr.Ref(expr1, Expr.Error(err), tree.loc), err)
-      }
-    }
-
-    private def visitSpawn(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Spawn)
-      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree)
-      flatMapN(
-        pickExpr(tree),
-        traverseOpt(scopeName)(visitScopeName)
-      ) {
-        case (expr1, Some(expr2)) => Validation.success(Expr.Spawn(expr1, expr2, tree.loc))
-        case (expr1, None) =>
-          val err = ParseError("Missing scope in spawn.", SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.toSoftFailure(Expr.Spawn(expr1, Expr.Error(err), tree.loc), err)
-      }
-    }
-
-    private def visitStatic(tree: Tree): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Static)
-      Validation.success(Expr.Static(tree.loc))
-    }
-
-    private def visitScopeName(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.ScopeName)
+    private def visitBlock(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Block)
       pickExpr(tree)
     }
 
-    private def visitRecordOperation(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.RecordOperation)
-      val updates = pickAll(TreeKind.Expr.RecordOpUpdate, tree)
-      val eextends = pickAll(TreeKind.Expr.RecordOpExtend, tree)
-      val restricts = pickAll(TreeKind.Expr.RecordOpRestrict, tree)
-      val ops = (updates ++ eextends ++ restricts).sortBy(_.loc)
-      Validation.foldRight(ops)(pickExpr(tree))((op, acc) =>
-        op.kind match {
-          case TreeKind.Expr.RecordOpExtend => mapN(pickExpr(op), pickNameIdent(op))(
-            (expr, id) => Expr.RecordExtend(Name.mkLabel(id), expr, acc, op.loc)
-          )
-          case TreeKind.Expr.RecordOpRestrict => mapN(pickNameIdent(op))(
-            id => Expr.RecordRestrict(Name.mkLabel(id), acc, op.loc)
-          )
-          case TreeKind.Expr.RecordOpUpdate => mapN(pickExpr(op), pickNameIdent(op))(
-            (expr, id) => {
-              // An update is a restrict followed by an extension
-              val restricted = Expr.RecordRestrict(Name.mkLabel(id), acc, op.loc)
-              Expr.RecordExtend(Name.mkLabel(id), expr, restricted, op.loc)
-            })
-          case k => throw InternalCompilerException(s"'$k' is not a record operation", op.loc)
+    private def visitStringInterpolation(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.StringInterpolation)
+      val init = WeededAst.Expr.Cst(Ast.Constant.Str(""), tree.loc)
+      var isDebug = false
+      // Check for empty interpolation
+      if (tryPick(TreeKind.Expr.Expr, tree).isEmpty) {
+        val error = EmptyInterpolatedExpression(tree.loc)
+        return Validation.toSoftFailure(Expr.Error(error), error)
+      }
+
+      Validation.fold(tree.children, init: WeededAst.Expr) {
+        // A string part: Concat it onto the result
+        case (acc, Child.TokenChild(token)) =>
+          isDebug = token.kind == TokenKind.LiteralDebugStringL
+          val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
+          val lit0 = token.text.stripPrefix("\"").stripSuffix("\"").stripPrefix("}")
+          val lit = if (isDebug) lit0.stripSuffix("%{") else lit0.stripSuffix("${")
+          if (lit == "") {
+            Validation.success(acc)
+          } else {
+            val (processed, errors) = Constants.visitChars(lit, loc)
+            val cst = Validation.success(Expr.Cst(Ast.Constant.Str(processed), loc)).withSoftFailures(errors)
+            mapN(cst) {
+              cst => Expr.Binary(SemanticOp.StringOp.Concat, acc, cst, tree.loc.asSynthetic)
+            }
+          }
+        // An expression part: Apply 'toString' to it and concat the result
+        case (acc, Child.TreeChild(tree)) if tree.kind == TreeKind.Expr.Expr =>
+          mapN(visitExpr(tree))(expr => {
+            val loc = tree.loc.asSynthetic
+            val funcName = if (isDebug) {
+              isDebug = false
+              "Debug.stringify"
+            } else "ToString.toString"
+            val str = Expr.Apply(Expr.Ambiguous(Name.mkQName(funcName), loc), List(expr), loc)
+            Expr.Binary(SemanticOp.StringOp.Concat, acc, str, loc)
+          })
+        // Skip anything else (Parser will have produced an error.)
+        case (acc, _) => Validation.success(acc)
+      }
+    }
+
+    private def visitOpenVariant(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.OpenVariant)
+      mapN(pickQName(tree))(Expr.Open(_, tree.loc))
+    }
+
+    private def visitOpenVariantAs(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.OpenVariantAs)
+      mapN(pickQName(tree), pickExpr(tree))((name, expr) => Expr.OpenAs(name, expr, tree.loc))
+    }
+
+    private def visitHole(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Hole)
+      mapN(tryPickNameIdent(tree)) {
+        ident =>
+          val strippedIdent = ident.map(id => Name.Ident(id.sp1, id.name.stripPrefix("?"), id.sp2))
+          Expr.Hole(strippedIdent, tree.loc)
+      }
+    }
+
+    private def visitHoleWithExp(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.HoleVariable)
+      mapN(pickNameIdent(tree)) {
+        ident =>
+          val id = Name.Ident(ident.sp1, ident.name.stripSuffix("?"), ident.sp2)
+          val expr = Expr.Ambiguous(Name.mkQName(id), id.loc)
+          Expr.HoleWithExp(expr, tree.loc)
+      }
+    }
+
+    private def visitExprUse(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Use)
+      mapN(flatMapN(pick(TreeKind.UsesOrImports.Use, tree))(visitUse), pickExpr(tree)) {
+        (use, expr) => Expr.Use(use, expr, tree.loc)
+      }
+    }
+
+    def visitLiteral(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      // Note: This visitor is used by both expression literals and pattern literals.
+      // Hence this assert:
+      assert(tree.kind == TreeKind.Expr.Literal || tree.kind == TreeKind.Pattern.Literal)
+
+      tree.children(0) match {
+        case Child.TokenChild(token) => token.kind match {
+          case TokenKind.KeywordNull => Validation.success(Expr.Cst(Ast.Constant.Null, token.mkSourceLocation(s.src, Some(s.parserInput))))
+          case TokenKind.KeywordTrue => Validation.success(Expr.Cst(Ast.Constant.Bool(true), token.mkSourceLocation(s.src, Some(s.parserInput))))
+          case TokenKind.KeywordFalse => Validation.success(Expr.Cst(Ast.Constant.Bool(false), token.mkSourceLocation(s.src, Some(s.parserInput))))
+          case TokenKind.LiteralString => Constants.toStringCst(token)
+          case TokenKind.LiteralChar => Constants.toChar(token)
+          case TokenKind.LiteralInt8 => Constants.toInt8(token)
+          case TokenKind.LiteralInt16 => Constants.toInt16(token)
+          case TokenKind.LiteralInt32 => Constants.toInt32(token)
+          case TokenKind.LiteralInt64 => Constants.toInt64(token)
+          case TokenKind.LiteralBigInt => Constants.toBigInt(token)
+          case TokenKind.LiteralFloat32 => Constants.toFloat32(token)
+          case TokenKind.LiteralFloat64 => Constants.toFloat64(token)
+          case TokenKind.LiteralBigDecimal => Constants.toBigDecimal(token)
+          case TokenKind.LiteralRegex => Constants.toRegex(token)
+          case TokenKind.NameLowerCase
+               | TokenKind.NameUpperCase
+               | TokenKind.NameMath
+               | TokenKind.NameGreek => mapN(pickNameIdent(tree))(ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc))
+          case _ =>
+            val err = ParseError("Expected literal", SyntacticContext.Expr.OtherExpr, tree.loc)
+            Validation.toSoftFailure(Expr.Error(err), err)
         }
-      )
+        case _ => throw InternalCompilerException(s"Literal had tree child", tree.loc)
+      }
     }
 
-    private def visitLiteralRecord(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.LiteralRecord)
-      val fields = pickAll(TreeKind.Expr.LiteralRecordFieldFragment, tree)
+    private def visitApply(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Apply)
+      flatMapN(pick(TreeKind.Expr.Expr, tree), pickArguments(tree)) {
+        case (expr, args) =>
+          val maybeIntrinsic = tryPick(TreeKind.Expr.Intrinsic, expr)
+          maybeIntrinsic match {
+            case Some(intrinsic) => visitIntrinsic(intrinsic, args)
+            case None => mapN(visitExpr(expr))(Expr.Apply(_, args, tree.loc))
+          }
+      }
+    }
+
+    private def pickArguments(tree: Tree)(implicit s: State): Validation[List[Expr], CompilationMessage] = {
+      flatMapN(pick(TreeKind.ArgumentList, tree))(visitArguments)
+    }
+
+    private def visitArguments(tree: Tree)(implicit s: State): Validation[List[Expr], CompilationMessage] = {
       mapN(
-        traverse(fields)(visitLiteralRecordField)
-      )(fields => fields.foldRight(Expr.RecordEmpty(tree.loc.asSynthetic): Expr) {
-        case ((label, expr, loc), acc) => Expr.RecordExtend(label, expr, acc, loc)
-      })
-    }
-
-    private def visitLiteralRecordField(tree: Tree)(implicit s: State): Validation[(Name.Label, Expr, SourceLocation), CompilationMessage] = {
-      mapN(
-        pickNameIdent(tree),
-        pickExpr(tree)
-      )((ident, expr) => (Name.mkLabel(ident), expr, tree.loc))
-    }
-
-    private def visitLiteralList(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.LiteralList)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree)
-      mapN(traverse(exprs)(visitExpr))(Expr.ListLit(_, tree.loc))
-    }
-
-    private def visitLiteralSet(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.LiteralSet)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree)
-      mapN(traverse(exprs)(visitExpr))(Expr.SetLit(_, tree.loc))
-    }
-
-    private def visitLiteralVector(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.LiteralVector)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree)
-      mapN(traverse(exprs)(visitExpr))(Expr.VectorLit(_, tree.loc))
-    }
-
-    private def visitLiteralArray(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.LiteralArray)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree)
-      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree)
-      flatMapN(
-        traverse(exprs)(visitExpr),
-        traverseOpt(scopeName)(visitScopeName)
+        traverse(pickAll(TreeKind.Argument, tree))(pickExpr),
+        traverse(pickAll(TreeKind.ArgumentNamed, tree))(visitArgumentNamed)
       ) {
-        case (exprs, Some(scope)) => Validation.success(Expr.ArrayLit(exprs, scope, tree.loc))
-        case (exprs, None) =>
-          val err = ParseError("Missing scope in array literal.", SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.toSoftFailure(Expr.ArrayLit(exprs, Expr.Error(err), tree.loc), err)
+        (unnamed, named) => unnamed ++ named match {
+          // Add synthetic unit arguments if there are none
+          case Nil => List(Expr.Cst(Ast.Constant.Unit, tree.loc))
+          case args => args.sortBy(_.loc)
+        }
       }
     }
 
-    private def visitLiteralMap(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.LiteralMap)
-      val pairs = pickAll(TreeKind.Expr.LiteralMapKeyValueFragment, tree)
-      mapN(traverse(pairs)(visitKeyValuePair))(Expr.MapLit(_, tree.loc))
-    }
-
-    private def visitKeyValuePair(tree: Tree)(implicit s: State): Validation[(Expr, Expr), CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.LiteralMapKeyValueFragment)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree)
-      flatMapN(traverse(exprs)(visitExpr)) {
-        // case: k => v
-        case k :: v :: Nil => Validation.success((k, v))
-        // case: k =>
-        case k :: Nil =>
-          val err = ParseError("Missing value in key-value pair", SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.toSoftFailure((k, Expr.Error(err)), err)
-        case xs => throw InternalCompilerException(s"Malformed KeyValue pair, found ${xs.length} expressions", tree.loc)
+    private def visitArgumentNamed(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.ArgumentNamed)
+      flatMapN(traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)) {
+        case e1 :: e2 :: Nil =>
+          // First expression must be a name
+          e1 match {
+            case Expr.Ambiguous(qname, _) =>
+              Validation.success(Expr.RecordExtend(Name.mkLabel(qname.ident), e2, Expr.RecordEmpty(tree.loc), tree.loc))
+            case _ =>
+              val error = ParseError(s"Named argument does not have a name.", SyntacticContext.Expr.OtherExpr, tree.loc)
+              Validation.toSoftFailure(Expr.Error(error), error)
+          }
+        case exprs =>
+          val error = ParseError(s"Found ${exprs.length} expressions under named argument", SyntacticContext.Expr.OtherExpr, tree.loc)
+          Validation.toSoftFailure(Expr.Error(error), error)
       }
     }
 
-    private def visitScope(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Scope)
-      val block = flatMapN(pick(TreeKind.Expr.Block, tree))(visitBlock)
-      mapN(pickNameIdent(tree), block)((ident, block) => Expr.Scope(ident, block, tree.loc))
+    private def visitLambda(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Lambda)
+      mapN(pickExpr(tree), Decls.pickFormalParameters(tree, presence = Presence.Optional)){
+        (expr, fparams) => {
+          val l = tree.loc.asSynthetic
+          fparams.foldRight(expr) {
+            case (fparam, acc) => WeededAst.Expr.Lambda(fparam, acc, l)
+          }
+        }
+      }
     }
 
-    private def tryPickNumberLiteralToken(tree: Tree): Option[Token] = {
-      val NumberLiteralKinds = List(TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
-      val maybeTree = tryPick(TreeKind.Expr.Literal, tree)
-      maybeTree.flatMap(_.children(0) match {
-        case Child.TokenChild(t) if NumberLiteralKinds.contains(t.kind) => Some(t)
-        case _ => None
-      })
+    private def visitLambdaMatch(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LambdaMatch)
+      mapN(Patterns.pickPattern(tree), pickExpr(tree)) {
+        (pat, expr) => Expr.LambdaMatch(pat, expr, tree.loc)
+      }
     }
 
     private def visitUnary(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -1438,10 +1048,10 @@ object Weeder2 {
                   visitLiteral(syntheticLiteral)
                 case _ => mapN(visitExpr(exprTree))(expr => {
                   opToken.text match {
-                    case "discard" => Expr.Discard(expr, tree.loc)
-                    case "lazy" => Expr.Lazy(expr, tree.loc)
-                    case "force" => Expr.Force(expr, tree.loc)
                     case "deref" => Expr.Deref(expr, tree.loc)
+                    case "discard" => Expr.Discard(expr, tree.loc)
+                    case "force" => Expr.Force(expr, tree.loc)
+                    case "lazy" => Expr.Lazy(expr, tree.loc)
                     case "not" => Expr.Unary(SemanticOp.BoolOp.Not, expr, tree.loc)
                     case "-" => Expr.Apply(Expr.Ambiguous(Name.mkQName("Neg.neg", sp1, sp2), opTree.loc), List(expr), tree.loc)
                     case "+" => expr
@@ -1452,166 +1062,17 @@ object Weeder2 {
             case Some(Child.TreeChild(_)) => throw InternalCompilerException(s"Expected unary operator but found tree", tree.loc)
             case None => throw InternalCompilerException(s"Parser produced tree of kind 'Op' without child", tree.loc)
           }
-
         }
       )
     }
 
-    private def visitLetRecDef(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.LetRecDef)
-      val annVal = flatMapN(Decls.pickAnnotations(tree)) {
-        case Ast.Annotations(as) =>
-          // Check for [[IllegalAnnotation]]
-          val errors = ArrayBuffer.empty[IllegalAnnotation]
-          for (a <- as) {
-            a match {
-              case Ast.Annotation.TailRecursive(_) => // OK
-              case otherAnn => errors += IllegalAnnotation(otherAnn.loc)
-            }
-          }
-          Validation.toSuccessOrSoftFailure(Ast.Annotations(as), errors)
-      }
-
-      val exprs = flatMapN(pickExpr(tree)) {
-        case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
-        case e =>
-          val error = ParseError("An internal definition must be followed by an expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.toSoftFailure((e, Expr.Error(error)), error)
-      }
-
-      mapN(
-        annVal,
-        exprs,
-        Decls.pickFormalParameters(tree, Presence.Optional),
-        pickNameIdent(tree),
-        Types.tryPickType(tree),
-        Types.tryPickEffect(tree),
-      ) {
-        case (ann, (exp1, exp2), fparams, ident, tpe, eff) =>
-          val e = if (tpe.isDefined || eff.isDefined) Expr.Ascribe(exp1, tpe, eff, exp1.loc) else exp1
-          val lambda = fparams.foldRight(e) {
-            case (fparam, acc) => WeededAst.Expr.Lambda(fparam, acc, exp1.loc.asSynthetic)
-          }
-          Expr.LetRec(ident, ann, Ast.Modifiers.Empty, lambda, exp2, tree.loc)
-      }
-    }
-
-    private def visitLetMatch(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.LetMatch)
-      flatMapN(
-        Patterns.pickPattern(tree),
-        Types.tryPickType(tree),
-        pickExpr(tree)
-      ) {
-        (pattern, tpe, expr) =>
-          // get expr1 and expr2 from the nested statement within expr.
-          val exprs = expr match {
-            case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
-            case e =>
-              val error = ParseError("A let-binding must be followed by an expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-              Validation.toSoftFailure((e, Expr.Error(error)), error)
-          }
-          mapN(exprs)(exprs => Expr.LetMatch(pattern, Ast.Modifiers.Empty, tpe, exprs._1, exprs._2, tree.loc))
-      }
-    }
-
-    private def visitIfThenElse(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.IfThenElse)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree)
-      exprs match {
-        case exprCondition :: exprThen :: exprElse :: Nil =>
-          mapN(
-            visitExpr(exprCondition),
-            visitExpr(exprThen),
-            visitExpr(exprElse)
-          ) {
-            case (condition, tthen, eelse) => Expr.IfThenElse(condition, tthen, eelse, tree.loc)
-          }
-        case _ =>
-          val error = ParseError("Malformed if-then-else expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.toSoftFailure(Expr.Error(error), error)
-      }
-    }
-
-    private def visitLambda(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Lambda)
-      mapN(
-        pickExpr(tree),
-        Decls.pickFormalParameters(tree, presence = Presence.Optional)
-      )((expr, fparams) => {
-        val l = tree.loc.asSynthetic
-        fparams.foldRight(expr) {
-          case (fparam, acc) => WeededAst.Expr.Lambda(fparam, acc, l)
-        }
+    private def tryPickNumberLiteralToken(tree: Tree): Option[Token] = {
+      val NumberLiteralKinds = List(TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
+      val maybeTree = tryPick(TreeKind.Expr.Literal, tree)
+      maybeTree.flatMap(_.children(0) match {
+        case Child.TokenChild(t) if NumberLiteralKinds.contains(t.kind) => Some(t)
+        case _ => None
       })
-    }
-
-    private def visitLambdaMatch(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.LambdaMatch)
-      mapN(
-        Patterns.pickPattern(tree),
-        pickExpr(tree)
-      )((pat, expr) => Expr.LambdaMatch(pat, expr, tree.loc))
-    }
-
-    private def visitAscribe(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Ascribe)
-      mapN(
-        pickExpr(tree),
-        Types.tryPickTypeNoWild(tree),
-        Types.tryPickEffect(tree)
-      ) {
-        (expr, tpe, eff) => Expr.Ascribe(expr, tpe, eff, tree.loc)
-      }
-    }
-
-    private def visitMatch(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Match)
-      val rules = pickAll(TreeKind.Expr.MatchRuleFragment, tree)
-      mapN(
-        pickExpr(tree),
-        traverse(rules)(visitMatchRule)
-      ) {
-        (expr, rules) => Expr.Match(expr, rules, tree.loc)
-      }
-    }
-
-    private def visitMatchRule(tree: Tree)(implicit s: State): Validation[MatchRule, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.MatchRuleFragment)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree)
-      flatMapN(
-        Patterns.pickPattern(tree),
-        traverse(exprs)(visitExpr)
-      ) {
-        // case pattern => expr
-        case (pat, expr :: Nil) => Validation.success(MatchRule(pat, None, expr))
-        // case pattern if expr => expr
-        case (pat, expr1 :: expr2 :: Nil) => Validation.success(MatchRule(pat, Some(expr1), expr2))
-        //BAD: case pattern if => expr
-        case (_, _) => Validation.HardFailure(Chain(ParseError("Malformed match rule.", SyntacticContext.Expr.OtherExpr, tree.loc)))
-      }
-    }
-
-    private def visitTypeMatch(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.TypeMatch)
-      val rules = pickAll(TreeKind.Expr.TypeMatchRuleFragment, tree)
-      mapN(
-        pickExpr(tree),
-        traverse(rules)(visitTypeMatchRule)
-      ) {
-        (expr, rules) => Expr.TypeMatch(expr, rules, tree.loc)
-      }
-    }
-
-    private def visitTypeMatchRule(tree: Tree)(implicit s: State): Validation[TypeMatchRule, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.TypeMatchRuleFragment)
-      mapN(
-        pickNameIdent(tree),
-        pickExpr(tree),
-        Types.pickType(tree)
-      ) {
-        (ident, expr, ttype) => TypeMatchRule(ident, ttype, expr)
-      }
     }
 
     private def visitBinary(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
@@ -1665,128 +1126,67 @@ object Weeder2 {
               val ident = Name.Ident(tree.loc.sp1, id, tree.loc.sp2)
               Validation.success(Expr.Apply(Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e1, e2), tree.loc))
           }
-
         case (_, operands) => throw InternalCompilerException(s"Expr.Binary tree with ${operands.length} operands", tree.loc)
       }
     }
 
-    private def visitParen(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Paren)
-      val expr = pickExpr(tree)
-      mapN(expr)(expr => Expr.Tuple(List(expr), tree.loc))
-    }
-
-    private def visitStringInterpolation(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.StringInterpolation)
-      val init = WeededAst.Expr.Cst(Ast.Constant.Str(""), tree.loc)
-      var isDebug = false
-      // Check for empty interpolation
-      if (tryPick(TreeKind.Expr.Expr, tree).isEmpty) {
-        val error = EmptyInterpolatedExpression(tree.loc)
-        return Validation.toSoftFailure(Expr.Error(error), error)
-      }
-
-      Validation.fold(tree.children, init: WeededAst.Expr) {
-        // A string part: Concat it onto the result
-        case (acc, Child.TokenChild(token)) =>
-          isDebug = token.kind == TokenKind.LiteralDebugStringL
-          val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
-          val lit0 = token.text.stripPrefix("\"").stripSuffix("\"").stripPrefix("}")
-          val lit = if (isDebug) lit0.stripSuffix("%{") else lit0.stripSuffix("${")
-          if (lit == "") {
-            Validation.success(acc)
-          } else {
-            val (processed, errors) = Constants.visitChars(lit, loc)
-            val cst = Validation.success(Expr.Cst(Ast.Constant.Str(processed), loc)).withSoftFailures(errors)
-            mapN(cst) {
-              cst => Expr.Binary(SemanticOp.StringOp.Concat, acc, cst, tree.loc.asSynthetic)
-            }
+    private def visitIfThenElse(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.IfThenElse)
+      pickAll(TreeKind.Expr.Expr, tree) match {
+        case exprCondition :: exprThen :: exprElse :: Nil =>
+          mapN(visitExpr(exprCondition), visitExpr(exprThen), visitExpr(exprElse)) {
+            (condition, tthen, eelse) => Expr.IfThenElse(condition, tthen, eelse, tree.loc)
           }
-        // An expression part: Apply 'toString' to it and concat the result
-        case (acc, Child.TreeChild(tree)) if tree.kind == TreeKind.Expr.Expr =>
-          mapN(visitExpr(tree))(expr => {
-            val loc = tree.loc.asSynthetic
-            val funcName = if (isDebug) {
-              isDebug = false
-              "Debug.stringify"
-            } else "ToString.toString"
-            val str = Expr.Apply(Expr.Ambiguous(Name.mkQName(funcName), loc), List(expr), loc)
-            Expr.Binary(SemanticOp.StringOp.Concat, acc, str, loc)
-          })
-        // Skip anything else (Parser will have produced an error.)
-        case (acc, _) => Validation.success(acc)
+        case _ =>
+          val error = ParseError("Malformed if-then-else expression", SyntacticContext.Expr.OtherExpr, tree.loc)
+          Validation.toSoftFailure(Expr.Error(error), error)
       }
-    }
-
-
-    private def visitCheckedTypeCast(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.CheckedTypeCast)
-      val expr = pickExpr(tree)
-      mapN(expr)(expr => Expr.CheckedCast(Ast.CheckedCastType.TypeCast, expr, tree.loc))
-    }
-
-
-    private def visitCheckedEffectCast(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.CheckedEffectCast)
-      val expr = pickExpr(tree)
-      mapN(expr)(expr => Expr.CheckedCast(Ast.CheckedCastType.EffectCast, expr, tree.loc))
-    }
-
-
-    private def visitUncheckedCast(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.UncheckedCast)
-      mapN(
-        pickExpr(tree),
-        Types.tryPickTypeNoWild(tree),
-        Types.tryPickEffect(tree)
-      ) {
-        (expr, tpe, eff) => Expr.UncheckedCast(expr, tpe, eff, tree.loc)
-      }
-    }
-
-    private def visitUncheckedMaskingCast(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.UncheckedMaskingCast)
-      val expr = pickExpr(tree)
-      mapN(expr)(expr => Expr.UncheckedMaskingCast(expr, tree.loc))
-    }
-
-    private def visitHole(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Hole)
-      mapN(tryPickNameIdent(tree)) {
-        ident =>
-          val strippedIdent = ident.map(id => Name.Ident(id.sp1, id.name.stripPrefix("?"), id.sp2))
-          Expr.Hole(strippedIdent, tree.loc)
-      }
-    }
-
-    private def visitHoleVariable(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.HoleVariable)
-      mapN(pickNameIdent(tree)) {
-        ident =>
-          val id = Name.Ident(ident.sp1, ident.name.stripSuffix("?"), ident.sp2)
-          val expr = Expr.Ambiguous(Name.mkQName(id), id.loc)
-          Expr.HoleWithExp(expr, tree.loc)
-      }
-    }
-
-    private def visitExprUse(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Use)
-      val use = flatMapN(pick(TreeKind.UsesOrImports.Use, tree))(visitUse)
-      val expr = pickExpr(tree)
-      mapN(use, expr)((use, expr) => Expr.Use(use, expr, tree.loc))
-    }
-
-    private def visitBlock(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Block)
-      pickExpr(tree)
     }
 
     private def visitStatement(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
       assert(tree.kind == TreeKind.Expr.Statement)
-      val exprs = pickAll(TreeKind.Expr.Expr, tree)
-      mapN(traverse(exprs)(visitExpr)) {
+      mapN(traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)) {
         case ex1 :: ex2 :: Nil => Expr.Stm(ex1, ex2, tree.loc)
         case exprs => throw InternalCompilerException(s"Parser error. Expected 2 expressions in statement but found '${exprs.length}'.", tree.loc)
+      }
+    }
+
+    private def visitLetRecDef(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LetRecDef)
+      val annVal = flatMapN(Decls.pickAnnotations(tree)) {
+        case Ast.Annotations(as) =>
+          // Check for [[IllegalAnnotation]]
+          val errors = ArrayBuffer.empty[IllegalAnnotation]
+          for (a <- as) {
+            a match {
+              case Ast.Annotation.TailRecursive(_) => // OK
+              case otherAnn => errors += IllegalAnnotation(otherAnn.loc)
+            }
+          }
+          Validation.toSuccessOrSoftFailure(Ast.Annotations(as), errors)
+      }
+
+      val exprs = flatMapN(pickExpr(tree)) {
+        case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
+        case e =>
+          val error = ParseError("An internal definition must be followed by an expression", SyntacticContext.Expr.OtherExpr, tree.loc)
+          Validation.toSoftFailure((e, Expr.Error(error)), error)
+      }
+
+      mapN(
+        annVal,
+        exprs,
+        Decls.pickFormalParameters(tree, Presence.Optional),
+        pickNameIdent(tree),
+        Types.tryPickType(tree),
+        Types.tryPickEffect(tree),
+      ) {
+        case (ann, (exp1, exp2), fparams, ident, tpe, eff) =>
+          val e = if (tpe.isDefined || eff.isDefined) Expr.Ascribe(exp1, tpe, eff, exp1.loc) else exp1
+          val lambda = fparams.foldRight(e) {
+            case (fparam, acc) => WeededAst.Expr.Lambda(fparam, acc, exp1.loc.asSynthetic)
+          }
+          Expr.LetRec(ident, ann, Ast.Modifiers.Empty, lambda, exp2, tree.loc)
       }
     }
 
@@ -1799,50 +1199,608 @@ object Weeder2 {
       }
     }
 
-    private def visitApply(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Expr.Apply)
-      flatMapN(pick(TreeKind.Expr.Expr, tree), pickArguments(tree)) {
-        case (expr, args) =>
-          val maybeIntrinsic = tryPick(TreeKind.Expr.Intrinsic, expr)
-          maybeIntrinsic match {
-            case Some(intrinsic) => visitIntrinsic(intrinsic, args)
-            case None => mapN(visitExpr(expr))(Expr.Apply(_, args, tree.loc))
+    private def visitScope(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Scope)
+      val block = flatMapN(pick(TreeKind.Expr.Block, tree))(visitBlock)
+      mapN(pickNameIdent(tree), block) {
+        (ident, block) => Expr.Scope(ident, block, tree.loc)
+      }
+    }
+
+    private def visitMatch(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Match)
+      val rules = pickAll(TreeKind.Expr.MatchRuleFragment, tree)
+      mapN(pickExpr(tree), traverse(rules)(visitMatchRule)) {
+        (expr, rules) => Expr.Match(expr, rules, tree.loc)
+      }
+    }
+
+    private def visitMatchRule(tree: Tree)(implicit s: State): Validation[MatchRule, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.MatchRuleFragment)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree)
+      flatMapN(Patterns.pickPattern(tree), traverse(exprs)(visitExpr)) {
+        // case pattern => expr
+        case (pat, expr :: Nil) => Validation.success(MatchRule(pat, None, expr))
+        // case pattern if expr => expr
+        case (pat, expr1 :: expr2 :: Nil) => Validation.success(MatchRule(pat, Some(expr1), expr2))
+        //BAD: case pattern if => expr
+        case (_, _) => Validation.HardFailure(Chain(ParseError("Malformed match rule.", SyntacticContext.Expr.OtherExpr, tree.loc)))
+      }
+    }
+
+    private def visitTypeMatch(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.TypeMatch)
+      val rules = pickAll(TreeKind.Expr.TypeMatchRuleFragment, tree)
+      mapN(pickExpr(tree), traverse(rules)(visitTypeMatchRule)) {
+        (expr, rules) => Expr.TypeMatch(expr, rules, tree.loc)
+      }
+    }
+
+    private def visitTypeMatchRule(tree: Tree)(implicit s: State): Validation[TypeMatchRule, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.TypeMatchRuleFragment)
+      mapN(pickNameIdent(tree), pickExpr(tree), Types.pickType(tree)) {
+        (ident, expr, ttype) => TypeMatchRule(ident, ttype, expr)
+      }
+    }
+
+    private def visitRestrictableChoose(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.RestrictableChoose || tree.kind == TreeKind.Expr.RestrictableChooseStar)
+      val isStar = tree.kind == TreeKind.Expr.RestrictableChooseStar
+      val rules = pickAll(TreeKind.Expr.MatchRuleFragment, tree)
+      mapN(pickExpr(tree), traverse(rules)(t => visitRestrictableChooseRule(isStar, t))) {
+        (expr, rules) => Expr.RestrictableChoose(isStar, expr, rules, tree.loc)
+      }
+    }
+
+    private def visitRestrictableChooseRule(isStar: Boolean, tree: Tree)(implicit s: State): Validation[RestrictableChooseRule, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.MatchRuleFragment)
+      flatMapN(pickRestrictableChoosePattern(isStar, tree), pickExpr(tree)) {
+        (pat, expr) => Validation.success(RestrictableChooseRule(pat, expr))
+      }
+    }
+
+    private def pickRestrictableChoosePattern(isStar: Boolean, tree: Tree)(implicit s: State): Validation[RestrictableChoosePattern, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.MatchRuleFragment)
+      flatMapN(Patterns.pickPattern(tree)) {
+        case Pattern.Tag(qname, pat, loc) =>
+          val inner = pat match {
+            case Pattern.Wild(loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
+            case Pattern.Var(ident, loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Var(ident, loc)))
+            case Pattern.Cst(Ast.Constant.Unit, loc) => Validation.success(List(WeededAst.RestrictableChoosePattern.Wild(loc)))
+            case Pattern.Tuple(elms, _) =>
+              traverse(elms) {
+                case Pattern.Wild(loc) => Validation.success(WeededAst.RestrictableChoosePattern.Wild(loc))
+                case Pattern.Var(ident, loc) => Validation.success(WeededAst.RestrictableChoosePattern.Var(ident, loc))
+                case Pattern.Cst(Ast.Constant.Unit, loc) => Validation.success(WeededAst.RestrictableChoosePattern.Wild(loc))
+                case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(isStar, other.loc))
+              }
+            case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(isStar, other.loc))
+          }
+          mapN(inner)(RestrictableChoosePattern.Tag(qname, _, loc))
+        case other => Validation.toHardFailure(UnsupportedRestrictedChoicePattern(isStar, other.loc))
+      }
+    }
+
+    private def visitForApplicative(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.ForApplicative)
+      flatMapN(pickForFragments(tree), pickExpr(tree)) {
+        case (Nil, _) =>
+          val err = EmptyForFragment(tree.loc)
+          Validation.toSoftFailure(Expr.Error(err), err)
+        case (fragments, expr) =>
+          // Check that there are only generators
+          val (generators, nonGeneratorFragments) = fragments.partition {
+            case _: ForFragment.Generator => true
+            case _ => false
+          }
+          if (nonGeneratorFragments.nonEmpty) {
+            val err = IllegalForAFragment(nonGeneratorFragments.head.loc)
+            Validation.success(Expr.Error(err)).withSoftFailures(nonGeneratorFragments.map(f => IllegalForAFragment(f.loc)))
+          } else {
+            Validation.success(Expr.ApplicativeFor(generators.asInstanceOf[List[ForFragment.Generator]], expr, tree.loc))
           }
       }
     }
 
-    private def pickArguments(tree: Tree)(implicit s: State): Validation[List[Expr], CompilationMessage] = {
-      flatMapN(pick(TreeKind.ArgumentList, tree))(visitArguments)
+    private def visitForeach(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Foreach)
+      flatMapN(pickForFragments(tree), pickExpr(tree)) {
+        case (Nil, _) =>
+          val err = EmptyForFragment(tree.loc)
+          Validation.toSoftFailure(Expr.Error(err), err)
+        case (fragments, expr) =>
+          // It's okay to do head rather than headOption here because we check for Nil above.
+          fragments.head match {
+            // Check that fragments start with a generator.
+            case _: ForFragment.Generator => Validation.success(Expr.ForEach(fragments, expr, tree.loc))
+            case f =>
+              val error = IllegalForFragment(f.loc)
+              Validation.toSoftFailure(Expr.Error(error), error)
+          }
+      }
     }
 
-    private def visitArguments(tree: Tree)(implicit s: State): Validation[List[Expr], CompilationMessage] = {
+    private def visitForMonadic(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.ForMonadic)
+      flatMapN(pickForFragments(tree), pickExpr(tree)) {
+        case (Nil, _) =>
+          val err = EmptyForFragment(tree.loc)
+          Validation.toSoftFailure(Expr.Error(err), err)
+        case (fragments, expr) =>
+          // It's okay to do head rather than headOption here because we check for Nil above.
+          fragments.head match {
+            // Check that fragments start with a generator.
+            case _: ForFragment.Generator => Validation.success(Expr.MonadicFor(fragments, expr, tree.loc))
+            case f =>
+              val error = IllegalForFragment(f.loc)
+              Validation.toSoftFailure(Expr.Error(error), error)
+          }
+      }
+    }
+
+    private def visitForeachYield(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.ForeachYield)
+      flatMapN(pickForFragments(tree), pickExpr(tree)) {
+        case (Nil, _) =>
+          val err = EmptyForFragment(tree.loc)
+          Validation.toSoftFailure(Expr.Error(err), err)
+        case (fragments, expr) =>
+          // It's okay to do head rather than headOption here because we check for Nil above.
+          fragments.head match {
+            // Check that fragments start with a generator.
+            case _: ForFragment.Generator => Validation.success(Expr.ForEachYield(fragments, expr, tree.loc))
+            case f =>
+              val error = IllegalForFragment(f.loc)
+              Validation.toSoftFailure(Expr.Error(error), error)
+          }
+      }
+    }
+
+    private def pickForFragments(tree: Tree)(implicit s: State): Validation[List[ForFragment], CompilationMessage] = {
+      val guards = pickAll(TreeKind.Expr.ForFragmentGuard, tree)
+      val generators = pickAll(TreeKind.Expr.ForFragmentGenerator, tree)
+      val lets = pickAll(TreeKind.Expr.ForFragmentLet, tree)
       mapN(
-        traverse(pickAll(TreeKind.Argument, tree))(pickExpr),
-        traverse(pickAll(TreeKind.ArgumentNamed, tree))(visitArgumentNamed)
-      )((unnamed, named) => unnamed ++ named match {
-        // Add synthetic unit arguments if there are none
-        case Nil => List(Expr.Cst(Ast.Constant.Unit, tree.loc))
-        case args => args.sortBy(_.loc)
+        traverse(guards)(visitForFragmentGuard),
+        traverse(generators)(visitForFragmentGenerator),
+        traverse(lets)(visitForFragmentLet),
+      ) {
+        (guards, generators, lets) => (generators ++ guards ++ lets).sortBy(_.loc)
+      }
+    }
+
+    private def visitForFragmentGuard(tree: Tree)(implicit s: State): Validation[ForFragment.Guard, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.ForFragmentGuard)
+      mapN(pickExpr(tree))(ForFragment.Guard(_, tree.loc))
+    }
+
+    private def visitForFragmentGenerator(tree: Tree)(implicit s: State): Validation[ForFragment.Generator, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.ForFragmentGenerator)
+      mapN(Patterns.pickPattern(tree), pickExpr(tree)) {
+        (pat, expr) => ForFragment.Generator(pat, expr, tree.loc)
+      }
+    }
+
+    private def visitForFragmentLet(tree: Tree)(implicit s: State): Validation[ForFragment.Let, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.ForFragmentLet)
+      mapN(Patterns.pickPattern(tree), pickExpr(tree)) {
+        (pat, expr) => ForFragment.Let(pat, expr, tree.loc)
+      }
+    }
+
+    private def visitLetMatch(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LetMatch)
+      flatMapN(Patterns.pickPattern(tree), Types.tryPickType(tree), pickExpr(tree)) {
+        (pattern, tpe, expr) =>
+          // get expr1 and expr2 from the nested statement within expr.
+          val exprs = expr match {
+            case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
+            case e =>
+              val error = ParseError("A let-binding must be followed by an expression", SyntacticContext.Expr.OtherExpr, tree.loc)
+              Validation.toSoftFailure((e, Expr.Error(error)), error)
+          }
+          mapN(exprs)(exprs => Expr.LetMatch(pattern, Ast.Modifiers.Empty, tpe, exprs._1, exprs._2, tree.loc))
+      }
+    }
+
+    private def visitTuple(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Tuple)
+      mapN(traverse(pickAll(TreeKind.Argument, tree))(pickExpr), traverse(pickAll(TreeKind.ArgumentNamed, tree))(visitArgumentNamed)) {
+        (unnamed, named) => Expr.Tuple((unnamed ++ named).sortBy(_.loc), tree.loc)
+      }
+    }
+
+    private def visitLiteralRecord(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LiteralRecord)
+      val fields = pickAll(TreeKind.Expr.LiteralRecordFieldFragment, tree)
+      mapN(traverse(fields)(visitLiteralRecordField)) {
+        fields => fields.foldRight(Expr.RecordEmpty(tree.loc.asSynthetic): Expr) {
+          case ((label, expr, loc), acc) => Expr.RecordExtend(label, expr, acc, loc)
+        }
+      }
+    }
+
+    private def visitLiteralRecordField(tree: Tree)(implicit s: State): Validation[(Name.Label, Expr, SourceLocation), CompilationMessage] = {
+      mapN(pickNameIdent(tree), pickExpr(tree)) {
+        (ident, expr) => (Name.mkLabel(ident), expr, tree.loc)
+      }
+    }
+
+    private def visitRecordSelect(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.RecordSelect)
+      val idents = pickAll(TreeKind.Ident, tree)
+      mapN(pickExpr(tree), traverse(idents)(tokenToIdent)) {
+        (expr, idents) =>
+          idents.foldLeft(expr) {
+            case (acc, ident) => Expr.RecordSelect(acc, Name.mkLabel(ident), ident.loc)
+          }
+      }
+    }
+
+    private def visitRecordOperation(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.RecordOperation)
+      val updates = pickAll(TreeKind.Expr.RecordOpUpdate, tree)
+      val eextends = pickAll(TreeKind.Expr.RecordOpExtend, tree)
+      val restricts = pickAll(TreeKind.Expr.RecordOpRestrict, tree)
+      val ops = (updates ++ eextends ++ restricts).sortBy(_.loc)
+      Validation.foldRight(ops)(pickExpr(tree))((op, acc) =>
+        op.kind match {
+          case TreeKind.Expr.RecordOpExtend => mapN(pickExpr(op), pickNameIdent(op))(
+            (expr, id) => Expr.RecordExtend(Name.mkLabel(id), expr, acc, op.loc)
+          )
+          case TreeKind.Expr.RecordOpRestrict => mapN(pickNameIdent(op))(
+            id => Expr.RecordRestrict(Name.mkLabel(id), acc, op.loc)
+          )
+          case TreeKind.Expr.RecordOpUpdate => mapN(pickExpr(op), pickNameIdent(op))(
+            (expr, id) => {
+              // An update is a restrict followed by an extension
+              val restricted = Expr.RecordRestrict(Name.mkLabel(id), acc, op.loc)
+              Expr.RecordExtend(Name.mkLabel(id), expr, restricted, op.loc)
+            })
+          case k => throw InternalCompilerException(s"'$k' is not a record operation", op.loc)
+        }
+      )
+    }
+
+    private def visitLiteralArray(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LiteralArray)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree)
+      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree)
+      flatMapN(traverse(exprs)(visitExpr), traverseOpt(scopeName)(visitScopeName)) {
+        case (exprs, Some(scope)) => Validation.success(Expr.ArrayLit(exprs, scope, tree.loc))
+        case (exprs, None) =>
+          val err = ParseError("Missing scope in array literal.", SyntacticContext.Expr.OtherExpr, tree.loc)
+          Validation.toSoftFailure(Expr.ArrayLit(exprs, Expr.Error(err), tree.loc), err)
+      }
+    }
+    
+    private def visitScopeName(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.ScopeName)
+      pickExpr(tree)
+    }
+
+    private def visitLiteralVector(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LiteralVector)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree)
+      mapN(traverse(exprs)(visitExpr))(Expr.VectorLit(_, tree.loc))
+    }
+
+    private def visitLiteralList(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LiteralList)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree)
+      mapN(traverse(exprs)(visitExpr))(Expr.ListLit(_, tree.loc))
+    }
+
+    private def visitLiteralMap(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LiteralMap)
+      val pairs = pickAll(TreeKind.Expr.LiteralMapKeyValueFragment, tree)
+      mapN(traverse(pairs)(visitKeyValuePair))(Expr.MapLit(_, tree.loc))
+    }
+
+    private def visitKeyValuePair(tree: Tree)(implicit s: State): Validation[(Expr, Expr), CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LiteralMapKeyValueFragment)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree)
+      flatMapN(traverse(exprs)(visitExpr)) {
+        // case: k => v
+        case k :: v :: Nil => Validation.success((k, v))
+        // case: k =>
+        case k :: Nil =>
+          val err = ParseError("Missing value in key-value pair", SyntacticContext.Expr.OtherExpr, tree.loc)
+          Validation.toSoftFailure((k, Expr.Error(err)), err)
+        case xs => throw InternalCompilerException(s"Malformed KeyValue pair, found ${xs.length} expressions", tree.loc)
+      }
+    }
+
+    private def visitLiteralSet(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.LiteralSet)
+      val exprs = pickAll(TreeKind.Expr.Expr, tree)
+      mapN(traverse(exprs)(visitExpr))(Expr.SetLit(_, tree.loc))
+    }
+
+    private def visitRef(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Ref)
+      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree)
+      flatMapN(pickExpr(tree), traverseOpt(scopeName)(visitScopeName)) {
+        case (expr1, Some(expr2)) => Validation.success(Expr.Ref(expr1, expr2, tree.loc))
+        case (expr1, None) =>
+          val err = ParseError("Missing scope in ref.", SyntacticContext.Expr.OtherExpr, tree.loc)
+          Validation.toSoftFailure(Expr.Ref(expr1, Expr.Error(err), tree.loc), err)
+      }
+    }
+
+    private def visitAscribe(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Ascribe)
+      mapN(pickExpr(tree), Types.tryPickTypeNoWild(tree), Types.tryPickEffect(tree)) {
+        (expr, tpe, eff) => Expr.Ascribe(expr, tpe, eff, tree.loc)
+      }
+    }
+
+    private def visitCheckedTypeCast(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.CheckedTypeCast)
+      mapN(pickExpr(tree)) {
+        expr => Expr.CheckedCast(Ast.CheckedCastType.TypeCast, expr, tree.loc)
+      }
+    }
+
+    private def visitCheckedEffectCast(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.CheckedEffectCast)
+      mapN(pickExpr(tree)) {
+        expr => Expr.CheckedCast(Ast.CheckedCastType.EffectCast, expr, tree.loc)
+      }
+    }
+
+    private def visitUncheckedCast(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.UncheckedCast)
+      mapN(pickExpr(tree), Types.tryPickTypeNoWild(tree), Types.tryPickEffect(tree)) {
+        (expr, tpe, eff) => Expr.UncheckedCast(expr, tpe, eff, tree.loc)
+      }
+    }
+
+    private def visitUncheckedMaskingCast(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.UncheckedMaskingCast)
+      mapN(pickExpr(tree)) {
+        expr => Expr.UncheckedMaskingCast(expr, tree.loc)
+      }
+    }
+
+    private def visitWithout(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Without)
+      val effectSet = pick(TreeKind.Type.EffectSet, tree)
+      val effects = flatMapN(effectSet)(effectSetTree => traverse(pickAll(TreeKind.QName, effectSetTree))(visitQName))
+      mapN(pickExpr(tree), effects) {
+        (expr, effects) =>
+          val base = Expr.Without(expr, effects.head, tree.loc)
+          effects.tail.foldLeft(base) {
+            case (acc, eff) => Expr.Without(acc, eff, tree.loc.asSynthetic)
+          }
+      }
+    }
+
+    private def visitTry(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Try)
+      val maybeCatch = pickAll(TreeKind.Expr.TryCatchBodyFragment, tree)
+      val maybeWith = pickAll(TreeKind.Expr.TryWithBodyFragment, tree)
+      flatMapN(
+        pickExpr(tree),
+        traverse(maybeCatch)(visitTryCatchBody),
+        traverse(maybeWith)(visitTryWithBody),
+      ) {
+        // Bad case: try expr
+        case (expr, Nil, Nil) => Validation.toSoftFailure(
+          Expr.TryCatch(expr, List.empty, tree.loc),
+          ParseError(s"Missing `catch` on try-catch expression", SyntacticContext.Expr.OtherExpr, tree.loc)
+        )
+        // Bad case: try expr catch { rules... } with eff { handlers... }
+        case (expr, _ :: _, _ :: _) => Validation.toSoftFailure(
+          Expr.TryCatch(expr, List.empty, tree.loc),
+          ParseError(s"Cannot use both `catch` and `with` on try-catch expression", SyntacticContext.Expr.OtherExpr, tree.loc)
+        )
+        // Case: try expr catch { rules... }
+        case (expr, catches, Nil) => Validation.success(Expr.TryCatch(expr, catches.flatten, tree.loc))
+        // Case: try expr with eff { handlers... }
+        case (expr, Nil, withs) => Validation.success(Expr.TryWith(expr, withs, tree.loc))
+      }
+    }
+
+    private def visitTryCatchBody(tree: Tree)(implicit s: State): Validation[List[CatchRule], CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.TryCatchBodyFragment)
+      val rules = pickAll(TreeKind.Expr.TryCatchRuleFragment, tree)
+      traverse(rules)(visitTryCatchRule)
+    }
+
+    private def visitTryCatchRule(tree: Tree)(implicit s: State): Validation[CatchRule, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.TryCatchRuleFragment)
+      mapN(pickNameIdent(tree), pickQName(tree), pickExpr(tree)) {
+        (ident, qname, expr) => CatchRule(ident, javaQnameToFqn(qname), expr)
+      }
+    }
+
+    private def visitTryWithBody(tree: Tree)(implicit s: State): Validation[WithHandler, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.TryWithBodyFragment)
+      val rules = pickAll(TreeKind.Expr.TryWithRuleFragment, tree)
+      mapN(pickQName(tree), /* This qname is an effect */ traverse(rules)(visitTryWithRule)) {
+        (eff, handlers) => WithHandler(eff, handlers)
+      }
+    }
+
+    private def visitTryWithRule(tree: Tree)(implicit s: State): Validation[HandlerRule, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.TryWithRuleFragment)
+      mapN(
+        pickNameIdent(tree),
+        Decls.pickFormalParameters(tree, Presence.Forbidden),
+        pickExpr(tree)
+      )((ident, fparams, expr) => {
+        // Add extra resumption argument as a synthetic unit parameter when there is exactly one parameter.
+        val hasSingleNonUnitParam = fparams.sizeIs == 1 && fparams.exists(_.ident.name != "_unit")
+        val syntheticUnitParam = if (hasSingleNonUnitParam) List(Decls.unitFormalParameter(tree.loc.asSynthetic)) else List.empty
+        HandlerRule(ident, (syntheticUnitParam ++ fparams).sortBy(_.loc), expr)
       })
     }
 
-    private def visitArgumentNamed(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      assert(tree.kind == TreeKind.ArgumentNamed)
-      flatMapN(
-        traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
+    private def visitDo(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Do)
+      mapN(pickQName(tree), pickArguments(tree)) {
+        (op, args) => Expr.Do(op, args, tree.loc)
+      }
+    }
+
+    private def visitNewObject(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.NewObject)
+      val methods = pickAll(TreeKind.Expr.JvmMethod, tree)
+      mapN(Types.pickType(tree), traverse(methods)(visitJvmMethod)) {
+        (tpe, methods) => Expr.NewObject(tpe, methods, tree.loc)
+      }
+    }
+
+    private def visitJvmMethod(tree: Tree)(implicit s: State): Validation[JvmMethod, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.JvmMethod)
+      mapN(
+        pickNameIdent(tree),
+        pickExpr(tree),
+        Decls.pickFormalParameters(tree),
+        Types.pickType(tree),
+        Types.tryPickEffect(tree),
       ) {
-        case e1 :: e2 :: Nil =>
-          // First expression must be a name
-          e1 match {
-            case Expr.Ambiguous(qname, _) =>
-              Validation.success(Expr.RecordExtend(Name.mkLabel(qname.ident), e2, Expr.RecordEmpty(tree.loc), tree.loc))
-            case _ =>
-              val error = ParseError(s"Named argument does not have a name.", SyntacticContext.Expr.OtherExpr, tree.loc)
-              Validation.toSoftFailure(Expr.Error(error), error)
-          }
-        case exprs =>
-          val error = ParseError(s"Found ${exprs.length} expressions under named argument", SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.toSoftFailure(Expr.Error(error), error)
+        (ident, expr, fparams, tpe, eff) => JvmMethod(ident, fparams, expr, tpe, eff, tree.loc)
+      }
+    }
+
+    private def visitStatic(tree: Tree): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Static)
+      Validation.success(Expr.Static(tree.loc))
+    }
+
+    private def visitSelect(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Select)
+      val rules = traverse(pickAll(TreeKind.Expr.SelectRuleFragment, tree))(visitSelectRule)
+      val maybeDefault = traverseOpt(tryPick(TreeKind.Expr.SelectRuleDefaultFragment, tree))(pickExpr)
+      mapN(rules, maybeDefault){
+        (rules, maybeDefault) => Expr.SelectChannel(rules, maybeDefault, tree.loc)
+      }
+    }
+
+    private def visitSelectRule(tree: Tree)(implicit s: State): Validation[SelectChannelRule, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.SelectRuleFragment)
+      val exprs = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
+      flatMapN(pickNameIdent(tree), exprs) {
+        case (ident, channel :: body :: Nil) =>
+          Validation.success(SelectChannelRule(ident, channel, body))
+        case (ident, channel :: Nil) =>
+          val err = ParseError("Missing body in select rule.", SyntacticContext.Expr.OtherExpr, tree.loc)
+          Validation.toSoftFailure(SelectChannelRule(ident, channel, Expr.Error(err)), err)
+        case _ =>
+          val err = ParseError("Malformed select rule.", SyntacticContext.Expr.OtherExpr, tree.loc)
+          Validation.HardFailure(Chain(err))
+      }
+    }
+
+    private def visitSpawn(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Spawn)
+      val scopeName = tryPick(TreeKind.Expr.ScopeName, tree)
+      flatMapN(pickExpr(tree), traverseOpt(scopeName)(visitScopeName)) {
+        case (expr1, Some(expr2)) => Validation.success(Expr.Spawn(expr1, expr2, tree.loc))
+        case (expr1, None) =>
+          val err = ParseError("Missing scope in spawn.", SyntacticContext.Expr.OtherExpr, tree.loc)
+          Validation.toSoftFailure(Expr.Spawn(expr1, Expr.Error(err), tree.loc), err)
+      }
+    }
+
+    private def visitParYield(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.ParYield)
+      val fragments = pickAll(TreeKind.Expr.ParYieldFragment, tree)
+      mapN(traverse(fragments)(visitParYieldFragment), pickExpr(tree)) {
+        (fragments, expr) => Expr.ParYield(fragments, expr, tree.loc)
+      }
+    }
+
+    private def visitParYieldFragment(tree: Tree)(implicit s: State): Validation[ParYieldFragment, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.ParYieldFragment)
+      mapN(Patterns.pickPattern(tree), pickExpr(tree)) {
+        (pat, expr) => ParYieldFragment(pat, expr, tree.loc)
+      }
+    }
+
+    private def visitFixpointConstraintSet(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.FixpointConstraintSet)
+      val constraints = pickAll(TreeKind.Expr.FixpointConstraint, tree)
+      mapN(traverse(constraints)(visitFixpointConstraint)) {
+        constraints => Expr.FixpointConstraintSet(constraints, tree.loc)
+      }
+    }
+
+    private def visitFixpointConstraint(tree: Tree)(implicit s: State): Validation[Constraint, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.FixpointConstraint)
+      val bodyItems = pickAll(TreeKind.Predicate.Body, tree)
+      mapN(Predicates.pickHead(tree), traverse(bodyItems)(Predicates.visitBody)) {
+        (head, body) => Constraint(head, body, tree.loc)
+      }
+    }
+
+    private def visitFixpointLambda(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.FixpointLambda)
+      val params = mapN(pick(TreeKind.Predicate.ParamList, tree))(t =>
+        (pickAll(TreeKind.Predicate.ParamUntyped, t) ++ pickAll(TreeKind.Predicate.Param, t)).sortBy(_.loc)
+      )
+      mapN(flatMapN(params)(ps => traverse(ps)(Predicates.visitParam)), pickExpr(tree)) {
+        (params, expr) => Expr.FixpointLambda(params, expr, tree.loc)
+      }
+    }
+
+    private def visitFixpointInject(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.FixpointInject)
+      val expressions = pickAll(TreeKind.Expr.Expr, tree)
+      val idents = pickAll(TreeKind.Ident, tree)
+      flatMapN(traverse(expressions)(visitExpr), traverse(idents)(tokenToIdent)) {
+        case (exprs, idents) if exprs.length != idents.length =>
+          // Check for mismatched arity
+          val err = MismatchedArity(exprs.length, idents.length, tree.loc)
+          Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
+
+        case (exprs, idents) => Validation.success(Expr.FixpointInjectInto(exprs, idents, tree.loc))
+      }
+    }
+
+    private def visitFixpointSolve(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.FixpointSolveWithProject)
+      val expressions = pickAll(TreeKind.Expr.Expr, tree)
+      val idents = pickAll(TreeKind.Ident, tree)
+      mapN(traverse(expressions)(visitExpr), traverse(idents)(tokenToIdent)) {
+        (exprs, idents) =>
+          val optIdents = if (idents.isEmpty) None else Some(idents)
+          Expr.FixpointSolveWithProject(exprs, optIdents, tree.loc)
+      }
+    }
+
+    private def visitFixpointQuery(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.FixpointQuery)
+      val expressions = traverse(pickAll(TreeKind.Expr.Expr, tree))(visitExpr)
+      val selects = flatMapN(pick(TreeKind.Expr.FixpointSelect, tree))(
+        selectTree => traverse(pickAll(TreeKind.Expr.Expr, selectTree))(visitExpr)
+      )
+      val froms = flatMapN(pick(TreeKind.Expr.FixpointFromFragment, tree))(
+        fromTree => traverse(pickAll(TreeKind.Predicate.Atom, fromTree))(Predicates.visitAtom)
+      )
+      val where = traverseOpt(tryPick(TreeKind.Expr.FixpointWhere, tree))(pickExpr)
+      mapN(expressions, selects, froms, where) {
+        (expressions, selects, froms, where) =>
+          val whereList = where.map(w => List(w)).getOrElse(List.empty)
+          Expr.FixpointQueryWithSelect(expressions, selects, froms, whereList, tree.loc)
+      }
+    }
+
+    private def visitDebug(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Expr.Debug)
+      mapN(pickDebugKind(tree), pickExpr(tree)) {
+        (kind, expr) => Expr.Debug(expr, kind, tree.loc)
+      }
+    }
+
+    private def pickDebugKind(tree: Tree): Validation[DebugKind, CompilationMessage] = {
+      tree.children.headOption match {
+        case Some(Child.TokenChild(t)) if t.kind == TokenKind.KeywordDebug => Validation.success(DebugKind.Debug)
+        case Some(Child.TokenChild(t)) if t.kind == TokenKind.KeywordDebugBang => Validation.success(DebugKind.DebugWithLoc)
+        case Some(Child.TokenChild(t)) if t.kind == TokenKind.KeywordDebugBangBang => Validation.success(DebugKind.DebugWithLocAndSrc)
+        case _ => throw InternalCompilerException(s"Malformed debug expression, could not find debug kind", tree.loc)
       }
     }
 
@@ -1974,39 +1932,6 @@ object Weeder2 {
         case _ =>
           val err = UndefinedIntrinsic(loc)
           Validation.toSoftFailure(Expr.Error(err), err)
-      }
-    }
-
-    def visitLiteral(tree: Tree)(implicit s: State): Validation[Expr, CompilationMessage] = {
-      // Note: This visitor is used by both expression literals and pattern literals.
-      // Hence this assert:
-      assert(tree.kind == TreeKind.Expr.Literal || tree.kind == TreeKind.Pattern.Literal)
-
-      tree.children(0) match {
-        case Child.TokenChild(token) => token.kind match {
-          case TokenKind.KeywordNull => Validation.success(Expr.Cst(Ast.Constant.Null, token.mkSourceLocation(s.src, Some(s.parserInput))))
-          case TokenKind.KeywordTrue => Validation.success(Expr.Cst(Ast.Constant.Bool(true), token.mkSourceLocation(s.src, Some(s.parserInput))))
-          case TokenKind.KeywordFalse => Validation.success(Expr.Cst(Ast.Constant.Bool(false), token.mkSourceLocation(s.src, Some(s.parserInput))))
-          case TokenKind.LiteralString => Constants.toStringCst(token)
-          case TokenKind.LiteralChar => Constants.toChar(token)
-          case TokenKind.LiteralInt8 => Constants.toInt8(token)
-          case TokenKind.LiteralInt16 => Constants.toInt16(token)
-          case TokenKind.LiteralInt32 => Constants.toInt32(token)
-          case TokenKind.LiteralInt64 => Constants.toInt64(token)
-          case TokenKind.LiteralBigInt => Constants.toBigInt(token)
-          case TokenKind.LiteralFloat32 => Constants.toFloat32(token)
-          case TokenKind.LiteralFloat64 => Constants.toFloat64(token)
-          case TokenKind.LiteralBigDecimal => Constants.toBigDecimal(token)
-          case TokenKind.LiteralRegex => Constants.toRegex(token)
-          case TokenKind.NameLowerCase
-               | TokenKind.NameUpperCase
-               | TokenKind.NameMath
-               | TokenKind.NameGreek => mapN(pickNameIdent(tree))(ident => Expr.Ambiguous(Name.mkQName(ident), tree.loc))
-          case _ =>
-            val err = ParseError("Expected literal", SyntacticContext.Expr.OtherExpr, tree.loc)
-            Validation.toSoftFailure(Expr.Error(err), err)
-        }
-        case _ => throw InternalCompilerException(s"Literal had tree child", tree.loc)
       }
     }
   }
