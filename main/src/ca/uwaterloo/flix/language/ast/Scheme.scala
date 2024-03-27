@@ -150,7 +150,7 @@ object Scheme {
     val cconstrs2 = cconstrs2_0.map {
       case Ast.TypeConstraint(head, arg, loc) =>
         // should never fail
-        val (t, _) = ConstraintResolution.simplifyType(subst(arg), RigidityEnv.empty, eenv0, loc).get
+        val (t, _) = ConstraintResolution.simplifyType(subst(arg), RigidityEnv.empty, loc)(eenv0, flix).get
         Ast.TypeConstraint(head, t, loc)
     }
 
