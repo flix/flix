@@ -96,7 +96,10 @@ object ConstraintResolution {
       val declaredEffConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
       val constrs = declaredTpeConstr :: declaredEffConstr :: infConstrs
 
-
+      ///////////////////////////////////////////////////////////////////
+      //             This is where the stuff happens!                  //
+      // We resolve the constraints under the environments we created. //
+      ///////////////////////////////////////////////////////////////////
       resolve(constrs, initialSubst, renv)(cenv, eenv, flix).flatMap {
         case ResolutionResult(subst, deferred, _) =>
           Debug.stopLogging()
