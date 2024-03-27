@@ -28,7 +28,16 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.math.BigInteger
 
+
 object MutationTester {
+
+    sealed trait TestRes
+    object TestRes {
+        case object MutantKilled extends TestRes
+        case object MutantSurvived extends TestRes
+        case object Unknown extends TestRes
+    }
+
     def run(flix: Flix, tester: String, testee: String): Unit = {
         val root = flix.check().unsafeGet
         val start = System.nanoTime()
@@ -120,7 +129,7 @@ object MutationTester {
         //println(s"mutation: $mDef")
         val newRoot = testKit.root.copy(defs = n)
         val cRes = testKit.flix.codeGen(newRoot).unsafeGet
-        val testsFromTester = cRes.getTests.filter { case (s, _) => s.toString.contains(testKit.testModule) }.toList
+        val testsFromTester = cRes.getTests.filter { case (s, _) => s.toString.contains(testKit.testModule) }.toList // change all "contains" to something more substantial
         runTest(testsFromTester)
     }
 
@@ -128,13 +137,15 @@ object MutationTester {
         testsFromTester.forall(c =>
             try {
                 c._2.run() match {
-                    case java.lang.Boolean.TRUE => true
-                    case _ => false
+                    case java.lang.Boolean.TRUE => true // TestRes.MutantSurvived
+                    case java.lang.Boolean.FALSE => false // TestRes.MutantKilled
+                    case _ => true // TestRes.MutantSurvived
                 }
             } catch {
+                // case OurException: Throwable => TestRes.Unknown
                 case _: Throwable =>
                   println("nonterminating mutation")
-                  false
+                  false // TestRes.MutantKilled
             }
         )
     }
@@ -222,7 +233,7 @@ object MutationTester {
         case Expr.Hole(sym, _, _) => Nil
         case Expr.HoleWithExp(exp, _, _, _) => Nil
         case Expr.OpenAs(symUse, exp, _, _) => Nil
-        case Expr.Use(sym, alias, exp, _) => Nil
+        case original@Expr.Use(sym, alias, exp, _) => mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.Lambda(fparam, exp, _, _) =>
             mutateExpr(exp).map(m => original.copy(exp = m))
         case original@Expr.Apply(exp, exps, _, _, _) =>
