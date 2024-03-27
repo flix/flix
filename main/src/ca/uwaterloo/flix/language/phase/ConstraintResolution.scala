@@ -562,7 +562,7 @@ object ConstraintResolution {
     case Nil => None
     case TypingConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
     case TypingConstraint.Class(sym, tpe, loc) :: _ => Some(TypeError.MissingInstance(sym, tpe, renv, loc))
-    case TypingConstraint.Purification(_, _, _, _, _, nested) :: _ => getFirstError(nested, renv)
+    case TypingConstraint.Purification(_, _, _, _, nested) :: _ => getFirstError(nested, renv)
   }
 
   /**

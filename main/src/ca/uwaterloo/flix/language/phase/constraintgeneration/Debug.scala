@@ -131,7 +131,7 @@ object Debug {
   private def toSubDot(constr: TypingConstraint): String = constr match {
     case TypingConstraint.Equality(tpe1, tpe2, _) => s"""${dotId(constr)} [label = "$tpe1 ~ $tpe2"];"""
     case TypingConstraint.Class(sym, tpe, _) => s"""${dotId(constr)} [label = "$sym[$tpe]"];"""
-    case TypingConstraint.Purification(sym, eff1, eff2, _, _, nested) =>
+    case TypingConstraint.Purification(sym, eff1, eff2, _, nested) =>
       val header = s"""${dotId(constr)} [label = "$eff1 ~ ($eff2)[$sym ↦ Pure]"];"""
       val children = nested.map(toSubDot)
       val edges = nested.map { child => s"${dotId(constr)} -> ${dotId(child)};" }
