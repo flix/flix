@@ -28,7 +28,9 @@ object WeededAst {
 
   case class CompilationUnit(usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation)
 
-  sealed trait Declaration
+  sealed trait Declaration {
+    def loc: SourceLocation
+  }
 
   object Declaration {
 
@@ -386,6 +388,8 @@ object WeededAst {
 
     case class Ascribe(tpe: Type, kind: Kind, loc: SourceLocation) extends Type
 
+    case class Error(loc: SourceLocation) extends Type
+
   }
 
   sealed trait Kind
@@ -467,7 +471,9 @@ object WeededAst {
   case class Derivations(classes: List[Name.QName], loc: SourceLocation)
 
 
-  sealed trait ForFragment
+  sealed trait ForFragment {
+    def loc: SourceLocation
+  }
 
   object ForFragment {
 
