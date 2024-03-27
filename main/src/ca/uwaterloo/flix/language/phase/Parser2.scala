@@ -383,6 +383,11 @@ object Parser2 {
 
   /**
     * Advance past current token if it is of kind `kind`. Otherwise wrap it in an error.
+    * Something to note about [[expect]] is that it does __not__ consume any comments.
+    * That means that consecutive calls to expect work in an atomic manner.
+    *   expect(TokenKind.KeywordIf)
+    *   expect(TokenKind.ParenL)
+    * Means "if (" with no comment in-between "if" and "(".
     */
   private def expect(kind: TokenKind)(implicit s: State): Unit = {
     if (!eat(kind)) {
@@ -672,12 +677,12 @@ object Parser2 {
       annotations()
       modifiers()
       nth(0) match {
-        case TokenKind.KeywordDef => definition(mark)
         case TokenKind.KeywordTrait => typeClass(mark)
         case TokenKind.KeywordInstance => instance(mark)
+        case TokenKind.KeywordDef => definition(mark)
+        case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumeration(mark)
         case TokenKind.KeywordType => typeAlias(mark)
         case TokenKind.KeywordEff => effect(mark)
-        case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumeration(mark)
         case at =>
           val error = ParseError(s"Expected declaration but found $at", SyntacticContext.Unknown, currentSourceLocation())
           advanceWithError(error, Some(mark))
@@ -697,29 +702,6 @@ object Parser2 {
         expect(TokenKind.CurlyR)
       }
       close(mark, TreeKind.Decl.Module)
-    }
-
-    private def definition(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      expect(TokenKind.KeywordDef)
-      name(NAME_DEFINITION)
-      if (at(TokenKind.BracketL)) {
-        Type.parameters()
-      }
-      if (at(TokenKind.ParenL)) {
-        parameters()
-      }
-      if (eat(TokenKind.Colon)) {
-        Type.typeAndEffect()
-      }
-      if (at(TokenKind.KeywordWith)) {
-        Type.constraints()
-      }
-      if (at(TokenKind.KeywordWhere)) {
-        equalityConstraints(TokenKind.Equal)
-      }
-      expect(TokenKind.Equal)
-      Expr.statement()
-      close(mark, TreeKind.Decl.Def)
     }
 
     private def typeClass(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
@@ -807,6 +789,29 @@ object Parser2 {
       close(mark, TreeKind.Decl.Signature)
     }
 
+    private def definition(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      expect(TokenKind.KeywordDef)
+      name(NAME_DEFINITION)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      if (at(TokenKind.ParenL)) {
+        parameters()
+      }
+      if (eat(TokenKind.Colon)) {
+        Type.typeAndEffect()
+      }
+      if (at(TokenKind.KeywordWith)) {
+        Type.constraints()
+      }
+      if (at(TokenKind.KeywordWhere)) {
+        equalityConstraints(TokenKind.Equal)
+      }
+      expect(TokenKind.Equal)
+      Expr.statement()
+      close(mark, TreeKind.Decl.Def)
+    }
+
     private def law(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordLaw))
       expect(TokenKind.KeywordLaw)
@@ -825,104 +830,6 @@ object Parser2 {
       expect(TokenKind.Dot)
       Expr.expression()
       close(mark, TreeKind.Decl.Law)
-    }
-
-    private def associatedTypeDef(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      expect(TokenKind.KeywordType)
-      name(NAME_TYPE)
-      if (at(TokenKind.BracketL)) {
-        Type.arguments()
-      }
-      if (eat(TokenKind.Equal)) {
-        Type.ttype()
-      }
-      close(mark, TreeKind.Decl.AssociatedTypeDef)
-    }
-
-    private def associatedTypeSig(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordType))
-      expect(TokenKind.KeywordType)
-      name(NAME_TYPE)
-      if (at(TokenKind.BracketL)) {
-        Type.parameters()
-      }
-      if (at(TokenKind.Colon)) {
-        expect(TokenKind.Colon)
-        Type.kind()
-      }
-      close(mark, TreeKind.Decl.AssociatedTypeSig)
-    }
-
-    private def typeAlias(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordType))
-      expect(TokenKind.KeywordType)
-      expect(TokenKind.KeywordAlias)
-      name(NAME_TYPE)
-      if (at(TokenKind.BracketL)) {
-        Type.parameters()
-      }
-      if (eat(TokenKind.Equal)) {
-        Type.ttype()
-      }
-      close(mark, TreeKind.Decl.TypeAlias)
-    }
-
-    private def effect(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordEff))
-      expect(TokenKind.KeywordEff)
-      name(NAME_EFFECT)
-
-      // Check for illegal type parameters.
-      if (at(TokenKind.BracketL)) {
-        val mark = open()
-        val loc = currentSourceLocation()
-        Type.parameters()
-        closeWithError(mark, WeederError.IllegalEffectTypeParams(loc))
-      }
-
-      if (eat(TokenKind.CurlyL)) {
-        while (!at(TokenKind.CurlyR) && !eof()) {
-          operation()
-        }
-        expect(TokenKind.CurlyR)
-      }
-      close(mark, TreeKind.Decl.Effect)
-    }
-
-    private def operation()(implicit s: State): Mark.Closed = {
-      val mark = open(consumeDocComments = false)
-      docComment()
-      annotations()
-      modifiers()
-      expect(TokenKind.KeywordDef)
-      name(NAME_DEFINITION)
-
-      // Check for illegal type parameters.
-      if (at(TokenKind.BracketL)) {
-        val mark = open()
-        val loc = currentSourceLocation()
-        Type.parameters()
-        closeWithError(mark, WeederError.IllegalEffectTypeParams(loc))
-      }
-
-      if (at(TokenKind.ParenL)) {
-        parameters()
-      }
-      if (eat(TokenKind.Colon)) {
-        val typeLoc = currentSourceLocation()
-        Type.ttype()
-        // Check for illegal effect
-        if (at(TokenKind.Backslash)) {
-          val mark = open()
-          eat(TokenKind.Backslash)
-          Type.effectSet()
-          closeWithError(mark, WeederError.IllegalEffectfulOperation(typeLoc))
-        }
-      }
-      if (at(TokenKind.KeywordWith)) {
-        Type.constraints()
-      }
-      close(mark, TreeKind.Decl.Op)
     }
 
     private def enumeration(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
@@ -995,7 +902,107 @@ object Parser2 {
       }
     }
 
-    ///////////// SHARED DECLARATION CONCEPTS ////////////
+    private def typeAlias(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordType))
+      expect(TokenKind.KeywordType)
+      expect(TokenKind.KeywordAlias)
+      name(NAME_TYPE)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      if (eat(TokenKind.Equal)) {
+        Type.ttype()
+      }
+      close(mark, TreeKind.Decl.TypeAlias)
+    }
+
+    private def associatedTypeSig(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordType))
+      expect(TokenKind.KeywordType)
+      name(NAME_TYPE)
+      if (at(TokenKind.BracketL)) {
+        Type.parameters()
+      }
+      if (at(TokenKind.Colon)) {
+        expect(TokenKind.Colon)
+        Type.kind()
+      }
+      close(mark, TreeKind.Decl.AssociatedTypeSig)
+    }
+
+    private def associatedTypeDef(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      expect(TokenKind.KeywordType)
+      name(NAME_TYPE)
+      if (at(TokenKind.BracketL)) {
+        Type.arguments()
+      }
+      if (eat(TokenKind.Equal)) {
+        Type.ttype()
+      }
+      close(mark, TreeKind.Decl.AssociatedTypeDef)
+    }
+
+    private def effect(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+      assert(at(TokenKind.KeywordEff))
+      expect(TokenKind.KeywordEff)
+      name(NAME_EFFECT)
+
+      // Check for illegal type parameters.
+      if (at(TokenKind.BracketL)) {
+        val mark = open()
+        val loc = currentSourceLocation()
+        Type.parameters()
+        closeWithError(mark, WeederError.IllegalEffectTypeParams(loc))
+      }
+
+      if (eat(TokenKind.CurlyL)) {
+        while (!at(TokenKind.CurlyR) && !eof()) {
+          operation()
+        }
+        expect(TokenKind.CurlyR)
+      }
+      close(mark, TreeKind.Decl.Effect)
+    }
+
+    private def operation()(implicit s: State): Mark.Closed = {
+      val mark = open(consumeDocComments = false)
+      docComment()
+      annotations()
+      modifiers()
+      expect(TokenKind.KeywordDef)
+      name(NAME_DEFINITION)
+
+      // Check for illegal type parameters.
+      if (at(TokenKind.BracketL)) {
+        val mark = open()
+        val loc = currentSourceLocation()
+        Type.parameters()
+        closeWithError(mark, WeederError.IllegalEffectTypeParams(loc))
+      }
+
+      if (at(TokenKind.ParenL)) {
+        parameters()
+      }
+      if (eat(TokenKind.Colon)) {
+        val typeLoc = currentSourceLocation()
+        Type.ttype()
+        // Check for illegal effect
+        if (at(TokenKind.Backslash)) {
+          val mark = open()
+          eat(TokenKind.Backslash)
+          Type.effectSet()
+          closeWithError(mark, WeederError.IllegalEffectfulOperation(typeLoc))
+        }
+      }
+      if (at(TokenKind.KeywordWith)) {
+        Type.constraints()
+      }
+      close(mark, TreeKind.Decl.Op)
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////
+    /// SHARED DECLARATION CONCEPTS ////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////
     private val MODIFIERS = List(TokenKind.KeywordSealed, TokenKind.KeywordLawful, TokenKind.KeywordPub, TokenKind.KeywordInline, TokenKind.KeywordOverride)
 
     private def modifiers()(implicit s: State): Mark.Closed = {
