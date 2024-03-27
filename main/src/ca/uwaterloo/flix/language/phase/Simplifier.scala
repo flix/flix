@@ -605,8 +605,7 @@ object Simplifier {
         val labelPats = pats.map(_.pat)
         val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
         val zero = patternMatchList(labelPats ::: ps, freshVars ::: vs, guard, succ, fail)
-        // Note that we reverse pats and freshVars because we still want to fold right
-        // but we want to restrict the record / matchVar from left to right
+        // Let-binders are built in reverse, but it does not matter since binders are independent and pure
         val (one, restrictedMatchVar) = pats.zip(freshVars).foldLeft((zero, varExp): (SimplifiedAst.Expr, SimplifiedAst.Expr)) {
           case ((exp, matchVarExp), (MonoAst.Pattern.Record.RecordLabelPattern(label, _, pat, loc1), name)) =>
             val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(label), List(matchVarExp), visitType(pat.tpe), Purity.Pure, loc1)
