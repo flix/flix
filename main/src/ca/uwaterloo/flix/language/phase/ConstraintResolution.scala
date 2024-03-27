@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
 import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.constraintgeneration.{Debug, TypingConstraint}
@@ -71,7 +71,7 @@ object ConstraintResolution {
 
       // The initial substitution maps from formal parameters to their types
       val initialSubst = fparams.foldLeft(Substitution.empty) {
-        case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(tpe)(Level.Top, flix))
+        case (acc, KindedAst.FormalParam(sym, mod, tpe, src, loc)) => acc ++ Substitution.singleton(sym.tvar.sym, openOuterSchema(tpe))
       }
 
       // Wildcard tparams are not counted in the tparams, so we need to traverse the types to get them.
@@ -268,22 +268,20 @@ object ConstraintResolution {
       resolveClassConstraint(sym, subst0(tpe), renv, loc).map {
         case (constrs, progress) => ResolutionResult(subst0, constrs, progress)
       }
-    case TypingConstraint.Purification(sym, eff1, eff2, level, prov, nested0) =>
+    case TypingConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
       // First reduce nested constraints
       resolveOneOf(nested0, subst0, renv).map {
         // Case 1: We have reduced everything below. Now reduce the purity constraint.
-        case ResolutionResult(subst1, newConstrs, progress) if newConstrs.isEmpty =>
-          val e1 = subst1(eff1)
+        case ResolutionResult(subst, newConstrs, progress) if newConstrs.isEmpty =>
+          val e1 = subst(eff1)
           // purify the inner type
-          val e2Raw = subst1(eff2)
+          val e2Raw = subst(eff2)
           val e2 = Substitution.singleton(sym, Type.Pure)(e2Raw)
-          val qvars = e2Raw.typeVars.map(_.sym).filter(_.level >= level)
-          val subst = qvars.foldLeft(subst1)(_.unbind(_))
           val constr = TypingConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov)
           ResolutionResult(subst, List(constr), progress = true)
         // Case 2: Constraints remain below. Maintain the purity constraint.
         case ResolutionResult(subst, newConstrs, progress) =>
-          val constr = TypingConstraint.Purification(sym, eff1, eff2, level, prov, newConstrs)
+          val constr = TypingConstraint.Purification(sym, eff1, eff2, prov, newConstrs)
           ResolutionResult(subst, List(constr), progress)
       }
   }
@@ -587,7 +585,7 @@ object ConstraintResolution {
     * `r`. This only happens for if the row type is the topmost type, i.e. this
     * doesn't happen inside tuples or other such nesting.
     */
-  private def openOuterSchema(tpe: Type)(implicit level: Level, flix: Flix): Type = {
+  private def openOuterSchema(tpe: Type)(implicit flix: Flix): Type = {
     @tailrec
     def transformRow(tpe: Type, acc: Type => Type): Type = tpe match {
       case Type.Cst(TypeConstructor.SchemaRowEmpty, loc) =>

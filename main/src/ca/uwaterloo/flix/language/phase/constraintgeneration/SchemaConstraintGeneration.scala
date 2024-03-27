@@ -24,11 +24,6 @@ import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 object SchemaConstraintGeneration {
 
   def visitFixpointConstraintSet(e: KindedAst.Expr.FixpointConstraintSet)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     e match {
       case KindedAst.Expr.FixpointConstraintSet(cs, tvar, loc) =>
         val constraintTypes = cs.map(visitConstraint)
@@ -41,11 +36,6 @@ object SchemaConstraintGeneration {
   }
 
   def visitFixpointLambda(e: KindedAst.Expr.FixpointLambda)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     e match {
       case KindedAst.Expr.FixpointLambda(pparams, exp, tvar, loc) =>
 
@@ -68,11 +58,6 @@ object SchemaConstraintGeneration {
   }
 
   def visitFixpointMerge(e: KindedAst.Expr.FixpointMerge)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     e match {
       case KindedAst.Expr.FixpointMerge(exp1, exp2, loc) =>
         //
@@ -90,11 +75,6 @@ object SchemaConstraintGeneration {
   }
 
   def visitFixpointSolve(e: KindedAst.Expr.FixpointSolve)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     e match {
       case KindedAst.Expr.FixpointSolve(exp, loc) =>
         //
@@ -112,11 +92,6 @@ object SchemaConstraintGeneration {
 
 
   def visitFixpointFilter(e: KindedAst.Expr.FixpointFilter)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     e match {
       case KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc) =>
         //
@@ -138,11 +113,6 @@ object SchemaConstraintGeneration {
   }
 
   def visitFixpointInject(e: KindedAst.Expr.FixpointInject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     e match {
       case KindedAst.Expr.FixpointInject(exp, pred, tvar, loc) =>
         //
@@ -172,11 +142,6 @@ object SchemaConstraintGeneration {
   }
 
   def visitFixpointProject(e: KindedAst.Expr.FixpointProject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     e match {
       case KindedAst.Expr.FixpointProject(pred, exp1, exp2, tvar, loc) =>
         //
@@ -201,11 +166,6 @@ object SchemaConstraintGeneration {
   }
 
   private def visitConstraint(con0: KindedAst.Constraint)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     val KindedAst.Constraint(cparams, head0, body0, loc) = con0
     //
     //  A_0 : tpe, A_1: tpe, ..., A_n : tpe
@@ -225,11 +185,6 @@ object SchemaConstraintGeneration {
     * Infers the type of the given head predicate.
     */
   private def visitHeadPredicate(head: KindedAst.Predicate.Head)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     head match {
       case KindedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
         // Adds additional type constraints if the denotation is a lattice.
@@ -248,11 +203,6 @@ object SchemaConstraintGeneration {
     * Infers the type of the given body predicate.
     */
   private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     body0 match {
       case KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, tvar, loc) =>
         val restRow = Type.freshVar(Kind.SchemaRow, loc)
@@ -326,5 +276,5 @@ object SchemaConstraintGeneration {
   }
 
 
-  private def mkAnySchemaRowType(loc: SourceLocation)(implicit level: Level, flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
+  private def mkAnySchemaRowType(loc: SourceLocation)(implicit flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
 }

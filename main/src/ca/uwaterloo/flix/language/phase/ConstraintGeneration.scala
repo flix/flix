@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.constraintgeneration.{RestrictableChooseConstraintGeneration, SchemaConstraintGeneration, TypeContext}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.ListOps
@@ -40,10 +40,6 @@ object ConstraintGeneration {
     * The type and effect may include variables that must be resolved.
     */
   def visitExp(exp0: KindedAst.Expr)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     exp0 match {
       case Expr.Var(sym, _) =>
         val resTpe = sym.tvar
@@ -905,10 +901,6 @@ object ConstraintGeneration {
     * Returns the pattern's type. The type may be a variable which must later be resolved.
     */
   def visitPattern(pat0: KindedAst.Pattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     pat0 match {
       case KindedAst.Pattern.Wild(tvar, _) => tvar
 
@@ -1096,7 +1088,7 @@ object ConstraintGeneration {
     *
     * Returns the type and effect of the rule body.
     */
-  private def visitDefaultRule(exp0: Option[KindedAst.Expr], loc: SourceLocation)(implicit l: Level, c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
+  private def visitDefaultRule(exp0: Option[KindedAst.Expr], loc: SourceLocation)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     exp0 match {
       case None => (Type.freshVar(Kind.Star, loc), Type.Pure)
       case Some(exp) => visitExp(exp)
@@ -1164,7 +1156,7 @@ object ConstraintGeneration {
     * This is usually the annotated return type of the op.
     * But if the op returns Void, we return a free variable instead.
     */
-  private def getDoType(op: KindedAst.Op)(implicit level: Level, flix: Flix): Type = {
+  private def getDoType(op: KindedAst.Op)(implicit flix: Flix): Type = {
     // We special-case the result type of the operation.
     op.spec.tpe.typeConstructor match {
       case Some(TypeConstructor.Void) =>

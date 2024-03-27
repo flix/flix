@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.constraintgeneration
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Level, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -86,11 +86,6 @@ class TypeContext {
   private var renv: RigidityEnv = RigidityEnv.empty
 
   /**
-    * The current level. Incremented and decremented as we enter and exit regions.
-    */
-  private var level: Level = Level.Top
-
-  /**
     * The typing context from outside the current scope.
     *
     * We push and pop information from this stack when we enter and exit regions.
@@ -106,11 +101,6 @@ class TypeContext {
     * Returns the current typing constraints.
     */
   def getTypingConstraints: List[TypingConstraint] = currentScopeConstraints.getConstraints
-
-  /**
-    * Returns the current level.
-    */
-  def getLevel: Level = level
 
   /**
     * Generates constraints unifying the given types.
@@ -149,7 +139,7 @@ class TypeContext {
     *   tpe1 ~ tpeN
     * }}}
     */
-  def unifyAllTypes(tpes: List[Type], kind: Kind, loc: SourceLocation)(implicit level: Level, flix: Flix): Type = {
+  def unifyAllTypes(tpes: List[Type], kind: Kind, loc: SourceLocation)(implicit flix: Flix): Type = {
     // For performance, avoid creating a fresh type var if the list is non-empty
     tpes match {
       // Case 1: Nonempty list. Unify everything with the first type.
@@ -240,14 +230,12 @@ class TypeContext {
     *
     * Current scope information is pushed onto the stack,
     * the region symbol is marked as rigid,
-    * the level is incremented,
     * and we get a fresh empty set of constraints for the new scope.
     */
   def enterRegion(sym: Symbol.KindedTypeVarSym): Unit = {
     // save the info from the parent region
     constraintStack.push(currentScopeConstraints)
     renv = renv.markRigid(sym)
-    level = level.incr
     currentScopeConstraints = ScopeConstraints.emptyForRegion(sym)
   }
 
@@ -266,7 +254,6 @@ class TypeContext {
     *
     * We pop the constraints from the parent scope; these become our current constraints.
     * We add the new purification constraints to the current constraints.
-    * Finally, we decrement the level.
     */
   def exitRegion(externalEff1: Type, internalEff2: Type, loc: SourceLocation): Unit = {
     val constr = currentScopeConstraints.region match {
@@ -274,12 +261,11 @@ class TypeContext {
       case Some(r) =>
         // TODO ASSOC-TYPES improve prov. We can probably get a better prov than "match"
         val prov = Provenance.Match(externalEff1, internalEff2, loc)
-        TypingConstraint.Purification(r, externalEff1, internalEff2, level, prov, currentScopeConstraints.getConstraints)
+        TypingConstraint.Purification(r, externalEff1, internalEff2, prov, currentScopeConstraints.getConstraints)
     }
 
     currentScopeConstraints = constraintStack.pop()
     currentScopeConstraints.add(constr)
-    level = level.decr
   }
 
 }

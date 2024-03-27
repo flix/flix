@@ -47,9 +47,6 @@ object Unification {
     * Unifies the given variable `x` with the given non-variable type `tpe`.
     */
   def unifyVar(x: Type.Var, tpe: Type, renv: RigidityEnv)(implicit flix: Flix): Result[(Substitution, List[Ast.BroadEqualityConstraint]), UnificationError] = {
-
-    Level.equalizeR(x, tpe, renv)
-
     tpe match {
 
       // ensure the kinds are compatible
