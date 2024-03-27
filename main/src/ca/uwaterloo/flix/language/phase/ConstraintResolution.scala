@@ -272,11 +272,13 @@ object ConstraintResolution {
       // First reduce nested constraints
       resolveOneOf(nested0, subst0, renv).map {
         // Case 1: We have reduced everything below. Now reduce the purity constraint.
-        case ResolutionResult(subst, newConstrs, progress) if newConstrs.isEmpty =>
-          val e1 = subst(eff1)
+        case ResolutionResult(subst1, newConstrs, progress) if newConstrs.isEmpty =>
+          val e1 = subst1(eff1)
           // purify the inner type
-          val e2Raw = subst(eff2)
+          val e2Raw = subst1(eff2)
           val e2 = Substitution.singleton(sym, Type.Pure)(e2Raw)
+          val qvars = e2Raw.typeVars.map(_.sym)
+          val subst = qvars.foldLeft(subst1)(_.unbind(_))
           val constr = TypingConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov)
           ResolutionResult(subst, List(constr), progress = true)
         // Case 2: Constraints remain below. Maintain the purity constraint.
