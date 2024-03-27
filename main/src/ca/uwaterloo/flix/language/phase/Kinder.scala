@@ -24,7 +24,6 @@ import ca.uwaterloo.flix.language.errors.KindError
 import ca.uwaterloo.flix.language.phase.unification.EqualityEnvironment
 import ca.uwaterloo.flix.language.phase.unification.KindUnification.unify
 import ca.uwaterloo.flix.util.Validation.{flatMapN, fold, mapN, traverse, traverseOpt}
-import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 
 import scala.collection.immutable.SortedSet
@@ -216,7 +215,7 @@ object Kinder {
       flatMapN(tparamsVal, superClassesVal, assocsVal) {
         case (tparam, superClasses, assocs) =>
           val sigsVal = traverse(sigs0) {
-            case (sigSym, sig0) => mapN(visitSig(sig0, tparam, kenv, taenv, root))(sig => sigSym -> sig)
+            case (sigSym, sig0) => mapN(visitSig(sig0, tparam, superClasses, kenv, taenv, root))(sig => sigSym -> sig)
           }
           val lawsVal = traverse(laws0)(visitDef(_, Nil, kenv, taenv, root)) // TODO ASSOC-TYPES need to include super classes?
           mapN(sigsVal, lawsVal) {
@@ -292,13 +291,13 @@ object Kinder {
   /**
     * Performs kinding on the given sig under the given kind environment.
     */
-  private def visitSig(sig0: ResolvedAst.Declaration.Sig, classTparam: KindedAst.TypeParam, kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
+  private def visitSig(sig0: ResolvedAst.Declaration.Sig, classTparam: KindedAst.TypeParam, classConstraints: List[Ast.TypeConstraint], kenv0: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Sig, KindError] = sig0 match {
     case ResolvedAst.Declaration.Sig(sym, spec0, exp0) =>
       val kenvVal = getKindEnvFromSpec(spec0, kenv0, taenv, root)
       flatMapN(kenvVal) {
         kenv =>
           val henv = None
-          val specVal = visitSpec(spec0, List(classTparam.sym), Nil, kenv, taenv, root) // TODO ASSOC-TYPES should be NonEmpty extra tconstrs?
+          val specVal = visitSpec(spec0, List(classTparam.sym), classConstraints, kenv, taenv, root)
           val expVal = traverseOpt(exp0)(visitExp(_, kenv, taenv, henv, root)(Level.Top, flix))
           mapN(specVal, expVal) {
             case (spec, exp) => KindedAst.Sig(sym, spec, exp)
