@@ -32,8 +32,8 @@ object SchemaConstraintGeneration {
     e match {
       case KindedAst.Expr.FixpointConstraintSet(cs, tvar, loc) =>
         val constraintTypes = cs.map(visitConstraint)
-        val schemaRow = c.unifyAllTypesM(constraintTypes, Kind.SchemaRow, loc)
-        c.unifyTypeM(tvar, Type.mkSchema(schemaRow, loc), loc)
+        val schemaRow = c.unifyAllTypes(constraintTypes, Kind.SchemaRow, loc)
+        c.unifyType(tvar, Type.mkSchema(schemaRow, loc), loc)
         val resTpe = tvar
         val resEff = Type.Pure
         (resTpe, resEff)
@@ -59,8 +59,8 @@ object SchemaConstraintGeneration {
         val resultRowType = mkFullRow(Type.freshVar(Kind.SchemaRow, loc))
 
         val (tpe, eff) = visitExp(exp)
-        c.unifyTypeM(tpe, Type.mkSchema(expectedRowType, loc), loc)
-        c.unifyTypeM(tvar, Type.mkSchema(resultRowType, loc), loc)
+        c.unifyType(tpe, Type.mkSchema(expectedRowType, loc), loc)
+        c.unifyType(tvar, Type.mkSchema(resultRowType, loc), loc)
         val resTpe = tvar
         val resEff = eff
         (resTpe, resEff)
@@ -82,7 +82,7 @@ object SchemaConstraintGeneration {
         //
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        c.unifyType3M(tpe1, tpe2, Type.mkSchema(mkAnySchemaRowType(loc), loc), loc)
+        c.unifyType3(tpe1, tpe2, Type.mkSchema(mkAnySchemaRowType(loc), loc), loc)
         val resTpe = tpe1
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -103,7 +103,7 @@ object SchemaConstraintGeneration {
         //  solve exp : tpe
         //
         val (tpe, eff) = visitExp(exp)
-        c.unifyTypeM(tpe, Type.mkSchema(mkAnySchemaRowType(loc), loc), loc)
+        c.unifyType(tpe, Type.mkSchema(mkAnySchemaRowType(loc), loc), loc)
         val resEff = eff
         val resTpe = tpe
         (resTpe, resEff)
@@ -129,8 +129,8 @@ object SchemaConstraintGeneration {
         val freshResultSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc)
 
         val (tpe, eff) = visitExp(exp)
-        c.unifyTypeM(tpe, Type.mkSchema(Type.mkSchemaRowExtend(pred, freshPredicateTypeVar, freshRestSchemaTypeVar, loc), loc), loc)
-        c.unifyTypeM(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, freshPredicateTypeVar, freshResultSchemaTypeVar, loc), loc), loc)
+        c.unifyType(tpe, Type.mkSchema(Type.mkSchemaRowExtend(pred, freshPredicateTypeVar, freshRestSchemaTypeVar, loc), loc), loc)
+        c.unifyType(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, freshPredicateTypeVar, freshResultSchemaTypeVar, loc), loc), loc)
         val resTpe = tvar
         val resEff = eff
         (resTpe, resEff)
@@ -160,11 +160,11 @@ object SchemaConstraintGeneration {
         val order = Ast.TypeConstraint(Ast.TypeConstraint.Head(orderSym, loc), freshElmTypeVar, loc)
         val foldable = Ast.TypeConstraint(Ast.TypeConstraint.Head(foldableSym, loc), freshTypeConstructorVar, loc)
 
-        c.addClassConstraintsM(List(order, foldable), loc)
+        c.addClassConstraints(List(order, foldable), loc)
 
         val (tpe, eff) = visitExp(exp)
-        c.unifyTypeM(tpe, Type.mkApply(freshTypeConstructorVar, List(freshElmTypeVar), loc), loc)
-        c.unifyTypeM(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkRelation(List(freshElmTypeVar), loc), freshRestSchemaTypeVar, loc), loc), loc)
+        c.unifyType(tpe, Type.mkApply(freshTypeConstructorVar, List(freshElmTypeVar), loc), loc)
+        c.unifyType(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkRelation(List(freshElmTypeVar), loc), freshRestSchemaTypeVar, loc), loc), loc)
         val resTpe = tvar
         val resEff = eff
         (resTpe, resEff)
@@ -191,9 +191,9 @@ object SchemaConstraintGeneration {
         val expectedSchemaType = Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.Apply(freshRelOrLat, freshTupleVar, loc), freshRestSchemaVar, loc), loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        c.unifyTypeM(tpe1, expectedSchemaType, loc)
-        c.unifyTypeM(tpe2, Type.mkSchema(freshRestSchemaVar, loc), loc)
-        c.unifyTypeM(tvar, Type.mkVector(freshTupleVar, loc), loc)
+        c.unifyType(tpe1, expectedSchemaType, loc)
+        c.unifyType(tpe2, Type.mkSchema(freshRestSchemaVar, loc), loc)
+        c.unifyType(tvar, Type.mkVector(freshTupleVar, loc), loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -214,8 +214,8 @@ object SchemaConstraintGeneration {
     //
     val headPredicateType = visitHeadPredicate(head0)
     val bodyPredicateTypes = body0.map(b => visitBodyPredicate(b))
-    val bodyPredicateType = c.unifyAllTypesM(bodyPredicateTypes, Kind.SchemaRow, loc)
-    c.unifyTypeM(headPredicateType, bodyPredicateType, loc)
+    val bodyPredicateType = c.unifyAllTypes(bodyPredicateTypes, Kind.SchemaRow, loc)
+    c.unifyType(headPredicateType, bodyPredicateType, loc)
     val resTpe = headPredicateType
     resTpe
   }
@@ -235,10 +235,10 @@ object SchemaConstraintGeneration {
         // Adds additional type constraints if the denotation is a lattice.
         val restRow = Type.freshVar(Kind.SchemaRow, loc)
         val (termTypes, termEffs) = terms.map(visitExp(_)).unzip
-        c.unifyTypeM(Type.Pure, Type.mkUnion(termEffs, loc), loc)
-        c.unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
+        c.unifyType(Type.Pure, Type.mkUnion(termEffs, loc), loc)
+        c.unifyType(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
         val tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
-        c.addClassConstraintsM(tconstrs, loc)
+        c.addClassConstraints(tconstrs, loc)
         val resTpe = Type.mkSchemaRowExtend(pred, tvar, restRow, loc)
         resTpe
     }
@@ -257,9 +257,9 @@ object SchemaConstraintGeneration {
       case KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, tvar, loc) =>
         val restRow = Type.freshVar(Kind.SchemaRow, loc)
         val termTypes = terms.map(visitPattern)
-        c.unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
+        c.unifyType(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
         val tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
-        c.addClassConstraintsM(tconstrs, loc)
+        c.addClassConstraints(tconstrs, loc)
         val resTpe = Type.mkSchemaRowExtend(pred, tvar, restRow, loc)
         resTpe
 
@@ -267,15 +267,15 @@ object SchemaConstraintGeneration {
         val tupleType = Type.mkTuplish(outVars.map(_.tvar), loc)
         val expectedType = Type.mkVector(tupleType, loc)
         val (tpe, eff) = visitExp(exp)
-        c.unifyTypeM(expectedType, tpe, loc)
-        c.unifyTypeM(Type.Pure, eff, loc)
+        c.unifyType(expectedType, tpe, loc)
+        c.unifyType(Type.Pure, eff, loc)
         val resTpe = mkAnySchemaRowType(loc)
         resTpe
 
       case KindedAst.Predicate.Body.Guard(exp, loc) =>
         val (tpe, eff) = visitExp(exp)
-        c.unifyTypeM(Type.Pure, eff, loc)
-        c.unifyTypeM(Type.Bool, tpe, loc)
+        c.unifyType(Type.Pure, eff, loc)
+        c.unifyType(Type.Bool, tpe, loc)
         val resTpe = mkAnySchemaRowType(loc)
         resTpe
     }

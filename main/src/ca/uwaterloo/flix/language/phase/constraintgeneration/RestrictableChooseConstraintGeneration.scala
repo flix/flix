@@ -61,7 +61,7 @@ object RestrictableChooseConstraintGeneration {
   private def unifySubset(t1: Type, t2: Type, sym: Symbol.RestrictableEnumSym, loc: SourceLocation)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Unit = {
     val diff = Type.mkCaseDifference(t1, t2, sym, loc)
     // t1 <: t2 <=> t1 - t2 ≡ ∅
-    c.unifyTypeM(diff, Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), loc), loc)
+    c.unifyType(diff, Type.Cst(TypeConstructor.CaseSet(SortedSet.empty, sym), loc), loc)
   }
 
   /**
@@ -90,10 +90,10 @@ object RestrictableChooseConstraintGeneration {
         // Γ ⊢ e: τ_in
         val (tpe, eff) = visitExp(exp0)
         val patTpes = visitRestrictableChoosePatterns(rules0.map(_.pat))
-        c.unifyAllTypesM(tpe :: patTpes, tpe.kind, loc)
+        c.unifyAllTypes(tpe :: patTpes, tpe.kind, loc)
 
         // τ_in = (... + l_i(τ_i) + ...)[φ_in]
-        c.unifyTypeM(enumType, tpe, loc)
+        c.unifyType(enumType, tpe, loc)
 
         // φ_in <: dom(M)
         if (domSet != universe) {
@@ -104,7 +104,7 @@ object RestrictableChooseConstraintGeneration {
         val (tpes, effs) = rules0.map(rule => visitExp(rule.exp)).unzip
 
         // τ_out
-        c.unifyAllTypesM(tpe0 :: tpes, tpe0.kind, loc)
+        c.unifyAllTypes(tpe0 :: tpes, tpe0.kind, loc)
         val resTpe = tpe0
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
@@ -136,20 +136,20 @@ object RestrictableChooseConstraintGeneration {
         // Γ ⊢ e: τ_in
         val (tpe, eff) = visitExp(exp0)
         val patTpes = visitRestrictableChoosePatterns(rules0.map(_.pat))
-        c.unifyAllTypesM(tpe :: patTpes, tpe.kind, loc)
+        c.unifyAllTypes(tpe :: patTpes, tpe.kind, loc)
 
         // τ_in = (... + l^in_i(τ^in_i) + ...)[φ_in]
-        c.unifyTypeM(enumTypeIn, tpe, loc)
+        c.unifyType(enumTypeIn, tpe, loc)
 
         // φ_in <: dom(M)
         unifySubset(indexInVar, domM, enumSym, loc.asSynthetic)
 
         // Γ, x_i: τ^in_i ⊢ e_i: τ^out_i
         val (tpes, effs) = rules0.map(rule => visitExp(rule.exp)).unzip
-        tpes.zip(bodyTypes).foreach { case (t1, t2) => c.unifyTypeM(t1, t2, loc) }
+        tpes.zip(bodyTypes).foreach { case (t1, t2) => c.unifyType(t1, t2, loc) }
 
         // τ_out = (... + l^out_i(τ^out_i) + ...)[_]
-        ((targsOut :: bodyTargs).transpose).foreach(c.unifyAllTypesM(_, Kind.CaseSet(enumSym), loc))
+        ((targsOut :: bodyTargs).transpose).foreach(c.unifyAllTypes(_, Kind.CaseSet(enumSym), loc))
 
         val indicesAndTags = bodyIndexVars.zip(patternTagTypes)
         val intros = mkUnion(indicesAndTags.map { case (i, tag) => Type.mkCaseDifference(i, tag, enumSym, loc.asSynthetic) })
@@ -165,7 +165,7 @@ object RestrictableChooseConstraintGeneration {
         unifySubset(set, indexOutVar, enumSym, loc)
 
         // τ_out
-        c.unifyTypeM(enumTypeOut, tpe0, loc)
+        c.unifyType(enumTypeOut, tpe0, loc)
         val resTpe = enumTypeOut
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
@@ -218,12 +218,12 @@ object RestrictableChooseConstraintGeneration {
               enumSym,
               loc.asSynthetic
             )
-          c.unifyTypeM(index, indexVarOut, loc)
+          c.unifyType(index, indexVarOut, loc)
         } else {
           // {l_i}
           val index = Type.Cst(TypeConstructor.CaseSet(SortedSet(symUse.sym), enumSym), loc.asSynthetic)
-          c.unifyTypeM(index, indexVar, loc)
-          c.unifyTypeM(indexVar, indexVarOut, loc)
+          c.unifyType(index, indexVar, loc)
+          c.unifyType(indexVar, indexVarOut, loc)
         }
 
 
@@ -235,10 +235,10 @@ object RestrictableChooseConstraintGeneration {
         //
         // Γ ⊢ e: τ
         val (tpe, eff) = visitExp(exp)
-        c.unifyTypeM(tagType, Type.mkPureArrow(tpe, enumType, loc), loc)
-        targs.zip(targsOut).foreach { case (targ, targOut) => c.unifyTypeM(targ, targOut, loc) }
+        c.unifyType(tagType, Type.mkPureArrow(tpe, enumType, loc), loc)
+        targs.zip(targsOut).foreach { case (targ, targOut) => c.unifyType(targ, targOut, loc) }
         //        _ <- indexUnification // TODO ASSOC-TYPES here is where we did the index unification before
-        c.unifyTypeM(enumTypeOut, tvar, loc)
+        c.unifyType(enumTypeOut, tvar, loc)
         val resTpe = tvar
         val resEff = eff
         (resTpe, resEff)
@@ -273,7 +273,7 @@ object RestrictableChooseConstraintGeneration {
         val (tpe, eff) = visitExp(exp)
 
         // make sure the expression has type EnumType[s][α1 ... αn]
-        c.expectTypeM(expected = enumType, actual = tpe, loc)
+        c.expectType(expected = enumType, actual = tpe, loc)
 
         // the new index is s ∪ φ for some free φ
         val openIndex = Type.mkCaseUnion(indexVar, Type.freshVar(Kind.CaseSet(`enum`.sym), loc.asSynthetic), sym, loc)
@@ -286,7 +286,7 @@ object RestrictableChooseConstraintGeneration {
         )
 
         // unify the tvar
-        c.unifyTypeM(tvar, resultType, loc)
+        c.unifyType(tvar, resultType, loc)
 
         val resTpe = resultType
         val resEff = eff
@@ -350,7 +350,7 @@ object RestrictableChooseConstraintGeneration {
         //
         val tpes = pat.map(visitVarOrWild)
         val tpe = Type.mkTuplish(tpes, loc)
-        c.unifyTypeM(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
+        c.unifyType(tagType, Type.mkPureArrow(tpe, tvar, loc), loc)
         val resTpe = tvar
         resTpe
     }
@@ -364,7 +364,7 @@ object RestrictableChooseConstraintGeneration {
   private def visitVarOrWild(pat: KindedAst.RestrictableChoosePattern.VarOrWild)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = pat match {
     case KindedAst.RestrictableChoosePattern.Wild(tvar, _) => tvar
     case KindedAst.RestrictableChoosePattern.Var(sym, tvar, loc) =>
-      c.unifyTypeM(sym.tvar, tvar, loc)
+      c.unifyType(sym.tvar, tvar, loc)
       tvar
   }
 
