@@ -17,7 +17,6 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.runtime.TestFn
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.api.lsp.Location
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.Type.{Apply, False, Int32, Null, Str, True, mkBigInt}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
@@ -105,8 +104,7 @@ object MutationTester {
         println(s"total time to test all mutants: $time sec")
     }
 
-    private def testMutantsAndUpdateProgress(acc: (Int, Double, Long, LocalDateTime, Int), mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit, f: DateTimeFormatter) = {
-        //println(s"testing ${mut._1.toString} with $mutationAmount mutations")
+    private def testMutantsAndUpdateProgress(acc: (Int, Int, Double, Long, LocalDateTime, Int), mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit, f: DateTimeFormatter) = {
         mut._2.foldLeft(acc)((acc2, mDef) => {
             val (survivorCount, unknownCount, time, accTemp, accDate, mAmount) = acc2
             val mutationAmount = mAmount + 1
@@ -116,7 +114,7 @@ object MutationTester {
             val newSurvivorCount = if (testResults.equals(TestRes.MutantSurvived)) survivorCount + 1 else survivorCount
             val newUnknownCount = if (testResults.equals(TestRes.Unknown)) unknownCount + 1 else unknownCount
             val newDate = LocalDateTime.now()
-            val message = s"[${f.format(newDate)}] Mutants: $mutationAmount, Killed: ${mutationAmount - survivorCount}, Survived: $survivorCount"
+            val message = s"[${f.format(newDate)}] Mutants: $mutationAmount, Killed: ${mutationAmount - survivorCount}, Survived: $survivorCount, Unknown: $unknownCount"
             val newTemp = progressUpdate(message, accTemp)
             (newSurvivorCount, newUnknownCount, newTime, newTemp, newDate, mutationAmount)
             //val sym = mDef.sym.toString
@@ -127,7 +125,6 @@ object MutationTester {
     private def testMutant(mDef: TypedAst.Def, mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit): TestRes = {
         val defs = testKit.root.defs
         val n = defs + (mut._1 -> mDef)
-        //println(s"mutation: $mDef")
         val newRoot = testKit.root.copy(defs = n)
         val cRes = testKit.flix.codeGen(newRoot).unsafeGet
         val testsFromTester = cRes.getTests.filter { case (s, _) => s.toString.contains(testKit.testModule) }.toList // change all "contains" to something more substantial
@@ -428,13 +425,8 @@ object MutationTester {
         }
     }
 
-
     private def mutateVar(varexp: Expr.Var): List[Expr] = varexp match {
         case Expr.Var(_, tpe, loc) =>
-            //val typ = if (tpe.size > 1) tpe.arrowResultType else tpe
-            val typ= tpe
-            println(s"before mutating var: $typ")
-            //val newtpe = Type.mkPureCurriedArrow(tpe :: tpe :: Nil, tpe, loc)
             val one = tpe match {
                 case Type.Cst(tc, _) => tc match {
                     case TypeConstructor.Char =>
@@ -460,20 +452,15 @@ object MutationTester {
                 case _ => Nil
             }
             if (one == Nil) return mutateVarToConstantByType(tpe)
-
             val newtpe = Type.mkPureUncurriedArrow(tpe :: tpe :: Nil, tpe, loc)
-            println(s"after mutating var: $newtpe")
             val sub = Expr.Sig(Symbol.mkSigSym(Symbol.mkClassSym("Sub"), Name.Ident(loc.sp1, "sub", loc.sp2)), newtpe, loc)
             val add = Expr.Sig(Symbol.mkSigSym(Symbol.mkClassSym("Add"), Name.Ident(loc.sp1, "add", loc.sp2)), newtpe, loc)
-
             val appSub = Expr.Apply(sub, varexp :: one, tpe, Type.Pure, loc)
             val appAdd = Expr.Apply(add, varexp :: one, tpe, Type.Pure, loc)
             val ret = appSub ::  appAdd :: Nil
-            println(s"ret: $ret")
             ret ::: mutateVarToConstantByType(tpe)
         case _ => Nil
     }
-
 
     private def mutateVarToConstantByType(constType: Type): List[Expr.Cst] = constType match {
         case Type.Cst(tc, loc) => tc match {
