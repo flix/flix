@@ -31,9 +31,10 @@ import scala.collection.mutable
 class TypeContext {
 
   private object ScopeConstraints {
-
     /**
       * Creates an empty ScopeConstraints with no associated region.
+      *
+      * Note: The function must return a _NEW_ object because each object has mutable state.
       */
     def empty: ScopeConstraints = new ScopeConstraints(None)
 
@@ -118,7 +119,7 @@ class TypeContext {
     *   tpe1 ~ tpe2
     * }}}
     */
-  def unifyTypeM(tpe1: Type, tpe2: Type, loc: SourceLocation): Unit = {
+  def unifyType(tpe1: Type, tpe2: Type, loc: SourceLocation): Unit = {
     val constr = TypingConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, loc))
     currentScopeConstraints.add(constr)
   }
@@ -131,9 +132,9 @@ class TypeContext {
     *   tpe1 ~ tpe3
     * }}}
     */
-  def unifyType3M(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Unit = {
-    unifyTypeM(tpe1, tpe2, loc)
-    unifyTypeM(tpe1, tpe3, loc)
+  def unifyType3(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Unit = {
+    unifyType(tpe1, tpe2, loc)
+    unifyType(tpe1, tpe3, loc)
   }
 
   /**
@@ -148,16 +149,28 @@ class TypeContext {
     *   tpe1 ~ tpeN
     * }}}
     */
-  def unifyAllTypesM(tpes: List[Type], kind: Kind, loc: SourceLocation)(implicit level: Level, flix: Flix): Type = {
+  def unifyAllTypes(tpes: List[Type], kind: Kind, loc: SourceLocation)(implicit level: Level, flix: Flix): Type = {
     // For performance, avoid creating a fresh type var if the list is non-empty
     tpes match {
       // Case 1: Nonempty list. Unify everything with the first type.
       case tpe1 :: rest =>
-        rest.foreach(unifyTypeM(tpe1, _, loc))
+        rest.foreach(unifyType(tpe1, _, loc))
         tpe1
       // Case 2: Empty list. Return a fresh type var.
       case Nil => Type.freshVar(kind, loc.asSynthetic)
     }
+  }
+
+  /**
+    * Generates constraints expecting the given types to unify.
+    *
+    * {{{
+    *   expected ~ actual
+    * }}}
+    */
+  def expectType(expected: Type, actual: Type, loc: SourceLocation): Unit = {
+    val constr = TypingConstraint.Equality(expected, actual, Provenance.ExpectType(expected, actual, loc))
+    currentScopeConstraints.add(constr)
   }
 
   /**
@@ -183,21 +196,9 @@ class TypeContext {
   }
 
   /**
-    * Generates constraints expecting the given types to unify.
-    *
-    * {{{
-    *   expected ~ actual
-    * }}}
-    */
-  def expectTypeM(expected: Type, actual: Type, loc: SourceLocation): Unit = {
-    val constr = TypingConstraint.Equality(expected, actual, Provenance.ExpectType(expected, actual, loc))
-    currentScopeConstraints.add(constr)
-  }
-
-  /**
     * Adds the given class constraints to the context.
     */
-  def addClassConstraintsM(tconstrs0: List[Ast.TypeConstraint], loc: SourceLocation): Unit = {
+  def addClassConstraints(tconstrs0: List[Ast.TypeConstraint], loc: SourceLocation): Unit = {
     // convert all the syntax-level constraints to semantic constraints
     val tconstrs = tconstrs0.map {
       case Ast.TypeConstraint(head, arg, _) => TypingConstraint.Class(head.sym, arg, loc)
@@ -208,7 +209,7 @@ class TypeContext {
   /**
     * Marks the given type variable as rigid in the context.
     */
-  def rigidifyM(sym: Symbol.KindedTypeVarSym): Unit = {
+  def rigidify(sym: Symbol.KindedTypeVarSym): Unit = {
     renv = renv.markRigid(sym)
   }
 
@@ -242,7 +243,7 @@ class TypeContext {
     * the level is incremented,
     * and we get a fresh empty set of constraints for the new scope.
     */
-  def enterRegionM(sym: Symbol.KindedTypeVarSym): Unit = {
+  def enterRegion(sym: Symbol.KindedTypeVarSym): Unit = {
     // save the info from the parent region
     constraintStack.push(currentScopeConstraints)
     renv = renv.markRigid(sym)
@@ -267,7 +268,7 @@ class TypeContext {
     * We add the new purification constraints to the current constraints.
     * Finally, we decrement the level.
     */
-  def exitRegionM(externalEff1: Type, internalEff2: Type, loc: SourceLocation): Unit = {
+  def exitRegion(externalEff1: Type, internalEff2: Type, loc: SourceLocation): Unit = {
     val constr = currentScopeConstraints.region match {
       case None => throw InternalCompilerException("unexpected missing region", loc)
       case Some(r) =>
@@ -280,4 +281,5 @@ class TypeContext {
     currentScopeConstraints.add(constr)
     level = level.decr
   }
+
 }
