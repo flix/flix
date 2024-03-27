@@ -209,7 +209,7 @@ object ConstraintResolution {
 
     while (progress) {
       if (count >= MaxIterations) {
-        return Result.Err(TypeError.TooComplex(SourceLocation.Unknown))
+        return Result.Err(TypeError.TooComplex(constrs.head.loc))
       }
 
       count += 1
