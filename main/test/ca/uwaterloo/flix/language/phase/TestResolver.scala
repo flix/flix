@@ -1444,6 +1444,24 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.MissingAssocTypeDef](result)
   }
 
+  test("MissingAssocTypeDef.02") {
+    val input =
+      """
+        |mod Foo {
+        |    trait Add[a] {
+        |        pub type Aef: Eff
+        |        pub def add(x: a, y: a): a \ Add.Aef[a]
+        |    }
+        |
+        |    instance Foo.Add[t] {
+        |        pub def add(x: t, y: t): t \ Aef[a] = ???
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingAssocTypeDef](result)
+  }
+
   test("IllegalAssocTypeApplication.01") {
     val input =
       """
