@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.NamedAst.{Declaration, RestrictableChooseP
 import ca.uwaterloo.flix.language.ast.ResolvedAst.Pattern.Record
 import ca.uwaterloo.flix.language.ast.UnkindedType._
 import ca.uwaterloo.flix.language.ast.{NamedAst, Symbol, _}
-import ca.uwaterloo.flix.language.errors.{Recoverable, ResolutionError}
+import ca.uwaterloo.flix.language.errors.{Recoverable, ResolutionError, Unrecoverable}
 import ca.uwaterloo.flix.language.errors.ResolutionError._
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap, MapOps}
@@ -656,7 +656,7 @@ object Resolver {
         val m = mutable.Map.empty[Symbol.AssocTypeSym, ResolvedAst.Declaration.AssocTypeDef]
 
         // We collect [[DuplicateAssocTypeDef]] and [[DuplicateAssocTypeDef]] errors.
-        val errors = mutable.ListBuffer.empty[ResolutionError with Recoverable]
+        val errors = mutable.ListBuffer.empty[ResolutionError with Unrecoverable]
 
         // Build the map `m` and check for [[DuplicateAssocTypeDef]].
         for (d@ResolvedAst.Declaration.AssocTypeDef(_, _, use, _, _, loc1) <- xs) {
@@ -689,8 +689,13 @@ object Resolver {
           }
         }
 
+        // TODO ASSOC-TYPES this should be a soft failure once we know how to handle error types in unification
         // We use `m.values` here because we have eliminated duplicates and introduced missing associated type defs.
-        Validation.toSuccessOrSoftFailure(m.values.toList, errors)
+        if (errors.isEmpty) {
+          Validation.success(m.values.toList)
+        } else {
+          Validation.HardFailure(Chain.from(errors))
+        }
     }
   }
 
