@@ -124,15 +124,12 @@ object Scheme {
     * Θₚ ⊩ (∀α₁.π₁ ⇒ τ₁) ≤ (∀α₂.π₂ ⇒ τ₂)
     */
   def checkLessThanEqual(sc1: Scheme, sc2: Scheme, cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eenv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Substitution, UnificationError] = {
-    // TODO ASSOC-TYPES probably these should be narrow from the start
-
-    // Mark every free variable in `sc1` as rigid.
-    //    val renv1 = RigidityEnv(sc1.base.typeVars.map(_.sym) -- sc1.quantifiers)
 
     // Instantiate sc2, creating [T/α₂]π₂ and [T/α₂]τ₂
     val (cconstrs2_0, econstrs2_0, tpe2_0) = Scheme.instantiate(sc2, SourceLocation.Unknown)(Level.Default, flix)
 
     // Resolve what we can from the new econstrs
+    // TODO ASSOC-TYPES probably these should be narrow from the start
     val tconstrs2_0 = econstrs2_0.map { case Ast.BroadEqualityConstraint(t1, t2) => TypingConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
     val (subst, econstrs2_1) = ConstraintResolution.resolve(tconstrs2_0, Substitution.empty, RigidityEnv.empty)(cenv0, eenv0, flix) match {
       case Result.Ok(ResolutionResult(newSubst, newConstrs, _)) =>
