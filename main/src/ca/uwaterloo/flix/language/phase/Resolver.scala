@@ -985,21 +985,23 @@ object Resolver {
       def visitExp(e0: NamedAst.Expr, env0: ListMap[String, Resolution])(implicit level: Level): Validation[ResolvedAst.Expr, ResolutionError] = e0 match {
 
         case NamedAst.Expr.Ambiguous(name, loc) =>
-          mapN(lookupTerm(name, env0, ns0, root)) {
-            case ResolvedTerm.Def(defn) => visitDef(defn, loc)
-            case ResolvedTerm.Sig(sig) => visitSig(sig, loc)
-            case ResolvedTerm.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
-            case ResolvedTerm.Tag(caze) => visitTag(caze, loc)
-            case ResolvedTerm.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = false, loc)
+          mapN(lookupQName(name, env0, ns0, root)) {
+            case ResolvedQName.Def(defn) => visitDef(defn, loc)
+            case ResolvedQName.Sig(sig) => visitSig(sig, loc)
+            case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
+            case ResolvedQName.Tag(caze) => visitTag(caze, loc)
+            case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = false, loc)
+            case ResolvedQName.Error(e) => ResolvedAst.Expr.Error(e)
           }
 
         case NamedAst.Expr.Open(name, loc) =>
-          mapN(lookupTerm(name, env0, ns0, root)) {
-            case ResolvedTerm.Def(defn) => visitDef(defn, loc)
-            case ResolvedTerm.Sig(sig) => visitSig(sig, loc)
-            case ResolvedTerm.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
-            case ResolvedTerm.Tag(caze) => visitTag(caze, loc)
-            case ResolvedTerm.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = true, loc)
+          mapN(lookupQName(name, env0, ns0, root)) {
+            case ResolvedQName.Def(defn) => visitDef(defn, loc)
+            case ResolvedQName.Sig(sig) => visitSig(sig, loc)
+            case ResolvedQName.Var(sym) => ResolvedAst.Expr.Var(sym, loc)
+            case ResolvedQName.Tag(caze) => visitTag(caze, loc)
+            case ResolvedQName.RestrictableTag(caze) => visitRestrictableTag(caze, isOpen = true, loc)
+            case ResolvedQName.Error(e) => ResolvedAst.Expr.Error(e)
           }
 
         case NamedAst.Expr.OpenAs(name, exp, loc) =>
@@ -1045,21 +1047,24 @@ object Resolver {
           Validation.success(ResolvedAst.Expr.Cst(cst, loc))
 
         case app@NamedAst.Expr.Apply(NamedAst.Expr.Ambiguous(qname, innerLoc), exps, outerLoc) =>
-          flatMapN(lookupTerm(qname, env0, ns0, root)) {
-            case ResolvedTerm.Def(defn) => visitApplyDef(app, defn, exps, env0, innerLoc, outerLoc)
-            case ResolvedTerm.Sig(sig) => visitApplySig(app, sig, exps, env0, innerLoc, outerLoc)
-            case ResolvedTerm.Var(_) => visitApply(app, env0)
-            case ResolvedTerm.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
-            case ResolvedTerm.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, env0, innerLoc, outerLoc)
+          flatMapN(lookupQName(qname, env0, ns0, root)) {
+            case ResolvedQName.Def(defn) => visitApplyDef(app, defn, exps, env0, innerLoc, outerLoc)
+            case ResolvedQName.Sig(sig) => visitApplySig(app, sig, exps, env0, innerLoc, outerLoc)
+            case ResolvedQName.Var(_) => visitApply(app, env0)
+            case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
+            case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = false, env0, innerLoc, outerLoc)
+            case ResolvedQName.Error(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
+
           }
 
         case app@NamedAst.Expr.Apply(NamedAst.Expr.Open(qname, innerLoc), exps, outerLoc) =>
-          flatMapN(lookupTerm(qname, env0, ns0, root)) {
-            case ResolvedTerm.Def(defn) => visitApplyDef(app, defn, exps, env0, innerLoc, outerLoc)
-            case ResolvedTerm.Sig(sig) => visitApplySig(app, sig, exps, env0, innerLoc, outerLoc)
-            case ResolvedTerm.Var(_) => visitApply(app, env0)
-            case ResolvedTerm.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
-            case ResolvedTerm.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, env0, innerLoc, outerLoc)
+          flatMapN(lookupQName(qname, env0, ns0, root)) {
+            case ResolvedQName.Def(defn) => visitApplyDef(app, defn, exps, env0, innerLoc, outerLoc)
+            case ResolvedQName.Sig(sig) => visitApplySig(app, sig, exps, env0, innerLoc, outerLoc)
+            case ResolvedQName.Var(_) => visitApply(app, env0)
+            case ResolvedQName.Tag(caze) => visitApplyTag(caze, exps, env0, innerLoc, outerLoc)
+            case ResolvedQName.RestrictableTag(caze) => visitApplyRestrictableTag(caze, exps, isOpen = true, env0, innerLoc, outerLoc)
+            case ResolvedQName.Error(e) => Validation.toSoftFailure(ResolvedAst.Expr.Error(e), e)
           }
 
         case app@NamedAst.Expr.Apply(_, _, _) =>
@@ -2085,7 +2090,7 @@ object Resolver {
   /**
     * Looks up the definition or signature with qualified name `qname` in the namespace `ns0`.
     */
-  private def lookupTerm(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedTerm, ResolutionError] = {
+  private def lookupQName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[ResolvedQName, ResolutionError] = {
     // first look in the local env
     val resolutions = tryLookupName(qname, env, ns0, root)
 
@@ -2098,28 +2103,30 @@ object Resolver {
     } match {
       case Resolution.Declaration(defn: NamedAst.Declaration.Def) :: _ =>
         if (isDefAccessible(defn, ns0)) {
-          Validation.success(ResolvedTerm.Def(defn))
+          Validation.success(ResolvedQName.Def(defn))
         } else {
-          Validation.toSoftFailure(ResolvedTerm.Def(defn), ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc))
+          Validation.toSoftFailure(ResolvedQName.Def(defn), ResolutionError.InaccessibleDef(defn.sym, ns0, qname.loc))
         }
       case Resolution.Declaration(sig: NamedAst.Declaration.Sig) :: _ =>
         if (isSigAccessible(sig, ns0)) {
-          Validation.success(ResolvedTerm.Sig(sig))
+          Validation.success(ResolvedQName.Sig(sig))
         } else {
-          Validation.toSoftFailure(ResolvedTerm.Sig(sig), ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc))
+          Validation.toSoftFailure(ResolvedQName.Sig(sig), ResolutionError.InaccessibleSig(sig.sym, ns0, qname.loc))
         }
       //      case Resolution.Declaration(caze1: NamedAst.Declaration.Case) :: Resolution.Declaration(caze2: NamedAst.Declaration.Case) :: _ =>
       //        // Multiple case matches. Error.
       //        ResolutionError.AmbiguousTag(qname.ident.name, ns0, List(caze1.sym.loc, caze2.sym.loc), qname.ident.loc).toFailure
       // TODO NS-REFACTOR overlapping tag check disabled. Revisit?
       case Resolution.Declaration(caze: NamedAst.Declaration.Case) :: _ =>
-        Validation.success(ResolvedTerm.Tag(caze))
+        Validation.success(ResolvedQName.Tag(caze))
       // TODO NS-REFACTOR check accessibility
       case Resolution.Declaration(caze: NamedAst.Declaration.RestrictableCase) :: Nil =>
-        Validation.success(ResolvedTerm.RestrictableTag(caze))
+        Validation.success(ResolvedQName.RestrictableTag(caze))
       // TODO NS-REFACTOR check accessibility
-      case Resolution.Var(sym) :: _ => Validation.success(ResolvedTerm.Var(sym))
-      case _ => Validation.toHardFailure(ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), isUse = false, qname.loc))
+      case Resolution.Var(sym) :: _ => Validation.success(ResolvedQName.Var(sym))
+      case _ =>
+        val e = ResolutionError.UndefinedName(qname, ns0, filterToVarEnv(env), isUse = false, qname.loc)
+        Validation.toSoftFailure(ResolvedQName.Error(e), e)
     }
   }
 
@@ -2667,7 +2674,7 @@ object Resolver {
 
     symOpt.collectFirst {
       case Resolution.Declaration(alias: NamedAst.Declaration.TypeAlias) => getTypeAliasIfAccessible(alias, ns0, qname.loc)
-    }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc)))
+    }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = false, qname.loc)))
   }
 
   /**
@@ -2678,7 +2685,7 @@ object Resolver {
 
     symOpt.collectFirst {
       case Resolution.Declaration(assoc: NamedAst.Declaration.AssocTypeSig) => getAssocTypeIfAccessible(assoc, ns0, qname.loc)
-    }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc)))
+    }.getOrElse(Validation.toHardFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = false, qname.loc)))
   }
 
   /**
@@ -2804,7 +2811,7 @@ object Resolver {
     */
   private def lookupQualifiedName(qname: Name.QName, env: ListMap[String, Resolution], ns0: Name.NName, root: NamedAst.Root): Validation[List[NamedAst.Declaration], ResolutionError] = {
     tryLookupQualifiedName(qname, env, ns0, root) match {
-      case None => Validation.toHardFailure(ResolutionError.UndefinedName(qname, ns0, Map.empty, isUse = false, qname.loc))
+      case None => Validation.toHardFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns0, Map.empty, isUse = false, qname.loc))
       case Some(decl) => Validation.success(decl)
     }
   }
@@ -3480,7 +3487,7 @@ object Resolver {
   private def visitUseOrImport(useOrImport: NamedAst.UseOrImport, ns: Name.NName, root: NamedAst.Root)(implicit flix: Flix): Validation[Ast.UseOrImport, ResolutionError] = useOrImport match {
     case NamedAst.UseOrImport.Use(qname, alias, loc) => tryLookupName(qname, ListMap.empty, ns, root) match {
       // Case 1: No matches. Error.
-      case Nil => Validation.toHardFailure(ResolutionError.UndefinedName(qname, ns, Map.empty, isUse = true, loc))
+      case Nil => Validation.toHardFailure(ResolutionError.UndefinedNameUnrecoverable(qname, ns, Map.empty, isUse = true, loc))
       // Case 2: A match. Map it to a use.
       // TODO NS-REFACTOR: should map to multiple uses or ignore namespaces or something
       case Resolution.Declaration(d) :: _ =>
@@ -3660,18 +3667,20 @@ object Resolver {
   /**
     * Union of variables, definitions, and signatures.
     */
-  private sealed trait ResolvedTerm
+  private sealed trait ResolvedQName
 
-  private object ResolvedTerm {
-    case class Var(sym: Symbol.VarSym) extends ResolvedTerm
+  private object ResolvedQName {
+    case class Var(sym: Symbol.VarSym) extends ResolvedQName
 
-    case class Def(defn: NamedAst.Declaration.Def) extends ResolvedTerm
+    case class Def(defn: NamedAst.Declaration.Def) extends ResolvedQName
 
-    case class Sig(sig: NamedAst.Declaration.Sig) extends ResolvedTerm
+    case class Sig(sig: NamedAst.Declaration.Sig) extends ResolvedQName
 
-    case class Tag(caze: NamedAst.Declaration.Case) extends ResolvedTerm
+    case class Tag(caze: NamedAst.Declaration.Case) extends ResolvedQName
 
-    case class RestrictableTag(caze: NamedAst.Declaration.RestrictableCase) extends ResolvedTerm
+    case class RestrictableTag(caze: NamedAst.Declaration.RestrictableCase) extends ResolvedQName
+
+    case class Error(e: ResolutionError.UndefinedName) extends ResolvedQName
   }
 
   /**
