@@ -370,7 +370,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |}
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedName](result)
+    expectError[ResolutionError.UndefinedNameUnrecoverable](result)
   }
 
   test("UndefinedEffect.01") {
