@@ -122,26 +122,26 @@ object Parser2 {
   /**
    * Runs the parser silently, throwing out results and errors. Used for migrating to the new parser, can be deleted afterwards.
    */
-  def runSilent(root: Map[Ast.Source, Array[Token]], oldRoot: Map[Ast.Source, SyntaxTree.Tree], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Ast.Source, SyntaxTree.Tree], CompilationMessage] = {
+  def runSilent(tokens: Map[Ast.Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = {
     try {
-      val _ = run(root, oldRoot, changeSet)
-      Validation.success(Map.empty)
+      val _ = run(tokens, oldRoot, changeSet)
+      Validation.success(SyntaxTree.empty)
     } catch {
       case except: Throwable =>
         except.printStackTrace()
-        Validation.success(Map.empty)
+        Validation.success(SyntaxTree.empty)
     }
   }
 
-  def run(root: Map[Ast.Source, Array[Token]], oldRoot: Map[Ast.Source, SyntaxTree.Tree], changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Ast.Source, SyntaxTree.Tree], CompilationMessage] = {
+  def run(tokens: Map[Ast.Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = {
     if (flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
-      return Validation.success(Map.empty)
+      return Validation.success(SyntaxTree.empty)
     }
 
     flix.phase("Parser2") {
       // Compute the stale and fresh sources.
-      val (stale, fresh) = changeSet.partition(root, oldRoot)
+      val (stale, fresh) = changeSet.partition(tokens, oldRoot.units)
 
       // Parse each stale source in parallel and join them into a WeededAst.Root
       val refreshed = ParOps.parMap(stale) {
@@ -149,7 +149,9 @@ object Parser2 {
       }
 
       // Join refreshed syntax trees with the already fresh ones.
-      mapN(sequence(refreshed))(_.toMap ++ fresh)
+      mapN(sequence(refreshed)) {
+        refreshed => SyntaxTree.Root(refreshed.toMap ++ fresh)
+      }
     }
   }
 

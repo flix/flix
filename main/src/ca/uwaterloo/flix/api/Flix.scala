@@ -78,7 +78,7 @@ class Flix {
     */
   private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
   private var cachedParserAst:  ParsedAst.Root = ParsedAst.empty
-  private var cachedParserCst:  Map[Ast.Source, SyntaxTree.Tree] = Map.empty
+  private var cachedParserCst:  SyntaxTree.Root = SyntaxTree.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
   private var cachedWeederAst2: WeededAst.Root = WeededAst.empty
   private var cachedDesugarAst: DesugaredAst.Root = DesugaredAst.empty
@@ -88,7 +88,7 @@ class Flix {
 
   def getParserAst: ParsedAst.Root = cachedParserAst
 
-  def getParserCst: Map[Ast.Source, SyntaxTree.Tree]  = cachedParserCst
+  def getParserCst: SyntaxTree.Root  = cachedParserCst
 
   def getWeederAst: WeededAst.Root = cachedWeederAst
 

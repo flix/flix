@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Fixity, Polarity, SyntacticContext}
-import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, Token, TokenKind, WeededAst}
+import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Root, Tree, TreeKind}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.errors.ParseError
 import ca.uwaterloo.flix.language.errors.WeederError._
 import ca.uwaterloo.flix.util.Validation._
@@ -54,9 +54,9 @@ object Weeder2 {
   /**
     * Runs the parser silently, throwing out results and errors. Used for migrating to the new parser, can be deleted afterwards.
     */
-  def runSilent(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], trees: Map[Ast.Source, Tree], oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
+  def runSilent(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
     try {
-      val _ = run(readRoot, entryPoint, trees, oldRoot, changeSet)
+      val _ = run(readRoot, entryPoint, root, oldRoot, changeSet)
       Validation.success(WeededAst.empty)
     } catch {
       case except: Throwable =>
@@ -65,14 +65,14 @@ object Weeder2 {
     }
   }
 
-  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], trees: Map[Ast.Source, Tree], oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
+  def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
     if (flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
       return Validation.success(WeededAst.empty)
     }
 
     flix.phase("Weeder2") {
-      val (stale, fresh) = changeSet.partition(trees, oldRoot.units)
+      val (stale, fresh) = changeSet.partition(root.units, oldRoot.units)
       // Parse each source file in parallel and join them into a WeededAst.Root
       val refreshed = ParOps.parMap(stale) {
         case (src, tree) => mapN(weed(src, tree))(tree => src -> tree)
