@@ -1764,7 +1764,6 @@ object Parser2 {
       assert(at(TokenKind.KeywordMatch))
       val mark = open()
       expect(TokenKind.KeywordMatch)
-
       // Detect match lambda
       val isLambda = {
         var lookAhead = 0

@@ -559,8 +559,8 @@ class Flix {
       //
       // Stage 3
       // Full migration, remove old parser and weeder.
-      afterParser2 <- Parser2.run(afterLexer, cachedParserCst, changeSet)
-      afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2, cachedWeederAst, changeSet)
+      afterParser2 <- Parser2.runSilent(afterLexer, cachedParserCst, changeSet)
+      afterWeeder2 <- Weeder2.runSilent(afterReader, entryPoint, afterParser2, cachedWeederAst, changeSet)
 
       afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
