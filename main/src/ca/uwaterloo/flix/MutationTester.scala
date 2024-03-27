@@ -64,7 +64,7 @@ object MutationTester {
 
     private def insertDecAndCheckInDef(d: TypedAst.Def): TypedAst.Def ={
         val loc = d.exp.loc
-        val method = classOf[Global].getMethods.apply(3)
+        val method = classOf[Global].getMethods.find(m => m.getName.equals("decAndCheck")).get
         val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Int64, Type.IO, loc)
         val mask = Expr.UncheckedMaskingCast(InvokeMethod, Type.Int64, Type.Pure, loc)
         val statement = Expr.Stm(mask, d.exp, d.exp.tpe, d.exp.eff, d.exp.loc)
@@ -92,8 +92,8 @@ object MutationTester {
         val amountOfMutants = mutatedDefs.map(m => m._2.length).sum
         val f = DateTimeFormatter.ofPattern("yyyy-MM-dd: HH:mm")
         // (survivorCount, startTime, tempTime for progress updates, date for progress updates, amount of mutants currently tested)
-        val localAcc = (0, totalStartTime.toDouble, temp, date, 0)
-        val (totalSurvivorCount, timeTemp, _, _, _) = mutatedDefs.foldLeft(localAcc)((acc, mut) => {
+        val localAcc = (0, 0, totalStartTime.toDouble, temp, date, 0)
+        val (totalSurvivorCount, totalUnknowns, timeTemp, _, _, _) = mutatedDefs.foldLeft(localAcc)((acc, mut) => {
             val kit = TestKit(flix, root, tester)
             testMutantsAndUpdateProgress(acc, mut, kit, f)
         })
@@ -108,22 +108,23 @@ object MutationTester {
     private def testMutantsAndUpdateProgress(acc: (Int, Double, Long, LocalDateTime, Int), mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit, f: DateTimeFormatter) = {
         //println(s"testing ${mut._1.toString} with $mutationAmount mutations")
         mut._2.foldLeft(acc)((acc2, mDef) => {
-            val (survivorCount, time, accTemp, accDate, mAmount) = acc2
+            val (survivorCount, unknownCount, time, accTemp, accDate, mAmount) = acc2
             val mutationAmount = mAmount + 1
             val start = System.nanoTime()
             val testResults = testMutant(mDef, mut, testKit)
             val newTime = time + (System.nanoTime() - start).toDouble / 1_000_000_000
-            val newSurvivorCount = if (testResults) survivorCount + 1 else survivorCount
+            val newSurvivorCount = if (testResults.equals(TestRes.MutantSurvived)) survivorCount + 1 else survivorCount
+            val newUnknownCount = if (testResults.equals(TestRes.Unknown)) unknownCount + 1 else unknownCount
             val newDate = LocalDateTime.now()
             val message = s"[${f.format(newDate)}] Mutants: $mutationAmount, Killed: ${mutationAmount - survivorCount}, Survived: $survivorCount"
             val newTemp = progressUpdate(message, accTemp)
-            (newSurvivorCount, newTime, newTemp, newDate, mutationAmount)
+            (newSurvivorCount, newUnknownCount, newTime, newTemp, newDate, mutationAmount)
             //val sym = mDef.sym.toString
             //println(s"mutation in $sym survived")
         })
     }
 
-    private def testMutant(mDef: TypedAst.Def, mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit): Boolean = {
+    private def testMutant(mDef: TypedAst.Def, mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit): TestRes = {
         val defs = testKit.root.defs
         val n = defs + (mut._1 -> mDef)
         //println(s"mutation: $mDef")

@@ -826,6 +826,9 @@ object BackendObjType {
       cm.mkStaticConstructor(StaticConstructor)
 
       cm.mkField(StepCounterField)
+      cm.mkField(InfiniteLoopException)
+      cm.mkStaticMethod(DecAndCheckMethod)
+
       cm.mkField(CounterField)
       cm.mkStaticMethod(NewIdMethod)
 
@@ -839,11 +842,26 @@ object BackendObjType {
     def Constructor: ConstructorMethod = nullarySuperConstructor(JavaObject.Constructor)
 
     def StaticConstructor: StaticConstructorMethod = StaticConstructorMethod(this.jvmName, Some(_ =>
-      NEW(JvmName.AtomicLong) ~
+        NEW(JvmName.AtomicLong) ~
         DUP() ~ invokeConstructor(JvmName.AtomicLong, MethodDescriptor.NothingToVoid) ~
         PUTSTATIC(CounterField) ~
-        DUP() ~ invokeConstructor(JvmName.AtomicLong, MethodDescriptor.NothingToVoid) ~
+
+        NEW(JvmName.AtomicLong) ~
+        DUP() ~
+        LCONST_1() ~
+        ICONST_5()~
+        LSHL() ~
+        ICONST_5()~
+        LSHL() ~
+        ICONST_5()~
+        LSHL() ~
+        invokeConstructor(JvmName.AtomicLong, MethodDescriptor.mkDescriptor(BackendType.Int64)(VoidableType.Void)) ~
         PUTSTATIC(StepCounterField) ~
+
+        ACONST_NULL() ~
+        DUP() ~
+        PUTSTATIC(InfiniteLoopException) ~
+
         ICONST_0() ~
         ANEWARRAY(String.jvmName) ~
         PUTSTATIC(ArgsField) ~
@@ -858,18 +876,19 @@ object BackendObjType {
           LRETURN()
       ))
 
-    def decAndCheck: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "decAndCheck",
-      mkDescriptor()(BackendType.Int32), Some(_ =>
+    def DecAndCheckMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "decAndCheck",
+      mkDescriptor()(VoidableType.Void), Some(_ =>
         GETSTATIC(StepCounterField) ~
           INVOKEVIRTUAL(JvmName.AtomicLong, "getAndDecrement",
             MethodDescriptor(Nil, BackendType.Int64)) ~
           LCONST_0() ~
           LCMP() ~
           ifCondition(Condition.GT) {
-            thisLoad() ~ ACONST_NULL() ~
-            ATHROW()
+            GETSTATIC(InfiniteLoopException) ~
+              thisLoad() ~ ACONST_NULL() ~
+              ATHROW()
           } ~
-          ICONST_M1() ~ LRETURN()
+          RETURN()
         ))
 
     def GetArgsMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "getArgs",
@@ -900,6 +919,8 @@ object BackendObjType {
     def CounterField: StaticField =
       StaticField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "counter", JvmName.AtomicLong.toTpe)
 
+    def InfiniteLoopException: StaticField =
+      StaticField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "infiniteLoopException", JvmName.Throwable.toTpe)
 
     def StepCounterField: StaticField =
       StaticField(this.jvmName, IsPrivate, IsFinal, NotVolatile, "stepCounter", JvmName.AtomicLong.toTpe)

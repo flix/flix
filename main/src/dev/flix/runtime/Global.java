@@ -1,5 +1,8 @@
 package dev.flix.runtime;
 
+import scala.Int;
+
+
 /**
  * OBS: A interface-like copy of the class generated in
  * `main/src/ca/uwaterloo/flix/language/phase/jvm/GenGlobalClass.scala` with
@@ -20,7 +23,7 @@ public final class Global {
         throw new RuntimeException("Global.setArgs should not be called on the mock class");
     }
 
-    public static final long deckAndCheck() {
+    public static final void decAndCheck() {
         throw new RuntimeException("Global.deckAndCheck should not be called on the mock class");
     }
 
