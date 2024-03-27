@@ -2221,7 +2221,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a float32.
       */
-    private def toFloat32(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
+    def toFloat32(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
       tryParseFloat(token,
         (text, loc) => Validation.success(Expr.Cst(Ast.Constant.Float32(text.stripSuffix("f32").toFloat), loc))
       )
@@ -2229,7 +2229,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a float32.
       */
-    private def toFloat64(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
+    def toFloat64(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
       tryParseFloat(token,
         (text, loc) => Validation.success(Expr.Cst(Ast.Constant.Float64(text.stripSuffix("f64").toDouble), loc))
       )
@@ -2237,7 +2237,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a big decimal.
       */
-    private def toBigDecimal(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
+    def toBigDecimal(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
       tryParseFloat(token, (text, loc) => {
         val bigDecimal = new java.math.BigDecimal(text.stripSuffix("ff"))
         Validation.success(Expr.Cst(Ast.Constant.BigDecimal(bigDecimal), loc))
@@ -2246,7 +2246,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a int8.
       */
-    private def toInt8(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
+    def toInt8(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
       tryParseInt(token, "i8", (radix, digits, loc) =>
         Expr.Cst(Ast.Constant.Int8(JByte.parseByte(digits, radix)), loc)
       )
@@ -2254,7 +2254,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a int16.
       */
-    private def toInt16(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
+    def toInt16(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
       tryParseInt(token, "i16", (radix, digits, loc) =>
         Expr.Cst(Ast.Constant.Int16(JShort.parseShort(digits, radix)), loc)
       )
@@ -2263,7 +2263,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a int32.
       */
-    private def toInt32(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
+    def toInt32(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
       tryParseInt(token, "i32", (radix, digits, loc) =>
         Expr.Cst(Ast.Constant.Int32(JInt.parseInt(digits, radix)), loc)
       )
@@ -2271,7 +2271,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a int64.
       */
-    private def toInt64(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
+    def toInt64(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
       tryParseInt(token, "i64", (radix, digits, loc) =>
         Expr.Cst(Ast.Constant.Int64(JLong.parseLong(digits, radix)), loc)
       )
@@ -2280,7 +2280,7 @@ object Weeder2 {
     /**
       * Attempts to parse the given tree to a int64.
       */
-    private def toBigInt(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
+    def toBigInt(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] =
       tryParseInt(token, "ii", (radix, digits, loc) =>
         Expr.Cst(Ast.Constant.BigInt(new java.math.BigInteger(digits, radix)), loc)
       )
@@ -2288,7 +2288,7 @@ object Weeder2 {
     /**
       * Attempts to compile the given regular expression into a Pattern.
       */
-    private def toRegex(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
+    def toRegex(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
       val text = token.text.stripPrefix("regex\"").stripSuffix("\"")
       val (processed, errors) = visitChars(text, loc)
@@ -2353,7 +2353,7 @@ object Weeder2 {
       visit(str.toList, Nil, Nil)
     }
 
-    private def toChar(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
+    def toChar(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
       val text = token.text.stripPrefix("\'").stripSuffix("\'")
       val (processed, errors) = visitChars(text, loc)
@@ -2365,7 +2365,7 @@ object Weeder2 {
       }
     }
 
-    private def toStringCst(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
+    def toStringCst(token: Token)(implicit s: State): Validation[Expr, CompilationMessage] = {
       val loc = token.mkSourceLocation(s.src, Some(s.parserInput))
       val text = token.text.stripPrefix("\"").stripSuffix("\"")
       val (processed, errors) = visitChars(text, loc)
