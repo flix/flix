@@ -16,7 +16,7 @@
 package ca.uwaterloo.flix.language.phase.constraintgeneration
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Level, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -31,9 +31,10 @@ import scala.collection.mutable
 class TypeContext {
 
   private object ScopeConstraints {
-
     /**
       * Creates an empty ScopeConstraints with no associated region.
+      *
+      * Note: The function must return a _NEW_ object because each object has mutable state.
       */
     def empty: ScopeConstraints = new ScopeConstraints(None)
 
@@ -85,11 +86,6 @@ class TypeContext {
   private var renv: RigidityEnv = RigidityEnv.empty
 
   /**
-    * The current level. Incremented and decremented as we enter and exit regions.
-    */
-  private var level: Level = Level.Top
-
-  /**
     * The typing context from outside the current scope.
     *
     * We push and pop information from this stack when we enter and exit regions.
@@ -107,18 +103,13 @@ class TypeContext {
   def getTypingConstraints: List[TypingConstraint] = currentScopeConstraints.getConstraints
 
   /**
-    * Returns the current level.
-    */
-  def getLevel: Level = level
-
-  /**
     * Generates constraints unifying the given types.
     *
     * {{{
     *   tpe1 ~ tpe2
     * }}}
     */
-  def unifyTypeM(tpe1: Type, tpe2: Type, loc: SourceLocation): Unit = {
+  def unifyType(tpe1: Type, tpe2: Type, loc: SourceLocation): Unit = {
     val constr = TypingConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, loc))
     currentScopeConstraints.add(constr)
   }
@@ -131,9 +122,9 @@ class TypeContext {
     *   tpe1 ~ tpe3
     * }}}
     */
-  def unifyType3M(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Unit = {
-    unifyTypeM(tpe1, tpe2, loc)
-    unifyTypeM(tpe1, tpe3, loc)
+  def unifyType3(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Unit = {
+    unifyType(tpe1, tpe2, loc)
+    unifyType(tpe1, tpe3, loc)
   }
 
   /**
@@ -148,16 +139,28 @@ class TypeContext {
     *   tpe1 ~ tpeN
     * }}}
     */
-  def unifyAllTypesM(tpes: List[Type], kind: Kind, loc: SourceLocation)(implicit level: Level, flix: Flix): Type = {
+  def unifyAllTypes(tpes: List[Type], kind: Kind, loc: SourceLocation)(implicit flix: Flix): Type = {
     // For performance, avoid creating a fresh type var if the list is non-empty
     tpes match {
       // Case 1: Nonempty list. Unify everything with the first type.
       case tpe1 :: rest =>
-        rest.foreach(unifyTypeM(tpe1, _, loc))
+        rest.foreach(unifyType(tpe1, _, loc))
         tpe1
       // Case 2: Empty list. Return a fresh type var.
       case Nil => Type.freshVar(kind, loc.asSynthetic)
     }
+  }
+
+  /**
+    * Generates constraints expecting the given types to unify.
+    *
+    * {{{
+    *   expected ~ actual
+    * }}}
+    */
+  def expectType(expected: Type, actual: Type, loc: SourceLocation): Unit = {
+    val constr = TypingConstraint.Equality(expected, actual, Provenance.ExpectType(expected, actual, loc))
+    currentScopeConstraints.add(constr)
   }
 
   /**
@@ -183,21 +186,9 @@ class TypeContext {
   }
 
   /**
-    * Generates constraints expecting the given types to unify.
-    *
-    * {{{
-    *   expected ~ actual
-    * }}}
-    */
-  def expectTypeM(expected: Type, actual: Type, loc: SourceLocation): Unit = {
-    val constr = TypingConstraint.Equality(expected, actual, Provenance.ExpectType(expected, actual, loc))
-    currentScopeConstraints.add(constr)
-  }
-
-  /**
     * Adds the given class constraints to the context.
     */
-  def addClassConstraintsM(tconstrs0: List[Ast.TypeConstraint], loc: SourceLocation): Unit = {
+  def addClassConstraints(tconstrs0: List[Ast.TypeConstraint], loc: SourceLocation): Unit = {
     // convert all the syntax-level constraints to semantic constraints
     val tconstrs = tconstrs0.map {
       case Ast.TypeConstraint(head, arg, _) => TypingConstraint.Class(head.sym, arg, loc)
@@ -208,7 +199,7 @@ class TypeContext {
   /**
     * Marks the given type variable as rigid in the context.
     */
-  def rigidifyM(sym: Symbol.KindedTypeVarSym): Unit = {
+  def rigidify(sym: Symbol.KindedTypeVarSym): Unit = {
     renv = renv.markRigid(sym)
   }
 
@@ -239,14 +230,12 @@ class TypeContext {
     *
     * Current scope information is pushed onto the stack,
     * the region symbol is marked as rigid,
-    * the level is incremented,
     * and we get a fresh empty set of constraints for the new scope.
     */
-  def enterRegionM(sym: Symbol.KindedTypeVarSym): Unit = {
+  def enterRegion(sym: Symbol.KindedTypeVarSym): Unit = {
     // save the info from the parent region
     constraintStack.push(currentScopeConstraints)
     renv = renv.markRigid(sym)
-    level = level.incr
     currentScopeConstraints = ScopeConstraints.emptyForRegion(sym)
   }
 
@@ -265,19 +254,18 @@ class TypeContext {
     *
     * We pop the constraints from the parent scope; these become our current constraints.
     * We add the new purification constraints to the current constraints.
-    * Finally, we decrement the level.
     */
-  def exitRegionM(externalEff1: Type, internalEff2: Type, loc: SourceLocation): Unit = {
+  def exitRegion(externalEff1: Type, internalEff2: Type, loc: SourceLocation): Unit = {
     val constr = currentScopeConstraints.region match {
       case None => throw InternalCompilerException("unexpected missing region", loc)
       case Some(r) =>
         // TODO ASSOC-TYPES improve prov. We can probably get a better prov than "match"
         val prov = Provenance.Match(externalEff1, internalEff2, loc)
-        TypingConstraint.Purification(r, externalEff1, internalEff2, level, prov, currentScopeConstraints.getConstraints)
+        TypingConstraint.Purification(r, externalEff1, internalEff2, prov, currentScopeConstraints.getConstraints)
     }
 
     currentScopeConstraints = constraintStack.pop()
     currentScopeConstraints.add(constr)
-    level = level.decr
   }
+
 }
