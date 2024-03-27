@@ -312,6 +312,49 @@ object Verifier {
           checkEq(decl, actual, loc)
           tpe
 
+        case AtomicOp.Assign =>
+          val List(t1, t2) = ts
+          t1 match {
+            case MonoType.Ref(elm) =>
+              checkEq(t2, elm, loc)
+              check(expected = MonoType.Unit)(actual = tpe, loc)
+            case _ => failMismatchedShape(t1, "Ref", loc)
+          }
+
+        // Match- and Hole-errors match with any type
+        case AtomicOp.HoleError(_) | AtomicOp.MatchError => tpe
+
+        case AtomicOp.RecordEmpty => check(expected = MonoType.RecordEmpty)(actual = tpe, loc)
+        case AtomicOp.RecordExtend(label) =>
+          val List(t1, t2) = ts
+          removeFromRecordType(tpe, label.name, loc) match {
+            case (rec, Some(valtype)) =>
+              checkEq(rec, t2, loc)
+              checkEq(valtype, t1, loc)
+              tpe
+            case (_, None) => failMismatchedShape(tpe, s"Record with ${label.name}", loc)
+          }
+
+        case AtomicOp.RecordRestrict(label) =>
+          val List(t1) = ts
+          removeFromRecordType(t1, label.name, loc) match {
+            case (rec, Some(_)) =>
+              // TODO: VERIFIER: this fails when a is removed from { a = Bool | { a = Int32 | { b = Int32 | {}}}}
+              //  which results in { a = Bool | { a = Int32 | { b = Int32 | {}}}}
+              checkEq(tpe, rec, loc)
+            case (_, None) => failMismatchedShape(t1, s"Record with ${label.name}", loc)
+          }
+
+        case AtomicOp.RecordSelect(label) =>
+          val List(t1) = ts
+          selectFromRecordType(t1, label.name, loc) match {
+            case Some(elmt) =>
+              // TODO: VERIFIER: this fails e.g. when a is selected from { a = Bool | { a = Int32 | { a = Int32 | {}}}}
+              //  which results in Int32. (Test.Exp.Match.Record.flix:262:60)
+              checkEq(tpe, elmt, loc)
+            case None => failMismatchedShape(t1, s"Record with '${label.name}'", loc)
+          }
+
         case _ => tpe // TODO: VERIFIER: Add rest
       }
 
@@ -414,6 +457,28 @@ object Verifier {
     if (tpe1 == tpe2)
       tpe1
     else failMismatchedTypes(tpe1, tpe2, loc)
+  }
+
+
+  private def removeFromRecordType(rec: MonoType, label: String, loc: SourceLocation): (MonoType, Option[MonoType]) = rec match {
+    case MonoType.RecordEmpty => (rec, None)
+    case MonoType.RecordExtend(lbl, valtype, rest) =>
+      if (label == lbl) (rest, Some(valtype))
+      else {
+        val (rec, opt) = removeFromRecordType(rest, label, loc)
+        (MonoType.RecordExtend(lbl, valtype, rec), opt)
+      }
+    case _ => failMismatchedShape(rec, "Record", loc)
+  }
+
+  private def selectFromRecordType(rec: MonoType, label: String, loc: SourceLocation): Option[MonoType] = rec match {
+    case MonoType.RecordExtend(lbl, valtype, rest) =>
+      if (lbl == label)
+        Some(valtype)
+      else
+        selectFromRecordType(rest, label, loc)
+    case MonoType.RecordEmpty => None
+    case _ => failMismatchedShape(rec, "Record", loc)
   }
 
   /**

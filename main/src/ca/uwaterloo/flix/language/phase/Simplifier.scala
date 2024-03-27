@@ -737,7 +737,7 @@ object Simplifier {
     @tailrec
     def visit(t: MonoType, cont: MonoType => MonoType): MonoType = t match {
       case MonoType.RecordExtend(f, _, tail) if label.name == f => cont(tail)
-      case MonoType.RecordExtend(f, tp, tail) => visit(tail, ty => MonoType.RecordExtend(f, tp, ty))
+      case MonoType.RecordExtend(f, tp, tail) => visit(tail, ty => cont(MonoType.RecordExtend(f, tp, ty)))
       case ty => cont(ty)
     }
 
