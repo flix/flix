@@ -32,9 +32,11 @@ class TypeContext {
 
   private object ScopeConstraints {
     /**
-      * The empty ScopeConstraints with no associated region.
+      * Creates an empty ScopeConstraints with no associated region.
+      *
+      * Note: The function must return a _NEW_ object because each object has mutable state.
       */
-    val empty: ScopeConstraints = new ScopeConstraints(None)
+    def empty: ScopeConstraints = new ScopeConstraints(None)
 
     /**
       * Creates an empty ScopeConstraints associated with the given region.
