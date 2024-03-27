@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase.constraintgeneration
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.RestrictableChoosePattern
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.ConstraintGeneration.visitExp
 import ca.uwaterloo.flix.util.InternalCompilerException
 
@@ -68,11 +68,6 @@ object RestrictableChooseConstraintGeneration {
     * Performs type inference on the given restrictable choose expression.
     */
   def visitRestrictableChoose(exp: KindedAst.Expr.RestrictableChoose)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     exp match {
       case KindedAst.Expr.RestrictableChoose(false, exp0, rules0, tpe0, loc) =>
 
@@ -177,10 +172,6 @@ object RestrictableChooseConstraintGeneration {
     * Performs type inference on the given restrictable tag expression.
     */
   def visitRestrictableTag(exp: KindedAst.Expr.RestrictableTag)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     exp match {
       case KindedAst.Expr.RestrictableTag(symUse, exp, isOpen, tvar, loc) =>
 
@@ -256,11 +247,6 @@ object RestrictableChooseConstraintGeneration {
     * Γ ⊢ open_as X e : X[s + φ][α1 ... αn]
     */
   def visitOpenAs(exp0: KindedAst.Expr.OpenAs)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     exp0 match {
       case KindedAst.Expr.OpenAs(Ast.RestrictableEnumSymUse(sym, _), exp, tvar, loc) =>
         val `enum` = root.restrictableEnums(sym)
@@ -300,7 +286,7 @@ object RestrictableChooseConstraintGeneration {
     *
     * The first and the second instantiation share all variables except the index.
     */
-  private def instantiatedEnumType(enumSym: Symbol.RestrictableEnumSym, decl: KindedAst.RestrictableEnum, loc: SourceLocation)(implicit level: Level, flix: Flix): (Type, Type.Var, List[Type]) = {
+  private def instantiatedEnumType(enumSym: Symbol.RestrictableEnumSym, decl: KindedAst.RestrictableEnum, loc: SourceLocation)(implicit flix: Flix): (Type, Type.Var, List[Type]) = {
     // TODO RESTR-VARS can get rid of enumSym since it's in the decl
     // Make fresh vars for all the type parameters
     // This will unify with the enum type to extract the index
@@ -326,11 +312,6 @@ object RestrictableChooseConstraintGeneration {
     * Infers the type of the given restrictable choice pattern `pat0`.
     */
   private def visitRestrictableChoosePattern(pat0: KindedAst.RestrictableChoosePattern)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     /**
       * Local pattern visitor.
       */

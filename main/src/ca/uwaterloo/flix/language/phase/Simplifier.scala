@@ -28,9 +28,6 @@ import scala.annotation.tailrec
   */
 object Simplifier {
 
-  // Post type inference, level is irrelevant.
-  private implicit val DefaultLevel: Level = Level.Default
-
   def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
     implicit val universe: Set[Symbol.EffectSym] = root.effects.keys.toSet
     val defs = ParOps.parMapValues(root.defs)(visitDef)

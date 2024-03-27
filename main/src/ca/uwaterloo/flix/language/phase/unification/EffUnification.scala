@@ -200,7 +200,6 @@ object EffUnification {
     * then returns None.
     */
   private def clearAssocs(tpe1: Type, tpe2: Type, renv: RigidityEnv)(implicit flix: Flix): Option[(Type, Type, Map[Symbol.KindedTypeVarSym, (Symbol.AssocTypeSym, Symbol.KindedTypeVarSym)])] = {
-    implicit val level = Level.Default
     val cache = mutable.HashMap.empty[(Symbol.AssocTypeSym, Symbol.KindedTypeVarSym), Symbol.KindedTypeVarSym]
 
     def visit(t0: Type): Option[Type] = t0 match {
