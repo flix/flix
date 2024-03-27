@@ -20,7 +20,6 @@ import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.constraintgeneration.{RestrictableChooseConstraintGeneration, SchemaConstraintGeneration, TypeContext}
 import ca.uwaterloo.flix.util.InternalCompilerException
-import ca.uwaterloo.flix.util.collection.ListOps
 
 /**
   * This phase generates a list of type constraints, which include
@@ -420,15 +419,17 @@ object ConstraintGeneration {
       case Expr.Match(exp, rules, loc) =>
         val (tpe, eff) = visitExp(exp)
         val (patTpes, tpes, effs) = rules.map(visitMatchRule).unzip3
-        c.unifyAllTypes(tpe :: patTpes, Kind.Star, loc)
-        val resTpe = c.unifyAllTypes(tpes, Kind.Star, loc)
+        c.unifyAllTypes(tpe :: patTpes, loc)
+        c.unifyAllTypes(tpes, loc)
+        val resTpe = tpes.headOption.getOrElse(Type.freshVar(Kind.Star, loc))
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
       case Expr.TypeMatch(exp, rules, loc) =>
         val (_, eff) = visitExp(exp)
         val (tpes, effs) = rules.map(visitTypeMatchRule).unzip
-        val resTpe = c.unifyAllTypes(tpes, Kind.Star, loc)
+        c.unifyAllTypes(tpes, loc)
+        val resTpe = tpes.headOption.getOrElse(Type.freshVar(Kind.Star, loc))
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
@@ -511,7 +512,8 @@ object ConstraintGeneration {
         val (tpes, effs) = exps.map(visitExp).unzip
         val (tpe, eff) = visitExp(exp)
         c.expectType(expected = regionType, actual = tpe, exp.loc)
-        val elmTpe = c.unifyAllTypes(tpes, Kind.Star, loc)
+        c.unifyAllTypes(tpes, loc)
+        val elmTpe = tpes.headOption.getOrElse(Type.freshVar(Kind.Star, loc))
         c.unifyType(tvar, Type.mkArray(elmTpe, regionVar, loc), loc)
         c.unifyType(evar, Type.mkUnion(Type.mkUnion(effs, loc), eff, regionVar, loc), loc)
         val resTpe = tvar
@@ -569,7 +571,8 @@ object ConstraintGeneration {
 
       case Expr.VectorLit(exps, tvar, evar, loc) =>
         val (tpes, effs) = exps.map(visitExp).unzip
-        val tpe = c.unifyAllTypes(tpes, Kind.Star, loc)
+        c.unifyAllTypes(tpes, loc)
+        val tpe = tpes.headOption.getOrElse(Type.freshVar(Kind.Star, loc))
         c.unifyType(tvar, Type.mkVector(tpe, loc), loc)
         c.unifyType(evar, Type.mkUnion(effs, loc), loc)
         val resTpe = tvar
@@ -695,7 +698,8 @@ object ConstraintGeneration {
       case Expr.TryCatch(exp, rules, loc) =>
         val (tpe, eff) = visitExp(exp)
         val (tpes, effs) = rules.map(visitCatchRule).unzip
-        val ruleTpe = c.unifyAllTypes(tpes, Kind.Star, loc)
+        c.unifyAllTypes(tpes, loc)
+        val ruleTpe = tpes.headOption.getOrElse(Type.freshVar(Kind.Star, loc))
         c.unifyType(tpe, ruleTpe, loc)
         val resTpe = tpe
         val resEff = Type.mkUnion(eff :: effs, loc)
@@ -705,7 +709,7 @@ object ConstraintGeneration {
         val (tpe, eff) = visitExp(exp)
         val continuationEffect = Type.freshVar(Kind.Eff, loc)
         val (tpes, effs) = rules.map(visitHandlerRule(_, tpe, continuationEffect, loc)).unzip
-        c.unifyAllTypes(tpe :: tvar :: tpes, Kind.Star, loc)
+        c.unifyAllTypes(tpe :: tvar :: tpes, loc)
 
 
         // TODO ASSOC-TYPES The types used here are not correct.
@@ -837,7 +841,7 @@ object ConstraintGeneration {
         val regionVar = Type.freshVar(Kind.Eff, loc)
         val (ruleTypes, ruleEffs) = rules.map(visitSelectRule(_, regionVar)).unzip
         val (defaultType, eff2) = visitDefaultRule(default, loc)
-        c.unifyAllTypes(tvar :: defaultType :: ruleTypes, Kind.Star, loc)
+        c.unifyAllTypes(tvar :: defaultType :: ruleTypes, loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(regionVar :: eff2 :: ruleEffs, loc)
         (resTpe, resEff)
