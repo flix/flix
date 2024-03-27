@@ -3001,7 +3001,15 @@ object Weeder2 {
     traverseOpt(tryPick(TreeKind.Ident, tree))(tokenToIdent)
   }
 
-  ////////// HELPERS //////////////////
+  ////////////////////////////////////////////////////////////////////////////////
+  /// HELPERS ////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////
+
+  /**
+    * Picks first child from a tree and if it is a [[Child.TokenChild]] turns it into a Name.Ident.
+    * Only use this if the structure of tree is well-known.
+    * IE. Calling on a tree of kind [[TreeKind.Ident]] is fine, but if the kind is not known avoid using [[tokenToIdent]].
+    */
   private def tokenToIdent(tree: Tree)(implicit s: State): Validation[Name.Ident, CompilationMessage] = {
     tree.children.headOption match {
       case Some(Child.TokenChild(token)) =>
@@ -3020,6 +3028,9 @@ object Weeder2 {
     }
   }
 
+  /**
+    * Turns a Name.QName into a string by removing prefix "##" and joining with ".".
+    */
   private def javaQnameToFqn(qname: Name.QName): String = {
     (qname.namespace.idents.map(_.name.stripPrefix("##")) :+ qname.ident.name).mkString(".")
   }
@@ -3030,10 +3041,10 @@ object Weeder2 {
   private def defaultKind(ident: Name.Ident): Kind = Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic)
 
   /**
-    * plucks the first inner tree in children.
-    * NB: This is intended to used to unfold the inner tree on special marker [[TreeKind]],
-    * such as [[TreeKind.Type.Type]] and [[TreeKind.Expr.Expr]].
-    * The parser should guarantee that these tree kinds have at least a single child.
+    * Plucks the first inner tree in children.
+    * This is intended to be used to unfold the inner tree on special marker [[TreeKind]]s,
+    * such as [[TreeKind.Type.Type]] or [[TreeKind.Expr.Expr]].
+    * The parser guarantees that these tree kinds have at least a single child.
     */
   private def unfold(tree: Tree): Tree = {
     assert(tree.kind match {
@@ -3053,7 +3064,9 @@ object Weeder2 {
     )
   }
 
-  // A helper that tries to find a token child of a specific kind
+  /**
+    * Tries to find a token child of a specific [[TokenKind]].
+    */
   private def hasToken(kind: TokenKind, tree: Tree): Boolean = {
     tree.children.exists {
       case Child.TokenChild(t) => t.kind == kind
@@ -3061,14 +3074,25 @@ object Weeder2 {
     }
   }
 
-  // A helper that picks all subtrees
+  /**
+    * Collects all immediate child trees from a tree.
+    */
   private def pickAllTrees(tree: Tree): List[Tree] = {
     tree.children.collect {
       case Child.TreeChild(t) => t
     }.toList
   }
 
-  // A helper that collects the text in token children
+  /**
+    * Collects all immediate child tokens from a tree.
+    */
+  private def pickAllTokens(tree: Tree): Array[Token] = {
+    tree.children.collect { case Child.TokenChild(token) => token }
+  }
+
+  /**
+    * Collects the text in immediate token children
+    */
   private def text(tree: Tree): List[String] = {
     tree.children.foldLeft[List[String]](List.empty)((acc, c) => c match {
       case Child.TokenChild(token) => acc :+ token.text
@@ -3076,11 +3100,9 @@ object Weeder2 {
     })
   }
 
-  private def pickAllTokens(tree: Tree): Array[Token] = {
-    tree.children.collect { case Child.TokenChild(token) => token }
-  }
-
-  // A helper that picks out the first tree of a specific kind from a list of children
+  /**
+    * Picks out the first sub-tree of a specific [[TreeKind]].
+    */
   private def pick(kind: TreeKind, tree: Tree): Validation[Tree, CompilationMessage] = {
     tryPick(kind, tree) match {
       case Some(t) => Validation.success(t)
@@ -3090,6 +3112,9 @@ object Weeder2 {
     }
   }
 
+  /**
+    * Tries to pick out the first sub-tree of a specific [[TreeKind]].
+    */
   private def tryPick(kind: TreeKind, tree: Tree): Option[Tree] = {
     tree.children.find {
       case Child.TreeChild(tree) if tree.kind == kind => true
@@ -3100,7 +3125,9 @@ object Weeder2 {
     }
   }
 
-  // A helper that picks out trees of a specific kind from a list of children
+  /**
+    * Picks out all the sub-trees of a specific [[TreeKind]].
+    */
   private def pickAll(kind: TreeKind, tree: Tree): List[Tree] = {
     tree.children.foldLeft[List[Tree]](List.empty)((acc, child) => child match {
       case Child.TreeChild(tree) if tree.kind == kind => acc.appended(tree)
@@ -3108,7 +3135,13 @@ object Weeder2 {
     })
   }
 
-  // A helper that returns the unique pairs of duplicates from an array of items
+  /**
+    * Gets duplicate pairs from a list of items.
+    * This is used to generate a list of pairs that can be mapped into Duplicate* errors.
+    * What constitutes a "duplicate" is abstracted into the groupBy argument.
+    * For instance, in the case of annotations, if the [[TokenKind]] of two annotations are equal then they form a duplicate pair.
+    * But for enum variants, two variants are duplicates if they share names.
+    */
   private def getDuplicates[A, K](items: Seq[A], groupBy: A => K): List[(A, A)] = {
     val duplicates = items.groupBy(groupBy).collect { case (_, is) if is.length > 1 => is }
     val pairs = duplicates.map(dups => {
