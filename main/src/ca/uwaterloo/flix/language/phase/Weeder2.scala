@@ -795,10 +795,8 @@ object Weeder2 {
         case TreeKind.Expr.FixpointSolveWithProject => visitFixpointSolveExpr(tree)
         case TreeKind.Expr.FixpointQuery => visitFixpointQueryExpr(tree)
         case TreeKind.Expr.Debug => visitDebugExpr(tree)
-        // TODO: We are double reporting the error here
-        case _ =>
-          val err = ParseError("Expected expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.HardFailure(Chain(err))
+        case TreeKind.ErrorTree(err) => Validation.success(Expr.Error(err))
+        case _ => throw InternalCompilerException("Expected expression.", tree.loc)
       }
     }
 
@@ -2283,7 +2281,6 @@ object Weeder2 {
       })
     }
 
-
     def visitBody(parentTree: Tree)(implicit s: State): Validation[Predicate.Body, CompilationMessage] = {
       assert(parentTree.kind == TreeKind.Predicate.Body)
       val tree = unfold(parentTree)
@@ -2400,8 +2397,7 @@ object Weeder2 {
         case TreeKind.Type.EffectSet => visitEffectType(inner)
         case TreeKind.Type.Ascribe => visitAscribeType(inner)
         case TreeKind.Type.Variable => visitVariableType(inner)
-        // TODO: This double reports the same error. We should be able to handle this resiliently if we had Type.Error.
-        case TreeKind.ErrorTree(_) => Validation.HardFailure(Chain(ParseError("Expected type but found Error", SyntacticContext.Type.OtherType, tree.loc)))
+        case TreeKind.ErrorTree(_) => Validation.success(Type.Error(tree.loc))
         case kind => throw InternalCompilerException(s"Parser passed unknown type '$kind'", tree.loc)
       }
     }
