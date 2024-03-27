@@ -605,12 +605,11 @@ object Simplifier {
         val labelPats = pats.map(_.pat)
         val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
         val zero = patternMatchList(labelPats ::: ps, freshVars ::: vs, guard, succ, fail)
-        // Note that we reverse pats and freshVars because we still want to fold right
-        // but we want to restrict the record / matchVar from left to right
-        val (one, restrictedMatchVar) = pats.reverse.zip(freshVars.reverse).foldRight((zero, varExp): (SimplifiedAst.Expr, SimplifiedAst.Expr)) {
-          case ((MonoAst.Pattern.Record.RecordLabelPattern(label, _, pat, loc1), name), (exp, matchVarExp)) =>
+        // Let-binders are built in reverse, but it does not matter since binders are independent and pure
+        val (one, restrictedMatchVar) = pats.zip(freshVars).foldLeft((zero, varExp): (SimplifiedAst.Expr, SimplifiedAst.Expr)) {
+          case ((exp, matchVarExp), (MonoAst.Pattern.Record.RecordLabelPattern(label, _, pat, loc1), name)) =>
             val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(label), List(matchVarExp), visitType(pat.tpe), Purity.Pure, loc1)
-            val restrictedMatchVarExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(label), List(matchVarExp), mkRecordRestrict(label, varExp.tpe), matchVarExp.purity, loc1)
+            val restrictedMatchVarExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(label), List(matchVarExp), mkRecordRestrict(label, matchVarExp.tpe), matchVarExp.purity, loc1)
             val labelLetBinding = SimplifiedAst.Expr.Let(name, recordSelectExp, exp, succ.tpe, exp.purity, loc1)
             (labelLetBinding, restrictedMatchVarExp)
         }
@@ -737,7 +736,7 @@ object Simplifier {
     @tailrec
     def visit(t: MonoType, cont: MonoType => MonoType): MonoType = t match {
       case MonoType.RecordExtend(f, _, tail) if label.name == f => cont(tail)
-      case MonoType.RecordExtend(f, tp, tail) => visit(tail, ty => MonoType.RecordExtend(f, tp, ty))
+      case MonoType.RecordExtend(f, tp, tail) => visit(tail, ty => cont(MonoType.RecordExtend(f, tp, ty)))
       case ty => cont(ty)
     }
 

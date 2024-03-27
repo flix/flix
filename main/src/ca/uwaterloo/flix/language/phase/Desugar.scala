@@ -334,6 +334,9 @@ object Desugar {
       val t = visitType(tpe)
       val k = visitKind(kind)
       DesugaredAst.Type.Ascribe(t, k, loc)
+
+    case WeededAst.Type.Error(loc) =>
+      DesugaredAst.Type.Error(loc)
   }
 
   /**

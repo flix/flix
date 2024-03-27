@@ -359,8 +359,9 @@ object NamedAst {
 
     case class CaseComplement(tpe: Type, loc: SourceLocation) extends Type
 
-
     case class Ascribe(tpe: Type, kind: Kind, loc: SourceLocation) extends Type
+
+    case class Error(loc: SourceLocation) extends Type
 
   }
 
