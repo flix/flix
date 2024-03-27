@@ -2400,30 +2400,33 @@ object Weeder2 {
       traverseOpt(maybeType)(visitType)
     }
 
+    def tryPickEffect(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {
+      val maybeEffectSet = tryPick(TreeKind.Type.EffectSet, tree)
+      traverseOpt(maybeEffectSet)(visitEffect)
+    }
+
     def visitType(tree: Tree)(implicit s: State): Validation[WeededAst.Type, CompilationMessage] = {
       expect(tree, TreeKind.Type.Type)
       // Visit first child and match its kind to know what to to
       val inner = unfold(tree)
       inner.kind match {
-        case TreeKind.Type.Ascribe => visitAscribe(inner)
-        case TreeKind.Type.Variable => visitVariable(inner)
-        case TreeKind.Type.Binary => visitBinary(inner)
-        case TreeKind.Type.Unary => visitUnary(inner)
-        case TreeKind.Type.Apply => visitApply(inner)
+        case TreeKind.QName => visitName(inner)
+        case TreeKind.Ident => visitIdent(inner)
         case TreeKind.Type.Tuple => visitTuple(inner)
-        case TreeKind.Type.Native => visitNative(inner)
-        case TreeKind.Type.CaseSet => visitCaseSet(inner)
         case TreeKind.Type.Record => visitRecord(inner)
         case TreeKind.Type.RecordRow => visitRecordRow(inner)
         case TreeKind.Type.Schema => visitSchema(inner)
         case TreeKind.Type.SchemaRow => visitSchemaRow(inner)
+        case TreeKind.Type.Native => visitNative(inner)
+        case TreeKind.Type.Apply => visitApply(inner)
         case TreeKind.Type.Constant => visitConstant(inner)
+        case TreeKind.Type.Unary => visitUnary(inner)
+        case TreeKind.Type.Binary => visitBinary(inner)
+        case TreeKind.Type.CaseSet => visitCaseSet(inner)
         case TreeKind.Type.EffectSet => visitEffect(inner)
-        case TreeKind.QName => visitName(inner)
-        case TreeKind.Ident => mapN(tokenToIdent(inner)) {
-          case ident if ident.isWild => Type.Var(ident, tree.loc)
-          case ident => Type.Ambiguous(Name.mkQName(ident), inner.loc)
-        }
+        case TreeKind.Type.Ascribe => visitAscribe(inner)
+        case TreeKind.Type.Variable => visitVariable(inner)
+
         // TODO: This double reports the same error. We should be able to handle this resiliently if we had Type.Error.
         case TreeKind.ErrorTree(_) => Validation.HardFailure(Chain(ParseError("Expected type but found Error", SyntacticContext.Type.OtherType, tree.loc)))
         case kind => throw InternalCompilerException(s"Parser passed unknown type '$kind'", tree.loc)
@@ -2434,10 +2437,124 @@ object Weeder2 {
       mapN(visitQName(tree))(Type.Ambiguous(_, tree.loc))
     }
 
-    private def visitAscribe(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      expect(tree, TreeKind.Type.Ascribe)
-      mapN(pickType(tree), pickKind(tree)) {
-        (tpe, kind) => Type.Ascribe(tpe, kind, tree.loc)
+    private def visitIdent(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      mapN(tokenToIdent(tree)) {
+        case ident if ident.isWild => Type.Var(ident, tree.loc)
+        case ident => Type.Ambiguous(Name.mkQName(ident), tree.loc)
+      }
+    }
+
+    private def visitTuple(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      expect(tree, TreeKind.Type.Tuple)
+      mapN(traverse(pickAll(TreeKind.Type.Type, tree))(visitType)) {
+        case tpe :: Nil => tpe // flatten singleton tuple types
+        case types => Type.Tuple(types, tree.loc)
+      }
+    }
+
+    private def visitRecord(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      expect(tree, TreeKind.Type.Record)
+      mapN(visitRecordRow(tree))(Type.Record(_, tree.loc))
+    }
+
+    private def visitRecordRow(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      expect(tree, TreeKind.Type.Record)
+      val maybeVar = tryPick(TreeKind.Type.Variable, tree)
+      val fields = pickAll(TreeKind.Type.RecordFieldFragment, tree)
+      mapN(traverseOpt(maybeVar)(visitVariable), traverse(fields)(visitRecordField)) {
+        (maybeVar, fields) =>
+          val variable = maybeVar.getOrElse(Type.RecordRowEmpty(tree.loc))
+          fields.foldRight(variable) { case ((label, tpe), acc) => Type.RecordRowExtend(label, tpe, acc, tree.loc) }
+      }
+    }
+
+    private def visitRecordField(tree: Tree)(implicit s: State): Validation[(Name.Label, Type), CompilationMessage] = {
+      expect(tree, TreeKind.Type.RecordFieldFragment)
+      mapN(pickNameIdent(tree), pickType(tree))((ident, tpe) => (Name.mkLabel(ident), tpe))
+    }
+
+    private def visitSchema(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      expect(tree, TreeKind.Type.Schema)
+      val row = visitSchemaRow(tree)
+      mapN(row)(Type.Schema(_, tree.loc))
+    }
+
+    private def visitSchemaRow(parentTree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      val maybeRest = tryPick(TreeKind.Ident, parentTree)
+      flatMapN(traverseOpt(maybeRest)(tokenToIdent)) {
+        maybeRest =>
+          val rest = maybeRest match {
+            case None => WeededAst.Type.SchemaRowEmpty(parentTree.loc)
+            case Some(name) => WeededAst.Type.Var(name, name.loc)
+          }
+
+          Validation.foldRight(pickAllTrees(parentTree))(Validation.success(rest)) {
+            case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithAlias =>
+              mapN(pickQName(parentTree), Types.pickArguments(tree)) {
+                (qname, targs) => Type.SchemaRowExtendByAlias(qname, targs, acc, tree.loc)
+              }
+
+            case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithTypes =>
+              val types = pickAll(TreeKind.Type.Type, tree)
+              val maybeLatTerm = tryPick(TreeKind.Predicate.LatticeTerm, tree)
+              mapN(pickQName(tree), traverse(types)(Types.visitType), traverseOpt(maybeLatTerm)(Types.pickType)) {
+                case (qname, tps, None) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Relational, tps, acc, tree.loc)
+                case (qname, tps, Some(t)) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Latticenal, tps :+ t, acc, tree.loc)
+              }
+
+            case (_, acc) => Validation.success(acc)
+          }
+      }
+    }
+
+    private def visitNative(tree: Tree): Validation[Type.Native, CompilationMessage] = {
+      expect(tree, TreeKind.Type.Native)
+      text(tree) match {
+        case head :: rest =>
+          val fqn = (List(head.stripPrefix("##")) ++ rest).mkString("")
+          Validation.success(Type.Native(fqn, tree.loc))
+        case Nil => throw InternalCompilerException("Parser passed empty Type.Native", tree.loc)
+      }
+    }
+
+    private def visitApply(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      expect(tree, TreeKind.Type.Apply)
+      flatMapN(pickType(tree), pick(TreeKind.Type.ArgumentList, tree)) {
+        (tpe, argsTree) =>
+          // Curry type arguments
+          val arguments = pickAll(TreeKind.Type.Argument, argsTree)
+          mapN(traverse(arguments)(pickType)) {
+            args => args.foldLeft(tpe) { case (acc, t2) => Type.Apply(acc, t2, tree.loc) }
+          }
+      }
+    }
+
+    private def visitConstant(tree: Tree): Validation[Type, CompilationMessage] = {
+      expect(tree, TreeKind.Type.Constant)
+      text(tree).head match {
+        case "false" => Validation.success(Type.False(tree.loc))
+        case "Pure" => Validation.success(Type.Pure(tree.loc))
+        case "true" => Validation.success(Type.True(tree.loc))
+        // TODO EFF-MIGRATION create dedicated Impure type
+        case "Univ" => Validation.success(Type.Complement(Type.Pure(tree.loc), tree.loc))
+        case other => throw InternalCompilerException(s"'$other' used as Type.Constant ${tree.loc}", tree.loc)
+      }
+    }
+
+    private def visitUnary(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      expect(tree, TreeKind.Type.Unary)
+      val types = traverse(pickAll(TreeKind.Type.Type, tree))(visitType)
+      val op = pick(TreeKind.Operator, tree)
+      flatMapN(op, types) {
+        case (op, t :: Nil) =>
+          text(op).head match {
+            case "~" => Validation.success(Type.Complement(t, tree.loc))
+            case "rvnot" => Validation.success(Type.CaseComplement(t, tree.loc))
+            case "not" => Validation.success(Type.Not(t, tree.loc))
+            // UNRECOGNIZED
+            case kind => throw InternalCompilerException(s"Parser passed unknown type operator '$kind'", tree.loc)
+          }
+        case (_, operands) => throw InternalCompilerException(s"Type.Unary tree with ${operands.length} operands", tree.loc)
       }
     }
 
@@ -2469,17 +2586,17 @@ object Weeder2 {
             // REGULAR TYPE OPERATORS
             case "+" => Validation.success(Type.Union(t1, t2, tree.loc))
             case "-" => Validation.success(Type.Intersection(t1, Type.Complement(t2, tree.loc.asSynthetic), tree.loc))
+            case "&" => Validation.success(Type.Intersection(t1, t2, tree.loc))
+            case "and" => Validation.success(Type.And(t1, t2, tree.loc))
+            case "or" => Validation.success(Type.Or(t1, t2, tree.loc))
             case "rvadd" => Validation.success(Type.CaseUnion(t1, t2, tree.loc))
             case "rvand" => Validation.success(Type.CaseIntersection(t1, t2, tree.loc))
             case "rvsub" => Validation.success(Type.CaseIntersection(t1, Type.CaseComplement(t2, tree.loc.asSynthetic), tree.loc))
-            case "&" => Validation.success(Type.Intersection(t1, t2, tree.loc))
             case "xor" => Validation.success(Type.Or(
               Type.And(t1, Type.Not(t2, tree.loc), tree.loc),
               Type.And(Type.Not(t1, tree.loc), t2, tree.loc),
               tree.loc
             ))
-            case "and" => Validation.success(Type.And(t1, t2, tree.loc))
-            case "or" => Validation.success(Type.Or(t1, t2, tree.loc))
             // UNRECOGNIZED
             case kind => throw InternalCompilerException(s"Parser passed unknown type operator '$kind'", tree.loc)
           }
@@ -2488,146 +2605,10 @@ object Weeder2 {
       }
     }
 
-    private def visitUnary(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      expect(tree, TreeKind.Type.Unary)
-      val types = traverse(pickAll(TreeKind.Type.Type, tree))(visitType)
-      val op = pick(TreeKind.Operator, tree)
-      flatMapN(op, types) {
-        case (op, t :: Nil) =>
-          text(op).head match {
-            case "~" => Validation.success(Type.Complement(t, tree.loc))
-            case "rvnot" => Validation.success(Type.CaseComplement(t, tree.loc))
-            case "not" => Validation.success(Type.Not(t, tree.loc))
-            // UNRECOGNIZED
-            case kind => throw InternalCompilerException(s"Parser passed unknown type operator '$kind'", tree.loc)
-          }
-
-        case (_, operands) => throw InternalCompilerException(s"Type.Unary tree with ${operands.length} operands", tree.loc)
-      }
-    }
-
-    private def visitSchema(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      expect(tree, TreeKind.Type.Schema)
-      val row = visitSchemaRow(tree)
-      mapN(row)(Type.Schema(_, tree.loc))
-    }
-
     private def visitCaseSet(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
       expect(tree, TreeKind.Type.CaseSet)
       val cases = traverse(pickAll(TreeKind.QName, tree))(visitQName)
       mapN(cases)(Type.CaseSet(_, tree.loc))
-    }
-
-    private def visitSchemaRow(parentTree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      val maybeRest = tryPick(TreeKind.Ident, parentTree)
-      flatMapN(
-        traverseOpt(maybeRest)(tokenToIdent)
-      ) { maybeRest =>
-        val rest = maybeRest match {
-          case None => WeededAst.Type.SchemaRowEmpty(parentTree.loc)
-          case Some(name) => WeededAst.Type.Var(name, name.loc)
-        }
-
-        Validation.foldRight(pickAllTrees(parentTree))(Validation.success(rest)) {
-          case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithAlias =>
-            mapN(
-              pickQName(parentTree),
-              Types.pickArguments(tree)
-            ) {
-              (qname, targs) => Type.SchemaRowExtendByAlias(qname, targs, acc, tree.loc)
-            }
-
-          case (tree, acc) if tree.kind == TreeKind.Type.PredicateWithTypes =>
-            val types = pickAll(TreeKind.Type.Type, tree)
-            val maybeLatTerm = tryPick(TreeKind.Predicate.LatticeTerm, tree)
-            mapN(
-              pickQName(tree),
-              traverse(types)(Types.visitType),
-              traverseOpt(maybeLatTerm)(Types.pickType)
-            ) {
-              case (qname, tps, None) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Relational, tps, acc, tree.loc)
-              case (qname, tps, Some(t)) => Type.SchemaRowExtendByTypes(qname.ident, Denotation.Latticenal, tps :+ t, acc, tree.loc)
-            }
-
-          case (_, acc) => Validation.success(acc)
-        }
-      }
-    }
-
-    private def visitConstant(tree: Tree): Validation[Type, CompilationMessage] = {
-      expect(tree, TreeKind.Type.Constant)
-
-      text(tree).head match {
-        case "false" => Validation.success(Type.False(tree.loc))
-        case "true" => Validation.success(Type.True(tree.loc))
-        case "Pure" => Validation.success(Type.Pure(tree.loc))
-        // TODO EFF-MIGRATION create dedicated Impure type
-        case "Univ" => Validation.success(Type.Complement(Type.Pure(tree.loc), tree.loc))
-        case other => throw InternalCompilerException(s"'$other' used as Type.Constant ${tree.loc}", tree.loc)
-      }
-    }
-
-    private def visitTuple(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      expect(tree, TreeKind.Type.Tuple)
-      mapN(
-        traverse(pickAll(TreeKind.Type.Type, tree))(visitType)
-      ) {
-        case tpe :: Nil => tpe // flatten singleton tuple types
-        case types => Type.Tuple(types, tree.loc)
-      }
-    }
-
-    private def visitRecord(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      expect(tree, TreeKind.Type.Record)
-      val row = visitRecordRow(tree)
-      mapN(row)(Type.Record(_, tree.loc))
-    }
-
-    private def visitRecordRow(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      val maybeVar = tryPick(TreeKind.Type.Variable, tree)
-      val fields = pickAll(TreeKind.Type.RecordFieldFragment, tree)
-      mapN(traverseOpt(maybeVar)(visitVariable), traverse(fields)(visitRecordField)) {
-        (maybeVar, fields) =>
-          val variable = maybeVar.getOrElse(Type.RecordRowEmpty(tree.loc))
-          fields.foldRight(variable) { case ((label, tpe), acc) => Type.RecordRowExtend(label, tpe, acc, tree.loc) }
-      }
-    }
-
-    private def visitRecordField(tree: Tree)(implicit s: State): Validation[(Name.Label, Type), CompilationMessage] = {
-      expect(tree, TreeKind.Type.RecordFieldFragment)
-      mapN(pickNameIdent(tree), pickType(tree))((ident, tpe) => (Name.mkLabel(ident), tpe))
-    }
-
-    private def visitNative(tree: Tree): Validation[Type.Native, CompilationMessage] = {
-      expect(tree, TreeKind.Type.Native)
-      text(tree) match {
-        case head :: rest =>
-          val fqn = (List(head.stripPrefix("##")) ++ rest).mkString("")
-          Validation.success(Type.Native(fqn, tree.loc))
-        case Nil => throw InternalCompilerException("Parser passed empty Type.Native", tree.loc)
-      }
-    }
-
-    private def visitVariable(tree: Tree)(implicit s: State): Validation[Type.Var, CompilationMessage] = {
-      expect(tree, TreeKind.Type.Variable)
-      mapN(tokenToIdent(tree)) { ident => Type.Var(ident, tree.loc) }
-    }
-
-    private def visitApply(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      expect(tree, TreeKind.Type.Apply)
-      flatMapN(pickType(tree), pick(TreeKind.Type.ArgumentList, tree)) {
-        (tpe, argsTree) =>
-          // Curry type arguments
-          val arguments = pickAll(TreeKind.Type.Argument, argsTree)
-          mapN(traverse(arguments)(pickType)) {
-            args => args.foldLeft(tpe) { case (acc, t2) => Type.Apply(acc, t2, tree.loc) }
-          }
-      }
-    }
-
-    def tryPickEffect(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {
-      val maybeEffectSet = tryPick(TreeKind.Type.EffectSet, tree)
-      traverseOpt(maybeEffectSet)(visitEffect)
     }
 
     private def visitEffect(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
@@ -2640,6 +2621,20 @@ object Weeder2 {
         case effects => effects.reduceLeft({
           case (acc, tpe) => Type.Union(acc, tpe, tree.loc)
         }: (Type, Type) => Type)
+      }
+    }
+
+    private def visitAscribe(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
+      expect(tree, TreeKind.Type.Ascribe)
+      mapN(pickType(tree), pickKind(tree)) {
+        (tpe, kind) => Type.Ascribe(tpe, kind, tree.loc)
+      }
+    }
+
+    private def visitVariable(tree: Tree)(implicit s: State): Validation[Type.Var, CompilationMessage] = {
+      expect(tree, TreeKind.Type.Variable)
+      mapN(tokenToIdent(tree)) {
+        ident => Type.Var(ident, tree.loc)
       }
     }
 
@@ -2736,19 +2731,14 @@ object Weeder2 {
 
     def pickConstraints(tree: Tree)(implicit s: State): Validation[List[TypeConstraint], CompilationMessage] = {
       val maybeWithClause = tryPick(TreeKind.Type.ConstraintList, tree)
-      maybeWithClause
-        .map(withClauseTree => {
-          val constraints = pickAll(TreeKind.Type.Constraint, withClauseTree)
-          traverse(constraints)(visitConstraint)
-        }).getOrElse(Validation.success(List.empty))
+      maybeWithClause.map(
+        withClauseTree => traverse(pickAll(TreeKind.Type.Constraint, withClauseTree))(visitConstraint)
+      ).getOrElse(Validation.success(List.empty))
     }
 
     private def visitConstraint(tree: Tree)(implicit s: State): Validation[TypeConstraint, CompilationMessage] = {
       expect(tree, TreeKind.Type.Constraint)
-      flatMapN(
-        pickQName(tree),
-        Types.pickType(tree)
-      ) {
+      flatMapN(pickQName(tree), Types.pickType(tree)) {
         (qname, tpe) =>
           // Check for illegal type constraint parameter
           if (!isAllVariables(tpe)) {
