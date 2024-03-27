@@ -312,7 +312,11 @@ object Verifier {
           }
 
         // Match- and Hole-errors match with any type
-        case AtomicOp.HoleError(_) | AtomicOp.MatchError => tpe
+        case AtomicOp.HoleError(_) =>
+          tpe
+
+        case AtomicOp.MatchError =>
+          tpe
 
         case AtomicOp.RecordEmpty => check(expected = MonoType.RecordEmpty)(actual = tpe, loc)
         case AtomicOp.RecordExtend(label) =>
@@ -329,8 +333,6 @@ object Verifier {
           val List(t1) = ts
           removeFromRecordType(t1, label.name, loc) match {
             case (rec, Some(_)) =>
-              // TODO: VERIFIER: this fails when a is removed from { a = Bool | { a = Int32 | { b = Int32 | {}}}}
-              //  which results in { a = Bool | { a = Int32 | { b = Int32 | {}}}}
               checkEq(tpe, rec, loc)
             case (_, None) => failMismatchedShape(t1, s"Record with ${label.name}", loc)
           }
@@ -339,8 +341,6 @@ object Verifier {
           val List(t1) = ts
           selectFromRecordType(t1, label.name, loc) match {
             case Some(elmt) =>
-              // TODO: VERIFIER: this fails e.g. when a is selected from { a = Bool | { a = Int32 | { a = Int32 | {}}}}
-              //  which results in Int32. (Test.Exp.Match.Record.flix:262:60)
               checkEq(tpe, elmt, loc)
             case None => failMismatchedShape(t1, s"Record with '${label.name}'", loc)
           }
