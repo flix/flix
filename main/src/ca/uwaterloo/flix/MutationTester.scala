@@ -57,12 +57,12 @@ object MutationTester {
     private def insertDeckAndCheckIntoRoot(root: Root): Root = {
         val newDefs = root.defs.map({
           case (sym, fun) =>
-            sym -> insertDeckAndCheckInDef(fun)
+            sym -> insertDecAndCheckInDef(fun)
         })
         root.copy(defs = newDefs)
     }
 
-    private def insertDeckAndCheckInDef(d: TypedAst.Def): TypedAst.Def ={
+    private def insertDecAndCheckInDef(d: TypedAst.Def): TypedAst.Def ={
         val loc = d.exp.loc
         val method = classOf[Global].getMethods.apply(3)
         val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Int64, Type.IO, loc)
@@ -133,21 +133,24 @@ object MutationTester {
         runTest(testsFromTester)
     }
 
-    private def runTest(testsFromTester: List[(Symbol.DefnSym, TestFn)]): Boolean = {
-        testsFromTester.forall(c =>
-            try {
-                c._2.run() match {
-                    case java.lang.Boolean.TRUE => true // TestRes.MutantSurvived
-                    case java.lang.Boolean.FALSE => false // TestRes.MutantKilled
-                    case _ => true // TestRes.MutantSurvived
-                }
-            } catch {
-                // case OurException: Throwable => TestRes.Unknown
-                case _: Throwable =>
-                  println("nonterminating mutation")
-                  false // TestRes.MutantKilled
+    private def runTest(testsFromTester: List[(Symbol.DefnSym, TestFn)]): TestRes = {
+      // fast exit 🏎
+      testsFromTester match {
+        case x::xs =>
+          try {
+            x._2.run() match {
+              case java.lang.Boolean.TRUE => runTest(xs)
+              case java.lang.Boolean.FALSE => TestRes.MutantKilled
+              case _ => runTest(xs)
             }
-        )
+          } catch {
+            // case OurException: Throwable => TestRes.Unknown
+            case e: Throwable =>
+              println(s"nonterminating mutation, ${e}")
+              TestRes.MutantKilled
+          }
+        case _ => TestRes.MutantSurvived
+      }
     }
 
 
@@ -166,7 +169,7 @@ object MutationTester {
                     val mutExps = mutateExpr(fun.exp)//.map(m => addDecAndCheck(m))
                     val mutDefs = mutExps.map(mexp =>{
                       val mutatedDef = fun.copy(exp = mexp)
-                      insertDeckAndCheckInDef(mutatedDef)
+                      insertDecAndCheckInDef(mutatedDef)
                     })
                     Some(d._1 -> mutDefs)
                 } else None
