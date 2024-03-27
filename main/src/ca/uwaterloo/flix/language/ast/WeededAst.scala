@@ -28,7 +28,9 @@ object WeededAst {
 
   case class CompilationUnit(usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation)
 
-  sealed trait Declaration
+  sealed trait Declaration {
+    def loc: SourceLocation
+  }
 
   object Declaration {
 

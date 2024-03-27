@@ -209,39 +209,25 @@ object Weeder2 {
     def pickAllDeclarations(tree: Tree)(implicit s: State): Validation[List[Declaration], CompilationMessage] = {
       assert(tree.kind == TreeKind.Root || tree.kind == TreeKind.Decl.Module)
       val modules = pickAll(TreeKind.Decl.Module, tree)
-      val definitions = pickAll(TreeKind.Decl.Def, tree)
       val classes = pickAll(TreeKind.Decl.Class, tree)
       val instances = pickAll(TreeKind.Decl.Instance, tree)
+      val definitions = pickAll(TreeKind.Decl.Def, tree)
       val enums = pickAll(TreeKind.Decl.Enum, tree)
-      val restrictabeEnums = pickAll(TreeKind.Decl.RestrictableEnum, tree)
+      val restrictableEnums = pickAll(TreeKind.Decl.RestrictableEnum, tree)
       val typeAliases = pickAll(TreeKind.Decl.TypeAlias, tree)
       val effects = pickAll(TreeKind.Decl.Effect, tree)
       mapN(
         traverse(modules)(visitModule),
-        traverse(definitions)(visitDefinition(_)),
         traverse(classes)(visitTypeClass),
         traverse(instances)(visitInstance),
+        traverse(definitions)(visitDefinition(_)),
         traverse(enums)(visitEnum),
-        traverse(restrictabeEnums)(visitRestrictableEnum),
+        traverse(restrictableEnums)(visitRestrictableEnum),
         traverse(typeAliases)(visitTypeAlias),
         traverse(effects)(visitEffect)
       ) {
-        case (modules, definitions, classes, instances, enums, rEnums, typeAliases, effects) =>
-          val all: List[Declaration] = definitions ++ classes ++ modules ++ enums ++ rEnums ++ instances ++ typeAliases ++ effects
-
-          def getLoc(d: Declaration): SourceLocation = d match {
-            case Declaration.Namespace(_, _, _, loc) => loc
-            case Declaration.Def(_, _, _, _, _, _, _, _, _, _, _, loc) => loc
-            case Declaration.Class(_, _, _, _, _, _, _, _, _, loc) => loc
-            case Declaration.Instance(_, _, _, _, _, _, _, _, loc) => loc
-            case Declaration.Enum(_, _, _, _, _, _, _, loc) => loc
-            case Declaration.RestrictableEnum(_, _, _, _, _, _, _, _, loc) => loc
-            case Declaration.TypeAlias(_, _, _, _, _, _, loc) => loc
-            case Declaration.Effect(_, _, _, _, _, loc) => loc
-            case d => throw InternalCompilerException(s"Cannot find source position of '$d'", tree.loc)
-          }
-
-          all.sortBy(getLoc)
+        case (modules, classes, instances, definitions, enums, rEnums, typeAliases, effects) =>
+          (modules ++ classes ++ instances ++ definitions ++ enums ++ rEnums ++ typeAliases ++ effects).sortBy(_.loc)
       }
     }
 
@@ -260,47 +246,104 @@ object Weeder2 {
       }
     }
 
-    private def visitEffect(tree: Tree)(implicit s: State): Validation[Declaration.Effect, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Decl.Effect)
-      val ops = pickAll(TreeKind.Decl.Op, tree)
-      mapN(
+    private def visitTypeClass(tree: Tree)(implicit s: State): Validation[Declaration.Class, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Decl.Class)
+      val sigs = pickAll(TreeKind.Decl.Signature, tree)
+      val laws = pickAll(TreeKind.Decl.Law, tree)
+      flatMapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
-        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub)),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordLawful, TokenKind.KeywordPub, TokenKind.KeywordSealed)),
         pickNameIdent(tree),
-        traverse(ops)(visitOperation)
+        Types.pickSingleParameter(tree),
+        Types.pickConstraints(tree),
+        traverse(sigs)(visitSignature),
+        traverse(laws)(visitLaw)
       ) {
-        (doc, ann, mods, ident, ops) => Declaration.Effect(doc, ann, mods, ident, ops, tree.loc)
+        (doc, annotations, modifiers, ident, tparam, tconstr, sigs, laws) =>
+          val assocs = pickAll(TreeKind.Decl.AssociatedTypeSig, tree)
+          mapN(traverse(assocs)(visitAssociatedTypeSig(_, tparam))) {
+            assocs => Declaration.Class(doc, annotations, modifiers, ident, tparam, tconstr, assocs, sigs, laws, tree.loc)
+          }
       }
     }
 
-    private def visitOperation(tree: Tree)(implicit s: State): Validation[Declaration.Op, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Decl.Op)
-      mapN(
+    private def visitInstance(tree: Tree)(implicit s: State): Validation[Declaration.Instance, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Decl.Instance)
+      flatMapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
-        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub)),
-        pickNameIdent(tree),
-        pickFormalParameters(tree),
+        pickModifiers(tree, allowed = Set.empty),
+        pickQName(tree),
         Types.pickType(tree),
         Types.pickConstraints(tree),
+        traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinition(_, allowedModifiers = Set(TokenKind.KeywordPub, TokenKind.KeywordOverride), mustBePublic = true)),
       ) {
-        (doc, ann, mods, ident, fparams, tpe, tconstrs) => Declaration.Op(doc, ann, mods, ident, fparams, tpe, tconstrs, tree.loc)
+        (doc, annotations, modifiers, clazz, tpe, tconstrs, defs) =>
+          val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree)
+          mapN(traverse(assocs)(visitAssociatedTypeDef(_, tpe))) {
+            assocs => Declaration.Instance(doc, annotations, modifiers, clazz, tpe, tconstrs, assocs, defs, tree.loc)
+          }
       }
     }
 
-
-    private def visitTypeAlias(tree: Tree)(implicit s: State): Validation[Declaration.TypeAlias, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Decl.TypeAlias)
+    private def visitSignature(tree: Tree)(implicit s: State): Validation[Declaration.Sig, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Decl.Signature)
+      val maybeExpression = tryPick(TreeKind.Expr.Expr, tree)
       mapN(
         pickDocumentation(tree),
-        pickModifiers(tree, Set(TokenKind.KeywordPub)),
         pickAnnotations(tree),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub), mustBePublic = true),
         pickNameIdent(tree),
-        Types.pickParameters(tree),
-        Types.pickType(tree)
+        Types.pickKindedParameters(tree),
+        pickFormalParameters(tree),
+        Types.pickType(tree),
+        Types.tryPickEffect(tree),
+        Types.pickConstraints(tree),
+        pickEqualityConstraints(tree),
+        traverseOpt(maybeExpression)(Exprs.visitExpr)
       ) {
-        (doc, mods, ann, ident, tparams, tpe) => Declaration.TypeAlias(doc, ann, mods, ident, tparams, tpe, tree.loc)
+        (doc, annotations, modifiers, ident, tparams, fparams, tpe, eff, tconstrs, econstrs, expr) =>
+          Declaration.Sig(doc, annotations, modifiers, ident, tparams, fparams, expr, tpe, eff, tconstrs, econstrs, tree.loc)
+      }
+    }
+
+    private def visitDefinition(tree: Tree, allowedModifiers: Set[TokenKind] = Set(TokenKind.KeywordPub), mustBePublic: Boolean = false)(implicit s: State): Validation[Declaration.Def, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Decl.Def)
+      mapN(
+        pickDocumentation(tree),
+        pickAnnotations(tree),
+        pickModifiers(tree, allowed = allowedModifiers, mustBePublic),
+        pickNameIdent(tree),
+        Types.pickKindedParameters(tree),
+        pickFormalParameters(tree),
+        Exprs.pickExpr(tree),
+        Types.pickType(tree),
+        Types.pickConstraints(tree),
+        pickEqualityConstraints(tree),
+        Types.tryPickEffect(tree)
+      ) {
+        (doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
+          Declaration.Def(doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
+      }
+    }
+
+    private def visitLaw(tree: Tree)(implicit s: State): Validation[Declaration.Def, CompilationMessage] = {
+      mapN(
+        pickDocumentation(tree),
+        pickAnnotations(tree),
+        pickModifiers(tree, allowed = Set.empty),
+        pickNameIdent(tree),
+        Types.pickConstraints(tree),
+        Types.pickKindedParameters(tree),
+        pickFormalParameters(tree),
+        Exprs.pickExpr(tree)
+      ) {
+        (doc, ann, mods, ident, tconstrs, tparams, fparams, expr) =>
+          val eff = None
+          val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
+          // TODO: There is a `Declaration.Law` but old Weeder produces a Def
+          Declaration.Def(doc, ann, mods, ident, tparams, fparams, expr, tpe, eff, tconstrs, Nil, tree.loc)
       }
     }
 
@@ -419,107 +462,17 @@ object Weeder2 {
       }
     }
 
-    private def visitTypeClass(tree: Tree)(implicit s: State): Validation[Declaration.Class, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Decl.Class)
-      val sigs = pickAll(TreeKind.Decl.Signature, tree)
-      val laws = pickAll(TreeKind.Decl.Law, tree)
-      flatMapN(
-        pickDocumentation(tree),
-        pickAnnotations(tree),
-        pickModifiers(tree, allowed = Set(TokenKind.KeywordLawful, TokenKind.KeywordPub, TokenKind.KeywordSealed)),
-        pickNameIdent(tree),
-        Types.pickSingleParameter(tree),
-        Types.pickConstraints(tree),
-        traverse(sigs)(visitSignature),
-        traverse(laws)(visitLaw)
-      ) {
-        (doc, annotations, modifiers, ident, tparam, tconstr, sigs, laws) =>
-          val assocs = pickAll(TreeKind.Decl.AssociatedTypeSig, tree)
-          mapN(traverse(assocs)(visitAssociatedTypeSig(_, tparam))) {
-            assocs => Declaration.Class(doc, annotations, modifiers, ident, tparam, tconstr, assocs, sigs, laws, tree.loc)
-          }
-      }
-    }
-
-    private def visitInstance(tree: Tree)(implicit s: State): Validation[Declaration.Instance, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Decl.Instance)
-      flatMapN(
-        pickDocumentation(tree),
-        pickAnnotations(tree),
-        pickModifiers(tree, allowed = Set.empty),
-        pickQName(tree),
-        Types.pickType(tree),
-        Types.pickConstraints(tree),
-        traverse(pickAll(TreeKind.Decl.Def, tree))(visitDefinition(_, allowedModifiers = Set(TokenKind.KeywordPub, TokenKind.KeywordOverride), mustBePublic = true)),
-      ) {
-        (doc, annotations, modifiers, clazz, tpe, tconstrs, defs) =>
-          val assocs = pickAll(TreeKind.Decl.AssociatedTypeDef, tree)
-          mapN(traverse(assocs)(visitAssociatedTypeDef(_, tpe))) {
-            assocs => Declaration.Instance(doc, annotations, modifiers, clazz, tpe, tconstrs, assocs, defs, tree.loc)
-          }
-      }
-    }
-
-    private def visitDefinition(tree: Tree, allowedModifiers: Set[TokenKind] = Set(TokenKind.KeywordPub), mustBePublic: Boolean = false)(implicit s: State): Validation[Declaration.Def, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Decl.Def)
+    private def visitTypeAlias(tree: Tree)(implicit s: State): Validation[Declaration.TypeAlias, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Decl.TypeAlias)
       mapN(
-        pickDocumentation(tree),
-        pickAnnotations(tree),
-        pickModifiers(tree, allowed = allowedModifiers, mustBePublic),
-        pickNameIdent(tree),
-        Types.pickKindedParameters(tree),
-        pickFormalParameters(tree),
-        Exprs.pickExpr(tree),
-        Types.pickType(tree),
-        Types.pickConstraints(tree),
-        pickEqualityConstraints(tree),
-        Types.tryPickEffect(tree)
-      ) {
-        (doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, tconstrs, constrs, eff) =>
-          Declaration.Def(doc, annotations, modifiers, ident, tparams, fparams, exp, ttype, eff, tconstrs, constrs, tree.loc)
-      }
-    }
-
-    private def visitLaw(tree: Tree)(implicit s: State): Validation[Declaration.Def, CompilationMessage] = {
-      mapN(
-        pickDocumentation(tree),
-        pickAnnotations(tree),
-        pickModifiers(tree, allowed = Set.empty),
-        pickNameIdent(tree),
-        Types.pickConstraints(tree),
-        Types.pickKindedParameters(tree),
-        pickFormalParameters(tree),
-        Exprs.pickExpr(tree)
-      ) {
-        (doc, ann, mods, ident, tconstrs, tparams, fparams, expr) =>
-          val eff = None
-          val tpe = WeededAst.Type.Ambiguous(Name.mkQName("Bool"), ident.loc)
-          // TODO: There is a `Declaration.Law` but old Weeder produces a Def
-          Declaration.Def(doc, ann, mods, ident, tparams, fparams, expr, tpe, eff, tconstrs, Nil, tree.loc)
-      }
-    }
-
-    private def visitAssociatedTypeDef(tree: Tree, instType: Type)(implicit s: State): Validation[Declaration.AssocTypeDef, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Decl.AssociatedTypeDef)
-      flatMapN(
         pickDocumentation(tree),
         pickModifiers(tree, Set(TokenKind.KeywordPub)),
+        pickAnnotations(tree),
         pickNameIdent(tree),
-        Types.pickArguments(tree),
+        Types.pickParameters(tree),
         Types.pickType(tree)
       ) {
-        (doc, mods, ident, typeArgs, tpe) =>
-          val typeArg = typeArgs match {
-            // Use instance type if type arguments were elided
-            case Nil => Validation.success(instType)
-            // Single argument: use that
-            case head :: Nil => Validation.success(head)
-            // Multiple type arguments: recover by arbitrarily picking the first one
-            case types => Validation.toSoftFailure(types.head, NonUnaryAssocType(types.length, ident.loc))
-          }
-          mapN(typeArg) {
-            typeArg => Declaration.AssocTypeDef(doc, mods, ident, typeArg, tpe, tree.loc)
-          }
+        (doc, mods, ann, ident, tparams, tpe) => Declaration.TypeAlias(doc, ann, mods, ident, tparams, tpe, tree.loc)
       }
     }
 
@@ -549,24 +502,56 @@ object Weeder2 {
       }
     }
 
-    private def visitSignature(tree: Tree)(implicit s: State): Validation[Declaration.Sig, CompilationMessage] = {
-      assert(tree.kind == TreeKind.Decl.Signature)
-      val maybeExpression = tryPick(TreeKind.Expr.Expr, tree)
+    private def visitAssociatedTypeDef(tree: Tree, instType: Type)(implicit s: State): Validation[Declaration.AssocTypeDef, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Decl.AssociatedTypeDef)
+      flatMapN(
+        pickDocumentation(tree),
+        pickModifiers(tree, Set(TokenKind.KeywordPub)),
+        pickNameIdent(tree),
+        Types.pickArguments(tree),
+        Types.pickType(tree)
+      ) {
+        (doc, mods, ident, typeArgs, tpe) =>
+          val typeArg = typeArgs match {
+            // Use instance type if type arguments were elided
+            case Nil => Validation.success(instType)
+            // Single argument: use that
+            case head :: Nil => Validation.success(head)
+            // Multiple type arguments: recover by arbitrarily picking the first one
+            case types => Validation.toSoftFailure(types.head, NonUnaryAssocType(types.length, ident.loc))
+          }
+          mapN(typeArg) {
+            typeArg => Declaration.AssocTypeDef(doc, mods, ident, typeArg, tpe, tree.loc)
+          }
+      }
+    }
+
+    private def visitEffect(tree: Tree)(implicit s: State): Validation[Declaration.Effect, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Decl.Effect)
+      val ops = pickAll(TreeKind.Decl.Op, tree)
       mapN(
         pickDocumentation(tree),
         pickAnnotations(tree),
-        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub), mustBePublic = true),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub)),
         pickNameIdent(tree),
-        Types.pickKindedParameters(tree),
+        traverse(ops)(visitOperation)
+      ) {
+        (doc, ann, mods, ident, ops) => Declaration.Effect(doc, ann, mods, ident, ops, tree.loc)
+      }
+    }
+
+    private def visitOperation(tree: Tree)(implicit s: State): Validation[Declaration.Op, CompilationMessage] = {
+      assert(tree.kind == TreeKind.Decl.Op)
+      mapN(
+        pickDocumentation(tree),
+        pickAnnotations(tree),
+        pickModifiers(tree, allowed = Set(TokenKind.KeywordPub)),
+        pickNameIdent(tree),
         pickFormalParameters(tree),
         Types.pickType(tree),
-        Types.tryPickEffect(tree),
         Types.pickConstraints(tree),
-        pickEqualityConstraints(tree),
-        traverseOpt(maybeExpression)(Exprs.visitExpr)
       ) {
-        (doc, annotations, modifiers, ident, tparams, fparams, tpe, eff, tconstrs, econstrs, expr) =>
-          Declaration.Sig(doc, annotations, modifiers, ident, tparams, fparams, expr, tpe, eff, tconstrs, econstrs, tree.loc)
+        (doc, ann, mods, ident, fparams, tpe, tconstrs) => Declaration.Op(doc, ann, mods, ident, fparams, tpe, tconstrs, tree.loc)
       }
     }
 
