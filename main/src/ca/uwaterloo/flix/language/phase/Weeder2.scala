@@ -1943,35 +1943,20 @@ object Weeder2 {
 
     def visitPattern(tree: Tree, seen: collection.mutable.Map[String, Name.Ident] = collection.mutable.Map.empty)(implicit s: State): Validation[Pattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Pattern)
-      tree.children(0) match {
-        case Child.TreeChild(tree) => tree.kind match {
-          case TreeKind.Pattern.FCons => visitFCons(tree, seen)
+      tree.children.headOption match {
+        case Some(Child.TreeChild(tree)) => tree.kind match {
           case TreeKind.Pattern.Variable => visitVariable(tree, seen)
-          case TreeKind.Pattern.Tag => visitTag(tree, seen)
           case TreeKind.Pattern.Literal => visitLiteral(tree)
-          case TreeKind.Pattern.Unary => visitUnary(tree)
+          case TreeKind.Pattern.Tag => visitTag(tree, seen)
           case TreeKind.Pattern.Tuple => visitTuple(tree, seen)
           case TreeKind.Pattern.Record => visitRecord(tree, seen)
-          case _ =>
-            val err = ParseError("Expected pattern.", SyntacticContext.Pat.OtherPat, tree.loc)
-            Validation.toSoftFailure(Pattern.Error(tree.loc), err)
+          case TreeKind.Pattern.Unary => visitUnary(tree)
+          case TreeKind.Pattern.FCons => visitFCons(tree, seen)
+          // Avoid double reporting errors by returning a success here
+          case TreeKind.ErrorTree(_) => Validation.success(Pattern.Error(tree.loc))
+          case _ => Validation.toSoftFailure(Pattern.Error(tree.loc), ParseError("Expected pattern.", SyntacticContext.Pat.OtherPat, tree.loc))
         }
-        case _ => throw InternalCompilerException(s"Pattern.Pattern had token child", tree.loc)
-      }
-    }
-
-    private def visitFCons(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit s: State): Validation[Pattern, CompilationMessage] = {
-      expect(tree, TreeKind.Pattern.FCons)
-      // FCons are rewritten into tag patterns
-      val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
-      mapN(
-        traverse(patterns)(visitPattern(_, seen))
-      ) {
-        case pat1 :: pat2 :: Nil =>
-          val qname = Name.mkQName("List.Cons", tree.loc.sp1, tree.loc.sp2)
-          val pat = Pattern.Tuple(List(pat1, pat2), tree.loc)
-          Pattern.Tag(qname, pat, tree.loc)
-        case pats => throw InternalCompilerException(s"${s.src.name} Pattern.FCons expected 2 but found '${pats.length}' sub-patterns", tree.loc)
+        case _ => throw InternalCompilerException(s"Expected Pattern.Pattern to have tree child", tree.loc)
       }
     }
 
@@ -1996,47 +1981,6 @@ object Weeder2 {
       )
     }
 
-    private def visitTag(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit s: State): Validation[Pattern, CompilationMessage] = {
-      expect(tree, TreeKind.Pattern.Tag)
-      val maybePat = tryPick(TreeKind.Pattern.Tuple, tree)
-      mapN(
-        pickQName(tree),
-        traverseOpt(maybePat)(visitTuple(_, seen))
-      ) {
-        (qname, maybePat) =>
-          maybePat match {
-            case None =>
-              // Synthetically add unit pattern to tag
-              val lit = Pattern.Cst(Ast.Constant.Unit, tree.loc.asSynthetic)
-              Pattern.Tag(qname, lit, tree.loc)
-            case Some(pat) => Pattern.Tag(qname, pat, tree.loc)
-          }
-      }
-    }
-
-    private def visitUnary(tree: Tree)(implicit s: State): Validation[Pattern, CompilationMessage] = {
-      expect(tree, TreeKind.Pattern.Unary)
-      val NumberLiteralKinds = List(TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
-      val literalToken = tree.children(1) match {
-        case Child.TokenChild(t) if NumberLiteralKinds.contains(t.kind) => Some(t)
-        case _ => None
-      }
-      flatMapN(pick(TreeKind.Operator, tree))(_.children(0) match {
-        case Child.TokenChild(opToken) =>
-          literalToken match {
-            // fold unary minus into a constant, and visit it like any other constant
-            case Some(lit) if opToken.text == "-" =>
-              // Construct a synthetic literal tree with the unary minus and visit that like any other literal expression
-              val syntheticToken = Token(lit.kind, lit.src, opToken.start, lit.end, lit.beginLine, lit.beginCol, lit.endLine, lit.endCol)
-              val syntheticLiteral = Tree(TreeKind.Pattern.Literal, Array(Child.TokenChild(syntheticToken)), tree.loc.asSynthetic)
-              visitLiteral(syntheticLiteral)
-            case _ => throw InternalCompilerException(s"No number literal found for unary '-'", tree.loc)
-          }
-        case _ => throw InternalCompilerException(s"Expected unary operator but found tree", tree.loc)
-      }
-      )
-    }
-
     private def visitLiteral(tree: Tree)(implicit s: State): Validation[Pattern, CompilationMessage] = {
       expect(tree, TreeKind.Pattern.Literal)
       flatMapN(Exprs.visitLiteral(tree)) {
@@ -2050,6 +1994,21 @@ object Weeder2 {
         // Avoid double reporting errors
         case Expr.Error(_) => Validation.success(Pattern.Error(tree.loc))
         case e => throw InternalCompilerException(s"Malformed Pattern.Literal. Expected literal but found $e", e.loc)
+      }
+    }
+
+    private def visitTag(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit s: State): Validation[Pattern, CompilationMessage] = {
+      expect(tree, TreeKind.Pattern.Tag)
+      val maybePat = tryPick(TreeKind.Pattern.Tuple, tree)
+      mapN(pickQName(tree), traverseOpt(maybePat)(visitTuple(_, seen))) {
+        (qname, maybePat) =>
+          maybePat match {
+            case None =>
+              // Synthetically add unit pattern to tag
+              val lit = Pattern.Cst(Ast.Constant.Unit, tree.loc.asSynthetic)
+              Pattern.Tag(qname, lit, tree.loc)
+            case Some(pat) => Pattern.Tag(qname, pat, tree.loc)
+          }
       }
     }
 
@@ -2067,10 +2026,7 @@ object Weeder2 {
       expect(tree, TreeKind.Pattern.Record)
       val fields = pickAll(TreeKind.Pattern.RecordFieldFragment, tree)
       val maybePattern = tryPick(TreeKind.Pattern.Pattern, tree)
-      flatMapN(
-        traverse(fields)(visitRecordField(_, seen)),
-        traverseOpt(maybePattern)(visitPattern(_, seen))
-      ) {
+      flatMapN(traverse(fields)(visitRecordField(_, seen)), traverseOpt(maybePattern)(visitPattern(_, seen))) {
         // Pattern { ... }
         case (fs, None) => Validation.success(Pattern.Record(fs, Pattern.RecordEmpty(tree.loc.asSynthetic), tree.loc))
         // Pattern { x, ... | r }
@@ -2101,6 +2057,40 @@ object Weeder2 {
       }
     }
 
+    private def visitUnary(tree: Tree)(implicit s: State): Validation[Pattern, CompilationMessage] = {
+      expect(tree, TreeKind.Pattern.Unary)
+      val NumberLiteralKinds = List(TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal)
+      val literalToken = tree.children(1) match {
+        case Child.TokenChild(t) if NumberLiteralKinds.contains(t.kind) => Some(t)
+        case _ => None
+      }
+      flatMapN(pick(TreeKind.Operator, tree))(_.children(0) match {
+        case Child.TokenChild(opToken) =>
+          literalToken match {
+            // fold unary minus into a constant, and visit it like any other constant
+            case Some(lit) if opToken.text == "-" =>
+              // Construct a synthetic literal tree with the unary minus and visit that like any other literal expression
+              val syntheticToken = Token(lit.kind, lit.src, opToken.start, lit.end, lit.beginLine, lit.beginCol, lit.endLine, lit.endCol)
+              val syntheticLiteral = Tree(TreeKind.Pattern.Literal, Array(Child.TokenChild(syntheticToken)), tree.loc.asSynthetic)
+              visitLiteral(syntheticLiteral)
+            case _ => throw InternalCompilerException(s"No number literal found for unary '-'", tree.loc)
+          }
+        case _ => throw InternalCompilerException(s"Expected unary operator but found tree", tree.loc)
+      })
+    }
+
+    private def visitFCons(tree: Tree, seen: collection.mutable.Map[String, Name.Ident])(implicit s: State): Validation[Pattern, CompilationMessage] = {
+      expect(tree, TreeKind.Pattern.FCons)
+      // FCons are rewritten into tag patterns
+      val patterns = pickAll(TreeKind.Pattern.Pattern, tree)
+      mapN(traverse(patterns)(visitPattern(_, seen))) {
+        case pat1 :: pat2 :: Nil =>
+          val qname = Name.mkQName("List.Cons", tree.loc.sp1, tree.loc.sp2)
+          val pat = Pattern.Tuple(List(pat1, pat2), tree.loc)
+          Pattern.Tag(qname, pat, tree.loc)
+        case pats => throw InternalCompilerException(s"${s.src.name} Pattern.FCons expected 2 but found '${pats.length}' sub-patterns", tree.loc)
+      }
+    }
   }
 
   private object Constants {
@@ -2779,6 +2769,70 @@ object Weeder2 {
   }
 
   private object JvmOp {
+    def visitJvmOp(tree: Tree)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
+      expect(tree, TreeKind.JvmOp.JvmOp)
+      val inner = unfold(tree)
+      inner.kind match {
+        case TreeKind.JvmOp.Constructor => visitConstructor(inner)
+        case TreeKind.JvmOp.Method => visitMethod(inner)
+        case TreeKind.JvmOp.StaticMethod => visitMethod(inner, isStatic = true)
+        case TreeKind.JvmOp.GetField => visitField(inner, WeededAst.JvmOp.GetField)
+        case TreeKind.JvmOp.PutField => visitField(inner, WeededAst.JvmOp.PutField)
+        case TreeKind.JvmOp.StaticGetField => visitField(inner, WeededAst.JvmOp.GetStaticField)
+        case TreeKind.JvmOp.StaticPutField => visitField(inner, WeededAst.JvmOp.PutStaticField)
+        // TODO: This double reports the same error. We should be able to handle this resiliently if we had JvmOp.Error.
+        case TreeKind.ErrorTree(_) => Validation.HardFailure(Chain(ParseError("Expected JvmOp but found Error", SyntacticContext.Unknown, tree.loc)))
+        case kind => throw InternalCompilerException(s"child of kind '$kind' under JvmOp.JvmOp", tree.loc)
+      }
+    }
+
+    private def visitConstructor(tree: Tree)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
+      val fqn = pickJavaName(tree)
+      val signature = pickSignature(tree)
+      val ascription = pickAscription(tree)
+      val ident = pickNameIdent(tree)
+      mapN(fqn, signature, ascription, ident) {
+        case (fqn, signature, (tpe, eff), ident) => WeededAst.JvmOp.Constructor(fqn, signature, tpe, eff, ident)
+      }
+    }
+
+    private def visitMethod(tree: Tree, isStatic: Boolean = false)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
+      val fqn = pickJavaClassMember(tree)
+      val signature = pickSignature(tree)
+      val ascription = pickAscription(tree)
+      val ident = tryPickNameIdent(tree)
+      mapN(fqn, signature, ascription, ident) {
+        case (fqn, signature, (tpe, eff), ident) => if (isStatic)
+          WeededAst.JvmOp.StaticMethod(fqn, signature, tpe, eff, ident)
+        else
+          WeededAst.JvmOp.Method(fqn, signature, tpe, eff, ident)
+      }
+    }
+
+    private type AstField = (WeededAst.JavaClassMember, Type, Option[WeededAst.Type], Name.Ident) => JvmOp
+
+    private def visitField(tree: Tree, astKind: AstField)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
+      val fqn = pickJavaClassMember(tree)
+      val ascription = pickAscription(tree)
+      val ident = pickNameIdent(tree)
+      mapN(fqn, ascription, ident) {
+        case (fqn, (tpe, eff), ident) => astKind(fqn, tpe, eff, ident)
+      }
+    }
+
+    private def pickSignature(tree: Tree)(implicit s: State): Validation[List[Type], CompilationMessage] = {
+      flatMapN(pick(TreeKind.JvmOp.Sig, tree)) {
+        sig => traverse(pickAll(TreeKind.Type.Type, sig))(Types.visitType)
+      }
+    }
+
+    private def pickAscription(tree: Tree)(implicit s: State): Validation[(Type, Option[Type]), CompilationMessage] = {
+      val ascription = pick(TreeKind.JvmOp.Ascription, tree)
+      flatMapN(ascription)(
+        ascTree => mapN(Types.pickType(ascTree), Types.tryPickEffect(ascTree))((tpe, eff) => (tpe, eff))
+      )
+    }
+
     private def pickQNameIdents(tree: Tree): Validation[List[String], CompilationMessage] = {
       flatMapN(pick(TreeKind.QName, tree)) {
         qname => mapN(traverse(pickAll(TreeKind.Ident, qname))(t => Validation.success(text(t))))(_.flatten)
@@ -2797,70 +2851,6 @@ object Weeder2 {
       val idents = pickQNameIdents(tree)
       mapN(idents) {
         idents => Name.JavaName(tree.loc.sp1, idents, tree.loc.sp2)
-      }
-    }
-
-    private def pickSignature(tree: Tree)(implicit s: State): Validation[List[Type], CompilationMessage] = {
-      flatMapN(pick(TreeKind.JvmOp.Sig, tree)) {
-        sig => traverse(pickAll(TreeKind.Type.Type, sig))(Types.visitType)
-      }
-    }
-
-    private def pickAscription(tree: Tree)(implicit s: State): Validation[(Type, Option[Type]), CompilationMessage] = {
-      val ascription = pick(TreeKind.JvmOp.Ascription, tree)
-      flatMapN(ascription)(
-        ascTree => mapN(Types.pickType(ascTree), Types.tryPickEffect(ascTree))((tpe, eff) => (tpe, eff))
-      )
-    }
-
-    private def visitMethod(tree: Tree, isStatic: Boolean = false)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
-      val fqn = pickJavaClassMember(tree)
-      val signature = pickSignature(tree)
-      val ascription = pickAscription(tree)
-      val ident = tryPickNameIdent(tree)
-      mapN(fqn, signature, ascription, ident) {
-        case (fqn, signature, (tpe, eff), ident) => if (isStatic)
-          WeededAst.JvmOp.StaticMethod(fqn, signature, tpe, eff, ident)
-        else
-          WeededAst.JvmOp.Method(fqn, signature, tpe, eff, ident)
-      }
-    }
-
-    private def visitConstructor(tree: Tree)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
-      val fqn = pickJavaName(tree)
-      val signature = pickSignature(tree)
-      val ascription = pickAscription(tree)
-      val ident = pickNameIdent(tree)
-      mapN(fqn, signature, ascription, ident) {
-        case (fqn, signature, (tpe, eff), ident) => WeededAst.JvmOp.Constructor(fqn, signature, tpe, eff, ident)
-      }
-    }
-
-    private type AstField = (WeededAst.JavaClassMember, Type, Option[WeededAst.Type], Name.Ident) => JvmOp
-
-    private def visitField(tree: Tree, astKind: AstField)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
-      val fqn = pickJavaClassMember(tree)
-      val ascription = pickAscription(tree)
-      val ident = pickNameIdent(tree)
-      mapN(fqn, ascription, ident) {
-        case (fqn, (tpe, eff), ident) => astKind(fqn, tpe, eff, ident)
-      }
-    }
-
-    def visitJvmOp(tree: Tree)(implicit s: State): Validation[JvmOp, CompilationMessage] = {
-      expect(tree, TreeKind.JvmOp.JvmOp)
-      val inner = unfold(tree)
-      inner.kind match {
-        case TreeKind.JvmOp.Method => visitMethod(inner)
-        case TreeKind.JvmOp.Constructor => visitConstructor(inner)
-        case TreeKind.JvmOp.StaticMethod => visitMethod(inner, isStatic = true)
-        case TreeKind.JvmOp.GetField => visitField(inner, WeededAst.JvmOp.GetField)
-        case TreeKind.JvmOp.StaticGetField => visitField(inner, WeededAst.JvmOp.GetStaticField)
-        case TreeKind.JvmOp.PutField => visitField(inner, WeededAst.JvmOp.PutField)
-        case TreeKind.JvmOp.StaticPutField => visitField(inner, WeededAst.JvmOp.PutStaticField)
-        // TODO: This double reports the same error. We should be able to handle this resiliently if we had JvmOp.Error.
-        case TreeKind.ErrorTree(_) => Validation.HardFailure(Chain(ParseError("Expected JvmOp but found Error", SyntacticContext.Unknown, tree.loc)))
-        case kind => throw InternalCompilerException(s"child of kind '$kind' under JvmOp.JvmOp", tree.loc)
       }
     }
   }
