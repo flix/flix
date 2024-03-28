@@ -555,7 +555,7 @@ object ConstraintGeneration {
         c.expectType(expected = arrayType, actual = tpe1, exp1.loc)
         c.expectType(expected = Type.Int32, actual = tpe2, exp2.loc)
         c.expectType(expected = elmVar, actual = tpe3, exp3.loc)
-        c.unifyType(evar, Type.mkUnion(List(regionVar, eff1, eff2, eff3), loc), loc)
+        c.unifyType(evar, Type.mkUnion(regionVar, eff1, eff2, eff3, loc), loc)
         val resTpe = Type.Unit
         val resEff = evar
         (resTpe, resEff)

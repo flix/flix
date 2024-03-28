@@ -346,7 +346,7 @@ class TestFormatType extends AnyFunSuite with TestUtils {
     val tvar1 = Type.Var(new Symbol.KindedTypeVarSym(1, Ast.VarText.SourceText("a"), Kind.Eff, isRegion = false, loc), loc)
     val tvar2 = Type.Var(new Symbol.KindedTypeVarSym(2, Ast.VarText.SourceText("b"), Kind.Eff, isRegion = false, loc), loc)
     val tvar3 = Type.Var(new Symbol.KindedTypeVarSym(3, Ast.VarText.SourceText("c"), Kind.Eff, isRegion = false, loc), loc)
-    val tpe = Type.mkUnion(List(tvar1, tvar2, tvar3), loc)
+    val tpe = Type.mkUnion(tvar1, tvar2, tvar3, loc)
 
     val expected = "a + b + c"
     val actual = FormatType.formatTypeWithOptions(tpe, standardFormat)
