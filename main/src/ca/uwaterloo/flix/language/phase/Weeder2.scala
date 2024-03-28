@@ -56,8 +56,7 @@ object Weeder2 {
     */
   def runSilent(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
     try {
-      val _ = run(readRoot, entryPoint, root, oldRoot, changeSet)
-      Validation.success(WeededAst.empty)
+      run(readRoot, entryPoint, root, oldRoot, changeSet)
     } catch {
       case except: Throwable =>
         except.printStackTrace()

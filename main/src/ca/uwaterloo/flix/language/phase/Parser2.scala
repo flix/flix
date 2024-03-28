@@ -124,8 +124,7 @@ object Parser2 {
     */
   def runSilent(tokens: Map[Ast.Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = {
     try {
-      val _ = run(tokens, oldRoot, changeSet)
-      Validation.success(SyntaxTree.empty)
+      run(tokens, oldRoot, changeSet)
     } catch {
       case except: Throwable =>
         except.printStackTrace()
