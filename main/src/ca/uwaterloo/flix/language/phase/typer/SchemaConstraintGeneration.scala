@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase.constraintgeneration
+package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.ConstraintGeneration.{visitExp, visitPattern}
+import ConstraintGen.{visitExp, visitPattern}
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 
 object SchemaConstraintGeneration {
