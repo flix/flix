@@ -127,7 +127,7 @@ object ConstraintGeneration {
             val declaredResultType = declaredType.arrowResultType
 
             val (tpes, effs) = exps.map(visitExp).unzip
-            c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc), loc)
+            c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
             c.addClassConstraints(constrs1, loc)
             econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
             c.unifyType(tvar2, declaredType, loc)
@@ -555,7 +555,7 @@ object ConstraintGeneration {
         c.expectType(expected = arrayType, actual = tpe1, exp1.loc)
         c.expectType(expected = Type.Int32, actual = tpe2, exp2.loc)
         c.expectType(expected = elmVar, actual = tpe3, exp3.loc)
-        c.unifyType(evar, Type.mkUnion(List(regionVar, eff1, eff2, eff3), loc), loc)
+        c.unifyType(evar, Type.mkUnion(regionVar, eff1, eff2, eff3, loc), loc)
         val resTpe = Type.Unit
         val resEff = evar
         (resTpe, resEff)
@@ -1015,7 +1015,7 @@ object ConstraintGeneration {
     */
   private def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam], loc: SourceLocation)(implicit c: TypeContext, flix: Flix): Unit = {
     // length check done in Resolver
-    c.expectTypeArguments(op, expectedTypes = expected.map(_.tpe), actualTypes = actual.map(_.tpe), actual.map(_.loc), loc)
+    c.expectTypeArguments(op, expectedTypes = expected.map(_.tpe), actualTypes = actual.map(_.tpe), actual.map(_.loc))
   }
 
   /**
