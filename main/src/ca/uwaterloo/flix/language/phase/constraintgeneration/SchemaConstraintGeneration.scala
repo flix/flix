@@ -27,7 +27,8 @@ object SchemaConstraintGeneration {
     e match {
       case KindedAst.Expr.FixpointConstraintSet(cs, tvar, loc) =>
         val constraintTypes = cs.map(visitConstraint)
-        val schemaRow = c.unifyAllTypes(constraintTypes, Kind.SchemaRow, loc)
+        c.unifyAllTypes(constraintTypes, loc)
+        val schemaRow = constraintTypes.headOption.getOrElse(Type.freshVar(Kind.SchemaRow, loc))
         c.unifyType(tvar, Type.mkSchema(schemaRow, loc), loc)
         val resTpe = tvar
         val resEff = Type.Pure
@@ -174,7 +175,8 @@ object SchemaConstraintGeneration {
     //
     val headPredicateType = visitHeadPredicate(head0)
     val bodyPredicateTypes = body0.map(b => visitBodyPredicate(b))
-    val bodyPredicateType = c.unifyAllTypes(bodyPredicateTypes, Kind.SchemaRow, loc)
+    c.unifyAllTypes(bodyPredicateTypes, loc)
+    val bodyPredicateType = bodyPredicateTypes.headOption.getOrElse(Type.freshVar(Kind.SchemaRow, loc))
     c.unifyType(headPredicateType, bodyPredicateType, loc)
     val resTpe = headPredicateType
     resTpe
