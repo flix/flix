@@ -39,7 +39,7 @@ object ResolutionError {
     * @param path the super class path from a class to itself.
     * @param loc  the location where the error occurred.
     */
-  case class CyclicClassHierarchy(path: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class CyclicClassHierarchy(path: List[Symbol.TraitSym], loc: SourceLocation) extends ResolutionError with Unrecoverable {
     private val fullCycle = path.last :: path
 
     override def summary: String = {
@@ -133,7 +133,7 @@ object ResolutionError {
     * @param loc1 the location of the first occurrence.
     * @param loc2 the location of the second occurrence.
     */
-  case class DuplicateDerivation(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Recoverable {
+  case class DuplicateDerivation(sym: Symbol.TraitSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"Duplicate derivation: ${sym.name}"
 
     def message(formatter: Formatter): String = {
@@ -273,7 +273,7 @@ object ResolutionError {
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */
-  case class InaccessibleTrait(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
+  case class InaccessibleTrait(sym: Symbol.TraitSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = "Inaccessible."
 
     def message(formatter: Formatter): String = {
@@ -534,7 +534,7 @@ object ResolutionError {
     * @param ns  the namespace from which the class is sealed.
     * @param loc the location where the error occurred.
     */
-  case class SealedTrait(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
+  case class SealedTrait(sym: Symbol.TraitSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = "Sealed."
 
     def message(formatter: Formatter): String = {

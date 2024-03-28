@@ -29,7 +29,7 @@ object Indexer {
     Index.all(
       traverse(root.defs.values)(visitDef),
       traverse(root.enums.values)(visitEnum),
-      traverse(root.classes.values)(visitClass),
+      traverse(root.classes.values)(visitTrait),
       traverse(root.instances.values) {
         instances => traverse(instances)(visitInstance)
       },
@@ -70,7 +70,7 @@ object Indexer {
       Index.all(
         traverse(tparams)(visitTypeParam),
         traverse(fparams)(visitFormalParam),
-        traverse(tconstrs)(visitTypeConstraint),
+        traverse(tconstrs)(visitTraitConstraint),
         traverse(econstrs)(visitEqualityConstraint),
         visitType(retTpe),
         visitType(eff),
@@ -85,7 +85,7 @@ object Indexer {
       Index.all(
         Index.occurrenceOf(enum0),
         traverse(tparams)(visitTypeParam),
-        traverse(derives.classes) {
+        traverse(derives.traits) {
           case Ast.Derivation(clazz, loc) => Index.useOf(clazz, loc)
         },
         traverse(cases.values)(visitCase),
@@ -101,14 +101,14 @@ object Indexer {
   }
 
   /**
-    * Returns a reverse index for the given class `class0`.
+    * Returns a reverse index for the given trait `trait0`.
     */
-  private def visitClass(class0: TypedAst.Class): Index = class0 match {
-    case Class(doc, ann, mod, sym, tparam, superClasses, assocs, signatures, laws, loc) =>
+  private def visitTrait(trait0: TypedAst.Trait): Index = trait0 match {
+    case Trait(doc, ann, mod, sym, tparam, superTraits, assocs, signatures, laws, loc) =>
       Index.all(
-        Index.occurrenceOf(class0),
+        Index.occurrenceOf(trait0),
         visitTypeParam(tparam),
-        traverse(superClasses)(visitTypeConstraint),
+        traverse(superTraits)(visitTraitConstraint),
         traverse(assocs)(visitAssocTypeSig),
         traverse(signatures)(visitSig),
         //        laws.map(visitDef) // TODO visit laws?
@@ -123,7 +123,7 @@ object Indexer {
       Index.all(
         Index.useOf(clazz.sym, clazz.loc),
         visitType(tpe),
-        traverse(tconstrs)(visitTypeConstraint),
+        traverse(tconstrs)(visitTraitConstraint),
         traverse(assocs)(visitAssocTypeDef),
         traverse(defs)(visitDef),
       )
@@ -559,17 +559,17 @@ object Indexer {
   }
 
   /**
-    * Returns a reverse index for the given type constraint `tconstr0`.
+    * Returns a reverse index for the given trait constraint `tconstr0`.
     */
-  private def visitTypeConstraint(tconstr0: Ast.TypeConstraint): Index = tconstr0 match {
-    case Ast.TypeConstraint(head, arg, _) => visitTypeConstraintHead(head) ++ visitType(arg)
+  private def visitTraitConstraint(tconstr0: Ast.TraitConstraint): Index = tconstr0 match {
+    case Ast.TraitConstraint(head, arg, _) => visitTraitConstraintHead(head) ++ visitType(arg)
   }
 
   /**
     * Returns a reverse index for the given type constraint `head`.
     */
-  private def visitTypeConstraintHead(head0: Ast.TypeConstraint.Head): Index = head0 match {
-    case Ast.TypeConstraint.Head(sym, loc) => Index.useOf(sym, loc)
+  private def visitTraitConstraintHead(head0: Ast.TraitConstraint.Head): Index = head0 match {
+    case Ast.TraitConstraint.Head(sym, loc) => Index.useOf(sym, loc)
   }
 
   /**

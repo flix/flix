@@ -49,14 +49,14 @@ object ConstraintResolution {
   /**
     * Resolves constraints in the given definition using the given inference result.
     */
-  def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
+  def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], cenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
     case KindedAst.Def(_, spec, _) => visitSpec(spec, infResult, renv0, tconstrs0, cenv0, eqEnv0, root)
   }
 
   /**
     * Resolves constraints in the given signature using the given inference result.
     */
-  def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
+  def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], cenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
     case KindedAst.Sig(_, _, None) => Validation.success(Substitution.empty)
     case KindedAst.Sig(_, spec, Some(_)) => visitSpec(spec, infResult, renv0, tconstrs0, cenv0, eqEnv0, root)
   }
@@ -64,7 +64,7 @@ object ConstraintResolution {
   /**
     * Resolves constraints in the given spec using the given inference result.
     */
-  def visitSpec(spec: KindedAst.Spec, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
+  def visitSpec(spec: KindedAst.Spec, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TraitConstraint], cenv0: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = spec match {
     case KindedAst.Spec(_, _, _, _, fparams, _, tpe, eff, tconstrs, econstrs, loc) =>
 
       val InfResult(infConstrs, infTpe, infEff, infRenv) = infResult
@@ -88,7 +88,7 @@ object ConstraintResolution {
       // The class and equality environments are made up of:
       // 1. constraints from the context (e.g. constraints on instances and classes, plus global constraints)
       // 2. constraints from the function signature
-      val cenv = expandClassEnv(cenv0, tconstrs ++ tconstrs0)
+      val cenv = expandTraitEnv(cenv0, tconstrs ++ tconstrs0)
       val eenv = expandEqualityEnv(eqEnv0, econstrs) // TODO ASSOC-TYPES allow econstrs on instances
 
       // We add extra constraints for the declared type and effect
@@ -140,12 +140,12 @@ object ConstraintResolution {
     *   instance Order[b]
     * }}}
     */
-  def expandClassEnv(cenv: Map[Symbol.ClassSym, Ast.ClassContext], tconstrs: List[Ast.TypeConstraint]): Map[Symbol.ClassSym, Ast.ClassContext] = {
+  def expandTraitEnv(cenv: Map[Symbol.TraitSym, Ast.TraitContext], tconstrs: List[Ast.TraitConstraint]): Map[Symbol.TraitSym, Ast.TraitContext] = {
     tconstrs.flatMap(withSupers(_, cenv)).foldLeft(cenv) {
-      case (acc, Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, _), arg, loc)) =>
+      case (acc, Ast.TraitConstraint(Ast.TraitConstraint.Head(sym, _), arg, loc)) =>
         val inst = Ast.Instance(arg, Nil)
         val context = acc.get(sym) match {
-          case Some(Ast.ClassContext(supers, insts)) => Ast.ClassContext(supers, inst :: insts)
+          case Some(Ast.TraitContext(supers, insts)) => Ast.TraitContext(supers, inst :: insts)
           case None => throw InternalCompilerException(s"unexpected unknown class sym: $sym", loc)
         }
         acc + (sym -> context)
@@ -189,7 +189,7 @@ object ConstraintResolution {
     * - a substitution and leftover constraints, or
     * - an error if resolution failed
     */
-  def resolve(constrs: List[TypingConstraint], subst0: Substitution, renv: RigidityEnv)(implicit cenv: Map[Symbol.ClassSym, Ast.ClassContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = {
+  def resolve(constrs: List[TypingConstraint], subst0: Substitution, renv: RigidityEnv)(implicit cenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = {
 
     // We track changes to the resolution state through mutable variables.
 
@@ -237,7 +237,7 @@ object ConstraintResolution {
     *
     * Applies the initial substitution `subst0` before attempting to resolve.
     */
-  private def resolveOneOf(constrs: List[TypingConstraint], subst0: Substitution, renv: RigidityEnv)(implicit cenv: Map[Symbol.ClassSym, Ast.ClassContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = {
+  private def resolveOneOf(constrs: List[TypingConstraint], subst0: Substitution, renv: RigidityEnv)(implicit cenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = {
     def tryResolve(cs: List[TypingConstraint]): Result[ResolutionResult, TypeError] = cs match {
       case Nil => Result.Ok(ResolutionResult(subst0, cs, progress = false))
       case hd :: tl => resolveOne(hd, renv, subst0).flatMap {
@@ -256,7 +256,7 @@ object ConstraintResolution {
   /**
     * Tries to resolve the given constraint.
     */
-  private def resolveOne(constr0: TypingConstraint, renv: RigidityEnv, subst0: Substitution)(implicit cenv: Map[Symbol.ClassSym, Ast.ClassContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
+  private def resolveOne(constr0: TypingConstraint, renv: RigidityEnv, subst0: Substitution)(implicit cenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
     case TypingConstraint.Equality(tpe1, tpe2, prov0) =>
       val t1 = TypeMinimization.minimizeType(subst0(tpe1))
       val t2 = TypeMinimization.minimizeType(subst0(tpe2))
@@ -264,8 +264,8 @@ object ConstraintResolution {
       resolveEquality(t1, t2, prov, renv, constr0.loc).map {
         case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
       }
-    case TypingConstraint.Class(sym, tpe, loc) =>
-      resolveClassConstraint(sym, subst0(tpe), renv, loc).map {
+    case TypingConstraint.Trait(sym, tpe, loc) =>
+      resolveTraitConstraint(sym, subst0(tpe), renv, loc).map {
         case (constrs, progress) => ResolutionResult(subst0, constrs, progress)
       }
     case TypingConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
@@ -436,7 +436,7 @@ object ConstraintResolution {
     *   ToString[a -> b \ ef] ~> <ERROR>
     * }}}
     */
-  private def resolveClassConstraint(clazz: Symbol.ClassSym, tpe0: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit cenv: Map[Symbol.ClassSym, Ast.ClassContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[(List[TypingConstraint], Boolean), TypeError] = {
+  private def resolveTraitConstraint(clazz: Symbol.TraitSym, tpe0: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit cenv: Map[Symbol.TraitSym, Ast.TraitContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[(List[TypingConstraint], Boolean), TypeError] = {
     // redE
     simplifyType(tpe0, renv0, loc).flatMap {
       case (t, progress) =>
@@ -444,10 +444,10 @@ object ConstraintResolution {
         t.baseType match {
           // Case 1: Flexible var. It might be resolved later.
           case Type.Var(sym, _) if renv0.isFlexible(sym) =>
-            Result.Ok((List(TypingConstraint.Class(clazz, t, loc)), progress))
+            Result.Ok((List(TypingConstraint.Trait(clazz, t, loc)), progress))
           // Case 2: Assoc type. It might be resolved later.
           case _: Type.AssocType =>
-            Result.Ok((List(TypingConstraint.Class(clazz, t, loc)), progress))
+            Result.Ok((List(TypingConstraint.Trait(clazz, t, loc)), progress))
           // Case 3: Something rigid (const or rigid var). We can look this up immediately.
           case _ =>
             // we mark t's tvars as rigid so we get the substitution in the right direction
@@ -466,17 +466,17 @@ object ConstraintResolution {
                 t.baseType match {
                   // If it's a var, it's ok. It may be substituted later to a type we can reduce.
                   // Or it might be part of the signature an expected constraint.
-                  case Type.Var(sym, loc) => Result.Ok(List(TypingConstraint.Class(clazz, t, loc)), progress)
+                  case Type.Var(sym, loc) => Result.Ok(List(TypingConstraint.Trait(clazz, t, loc)), progress)
                   // If it's an associated type, it's ok. It may be reduced later to a concrete type.
-                  case _: Type.AssocType => Result.Ok(List(TypingConstraint.Class(clazz, t, loc)), progress)
+                  case _: Type.AssocType => Result.Ok(List(TypingConstraint.Trait(clazz, t, loc)), progress)
                   // Otherwise it's a problem.
                   case _ => Result.Err(TypeError.MissingInstance(clazz, tpe0, renv, loc))
                 }
               case Some(tconstrs) =>
                 // simplify all the implied constraints
                 Result.traverse(tconstrs) {
-                  case Ast.TypeConstraint(Ast.TypeConstraint.Head(c, _), arg, _) =>
-                    resolveClassConstraint(c, arg, renv0, loc)
+                  case Ast.TraitConstraint(Ast.TraitConstraint.Head(c, _), arg, _) =>
+                    resolveTraitConstraint(c, arg, renv0, loc)
                 } map {
                   case res =>
                     val cs = res.flatMap { case (c, _) => c }
@@ -563,20 +563,20 @@ object ConstraintResolution {
   private def getFirstError(deferred: List[TypingConstraint], renv: RigidityEnv)(implicit flix: Flix): Option[TypeError] = deferred match {
     case Nil => None
     case TypingConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
-    case TypingConstraint.Class(sym, tpe, loc) :: _ => Some(TypeError.MissingInstance(sym, tpe, renv, loc))
+    case TypingConstraint.Trait(sym, tpe, loc) :: _ => Some(TypeError.MissingInstance(sym, tpe, renv, loc))
     case TypingConstraint.Purification(_, _, _, _, nested) :: _ => getFirstError(nested, renv)
   }
 
   /**
-    * Gets the list of type constraints implied by this type constraint due to a superclass relationship,
+    * Gets the list of type constraints implied by this type constraint due to a supertrait relationship,
     * including the type constraint itself.
     *
     * For example, `Order[a]` implies `Order[a]` and `Eq[a]`
     */
-  private def withSupers(tconstr: Ast.TypeConstraint, cenv: Map[Symbol.ClassSym, Ast.ClassContext]): List[Ast.TypeConstraint] = {
-    val superSyms = cenv(tconstr.head.sym).superClasses
+  private def withSupers(tconstr: Ast.TraitConstraint, cenv: Map[Symbol.TraitSym, Ast.TraitContext]): List[Ast.TraitConstraint] = {
+    val superSyms = cenv(tconstr.head.sym).superTraits
     val directSupers = superSyms.map {
-      case sym => Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, SourceLocation.Unknown), tconstr.arg, tconstr.loc)
+      case sym => Ast.TraitConstraint(Ast.TraitConstraint.Head(sym, SourceLocation.Unknown), tconstr.arg, tconstr.loc)
     }
     val allSupers = directSupers.flatMap(withSupers(_, cenv))
     tconstr :: allSupers

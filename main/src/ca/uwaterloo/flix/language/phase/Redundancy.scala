@@ -73,7 +73,7 @@ object Redundancy {
         checkUnusedEffects()(sctx, root) ++
         checkUnusedEnumsAndTags()(sctx, root) ++
         checkUnusedTypeParamsEnums()(root) ++
-        checkRedundantTypeConstraints()(root, flix)
+        checkRedundantTraitConstraints()(root, flix)
     }
 
     // Determine whether to return success or soft failure.
@@ -147,11 +147,11 @@ object Redundancy {
   /**
     * Checks for redundant type constraints in the given `root`.
     */
-  private def checkRedundantTypeConstraints()(implicit root: Root, flix: Flix): List[RedundancyError] = {
-    val defErrors = ParOps.parMap(root.defs.values)(defn => redundantTypeConstraints(defn.spec.declaredScheme.tconstrs))
-    val classErrors = ParOps.parMap(root.classes.values)(clazz => redundantTypeConstraints(clazz.superClasses))
-    val instErrors = ParOps.parMap(root.instances.values.flatten)(inst => redundantTypeConstraints(inst.tconstrs))
-    val sigErrors = ParOps.parMap(root.sigs.values)(sig => redundantTypeConstraints(sig.spec.declaredScheme.tconstrs))
+  private def checkRedundantTraitConstraints()(implicit root: Root, flix: Flix): List[RedundancyError] = {
+    val defErrors = ParOps.parMap(root.defs.values)(defn => redundantTraitConstraints(defn.spec.declaredScheme.tconstrs))
+    val classErrors = ParOps.parMap(root.classes.values)(clazz => redundantTraitConstraints(clazz.superTraits))
+    val instErrors = ParOps.parMap(root.instances.values.flatten)(inst => redundantTraitConstraints(inst.tconstrs))
+    val sigErrors = ParOps.parMap(root.sigs.values)(sig => redundantTraitConstraints(sig.spec.declaredScheme.tconstrs))
 
     (defErrors.flatten ++ classErrors.flatten ++ instErrors.flatten ++ sigErrors.flatten).toList
   }
@@ -159,13 +159,13 @@ object Redundancy {
   /**
     * Finds redundant type constraints in `tconstrs`.
     */
-  private def redundantTypeConstraints(tconstrs: List[Ast.TypeConstraint])(implicit root: Root, flix: Flix): List[RedundancyError] = {
+  private def redundantTraitConstraints(tconstrs: List[Ast.TraitConstraint])(implicit root: Root, flix: Flix): List[RedundancyError] = {
     for {
       (tconstr1, i1) <- tconstrs.zipWithIndex
       (tconstr2, i2) <- tconstrs.zipWithIndex
       // don't compare a constraint against itself
       if i1 != i2 && ClassEnvironment.entails(tconstr1, tconstr2, root.classEnv)
-    } yield RedundancyError.RedundantTypeConstraint(tconstr1, tconstr2, tconstr2.loc)
+    } yield RedundancyError.RedundantTraitConstraint(tconstr1, tconstr2, tconstr2.loc)
   }
 
   /**

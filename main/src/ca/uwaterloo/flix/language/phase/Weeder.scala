@@ -139,7 +139,7 @@ object Weeder {
 
     case d: ParsedAst.Declaration.TypeAlias => visitTypeAlias(d)
 
-    case d: ParsedAst.Declaration.Class => visitClass(d)
+    case d: ParsedAst.Declaration.Trait => visitTrait(d)
 
     case d: ParsedAst.Declaration.Instance => visitInstance(d)
 
@@ -149,8 +149,8 @@ object Weeder {
   /**
     * Performs weeding on the given class declaration `c0`.
     */
-  private def visitClass(c0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Class], WeederError] = c0 match {
-    case ParsedAst.Declaration.Class(doc0, ann0, mods0, sp1, ident, tparam0, superClasses0, assocs0, lawsAndSigs, sp2) =>
+  private def visitTrait(c0: ParsedAst.Declaration.Trait)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Trait], WeederError] = c0 match {
+    case ParsedAst.Declaration.Trait(doc0, ann0, mods0, sp1, ident, tparam0, superTraits0, assocs0, lawsAndSigs, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
       val laws0 = lawsAndSigs.collect { case law: ParsedAst.Declaration.Law => law }
@@ -159,14 +159,14 @@ object Weeder {
       val annVal = visitAnnotations(ann0)
       val modsVal = visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Lawful, Ast.Modifier.Public, Ast.Modifier.Sealed))
       val tparam = visitTypeParam(tparam0)
-      val superClassesVal = traverse(superClasses0)(visitTypeConstraint)
+      val superTraitsVal = traverse(superTraits0)(visitTraitConstraint)
       val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, tparam))
       val sigsVal = traverse(sigs0)(visitSig)
       val lawsVal = traverse(laws0)(visitLaw)
 
-      mapN(annVal, modsVal, superClassesVal, assocsVal, sigsVal, lawsVal) {
+      mapN(annVal, modsVal, superTraitsVal, assocsVal, sigsVal, lawsVal) {
         case (ann, mods, superClasses, assocs, sigs, laws) =>
-          List(WeededAst.Declaration.Class(doc, ann, mods, ident, tparam, superClasses, assocs.flatten, sigs.flatten, laws.flatten, loc))
+          List(WeededAst.Declaration.Trait(doc, ann, mods, ident, tparam, superClasses, assocs.flatten, sigs.flatten, laws.flatten, loc))
       }
   }
 
@@ -185,7 +185,7 @@ object Weeder {
       val formalsVal = visitFormalParams(fparams0, Presence.Required)
       val tpeVal = visitType(tpe0)
       val effVal = traverseOpt(eff0)(visitType)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
+      val tconstrsVal = traverse(tconstrs0)(visitTraitConstraint)
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint)
       val expVal = traverseOpt(exp0)(visitExp)
 
@@ -205,7 +205,7 @@ object Weeder {
       val annVal = visitAnnotations(ann0)
       val modsVal = visitModifiers(mods0, legalModifiers = Set.empty)
       val tpeVal = visitType(tpe0)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
+      val tconstrsVal = traverse(tconstrs0)(visitTraitConstraint)
       val defsVal = traverse(defs0)(visitInstanceDef)
 
       flatMapN(annVal, modsVal, tpeVal, defsVal, tconstrsVal) {
@@ -249,7 +249,7 @@ object Weeder {
       val formalsVal = visitFormalParams(fparams0, Presence.Required)
       val tpeVal = visitType(tpe0)
       val effVal = traverseOpt(eff0)(visitType)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
+      val tconstrsVal = traverse(tconstrs0)(visitTraitConstraint)
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint)
 
       mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, tpeVal, effVal, expVal, tconstrsVal, econstrsVal) {
@@ -270,7 +270,7 @@ object Weeder {
       val expVal = visitExp(exp0)
       val tparamsVal = visitKindedTypeParams(tparams0)
       val formalsVal = visitFormalParams(fparams0, Presence.Required)
-      val tconstrsVal = Validation.traverse(tconstrs0)(visitTypeConstraint)
+      val tconstrsVal = Validation.traverse(tconstrs0)(visitTraitConstraint)
 
       mapN(annVal, modVal, identVal, tparamsVal, formalsVal, expVal, tconstrsVal) {
         case (ann, mod, id, tparams, fs, exp, tconstrs) =>
@@ -312,7 +312,7 @@ object Weeder {
       val fparamsVal = visitFormalParams(fparamsOpt0, Presence.Required)
       val tpeVal = visitType(tpe0)
       val effVal = requireNoEffect(eff0, ident.loc)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
+      val tconstrsVal = traverse(tconstrs0)(visitTraitConstraint)
       mapN(annVal, modVal, pubVal, identVal, tparamsVal, fparamsVal, tpeVal, effVal, tconstrsVal) {
         case (ann, mod, _, id, _, fparams, tpe, _, tconstrs) =>
           WeededAst.Declaration.Op(doc, ann, mod, id, fparams, tpe, tconstrs, mkSL(sp1, sp2));
@@ -2602,16 +2602,16 @@ object Weeder {
   /**
     * Weeds the given type constraint `tconstr`.
     */
-  private def visitTypeConstraint(tconstr: ParsedAst.TypeConstraint): Validation[WeededAst.TypeConstraint, WeederError] = tconstr match {
-    case ParsedAst.TypeConstraint(sp1, clazz, tparam0, sp2) =>
+  private def visitTraitConstraint(tconstr: ParsedAst.TraitConstraint): Validation[WeededAst.TraitConstraint, WeederError] = tconstr match {
+    case ParsedAst.TraitConstraint(sp1, clazz, tparam0, sp2) =>
       val tpeVal = visitType(tparam0)
       val checkVal = if (isAllVars(tparam0)) {
         Validation.success(())
       } else {
-        Validation.toHardFailure(IllegalTypeConstraintParameter(mkSL(sp1, sp2)))
+        Validation.toHardFailure(IllegalTraitConstraintParameter(mkSL(sp1, sp2)))
       }
       mapN(tpeVal, checkVal) {
-        case (tpe, check) => WeededAst.TypeConstraint(clazz, tpe, mkSL(sp1, sp2))
+        case (tpe, check) => WeededAst.TraitConstraint(clazz, tpe, mkSL(sp1, sp2))
       }
   }
 

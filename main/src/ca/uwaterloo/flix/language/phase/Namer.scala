@@ -82,7 +82,7 @@ object Namer {
     */
   private def visitDecl(decl0: DesugaredAst.Declaration, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration, NameError] = decl0 match {
     case decl: DesugaredAst.Declaration.Namespace => visitNamespace(decl, ns0)
-    case decl: DesugaredAst.Declaration.Class => visitClass(decl, ns0)
+    case decl: DesugaredAst.Declaration.Trait => visitClass(decl, ns0)
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
     case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
     case decl: DesugaredAst.Declaration.Enum => visitEnum(decl, ns0)
@@ -125,7 +125,7 @@ object Namer {
       }
       mapN(table2Val)(addUsesToTable(_, sym.ns, usesAndImports))
 
-    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc) =>
+    case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc) =>
       val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
       flatMapN(table1Val) {
         case table1 => fold(assocs ++ sigs, table1) {
@@ -398,7 +398,7 @@ object Namer {
   /**
     * Performs naming on the given associated type signature `s0`.
     */
-  private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, clazz: Symbol.ClassSym, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
+  private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, clazz: Symbol.TraitSym, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
     case DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, loc) =>
       val sym = Symbol.mkAssocTypeSym(clazz, ident)
       val tparam = getTypeParam(tparams0)
@@ -421,20 +421,20 @@ object Namer {
   /**
     * Performs naming on the given class `clazz`.
     */
-  private def visitClass(clazz: DesugaredAst.Declaration.Class, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Class, NameError] = clazz match {
-    case DesugaredAst.Declaration.Class(doc, ann, mod0, ident, tparams0, superClasses0, assocs0, signatures, laws0, loc) =>
-      val sym = Symbol.mkClassSym(ns0, ident)
+  private def visitClass(clazz: DesugaredAst.Declaration.Trait, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Trait, NameError] = clazz match {
+    case DesugaredAst.Declaration.Trait(doc, ann, mod0, ident, tparams0, superClasses0, assocs0, signatures, laws0, loc) =>
+      val sym = Symbol.mkTraitSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparam = getTypeParam(tparams0)
 
-      val superClassesVal = traverse(superClasses0)(visitTypeConstraint(_, ns0))
+      val superClassesVal = traverse(superClasses0)(visitTraitConstraint(_, ns0))
       val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, sym, ns0)) // TODO switch param order to match visitSig
       val sigsVal = traverse(signatures)(visitSig(_, ns0, sym))
       val lawsVal = traverse(laws0)(visitDef(_, ns0, DefKind.Member))
 
       mapN(superClassesVal, assocsVal, sigsVal, lawsVal) {
         case (superClasses, assocs, sigs, laws) =>
-          NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc)
+          NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc)
       }
   }
 
@@ -446,7 +446,7 @@ object Namer {
       val tparams = getImplicitTypeParamsFromTypes(List(tpe0))
 
       val tpeVal = visitType(tpe0)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
+      val tconstrsVal = traverse(tconstrs0)(visitTraitConstraint(_, ns0))
       val assocsVal = traverse(assocs0)(visitAssocTypeDef(_, ns0))
       flatMapN(tpeVal, tconstrsVal, assocsVal) {
         case (tpe, tconstrs, assocs) =>
@@ -461,10 +461,10 @@ object Namer {
   /**
     * Performs naming on the given type constraint `tconstr`.
     */
-  private def visitTypeConstraint(tconstr: DesugaredAst.TypeConstraint, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.TypeConstraint, NameError] = tconstr match {
-    case DesugaredAst.TypeConstraint(clazz, tparam0, loc) =>
+  private def visitTraitConstraint(tconstr: DesugaredAst.TraitConstraint, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.TraitConstraint, NameError] = tconstr match {
+    case DesugaredAst.TraitConstraint(clazz, tparam0, loc) =>
       mapN(visitType(tparam0)) {
-        tparam => NamedAst.TypeConstraint(clazz, tparam, loc)
+        tparam => NamedAst.TraitConstraint(clazz, tparam, loc)
       }
   }
 
@@ -483,7 +483,7 @@ object Namer {
   /**
     * Performs naming on the given signature declaration `sig`.
     */
-  private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, classSym: Symbol.ClassSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
+  private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, classSym: Symbol.TraitSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
     case DesugaredAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, eff0, econstrs0)
 
@@ -492,7 +492,7 @@ object Namer {
       val fparamsVal = getFormalParams(fparams0)
       val tpeVal = visitType(tpe0)
       val effVal = traverseOpt(eff0)(visitType)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
+      val tconstrsVal = traverse(tconstrs0)(visitTraitConstraint(_, ns0))
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, ns0))
 
       flatMapN(fparamsVal, tpeVal, effVal, tconstrsVal, econstrsVal) {
@@ -525,7 +525,7 @@ object Namer {
       val fparamsVal = getFormalParams(fparams0)
       val tpeVal = visitType(tpe0)
       val effVal = traverseOpt(eff0)(visitType)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
+      val tconstrsVal = traverse(tconstrs0)(visitTraitConstraint(_, ns0))
       val econstrsVal = traverse(econstrs0)(visitEqualityConstraint(_, ns0))
 
       flatMapN(fparamsVal, tpeVal, effVal, tconstrsVal, econstrsVal) {
@@ -574,7 +574,7 @@ object Namer {
       val mod = visitModifiers(mod0, ns0)
       val fparamsVal = getFormalParams(fparams0)
       val tpeVal = visitType(tpe0)
-      val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint(_, ns0))
+      val tconstrsVal = traverse(tconstrs0)(visitTraitConstraint(_, ns0))
 
       mapN(fparamsVal, tpeVal, tconstrsVal) {
         case (fparams, tpe, tconstrs) =>
@@ -1554,7 +1554,7 @@ object Namer {
     * Gets the location of the symbol of the declaration.
     */
   private def getSymLocation(f: NamedAst.Declaration): SourceLocation = f match {
-    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc) => sym.loc
+    case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc) => sym.loc
     case NamedAst.Declaration.Sig(sym, spec, exp) => sym.loc
     case NamedAst.Declaration.Def(sym, spec, exp) => sym.loc
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.loc

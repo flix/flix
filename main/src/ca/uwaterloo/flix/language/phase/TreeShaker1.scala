@@ -184,7 +184,7 @@ object TreeShaker1 {
 
     case class DefnSym(sym: Symbol.DefnSym) extends ReachableSym
 
-    case class ClassSym(sym: Symbol.ClassSym) extends ReachableSym
+    case class ClassSym(sym: Symbol.TraitSym) extends ReachableSym
 
     case class SigSym(sym: Symbol.SigSym) extends ReachableSym
 

@@ -120,7 +120,7 @@ sealed trait Completion {
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Field)
-    case Completion.ClassCompletion(name) =>
+    case Completion.TraitCompletion(name) =>
       CompletionItem(label = name,
         sortText = Priority.high(name),
         textEdit = TextEdit(context.range, name),
@@ -187,7 +187,7 @@ sealed trait Completion {
       CompletionItem(label = s"$classSym[...]",
         sortText = Priority.high(classSym.toString),
         textEdit = TextEdit(context.range, completion),
-        detail = Some(InstanceCompleter.fmtClass(clazz)),
+        detail = Some(InstanceCompleter.fmtTrait(clazz)),
         documentation = Some(clazz.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Snippet)
@@ -388,7 +388,7 @@ object Completion {
     *
     * @param name the name of the class.
     */
-  case class ClassCompletion(name: String) extends Completion
+  case class TraitCompletion(name: String) extends Completion
 
   /**
     * Represents a Snippet completion
@@ -443,7 +443,7 @@ object Completion {
     * @param clazz      the clazz.
     * @param completion the completion string (used as information for TextEdit).
     */
-  case class InstanceCompletion(clazz: TypedAst.Class, completion: String) extends Completion
+  case class InstanceCompletion(clazz: TypedAst.Trait, completion: String) extends Completion
 
   /**
     * Represents an Use completion.

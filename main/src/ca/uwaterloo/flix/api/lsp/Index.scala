@@ -37,7 +37,7 @@ object Index {
   /**
     * Returns an index for the given `class0`.
     */
-  def occurrenceOf(class0: TypedAst.Class): Index = empty + Entity.Class(class0)
+  def occurrenceOf(class0: TypedAst.Trait): Index = empty + Entity.Trait(class0)
 
   /**
     * Returns an index for the given `case0`.
@@ -122,7 +122,7 @@ object Index {
   /**
     * Returns an index with the symbol 'sym' used at location 'loc'.
     */
-  def useOf(sym: Symbol.ClassSym, loc: SourceLocation): Index = Index.empty.copy(classUses = MultiMap.singleton(sym, loc))
+  def useOf(sym: Symbol.TraitSym, loc: SourceLocation): Index = Index.empty.copy(classUses = MultiMap.singleton(sym, loc))
 
   /**
     * Returns an index with the symbol 'sym' used at location 'loc'.
@@ -212,7 +212,7 @@ object Index {
   * Represents a reserve index from documents to line numbers to expressions.
   */
 case class Index(m: Map[(String, Int), List[Entity]],
-                 classUses: MultiMap[Symbol.ClassSym, SourceLocation],
+                 classUses: MultiMap[Symbol.TraitSym, SourceLocation],
                  sigUses: MultiMap[Symbol.SigSym, SourceLocation],
                  defUses: MultiMap[Symbol.DefnSym, SourceLocation],
                  enumUses: MultiMap[Symbol.EnumSym, SourceLocation],
@@ -295,7 +295,7 @@ case class Index(m: Map[(String, Int), List[Entity]],
   /**
     * Returns all uses of the given symbol `sym`.
     */
-  def usesOf(sym: Symbol.ClassSym): Set[SourceLocation] = classUses(sym)
+  def usesOf(sym: Symbol.TraitSym): Set[SourceLocation] = classUses(sym)
 
   /**
     * Returns all uses of the given symbol `sym`.

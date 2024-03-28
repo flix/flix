@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.errors
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.fmt.{FormatType, FormatTypeConstraint}
+import ca.uwaterloo.flix.language.fmt.{FormatType, FormatTraitConstraint}
 import ca.uwaterloo.flix.util.Formatter
 
 /**
@@ -145,15 +145,15 @@ object RedundancyError {
     * @param redundantTconstr the tconstr that is made redundant by the other.
     * @param loc              the location where the error occured.
     */
-  case class RedundantTypeConstraint(entailingTconstr: Ast.TypeConstraint, redundantTconstr: Ast.TypeConstraint, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError with Recoverable {
-    def summary: String = "Redundant type constraint."
+  case class RedundantTraitConstraint(entailingTconstr: Ast.TraitConstraint, redundantTconstr: Ast.TraitConstraint, loc: SourceLocation)(implicit flix: Flix) extends RedundancyError with Recoverable {
+    def summary: String = "Redundant trait constraint."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
-         |>> Type constraint '${red(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}' is entailed by type constraint '${green(FormatTypeConstraint.formatTypeConstraint(redundantTconstr))}'.
+         |>> Trait constraint '${red(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}' is entailed by trait constraint '${green(FormatTraitConstraint.formatTraitConstraint(redundantTconstr))}'.
          |
-         |${code(loc, "redundant type constraint.")}
+         |${code(loc, "redundant trait constraint.")}
          |""".stripMargin
     }
 

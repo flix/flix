@@ -653,7 +653,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Def.TypeConstraint.01") {
+  test("KindError.Def.TraitConstraint.01") {
     val input =
       """
         |trait C[a: Type -> Type]
@@ -789,7 +789,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Instance.TypeConstraint.01") {
+  test("KindError.Instance.TraitConstraint.01") {
     val input =
       """
         |trait C[a]
@@ -874,7 +874,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Class.TypeConstraint.01") {
+  test("KindError.Class.TraitConstraint.01") {
     val input =
       """
         |trait C[a]
@@ -1025,7 +1025,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |def foo(): C.T[a] = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[KindError.MissingTypeClassConstraint](result)
+    expectError[KindError.MissingTraitConstraint](result)
   }
 
   test("KindError.AssocType.01") {

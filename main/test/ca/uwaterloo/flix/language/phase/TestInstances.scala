@@ -452,7 +452,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance A[Int32]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.MissingSuperClassInstance](result)
+    expectError[InstanceError.MissingSuperTraitInstance](result)
   }
 
   test("Test.MissingSuperClassInstance.02") {
@@ -466,7 +466,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance B[Int32]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.MissingSuperClassInstance](result)
+    expectError[InstanceError.MissingSuperTraitInstance](result)
   }
 
   test("Test.MissingSuperClassInstance.03") {
@@ -479,7 +479,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance B[Bool]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.MissingSuperClassInstance](result)
+    expectError[InstanceError.MissingSuperTraitInstance](result)
   }
 
   test("Test.UnlawfulSignature.01") {
@@ -625,7 +625,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance D[(a, b)]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.MissingTypeClassConstraint](result)
+    expectError[InstanceError.MissingTraitConstraint](result)
   }
 
   test("Test.MissingConstraint.02") {
@@ -642,7 +642,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance E[(a, b)] with C[a], C[b]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.MissingTypeClassConstraint](result)
+    expectError[InstanceError.MissingTraitConstraint](result)
   }
 
   test("Test.MissingConstraint.03") {
@@ -655,6 +655,6 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance D[(a, b)] with D[a], D[b]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    rejectError[InstanceError.MissingTypeClassConstraint](result)
+    rejectError[InstanceError.MissingTraitConstraint](result)
   }
 }

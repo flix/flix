@@ -62,7 +62,7 @@ object Stratifier {
   /**
     * Performs Stratification of the given class `c0`.
     */
-  private def visitClass(c0: TypedAst.Class)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Class, StratificationError] = {
+  private def visitClass(c0: TypedAst.Trait)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Trait, StratificationError] = {
     val newLaws = traverse(c0.laws)(visitDef(_))
     val newSigs = traverse(c0.sigs)(visitSig(_))
     mapN(newLaws, newSigs) {

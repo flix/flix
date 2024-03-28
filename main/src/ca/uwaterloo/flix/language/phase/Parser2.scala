@@ -730,13 +730,13 @@ object Parser2 {
             case TokenKind.KeywordDef => signatureDecl(mark)
             case TokenKind.KeywordType => associatedTypeSigDecl(mark)
             case at =>
-              val error = ParseError(s"Expected associated type, signature or law but found $at", SyntacticContext.Decl.Class, currentSourceLocation())
+              val error = ParseError(s"Expected associated type, signature or law but found $at", SyntacticContext.Decl.Trait, currentSourceLocation())
               advanceWithError(error, Some(mark))
           }
         }
         expect(TokenKind.CurlyR)
       }
-      close(mark, TreeKind.Decl.Class)
+      close(mark, TreeKind.Decl.Trait)
     }
 
     private def instanceDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {

@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 /**
   * This phase generates a list of type constraints, which include
   * - equality constraints `tpe1 ~ tpe2`
-  * - class constraints `C[tpe1]`
+  * - trait constraints `C[tpe1]`
   * - purification constraints `eff1 ~ eff2[sym ↦ Pure]`
   *
   * We gather constraints as we traverse each def.
@@ -49,7 +49,7 @@ object ConstraintGeneration {
         val defn = root.defs(sym)
         val (tconstrs, econstrs, defTpe) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
         c.unifyType(tvar, defTpe, loc)
-        c.addClassConstraints(tconstrs, loc)
+        c.addTraitConstraints(tconstrs, loc)
         econstrs.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
         val resTpe = defTpe
         val resEff = Type.Pure
@@ -59,7 +59,7 @@ object ConstraintGeneration {
         val sig = root.classes(sym.clazz).sigs(sym)
         val (tconstrs, econstrs, sigTpe) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
         c.unifyType(tvar, sigTpe, loc)
-        c.addClassConstraints(tconstrs, loc)
+        c.addTraitConstraints(tconstrs, loc)
         econstrs.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
         val resTpe = sigTpe
         val resEff = Type.Pure
@@ -128,7 +128,7 @@ object ConstraintGeneration {
 
             val (tpes, effs) = exps.map(visitExp).unzip
             c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc), loc)
-            c.addClassConstraints(constrs1, loc)
+            c.addTraitConstraints(constrs1, loc)
             econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
             c.unifyType(tvar2, declaredType, loc)
             c.unifyType(tvar, declaredResultType, loc)

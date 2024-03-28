@@ -601,19 +601,19 @@ object Ast {
     */
   case class EliminatedBy(clazz: java.lang.Class[_]) extends scala.annotation.StaticAnnotation
 
-  case object TypeConstraint {
+  case object TraitConstraint {
     /**
-      * Represents the head (located class) of a type constraint.
+      * Represents the head (located trait) of a trait constraint.
       */
-    case class Head(sym: Symbol.ClassSym, loc: SourceLocation)
+    case class Head(sym: Symbol.TraitSym, loc: SourceLocation)
   }
 
   /**
-    * Represents that the type `arg` must belong to class `sym`.
+    * Represents that the type `arg` must belong to trait `sym`.
     */
-  case class TypeConstraint(head: TypeConstraint.Head, arg: Type, loc: SourceLocation) {
+  case class TraitConstraint(head: TraitConstraint.Head, arg: Type, loc: SourceLocation) {
     override def equals(o: Any): Boolean = o match {
-      case that: TypeConstraint =>
+      case that: TraitConstraint =>
         this.head.sym == that.head.sym && this.arg == that.arg
       case _ => false
     }
@@ -660,7 +660,7 @@ object Ast {
   /**
     * Represents a use of a class sym.
     */
-  case class ClassSymUse(sym: Symbol.ClassSym, loc: SourceLocation)
+  case class TraitSymUse(sym: Symbol.TraitSym, loc: SourceLocation)
 
   /**
     * Represents a use of an associated type sym.
@@ -670,12 +670,12 @@ object Ast {
   /**
     * Represents that an instance on type `tpe` has the type constraints `tconstrs`.
     */
-  case class Instance(tpe: Type, tconstrs: List[Ast.TypeConstraint])
+  case class Instance(tpe: Type, tconstrs: List[Ast.TraitConstraint])
 
   /**
-    * Represents the super classes and instances available for a particular class.
+    * Represents the super traits and instances available for a particular trait.
     */
-  case class ClassContext(superClasses: List[Symbol.ClassSym], instances: List[Ast.Instance])
+  case class TraitContext(superTraits: List[Symbol.TraitSym], instances: List[Ast.Instance])
 
   /**
     * Represents the definition of an associated type.
@@ -687,7 +687,7 @@ object Ast {
   /**
     * Represents a derivation on an enum (e.g. `enum E with Eq`).
     */
-  case class Derivation(clazz: Symbol.ClassSym, loc: SourceLocation)
+  case class Derivation(clazz: Symbol.TraitSym, loc: SourceLocation)
 
   /**
     * Represents a list of derivations with a source location.
@@ -699,7 +699,7 @@ object Ast {
     * if the enum is `enum Color {` then the source position would point
     * to the position right after `r` and have zero width.
     */
-  case class Derivations(classes: List[Derivation], loc: SourceLocation)
+  case class Derivations(traits: List[Derivation], loc: SourceLocation)
 
   /**
     * Represents the way a variable is bound.
@@ -831,7 +831,7 @@ object Ast {
     sealed trait Decl extends SyntacticContext
 
     object Decl {
-      case object Class extends Decl
+      case object Trait extends Decl
 
       case object Enum extends Decl
 

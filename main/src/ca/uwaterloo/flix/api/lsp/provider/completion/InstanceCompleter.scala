@@ -57,19 +57,19 @@ object InstanceCompleter extends Completer {
     /**
       * Formats the given type `tpe`.
       */
-    def fmtType(clazz: TypedAst.Class, tpe: Type, hole: String)(implicit flix: Flix): String =
+    def fmtType(clazz: TypedAst.Trait, tpe: Type, hole: String)(implicit flix: Flix): String =
       FormatType.formatType(replaceText(clazz.tparam.sym, tpe, hole))
 
     /**
       * Formats the given formal parameters in `spec`.
       */
-    def fmtFormalParams(clazz: TypedAst.Class, spec: TypedAst.Spec, hole: String)(implicit flix: Flix): String =
+    def fmtFormalParams(clazz: TypedAst.Trait, spec: TypedAst.Spec, hole: String)(implicit flix: Flix): String =
       spec.fparams.map(fparam => s"${fparam.sym.text}: ${fmtType(clazz, fparam.tpe, hole)}").mkString(", ")
 
     /**
       * Formats the given signature `sig`.
       */
-    def fmtSignature(clazz: TypedAst.Class, sig: TypedAst.Sig, hole: String)(implicit flix: Flix): String = {
+    def fmtSignature(clazz: TypedAst.Trait, sig: TypedAst.Sig, hole: String)(implicit flix: Flix): String = {
       val fparams = fmtFormalParams(clazz, sig.spec, hole)
       val retTpe = fmtType(clazz, sig.spec.retTpe, hole)
       val eff = sig.spec.eff match {
@@ -92,9 +92,9 @@ object InstanceCompleter extends Completer {
   }
 
   /**
-    * Formats the given class `clazz`.
+    * Formats the given trait `trt`.
     */
-  def fmtClass(clazz: TypedAst.Class): String = {
-    s"class ${clazz.sym.name}[${clazz.tparam.name.name}]"
+  def fmtTrait(trt: TypedAst.Trait): String = {
+    s"trait ${trt.sym.name}[${trt.tparam.name.name}]"
   }
 }

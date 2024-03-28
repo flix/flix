@@ -31,18 +31,18 @@ object ImplementationProvider {
     }
 
     val links = for {
-      classSym <- classAt(uri, position)
+      classSym <- traitAt(uri, position)
       inst <- root.instances.getOrElse(classSym, Nil)
-    } yield LocationLink.fromInstanceClassSymUse(inst.clazz, classSym.loc)
+    } yield LocationLink.fromInstanceTraitSymUse(inst.trt, classSym.loc)
 
     links.toList
   }
 
   /**
-    * Returns the class symbol located at the given position as a singleton iterable.
-    * Returns an empty iterable if there is no such class symbol.
+    * Returns the trait symbol located at the given position as a singleton iterable.
+    * Returns an empty iterable if there is no such trait symbol.
     */
-  private def classAt(uri: String, p: Position)(implicit root: Root): Iterable[Symbol.ClassSym] = {
+  private def traitAt(uri: String, p: Position)(implicit root: Root): Iterable[Symbol.TraitSym] = {
     root.instances.keys.filter(classSym => classSym.loc.source.name == uri
       && (classSym.loc.beginLine < p.line
       || (classSym.loc.beginLine == p.line && classSym.loc.beginCol <= p.character))

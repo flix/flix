@@ -203,7 +203,7 @@ object Weeder2 {
     def pickAllDeclarations(tree: Tree)(implicit s: State): Validation[List[Declaration], CompilationMessage] = {
       expectAny(tree, List(TreeKind.Root, TreeKind.Decl.Module))
       val modules = pickAll(TreeKind.Decl.Module, tree)
-      val classes = pickAll(TreeKind.Decl.Class, tree)
+      val classes = pickAll(TreeKind.Decl.Trait, tree)
       val instances = pickAll(TreeKind.Decl.Instance, tree)
       val definitions = pickAll(TreeKind.Decl.Def, tree)
       val enums = pickAll(TreeKind.Decl.Enum, tree)
@@ -240,8 +240,8 @@ object Weeder2 {
       }
     }
 
-    private def visitTypeClassDecl(tree: Tree)(implicit s: State): Validation[Declaration.Class, CompilationMessage] = {
-      expect(tree, TreeKind.Decl.Class)
+    private def visitTypeClassDecl(tree: Tree)(implicit s: State): Validation[Declaration.Trait, CompilationMessage] = {
+      expect(tree, TreeKind.Decl.Trait)
       val sigs = pickAll(TreeKind.Decl.Signature, tree)
       val laws = pickAll(TreeKind.Decl.Law, tree)
       flatMapN(
@@ -257,7 +257,7 @@ object Weeder2 {
         (doc, annotations, modifiers, ident, tparam, tconstr, sigs, laws) =>
           val assocs = pickAll(TreeKind.Decl.AssociatedTypeSig, tree)
           mapN(traverse(assocs)(visitAssociatedTypeSigDecl(_, tparam))) {
-            assocs => Declaration.Class(doc, annotations, modifiers, ident, tparam, tconstr, assocs, sigs, laws, tree.loc)
+            assocs => Declaration.Trait(doc, annotations, modifiers, ident, tparam, tconstr, assocs, sigs, laws, tree.loc)
           }
       }
     }
@@ -2698,22 +2698,22 @@ object Weeder2 {
       }
     }
 
-    def pickConstraints(tree: Tree)(implicit s: State): Validation[List[TypeConstraint], CompilationMessage] = {
+    def pickConstraints(tree: Tree)(implicit s: State): Validation[List[TraitConstraint], CompilationMessage] = {
       val maybeWithClause = tryPick(TreeKind.Type.ConstraintList, tree)
       maybeWithClause.map(
         withClauseTree => traverse(pickAll(TreeKind.Type.Constraint, withClauseTree))(visitConstraint)
       ).getOrElse(Validation.success(List.empty))
     }
 
-    private def visitConstraint(tree: Tree)(implicit s: State): Validation[TypeConstraint, CompilationMessage] = {
+    private def visitConstraint(tree: Tree)(implicit s: State): Validation[TraitConstraint, CompilationMessage] = {
       expect(tree, TreeKind.Type.Constraint)
       flatMapN(pickQName(tree), Types.pickType(tree)) {
         (qname, tpe) =>
           // Check for illegal type constraint parameter
           if (!isAllVariables(tpe)) {
-            Validation.toHardFailure(IllegalTypeConstraintParameter(tree.loc))
+            Validation.toHardFailure(IllegalTraitConstraintParameter(tree.loc))
           } else {
-            Validation.success(TypeConstraint(qname, tpe, tree.loc))
+            Validation.success(TraitConstraint(qname, tpe, tree.loc))
           }
       }
     }

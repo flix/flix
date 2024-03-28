@@ -197,7 +197,7 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     */
   private def execInfo(s: String)(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
-    val classSym = Symbol.mkClassSym(s)
+    val classSym = Symbol.mkTraitSym(s)
     val defnSym = Symbol.mkDefnSym(s)
     val enumSym = Symbol.mkEnumSym(s)
     val aliasSym = Symbol.mkTypeAliasSym(s)

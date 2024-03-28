@@ -137,7 +137,7 @@ object Parser {
       case "Constraint" => SyntacticContext.Expr.Constraint
       case "Do" => SyntacticContext.Expr.Do
 
-      case "Class" => SyntacticContext.Decl.Class
+      case "Class" => SyntacticContext.Decl.Trait
       case "Enum" => SyntacticContext.Decl.Enum
       case "Instance" => SyntacticContext.Decl.Instance
       case "Decls" => SyntacticContext.Decl.OtherDecl
@@ -350,16 +350,16 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Class
+        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Trait
       }
     }
 
-    def TypeConstraint: Rule1[ParsedAst.TypeConstraint] = rule {
-      SP ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ SP ~> ParsedAst.TypeConstraint
+    def TraitConstraint: Rule1[ParsedAst.TraitConstraint] = rule {
+      SP ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ SP ~> ParsedAst.TraitConstraint
     }
 
-    def WithClause: Rule1[Seq[ParsedAst.TypeConstraint]] = rule {
-      optional(optWS ~ keyword("with") ~ WS ~ oneOrMore(TypeConstraint).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.TypeConstraint]]) => o.getOrElse(Seq.empty))
+    def WithClause: Rule1[Seq[ParsedAst.TraitConstraint]] = rule {
+      optional(optWS ~ keyword("with") ~ WS ~ oneOrMore(TraitConstraint).separatedBy(optWS ~ "," ~ optWS)) ~> ((o: Option[Seq[ParsedAst.TraitConstraint]]) => o.getOrElse(Seq.empty))
     }
 
     def EqualityConstraint: Rule1[ParsedAst.EqualityConstraint] = rule {

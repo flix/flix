@@ -38,8 +38,8 @@ object Deriver {
       instances =>
         val newInstances = instances.flatten.foldLeft(root.instances) {
           case (acc, inst) =>
-            val accInsts = acc.getOrElse(inst.clazz.sym, Nil)
-            acc + (inst.clazz.sym -> (inst :: accInsts))
+            val accInsts = acc.getOrElse(inst.trt.sym, Nil)
+            acc + (inst.trt.sym -> (inst :: accInsts))
         }
         root.copy(instances = newInstances)
     }
@@ -56,7 +56,7 @@ object Deriver {
       lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
       lazy val hashSym = PredefinedClasses.lookupClassSym("Hash", root)
       lazy val sendableSym = PredefinedClasses.lookupClassSym("Sendable", root)
-      val instanceVals = Validation.traverse(derives.classes) {
+      val instanceVals = Validation.traverse(derives.traits) {
         case Ast.Derivation(classSym, loc) if cases.isEmpty => Validation.toSoftFailure(None, DerivationError.IllegalDerivationForEmptyEnum(enumSym, classSym, loc))
         case Ast.Derivation(sym, loc) if sym == eqSym => mapN(mkEqInstance(enum0, loc, root))(Some(_))
         case Ast.Derivation(sym, loc) if sym == orderSym => mapN(mkOrderInstance(enum0, loc, root))(Some(_))
@@ -104,15 +104,15 @@ object Deriver {
 
       val defn = KindedAst.Def(eqDefSym, spec, exp)
 
-      val tconstrs = getTypeConstraintsForTypeParams(tparams, eqClassSym, loc)
+      val cconstrs = getTraitConstraintsForTypeParams(tparams, eqClassSym, loc)
 
       Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.ClassSymUse(eqClassSym, loc),
+        trt = Ast.TraitSymUse(eqClassSym, loc),
         tpe = tpe,
-        tconstrs = tconstrs,
+        tconstrs = cconstrs,
         assocs = Nil,
         defs = List(defn),
         ns = Name.RootNS,
@@ -157,13 +157,13 @@ object Deriver {
         ),
         sc = Scheme(
           tparams.map(_.sym),
-          List(Ast.TypeConstraint(Ast.TypeConstraint.Head(eqClassSym, loc), tpe, loc)),
+          List(Ast.TraitConstraint(Ast.TraitConstraint.Head(eqClassSym, loc), tpe, loc)),
           Nil,
           Type.mkPureUncurriedArrow(List(tpe, tpe), Type.mkBool(loc), loc)
         ),
         tpe = Type.mkBool(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(eqClassSym, loc), tpe, loc)),
+        tconstrs = List(Ast.TraitConstraint(Ast.TraitConstraint.Head(eqClassSym, loc), tpe, loc)),
         econstrs = Nil,
         loc = loc
       )
@@ -255,12 +255,12 @@ object Deriver {
 
       val defn = KindedAst.Def(compareDefSym, spec, exp)
 
-      val tconstrs = getTypeConstraintsForTypeParams(tparams, orderClassSym, loc)
+      val tconstrs = getTraitConstraintsForTypeParams(tparams, orderClassSym, loc)
       Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.ClassSymUse(orderClassSym, loc),
+        trt = Ast.TraitSymUse(orderClassSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -350,13 +350,13 @@ object Deriver {
         ),
         sc = Scheme(
           tparams.map(_.sym),
-          List(Ast.TypeConstraint(Ast.TypeConstraint.Head(orderClassSym, loc), tpe, loc)),
+          List(Ast.TraitConstraint(Ast.TraitConstraint.Head(orderClassSym, loc), tpe, loc)),
           Nil,
           Type.mkPureUncurriedArrow(List(tpe, tpe), Type.mkEnum(comparisonEnumSym, Kind.Star, loc), loc)
         ),
         tpe = Type.mkEnum(comparisonEnumSym, Kind.Star, loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(orderClassSym, loc), tpe, loc)),
+        tconstrs = List(Ast.TraitConstraint(Ast.TraitConstraint.Head(orderClassSym, loc), tpe, loc)),
         econstrs = Nil,
         loc = loc
       )
@@ -468,13 +468,13 @@ object Deriver {
 
       val defn = KindedAst.Def(toStringDefSym, spec, exp)
 
-      val tconstrs = getTypeConstraintsForTypeParams(tparams, toStringClassSym, loc)
+      val tconstrs = getTraitConstraintsForTypeParams(tparams, toStringClassSym, loc)
 
       Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.ClassSymUse(toStringClassSym, loc),
+        trt = Ast.TraitSymUse(toStringClassSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -514,13 +514,13 @@ object Deriver {
         fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
-          List(Ast.TypeConstraint(Ast.TypeConstraint.Head(toStringClassSym, loc), tpe, loc)),
+          List(Ast.TraitConstraint(Ast.TraitConstraint.Head(toStringClassSym, loc), tpe, loc)),
           Nil,
           Type.mkPureArrow(tpe, Type.mkString(loc), loc)
         ),
         tpe = Type.mkString(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(toStringClassSym, loc), tpe, loc)),
+        tconstrs = List(Ast.TraitConstraint(Ast.TraitConstraint.Head(toStringClassSym, loc), tpe, loc)),
         econstrs = Nil,
         loc = loc
       )
@@ -604,12 +604,12 @@ object Deriver {
 
       val defn = KindedAst.Def(hashDefSym, spec, exp)
 
-      val tconstrs = getTypeConstraintsForTypeParams(tparams, hashClassSym, loc)
+      val tconstrs = getTraitConstraintsForTypeParams(tparams, hashClassSym, loc)
       Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.ClassSymUse(hashClassSym, loc),
+        trt = Ast.TraitSymUse(hashClassSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         defs = List(defn),
@@ -651,13 +651,13 @@ object Deriver {
         fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
-          List(Ast.TypeConstraint(Ast.TypeConstraint.Head(hashClassSym, loc), tpe, loc)),
+          List(Ast.TraitConstraint(Ast.TraitConstraint.Head(hashClassSym, loc), tpe, loc)),
           Nil,
           Type.mkPureArrow(tpe, Type.mkInt32(loc), loc)
         ),
         tpe = Type.mkInt32(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(hashClassSym, loc), tpe, loc)),
+        tconstrs = List(Ast.TraitConstraint(Ast.TraitConstraint.Head(hashClassSym, loc), tpe, loc)),
         econstrs = Nil,
         loc = loc
       )
@@ -725,13 +725,13 @@ object Deriver {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
       val sendableClassSym = PredefinedClasses.lookupClassSym("Sendable", root)
 
-      val tconstrs = getTypeConstraintsForTypeParams(tparams, sendableClassSym, loc)
+      val tconstrs = getTraitConstraintsForTypeParams(tparams, sendableClassSym, loc)
 
       Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.ClassSymUse(sendableClassSym, loc),
+        trt = Ast.TraitSymUse(sendableClassSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         defs = Nil,
@@ -749,12 +749,12 @@ object Deriver {
   }
 
   /**
-    * Creates type constraints for the given type parameters.
+    * Creates trait constraints for the given type parameters.
     * Filters out non-star type parameters and wild type parameters.
     */
-  private def getTypeConstraintsForTypeParams(tparams: List[KindedAst.TypeParam], clazz: Symbol.ClassSym, loc: SourceLocation): List[Ast.TypeConstraint] = tparams.collect {
+  private def getTraitConstraintsForTypeParams(tparams: List[KindedAst.TypeParam], clazz: Symbol.TraitSym, loc: SourceLocation): List[Ast.TraitConstraint] = tparams.collect {
     case tparam if tparam.sym.kind == Kind.Star && !tparam.name.isWild =>
-      Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), Type.Var(tparam.sym, loc), loc)
+      Ast.TraitConstraint(Ast.TraitConstraint.Head(clazz, loc), Type.Var(tparam.sym, loc), loc)
   }
 
   /**

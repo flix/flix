@@ -56,7 +56,7 @@ object TypeMinimization {
 
       // filter out unused type constraints
       val newTconstrs = tconstrs.filter {
-        case Ast.TypeConstraint(_, Type.Var(sym, _), _) if tvars.contains(sym) => true
+        case Ast.TraitConstraint(_, Type.Var(sym, _), _) if tvars.contains(sym) => true
         case _ => false
       }
       Scheme(newQuants, newTconstrs, econstrs, newBase)

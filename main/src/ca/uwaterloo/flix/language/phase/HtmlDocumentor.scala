@@ -156,17 +156,17 @@ object HtmlDocumentor {
   /**
     * Get the shortest name of the class symbol, e.g. 'StdOut'.
     */
-  private def className(sym: Symbol.ClassSym): String = sym.name
+  private def className(sym: Symbol.TraitSym): String = sym.name
 
   /**
     * Get the fully qualified name of the class symbol, e.g. 'System.StdOut'.
     */
-  private def classQualifiedName(sym: Symbol.ClassSym): String = sym.toString
+  private def classQualifiedName(sym: Symbol.TraitSym): String = sym.toString
 
   /**
     * Get the file name of the class symbol, e.g. 'System.StdOut.html'.
     */
-  private def classFileName(sym: Symbol.ClassSym): String = s"${sym.toString}.html"
+  private def classFileName(sym: Symbol.TraitSym): String = s"${sym.toString}.html"
 
   /**
     * Get the shortest name of the effect symbol, e.g. 'StdOut'.
@@ -221,7 +221,7 @@ object HtmlDocumentor {
       var defs: List[TypedAst.Def] = Nil
       mod.foreach {
         case sym: Symbol.ModuleSym => submodules = sym :: submodules
-        case sym: Symbol.ClassSym =>
+        case sym: Symbol.TraitSym =>
           val companionMod = companionModule(sym.namespace :+ sym.name, moduleSym, root)
           companionMod.foreach(m => companionMods = m.sym :: companionMods)
           classes = mkClass(sym, moduleSym, companionMod, root) :: classes
@@ -269,7 +269,7 @@ object HtmlDocumentor {
   /**
     * Extracts all relevant information about the given `ClassSym` from the root, into a `HtmlDocumentor.Class`.
     */
-  private def mkClass(sym: Symbol.ClassSym, parent: Symbol.ModuleSym, companionMod: Option[Module], root: TypedAst.Root): Class = {
+  private def mkClass(sym: Symbol.TraitSym, parent: Symbol.ModuleSym, companionMod: Option[Module], root: TypedAst.Root): Class = {
     val decl = root.classes(sym)
 
     val (sigs, defs) = decl.sigs.partition(_.exp.isEmpty)
@@ -344,9 +344,9 @@ object HtmlDocumentor {
     * but with all items that shouldn't appear in the documentation removed.
     */
   private def filterClass(clazz: Class): Class = clazz match {
-    case Class(TypedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, _, laws, loc), signatures, defs, instances, parent, companionMod) =>
+    case Class(TypedAst.Trait(doc, ann, mod, sym, tparam, superClasses, assocs, _, laws, loc), signatures, defs, instances, parent, companionMod) =>
       Class(
-        TypedAst.Class(
+        TypedAst.Trait(
           doc,
           ann,
           mod,
@@ -589,7 +589,7 @@ object HtmlDocumentor {
     sb.append("<span class='keyword'>trait</span> ")
     sb.append(s"<span class='name'>${esc(clazz.name)}</span>")
     docTypeParams(List(clazz.decl.tparam))
-    docTypeConstraints(clazz.decl.superClasses)
+    docTraitConstraints(clazz.decl.superTraits)
     sb.append("</code>")
     docActions(None, clazz.decl.loc)
     sb.append("</div>")
@@ -990,7 +990,7 @@ object HtmlDocumentor {
     sb.append(": ")
     docType(spec.retTpe)
     docEffectType(spec.eff)
-    docTypeConstraints(spec.tconstrs)
+    docTraitConstraints(spec.tconstrs)
     docEqualityConstraints(spec.econstrs)
     sb.append("</code>")
     docActions(linkId, spec.loc)
@@ -1030,7 +1030,7 @@ object HtmlDocumentor {
     sb.append("<code>")
     sb.append("<span class='keyword'>instance</span> ")
     docType(instance.tpe)
-    docTypeConstraints(instance.tconstrs)
+    docTraitConstraints(instance.tconstrs)
     sb.append("</code>")
     docActions(None, instance.loc)
     sb.append("</div>")
@@ -1039,14 +1039,14 @@ object HtmlDocumentor {
   }
 
   /**
-    * Documents the given list of `TypeConstraint`s, `tconsts`.
+    * Documents the given list of `TraitConstraint`s, `tconsts`.
     * E.g. "with Functor[m]".
     *
     * The result will be appended to the given `StringBuilder`, `sb`.
     *
     * If `tconsts` is empty, nothing will be generated.
     */
-  private def docTypeConstraints(tconsts: List[Ast.TypeConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
+  private def docTraitConstraints(tconsts: List[Ast.TraitConstraint])(implicit flix: Flix, sb: StringBuilder): Unit = {
     if (tconsts.isEmpty) {
       return
     }
@@ -1095,12 +1095,12 @@ object HtmlDocumentor {
     * If `derives` contains no elements, nothing will be generated.
     */
   private def docDerivations(derives: Ast.Derivations)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    if (derives.classes.isEmpty) {
+    if (derives.traits.isEmpty) {
       return
     }
 
     sb.append("<span> <span class='keyword'>with</span> ")
-    docList(derives.classes.sortBy(_.loc)) { c =>
+    docList(derives.traits.sortBy(_.loc)) { c =>
       sb.append(s"<a class='tpe-constraint' href='${escUrl(classFileName(c.clazz))}' title='trait ${esc(className(c.clazz))}'>")
       sb.append(s"${esc(c.clazz.name)}")
       sb.append("</a>")
@@ -1419,7 +1419,7 @@ object HtmlDocumentor {
   /**
     * A represention of a class that's easier to work with while generating documention.
     */
-  private case class Class(decl: TypedAst.Class,
+  private case class Class(decl: TypedAst.Trait,
                            signatures: List[TypedAst.Sig],
                            defs: List[TypedAst.Sig],
                            instances: List[TypedAst.Instance],

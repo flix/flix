@@ -45,9 +45,9 @@ object Instances {
   /**
     * Checks that all signatures in `class0` are used in laws if `class0` is marked `lawful`.
     */
-  private def checkLawApplication(class0: TypedAst.Class): List[InstanceError] = class0 match {
+  private def checkLawApplication(class0: TypedAst.Trait): List[InstanceError] = class0 match {
     // Case 1: lawful class
-    case TypedAst.Class(_, _, mod, _, _, _, _, sigs, laws, _) if mod.isLawful =>
+    case TypedAst.Trait(_, _, mod, _, _, _, _, sigs, laws, _) if mod.isLawful =>
       val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
         case (acc, TypedAst.Def(_, _, exp)) => acc ++ TypedAstOps.sigSymsOf(exp)
       }
@@ -56,13 +56,13 @@ object Instances {
         sig => InstanceError.UnlawfulSignature(sig, sig.loc)
       }
     // Case 2: non-lawful class
-    case TypedAst.Class(_, _, _, _, _, _, _, _, _, _) => Nil
+    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, _) => Nil
   }
 
   /**
     * Performs validations on a single class.
     */
-  private def visitClass(class0: TypedAst.Class): List[InstanceError] = {
+  private def visitClass(class0: TypedAst.Trait): List[InstanceError] = {
     checkLawApplication(class0)
   }
 
@@ -142,8 +142,8 @@ object Instances {
         // Case 2: An instance matching this type exists. Error.
         case Some(inst2) =>
           List(
-            InstanceError.OverlappingInstances(inst1.clazz.sym, inst1.clazz.loc, inst2.clazz.loc),
-            InstanceError.OverlappingInstances(inst1.clazz.sym, inst2.clazz.loc, inst1.clazz.loc)
+            InstanceError.OverlappingInstances(inst1.trt.sym, inst1.trt.loc, inst2.trt.loc),
+            InstanceError.OverlappingInstances(inst1.trt.sym, inst2.trt.loc, inst1.trt.loc)
           )
       }
     }
@@ -153,14 +153,14 @@ object Instances {
     * Checks that every signature in `clazz` is implemented in `inst`, and that `inst` does not have any extraneous definitions.
     */
   private def checkSigMatch(inst: TypedAst.Instance, root: TypedAst.Root)(implicit flix: Flix): List[InstanceError] = {
-    val clazz = root.classes(inst.clazz.sym)
+    val clazz = root.classes(inst.trt.sym)
 
     // Step 1: check that each signature has an implementation.
     val sigMatchVal = clazz.sigs.flatMap {
       sig =>
         (inst.defs.find(_.sym.text == sig.sym.name), sig.exp) match {
           // Case 1: there is no definition with the same name, and no default implementation
-          case (None, None) => List(InstanceError.MissingImplementation(sig.sym, inst.clazz.loc))
+          case (None, None) => List(InstanceError.MissingImplementation(sig.sym, inst.trt.loc))
           // Case 2: there is no definition with the same name, but there is a default implementation
           case (None, Some(_)) => Nil
           // Case 3: there is an implementation marked override, but no default implementation
@@ -183,7 +183,7 @@ object Instances {
     val extraDefVal = inst.defs.flatMap {
       defn =>
         clazz.sigs.find(_.sym.name == defn.sym.text) match {
-          case None => List(InstanceError.ExtraneousDef(defn.sym, inst.clazz.sym, defn.sym.loc))
+          case None => List(InstanceError.ExtraneousDef(defn.sym, inst.trt.sym, defn.sym.loc))
           case _ => Nil
         }
     }
@@ -194,7 +194,7 @@ object Instances {
   /**
     * Finds an instance of the class for a given type.
     */
-  def findInstanceForType(tpe: Type, clazz: Symbol.ClassSym, root: TypedAst.Root)(implicit flix: Flix): Option[(Ast.Instance, Substitution)] = {
+  def findInstanceForType(tpe: Type, clazz: Symbol.TraitSym, root: TypedAst.Root)(implicit flix: Flix): Option[(Ast.Instance, Substitution)] = {
     val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
     // lazily find the instance whose type unifies and save the substitution
     ListOps.findMap(superInsts) {
@@ -211,7 +211,7 @@ object Instances {
     */
   private def checkSuperInstances(inst: TypedAst.Instance, root: TypedAst.Root)(implicit flix: Flix): List[InstanceError] = inst match {
     case TypedAst.Instance(_, _, _, clazz, tpe, tconstrs, _, _, _, _) =>
-      val superClasses = root.classEnv(clazz.sym).superClasses
+      val superClasses = root.classEnv(clazz.sym).superTraits
       superClasses flatMap {
         superClass =>
           // Find the instance of the superclass matching the type of this instance.
@@ -223,14 +223,14 @@ object Instances {
                   ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv).toHardResult match {
                     case Result.Ok(_) => Nil
                     case Result.Err(errors) => errors.map {
-                      case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTypeClassConstraint(missingTconstr, superClass, clazz.loc)
+                      case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTraitConstraint(missingTconstr, superClass, clazz.loc)
                       case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
                     }.toList
                   }
               }
             case None =>
               // Case 2: No instance matches. Error.
-              List(InstanceError.MissingSuperClassInstance(tpe, clazz.sym, superClass, clazz.loc))
+              List(InstanceError.MissingSuperTraitInstance(tpe, clazz.sym, superClass, clazz.loc))
           }
       }
   }
@@ -239,7 +239,7 @@ object Instances {
     * Reassembles an instance
     */
   private def checkInstance(inst: TypedAst.Instance, root: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
-    val isClassStable = inst.clazz.loc.source.stable
+    val isClassStable = inst.trt.loc.source.stable
     val isInstanceStable = inst.loc.source.stable
     val isIncremental = changeSet.isInstanceOf[ChangeSet.Changes]
     if (isIncremental && isClassStable && isInstanceStable) {
@@ -282,7 +282,7 @@ object Instances {
   private def unsafeGetHead(inst: TypedAst.Instance): TypeConstructor = {
     inst.tpe.typeConstructor match {
       case Some(tc) => tc
-      case None => throw InternalCompilerException("unexpected non-simple type",  inst.clazz.loc)
+      case None => throw InternalCompilerException("unexpected non-simple type",  inst.trt.loc)
     }
   }
 }

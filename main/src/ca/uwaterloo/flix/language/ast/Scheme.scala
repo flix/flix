@@ -46,7 +46,7 @@ object Scheme {
   /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
     */
-  def instantiate(sc: Scheme, loc: SourceLocation)(implicit flix: Flix): (List[Ast.TypeConstraint], List[Ast.BroadEqualityConstraint], Type) = {
+  def instantiate(sc: Scheme, loc: SourceLocation)(implicit flix: Flix): (List[Ast.TraitConstraint], List[Ast.BroadEqualityConstraint], Type) = {
     // Compute the base type.
     val baseType = sc.base
 
@@ -75,9 +75,9 @@ object Scheme {
     val newBase = visitType(baseType)
 
     val newTconstrs = sc.tconstrs.map {
-      case Ast.TypeConstraint(head, tpe0, loc) =>
+      case Ast.TraitConstraint(head, tpe0, loc) =>
         val tpe = tpe0.map(visitType)
-        Ast.TypeConstraint(head, tpe, loc)
+        Ast.TraitConstraint(head, tpe, loc)
     }
 
     val newEconstrs = sc.econstrs.map {
@@ -91,7 +91,7 @@ object Scheme {
   /**
     * Generalizes the given type `tpe0` with respect to the empty type environment.
     */
-  def generalize(tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.BroadEqualityConstraint], tpe0: Type, renv: RigidityEnv): Scheme = {
+  def generalize(tconstrs: List[Ast.TraitConstraint], econstrs: List[Ast.BroadEqualityConstraint], tpe0: Type, renv: RigidityEnv): Scheme = {
     val tvars = tpe0.typeVars ++ tconstrs.flatMap(tconstr => tconstr.arg.typeVars) ++ econstrs.flatMap(econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars)
     val quantifiers = renv.getFlexibleVarsOf(tvars.toList)
     Scheme(quantifiers.map(_.sym), tconstrs, econstrs, tpe0)
@@ -101,14 +101,14 @@ object Scheme {
     * Returns `true` if the given schemes are equivalent.
     */
   // TODO can optimize?
-  def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
+  def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
     lessThanEqual(sc1, sc2, classEnv, eqEnv) && lessThanEqual(sc2, sc1, classEnv, eqEnv)
   }
 
   /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
+  def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
     checkLessThanEqual(sc1, sc2, classEnv, eqEnv).toHardResult match {
       case Result.Ok(_) => true
       case Result.Err(_) => false
@@ -123,7 +123,7 @@ object Scheme {
     * ---------------------------------------
     * Θₚ ⊩ (∀α₁.π₁ ⇒ τ₁) ≤ (∀α₂.π₂ ⇒ τ₂)
     */
-  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eenv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Substitution, UnificationError] = {
+  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, cenv0: Map[Symbol.TraitSym, Ast.TraitContext], eenv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Substitution, UnificationError] = {
 
     // Instantiate sc2, creating [T/α₂]π₂ and [T/α₂]τ₂
     val (cconstrs2_0, econstrs2_0, tpe2_0) = Scheme.instantiate(sc2, SourceLocation.Unknown)
@@ -145,15 +145,15 @@ object Scheme {
     }
     val tpe2 = subst(tpe2_0)
     val cconstrs2 = cconstrs2_0.map {
-      case Ast.TypeConstraint(head, arg, loc) =>
+      case Ast.TraitConstraint(head, arg, loc) =>
         // should never fail
         val (t, _) = ConstraintResolution.simplifyType(subst(arg), RigidityEnv.empty, loc)(eenv0, flix).get
-        Ast.TypeConstraint(head, t, loc)
+        Ast.TraitConstraint(head, t, loc)
     }
 
     // Add sc2's constraints to the environment
     val eenv = ConstraintResolution.expandEqualityEnv(eenv0, econstrs2)
-    val cenv = ConstraintResolution.expandClassEnv(cenv0, cconstrs2)
+    val cenv = ConstraintResolution.expandTraitEnv(cenv0, cconstrs2)
 
     // Mark all the constraints from sc2 as rigid
     val tvars = cconstrs2.flatMap(_.arg.typeVars) ++
@@ -163,10 +163,10 @@ object Scheme {
 
     // Check that the constraints from sc1 hold
     // And that the bases unify
-    val cconstrs = sc1.tconstrs.map { case Ast.TypeConstraint(head, arg, loc) => TypingConstraint.Class(head.sym, arg, loc) }
+    val tconstrs = sc1.tconstrs.map { case Ast.TraitConstraint(head, arg, loc) => TypingConstraint.Trait(head.sym, arg, loc) }
     val econstrs = sc1.econstrs.map { case Ast.BroadEqualityConstraint(t1, t2) => TypingConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
     val baseConstr = TypingConstraint.Equality(sc1.base, tpe2, Provenance.Match(sc1.base, tpe2, SourceLocation.Unknown))
-    ConstraintResolution.resolve(baseConstr :: cconstrs ::: econstrs, subst, renv)(cenv, eenv, flix) match {
+    ConstraintResolution.resolve(baseConstr :: tconstrs ::: econstrs, subst, renv)(cenv, eenv, flix) match {
       case Result.Ok(ResolutionResult(subst, Nil, _)) => Validation.success(subst)
       case _ => Validation.HardFailure(Chain(UnificationError.MismatchedTypes(sc1.base, sc2.base)))
     }
@@ -178,7 +178,7 @@ object Scheme {
 /**
   * Representation of polytypes.
   */
-case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], tconstrs: List[Ast.TypeConstraint], econstrs: List[Ast.BroadEqualityConstraint], base: Type) {
+case class Scheme(quantifiers: List[Symbol.KindedTypeVarSym], tconstrs: List[Ast.TraitConstraint], econstrs: List[Ast.BroadEqualityConstraint], base: Type) {
 
   /**
     * Returns a human readable representation of the polytype.

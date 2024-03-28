@@ -58,7 +58,7 @@ object CodeHinter {
   /**
     * Computes code quality hints for the given class `typeclass`.
     */
-  private def visitClass(typeclass: TypedAst.Class)(implicit root: Root, index: Index): List[CodeHint] = {
+  private def visitClass(typeclass: TypedAst.Trait)(implicit root: Root, index: Index): List[CodeHint] = {
     val uses = index.usesOf(typeclass.sym)
     val isDeprecated = typeclass.ann.isDeprecated
     val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated) else Nil

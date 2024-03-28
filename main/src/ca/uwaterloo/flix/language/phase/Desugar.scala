@@ -66,7 +66,7 @@ object Desugar {
       val decls = decls0.map(visitDecl)
       DesugaredAst.Declaration.Namespace(ident, usesAndImports, decls, loc)
 
-    case d: WeededAst.Declaration.Class => visitClass(d)
+    case d: WeededAst.Declaration.Trait => visitClass(d)
     case d: WeededAst.Declaration.Instance => visitInstance(d)
     case d: WeededAst.Declaration.Def => visitDef(d)
     case d: WeededAst.Declaration.Law => visitLaw(d)
@@ -77,16 +77,16 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.Declaration.Class]] `class0`.
+    * Desugars the given [[WeededAst.Declaration.Trait]] `class0`.
     */
-  private def visitClass(class0: WeededAst.Declaration.Class)(implicit flix: Flix): DesugaredAst.Declaration.Class = class0 match {
-    case WeededAst.Declaration.Class(doc, ann, mod, ident, tparam0, superClasses0, assocs0, sigs0, laws0, loc) =>
+  private def visitClass(class0: WeededAst.Declaration.Trait)(implicit flix: Flix): DesugaredAst.Declaration.Trait = class0 match {
+    case WeededAst.Declaration.Trait(doc, ann, mod, ident, tparam0, superClasses0, assocs0, sigs0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0)
-      val superClasses = superClasses0.map(visitTypeConstraint)
+      val superClasses = superClasses0.map(visitTraitConstraint)
       val assocs = assocs0.map(visitAssocTypeSig)
       val sigs = sigs0.map(visitSig)
       val laws = laws0.map(visitDef)
-      DesugaredAst.Declaration.Class(doc, ann, mod, ident, tparam, superClasses, assocs, sigs, laws, loc)
+      DesugaredAst.Declaration.Trait(doc, ann, mod, ident, tparam, superClasses, assocs, sigs, laws, loc)
   }
 
   /**
@@ -95,7 +95,7 @@ object Desugar {
   private def visitInstance(instance0: WeededAst.Declaration.Instance)(implicit flix: Flix): DesugaredAst.Declaration.Instance = instance0 match {
     case WeededAst.Declaration.Instance(doc, ann, mod, clazz, tpe0, tconstrs0, assocs0, defs0, loc) =>
       val tpe = visitType(tpe0)
-      val tconstrs = tconstrs0.map(visitTypeConstraint)
+      val tconstrs = tconstrs0.map(visitTraitConstraint)
       val assocs = assocs0.map(visitAssocTypeDef)
       val defs = defs0.map(visitDef)
       DesugaredAst.Declaration.Instance(doc, ann, mod, clazz, tpe, tconstrs, assocs, defs, loc)
@@ -112,7 +112,7 @@ object Desugar {
       val exp = visitExp(exp0)
       val tpe = visitType(tpe0)
       val eff = eff0.map(visitType)
-      val tconstrs = tconstrs0.map(visitTypeConstraint)
+      val tconstrs = tconstrs0.map(visitTraitConstraint)
       val constrs = constrs0.map(visitEqualityConstraint)
       DesugaredAst.Declaration.Def(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, constrs, loc)
   }
@@ -127,7 +127,7 @@ object Desugar {
       val exp = visitExp(exp0)
       val tpe = visitType(tpe0)
       val eff = visitType(eff0)
-      val tconstrs = tconstrs0.map(visitTypeConstraint)
+      val tconstrs = tconstrs0.map(visitTraitConstraint)
       DesugaredAst.Declaration.Law(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, loc)
   }
 
@@ -184,12 +184,12 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.TypeConstraint]] `tconstr0`.
+    * Desugars the given [[WeededAst.TraitConstraint]] `tconstr0`.
     */
-  private def visitTypeConstraint(tconstr0: WeededAst.TypeConstraint): DesugaredAst.TypeConstraint = tconstr0 match {
-    case WeededAst.TypeConstraint(clazz, tpe0, loc) =>
+  private def visitTraitConstraint(tconstr0: WeededAst.TraitConstraint): DesugaredAst.TraitConstraint = tconstr0 match {
+    case WeededAst.TraitConstraint(clazz, tpe0, loc) =>
       val tpe = visitType(tpe0)
-      DesugaredAst.TypeConstraint(clazz, tpe, loc)
+      DesugaredAst.TraitConstraint(clazz, tpe, loc)
   }
 
   /**
@@ -212,7 +212,7 @@ object Desugar {
       val exp = exp0.map(visitExp)
       val tpe = visitType(tpe0)
       val eff = eff0.map(visitType)
-      val tconstrs = tconstrs0.map(visitTypeConstraint)
+      val tconstrs = tconstrs0.map(visitTraitConstraint)
       val econstrs = econstrs0.map(visitEqualityConstraint)
       DesugaredAst.Declaration.Sig(doc, ann, mod, ident, tparams, fparams, exp, tpe, eff, tconstrs, econstrs, loc)
   }
@@ -433,7 +433,7 @@ object Desugar {
     case WeededAst.Declaration.Op(doc, ann, mod, ident, fparams0, tpe0, tconstrs0, loc) =>
       val fparams = visitFormalParams(fparams0)
       val tpe = visitType(tpe0)
-      val tconstrs = tconstrs0.map(visitTypeConstraint)
+      val tconstrs = tconstrs0.map(visitTraitConstraint)
       DesugaredAst.Declaration.Op(doc, ann, mod, ident, fparams, tpe, tconstrs, loc)
   }
 

@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.language.phase.Resolver
 
 object WithCompleter extends Completer {
   /**
-    * Returns a List of Completion based on with type class constraints.
+    * Returns a List of Completion based on with trait constraints.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[WithCompletion] = {
     /*
