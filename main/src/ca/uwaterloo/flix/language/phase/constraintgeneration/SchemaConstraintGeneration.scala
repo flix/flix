@@ -68,7 +68,7 @@ object SchemaConstraintGeneration {
         //
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        c.unifyType3(tpe1, tpe2, Type.mkSchema(mkAnySchemaRowType(loc), loc), loc)
+        c.unifyType(tpe1, tpe2, Type.mkSchema(mkAnySchemaRowType(loc), loc), loc)
         val resTpe = tpe1
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
