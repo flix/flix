@@ -163,7 +163,7 @@ object Typer {
     implicit val context = new TypeContext
     val (tpe, eff) = ConstraintGeneration.visitExp(defn.exp)
     val infRenv = context.getRigidityEnv
-    val infTconstrs = context.getTypingConstraints
+    val infTconstrs = context.getTypeConstraints
     val infResult = ConstraintResolution.InfResult(infTconstrs, tpe, eff, infRenv)
     val substVal = ConstraintResolution.visitDef(defn, infResult, renv0, tconstrs0, classEnv, eqEnv, root)
     mapN(substVal) {
@@ -214,7 +214,7 @@ object Typer {
       case Some(exp) =>
         val (tpe, eff) = ConstraintGeneration.visitExp(exp)
         val renv = context.getRigidityEnv
-        val constrs = context.getTypingConstraints
+        val constrs = context.getTypeConstraints
         val infResult = ConstraintResolution.InfResult(constrs, tpe, eff, renv)
         val substVal = ConstraintResolution.visitSig(sig, infResult, renv0, tconstrs0, classEnv, eqEnv, root)
         mapN(substVal) {

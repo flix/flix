@@ -127,7 +127,7 @@ object ConstraintGeneration {
             val declaredResultType = declaredType.arrowResultType
 
             val (tpes, effs) = exps.map(visitExp).unzip
-            c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc), loc)
+            c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
             c.addClassConstraints(constrs1, loc)
             econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
             c.unifyType(tvar2, declaredType, loc)
@@ -1015,7 +1015,7 @@ object ConstraintGeneration {
     */
   private def unifyFormalParams(op: Symbol.OpSym, expected: List[KindedAst.FormalParam], actual: List[KindedAst.FormalParam], loc: SourceLocation)(implicit c: TypeContext, flix: Flix): Unit = {
     // length check done in Resolver
-    c.expectTypeArguments(op, expectedTypes = expected.map(_.tpe), actualTypes = actual.map(_.tpe), actual.map(_.loc), loc)
+    c.expectTypeArguments(op, expectedTypes = expected.map(_.tpe), actualTypes = actual.map(_.tpe), actual.map(_.loc))
   }
 
   /**

@@ -15,17 +15,17 @@
  */
 package ca.uwaterloo.flix.language.phase.constraintgeneration
 
-import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
 
 /**
-  * The typing context is a mutable environment that tracks information during type constraint generation.
+  * The type context is a mutable environment that tracks information during type constraint generation.
+  *
   * It maintains a stack of information: Whenever inference enters a region, the current information is pushed
-  * onto the stack, and the information is reset. On exiting a region, the information is popped off, and
+  * onto the stack, and a new empty scope is entered. On exiting a region, the information is popped off, and
   * a special constraint is added which incorporates all the popped constraints.
   */
 class TypeContext {
@@ -52,28 +52,28 @@ class TypeContext {
   private class ScopeConstraints(val region: Option[Symbol.KindedTypeVarSym]) {
 
     /**
-      * The constraints inferred for the scope.
+      * The constraints generated for the scope.
       */
     private val constrs: mutable.ListBuffer[TypingConstraint] = mutable.ListBuffer.empty
 
     /**
-      * Adds the constraint to the constraint list.
+      * Adds the given constraint to the constraint set.
       */
     def add(constr: TypingConstraint): Unit = this.constrs.addOne(constr)
 
     /**
-      * Adds all the constraints to the constraint list.
+      * Adds all the given constraints to the constraint set.
       */
     def addAll(constrs: Iterable[TypingConstraint]): Unit = this.constrs.addAll(constrs)
 
     /**
-      * Returns the gathered constraints.
+      * Returns the generated constraints.
       */
     def getConstraints: List[TypingConstraint] = this.constrs.toList
   }
 
   /**
-    * The information about the current scope.
+    * The current scope of constraints.
     */
   private var currentScopeConstraints: ScopeConstraints = ScopeConstraints.empty
 
@@ -81,6 +81,7 @@ class TypeContext {
     * The current rigidity environment.
     *
     * This environment only grows; we don't remove rigid variables as we exit a region.
+    *
     * We use a mutable variable because RigidityEnv is an immutable structure.
     */
   private var renv: RigidityEnv = RigidityEnv.empty
@@ -98,9 +99,9 @@ class TypeContext {
   def getRigidityEnv: RigidityEnv = renv
 
   /**
-    * Returns the current typing constraints.
+    * Returns the current type constraints.
     */
-  def getTypingConstraints: List[TypingConstraint] = currentScopeConstraints.getConstraints
+  def getTypeConstraints: List[TypingConstraint] = currentScopeConstraints.getConstraints
 
   /**
     * Generates constraints unifying the given types.
@@ -122,15 +123,17 @@ class TypeContext {
     *   tpe1 ~ tpe3
     * }}}
     */
-  def unifyType3(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Unit = {
+  def unifyType(tpe1: Type, tpe2: Type, tpe3: Type, loc: SourceLocation): Unit = {
     unifyType(tpe1, tpe2, loc)
     unifyType(tpe1, tpe3, loc)
   }
 
   /**
-    * Generates constraints unifying the given types.
+    * Generates constraints unifying all the given types.
     *
-    * Returns a fresh type variable if the list is empty.
+    * Generates no constraints if the list is empty.
+    *
+    * Generates no constraints if the list has a single element.
     *
     * {{{
     *   tpe1 ~ tpe2
@@ -139,7 +142,7 @@ class TypeContext {
     *   tpe1 ~ tpeN
     * }}}
     */
-  def unifyAllTypes(tpes: List[Type], loc: SourceLocation)(implicit flix: Flix): Unit = {
+  def unifyAllTypes(tpes: List[Type], loc: SourceLocation): Unit = {
     // For performance, avoid creating a fresh type var if the list is non-empty
     tpes match {
       // Case 1: Nonempty list. Unify everything with the first type.
@@ -151,7 +154,7 @@ class TypeContext {
   }
 
   /**
-    * Generates constraints expecting the given types to unify.
+    * Generates a constraint with an expected type and an actual type.
     *
     * {{{
     *   expected ~ actual
@@ -174,7 +177,7 @@ class TypeContext {
     *   tpeEN ~ tpeAN
     * }}}
     */
-  def expectTypeArguments(sym: Symbol, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation], loc: SourceLocation)(implicit flix: Flix): Unit = {
+  def expectTypeArguments(sym: Symbol, expectedTypes: List[Type], actualTypes: List[Type], actualLocs: List[SourceLocation]): Unit = {
     expectedTypes.zip(actualTypes).zip(actualLocs).zipWithIndex.foreach {
       case (((expectedType, actualType), loc), index) =>
         val argNum = index + 1
