@@ -16,8 +16,8 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint
-import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint.Provenance
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -137,7 +137,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
   /**
     * Applies `this` substitution to the given provenance.
     */
-  def apply(prov: TypingConstraint.Provenance): TypingConstraint.Provenance = prov match {
+  def apply(prov: TypeConstraint.Provenance): TypeConstraint.Provenance = prov match {
     case Provenance.ExpectType(expected, actual, loc) => Provenance.ExpectType(apply(expected), apply(actual), loc)
     case Provenance.ExpectEffect(expected, actual, loc) => Provenance.ExpectEffect(apply(expected), apply(actual), loc)
     case Provenance.ExpectArgument(expected, actual, sym, num, loc) => Provenance.ExpectArgument(apply(expected), apply(actual), sym, num, loc)

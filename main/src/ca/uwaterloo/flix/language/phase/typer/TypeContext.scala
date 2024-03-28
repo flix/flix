@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase.constraintgeneration
+package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint.Provenance
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.mutable
@@ -54,22 +54,22 @@ class TypeContext {
     /**
       * The constraints generated for the scope.
       */
-    private val constrs: mutable.ListBuffer[TypingConstraint] = mutable.ListBuffer.empty
+    private val constrs: mutable.ListBuffer[TypeConstraint] = mutable.ListBuffer.empty
 
     /**
       * Adds the given constraint to the constraint set.
       */
-    def add(constr: TypingConstraint): Unit = this.constrs.addOne(constr)
+    def add(constr: TypeConstraint): Unit = this.constrs.addOne(constr)
 
     /**
       * Adds all the given constraints to the constraint set.
       */
-    def addAll(constrs: Iterable[TypingConstraint]): Unit = this.constrs.addAll(constrs)
+    def addAll(constrs: Iterable[TypeConstraint]): Unit = this.constrs.addAll(constrs)
 
     /**
       * Returns the generated constraints.
       */
-    def getConstraints: List[TypingConstraint] = this.constrs.toList
+    def getConstraints: List[TypeConstraint] = this.constrs.toList
   }
 
   /**
@@ -101,7 +101,7 @@ class TypeContext {
   /**
     * Returns the current type constraints.
     */
-  def getTypeConstraints: List[TypingConstraint] = currentScopeConstraints.getConstraints
+  def getTypeConstraints: List[TypeConstraint] = currentScopeConstraints.getConstraints
 
   /**
     * Generates constraints unifying the given types.
@@ -111,7 +111,7 @@ class TypeContext {
     * }}}
     */
   def unifyType(tpe1: Type, tpe2: Type, loc: SourceLocation): Unit = {
-    val constr = TypingConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, loc))
+    val constr = TypeConstraint.Equality(tpe1, tpe2, Provenance.Match(tpe1, tpe2, loc))
     currentScopeConstraints.add(constr)
   }
 
@@ -161,7 +161,7 @@ class TypeContext {
     * }}}
     */
   def expectType(expected: Type, actual: Type, loc: SourceLocation): Unit = {
-    val constr = TypingConstraint.Equality(expected, actual, Provenance.ExpectType(expected, actual, loc))
+    val constr = TypeConstraint.Equality(expected, actual, Provenance.ExpectType(expected, actual, loc))
     currentScopeConstraints.add(constr)
   }
 
@@ -182,7 +182,7 @@ class TypeContext {
       case (((expectedType, actualType), loc), index) =>
         val argNum = index + 1
         val prov = Provenance.ExpectArgument(expectedType, actualType, sym, argNum, loc)
-        val constr = TypingConstraint.Equality(expectedType, actualType, prov)
+        val constr = TypeConstraint.Equality(expectedType, actualType, prov)
         currentScopeConstraints.add(constr)
     }
   }
@@ -193,7 +193,7 @@ class TypeContext {
   def addClassConstraints(tconstrs0: List[Ast.TypeConstraint], loc: SourceLocation): Unit = {
     // convert all the syntax-level constraints to semantic constraints
     val tconstrs = tconstrs0.map {
-      case Ast.TypeConstraint(head, arg, _) => TypingConstraint.Class(head.sym, arg, loc)
+      case Ast.TypeConstraint(head, arg, _) => TypeConstraint.Class(head.sym, arg, loc)
     }
     currentScopeConstraints.addAll(tconstrs)
   }
@@ -263,7 +263,7 @@ class TypeContext {
       case Some(r) =>
         // TODO ASSOC-TYPES improve prov. We can probably get a better prov than "match"
         val prov = Provenance.Match(externalEff1, internalEff2, loc)
-        TypingConstraint.Purification(r, externalEff1, internalEff2, prov, currentScopeConstraints.getConstraints)
+        TypeConstraint.Purification(r, externalEff1, internalEff2, prov, currentScopeConstraints.getConstraints)
     }
 
     currentScopeConstraints = constraintStack.pop()

@@ -13,12 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.KindedAst.Expr
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.constraintgeneration.{RestrictableChooseConstraintGeneration, SchemaConstraintGeneration, TypeContext}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -30,7 +29,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
   * We gather constraints as we traverse each def.
   * Constraints are later resolved in ConstraintResolution.
   */
-object ConstraintGeneration {
+object ConstraintGen {
 
   /**
     * Generates constraints for the given expression `exp0`, adding them to the type context `c`.

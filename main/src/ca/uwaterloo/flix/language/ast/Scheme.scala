@@ -18,10 +18,9 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
-import ca.uwaterloo.flix.language.phase.ConstraintResolution
-import ca.uwaterloo.flix.language.phase.ConstraintResolution.ResolutionResult
-import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint
-import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint.Provenance
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver.ResolutionResult
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver, TypeConstraint}
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, UnificationError}
 import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
@@ -130,8 +129,8 @@ object Scheme {
 
     // Resolve what we can from the new econstrs
     // TODO ASSOC-TYPES probably these should be narrow from the start
-    val tconstrs2_0 = econstrs2_0.map { case Ast.BroadEqualityConstraint(t1, t2) => TypingConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
-    val (subst, econstrs2_1) = ConstraintResolution.resolve(tconstrs2_0, Substitution.empty, RigidityEnv.empty)(cenv0, eenv0, flix) match {
+    val tconstrs2_0 = econstrs2_0.map { case Ast.BroadEqualityConstraint(t1, t2) => TypeConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
+    val (subst, econstrs2_1) = ConstraintSolver.resolve(tconstrs2_0, Substitution.empty, RigidityEnv.empty)(cenv0, eenv0, flix) match {
       case Result.Ok(ResolutionResult(newSubst, newConstrs, _)) =>
         (newSubst, newConstrs)
       case _ => throw InternalCompilerException("unexpected inconsistent type constraints", SourceLocation.Unknown)
@@ -140,20 +139,20 @@ object Scheme {
     // Anything we didn't solve must be a standard equality constraint
     // Apply the substitution to the new scheme 2
     val econstrs2 = econstrs2_1.map {
-      case TypingConstraint.Equality(t1, t2, prov) => EqualityEnvironment.narrow(Ast.BroadEqualityConstraint(subst(t1), subst(t2)))
+      case TypeConstraint.Equality(t1, t2, prov) => EqualityEnvironment.narrow(Ast.BroadEqualityConstraint(subst(t1), subst(t2)))
       case _ => throw InternalCompilerException("unexpected constraint", SourceLocation.Unknown)
     }
     val tpe2 = subst(tpe2_0)
     val cconstrs2 = cconstrs2_0.map {
       case Ast.TypeConstraint(head, arg, loc) =>
         // should never fail
-        val (t, _) = ConstraintResolution.simplifyType(subst(arg), RigidityEnv.empty, loc)(eenv0, flix).get
+        val (t, _) = ConstraintSolver.simplifyType(subst(arg), RigidityEnv.empty, loc)(eenv0, flix).get
         Ast.TypeConstraint(head, t, loc)
     }
 
     // Add sc2's constraints to the environment
-    val eenv = ConstraintResolution.expandEqualityEnv(eenv0, econstrs2)
-    val cenv = ConstraintResolution.expandClassEnv(cenv0, cconstrs2)
+    val eenv = ConstraintSolver.expandEqualityEnv(eenv0, econstrs2)
+    val cenv = ConstraintSolver.expandClassEnv(cenv0, cconstrs2)
 
     // Mark all the constraints from sc2 as rigid
     val tvars = cconstrs2.flatMap(_.arg.typeVars) ++
@@ -163,10 +162,10 @@ object Scheme {
 
     // Check that the constraints from sc1 hold
     // And that the bases unify
-    val cconstrs = sc1.tconstrs.map { case Ast.TypeConstraint(head, arg, loc) => TypingConstraint.Class(head.sym, arg, loc) }
-    val econstrs = sc1.econstrs.map { case Ast.BroadEqualityConstraint(t1, t2) => TypingConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
-    val baseConstr = TypingConstraint.Equality(sc1.base, tpe2, Provenance.Match(sc1.base, tpe2, SourceLocation.Unknown))
-    ConstraintResolution.resolve(baseConstr :: cconstrs ::: econstrs, subst, renv)(cenv, eenv, flix) match {
+    val cconstrs = sc1.tconstrs.map { case Ast.TypeConstraint(head, arg, loc) => TypeConstraint.Class(head.sym, arg, loc) }
+    val econstrs = sc1.econstrs.map { case Ast.BroadEqualityConstraint(t1, t2) => TypeConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
+    val baseConstr = TypeConstraint.Equality(sc1.base, tpe2, Provenance.Match(sc1.base, tpe2, SourceLocation.Unknown))
+    ConstraintSolver.resolve(baseConstr :: cconstrs ::: econstrs, subst, renv)(cenv, eenv, flix) match {
       case Result.Ok(ResolutionResult(subst, Nil, _)) => Validation.success(subst)
       case _ => Validation.HardFailure(Chain(UnificationError.MismatchedTypes(sc1.base, sc2.base)))
     }

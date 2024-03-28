@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase
+package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.constraintgeneration.TypingConstraint.Provenance
-import ca.uwaterloo.flix.language.phase.constraintgeneration.{Debug, TypingConstraint}
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.language.phase.unification.Unification.getUnderOrOverAppliedError
 import ca.uwaterloo.flix.language.phase.unification._
 import ca.uwaterloo.flix.util.Result.Err
@@ -38,7 +37,7 @@ import scala.annotation.tailrec
   *
   * We repeat this until we cannot make any more progress or we discover an invalid constraint.
   */
-object ConstraintResolution {
+object ConstraintSolver {
 
   /**
     * The maximum number of resolution iterations before we throw an error.
@@ -100,8 +99,8 @@ object ConstraintResolution {
       val eenv = expandEqualityEnv(eqEnv0, econstrs) // TODO ASSOC-TYPES allow econstrs on instances
 
       // We add extra constraints for the declared type and effect
-      val declaredTpeConstr = TypingConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
-      val declaredEffConstr = TypingConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
+      val declaredTpeConstr = TypeConstraint.Equality(tpe, infTpe, Provenance.ExpectType(expected = tpe, actual = infTpe, loc))
+      val declaredEffConstr = TypeConstraint.Equality(eff, infEff, Provenance.ExpectEffect(expected = eff, actual = infEff, loc))
       val constrs = declaredTpeConstr :: declaredEffConstr :: infConstrs
 
       ///////////////////////////////////////////////////////////////////
@@ -197,7 +196,7 @@ object ConstraintResolution {
     * - a substitution and leftover constraints, or
     * - an error if resolution failed
     */
-  def resolve(constrs: List[TypingConstraint], subst0: Substitution, renv: RigidityEnv)(implicit cenv: Map[Symbol.ClassSym, Ast.ClassContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = {
+  def resolve(constrs: List[TypeConstraint], subst0: Substitution, renv: RigidityEnv)(implicit cenv: Map[Symbol.ClassSym, Ast.ClassContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = {
 
     // We track changes to the resolution state through mutable variables.
 
@@ -245,8 +244,8 @@ object ConstraintResolution {
     *
     * Applies the initial substitution `subst0` before attempting to resolve.
     */
-  private def resolveOneOf(constrs: List[TypingConstraint], subst0: Substitution, renv: RigidityEnv)(implicit cenv: Map[Symbol.ClassSym, Ast.ClassContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = {
-    def tryResolve(cs: List[TypingConstraint]): Result[ResolutionResult, TypeError] = cs match {
+  private def resolveOneOf(constrs: List[TypeConstraint], subst0: Substitution, renv: RigidityEnv)(implicit cenv: Map[Symbol.ClassSym, Ast.ClassContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = {
+    def tryResolve(cs: List[TypeConstraint]): Result[ResolutionResult, TypeError] = cs match {
       case Nil => Result.Ok(ResolutionResult(subst0, cs, progress = false))
       case hd :: tl => resolveOne(hd, renv, subst0).flatMap {
         // if we're just returning the same constraint, then have made no progress and we need to find something else to reduce
@@ -264,19 +263,19 @@ object ConstraintResolution {
   /**
     * Tries to resolve the given constraint.
     */
-  private def resolveOne(constr0: TypingConstraint, renv: RigidityEnv, subst0: Substitution)(implicit cenv: Map[Symbol.ClassSym, Ast.ClassContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
-    case TypingConstraint.Equality(tpe1, tpe2, prov0) =>
+  private def resolveOne(constr0: TypeConstraint, renv: RigidityEnv, subst0: Substitution)(implicit cenv: Map[Symbol.ClassSym, Ast.ClassContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = constr0 match {
+    case TypeConstraint.Equality(tpe1, tpe2, prov0) =>
       val t1 = TypeMinimization.minimizeType(subst0(tpe1))
       val t2 = TypeMinimization.minimizeType(subst0(tpe2))
       val prov = subst0(prov0)
       resolveEquality(t1, t2, prov, renv, constr0.loc).map {
         case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
       }
-    case TypingConstraint.Class(sym, tpe, loc) =>
+    case TypeConstraint.Class(sym, tpe, loc) =>
       resolveClassConstraint(sym, subst0(tpe), renv, loc).map {
         case (constrs, progress) => ResolutionResult(subst0, constrs, progress)
       }
-    case TypingConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
+    case TypeConstraint.Purification(sym, eff1, eff2, prov, nested0) =>
       // First reduce nested constraints
       resolveOneOf(nested0, subst0, renv).map {
         // Case 1: We have reduced everything below. Now reduce the purity constraint.
@@ -287,11 +286,11 @@ object ConstraintResolution {
           val e2 = Substitution.singleton(sym, Type.Pure)(e2Raw)
           val qvars = e2Raw.typeVars.map(_.sym)
           val subst = qvars.foldLeft(subst1)(_.unbind(_))
-          val constr = TypingConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov)
+          val constr = TypeConstraint.Equality(e1, TypeMinimization.minimizeType(e2), prov)
           ResolutionResult(subst, List(constr), progress = true)
         // Case 2: Constraints remain below. Maintain the purity constraint.
         case ResolutionResult(subst, newConstrs, progress) =>
-          val constr = TypingConstraint.Purification(sym, eff1, eff2, prov, newConstrs)
+          val constr = TypeConstraint.Purification(sym, eff1, eff2, prov, newConstrs)
           ResolutionResult(subst, List(constr), progress)
       }
   }
@@ -313,7 +312,7 @@ object ConstraintResolution {
           if (res0._2.isEmpty) {
             ResolutionResult.newSubst(res0._1)
           } else {
-            ResolutionResult.constraints(List(TypingConstraint.Equality(t1, t2, prov)), p1 || p2)
+            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
           }
       } yield res
 
@@ -328,7 +327,7 @@ object ConstraintResolution {
           if (res0._2.isEmpty) {
             ResolutionResult.newSubst(res0._1)
           } else {
-            ResolutionResult.constraints(List(TypingConstraint.Equality(t1, t2, prov)), p1 || p2)
+            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
           }
       } yield res
 
@@ -406,7 +405,7 @@ object ConstraintResolution {
         (t1, p1) <- simplifyType(assoc, renv, loc)
         (t2, p2) <- simplifyType(tpe, renv, loc)
       } yield {
-        ResolutionResult.constraints(List(TypingConstraint.Equality(t1, t2, prov)), p1 || p2)
+        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
       }
 
     // redU
@@ -415,7 +414,7 @@ object ConstraintResolution {
         (t1, p1) <- simplifyType(tpe, renv, loc)
         (t2, p2) <- simplifyType(assoc, renv, loc)
       } yield {
-        ResolutionResult.constraints(List(TypingConstraint.Equality(t1, t2, prov)), p1 || p2)
+        ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
       }
 
     case _ =>
@@ -444,7 +443,7 @@ object ConstraintResolution {
     *   ToString[a -> b \ ef] ~> <ERROR>
     * }}}
     */
-  private def resolveClassConstraint(clazz: Symbol.ClassSym, tpe0: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit cenv: Map[Symbol.ClassSym, Ast.ClassContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[(List[TypingConstraint], Boolean), TypeError] = {
+  private def resolveClassConstraint(clazz: Symbol.ClassSym, tpe0: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit cenv: Map[Symbol.ClassSym, Ast.ClassContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[(List[TypeConstraint], Boolean), TypeError] = {
     // redE
     simplifyType(tpe0, renv0, loc).flatMap {
       case (t, progress) =>
@@ -452,10 +451,10 @@ object ConstraintResolution {
         t.baseType match {
           // Case 1: Flexible var. It might be resolved later.
           case Type.Var(sym, _) if renv0.isFlexible(sym) =>
-            Result.Ok((List(TypingConstraint.Class(clazz, t, loc)), progress))
+            Result.Ok((List(TypeConstraint.Class(clazz, t, loc)), progress))
           // Case 2: Assoc type. It might be resolved later.
           case _: Type.AssocType =>
-            Result.Ok((List(TypingConstraint.Class(clazz, t, loc)), progress))
+            Result.Ok((List(TypeConstraint.Class(clazz, t, loc)), progress))
           // Case 3: Something rigid (const or rigid var). We can look this up immediately.
           case _ =>
             // we mark t's tvars as rigid so we get the substitution in the right direction
@@ -474,9 +473,9 @@ object ConstraintResolution {
                 t.baseType match {
                   // If it's a var, it's ok. It may be substituted later to a type we can reduce.
                   // Or it might be part of the signature an expected constraint.
-                  case Type.Var(sym, loc) => Result.Ok(List(TypingConstraint.Class(clazz, t, loc)), progress)
+                  case Type.Var(sym, loc) => Result.Ok(List(TypeConstraint.Class(clazz, t, loc)), progress)
                   // If it's an associated type, it's ok. It may be reduced later to a concrete type.
-                  case _: Type.AssocType => Result.Ok(List(TypingConstraint.Class(clazz, t, loc)), progress)
+                  case _: Type.AssocType => Result.Ok(List(TypeConstraint.Class(clazz, t, loc)), progress)
                   // Otherwise it's a problem.
                   case _ => Result.Err(TypeError.MissingInstance(clazz, tpe0, renv, loc))
                 }
@@ -568,11 +567,11 @@ object ConstraintResolution {
   /**
     * Gets an error from the list of unresolved constraints.
     */
-  private def getFirstError(deferred: List[TypingConstraint], renv: RigidityEnv)(implicit flix: Flix): Option[TypeError] = deferred match {
+  private def getFirstError(deferred: List[TypeConstraint], renv: RigidityEnv)(implicit flix: Flix): Option[TypeError] = deferred match {
     case Nil => None
-    case TypingConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
-    case TypingConstraint.Class(sym, tpe, loc) :: _ => Some(TypeError.MissingInstance(sym, tpe, renv, loc))
-    case TypingConstraint.Purification(_, _, _, _, nested) :: _ => getFirstError(nested, renv)
+    case TypeConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
+    case TypeConstraint.Class(sym, tpe, loc) :: _ => Some(TypeError.MissingInstance(sym, tpe, renv, loc))
+    case TypeConstraint.Purification(_, _, _, _, nested) :: _ => getFirstError(nested, renv)
   }
 
   /**
@@ -750,7 +749,7 @@ object ConstraintResolution {
     * @param eff     the inferred effect of the expression
     * @param renv    the inferred rigidity environment for the expression (marking region variables)
     */
-  case class InfResult(constrs: List[TypingConstraint], tpe: Type, eff: Type, renv: RigidityEnv)
+  case class InfResult(constrs: List[TypeConstraint], tpe: Type, eff: Type, renv: RigidityEnv)
 
   /**
     * The result of constraint resolution.
@@ -759,7 +758,7 @@ object ConstraintResolution {
     * @param constrs  leftover constraints
     * @param progress a flag indicating whether this resolution attempt made progress
     */
-  case class ResolutionResult(subst: Substitution, constrs: List[TypingConstraint], progress: Boolean) {
+  case class ResolutionResult(subst: Substitution, constrs: List[TypeConstraint], progress: Boolean) {
 
     /**
       * Composes `this` equality result with `that` equality result.
@@ -793,7 +792,7 @@ object ConstraintResolution {
       * This may be the same list of constraints as was given to the solver.
       * In this case, `progress` is `false`.
       */
-    def constraints(constrs: List[TypingConstraint], progress: Boolean): ResolutionResult = ResolutionResult(Substitution.empty, constrs, progress)
+    def constraints(constrs: List[TypeConstraint], progress: Boolean): ResolutionResult = ResolutionResult(Substitution.empty, constrs, progress)
   }
 
 }
