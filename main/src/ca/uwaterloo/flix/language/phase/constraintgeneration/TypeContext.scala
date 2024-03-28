@@ -139,15 +139,14 @@ class TypeContext {
     *   tpe1 ~ tpeN
     * }}}
     */
-  def unifyAllTypes(tpes: List[Type], kind: Kind, loc: SourceLocation)(implicit flix: Flix): Type = {
+  def unifyAllTypes(tpes: List[Type], loc: SourceLocation)(implicit flix: Flix): Unit = {
     // For performance, avoid creating a fresh type var if the list is non-empty
     tpes match {
       // Case 1: Nonempty list. Unify everything with the first type.
       case tpe1 :: rest =>
         rest.foreach(unifyType(tpe1, _, loc))
-        tpe1
-      // Case 2: Empty list. Return a fresh type var.
-      case Nil => Type.freshVar(kind, loc.asSynthetic)
+      // Case 2: Empty list. Do nothing.
+      case Nil => ()
     }
   }
 

@@ -85,7 +85,7 @@ object RestrictableChooseConstraintGeneration {
         // Γ ⊢ e: τ_in
         val (tpe, eff) = visitExp(exp0)
         val patTpes = visitRestrictableChoosePatterns(rules0.map(_.pat))
-        c.unifyAllTypes(tpe :: patTpes, tpe.kind, loc)
+        c.unifyAllTypes(tpe :: patTpes, loc)
 
         // τ_in = (... + l_i(τ_i) + ...)[φ_in]
         c.unifyType(enumType, tpe, loc)
@@ -99,7 +99,7 @@ object RestrictableChooseConstraintGeneration {
         val (tpes, effs) = rules0.map(rule => visitExp(rule.exp)).unzip
 
         // τ_out
-        c.unifyAllTypes(tpe0 :: tpes, tpe0.kind, loc)
+        c.unifyAllTypes(tpe0 :: tpes, loc)
         val resTpe = tpe0
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
@@ -131,7 +131,7 @@ object RestrictableChooseConstraintGeneration {
         // Γ ⊢ e: τ_in
         val (tpe, eff) = visitExp(exp0)
         val patTpes = visitRestrictableChoosePatterns(rules0.map(_.pat))
-        c.unifyAllTypes(tpe :: patTpes, tpe.kind, loc)
+        c.unifyAllTypes(tpe :: patTpes, loc)
 
         // τ_in = (... + l^in_i(τ^in_i) + ...)[φ_in]
         c.unifyType(enumTypeIn, tpe, loc)
@@ -144,7 +144,7 @@ object RestrictableChooseConstraintGeneration {
         tpes.zip(bodyTypes).foreach { case (t1, t2) => c.unifyType(t1, t2, loc) }
 
         // τ_out = (... + l^out_i(τ^out_i) + ...)[_]
-        ((targsOut :: bodyTargs).transpose).foreach(c.unifyAllTypes(_, Kind.CaseSet(enumSym), loc))
+        ((targsOut :: bodyTargs).transpose).foreach(c.unifyAllTypes(_, loc))
 
         val indicesAndTags = bodyIndexVars.zip(patternTagTypes)
         val intros = mkUnion(indicesAndTags.map { case (i, tag) => Type.mkCaseDifference(i, tag, enumSym, loc.asSynthetic) })
