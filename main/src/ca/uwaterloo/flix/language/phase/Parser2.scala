@@ -22,7 +22,7 @@ import ca.uwaterloo.flix.language.ast.SyntaxTree.TreeKind
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 import org.parboiled2.ParserInput
 
 import scala.collection.mutable.ArrayBuffer
@@ -124,7 +124,13 @@ object Parser2 {
     */
   def runSilent(tokens: Map[Ast.Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = {
     try {
-      run(tokens, oldRoot, changeSet)
+      run(tokens, oldRoot, changeSet).toHardResult match {
+        case Result.Ok(t) => Validation.success(t)
+        case Result.Err(e) =>
+          // Note: We don't know if the Parser failed or the input was actually incorrect.
+          // We assume the worst, i.e. that the Parser failed, and we return success.
+          Validation.success(SyntaxTree.empty)
+      }
     } catch {
       case except: Throwable =>
         except.printStackTrace()
