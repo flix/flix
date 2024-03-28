@@ -228,6 +228,14 @@ object TypedAst {
 
     case class PutStaticField(field: Field, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
+    case class InvokeMethod2(methodName: Name.Ident, exp: Expr, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class InvokeStaticMethod2(methodName: Name.Ident, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class GetField2(fieldName: Name.Ident, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
+    case class PutField2(fieldName: Name.Ident, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
     case class NewObject(name: String, clazz: java.lang.Class[_], tpe: Type, eff: Type, methods: List[JvmMethod], loc: SourceLocation) extends Expr
 
     case class NewChannel(exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
