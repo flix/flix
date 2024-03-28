@@ -15,6 +15,7 @@
  */
 package ca.uwaterloo.flix.language.phase.constraintgeneration
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
@@ -29,7 +30,7 @@ object Debug {
   /**
     * The directory in which to store the constraint graphs.
     */
-  private val GraphDir: String = "./personal/constraint-graphs/"
+  private var graphDir: Path = _
 
   /**
     * Indicates whether we are currently recording constraint resolution.
@@ -45,12 +46,16 @@ object Debug {
   /**
     * Activates recording of constraint resolution.
     */
-  def startRecording(): Unit = record = true
+  def startRecording()(implicit flix: Flix): Unit = {
+    graphDir = flix.options.output.getOrElse(Path.of("./build/")).resolve("constraint-graphs")
+    Files.createDirectory(graphDir)
+    record = true
+  }
 
   /**
     * Deactivates recording of constraint resolution.
     */
-  def stopLogging(): Unit = record = false
+  def stopRecording(): Unit = record = false
 
   /**
     * Records the given typing constraints and substitution as a dot graph.
@@ -58,7 +63,8 @@ object Debug {
   def recordGraph(tconstrs: List[TypingConstraint], subst: Substitution): Unit = {
     if (record) {
       val dot = toDotWithSubst(tconstrs, subst)
-      val path = Path.of(GraphDir, s"${index.toString.reverse.padTo(4, '0').reverse}.dot")
+      val fileName = s"${index.toString.reverse.padTo(4, '0').reverse}.dot"
+      val path = graphDir.resolve(fileName)
       Files.writeString(path, dot)
       index += 1
     }

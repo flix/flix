@@ -50,7 +50,11 @@ object ConstraintResolution {
     * Resolves constraints in the given definition using the given inference result.
     */
   def visitDef(defn: KindedAst.Def, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = defn match {
-    case KindedAst.Def(_, spec, _) => visitSpec(spec, infResult, renv0, tconstrs0, cenv0, eqEnv0, root)
+    case KindedAst.Def(sym, spec, _) =>
+      if (flix.options.xprinttyper.contains(sym.toString)) {
+        Debug.startRecording()
+      }
+      visitSpec(spec, infResult, renv0, tconstrs0, cenv0, eqEnv0, root)
   }
 
   /**
@@ -58,7 +62,11 @@ object ConstraintResolution {
     */
   def visitSig(sig: KindedAst.Sig, infResult: InfResult, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], root: KindedAst.Root)(implicit flix: Flix): Validation[Substitution, TypeError] = sig match {
     case KindedAst.Sig(_, _, None) => Validation.success(Substitution.empty)
-    case KindedAst.Sig(_, spec, Some(_)) => visitSpec(spec, infResult, renv0, tconstrs0, cenv0, eqEnv0, root)
+    case KindedAst.Sig(sym, spec, Some(_)) =>
+      if (flix.options.xprinttyper.contains(sym.toString)) {
+        Debug.startRecording()
+      }
+      visitSpec(spec, infResult, renv0, tconstrs0, cenv0, eqEnv0, root)
   }
 
   /**
@@ -102,7 +110,7 @@ object ConstraintResolution {
       ///////////////////////////////////////////////////////////////////
       resolve(constrs, initialSubst, renv)(cenv, eenv, flix).flatMap {
         case ResolutionResult(subst, deferred, _) =>
-          Debug.stopLogging()
+          Debug.stopRecording()
 
           // If there are any constraints we could not resolve, then we report an error.
           // TODO ASSOC-TYPES here we only consider the first error
@@ -225,7 +233,7 @@ object ConstraintResolution {
 
         // Case 2: Error. Break out of the loop and return the error.
         case res@Result.Err(_) =>
-          Debug.stopLogging()
+          Debug.stopRecording()
           return res
       }
     }
