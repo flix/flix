@@ -62,7 +62,7 @@ object KindError {
    * @param renv  the rigidity environment.
    * @param loc   the location where the error occurred.
    */
-  case class MissingTypeClassConstraint(clazz: Symbol.ClassSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends KindError with Unrecoverable {
+  case class MissingTypeClassConstraint(clazz: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends KindError with Unrecoverable {
     def summary: String = s"No constraint of the '$clazz' class for the type '${formatType(tpe, Some(renv))}'"
 
     def message(formatter: Formatter): String = {

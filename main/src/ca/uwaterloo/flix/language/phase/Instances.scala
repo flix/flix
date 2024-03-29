@@ -194,7 +194,7 @@ object Instances {
   /**
     * Finds an instance of the class for a given type.
     */
-  def findInstanceForType(tpe: Type, clazz: Symbol.ClassSym, root: TypedAst.Root)(implicit flix: Flix): Option[(Ast.Instance, Substitution)] = {
+  def findInstanceForType(tpe: Type, clazz: Symbol.TraitSym, root: TypedAst.Root)(implicit flix: Flix): Option[(Ast.Instance, Substitution)] = {
     val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
     // lazily find the instance whose type unifies and save the substitution
     ListOps.findMap(superInsts) {

@@ -653,7 +653,7 @@ object Monomorpher {
     val sig = root.sigs(sym)
 
     // lookup the instance corresponding to this type
-    val instances = root.instances(sig.sym.clazz)
+    val instances = root.instances(sig.sym.trt)
 
     val defns = instances.flatMap {
       inst =>
@@ -686,7 +686,7 @@ object Monomorpher {
     * Converts a SigSym into the equivalent DefnSym.
     */
   private def sigSymToDefnSym(sigSym: Symbol.SigSym): Symbol.DefnSym = {
-    val ns = sigSym.clazz.namespace :+ sigSym.clazz.name
+    val ns = sigSym.trt.namespace :+ sigSym.trt.name
     new Symbol.DefnSym(None, ns, sigSym.name, sigSym.loc)
   }
 

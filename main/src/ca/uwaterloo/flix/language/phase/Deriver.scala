@@ -110,7 +110,7 @@ object Deriver {
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.ClassSymUse(eqClassSym, loc),
+        clazz = Ast.TraitSymUse(eqClassSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -260,7 +260,7 @@ object Deriver {
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.ClassSymUse(orderClassSym, loc),
+        clazz = Ast.TraitSymUse(orderClassSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -474,7 +474,7 @@ object Deriver {
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.ClassSymUse(toStringClassSym, loc),
+        clazz = Ast.TraitSymUse(toStringClassSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -609,7 +609,7 @@ object Deriver {
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.ClassSymUse(hashClassSym, loc),
+        clazz = Ast.TraitSymUse(hashClassSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         defs = List(defn),
@@ -731,7 +731,7 @@ object Deriver {
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.ClassSymUse(sendableClassSym, loc),
+        clazz = Ast.TraitSymUse(sendableClassSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         defs = Nil,
@@ -752,7 +752,7 @@ object Deriver {
     * Creates type constraints for the given type parameters.
     * Filters out non-star type parameters and wild type parameters.
     */
-  private def getTypeConstraintsForTypeParams(tparams: List[KindedAst.TypeParam], clazz: Symbol.ClassSym, loc: SourceLocation): List[Ast.TypeConstraint] = tparams.collect {
+  private def getTypeConstraintsForTypeParams(tparams: List[KindedAst.TypeParam], clazz: Symbol.TraitSym, loc: SourceLocation): List[Ast.TypeConstraint] = tparams.collect {
     case tparam if tparam.sym.kind == Kind.Star && !tparam.name.isWild =>
       Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), Type.Var(tparam.sym, loc), loc)
   }

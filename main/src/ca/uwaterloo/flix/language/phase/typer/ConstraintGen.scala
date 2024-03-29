@@ -55,7 +55,7 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.Sig(sym, tvar, loc) =>
-        val sig = root.classes(sym.clazz).sigs(sym)
+        val sig = root.classes(sym.trt).sigs(sym)
         val (tconstrs, econstrs, sigTpe) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
         c.unifyType(tvar, sigTpe, loc)
         c.addClassConstraints(tconstrs, loc)
@@ -106,7 +106,7 @@ object ConstraintGen {
 
           case KindedAst.Expr.Sig(sym, tvar2, loc2) =>
             // Case 2: Lookup the sym and instantiate its scheme.
-            val sig = root.classes(sym.clazz).sigs(sym)
+            val sig = root.classes(sym.trt).sigs(sym)
             val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(sig.spec.sc, loc2.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
             Some((sym, tvar2, constrs1, econstrs1, declaredType))
