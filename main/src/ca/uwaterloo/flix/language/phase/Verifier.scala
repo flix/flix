@@ -318,7 +318,9 @@ object Verifier {
         case AtomicOp.MatchError =>
           tpe
 
-        case AtomicOp.RecordEmpty => check(expected = MonoType.RecordEmpty)(actual = tpe, loc)
+        case AtomicOp.RecordEmpty =>
+          check(expected = MonoType.RecordEmpty)(actual = tpe, loc)
+
         case AtomicOp.RecordExtend(label) =>
           val List(t1, t2) = ts
           removeFromRecordType(tpe, label.name, loc) match {
@@ -459,6 +461,10 @@ object Verifier {
     else failMismatchedTypes(tpe1, tpe2, loc)
   }
 
+  /**
+    * Remove the type associated with `label` from the given record type `rec`.
+    * If `rec` is not a record, return `None`.
+    */
   private def removeFromRecordType(rec: MonoType, label: String, loc: SourceLocation): (MonoType, Option[MonoType]) = rec match {
     case MonoType.RecordEmpty => (rec, None)
     case MonoType.RecordExtend(lbl, valtype, rest) =>
@@ -470,6 +476,10 @@ object Verifier {
     case _ => failMismatchedShape(rec, "Record", loc)
   }
 
+  /**
+    * Get the type associated with `label` in the given record type `rec`.
+    * If `rec` is not a record, return `None`
+    */
   private def selectFromRecordType(rec: MonoType, label: String, loc: SourceLocation): Option[MonoType] = rec match {
     case MonoType.RecordExtend(lbl, valtype, rest) =>
       if (lbl == label)
