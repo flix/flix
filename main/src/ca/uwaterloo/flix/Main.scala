@@ -103,6 +103,7 @@ object Main {
       xprintphase = cmdOpts.xprintphase,
       xsummary = cmdOpts.xsummary,
       xparser = cmdOpts.xparser,
+      xprinttyper = cmdOpts.xprinttyper,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfN = cmdOpts.XPerfN
     )
@@ -361,6 +362,7 @@ object Main {
                      xprintphase: Set[String] = Set.empty,
                      xsummary: Boolean = false,
                      xparser: Boolean = false,
+                     xprinttyper: Option[String] = None,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
                      files: Seq[File] = Seq())
@@ -569,6 +571,8 @@ object Main {
       // Xparser
       opt[Unit]("Xparser").action((_, c) => c.copy(xparser = true)).
         text("[experimental] disables new experimental lexer and parser.")
+
+      opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym)))
 
       note("")
 

@@ -18,9 +18,11 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.fmt.{FormatOptions, FormatScheme}
-import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, EqualityEnvironment, Substitution, Unification, UnificationError}
-import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
-import ca.uwaterloo.flix.util.collection.ListMap
+import ca.uwaterloo.flix.language.phase.typer.ConstraintSolver.ResolutionResult
+import ca.uwaterloo.flix.language.phase.typer.{ConstraintSolver, TypeConstraint}
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, UnificationError}
+import ca.uwaterloo.flix.util.collection.{Chain, ListMap}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
 object Scheme {
@@ -43,7 +45,7 @@ object Scheme {
   /**
     * Instantiates the given type scheme `sc` by replacing all quantified variables with fresh type variables.
     */
-  def instantiate(sc: Scheme, loc: SourceLocation)(implicit level: Level, flix: Flix): (List[Ast.TypeConstraint], List[Ast.BroadEqualityConstraint], Type) = {
+  def instantiate(sc: Scheme, loc: SourceLocation)(implicit flix: Flix): (List[Ast.TypeConstraint], List[Ast.BroadEqualityConstraint], Type) = {
     // Compute the base type.
     val baseType = sc.base
 
@@ -114,51 +116,60 @@ object Scheme {
 
   /**
     * Returns `Success` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
+    *
+    * Θₚ [T/α₂]π₂ ⊫ₑ {π₁, τ₁ = [T/α₂]τ₂} ⤳! ∙ ; R
+    * T new constructors
+    * ---------------------------------------
+    * Θₚ ⊩ (∀α₁.π₁ ⇒ τ₁) ≤ (∀α₂.π₂ ⇒ τ₂)
     */
-  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.ClassSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Substitution, UnificationError] = {
+  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, cenv0: Map[Symbol.ClassSym, Ast.ClassContext], eenv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Substitution, UnificationError] = {
 
-    ///
-    /// Special Case: If `sc1` and `sc2` are syntactically the same then `sc1` must be less than or equal to `sc2`.
-    ///
-    if (sc1 == sc2) {
-      return Validation.success(Substitution.empty)
+    // Instantiate sc2, creating [T/α₂]π₂ and [T/α₂]τ₂
+    val (cconstrs2_0, econstrs2_0, tpe2_0) = Scheme.instantiate(sc2, SourceLocation.Unknown)
+
+    // Resolve what we can from the new econstrs
+    // TODO ASSOC-TYPES probably these should be narrow from the start
+    val tconstrs2_0 = econstrs2_0.map { case Ast.BroadEqualityConstraint(t1, t2) => TypeConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
+    val (subst, econstrs2_1) = ConstraintSolver.resolve(tconstrs2_0, Substitution.empty, RigidityEnv.empty)(cenv0, eenv0, flix) match {
+      case Result.Ok(ResolutionResult(newSubst, newConstrs, _)) =>
+        (newSubst, newConstrs)
+      case _ => throw InternalCompilerException("unexpected inconsistent type constraints", SourceLocation.Unknown)
     }
 
-    //
-    // General Case: Compute if `sc1` <= `sc2`.
-    //
-
-    // Mark every free variable in `sc1` as rigid.
-    val renv1 = RigidityEnv(sc1.base.typeVars.map(_.sym) -- sc1.quantifiers)
-
-    // Mark every free and bound variable in `sc2` as rigid.
-    val renv2 = RigidityEnv(sc2.base.typeVars.map(_.sym))
-
-    val renv = renv1 ++ renv2
-
-    // Attempt to unify the two instantiated types.
-    flatMapN(Unification.unifyTypes(sc1.base, sc2.base, renv).toValidation) {
-      case (subst, econstrs) => // TODO ASSOC-TYPES consider econstrs
-        val newTconstrs1Val = ClassEnvironment.reduce(sc1.tconstrs.map(subst.apply), classEnv)
-        val newTconstrs2Val = ClassEnvironment.reduce(sc2.tconstrs.map(subst.apply), classEnv)
-        flatMapN(newTconstrs1Val, newTconstrs2Val) {
-          case (newTconstrs1, newTconstrs2) =>
-            flatMapN(Validation.sequence(newTconstrs1.map(ClassEnvironment.entail(newTconstrs2, _, classEnv)))) {
-              case _ =>
-                val newEconstrs1 = sc1.econstrs.map(subst.apply) // TODO ASSOC-TYPES reduce
-                val newEconstrs2 = sc2.econstrs.map(subst.apply).map(EqualityEnvironment.narrow) // TODO ASSOC-TYPES reduce, unsafe narrowing here
-                // ensure the eqenv entails the constraints and build up the substitution
-                val substVal = Validation.fold(newEconstrs1, Substitution.empty) {
-                  case (subst, econstr) => mapN(EqualityEnvironment.entail(newEconstrs2, subst(econstr), renv, eqEnv))(_ @@ subst)
-                }
-                mapN(substVal) {
-                  // combine the econstr substitution with the base type substitution
-                  case s => s @@ subst
-                }
-            }
-
-        }
+    // Anything we didn't solve must be a standard equality constraint
+    // Apply the substitution to the new scheme 2
+    val econstrs2 = econstrs2_1.map {
+      case TypeConstraint.Equality(t1, t2, prov) => EqualityEnvironment.narrow(Ast.BroadEqualityConstraint(subst(t1), subst(t2)))
+      case _ => throw InternalCompilerException("unexpected constraint", SourceLocation.Unknown)
     }
+    val tpe2 = subst(tpe2_0)
+    val cconstrs2 = cconstrs2_0.map {
+      case Ast.TypeConstraint(head, arg, loc) =>
+        // should never fail
+        val (t, _) = ConstraintSolver.simplifyType(subst(arg), RigidityEnv.empty, loc)(eenv0, flix).get
+        Ast.TypeConstraint(head, t, loc)
+    }
+
+    // Add sc2's constraints to the environment
+    val eenv = ConstraintSolver.expandEqualityEnv(eenv0, econstrs2)
+    val cenv = ConstraintSolver.expandClassEnv(cenv0, cconstrs2)
+
+    // Mark all the constraints from sc2 as rigid
+    val tvars = cconstrs2.flatMap(_.arg.typeVars) ++
+      econstrs2.flatMap { econstr => econstr.tpe1.typeVars ++ econstr.tpe2.typeVars } ++
+      tpe2.typeVars
+    val renv = tvars.foldLeft(RigidityEnv.empty) { case (r, tvar) => r.markRigid(tvar.sym) }
+
+    // Check that the constraints from sc1 hold
+    // And that the bases unify
+    val cconstrs = sc1.tconstrs.map { case Ast.TypeConstraint(head, arg, loc) => TypeConstraint.Class(head.sym, arg, loc) }
+    val econstrs = sc1.econstrs.map { case Ast.BroadEqualityConstraint(t1, t2) => TypeConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
+    val baseConstr = TypeConstraint.Equality(sc1.base, tpe2, Provenance.Match(sc1.base, tpe2, SourceLocation.Unknown))
+    ConstraintSolver.resolve(baseConstr :: cconstrs ::: econstrs, subst, renv)(cenv, eenv, flix) match {
+      case Result.Ok(ResolutionResult(subst, Nil, _)) => Validation.success(subst)
+      case _ => Validation.HardFailure(Chain(UnificationError.MismatchedTypes(sc1.base, sc2.base)))
+    }
+
   }
 
 }

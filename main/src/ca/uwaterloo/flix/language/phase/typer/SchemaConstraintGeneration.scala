@@ -13,27 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase.constraintgeneration
+package ca.uwaterloo.flix.language.phase.typer
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.ConstraintGeneration.{visitExp, visitPattern}
+import ConstraintGen.{visitExp, visitPattern}
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 
 object SchemaConstraintGeneration {
 
   def visitFixpointConstraintSet(e: KindedAst.Expr.FixpointConstraintSet)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     e match {
       case KindedAst.Expr.FixpointConstraintSet(cs, tvar, loc) =>
         val constraintTypes = cs.map(visitConstraint)
-        val schemaRow = c.unifyAllTypesM(constraintTypes, Kind.SchemaRow, loc)
-        c.unifyTypeM(tvar, Type.mkSchema(schemaRow, loc), loc)
+        c.unifyAllTypes(constraintTypes, loc)
+        val schemaRow = constraintTypes.headOption.getOrElse(Type.freshVar(Kind.SchemaRow, loc))
+        c.unifyType(tvar, Type.mkSchema(schemaRow, loc), loc)
         val resTpe = tvar
         val resEff = Type.Pure
         (resTpe, resEff)
@@ -41,11 +37,6 @@ object SchemaConstraintGeneration {
   }
 
   def visitFixpointLambda(e: KindedAst.Expr.FixpointLambda)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     e match {
       case KindedAst.Expr.FixpointLambda(pparams, exp, tvar, loc) =>
 
@@ -59,8 +50,8 @@ object SchemaConstraintGeneration {
         val resultRowType = mkFullRow(Type.freshVar(Kind.SchemaRow, loc))
 
         val (tpe, eff) = visitExp(exp)
-        c.unifyTypeM(tpe, Type.mkSchema(expectedRowType, loc), loc)
-        c.unifyTypeM(tvar, Type.mkSchema(resultRowType, loc), loc)
+        c.unifyType(tpe, Type.mkSchema(expectedRowType, loc), loc)
+        c.unifyType(tvar, Type.mkSchema(resultRowType, loc), loc)
         val resTpe = tvar
         val resEff = eff
         (resTpe, resEff)
@@ -68,11 +59,6 @@ object SchemaConstraintGeneration {
   }
 
   def visitFixpointMerge(e: KindedAst.Expr.FixpointMerge)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     e match {
       case KindedAst.Expr.FixpointMerge(exp1, exp2, loc) =>
         //
@@ -82,7 +68,7 @@ object SchemaConstraintGeneration {
         //
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        c.unifyType3M(tpe1, tpe2, Type.mkSchema(mkAnySchemaRowType(loc), loc), loc)
+        c.unifyType(tpe1, tpe2, Type.mkSchema(mkAnySchemaRowType(loc), loc), loc)
         val resTpe = tpe1
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -90,11 +76,6 @@ object SchemaConstraintGeneration {
   }
 
   def visitFixpointSolve(e: KindedAst.Expr.FixpointSolve)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     e match {
       case KindedAst.Expr.FixpointSolve(exp, loc) =>
         //
@@ -103,7 +84,7 @@ object SchemaConstraintGeneration {
         //  solve exp : tpe
         //
         val (tpe, eff) = visitExp(exp)
-        c.unifyTypeM(tpe, Type.mkSchema(mkAnySchemaRowType(loc), loc), loc)
+        c.unifyType(tpe, Type.mkSchema(mkAnySchemaRowType(loc), loc), loc)
         val resEff = eff
         val resTpe = tpe
         (resTpe, resEff)
@@ -112,11 +93,6 @@ object SchemaConstraintGeneration {
 
 
   def visitFixpointFilter(e: KindedAst.Expr.FixpointFilter)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     e match {
       case KindedAst.Expr.FixpointFilter(pred, exp, tvar, loc) =>
         //
@@ -129,8 +105,8 @@ object SchemaConstraintGeneration {
         val freshResultSchemaTypeVar = Type.freshVar(Kind.SchemaRow, loc)
 
         val (tpe, eff) = visitExp(exp)
-        c.unifyTypeM(tpe, Type.mkSchema(Type.mkSchemaRowExtend(pred, freshPredicateTypeVar, freshRestSchemaTypeVar, loc), loc), loc)
-        c.unifyTypeM(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, freshPredicateTypeVar, freshResultSchemaTypeVar, loc), loc), loc)
+        c.unifyType(tpe, Type.mkSchema(Type.mkSchemaRowExtend(pred, freshPredicateTypeVar, freshRestSchemaTypeVar, loc), loc), loc)
+        c.unifyType(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, freshPredicateTypeVar, freshResultSchemaTypeVar, loc), loc), loc)
         val resTpe = tvar
         val resEff = eff
         (resTpe, resEff)
@@ -138,11 +114,6 @@ object SchemaConstraintGeneration {
   }
 
   def visitFixpointInject(e: KindedAst.Expr.FixpointInject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     e match {
       case KindedAst.Expr.FixpointInject(exp, pred, tvar, loc) =>
         //
@@ -160,11 +131,11 @@ object SchemaConstraintGeneration {
         val order = Ast.TypeConstraint(Ast.TypeConstraint.Head(orderSym, loc), freshElmTypeVar, loc)
         val foldable = Ast.TypeConstraint(Ast.TypeConstraint.Head(foldableSym, loc), freshTypeConstructorVar, loc)
 
-        c.addClassConstraintsM(List(order, foldable), loc)
+        c.addClassConstraints(List(order, foldable), loc)
 
         val (tpe, eff) = visitExp(exp)
-        c.unifyTypeM(tpe, Type.mkApply(freshTypeConstructorVar, List(freshElmTypeVar), loc), loc)
-        c.unifyTypeM(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkRelation(List(freshElmTypeVar), loc), freshRestSchemaTypeVar, loc), loc), loc)
+        c.unifyType(tpe, Type.mkApply(freshTypeConstructorVar, List(freshElmTypeVar), loc), loc)
+        c.unifyType(tvar, Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.mkRelation(List(freshElmTypeVar), loc), freshRestSchemaTypeVar, loc), loc), loc)
         val resTpe = tvar
         val resEff = eff
         (resTpe, resEff)
@@ -172,11 +143,6 @@ object SchemaConstraintGeneration {
   }
 
   def visitFixpointProject(e: KindedAst.Expr.FixpointProject)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     e match {
       case KindedAst.Expr.FixpointProject(pred, exp1, exp2, tvar, loc) =>
         //
@@ -191,9 +157,9 @@ object SchemaConstraintGeneration {
         val expectedSchemaType = Type.mkSchema(Type.mkSchemaRowExtend(pred, Type.Apply(freshRelOrLat, freshTupleVar, loc), freshRestSchemaVar, loc), loc)
         val (tpe1, eff1) = visitExp(exp1)
         val (tpe2, eff2) = visitExp(exp2)
-        c.unifyTypeM(tpe1, expectedSchemaType, loc)
-        c.unifyTypeM(tpe2, Type.mkSchema(freshRestSchemaVar, loc), loc)
-        c.unifyTypeM(tvar, Type.mkVector(freshTupleVar, loc), loc)
+        c.unifyType(tpe1, expectedSchemaType, loc)
+        c.unifyType(tpe2, Type.mkSchema(freshRestSchemaVar, loc), loc)
+        c.unifyType(tvar, Type.mkVector(freshTupleVar, loc), loc)
         val resTpe = tvar
         val resEff = Type.mkUnion(eff1, eff2, loc)
         (resTpe, resEff)
@@ -201,11 +167,6 @@ object SchemaConstraintGeneration {
   }
 
   private def visitConstraint(con0: KindedAst.Constraint)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     val KindedAst.Constraint(cparams, head0, body0, loc) = con0
     //
     //  A_0 : tpe, A_1: tpe, ..., A_n : tpe
@@ -214,8 +175,9 @@ object SchemaConstraintGeneration {
     //
     val headPredicateType = visitHeadPredicate(head0)
     val bodyPredicateTypes = body0.map(b => visitBodyPredicate(b))
-    val bodyPredicateType = c.unifyAllTypesM(bodyPredicateTypes, Kind.SchemaRow, loc)
-    c.unifyTypeM(headPredicateType, bodyPredicateType, loc)
+    c.unifyAllTypes(bodyPredicateTypes, loc)
+    val bodyPredicateType = bodyPredicateTypes.headOption.getOrElse(Type.freshVar(Kind.SchemaRow, loc))
+    c.unifyType(headPredicateType, bodyPredicateType, loc)
     val resTpe = headPredicateType
     resTpe
   }
@@ -225,20 +187,15 @@ object SchemaConstraintGeneration {
     * Infers the type of the given head predicate.
     */
   private def visitHeadPredicate(head: KindedAst.Predicate.Head)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     head match {
       case KindedAst.Predicate.Head.Atom(pred, den, terms, tvar, loc) =>
         // Adds additional type constraints if the denotation is a lattice.
         val restRow = Type.freshVar(Kind.SchemaRow, loc)
         val (termTypes, termEffs) = terms.map(visitExp(_)).unzip
-        c.unifyTypeM(Type.Pure, Type.mkUnion(termEffs, loc), loc)
-        c.unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
+        c.unifyType(Type.Pure, Type.mkUnion(termEffs, loc), loc)
+        c.unifyType(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
         val tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
-        c.addClassConstraintsM(tconstrs, loc)
+        c.addClassConstraints(tconstrs, loc)
         val resTpe = Type.mkSchemaRowExtend(pred, tvar, restRow, loc)
         resTpe
     }
@@ -248,18 +205,13 @@ object SchemaConstraintGeneration {
     * Infers the type of the given body predicate.
     */
   private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): Type = {
-
-    // Make the context's level available
-    // This is a def rather than a val because c is mutable.
-    implicit def level: Level = c.getLevel
-
     body0 match {
       case KindedAst.Predicate.Body.Atom(pred, den, polarity, fixity, terms, tvar, loc) =>
         val restRow = Type.freshVar(Kind.SchemaRow, loc)
         val termTypes = terms.map(visitPattern)
-        c.unifyTypeM(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
+        c.unifyType(tvar, mkRelationOrLatticeType(pred.name, den, termTypes, root, loc), loc)
         val tconstrs = getTermTypeClassConstraints(den, termTypes, root, loc)
-        c.addClassConstraintsM(tconstrs, loc)
+        c.addClassConstraints(tconstrs, loc)
         val resTpe = Type.mkSchemaRowExtend(pred, tvar, restRow, loc)
         resTpe
 
@@ -267,15 +219,15 @@ object SchemaConstraintGeneration {
         val tupleType = Type.mkTuplish(outVars.map(_.tvar), loc)
         val expectedType = Type.mkVector(tupleType, loc)
         val (tpe, eff) = visitExp(exp)
-        c.unifyTypeM(expectedType, tpe, loc)
-        c.unifyTypeM(Type.Pure, eff, loc)
+        c.unifyType(expectedType, tpe, loc)
+        c.unifyType(Type.Pure, eff, loc)
         val resTpe = mkAnySchemaRowType(loc)
         resTpe
 
       case KindedAst.Predicate.Body.Guard(exp, loc) =>
         val (tpe, eff) = visitExp(exp)
-        c.unifyTypeM(Type.Pure, eff, loc)
-        c.unifyTypeM(Type.Bool, tpe, loc)
+        c.unifyType(Type.Pure, eff, loc)
+        c.unifyType(Type.Bool, tpe, loc)
         val resTpe = mkAnySchemaRowType(loc)
         resTpe
     }
@@ -326,5 +278,5 @@ object SchemaConstraintGeneration {
   }
 
 
-  private def mkAnySchemaRowType(loc: SourceLocation)(implicit level: Level, flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
+  private def mkAnySchemaRowType(loc: SourceLocation)(implicit flix: Flix): Type = Type.freshVar(Kind.SchemaRow, loc)
 }

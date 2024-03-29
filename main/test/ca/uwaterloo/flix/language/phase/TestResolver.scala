@@ -370,7 +370,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |}
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedName](result)
+    expectError[ResolutionError.UndefinedNameUnrecoverable](result)
   }
 
   test("UndefinedEffect.01") {
@@ -1438,6 +1438,24 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |
         |instance C[String] {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingAssocTypeDef](result)
+  }
+
+  test("MissingAssocTypeDef.02") {
+    val input =
+      """
+        |mod Foo {
+        |    trait Add[a] {
+        |        pub type Aef: Eff
+        |        pub def add(x: a, y: a): a \ Add.Aef[a]
+        |    }
+        |
+        |    instance Foo.Add[t] {
+        |        pub def add(x: t, y: t): t \ Aef[a] = ???
+        |    }
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

@@ -109,7 +109,7 @@ object ResolutionError {
     * @param loc1 the location of the first associated type definition.
     * @param loc2 the location of the second associated type definition.
     */
-  case class DuplicateAssocTypeDef(sym: Symbol.AssocTypeSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Recoverable {
+  case class DuplicateAssocTypeDef(sym: Symbol.AssocTypeSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Unrecoverable {
     override def summary: String = s"Duplicate associated type definition: $sym."
 
     override def message(formatter: Formatter): String = {
@@ -512,7 +512,7 @@ object ResolutionError {
     * @param name the name of the missing associated type definition.
     * @param loc  the location of the instance symbol where the error occurred.
     */
-  case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError with Recoverable {
+  case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     override def summary: String = s"Missing associated type definition: $name."
 
     override def message(formatter: Formatter): String = {
@@ -807,7 +807,36 @@ object ResolutionError {
   }
 
   /**
-    * Undefined Name Error.
+   * Undefined Name Error.
+   *
+   * @param qn    the unresolved name.
+   * @param ns    the current namespace.
+   * @param env   the variables in the scope.
+   * @param isUse true if the undefined name occurs in a use.
+   * @param loc   the location where the error occurred.
+   */
+  case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError with Recoverable {
+    def summary: String = s"Undefined name: '${qn.toString}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined name '${red(qn.toString)}'.
+         |
+         |${code(loc, "name not found")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent definition?"
+    })
+
+  }
+
+  /**
+    * Undefined Name Error (unrecoverable).
     *
     * @param qn    the unresolved name.
     * @param ns    the current namespace.
@@ -815,7 +844,7 @@ object ResolutionError {
     * @param isUse true if the undefined name occurs in a use.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UndefinedNameUnrecoverable(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {
