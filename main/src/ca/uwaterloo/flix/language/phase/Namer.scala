@@ -125,7 +125,7 @@ object Namer {
       }
       mapN(table2Val)(addUsesToTable(_, sym.ns, usesAndImports))
 
-    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc) =>
+    case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc) =>
       val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
       flatMapN(table1Val) {
         case table1 => fold(assocs ++ sigs, table1) {
@@ -398,7 +398,7 @@ object Namer {
   /**
     * Performs naming on the given associated type signature `s0`.
     */
-  private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, clazz: Symbol.ClassSym, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
+  private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, clazz: Symbol.TraitSym, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
     case DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, loc) =>
       val sym = Symbol.mkAssocTypeSym(clazz, ident)
       val tparam = getTypeParam(tparams0)
@@ -421,7 +421,7 @@ object Namer {
   /**
     * Performs naming on the given class `clazz`.
     */
-  private def visitClass(clazz: DesugaredAst.Declaration.Class, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Class, NameError] = clazz match {
+  private def visitClass(clazz: DesugaredAst.Declaration.Class, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Trait, NameError] = clazz match {
     case DesugaredAst.Declaration.Class(doc, ann, mod0, ident, tparams0, superClasses0, assocs0, signatures, laws0, loc) =>
       val sym = Symbol.mkClassSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
@@ -434,7 +434,7 @@ object Namer {
 
       mapN(superClassesVal, assocsVal, sigsVal, lawsVal) {
         case (superClasses, assocs, sigs, laws) =>
-          NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc)
+          NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc)
       }
   }
 
@@ -483,7 +483,7 @@ object Namer {
   /**
     * Performs naming on the given signature declaration `sig`.
     */
-  private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, classSym: Symbol.ClassSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
+  private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, classSym: Symbol.TraitSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
     case DesugaredAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, eff0, econstrs0)
 
@@ -1554,7 +1554,7 @@ object Namer {
     * Gets the location of the symbol of the declaration.
     */
   private def getSymLocation(f: NamedAst.Declaration): SourceLocation = f match {
-    case NamedAst.Declaration.Class(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc) => sym.loc
+    case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc) => sym.loc
     case NamedAst.Declaration.Sig(sym, spec, exp) => sym.loc
     case NamedAst.Declaration.Def(sym, spec, exp) => sym.loc
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.loc

@@ -156,17 +156,17 @@ object HtmlDocumentor {
   /**
     * Get the shortest name of the class symbol, e.g. 'StdOut'.
     */
-  private def className(sym: Symbol.ClassSym): String = sym.name
+  private def className(sym: Symbol.TraitSym): String = sym.name
 
   /**
     * Get the fully qualified name of the class symbol, e.g. 'System.StdOut'.
     */
-  private def classQualifiedName(sym: Symbol.ClassSym): String = sym.toString
+  private def classQualifiedName(sym: Symbol.TraitSym): String = sym.toString
 
   /**
     * Get the file name of the class symbol, e.g. 'System.StdOut.html'.
     */
-  private def classFileName(sym: Symbol.ClassSym): String = s"${sym.toString}.html"
+  private def classFileName(sym: Symbol.TraitSym): String = s"${sym.toString}.html"
 
   /**
     * Get the shortest name of the effect symbol, e.g. 'StdOut'.
@@ -221,7 +221,7 @@ object HtmlDocumentor {
       var defs: List[TypedAst.Def] = Nil
       mod.foreach {
         case sym: Symbol.ModuleSym => submodules = sym :: submodules
-        case sym: Symbol.ClassSym =>
+        case sym: Symbol.TraitSym =>
           val companionMod = companionModule(sym.namespace :+ sym.name, moduleSym, root)
           companionMod.foreach(m => companionMods = m.sym :: companionMods)
           classes = mkClass(sym, moduleSym, companionMod, root) :: classes
@@ -269,7 +269,7 @@ object HtmlDocumentor {
   /**
     * Extracts all relevant information about the given `ClassSym` from the root, into a `HtmlDocumentor.Class`.
     */
-  private def mkClass(sym: Symbol.ClassSym, parent: Symbol.ModuleSym, companionMod: Option[Module], root: TypedAst.Root): Class = {
+  private def mkClass(sym: Symbol.TraitSym, parent: Symbol.ModuleSym, companionMod: Option[Module], root: TypedAst.Root): Class = {
     val decl = root.classes(sym)
 
     val (sigs, defs) = decl.sigs.partition(_.exp.isEmpty)

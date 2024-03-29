@@ -172,16 +172,16 @@ object Symbol {
   /**
     * Returns the class symbol for the given name `ident` in the given namespace `ns`.
     */
-  def mkClassSym(ns: NName, ident: Ident): ClassSym = {
-    new ClassSym(ns.parts, ident.name, ident.loc)
+  def mkClassSym(ns: NName, ident: Ident): TraitSym = {
+    new TraitSym(ns.parts, ident.name, ident.loc)
   }
 
   /**
     * Returns the class symbol for the given fully qualified name
     */
-  def mkClassSym(fqn: String): ClassSym = split(fqn) match {
-    case None => new ClassSym(Nil, fqn, SourceLocation.Unknown)
-    case Some((ns, name)) => new ClassSym(ns, name, SourceLocation.Unknown)
+  def mkClassSym(fqn: String): TraitSym = split(fqn) match {
+    case None => new TraitSym(Nil, fqn, SourceLocation.Unknown)
+    case Some((ns, name)) => new TraitSym(ns, name, SourceLocation.Unknown)
   }
 
   /**
@@ -202,7 +202,7 @@ object Symbol {
   /**
     * Returns the signature symbol for the given name `ident` in the class associated with the given class symbol `classSym`.
     */
-  def mkSigSym(classSym: ClassSym, ident: Name.Ident): SigSym = {
+  def mkSigSym(classSym: TraitSym, ident: Name.Ident): SigSym = {
     new SigSym(classSym, ident.name, ident.loc)
   }
 
@@ -216,7 +216,7 @@ object Symbol {
   /**
     * Returns the associated type symbol for the given name `ident` in the class associated with the given class symbol `classSym`.
     */
-  def mkAssocTypeSym(classSym: ClassSym, ident: Name.Ident): AssocTypeSym = {
+  def mkAssocTypeSym(classSym: TraitSym, ident: Name.Ident): AssocTypeSym = {
     new AssocTypeSym(classSym, ident.name, ident.loc)
   }
 
@@ -548,12 +548,12 @@ object Symbol {
   /**
     * Class Symbol.
     */
-  final class ClassSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Symbol {
+  final class TraitSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Symbol {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: ClassSym => this.namespace == that.namespace && this.name == that.name
+      case that: TraitSym => this.namespace == that.namespace && this.name == that.name
       case _ => false
     }
 
@@ -576,29 +576,29 @@ object Symbol {
   /**
     * Signature Symbol.
     */
-  final class SigSym(val clazz: Symbol.ClassSym, val name: String, val loc: SourceLocation) extends Symbol {
+  final class SigSym(val trt: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Symbol {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */
     override def equals(obj: scala.Any): Boolean = obj match {
-      case that: SigSym => this.clazz == that.clazz && this.name == that.name
+      case that: SigSym => this.trt == that.trt && this.name == that.name
       case _ => false
     }
 
     /**
       * Returns the hash code of this symbol.
       */
-    override val hashCode: Int = 7 * clazz.hashCode + 11 * name.hashCode
+    override val hashCode: Int = 7 * trt.hashCode + 11 * name.hashCode
 
     /**
       * Human readable representation.
       */
-    override def toString: String = clazz.toString + "." + name
+    override def toString: String = trt.toString + "." + name
 
     /**
       * The symbol's namespace.
       */
-    def namespace: List[String] = clazz.namespace :+ clazz.name
+    def namespace: List[String] = trt.namespace :+ trt.name
   }
 
   /**
@@ -673,7 +673,7 @@ object Symbol {
   /**
     * Associated Type Symbol.
     */
-  final class AssocTypeSym(val clazz: Symbol.ClassSym, val name: String, val loc: SourceLocation) extends Symbol {
+  final class AssocTypeSym(val clazz: Symbol.TraitSym, val name: String, val loc: SourceLocation) extends Symbol {
     /**
       * Returns `true` if this symbol is equal to `that` symbol.
       */

@@ -195,7 +195,7 @@ object Kinder {
   /**
     * Performs kinding on the all the classes in the given root.
     */
-  private def visitClasses(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.ClassSym, KindedAst.Class], KindError] = {
+  private def visitClasses(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.TraitSym, KindedAst.Class], KindError] = {
     val (staleClasses, freshClasses) = changeSet.partition(root.classes, oldRoot.classes)
 
     val result = ParOps.parTraverseValues(staleClasses)(visitClass(_, taenv, root))
@@ -205,8 +205,8 @@ object Kinder {
   /**
     * Performs kinding on the given type class.
     */
-  private def visitClass(clazz: ResolvedAst.Declaration.Class, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = clazz match {
-    case ResolvedAst.Declaration.Class(doc, ann, mod, sym, tparam0, superClasses0, assocs0, sigs0, laws0, loc) =>
+  private def visitClass(clazz: ResolvedAst.Declaration.Trait, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = clazz match {
+    case ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam0, superClasses0, assocs0, sigs0, laws0, loc) =>
       val kenv = getKindEnvFromTypeParamDefaultStar(tparam0)
 
       val tparamsVal = visitTypeParam(tparam0, kenv)
@@ -1716,7 +1716,7 @@ object Kinder {
   /**
     * Gets the kind of the class.
     */
-  private def getClassKind(clazz: ResolvedAst.Declaration.Class): Kind = clazz.tparam match {
+  private def getClassKind(clazz: ResolvedAst.Declaration.Trait): Kind = clazz.tparam match {
     case ResolvedAst.TypeParam.Kinded(_, _, kind, _) => kind
     case _: ResolvedAst.TypeParam.Unkinded => Kind.Star
   }

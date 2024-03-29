@@ -831,7 +831,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("CyclicClassHierarchy.01") {
     val input = "trait A[a] with A[a]"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
   test("CyclicClassHierarchy.02") {
@@ -841,7 +841,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait B[a] with A[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
   test("CyclicClassHierarchy.03") {
@@ -852,7 +852,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait C[a] with A[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
   test("CyclicClassHierarchy.04") {
@@ -862,7 +862,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait B[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
   test("CyclicClassHierarchy.05") {
@@ -873,7 +873,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait C[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
   test("DuplicateDerivation.01") {

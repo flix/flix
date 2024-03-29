@@ -75,7 +75,7 @@ object TypeConstraint {
     *   sym[tpe]
     * }}}
     */
-  case class Class(sym: Symbol.ClassSym, tpe: Type, loc: SourceLocation) extends TypeConstraint
+  case class Class(sym: Symbol.TraitSym, tpe: Type, loc: SourceLocation) extends TypeConstraint
 
   /**
     * A constraint indicating that:
