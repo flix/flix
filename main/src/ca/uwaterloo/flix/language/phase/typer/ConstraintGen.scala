@@ -97,19 +97,19 @@ object ConstraintGen {
         // - have better performance (we don't generate unnecessary type variables)
         //
         val knownTarget = exp match {
-          case KindedAst.Expr.Def(sym, tvar2, loc2) =>
+          case KindedAst.Expr.Def(sym, tvar1, loc1) =>
             // Case 1: Lookup the sym and instantiate its scheme.
             val defn = root.defs(sym)
-            val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
+            val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
-            Some((sym, tvar2, constrs1, econstrs1, declaredType))
+            Some((sym, tvar1, constrs1, econstrs1, declaredType))
 
-          case KindedAst.Expr.Sig(sym, tvar2, loc2) =>
+          case KindedAst.Expr.Sig(sym, tvar1, loc1) =>
             // Case 2: Lookup the sym and instantiate its scheme.
             val sig = root.classes(sym.trt).sigs(sym)
-            val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(sig.spec.sc, loc2.asSynthetic)
+            val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
-            Some((sym, tvar2, constrs1, econstrs1, declaredType))
+            Some((sym, tvar1, constrs1, econstrs1, declaredType))
 
           case _ =>
             // Case 3: Unknown target.
@@ -117,7 +117,7 @@ object ConstraintGen {
         }
 
         knownTarget match {
-          case Some((sym, tvar2, constrs1, econstrs1, declaredType)) =>
+          case Some((sym, tvar1, constrs1, econstrs1, declaredType)) =>
             //
             // Special Case: We are applying a Def or Sig and we break apart its declared type.
             //
@@ -129,7 +129,7 @@ object ConstraintGen {
             c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
             c.addClassConstraints(constrs1, loc)
             econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
-            c.unifyType(tvar2, declaredType, loc)
+            c.unifyType(tvar1, declaredType, loc)
             c.unifyType(tvar, declaredResultType, loc)
             c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
             val resTpe = tvar
