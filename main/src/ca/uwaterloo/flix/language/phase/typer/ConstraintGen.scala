@@ -48,6 +48,7 @@ object ConstraintGen {
         val defn = root.defs(sym)
         val (tconstrs, econstrs, defTpe) = Scheme.instantiate(defn.spec.sc, loc.asSynthetic)
         c.unifyType(tvar, defTpe, loc)
+        val constrs = tconstrs.map(_.copy(loc = loc))
         c.addClassConstraints(tconstrs, loc)
         econstrs.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
         val resTpe = defTpe
@@ -58,7 +59,8 @@ object ConstraintGen {
         val sig = root.classes(sym.trt).sigs(sym)
         val (tconstrs, econstrs, sigTpe) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
         c.unifyType(tvar, sigTpe, loc)
-        c.addClassConstraints(tconstrs, loc)
+        val constrs = tconstrs.map(_.copy(loc = loc))
+        c.addClassConstraints(constrs, loc)
         econstrs.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
         val resTpe = sigTpe
         val resEff = Type.Pure
