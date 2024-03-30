@@ -106,23 +106,13 @@ object Scheme {
 
   /**
     * Returns `true` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
-    */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.TraitSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
-    checkLessThanEqual(sc1, sc2, classEnv, eqEnv).toHardResult match {
-      case Result.Ok(_) => true
-      case Result.Err(_) => false
-    }
-  }
-
-  /**
-    * Returns `Success` if the given scheme `sc1` is smaller or equal to the given scheme `sc2`.
     *
     * Θₚ [T/α₂]π₂ ⊫ₑ {π₁, τ₁ = [T/α₂]τ₂} ⤳! ∙ ; R
     * T new constructors
     * ---------------------------------------
     * Θₚ ⊩ (∀α₁.π₁ ⇒ τ₁) ≤ (∀α₂.π₂ ⇒ τ₂)
     */
-  def checkLessThanEqual(sc1: Scheme, sc2: Scheme, cenv0: Map[Symbol.TraitSym, Ast.ClassContext], eenv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Substitution, UnificationError] = {
+  def lessThanEqual(sc1: Scheme, sc2: Scheme, cenv0: Map[Symbol.TraitSym, Ast.ClassContext], eenv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
 
     // Instantiate sc2, creating [T/α₂]π₂ and [T/α₂]τ₂
     val (cconstrs2_0, econstrs2_0, tpe2_0) = Scheme.instantiate(sc2, SourceLocation.Unknown)
@@ -166,8 +156,9 @@ object Scheme {
     val econstrs = sc1.econstrs.map { case Ast.BroadEqualityConstraint(t1, t2) => TypeConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
     val baseConstr = TypeConstraint.Equality(sc1.base, tpe2, Provenance.Match(sc1.base, tpe2, SourceLocation.Unknown))
     ConstraintSolver.resolve(baseConstr :: cconstrs ::: econstrs, subst, renv)(cenv, eenv, flix) match {
-      case Result.Ok(ResolutionResult(subst, Nil, _)) => Validation.success(subst)
-      case _ => Validation.HardFailure(Chain(UnificationError.MismatchedTypes(sc1.base, sc2.base)))
+      // We succeed only if there are no leftover constraints
+      case Result.Ok(ResolutionResult(_, Nil, _)) => true
+      case _ => false
     }
 
   }
