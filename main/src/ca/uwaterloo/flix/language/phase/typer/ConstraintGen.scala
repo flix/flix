@@ -79,7 +79,7 @@ object ConstraintGen {
         val resEff = atLeastEff
         (resTpe, resEff)
 
-      case e: Expr.OpenAs => RestrictableChooseConstraintGeneration.visitOpenAs(e)
+      case e: Expr.OpenAs => RestrictableChooseConstraintGen.visitOpenAs(e)
 
       case Expr.Use(_, _, exp, _) =>
         visitExp(exp)
@@ -432,7 +432,7 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
-      case e: Expr.RestrictableChoose => RestrictableChooseConstraintGeneration.visitRestrictableChoose(e)
+      case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
       case KindedAst.Expr.Tag(symUse, exp, tvar, loc) =>
         val decl = root.enums(symUse.sym.enumSym)
@@ -447,7 +447,7 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
-      case e: Expr.RestrictableTag => RestrictableChooseConstraintGeneration.visitRestrictableTag(e)
+      case e: Expr.RestrictableTag => RestrictableChooseConstraintGen.visitRestrictableTag(e)
 
       case Expr.Tuple(elms, loc) =>
         val (elmTpes, elmEffs) = elms.map(visitExp).unzip
@@ -882,13 +882,13 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
-      case e: Expr.FixpointConstraintSet => SchemaConstraintGeneration.visitFixpointConstraintSet(e)
-      case e: Expr.FixpointLambda => SchemaConstraintGeneration.visitFixpointLambda(e)
-      case e: Expr.FixpointMerge => SchemaConstraintGeneration.visitFixpointMerge(e)
-      case e: Expr.FixpointSolve => SchemaConstraintGeneration.visitFixpointSolve(e)
-      case e: Expr.FixpointFilter => SchemaConstraintGeneration.visitFixpointFilter(e)
-      case e: Expr.FixpointInject => SchemaConstraintGeneration.visitFixpointInject(e)
-      case e: Expr.FixpointProject => SchemaConstraintGeneration.visitFixpointProject(e)
+      case e: Expr.FixpointConstraintSet => SchemaConstraintGen.visitFixpointConstraintSet(e)
+      case e: Expr.FixpointLambda => SchemaConstraintGen.visitFixpointLambda(e)
+      case e: Expr.FixpointMerge => SchemaConstraintGen.visitFixpointMerge(e)
+      case e: Expr.FixpointSolve => SchemaConstraintGen.visitFixpointSolve(e)
+      case e: Expr.FixpointFilter => SchemaConstraintGen.visitFixpointFilter(e)
+      case e: Expr.FixpointInject => SchemaConstraintGen.visitFixpointInject(e)
+      case e: Expr.FixpointProject => SchemaConstraintGen.visitFixpointProject(e)
 
       case Expr.Error(_, tvar, evar) =>
         // The error expression has whatever type and effect it needs to have.

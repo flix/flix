@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 import scala.collection.immutable.SortedSet
 
-object RestrictableChooseConstraintGeneration {
+object RestrictableChooseConstraintGen {
 
   /**
     * Returns the domain of the list of rules,
