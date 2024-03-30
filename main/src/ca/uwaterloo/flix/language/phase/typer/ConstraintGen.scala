@@ -81,7 +81,7 @@ object ConstraintGen {
         val resEff = atLeastEff
         (resTpe, resEff)
 
-      case e: Expr.OpenAs => RestrictableChooseConstraintGeneration.visitOpenAs(e)
+      case e: Expr.OpenAs => RestrictableChooseConstraintGen.visitOpenAs(e)
 
       case Expr.Use(_, _, exp, _) =>
         visitExp(exp)
@@ -99,19 +99,19 @@ object ConstraintGen {
         // - have better performance (we don't generate unnecessary type variables)
         //
         val knownTarget = exp match {
-          case KindedAst.Expr.Def(sym, tvar2, loc2) =>
+          case KindedAst.Expr.Def(sym, tvar1, loc1) =>
             // Case 1: Lookup the sym and instantiate its scheme.
             val defn = root.defs(sym)
-            val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(defn.spec.sc, loc2.asSynthetic)
+            val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(defn.spec.sc, loc1.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
-            Some((sym, tvar2, constrs1, econstrs1, declaredType))
+            Some((sym, tvar1, constrs1, econstrs1, declaredType))
 
-          case KindedAst.Expr.Sig(sym, tvar2, loc2) =>
+          case KindedAst.Expr.Sig(sym, tvar1, loc1) =>
             // Case 2: Lookup the sym and instantiate its scheme.
             val sig = root.classes(sym.trt).sigs(sym)
-            val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(sig.spec.sc, loc2.asSynthetic)
+            val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
-            Some((sym, tvar2, constrs1, econstrs1, declaredType))
+            Some((sym, tvar1, constrs1, econstrs1, declaredType))
 
           case _ =>
             // Case 3: Unknown target.
@@ -119,7 +119,7 @@ object ConstraintGen {
         }
 
         knownTarget match {
-          case Some((sym, tvar2, constrs1, econstrs1, declaredType)) =>
+          case Some((sym, tvar1, constrs1, econstrs1, declaredType)) =>
             //
             // Special Case: We are applying a Def or Sig and we break apart its declared type.
             //
@@ -131,7 +131,7 @@ object ConstraintGen {
             c.expectTypeArguments(sym, declaredArgumentTypes, tpes, exps.map(_.loc))
             c.addClassConstraints(constrs1, loc)
             econstrs1.foreach { econstr => c.unifyType(econstr.tpe1, econstr.tpe2, loc) }
-            c.unifyType(tvar2, declaredType, loc)
+            c.unifyType(tvar1, declaredType, loc)
             c.unifyType(tvar, declaredResultType, loc)
             c.unifyType(evar, Type.mkUnion(declaredEff :: effs, loc), loc)
             val resTpe = tvar
@@ -434,7 +434,7 @@ object ConstraintGen {
         val resEff = Type.mkUnion(eff :: effs, loc)
         (resTpe, resEff)
 
-      case e: Expr.RestrictableChoose => RestrictableChooseConstraintGeneration.visitRestrictableChoose(e)
+      case e: Expr.RestrictableChoose => RestrictableChooseConstraintGen.visitRestrictableChoose(e)
 
       case KindedAst.Expr.Tag(symUse, exp, tvar, loc) =>
         val decl = root.enums(symUse.sym.enumSym)
@@ -449,7 +449,7 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
-      case e: Expr.RestrictableTag => RestrictableChooseConstraintGeneration.visitRestrictableTag(e)
+      case e: Expr.RestrictableTag => RestrictableChooseConstraintGen.visitRestrictableTag(e)
 
       case Expr.Tuple(elms, loc) =>
         val (elmTpes, elmEffs) = elms.map(visitExp).unzip
@@ -884,13 +884,13 @@ object ConstraintGen {
         val resEff = eff
         (resTpe, resEff)
 
-      case e: Expr.FixpointConstraintSet => SchemaConstraintGeneration.visitFixpointConstraintSet(e)
-      case e: Expr.FixpointLambda => SchemaConstraintGeneration.visitFixpointLambda(e)
-      case e: Expr.FixpointMerge => SchemaConstraintGeneration.visitFixpointMerge(e)
-      case e: Expr.FixpointSolve => SchemaConstraintGeneration.visitFixpointSolve(e)
-      case e: Expr.FixpointFilter => SchemaConstraintGeneration.visitFixpointFilter(e)
-      case e: Expr.FixpointInject => SchemaConstraintGeneration.visitFixpointInject(e)
-      case e: Expr.FixpointProject => SchemaConstraintGeneration.visitFixpointProject(e)
+      case e: Expr.FixpointConstraintSet => SchemaConstraintGen.visitFixpointConstraintSet(e)
+      case e: Expr.FixpointLambda => SchemaConstraintGen.visitFixpointLambda(e)
+      case e: Expr.FixpointMerge => SchemaConstraintGen.visitFixpointMerge(e)
+      case e: Expr.FixpointSolve => SchemaConstraintGen.visitFixpointSolve(e)
+      case e: Expr.FixpointFilter => SchemaConstraintGen.visitFixpointFilter(e)
+      case e: Expr.FixpointInject => SchemaConstraintGen.visitFixpointInject(e)
+      case e: Expr.FixpointProject => SchemaConstraintGen.visitFixpointProject(e)
 
       case Expr.Error(_, tvar, evar) =>
         // The error expression has whatever type and effect it needs to have.

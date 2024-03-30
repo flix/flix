@@ -21,7 +21,7 @@ import ca.uwaterloo.flix.language.ast._
 import ConstraintGen.{visitExp, visitPattern}
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 
-object SchemaConstraintGeneration {
+object SchemaConstraintGen {
 
   def visitFixpointConstraintSet(e: KindedAst.Expr.FixpointConstraintSet)(implicit c: TypeContext, root: KindedAst.Root, flix: Flix): (Type, Type) = {
     e match {
