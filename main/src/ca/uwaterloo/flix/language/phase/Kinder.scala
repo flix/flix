@@ -380,7 +380,7 @@ object Kinder {
               Validation.success(())
             } else {
               val renv = tparams.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
-              Validation.toHardFailure(KindError.MissingTypeClassConstraint(clazzSym, arg, renv, loc))
+              Validation.toHardFailure(KindError.MissingTraitConstraint(clazzSym, arg, renv, loc))
             }
           case t => throw InternalCompilerException(s"illegal type: $t", t.loc)
         }

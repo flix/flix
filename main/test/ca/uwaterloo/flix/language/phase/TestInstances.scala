@@ -443,7 +443,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
     expectError[InstanceError.OrphanInstance](result)
   }
 
-  test("Test.MissingSuperClassInstance.01") {
+  test("Test.MissingSuperTraitInstance.01") {
     val input =
       """
         |trait A[a] with B[a]
@@ -452,10 +452,10 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance A[Int32]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.MissingSuperClassInstance](result)
+    expectError[InstanceError.MissingSuperTraitInstance](result)
   }
 
-  test("Test.MissingSuperClassInstance.02") {
+  test("Test.MissingSuperTraitInstance.02") {
     val input =
       """
         |trait A[a] with B[a], C[a]
@@ -466,10 +466,10 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance B[Int32]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.MissingSuperClassInstance](result)
+    expectError[InstanceError.MissingSuperTraitInstance](result)
   }
 
-  test("Test.MissingSuperClassInstance.03") {
+  test("Test.MissingSuperTraitInstance.03") {
     val input =
       """
         |trait A[a] with B[a]
@@ -479,7 +479,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance B[Bool]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.MissingSuperClassInstance](result)
+    expectError[InstanceError.MissingSuperTraitInstance](result)
   }
 
   test("Test.UnlawfulSignature.01") {
@@ -625,7 +625,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance D[(a, b)]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.MissingTypeClassConstraint](result)
+    expectError[InstanceError.MissingTraitConstraint](result)
   }
 
   test("Test.MissingConstraint.02") {
@@ -642,7 +642,7 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance E[(a, b)] with C[a], C[b]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[InstanceError.MissingTypeClassConstraint](result)
+    expectError[InstanceError.MissingTraitConstraint](result)
   }
 
   test("Test.MissingConstraint.03") {
@@ -655,6 +655,6 @@ class TestInstances extends AnyFunSuite with TestUtils {
         |instance D[(a, b)] with D[a], D[b]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    rejectError[InstanceError.MissingTypeClassConstraint](result)
+    rejectError[InstanceError.MissingTraitConstraint](result)
   }
 }

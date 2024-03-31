@@ -1506,7 +1506,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
-  test("RedundantTypeConstraint.Class.01") {
+  test("RedundantTypeConstraint.Trait.01") {
     val input =
       """
         |trait C[a]
@@ -1517,7 +1517,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantTypeConstraint](result)
   }
 
-  test("RedundantTypeConstraint.Class.02") {
+  test("RedundantTypeConstraint.Trait.02") {
     val input =
       """
         |trait C[a]
