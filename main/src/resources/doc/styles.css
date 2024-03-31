@@ -463,6 +463,7 @@ main h2 {
 .decl {
     display: flex;
     gap: 0.2rem;
+    align-items: center;
 }
 .decl > code {
     flex: 1;
