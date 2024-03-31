@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.{Flix, Version}
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.{FormatType, SimpleType}
 import ca.uwaterloo.flix.tools.pkg.PackageModules
 import ca.uwaterloo.flix.util.LocalResource
@@ -1120,7 +1120,7 @@ object HtmlDocumentor {
       sb.append("<span class='keyword'>case</span> ")
       sb.append(s"<span class='case-tag'>${esc(c.sym.name)}</span>")
 
-      SimpleType.fromWellKindedType(c.tpe)(flix.getFormatOptions) match {
+      SimpleType.fromWellKindedType(c.tpe) match {
         case SimpleType.Unit => // Nothing
         case SimpleType.Tuple(elms) =>
           sb.append("(")
@@ -1286,7 +1286,7 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docEffectType(eff: Type)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    val simpleEff = SimpleType.fromWellKindedType(eff)(flix.getFormatOptions)
+    val simpleEff = SimpleType.fromWellKindedType(eff)
     simpleEff match {
       case SimpleType.Pure => // No op
       case _ =>
