@@ -65,7 +65,7 @@ object FormatType {
     */
   def formatTypeWithOptions(tpe: Type, fmt: FormatOptions): String = {
     try {
-      format(SimpleType.fromWellKindedType(tpe)(fmt))(fmt)
+      format(SimpleType.fromWellKindedType(tpe))(fmt)
     } catch {
       case _: Throwable => "ERR_UNABLE_TO_FORMAT_TYPE"
     }
