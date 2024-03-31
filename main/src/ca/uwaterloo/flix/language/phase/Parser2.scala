@@ -932,6 +932,10 @@ object Parser2 {
         expect(TokenKind.Colon)
         Type.kind()
       }
+      if (at(TokenKind.Equal)) {
+        expect(TokenKind.Equal)
+        Type.ttype()
+      }
       close(mark, TreeKind.Decl.AssociatedTypeSig)
     }
 

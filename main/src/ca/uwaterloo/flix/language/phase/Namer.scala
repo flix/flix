@@ -161,7 +161,7 @@ object Namer {
     case NamedAst.Declaration.TypeAlias(doc, _, mod, sym, tparams, tpe, loc) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
-    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, loc) =>
+    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) =>
       tryAddToTable(table0, sym.namespace, sym.name, decl)
 
     case NamedAst.Declaration.Effect(doc, ann, mod, sym, ops, loc) =>
@@ -399,11 +399,15 @@ object Namer {
     * Performs naming on the given associated type signature `s0`.
     */
   private def visitAssocTypeSig(s0: DesugaredAst.Declaration.AssocTypeSig, clazz: Symbol.TraitSym, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.AssocTypeSig, NameError] = s0 match {
-    case DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, loc) =>
+    case DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparams0, kind0, tpe0, loc) =>
       val sym = Symbol.mkAssocTypeSym(clazz, ident)
       val tparam = getTypeParam(tparams0)
       val kind = visitKind(kind0)
-      Validation.success(NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, loc))
+      val tpeVal = traverseOpt(tpe0)(visitType)
+      mapN(tpeVal) {
+        case tpe =>
+          NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam, kind, tpe, loc)
+      }
   }
 
   /**
@@ -1564,7 +1568,7 @@ object Namer {
     case NamedAst.Declaration.Op(sym, spec) => sym.loc
     case NamedAst.Declaration.Case(sym, tpe, _) => sym.loc
     case NamedAst.Declaration.RestrictableCase(sym, tpe, _) => sym.loc
-    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, loc) => sym.loc
+    case NamedAst.Declaration.AssocTypeSig(doc, mod, sym, tparams, kind, tpe, loc) => sym.loc
     case NamedAst.Declaration.AssocTypeDef(doc, mod, ident, args, tpe, loc) => throw InternalCompilerException("Unexpected associated type definition", loc)
     case NamedAst.Declaration.Instance(doc, ann, mod, clazz, tparams, tpe, tconstrs, assocs, defs, ns, loc) => throw InternalCompilerException("Unexpected instance", loc)
     case NamedAst.Declaration.Namespace(sym, usesAndImports, decls, loc) => throw InternalCompilerException("Unexpected namespace", loc)

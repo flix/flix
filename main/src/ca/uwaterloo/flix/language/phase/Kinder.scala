@@ -211,7 +211,7 @@ object Kinder {
 
       val tparamsVal = visitTypeParam(tparam0, kenv)
       val superClassesVal = traverse(superClasses0)(visitTypeConstraint(_, kenv, taenv, root))
-      val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, kenv))
+      val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, kenv, taenv, root))
       flatMapN(tparamsVal, superClassesVal, assocsVal) {
         case (tparam, superClasses, assocs) =>
           val sigsVal = traverse(sigs0) {
@@ -390,12 +390,13 @@ object Kinder {
   /**
     * Performs kinding on the given associated type signature under the given kind environment.
     */
-  private def visitAssocTypeSig(s0: ResolvedAst.Declaration.AssocTypeSig, kenv: KindEnv): Validation[KindedAst.AssocTypeSig, KindError] = s0 match {
-    case ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, kind, loc) =>
+  private def visitAssocTypeSig(s0: ResolvedAst.Declaration.AssocTypeSig, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.AssocTypeSig, KindError] = s0 match {
+    case ResolvedAst.Declaration.AssocTypeSig(doc, mod, sym, tparam0, kind, tpe0, loc) =>
       val tparamVal = visitTypeParam(tparam0, kenv)
+      val tpeVal = traverseOpt(tpe0)(visitType(_, kind, kenv, taenv, root))
 
-      mapN(tparamVal) {
-        case tparam => KindedAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc)
+      mapN(tparamVal, tpeVal) {
+        case (tparam, tpe) => KindedAst.AssocTypeSig(doc, mod, sym, tparam, kind, tpe, loc)
       }
   }
 
@@ -1210,7 +1211,7 @@ object Kinder {
       val clazz = root.classes(cst.sym.clazz)
       // TODO ASSOC-TYPES maybe have dedicated field in root for assoc types
       clazz.assocs.find(_.sym == cst.sym).get match {
-        case ResolvedAst.Declaration.AssocTypeSig(_, _, _, _, k0, _) =>
+        case ResolvedAst.Declaration.AssocTypeSig(_, _, _, _, k0, _, _) =>
           // TODO ASSOC-TYPES for now assuming just one type parameter
           // check that the assoc type kind matches the expected
           unify(k0, expectedKind) match {
