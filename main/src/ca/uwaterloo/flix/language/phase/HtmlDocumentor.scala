@@ -360,12 +360,13 @@ object HtmlDocumentor {
         ),
         signatures.filter(s => s.spec.mod.isPublic && !s.spec.ann.isInternal),
         defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
-        instances.filter(i => i.mod.isPublic && !i.ann.isInternal),
+        instances.filter(i => !i.ann.isInternal),
         parent,
         // If this class is included, it means that all of its sub items should be included as well
         companionMod.map(m => filterContents(m, PackageModules.All))
       )
   }
+
 
   /**
     * Returns an `Effect` corresponding to the given `eff`,
@@ -595,7 +596,7 @@ object HtmlDocumentor {
     sb.append("</div>")
     docDoc(clazz.decl.doc)
     docSubSection("Associated Types", sortedAssocs, docAssoc)
-    docSubSection("Instances", sortedInstances, docInstance)
+    docCollapsableSubSection("Instances", sortedInstances, docInstance)
     sb.append("</div>")
 
     docSection("Signatures", sortedSigs, docSignature)
@@ -918,6 +919,30 @@ object HtmlDocumentor {
       docElt(e)
     }
     sb.append("</section>")
+  }
+
+  /**
+    * Documents a collapsable subsection, containing a `group` of items.
+    *
+    * The result will be appended to the given `StringBuilder`, `sb`.
+    *
+    * If `group` is empty, nothing will be generated.
+    *
+    * @param name   The name of the subsection, e.g. "Instances".
+    * @param group  The list of items in the section, in the order that they should appear.
+    * @param docElt A function taking a single item from `group` and generating the corresponding HTML string.
+    */
+  private def docCollapsableSubSection[T](name: String, group: List[T], docElt: T => Unit)(implicit flix: Flix, sb: StringBuilder): Unit = {
+    if (group.isEmpty) {
+      return
+    }
+
+    sb.append(s"<details class='subsection'>")
+    sb.append(s"<summary><h3>${esc(name)}</h3></summary>")
+    for (e <- group) {
+      docElt(e)
+    }
+    sb.append("</details>")
   }
 
   /**
