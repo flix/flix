@@ -300,7 +300,7 @@ object Lowering {
       val tparam = visitTypeParam(tparam0)
       val superClasses = superClasses0.map(visitTypeConstraint)
       val assocs = assocs0.map {
-        case TypedAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc) => LoweredAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc)
+        case TypedAst.AssocTypeSig(doc, mod, sym, tparam, kind, tpe, loc) => LoweredAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc)
       }
       val signatures = signatures0.map(sig => sigs(sig.sym))
       val laws = laws0.map(visitDef)

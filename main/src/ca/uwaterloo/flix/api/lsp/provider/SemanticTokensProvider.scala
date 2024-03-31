@@ -240,11 +240,12 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given associated type signature `assoc`.
     */
   private def visitAssocTypeSig(assoc: TypedAst.AssocTypeSig): Iterator[SemanticToken] = assoc match {
-    case TypedAst.AssocTypeSig(_, _, sym, tparam, _, _) =>
+    case TypedAst.AssocTypeSig(_, _, sym, tparam, _, tpe, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
         visitTypeParam(tparam),
+        tpe.iterator.flatMap(visitType)
       )
   }
 

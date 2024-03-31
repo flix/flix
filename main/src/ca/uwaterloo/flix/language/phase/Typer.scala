@@ -132,10 +132,19 @@ object Typer {
     flix.subphase("EqualityEnv") {
 
       val assocs = for {
-        (classSym, _) <- classes0.iterator
+        (classSym, clazz) <- classes0.iterator
         inst <- instances0.getOrElse(classSym, Nil)
-        assoc <- inst.assocs
-      } yield (assoc.sym.sym, Ast.AssocTypeDef(assoc.arg, assoc.tpe))
+        assocSig <- clazz.assocs
+        assocDefOpt = inst.assocs.find(_.sym.sym == assocSig.sym)
+        assocDef = assocDefOpt match {
+          case None =>
+            val subst = Substitution.singleton(clazz.tparam.sym, inst.tpe)
+            val tpe = subst(assocSig.tpe.get)
+            Ast.AssocTypeDef(inst.tpe, tpe)
+          case Some(KindedAst.AssocTypeDef(doc, mod, sym, arg, tpe, loc)) =>
+            Ast.AssocTypeDef(arg, tpe)
+        }
+      } yield (assocSig.sym, assocDef)
 
 
       assocs.foldLeft(ListMap.empty[Symbol.AssocTypeSym, Ast.AssocTypeDef]) {
@@ -191,9 +200,9 @@ object Typer {
       val renv = RigidityEnv.empty.markRigid(tparam0.sym)
       val superClasses = superClasses0 // no subst to be done
       val assocs = assocs0.map {
-        case KindedAst.AssocTypeSig(doc, mod, sym, tp0, kind, loc) =>
+        case KindedAst.AssocTypeSig(doc, mod, sym, tp0, kind, tpe, loc) =>
           val tp = visitTypeParam(tp0, root) // TODO ASSOC-TYPES redundant?
-          TypedAst.AssocTypeSig(doc, mod, sym, tp, kind, loc) // TODO ASSOC-TYPES trivial
+          TypedAst.AssocTypeSig(doc, mod, sym, tp, kind, tpe, loc) // TODO ASSOC-TYPES trivial
       }
       val tconstr = Ast.TypeConstraint(Ast.TypeConstraint.Head(sym, sym.loc), Type.Var(tparam.sym, tparam.loc), sym.loc)
       val sigsVal = traverse(sigs0.values)(visitSig(_, renv, List(tconstr), root, classEnv, eqEnv))

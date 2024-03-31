@@ -158,10 +158,11 @@ object Indexer {
     * Returns a reverse index for the given associated type signature `assoc`.
     */
   private def visitAssocTypeSig(assoc: AssocTypeSig): Index = assoc match {
-    case AssocTypeSig(_, _, _, tparam, _, _) =>
+    case AssocTypeSig(_, _, _, tparam, _, tpe, _) =>
       Index.all(
         Index.occurrenceOf(assoc),
         visitTypeParam(tparam),
+        Index.traverse(tpe)(visitType)
       )
   }
 
