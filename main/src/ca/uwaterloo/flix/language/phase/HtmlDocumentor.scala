@@ -1233,7 +1233,12 @@ object HtmlDocumentor {
     * The result will be appended to the given `StringBuilder`, `sb`.
     */
   private def docDoc(doc: Ast.Doc)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    val escaped = esc(doc.text)
+    val text = doc.text
+    if (text.isBlank) {
+      return
+    }
+
+    val escaped = esc(text)
 
     val config =
       txtmark.Configuration.builder()
