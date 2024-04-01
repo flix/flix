@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2024 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.tools.pkg
+package flix.fuzzers
 
-sealed trait DependencyKind
+import org.scalatest.Suites
 
-object DependencyKind {
-
-  case object Production extends DependencyKind
-
-  case object Development extends DependencyKind
-
-}
+class FuzzerSuite extends Suites(
+  new FuzzPrefixes,
+  new FuzzLines
+)

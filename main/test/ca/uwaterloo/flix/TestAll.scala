@@ -22,11 +22,13 @@ import ca.uwaterloo.flix.tools.ToolsSuite
 import ca.uwaterloo.flix.util.UtilSuite
 import flix.CompilerSuite
 import flix.experimental.ExperimentalSuite
+import flix.fuzzers.FuzzerSuite
 import org.scalatest.Suites
 
 class TestAll extends Suites(
   new BenchmarkSuite,
   new CompilerSuite,
+  new FuzzerSuite,
   new ExampleSuite,
   new ExperimentalSuite,
   new LanguageSuite,

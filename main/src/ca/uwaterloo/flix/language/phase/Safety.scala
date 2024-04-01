@@ -49,7 +49,7 @@ object Safety {
     * Checks that no type parameters for types that implement `Sendable` of kind `Region`
     */
   private def visitSendable(root: Root): List[SafetyError] = {
-    val sendableClass = new Symbol.ClassSym(Nil, "Sendable", SourceLocation.Unknown)
+    val sendableClass = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
 
     root.instances.getOrElse(sendableClass, Nil) flatMap {
       case Instance(_, _, _, _, tpe, _, _, _, _, loc) =>
@@ -292,7 +292,7 @@ object Safety {
 
       case Expr.TryCatch(exp, rules, _, _, _) =>
         visit(exp) ++
-          rules.flatMap { case CatchRule(_, _, e) => visit(e) }
+          rules.flatMap { case CatchRule(sym, clazz, e) => checkCatchClass(clazz, sym.loc) ++ visit(e) }
 
       case Expr.TryWith(exp, _, rules, _, _, _) =>
         visit(exp) ++
@@ -724,6 +724,20 @@ object Safety {
     */
   private def visitRecordPattern(pats: List[Pattern.Record.RecordLabelPattern], pat: Pattern, loc: SourceLocation): List[SafetyError] = {
     visitPats(pats.map(_.pat), loc) ++ visitPat(pat, loc)
+  }
+
+  /**
+   * Ensures that the Java type in a catch clause is Throwable or a subclass.
+   *
+   * @param clazz the Java class specified in the catch clause
+   * @param loc   the location of the catch parameter.
+   */
+  private def checkCatchClass(clazz: java.lang.Class[_], loc: SourceLocation): List[SafetyError] = {
+    if (!classOf[Throwable].isAssignableFrom(clazz)) {
+      List(IllegalCatchType(loc))
+    } else {
+      List.empty
+    }
   }
 
   /**
