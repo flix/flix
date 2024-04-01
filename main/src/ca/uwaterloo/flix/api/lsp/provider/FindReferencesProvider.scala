@@ -91,7 +91,7 @@ object FindReferencesProvider {
     }
   }
 
-  private def findClassReferences(sym: Symbol.ClassSym)(implicit index: Index, root: Root): JObject = {
+  private def findClassReferences(sym: Symbol.TraitSym)(implicit index: Index, root: Root): JObject = {
     val defSite = Location.from(sym.loc)
     val useSites = index.usesOf(sym)
     val locs = defSite :: useSites.toList.map(Location.from)

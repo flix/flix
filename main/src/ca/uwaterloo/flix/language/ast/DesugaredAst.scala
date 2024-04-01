@@ -51,7 +51,7 @@ object DesugaredAst {
 
     case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: TypeParams, tpe: Type, loc: SourceLocation) extends Declaration
 
-    case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparam: TypeParam, kind: Kind, loc: SourceLocation)
+    case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparam: TypeParam, kind: Kind, tpe: Option[Type], loc: SourceLocation)
 
     case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, arg: Type, tpe: Type, loc: SourceLocation)
 
@@ -351,6 +351,8 @@ object DesugaredAst {
     case class CaseComplement(tpe: Type, loc: SourceLocation) extends Type
 
     case class Ascribe(tpe: Type, kind: Kind, loc: SourceLocation) extends Type
+
+    case class Error(loc: SourceLocation) extends Type
 
   }
 

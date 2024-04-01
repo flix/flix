@@ -302,7 +302,7 @@ object SimpleType {
   /**
     * Creates a simple type from the well-kinded type `t`.
     */
-  def fromWellKindedType(t0: Type)(implicit fmt: FormatOptions): SimpleType = {
+  def fromWellKindedType(t0: Type): SimpleType = {
 
     def visit(t: Type): SimpleType = t.baseType match {
       case Type.Var(sym, _) =>
@@ -573,7 +573,7 @@ object SimpleType {
   /**
     * Transforms the given type, assuming it is a record row.
     */
-  private def fromRecordRow(row0: Type)(implicit fmt: FormatOptions): SimpleType = {
+  private def fromRecordRow(row0: Type): SimpleType = {
     def visit(row: Type): SimpleType = row match {
       // Case 1: A fully applied record row.
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(name), _), tpe, _), rest, _) =>
@@ -603,7 +603,7 @@ object SimpleType {
   /**
     * Transforms the given type, assuming it is a schema row.
     */
-  private def fromSchemaRow(row0: Type)(implicit fmt: FormatOptions): SimpleType = {
+  private def fromSchemaRow(row0: Type): SimpleType = {
     def visit(row: Type): SimpleType = row match {
       // Case 1: A fully applied record row.
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(name), _), tpe, _), rest, _) =>

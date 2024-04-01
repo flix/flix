@@ -29,8 +29,8 @@ object PredefinedClasses {
   /**
     * Returns the class symbol with the given `name`.
     */
-  def lookupClassSym(name: String, root: KindedAst.Root): Symbol.ClassSym = {
-    val key = new Symbol.ClassSym(Nil, name, SourceLocation.Unknown)
+  def lookupClassSym(name: String, root: KindedAst.Root): Symbol.TraitSym = {
+    val key = new Symbol.TraitSym(Nil, name, SourceLocation.Unknown)
     root.classes.getOrElse(key, throw InternalCompilerException(s"The type class: '$key' is not defined.", SourceLocation.Unknown)).sym
   }
 
@@ -38,7 +38,7 @@ object PredefinedClasses {
     * Returns the sig symbol with the given `clazz` and name `sig`.
     */
   def lookupSigSym(clazz: String, sig: String, root: KindedAst.Root): Symbol.SigSym = {
-    val clazzKey = new Symbol.ClassSym(Nil, clazz, SourceLocation.Unknown)
+    val clazzKey = new Symbol.TraitSym(Nil, clazz, SourceLocation.Unknown)
     val sigKey = new Symbol.SigSym(clazzKey, sig, SourceLocation.Unknown)
     root.classes.getOrElse(clazzKey, throw InternalCompilerException(s"The type class: '$clazzKey' is not defined.", SourceLocation.Unknown))
       .sigs.getOrElse(sigKey, throw InternalCompilerException(s"The signature '$sigKey' is not defined.", SourceLocation.Unknown))

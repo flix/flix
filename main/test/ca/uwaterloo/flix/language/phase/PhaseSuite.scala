@@ -21,6 +21,7 @@ import org.scalatest.Suites
 
 class PhaseSuite extends Suites(
   // phases
+  new TestLexer,
   new TestDeriver,
   new TestEntryPoint,
   new TestInstances,

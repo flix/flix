@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Name, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -302,6 +302,61 @@ object Verifier {
             case _ => failMismatchedShape(t1, "Tuple", loc)
           }
 
+        case AtomicOp.Assign =>
+          val List(t1, t2) = ts
+          t1 match {
+            case MonoType.Ref(elm) =>
+              checkEq(t2, elm, loc)
+              check(expected = MonoType.Unit)(actual = tpe, loc)
+            case _ => failMismatchedShape(t1, "Ref", loc)
+          }
+
+        // Match- and Hole-errors match with any type
+        case AtomicOp.HoleError(_) =>
+          tpe
+
+        case AtomicOp.MatchError =>
+          tpe
+
+        case AtomicOp.RecordEmpty =>
+          check(expected = MonoType.RecordEmpty)(actual = tpe, loc)
+
+        case AtomicOp.RecordExtend(label) =>
+          val List(t1, t2) = ts
+          removeFromRecordType(tpe, label.name, loc) match {
+            case (rec, Some(valtype)) =>
+              checkEq(rec, t2, loc)
+              checkEq(valtype, t1, loc)
+              tpe
+            case (_, None) => failMismatchedShape(tpe, s"Record with ${label.name}", loc)
+          }
+
+        case AtomicOp.RecordRestrict(label) =>
+          val List(t1) = ts
+          removeFromRecordType(t1, label.name, loc) match {
+            case (rec, Some(_)) =>
+              checkEq(tpe, rec, loc)
+            case (_, None) => failMismatchedShape(t1, s"Record with ${label.name}", loc)
+          }
+
+        case AtomicOp.RecordSelect(label) =>
+          val List(t1) = ts
+          selectFromRecordType(t1, label.name, loc) match {
+            case Some(elmt) =>
+              checkEq(tpe, elmt, loc)
+            case None => failMismatchedShape(t1, s"Record with '${label.name}'", loc)
+          }
+
+        case AtomicOp.Closure(sym) =>
+          val defn = root.defs(sym)
+          val signature = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
+
+          val decl = MonoType.Arrow(defn.cparams.map(_.tpe), signature)
+          val actual = MonoType.Arrow(ts, tpe)
+
+          checkEq(decl, actual, loc)
+          tpe
+
         case _ => tpe // TODO: VERIFIER: Add rest
       }
 
@@ -407,7 +462,36 @@ object Verifier {
   }
 
   /**
-    * Throw `InternalCompilerException` because the `found` type does not match the shape specified by `expected`
+    * Remove the type associated with `label` from the given record type `rec`.
+    * If `rec` is not a record, return `None`.
+    */
+  private def removeFromRecordType(rec: MonoType, label: String, loc: SourceLocation): (MonoType, Option[MonoType]) = rec match {
+    case MonoType.RecordEmpty => (rec, None)
+    case MonoType.RecordExtend(lbl, valtype, rest) =>
+      if (label == lbl) (rest, Some(valtype))
+      else {
+        val (rec, opt) = removeFromRecordType(rest, label, loc)
+        (MonoType.RecordExtend(lbl, valtype, rec), opt)
+      }
+    case _ => failMismatchedShape(rec, "Record", loc)
+  }
+
+  /**
+    * Get the type associated with `label` in the given record type `rec`.
+    * If `rec` is not a record, return `None`
+    */
+  private def selectFromRecordType(rec: MonoType, label: String, loc: SourceLocation): Option[MonoType] = rec match {
+    case MonoType.RecordExtend(lbl, valtype, rest) =>
+      if (lbl == label)
+        Some(valtype)
+      else
+        selectFromRecordType(rest, label, loc)
+    case MonoType.RecordEmpty => None
+    case _ => failMismatchedShape(rec, "Record", loc)
+  }
+
+  /**
+    * Throw `InternalCompilerException` because the `found` does not match the shape specified by `expected`
     */
   private def failMismatchedShape(found: MonoType, expected: String, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
