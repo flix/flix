@@ -142,19 +142,19 @@ object Simplifier {
       val t = visitType(d.tpe)
       SimplifiedAst.Expr.Let(sym, visitExp(exp), SimplifiedAst.Expr.Cst(Ast.Constant.Unit, MonoType.Unit, loc), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.Let(sym, mod, e1, e2, tpe, eff, loc) =>
+    case MonoAst.Expr.Let(sym, _, e1, e2, tpe, eff, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Let(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.LetRec(sym, mod, e1, e2, tpe, eff, loc) =>
+    case MonoAst.Expr.LetRec(sym, _, e1, e2, tpe, eff, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.LetRec(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+    case MonoAst.Expr.Scope(sym, _, exp, tpe, eff, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Scope(sym, visitExp(exp), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.Match(exp0, rules, tpe, eff, loc) =>
+    case MonoAst.Expr.Match(exp0, rules, tpe, _, loc) =>
       patternMatchWithLabels(exp0, rules, tpe, loc)
 
     case MonoAst.Expr.VectorLit(exps, tpe, _, loc) =>
@@ -176,7 +176,7 @@ object Simplifier {
       val purity = e.purity
       SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, List(e), MonoType.Int32, purity, loc)
 
-    case MonoAst.Expr.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
+    case MonoAst.Expr.Ascribe(exp, _, _, _) => visitExp(exp)
 
     case MonoAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -365,12 +365,12 @@ object Simplifier {
     case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat0.", pat0.loc)
   }
 
-  private def isPatLiteral(pat0: MonoAst.Pattern)(implicit flix: Flix): Boolean = pat0 match {
+  private def isPatLiteral(pat0: MonoAst.Pattern): Boolean = pat0 match {
     case MonoAst.Pattern.Cst(_, _, _) => true
     case _ => false
   }
 
-  private def mkEqual(e1: SimplifiedAst.Expr, e2: SimplifiedAst.Expr, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expr = {
+  private def mkEqual(e1: SimplifiedAst.Expr, e2: SimplifiedAst.Expr, loc: SourceLocation): SimplifiedAst.Expr = {
     /*
      * Special Case 1: Unit
      * Special Case 2: String - must be desugared to String.equals
@@ -520,7 +520,7 @@ object Simplifier {
         *
         * We proceed by recursion on the remaining patterns and variables.
         */
-      case (MonoAst.Pattern.Wild(tpe, loc) :: ps, v :: vs) =>
+      case (MonoAst.Pattern.Wild(_, _) :: ps, _ :: vs) =>
         patternMatchList(ps, vs, guard, succ, fail)
 
       /**
@@ -643,7 +643,7 @@ object Simplifier {
         case Some(replacement) => SimplifiedAst.Expr.Var(replacement, tpe, loc)
       }
 
-      case SimplifiedAst.Expr.Def(sym, tpe, loc) => e
+      case SimplifiedAst.Expr.Def(_, _, _) => e
 
       case SimplifiedAst.Expr.Lambda(fparams, body, tpe, loc) =>
         SimplifiedAst.Expr.Lambda(fparams, visitExp(body), tpe, loc)
