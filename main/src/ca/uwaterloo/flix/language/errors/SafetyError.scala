@@ -165,6 +165,24 @@ object SafetyError {
   }
 
   /**
+   * An error raised to indicate that the Java class in a catch clause is not a Throwable.
+   *
+   * @param loc the location of the catch parameter.
+   */
+  case class IllegalCatchType(loc: SourceLocation) extends SafetyError with Recoverable {
+    def summary: String = s"Exception type is not a subclass of Throwable."
+
+    override def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> $summary
+         |
+         |${code(loc, "Type should be java.lang.Throwable or a subclass.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * An error raised to indicate an illegal use of a wildcard in a negative atom.
     *
     * @param loc the position of the body atom containing the illegal wildcard.
