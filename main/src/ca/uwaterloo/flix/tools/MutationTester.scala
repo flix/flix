@@ -132,6 +132,9 @@ object MutationTester {
   }
 
   private object Mutator {
+
+    import Helper._
+
     // todo: collections: for example, Set constructor
     def mutateExpr(expr: Expr)(implicit flix: Flix): LazyList[Mutation] = {
       if (expr.tpe.toString == "Unit") {
@@ -139,15 +142,16 @@ object MutationTester {
       } else {
         expr match {
           case Expr.Cst(cst, tpe, loc) => mutateExprCst(expr)
+          // TODO: think mutation vars by type. for example in def calls 'Add.add(x, y)'
           case Expr.Var(sym, tpe, loc) => LazyList.empty
-          case Expr.Def(sym, tpe, loc) => MutatorHelper.mutateExprDef(expr)
-          case Expr.Sig(sym, tpe, loc) => MutatorHelper.mutateExprSig(expr)
+          case Expr.Def(sym, tpe, loc) => mutateExprDef(expr)
+          case Expr.Sig(sym, tpe, loc) => mutateExprSig(expr)
           case Expr.Hole(sym, tpe, loc) => LazyList.empty
           case Expr.HoleWithExp(exp, tpe, eff, loc) => LazyList.empty
           case Expr.OpenAs(symUse, exp, tpe, loc) => LazyList.empty
           case Expr.Use(sym, alias, exp, loc) => LazyList.empty
           case Expr.Lambda(fparam, exp, tpe, loc) => LazyList.empty
-          case Expr.Apply(exp, exps, tpe, eff, loc) => MutatorHelper.mutateExprApply(expr)
+          case Expr.Apply(exp, exps, tpe, eff, loc) => mutateExprApply(expr)
           case Expr.Unary(sop, exp, tpe, eff, loc) => mutateExprUnary(expr)
           case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => mutateExprBinary(expr)
           case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
@@ -213,119 +217,78 @@ object MutationTester {
           case Expr.ParYield(frags, exp, tpe, eff, loc) => LazyList.empty
           case Expr.Lazy(exp, tpe, loc) => LazyList.empty
           case Expr.Force(exp, tpe, eff, loc) => LazyList.empty
-          case Expr.FixpointConstraintSet(cs, tpe, loc) => LazyList.empty
-          case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => LazyList.empty
+
+          case Expr.FixpointConstraintSet(cs, tpe, loc) => mutateExprFixpointConstraintSet(expr)
+          case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => LazyList.empty // find example
           case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => LazyList.empty
           case Expr.FixpointSolve(exp, tpe, eff, loc) => LazyList.empty
           case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => LazyList.empty
-          case Expr.FixpointInject(exp, pred, tpe, eff, loc) => LazyList.empty
+          case Expr.FixpointInject(exp, pred, tpe, eff, loc) => LazyList.empty // todo: think
           case Expr.FixpointProject(pred, exp, tpe, eff, loc) => LazyList.empty
+
           case Expr.Error(m, tpe, eff) => LazyList.empty
         }
       }
     }
 
     private def mutateExprCst(exp: Expr): LazyList[Mutation] = exp match {
-      case Expr.Cst(cst, tpe, loc) => cst match {
-        case Constant.Bool(lit) => LazyList(Mutation(Expr.Cst(Constant.Bool(!lit), tpe, loc), loc, (!lit).toString))
-        case Constant.Float32(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Expr.Cst(Constant.Float32(value), tpe, loc), loc, s"${value.toString}f32"))
-        case Constant.Float64(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Expr.Cst(Constant.Float64(value), tpe, loc), loc, value.toString))
-        case Constant.BigDecimal(lit) => LazyList(
-          lit.add(java.math.BigDecimal.ONE),
-          lit.subtract(java.math.BigDecimal.ONE)
-        ).map(value => Mutation(Expr.Cst(Constant.BigDecimal(value), tpe, loc), loc, s"${value.toString}ff"))
-        case Constant.Int8(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Expr.Cst(Constant.Int8(value.toByte), tpe, loc), loc, s"${value.toString}i8"))
-        case Constant.Int16(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Expr.Cst(Constant.Int16(value.toShort), tpe, loc), loc, s"${value.toString}i16"))
-        case Constant.Int32(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Expr.Cst(Constant.Int32(value), tpe, loc), loc, value.toString))
-        case Constant.Int64(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Expr.Cst(Constant.Int64(value), tpe, loc), loc, s"${value.toString}i64"))
-        case Constant.BigInt(lit) => LazyList(
-          lit.add(java.math.BigInteger.ONE),
-          lit.subtract(java.math.BigInteger.ONE)
-        ).map(value => Mutation(Expr.Cst(Constant.BigInt(value), tpe, loc), loc, s"${value.toString}ii"))
-        case _ => LazyList.empty
-      }
+      case Expr.Cst(cst, tpe, loc) => mutateConstant(cst).map(p => Mutation(Expr.Cst(p._1, tpe, loc), loc, p._2))
       case _ => LazyList.empty
     }
 
-    private def mutateExprUnary(exp: Expr): LazyList[Mutation] = exp match {
-      case Expr.Unary(BoolOp.Not, exp, _, _, loc) => LazyList(Mutation(exp, loc, exp.loc.text.get))
+    private def mutateConstant(cst: Constant): LazyList[(Constant, String)] = cst match {
+      case Constant.Bool(lit) => LazyList((Constant.Bool(!lit), (!lit).toString))
+      case Constant.Float32(lit) => LazyList(lit + 1, lit - 1).map(value => (Constant.Float32(value), s"${value.toString}f32"))
+      case Constant.Float64(lit) => LazyList(lit + 1, lit - 1).map(value => (Constant.Float64(value), s"${value.toString}f64"))
+      case Constant.BigDecimal(lit) => LazyList(
+        lit.add(java.math.BigDecimal.ONE),
+        lit.subtract(java.math.BigDecimal.ONE)
+      ).map(value => (Constant.BigDecimal(value), s"${value.toString}ff"))
+      case Constant.Int8(lit) => LazyList(lit + 1, lit - 1).map(value => (Constant.Int8(value.toByte), s"${value.toString}i8"))
+      case Constant.Int16(lit) => LazyList(lit + 1, lit - 1).map(value => (Constant.Int16(value.toShort), s"${value.toString}i16"))
+      case Constant.Int32(lit) => LazyList(lit + 1, lit - 1).map(value => (Constant.Int32(value), s"${value.toString}i32"))
+      case Constant.Int64(lit) => LazyList(lit + 1, lit - 1).map(value => (Constant.Int64(value), s"${value.toString}i64"))
+      case Constant.BigInt(lit) => LazyList(
+        lit.add(java.math.BigInteger.ONE),
+        lit.subtract(java.math.BigInteger.ONE)
+      ).map(value => (Constant.BigInt(value), s"${value.toString}ii"))
       case _ => LazyList.empty
     }
 
-    private def mutateExprBinary(exp: Expr): LazyList[Mutation] = exp match {
-      case Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc) => LazyList(Mutation(Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc), loc, s"${exp1.loc.text.get} or ${exp2.loc.text.get}"))
-      case Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc) => LazyList(Mutation(Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc), loc, s"${exp1.loc.text.get} and ${exp2.loc.text.get}"))
+    private def mutateExprDef(exp: Expr)(implicit flix: Flix): LazyList[Mutation] = exp match {
+      case Expr.Def(sym, tpe, loc) if defnIntNamespaces.contains(sym.namespace.mkString(".")) =>
+        defnToDefn.get(sym.text)
+          .flatMap(findDef(sym.namespace, _))
+          .map(s => LazyList(Mutation(Expr.Def(s, tpe, loc), loc, s.toString)))
+          .orElse {
+            defnToSig.get(sym.text)
+              .flatMap(p => findSig(p._1, p._2))
+              .map(s => LazyList(Mutation(Expr.Sig(s, tpe, loc), loc, s.toString)))
+          }
+          .getOrElse(LazyList.empty)
       case _ => LazyList.empty
     }
 
-    private def mutateExprTuple(exp: Expr)(implicit flix: Flix): LazyList[Mutation] = exp match {
-      case Expr.Tuple(elms, tpe, eff, loc) =>
-        LazyList.tabulate(elms.length)(i =>
-          mutateExpr(elms(i)).map(m => Mutation(Expr.Tuple(elms.updated(i, m.expr), tpe, eff, loc), m.loc, m.newStr))
-        ).flatten
+    private def mutateExprSig(exp: Expr)(implicit flix: Flix): LazyList[Mutation] = exp match {
+      case Expr.Sig(sym, tpe, loc) =>
+        var l = List(conditionalNegateSigToSig, conditionalBoundarySigToSig)
+        if (arithmeticSigTypes.contains(tpe.toString)) {
+          l = arithmeticSigToSig :: l
+        }
+
+        l.foldLeft(LazyList.empty[Mutation]) {
+          (acc, sigMap) =>
+            acc #::: sigMap.get(sym.toString)
+              .flatMap(p => findSig(p._1, p._2))
+              .map(s => LazyList(Mutation(Expr.Sig(s, tpe, loc), loc, s.toString)))
+              .getOrElse(LazyList.empty)
+        }
       case _ => LazyList.empty
     }
-  }
-
-  private object MutatorHelper {
-
-    private val arithmeticSigTypes: Set[String] = Set(
-      "Float32 -> (Float32 -> Float32)",
-      "Float64 -> (Float64 -> Float64)",
-      "BigDecimal -> (BigDecimal -> BigDecimal)",
-      "Int8 -> (Int8 -> Int8)",
-      "Int16 -> (Int16 -> Int16)",
-      "Int32 -> (Int32 -> Int32)",
-      "Int64 -> (Int64 -> Int64)",
-      "BigInt -> (BigInt -> BigInt)",
-    )
-
-    private val arithmeticSigToSig: Map[String, (String, String)] = Map(
-      "Add.add" -> ("Sub", "sub"),
-      "Sub.sub" -> ("Add", "add"),
-      "Mul.mul" -> ("Div", "div"),
-      "Div.div" -> ("Mul", "mul"),
-    )
-
-    private val conditionalNegateSigToSig: Map[String, (String, String)] = Map(
-      "Eq.eq" -> ("Eq", "neq"),
-      "Eq.neq" -> ("Eq", "eq"),
-      "Order.less" -> ("Order", "greaterEqual"),
-      "Order.lessEqual" -> ("Order", "greater"),
-      "Order.greater" -> ("Order", "lessEqual"),
-      "Order.greaterEqual" -> ("Order", "less"),
-    )
-
-    private val conditionalBoundarySigToSig: Map[String, (String, String)] = Map(
-      "Order.less" -> ("Order", "lessEqual"),
-      "Order.lessEqual" -> ("Order", "less"),
-      "Order.greater" -> ("Order", "greaterEqual"),
-      "Order.greaterEqual" -> ("Order", "greater"),
-    )
-
-    private val defnIntNamespaces: Set[String] = Set(
-      "Int8",
-      "Int16",
-      "Int32",
-      "Int64",
-    )
-
-    private val defnToSig: Map[String, (String, String)] = Map(
-      "modulo" -> ("Mul", "mul"),
-      "remainder" -> ("Mul", "mul"),
-    )
-
-    private val defnToDefn: Map[String, String] = Map(
-      "bitwiseAnd" -> "bitwiseOr",
-      "bitwiseOr" -> "bitwiseAnd",
-      "bitwiseXor" -> "bitwiseAnd",
-      "leftShift" -> "rightShift",
-      "rightShift" -> "leftShift",
-    )
 
     // what if there is an expression other than Def and Sig ?
     // take Apply's SourceLocation and refactor Mutation.newStr creating
-    def mutateExprApply(exp: TypedAst.Expr)(implicit flix: Flix): LazyList[Mutation] = exp match {
+    private def mutateExprApply(exp: TypedAst.Expr)(implicit flix: Flix): LazyList[Mutation] = exp match {
       case Expr.Apply(exp, exps, tpe, eff, loc) =>
         exp match {
           case Expr.Sig(sym, _, _) if sym.toString == "Neg.neg" => LazyList(Mutation(exps.head, loc, exps.head.loc.text.get))
@@ -348,52 +311,110 @@ object MutationTester {
       case _ => LazyList.empty
     }
 
-    def mutateExprSig(exp: Expr)(implicit flix: Flix): LazyList[Mutation] =
-      exp match {
-        case Expr.Sig(sym, tpe, loc) =>
-          var l = List(conditionalNegateSigToSig, conditionalBoundarySigToSig)
-          if (arithmeticSigTypes.contains(tpe.toString)) {
-            l = arithmeticSigToSig :: l
-          }
-
-          l.foldLeft(LazyList.empty[Mutation]) {
-            (acc, sigMap) =>
-              acc #::: sigMap.get(sym.toString)
-                .flatMap(p => findSig(p._1, p._2))
-                .map(s => LazyList(Mutation(Expr.Sig(s, tpe, loc), loc, s.toString)))
-                .getOrElse(LazyList.empty)
-          }
-        case _ => LazyList.empty
-      }
-
-    def mutateExprDef(exp: Expr)(implicit flix: Flix): LazyList[Mutation] = exp match {
-      case Expr.Def(sym, tpe, loc) if defnIntNamespaces.contains(sym.namespace.mkString(".")) =>
-        defnToDefn.get(sym.text)
-          .flatMap(findDef(sym.namespace, _))
-          .map(s => LazyList(Mutation(Expr.Def(s, tpe, loc), loc, s.toString)))
-          .orElse {
-            defnToSig.get(sym.text)
-              .flatMap(p => findSig(p._1, p._2))
-              .map(s => LazyList(Mutation(Expr.Sig(s, tpe, loc), loc, s.toString)))
-          }
-          .getOrElse(LazyList.empty)
+    private def mutateExprUnary(exp: Expr): LazyList[Mutation] = exp match {
+      case Expr.Unary(BoolOp.Not, exp, _, _, loc) => LazyList(Mutation(exp, loc, exp.loc.text.get))
       case _ => LazyList.empty
     }
 
-    private def findSig(clazz: String, sig: String)(implicit flix: Flix): Option[Symbol.SigSym] = try {
-      Some(PredefinedClasses.lookupSigSym(clazz, sig, flix.getKinderAst))
-    } catch {
-      case _: Exception => None // todo: refactor to return info that mutant creation failed ?
+    private def mutateExprBinary(exp: Expr): LazyList[Mutation] = exp match {
+      case Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc) => LazyList(Mutation(Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc), loc, s"${exp1.loc.text.get} or ${exp2.loc.text.get}"))
+      case Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc) => LazyList(Mutation(Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc), loc, s"${exp1.loc.text.get} and ${exp2.loc.text.get}"))
+      case _ => LazyList.empty
     }
 
-    private def findDef(namespace: List[String], name: String)(implicit flix: Flix): Option[Symbol.DefnSym] = try {
-      Some(PredefinedClasses.lookupDefSym(namespace, name, flix.getKinderAst))
-    } catch {
-      case _: Exception => None // todo: refactor to return info that mutant creation failed ?
+    private def mutateExprTuple(exp: Expr)(implicit flix: Flix): LazyList[Mutation] = exp match {
+      case Expr.Tuple(elms, tpe, eff, loc) =>
+        LazyList.tabulate(elms.length)(i =>
+          mutateExpr(elms(i)).map(m => Mutation(Expr.Tuple(elms.updated(i, m.expr), tpe, eff, loc), m.loc, m.newStr))
+        ).flatten
+      case _ => LazyList.empty
+    }
+
+    /* todo:
+     * check Atom.Denotation: Relational or Latticenal
+     *
+     * there needs mutate only FixpointConstraintSet
+     * or also mutate injected structure in FixpointInject (?)
+     * or rename injected pred.Name (eq deletion inject)
+     *
+     * for Predicate.Body.Functional and Predicate.Body.Guard mutate inner exp
+     */
+    private def mutateExprFixpointConstraintSet(exp: Expr)(implicit flix: Flix): LazyList[Mutation] = exp match {
+      case Expr.FixpointConstraintSet(cs, tpe, loc) =>
+        LazyList.empty
+      case _ => LazyList.empty
+    }
+
+    private object Helper {
+      val arithmeticSigTypes: Set[String] = Set(
+        "Float32 -> (Float32 -> Float32)",
+        "Float64 -> (Float64 -> Float64)",
+        "BigDecimal -> (BigDecimal -> BigDecimal)",
+        "Int8 -> (Int8 -> Int8)",
+        "Int16 -> (Int16 -> Int16)",
+        "Int32 -> (Int32 -> Int32)",
+        "Int64 -> (Int64 -> Int64)",
+        "BigInt -> (BigInt -> BigInt)",
+      )
+
+      val arithmeticSigToSig: Map[String, (String, String)] = Map(
+        "Add.add" -> ("Sub", "sub"),
+        "Sub.sub" -> ("Add", "add"),
+        "Mul.mul" -> ("Div", "div"),
+        "Div.div" -> ("Mul", "mul"),
+      )
+
+      val conditionalNegateSigToSig: Map[String, (String, String)] = Map(
+        "Eq.eq" -> ("Eq", "neq"),
+        "Eq.neq" -> ("Eq", "eq"),
+        "Order.less" -> ("Order", "greaterEqual"),
+        "Order.lessEqual" -> ("Order", "greater"),
+        "Order.greater" -> ("Order", "lessEqual"),
+        "Order.greaterEqual" -> ("Order", "less"),
+      )
+
+      val conditionalBoundarySigToSig: Map[String, (String, String)] = Map(
+        "Order.less" -> ("Order", "lessEqual"),
+        "Order.lessEqual" -> ("Order", "less"),
+        "Order.greater" -> ("Order", "greaterEqual"),
+        "Order.greaterEqual" -> ("Order", "greater"),
+      )
+
+      val defnIntNamespaces: Set[String] = Set(
+        "Int8",
+        "Int16",
+        "Int32",
+        "Int64",
+      )
+
+      val defnToSig: Map[String, (String, String)] = Map(
+        "modulo" -> ("Mul", "mul"),
+        "remainder" -> ("Mul", "mul"),
+      )
+
+      val defnToDefn: Map[String, String] = Map(
+        "bitwiseAnd" -> "bitwiseOr",
+        "bitwiseOr" -> "bitwiseAnd",
+        "bitwiseXor" -> "bitwiseAnd",
+        "leftShift" -> "rightShift",
+        "rightShift" -> "leftShift",
+      )
+
+      def findSig(clazz: String, sig: String)(implicit flix: Flix): Option[Symbol.SigSym] = try {
+        Some(PredefinedClasses.lookupSigSym(clazz, sig, flix.getKinderAst))
+      } catch {
+        case _: Exception => None // todo: refactor to return info that mutant creation failed ?
+      }
+
+      def findDef(namespace: List[String], name: String)(implicit flix: Flix): Option[Symbol.DefnSym] = try {
+        Some(PredefinedClasses.lookupDefSym(namespace, name, flix.getKinderAst))
+      } catch {
+        case _: Exception => None // todo: refactor to return info that mutant creation failed ?
+      }
     }
   }
 
-  // create MutationKind enum and ovverided toString method for this
+  // create MutationKind enum
   private case class Mutation(expr: Expr, loc: SourceLocation, newStr: String)
 
   class MutationReporter(implicit flix: Flix) {
