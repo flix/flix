@@ -51,7 +51,8 @@ object Options {
     xparser = false,
     xprinttyper = None,
     XPerfN = None,
-    XPerfFrontend = false
+    XPerfFrontend = false,
+    albatross = 0
   )
 
   /**
