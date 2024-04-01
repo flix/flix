@@ -99,7 +99,7 @@ object LocationLink {
   /**
     * Returns a reference to the instance node `instance`.
     */
-  def fromInstanceClassSymUse(clazz: Ast.ClassSymUse, originLoc: SourceLocation): LocationLink = {
+  def fromInstanceClassSymUse(clazz: Ast.TraitSymUse, originLoc: SourceLocation): LocationLink = {
     val originSelectionRange = Range.from(originLoc)
     val targetUri = clazz.loc.source.name
     val targetRange = Range.from(clazz.loc)

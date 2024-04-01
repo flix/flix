@@ -42,7 +42,7 @@ object ImplementationProvider {
     * Returns the class symbol located at the given position as a singleton iterable.
     * Returns an empty iterable if there is no such class symbol.
     */
-  private def classAt(uri: String, p: Position)(implicit root: Root): Iterable[Symbol.ClassSym] = {
+  private def classAt(uri: String, p: Position)(implicit root: Root): Iterable[Symbol.TraitSym] = {
     root.instances.keys.filter(classSym => classSym.loc.source.name == uri
       && (classSym.loc.beginLine < p.line
       || (classSym.loc.beginLine == p.line && classSym.loc.beginCol <= p.character))

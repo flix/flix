@@ -489,7 +489,7 @@ object Weeder {
     * Performs weeding on the given associated type signature `d0`.
     */
   private def visitAssocTypeSig(d0: ParsedAst.Declaration.AssocTypeSig, clazzTparam: WeededAst.TypeParam): Validation[List[WeededAst.Declaration.AssocTypeSig], WeederError] = d0 match {
-    case ParsedAst.Declaration.AssocTypeSig(doc0, mod0, sp1, ident, tparams0, kind0, sp2) =>
+    case ParsedAst.Declaration.AssocTypeSig(doc0, mod0, sp1, ident, tparams0, kind0, tpe0, sp2) =>
 
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
@@ -498,10 +498,11 @@ object Weeder {
         case Some(k) => visitKind(k)
         case None => WeededAst.Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic)
       }
+      val tpeVal = Validation.traverseOpt(tpe0)(visitType)
       val loc = mkSL(sp1, sp2)
 
-      flatMapN(modVal, tparamsVal) {
-        case (mod, tparams) =>
+      flatMapN(modVal, tparamsVal, tpeVal) {
+        case (mod, tparams, tpe) =>
           val tparamVal = tparams match {
             // Case 1: Elided. Use the class tparam.
             case WeededAst.TypeParams.Elided => Validation.success(clazzTparam)
@@ -516,7 +517,7 @@ object Weeder {
             case WeededAst.TypeParams.Unkinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
           }
           mapN(tparamVal) {
-            case tparam => List(WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, loc))
+            case tparam => List(WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, tpe, loc))
           }
       }
   }

@@ -322,7 +322,7 @@ object TypeError {
     * @param renv  the rigidity environment.
     * @param loc   the location where the error occurred.
     */
-  case class MissingInstance(clazz: Symbol.ClassSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingInstance(clazz: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"No instance of the '$clazz' class for the type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
@@ -344,7 +344,7 @@ object TypeError {
     * @param renv  the rigidity environment.
     * @param loc   the location where the error occurred.
     */
-  case class MissingInstanceArrow(clazz: Symbol.ClassSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingInstanceArrow(clazz: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"No instance of the '$clazz' class for the function type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {

@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Acknowledge request
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: >
@@ -26,7 +26,7 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
       - name: Lookup branches
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: >
@@ -54,7 +54,7 @@ jobs:
           name: JAR
           path: build/libs/flix.jar
       - name: Comment phase report
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: >

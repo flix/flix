@@ -605,7 +605,7 @@ object Ast {
     /**
       * Represents the head (located class) of a type constraint.
       */
-    case class Head(sym: Symbol.ClassSym, loc: SourceLocation)
+    case class Head(sym: Symbol.TraitSym, loc: SourceLocation)
   }
 
   /**
@@ -660,7 +660,7 @@ object Ast {
   /**
     * Represents a use of a class sym.
     */
-  case class ClassSymUse(sym: Symbol.ClassSym, loc: SourceLocation)
+  case class TraitSymUse(sym: Symbol.TraitSym, loc: SourceLocation)
 
   /**
     * Represents a use of an associated type sym.
@@ -675,7 +675,7 @@ object Ast {
   /**
     * Represents the super classes and instances available for a particular class.
     */
-  case class ClassContext(superClasses: List[Symbol.ClassSym], instances: List[Ast.Instance])
+  case class ClassContext(superClasses: List[Symbol.TraitSym], instances: List[Ast.Instance])
 
   /**
     * Represents the definition of an associated type.
@@ -687,7 +687,7 @@ object Ast {
   /**
     * Represents a derivation on an enum (e.g. `enum E with Eq`).
     */
-  case class Derivation(clazz: Symbol.ClassSym, loc: SourceLocation)
+  case class Derivation(clazz: Symbol.TraitSym, loc: SourceLocation)
 
   /**
     * Represents a list of derivations with a source location.

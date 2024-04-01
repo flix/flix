@@ -16,14 +16,11 @@
 package ca.uwaterloo.flix.api.lsp.provider
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, Level, RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, RigidityEnv, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.phase.unification.Unification
 import ca.uwaterloo.flix.util.Result
 
 object HoleCompletion {
-
-  // Post type inference, level is irrelevant.
-  private implicit val DefaultLevel: Level = Level.Default
 
   /**
     * Returns the set of definitions whose final parameter type and return type match the given `sourceType` and `targetType`, respectively.
