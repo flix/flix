@@ -480,6 +480,7 @@ object Weeder2 {
       ) {
         (doc, mods, ident, tparams) =>
           val kind = Types.tryPickKind(tree).getOrElse(defaultKind(ident))
+          val tpe = Types.tryPickTypeNoWild(tree)
           val tparam = tparams match {
             // Elided: Use class type parameter
             case TypeParams.Elided => Validation.success(classTypeParam)
@@ -490,8 +491,8 @@ object Weeder2 {
             case TypeParams.Unkinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
             case TypeParams.Kinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
           }
-          mapN(tparam) {
-            tparam => Declaration.AssocTypeSig(doc, mods, ident, tparam, kind, tree.loc)
+          mapN(tparam, tpe) {
+            (tparam, tpe) => Declaration.AssocTypeSig(doc, mods, ident, tparam, kind, tpe, tree.loc)
           }
       }
     }
