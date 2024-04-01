@@ -1,4 +1,4 @@
-mod Subtyping {
+mod ClassHierarchyAnalysis {
 
     ///
     /// Represents the entities in a Java program.
@@ -94,7 +94,7 @@ mod Subtyping {
     ///
     /// Returns a vector of types that extend the final classes in the program `p`.
     ///
-    pub def illegalFinalClasses(p: Program): Vector[String] =
+    pub def illegalFinalClassExtension(p: Program): Vector[String] =
         let fcs  = inject p.finalClasses into Final;
         let rule = #{
             ExtendsFinalClass(sub, super)  :- Final(super), Subtype(sub, super), if sub != super.
@@ -120,42 +120,42 @@ mod Subtyping {
 
         @Test
         def testIsSubtype01(): Bool =
-            let result = Subtyping.isSubtype(emptyFacts(), "java.lang.String", "java.lang.Object");
+            let result = ClassHierarchyAnalysis.isSubtype(emptyFacts(), "java.lang.String", "java.lang.Object");
             Assert.eq(false, result)
 
         @Test
         def testIsSubtype02(): Bool =
-            let result = Subtyping.isSubtype(facts(), "java.lang.String", "java.lang.Object");
+            let result = ClassHierarchyAnalysis.isSubtype(facts(), "java.lang.String", "java.lang.Object");
             Assert.eq(true, result)
 
         @Test
         def testIsSubtype03(): Bool =
-            let result = Subtyping.isSubtype(facts(), "java.lang.Object", "java.lang.Object");
+            let result = ClassHierarchyAnalysis.isSubtype(facts(), "java.lang.Object", "java.lang.Object");
             Assert.eq(true, result)
 
         @Test
         def testIsSubtype04(): Bool =
-            let result = Subtyping.isSubtype(facts(), "java.lang.Object", "java.lang.String");
+            let result = ClassHierarchyAnalysis.isSubtype(facts(), "java.lang.Object", "java.lang.String");
             Assert.eq(false, result)
 
         @Test
         def testIsSubtype05(): Bool =
-            let result = Subtyping.isSubtype(facts(), "java.util.ArrayList", "java.util.Collection");
+            let result = ClassHierarchyAnalysis.isSubtype(facts(), "java.util.ArrayList", "java.util.Collection");
             Assert.eq(true, result)
 
         @Test
         def testIsSubtype06(): Bool =
-            let result = Subtyping.isSubtype(facts(), "au.content.SpecialArrayList", "java.util.Collection");
+            let result = ClassHierarchyAnalysis.isSubtype(facts(), "au.content.SpecialArrayList", "java.util.Collection");
             Assert.eq(true, result)
 
         @Test
         def testIsSubtype07(): Bool =
-            let result = Subtyping.isSubtype(facts(), "java.util.List", "java.util.List");
+            let result = ClassHierarchyAnalysis.isSubtype(facts(), "java.util.List", "java.util.List");
             Assert.eq(true, result)
 
         @Test
         def testHasField01(): Bool =
-            let result = Subtyping.hasField(facts(), "elementData");
+            let result = ClassHierarchyAnalysis.hasField(facts(), "elementData");
             let expected = Vector#{
                 "java.util.ArrayList",
                 "au.content.SpecialArrayList"
@@ -164,7 +164,7 @@ mod Subtyping {
 
         @Test
         def testHasField02(): Bool =
-            let result = Subtyping.hasField(facts(), "size");
+            let result = ClassHierarchyAnalysis.hasField(facts(), "size");
             let expected = Vector#{
                 "java.util.ArrayList",
                 "au.content.SpecialArrayList"
@@ -173,7 +173,7 @@ mod Subtyping {
 
         @Test
         def testHasField03(): Bool =
-            let result = Subtyping.hasField(facts(), "specialField");
+            let result = ClassHierarchyAnalysis.hasField(facts(), "specialField");
             let expected = Vector#{
                 "au.content.SpecialArrayList"
             } |> Vector.sort;
@@ -181,7 +181,7 @@ mod Subtyping {
 
         @Test
         def testHasField04(): Bool =
-            let result = Subtyping.hasField(facts(), "markerField");
+            let result = ClassHierarchyAnalysis.hasField(facts(), "markerField");
             let expected = Vector#{
                 "au.content.Marker"
             } |> Vector.sort;
@@ -189,7 +189,7 @@ mod Subtyping {
 
         @Test
         def testHasMethod01(): Bool =
-            let result = Subtyping.hasMethod(facts(), "toString");
+            let result = ClassHierarchyAnalysis.hasMethod(facts(), "toString");
             let expected = Vector#{
                 "java.lang.Object",
                 "java.lang.String",
@@ -203,7 +203,7 @@ mod Subtyping {
 
         @Test
         def testHasMethod02(): Bool =
-            let result = Subtyping.hasMethod(facts(), "add");
+            let result = ClassHierarchyAnalysis.hasMethod(facts(), "add");
             let expected = Vector#{
                 "java.util.ArrayList",
                 "au.content.SpecialArrayList"
@@ -212,7 +212,7 @@ mod Subtyping {
 
         @Test
         def testHasMethod03(): Bool =
-            let result = Subtyping.hasMethod(facts(), "contains");
+            let result = ClassHierarchyAnalysis.hasMethod(facts(), "contains");
             let expected = Vector#{
                 "java.lang.String"
             } |> Vector.sort;
@@ -220,7 +220,7 @@ mod Subtyping {
 
         @Test
         def testNonImplementedMethods01(): Bool =
-            let result = Subtyping.nonImplementedMethods(facts());
+            let result = ClassHierarchyAnalysis.nonImplementedMethods(facts());
             let expected = Vector#{
                 ("java.util.ArrayList", "isEmpty"),
                 ("au.content.SpecialArrayList", "isEmpty")
@@ -229,19 +229,19 @@ mod Subtyping {
 
         @Test
         def testIllegalFinalClasses01(): Bool =
-            let result = Subtyping.illegalFinalClasses({ finalClasses = Vector#{"java.lang.String"} | facts() });
+            let result = ClassHierarchyAnalysis.illegalFinalClassExtension({ finalClasses = Vector#{"java.lang.String"} | facts() });
             let expected = Vector#{} |> Vector.sort;
             Assert.eq(expected, result)
 
         @Test
         def testIllegalFinalClasses02(): Bool =
-            let result = Subtyping.illegalFinalClasses({ finalClasses = Vector#{"java.util.ArrayList"} | facts() });
+            let result = ClassHierarchyAnalysis.illegalFinalClassExtension({ finalClasses = Vector#{"java.util.ArrayList"} | facts() });
             let expected = Vector#{"au.content.SpecialArrayList"} |> Vector.sort;
             Assert.eq(expected, result)
 
         @Test
         def testIllegalFinalClasses03(): Bool =
-            let result = Subtyping.illegalFinalClasses({finalClasses = Vector#{"java.lang.Object"} | facts() });
+            let result = ClassHierarchyAnalysis.illegalFinalClassExtension({finalClasses = Vector#{"java.lang.Object"} | facts() });
             let expected = Vector#{
                 "java.lang.String",
                 "java.util.ArrayList",
@@ -254,7 +254,7 @@ mod Subtyping {
 
         @Test
         def testIllegalFinalClasses04(): Bool =
-            let result = Subtyping.illegalFinalClasses({ finalClasses = Vector#{"java.lang.Object", "java.util.ArrayList"} | facts() } );
+            let result = ClassHierarchyAnalysis.illegalFinalClassExtension({ finalClasses = Vector#{"java.lang.Object", "java.util.ArrayList"} | facts() } );
             let expected = Vector#{
                 "java.lang.String",
                 "java.util.ArrayList",
@@ -267,29 +267,29 @@ mod Subtyping {
 
         @Test
         def testIllegalNonThrowable01(): Bool =
-            let result = Subtyping.illegalNonThrowable({ throws = Vector#{"java.lang.String"} | facts() });
+            let result = ClassHierarchyAnalysis.illegalNonThrowable({ throws = Vector#{"java.lang.String"} | facts() });
             let expected = Vector#{"java.lang.String"} |> Vector.sort;
             Assert.eq(expected, result)
 
         @Test
         def testIllegalNonThrowable02(): Bool =
-            let result = Subtyping.illegalNonThrowable({ throws = Vector#{"java.lang.String", "java.util.ArrayList"} | facts() });
+            let result = ClassHierarchyAnalysis.illegalNonThrowable({ throws = Vector#{"java.lang.String", "java.util.ArrayList"} | facts() });
             let expected = Vector#{"java.lang.String", "java.util.ArrayList"} |> Vector.sort;
             Assert.eq(expected, result)
 
         @Test
         def testIllegalNonThrowable03(): Bool =
-            let result = Subtyping.illegalNonThrowable({ throws = Vector#{"java.lang.String", "java.util.ArrayList", "java.lang.Throwable"} | facts() });
+            let result = ClassHierarchyAnalysis.illegalNonThrowable({ throws = Vector#{"java.lang.String", "java.util.ArrayList", "java.lang.Throwable"} | facts() });
             let expected = Vector#{"java.lang.String", "java.util.ArrayList"} |> Vector.sort;
             Assert.eq(expected, result)
 
         @Test
         def testIllegalNonThrowable04(): Bool =
-            let result = Subtyping.illegalNonThrowable({ throws = Vector#{"java.lang.String", "java.util.ArrayList", "java.lang.Throwable", "java.lang.Exception"} | facts() });
+            let result = ClassHierarchyAnalysis.illegalNonThrowable({ throws = Vector#{"java.lang.String", "java.util.ArrayList", "java.lang.Throwable", "java.lang.Exception"} | facts() });
             let expected = Vector#{"java.lang.String", "java.util.ArrayList"} |> Vector.sort;
             Assert.eq(expected, result)
 
-        def emptyFacts(): Subtyping.Program = {
+        def emptyFacts(): ClassHierarchyAnalysis.Program = {
             classes = Vector#{},
             finalClasses = Vector#{},
             interfaces = Vector#{},
@@ -302,7 +302,7 @@ mod Subtyping {
             throws = Vector#{}
         }
 
-        def facts(): Subtyping.Program = {
+        def facts(): ClassHierarchyAnalysis.Program = {
             classes = Vector#{
                 "java.lang.Object",
                 "java.lang.String",
