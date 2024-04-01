@@ -59,8 +59,6 @@ object TypeNormalization {
     * already normalized.
     */
   def normalizeOuterType(tpe: Type)(implicit univ: SortedSet[Symbol.EffectSym]): Type = tpe match {
-    case Type.Cst(_, _) =>
-      tpe
     // Simplify effect formulas
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), _, loc) =>
       Type.Cst(TypeConstructor.EffectSet(Purity.evaluateFormula(tpe)), loc)
@@ -108,6 +106,8 @@ object TypeNormalization {
       insertSchemaPred(pred, predType, t2, applyLoc)
     case Type.Apply(tpe1, tpe2, loc) =>
       Type.Apply(tpe1, tpe2, loc)
+    case Type.Cst(_, _) =>
+      tpe
     case Type.Var(sym, loc) =>
       throw InternalCompilerException(s"Unexpected type var '$sym'", loc)
     case Type.Alias(cst, _, _, loc) =>

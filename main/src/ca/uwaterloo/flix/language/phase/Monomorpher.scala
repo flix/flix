@@ -427,7 +427,8 @@ object Monomorpher {
       // Generate a fresh symbol for the let-bound variable.
       val freshSym = Symbol.freshVarSym(sym)
       val env1 = env0 + (sym -> freshSym)
-      MonoAst.Expr.Let(freshSym, mod, visitExp(exp1, env0, subst), visitExp(exp2, env1, subst), subst(tpe), subst(eff), loc)
+      val asdasd = subst(eff)
+      MonoAst.Expr.Let(freshSym, mod, visitExp(exp1, env0, subst), visitExp(exp2, env1, subst), subst(tpe), asdasd, loc)
 
     case LoweredAst.Expr.LetRec(sym, mod, exp1, exp2, tpe, eff, loc) =>
       // Generate a fresh symbol for the let-bound variable.
@@ -495,7 +496,7 @@ object Monomorpher {
               // visit the body under the extended environment
               val body = visitExp(body0, env1, ssubst1)
               val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
-              Some(MonoAst.Expr.Let(freshSym, Modifiers.Empty, e, body, ssubst1.apply(tpe), subst1(eff), loc))
+              Some(MonoAst.Expr.Let(freshSym, Modifiers.Empty, e, body, ssubst1(tpe), ssubst1(eff), loc))
           }
       }.get // We are safe to call get because the last case will always match
 
