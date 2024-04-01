@@ -2,6 +2,7 @@ mod Subtyping {
 
     type alias Program = {
         classes = Vector[String],
+        finalClasses = Vector[String],
         interfaces = Vector[String],
         classImplements = Vector[(String, String)],
         classExtends = Vector[(String, String)],
@@ -47,10 +48,10 @@ mod Subtyping {
         let res = query classHierarchyAnalysis(p) select subtype from Subtype(subtype, possibleSupertype);
         not Vector.isEmpty(res)
 
-    pub def illegalFinalClasses(p: Program, finalClasses: Vector[String]): Vector[String] =
-        let fcs  = inject finalClasses into FinalClass;
+    pub def illegalFinalClasses(p: Program): Vector[String] =
+        let fcs  = inject p.finalClasses into Final;
         let rule = #{
-            ExtendsFinalClass(sub, super)  :- FinalClass(super), Subtype(sub, super), if sub != super.
+            ExtendsFinalClass(sub, super)  :- Final(super), Subtype(sub, super), if sub != super.
         };
         query fcs, rule, classHierarchyAnalysis(p) select tpe from ExtendsFinalClass(tpe, _)
 
@@ -179,19 +180,19 @@ mod Subtyping {
 
         @Test
         def testIllegalFinalClasses01(): Bool =
-            let result = Subtyping.illegalFinalClasses(facts(), Vector#{"java.lang.String"});
+            let result = Subtyping.illegalFinalClasses({ finalClasses = Vector#{"java.lang.String"} | facts() });
             let expected = Vector#{} |> Vector.sort;
             Assert.eq(expected, result)
 
         @Test
         def testIllegalFinalClasses02(): Bool =
-            let result = Subtyping.illegalFinalClasses(facts(), Vector#{"java.util.ArrayList"});
+            let result = Subtyping.illegalFinalClasses({ finalClasses = Vector#{"java.util.ArrayList"} | facts() });
             let expected = Vector#{"au.content.SpecialArrayList"} |> Vector.sort;
             Assert.eq(expected, result)
 
         @Test
         def testIllegalFinalClasses03(): Bool =
-            let result = Subtyping.illegalFinalClasses(facts(), Vector#{"java.lang.Object"});
+            let result = Subtyping.illegalFinalClasses({finalClasses = Vector#{"java.lang.Object"} | facts() });
             let expected = Vector#{
                 "java.lang.String",
                 "java.util.ArrayList",
@@ -204,7 +205,7 @@ mod Subtyping {
 
         @Test
         def testIllegalFinalClasses04(): Bool =
-            let result = Subtyping.illegalFinalClasses(facts(), Vector#{"java.lang.Object", "java.util.ArrayList"});
+            let result = Subtyping.illegalFinalClasses({ finalClasses = Vector#{"java.lang.Object", "java.util.ArrayList"} | facts() } );
             let expected = Vector#{
                 "java.lang.String",
                 "java.util.ArrayList",
@@ -241,6 +242,7 @@ mod Subtyping {
 
         def emptyFacts(): Subtyping.Program = {
             classes = Vector#{},
+            finalClasses = Vector#{},
             interfaces = Vector#{},
             classImplements = Vector#{},
             classExtends = Vector#{},
@@ -260,6 +262,7 @@ mod Subtyping {
                 "au.content.Marker",
                 "au.content.SpecialArrayList"
             },
+            finalClasses = Vector#{},
             interfaces = Vector#{
                 "java.io.Serializable",
                 "java.util.List",
