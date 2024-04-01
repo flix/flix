@@ -105,7 +105,8 @@ object Main {
       xparser = cmdOpts.xparser,
       xprinttyper = cmdOpts.xprinttyper,
       XPerfFrontend = cmdOpts.XPerfFrontend,
-      XPerfN = cmdOpts.XPerfN
+      XPerfN = cmdOpts.XPerfN,
+      albatross = cmdOpts.albatross
     )
 
     // Don't use progress bar if benchmarking.
@@ -365,6 +366,7 @@ object Main {
                      xprinttyper: Option[String] = None,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
+                     albatross: Int = 0,
                      files: Seq[File] = Seq())
 
   /**
@@ -573,6 +575,8 @@ object Main {
         text("[experimental] disables new experimental lexer and parser.")
 
       opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym)))
+
+      opt[Int]("albatross").action((time, c) => c.copy(albatross = time))
 
       note("")
 

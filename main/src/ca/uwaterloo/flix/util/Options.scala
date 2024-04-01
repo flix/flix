@@ -127,6 +127,7 @@ case class Options(lib: LibLevel,
                    xprinttyper: Option[String],
                    XPerfFrontend: Boolean,
                    XPerfN: Option[Int],
+                   albatross: Int
                   )
 
 /**

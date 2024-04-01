@@ -159,7 +159,11 @@ object Typer {
     flix.subphase("Defs") {
       val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
       mapN(ParOps.parTraverseValues(staleDefs) {
-        case defn => visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, classEnv, eqEnv)
+        case defn =>
+          if (defn.spec.eff != Type.Pure) {
+            Thread.sleep(flix.options.albatross * 1000)
+          }
+          visitDef(defn, tconstrs0 = Nil, RigidityEnv.empty, root, classEnv, eqEnv)
       })(_ ++ freshDefs)
     }
   }
