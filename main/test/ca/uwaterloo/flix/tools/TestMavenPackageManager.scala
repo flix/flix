@@ -25,12 +25,8 @@ class TestMavenPackageManager extends AnyFunSuite {
           |
           |[dependencies]
           |
-          |[dev-dependencies]
-          |
           |[mvn-dependencies]
           |"org.junit.jupiter:junit-jupiter-api" = "5.9.2"
-          |
-          |[dev-mvn-dependencies]
           |
           |""".stripMargin
       }
@@ -65,8 +61,6 @@ class TestMavenPackageManager extends AnyFunSuite {
           |authors = ["Anna Blume"]
           |
           |[dependencies]
-          |
-          |[dev-dependencies]
           |
           |[mvn-dependencies]
           |"annablume:helloworld" = "1.2.3"
