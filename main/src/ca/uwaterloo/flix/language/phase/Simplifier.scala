@@ -22,6 +22,7 @@ import ca.uwaterloo.flix.language.ast.{Purity, Symbol, _}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import scala.annotation.tailrec
+import scala.collection.immutable.SortedSet
 
 /**
   * A phase that simplifies the MonoAst by elimination of pattern matching and other rewritings.
@@ -29,14 +30,14 @@ import scala.annotation.tailrec
 object Simplifier {
 
   def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
-    implicit val universe: Set[Symbol.EffectSym] = root.effects.keys.toSet
+    implicit val univ: SortedSet[Symbol.EffectSym] = SortedSet.from(root.effects.keys)
     val defs = ParOps.parMapValues(root.defs)(visitDef)
     val effects = ParOps.parMapValues(root.effects)(visitEffect)
 
     SimplifiedAst.Root(defs, effects, root.entryPoint, root.reachable, root.sources)
   }
 
-  private def visitDef(decl: MonoAst.Def)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Def = decl match {
+  private def visitDef(decl: MonoAst.Def)(implicit flix: Flix, univ: SortedSet[Symbol.EffectSym]): SimplifiedAst.Def = decl match {
     case MonoAst.Def(sym, spec, exp) =>
       val fs = spec.fparams.map(visitFormalParam)
       val e = visitExp(exp)
@@ -46,13 +47,13 @@ object Simplifier {
       SimplifiedAst.Def(spec.ann, spec.mod, sym, fs, e, retType, eff, sym.loc)
   }
 
-  private def visitEffect(decl: MonoAst.Effect)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Effect = decl match {
+  private def visitEffect(decl: MonoAst.Effect)(implicit flix: Flix, univ: SortedSet[Symbol.EffectSym]): SimplifiedAst.Effect = decl match {
     case MonoAst.Effect(_, ann, mod, sym, ops0, loc) =>
       val ops = ops0.map(visitEffOp)
       SimplifiedAst.Effect(ann, mod, sym, ops, loc)
   }
 
-  private def visitExp(exp0: MonoAst.Expr)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Expr = exp0 match {
+  private def visitExp(exp0: MonoAst.Expr)(implicit flix: Flix, univ: SortedSet[Symbol.EffectSym]): SimplifiedAst.Expr = exp0 match {
     case MonoAst.Expr.Var(sym, tpe, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Var(sym, t, loc)
@@ -310,6 +311,7 @@ object Simplifier {
           case TypeConstructor.Union => MonoType.Unit
           case TypeConstructor.Intersection => MonoType.Unit
           case TypeConstructor.Effect(_) => MonoType.Unit
+          case TypeConstructor.EffectSet(_) => MonoType.Unit
           case TypeConstructor.CaseSet(_, _) => MonoType.Unit
           case TypeConstructor.CaseComplement(_) => MonoType.Unit
           case TypeConstructor.CaseIntersection(_) => MonoType.Unit
@@ -341,7 +343,7 @@ object Simplifier {
     SimplifiedAst.FormalParam(p.sym, p.mod, t, p.loc)
   }
 
-  private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.JvmMethod = method match {
+  private def visitJvmMethod(method: MonoAst.JvmMethod)(implicit flix: Flix, univ: SortedSet[Symbol.EffectSym]): SimplifiedAst.JvmMethod = method match {
     case MonoAst.JvmMethod(ident, fparams0, exp0, retTpe, eff, loc) =>
       val fparams = fparams0 map visitFormalParam
       val exp = visitExp(exp0)
@@ -411,7 +413,7 @@ object Simplifier {
   /**
     * Eliminates pattern matching by translations to labels and jumps.
     */
-  private def patternMatchWithLabels(exp0: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Expr = {
+  private def patternMatchWithLabels(exp0: MonoAst.Expr, rules: List[MonoAst.MatchRule], tpe: Type, loc: SourceLocation)(implicit flix: Flix, univ: SortedSet[Symbol.EffectSym]): SimplifiedAst.Expr = {
     //
     // Given the code:
     //
@@ -504,7 +506,7 @@ object Simplifier {
     *
     * Evaluates `succ` on success and `fail` otherwise.
     */
-  private def patternMatchList(xs: List[MonoAst.Pattern], ys: List[Symbol.VarSym], guard: MonoAst.Expr, succ: SimplifiedAst.Expr, fail: SimplifiedAst.Expr)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Expr =
+  private def patternMatchList(xs: List[MonoAst.Pattern], ys: List[Symbol.VarSym], guard: MonoAst.Expr, succ: SimplifiedAst.Expr, fail: SimplifiedAst.Expr)(implicit flix: Flix, univ: SortedSet[Symbol.EffectSym]): SimplifiedAst.Expr =
     ((xs, ys): @unchecked) match {
       /**
         * There are no more patterns and variables to match.
@@ -622,7 +624,7 @@ object Simplifier {
       case p => throw InternalCompilerException(s"Unsupported pattern '$p'.", xs.head.loc)
     }
 
-  private def visitEffOp(op: MonoAst.Op)(implicit flix: Flix, universe: Set[Symbol.EffectSym]): SimplifiedAst.Op = op match {
+  private def visitEffOp(op: MonoAst.Op)(implicit flix: Flix, univ: SortedSet[Symbol.EffectSym]): SimplifiedAst.Op = op match {
     case MonoAst.Op(sym, MonoAst.Spec(_, ann, mod, fparams0, _, retTpe0, eff0, loc)) =>
       val fparams = fparams0.map(visitFormalParam)
       val retTpe = visitType(retTpe0)
@@ -719,7 +721,7 @@ object Simplifier {
   /**
     * Returns the purity of an expression.
     */
-  private def simplifyEffect(eff: Type)(implicit universe: Set[Symbol.EffectSym]): Purity = {
+  private def simplifyEffect(eff: Type)(implicit univ: SortedSet[Symbol.EffectSym]): Purity = {
     Purity.fromType(eff)
   }
 

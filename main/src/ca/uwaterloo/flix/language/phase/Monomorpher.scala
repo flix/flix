@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Modifiers
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, LoweredAst, MonoAst, Name, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
-import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, Unification}
+import ca.uwaterloo.flix.language.phase.unification.{EqualityEnvironment, Substitution, TypeNormalization, Unification}
 import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result}
@@ -97,7 +97,7 @@ object Monomorpher {
     * mapped to their default representation. `s` is used without the [[StrictSubstitution]] to
     * support variables in typematch, where it is not only used on variables.
     */
-  private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix) {
+  private case class StrictSubstitution(s: Substitution, eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], univ: SortedSet[Symbol.EffectSym])(implicit flix: Flix) {
 
     /**
       * Returns the normalized default type for the kind of `tpe0`.
@@ -135,24 +135,9 @@ object Monomorpher {
             default(x)
         }
       case Type.Cst(_, _) =>
-        tpe0
+        TypeNormalization.normalizeOuterType(tpe0)(univ)
       case Type.Apply(t1, t2, loc) =>
-        (apply(t1), apply(t2)) match {
-          // Simplify boolean equations.
-          case (Type.Cst(TypeConstructor.Complement, _), y) => Type.mkComplement(y, loc)
-          case (Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _), y) => Type.mkUnion(x, y, loc)
-          case (Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _), y) => Type.mkIntersection(x, y, loc)
-
-          case (Type.Cst(TypeConstructor.CaseComplement(sym), _), y) => Type.mkCaseComplement(y, sym, loc)
-          case (Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(sym), _), x, _), y) => Type.mkCaseIntersection(x, y, sym, loc)
-          case (Type.Apply(Type.Cst(TypeConstructor.CaseUnion(sym), _), x, _), y) => Type.mkCaseUnion(x, y, sym, loc)
-
-          // Put records in alphabetical order
-          case (Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), tpe, _), rest) => mkRecordExtendSorted(label, tpe, rest, loc)
-
-          // Else just apply.
-          case (x, y) => Type.Apply(x, y, loc)
-        }
+        TypeNormalization.normalizeOuterType(Type.Apply(apply(t1), apply(t2), loc))(univ)
       case Type.Alias(_, _, t, _) =>
         // Remove the Alias.
         apply(t)
@@ -163,7 +148,8 @@ object Monomorpher {
           case Ok(t) =>
             // Use apply to normalize the type, `t` is ground.
             apply(t)
-          case Err(_) => throw InternalCompilerException("unexpected associated type reduction failure", loc)
+          case Err(_) =>
+            throw InternalCompilerException("unexpected associated type reduction failure", loc)
         }
     }
 
@@ -173,14 +159,14 @@ object Monomorpher {
       * The type must be a normalized type.
       */
     def +(kv: (Symbol.KindedTypeVarSym, Type)): StrictSubstitution = kv match {
-      case (tvar, tpe) => StrictSubstitution(s ++ Substitution.singleton(tvar, tpe), eqEnv)
+      case (tvar, tpe) => StrictSubstitution(s ++ Substitution.singleton(tvar, tpe), eqEnv, univ)
     }
 
     /**
       * Removes the binding for the given type variable `tvar` (if it exists).
       */
     def unbind(sym: Symbol.KindedTypeVarSym): StrictSubstitution =
-      StrictSubstitution(s.unbind(sym), eqEnv)
+      StrictSubstitution(s.unbind(sym), eqEnv, univ)
 
     /**
       * Returns the non-strict version of this substitution.
@@ -289,32 +275,14 @@ object Monomorpher {
   }
 
   /**
-    * Returns a sorted record, assuming that `rest` is sorted.
-    * Sorting is stable on duplicate fields.
-    *
-    * Assumes that rest does not contain variables, aliases, or associated types.
-    */
-  private def mkRecordExtendSorted(label: Name.Label, tpe: Type, rest: Type, loc: SourceLocation): Type = rest match {
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(l), loc1), t, loc2), r, loc3) if l.name < label.name =>
-      // Push extend further.
-      val newRest = mkRecordExtendSorted(label, tpe, r, loc)
-      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(l), loc1), t, loc2), newRest, loc3)
-    case Type.Cst(_, _) | Type.Apply(_, _, _) =>
-      // Non-record related types or a record in correct order.
-      Type.mkRecordRowExtend(label, tpe, rest, loc)
-    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type variable '$rest'", rest.loc)
-    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
-    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
-  }
-
-  /**
     * Performs monomorphization of the given AST `root`.
     */
   def run(root: LoweredAst.Root)(implicit flix: Flix): MonoAst.Root = flix.phase("Monomorpher") {
 
     implicit val r: LoweredAst.Root = root
     implicit val ctx: Context = new Context()
-    val empty = StrictSubstitution(Substitution.empty, root.eqEnv)
+    val univ = SortedSet.from(root.effects.values.map(_.sym))
+    val empty = StrictSubstitution(Substitution.empty, root.eqEnv, univ)
 
     /*
      * Collect all non-parametric function definitions.
@@ -431,11 +399,11 @@ object Monomorpher {
       /*
        * !! This is where all the magic happens !!
        */
-      val newSym = specializeDefSym(sym, subst(tpe))
+      val newSym = specializeDefSym(sym, subst(tpe))(ctx, root, flix, subst.univ)
       MonoAst.Expr.Def(newSym, subst(tpe), loc)
 
     case LoweredAst.Expr.Sig(sym, tpe, loc) =>
-      val newSym = specializeSigSym(sym, subst(tpe))
+      val newSym = specializeSigSym(sym, subst(tpe))(ctx, root, flix, subst.univ)
       MonoAst.Expr.Def(newSym, subst(tpe), loc)
 
     case LoweredAst.Expr.Cst(cst, tpe, loc) =>
@@ -523,10 +491,11 @@ object Monomorpher {
               val freshSym = Symbol.freshVarSym(sym)
               val env1 = env0 + (sym -> freshSym)
               val subst1 = caseSubst @@ subst.nonStrict
+              val ssubst1 = StrictSubstitution(subst1, subst.eqEnv, subst.univ)
               // visit the body under the extended environment
-              val body = visitExp(body0, env1, StrictSubstitution(subst1, root.eqEnv))
+              val body = visitExp(body0, env1, ssubst1)
               val eff = Type.mkUnion(e.eff, body.eff, loc.asSynthetic)
-              Some(MonoAst.Expr.Let(freshSym, Modifiers.Empty, e, body, StrictSubstitution(subst1, root.eqEnv).apply(tpe), subst1(eff), loc))
+              Some(MonoAst.Expr.Let(freshSym, Modifiers.Empty, e, body, ssubst1.apply(tpe), subst1(eff), loc))
           }
       }.get // We are safe to call get because the last case will always match
 
@@ -632,7 +601,7 @@ object Monomorpher {
     *
     * The given type must be a normalized type.
     */
-  private def specializeDefSym(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
+  private def specializeDefSym(sym: Symbol.DefnSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix, univ: SortedSet[Symbol.EffectSym]): Symbol.DefnSym = {
     // Lookup the definition and its declared type.
     val defn = root.defs(sym)
 
@@ -649,7 +618,7 @@ object Monomorpher {
     *
     * The given type must be a normalized type.
     */
-  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
+  private def specializeSigSym(sym: Symbol.SigSym, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix, univ: SortedSet[Symbol.EffectSym]): Symbol.DefnSym = {
     val sig = root.sigs(sym)
 
     // lookup the instance corresponding to this type
@@ -695,7 +664,7 @@ object Monomorpher {
     *
     * The given type must be a normalized type.
     */
-  private def specializeDef(defn: LoweredAst.Def, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
+  private def specializeDef(defn: LoweredAst.Def, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix, univ: SortedSet[Symbol.EffectSym]): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
     val subst = infallibleUnify(defn.spec.declaredScheme.base, tpe)
 
@@ -751,10 +720,10 @@ object Monomorpher {
   /**
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
-  private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
+  private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit root: LoweredAst.Root, flix: Flix, univ: SortedSet[Symbol.EffectSym]): StrictSubstitution = {
     Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
       case Result.Ok((subst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
-        StrictSubstitution(subst, root.eqEnv)
+        StrictSubstitution(subst, root.eqEnv, univ)
       case Result.Err(_) =>
         throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.", tpe1.loc)
     }

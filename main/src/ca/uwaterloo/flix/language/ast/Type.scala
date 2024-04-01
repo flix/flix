@@ -63,6 +63,7 @@ sealed trait Type {
     */
   def effects: SortedSet[Symbol.EffectSym] = this match {
     case Type.Cst(TypeConstructor.Effect(sym), _) => SortedSet(sym)
+    case Type.Cst(TypeConstructor.EffectSet(set), _) => set
 
     case _: Type.Var => SortedSet.empty
     case _: Type.Cst => SortedSet.empty

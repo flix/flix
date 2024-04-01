@@ -16,11 +16,12 @@
 
 package ca.uwaterloo.flix.language.phase.unification
 
-import ca.uwaterloo.flix.language.ast.{Name, SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Name, Purity, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 
-object TypeNormalization {
+import scala.collection.immutable.SortedSet
 
+object TypeNormalization {
 
   /**
     * Converts a type (with the below assumptions) into an equivalent type in
@@ -38,91 +39,77 @@ object TypeNormalization {
     * 2. `tpe` has no aliases
     * 3. `tpe` has no associated types
     */
-  def normalizeType(tpe: Type): Type = tpe match {
-    case Type.Var(sym, loc) =>
-      throw InternalCompilerException(s"Unexpected type var '$sym'", loc)
+  def normalizeType(tpe: Type)(implicit univ: SortedSet[Symbol.EffectSym]): Type = tpe match {
+    case Type.Var(_, _) =>
+      normalizeOuterType(tpe)
     case Type.Cst(_, _) =>
-      tpe
-    case Type.Apply(tpe1, tpe2, applyLoc) =>
+      normalizeOuterType(tpe)
+    case Type.Apply(tpe1, tpe2, loc) =>
       val t1 = normalizeType(tpe1)
       val t2 = normalizeType(tpe2)
-      t1 match {
-        // Simplify effect set formulas.
-        case Type.Cst(TypeConstructor.Complement, _) => t2 match {
-          case Type.Pure => Type.Univ
-          case Type.Univ => Type.Pure
-          case _ => throw InternalCompilerException(s"Unexpected non-simple effect: $tpe", applyLoc)
-        }
-        case Type.Apply(Type.Cst(TypeConstructor.Union, _), x, _) =>
-          (x, t2) match {
-            case (Type.Pure, Type.Pure) => Type.Pure
-            case (Type.Pure, Type.Univ) => Type.Univ
-            case (Type.Univ, Type.Pure) => Type.Univ
-            case (Type.Univ, Type.Univ) => Type.Univ
-            case _ => throw InternalCompilerException(s"Unexpected non-simple effect: $tpe", applyLoc)
-          }
-        case Type.Apply(Type.Cst(TypeConstructor.Intersection, _), x, _) =>
-          (x, t2) match {
-            case (Type.Pure, Type.Pure) => Type.Pure
-            case (Type.Pure, Type.Univ) => Type.Pure
-            case (Type.Univ, Type.Pure) => Type.Pure
-            case (Type.Univ, Type.Univ) => Type.Univ
-            case _ => throw InternalCompilerException(s"Unexpected non-simple effect: $tpe", applyLoc)
-          }
+      normalizeOuterType(Type.Apply(t1, t2, loc))
+    case Type.Alias(_, _, _, _) =>
+      normalizeOuterType(tpe)
+    case Type.AssocType(_, _, _, _) =>
+      normalizeOuterType(tpe)
+  }
 
-        // Simplify boolean formulas.
-        case Type.Cst(TypeConstructor.Not, _) => t2 match {
-          case Type.True => Type.False
-          case Type.False => Type.True
-          case _ => throw InternalCompilerException(s"Unexpected non-simple Boolean formula: $tpe", applyLoc)
-        }
-        case Type.Apply(Type.Cst(TypeConstructor.And, _), x, _) =>
-          (x, t2) match {
-            case (Type.True, Type.True) => Type.True
-            case (Type.True, Type.False) => Type.False
-            case (Type.False, Type.True) => Type.False
-            case (Type.False, Type.False) => Type.False
-            case _ => throw InternalCompilerException(s"Unexpected non-simple Boolean formula: $tpe", applyLoc)
-          }
-        case Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _) =>
-          (x, t2) match {
-            case (Type.True, Type.True) => Type.True
-            case (Type.True, Type.False) => Type.True
-            case (Type.False, Type.True) => Type.True
-            case (Type.False, Type.False) => Type.False
-            case _ => throw InternalCompilerException(s"Unexpected non-simple Boolean formula: $tpe", applyLoc)
-          }
-
-        // Simplify case set formulas
-        case Type.Cst(TypeConstructor.CaseComplement(enumSym), _) => t2 match {
-          case Type.Cst(TypeConstructor.CaseSet(syms, _), loc) =>
-            Type.Cst(TypeConstructor.CaseSet(enumSym.universe.diff(syms), enumSym), loc)
-          case _ => throw InternalCompilerException(s"Unexpected non-simple case set formula: $tpe", applyLoc)
-        }
-        case Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(enumSym), _), x, loc) =>
-          (x, t2) match {
-            case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
-              Type.Cst(TypeConstructor.CaseSet(syms1.intersect(syms2), enumSym), loc)
-            case _ => throw InternalCompilerException(s"Unexpected non-simple case set formula: $tpe", applyLoc)
-          }
-        case Type.Apply(Type.Cst(TypeConstructor.CaseUnion(enumSym), _), x, loc) =>
-          (x, t2) match {
-            case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
-              Type.Cst(TypeConstructor.CaseSet(syms1.union(syms2), enumSym), loc)
-            case _ => throw InternalCompilerException(s"Unexpected non-simple case set formula: $tpe", applyLoc)
-          }
-
-        // Sort record row labels
-        case Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), labelType, _) =>
-          insertRecordLabel(label, labelType, t2, applyLoc)
-
-        // Sort schema row fields
-        case Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _) =>
-          insertSchemaPred(pred, predType, t2, applyLoc)
-
-        // Else just apply
-        case x => Type.Apply(x, t2, applyLoc)
-      }
+  /**
+    * Normalizes types like [[normalizeType]] assuming that inner types are
+    * already normalized.
+    */
+  def normalizeOuterType(tpe: Type)(implicit univ: SortedSet[Symbol.EffectSym]): Type = tpe match {
+    case Type.Cst(_, _) =>
+      tpe
+    // Simplify effect formulas
+    case Type.Apply(Type.Cst(TypeConstructor.Complement, _), _, loc) =>
+      Type.Cst(TypeConstructor.EffectSet(Purity.evaluateFormula(tpe)), loc)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), _, _), _, loc) =>
+      Type.Cst(TypeConstructor.EffectSet(Purity.evaluateFormula(tpe)), loc)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Intersection, _), _, _), _, loc) =>
+      Type.Cst(TypeConstructor.EffectSet(Purity.evaluateFormula(tpe)), loc)
+    // Simplify Boolean formulas
+    case Type.Apply(Type.Cst(TypeConstructor.Not, _), Type.Cst(TypeConstructor.True, _), _) =>
+      Type.False
+    case Type.Apply(Type.Cst(TypeConstructor.Not, _), Type.Cst(TypeConstructor.False, _), _) =>
+      Type.True
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.And, _), x, _), y, loc) => (x, y) match {
+      case (Type.True, Type.True) => Type.True
+      case (Type.True, Type.False) => Type.False
+      case (Type.False, Type.True) => Type.False
+      case (Type.False, Type.False) => Type.False
+      case _ => throw InternalCompilerException(s"Unexpected non-simple Boolean formula: $tpe", loc)
+    }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Or, _), x, _), y, loc) => (x, y) match {
+      case (Type.True, Type.True) => Type.True
+      case (Type.True, Type.False) => Type.True
+      case (Type.False, Type.True) => Type.True
+      case (Type.False, Type.False) => Type.False
+      case _ => throw InternalCompilerException(s"Unexpected non-simple Boolean formula: $tpe", loc)
+    }
+    // Simplify case set formulas
+    case Type.Apply(Type.Cst(TypeConstructor.CaseComplement(enumSym), _), Type.Cst(TypeConstructor.CaseSet(syms, _), loc), _) =>
+      Type.Cst(TypeConstructor.CaseSet(enumSym.universe.diff(syms), enumSym), loc)
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseIntersection(enumSym), _), x, _), y, loc) => (x, y) match {
+      case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
+        Type.Cst(TypeConstructor.CaseSet(syms1.intersect(syms2), enumSym), loc)
+      case _ => throw InternalCompilerException("", loc)
+    }
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.CaseUnion(enumSym), _), x, _), y, loc) => (x, y) match {
+      case (Type.Cst(TypeConstructor.CaseSet(syms1, _), _), Type.Cst(TypeConstructor.CaseSet(syms2, _), _)) =>
+        Type.Cst(TypeConstructor.CaseSet(syms1.union(syms2), enumSym), loc)
+      case _ => throw InternalCompilerException("", loc)
+    }
+    // Sort record row labels
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), labelType, _), t2, applyLoc) =>
+      insertRecordLabel(label, labelType, t2, applyLoc)
+    // Sort schema row labels
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(pred), _), predType, _), t2, applyLoc) =>
+      insertSchemaPred(pred, predType, t2, applyLoc)
+    case Type.Apply(tpe1, tpe2, loc) =>
+      Type.Apply(tpe1, tpe2, loc)
+    case Type.Var(sym, loc) =>
+      throw InternalCompilerException(s"Unexpected type var '$sym'", loc)
     case Type.Alias(cst, _, _, loc) =>
       throw InternalCompilerException(s"Unexpected type alias: '${cst.sym}'", loc)
     case Type.AssocType(cst, _, _, loc) =>
