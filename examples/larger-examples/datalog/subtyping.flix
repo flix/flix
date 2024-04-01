@@ -9,7 +9,8 @@ mod Subtyping {
         interfaceExtends = Vector[(String, String)],
         fields = Vector[(String, String)],
         classMethods = Vector[(String, String)],
-        interfaceSignatures = Vector[(String, String)]
+        interfaceSignatures = Vector[(String, String)],
+        throws = Vector[String]
     }
 
     def classHierarchyAnalysis(p: Program): #{ Subtype(String, String), AvailableField(String, String), AvailableMethod(String, String), NonImplementedMethod(String, String) | r } =
@@ -55,8 +56,8 @@ mod Subtyping {
         };
         query fcs, rule, classHierarchyAnalysis(p) select tpe from ExtendsFinalClass(tpe, _)
 
-    pub def illegalNonThrowable(p: Program, throws: Vector[String]): Vector[String] =
-        let ths = inject throws into Throws;
+    pub def illegalNonThrowable(p: Program): Vector[String] =
+        let ths = inject p.throws into Throws;
         let rule = #{
             IllegalThrowable(t) :- Throws(t), not Subtype(t, "java.lang.Throwable").
         };
@@ -218,25 +219,25 @@ mod Subtyping {
 
         @Test
         def testIllegalNonThrowable01(): Bool =
-            let result = Subtyping.illegalNonThrowable(facts(), Vector#{"java.lang.String"});
+            let result = Subtyping.illegalNonThrowable({ throws = Vector#{"java.lang.String"} | facts() });
             let expected = Vector#{"java.lang.String"} |> Vector.sort;
             Assert.eq(expected, result)
 
         @Test
         def testIllegalNonThrowable02(): Bool =
-            let result = Subtyping.illegalNonThrowable(facts(), Vector#{"java.lang.String", "java.util.ArrayList"});
+            let result = Subtyping.illegalNonThrowable({ throws = Vector#{"java.lang.String", "java.util.ArrayList"} | facts() });
             let expected = Vector#{"java.lang.String", "java.util.ArrayList"} |> Vector.sort;
             Assert.eq(expected, result)
 
         @Test
         def testIllegalNonThrowable03(): Bool =
-            let result = Subtyping.illegalNonThrowable(facts(), Vector#{"java.lang.String", "java.util.ArrayList", "java.lang.Throwable"});
+            let result = Subtyping.illegalNonThrowable({ throws = Vector#{"java.lang.String", "java.util.ArrayList", "java.lang.Throwable"} | facts() });
             let expected = Vector#{"java.lang.String", "java.util.ArrayList"} |> Vector.sort;
             Assert.eq(expected, result)
 
         @Test
         def testIllegalNonThrowable04(): Bool =
-            let result = Subtyping.illegalNonThrowable(facts(), Vector#{"java.lang.String", "java.util.ArrayList", "java.lang.Throwable", "java.lang.Exception"});
+            let result = Subtyping.illegalNonThrowable({ throws = Vector#{"java.lang.String", "java.util.ArrayList", "java.lang.Throwable", "java.lang.Exception"} | facts() });
             let expected = Vector#{"java.lang.String", "java.util.ArrayList"} |> Vector.sort;
             Assert.eq(expected, result)
 
@@ -249,7 +250,8 @@ mod Subtyping {
             interfaceExtends = Vector#{},
             fields = Vector#{},
             classMethods = Vector#{},
-            interfaceSignatures = Vector#{}
+            interfaceSignatures = Vector#{},
+            throws = Vector#{}
         }
 
         def facts(): Subtyping.Program = {
@@ -298,7 +300,8 @@ mod Subtyping {
             interfaceSignatures = Vector#{
                 ("java.util.List", "add"),
                 ("java.util.Collection", "isEmpty")
-            }
+            },
+            throws = Vector#{}
         }
     }
 }
