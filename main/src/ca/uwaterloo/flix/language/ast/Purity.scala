@@ -145,7 +145,7 @@ object Purity {
     * Print + IO == {Print, IO}
     * Univ & (!Print) == !Print
     */
-  def evaluateFormula(f: Type)(implicit universe: SortedSet[Symbol.EffectSym]): SortedSet[Symbol.EffectSym] = f match {
+  def evaluateFormula(f: Type)(implicit univ: SortedSet[Symbol.EffectSym]): SortedSet[Symbol.EffectSym] = f match {
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
       SortedSet(sym)
     case Type.Cst(TypeConstructor.EffectSet(set), _) =>
@@ -153,7 +153,7 @@ object Purity {
     case Type.Cst(TypeConstructor.Pure, _) =>
       SortedSet.empty
     case Type.Cst(TypeConstructor.Univ, _) =>
-      universe
+      univ
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) =>
       val t1 = evaluateFormula(tpe1)
       val t2 = evaluateFormula(tpe2)
@@ -164,7 +164,7 @@ object Purity {
       t1.intersect(t2)
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe, _) =>
       val t = evaluateFormula(tpe)
-      universe.diff(t)
+      univ.diff(t)
     case Type.Cst(_, _) =>
       throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
     case Type.Apply(_, _, _) =>
