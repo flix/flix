@@ -41,7 +41,7 @@ mod ClassHierarchyAnalysis {
     ///
     /// Returns a set of relations representing the class hierarchy analysis results.
     ///
-    def classHierarchyAnalysis(p: Program): #{ Subtype(String, String), AvailableField(String, String), AvailableMethod(String, String), ConcreteMethod(String, String) | r } =
+    def classHierarchyAnalysis(p: Program): #{ Subtype(String, String), AvailableField(String, String), AvailableMethod(String, String), ConcreteMethod(String, String, String) | r } =
         let cs    = inject p.classes          into Class;
         let is    = inject p.interfaces       into Interface;
         let impls = inject p.classImplements  into ClassImplements;
@@ -58,13 +58,13 @@ mod ClassHierarchyAnalysis {
             Subtype(sub, super) :- Interface(sub), Interface(super), InterfaceExtends(sub, super).
             Subtype(sub, super) :- Subtype(sub, a), Subtype(a, super).
 
-            AvailableField(class, field)   :- Field(super, field), Subtype(class, super).
+            AvailableField(class, field) :- Field(super, field), Subtype(class, super).
 
-            AvailableMethod(class, method) :- ClassMethod(super, method)   , Subtype(class, super).
-            AvailableMethod(class, method) :- AbstractMethod(super, method), Subtype(class, super), not Interface(class).
+            AvailableMethod(class, method) :- Class(class), ClassMethod(super, method), Subtype(class, super).
+            AvailableMethod(class, method) :- Class(class), AbstractMethod(super, method), Subtype(class, super).
 
-            ConcreteMethod(class, method)  :- Class(class), ClassMethod(class, method).
-            ConcreteMethod(sub, method)    :- Class(sub), Subtype(sub, super), ConcreteMethod(super, method).
+            ConcreteMethod(class, method, class) :- Class(class), ClassMethod(class, method).
+            ConcreteMethod(sub, method, source)  :- Class(sub), Subtype(sub, super), ConcreteMethod(super, method, source).
         };
         #(Subtype, AvailableField, AvailableMethod, ConcreteMethod) -> rules <+> cs <+> is <+> ce <+> impls <+> ies <+> fs <+> ms <+> ams
 
@@ -96,7 +96,8 @@ mod ClassHierarchyAnalysis {
     pub def missingMethods(p: Program): Vector[(String, String)] =
         let is   = inject p.interfaces into Interface;
         let rule = #{
-            MissingMethod(class, method) :- AvailableMethod(class, method), not ConcreteMethod(class, method), not Interface(class).
+            SimpleConcreteMethod(class, method) :- ConcreteMethod(class, method, _).
+            MissingMethod(class, method) :- AvailableMethod(class, method), not SimpleConcreteMethod(class, method), not Interface(class).
         };
         query is, rule, classHierarchyAnalysis(p) select (class, method) from MissingMethod(class, method)
 
