@@ -1,5 +1,8 @@
 mod Subtyping {
 
+    ///
+    /// Represents the entities in a Java program.
+    ///
     type alias Program = {
         classes = Vector[String],
         finalClasses = Vector[String],
@@ -13,6 +16,31 @@ mod Subtyping {
         throws = Vector[String]
     }
 
+    ///
+    /// Performs class hierarchy analysis on the given program `p`.
+    ///
+    /// The function takes a `Program` as input and returns a set of relations
+    /// representing the class hierarchy analysis results. The relations include
+    /// `Subtype`, `AvailableMethod`, `AvailableField`, and `NonImplementedMethod`.
+    ///
+    /// The `Subtype` relation represents the subtyping relationship between classes
+    /// and interfaces. It includes rules for direct subtyping, class implementing
+    /// an interface, class extending another class, and interface extending another
+    /// interface. It also includes transitive subtyping rules.
+    ///
+    /// The `AvailableMethod` relation represents the available methods for a given
+    /// class. It includes methods defined in the class itself and methods inherited
+    /// from its supertypes.
+    ///
+    /// The `AvailableField` relation represents the available fields for a given
+    /// class. It includes fields defined in the class itself and fields inherited
+    /// from its supertypes.
+    ///
+    /// The `NonImplementedMethod` relation represents the methods declared in an
+    /// interface that are not implemented by a class.
+    ///
+    /// Returns a set of relations representing the class hierarchy analysis results.
+    ///
     def classHierarchyAnalysis(p: Program): #{ Subtype(String, String), AvailableField(String, String), AvailableMethod(String, String), NonImplementedMethod(String, String) | r } =
         let cs    = inject p.classes             into Class;
         let is    = inject p.interfaces          into Interface;
@@ -36,19 +64,36 @@ mod Subtyping {
         };
         #(Subtype, AvailableField, AvailableMethod, NonImplementedMethod) -> rules <+> cs <+> is <+> ce <+> impls <+> ies <+> fs <+> ms <+> iss
 
+    ///
+    /// Returns a vector of types that have the specified field `field`.
+    ///
     pub def hasField(p: Program, field: String): Vector[String] =
         query classHierarchyAnalysis(p) select tpe from AvailableField(tpe, field)
 
+    ///
+    /// Returns a vector of types that have the specified method `method`.
+    ///
     pub def hasMethod(p: Program, method: String): Vector[String] =
         query classHierarchyAnalysis(p) select tpe from AvailableMethod(tpe, method)
 
+    ///
+    /// Returns a vector of pairs representing non-implemented methods in the program.
+    /// Each pair contains the class and method name.
+    ///
     pub def nonImplementedMethods(p: Program): Vector[(String, String)] =
         query classHierarchyAnalysis(p) select (tpe, method) from NonImplementedMethod(tpe, method)
 
+    ///
+    /// Checks if a type is a subtype of another type in the program.
+    /// Returns `true` if the `subtype` is a subtype of the `possibleSupertype`, `false` otherwise.
+    ///
     pub def isSubtype(p: Program, subtype: String, possibleSupertype: String): Bool =
         let res = query classHierarchyAnalysis(p) select subtype from Subtype(subtype, possibleSupertype);
         not Vector.isEmpty(res)
 
+    ///
+    /// Returns a vector of types that extend the final classes in the program `p`.
+    ///
     pub def illegalFinalClasses(p: Program): Vector[String] =
         let fcs  = inject p.finalClasses into Final;
         let rule = #{
@@ -56,6 +101,9 @@ mod Subtyping {
         };
         query fcs, rule, classHierarchyAnalysis(p) select tpe from ExtendsFinalClass(tpe, _)
 
+    ///
+    /// Returns a vector of types that are thrown in the `p` program but are not subtypes of `java.lang.Throwable`.
+    ///
     pub def illegalNonThrowable(p: Program): Vector[String] =
         let ths = inject p.throws into Throws;
         let rule = #{
