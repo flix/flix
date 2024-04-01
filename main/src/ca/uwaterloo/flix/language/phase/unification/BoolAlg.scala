@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.language.ast.{RigidityEnv, Symbol, Type, TypeConstructo
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
-import scala.collection.immutable.{AbstractSet, SortedSet}
+import scala.collection.immutable.SortedSet
 
 /**
   * A type class for Boolean Formulas.
