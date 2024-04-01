@@ -78,7 +78,7 @@ object CodeActionProvider {
       mkDeriveMissingOrder(tpe, uri)
     case TypeError.MissingInstanceToString(tpe, _, loc) if onSameLine(range, loc) =>
       mkDeriveMissingToString(tpe, uri)
-    case InstanceError.MissingSuperClassInstance(tpe, sub, sup, loc) if onSameLine(range, loc) =>
+    case InstanceError.MissingSuperTraitInstance(tpe, sub, sup, loc) if onSameLine(range, loc) =>
       mkDeriveMissingSuperClass(tpe, sup, uri)
     case _ => Nil
   }
@@ -374,7 +374,7 @@ object CodeActionProvider {
   /**
    * Returns a quickfix code action to derive the missing superclass for the given subclass.
    */
-  private def mkDeriveMissingSuperClass(tpe: Type, superClass: Symbol.ClassSym, uri: String)(implicit root: Root): Option[CodeAction] =
+  private def mkDeriveMissingSuperClass(tpe: Type, superClass: Symbol.TraitSym, uri: String)(implicit root: Root): Option[CodeAction] =
     mkDeriveMissing(tpe, superClass.name, uri)
 
   /**

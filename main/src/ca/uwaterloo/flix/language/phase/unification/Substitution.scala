@@ -16,6 +16,8 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -130,6 +132,16 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     */
   def apply(ec: Ast.BroadEqualityConstraint): Ast.BroadEqualityConstraint = if (isEmpty) ec else ec match {
     case Ast.BroadEqualityConstraint(t1, t2) => Ast.BroadEqualityConstraint(apply(t1), apply(t2))
+  }
+
+  /**
+    * Applies `this` substitution to the given provenance.
+    */
+  def apply(prov: TypeConstraint.Provenance): TypeConstraint.Provenance = prov match {
+    case Provenance.ExpectType(expected, actual, loc) => Provenance.ExpectType(apply(expected), apply(actual), loc)
+    case Provenance.ExpectEffect(expected, actual, loc) => Provenance.ExpectEffect(apply(expected), apply(actual), loc)
+    case Provenance.ExpectArgument(expected, actual, sym, num, loc) => Provenance.ExpectArgument(apply(expected), apply(actual), sym, num, loc)
+    case Provenance.Match(tpe1, tpe2, loc) => Provenance.Match(apply(tpe1), apply(tpe2), loc)
   }
 
   /**

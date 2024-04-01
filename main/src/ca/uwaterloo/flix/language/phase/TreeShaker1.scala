@@ -83,7 +83,7 @@ object TreeShaker1 {
 
     case ReachableSym.SigSym(sigSym) =>
       val sig = root.sigs(sigSym)
-      Set(ReachableSym.ClassSym(sig.sym.clazz)) ++
+      Set(ReachableSym.ClassSym(sig.sym.trt)) ++
         sig.exp.map(visitExp).getOrElse(Set.empty)
 
     case ReachableSym.ClassSym(classSym) =>
@@ -184,7 +184,7 @@ object TreeShaker1 {
 
     case class DefnSym(sym: Symbol.DefnSym) extends ReachableSym
 
-    case class ClassSym(sym: Symbol.ClassSym) extends ReachableSym
+    case class ClassSym(sym: Symbol.TraitSym) extends ReachableSym
 
     case class SigSym(sym: Symbol.SigSym) extends ReachableSym
 

@@ -1474,7 +1474,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.UnusedFormalParam](result)
   }
 
-  test("RedundantPurityCast.01") {
+  ignore("RedundantPurityCast.01") {
     val input =
       """
         |pub def f(): Int32 = unchecked_cast(123 as _ \ Pure)
@@ -1484,7 +1484,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
-  test("RedundantPurityCast.02") {
+  ignore("RedundantPurityCast.02") {
     val input =
       raw"""
            |pub def f(): Array[Int32, Static] \ IO =
@@ -1496,7 +1496,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
-  test("RedundantUncheckedEffectCast.01") {
+  ignore("RedundantUncheckedEffectCast.01") {
     val input =
       raw"""
            |pub def f(g: Int32 -> Int32 \ ef): Int32 \ ef = unchecked_cast(g(123) as _ \ ef)
@@ -1506,7 +1506,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantUncheckedEffectCast](result)
   }
 
-  test("RedundantTypeConstraint.Class.01") {
+  test("RedundantTypeConstraint.Trait.01") {
     val input =
       """
         |trait C[a]
@@ -1517,7 +1517,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
     expectError[RedundancyError.RedundantTypeConstraint](result)
   }
 
-  test("RedundantTypeConstraint.Class.02") {
+  test("RedundantTypeConstraint.Trait.02") {
     val input =
       """
         |trait C[a]

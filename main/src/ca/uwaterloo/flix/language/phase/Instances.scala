@@ -194,7 +194,7 @@ object Instances {
   /**
     * Finds an instance of the class for a given type.
     */
-  def findInstanceForType(tpe: Type, clazz: Symbol.ClassSym, root: TypedAst.Root)(implicit flix: Flix): Option[(Ast.Instance, Substitution)] = {
+  def findInstanceForType(tpe: Type, clazz: Symbol.TraitSym, root: TypedAst.Root)(implicit flix: Flix): Option[(Ast.Instance, Substitution)] = {
     val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
     // lazily find the instance whose type unifies and save the substitution
     ListOps.findMap(superInsts) {
@@ -223,14 +223,14 @@ object Instances {
                   ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv).toHardResult match {
                     case Result.Ok(_) => Nil
                     case Result.Err(errors) => errors.map {
-                      case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTypeClassConstraint(missingTconstr, superClass, clazz.loc)
+                      case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTraitConstraint(missingTconstr, superClass, clazz.loc)
                       case _ => throw InternalCompilerException("Unexpected unification error", inst.loc)
                     }.toList
                   }
               }
             case None =>
               // Case 2: No instance matches. Error.
-              List(InstanceError.MissingSuperClassInstance(tpe, clazz.sym, superClass, clazz.loc))
+              List(InstanceError.MissingSuperTraitInstance(tpe, clazz.sym, superClass, clazz.loc))
           }
       }
   }

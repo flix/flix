@@ -28,7 +28,9 @@ object WeededAst {
 
   case class CompilationUnit(usesAndImports: List[UseOrImport], decls: List[Declaration], loc: SourceLocation)
 
-  sealed trait Declaration
+  sealed trait Declaration {
+    def loc: SourceLocation
+  }
 
   object Declaration {
 
@@ -51,7 +53,7 @@ object WeededAst {
 
     case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, ident: Name.Ident, tparams: TypeParams, tpe: Type, loc: SourceLocation) extends Declaration
 
-    case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparam: TypeParam, kind: Kind, loc: SourceLocation)
+    case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, tparam: TypeParam, kind: Kind, tpe: Option[Type], loc: SourceLocation)
 
     case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, ident: Name.Ident, arg: Type, tpe: Type, loc: SourceLocation)
 
@@ -469,7 +471,9 @@ object WeededAst {
   case class Derivations(classes: List[Name.QName], loc: SourceLocation)
 
 
-  sealed trait ForFragment
+  sealed trait ForFragment {
+    def loc: SourceLocation
+  }
 
   object ForFragment {
 

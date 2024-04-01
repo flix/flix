@@ -23,6 +23,54 @@ import org.scalatest.funsuite.AnyFunSuite
 
 class TestNamer extends AnyFunSuite with TestUtils {
 
+  // TODO NS-REFACTOR move to Redundancy
+  ignore("DuplicateImport.01") {
+    val input =
+      """
+        |import java.lang.StringBuffer
+        |import java.lang.StringBuffer
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  // TODO NS-REFACTOR move to Redundancy
+  ignore("DuplicateImport.02") {
+    val input =
+      """
+        |import java.lang.{StringBuffer => StringThingy}
+        |import java.lang.{StringBuffer => StringThingy}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  // TODO NS-REFACTOR move to Redundancy
+  ignore("DuplicateImport.03") {
+    val input =
+      """
+        |mod A {
+        |    import java.lang.StringBuffer
+        |    import java.lang.StringBuffer
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
+  // TODO NS-REFACTOR move to Redundancy
+  ignore("DuplicateImport.04") {
+    val input =
+      """
+        |mod A {
+        |    import java.lang.{StringBuffer => StringThingy}
+        |    import java.lang.{StringBuilder => StringThingy}
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[NameError.DuplicateUpperName](result)
+  }
+
   test("DuplicateLowerName.01") {
     val input =
       s"""
@@ -587,53 +635,5 @@ class TestNamer extends AnyFunSuite with TestUtils {
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[NameError.SuspiciousTypeVarName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateImport.01") {
-    val input =
-      """
-        |import java.lang.StringBuffer
-        |import java.lang.StringBuffer
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateImport.02") {
-    val input =
-      """
-        |import java.lang.{StringBuffer => StringThingy}
-        |import java.lang.{StringBuffer => StringThingy}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateImport.03") {
-    val input =
-      """
-        |mod A {
-        |    import java.lang.StringBuffer
-        |    import java.lang.StringBuffer
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
-  }
-
-  // TODO NS-REFACTOR move to Redundancy
-  ignore("DuplicateImport.04") {
-    val input =
-      """
-        |mod A {
-        |    import java.lang.{StringBuffer => StringThingy}
-        |    import java.lang.{StringBuilder => StringThingy}
-        |}
-        |""".stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[NameError.DuplicateUpperName](result)
   }
 }
