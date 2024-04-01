@@ -148,8 +148,7 @@ object Monomorpher {
           case Ok(t) =>
             // Use apply to normalize the type, `t` is ground.
             apply(t)
-          case Err(_) =>
-            throw InternalCompilerException("unexpected associated type reduction failure", loc)
+          case Err(_) => throw InternalCompilerException("unexpected associated type reduction failure", loc)
         }
     }
 
