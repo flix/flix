@@ -1,6 +1,6 @@
 # Contributor Guide
 
-Hello and thank you for your interest in working on Flix!
+Hello and thank you for your interest in working on Flix! :-)
 
 ## The Process
 
@@ -27,6 +27,7 @@ We suggest that you proceed by following these steps:
 8. GitHub automatically compiles and tests the PR. Be sure to check the results!
 
 9. We perform a code review and iterate on the implementation.
+   - You should expect that most PRs will require multiple iterations.
 
 **Note:** You must agree to release your contributions under the Apache 2.0 license. You affirm this by adding yourself to AUTHORS.md.
 
@@ -38,8 +39,8 @@ We suggest that you proceed by following these steps:
 - Pull requests should be a small as possible.
     - An ideal pull request is between one and a few hundred lines of code.
     - A pull request should focus on a single change.
-    - We are happy to use multiple pull requests to implement one change.
-- When you create a pull request, click `Files Changes` to ensure that everything looks as you expect.
+    - Most features are broken down into multiple pull requests.
+- When you create a pull request, click `Files changed` to ensure that everything looks as you expect.
     - The easier a pull request is to understand the faster it will be merged. A win-win.
 - If the pull request fixes a bug the summary should end with (fixes #9999).
 - If the pull request is related to a ticket the summary should end with (related to #9999).
@@ -48,8 +49,9 @@ We suggest that you proceed by following these steps:
 
 We are interested in correct, well-documented, and well-tested code. 
 
-That code "works" is not sufficient. It must be maintainable. It must follow our style.
+The argument that "the code works" is not sufficient. It must be maintainable. It must follow our style.
 
-We refer you to [STYLE.md](./STYLE.md) for more information on code style.
+We refer to [STYLE.md](./STYLE.md) for more information on code style.
+- As an example of high-quality code, we refer to `FastBoolUnification.scala`.
 
 Getting your code merged into Flix is a privilege, not a right.
