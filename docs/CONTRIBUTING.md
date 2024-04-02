@@ -15,13 +15,13 @@ We suggest that you proceed by following these steps:
 3. We discuss the issue and how best to fix it.
     - The idea is to come up with an implementation plan and to hash out any design choices.
 
-4. You fork the Flix repository to your own account on GitHub.
+4. Fork the Flix repository to your own account on GitHub.
 
-5. You clone the forked repository to your own machine.
+5. Clone the forked repository to your own machine.
 
-6. You make the required changes, add test cases, documentation, and so forth.
+6. Make the required changes, add test cases, documentation, and so forth.
 
-7. You push the local changes to your GitHub repository and create a new pull request (PR).
+7. Push the local changes to your GitHub repository and create a new pull request (PR).
    - See below for instructions on how to make a good pull request.
 
 8. GitHub automatically compiles and tests the PR. Be sure to check the results!
@@ -49,9 +49,6 @@ We suggest that you proceed by following these steps:
 
 We are interested in correct, well-documented, and well-tested code. 
 
-The argument that "the code works" is not sufficient. It must be maintainable. It must follow our style.
+We expect all pull requests to be maintainable and follow established style.
 
-We refer to [STYLE.md](./STYLE.md) for more information on code style.
-- As an example of high-quality code, we refer to `FastBoolUnification.scala`.
-
-Getting your code merged into Flix is a privilege, not a right.
+Please have a look at [STYLE.md](./STYLE.md) for more information on how to structure your code.
