@@ -442,10 +442,7 @@ mod MutDeque {
             if (i == deref back) {
                 ()
             } else {
-                match Array.nth(i, deref a) {
-                    case Some(x) => f(x)
-                    case None    => bug!("An error occurred in MutDeque.forEach!")
-                };
+                f(Array.get(i, deref a));
                 loop(Int32.bitwiseAnd(i + 1, c))
             }
         };

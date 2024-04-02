@@ -271,7 +271,7 @@ mod CodePoint {
             let arr = Array.empty(rc, 2);
             let i = toChars(cp, arr, 0);
             if (i == 1)
-                Array.nth(0, arr)
+                Array.head(arr)
             else
                 None
         }

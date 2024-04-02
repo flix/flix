@@ -108,12 +108,12 @@ mod TestVector {
     @test
     def singleton01(): Bool =
         let v = Vector.singleton(0);
-        Vector.nth(0, v) == Some(0)
+        Vector.head(v) == Some(0)
 
     @test
     def singleton02(): Bool =
         let v = Vector.singleton('A');
-        Vector.nth(0, v) == Some('A')
+        Vector.head(v) == Some('A')
 
     /////////////////////////////////////////////////////////////////////////////
     // nth                                                                     //
@@ -121,23 +121,45 @@ mod TestVector {
 
     @test
     def nth01(): Bool =
-        Vector.nth(0, Vector#{1, 2, 3}) == Some(1)
+        try {
+            Assert.eq(1, Vector.nth(0, Vector#{1, 2, 3}))
+        } with IndexOutOfBounds {
+            def throw(_, _) = false
+        }
 
     @test
     def nth02(): Bool =
-        Vector.nth(1, Vector#{1, 2, 3}) == Some(2)
+        try {
+            Assert.eq(2, Vector.nth(1, Vector#{1, 2, 3}))
+        } with IndexOutOfBounds {
+            def throw(_, _) = false
+        }
 
     @test
     def nth03(): Bool =
-        Vector.nth(2, Vector#{1, 2, 3}) == Some(3)
+        try {
+            Assert.eq(3, Vector.nth(2, Vector#{1, 2, 3}))
+        } with IndexOutOfBounds {
+            def throw(_, _) = false
+        }
 
     @test
     def nth04(): Bool =
-        Vector.nth(3, Vector#{1, 2, 3}) == None
+        try {
+            Vector.nth(3, Vector#{1, 2, 3});
+            false
+        } with IndexOutOfBounds {
+            def throw(_, _) = true
+        }
 
     @test
     def nth05(): Bool =
-        Vector.nth(-2, Vector#{1, 2, 3}) == None
+        try {
+            Vector.nth(-2, Vector#{1, 2, 3});
+            false
+        } with IndexOutOfBounds {
+            def throw(_, _) = true
+        }
 
     /////////////////////////////////////////////////////////////////////////////
     // isEmpty                                                                 //
