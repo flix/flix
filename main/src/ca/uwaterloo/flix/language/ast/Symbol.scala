@@ -170,16 +170,16 @@ object Symbol {
   def mkModuleSym(fqn: List[String]): ModuleSym = new ModuleSym(fqn)
 
   /**
-    * Returns the class symbol for the given name `ident` in the given namespace `ns`.
+    * Returns the trait symbol for the given name `ident` in the given namespace `ns`.
     */
-  def mkClassSym(ns: NName, ident: Ident): TraitSym = {
+  def mkTraitSym(ns: NName, ident: Ident): TraitSym = {
     new TraitSym(ns.parts, ident.name, ident.loc)
   }
 
   /**
-    * Returns the class symbol for the given fully qualified name
+    * Returns the trait symbol for the given fully qualified name
     */
-  def mkClassSym(fqn: String): TraitSym = split(fqn) match {
+  def mkTraitSym(fqn: String): TraitSym = split(fqn) match {
     case None => new TraitSym(Nil, fqn, SourceLocation.Unknown)
     case Some((ns, name)) => new TraitSym(ns, name, SourceLocation.Unknown)
   }
@@ -200,10 +200,10 @@ object Symbol {
   }
 
   /**
-    * Returns the signature symbol for the given name `ident` in the class associated with the given class symbol `classSym`.
+    * Returns the signature symbol for the given name `ident` in the trait associated with the given trait symbol `traitSym`.
     */
-  def mkSigSym(classSym: TraitSym, ident: Name.Ident): SigSym = {
-    new SigSym(classSym, ident.name, ident.loc)
+  def mkSigSym(traitSym: TraitSym, ident: Name.Ident): SigSym = {
+    new SigSym(traitSym, ident.name, ident.loc)
   }
 
   /**
@@ -214,10 +214,10 @@ object Symbol {
   }
 
   /**
-    * Returns the associated type symbol for the given name `ident` in the class associated with the given class symbol `classSym`.
+    * Returns the associated type symbol for the given name `ident` in the trait associated with the given trait symbol `traitSym`.
     */
-  def mkAssocTypeSym(classSym: TraitSym, ident: Name.Ident): AssocTypeSym = {
-    new AssocTypeSym(classSym, ident.name, ident.loc)
+  def mkAssocTypeSym(traitSym: TraitSym, ident: Name.Ident): AssocTypeSym = {
+    new AssocTypeSym(traitSym, ident.name, ident.loc)
   }
 
   /**
@@ -546,7 +546,7 @@ object Symbol {
   }
 
   /**
-    * Class Symbol.
+    * Trait Symbol.
     */
   final class TraitSym(val namespace: List[String], val name: String, val loc: SourceLocation) extends Sourceable with Symbol {
     /**

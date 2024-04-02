@@ -427,7 +427,7 @@ object Namer {
     */
   private def visitTrait(trt: DesugaredAst.Declaration.Class, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Trait, NameError] = trt match {
     case DesugaredAst.Declaration.Class(doc, ann, mod0, ident, tparams0, superTraits0, assocs0, signatures, laws0, loc) =>
-      val sym = Symbol.mkClassSym(ns0, ident)
+      val sym = Symbol.mkTraitSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparam = getTypeParam(tparams0)
 
