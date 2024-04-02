@@ -15,7 +15,6 @@
  */
 
 package ca.uwaterloo.flix
-
 import ca.uwaterloo.flix.runtime.TestFn
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
@@ -25,9 +24,25 @@ import dev.flix.runtime.Global
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+///
+/// A Mutation Tester can be used to evaluate ones test suite.
+/// It is based on the following:
+///     - given a source and test module we can test the source code.
+///     - A competent programmer writes almost correct code and only
+///       needs to make few changes to achieve the correct program.
+///     - We can simulate the competent programmer mistakes by making single changes to the source code,
+///       which is called a mutation.
+///     - Running the mutants with the given tests, we can estimate the quality of the test suite.
+/// Mutants are created by greedily going through the AST and making all sensible changes.
+///
 
 object MutationTester {
 
+    /**
+      * When the test suite is ran, a mutant can either be killed or survive.
+      *
+      * A special case is added when the test doesn't terminate.
+      */
     sealed trait TestRes
     object TestRes {
         case object MutantKilled extends TestRes
@@ -144,6 +159,16 @@ object MutationTester {
         runTest(testsFromTester)
     }
 
+    /**
+      * Runs all tests on the individual mutation, until a test failed or all succeeded.
+      *
+      * @param testsFromTester  : all tests regarding the given source code.
+      * @return TestRes.MutantKilled: A Test failed and we mark the mutant as killed.
+      * @return TestRes.MutantSurvived: All Test succeeded and we can mark the mutant as survived.
+      * @return TestRes.Unknown: The test didn't terminate within a fixed number of iterations. The mutant is marked as
+      *         unknown and isn't included in the mutation score.
+      *
+      */
     private def runTest(testsFromTester: List[(Symbol.DefnSym, TestFn)]): TestRes = {
         testsFromTester match {
             case x :: xs =>
