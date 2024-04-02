@@ -50,6 +50,6 @@ We are interested in correct, well-documented, and well-tested code.
 
 That code "works" is not sufficient. It must be maintainable. It must follow our style.
 
-We refer you to [STYLE.md](./style.md) for more information on code style.
+We refer you to [STYLE.md](./STYLE.md) for more information on code style.
 
 Getting your code merged into Flix is a privilege, not a right.
