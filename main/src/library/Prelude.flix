@@ -109,6 +109,13 @@ pub eff NonDet
 pub eff Sys
 
 ///
+/// An effect raised to indicate that an index is out of range.
+///
+pub eff IndexOutOfBounds {
+    pub def throw(msg: String): Void
+}
+
+///
 /// The pure identity function.
 ///
 pub def identity(x: a): a = x

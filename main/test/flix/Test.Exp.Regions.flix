@@ -439,10 +439,10 @@ mod Test.Exp.Regions {
                 MutList.push!(1, l);
                 MutMap.put!(1, l, m);
                 match MutMap.get(1, m) {
-                    case Some(k) => MutList.nth(0, k) == Some(1)
+                    case Some(k) => optionalNth(0, k) == Some(1)
                     case _       => unreachable!()
                 }
-            } and MutList.nth(0, l) == Some(1)
+            } and optionalNth(0, l) == Some(1)
         }
 
     @test
@@ -454,7 +454,7 @@ mod Test.Exp.Regions {
                 MutList.push!(1, l);
                 MutMap.put!(1, l, Array.get(0, a));
                 match MutMap.get(1, Array.get(0, a)) {
-                    case Some(k) => MutList.nth(0, k) == Some(1)
+                    case Some(k) => optionalNth(0, k) == Some(1)
                     case _       => unreachable!()
                 }
             }
@@ -484,11 +484,11 @@ mod Test.Exp.Regions {
                 MutList.push!(Array.repeat(rc2, 8, 1), l);
                 MutMap.put!(1, l, m);
                 match MutMap.get(1, m) {
-                    case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0)) == Some(1)
+                    case Some(k) => optionalNth(0, k) |> Option.flatMap(Array.head) == Some(1)
                     case _       => unreachable!()
                 }
             }
-        }
+    }
 
     @test
     def testRegions2Regions3Nested01(): Bool =
@@ -499,11 +499,11 @@ mod Test.Exp.Regions {
                 MutList.push!(Array.repeat(rc1, 8, 1), l);
                 MutMap.put!(1, l, Array.get(0, a));
                 match MutMap.get(1, Array.get(0, a)) {
-                    case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0)) == Some(1)
+                    case Some(k) => optionalNth(0, k) |> Option.flatMap(Array.head) == Some(1)
                     case _       => unreachable!()
                 }
             }
-        }
+    }
 
     @test
     def testRegions2Regions3Nested02(): Bool =
@@ -517,7 +517,7 @@ mod Test.Exp.Regions {
                 MutList.push!(1, l2);
                 match MutList.pop!(l) {
                     case Some(b) => match MutMap.get(1, Array.get(0, b)) {
-                        case Some(k) => MutList.nth(0, k) == Some(1)
+                        case Some(k) => optionalNth(0, k) == Some(1)
                         case _       => unreachable!()
                     }
                     case _       => unreachable!()
@@ -536,7 +536,7 @@ mod Test.Exp.Regions {
                 MutMap.put!(1, 1, Array.get(0, a)); // Mutate the innermost nested MutMap
                 MutMap.put!(1, l, m);
                 match MutMap.get(1, m) {
-                    case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0))
+                    case Some(k) => optionalNth(0, k) |> Option.flatMap(Array.head)
                                                       |> Option.flatMap(MutMap.get(1)) == Some(1)
                     case _       => unreachable!()
                 }
@@ -695,7 +695,7 @@ mod Test.Exp.Regions {
                     MutMap.put!(1, l, m);
                     MutList.push!(Array.repeat(rc1, 8, 1), l);
                     match MutMap.get(1, m) {
-                        case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0)) == Some(1)
+                        case Some(k) => optionalNth(0, k) |> Option.flatMap(Array.head) == Some(1)
                         case _       => unreachable!()
                     }
                 }
@@ -712,7 +712,7 @@ mod Test.Exp.Regions {
                     MutMap.put!(1, l, Array.get(0, a));
                     MutList.push!(Array.repeat(rc1, 8, 1), l);
                     match MutMap.get(1, Array.get(0, a)) {
-                        case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0)) == Some(1)
+                        case Some(k) => optionalNth(0, k) |> Option.flatMap(Array.head) == Some(1)
                         case _       => unreachable!()
                     }
                 }
@@ -753,7 +753,7 @@ mod Test.Exp.Regions {
                     MutList.push!(a, l);
                     MutMap.put!(1, 1, Array.get(0, a));
                     match MutMap.get(1, m) {
-                        case Some(k) => MutList.nth(0, k) |> Option.flatMap(Array.nth(0)) |> Option.flatMap(MutMap.get(1)) == Some(1)
+                        case Some(k) => optionalNth(0, k) |> Option.flatMap(Array.head) |> Option.flatMap(MutMap.get(1)) == Some(1)
                         case _       => unreachable!()
                     }
                 }
@@ -1055,7 +1055,7 @@ mod Test.Exp.Regions {
                 MutList.push!(1, Ref.get(l));
                 MutMap.put!(1, l, Ref.get(Array.get(0, Ref.get(a))));
                 match MutMap.get(1, Ref.get(Array.get(0, Ref.get(a)))) {
-                    case Some(k) => MutList.nth(0, Ref.get(k)) == Some(1)
+                    case Some(k) => optionalNth(0, Ref.get(k)) == Some(1)
                     case _       => unreachable!()
                 }
             }
@@ -1085,7 +1085,7 @@ mod Test.Exp.Regions {
                 MutList.push!(Ref.fresh(rc2, Array.repeat(rc2, 8, 1)), Ref.get(l));
                 MutMap.put!(1, l, Ref.get(m));
                 match MutMap.get(1, Ref.get(m)) {
-                    case Some(k) => MutList.nth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr))) == Some(1)
+                    case Some(k) => optionalNth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr))) == Some(1)
                     case _       => unreachable!()
                 }
             }
@@ -1100,7 +1100,7 @@ mod Test.Exp.Regions {
                 MutList.push!(Ref.fresh(rc1, Array.repeat(rc1, 8, 1)), Ref.get(l));
                 MutMap.put!(1, l, Ref.get(Array.get(0, Ref.get(a))));
                 match MutMap.get(1, Ref.get(Array.get(0, Ref.get(a)))) {
-                    case Some(k) => MutList.nth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr))) == Some(1)
+                    case Some(k) => optionalNth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr))) == Some(1)
                     case _       => unreachable!()
                 }
             }
@@ -1118,7 +1118,7 @@ mod Test.Exp.Regions {
                 MutList.push!(1, Ref.get(l2));
                 match MutList.pop!(Ref.get(l)) {
                     case Some(b) => match MutMap.get(1, Ref.get(Array.get(0, Ref.get(b)))) {
-                        case Some(k) => MutList.nth(0, Ref.get(k)) == Some(1)
+                        case Some(k) => optionalNth(0, Ref.get(k)) == Some(1)
                         case _       => unreachable!()
                     }
                     case _       => unreachable!()
@@ -1137,7 +1137,7 @@ mod Test.Exp.Regions {
                 MutMap.put!(1, 1, Ref.get(Array.get(0, Ref.get(a)))); // Mutate the innermost nested MutMap
                 MutMap.put!(1, l, Ref.get(m));
                 match MutMap.get(1, Ref.get(m)) {
-                    case Some(k) => MutList.nth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr)))
+                    case Some(k) => optionalNth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr)))
                                                                |> Option.flatMap(m1 -> MutMap.get(1, Ref.get(m1))) == Some(1)
                     case _       => unreachable!()
                 }
@@ -1296,7 +1296,7 @@ mod Test.Exp.Regions {
                     MutMap.put!(1, l, Ref.get(m));
                     MutList.push!(Ref.fresh(rc2, Array.repeat(rc1, 8, 1)), Ref.get(l));
                     match MutMap.get(1, Ref.get(m)) {
-                        case Some(k) => MutList.nth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr))) == Some(1)
+                        case Some(k) => optionalNth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr))) == Some(1)
                         case _       => unreachable!()
                     }
                 }
@@ -1313,7 +1313,7 @@ mod Test.Exp.Regions {
                     MutMap.put!(1, l, Ref.get(Array.get(0, Ref.get(a))));
                     MutList.push!(Ref.fresh(rc1, Array.repeat(rc1, 8, 1)), Ref.get(l));
                     match MutMap.get(1, Ref.get(Array.get(0, Ref.get(a)))) {
-                        case Some(k) => MutList.nth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr))) == Some(1)
+                        case Some(k) => optionalNth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr))) == Some(1)
                         case _       => unreachable!()
                     }
                 }
@@ -1354,7 +1354,7 @@ mod Test.Exp.Regions {
                     MutList.push!(a, Ref.get(l));
                     MutMap.put!(1, 1, Ref.get(Array.get(0, Ref.get(a))));
                     match MutMap.get(1, Ref.get(m)) {
-                        case Some(k) => MutList.nth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr)))
+                        case Some(k) => optionalNth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr)))
                                                                    |> Option.flatMap(m1 -> MutMap.get(1, Ref.get(m1))) == Some(1)
                         case _       => unreachable!()
                     }
@@ -1375,7 +1375,7 @@ mod Test.Exp.Regions {
                     MutList.push!(a, Ref.get(l));
                     MutMap.put!(1, 1, Ref.get(Ref.get(Ref.get(Ref.get(Array.get(0, Ref.get(a)))))));
                     match MutMap.get(1, Ref.get(Ref.get(Ref.get(Ref.get(m)))))                    {
-                        case Some(k) => MutList.nth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr)))
+                        case Some(k) => optionalNth(0, Ref.get(k)) |> Option.flatMap(arr -> Array.nth(0, Ref.get(arr)))
                                                                    |> Option.flatMap(m1 -> MutMap.get(1, Ref.get(Ref.get(Ref.get(Ref.get(m1)))))) == Some(1)
                         case _       => unreachable!()
                     }
@@ -1383,4 +1383,12 @@ mod Test.Exp.Regions {
             }
         }
 
+    ///
+    /// Helper function to convert MutList IndexOutOfBounds effects to Optional values.
+    ///
+    def optionalNth(n: Int32, l: MutList[a, r]): Option[a] = try {
+        Some(MutList.nth(n, l))
+    } with IndexOutOfBounds {
+        def throw(_, _) = None
+    }
 }

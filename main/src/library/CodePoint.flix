@@ -248,7 +248,7 @@ mod CodePoint {
             let arr : Array[Char, rc] = Array.empty(rc, 2);
             let i = unsafe Character.toChars(cp, arr, 0);
             if (i == 1)
-                Array.nth(0, arr)
+                Array.head(arr)
             else
                 None
         }

@@ -82,27 +82,49 @@ mod TestArray {
 
     @test
     def testNth01(): Bool = region rc {
-        Array.nth(0, Array#{1, 2, 3} @ rc) == Some(1)
+        try {
+            Assert.eq(1, Array.nth(0, Array#{1, 2, 3} @ rc))
+        } with IndexOutOfBounds {
+            def throw(_, _) = false
+        }
     }
 
     @test
     def testNth02(): Bool = region rc {
-        Array.nth(1, Array#{1, 2, 3} @ rc) == Some(2)
+        try {
+            Assert.eq(2, Array.nth(1, Array#{1, 2, 3} @ rc))
+        } with IndexOutOfBounds {
+            def throw(_, _) = false
+        }
     }
 
     @test
     def testNth03(): Bool = region rc {
-        Array.nth(2, Array#{1, 2, 3} @ rc) == Some(3)
+        try {
+            Assert.eq(3, Array.nth(2, Array#{1, 2, 3} @ rc))
+        } with IndexOutOfBounds {
+            def throw(_, _) = false
+        }
     }
 
     @test
     def testNth04(): Bool = region rc {
-        Array.nth(3, Array#{1, 2, 3} @ rc) == None
+        try {
+            Array.nth(3, Array#{1, 2, 3} @ rc);
+            false
+        } with IndexOutOfBounds {
+            def throw(_, _) = true
+        }
     }
 
     @test
     def testNth05(): Bool = region rc {
-        Array.nth(-2, Array#{1, 2, 3} @ rc) == None
+        try {
+            Array.nth(-2, Array#{1, 2, 3} @ rc);
+            false
+        } with IndexOutOfBounds {
+            def throw(_, _) = true
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////////
@@ -6031,5 +6053,4 @@ mod TestArray {
         Array.shuffle(Random.fresh(), a);
         Array.length(a) == 10 and Array.toSet(a) == Set#{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
     }
-
 }
