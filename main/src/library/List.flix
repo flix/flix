@@ -268,8 +268,8 @@ mod List {
     /// Returns `Nil` if `b >= e`.
     ///
     pub def range(b: Int32, e: Int32): List[Int32] =
+        //decAndCheck();
         def loop(i, acc) =
-            //decAndCheck();
             if (i < b)
                 acc
             else

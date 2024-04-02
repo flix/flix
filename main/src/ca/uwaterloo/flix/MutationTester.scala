@@ -44,9 +44,12 @@ object MutationTester {
       * A special case is added when the test doesn't terminate.
       */
     sealed trait TestRes
+
     object TestRes {
         case object MutantKilled extends TestRes
+
         case object MutantSurvived extends TestRes
+
         case object Unknown extends TestRes
     }
 
@@ -79,8 +82,8 @@ object MutationTester {
       */
     private def insertDeckAndCheckIntoRoot(root: Root): Root = {
         val newDefs = root.defs.map({
-          case (sym, fun) =>
-            sym -> insertDecAndCheckInDef(fun)
+            case (sym, fun) =>
+                sym -> insertDecAndCheckInDef(fun)
         })
         root.copy(defs = newDefs)
     }
@@ -109,9 +112,8 @@ object MutationTester {
 
     private case class TestKit(flix: Flix, root: Root, testModule: String)
 
-    private def runMutations2(flix: Flix, tester: String, root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[TypedAst.Def])]): Unit = {
+    private def runMutations(flix: Flix, testModule: String, root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[TypedAst.Def])]): Unit = {
         val totalStartTime = System.nanoTime()
-        val date = LocalDateTime.now()
         val temp = totalStartTime
         val amountOfMutants = mutatedDefs.map(m => m._2.length).sum
         val f = DateTimeFormatter.ofPattern("yyyy-MM-dd: HH:mm")
@@ -131,9 +133,9 @@ object MutationTester {
         println(s"Total time to test all mutants: $time seconds")
     }
 
-    private def testMutantsAndUpdateProgress(acc: (Int, Int, Double, Long, LocalDateTime, Int), mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit, f: DateTimeFormatter) = {
+    private def testMutantsAndUpdateProgress(acc: (Int, Int, Double, Long, Int), mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit, f: DateTimeFormatter) = {
         mut._2.foldLeft(acc)((acc2, mDef) => {
-            val (survivorCount, unknownCount, time, accTemp, accDate, mAmount) = acc2
+            val (survivorCount, unknownCount, time, accTemp, mAmount) = acc2
             val mutationAmount = mAmount + 1
             val start = System.nanoTime()
             val testResults = compileAndTestMutant(mDef, mut, testKit)
@@ -150,12 +152,12 @@ object MutationTester {
         })
     }
 
-    private def testMutant(mDef: TypedAst.Def, mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit): TestRes = {
+    private def compileAndTestMutant(mDef: TypedAst.Def, mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit): TestRes = {
         val defs = testKit.root.defs
         val n = defs + (mut._1 -> mDef)
         val newRoot = testKit.root.copy(defs = n)
         val cRes = testKit.flix.codeGen(newRoot).unsafeGet
-        val testsFromTester = cRes.getTests.filter { case (s, _) => s.toString.contains(testKit.testModule) }.toList // change all "contains" to something more substantial
+        val testsFromTester = cRes.getTests.filter { case (s, _) => s.namespace.head.equals(testKit.testModule) }.toList
         runTest(testsFromTester)
     }
 

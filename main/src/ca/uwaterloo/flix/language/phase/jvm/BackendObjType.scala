@@ -884,8 +884,7 @@ object BackendObjType {
           LCONST_0() ~
           LCMP() ~
           ifCondition(Condition.GT) {
-            GETSTATIC(InfiniteLoopException) ~
-              thisLoad() ~ ACONST_NULL() ~
+              GETSTATIC(InfiniteLoopException) ~
               ATHROW()
           } ~
           RETURN()
