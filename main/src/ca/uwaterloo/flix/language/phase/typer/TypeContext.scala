@@ -188,12 +188,12 @@ class TypeContext {
   }
 
   /**
-    * Adds the given class constraints to the context.
+    * Adds the given trait constraints to the context.
     */
   def addClassConstraints(tconstrs0: List[Ast.TypeConstraint], loc: SourceLocation): Unit = {
     // convert all the syntax-level constraints to semantic constraints
     val tconstrs = tconstrs0.map {
-      case Ast.TypeConstraint(head, arg, _) => TypeConstraint.Class(head.sym, arg, loc)
+      case Ast.TypeConstraint(head, arg, _) => TypeConstraint.Trait(head.sym, arg, loc)
     }
     currentScopeConstraints.addAll(tconstrs)
   }
