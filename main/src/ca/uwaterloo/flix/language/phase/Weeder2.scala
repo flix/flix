@@ -61,7 +61,7 @@ object Weeder2 {
     } catch {
       case except: Throwable =>
         except.printStackTrace()
-        Validation.HardFailure(Chain.empty)
+        Validation.success(WeededAst.empty)
     }
   }
 
