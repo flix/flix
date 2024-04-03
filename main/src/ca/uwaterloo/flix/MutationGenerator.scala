@@ -157,165 +157,164 @@ object MutationGenerator {
       val mut1 = Expr.Unary(sop, original, tpe, eff, loc)
       mut1 :: mutateExpr(exp).map(m => original.copy(exp = m))
 
-        case original@Expr.Binary(_, exp1, exp2, _, _, _) =>
-            val mut2 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
-            val mut3 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut2 ::: mut3
-        case original@Expr.Let(_, _, exp1, exp2, _, _, _) =>
-            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
-            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1 ::: mut2
-        case original@Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
-            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
-            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1 ::: mut2
-        case Expr.Region(_, _) => Nil
-        case Expr.Scope(_, _, _, _, _, _) => Nil
-        case original@Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-            val ifTrue = original.copy(exp1 = Expr.Cst(Constant.Bool(true), True, exp1.loc))
-            val ifFalse = original.copy(exp1 = Expr.Cst(Constant.Bool(false), False, exp1.loc))
-            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            val mut3 = mutateExpr(exp3).map(m => original.copy(exp3 = m))
-            ifTrue :: ifFalse :: mut2 ::: mut3
-        case original@Expr.Stm(exp1, exp2, _, _, _) =>
-            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
-            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1 ::: mut2
-        case Expr.Discard(_, _, _) => Nil
-        case original@Expr.Match(_, rules, _, _, _) =>
-            val permutations = rules.permutations.toList.map(m => original.copy(rules = m))
-            val deletedCasesMutation = rules.indices
-                .map(index =>
-                    rules.filter(e => rules.indexOf(e) != index || rules.indexOf(e) == rules.length - 1))
-                .toList.map(m => original.copy(rules = m))
-            val mutateRules = rules.zipWithIndex.flatMap {
-                case (rule, index) =>
-                    val mutations = mutateMatchrule(rule)
-                    mutations.map(m => original.copy(rules = rules.updated(index, m)))
-            }
-            val lengths = mutateRules.map(mr => mr.rules.length)
-            lengths.foreach(l => assert(rules.length == l, "fail in match"))
-            permutations ::: mutateRules ::: deletedCasesMutation.reverse.tail
-        case Expr.TypeMatch(exp, rules, _, _, _) => Nil
-        case Expr.RestrictableChoose(_, _, _, _, _, _) => Nil
-        case Expr.Tag(_, exp, _, _, _) => Nil
-        case Expr.RestrictableTag(_, _, _, _, _) => Nil
-        case original@Expr.Tuple(elms, _, _, _) =>
-            elms.zipWithIndex.flatMap {
-                case (exp, index) =>
-                    val mutations = mutateExpr(exp)
-                    mutations.map(m => original.copy(elms = elms.updated(index, m)))
-            }
-        case Expr.RecordEmpty(_, _) => Nil
-        case Expr.RecordSelect(exp, _, _, _, _) => Nil
-        case Expr.RecordExtend(_, exp1, exp2, _, _, _) => Nil
-        case Expr.RecordRestrict(_, exp, _, _, _) => Nil
-        case original@Expr.ArrayLit(exps, exp, _, _, _) =>
-            val mut = mutateExpr(exp).map(m => original.copy(exp = m))
-            val mutateExps = exps.map(e => mutateExpr(e))
-            mutateExps.map(m => original.copy(exps = m)) ::: mut
-        case original@Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
-            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
-            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            val mut3 = mutateExpr(exp3).map(m => original.copy(exp3 = m))
-            mut1 ::: mut2 ::: mut3
-        case original@Expr.ArrayLoad(exp1, exp2, _, _, _) =>
-            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
-            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1 ::: mut2
-        case original@Expr.ArrayLength(exp, _, _) =>
-            mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
-            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
-            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            val mut3 = mutateExpr(exp3).map(m => original.copy(exp3 = m))
-            mut1 ::: mut2 ::: mut3
-        case original@Expr.VectorLit(exps, _, _, _) =>
-            exps.zipWithIndex.flatMap {
-                case (exp, index) =>
-                    val mutations = mutateExpr(exp)
-                    mutations.map(m => original.copy(exps = exps.updated(index, m)))
-            }
-        case original@Expr.VectorLoad(exp1, exp2, _, _, _) =>
-            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
-            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1 ::: mut2
-        case original@Expr.VectorLength(exp, _) =>
-            mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.Ref(exp1, exp2, _, _, _) =>
-            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
-            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1 ::: mut2
-        case original@Expr.Deref(exp, _, _, _) =>
-            mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.Assign(exp1, exp2, _, _, _) =>
-            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
-            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1 ::: mut2
-        case original@Expr.Ascribe(exp, _, _, _) =>
-            // mutateExpr(exp).map(m => original.copy(exp = m))
-            Nil
-        case original@Expr.InstanceOf(exp, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.CheckedCast(_, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.UncheckedCast(exp, _, _, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.UncheckedMaskingCast(exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.Without(exp, _, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.TryCatch(exp, _, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.TryWith(exp, _, _, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.Do(_, exps, _, _, _) =>
-            exps.zipWithIndex.flatMap {
-                case (exp, index) =>
-                    val mutations = mutateExpr(exp)
-                    mutations.map(m => original.copy(exps = exps.updated(index, m)))
-            }
-        case original@Expr.InvokeConstructor(_, exps, _, _, _) =>
-            val mutateExps = exps.map(e => mutateExpr(e))
-            mutateExps.map(m => original.copy(exps = m))
-        case original@Expr.InvokeMethod(_, exp, exps, _, _, _) =>
-            val mut = mutateExpr(exp).map(m => original.copy(exp = m))
-            val mutateExps = exps.map(e => mutateExpr(e))
-            mutateExps.map(m => original.copy(exps = m)) ::: mut
-        case original@Expr.InvokeStaticMethod(_, exps, _, _, _) =>
-            val mutateExps = exps.map(e => mutateExpr(e))
-            mutateExps.map(m => original.copy(exps = m))
-        case original@Expr.GetField(_, exp, _, _, _) =>
-            mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.PutField(_, exp1, exp2, _, _, _) =>
-            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
-            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1 ::: mut2
-        case Expr.GetStaticField(_, _, _, _) => Nil
-        case original@Expr.PutStaticField(_, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case Expr.NewObject(_, _, _, _, _, _) => Nil
-        case original@Expr.NewChannel(exp1, exp2, _, _, _) =>
-            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
-            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1 ::: mut2
-        case original@Expr.GetChannel(exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.PutChannel(exp1, exp2, _, _, _) =>
-            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
-            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1 ::: mut2
-        case Expr.SelectChannel(_, _, _, _, _) => Nil
-        case original@Expr.Spawn(exp1, exp2, _, _, _) =>
-            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
-            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1 ::: mut2
-        case original@Expr.ParYield(_, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.Lazy(exp, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.Force(exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case Expr.FixpointConstraintSet(_, _, _) => Nil
-        case original@Expr.FixpointLambda(_, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.FixpointMerge(exp1, exp2, _, _, _) =>
-            val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
-            val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
-            mut1 ::: mut2
-        case original@Expr.FixpointSolve(exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.FixpointFilter(_, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.FixpointInject(exp, _, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.FixpointProject(_, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case Expr.Error(_, _, _) => Nil
-    }
+    case original@Expr.Binary(_, exp1, exp2, _, _, _) =>
+      val mut2 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+      val mut3 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+      mut2 ::: mut3
+    case original@Expr.Let(_, _, exp1, exp2, _, _, _) =>
+      val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+      val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+      mut1 ::: mut2
+    case original@Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
+      val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+      val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+      mut1 ::: mut2
+    case Expr.Region(_, _) => Nil
+    case Expr.Scope(_, _, _, _, _, _) => Nil
+    case original@Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
+      val ifTrue = original.copy(exp1 = Expr.Cst(Constant.Bool(true), True, exp1.loc))
+      val ifFalse = original.copy(exp1 = Expr.Cst(Constant.Bool(false), False, exp1.loc))
+      val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+      val mut3 = mutateExpr(exp3).map(m => original.copy(exp3 = m))
+      ifTrue :: ifFalse :: mut2 ::: mut3
+    case original@Expr.Stm(exp1, exp2, _, _, _) =>
+      val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+      val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+      mut1 ::: mut2
+    case Expr.Discard(_, _, _) => Nil
+    case original@Expr.Match(_, rules, _, _, _) =>
+      val permutations = rules.permutations.toList.map(m => original.copy(rules = m))
+      val deletedCasesMutation = rules.indices
+        .map(index =>
+          rules.filter(e => rules.indexOf(e) != index || rules.indexOf(e) == rules.length - 1))
+        .toList.map(m => original.copy(rules = m))
+      val mutateRules = rules.zipWithIndex.flatMap {
+        case (rule, index) =>
+          val mutations = mutateMatchrule(rule)
+          mutations.map(m => original.copy(rules = rules.updated(index, m)))
+      }
+      val lengths = mutateRules.map(mr => mr.rules.length)
+      lengths.foreach(l => assert(rules.length == l, "fail in match"))
+      permutations ::: mutateRules ::: deletedCasesMutation.reverse.tail
+    case Expr.TypeMatch(exp, rules, _, _, _) => Nil
+    case Expr.RestrictableChoose(_, _, _, _, _, _) => Nil
+    case Expr.Tag(_, exp, _, _, _) => Nil
+    case Expr.RestrictableTag(_, _, _, _, _) => Nil
+    case original@Expr.Tuple(elms, _, _, _) =>
+      elms.zipWithIndex.flatMap {
+        case (exp, index) =>
+          val mutations = mutateExpr(exp)
+          mutations.map(m => original.copy(elms = elms.updated(index, m)))
+      }
+    case Expr.RecordEmpty(_, _) => Nil
+    case Expr.RecordSelect(exp, _, _, _, _) => Nil
+    case Expr.RecordExtend(_, exp1, exp2, _, _, _) => Nil
+    case Expr.RecordRestrict(_, exp, _, _, _) => Nil
+    case original@Expr.ArrayLit(exps, exp, _, _, _) =>
+      val mut = mutateExpr(exp).map(m => original.copy(exp = m))
+      val mutateExps = exps.map(e => mutateExpr(e))
+      mutateExps.map(m => original.copy(exps = m)) ::: mut
+    case original@Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
+      val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+      val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+      val mut3 = mutateExpr(exp3).map(m => original.copy(exp3 = m))
+      mut1 ::: mut2 ::: mut3
+    case original@Expr.ArrayLoad(exp1, exp2, _, _, _) =>
+      val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+      val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+      mut1 ::: mut2
+    case original@Expr.ArrayLength(exp, _, _) =>
+      mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.ArrayStore(exp1, exp2, exp3, _, _) =>
+      val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+      val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+      val mut3 = mutateExpr(exp3).map(m => original.copy(exp3 = m))
+      mut1 ::: mut2 ::: mut3
+    case original@Expr.VectorLit(exps, _, _, _) =>
+      exps.zipWithIndex.flatMap {
+        case (exp, index) =>
+          val mutations = mutateExpr(exp)
+          mutations.map(m => original.copy(exps = exps.updated(index, m)))
+      }
+    case original@Expr.VectorLoad(exp1, exp2, _, _, _) =>
+      val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+      val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+      mut1 ::: mut2
+    case original@Expr.VectorLength(exp, _) =>
+      mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.Ref(exp1, exp2, _, _, _) =>
+      val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+      val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+      mut1 ::: mut2
+    case original@Expr.Deref(exp, _, _, _) =>
+      mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.Assign(exp1, exp2, _, _, _) =>
+      val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+      val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+      mut1 ::: mut2
+    case original@Expr.Ascribe(exp, _, _, _) =>
+      Nil
+    case original@Expr.InstanceOf(exp, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.CheckedCast(_, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.UncheckedCast(exp, _, _, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.UncheckedMaskingCast(exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.Without(exp, _, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.TryCatch(exp, _, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.TryWith(exp, _, _, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.Do(_, exps, _, _, _) =>
+      exps.zipWithIndex.flatMap {
+        case (exp, index) =>
+          val mutations = mutateExpr(exp)
+          mutations.map(m => original.copy(exps = exps.updated(index, m)))
+      }
+    case original@Expr.InvokeConstructor(_, exps, _, _, _) =>
+      val mutateExps = exps.map(e => mutateExpr(e))
+      mutateExps.map(m => original.copy(exps = m))
+    case original@Expr.InvokeMethod(_, exp, exps, _, _, _) =>
+      val mut = mutateExpr(exp).map(m => original.copy(exp = m))
+      val mutateExps = exps.map(e => mutateExpr(e))
+      mutateExps.map(m => original.copy(exps = m)) ::: mut
+    case original@Expr.InvokeStaticMethod(_, exps, _, _, _) =>
+      val mutateExps = exps.map(e => mutateExpr(e))
+      mutateExps.map(m => original.copy(exps = m))
+    case original@Expr.GetField(_, exp, _, _, _) =>
+      mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.PutField(_, exp1, exp2, _, _, _) =>
+      val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+      val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+      mut1 ::: mut2
+    case Expr.GetStaticField(_, _, _, _) => Nil
+    case original@Expr.PutStaticField(_, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case Expr.NewObject(_, _, _, _, _, _) => Nil
+    case original@Expr.NewChannel(exp1, exp2, _, _, _) =>
+      val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+      val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+      mut1 ::: mut2
+    case original@Expr.GetChannel(exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.PutChannel(exp1, exp2, _, _, _) =>
+      val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+      val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+      mut1 ::: mut2
+    case Expr.SelectChannel(_, _, _, _, _) => Nil
+    case original@Expr.Spawn(exp1, exp2, _, _, _) =>
+      val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+      val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+      mut1 ::: mut2
+    case original@Expr.ParYield(_, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.Lazy(exp, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.Force(exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case Expr.FixpointConstraintSet(_, _, _) => Nil
+    case original@Expr.FixpointLambda(_, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.FixpointMerge(exp1, exp2, _, _, _) =>
+      val mut1 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
+      val mut2 = mutateExpr(exp2).map(m => original.copy(exp2 = m))
+      mut1 ::: mut2
+    case original@Expr.FixpointSolve(exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.FixpointFilter(_, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.FixpointInject(exp, _, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.FixpointProject(_, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case Expr.Error(_, _, _) => Nil
+  }
 
   private def mutateMatchrule(mr: TypedAst.MatchRule): List[TypedAst.MatchRule] = {
     val mut1 = mutateExpr(mr.exp).map(m => mr.copy(exp = m))
