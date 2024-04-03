@@ -61,7 +61,7 @@ object Weeder2 {
     } catch {
       case except: Throwable =>
         except.printStackTrace()
-        Validation.success(WeededAst.empty)
+        Validation.HardFailure(Chain.empty)
     }
   }
 
@@ -2428,7 +2428,7 @@ object Weeder2 {
     }
 
     private def visitRecordRowType(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      expect(tree, TreeKind.Type.Record)
+      expectAny(tree, List(TreeKind.Type.Record, TreeKind.Type.RecordRow))
       val maybeVar = tryPick(TreeKind.Type.Variable, tree)
       val fields = pickAll(TreeKind.Type.RecordFieldFragment, tree)
       mapN(traverseOpt(maybeVar)(visitVariableType), traverse(fields)(visitRecordField)) {
@@ -2879,7 +2879,13 @@ object Weeder2 {
     * Checks that tree has expected kind by wrapping assert.
     * This provides an isolated spot for deciding what to do with unexpected kinds.
     */
-  private def expect(tree: Tree, kind: TreeKind): Unit = assert(tree.kind == kind)
+  private def expect(tree: Tree, kind: TreeKind): Unit = {
+    if (tree.kind != kind) {
+      println(tree.loc, tree)
+    }
+    assert(tree.kind == kind)
+  }
+
 
   /**
     * Checks that tree has one of expected kinds by wrapping assert.
