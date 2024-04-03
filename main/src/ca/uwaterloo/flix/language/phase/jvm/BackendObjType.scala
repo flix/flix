@@ -873,12 +873,12 @@ object BackendObjType {
 
     def DecAndCheckMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "decAndCheck",
       mkDescriptor()(BackendType.Int64), Some(_ =>
-        GETSTATIC(StepCounterField) ~
+          GETSTATIC(StepCounterField) ~
           INVOKEVIRTUAL(JvmName.AtomicLong, "getAndDecrement",
             MethodDescriptor(Nil, BackendType.Int64)) ~
           LCONST_0() ~
           LCMP() ~
-          ifCondition(Condition.GT) {
+          ifCondition(Condition.LT) {
             GETSTATIC(InfiniteLoopException) ~
             ATHROW()
           } ~
