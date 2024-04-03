@@ -1168,6 +1168,11 @@ class TestTyper extends AnyFunSuite with TestUtils {
   test("TestAssocType.03") {
     val input =
       """
+        |pub enum Maybe[a] {
+        |    case Just(a),
+        |    case Nothing
+        |}
+        |
         |trait C[a] {
         |    type S : Type
         |    type T : Type -> Type
@@ -1176,8 +1181,8 @@ class TestTyper extends AnyFunSuite with TestUtils {
         |
         |instance C[Int32] {
         |    type S = Int32
-        |    type T = Option
-        |    pub def f(x: Int32): Option[Int64] = x
+        |    type T = Maybe
+        |    pub def f(x: Int32): Maybe[Int64] = x
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
