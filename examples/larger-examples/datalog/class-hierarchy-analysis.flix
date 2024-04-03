@@ -21,7 +21,7 @@ mod ClassHierarchyAnalysis {
     ///
     /// The function takes a `Program` as input and returns a set of relations
     /// representing the class hierarchy analysis results. The relations include
-    /// `Subtype`, `AvailableMethod`, `AvailableField`, and `ConcreteMethod`.
+    /// `Subtype`, `AvailableMethod`, `AvailableField`, and `InheritedMethod`.
     ///
     /// The `Subtype` relation represents the subtyping relationship between classes
     /// and interfaces. It includes rules for direct subtyping, class implementing
@@ -36,12 +36,12 @@ mod ClassHierarchyAnalysis {
     /// class. It includes fields defined in the class itself and fields inherited
     /// from its supertypes.
     ///
-    /// The `ConcreteMethod` relation represents the methods that are implemented
+    /// The `InheritedMethod` relation represents the methods that are implemented
     /// on a class or by a super class.
     ///
     /// Returns a set of relations representing the class hierarchy analysis results.
     ///
-    def classHierarchyAnalysis(p: Program): #{ Subtype(String, String), AvailableField(String, String), AvailableMethod(String, String), ConcreteMethod(String, String, String) | r } =
+    def classHierarchyAnalysis(p: Program): #{ Subtype(String, String), AvailableField(String, String), AvailableMethod(String, String), InheritedMethod(String, String, String) | r } =
         let cs    = inject p.classes          into Class;
         let is    = inject p.interfaces       into Interface;
         let impls = inject p.classImplements  into ClassImplements;
@@ -63,10 +63,10 @@ mod ClassHierarchyAnalysis {
             AvailableMethod(class, method) :- Class(class), ClassMethod(super, method), Subtype(class, super).
             AvailableMethod(class, method) :- Class(class), AbstractMethod(super, method), Subtype(class, super).
 
-            ConcreteMethod(class, method, class) :- Class(class), ClassMethod(class, method).
-            ConcreteMethod(sub, method, source)  :- Class(sub), Subtype(sub, super), ConcreteMethod(super, method, source).
+            InheritedMethod(class, method, class) :- Class(class), ClassMethod(class, method).
+            InheritedMethod(sub, method, source)  :- Class(sub), Subtype(sub, super), InheritedMethod(super, method, source).
         };
-        #(Subtype, AvailableField, AvailableMethod, ConcreteMethod) -> rules <+> cs <+> is <+> ce <+> impls <+> ies <+> fs <+> ms <+> ams
+        #(Subtype, AvailableField, AvailableMethod, InheritedMethod) -> rules <+> cs <+> is <+> ce <+> impls <+> ies <+> fs <+> ms <+> ams
 
     ///
     /// Returns a vector of types that have the specified field `field`.
@@ -96,8 +96,8 @@ mod ClassHierarchyAnalysis {
     pub def missingMethods(p: Program): Vector[(String, String)] =
         let is   = inject p.interfaces into Interface;
         let rule = #{
-            SimpleConcreteMethod(class, method) :- ConcreteMethod(class, method, _).
-            MissingMethod(class, method) :- AvailableMethod(class, method), not SimpleConcreteMethod(class, method), not Interface(class).
+            SimpleInheritedMethod(class, method) :- InheritedMethod(class, method, _).
+            MissingMethod(class, method) :- AvailableMethod(class, method), not SimpleInheritedMethod(class, method), not Interface(class).
         };
         query is, rule, classHierarchyAnalysis(p) select (class, method) from MissingMethod(class, method)
 
