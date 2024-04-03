@@ -11,21 +11,14 @@ def splitRand(r: Int32): (Int32, Int32) =
         (r1, r2)
 
 def main(): Unit \ IO =
-
-    // let gen: Gen[List[Int32]] = Arbitrary.arbitrary();
-    // let ll = testNTimes(100, 6, 70077, gen, true);
-    // let lengthsum = List.foldLeft((acc, x) -> acc + List.length(x), 0, ll);
-    // println(lengthsum)
-
-    // let gen: Gen[Int32] = Arbitrary.arbitrary();
-    // let ll = testNTimes(100, 10, 43568, gen, true);
-    // let sumOfInts = List.foldLeft((acc, x) -> acc + x, 0, ll);
-    // println(sumOfInts)
-
     // let gen: Gen[Float32] = Arbitrary.arbitrary();
     // let ll = testNTimes(200, 10, 123456789, gen, true);
     // let sumOfPos = List.foldLeft((acc, x) -> if (x > 0.0f32) acc + 1 else acc, 0, ll);
     // println(sumOfPos)
     
-    let listGen: Gen[List[Int32]] = FlixCheck2.vector(20);
-    println(applyGen(listGen, 1000, 123456786))
+    // let listGen: Gen[List[Int32]] = FlixCheck2.vector(20);
+    // println(applyGen(listGen, 1000, 123456786))
+
+    // let charGen = FlixCheck2.elements(Nel.Nel('a', 'b' :: 'c' :: Nil));
+    let l : Gen[List[Char]] = FlixCheck2.vector(10);
+    println(applyGen(l, 1000, 12345678))

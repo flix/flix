@@ -7,69 +7,43 @@ mod FlixCheck1 {
     pub enum Gen[a](Int32 -> Rand -> a)
 
     ///
-    /// Applies a generator `g` to a random number `r` and returns the generated value.
+    /// Applies a generator `gen` to a random number `r` and returns the generated value.
     ///
-    /// `g` the generator to apply.
+    /// `gen` the generator to apply.
     ///
     /// `r` the random number.
     ///
     /// returns the generated value.
     ///
-    pub def applyGen(g: Gen[a], size: Int32, r: Rand): a =
-        match g {
+    pub def applyGen(gen: Gen[a], size: Int32, r: Rand): a =
+        match gen {
             case Gen.Gen(f) => f(size, r)
         }
-        
-    /// Returns a Generator that uniformly generates values in the interval [lower, upper]
-    pub def chooseInt(lower: Int32, upper: Int32): Gen[Int32] = 
-        Gen.Gen(_ -> rand -> Int32.abs(Int32.remainder(rand, (upper + 1) - lower)) + lower)
 
-    /// Returns a generator that uniformly generates a boolean value.
-    pub def chooseBool(): Gen[Bool] =
-        elements(Nel.Nel(true, false :: Nil))
+    pub def sized(f: Int32 -> Gen[a]): Gen[a] =
+    Gen.Gen(size -> rand ->
+        let gen = f(size);
+        applyGen(gen, size, rand)
+    )
 
-    /// TODO: Implement a better float generator
-    pub def chooseFloat(lower: Int32, upper: Int32): Gen[Float32] =
-        Gen.Gen(size -> rand -> 
-            let (r1, r2) = splitRand(rand);
-            let intGen = chooseInt(lower, upper - 1);
-            let quotientGen = chooseInt(0, Int32.maxValue());
-
-            let quotient = Int32.toFloat32(applyGen(quotientGen, size, r1));
-            let fraction: Float32 = quotient/Int32.toFloat32(Int32.maxValue());
-
-            Int32.toFloat32(applyGen(intGen, size, r2)) + fraction
+    pub def resize(size: Int32, gen: Gen[a]): Gen[a] =
+        Gen.Gen(_ -> rand ->
+            applyGen(gen, size, rand)
         )
 
+    pub def rand(): Gen[Rand] =
+        Gen.Gen(_ -> rand -> rand)
 
-    /// Returns a generator that uniformly generates a lower case character.
-    pub def chooseLowerChar(): Gen[Char] =
-        elements(Nel.Nel('a', 
-        'b' :: 'c' :: 'd' :: 'e' :: 'f' :: 'g' :: 'h' :: 
-        'i' :: 'j' :: 'k' :: 'l' :: 'm' :: 'n' :: 'o' :: 
-        'p' :: 'q' :: 'r' :: 's' :: 't' :: 'u' :: 'v' :: 
-        'w' :: 'x' :: 'y' :: 'z' :: Nil))
+    pub def promote(f: a -> Gen[b]): Gen[a -> b] =
+        Gen.Gen(size -> rand -> 
+            a -> let gen = f(a);
+            applyGen(gen, size, rand)
+        )
 
-
-    /// Returns a generator that uniformly generates an upper case character.
-    pub def chooseUpperChar(): Gen[Char] =
-        elements(Nel.Nel('A', 
-        'B' :: 'C' :: 'D' :: 'E' :: 'F' :: 'G' :: 'H' ::
-        'I' :: 'J' :: 'K' :: 'L' :: 'M' :: 'N' :: 'O' ::
-        'P' :: 'Q' :: 'R' :: 'S' :: 'T' :: 'U' :: 'V' ::
-        'W' :: 'X' :: 'Y' :: 'Z' :: Nil))
-
-        
     /// Returns a generator that generates the value `a`.
     pub def return(x: a): Gen[a] = 
         Gen.Gen(_ -> _ -> x)
 
-
-    pub def sized(f: Int32 -> Gen[a]): Gen[a] =
-        Gen.Gen(size -> rand ->
-            let gen = f(size);
-            applyGen(gen, size, rand)
-        )
 
     pub def elements(xs: Nel[a]): Gen[a] =
         Gen.Gen(size -> rand -> 
@@ -224,6 +198,46 @@ mod FlixCheck1 {
                 case false => Err(applyGen(eGen, size, r2))
             }
         )
+        
+    /// Returns a Generator that uniformly generates values in the interval [lower, upper]
+    pub def chooseInt(lower: Int32, upper: Int32): Gen[Int32] = 
+        Gen.Gen(_ -> rand -> Int32.abs(Int32.remainder(rand, (upper + 1) - lower)) + lower)
+
+    /// Returns a generator that uniformly generates a boolean value.
+    pub def chooseBool(): Gen[Bool] =
+        elements(Nel.Nel(true, false :: Nil))
+
+    /// TODO: Implement a better float generator
+    pub def chooseFloat(lower: Int32, upper: Int32): Gen[Float32] =
+        Gen.Gen(size -> rand -> 
+            let (r1, r2) = splitRand(rand);
+            let intGen = chooseInt(lower, upper - 1);
+            let quotientGen = chooseInt(0, Int32.maxValue());
+
+            let quotient = Int32.toFloat32(applyGen(quotientGen, size, r1));
+            let fraction: Float32 = quotient/Int32.toFloat32(Int32.maxValue());
+
+            Int32.toFloat32(applyGen(intGen, size, r2)) + fraction
+        )
+
+
+    /// Returns a generator that uniformly generates a lower case character.
+    pub def chooseLowerChar(): Gen[Char] =
+        elements(Nel.Nel('a', 
+        'b' :: 'c' :: 'd' :: 'e' :: 'f' :: 'g' :: 'h' :: 
+        'i' :: 'j' :: 'k' :: 'l' :: 'm' :: 'n' :: 'o' :: 
+        'p' :: 'q' :: 'r' :: 's' :: 't' :: 'u' :: 'v' :: 
+        'w' :: 'x' :: 'y' :: 'z' :: Nil))
+
+
+    /// Returns a generator that uniformly generates an upper case character.
+    pub def chooseUpperChar(): Gen[Char] =
+        elements(Nel.Nel('A', 
+        'B' :: 'C' :: 'D' :: 'E' :: 'F' :: 'G' :: 'H' ::
+        'I' :: 'J' :: 'K' :: 'L' :: 'M' :: 'N' :: 'O' ::
+        'P' :: 'Q' :: 'R' :: 'S' :: 'T' :: 'U' :: 'V' ::
+        'W' :: 'X' :: 'Y' :: 'Z' :: Nil))
+
 
     // Arbitrary trait
     pub trait Arbitrary[a] {
