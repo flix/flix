@@ -152,7 +152,7 @@ object Scheme {
 
     // Check that the constraints from sc1 hold
     // And that the bases unify
-    val cconstrs = sc1.tconstrs.map { case Ast.TypeConstraint(head, arg, loc) => TypeConstraint.Class(head.sym, arg, loc) }
+    val cconstrs = sc1.tconstrs.map { case Ast.TypeConstraint(head, arg, loc) => TypeConstraint.Trait(head.sym, arg, loc) }
     val econstrs = sc1.econstrs.map { case Ast.BroadEqualityConstraint(t1, t2) => TypeConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
     val baseConstr = TypeConstraint.Equality(sc1.base, tpe2, Provenance.Match(sc1.base, tpe2, SourceLocation.Unknown))
     ConstraintSolver.resolve(baseConstr :: cconstrs ::: econstrs, subst, renv)(cenv, eenv, flix) match {
