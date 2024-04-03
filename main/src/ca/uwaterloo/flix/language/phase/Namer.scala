@@ -82,7 +82,7 @@ object Namer {
     */
   private def visitDecl(decl0: DesugaredAst.Declaration, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration, NameError] = decl0 match {
     case decl: DesugaredAst.Declaration.Namespace => visitNamespace(decl, ns0)
-    case decl: DesugaredAst.Declaration.Class => visitClass(decl, ns0)
+    case decl: DesugaredAst.Declaration.Class => visitTrait(decl, ns0)
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
     case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
     case decl: DesugaredAst.Declaration.Enum => visitEnum(decl, ns0)
@@ -125,7 +125,7 @@ object Namer {
       }
       mapN(table2Val)(addUsesToTable(_, sym.ns, usesAndImports))
 
-    case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc) =>
+    case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc) =>
       val table1Val = tryAddToTable(table0, sym.namespace, sym.name, decl)
       flatMapN(table1Val) {
         case table1 => fold(assocs ++ sigs, table1) {
@@ -253,7 +253,7 @@ object Namer {
   }
 
   /**
-    * The result of looking up a type or class name in an ast root.
+    * The result of looking up a type or trait name in an ast root.
     */
   private sealed trait NameLookupResult
 
@@ -423,22 +423,22 @@ object Namer {
   }
 
   /**
-    * Performs naming on the given class `clazz`.
+    * Performs naming on the given trait `trt`.
     */
-  private def visitClass(clazz: DesugaredAst.Declaration.Class, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Trait, NameError] = clazz match {
-    case DesugaredAst.Declaration.Class(doc, ann, mod0, ident, tparams0, superClasses0, assocs0, signatures, laws0, loc) =>
-      val sym = Symbol.mkClassSym(ns0, ident)
+  private def visitTrait(trt: DesugaredAst.Declaration.Class, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Trait, NameError] = trt match {
+    case DesugaredAst.Declaration.Class(doc, ann, mod0, ident, tparams0, superTraits0, assocs0, signatures, laws0, loc) =>
+      val sym = Symbol.mkTraitSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparam = getTypeParam(tparams0)
 
-      val superClassesVal = traverse(superClasses0)(visitTypeConstraint(_, ns0))
+      val superTraitsVal = traverse(superTraits0)(visitTypeConstraint(_, ns0))
       val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, sym, ns0)) // TODO switch param order to match visitSig
       val sigsVal = traverse(signatures)(visitSig(_, ns0, sym))
       val lawsVal = traverse(laws0)(visitDef(_, ns0, DefKind.Member))
 
-      mapN(superClassesVal, assocsVal, sigsVal, lawsVal) {
-        case (superClasses, assocs, sigs, laws) =>
-          NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc)
+      mapN(superTraitsVal, assocsVal, sigsVal, lawsVal) {
+        case (superTraits, assocs, sigs, laws) =>
+          NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
       }
   }
 
@@ -487,7 +487,7 @@ object Namer {
   /**
     * Performs naming on the given signature declaration `sig`.
     */
-  private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, classSym: Symbol.TraitSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
+  private def visitSig(sig: DesugaredAst.Declaration.Sig, ns0: Name.NName, traitSym: Symbol.TraitSym)(implicit flix: Flix): Validation[NamedAst.Declaration.Sig, NameError] = sig match {
     case DesugaredAst.Declaration.Sig(doc, ann, mod0, ident, tparams0, fparams0, exp0, tpe0, eff0, tconstrs0, econstrs0, loc) =>
       val tparams = getTypeParamsFromFormalParams(tparams0, fparams0, tpe0, eff0, econstrs0)
 
@@ -508,7 +508,7 @@ object Namer {
           mapN(expVal) {
             case exp =>
 
-              val sym = Symbol.mkSigSym(classSym, ident)
+              val sym = Symbol.mkSigSym(traitSym, ident)
               val spec = NamedAst.Spec(doc, ann, mod, tparams, fparams, tpe, eff, tconstrs, econstrs, loc)
               NamedAst.Declaration.Sig(sym, spec, exp)
           }
@@ -1558,7 +1558,7 @@ object Namer {
     * Gets the location of the symbol of the declaration.
     */
   private def getSymLocation(f: NamedAst.Declaration): SourceLocation = f match {
-    case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superClasses, assocs, sigs, laws, loc) => sym.loc
+    case NamedAst.Declaration.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc) => sym.loc
     case NamedAst.Declaration.Sig(sym, spec, exp) => sym.loc
     case NamedAst.Declaration.Def(sym, spec, exp) => sym.loc
     case NamedAst.Declaration.Enum(doc, ann, mod, sym, tparams, derives, cases, loc) => sym.loc
@@ -1601,12 +1601,12 @@ object Namer {
 
   private object DefKind {
     /**
-      * A def that is a member of an instance or class.
+      * A def that is a member of an instance or trait.
       */
     case object Member extends DefKind
 
     /**
-      * A def that is not a member of an instance or class.
+      * A def that is not a member of an instance or trait.
       */
     case object NonMember extends DefKind
   }

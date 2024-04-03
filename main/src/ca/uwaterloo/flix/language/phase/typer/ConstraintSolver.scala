@@ -92,8 +92,8 @@ object ConstraintSolver {
         case (acc, Type.Var(sym, _)) => acc.markRigid(sym)
       }
 
-      // The class and equality environments are made up of:
-      // 1. constraints from the context (e.g. constraints on instances and classes, plus global constraints)
+      // The trait and equality environments are made up of:
+      // 1. constraints from the context (e.g. constraints on instances and traits, plus global constraints)
       // 2. constraints from the function signature
       val cenv = expandClassEnv(cenv0, tconstrs ++ tconstrs0)
       val eenv = expandEqualityEnv(eqEnv0, econstrs) // TODO ASSOC-TYPES allow econstrs on instances
@@ -121,13 +121,13 @@ object ConstraintSolver {
   }
 
   /**
-    * Adds the given type constraints as assumptions to the class environment.
+    * Adds the given type constraints as assumptions to the trait environment.
     *
-    * Transitively adds the superclasses of the constraints.
-    * For example, given the class environment:
+    * Transitively adds the supertraits of the constraints.
+    * For example, given the trait environment:
     *
     * {{{
-    *   class Order[a] with Eq[a]
+    *   trait Order[a] with Eq[a]
     *   instance Eq[String]
     *   instance Order[String]
     * }}}
@@ -139,7 +139,7 @@ object ConstraintSolver {
     *
     * then we get
     * {{{
-    *   class Order[a] with Eq[a]
+    *   trait Order[a] with Eq[a]
     *   instance Eq[String]
     *   instance Order[String]
     *
@@ -153,7 +153,7 @@ object ConstraintSolver {
         val inst = Ast.Instance(arg, Nil)
         val context = acc.get(sym) match {
           case Some(Ast.ClassContext(supers, insts)) => Ast.ClassContext(supers, inst :: insts)
-          case None => throw InternalCompilerException(s"unexpected unknown class sym: $sym", loc)
+          case None => throw InternalCompilerException(s"unexpected unknown trait sym: $sym", loc)
         }
         acc + (sym -> context)
     }
@@ -271,7 +271,7 @@ object ConstraintSolver {
       resolveEquality(t1, t2, prov, renv, constr0.loc).map {
         case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
       }
-    case TypeConstraint.Class(sym, tpe, loc) =>
+    case TypeConstraint.Trait(sym, tpe, loc) =>
       resolveClassConstraint(sym, subst0(tpe), renv, loc).map {
         case (constrs, progress) => ResolutionResult(subst0, constrs, progress)
       }
@@ -422,7 +422,7 @@ object ConstraintSolver {
   }
 
   /**
-    * Resolves the given class constraint.
+    * Resolves the given trait constraint.
     *
     * Θ ⊩ₑ π ⤳ P
     *
@@ -432,7 +432,7 @@ object ConstraintSolver {
     * These are constraints on associated types applied to variables and applied to other unresolvable types.
     *
     * Constraints that are illegal result in an Err.
-    * These are constraints applied to types for which the classEnv has no corresponding instance.
+    * These are constraints applied to types for which the traitEnv has no corresponding instance.
     *
     * For example:
     * {{{
@@ -443,7 +443,7 @@ object ConstraintSolver {
     *   ToString[a -> b \ ef] ~> <ERROR>
     * }}}
     */
-  private def resolveClassConstraint(clazz: Symbol.TraitSym, tpe0: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit cenv: Map[Symbol.TraitSym, Ast.ClassContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[(List[TypeConstraint], Boolean), TypeError] = {
+  private def resolveClassConstraint(trt: Symbol.TraitSym, tpe0: Type, renv0: RigidityEnv, loc: SourceLocation)(implicit cenv: Map[Symbol.TraitSym, Ast.ClassContext], eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[(List[TypeConstraint], Boolean), TypeError] = {
     // redE
     simplifyType(tpe0, renv0, loc).flatMap {
       case (t, progress) =>
@@ -451,15 +451,15 @@ object ConstraintSolver {
         t.baseType match {
           // Case 1: Flexible var. It might be resolved later.
           case Type.Var(sym, _) if renv0.isFlexible(sym) =>
-            Result.Ok((List(TypeConstraint.Class(clazz, t, loc)), progress))
+            Result.Ok((List(TypeConstraint.Trait(trt, t, loc)), progress))
           // Case 2: Assoc type. It might be resolved later.
           case _: Type.AssocType =>
-            Result.Ok((List(TypeConstraint.Class(clazz, t, loc)), progress))
+            Result.Ok((List(TypeConstraint.Trait(trt, t, loc)), progress))
           // Case 3: Something rigid (const or rigid var). We can look this up immediately.
           case _ =>
             // we mark t's tvars as rigid so we get the substitution in the right direction
             val renv = t.typeVars.map(_.sym).foldLeft(renv0)(_.markRigid(_))
-            val insts = cenv(clazz).instances
+            val insts = cenv(trt).instances
             // find the first (and only) instance that matches
             val tconstrsOpt = ListOps.findMap(insts) {
               inst =>
@@ -473,11 +473,11 @@ object ConstraintSolver {
                 t.baseType match {
                   // If it's a var, it's ok. It may be substituted later to a type we can reduce.
                   // Or it might be part of the signature an expected constraint.
-                  case Type.Var(sym, loc) => Result.Ok(List(TypeConstraint.Class(clazz, t, loc)), progress)
+                  case Type.Var(sym, loc) => Result.Ok(List(TypeConstraint.Trait(trt, t, loc)), progress)
                   // If it's an associated type, it's ok. It may be reduced later to a concrete type.
-                  case _: Type.AssocType => Result.Ok(List(TypeConstraint.Class(clazz, t, loc)), progress)
+                  case _: Type.AssocType => Result.Ok(List(TypeConstraint.Trait(trt, t, loc)), progress)
                   // Otherwise it's a problem.
-                  case _ => Result.Err(TypeError.MissingInstance(clazz, tpe0, renv, loc))
+                  case _ => Result.Err(TypeError.MissingInstance(trt, tpe0, renv, loc))
                 }
               case Some(tconstrs) =>
                 // simplify all the implied constraints
@@ -570,12 +570,12 @@ object ConstraintSolver {
   private def getFirstError(deferred: List[TypeConstraint], renv: RigidityEnv)(implicit flix: Flix): Option[TypeError] = deferred match {
     case Nil => None
     case TypeConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
-    case TypeConstraint.Class(sym, tpe, loc) :: _ => Some(TypeError.MissingInstance(sym, tpe, renv, loc))
+    case TypeConstraint.Trait(sym, tpe, loc) :: _ => Some(TypeError.MissingInstance(sym, tpe, renv, loc))
     case TypeConstraint.Purification(_, _, _, _, nested) :: _ => getFirstError(nested, renv)
   }
 
   /**
-    * Gets the list of type constraints implied by this type constraint due to a superclass relationship,
+    * Gets the list of type constraints implied by this type constraint due to a supertrait relationship,
     * including the type constraint itself.
     *
     * For example, `Order[a]` implies `Order[a]` and `Eq[a]`
