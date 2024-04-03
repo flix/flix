@@ -2361,9 +2361,9 @@ object Weeder2 {
     }
 
     def tryPickTypeNoWild(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {
-      mapN(pickType(tree)) {
-        case Type.Var(ident, _) if ident.isWild => None
-        case t => Some(t)
+      mapN(tryPickType(tree)) {
+        case Some(Type.Var(ident, _)) if ident.isWild => None
+        case t => t
       }
     }
 
