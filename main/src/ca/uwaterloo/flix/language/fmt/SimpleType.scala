@@ -544,6 +544,7 @@ object SimpleType {
           }
 
         case TypeConstructor.Effect(sym) => mkApply(SimpleType.Name(sym.name), t.typeArguments.map(visit))
+        case TypeConstructor.EffectSet(set) => mkApply(Plus(set.toList.map(sym => SimpleType.Name(sym.name))), t.typeArguments.map(visit))
         case TypeConstructor.RegionToStar => mkApply(Region, t.typeArguments.map(visit))
 
         case TypeConstructor.Error(_) => SimpleType.Error

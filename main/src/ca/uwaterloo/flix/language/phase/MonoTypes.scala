@@ -310,8 +310,8 @@ object MonoTypes {
         case Type.Apply(tpe1, tpe2, loc) =>
           Type.Apply(visitType(tpe1), visitType(tpe2), loc)
         case Type.Alias(_, _, tpe, _) =>
-          // Remove the alias
-          visitType(tpe)
+          // Assumed to have been removed earlier.
+          throw InternalCompilerException(s"Unexpected type alias: '$tpe'", tpe.loc)
         case Type.Var(_, _) =>
           // Assumed to have been removed earlier.
           throw InternalCompilerException(s"Unexpected type var: '$tpe'", tpe.loc)

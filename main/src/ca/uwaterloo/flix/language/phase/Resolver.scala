@@ -3325,6 +3325,7 @@ object Resolver {
 
         case TypeConstructor.Union => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Effect(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
+        case TypeConstructor.EffectSet(_) => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Univ => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Lattice => Result.Err(ResolutionError.IllegalType(tpe, loc))
         case TypeConstructor.Lazy => Result.Err(ResolutionError.IllegalType(tpe, loc))

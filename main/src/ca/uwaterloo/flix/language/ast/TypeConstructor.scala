@@ -32,6 +32,14 @@ object TypeConstructor {
   }
 
   /**
+    * A type constructor that represent a simplified effect after monomorphization.
+    */
+  @IntroducedBy(Monomorpher.getClass)
+  case class EffectSet(set: SortedSet[Symbol.EffectSym]) extends TypeConstructor {
+    override def kind: Kind = Kind.Eff
+  }
+
+  /**
     * A type constructor that represent the Unit type.
     */
   case object Unit extends TypeConstructor {

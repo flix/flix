@@ -18,6 +18,8 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.util.InternalCompilerException
 
+import scala.collection.immutable.SortedSet
+
 sealed trait Purity
 
 /**
@@ -119,7 +121,7 @@ object Purity {
     * Assumes that the given type is a well-formed formula without variables,
     * aliases, or associated types.
     */
-  def fromType(eff: Type)(implicit universe: Set[Symbol.EffectSym]): Purity = {
+  def fromType(eff: Type)(implicit univ: SortedSet[Symbol.EffectSym]): Purity = {
     evaluateFormula(eff) match {
       case set if set.isEmpty => Purity.Pure
       case set if set.sizeIs == 1 && set.contains(Symbol.IO) => Purity.Impure
@@ -143,13 +145,15 @@ object Purity {
     * Print + IO == {Print, IO}
     * Univ & (!Print) == !Print
     */
-  private def evaluateFormula(f: Type)(implicit universe: Set[Symbol.EffectSym]): Set[Symbol.EffectSym] = f match {
+  def evaluateFormula(f: Type)(implicit univ: SortedSet[Symbol.EffectSym]): SortedSet[Symbol.EffectSym] = f match {
     case Type.Cst(TypeConstructor.Effect(sym), _) =>
-      Set(sym)
+      SortedSet(sym)
+    case Type.Cst(TypeConstructor.EffectSet(set), _) =>
+      set
     case Type.Cst(TypeConstructor.Pure, _) =>
-      Set.empty
+      SortedSet.empty
     case Type.Cst(TypeConstructor.Univ, _) =>
-      universe
+      univ
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Union, _), tpe1, _), tpe2, _) =>
       val t1 = evaluateFormula(tpe1)
       val t2 = evaluateFormula(tpe2)
@@ -160,7 +164,7 @@ object Purity {
       t1.intersect(t2)
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe, _) =>
       val t = evaluateFormula(tpe)
-      universe.diff(t)
+      univ.diff(t)
     case Type.Cst(_, _) =>
       throw InternalCompilerException(s"Unexpected formula '$f'", f.loc)
     case Type.Apply(_, _, _) =>

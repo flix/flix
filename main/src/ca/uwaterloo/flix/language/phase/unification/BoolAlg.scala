@@ -148,6 +148,17 @@ trait BoolAlg[F] {
       case None => throw InternalCompilerException(s"Unexpected unbound effect: '$sym'.", sym.loc)
       case Some(x) => mkVar(x)
     }
+    case Type.Cst(TypeConstructor.EffectSet(set), _) =>
+      val vars = set.toList.map(sym => env.getForward(BoolFormula.VarOrEff.Eff(sym)) match {
+        case None => throw InternalCompilerException(s"Unexpected unbound effect: '$sym'.", sym.loc)
+        case Some(x) => mkVar(x)
+      })
+      vars match {
+        case Nil => mkTrue
+        case ::(head, next) => next.foldLeft(head){
+          case (f, sym) => mkAnd(f, sym)
+        }
+      }
     case Type.Pure => mkTrue
     case Type.Univ => mkFalse
     case Type.Apply(Type.Cst(TypeConstructor.Complement, _), tpe1, _) => mkNot(fromType(tpe1, env))
