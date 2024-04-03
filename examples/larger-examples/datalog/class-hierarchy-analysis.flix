@@ -94,12 +94,12 @@ mod ClassHierarchyAnalysis {
     /// `class` in the program `p`.
     ///
     pub def missingMethods(p: Program): Vector[(String, String)] =
-        let is   = inject p.interfaces into Interface;
+        let cs   = inject p.classes into Class;
         let rule = #{
-            SimpleInheritedMethod(class, method) :- InheritedMethod(class, method, _).
-            MissingMethod(class, method) :- AvailableMethod(class, method), not SimpleInheritedMethod(class, method), not Interface(class).
+            ConcreteMethod(class, method) :- InheritedMethod(class, method, _).
+            MissingMethod(class, method)  :- Class(class), AvailableMethod(class, method), not ConcreteMethod(class, method).
         };
-        query is, rule, classHierarchyAnalysis(p) select (class, method) from MissingMethod(class, method)
+        query cs, rule, classHierarchyAnalysis(p) select (class, method) from MissingMethod(class, method)
 
     ///
     /// Returns a vector of types that extend the final classes in the program `p`.
