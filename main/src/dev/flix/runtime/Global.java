@@ -23,8 +23,12 @@ public final class Global {
         throw new RuntimeException("Global.setArgs should not be called on the mock class");
     }
 
-    public static final void decAndCheck() {
+    public static final long decAndCheck() {
         throw new RuntimeException("Global.deckAndCheck should not be called on the mock class");
+    }
+
+    public static final long setStepCounterField() {
+        throw new RuntimeException("Global.setStepCounterField should not be called on the mock class");
     }
 
 }

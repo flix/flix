@@ -52,6 +52,7 @@ sealed trait BackendObjType {
     case BackendObjType.FlixError => JvmName(DevFlixRuntime, mkClassName("FlixError"))
     case BackendObjType.HoleError => JvmName(DevFlixRuntime, mkClassName("HoleError"))
     case BackendObjType.MatchError => JvmName(DevFlixRuntime, mkClassName("MatchError"))
+    case BackendObjType.MutationError => JvmName(DevFlixRuntime, mkClassName("MutationError"))
     case BackendObjType.UnhandledEffectError => JvmName(DevFlixRuntime, mkClassName("UnhandledEffectError"))
     case BackendObjType.Region => JvmName(DevFlixRuntime, mkClassName("Region"))
     case BackendObjType.UncaughtExceptionHandler => JvmName(DevFlixRuntime, mkClassName("UncaughtExceptionHandler"))
@@ -848,13 +849,7 @@ object BackendObjType {
 
         NEW(JvmName.AtomicLong) ~
         DUP() ~
-        LCONST_1() ~
-        ICONST_5()~
-        LSHL() ~
-        ICONST_5()~
-        LSHL() ~
-        ICONST_5()~
-        LSHL() ~
+        cheat(mv => mv.visitLdcInsn(100_000L))~
         invokeConstructor(JvmName.AtomicLong, MethodDescriptor.mkDescriptor(BackendType.Int64)(VoidableType.Void)) ~
         PUTSTATIC(StepCounterField) ~
 
@@ -877,17 +872,18 @@ object BackendObjType {
       ))
 
     def DecAndCheckMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "decAndCheck",
-      mkDescriptor()(VoidableType.Void), Some(_ =>
+      mkDescriptor()(BackendType.Int64), Some(_ =>
         GETSTATIC(StepCounterField) ~
           INVOKEVIRTUAL(JvmName.AtomicLong, "getAndDecrement",
             MethodDescriptor(Nil, BackendType.Int64)) ~
           LCONST_0() ~
           LCMP() ~
           ifCondition(Condition.GT) {
-              GETSTATIC(InfiniteLoopException) ~
-              ATHROW()
+            GETSTATIC(InfiniteLoopException) ~
+            ATHROW()
           } ~
-          RETURN()
+          LCONST_0() ~
+          LRETURN()
         ))
 
     def GetArgsMethod: StaticMethod = StaticMethod(this.jvmName, IsPublic, IsFinal, "getArgs",
@@ -1023,6 +1019,28 @@ object BackendObjType {
         thisLoad() ~
         ALOAD(1) ~
         PUTFIELD(this.LocationField) ~
+        RETURN()
+    ))
+  }
+
+  case object MutationError extends BackendObjType with Generatable {
+
+    def genByteCode()(implicit flix: Flix): Array[Byte] = {
+      val cm = ClassMaker.mkClass(MutationError.jvmName, IsFinal, superClass = FlixError.jvmName)
+
+      cm.mkConstructor(Constructor)
+
+      cm.closeClassMaker()
+    }
+    def Constructor: ConstructorMethod = ConstructorMethod(MutationError.jvmName, IsPublic, List(ReifiedSourceLocation.toTpe), Some(_ =>
+      thisLoad() ~
+        NEW(StringBuilder.jvmName) ~
+        DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
+        pushString("Resource ran out, cannot determine if method will terminate") ~
+        INVOKEVIRTUAL(StringBuilder.AppendStringMethod) ~
+        INVOKEVIRTUAL(JavaObject.ToStringMethod) ~
+        INVOKESPECIAL(FlixError.Constructor) ~
+        // save argument locally
         RETURN()
     ))
   }

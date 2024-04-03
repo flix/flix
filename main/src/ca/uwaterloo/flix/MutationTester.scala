@@ -70,7 +70,7 @@ object MutationTester {
         val end = System.nanoTime() - start
         val timeSec = end.toFloat / 1_000_000_000.0
         println(s"time to generate mutations: $timeSec")
-        val lastRoot = insertDeckAndCheckIntoRoot(root)
+        val lastRoot = insertDecAndCheckIntoRoot(root)
         runMutations(flix, testModule, lastRoot, mutations)
     }
 
