@@ -1116,4 +1116,23 @@ class TestKinder extends AnyFunSuite with TestUtils {
     val result = compile(input, DefaultOptions)
     expectError[KindError.UnexpectedKind](result)
   }
+
+  test("KindError.AssocType.06") {
+    val input =
+      """
+        |trait C[a] {
+        |    type S : Type
+        |    type T : Type -> Type
+        |    pub def f(x: a): C.T[a][C.S[a]]
+        |}
+        |
+        |instance C[Int32] {
+        |    type S = Int32
+        |    type T = Int32
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
 }
