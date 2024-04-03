@@ -22,6 +22,49 @@ import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol, Type, TypeConstructor,
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
 
 import java.math.BigInteger
+import ca.uwaterloo.flix.language.ast.Type.AssocType
+import ca.uwaterloo.flix.language.ast.Type.Alias
+import ca.uwaterloo.flix.language.ast.Type.Cst
+import ca.uwaterloo.flix.language.ast.Type.Var
+import ca.uwaterloo.flix.language.ast.Type.Apply
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Intersection
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Union
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Schema
+import ca.uwaterloo.flix.language.ast.TypeConstructor.RecordRowExtend
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Complement
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Pure
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Relation
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Univ
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Lazy
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Effect
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Receiver
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Not
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Int16
+import ca.uwaterloo.flix.language.ast.TypeConstructor.SchemaRowExtend
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Native
+import ca.uwaterloo.flix.language.ast.TypeConstructor.RecordRowEmpty
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Bool
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Float64
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Record
+import ca.uwaterloo.flix.language.ast.TypeConstructor.CaseIntersection
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Int8
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Int64
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Float32
+import ca.uwaterloo.flix.language.ast.TypeConstructor.RegionToStar
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Arrow
+import ca.uwaterloo.flix.language.ast.TypeConstructor.And
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Ref
+import ca.uwaterloo.flix.language.ast.TypeConstructor.CaseSet
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Lattice
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Int32
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Regex
+import ca.uwaterloo.flix.language.ast.TypeConstructor.CaseComplement
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Tuple
+import ca.uwaterloo.flix.language.ast.TypeConstructor.RestrictableEnum
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Sender
+import ca.uwaterloo.flix.language.ast.TypeConstructor.CaseUnion
+import ca.uwaterloo.flix.language.ast.TypeConstructor.SchemaRowEmpty
+import ca.uwaterloo.flix.language.ast.TypeConstructor.Or
 
 
 ///
@@ -205,8 +248,26 @@ object MutationGenerator {
                     mutations.map(m => original.copy(elms = elms.updated(index, m)))
             }
         case Expr.RecordEmpty(_, _) => Nil
-        case Expr.RecordSelect(exp, _, _, _, _) => Nil
-        case Expr.RecordExtend(_, exp1, exp2, _, _, _) => Nil
+        case o@Expr.RecordSelect(exp, label, tpe, _, _) =>
+          def nameAndType(xs: List[TypeConstructor]): List[(Name.Label, TypeConstructor)] = xs match {
+            case RecordRowExtend(label) :: tp :: tail  => (label, tp) :: nameAndType(tail)
+            case _ :: tail => nameAndType(tail)
+            case _ => Nil
+          }
+          val types = nameAndType(exp.tpe.typeConstructors)
+          val res = types.map{
+            case (name, tp) =>
+              if (!name.equals(label) && tp.equals(tpe.typeConstructor.get))
+                Some(o.copy(label = name))
+              else None
+          }.flatten
+          println("mutation for record select")
+          println(res)
+          res
+        case o@Expr.RecordExtend(_, exp1, exp2, _, _, _) =>
+            val mut1 = mutateExpr(exp1).map(m => o.copy(exp1 = m))
+            val mut2 = mutateExpr(exp2).map(m => o.copy(exp2 = m))
+            mut1 ::: mut2
         case Expr.RecordRestrict(_, exp, _, _, _) => Nil
         case original@Expr.ArrayLit(exps, exp, _, _, _) =>
             val mut = mutateExpr(exp).map(m => original.copy(exp = m))
