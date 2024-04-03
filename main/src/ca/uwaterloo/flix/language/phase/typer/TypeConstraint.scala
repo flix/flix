@@ -36,12 +36,12 @@ sealed trait TypeConstraint {
       val tvars = tpe1.typeVars ++ tpe2.typeVars
       val effTvars = tvars.filter(_.kind == Kind.Eff)
       (1, effTvars.size, tvars.size)
-    case TypeConstraint.Class(_, _, _) => (2, 0, 0)
+    case TypeConstraint.Trait(_, _, _) => (2, 0, 0)
   }
 
   override def toString: String = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"$tpe1 ~ $tpe2"
-    case TypeConstraint.Class(sym, tpe, _) => s"$sym[$tpe]"
+    case TypeConstraint.Trait(sym, tpe, _) => s"$sym[$tpe]"
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
   }
 
@@ -50,7 +50,7 @@ sealed trait TypeConstraint {
     */
   def numVars: Int = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => tpe1.typeVars.size + tpe2.typeVars.size
-    case TypeConstraint.Class(_, tpe, _) => tpe.typeVars.size
+    case TypeConstraint.Trait(_, tpe, _) => tpe.typeVars.size
     case TypeConstraint.Purification(_, eff1, eff2, _, _) => eff1.typeVars.size + eff2.typeVars.size
   }
 
@@ -70,12 +70,12 @@ object TypeConstraint {
   }
 
   /**
-    * A constraint indicating that the given type is a member of the given class.
+    * A constraint indicating that the given type is a member of the given trait.
     * {{{
     *   sym[tpe]
     * }}}
     */
-  case class Class(sym: Symbol.TraitSym, tpe: Type, loc: SourceLocation) extends TypeConstraint
+  case class Trait(sym: Symbol.TraitSym, tpe: Type, loc: SourceLocation) extends TypeConstraint
 
   /**
     * A constraint indicating that:

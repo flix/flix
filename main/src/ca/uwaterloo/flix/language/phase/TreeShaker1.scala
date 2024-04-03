@@ -32,7 +32,7 @@ import ca.uwaterloo.flix.util.ParOps
   *
   * (c) Appears in a function which itself is reachable.
   *
-  * (d) Is an instance of a class whose signature(s) appear in a reachable function.
+  * (d) Is an instance of a trait whose signature(s) appear in a reachable function.
   * Monomorph will erase unused instances so this phase must check all instances
   * for the monomorph to work.
   *
@@ -72,9 +72,9 @@ object TreeShaker1 {
     *
     * (a) The function or signature symbols in the implementation / body expression of a reachable function symbol
     *
-    * (b) The class symbol of a reachable sig symbol.
+    * (b) The trait symbol of a reachable sig symbol.
     *
-    * (c) Every expression in a class instance of a reachable class symbol is reachable.
+    * (c) Every expression in a trait instance of a reachable trait symbol is reachable.
     *
     */
   private def visitSym(sym: ReachableSym, root: Root): Set[ReachableSym] = sym match {
@@ -83,11 +83,11 @@ object TreeShaker1 {
 
     case ReachableSym.SigSym(sigSym) =>
       val sig = root.sigs(sigSym)
-      Set(ReachableSym.ClassSym(sig.sym.trt)) ++
+      Set(ReachableSym.TraitSym(sig.sym.trt)) ++
         sig.exp.map(visitExp).getOrElse(Set.empty)
 
-    case ReachableSym.ClassSym(classSym) =>
-      root.instances(classSym).foldLeft(Set.empty[ReachableSym]) {
+    case ReachableSym.TraitSym(traitSym) =>
+      root.instances(traitSym).foldLeft(Set.empty[ReachableSym]) {
         case (acc, s) => visitExps(s.defs.map(_.exp)) ++ acc
       }
   }
@@ -176,7 +176,7 @@ object TreeShaker1 {
 
 
   /**
-    * A common super-type for reachable symbols (defs, classes, sigs)
+    * A common super-type for reachable symbols (defs, traits, sigs)
     */
   sealed trait ReachableSym
 
@@ -184,7 +184,7 @@ object TreeShaker1 {
 
     case class DefnSym(sym: Symbol.DefnSym) extends ReachableSym
 
-    case class ClassSym(sym: Symbol.TraitSym) extends ReachableSym
+    case class TraitSym(sym: Symbol.TraitSym) extends ReachableSym
 
     case class SigSym(sym: Symbol.SigSym) extends ReachableSym
 

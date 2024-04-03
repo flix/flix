@@ -31,7 +31,7 @@ object FindReferencesProvider {
 
         case Entity.Case(caze) => findCaseReferences(caze.sym)
 
-        case Entity.Class(class0) => findClassReferences(class0.sym)
+        case Entity.Class(trait0) => findTraitReferences(trait0.sym)
 
         case Entity.Def(defn) => findDefReferences(defn.sym)
 
@@ -91,7 +91,7 @@ object FindReferencesProvider {
     }
   }
 
-  private def findClassReferences(sym: Symbol.TraitSym)(implicit index: Index, root: Root): JObject = {
+  private def findTraitReferences(sym: Symbol.TraitSym)(implicit index: Index, root: Root): JObject = {
     val defSite = Location.from(sym.loc)
     val useSites = index.usesOf(sym)
     val locs = defSite :: useSites.toList.map(Location.from)
