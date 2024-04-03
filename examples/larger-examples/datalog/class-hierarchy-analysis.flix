@@ -64,7 +64,7 @@ mod ClassHierarchyAnalysis {
             AvailableMethod(class, method) :- Class(class), AbstractMethod(super, method), Subtype(class, super).
 
             InheritedMethod(class, method, class) :- Class(class), ClassMethod(class, method).
-            InheritedMethod(sub, method, source)  :- Class(sub), Subtype(sub, super), InheritedMethod(super, method, source).
+            InheritedMethod(sub, method, source)  :- Class(sub), Subtype(sub, super), InheritedMethod(super, method, source), not ClassMethod(sub, method).
         };
         #(Subtype, AvailableField, AvailableMethod, InheritedMethod) -> rules <+> cs <+> is <+> ce <+> impls <+> ies <+> fs <+> ms <+> ams
 
