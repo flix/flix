@@ -70,8 +70,8 @@ object MutationTester {
         val end = System.nanoTime() - start
         val timeSec = end.toFloat / 1_000_000_000.0
         println(s"time to generate mutations: $timeSec")
-        // val lastRoot = insertDeckAndCheckIntoRoot(root)
-        runMutations(flix, testModule, root, mutations)
+        val lastRoot = insertDeckAndCheckIntoRoot(root)
+        runMutations(flix, testModule, lastRoot, mutations)
     }
 
     /**
@@ -88,7 +88,7 @@ object MutationTester {
         root.copy(defs = newDefs)
     }
 
-    private def insertDecAndCheckInDef(d: TypedAst.Def): TypedAst.Def = {
+    def insertDecAndCheckInDef(d: TypedAst.Def): TypedAst.Def = {
         val loc = d.exp.loc
         val method = classOf[Global].getMethods.find(m => m.getName.equals("decAndCheck")).get
         val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Int64, Type.IO, loc)
