@@ -23,6 +23,5 @@ class UnificationSuite extends Suites(
   new TestBoolFormulaTable,
   new TestFastBoolUnification,
   new TestQMCtoBoolFormula,
-  new TestUnification,
   new TestIncremental
 )

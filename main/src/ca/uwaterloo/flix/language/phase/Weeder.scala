@@ -139,7 +139,7 @@ object Weeder {
 
     case d: ParsedAst.Declaration.TypeAlias => visitTypeAlias(d)
 
-    case d: ParsedAst.Declaration.Class => visitClass(d)
+    case d: ParsedAst.Declaration.Class => visitTrait(d)
 
     case d: ParsedAst.Declaration.Instance => visitInstance(d)
 
@@ -147,10 +147,10 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given class declaration `c0`.
+    * Performs weeding on the given trait declaration `c0`.
     */
-  private def visitClass(c0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Class], WeederError] = c0 match {
-    case ParsedAst.Declaration.Class(doc0, ann0, mods0, sp1, ident, tparam0, superClasses0, assocs0, lawsAndSigs, sp2) =>
+  private def visitTrait(t0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Class], WeederError] = t0 match {
+    case ParsedAst.Declaration.Class(doc0, ann0, mods0, sp1, ident, tparam0, superTraits0, assocs0, lawsAndSigs, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
       val laws0 = lawsAndSigs.collect { case law: ParsedAst.Declaration.Law => law }
@@ -159,14 +159,14 @@ object Weeder {
       val annVal = visitAnnotations(ann0)
       val modsVal = visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Lawful, Ast.Modifier.Public, Ast.Modifier.Sealed))
       val tparam = visitTypeParam(tparam0)
-      val superClassesVal = traverse(superClasses0)(visitTypeConstraint)
+      val superTraitsVal = traverse(superTraits0)(visitTypeConstraint)
       val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, tparam))
       val sigsVal = traverse(sigs0)(visitSig)
       val lawsVal = traverse(laws0)(visitLaw)
 
-      mapN(annVal, modsVal, superClassesVal, assocsVal, sigsVal, lawsVal) {
-        case (ann, mods, superClasses, assocs, sigs, laws) =>
-          List(WeededAst.Declaration.Class(doc, ann, mods, ident, tparam, superClasses, assocs.flatten, sigs.flatten, laws.flatten, loc))
+      mapN(annVal, modsVal, superTraitsVal, assocsVal, sigsVal, lawsVal) {
+        case (ann, mods, superTraits, assocs, sigs, laws) =>
+          List(WeededAst.Declaration.Class(doc, ann, mods, ident, tparam, superTraits, assocs.flatten, sigs.flatten, laws.flatten, loc))
       }
   }
 
@@ -438,8 +438,8 @@ object Weeder {
     * Performs weeding on the given enum derivations `derives0`.
     */
   private def visitDerivations(derives0: ParsedAst.Derivations): WeededAst.Derivations = derives0 match {
-    case ParsedAst.Derivations(sp1, classes, sp2) =>
-      WeededAst.Derivations(classes.toList, mkSL(sp1, sp2))
+    case ParsedAst.Derivations(sp1, traits, sp2) =>
+      WeededAst.Derivations(traits.toList, mkSL(sp1, sp2))
   }
 
   /**
@@ -488,8 +488,8 @@ object Weeder {
   /**
     * Performs weeding on the given associated type signature `d0`.
     */
-  private def visitAssocTypeSig(d0: ParsedAst.Declaration.AssocTypeSig, clazzTparam: WeededAst.TypeParam): Validation[List[WeededAst.Declaration.AssocTypeSig], WeederError] = d0 match {
-    case ParsedAst.Declaration.AssocTypeSig(doc0, mod0, sp1, ident, tparams0, kind0, sp2) =>
+  private def visitAssocTypeSig(d0: ParsedAst.Declaration.AssocTypeSig, trtTparam: WeededAst.TypeParam): Validation[List[WeededAst.Declaration.AssocTypeSig], WeederError] = d0 match {
+    case ParsedAst.Declaration.AssocTypeSig(doc0, mod0, sp1, ident, tparams0, kind0, tpe0, sp2) =>
 
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
@@ -498,13 +498,14 @@ object Weeder {
         case Some(k) => visitKind(k)
         case None => WeededAst.Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic)
       }
+      val tpeVal = Validation.traverseOpt(tpe0)(visitType)
       val loc = mkSL(sp1, sp2)
 
-      flatMapN(modVal, tparamsVal) {
-        case (mod, tparams) =>
+      flatMapN(modVal, tparamsVal, tpeVal) {
+        case (mod, tparams, tpe) =>
           val tparamVal = tparams match {
-            // Case 1: Elided. Use the class tparam.
-            case WeededAst.TypeParams.Elided => Validation.success(clazzTparam)
+            // Case 1: Elided. Use the trait tparam.
+            case WeededAst.TypeParams.Elided => Validation.success(trtTparam)
 
             // Case 2: Singleton parameter.
             case WeededAst.TypeParams.Kinded(hd :: Nil) => Validation.success(hd)
@@ -516,7 +517,7 @@ object Weeder {
             case WeededAst.TypeParams.Unkinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
           }
           mapN(tparamVal) {
-            case tparam => List(WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, loc))
+            case tparam => List(WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, tpe, loc))
           }
       }
   }
@@ -1290,11 +1291,11 @@ object Weeder {
         case (e, t, f) => WeededAst.Expr.Ascribe(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
-    case ParsedAst.Expression.InstanceOf(exp, className, sp2) =>
+    case ParsedAst.Expression.InstanceOf(exp, traitName, sp2) =>
       val sp1 = leftMostSourcePosition(exp)
       val loc = mkSL(sp1, sp2)
       mapN(visitExp(exp)) {
-        case e => WeededAst.Expr.InstanceOf(e, className.toString, loc)
+        case e => WeededAst.Expr.InstanceOf(e, traitName.toString, loc)
       }
 
     case ParsedAst.Expression.CheckedTypeCast(sp1, exp, sp2) =>
