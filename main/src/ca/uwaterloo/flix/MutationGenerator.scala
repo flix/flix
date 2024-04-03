@@ -250,8 +250,26 @@ object MutationGenerator {
           mutations.map(m => original.copy(elms = elms.updated(index, m)))
       }
     case Expr.RecordEmpty(_, _) => Nil
-    case Expr.RecordSelect(exp, _, _, _, _) => Nil
-    case Expr.RecordExtend(_, exp1, exp2, _, _, _) => Nil
+    case o@Expr.RecordSelect(exp, label, tpe, _, _) =>
+      def nameAndType(xs: List[TypeConstructor]): List[(Name.Label, TypeConstructor)] = xs match {
+        case RecordRowExtend(label) :: tp :: tail  => (label, tp) :: nameAndType(tail)
+        case _ :: tail => nameAndType(tail)
+        case _ => Nil
+      }
+      val types = nameAndType(exp.tpe.typeConstructors)
+      val res = types.flatMap {
+        case (name, tp) =>
+          if (!name.equals(label) && tp.equals(tpe.typeConstructor.get))
+            Some(o.copy(label = name))
+          else None
+      }
+      println("mutation for record select")
+      println(res)
+      res
+    case o@Expr.RecordExtend(_, exp1, exp2, _, _, _) =>
+      val mut1 = mutateExpr(exp1).map(m => o.copy(exp1 = m))
+      val mut2 = mutateExpr(exp2).map(m => o.copy(exp2 = m))
+      mut1 ::: mut2
     case Expr.RecordRestrict(_, exp, _, _, _) => Nil
     case original@Expr.ArrayLit(exps, exp, _, _, _) =>
       val mut = mutateExpr(exp).map(m => original.copy(exp = m))

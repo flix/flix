@@ -80,7 +80,7 @@ object MutationTester {
       * @param root: The TAST before the insertion of decAndCheck
       * @return The root with the call inserted into all defs
       */
-    private def insertDeckAndCheckIntoRoot(root: Root): Root = {
+    private def insertDecAndCheckIntoRoot(root: Root): Root = {
         val newDefs = root.defs.map({
             case (sym, fun) =>
                 sym -> insertDecAndCheckInDef(fun)
