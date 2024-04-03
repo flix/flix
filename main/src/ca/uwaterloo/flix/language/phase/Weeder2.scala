@@ -2879,12 +2879,7 @@ object Weeder2 {
     * Checks that tree has expected kind by wrapping assert.
     * This provides an isolated spot for deciding what to do with unexpected kinds.
     */
-  private def expect(tree: Tree, kind: TreeKind): Unit = {
-    if (tree.kind != kind) {
-      println(tree.loc, tree)
-    }
-    assert(tree.kind == kind)
-  }
+  private def expect(tree: Tree, kind: TreeKind): Unit = assert(tree.kind == kind)
 
 
   /**
