@@ -33,127 +33,129 @@ import java.math.BigInteger
 ///
 
 object MutationGenerator {
-    /**
-      * Generates all possible mutants of the given module
-      * @param root: The TypedAST
-      * @param productionModule: The name of the module that is to be mutated
-      * @return List[(Symbol.DefnSym, List[TypedAst.Def])]: the list of the symbols of the defs along with a
-      *         list that contains a def for all mutations of that def
-      */
-    def mutateRoot(root: TypedAst.Root, productionModule: String): List[(Symbol.DefnSym, List[TypedAst.Def])] = {
-        val defs = root.defs
-        val defSyms = root.modules.filter(pair => pair._1.toString.equals(productionModule)).values.toList.flatten
-        mutateDefs(defs, defSyms).flatten
+  /**
+    * Generates all possible mutants of the given module
+    *
+    * @param root             : The TypedAST
+    * @param productionModule : The name of the module that is to be mutated
+    * @return List[(Symbol.DefnSym, List[TypedAst.Def])]: the list of the symbols of the defs along with a
+    *         list that contains a def for all mutations of that def
+    */
+  def mutateRoot(root: TypedAst.Root, productionModule: String): List[(Symbol.DefnSym, List[TypedAst.Def])] = {
+    val defs = root.defs
+    val defSyms = root.modules.filter(pair => pair._1.toString.equals(productionModule)).values.toList.flatten
+    mutateDefs(defs, defSyms).flatten
+  }
+
+
+  /**
+    *
+    * @param defs    : a map of the all defs
+    * @param defSyms : the symbols of the defs that are to be mutated
+    * @return List[(Symbol.DefnSym, List[TypedAst.Def])]: the list of the symbols of the defs along with a
+    *         list that contains a def for all mutations of that def
+    */
+  private def mutateDefs(defs: Map[Symbol.DefnSym, TypedAst.Def], defSyms: List[Symbol]) = {
+    defs.toList.map(d => (d._1, d._2) match {
+      case (s, fun) =>
+        if (defSyms.contains(s)) {
+          println(s, fun.exp)
+          val mutExps = mutateExpr(fun.exp)
+          val mutDefs = mutExps.map(mexp => {
+            /*val mutatedDef =*/ fun.copy(exp = mexp)
+            // insertDecAndCheckInDef(mutatedDef)
+          })
+          Some(d._1 -> mutDefs)
+        } else None
+      case _ => None
+    })
+  }
+
+
+  def mutateSig(sig: Expr.Sig): List[TypedAst.Expr.Sig] = {
+    val tpe = sig.tpe
+    val sym = sig.sym
+    val sub = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Sub"), Name.Ident(sym.loc.sp1, "sub", sym.loc.sp2)))
+    val mul = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Mul"), Name.Ident(sym.loc.sp1, "mul", sym.loc.sp2)))
+    val div = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Div"), Name.Ident(sym.loc.sp1, "div", sym.loc.sp2)))
+    val add = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Add"), Name.Ident(sym.loc.sp1, "add", sym.loc.sp2)))
+    val clazz = Symbol.mkClassSym("Order")
+    val le = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "less", sym.loc.sp2)))
+    val leq = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "lessEqual", sym.loc.sp2)))
+    val gre = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "greater", sym.loc.sp2)))
+    val greq = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "greaterEqual", sym.loc.sp2)))
+    val compare = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "compare", sym.loc.sp2)))
+
+    (sym.toString(), tpe.arrowArgTypes) match {
+      case ("Add.add", List(Str, Str)) => Nil
+      case ("Add.add", _) =>
+        sub :: div :: mul :: Nil
+      case ("Sub.sub", _) =>
+        add :: div :: mul :: Nil
+      case ("Div.div", _) =>
+        mul :: add :: sub :: Nil
+      case ("Mul.mul", _) =>
+        div :: add :: sub :: Nil
+      case ("Eq.eq", _) =>
+        sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Eq"), Name.Ident(sym.loc.sp1, "neq", sym.loc.sp2))) :: Nil
+      case ("Eq.neq", _) =>
+        sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Eq"), Name.Ident(sym.loc.sp1, "eq", sym.loc.sp2))) :: Nil
+      case ("Order.less", _) =>
+        leq :: gre :: greq :: compare :: Nil
+      case ("Order.lessEqual", _) =>
+        le :: gre :: greq :: compare :: Nil
+      case ("Order.greaterEqual", _) =>
+        leq :: le :: gre :: compare :: Nil
+      case ("Order.greater", _) =>
+        leq :: le :: greq :: compare :: Nil
+      case ("Order.compare", _) =>
+        leq :: le :: greq :: gre :: Nil
+      case _ => Nil
     }
+  }
 
+  /**
+    * Goes through an expression and its subtree and returns a list of all possible mutations and permutations
+    *
+    * @param e : the expression to be mutated
+    * @return List[TypedAst.Expr]: all possible mutants from the given expression and its subtree
+    *
+    *         For instance for an IfThenElse expression we generate three lists of mutations. The first includes the two mutants
+    *         where the condition has been changed to either to true or false. The second list includes all generated mutants of the
+    *         subtree of the then-branch, the same is done for the else-branch respectively.
+    *
+    *         Moreover for MatchCase expression we generate a mutant for each possible permutation of the cases and mutants
+    *         where there in each mutant has been removed a case (expect the las of course). Furthermore we generate a list of
+    *         mutants for each case, which includes all mutants of the respective subtree.
+    */
+  private def mutateExpr(e: TypedAst.Expr): List[TypedAst.Expr] = e match {
+    case Expr.Cst(cst, tpe, loc) =>
+      mutateCst(cst).map(c => Expr.Cst(c, tpe, loc))
+    case exp@Expr.Var(_, _, _) =>
+      mutateVar(exp)
+    case Expr.Def(_, _, _) => Nil
+    case original@Expr.Sig(_, _, _) =>
+      mutateSig(original)
+    case Expr.Hole(_, _, _) => Nil
+    case Expr.HoleWithExp(_, _, _, _) => Nil
+    case Expr.OpenAs(_, _, _, _) => Nil
+    case original@Expr.Use(_, _, exp, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.Lambda(_, exp, _, _) =>
+      mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.Apply(exp, exps, _, _, _) =>
+      val mut = mutateExpr(exp).map(m => original.copy(exp = m))
+      val mutateExps = exps.zipWithIndex.flatMap {
+        case (exp, index) =>
+          val mutations = mutateExpr(exp)
+          mutations.map(m => original.copy(exps = exps.updated(index, m)))
+      }
+      val lengths = mutateExps.map(mr => mr.exps.length)
+      lengths.foreach(l => assert(exps.length == l, "fail in apply"))
+      mut ::: mutateExps
 
-    /**
-      *
-      * @param defs: a map of the all defs
-      * @param defSyms: the symbols of the defs that are to be mutated
-      * @return List[(Symbol.DefnSym, List[TypedAst.Def])]: the list of the symbols of the defs along with a
-      *         list that contains a def for all mutations of that def
-      */
-    private def mutateDefs(defs: Map[Symbol.DefnSym, TypedAst.Def], defSyms: List[Symbol]) = {
-        defs.toList.map(d => (d._1, d._2) match {
-            case (s, fun) =>
-                if (defSyms.contains(s)) {
-                    println(s, fun.exp)
-                    val mutExps = mutateExpr(fun.exp)
-                    val mutDefs = mutExps.map(mexp =>{
-                        /*val mutatedDef =*/ fun.copy(exp = mexp)
-                        // insertDecAndCheckInDef(mutatedDef)
-                    })
-                    Some(d._1 -> mutDefs)
-                } else None
-            case _ => None
-        })
-    }
-
-
-    def mutateSig(sig: Expr.Sig): List[TypedAst.Expr.Sig] = {
-        val tpe = sig.tpe
-        val sym = sig.sym
-        val sub = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Sub"), Name.Ident(sym.loc.sp1, "sub", sym.loc.sp2)))
-        val mul = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Mul"), Name.Ident(sym.loc.sp1, "mul", sym.loc.sp2)))
-        val div = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Div"), Name.Ident(sym.loc.sp1, "div", sym.loc.sp2)))
-        val add = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Add"), Name.Ident(sym.loc.sp1, "add", sym.loc.sp2)))
-        val clazz = Symbol.mkClassSym("Order")
-        val le = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "less", sym.loc.sp2)))
-        val leq = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "lessEqual", sym.loc.sp2)))
-        val gre = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "greater", sym.loc.sp2)))
-        val greq = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "greaterEqual", sym.loc.sp2)))
-        val compare = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "compare", sym.loc.sp2)))
-
-        (sym.toString(), tpe.arrowArgTypes) match {
-            case ("Add.add", List(Str, Str)) => Nil
-            case ("Add.add", _) =>
-                sub :: div :: mul :: Nil
-            case ("Sub.sub", _) =>
-                add :: div :: mul :: Nil
-            case ("Div.div", _) =>
-                mul :: add :: sub :: Nil
-            case ("Mul.mul", _) =>
-                div :: add :: sub :: Nil
-            case ("Eq.eq", _) =>
-                sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Eq"), Name.Ident(sym.loc.sp1, "neq", sym.loc.sp2))) :: Nil
-            case ("Eq.neq", _) =>
-                sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Eq"), Name.Ident(sym.loc.sp1, "eq", sym.loc.sp2))) :: Nil
-            case ("Order.less", _) =>
-                leq :: gre :: greq :: compare :: Nil
-            case("Order.lessEqual",_ ) =>
-                le :: gre :: greq :: compare :: Nil
-            case("Order.greaterEqual",_ ) =>
-                leq :: le :: gre :: compare :: Nil
-            case ("Order.greater", _ ) =>
-                leq :: le :: greq :: compare :: Nil
-            case ("Order.compare",_) =>
-                leq :: le :: greq :: gre :: Nil
-            case _ => Nil
-        }
-    }
-
-    /**
-      * Goes through an expression and its subtree and returns a list of all possible mutations and permutations
-      * @param e: the expression to be mutated
-      * @return List[TypedAst.Expr]: all possible mutants from the given expression and its subtree
-      *
-      * For instance for an IfThenElse expression we generate three lists of mutations. The first includes the two mutants
-      * where the condition has been changed to either to true or false. The second list includes all generated mutants of the
-      * subtree of the then-branch, the same is done for the else-branch respectively.
-      *
-      * Moreover for MatchCase expression we generate a mutant for each possible permutation of the cases and mutants
-      * where there in each mutant has been removed a case (expect the las of course). Furthermore we generate a list of
-      * mutants for each case, which includes all mutants of the respective subtree.
-      */
-    private def mutateExpr(e: TypedAst.Expr): List[TypedAst.Expr] = e match {
-        case Expr.Cst(cst, tpe, loc) =>
-            mutateCst(cst).map(c => Expr.Cst(c, tpe, loc))
-        case exp@Expr.Var(_, _, _) =>
-            mutateVar(exp)
-        case Expr.Def(_, _, _) => Nil
-        case original@Expr.Sig(_, _, _) =>
-            mutateSig(original)
-        case Expr.Hole(_, _, _) => Nil
-        case Expr.HoleWithExp(_, _, _, _) => Nil
-        case Expr.OpenAs(_, _, _, _) => Nil
-        case original@Expr.Use(_, _, exp, _) => mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.Lambda(_, exp, _, _) =>
-            mutateExpr(exp).map(m => original.copy(exp = m))
-        case original@Expr.Apply(exp, exps, _, _, _) =>
-            val mut = mutateExpr(exp).map(m => original.copy(exp = m))
-            val mutateExps = exps.zipWithIndex.flatMap {
-                case (exp, index) =>
-                    val mutations = mutateExpr(exp)
-                    mutations.map(m => original.copy(exps = exps.updated(index, m)))
-            }
-            val lengths = mutateExps.map(mr => mr.exps.length)
-            lengths.foreach(l => assert(exps.length == l, "fail in apply"))
-            mut ::: mutateExps
-
-        case original@Expr.Unary(sop, exp, tpe, eff, loc) =>
-            val mut1 = Expr.Unary(sop, original, tpe, eff, loc)
-            mut1 :: mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.Unary(sop, exp, tpe, eff, loc) =>
+      val mut1 = Expr.Unary(sop, original, tpe, eff, loc)
+      mut1 :: mutateExpr(exp).map(m => original.copy(exp = m))
 
         case original@Expr.Binary(_, exp1, exp2, _, _, _) =>
             val mut2 = mutateExpr(exp1).map(m => original.copy(exp1 = m))
@@ -315,177 +317,177 @@ object MutationGenerator {
         case Expr.Error(_, _, _) => Nil
     }
 
-    private def mutateMatchrule(mr: TypedAst.MatchRule): List[TypedAst.MatchRule] = {
-        val mut1 = mutateExpr(mr.exp).map(m => mr.copy(exp = m))
-        val patterns = mutatePattern(mr.pat).map(m => mr.copy(pat = m))
-        patterns ::: mut1
-    }
+  private def mutateMatchrule(mr: TypedAst.MatchRule): List[TypedAst.MatchRule] = {
+    val mut1 = mutateExpr(mr.exp).map(m => mr.copy(exp = m))
+    val patterns = mutatePattern(mr.pat).map(m => mr.copy(pat = m))
+    patterns ::: mut1
+  }
 
-    private def mutatePattern(pattern: TypedAst.Pattern): List[TypedAst.Pattern] = {
-        pattern match {
-            case original@TypedAst.Pattern.Cst(cst, _, _) => mutateCst(cst).map(m => original.copy(m))
-            case _ => Nil
-        }
+  private def mutatePattern(pattern: TypedAst.Pattern): List[TypedAst.Pattern] = {
+    pattern match {
+      case original@TypedAst.Pattern.Cst(cst, _, _) => mutateCst(cst).map(m => original.copy(m))
+      case _ => Nil
     }
+  }
 
-    /**
-      * Generates mutants where a variable is treated like the constant of the respective value
-      * and is overwritten with sensible constants values of the respective type, including of by one values.
-      *
-      * @param varexp: The Var expression to be mutated
-      * @return List of expressions.
-      */
-    private def mutateVar(varexp: Expr.Var): List[Expr] = varexp match {
-        case Expr.Var(_, tpe, loc) =>
-            val one = tpe match {
-                case Type.Cst(tc, _) => tc match {
-                    case TypeConstructor.Char =>
-                        Expr.Cst(Constant.Char(1), tpe, loc) :: Nil
-                    case TypeConstructor.Float32 =>
-                        Expr.Cst(Constant.Float32(1), tpe, loc) :: Nil
-                    case TypeConstructor.Float64 =>
-                        Expr.Cst(Constant.Float64(1), tpe, loc) :: Nil
-                    case TypeConstructor.BigDecimal =>
-                        Expr.Cst(Constant.BigDecimal(java.math.BigDecimal.valueOf(1)), tpe, loc) :: Nil
-                    case TypeConstructor.Int8 =>
-                        Expr.Cst(Constant.Int8(1), tpe, loc) :: Nil
-                    case TypeConstructor.Int16 =>
-                        Expr.Cst(Constant.Int16(1), tpe, loc) :: Nil
-                    case TypeConstructor.Int32 =>
-                        Expr.Cst(Constant.Int32(1), tpe, loc) :: Nil
-                    case TypeConstructor.Int64 =>
-                        Expr.Cst(Constant.Int64(1), tpe, loc) :: Nil
-                    case TypeConstructor.BigInt =>
-                        Expr.Cst(Constant.BigInt(java.math.BigInteger.valueOf(1)), tpe, loc) :: Nil
-                    case _ => Nil
-                }
-                case _ => Nil
-            }
-            if (one == Nil) return mutateVarToConstantByType(tpe)
-            val newtpe = Type.mkPureUncurriedArrow(tpe :: tpe :: Nil, tpe, loc)
-            val sub = Expr.Sig(Symbol.mkSigSym(Symbol.mkClassSym("Sub"), Name.Ident(loc.sp1, "sub", loc.sp2)), newtpe, loc)
-            val add = Expr.Sig(Symbol.mkSigSym(Symbol.mkClassSym("Add"), Name.Ident(loc.sp1, "add", loc.sp2)), newtpe, loc)
-            val appSub = Expr.Apply(sub, varexp :: one, tpe, Type.Pure, loc)
-            val appAdd = Expr.Apply(add, varexp :: one, tpe, Type.Pure, loc)
-            val ret = appSub ::  appAdd :: Nil
-            ret ::: mutateVarToConstantByType(tpe)
-        case _ => Nil
-    }
-
-    private def mutateVarToConstantByType(constType: Type): List[Expr.Cst] = constType match {
-        case Type.Cst(tc, loc) => tc match {
-            case TypeConstructor.Bool =>
-                val mut = Constant.Bool(true)
-                val mutations = mut :: mutateCst(mut)
-                mutations.map(m => Expr.Cst(m, Type.Bool, loc))
-            case TypeConstructor.Char =>
-                val mut = Constant.Char(0)
-                val mutations = mut :: mutateCst(mut)
-                mutations.map(m => Expr.Cst(m, Type.Bool, loc))
-            case TypeConstructor.Float32 =>
-                val mut = Constant.Float32(0)
-                val mutations = mut :: mutateCst(mut)
-                mutations.map(m => Expr.Cst(m, Type.Float32, loc))
-            case TypeConstructor.Float64 =>
-                val mut = Constant.Float64(0)
-                val mutations = mut :: mutateCst(mut)
-                mutations.map(m => Expr.Cst(m, Type.Float64, loc))
-            case TypeConstructor.BigDecimal =>
-                val mut = Constant.BigDecimal(java.math.BigDecimal.ZERO)
-                val mutations = mut :: mutateCst(mut)
-                mutations.map(m => Expr.Cst(m, Type.BigDecimal, loc))
-            case TypeConstructor.Int8 =>
-                val mut = Constant.Int8(0)
-                val mutations = mut :: mutateCst(mut)
-                mutations.map(m => Expr.Cst(m, Type.Int8, loc))
-            case TypeConstructor.Int16 =>
-                val mut = Constant.Int16(0)
-                val mutations = mut :: mutateCst(mut)
-                mutations.map(m => Expr.Cst(m, Type.Int16, loc))
-            case TypeConstructor.Int32 =>
-                val mut = Constant.Int32(0)
-                val mutations = mut :: mutateCst(mut)
-                mutations.map(m => Expr.Cst(m, Type.Int32, loc))
-            case TypeConstructor.Int64 =>
-                val mut = Constant.Int64(0)
-                val mutations = mut :: mutateCst(mut)
-                mutations.map(m => Expr.Cst(m, Type.Int64, loc))
-            case TypeConstructor.BigInt =>
-                val mut = Constant.BigInt(BigInteger.ZERO)
-                val mutations = mut :: mutateCst(mut)
-                mutations.map(m => Expr.Cst(m, Type.BigInt, loc))
-            case TypeConstructor.Str =>
-                val mut = Constant.Str("")
-                val mutations = mut :: mutateCst(mut)
-                mutations.map(m => Expr.Cst(m, Type.Str, loc))
-            case TypeConstructor.Regex =>
-                val mut = Constant.Regex(java.util.regex.Pattern.compile("b"))
-                val mutations = mut :: mutateCst(mut)
-                mutations.map(m => Expr.Cst(m, Type.Regex, loc))
-            case e => println(s"$e not implemented in mutateConstantByType"); Nil
+  /**
+    * Generates mutants where a variable is treated like the constant of the respective value
+    * and is overwritten with sensible constants values of the respective type, including of by one values.
+    *
+    * @param varexp : The Var expression to be mutated
+    * @return List of expressions.
+    */
+  private def mutateVar(varexp: Expr.Var): List[Expr] = varexp match {
+    case Expr.Var(_, tpe, loc) =>
+      val one = tpe match {
+        case Type.Cst(tc, _) => tc match {
+          case TypeConstructor.Char =>
+            Expr.Cst(Constant.Char(1), tpe, loc) :: Nil
+          case TypeConstructor.Float32 =>
+            Expr.Cst(Constant.Float32(1), tpe, loc) :: Nil
+          case TypeConstructor.Float64 =>
+            Expr.Cst(Constant.Float64(1), tpe, loc) :: Nil
+          case TypeConstructor.BigDecimal =>
+            Expr.Cst(Constant.BigDecimal(java.math.BigDecimal.valueOf(1)), tpe, loc) :: Nil
+          case TypeConstructor.Int8 =>
+            Expr.Cst(Constant.Int8(1), tpe, loc) :: Nil
+          case TypeConstructor.Int16 =>
+            Expr.Cst(Constant.Int16(1), tpe, loc) :: Nil
+          case TypeConstructor.Int32 =>
+            Expr.Cst(Constant.Int32(1), tpe, loc) :: Nil
+          case TypeConstructor.Int64 =>
+            Expr.Cst(Constant.Int64(1), tpe, loc) :: Nil
+          case TypeConstructor.BigInt =>
+            Expr.Cst(Constant.BigInt(java.math.BigInteger.valueOf(1)), tpe, loc) :: Nil
+          case _ => Nil
         }
         case _ => Nil
-    }
+      }
+      if (one == Nil) return mutateVarToConstantByType(tpe)
+      val newtpe = Type.mkPureUncurriedArrow(tpe :: tpe :: Nil, tpe, loc)
+      val sub = Expr.Sig(Symbol.mkSigSym(Symbol.mkClassSym("Sub"), Name.Ident(loc.sp1, "sub", loc.sp2)), newtpe, loc)
+      val add = Expr.Sig(Symbol.mkSigSym(Symbol.mkClassSym("Add"), Name.Ident(loc.sp1, "add", loc.sp2)), newtpe, loc)
+      val appSub = Expr.Apply(sub, varexp :: one, tpe, Type.Pure, loc)
+      val appAdd = Expr.Apply(add, varexp :: one, tpe, Type.Pure, loc)
+      val ret = appSub :: appAdd :: Nil
+      ret ::: mutateVarToConstantByType(tpe)
+    case _ => Nil
+  }
 
-    /**
-      * Matches the constant to the specific type and returns a list of mutants.
-      *
-      * @param cst: The constant that is to be mutated
-      * @return A list of constants to replace cst with
-      */
-    private def mutateCst(cst: Ast.Constant): List[Ast.Constant] = {
-        cst match {
-            case Constant.Unit => Nil
-            case Constant.Null => Nil
-            case Constant.Bool(lit) => Constant.Bool(!lit) :: Nil
-            case Constant.Char(lit) => Constant.Char((lit ^ Char.MaxValue).toChar) :: Nil
-            case Constant.Float32(lit) =>
-                val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Float.MinValue, Float.MaxValue, lit + 1, lit - 1).filter(i => lit != i)
-                litCand.toList.map(i => Constant.Float32(i))
-            case Constant.Float64(lit) =>
-                val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Double.MaxValue, Double.MinValue, lit + 1, lit - 1).filter(i => lit != i)
-                litCand.toList.map(i => Constant.Float64(i))
-            case Constant.BigDecimal(lit) =>
-                val litCand = Set(java.math.BigDecimal.ZERO,
-                    java.math.BigDecimal.valueOf(-1),
-                    java.math.BigDecimal.ONE,
-                    lit.subtract(java.math.BigDecimal.ONE),
-                    java.math.BigDecimal.valueOf(2),
-                    java.math.BigDecimal.valueOf(4),
-                    java.math.BigDecimal.valueOf(6),
-                    java.math.BigDecimal.valueOf(8),
-                    java.math.BigDecimal.valueOf(16),
-                    lit.add(java.math.BigDecimal.ONE),
-                    lit.subtract(java.math.BigDecimal.ONE)).filter(i => lit != i)
-                litCand.toList.map(i => Constant.BigDecimal(i))
-            case Constant.Int8(lit) =>
-                val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Byte.MaxValue, Byte.MinValue, lit + 1, lit - 1).map(i => i.toByte).filter(i => lit != i)
-                litCand.toList.map(i => Constant.Int8(i))
-            case Constant.Int16(lit) =>
-                val litCand = Set(0, -1, 1, 2, 4, 6, 8, Short.MinValue, Short.MaxValue, lit + 1, lit - 1).map(i => i.toShort).filter(i => lit != i)
-                litCand.toList.map(i => Constant.Int16(i))
-            case Constant.Int32(lit) =>
-                val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Int.MaxValue, Int.MinValue, lit + 1, lit - 1).filter(i => lit != i)
-                litCand.toList.map(i => Constant.Int32(i))
-            case Constant.Int64(lit) =>
-                val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Long.MaxValue, Long.MinValue, lit + 1, lit - 1).filter(i => lit != i)
-                litCand.toList.map(i => Constant.Int64(i))
-            case Constant.BigInt(lit) =>
-                val litCand = Set(java.math.BigInteger.ZERO,
-                    java.math.BigInteger.valueOf(-1),
-                    java.math.BigInteger.ONE,
-                    lit.subtract(java.math.BigInteger.ONE),
-                    java.math.BigInteger.TWO,
-                    java.math.BigInteger.valueOf(4),
-                    java.math.BigInteger.valueOf(6),
-                    java.math.BigInteger.valueOf(8),
-                    java.math.BigInteger.valueOf(16),
-                    lit.add(java.math.BigInteger.ONE),
-                    lit.subtract(java.math.BigInteger.ONE)).filter(i => lit != i)
-                litCand.toList.map(i => Constant.BigInt(i))
-            case Constant.Str(lit) => Constant.Str(lit + "\b") :: Nil
-            case Constant.Regex(_) => Constant.Regex(java.util.regex.Pattern.compile(".*")) :: Nil
-        }
+  private def mutateVarToConstantByType(constType: Type): List[Expr.Cst] = constType match {
+    case Type.Cst(tc, loc) => tc match {
+      case TypeConstructor.Bool =>
+        val mut = Constant.Bool(true)
+        val mutations = mut :: mutateCst(mut)
+        mutations.map(m => Expr.Cst(m, Type.Bool, loc))
+      case TypeConstructor.Char =>
+        val mut = Constant.Char(0)
+        val mutations = mut :: mutateCst(mut)
+        mutations.map(m => Expr.Cst(m, Type.Bool, loc))
+      case TypeConstructor.Float32 =>
+        val mut = Constant.Float32(0)
+        val mutations = mut :: mutateCst(mut)
+        mutations.map(m => Expr.Cst(m, Type.Float32, loc))
+      case TypeConstructor.Float64 =>
+        val mut = Constant.Float64(0)
+        val mutations = mut :: mutateCst(mut)
+        mutations.map(m => Expr.Cst(m, Type.Float64, loc))
+      case TypeConstructor.BigDecimal =>
+        val mut = Constant.BigDecimal(java.math.BigDecimal.ZERO)
+        val mutations = mut :: mutateCst(mut)
+        mutations.map(m => Expr.Cst(m, Type.BigDecimal, loc))
+      case TypeConstructor.Int8 =>
+        val mut = Constant.Int8(0)
+        val mutations = mut :: mutateCst(mut)
+        mutations.map(m => Expr.Cst(m, Type.Int8, loc))
+      case TypeConstructor.Int16 =>
+        val mut = Constant.Int16(0)
+        val mutations = mut :: mutateCst(mut)
+        mutations.map(m => Expr.Cst(m, Type.Int16, loc))
+      case TypeConstructor.Int32 =>
+        val mut = Constant.Int32(0)
+        val mutations = mut :: mutateCst(mut)
+        mutations.map(m => Expr.Cst(m, Type.Int32, loc))
+      case TypeConstructor.Int64 =>
+        val mut = Constant.Int64(0)
+        val mutations = mut :: mutateCst(mut)
+        mutations.map(m => Expr.Cst(m, Type.Int64, loc))
+      case TypeConstructor.BigInt =>
+        val mut = Constant.BigInt(BigInteger.ZERO)
+        val mutations = mut :: mutateCst(mut)
+        mutations.map(m => Expr.Cst(m, Type.BigInt, loc))
+      case TypeConstructor.Str =>
+        val mut = Constant.Str("")
+        val mutations = mut :: mutateCst(mut)
+        mutations.map(m => Expr.Cst(m, Type.Str, loc))
+      case TypeConstructor.Regex =>
+        val mut = Constant.Regex(java.util.regex.Pattern.compile("b"))
+        val mutations = mut :: mutateCst(mut)
+        mutations.map(m => Expr.Cst(m, Type.Regex, loc))
+      case e => println(s"$e not implemented in mutateConstantByType"); Nil
     }
+    case _ => Nil
+  }
+
+  /**
+    * Matches the constant to the specific type and returns a list of mutants.
+    *
+    * @param cst : The constant that is to be mutated
+    * @return A list of constants to replace cst with
+    */
+  private def mutateCst(cst: Ast.Constant): List[Ast.Constant] = {
+    cst match {
+      case Constant.Unit => Nil
+      case Constant.Null => Nil
+      case Constant.Bool(lit) => Constant.Bool(!lit) :: Nil
+      case Constant.Char(lit) => Constant.Char((lit ^ Char.MaxValue).toChar) :: Nil
+      case Constant.Float32(lit) =>
+        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Float.MinValue, Float.MaxValue, lit + 1, lit - 1).filter(i => lit != i)
+        litCand.toList.map(i => Constant.Float32(i))
+      case Constant.Float64(lit) =>
+        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Double.MaxValue, Double.MinValue, lit + 1, lit - 1).filter(i => lit != i)
+        litCand.toList.map(i => Constant.Float64(i))
+      case Constant.BigDecimal(lit) =>
+        val litCand = Set(java.math.BigDecimal.ZERO,
+          java.math.BigDecimal.valueOf(-1),
+          java.math.BigDecimal.ONE,
+          lit.subtract(java.math.BigDecimal.ONE),
+          java.math.BigDecimal.valueOf(2),
+          java.math.BigDecimal.valueOf(4),
+          java.math.BigDecimal.valueOf(6),
+          java.math.BigDecimal.valueOf(8),
+          java.math.BigDecimal.valueOf(16),
+          lit.add(java.math.BigDecimal.ONE),
+          lit.subtract(java.math.BigDecimal.ONE)).filter(i => lit != i)
+        litCand.toList.map(i => Constant.BigDecimal(i))
+      case Constant.Int8(lit) =>
+        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Byte.MaxValue, Byte.MinValue, lit + 1, lit - 1).map(i => i.toByte).filter(i => lit != i)
+        litCand.toList.map(i => Constant.Int8(i))
+      case Constant.Int16(lit) =>
+        val litCand = Set(0, -1, 1, 2, 4, 6, 8, Short.MinValue, Short.MaxValue, lit + 1, lit - 1).map(i => i.toShort).filter(i => lit != i)
+        litCand.toList.map(i => Constant.Int16(i))
+      case Constant.Int32(lit) =>
+        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Int.MaxValue, Int.MinValue, lit + 1, lit - 1).filter(i => lit != i)
+        litCand.toList.map(i => Constant.Int32(i))
+      case Constant.Int64(lit) =>
+        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Long.MaxValue, Long.MinValue, lit + 1, lit - 1).filter(i => lit != i)
+        litCand.toList.map(i => Constant.Int64(i))
+      case Constant.BigInt(lit) =>
+        val litCand = Set(java.math.BigInteger.ZERO,
+          java.math.BigInteger.valueOf(-1),
+          java.math.BigInteger.ONE,
+          lit.subtract(java.math.BigInteger.ONE),
+          java.math.BigInteger.TWO,
+          java.math.BigInteger.valueOf(4),
+          java.math.BigInteger.valueOf(6),
+          java.math.BigInteger.valueOf(8),
+          java.math.BigInteger.valueOf(16),
+          lit.add(java.math.BigInteger.ONE),
+          lit.subtract(java.math.BigInteger.ONE)).filter(i => lit != i)
+        litCand.toList.map(i => Constant.BigInt(i))
+      case Constant.Str(lit) => Constant.Str(lit + "\b") :: Nil
+      case Constant.Regex(_) => Constant.Regex(java.util.regex.Pattern.compile(".*")) :: Nil
+    }
+  }
 
 }
