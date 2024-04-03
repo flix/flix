@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, RigidityEnv, Scheme, SourceLocation, Symbol, Type, TypedAst}
 import ca.uwaterloo.flix.language.errors.EntryPointError
-import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
+import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.Validation.{flatMapN, mapN}
 import ca.uwaterloo.flix.util.collection.ListMap
 import ca.uwaterloo.flix.util.{InternalCompilerException, Validation}
@@ -128,9 +128,9 @@ object EntryPoint {
     *
     * The new entry point should be added to the AST.
     */
-  private def visitEntryPoint(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.TraitSym, Ast.ClassContext])(implicit flix: Flix): Validation[TypedAst.Def, EntryPointError] = {
-    val argsVal = checkEntryPointArgs(defn, classEnv, root)
-    val resultVal = checkEntryPointResult(defn, root, classEnv)
+  private def visitEntryPoint(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit flix: Flix): Validation[TypedAst.Def, EntryPointError] = {
+    val argsVal = checkEntryPointArgs(defn, traitEnv, root)
+    val resultVal = checkEntryPointResult(defn, root, traitEnv)
 
     mapN(argsVal, resultVal) {
       case (_, _) =>
@@ -142,7 +142,7 @@ object EntryPoint {
     * Checks the entry point function arguments.
     * Returns a flag indicating whether the args should be passed to this function or ignored.
     */
-  private def checkEntryPointArgs(defn: TypedAst.Def, classEnv: Map[Symbol.TraitSym, Ast.ClassContext], root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
+  private def checkEntryPointArgs(defn: TypedAst.Def, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], root: TypedAst.Root)(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, _, _, _, loc), _) =>
       val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
 
@@ -158,7 +158,7 @@ object EntryPoint {
 
       flatMapN(argVal: Validation[Option[Type], EntryPointError]) {
         // Case 1: Unit -> XYZ. We can ignore the args.
-        case Some(arg) if Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), classEnv, ListMap.empty) =>
+        case Some(arg) if Scheme.equal(unitSc, Scheme.generalize(Nil, Nil, arg, RigidityEnv.empty), traitEnv, ListMap.empty) =>
           // TODO ASSOC-TYPES better eqEnv
           Validation.success(())
 
@@ -172,7 +172,7 @@ object EntryPoint {
     * Checks the entry point function result type.
     * Returns a flag indicating whether the result should be printed, cast, or unchanged.
     */
-  private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, classEnv: Map[Symbol.TraitSym, Ast.ClassContext])(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
+  private def checkEntryPointResult(defn: TypedAst.Def, root: TypedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext])(implicit flix: Flix): Validation[Unit, EntryPointError] = defn match {
     case TypedAst.Def(sym, TypedAst.Spec(_, _, _, _, _, declaredScheme, _, declaredEff, _, _, _), _) =>
       val resultTpe = declaredScheme.base.arrowResultType
       val unitSc = Scheme.generalize(Nil, Nil, Type.Unit, RigidityEnv.empty)
@@ -183,13 +183,13 @@ object EntryPoint {
         return Validation.toSoftFailure((),EntryPointError.IllegalEntryPointEff(sym, declaredEff, declaredEff.loc))
       }
 
-      if (Scheme.equal(unitSc, resultSc, classEnv, ListMap.empty)) { // TODO ASSOC-TYPES better eqEnv
+      if (Scheme.equal(unitSc, resultSc, traitEnv, ListMap.empty)) { // TODO ASSOC-TYPES better eqEnv
         // Case 1: XYZ -> Unit.
         Validation.success(())
       } else {
         // Delay ToString resolution if main has return type unit for testing with lib nix.
         val toString = root.classes(new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)).sym
-        if (ClassEnvironment.holds(Ast.TypeConstraint(Ast.TypeConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), classEnv)) {
+        if (TraitEnvironment.holds(Ast.TypeConstraint(Ast.TypeConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv)) {
           // Case 2: XYZ -> a with ToString[a]
           Validation.success(())
         } else {

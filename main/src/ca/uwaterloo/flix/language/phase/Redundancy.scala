@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.RedundancyError
 import ca.uwaterloo.flix.language.errors.RedundancyError._
-import ca.uwaterloo.flix.language.phase.unification.ClassEnvironment
+import ca.uwaterloo.flix.language.phase.unification.TraitEnvironment
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
 import java.util.concurrent.ConcurrentHashMap
@@ -164,7 +164,7 @@ object Redundancy {
       (tconstr1, i1) <- tconstrs.zipWithIndex
       (tconstr2, i2) <- tconstrs.zipWithIndex
       // don't compare a constraint against itself
-      if i1 != i2 && ClassEnvironment.entails(tconstr1, tconstr2, root.classEnv)
+      if i1 != i2 && TraitEnvironment.entails(tconstr1, tconstr2, root.classEnv)
     } yield RedundancyError.RedundantTypeConstraint(tconstr1, tconstr2, tconstr2.loc)
   }
 

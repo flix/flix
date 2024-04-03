@@ -673,9 +673,9 @@ object Ast {
   case class Instance(tpe: Type, tconstrs: List[Ast.TypeConstraint])
 
   /**
-    * Represents the super classes and instances available for a particular class.
+    * Represents the super traits and instances available for a particular traits.
     */
-  case class ClassContext(superClasses: List[Symbol.TraitSym], instances: List[Ast.Instance])
+  case class TraitContext(superTraits: List[Symbol.TraitSym], instances: List[Ast.Instance])
 
   /**
     * Represents the definition of an associated type.
@@ -687,7 +687,7 @@ object Ast {
   /**
     * Represents a derivation on an enum (e.g. `enum E with Eq`).
     */
-  case class Derivation(clazz: Symbol.TraitSym, loc: SourceLocation)
+  case class Derivation(trt: Symbol.TraitSym, loc: SourceLocation)
 
   /**
     * Represents a list of derivations with a source location.

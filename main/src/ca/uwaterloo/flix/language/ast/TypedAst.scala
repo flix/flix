@@ -39,7 +39,7 @@ object TypedAst {
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  classEnv: Map[Symbol.TraitSym, Ast.ClassContext],
+                  classEnv: Map[Symbol.TraitSym, Ast.TraitContext],
                   eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef],
                   names: MultiMap[List[String], String],
                   precedenceGraph: LabelledPrecedenceGraph)

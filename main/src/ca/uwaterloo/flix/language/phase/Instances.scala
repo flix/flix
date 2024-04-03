@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
+import ca.uwaterloo.flix.language.phase.unification.{TraitEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
@@ -211,7 +211,7 @@ object Instances {
     */
   private def checkSuperInstances(inst: TypedAst.Instance, root: TypedAst.Root)(implicit flix: Flix): List[InstanceError] = inst match {
     case TypedAst.Instance(_, _, _, clazz, tpe, tconstrs, _, _, _, _) =>
-      val superTraits = root.classEnv(clazz.sym).superClasses
+      val superTraits = root.classEnv(clazz.sym).superTraits
       superTraits flatMap {
         superTrait =>
           // Find the instance of the super trait matching the type of this instance.
@@ -220,7 +220,7 @@ object Instances {
               // Case 1: An instance matches. Check that its constraints are entailed by this instance.
               superInst.tconstrs flatMap {
                 tconstr =>
-                  ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv).toHardResult match {
+                  TraitEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv).toHardResult match {
                     case Result.Ok(_) => Nil
                     case Result.Err(errors) => errors.map {
                       case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTraitConstraint(missingTconstr, superTrait, clazz.loc)
