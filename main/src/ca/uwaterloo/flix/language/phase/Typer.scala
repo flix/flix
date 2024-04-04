@@ -111,7 +111,7 @@ object Typer {
   /**
     * Creates a trait environment from the traits and instances in the root.
     */
-  private def mkTraitEnv(traits0: Map[Symbol.TraitSym, KindedAst.Class], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): Map[Symbol.TraitSym, Ast.ClassContext] =
+  private def mkTraitEnv(traits0: Map[Symbol.TraitSym, KindedAst.Class], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): Map[Symbol.TraitSym, Ast.TraitContext] =
     flix.subphase("TraitEnv") {
       traits0.map {
         case (traitSym, trt) =>
@@ -121,7 +121,7 @@ object Typer {
           }
           // ignore the super trait parameters since they should all be the same as the trait param
           val superTraits = trt.superClasses.map(_.head.sym)
-          (traitSym, Ast.ClassContext(superTraits, envInsts))
+          (traitSym, Ast.TraitContext(superTraits, envInsts))
       }
     }
 
@@ -155,7 +155,7 @@ object Typer {
   /**
     * Reconstructs types in the given defs.
     */
-  private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: Map[Symbol.TraitSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
+  private def visitDefs(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[Map[Symbol.DefnSym, TypedAst.Def], TypeError] = {
     flix.subphase("Defs") {
       val (staleDefs, freshDefs) = changeSet.partition(root.defs, oldRoot.defs)
       mapN(ParOps.parTraverseValues(staleDefs) {
@@ -167,7 +167,7 @@ object Typer {
   /**
     * Reconstructs types in the given def.
     */
-  private def visitDef(defn: KindedAst.Def, tconstrs0: List[Ast.TypeConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = {
+  private def visitDef(defn: KindedAst.Def, tconstrs0: List[Ast.TypeConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = {
     implicit val r = root
     implicit val context = new TypeContext
     val (tpe, eff) = ConstraintGen.visitExp(defn.exp)
@@ -185,7 +185,7 @@ object Typer {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitTraits(root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.TraitSym, TypedAst.Class], TypeError] =
+  private def visitTraits(root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.TraitSym, TypedAst.Class], TypeError] =
     flix.subphase("Traits") {
       val (staleTraits, freshTraits) = changeSet.partition(root.classes, oldRoot.classes)
       mapN(ParOps.parTraverseValues(staleTraits)(visitTrait(_, root, traitEnv, eqEnv)))(_ ++ freshTraits)
@@ -194,7 +194,7 @@ object Typer {
   /**
     * Reassembles a single trait.
     */
-  private def visitTrait(trt: KindedAst.Class, root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Class, TypeError] = trt match {
+  private def visitTrait(trt: KindedAst.Class, root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Class, TypeError] = trt match {
     case KindedAst.Class(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0, root) // TODO ASSOC-TYPES redundant?
       val renv = RigidityEnv.empty.markRigid(tparam0.sym)
@@ -215,7 +215,7 @@ object Typer {
   /**
     * Performs type inference and reassembly on the given signature `sig`.
     */
-  private def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Sig, TypeError] = {
+  private def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Sig, TypeError] = {
     implicit val r = root
     implicit val context = new TypeContext
     sig.exp match {
@@ -237,7 +237,7 @@ object Typer {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitInstances(root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[ListMap[Symbol.TraitSym, TypedAst.Instance], TypeError] =
+  private def visitInstances(root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[ListMap[Symbol.TraitSym, TypedAst.Instance], TypeError] =
     flix.subphase("Instances") {
 
       val instances0 = for {
@@ -259,7 +259,7 @@ object Typer {
   /**
     * Reassembles a single instance.
     */
-  private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
+  private def visitInstance(inst: KindedAst.Instance, root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Instance, TypeError] = inst match {
     case KindedAst.Instance(doc, ann, mod, sym, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
       val tpe = tpe0 // TODO ASSOC-TYPES redundant?
       val renv = tpe0.typeVars.map(_.sym).foldLeft(RigidityEnv.empty)(_.markRigid(_))
