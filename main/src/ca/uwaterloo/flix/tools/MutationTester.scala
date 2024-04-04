@@ -68,7 +68,7 @@ object MutationTester {
       defn =>
         // todo: move generation to separated thread or ExecutorService
         Mutator.mutateExpr(defn.exp).foreach { mutation =>
-          val mutatedDef = defn.copy(exp = mutation.expr)
+          val mutatedDef = defn.copy(exp = mutation.value)
           val mutant = root.copy(defs = root.defs + (mutatedDef.sym -> mutatedDef))
 
           //    val redirect = new ConsoleRedirection
@@ -137,7 +137,7 @@ object MutationTester {
     import Helper._
 
     // todo: collections: for example, Set constructor
-    def mutateExpr(expr: Expr)(implicit flix: Flix): LazyList[Mutation] = {
+    def mutateExpr(expr: Expr)(implicit flix: Flix): LazyList[Mutation[Expr]] = {
       if (expr.tpe.toString == "Unit") {
         LazyList.empty
       } else {
@@ -156,21 +156,21 @@ object MutationTester {
           case Expr.Unary(sop, exp, tpe, eff, loc) => mutateExprUnary(expr)
           case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => mutateExprBinary(expr)
           case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
-            mutateExpr(exp1).map(m => Mutation(Expr.Let(sym, mod, m.expr, exp2, tpe, eff, loc), m.loc, m.newStr)) #:::
-              mutateExpr(exp2).map(m => Mutation(Expr.Let(sym, mod, exp1, m.expr, tpe, eff, loc), m.loc, m.newStr))
+            mutateExpr(exp1).map(m => Mutation(Expr.Let(sym, mod, m.value, exp2, tpe, eff, loc), m.loc, m.newStr)) #:::
+              mutateExpr(exp2).map(m => Mutation(Expr.Let(sym, mod, exp1, m.value, tpe, eff, loc), m.loc, m.newStr))
           case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => // find example code
-            mutateExpr(exp1).map(m => Mutation(Expr.LetRec(sym, ann, mod, m.expr, exp2, tpe, eff, loc), m.loc, m.newStr)) #:::
-              mutateExpr(exp2).map(m => Mutation(Expr.LetRec(sym, ann, mod, exp1, m.expr, tpe, eff, loc), m.loc, m.newStr))
+            mutateExpr(exp1).map(m => Mutation(Expr.LetRec(sym, ann, mod, m.value, exp2, tpe, eff, loc), m.loc, m.newStr)) #:::
+              mutateExpr(exp2).map(m => Mutation(Expr.LetRec(sym, ann, mod, exp1, m.value, tpe, eff, loc), m.loc, m.newStr))
           case Expr.Region(tpe, loc) => LazyList.empty
           case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
-            mutateExpr(exp).map(m => Mutation(Expr.Scope(sym, regionVar, m.expr, tpe, eff, loc), m.loc, m.newStr))
+            mutateExpr(exp).map(m => Mutation(Expr.Scope(sym, regionVar, m.value, tpe, eff, loc), m.loc, m.newStr))
           case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-            mutateExpr(exp1).map(m => Mutation(Expr.IfThenElse(m.expr, exp2, exp3, tpe, eff, loc), m.loc, m.newStr)) #:::
-              mutateExpr(exp2).map(m => Mutation(Expr.IfThenElse(exp1, m.expr, exp3, tpe, eff, loc), m.loc, m.newStr)) #:::
-              mutateExpr(exp3).map(m => Mutation(Expr.IfThenElse(exp1, exp2, m.expr, tpe, eff, loc), m.loc, m.newStr))
+            mutateExpr(exp1).map(m => Mutation(Expr.IfThenElse(m.value, exp2, exp3, tpe, eff, loc), m.loc, m.newStr)) #:::
+              mutateExpr(exp2).map(m => Mutation(Expr.IfThenElse(exp1, m.value, exp3, tpe, eff, loc), m.loc, m.newStr)) #:::
+              mutateExpr(exp3).map(m => Mutation(Expr.IfThenElse(exp1, exp2, m.value, tpe, eff, loc), m.loc, m.newStr))
           case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-            mutateExpr(exp1).map(m => Mutation(Expr.Stm(m.expr, exp2, tpe, eff, loc), m.loc, m.newStr)) #:::
-              mutateExpr(exp2).map(m => Mutation(Expr.Stm(exp1, m.expr, tpe, eff, loc), m.loc, m.newStr))
+            mutateExpr(exp1).map(m => Mutation(Expr.Stm(m.value, exp2, tpe, eff, loc), m.loc, m.newStr)) #:::
+              mutateExpr(exp2).map(m => Mutation(Expr.Stm(exp1, m.value, tpe, eff, loc), m.loc, m.newStr))
           case Expr.Discard(exp, eff, loc) => LazyList.empty
           case Expr.Match(exp, rules, tpe, eff, loc) => LazyList.empty
           case Expr.TypeMatch(exp, rules, tpe, eff, loc) => LazyList.empty
@@ -224,7 +224,7 @@ object MutationTester {
           case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => LazyList.empty
           case Expr.FixpointSolve(exp, tpe, eff, loc) => LazyList.empty
           case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => LazyList.empty
-          case Expr.FixpointInject(exp, pred, tpe, eff, loc) => LazyList.empty // todo: think
+          case Expr.FixpointInject(exp, pred, tpe, eff, loc) => LazyList.empty
           case Expr.FixpointProject(pred, exp, tpe, eff, loc) => LazyList.empty
 
           case Expr.Error(m, tpe, eff) => LazyList.empty
@@ -232,32 +232,34 @@ object MutationTester {
       }
     }
 
-    private def mutateExprCst(expr: Expr): LazyList[Mutation] = expr match {
-      case Expr.Cst(cst, tpe, loc) => mutateConstant(cst).map(p => Mutation(Expr.Cst(p._1, tpe, loc), loc, p._2))
+    private def mutateExprCst(expr: Expr): LazyList[Mutation[Expr]] = expr match {
+      case Expr.Cst(cst, tpe, loc) => mutateConstant(cst).map(p => Mutation(Expr.Cst(p.value, tpe, loc), loc, p.newStr))
       case _ => LazyList.empty
     }
 
-    private def mutateConstant(cst: Constant): LazyList[(Constant, String)] = cst match {
-      case Constant.Bool(lit) => LazyList((Constant.Bool(!lit), (!lit).toString))
-      case Constant.Float32(lit) => LazyList(lit + 1, lit - 1).map(value => (Constant.Float32(value), s"${value.toString}f32"))
-      case Constant.Float64(lit) => LazyList(lit + 1, lit - 1).map(value => (Constant.Float64(value), value.toString))
+    private def mutateConstant(cst: Constant): LazyList[Mutation[Constant]] = cst match {
+      case Constant.Bool(lit) => LazyList(Mutation(Constant.Bool(!lit), SourceLocation.Unknown, (!lit).toString))
+      case Constant.Float32(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Constant.Float32(value), SourceLocation.Unknown, s"${value.toString}f32"))
+      case Constant.Float64(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Constant.Float64(value), SourceLocation.Unknown, value.toString))
       case Constant.BigDecimal(lit) => LazyList(
         lit.add(java.math.BigDecimal.ONE),
         lit.subtract(java.math.BigDecimal.ONE)
-      ).map(value => (Constant.BigDecimal(value), s"${value.toString}ff"))
-      case Constant.Int8(lit) => LazyList(lit + 1, lit - 1).map(value => (Constant.Int8(value.toByte), s"${value.toString}i8"))
-      case Constant.Int16(lit) => LazyList(lit + 1, lit - 1).map(value => (Constant.Int16(value.toShort), s"${value.toString}i16"))
-      case Constant.Int32(lit) => LazyList(lit + 1, lit - 1).map(value => (Constant.Int32(value), value.toString))
-      case Constant.Int64(lit) => LazyList(lit + 1, lit - 1).map(value => (Constant.Int64(value), s"${value.toString}i64"))
+      ).map(value => Mutation(Constant.BigDecimal(value), SourceLocation.Unknown, s"${value.toString}ff"))
+      case Constant.Int8(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Constant.Int8(value.toByte), SourceLocation.Unknown, s"${value.toString}i8"))
+      case Constant.Int16(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Constant.Int16(value.toShort), SourceLocation.Unknown, s"${value.toString}i16"))
+      case Constant.Int32(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Constant.Int32(value), SourceLocation.Unknown, value.toString))
+      case Constant.Int64(lit) => LazyList(lit + 1, lit - 1).map(value => Mutation(Constant.Int64(value), SourceLocation.Unknown, s"${value.toString}i64"))
       case Constant.BigInt(lit) => LazyList(
         lit.add(java.math.BigInteger.ONE),
         lit.subtract(java.math.BigInteger.ONE)
-      ).map(value => (Constant.BigInt(value), s"${value.toString}ii"))
-      //      case Constant.Str(lit) => ???
+      ).map(value => Mutation(Constant.BigInt(value), SourceLocation.Unknown, s"${value.toString}ii"))
+      case Constant.Str(lit) =>
+        val pair = if (lit != "") ("", "") else ("Flix", "\"Flix\"")
+        LazyList(Mutation(Constant.Str(pair._1), SourceLocation.Unknown, pair._2))
       case _ => LazyList.empty
     }
 
-    private def mutateExprDef(expr: Expr)(implicit flix: Flix): LazyList[Mutation] = expr match {
+    private def mutateExprDef(expr: Expr)(implicit flix: Flix): LazyList[Mutation[Expr]] = expr match {
       case Expr.Def(sym, tpe, loc) if defnIntNamespaces.contains(sym.namespace.mkString(".")) =>
         defnToDefn.get(sym.text)
           .flatMap(findDef(sym.namespace, _))
@@ -271,14 +273,14 @@ object MutationTester {
       case _ => LazyList.empty
     }
 
-    private def mutateExprSig(expr: Expr)(implicit flix: Flix): LazyList[Mutation] = expr match {
+    private def mutateExprSig(expr: Expr)(implicit flix: Flix): LazyList[Mutation[Expr]] = expr match {
       case Expr.Sig(sym, tpe, loc) =>
         var l = List(conditionalNegateSigToSig, conditionalBoundarySigToSig)
         if (arithmeticSigTypes.contains(tpe.toString)) {
           l = arithmeticSigToSig :: l
         }
 
-        l.foldLeft(LazyList.empty[Mutation]) {
+        l.foldLeft(LazyList.empty[Mutation[Expr]]) {
           (acc, sigMap) =>
             acc #::: sigMap.get(sym.toString)
               .flatMap(p => findSig(p._1, p._2))
@@ -290,7 +292,7 @@ object MutationTester {
 
     // what if there is an expression other than Def and Sig ?
     // take Apply's SourceLocation and refactor Mutation.newStr creating
-    private def mutateExprApply(expr: TypedAst.Expr)(implicit flix: Flix): LazyList[Mutation] = expr match {
+    private def mutateExprApply(expr: TypedAst.Expr)(implicit flix: Flix): LazyList[Mutation[Expr]] = expr match {
       case Expr.Apply(exp, exps, tpe, eff, loc) =>
         exp match {
           case Expr.Sig(sym, _, _) if sym.toString == "Neg.neg" => LazyList(Mutation(exps.head, loc, exps.head.loc.text.get))
@@ -298,39 +300,61 @@ object MutationTester {
           case _ =>
             val res = Mutator.mutateExpr(exp).map { m =>
               val str = s"${m.newStr}${exps.map(_.loc.text.get).mkString("(", ", ", ")")}"
-              Mutation(Expr.Apply(m.expr, exps, tpe, eff, loc), loc, str)
+              Mutation(Expr.Apply(m.value, exps, tpe, eff, loc), loc, str)
             }
 
             if (res.nonEmpty) res
             else LazyList.tabulate(exps.length)(i =>
               Mutator.mutateExpr(exps(i)).map { m =>
-                val updatedExps = exps.updated(i, m.expr)
-                val str = s"${exp.loc.text.get}${updatedExps.map(_.loc.text.get).updated(i, m.newStr).mkString("(", ", ", ")")}"
-                Mutation(Expr.Apply(exp, updatedExps, tpe, eff, loc), loc, str)
+                val updatedExps = exps.updated(i, m.value)
+                Mutation(Expr.Apply(exp, updatedExps, tpe, eff, loc), m.loc, m.newStr)
               }
             ).flatten
         }
       case _ => LazyList.empty
     }
 
-    private def mutateExprUnary(expr: Expr): LazyList[Mutation] = expr match {
+    private def mutateExprUnary(expr: Expr): LazyList[Mutation[Expr]] = expr match {
       case Expr.Unary(BoolOp.Not, exp, _, _, loc) => LazyList(Mutation(exp, loc, exp.loc.text.get))
       case _ => LazyList.empty
     }
 
-    private def mutateExprBinary(expr: Expr): LazyList[Mutation] = expr match {
+    private def mutateExprBinary(expr: Expr): LazyList[Mutation[Expr]] = expr match {
       case Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc) => LazyList(Mutation(Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc), loc, s"${exp1.loc.text.get} or ${exp2.loc.text.get}"))
       case Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc) => LazyList(Mutation(Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc), loc, s"${exp1.loc.text.get} and ${exp2.loc.text.get}"))
       case _ => LazyList.empty
     }
 
-    private def mutateExprTuple(expr: Expr)(implicit flix: Flix): LazyList[Mutation] = expr match {
+    private def mutateExprTuple(expr: Expr)(implicit flix: Flix): LazyList[Mutation[Expr]] = expr match {
       case Expr.Tuple(elms, tpe, eff, loc) =>
         LazyList.tabulate(elms.length)(i =>
-          mutateExpr(elms(i)).map(m => Mutation(Expr.Tuple(elms.updated(i, m.expr), tpe, eff, loc), m.loc, m.newStr))
+          mutateExpr(elms(i)).map(m => Mutation(Expr.Tuple(elms.updated(i, m.value), tpe, eff, loc), m.loc, m.newStr))
         ).flatten
       case _ => LazyList.empty
     }
+
+    private def mutateExprFixpointConstraintSet(expr: Expr)(implicit flix: Flix): LazyList[Mutation[Expr]] =
+      expr match {
+        case Expr.FixpointConstraintSet(cs, tpe, loc1) =>
+          // 1. Mutate each constraint
+          // 2. Add trivial constraint by name. todo: this
+          //    For formatter this will be line adding -> specify line number (before and after) and spaces count from left
+
+          var result = LazyList.empty[Mutation[Expr]]
+
+          cs.zipWithIndex.foreach { case (constraint, i) =>
+            val mutations = mutateConstraint(constraint)
+            mutations.foreach { mutation =>
+              val updatedCS: List[Constraint] = cs.updated(i, mutation.value)
+              val updatedExpr = Expr.FixpointConstraintSet(updatedCS, tpe, loc1)
+              val updatedMutation = Mutation(updatedExpr, mutation.loc, mutation.newStr)
+              result = result.appended(updatedMutation)
+            }
+          }
+
+          result
+        case _ => LazyList.empty
+      }
 
     /* todo:
      * check Atom.Denotation: Relational or Latticenal
@@ -341,90 +365,88 @@ object MutationTester {
      *
      * for Predicate.Body.Functional and Predicate.Body.Guard mutate inner exp
      */
-    private def mutateExprFixpointConstraintSet(expr: Expr)(implicit flix: Flix): LazyList[Mutation] =
-      expr match {
-        case Expr.FixpointConstraintSet(cs, tpe, loc1) =>
-          var result = LazyList.empty[Mutation]
+    private def mutateConstraint(constraint: Constraint)(implicit flix: Flix): LazyList[Mutation[Constraint]] = {
+      var result = LazyList.empty[Mutation[Constraint]]
 
-          cs.zipWithIndex.foreach { case (constraint, i) =>
-            constraint.head match {
-              case Head.Atom(pred, den, terms, tpe, loc2) =>
-                terms.zipWithIndex.foreach { case (exp, j) =>
-                  val mutations = mutateExpr(exp)
-                  mutations.foreach { mutation =>
-                    val updatedTerms = terms.updated(j, mutation.expr)
-                    val updatedHeadAtom = Head.Atom(pred, den, updatedTerms, tpe, loc2)
-                    val updatedConstraint = Constraint(constraint.cparams, updatedHeadAtom, constraint.body, constraint.loc)
-                    val updatedCS: List[Constraint] = cs.updated(i, updatedConstraint)
-                    val updatedExpr = Expr.FixpointConstraintSet(updatedCS, tpe, loc1)
-                    val updatedMutation = Mutation(updatedExpr, mutation.loc, mutation.newStr)
+      constraint.head match {
+        case Head.Atom(pred, den, terms, tpe, loc2) =>
+          terms.zipWithIndex.foreach { case (exp, i) =>
+            val mutations = mutateExpr(exp)
+            mutations.foreach { mutation =>
+              val updatedTerms = terms.updated(i, mutation.value)
+              val updatedHeadAtom = Head.Atom(pred, den, updatedTerms, tpe, loc2)
+              val updatedConstraint = Constraint(constraint.cparams, updatedHeadAtom, constraint.body, constraint.loc)
+              val updatedMutation = Mutation(updatedConstraint, mutation.loc, mutation.newStr)
+              result = result.appended(updatedMutation)
+            }
+          }
+      }
+
+      // todo: refactor body mutations and common code
+      constraint.body.zipWithIndex.foreach { case (body, i) =>
+        body match {
+          case Body.Atom(pred, den, polarity, fixity, terms, tpe, loc2) =>
+            polarity match {
+              case Polarity.Positive =>
+                terms.zipWithIndex.foreach { case (pattern, j) =>
+                  mutatePattern(pattern).foreach { mutation =>
+                    val updatedTerms = terms.updated(j, mutation.value)
+                    val updatedBodyAtom = Body.Atom(pred, den, polarity, fixity, updatedTerms, tpe, loc2)
+                    val updatedConstraintBody = constraint.body.updated(i, updatedBodyAtom)
+                    val updatedConstraint = Constraint(constraint.cparams, constraint.head, updatedConstraintBody, constraint.loc)
+                    val updatedMutation = Mutation(updatedConstraint, mutation.loc, mutation.newStr)
                     result = result.appended(updatedMutation)
                   }
                 }
+              case Polarity.Negative =>
+                val updatedBodyAtom = Body.Atom(pred, den, Polarity.Positive, fixity, terms, tpe, loc2)
+                val updatedConstraintBody = constraint.body.updated(i, updatedBodyAtom)
+                val updatedConstraint = Constraint(constraint.cparams, constraint.head, updatedConstraintBody, constraint.loc)
+                val mutation = Mutation(updatedConstraint, loc2, loc2.text.get.stripPrefix("not "))
+                result = result.appended(mutation)
             }
-
-            constraint.body.zipWithIndex.foreach { case (body, j) =>
-              body match {
-                case Body.Atom(pred, den, polarity, fixity, terms, tpe, loc2) =>
-                  polarity match {
-                    case Polarity.Positive =>
-                      terms.zipWithIndex.foreach { case (pattern, k) =>
-                        // todo: PatternMutator or other way to refactor
-                        pattern match {
-                          case Pattern.Cst(cst, tpe, loc) =>
-                            val mutations = mutateConstant(cst)
-                            mutations.foreach { mutation =>
-                              val updatedPatternCst =  Pattern.Cst(mutation._1, tpe, loc)
-                              val updatedTerms = terms.updated(k, updatedPatternCst)
-                              val updatedBodyAtom = Body.Atom(pred, den, polarity, fixity, updatedTerms, tpe, loc2)
-                              val updatedConstraintBody = constraint.body.updated(j, updatedBodyAtom)
-                              val updatedConstraint = Constraint(constraint.cparams, constraint.head, updatedConstraintBody, constraint.loc)
-                              val updatedCS: List[Constraint] = cs.updated(i, updatedConstraint)
-                              val updatedExpr = Expr.FixpointConstraintSet(updatedCS, tpe, loc1)
-                              val updatedMutation = Mutation(updatedExpr, loc2, mutation._2) // todo: mutation._2 is not coorect
-                              result = result.appended(updatedMutation)
-                            }
-                          case _ => // todo: other branches
-                        }
-                      }
-                    case Polarity.Negative =>
-                      val updatedBodyAtom = Body.Atom(pred, den, Polarity.Positive, fixity, terms, tpe, loc2)
-                      val updatedConstraintBody = constraint.body.updated(j, updatedBodyAtom)
-                      val updatedConstraint = Constraint(constraint.cparams, constraint.head, updatedConstraintBody, constraint.loc)
-                      val updatedCS: List[Constraint] = cs.updated(i, updatedConstraint)
-                      val updatedExpr = Expr.FixpointConstraintSet(updatedCS, tpe, loc1)
-                      val mutation = Mutation(updatedExpr, loc2, loc2.text.get.stripPrefix("not "))
-                      result = result.appended(mutation)
-                  }
-                case Body.Functional(outVars, exp, loc2) =>
-                  val mutations = mutateExpr(exp)
-                  mutations.foreach { mutation =>
-                    val updatedBodyFunctional = Body.Functional(outVars, mutation.expr, loc2)
-                    val updatedConstraintBody = constraint.body.updated(j, updatedBodyFunctional)
-                    val updatedConstraint = Constraint(constraint.cparams, constraint.head, updatedConstraintBody, constraint.loc)
-                    val updatedCS: List[Constraint] = cs.updated(i, updatedConstraint)
-                    val updatedExpr = Expr.FixpointConstraintSet(updatedCS, tpe, loc1)
-                    val updatedMutation = Mutation(updatedExpr, mutation.loc, mutation.newStr)
-                    result = result.appended(updatedMutation)
-                  }
-                case Body.Guard(exp, loc2) =>
-                  val mutations = mutateExpr(exp)
-                  mutations.foreach { mutation =>
-                    val updatedBodyFunctional = Body.Guard(mutation.expr, loc2)
-                    val updatedConstraintBody = constraint.body.updated(j, updatedBodyFunctional)
-                    val updatedConstraint = Constraint(constraint.cparams, constraint.head, updatedConstraintBody, constraint.loc)
-                    val updatedCS: List[Constraint] = cs.updated(i, updatedConstraint)
-                    val updatedExpr = Expr.FixpointConstraintSet(updatedCS, tpe, loc1)
-                    val updatedMutation = Mutation(updatedExpr, mutation.loc, mutation.newStr)
-                    result = result.appended(updatedMutation)
-                  }
-              }
+          case Body.Functional(outVars, exp, loc2) =>
+            mutateExpr(exp).foreach { mutation =>
+              val updatedBodyFunctional = Body.Functional(outVars, mutation.value, loc2)
+              val updatedConstraintBody = constraint.body.updated(i, updatedBodyFunctional)
+              val updatedConstraint = Constraint(constraint.cparams, constraint.head, updatedConstraintBody, constraint.loc)
+              val updatedMutation = Mutation(updatedConstraint, mutation.loc, mutation.newStr)
+              result = result.appended(updatedMutation)
             }
-          }
-
-          result
-        case _ => LazyList.empty
+          case Body.Guard(exp, loc2) =>
+            mutateExpr(exp).foreach { mutation =>
+              val updatedBodyFunctional = Body.Guard(mutation.value, loc2)
+              val updatedConstraintBody = constraint.body.updated(i, updatedBodyFunctional)
+              val updatedConstraint = Constraint(constraint.cparams, constraint.head, updatedConstraintBody, constraint.loc)
+              val updatedMutation = Mutation(updatedConstraint, mutation.loc, mutation.newStr)
+              result = result.appended(updatedMutation)
+            }
+        }
       }
+
+      result
+    }
+
+    private def mutatePattern(pattern: Pattern)(implicit flix: Flix): LazyList[Mutation[Pattern]] =
+      pattern match {
+        // todo: I think, not mutate Wild and Var. What is Tag ?
+        case Pattern.Wild(tpe, loc) => LazyList.empty
+        case Pattern.Var(sym, tpe, loc) => LazyList.empty
+        case Pattern.Cst(cst, tpe, loc) => mutateConstant(cst).map(m => Mutation(Pattern.Cst(m.value, tpe, loc), loc, m.newStr))
+        case Pattern.Tag(sym, pat, tpe, loc) => LazyList.empty
+        case Pattern.Tuple(elms, tpe, loc) => mutatePatternTuple(pattern)
+        case Pattern.Record(pats, pat, tpe, loc) => LazyList.empty
+        case Pattern.RecordEmpty(tpe, loc) => LazyList.empty
+        case Pattern.Error(tpe, loc) => LazyList.empty
+      }
+
+    private def mutatePatternTuple(pattern: Pattern)(implicit flix: Flix): LazyList[Mutation[Pattern]] = pattern match {
+      case Pattern.Tuple(elms, tpe, loc) =>
+        LazyList.tabulate(elms.length)(i =>
+          mutatePattern(elms(i)).map(m => Mutation(Pattern.Tuple(elms.updated(i, m.value), tpe, loc), m.loc, m.newStr))
+        ).flatten
+      case _ => LazyList.empty
+    }
 
     private object Helper {
       val arithmeticSigTypes: Set[String] = Set(
@@ -496,7 +518,7 @@ object MutationTester {
   }
 
   // create MutationKind enum
-  private case class Mutation(expr: Expr, loc: SourceLocation, newStr: String)
+  private case class Mutation[+T](value: T, loc: SourceLocation, newStr: String)
 
   class MutationReporter(implicit flix: Flix) {
     private val all: AtomicInteger = new AtomicInteger(0)
@@ -526,7 +548,7 @@ object MutationTester {
           sb.append(yellow("COMPILATION FAILED") + System.lineSeparator())
       }
 
-      sb.append("-" * 50)
+      sb.append("-" * 70)
 
       // Todo: print and clear after each N mutants. Remember, that multiple threads can perform this function at a time
       println(sb.toString())
@@ -538,6 +560,7 @@ object MutationTester {
       .append(blue(s"All = $all, Killed = $killed, Survived = $survived, CompilationFailed = $compilationFailed."))
       .toString()
 
+    // todo: support diff kind enum: substringReplaced, line(s) added and other
     // todo: refactor SigSym newStr. For example, `Eq.neq(x, 5)` to `x != 5`
     // todo: refactor hardcoded '.loc.text.get' in this file
     // todo: refactor for multiline. Example: examples/larger-examples/Reachable.flix
