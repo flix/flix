@@ -203,7 +203,7 @@ object Weeder2 {
     def pickAllDeclarations(tree: Tree)(implicit s: State): Validation[List[Declaration], CompilationMessage] = {
       expectAny(tree, List(TreeKind.Root, TreeKind.Decl.Module))
       val modules = pickAll(TreeKind.Decl.Module, tree)
-      val classes = pickAll(TreeKind.Decl.Class, tree)
+      val traits = pickAll(TreeKind.Decl.Trait, tree)
       val instances = pickAll(TreeKind.Decl.Instance, tree)
       val definitions = pickAll(TreeKind.Decl.Def, tree)
       val enums = pickAll(TreeKind.Decl.Enum, tree)
@@ -212,7 +212,7 @@ object Weeder2 {
       val effects = pickAll(TreeKind.Decl.Effect, tree)
       mapN(
         traverse(modules)(visitModuleDecl),
-        traverse(classes)(visitTypeClassDecl),
+        traverse(traits)(visitTraitDecl),
         traverse(instances)(visitInstanceDecl),
         traverse(definitions)(visitDefinitionDecl(_)),
         traverse(enums)(visitEnumDecl),
@@ -220,8 +220,8 @@ object Weeder2 {
         traverse(typeAliases)(visitTypeAliasDecl),
         traverse(effects)(visitEffectDecl)
       ) {
-        case (modules, classes, instances, definitions, enums, rEnums, typeAliases, effects) =>
-          (modules ++ classes ++ instances ++ definitions ++ enums ++ rEnums ++ typeAliases ++ effects).sortBy(_.loc)
+        case (modules, traits, instances, definitions, enums, rEnums, typeAliases, effects) =>
+          (modules ++ traits ++ instances ++ definitions ++ enums ++ rEnums ++ typeAliases ++ effects).sortBy(_.loc)
       }
     }
 
@@ -240,8 +240,8 @@ object Weeder2 {
       }
     }
 
-    private def visitTypeClassDecl(tree: Tree)(implicit s: State): Validation[Declaration.Class, CompilationMessage] = {
-      expect(tree, TreeKind.Decl.Class)
+    private def visitTraitDecl(tree: Tree)(implicit s: State): Validation[Declaration.Trait, CompilationMessage] = {
+      expect(tree, TreeKind.Decl.Trait)
       val sigs = pickAll(TreeKind.Decl.Signature, tree)
       val laws = pickAll(TreeKind.Decl.Law, tree)
       flatMapN(
@@ -257,7 +257,7 @@ object Weeder2 {
         (doc, annotations, modifiers, ident, tparam, tconstr, sigs, laws) =>
           val assocs = pickAll(TreeKind.Decl.AssociatedTypeSig, tree)
           mapN(traverse(assocs)(visitAssociatedTypeSigDecl(_, tparam))) {
-            assocs => Declaration.Class(doc, annotations, modifiers, ident, tparam, tconstr, assocs, sigs, laws, tree.loc)
+            assocs => Declaration.Trait(doc, annotations, modifiers, ident, tparam, tconstr, assocs, sigs, laws, tree.loc)
           }
       }
     }

@@ -152,7 +152,7 @@ object CompletionProvider {
       //
       // Declarations.
       //
-      case SyntacticContext.Decl.Class => KeywordOtherCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Trait => KeywordOtherCompleter.getCompletions(context)
       case SyntacticContext.Decl.Enum => KeywordOtherCompleter.getCompletions(context)
       case SyntacticContext.Decl.Instance => KeywordOtherCompleter.getCompletions(context)
       case _: SyntacticContext.Decl =>

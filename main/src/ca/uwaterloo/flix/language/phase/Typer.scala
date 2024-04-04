@@ -31,8 +31,8 @@ object Typer {
     * Type checks the given AST root.
     */
   def run(root: KindedAst.Root, oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[TypedAst.Root, TypeError] = flix.phase("Typer") {
-    val traitEnv = mkTraitEnv(root.classes, root.instances)
-    val eqEnv = mkEqualityEnv(root.classes, root.instances)
+    val traitEnv = mkTraitEnv(root.traits, root.instances)
+    val eqEnv = mkEqualityEnv(root.traits, root.instances)
 
     val traitsVal = visitTraits(root, traitEnv, eqEnv, oldRoot, changeSet)
     val instancesVal = visitInstances(root, traitEnv, eqEnv)
@@ -111,7 +111,7 @@ object Typer {
   /**
     * Creates a trait environment from the traits and instances in the root.
     */
-  private def mkTraitEnv(traits0: Map[Symbol.TraitSym, KindedAst.Class], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): Map[Symbol.TraitSym, Ast.TraitContext] =
+  private def mkTraitEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): Map[Symbol.TraitSym, Ast.TraitContext] =
     flix.subphase("TraitEnv") {
       traits0.map {
         case (traitSym, trt) =>
@@ -120,7 +120,7 @@ object Typer {
             case KindedAst.Instance(_, _, _, _, tpe, tconstrs, _, _, _, _) => Ast.Instance(tpe, tconstrs)
           }
           // ignore the super trait parameters since they should all be the same as the trait param
-          val superTraits = trt.superClasses.map(_.head.sym)
+          val superTraits = trt.superTraits.map(_.head.sym)
           (traitSym, Ast.TraitContext(superTraits, envInsts))
       }
     }
@@ -128,7 +128,7 @@ object Typer {
   /**
     * Creates an equality environment from the traits and instances in the root.
     */
-  private def mkEqualityEnv(traits0: Map[Symbol.TraitSym, KindedAst.Class], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] =
+  private def mkEqualityEnv(traits0: Map[Symbol.TraitSym, KindedAst.Trait], instances0: Map[Symbol.TraitSym, List[KindedAst.Instance]])(implicit flix: Flix): ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef] =
     flix.subphase("EqualityEnv") {
 
       val assocs = for {
@@ -187,15 +187,15 @@ object Typer {
     */
   private def visitTraits(root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.TraitSym, TypedAst.Class], TypeError] =
     flix.subphase("Traits") {
-      val (staleTraits, freshTraits) = changeSet.partition(root.classes, oldRoot.classes)
+      val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.classes)
       mapN(ParOps.parTraverseValues(staleTraits)(visitTrait(_, root, traitEnv, eqEnv)))(_ ++ freshTraits)
     }
 
   /**
     * Reassembles a single trait.
     */
-  private def visitTrait(trt: KindedAst.Class, root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Class, TypeError] = trt match {
-    case KindedAst.Class(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, laws0, loc) =>
+  private def visitTrait(trt: KindedAst.Trait, root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Class, TypeError] = trt match {
+    case KindedAst.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0, root) // TODO ASSOC-TYPES redundant?
       val renv = RigidityEnv.empty.markRigid(tparam0.sym)
       val superTraits = superTraits0 // no subst to be done
