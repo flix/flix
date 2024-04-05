@@ -64,7 +64,7 @@ object MutationGenerator {
     defs.toList.map(d => (d._1, d._2) match {
       case (s, fun) =>
         if (defSyms.contains(s)) {
-          println(s, fun.exp)
+          //println(s, fun.exp)
           val mutExps = mutateExpr(fun.exp)
           val mutDefs = mutExps.map(mexp => {
             val mutatedDef = fun.copy(exp = mexp)

@@ -90,11 +90,19 @@ object MutationTester {
     }
 
     def insertDecAndCheckInDef(d: TypedAst.Def): TypedAst.Def = {
-        val loc = d.exp.loc
-        val method = classOf[Global].getMethods.find(m => m.getName.equals("decAndCheck")).get
-        val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Int64, Type.IO, loc)
-        val mask = Expr.UncheckedMaskingCast(InvokeMethod, Type.Int64, Type.Pure, loc)
-        val statement = Expr.Stm(mask, d.exp, d.exp.tpe, d.exp.eff, d.exp.loc)
+
+      val loc = d.exp.loc
+      val method = classOf[Global].getMethods.find(m => m.getName.equals("decAndCheck")).get
+      val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Int64, Type.IO, loc)
+      val mask = Expr.UncheckedMaskingCast(InvokeMethod, Type.Int64, Type.Pure, loc)
+      val block = d.exp match {
+          case e@Expr.LetRec(_, _, _, _, exp2, tpe, eff, loc) =>
+             e.copy(exp2 = Expr.Stm(mask, exp2, exp2.tpe, exp2.eff, exp2.loc))
+          case _ => d.exp
+        }
+
+
+        val statement = Expr.Stm(mask, block, d.exp.tpe, d.exp.eff, d.exp.loc)
         //println(s"name of function ${method.getName}")
         d.copy(exp = statement)
     }
@@ -157,11 +165,13 @@ object MutationTester {
     private def compileAndTestMutant(mDef: TypedAst.Def, mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit): TestRes = {
         val defs = testKit.root.defs
         val n = defs + (mut._1 -> mDef)
+        println(mDef)
         val newRoot = testKit.root.copy(defs = n)
         val cRes = testKit.flix.codeGen(newRoot).unsafeGet
         val testsFromTester = cRes.getTests.filter { case (s, _) => s.namespace.head.equals(testKit.testModule) }.toList
         runTest(testsFromTester)
     }
+
 
     /**
       * Runs all tests on the individual mutation, until a test failed or all succeeded.
