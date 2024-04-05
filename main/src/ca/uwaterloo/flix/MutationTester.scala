@@ -146,7 +146,7 @@ object MutationTester {
             val newSurvivorCount = if (testResults.equals(TestRes.MutantSurvived)) survivorCount + 1 else survivorCount
             val newUnknownCount = if (testResults.equals(TestRes.Unknown)) unknownCount + 1 else unknownCount
             val now = LocalDateTime.now()
-            val message = s"[${f.format(now)}] Mutants: $mutationAmount, Killed: ${mutationAmount - survivorCount}, Survived: $survivorCount, Unknown: $unknownCount"
+            val message = s"[${f.format(now)}] Mutants: $mutationAmount, Killed: ${mutationAmount - survivorCount - unknownCount}, Survived: $survivorCount, Unknown: $unknownCount"
             val newTemp = progressUpdate(message, accTemp)
             (newSurvivorCount, newUnknownCount, newTime, newTemp, mutationAmount)
             //val sym = mDef.sym.toString
@@ -156,6 +156,7 @@ object MutationTester {
 
     private def compileAndTestMutant(mDef: TypedAst.Def, mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit): TestRes = {
         val defs = testKit.root.defs
+        println(mDef)
         val n = defs + (mut._1 -> mDef)
         val newRoot = testKit.root.copy(defs = n)
         val cRes = testKit.flix.codeGen(newRoot).unsafeGet

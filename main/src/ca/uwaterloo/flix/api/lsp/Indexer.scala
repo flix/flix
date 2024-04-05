@@ -451,6 +451,9 @@ object Indexer {
 
     case Expr.Error(_, _, _) =>
       Index.occurrenceOf(exp0)
+
+    case Expr.Mutated(mutExp, _, _, _, _) =>
+      visitExp(mutExp)
   }
 
   /**

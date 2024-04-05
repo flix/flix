@@ -109,6 +109,7 @@ object TypedAstOps {
     case Expr.FixpointInject(exp, _, _, _, _) => sigSymsOf(exp)
     case Expr.FixpointProject(_, exp, _, _, _) => sigSymsOf(exp)
     case Expr.Error(_, _, _) => Set.empty
+    case Expr.Mutated(mutExp, _, _, _ , _) => sigSymsOf(mutExp)
   }
 
   /**
