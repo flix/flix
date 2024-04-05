@@ -258,7 +258,10 @@ mod FlixCheck2 {
 
     instance Arbitrary[Char] {
         pub def arbitrary(): Gen[Char] = 
-            chooseLowerChar()
+            chooseUpperChar()
+
+        pub def coArbitrary(x: Char): Gen[b] -> Gen[b] = 
+            ???
     }
 
     instance Arbitrary[Float32] {
