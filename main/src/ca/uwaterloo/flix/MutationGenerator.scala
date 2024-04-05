@@ -133,34 +133,35 @@ object MutationGenerator {
     *         where there in each mutant has been removed a case (expect the las of course). Furthermore we generate a list of
     *         mutants for each case, which includes all mutants of the respective subtree.
     */
-  private def mutateExpr(e: TypedAst.Expr): List[TypedAst.Expr] = e match {
-    case Expr.Cst(cst, tpe, loc) =>
-      mutateCst(cst).map(c => Expr.Cst(c, tpe, loc))
-    case exp@Expr.Var(_, _, _) =>
-      mutateVar(exp)
+  private def mutateExpr(e: TypedAst.Expr): List[TypedAst.Expr.Mutated] = e match {
+    case original@Expr.Cst(cst, tpe, loc) =>
+      mutateCst(cst).map(c => Expr.Mutated(Expr.Cst(c, tpe, loc),original,original.tpe, original.eff, original.loc))
+    case original@Expr.Var(_, _, _) =>
+      mutateVar(original).map(c => Expr.Mutated(c,original,original.tpe, original.eff, original.loc))
     case Expr.Def(_, _, _) => Nil
     case original@Expr.Sig(_, _, _) =>
-      mutateSig(original)
+      mutateSig(original).map(c => Expr.Mutated(c,original,original.tpe, original.eff, original.loc))
     case Expr.Hole(_, _, _) => Nil
     case Expr.HoleWithExp(_, _, _, _) => Nil
     case Expr.OpenAs(_, _, _, _) => Nil
-    case original@Expr.Use(_, _, exp, _) => mutateExpr(exp).map(m => original.copy(exp = m))
+    case original@Expr.Use(_, _, exp, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
     case original@Expr.Lambda(_, exp, _, _) =>
-      mutateExpr(exp).map(m => original.copy(exp = m))
+      mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
     case original@Expr.Apply(exp, exps, _, _, _) =>
-      val mut = mutateExpr(exp).map(m => original.copy(exp = m))
-      val mutateExps = exps.zipWithIndex.flatMap {
+      val mut = mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m),original,original.tpe, original.eff, original.loc))
+      val mutateExpsTemp = exps.zipWithIndex.flatMap {
         case (exp, index) =>
           val mutations = mutateExpr(exp)
           mutations.map(m => original.copy(exps = exps.updated(index, m)))
       }
-      val lengths = mutateExps.map(mr => mr.exps.length)
+      val lengths = mutateExpsTemp.map(mr => mr.exps.length)
       lengths.foreach(l => assert(exps.length == l, "fail in apply"))
+      val mutateExps = mutateExpsTemp.map(m => Expr.Mutated(m,original,original.tpe, original.eff, original.loc))
       mut ::: mutateExps
 
     case original@Expr.Unary(sop, exp, tpe, eff, loc) =>
-      val mut1 = Expr.Unary(sop, original, tpe, eff, loc)
-      mut1 :: mutateExpr(exp).map(m => original.copy(exp = m))
+      val mut1 = Expr.Mutated(Expr.Unary(sop, original, tpe, eff, loc), original, original.tpe, original.eff, original.loc)
+      mut1 :: mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
 
     case original@Expr.Binary(_, exp1, exp2, _, _, _) =>
       val mut2 = mutateExpr(exp1).map(m => Expr.Mutated(original.copy(exp1 = m), original, original.tpe, original.eff, original.loc))
@@ -237,7 +238,7 @@ object MutationGenerator {
     case original@Expr.ArrayLit(exps, exp, _, _, _) =>
       val mut = mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
       val mutateExps = exps.map(e => mutateExpr(e))
-      mutateExps.map(m => original.copy(exps = m)) ::: mut
+      mutateExps.map(m => Expr.Mutated(original.copy(m), original, original.tpe, original.eff, original.loc)) ::: mut
     case original@Expr.ArrayNew(exp1, exp2, exp3, _, _, _) =>
       val mut1 = mutateExpr(exp1).map(m => Expr.Mutated(original.copy(exp1 = m), original, original.tpe, original.eff, original.loc))
       val mut2 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = m), original, original.tpe, original.eff, original.loc))
