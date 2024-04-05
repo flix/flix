@@ -879,7 +879,9 @@ object BackendObjType {
           LCONST_0() ~
           LCMP() ~
           ifCondition(Condition.LT) {
-            GETSTATIC(InfiniteLoopException) ~
+            NEW(BackendObjType.MutationError.jvmName) ~
+            DUP() ~
+            INVOKESPECIAL(MutationError.Constructor) ~
             ATHROW()
           } ~
           LCONST_0() ~
@@ -1032,7 +1034,7 @@ object BackendObjType {
 
       cm.closeClassMaker()
     }
-    def Constructor: ConstructorMethod = ConstructorMethod(MutationError.jvmName, IsPublic, List(ReifiedSourceLocation.toTpe), Some(_ =>
+    def Constructor: ConstructorMethod = ConstructorMethod(MutationError.jvmName, IsPublic, Nil, Some(_ =>
       thisLoad() ~
         NEW(StringBuilder.jvmName) ~
         DUP() ~ INVOKESPECIAL(StringBuilder.Constructor) ~
