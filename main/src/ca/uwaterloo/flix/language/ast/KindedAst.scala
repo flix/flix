@@ -26,7 +26,7 @@ object KindedAst {
 
   val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Map.empty, MultiMap.empty)
 
-  case class Root(classes: Map[Symbol.TraitSym, Class],
+  case class Root(traits: Map[Symbol.TraitSym, Trait],
                   instances: Map[Symbol.TraitSym, List[Instance]],
                   defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
@@ -38,7 +38,7 @@ object KindedAst {
                   sources: Map[Source, SourceLocation],
                   names: MultiMap[List[String], String])
 
-  case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superClasses: List[Ast.TypeConstraint], assocs: List[AssocTypeSig], sigs: Map[Symbol.SigSym, Sig], laws: List[Def], loc: SourceLocation)
+  case class Trait(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[Ast.TypeConstraint], assocs: List[AssocTypeSig], sigs: Map[Symbol.SigSym, Sig], laws: List[Def], loc: SourceLocation)
 
   case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.TraitSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 

@@ -831,7 +831,7 @@ object Ast {
     sealed trait Decl extends SyntacticContext
 
     object Decl {
-      case object Class extends Decl
+      case object Trait extends Decl
 
       case object Enum extends Decl
 
