@@ -139,7 +139,7 @@ object Weeder {
 
     case d: ParsedAst.Declaration.TypeAlias => visitTypeAlias(d)
 
-    case d: ParsedAst.Declaration.Class => visitTrait(d)
+    case d: ParsedAst.Declaration.Trait => visitTrait(d)
 
     case d: ParsedAst.Declaration.Instance => visitInstance(d)
 
@@ -147,10 +147,10 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given trait declaration `c0`.
+    * Performs weeding on the given trait declaration `t0`.
     */
-  private def visitTrait(t0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Class], WeederError] = t0 match {
-    case ParsedAst.Declaration.Class(doc0, ann0, mods0, sp1, ident, tparam0, superTraits0, assocs0, lawsAndSigs, sp2) =>
+  private def visitTrait(t0: ParsedAst.Declaration.Trait)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Trait], WeederError] = t0 match {
+    case ParsedAst.Declaration.Trait(doc0, ann0, mods0, sp1, ident, tparam0, superTraits0, assocs0, lawsAndSigs, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
       val laws0 = lawsAndSigs.collect { case law: ParsedAst.Declaration.Law => law }
@@ -166,7 +166,7 @@ object Weeder {
 
       mapN(annVal, modsVal, superTraitsVal, assocsVal, sigsVal, lawsVal) {
         case (ann, mods, superTraits, assocs, sigs, laws) =>
-          List(WeededAst.Declaration.Class(doc, ann, mods, ident, tparam, superTraits, assocs.flatten, sigs.flatten, laws.flatten, loc))
+          List(WeededAst.Declaration.Trait(doc, ann, mods, ident, tparam, superTraits, assocs.flatten, sigs.flatten, laws.flatten, loc))
       }
   }
 

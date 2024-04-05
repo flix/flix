@@ -295,7 +295,7 @@ object Lowering {
   /**
     * Lowers the given trait `trt0`, with the given lowered sigs `sigs`.
     */
-  private def visitTrait(trt0: TypedAst.Class, sigs: Map[Symbol.SigSym, LoweredAst.Sig])(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Class = trt0 match {
+  private def visitTrait(trt0: TypedAst.Class, sigs: Map[Symbol.SigSym, LoweredAst.Sig])(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Trait = trt0 match {
     case TypedAst.Class(doc, ann, mod, sym, tparam0, superTraits0, assocs0, signatures0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0)
       val superTraits = superTraits0.map(visitTypeConstraint)
@@ -304,7 +304,7 @@ object Lowering {
       }
       val signatures = signatures0.map(sig => sigs(sig.sym))
       val laws = laws0.map(visitDef)
-      LoweredAst.Class(doc, ann, mod, sym, tparam, superTraits, assocs, signatures, laws, loc)
+      LoweredAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, signatures, laws, loc)
   }
 
   /**
