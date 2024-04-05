@@ -67,7 +67,7 @@ object EntryPoint {
     flatMapN(findOriginalEntryPoint(root)) {
       // Case 1: We have an entry point. Wrap it.
       case Some(entryPoint0) =>
-        mapN(visitEntryPoint(entryPoint0, root, root.classEnv)) {
+        mapN(visitEntryPoint(entryPoint0, root, root.traitEnv)) {
           entryPoint =>
             root.copy(
               defs = root.defs + (entryPoint.sym -> entryPoint),
@@ -188,7 +188,7 @@ object EntryPoint {
         Validation.success(())
       } else {
         // Delay ToString resolution if main has return type unit for testing with lib nix.
-        val toString = root.classes(new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)).sym
+        val toString = root.traits(new Symbol.TraitSym(Nil, "ToString", SourceLocation.Unknown)).sym
         if (TraitEnvironment.holds(Ast.TypeConstraint(Ast.TypeConstraint.Head(toString, SourceLocation.Unknown), resultTpe, SourceLocation.Unknown), traitEnv)) {
           // Case 2: XYZ -> a with ToString[a]
           Validation.success(())

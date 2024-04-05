@@ -185,16 +185,16 @@ object Typer {
     *
     * Returns [[Err]] if a definition fails to type check.
     */
-  private def visitTraits(root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.TraitSym, TypedAst.Class], TypeError] =
+  private def visitTraits(root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], oldRoot: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.TraitSym, TypedAst.Trait], TypeError] =
     flix.subphase("Traits") {
-      val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.classes)
+      val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
       mapN(ParOps.parTraverseValues(staleTraits)(visitTrait(_, root, traitEnv, eqEnv)))(_ ++ freshTraits)
     }
 
   /**
     * Reassembles a single trait.
     */
-  private def visitTrait(trt: KindedAst.Trait, root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Class, TypeError] = trt match {
+  private def visitTrait(trt: KindedAst.Trait, root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Trait, TypeError] = trt match {
     case KindedAst.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0, root) // TODO ASSOC-TYPES redundant?
       val renv = RigidityEnv.empty.markRigid(tparam0.sym)
@@ -208,7 +208,7 @@ object Typer {
       val sigsVal = traverse(sigs0.values)(visitSig(_, renv, List(tconstr), root, traitEnv, eqEnv))
       val lawsVal = traverse(laws0)(visitDef(_, List(tconstr), renv, root, traitEnv, eqEnv))
       mapN(sigsVal, lawsVal) {
-        case (sigs, laws) => TypedAst.Class(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
+        case (sigs, laws) => TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs, laws, loc)
       }
   }
 
@@ -250,7 +250,7 @@ object Typer {
       mapN(instancesVal) {
         case instances =>
           val map = instances.map {
-            case instance => instance.clazz.sym -> instance
+            case instance => instance.trt.sym -> instance
           }
           ListMap.from(map)
       }

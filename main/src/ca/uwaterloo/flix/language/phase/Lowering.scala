@@ -154,13 +154,13 @@ object Lowering {
 
     // TypedAst.Sigs are shared between the `sigs` field and the `classes` field.
     // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting traits.
-    val traits = ParOps.parMapValues(root.classes)(t => visitTrait(t, sigs))
+    val traits = ParOps.parMapValues(root.traits)(t => visitTrait(t, sigs))
 
     val newEnums = enums ++ restrictableEnums.map {
       case (_, v) => v.sym -> v
     }
 
-    LoweredAst.Root(traits, instances, sigs, defs, newEnums, effects, aliases, root.entryPoint, root.reachable, root.sources, root.classEnv, root.eqEnv)
+    LoweredAst.Root(traits, instances, sigs, defs, newEnums, effects, aliases, root.entryPoint, root.reachable, root.sources, root.traitEnv, root.eqEnv)
   }
 
   /**
@@ -295,8 +295,8 @@ object Lowering {
   /**
     * Lowers the given trait `trt0`, with the given lowered sigs `sigs`.
     */
-  private def visitTrait(trt0: TypedAst.Class, sigs: Map[Symbol.SigSym, LoweredAst.Sig])(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Trait = trt0 match {
-    case TypedAst.Class(doc, ann, mod, sym, tparam0, superTraits0, assocs0, signatures0, laws0, loc) =>
+  private def visitTrait(trt0: TypedAst.Trait, sigs: Map[Symbol.SigSym, LoweredAst.Sig])(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Trait = trt0 match {
+    case TypedAst.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, signatures0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0)
       val superTraits = superTraits0.map(visitTypeConstraint)
       val assocs = assocs0.map {
