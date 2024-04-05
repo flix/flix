@@ -564,6 +564,9 @@ object SemanticTokensProvider {
     case Expr.Error(_, _, _) =>
       Iterator.empty
 
+    case Expr.Mutated(mutExp, _, _, _, _) =>
+      visitExp(mutExp)
+
   }
 
   /**

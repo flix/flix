@@ -376,6 +376,9 @@ object TypedAstOps {
     case Expr.Error(_, _, _) =>
       Map.empty
 
+    case Expr.Mutated(mutExp, _, _, _, _) =>
+      freeVars(mutExp)
+
   }
 
   /**
