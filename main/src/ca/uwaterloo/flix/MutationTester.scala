@@ -23,6 +23,7 @@ import dev.flix.runtime.Global
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import ca.uwaterloo.flix.language.phase.jvm.BackendObjType
 
 ///
 /// A Mutation Tester can be used to evaluate ones test suite.
@@ -125,6 +126,7 @@ object MutationTester {
         })
         val totalEndTime = System.nanoTime() - totalStartTime
         println(s"There where $totalSurvivorCount surviving mutations, out of $amountOfMutants mutations")
+        println(s"There where $totalUnknowns mutations that did not finish terminating, out of $amountOfMutants mutations")
         val nano = 1_000_000_000.0
         val ifMutants = amountOfMutants > 0
         val average = if (ifMutants) (totalEndTime / nano) / amountOfMutants else 0
@@ -181,10 +183,11 @@ object MutationTester {
                         case _ => runTest(xs)
                     }
                 } catch {
-                    // case OurException: Throwable => TestRes.Unknown
                     case e: Throwable =>
-                        println(s"nonterminating mutation, $e")
-                        TestRes.MutantKilled
+                      if (e.getClass.toString.equals("class dev.flix.runtime.MutationError$")) {
+                        TestRes.Unknown
+                      }
+                      else TestRes.MutantKilled
                 }
             case _ => TestRes.MutantSurvived
         }
