@@ -80,6 +80,8 @@ object TypedAst {
 
   object Expr {
 
+    case class Mutated(mutExp: Expr, originalExp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+
     case class Cst(cst: Ast.Constant, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
     }

@@ -27,44 +27,6 @@ import ca.uwaterloo.flix.language.ast.Type.Alias
 import ca.uwaterloo.flix.language.ast.Type.Cst
 import ca.uwaterloo.flix.language.ast.Type.Var
 import ca.uwaterloo.flix.language.ast.Type.Apply
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Intersection
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Union
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Schema
-import ca.uwaterloo.flix.language.ast.TypeConstructor.RecordRowExtend
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Complement
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Pure
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Relation
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Univ
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Lazy
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Effect
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Receiver
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Not
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Int16
-import ca.uwaterloo.flix.language.ast.TypeConstructor.SchemaRowExtend
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Native
-import ca.uwaterloo.flix.language.ast.TypeConstructor.RecordRowEmpty
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Bool
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Float64
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Record
-import ca.uwaterloo.flix.language.ast.TypeConstructor.CaseIntersection
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Int8
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Int64
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Float32
-import ca.uwaterloo.flix.language.ast.TypeConstructor.RegionToStar
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Arrow
-import ca.uwaterloo.flix.language.ast.TypeConstructor.And
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Ref
-import ca.uwaterloo.flix.language.ast.TypeConstructor.CaseSet
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Lattice
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Int32
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Regex
-import ca.uwaterloo.flix.language.ast.TypeConstructor.CaseComplement
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Tuple
-import ca.uwaterloo.flix.language.ast.TypeConstructor.RestrictableEnum
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Sender
-import ca.uwaterloo.flix.language.ast.TypeConstructor.CaseUnion
-import ca.uwaterloo.flix.language.ast.TypeConstructor.SchemaRowEmpty
-import ca.uwaterloo.flix.language.ast.TypeConstructor.Or
 
 
 ///
@@ -375,6 +337,7 @@ object MutationGenerator {
     case original@Expr.FixpointInject(exp, _, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
     case original@Expr.FixpointProject(_, exp, _, _, _) => mutateExpr(exp).map(m => original.copy(exp = m))
     case Expr.Error(_, _, _) => Nil
+    case _ => Nil
   }
 
   private def mutateMatchrule(mr: TypedAst.MatchRule): List[TypedAst.MatchRule] = {
