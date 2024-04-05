@@ -20,27 +20,27 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 
 
 /**
-  * The following classes are assumed to always exist.
+  * The following traits are assumed to always exist.
   *
   * Anything added here must be mentioned in `CoreLibrary` in the Flix class.
   */
-object PredefinedClasses {
+object PredefinedTraits {
 
   /**
-    * Returns the class symbol with the given `name`.
+    * Returns the trait symbol with the given `name`.
     */
-  def lookupClassSym(name: String, root: KindedAst.Root): Symbol.ClassSym = {
-    val key = new Symbol.ClassSym(Nil, name, SourceLocation.Unknown)
-    root.classes.getOrElse(key, throw InternalCompilerException(s"The type class: '$key' is not defined.", SourceLocation.Unknown)).sym
+  def lookupTraitSym(name: String, root: KindedAst.Root): Symbol.TraitSym = {
+    val key = new Symbol.TraitSym(Nil, name, SourceLocation.Unknown)
+    root.classes.getOrElse(key, throw InternalCompilerException(s"The trait: '$key' is not defined.", SourceLocation.Unknown)).sym
   }
 
   /**
     * Returns the sig symbol with the given `clazz` and name `sig`.
     */
   def lookupSigSym(clazz: String, sig: String, root: KindedAst.Root): Symbol.SigSym = {
-    val clazzKey = new Symbol.ClassSym(Nil, clazz, SourceLocation.Unknown)
-    val sigKey = new Symbol.SigSym(clazzKey, sig, SourceLocation.Unknown)
-    root.classes.getOrElse(clazzKey, throw InternalCompilerException(s"The type class: '$clazzKey' is not defined.", SourceLocation.Unknown))
+    val trtKey = new Symbol.TraitSym(Nil, clazz, SourceLocation.Unknown)
+    val sigKey = new Symbol.SigSym(trtKey, sig, SourceLocation.Unknown)
+    root.classes.getOrElse(trtKey, throw InternalCompilerException(s"The trait: '$trtKey' is not defined.", SourceLocation.Unknown))
       .sigs.getOrElse(sigKey, throw InternalCompilerException(s"The signature '$sigKey' is not defined.", SourceLocation.Unknown))
       .sym
   }

@@ -6,16 +6,30 @@ mod Monadic {
 
     pub enum Gen[a](Int32 -> Rand -> a \ IO)
 
+<<<<<<< HEAD
     instance Functor[Gen] {
         pub def map(f: a -> b \ ef, gen: Gen[a]): Gen[b] \ ef =
             checked_ecast(Gen.Gen(size -> rand -> 
                 unchecked_cast(f(applyGen(gen, size, rand)) as _ \ IO)))
+=======
+    // pub def applyGen(gen: Gen[a], size: Int32, rand: Rand): a = 
+    //     let Gen.Gen(g) = gen;
+    //     checked_ecast(unchecked_cast(g(size, rand) as _ \ IO))
+    //     // g(size, rand)
+
+    instance Functor[Gen] {
+        pub def map(f: a -> b \ ef, gen: Gen[a]): Gen[b] \ ef =
+            let Gen.Gen(g) = gen;
+            checked_ecast(Gen.Gen(size -> rand -> 
+                unchecked_cast(f(g(size, rand)) as _ \ IO)))
+>>>>>>> 7f8862e70e544d2e31b439aa88e5ad89ad2bd672
     }
 
     instance Applicative[Gen] {
         pub def ap(fGen: Gen[a -> b \ ef], aGen: Gen[a]): Gen[b] \ ef = 
             checked_ecast(Gen.Gen(size -> rand ->
                 let (r1, r2) = splitRand(rand); 
+<<<<<<< HEAD
                 let func = applyGen(fGen, size, r1);
                 unchecked_cast(func(applyGen(aGen, size, r2)) as _ \ IO)))
     
@@ -59,6 +73,56 @@ mod Monadic {
     pub def rand(): Gen[Rand] = 
         Gen.Gen(_ -> rand -> unchecked_cast(rand as _ \ IO))
     
+=======
+                let Gen.Gen(g) = aGen;
+                let Gen.Gen(func) = fGen;
+                unchecked_cast(func(size, r1)(g(size, r2)) as _ \ IO)))
+    
+        pub def point(x: a): Gen[a] = 
+            Gen.Gen(_ -> _ -> unchecked_cast(x as _ \ IO))
+    
+    }
+
+    instance Monad[Gen] {
+        pub def flatMap(f: a -> Gen[b] \ ef, aGen: Gen[a]): Gen[b] \ ef =             
+            checked_ecast(Gen.Gen(size -> rand -> 
+                let (r1, r2) = splitRand(rand);
+                let Gen.Gen(g) = aGen;
+                unchecked_cast(
+                    let Gen.Gen(func) = f(g(size, r1));
+                    func(size, r2) as _ \ IO)))
+
+    }
+    
+    /// Returns a generator that generates a value of type `a` in the interval size defines.
+    pub def sized(f: Int32 -> Gen[a]): Gen[a] = 
+        Gen.Gen(size -> rand -> 
+            let Gen.Gen(g) = f(size);
+            g(size, rand)
+        )
+
+    /// Makes sure that the generator uses the specified size.
+    /// 
+    /// Takes as input size and generator of type `a`.     
+    ///
+    /// Returns a generator that generates a value of type `a`.
+    pub def resize(size: Int32, gen: Gen[a]): Gen[a] = 
+        Gen.Gen(_ -> rand -> 
+            let Gen.Gen(g) = gen;
+            g(size, rand)
+        )
+
+    pub def rand(): Gen[Rand] = 
+        Gen.Gen(_ -> rand -> unchecked_cast(rand as _ \ IO))
+
+    // pub def promote(f: a -> Gen[b]): Gen[a -> b] = 
+    //     Gen.Gen(size -> rand ->
+    //         a -> let gen = f(a);
+    //         let Gen.Gen(g) = gen;
+    //         g(size, rand)
+    //     )
+    
+>>>>>>> 7f8862e70e544d2e31b439aa88e5ad89ad2bd672
     /// Returns a generator that generates a value of type `a` from the given non-empty list of generators.
     pub def elements(xs: Nel[a]): Gen[a] =
         let vec = Nel.toVector(xs);

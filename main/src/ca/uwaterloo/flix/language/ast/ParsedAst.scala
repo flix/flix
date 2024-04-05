@@ -190,9 +190,10 @@ object ParsedAst {
       * @param ident   the name of the type.
       * @param tparams the type parameters of the type.
       * @param kind    the kind of the type.
+      * @param tpe     the default value for the type.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class AssocTypeSig(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, kind: Option[ParsedAst.Kind], sp2: SourcePosition)
+    case class AssocTypeSig(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, kind: Option[ParsedAst.Kind], tpe: Option[Type], sp2: SourcePosition)
 
     /**
       * Associated Type Declaration.

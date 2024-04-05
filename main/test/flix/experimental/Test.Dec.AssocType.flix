@@ -232,4 +232,25 @@ mod Test.Dec.AssocType {
 
     @test
     pub def testCOption2List03(): Bool = C.f(Option2.Some2(Option2.Some2(Option2.Some2(1 :: 2 :: Nil)))) == Some(1)
+
+    trait D[a] {
+        type T: Type = Bool
+        pub def f(x: a): D.T[a]
+    }
+
+    instance D[Unit] {
+        pub def f(_: Unit): Bool = true
+    }
+
+    instance D[Int32] {
+        type T = String
+        pub def f(_: Int32): String = "hi"
+    }
+
+    @test
+    pub def testD01(): Bool = D.f()
+
+    @test
+    pub def testD02(): String = D.f(123)
+
 }

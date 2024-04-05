@@ -320,7 +320,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](result)
   }
 
-  test("Pattern.Class.01") {
+  test("Pattern.Trait.01") {
     val input =
       """
         |enum E {

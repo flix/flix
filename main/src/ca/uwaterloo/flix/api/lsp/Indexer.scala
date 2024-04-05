@@ -29,7 +29,7 @@ object Indexer {
     Index.all(
       traverse(root.defs.values)(visitDef),
       traverse(root.enums.values)(visitEnum),
-      traverse(root.classes.values)(visitClass),
+      traverse(root.classes.values)(visitTrait),
       traverse(root.instances.values) {
         instances => traverse(instances)(visitInstance)
       },
@@ -101,14 +101,14 @@ object Indexer {
   }
 
   /**
-    * Returns a reverse index for the given class `class0`.
+    * Returns a reverse index for the given trait `trait0`.
     */
-  private def visitClass(class0: TypedAst.Class): Index = class0 match {
-    case Class(doc, ann, mod, sym, tparam, superClasses, assocs, signatures, laws, loc) =>
+  private def visitTrait(trait0: TypedAst.Class): Index = trait0 match {
+    case Class(doc, ann, mod, sym, tparam, superTraits, assocs, signatures, laws, loc) =>
       Index.all(
-        Index.occurrenceOf(class0),
+        Index.occurrenceOf(trait0),
         visitTypeParam(tparam),
-        traverse(superClasses)(visitTypeConstraint),
+        traverse(superTraits)(visitTypeConstraint),
         traverse(assocs)(visitAssocTypeSig),
         traverse(signatures)(visitSig),
         //        laws.map(visitDef) // TODO visit laws?
@@ -158,10 +158,11 @@ object Indexer {
     * Returns a reverse index for the given associated type signature `assoc`.
     */
   private def visitAssocTypeSig(assoc: AssocTypeSig): Index = assoc match {
-    case AssocTypeSig(_, _, _, tparam, _, _) =>
+    case AssocTypeSig(_, _, _, tparam, _, tpe, _) =>
       Index.all(
         Index.occurrenceOf(assoc),
         visitTypeParam(tparam),
+        Index.traverse(tpe)(visitType)
       )
   }
 
@@ -204,7 +205,7 @@ object Indexer {
 
     case Expr.Sig(sym, _, loc) =>
       val parent = Entity.Exp(exp0)
-      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ Index.useOf(sym.clazz, loc)
+      Index.occurrenceOf(exp0) ++ Index.useOf(sym, loc, parent) ++ Index.useOf(sym.trt, loc)
 
     case Expr.Hole(_, _, _) =>
       Index.occurrenceOf(exp0)

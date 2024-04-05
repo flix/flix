@@ -49,7 +49,7 @@ object Safety {
     * Checks that no type parameters for types that implement `Sendable` of kind `Region`
     */
   private def visitSendable(root: Root): List[SafetyError] = {
-    val sendableClass = new Symbol.ClassSym(Nil, "Sendable", SourceLocation.Unknown)
+    val sendableClass = new Symbol.TraitSym(Nil, "Sendable", SourceLocation.Unknown)
 
     root.instances.getOrElse(sendableClass, Nil) flatMap {
       case Instance(_, _, _, _, tpe, _, _, _, _, loc) =>

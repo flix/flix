@@ -41,10 +41,10 @@ object SemanticTokensProvider {
     //
 
     //
-    // Construct an iterator of the semantic tokens from classes.
+    // Construct an iterator of the semantic tokens from traits.
     //
-    val classTokens = root.classes.values.flatMap {
-      case decl if include(uri, decl.sym.loc) => visitClass(decl)
+    val traitTokens = root.classes.values.flatMap {
+      case decl if include(uri, decl.sym.loc) => visitTrait(decl)
       case _ => Nil
     }
 
@@ -93,7 +93,7 @@ object SemanticTokensProvider {
     //
     // Collect all tokens into one list.
     //
-    val allTokens = (classTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens ++ effectTokens).toList
+    val allTokens = (traitTokens ++ instanceTokens ++ defnTokens ++ enumTokens ++ typeAliasTokens ++ effectTokens).toList
 
     //
     // We keep all tokens that are: (i) single-line tokens, (ii) have the same source as `uri`, and (iii) come from real source locations.
@@ -122,14 +122,14 @@ object SemanticTokensProvider {
   private def include(uri: String, loc: SourceLocation): Boolean = loc.source.name == uri
 
   /**
-    * Returns all semantic tokens in the given class `classDecl`.
+    * Returns all semantic tokens in the given trait `traitDecl`.
     */
-  private def visitClass(classDecl: TypedAst.Class): Iterator[SemanticToken] = classDecl match {
-    case TypedAst.Class(_, _, _, sym, tparam, superClasses, assocs, signatures, laws, _) =>
+  private def visitTrait(traitDecl: TypedAst.Class): Iterator[SemanticToken] = traitDecl match {
+    case TypedAst.Class(_, _, _, sym, tparam, superTraits, assocs, signatures, laws, _) =>
       val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
-        superClasses.flatMap(visitTypeConstraint),
+        superTraits.flatMap(visitTypeConstraint),
         assocs.flatMap(visitAssocTypeSig),
         visitTypeParam(tparam),
         signatures.flatMap(visitSig),
@@ -240,11 +240,12 @@ object SemanticTokensProvider {
     * Returns all semantic tokens in the given associated type signature `assoc`.
     */
   private def visitAssocTypeSig(assoc: TypedAst.AssocTypeSig): Iterator[SemanticToken] = assoc match {
-    case TypedAst.AssocTypeSig(_, _, sym, tparam, _, _) =>
+    case TypedAst.AssocTypeSig(_, _, sym, tparam, _, tpe, _) =>
       val t = SemanticToken(SemanticTokenType.Type, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
         visitTypeParam(tparam),
+        tpe.iterator.flatMap(visitType)
       )
   }
 
