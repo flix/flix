@@ -261,6 +261,7 @@ object MutationTester {
 
     private def mutateExprDef(expr: Expr)(implicit flix: Flix): LazyList[Mutation[Expr]] = expr match {
       case Expr.Def(sym, tpe, loc) if defnIntNamespaces.contains(sym.namespace.mkString(".")) =>
+        // todo: refactor to imperative
         defnToDefn.get(sym.text)
           .flatMap(findDef(sym.namespace, _))
           .map(s => LazyList(Mutation(Expr.Def(s, tpe, loc), loc, s.toString)))
@@ -275,6 +276,7 @@ object MutationTester {
 
     private def mutateExprSig(expr: Expr)(implicit flix: Flix): LazyList[Mutation[Expr]] = expr match {
       case Expr.Sig(sym, tpe, loc) =>
+        // todo: refactor to imperative
         var l = List(conditionalNegateSigToSig, conditionalBoundarySigToSig)
         if (arithmeticSigTypes.contains(tpe.toString)) {
           l = arithmeticSigToSig :: l
@@ -295,8 +297,10 @@ object MutationTester {
     private def mutateExprApply(expr: TypedAst.Expr)(implicit flix: Flix): LazyList[Mutation[Expr]] = expr match {
       case Expr.Apply(exp, exps, tpe, eff, loc) =>
         exp match {
-          case Expr.Sig(sym, _, _) if sym.toString == "Neg.neg" => LazyList(Mutation(exps.head, loc, exps.head.loc.text.get))
-          case Expr.Def(sym, _, _) if defnIntNamespaces.contains(sym.namespace.mkString(".")) && sym.text == "bitwiseNot" => LazyList(Mutation(exps.head, loc, exps.head.loc.text.get))
+          case Expr.Sig(sym, _, _) if sym.toString == "Neg.neg" =>
+            LazyList(Mutation(exps.head, loc, exps.head.loc.text.get))
+          case Expr.Def(sym, _, _) if defnIntNamespaces.contains(sym.namespace.mkString(".")) && sym.text == "bitwiseNot" =>
+            LazyList(Mutation(exps.head, loc, exps.head.loc.text.get))
           case _ =>
             val res = Mutator.mutateExpr(exp).map { m =>
               val str = s"${m.newStr}${exps.map(_.loc.text.get).mkString("(", ", ", ")")}"
@@ -320,8 +324,10 @@ object MutationTester {
     }
 
     private def mutateExprBinary(expr: Expr): LazyList[Mutation[Expr]] = expr match {
-      case Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc) => LazyList(Mutation(Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc), loc, s"${exp1.loc.text.get} or ${exp2.loc.text.get}"))
-      case Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc) => LazyList(Mutation(Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc), loc, s"${exp1.loc.text.get} and ${exp2.loc.text.get}"))
+      case Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc) =>
+        LazyList(Mutation(Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc), loc, s"${exp1.loc.text.get} or ${exp2.loc.text.get}"))
+      case Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc) =>
+        LazyList(Mutation(Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc), loc, s"${exp1.loc.text.get} and ${exp2.loc.text.get}"))
       case _ => LazyList.empty
     }
 
@@ -333,120 +339,117 @@ object MutationTester {
       case _ => LazyList.empty
     }
 
+    // todo: move all FixPoints mutations to separated object ?
     private def mutateExprFixpointConstraintSet(expr: Expr)(implicit flix: Flix): LazyList[Mutation[Expr]] =
       expr match {
         case Expr.FixpointConstraintSet(cs, tpe, loc1) =>
-          // 1. Mutate each constraint
-          // 2. Add trivial constraint by name. todo: this
-          //    For formatter this will be line adding -> specify line number (before and after) and spaces count from left
+          val csWithIndex = cs.zipWithIndex
+          LazyList.from(csWithIndex).flatMap { case (constraint, i) =>
+            // remove constraint
+            val removedCS = csWithIndex.filterNot(_._2 == i).map(_._1)
+            val removedExpr = Expr.FixpointConstraintSet(removedCS, tpe, loc1)
+            val removedMutation = Mutation(removedExpr, constraint.loc, "")
 
-          var result = LazyList.empty[Mutation[Expr]]
-
-          cs.zipWithIndex.foreach { case (constraint, i) =>
-            val mutations = mutateConstraint(constraint)
-            mutations.foreach { mutation =>
-              val updatedCS: List[Constraint] = cs.updated(i, mutation.value)
+            // mutate constraint
+            val constraintMutations = mutateConstraint(constraint).map { m =>
+              val updatedCS: List[Constraint] = cs.updated(i, m.value)
               val updatedExpr = Expr.FixpointConstraintSet(updatedCS, tpe, loc1)
-              val updatedMutation = Mutation(updatedExpr, mutation.loc, mutation.newStr)
-              result = result.appended(updatedMutation)
+              Mutation(updatedExpr, m.loc, m.newStr)
             }
-          }
 
-          result
+            removedMutation #:: constraintMutations
+          }
         case _ => LazyList.empty
       }
 
-    /* todo:
-     * check Atom.Denotation: Relational or Latticenal
-     *
-     * there needs mutate only FixpointConstraintSet
-     * or also mutate injected structure in FixpointInject (?)
-     * or rename injected pred.Name (eq deletion inject)
-     *
-     * for Predicate.Body.Functional and Predicate.Body.Guard mutate inner exp
-     */
     private def mutateConstraint(constraint: Constraint)(implicit flix: Flix): LazyList[Mutation[Constraint]] = {
-      var result = LazyList.empty[Mutation[Constraint]]
+      // mutate head
+      val headMutations = mutatePredicateHead(constraint.head).map { m =>
+        Mutation(Constraint(constraint.cparams, m.value, constraint.body, constraint.loc), m.loc, m.newStr)
+      }
 
-      constraint.head match {
-        case Head.Atom(pred, den, terms, tpe, loc2) =>
-          terms.zipWithIndex.foreach { case (exp, i) =>
-            val mutations = mutateExpr(exp)
-            mutations.foreach { mutation =>
-              val updatedTerms = terms.updated(i, mutation.value)
-              val updatedHeadAtom = Head.Atom(pred, den, updatedTerms, tpe, loc2)
-              val updatedConstraint = Constraint(constraint.cparams, updatedHeadAtom, constraint.body, constraint.loc)
-              val updatedMutation = Mutation(updatedConstraint, mutation.loc, mutation.newStr)
-              result = result.appended(updatedMutation)
-            }
+      // mutate body
+      val bodiesMutations = mutatePredicateBodyList(constraint.body).map { m =>
+        Mutation(Constraint(constraint.cparams, constraint.head, m.value, constraint.loc), m.loc, m.newStr)
+      }
+
+      headMutations #::: bodiesMutations
+    }
+
+    private def mutatePredicateHead(head: Head)(implicit flix: Flix): LazyList[Mutation[Head]] = head match {
+      case Head.Atom(pred, den, terms, tpe, loc) =>
+        // mutate terms
+        LazyList.from(terms.zipWithIndex).flatMap { case (exp, i) =>
+          mutateExpr(exp).map { m =>
+            val updatedTerms = terms.updated(i, m.value)
+            val updatedHeadAtom = Head.Atom(pred, den, updatedTerms, tpe, loc)
+            Mutation(updatedHeadAtom, m.loc, m.newStr)
           }
-      }
-
-      // todo: refactor body mutations and common code
-      constraint.body.zipWithIndex.foreach { case (body, i) =>
-        body match {
-          case Body.Atom(pred, den, polarity, fixity, terms, tpe, loc2) =>
-            polarity match {
-              case Polarity.Positive =>
-                terms.zipWithIndex.foreach { case (pattern, j) =>
-                  mutatePattern(pattern).foreach { mutation =>
-                    val updatedTerms = terms.updated(j, mutation.value)
-                    val updatedBodyAtom = Body.Atom(pred, den, polarity, fixity, updatedTerms, tpe, loc2)
-                    val updatedConstraintBody = constraint.body.updated(i, updatedBodyAtom)
-                    val updatedConstraint = Constraint(constraint.cparams, constraint.head, updatedConstraintBody, constraint.loc)
-                    val updatedMutation = Mutation(updatedConstraint, mutation.loc, mutation.newStr)
-                    result = result.appended(updatedMutation)
-                  }
-                }
-              case Polarity.Negative =>
-                val updatedBodyAtom = Body.Atom(pred, den, Polarity.Positive, fixity, terms, tpe, loc2)
-                val updatedConstraintBody = constraint.body.updated(i, updatedBodyAtom)
-                val updatedConstraint = Constraint(constraint.cparams, constraint.head, updatedConstraintBody, constraint.loc)
-                val mutation = Mutation(updatedConstraint, loc2, loc2.text.get.stripPrefix("not "))
-                result = result.appended(mutation)
-            }
-          case Body.Functional(outVars, exp, loc2) =>
-            mutateExpr(exp).foreach { mutation =>
-              val updatedBodyFunctional = Body.Functional(outVars, mutation.value, loc2)
-              val updatedConstraintBody = constraint.body.updated(i, updatedBodyFunctional)
-              val updatedConstraint = Constraint(constraint.cparams, constraint.head, updatedConstraintBody, constraint.loc)
-              val updatedMutation = Mutation(updatedConstraint, mutation.loc, mutation.newStr)
-              result = result.appended(updatedMutation)
-            }
-          case Body.Guard(exp, loc2) =>
-            mutateExpr(exp).foreach { mutation =>
-              val updatedBodyFunctional = Body.Guard(mutation.value, loc2)
-              val updatedConstraintBody = constraint.body.updated(i, updatedBodyFunctional)
-              val updatedConstraint = Constraint(constraint.cparams, constraint.head, updatedConstraintBody, constraint.loc)
-              val updatedMutation = Mutation(updatedConstraint, mutation.loc, mutation.newStr)
-              result = result.appended(updatedMutation)
-            }
         }
-      }
+    }
 
-      result
+    private def mutatePredicateBodyList(bodyList: List[Body])(implicit flix: Flix): LazyList[Mutation[List[Body]]] = {
+      val bodyListWithIndex = bodyList.zipWithIndex
+      LazyList.from(bodyListWithIndex).flatMap { case (body, i) =>
+        // remove item
+        val removedMutation = Mutation(bodyListWithIndex.filterNot(_._2 == i).map(_._1), body.loc, "")
+
+        // mutate item
+        val bodyMutations = mutatePredicateBody(body).map { m =>
+          Mutation(bodyList.updated(i, m.value), m.loc, m.newStr)
+        }
+
+        removedMutation #:: bodyMutations
+      }
+    }
+
+    private def mutatePredicateBody(body: Body)(implicit flix: Flix): LazyList[Mutation[Body]] = body match {
+      case Body.Atom(pred, den, polarity, fixity, terms, tpe, loc) =>
+        // inverse polarity
+        val inversedPolarity = inverseAstPolarity(polarity)
+        val inversedBodyAtom = Body.Atom(pred, den, inversedPolarity, fixity, terms, tpe, loc)
+        val inversedStr = inversedPolarity match {
+          case Polarity.Positive => loc.text.get.stripPrefix("not ")
+          case Polarity.Negative => s"not ${loc.text.get}"
+        }
+        val inversedMutation = Mutation(inversedBodyAtom, loc, inversedStr)
+
+        // mutate terms
+        val termsMutations = LazyList.from(terms.zipWithIndex).flatMap { case (pattern, i) =>
+          mutatePattern(pattern).map { m =>
+            val updatedTerms = terms.updated(i, m.value)
+            val updatedBodyAtom = Body.Atom(pred, den, polarity, fixity, updatedTerms, tpe, loc)
+            Mutation(updatedBodyAtom, m.loc, m.newStr)
+          }
+        }
+
+        inversedMutation #:: termsMutations
+      case Body.Functional(outVars, exp, loc) =>
+        mutateExpr(exp).map(m => Mutation(Body.Functional(outVars, m.value, loc), m.loc, m.newStr))
+      case Body.Guard(exp, loc) =>
+        mutateExpr(exp).map(m => Mutation(Body.Guard(m.value, loc), m.loc, m.newStr))
     }
 
     private def mutatePattern(pattern: Pattern)(implicit flix: Flix): LazyList[Mutation[Pattern]] =
       pattern match {
-        // todo: I think, not mutate Wild and Var. What is Tag ?
+        // todo: I think, there needs mutate only Cst
         case Pattern.Wild(tpe, loc) => LazyList.empty
         case Pattern.Var(sym, tpe, loc) => LazyList.empty
         case Pattern.Cst(cst, tpe, loc) => mutateConstant(cst).map(m => Mutation(Pattern.Cst(m.value, tpe, loc), loc, m.newStr))
         case Pattern.Tag(sym, pat, tpe, loc) => LazyList.empty
-        case Pattern.Tuple(elms, tpe, loc) => mutatePatternTuple(pattern)
+        case Pattern.Tuple(elms, tpe, loc) => /*mutatePatternTuple(pattern)*/ LazyList.empty
         case Pattern.Record(pats, pat, tpe, loc) => LazyList.empty
         case Pattern.RecordEmpty(tpe, loc) => LazyList.empty
         case Pattern.Error(tpe, loc) => LazyList.empty
       }
-
-    private def mutatePatternTuple(pattern: Pattern)(implicit flix: Flix): LazyList[Mutation[Pattern]] = pattern match {
-      case Pattern.Tuple(elms, tpe, loc) =>
-        LazyList.tabulate(elms.length)(i =>
-          mutatePattern(elms(i)).map(m => Mutation(Pattern.Tuple(elms.updated(i, m.value), tpe, loc), m.loc, m.newStr))
-        ).flatten
-      case _ => LazyList.empty
-    }
+    //
+    //    private def mutatePatternTuple(pattern: Pattern)(implicit flix: Flix): LazyList[Mutation[Pattern]] = pattern match {
+    //      case Pattern.Tuple(elms, tpe, loc) =>
+    //        LazyList.tabulate(elms.length)(i =>
+    //          mutatePattern(elms(i)).map(m => Mutation(Pattern.Tuple(elms.updated(i, m.value), tpe, loc), m.loc, m.newStr))
+    //        ).flatten
+    //      case _ => LazyList.empty
+    //    }
 
     private object Helper {
       val arithmeticSigTypes: Set[String] = Set(
@@ -514,10 +517,17 @@ object MutationTester {
       } catch {
         case _: Exception => None // todo: refactor to return info that mutant creation failed ?
       }
+
+      def inverseAstPolarity(polarity: Polarity): Polarity =
+        polarity match {
+          case Polarity.Positive => Polarity.Negative
+          case Polarity.Negative => Polarity.Positive
+        }
     }
   }
 
-  // create MutationKind enum
+  // create MutationKind enum (?)
+  // todo: Mutation(_, m.loc, m.newStr) - refactor
   private case class Mutation[+T](value: T, loc: SourceLocation, newStr: String)
 
   class MutationReporter(implicit flix: Flix) {
