@@ -56,7 +56,7 @@ object Deriver {
       lazy val toStringSym = PredefinedTraits.lookupTraitSym("ToString", root)
       lazy val hashSym = PredefinedTraits.lookupTraitSym("Hash", root)
       lazy val sendableSym = PredefinedTraits.lookupTraitSym("Sendable", root)
-      val instanceVals = Validation.traverse(derives.classes) {
+      val instanceVals = Validation.traverse(derives.traits) {
         case Ast.Derivation(traitSym, loc) if cases.isEmpty => Validation.toSoftFailure(None, DerivationError.IllegalDerivationForEmptyEnum(enumSym, traitSym, loc))
         case Ast.Derivation(sym, loc) if sym == eqSym => mapN(mkEqInstance(enum0, loc, root))(Some(_))
         case Ast.Derivation(sym, loc) if sym == orderSym => mapN(mkOrderInstance(enum0, loc, root))(Some(_))

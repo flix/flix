@@ -699,7 +699,7 @@ object Ast {
     * if the enum is `enum Color {` then the source position would point
     * to the position right after `r` and have zero width.
     */
-  case class Derivations(classes: List[Derivation], loc: SourceLocation)
+  case class Derivations(traits: List[Derivation], loc: SourceLocation)
 
   /**
     * Represents the way a variable is bound.
