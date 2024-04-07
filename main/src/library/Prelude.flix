@@ -162,7 +162,7 @@ pub enum Purity3[a: Type, b: Type, c: Type, d: Type, ef: Eff] {
 }
 
 ///
-/// Returns `Purity.Pure(g) if `f` has no effects.
+/// Returns `Purity.Pure(g)` if `f` has no effects.
 /// Returns `Purity.Impure(g)` otherwise.
 /// The function `g` can then be used in a context that requires
 /// it to be pure.
