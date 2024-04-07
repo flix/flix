@@ -429,12 +429,44 @@ object Verifier {
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)
 
-    case Expr.TryWith(_, _, _, _, tpe, _, _) =>
-      // TODO: VERIFIER: Add support for TryWith.
-      tpe
+    case Expr.TryWith(exp, effUse, rules, ct, tpe, purity, loc) =>
+      val exptype = visitExpr(exp) match {
+        case MonoType.Arrow(List(u), t) =>
+          check(expected = MonoType.Unit)(actual = u, loc)
+          t
+        case e => failMismatchedShape(e, "Arrow with one parameter", loc)
+      }
 
-    case Expr.Do(_, _, tpe, _, _) =>
-      // TODO: VERIFIER: Add support for Do.
+      val effect = root.effects.getOrElse(effUse.sym,
+        throw InternalCompilerException(s"Unknown effect sym: '${effUse.sym}'", loc))
+      val ops = effect.ops.map(op => op.sym -> op).toMap
+
+      for (rule <- rules) {
+        val ruletype = visitExpr(rule.exp)
+        val op = ops.getOrElse(rule.op.sym,
+          throw InternalCompilerException(s"Unknown operation sym: '${rule.op.sym}'", loc))
+
+        val params = op.fparams.map(_.tpe)
+        val resumptionType = MonoType.Arrow(List(op.tpe), exptype)
+        val signature = MonoType.Arrow(params :+ resumptionType, exptype)
+
+        checkEq(ruletype, signature, loc)
+      }
+
+      checkEq(tpe, exptype, loc)
+
+    case Expr.Do(op, exps, tpe, purity, loc) =>
+      val ts = exps.map(visitExpr)
+      val eff = root.effects.getOrElse(op.sym.eff,
+        throw InternalCompilerException(s"Unknown effect sym: '${op.sym.eff}'", loc))
+      val opp = eff.ops.find(_.sym == op.sym)
+        .getOrElse(throw InternalCompilerException(s"Unknown operation sym: '${op.sym}'", loc))
+
+      assert(opp.fparams.length == ts.length)
+      for ((fp, t) <- opp.fparams.zip(ts)) {
+        checkEq(fp.tpe, t, loc)
+      }
+
       tpe
 
     case Expr.NewObject(name, clazz, tpe, methods, _, loc) =>
