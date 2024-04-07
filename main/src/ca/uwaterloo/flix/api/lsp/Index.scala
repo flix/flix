@@ -37,7 +37,7 @@ object Index {
   /**
     * Returns an index for the given `trait0`.
     */
-  def occurrenceOf(trait0: TypedAst.Trait): Index = empty + Entity.Class(trait0)
+  def occurrenceOf(trait0: TypedAst.Trait): Index = empty + Entity.Trait(trait0)
 
   /**
     * Returns an index for the given `case0`.
