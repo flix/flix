@@ -1,193 +1,161 @@
-mod Test.Dec.Assoc.Type.Eff {
+mod Test.Dec.Assoc.Type.Mult {
 
     ////////////////////////////////////////////////////////
     // Type Definitions                                   //
     ////////////////////////////////////////////////////////
 
-    eff OutInt32 {
-        pub def toStream(x: Int32): Unit
+    trait Mult[a] {
+        pub type Right: Type
+        pub type Out: Type
+        pub def mul(x: a, y: Mult.Right[a]): Mult.Out[a]
     }
 
-    eff OutString {
-        pub def toStream(x: String): Unit
+    instance Mult[Int32] {
+        pub type Right = Int32
+        pub type Out = Int32
+        pub def mul(x: Int32, y: Int32): Int32 = x * y
     }
 
-    trait Runner[a] {
-        pub type E: Eff
-        pub def run(x: a): Unit \ Runner.E[a]
+    instance Mult[String] {
+        pub type Right = Int32
+        pub type Out = String
+        pub def mul(x: String, y: Int32): String = String.repeat(y, x)
     }
 
-    instance Runner[Int32] {
-        pub type E = OutInt32
-        pub def run(x: Int32): Unit \ OutInt32 =
-            do OutInt32.toStream(x)
-    }
-
-    instance Runner[String] {
-        pub type E = OutString
-        pub def run(x: String): Unit \ OutString =
-            do OutString.toStream(x)
-    }
-
-    instance Runner[Vector[a]] with Runner[a] {
-        pub type E = Runner.E[a]
-        pub def run(x: Vector[a]): Unit \ Runner.E[a] =
-            foreach (a <- x) Runner.run(a)
-    }
-
-    ////////////////////////////////////////////////////////
-    // Polymorphic functions using Runner                 //
-    ////////////////////////////////////////////////////////
-
-    pub def runOnce(x: a): Unit \ Runner.E[a] with Runner[a] =
-        Runner.run(x)
-
-    pub def runTwice(x: a): Unit \ Runner.E[a] with Runner[a] = {
-        Runner.run(x);
-        Runner.run(x)
+    instance Mult[Vector[a]] with Mult[a] {
+        pub type Right = Mult.Right[a]
+        pub type Out = Vector[Mult.Out[a]]
+        pub def mul(x: Vector[a], y: Mult.Right[a]): Vector[Mult.Out[a]] = Vector.map(z -> Mult.mul(z, y), x)
     }
 
 
     ////////////////////////////////////////////////////////
-    // Monomorphic functions using Runner                 //
+    // Polymorphic functions using Mult                   //
+    ////////////////////////////////////////////////////////
+
+    pub def twiceLeft(f: Mult.Out[a] -> Mult.Right[a], x: a, y: Mult.Right[a]): Mult.Out[a] with Mult[a] =
+        Mult.mul(x, f(Mult.mul(x, y)))
+
+    pub def twiceRight(f: Mult.Out[a] -> a, x: a, y: Mult.Right[a]): Mult.Out[a] with Mult[a] =
+        Mult.mul(f(Mult.mul(x, y)), y)
+
+
+    ////////////////////////////////////////////////////////
+    // Monomorphic functions using Mult                   //
     ////////////////////////////////////////////////////////
 
     // Int32
 
-    pub def runOnceInt3201(x: Int32): Unit \ OutInt32 =
-        Runner.run(x)
+    pub def twiceLeftInt3201(x: Int32, y: Int32): Int32 =
+        Mult.mul(x, Mult.mul(x, y))
 
-    pub def runTwiceInt3201(x: Int32): Unit \ OutInt32 = {
-        Runner.run(x);
-        Runner.run(x)
-    }
+    pub def twiceRightInt3201(x: Int32, y: Int32): Int32 =
+        Mult.mul(Mult.mul(x, y), y)
 
-    pub def runOnceInt3202(x: Int32): Unit \ OutInt32 =
-        do OutInt32.toStream(x)
+    pub def twiceLeftInt3202(x: Int32, y: Int32): Int32 =
+        twiceLeft(identity, x, y)
 
-    pub def runTwiceInt3202(x: Int32): Unit \ OutInt32 = {
-        do OutInt32.toStream(x);
-        do OutInt32.toStream(x)
-    }
+    pub def twiceRightInt3202(x: Int32, y: Int32): Int32 =
+        twiceRight(identity, x, y)
+
 
     // String
 
-    pub def runOnceString01(x: String): Unit \ OutString =
-        Runner.run(x)
+    pub def twiceLeftString01(x: String, y: Int32): String =
+        Mult.mul(x, String.length(Mult.mul(x, y)))
 
-    pub def runTwiceString01(x: String): Unit \ OutString = {
-        Runner.run(x);
-        Runner.run(x)
-    }
+    pub def twiceRightString01(x: String, y: Int32): String =
+        Mult.mul(Mult.mul(x, y), y)
 
-    pub def runOnceString02(x: String): Unit \ OutString =
-        do OutString.toStream(x)
+    pub def twiceLeftString02(x: String, y: Int32): String =
+        twiceLeft(String.length, x, y)
 
-    pub def runTwiceString02(x: String): Unit \ OutString = {
-        do OutString.toStream(x);
-        do OutString.toStream(x)
-    }
+    pub def twiceRightString02(x: String, y: Int32): String =
+        twiceRight(identity, x, y)
 
-    // Vector[Int32]
+    // Vector
 
-    pub def runOnceVectorInt3201(x: Vector[Int32]): Unit \ OutInt32 =
-        Runner.run(x)
+    pub def twiceLeftVector01(x: Vector[Int32], y: Int32): Vector[Int32] =
+        Mult.mul(x, Vector.sum(Mult.mul(x, y)))
 
-    pub def runTwiceVectorInt3201(x: Vector[Int32]): Unit \ OutInt32 = {
-        Runner.run(x);
-        Runner.run(x)
-    }
+    pub def twiceRightVector01(x: Vector[Int32], y: Int32): Vector[Int32] =
+        Mult.mul(Mult.mul(x, y), y)
 
-    pub def runOnceVectorInt3202(x: Vector[Int32]): Unit \ OutInt32 =
-        foreach (a <- x) do OutInt32.toStream(a)
+    pub def twiceLeftVector02(x: Vector[Int32], y: Int32): Vector[Int32] =
+        twiceLeft(Vector.sum, x, y)
 
-    pub def runTwiceVectorInt3202(x: Vector[Int32]): Unit \ OutInt32 = {
-        foreach (a <- x) do OutInt32.toStream(a);
-        foreach (a <- x) do OutInt32.toStream(a)
-    }
+    pub def twiceRightVector02(x: Vector[Int32], y: Int32): Vector[Int32] =
+        twiceRight(identity, x, y)
 
-    // Vector[String]
-
-    pub def runOnceVectorString01(x: Vector[String]): Unit \ OutString =
-        Runner.run(x)
-
-    pub def runTwiceVectorString01(x: Vector[String]): Unit \ OutString = {
-        Runner.run(x);
-        Runner.run(x)
-    }
-
-    pub def runOnceVectorString02(x: Vector[String]): Unit \ OutString =
-        foreach (a <- x) do OutString.toStream(a)
-
-    pub def runTwiceVectorString02(x: Vector[String]): Unit \ OutString = {
-        foreach (a <- x) do OutString.toStream(a);
-        foreach (a <- x) do OutString.toStream(a)
-    }
-
-    // Vector[Vector[Int32]]
-
-    pub def runOnceVectorVectorInt3201(x: Vector[Vector[Int32]]): Unit \ OutInt32 =
-        Runner.run(x)
-
-    pub def runTwiceVectorVectorInt3201(x: Vector[Vector[Int32]]): Unit \ OutInt32 = {
-        Runner.run(x);
-        Runner.run(x)
-    }
-
-    pub def runOnceVectorVectorInt3202(x: Vector[Vector[Int32]]): Unit \ OutInt32 =
-        foreach (a <- x) foreach (b <- a) do OutInt32.toStream(b)
-
-    pub def runTwiceVectorVectorInt3202(x: Vector[Vector[Int32]]): Unit \ OutInt32 = {
-        foreach (a <- x) foreach (b <- a) do OutInt32.toStream(b);
-        foreach (a <- x) foreach (b <- a) do OutInt32.toStream(b)
-    }
-
-    // Vector[Vector[String]]
-
-    pub def runOnceVectorVectorString01(x: Vector[Vector[String]]): Unit \ OutString =
-        Runner.run(x)
-
-    pub def runTwiceVectorVectorString01(x: Vector[Vector[String]]): Unit \ OutString = {
-        Runner.run(x);
-        Runner.run(x)
-    }
-
-    pub def runOnceVectorVectorString02(x: Vector[Vector[String]]): Unit \ OutString =
-        foreach (a <- x) foreach (b <- a) do OutString.toStream(b)
-
-    pub def runTwiceVectorVectorString02(x: Vector[Vector[String]]): Unit \ OutString = {
-        foreach (a <- x) foreach (b <- a) do OutString.toStream(b);
-        foreach (a <- x) foreach (b <- a) do OutString.toStream(b)
-    }
+    pub def outerProduct(x: Vector[Int32], y: Vector[Int32]): Vector[Vector[Int32]] =
+        Vector.map(z -> Mult.mul(y, z), x)
 
 
     ////////////////////////////////////////////////////////
     // Tests                                              //
     ////////////////////////////////////////////////////////
 
-    pub def handleWithListInt32(f: a -> Unit \ OutInt32, x: a): List[Int32] =
-        try {
-            f(x); Nil
-        } with OutInt32 {
-            def toStream(x, k) =
-                (x :: k()) ::: Nil
-        }
+
+    // Int32
 
     @Test
     pub def testInt3201(): Bool =
-        handleWithListInt32(runOnceInt3201, 42) == 42 :: Nil
+        12 == twiceLeftInt3201(2, 3)
 
     @Test
     pub def testInt3202(): Bool =
-        handleWithListInt32(runOnceInt3202, 42) == 42 :: Nil
+        12 == twiceLeftInt3202(2, 3)
 
     @Test
     pub def testInt3203(): Bool =
-        handleWithListInt32(runTwiceInt3201, 42) == 42 :: 42 :: Nil
+        18 == twiceRightInt3201(2, 3)
 
     @Test
     pub def testInt3204(): Bool =
-        handleWithListInt32(runTwiceInt3202, 42) == 42 :: 42 :: Nil
+        18 == twiceRightInt3202(2, 3)
 
+
+    // String
+
+    @Test
+    pub def testString01(): Bool =
+        "abcabcabcabcabcabcabcabcabc" == twiceLeftString01("abc", 3)
+
+    @Test
+    pub def testString02(): Bool =
+        "abcabcabcabcabcabcabcabcabc" == twiceLeftString02("abc", 3)
+
+    @Test
+    pub def testString03(): Bool =
+        "abcabcabcabcabcabcabcabcabc" == twiceRightString01("abc", 3)
+
+    @Test
+    pub def testString04(): Bool =
+        "abcabcabcabcabcabcabcabcabc" == twiceRightString02("abc", 3)
+
+
+    // Vector
+
+    @Test
+    pub def testVector01(): Bool =
+        let right = 2 * 3 + 3 * 3 + 4 * 3;
+        Vector#{2 * right, 3 * right, 4 * right} == twiceLeftVector01(Vector#{2, 3, 4}, 3)
+
+    @Test
+    pub def testVector02(): Bool =
+        let right = 2 * 3 + 3 * 3 + 4 * 3;
+        Vector#{2 * right, 3 * right, 4 * right} == twiceLeftVector02(Vector#{2, 3, 4}, 3)
+
+    @Test
+    pub def testVector03(): Bool =
+        Vector#{2 * 3 * 3, 3 * 3 * 3, 4 * 3 * 3} == twiceRightVector01(Vector#{2, 3, 4}, 3)
+
+    @Test
+    pub def testVector04(): Bool =
+        Vector#{2 * 3 * 3, 3 * 3 * 3, 4 * 3 * 3} == twiceRightVector02(Vector#{2, 3, 4}, 3)
+
+    @Test
+    pub def testVector05(): Bool =
+        Vector#{Vector#{2 * 5, 2 * 6}, Vector#{3 * 5, 3 * 6}, Vector#{4 * 5, 4 * 6}} == outerProduct(Vector#{2, 3, 4}, Vector#{5, 6})
 
 }
