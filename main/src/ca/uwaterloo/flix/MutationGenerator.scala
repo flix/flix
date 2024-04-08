@@ -29,6 +29,8 @@ import ca.uwaterloo.flix.language.ast.Type.Var
 import ca.uwaterloo.flix.language.ast.Type.Apply
 import dev.flix.runtime.Global
 
+import scala.util.Failure
+
 
 ///
 /// The Mutation Generator has a single purpose,
@@ -336,13 +338,15 @@ object MutationGenerator {
       val mut2 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = m), original, original.tpe, original.eff, original.loc))
       mut1 ::: mut2
     case Expr.GetStaticField(_, _, _, _) => Nil
-    case original@Expr.PutStaticField(_, exp, _, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
+    case original@Expr.PutStaticField(_, exp, _, _, _) =>
+      mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
     case Expr.NewObject(_, _, _, _, _, _) => Nil
     case original@Expr.NewChannel(exp1, exp2, _, _, _) =>
       val mut1 = mutateExpr(exp1).map(m => Expr.Mutated(original.copy(exp1 = m), original, original.tpe, original.eff, original.loc))
       val mut2 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = m), original, original.tpe, original.eff, original.loc))
       mut1 ::: mut2
-    case original@Expr.GetChannel(exp, _, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
+    case original@Expr.GetChannel(exp, _, _, _) =>
+      mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
     case original@Expr.PutChannel(exp1, exp2, _, _, _) =>
       val mut1 = mutateExpr(exp1).map(m => Expr.Mutated(original.copy(exp1 = m), original, original.tpe, original.eff, original.loc))
       val mut2 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = m), original, original.tpe, original.eff, original.loc))

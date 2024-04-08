@@ -86,10 +86,9 @@ object Command {
     */
   case object Test extends Command
 
-   /**
-    * Show dependencies which have newer versions available.
+  /**
+    * Runs the mutation tests given a tester and testee.
     */
-  case object Outdated extends Command
 
   /**
     * Terminates the shell.
@@ -120,12 +119,9 @@ object Command {
     * Unknown command.
     */
   case class Unknown(s: String) extends Command
-  
-  /**
-    * Runs the mutation tests given a tester and testee.
-    */
+
+
   case class Mtest(tester: String, testee: String) extends Command
-  
   /**
     * Parses the given `input` into a command.
     */
@@ -163,9 +159,6 @@ object Command {
     if (input == ":build-jar" || input == ":jar")
       return Command.BuildJar
 
-    if (input == ":build-fatjar" || input == ":fatjar")
-      return Command.BuildFatJar
-
     if (input == ":build-pkg" || input == ":pkg")
       return Command.BuildPkg
 
@@ -178,8 +171,6 @@ object Command {
     if (input == ":test" || input == ":t")
       return Command.Test
 
-    if (input == ":outdated")
-      return Command.Outdated
 
     if (input == ":quit" || input == ":q")
       return Command.Quit
