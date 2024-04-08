@@ -42,6 +42,7 @@ object Verifier {
     visitExpr(decl.expr)(root, env, Map.empty)
   }
 
+
   private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
