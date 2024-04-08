@@ -42,8 +42,6 @@ object Verifier {
     visitExpr(decl.expr)(root, env, Map.empty)
   }
 
-  private val boxtype = MonoType.Native(new java.lang.Object().getClass)
-
   private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
 
     case Expr.Cst(cst, tpe, loc) => cst match {
@@ -359,11 +357,11 @@ object Verifier {
           tpe
 
         case AtomicOp.Box =>
-          check(expected = boxtype)(actual = tpe, loc)
+          check(expected = MonoType.Object)(actual = tpe, loc)
 
         case AtomicOp.Unbox =>
           val List(t1) = ts
-          check(expected = boxtype)(actual = t1, loc)
+          check(expected = MonoType.Object)(actual = t1, loc)
           tpe
 
         // cast may result in any type
