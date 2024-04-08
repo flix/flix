@@ -437,9 +437,8 @@ object Verifier {
       // TODO: VERIFIER: Add support for Do.
       tpe
 
-    case Expr.NewObject(name, clazz, tpe, methods, _, loc) =>
-      // TODO: VERIFIER: Add support for NewObject.
-      tpe
+    case Expr.NewObject(_, clazz, tpe, _, _, loc) =>
+      checkEq(tpe, MonoType.Native(clazz), loc)
 
   }
 
