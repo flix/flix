@@ -27,7 +27,7 @@ import ca.uwaterloo.flix.util.Formatter
   * All [[EntryPointError]]s are [[Recoverable]].
   */
 sealed trait EntryPointError extends CompilationMessage {
-  val kind = MessageKind("Entry Point Error")
+  implicit val kind: MessageKind = MessageKind("Entry Point Error")
 }
 
 object EntryPointError {

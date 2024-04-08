@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.Formatter
   * A common super-type for derivation errors.
   */
 sealed trait DerivationError extends CompilationMessage {
-  val kind = MessageKind("Derivation Error")
+  implicit val kind: MessageKind = MessageKind("Derivation Error")
 }
 
 object DerivationError {

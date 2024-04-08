@@ -26,7 +26,7 @@ import java.lang.reflect.{Constructor, Field, Method}
   * A common super-type for resolution errors.
   */
 sealed trait ResolutionError extends CompilationMessage {
-  val kind = MessageKind("Resolution Error")
+  implicit val kind: MessageKind = MessageKind("Resolution Error")
 }
 
 object ResolutionError {

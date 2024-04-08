@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.Formatter
   * A common super-type for weeding errors.
   */
 sealed trait WeederError extends CompilationMessage {
-  val kind = MessageKind("Syntax Error")
+  implicit val kind: MessageKind = MessageKind("Syntax Error")
 }
 
 object WeederError {

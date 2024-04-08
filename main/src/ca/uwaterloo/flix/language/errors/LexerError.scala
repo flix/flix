@@ -20,7 +20,7 @@ import ca.uwaterloo.flix.language.ast.SourceLocation
 import ca.uwaterloo.flix.util.Formatter
 
 sealed trait LexerError extends CompilationMessage with Recoverable {
-  val kind = MessageKind("Lexer Error")
+  implicit val kind: MessageKind = MessageKind("Lexer Error")
 }
 
 object LexerError {

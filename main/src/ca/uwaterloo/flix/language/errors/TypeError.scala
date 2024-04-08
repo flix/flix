@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.util.{Formatter, Grammar}
   * A common super-type for type errors.
   */
 sealed trait TypeError extends CompilationMessage {
-  val kind = MessageKind("Type Error")
+  implicit val kind: MessageKind = MessageKind("Type Error")
 }
 
 object TypeError {

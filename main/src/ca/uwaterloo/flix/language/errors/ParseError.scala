@@ -29,7 +29,7 @@ import ca.uwaterloo.flix.util.Formatter
  * @param loc the source location.
  */
 case class ParseError(msg: String, ctx: SyntacticContext, loc: SourceLocation) extends CompilationMessage with Recoverable {
-  val kind = MessageKind("Parse Error")
+  implicit val kind: MessageKind = MessageKind("Parse Error")
 
   def summary: String = msg
 

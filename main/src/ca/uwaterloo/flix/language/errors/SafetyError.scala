@@ -12,7 +12,7 @@ import ca.uwaterloo.flix.util.Formatter
   * All [[SafetyError]]s are [[Recoverable]].
   */
 sealed trait SafetyError extends CompilationMessage with Recoverable {
-  val kind = MessageKind("Safety Error")
+  implicit val kind: MessageKind = MessageKind("Safety Error")
 }
 
 object SafetyError {

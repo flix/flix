@@ -24,7 +24,7 @@ import ca.uwaterloo.flix.util.Formatter
   * A common super-type for naming errors.
   */
 sealed trait NameError extends CompilationMessage {
-  val kind = MessageKind("Name Error")
+  implicit val kind: MessageKind = MessageKind("Name Error")
 }
 
 object NameError {

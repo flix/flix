@@ -23,21 +23,21 @@ import ca.uwaterloo.flix.language.fmt.FormatType.formatType
 import ca.uwaterloo.flix.util.Formatter
 
 /**
- * A common super-type for kind errors.
- */
+  * A common super-type for kind errors.
+  */
 sealed trait KindError extends CompilationMessage {
-  val kind = MessageKind("Kind Error")
+  implicit val kind: MessageKind = MessageKind("Kind Error")
 }
 
 object KindError {
 
   /**
-   * An error raised to indicate two incompatible kinds.
-   *
-   * @param k1  the first kind.
-   * @param k2  the second kind.
-   * @param loc the location where the error occurred.
-   */
+    * An error raised to indicate two incompatible kinds.
+    *
+    * @param k1  the first kind.
+    * @param k2  the second kind.
+    * @param loc the location where the error occurred.
+    */
   case class MismatchedKinds(k1: Kind, k2: Kind, loc: SourceLocation) extends KindError with Unrecoverable {
     override def summary: String = s"Mismatched kinds: '${formatKind(k1)}' and '${formatKind(k2)}''"
 
@@ -54,13 +54,13 @@ object KindError {
   }
 
   /**
-   * Missing trait constraint.
-   *
-   * @param trt   the trait of the constraint.
-   * @param tpe   the type of the constraint.
-   * @param renv  the rigidity environment.
-   * @param loc   the location where the error occurred.
-   */
+    * Missing trait constraint.
+    *
+    * @param trt  the trait of the constraint.
+    * @param tpe  the type of the constraint.
+    * @param renv the rigidity environment.
+    * @param loc  the location where the error occurred.
+    */
   case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends KindError with Unrecoverable {
     def summary: String = s"No constraint of the '$trt' trait for the type '${formatType(tpe, Some(renv))}'"
 
@@ -75,12 +75,12 @@ object KindError {
   }
 
   /**
-   * An error describing a kind that doesn't match the expected kind.
-   *
-   * @param expectedKind the expected kind.
-   * @param actualKind   the actual kind.
-   * @param loc          the location where the error occurred.
-   */
+    * An error describing a kind that doesn't match the expected kind.
+    *
+    * @param expectedKind the expected kind.
+    * @param actualKind   the actual kind.
+    * @param loc          the location where the error occurred.
+    */
   case class UnexpectedKind(expectedKind: Kind, actualKind: Kind, loc: SourceLocation) extends KindError with Unrecoverable {
     override def summary: String = s"Kind ${formatKind(expectedKind)} was expected, but found ${formatKind(actualKind)}."
 
@@ -97,10 +97,10 @@ object KindError {
   }
 
   /**
-   * An error resulting from a type whose kind cannot be inferred.
-   *
-   * @param loc The location where the error occurred.
-   */
+    * An error resulting from a type whose kind cannot be inferred.
+    *
+    * @param loc The location where the error occurred.
+    */
   case class UninferrableKind(loc: SourceLocation) extends KindError with Unrecoverable {
     override def summary: String = "Unable to infer kind."
 

@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.Formatter
   * All [[RedundancyError]]s are [[Recoverable]].
   */
 trait RedundancyError extends CompilationMessage with Recoverable {
-  val kind = MessageKind("Redundancy Error")
+  implicit val kind: MessageKind = MessageKind("Redundancy Error")
 }
 
 object RedundancyError {
