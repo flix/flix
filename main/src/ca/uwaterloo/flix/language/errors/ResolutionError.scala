@@ -792,8 +792,7 @@ object ResolutionError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""${line(kind, source.name)}
-         |>> Undefined name '${red(qn.toString)}'.
+      s""">> Undefined name '${red(qn.toString)}'.
          |
          |${code(loc, "name not found")}
          |
