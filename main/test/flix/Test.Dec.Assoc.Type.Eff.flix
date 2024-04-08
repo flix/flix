@@ -165,12 +165,14 @@ mod Test.Dec.Assoc.Type.Eff {
     // Tests                                              //
     ////////////////////////////////////////////////////////
 
+    // Int32
+
     pub def handleWithListInt32(f: a -> Unit \ OutInt32, x: a): List[Int32] =
         try {
             f(x); Nil
         } with OutInt32 {
-            def toStream(x, k) =
-                (x :: k()) ::: Nil
+            def toStream(a, k) =
+                (a :: k()) ::: Nil
         }
 
     @Test
@@ -189,5 +191,38 @@ mod Test.Dec.Assoc.Type.Eff {
     pub def testInt3204(): Bool =
         handleWithListInt32(runTwiceInt3202, 42) == 42 :: 42 :: Nil
 
+
+    // String
+
+    pub def handleWithListString(f: a -> Unit \ OutString, x: a): List[String] =
+        try {
+            f(x); Nil
+        } with OutString {
+            def toStream(a, k) =
+                (a :: k()) ::: Nil
+        }
+
+    @Test
+    pub def testString01(): Bool =
+        handleWithListString(runOnceString01, "Hello") == "Hello" :: Nil
+
+    @Test
+    pub def testString02(): Bool =
+        handleWithListString(runOnceString02, "Hello") == "Hello" :: Nil
+
+    @Test
+    pub def testString03(): Bool =
+        handleWithListString(runTwiceString01, "Hello") == "Hello" :: "Hello" :: Nil
+
+    @Test
+    pub def testString04(): Bool =
+        handleWithListString(runTwiceString02, "Hello") == "Hello" :: "Hello" :: Nil
+
+
+    // Vector[Int32]
+
+    @Test
+    pub def testVectorInt3201(): Bool =
+        handleWithListInt32(runOnceVectorInt3201, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: Nil
 
 }
