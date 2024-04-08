@@ -27,6 +27,7 @@ import ca.uwaterloo.flix.language.ast.Type.Alias
 import ca.uwaterloo.flix.language.ast.Type.Cst
 import ca.uwaterloo.flix.language.ast.Type.Var
 import ca.uwaterloo.flix.language.ast.Type.Apply
+import dev.flix.runtime.Global
 
 
 ///
@@ -52,6 +53,13 @@ object MutationGenerator {
     mutateDefs(defs, defSyms).flatten
   }
 
+  def insertDACAndMutInExp(mutated: TypedAst.Expr): TypedAst.Expr = {
+    val loc = mutated.loc
+    val method = classOf[Global].getMethods.find(m => m.getName.equals("decAndCheck")).get
+    val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Int64, Type.IO, loc)
+    val mask = Expr.UncheckedMaskingCast(InvokeMethod, Type.Int64, Type.Pure, loc)
+    Expr.Stm(mask, mutated, mutated.tpe, mutated.eff, mutated.loc)
+  }
 
   /**
     *
@@ -64,7 +72,7 @@ object MutationGenerator {
     defs.toList.map(d => (d._1, d._2) match {
       case (s, fun) =>
         if (defSyms.contains(s)) {
-          //println(s, fun.exp)
+          println(s, fun)
           val mutExps = mutateExpr(fun.exp)
           val mutDefs = mutExps.map(mexp => {
             val mutatedDef = fun.copy(exp = mexp)
@@ -171,10 +179,8 @@ object MutationGenerator {
       val mut1 = mutateExpr(exp1).map(m => Expr.Mutated(original.copy(exp1 = m), original, original.tpe, original.eff, original.loc))
       val mut2 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = m), original, original.tpe, original.eff, original.loc))
       mut1 ::: mut2
-    case original@Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
-      val mut1 = mutateExpr(exp1).map(m => Expr.Mutated(original.copy(exp1 = m), original, original.tpe, original.eff, original.loc))
-      val mut2 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = m), original, original.tpe, original.eff, original.loc))
-      mut1 ::: mut2
+    case original@Expr.LetRec(_, _, _, _, exp2, _, _, _) =>
+      mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = insertDACAndMutInExp(m)), original, original.tpe, original.eff, original.loc))
     case Expr.Region(_, _) => Nil
     case Expr.Scope(_, _, _, _, _, _) => Nil
     case original@Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
@@ -492,7 +498,7 @@ object MutationGenerator {
         val litCand = Set(0, -1, 1, 2, 4, 6, 8, Short.MinValue, Short.MaxValue, lit + 1, lit - 1).map(i => i.toShort).filter(i => lit != i)
         litCand.toList.map(i => Constant.Int16(i))
       case Constant.Int32(lit) =>
-        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Int.MaxValue, Int.MinValue, lit + 1, lit - 1).filter(i => lit != i)
+        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, lit + 1, lit - 1).filter(i => lit != i)
         litCand.toList.map(i => Constant.Int32(i))
       case Constant.Int64(lit) =>
         val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Long.MaxValue, Long.MinValue, lit + 1, lit - 1).filter(i => lit != i)

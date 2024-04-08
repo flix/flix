@@ -90,23 +90,11 @@ object MutationTester {
     }
 
     def insertDecAndCheckInDef(d: TypedAst.Def): TypedAst.Def = {
-
       val loc = d.exp.loc
       val method = classOf[Global].getMethods.find(m => m.getName.equals("decAndCheck")).get
       val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Int64, Type.IO, loc)
       val mask = Expr.UncheckedMaskingCast(InvokeMethod, Type.Int64, Type.Pure, loc)
-      val block =  d.exp match {
-          case e@Expr.LetRec(_, _, _, _, exp2, _, _, _) =>
-             e.copy(exp2 = Expr.Stm(mask, exp2, exp2.tpe, exp2.eff, exp2.loc))
-          case e@Expr.Mutated(mutExp, _, _, _, _) =>
-            mutExp match {
-              case e@Expr.LetRec(_, _, _, _, exp2, _, _, _) =>
-                e.copy(exp2 = Expr.Stm(mask, exp2, exp2.tpe, exp2.eff, exp2.loc))
-              case _ => d.exp
-            }
-          case _ => d.exp
-        }
-        val statement = Expr.Stm(mask, block, d.exp.tpe, d.exp.eff, d.exp.loc)
+        val statement = Expr.Stm(mask, d.exp, d.exp.tpe, d.exp.eff, d.exp.loc)
         //println(s"name of function ${method.getName}")
         d.copy(exp = statement)
     }
@@ -134,7 +122,7 @@ object MutationTester {
         val localAcc = (0, 0, totalStartTime.toDouble, temp, 0)
         val (totalSurvivorCount, totalUnknowns, _, _, _) = mutatedDefs.foldLeft(localAcc)((acc, mut) => {
             val kit = TestKit(flix, root, testModule)
-            println(s"testing mutation in: ${mut._1}")
+            println(s"testing ${mut._2.length} mutations in: ${mut._1}")
             testMutantsAndUpdateProgress(acc, mut, kit, f)
         })
         val totalEndTime = System.nanoTime() - totalStartTime
