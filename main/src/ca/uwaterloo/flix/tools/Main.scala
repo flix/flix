@@ -15,15 +15,8 @@ object Main {
 
     val ast = flix.check().unsafeGet
     MutationTester.run(ast) match {
-      case Result.Ok(value) =>
-        val reporter = value._1
-        val timeSeconds = value._2
-
-        println()
-        println(reporter.printStats())
-        println(s"Calculated in $timeSeconds seconds")
-
-      case Result.Err(_) => println("Something went wrong")
+      case Result.Ok(_) =>
+      case Result.Err(e) => println(e)
     }
   }
 }
