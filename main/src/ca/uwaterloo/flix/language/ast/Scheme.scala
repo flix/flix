@@ -100,8 +100,8 @@ object Scheme {
     * Returns `true` if the given schemes are equivalent.
     */
   // TODO can optimize?
-  def equal(sc1: Scheme, sc2: Scheme, classEnv: Map[Symbol.TraitSym, Ast.ClassContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
-    lessThanEqual(sc1, sc2, classEnv, eqEnv) && lessThanEqual(sc2, sc1, classEnv, eqEnv)
+  def equal(sc1: Scheme, sc2: Scheme, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
+    lessThanEqual(sc1, sc2, traitEnv, eqEnv) && lessThanEqual(sc2, sc1, traitEnv, eqEnv)
   }
 
   /**
@@ -112,7 +112,7 @@ object Scheme {
     * ---------------------------------------
     * Θₚ ⊩ (∀α₁.π₁ ⇒ τ₁) ≤ (∀α₂.π₂ ⇒ τ₂)
     */
-  def lessThanEqual(sc1: Scheme, sc2: Scheme, cenv0: Map[Symbol.TraitSym, Ast.ClassContext], eenv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
+  def lessThanEqual(sc1: Scheme, sc2: Scheme, tenv0: Map[Symbol.TraitSym, Ast.TraitContext], eenv0: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Boolean = {
 
     // Instantiate sc2, creating [T/α₂]π₂ and [T/α₂]τ₂
     val (cconstrs2_0, econstrs2_0, tpe2_0) = Scheme.instantiate(sc2, SourceLocation.Unknown)
@@ -120,7 +120,7 @@ object Scheme {
     // Resolve what we can from the new econstrs
     // TODO ASSOC-TYPES probably these should be narrow from the start
     val tconstrs2_0 = econstrs2_0.map { case Ast.BroadEqualityConstraint(t1, t2) => TypeConstraint.Equality(t1, t2, Provenance.Match(t1, t2, SourceLocation.Unknown)) }
-    val (subst, econstrs2_1) = ConstraintSolver.resolve(tconstrs2_0, Substitution.empty, RigidityEnv.empty)(cenv0, eenv0, flix) match {
+    val (subst, econstrs2_1) = ConstraintSolver.resolve(tconstrs2_0, Substitution.empty, RigidityEnv.empty)(tenv0, eenv0, flix) match {
       case Result.Ok(ResolutionResult(newSubst, newConstrs, _)) =>
         (newSubst, newConstrs)
       case _ => throw InternalCompilerException("unexpected inconsistent type constraints", SourceLocation.Unknown)
@@ -142,7 +142,7 @@ object Scheme {
 
     // Add sc2's constraints to the environment
     val eenv = ConstraintSolver.expandEqualityEnv(eenv0, econstrs2)
-    val cenv = ConstraintSolver.expandClassEnv(cenv0, cconstrs2)
+    val cenv = ConstraintSolver.expandTraitEnv(tenv0, cconstrs2)
 
     // Mark all the constraints from sc2 as rigid
     val tvars = cconstrs2.flatMap(_.arg.typeVars) ++

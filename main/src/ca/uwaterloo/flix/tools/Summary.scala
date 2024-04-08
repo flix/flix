@@ -74,7 +74,7 @@ object Summary {
       for ((source, loc) <- root.sources.toList.sortBy(_._1.name)) {
         val module = source.name
         val defs = getFunctions(source, root) ++
-          getClassFunctions(source, root) ++
+          getTraitFunctions(source, root) ++
           getInstanceFunctions(source, root)
 
         val numberOfLines = loc.endLine
@@ -129,14 +129,14 @@ object Summary {
     }
 
   /**
-    * Returns the [[Spec]] of all class functions in the given `source`.
+    * Returns the [[Spec]] of all trait functions in the given `source`.
     *
     * Note: This means signatures that have an implementation (i.e. body expression).
     */
-  private def getClassFunctions(source: Ast.Source, root: Root): Iterable[Spec] =
-    root.classes.collect {
-      case (sym, clazz) if sym.loc.source == source =>
-        clazz.sigs.collect {
+  private def getTraitFunctions(source: Ast.Source, root: Root): Iterable[Spec] =
+    root.traits.collect {
+      case (sym, trt) if sym.loc.source == source =>
+        trt.sigs.collect {
           case sig if sig.exp.nonEmpty => sig.spec
         }
     }.flatten

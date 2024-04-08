@@ -67,7 +67,7 @@ object Entity {
     def precision: Precision = Precision.High
   }
 
-  case class Class(e: TypedAst.Class) extends Entity {
+  case class Trait(e: TypedAst.Trait) extends Entity {
     def loc: SourceLocation = e.sym.loc
     def precision: Precision = Precision.High
   }

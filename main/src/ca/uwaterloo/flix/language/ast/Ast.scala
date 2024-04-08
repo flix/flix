@@ -673,9 +673,9 @@ object Ast {
   case class Instance(tpe: Type, tconstrs: List[Ast.TypeConstraint])
 
   /**
-    * Represents the super classes and instances available for a particular class.
+    * Represents the super traits and instances available for a particular traits.
     */
-  case class ClassContext(superClasses: List[Symbol.TraitSym], instances: List[Ast.Instance])
+  case class TraitContext(superTraits: List[Symbol.TraitSym], instances: List[Ast.Instance])
 
   /**
     * Represents the definition of an associated type.
@@ -687,7 +687,7 @@ object Ast {
   /**
     * Represents a derivation on an enum (e.g. `enum E with Eq`).
     */
-  case class Derivation(clazz: Symbol.TraitSym, loc: SourceLocation)
+  case class Derivation(trt: Symbol.TraitSym, loc: SourceLocation)
 
   /**
     * Represents a list of derivations with a source location.
@@ -699,7 +699,7 @@ object Ast {
     * if the enum is `enum Color {` then the source position would point
     * to the position right after `r` and have zero width.
     */
-  case class Derivations(classes: List[Derivation], loc: SourceLocation)
+  case class Derivations(traits: List[Derivation], loc: SourceLocation)
 
   /**
     * Represents the way a variable is bound.
@@ -831,7 +831,7 @@ object Ast {
     sealed trait Decl extends SyntacticContext
 
     object Decl {
-      case object Class extends Decl
+      case object Trait extends Decl
 
       case object Enum extends Decl
 
