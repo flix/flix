@@ -225,4 +225,95 @@ mod Test.Dec.Assoc.Type.Eff {
     pub def testVectorInt3201(): Bool =
         handleWithListInt32(runOnceVectorInt3201, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: Nil
 
+    @Test
+    pub def testVectorInt3202(): Bool =
+        handleWithListInt32(runOnceVectorInt3202, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: Nil
+
+    @Test
+    pub def testVectorInt3203(): Bool =
+        handleWithListInt32(runTwiceVectorInt3201, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: 1 :: 2 :: 3 :: Nil
+
+    @Test
+    pub def testVectorInt3204(): Bool =
+        handleWithListInt32(runTwiceVectorInt3202, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: 1 :: 2 :: 3 :: Nil
+
+    @Test
+    pub def testVectorInt3205(): Bool =
+        handleWithListInt32(runOnceVectorInt3201, Vector#{}) == Nil
+
+    @Test
+    pub def testVectorInt3206(): Bool =
+        handleWithListInt32(runOnceVectorInt3202, Vector#{}) == Nil
+
+    @Test
+    pub def testVectorInt3207(): Bool =
+        handleWithListInt32(runTwiceVectorInt3201, Vector#{}) == Nil
+
+    @Test
+    pub def testVectorInt3208(): Bool =
+        handleWithListInt32(runTwiceVectorInt3202, Vector#{}) == Nil
+
+    @Test
+    pub def testVectorInt3209(): Bool =
+        let l = List.range(0, 100);
+        let left = handleWithListInt32(runOnceVectorInt3201, Foldable.toVector(l));
+        let right = handleWithListInt32(runOnceVectorInt3202, Foldable.toVector(l));
+        left == right
+
+    @Test
+    pub def testVectorInt3210(): Bool =
+        let l = List.range(0, 100);
+        let left = handleWithListInt32(runTwiceVectorInt3201, Foldable.toVector(l));
+        let right = handleWithListInt32(runTwiceVectorInt3202, Foldable.toVector(l));
+        left == right
+
+
+    // Vector[String]
+
+    @Test
+    pub def testVectorString01(): Bool =
+        handleWithListString(runOnceVectorString01, Vector#{"a", "b", "c"}) == "a" :: "b" :: "c" :: Nil
+
+    @Test
+    pub def testVectorString02(): Bool =
+        handleWithListString(runOnceVectorString02, Vector#{"a", "b", "c"}) == "a" :: "b" :: "c" :: Nil
+
+    @Test
+    pub def testVectorString03(): Bool =
+        handleWithListString(runTwiceVectorString01, Vector#{"a", "b", "c"}) == "a" :: "b" :: "c" :: "a" :: "b" :: "c" :: Nil
+
+    @Test
+    pub def testVectorString04(): Bool =
+        handleWithListString(runTwiceVectorString02, Vector#{"a", "b", "c"}) == "a" :: "b" :: "c" :: "a" :: "b" :: "c" :: Nil
+
+    @Test
+    pub def testVectorString05(): Bool =
+        handleWithListString(runOnceVectorString01, Vector#{}) == Nil
+
+    @Test
+    pub def testVectorString06(): Bool =
+        handleWithListString(runOnceVectorString02, Vector#{}) == Nil
+
+    @Test
+    pub def testVectorString07(): Bool =
+        handleWithListString(runTwiceVectorString01, Vector#{}) == Nil
+
+    @Test
+    pub def testVectorString08(): Bool =
+        handleWithListString(runTwiceVectorString02, Vector#{}) == Nil
+
+    @Test
+    pub def testVectorString09(): Bool =
+        let l = List.range(0, 100) |> List.map(Int32.toString);
+        let left = handleWithListString(runOnceVectorString01, Foldable.toVector(l));
+        let right = handleWithListString(runOnceVectorString02, Foldable.toVector(l));
+        left == right
+
+    @Test
+    pub def testVectorString10(): Bool =
+        let l = List.range(0, 100) |> List.map(Int32.toString);
+        let left = handleWithListString(runTwiceVectorString01, Foldable.toVector(l));
+        let right = handleWithListString(runTwiceVectorString02, Foldable.toVector(l));
+        left == right
+
 }
