@@ -72,11 +72,10 @@ object MutationGenerator {
     defs.toList.map(d => (d._1, d._2) match {
       case (s, fun) =>
         if (defSyms.contains(s)) {
-          println(s, fun)
           val mutExps = mutateExpr(fun.exp)
           val mutDefs = mutExps.map(mexp => {
-            val mutatedDef = fun.copy(exp = mexp)
-            MutationTester.insertDecAndCheckInDef(mutatedDef)
+            val mut = fun.copy(exp = mexp)
+            MutationTester.insertDecAndCheckInDef(mut)
           })
           Some(d._1 -> mutDefs)
         } else None
@@ -180,7 +179,7 @@ object MutationGenerator {
       val mut1 = mutateExpr(exp1).map(m => Expr.Mutated(original.copy(exp1 = m), original, original.tpe, original.eff, original.loc))
       val mut2 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = m), original, original.tpe, original.eff, original.loc))
       mut1 ::: mut2
-    case original@Expr.LetRec(_, _, _, _, exp2, _, _, _) =>
+    case original@Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
       mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = insertDACAndMutInExp(m)), original, original.tpe, original.eff, original.loc))
     case Expr.Region(_, _) => Nil
     case Expr.Scope(_, _, _, _, _, _) => Nil

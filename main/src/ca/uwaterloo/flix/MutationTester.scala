@@ -94,9 +94,9 @@ object MutationTester {
       val method = classOf[Global].getMethods.find(m => m.getName.equals("decAndCheck")).get
       val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Int64, Type.IO, loc)
       val mask = Expr.UncheckedMaskingCast(InvokeMethod, Type.Int64, Type.Pure, loc)
-        val statement = Expr.Stm(mask, d.exp, d.exp.tpe, d.exp.eff, d.exp.loc)
-        //println(s"name of function ${method.getName}")
-        d.copy(exp = statement)
+      val statement = Expr.Stm(mask, d.exp, d.exp.tpe, d.exp.eff, d.exp.loc)
+      //println(s"name of function ${method.getName}")
+      d.copy(exp = statement)
     }
 
     private def progressUpdate(message: String, timePassed: Long): Long = {
@@ -187,7 +187,9 @@ object MutationTester {
                     }
                 } catch {
                     case e: Throwable =>
+                      println(e)
                       if (e.getClass.toString.equals("class dev.flix.runtime.MutationError$")) {
+                        println("here")
                         TestRes.Unknown
                       }
                       else TestRes.MutantKilled
