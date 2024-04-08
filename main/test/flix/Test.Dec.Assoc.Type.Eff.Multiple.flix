@@ -42,14 +42,17 @@ mod Test.Dec.Assoc.Type.Eff.Multiple {
         pub type C = Split
 
         pub def compose(f: Int32 -> Unit \ Observe, x: Int32): Split[Observe, Maybe[Int32]] =
-            Split.Pending(f, Maybe.Just(x))
+            let g = y -> match y {
+                case Maybe.Nothing  => ()
+                case Maybe.Just(v)  => f(v)
+            };
+            Split.Pending(g, Maybe.Just(x))
 
         pub def reduce(x: Split[Observe, Maybe[Int32]]): Maybe[Int32] \ Observe = match x {
-            case Split.Nothing                   => Maybe.Nothing
-            case Split.Value(Maybe.Just(v))      => Maybe.Just(v)
-            case Split.Value(Maybe.Nothing)      => Maybe.Nothing
-            case Split.Pending(f, Maybe.Just(v)) => f(v); Maybe.Just(v)
-            case Split.Pending(_, Maybe.Nothing) => Maybe.Nothing
+            case Split.Nothing              => Maybe.Nothing
+            case Split.Value(Maybe.Just(v)) => Maybe.Just(v)
+            case Split.Value(Maybe.Nothing) => Maybe.Nothing
+            case Split.Pending(f, v)        => f(v); v
         }
     }
 }
