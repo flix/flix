@@ -40,7 +40,7 @@ mod Test.Dec.Assoc.Type.Eff.Multiple {
         pub type B = Maybe
         pub type C = Split
 
-        pub def compose(f: a -> Unit \ Observe, x: Int32): Split[Observe, Maybe[Int32]] =
+        pub def compose(f: Int32 -> Unit \ Observe, x: Int32): Split[Observe, Maybe[Int32]] =
             Split.Pending(f, Maybe.Just(x))
 
     }
