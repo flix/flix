@@ -26,6 +26,7 @@ mod Test.Dec.Assoc.Type.Eff.Multiple {
         pub type B: Type -> Type
         pub type C: Eff -> Type -> Type
         pub def compose(f: a -> Unit \ Composable.E[a], x: a): Composable.C[a][Composable.E[a], Composable.B[a][a]]
+        pub def reduce(x: Composable.C[a][Composable.E[a], Composable.B[a][a]]): Composable.B[a][a] \ Composable.E[a]
     }
 
     instance Transformer[Int32] {
@@ -43,5 +44,12 @@ mod Test.Dec.Assoc.Type.Eff.Multiple {
         pub def compose(f: Int32 -> Unit \ Observe, x: Int32): Split[Observe, Maybe[Int32]] =
             Split.Pending(f, Maybe.Just(x))
 
+        pub def reduce(x: Split[Observe, Maybe[Int32]]): Maybe[Int32] \ Observe = match x {
+            case Split.Nothing                   => Maybe.Nothing
+            case Split.Value(Maybe.Just(v))      => Maybe.Just(v)
+            case Split.Value(Maybe.Nothing)      => Maybe.Nothing
+            case Split.Pending(f, Maybe.Just(v)) => f(v); Maybe.Just(v)
+            case Split.Pending(_, Maybe.Nothing) => Maybe.Nothing
+        }
     }
 }
