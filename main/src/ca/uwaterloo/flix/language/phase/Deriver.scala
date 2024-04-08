@@ -17,9 +17,9 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Level, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, Name, Scheme, SemanticOp, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.DerivationError
-import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
+import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
 import ca.uwaterloo.flix.util.Validation.mapN
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 
@@ -30,9 +30,6 @@ import ca.uwaterloo.flix.util.{ParOps, Validation}
   * Errors with overlapping instances or unfulfilled type constraints must be caught in later phases.
   */
 object Deriver {
-
-  // We don't use regions here, so we can safely put every variable in the default level
-  private implicit val DefaultLevel: Level = Level.Default
 
   def run(root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Root, DerivationError] = flix.phase("Deriver") {
     val derivedInstances = ParOps.parTraverse(root.enums.values)(getDerivedInstances(_, root))
@@ -54,13 +51,13 @@ object Deriver {
   private def getDerivedInstances(enum0: KindedAst.Enum, root: KindedAst.Root)(implicit flix: Flix): Validation[List[KindedAst.Instance], DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, enumSym, _, derives, cases, _, _) =>
       // lazy so that in we don't try a lookup if there are no derivations (important for Nix Lib)
-      lazy val eqSym = PredefinedClasses.lookupClassSym("Eq", root)
-      lazy val orderSym = PredefinedClasses.lookupClassSym("Order", root)
-      lazy val toStringSym = PredefinedClasses.lookupClassSym("ToString", root)
-      lazy val hashSym = PredefinedClasses.lookupClassSym("Hash", root)
-      lazy val sendableSym = PredefinedClasses.lookupClassSym("Sendable", root)
-      val instanceVals = Validation.traverse(derives.classes) {
-        case Ast.Derivation(classSym, loc) if cases.isEmpty => Validation.toSoftFailure(None, DerivationError.IllegalDerivationForEmptyEnum(enumSym, classSym, loc))
+      lazy val eqSym = PredefinedTraits.lookupTraitSym("Eq", root)
+      lazy val orderSym = PredefinedTraits.lookupTraitSym("Order", root)
+      lazy val toStringSym = PredefinedTraits.lookupTraitSym("ToString", root)
+      lazy val hashSym = PredefinedTraits.lookupTraitSym("Hash", root)
+      lazy val sendableSym = PredefinedTraits.lookupTraitSym("Sendable", root)
+      val instanceVals = Validation.traverse(derives.traits) {
+        case Ast.Derivation(traitSym, loc) if cases.isEmpty => Validation.toSoftFailure(None, DerivationError.IllegalDerivationForEmptyEnum(enumSym, traitSym, loc))
         case Ast.Derivation(sym, loc) if sym == eqSym => mapN(mkEqInstance(enum0, loc, root))(Some(_))
         case Ast.Derivation(sym, loc) if sym == orderSym => mapN(mkOrderInstance(enum0, loc, root))(Some(_))
         case Ast.Derivation(sym, loc) if sym == toStringSym => mapN(mkToStringInstance(enum0, loc, root))(Some(_))
@@ -97,7 +94,7 @@ object Deriver {
     */
   private def mkEqInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
-      val eqClassSym = PredefinedClasses.lookupClassSym("Eq", root)
+      val eqTraitSym = PredefinedTraits.lookupTraitSym("Eq", root)
       val eqDefSym = Symbol.mkDefnSym("Eq.eq", Some(flix.genSym.freshId()))
 
       val param1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
@@ -107,13 +104,13 @@ object Deriver {
 
       val defn = KindedAst.Def(eqDefSym, spec, exp)
 
-      val tconstrs = getTypeConstraintsForTypeParams(tparams, eqClassSym, loc)
+      val tconstrs = getTypeConstraintsForTypeParams(tparams, eqTraitSym, loc)
 
       Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.ClassSymUse(eqClassSym, loc),
+        clazz = Ast.TraitSymUse(eqTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -148,7 +145,7 @@ object Deriver {
     */
   private def mkEqSpec(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
-      val eqClassSym = PredefinedClasses.lookupClassSym("Eq", root)
+      val eqTraitSym = PredefinedTraits.lookupTraitSym("Eq", root)
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
@@ -160,13 +157,13 @@ object Deriver {
         ),
         sc = Scheme(
           tparams.map(_.sym),
-          List(Ast.TypeConstraint(Ast.TypeConstraint.Head(eqClassSym, loc), tpe, loc)),
+          List(Ast.TypeConstraint(Ast.TypeConstraint.Head(eqTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureUncurriedArrow(List(tpe, tpe), Type.mkBool(loc), loc)
         ),
         tpe = Type.mkBool(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(eqClassSym, loc), tpe, loc)),
+        tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(eqTraitSym, loc), tpe, loc)),
         econstrs = Nil,
         loc = loc
       )
@@ -177,7 +174,7 @@ object Deriver {
     */
   private def mkEqMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(sym, tpe, _, _) =>
-      val eqSym = PredefinedClasses.lookupSigSym("Eq", "eq", root)
+      val eqSym = PredefinedTraits.lookupSigSym("Eq", "eq", root)
 
       // get a pattern corresponding to this case, e.g.
       // `case C2(x0, x1)`
@@ -248,7 +245,7 @@ object Deriver {
     */
   private def mkOrderInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
-      val orderClassSym = PredefinedClasses.lookupClassSym("Order", root)
+      val orderTraitSym = PredefinedTraits.lookupTraitSym("Order", root)
       val compareDefSym = Symbol.mkDefnSym("Order.compare", Some(flix.genSym.freshId()))
 
       val param1 = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
@@ -258,12 +255,12 @@ object Deriver {
 
       val defn = KindedAst.Def(compareDefSym, spec, exp)
 
-      val tconstrs = getTypeConstraintsForTypeParams(tparams, orderClassSym, loc)
+      val tconstrs = getTypeConstraintsForTypeParams(tparams, orderTraitSym, loc)
       Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.ClassSymUse(orderClassSym, loc),
+        clazz = Ast.TraitSymUse(orderTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -278,7 +275,7 @@ object Deriver {
     */
   private def mkCompareImpl(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Expr = enum0 match {
     case KindedAst.Enum(_, _, _, _, _, _, cases, _, _) =>
-      val compareSigSym = PredefinedClasses.lookupSigSym("Order", "compare", root)
+      val compareSigSym = PredefinedTraits.lookupSigSym("Order", "compare", root)
 
       val lambdaVarSym = Symbol.freshVarSym("indexOf", BoundBy.Let, loc)
 
@@ -339,8 +336,8 @@ object Deriver {
     */
   private def mkCompareSpec(enum0: KindedAst.Enum, param1: Symbol.VarSym, param2: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
-      val orderClassSym = PredefinedClasses.lookupClassSym("Order", root)
-      val comparisonEnumSym = PredefinedClasses.lookupEnumSym("Comparison", root)
+      val orderTraitSym = PredefinedTraits.lookupTraitSym("Order", root)
+      val comparisonEnumSym = PredefinedTraits.lookupEnumSym("Comparison", root)
 
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
@@ -353,13 +350,13 @@ object Deriver {
         ),
         sc = Scheme(
           tparams.map(_.sym),
-          List(Ast.TypeConstraint(Ast.TypeConstraint.Head(orderClassSym, loc), tpe, loc)),
+          List(Ast.TypeConstraint(Ast.TypeConstraint.Head(orderTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureUncurriedArrow(List(tpe, tpe), Type.mkEnum(comparisonEnumSym, Kind.Star, loc), loc)
         ),
         tpe = Type.mkEnum(comparisonEnumSym, Kind.Star, loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(orderClassSym, loc), tpe, loc)),
+        tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(orderTraitSym, loc), tpe, loc)),
         econstrs = Nil,
         loc = loc
       )
@@ -382,9 +379,9 @@ object Deriver {
     */
   private def mkComparePairMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(sym, tpe, _, _) =>
-      val equalToSym = PredefinedClasses.lookupCaseSym("Comparison", "EqualTo", root)
-      val compareSigSym = PredefinedClasses.lookupSigSym("Order", "compare", root)
-      val thenCompareDefSym = PredefinedClasses.lookupDefSym(List("Order"), "thenCompare", root)
+      val equalToSym = PredefinedTraits.lookupCaseSym("Comparison", "EqualTo", root)
+      val compareSigSym = PredefinedTraits.lookupSigSym("Order", "compare", root)
+      val thenCompareDefSym = PredefinedTraits.lookupDefSym(List("Order"), "thenCompare", root)
 
       // Match on the tuple
       // `case (C2(x0, x1), C2(y0, y1))
@@ -462,7 +459,7 @@ object Deriver {
     */
   private def mkToStringInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
-      val toStringClassSym = PredefinedClasses.lookupClassSym("ToString", root)
+      val toStringTraitSym = PredefinedTraits.lookupTraitSym("ToString", root)
       val toStringDefSym = Symbol.mkDefnSym("ToString.toString", Some(flix.genSym.freshId()))
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
@@ -471,13 +468,13 @@ object Deriver {
 
       val defn = KindedAst.Def(toStringDefSym, spec, exp)
 
-      val tconstrs = getTypeConstraintsForTypeParams(tparams, toStringClassSym, loc)
+      val tconstrs = getTypeConstraintsForTypeParams(tparams, toStringTraitSym, loc)
 
       Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.ClassSymUse(toStringClassSym, loc),
+        clazz = Ast.TraitSymUse(toStringTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         assocs = Nil,
@@ -508,7 +505,7 @@ object Deriver {
     */
   private def mkToStringSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
-      val toStringClassSym = PredefinedClasses.lookupClassSym("ToString", root)
+      val toStringTraitSym = PredefinedTraits.lookupTraitSym("ToString", root)
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
@@ -517,13 +514,13 @@ object Deriver {
         fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
-          List(Ast.TypeConstraint(Ast.TypeConstraint.Head(toStringClassSym, loc), tpe, loc)),
+          List(Ast.TypeConstraint(Ast.TypeConstraint.Head(toStringTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureArrow(tpe, Type.mkString(loc), loc)
         ),
         tpe = Type.mkString(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(toStringClassSym, loc), tpe, loc)),
+        tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(toStringTraitSym, loc), tpe, loc)),
         econstrs = Nil,
         loc = loc
       )
@@ -534,7 +531,7 @@ object Deriver {
     */
   private def mkToStringMatchRule(caze: KindedAst.Case, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(sym, tpe, _, _) =>
-      val toStringSym = PredefinedClasses.lookupSigSym("ToString", "toString", root)
+      val toStringSym = PredefinedTraits.lookupSigSym("ToString", "toString", root)
 
       // get a pattern corresponding to this case, e.g.
       // `case C2(x0, x1)`
@@ -598,7 +595,7 @@ object Deriver {
     */
   private def mkHashInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
-      val hashClassSym = PredefinedClasses.lookupClassSym("Hash", root)
+      val hashTraitSym = PredefinedTraits.lookupTraitSym("Hash", root)
       val hashDefSym = Symbol.mkDefnSym("Hash.hash", Some(flix.genSym.freshId()))
 
       val param = Symbol.freshVarSym("x", BoundBy.FormalParam, loc)
@@ -607,12 +604,12 @@ object Deriver {
 
       val defn = KindedAst.Def(hashDefSym, spec, exp)
 
-      val tconstrs = getTypeConstraintsForTypeParams(tparams, hashClassSym, loc)
+      val tconstrs = getTypeConstraintsForTypeParams(tparams, hashTraitSym, loc)
       Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.ClassSymUse(hashClassSym, loc),
+        clazz = Ast.TraitSymUse(hashTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         defs = List(defn),
@@ -645,7 +642,7 @@ object Deriver {
     */
   private def mkHashSpec(enum0: KindedAst.Enum, param: Symbol.VarSym, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.Spec = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
-      val hashClassSym = PredefinedClasses.lookupClassSym("Hash", root)
+      val hashTraitSym = PredefinedTraits.lookupTraitSym("Hash", root)
       KindedAst.Spec(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
@@ -654,13 +651,13 @@ object Deriver {
         fparams = List(KindedAst.FormalParam(param, Ast.Modifiers.Empty, tpe, Ast.TypeSource.Ascribed, loc)),
         sc = Scheme(
           tparams.map(_.sym),
-          List(Ast.TypeConstraint(Ast.TypeConstraint.Head(hashClassSym, loc), tpe, loc)),
+          List(Ast.TypeConstraint(Ast.TypeConstraint.Head(hashTraitSym, loc), tpe, loc)),
           Nil,
           Type.mkPureArrow(tpe, Type.mkInt32(loc), loc)
         ),
         tpe = Type.mkInt32(loc),
         eff = Type.Cst(TypeConstructor.Pure, loc),
-        tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(hashClassSym, loc), tpe, loc)),
+        tconstrs = List(Ast.TypeConstraint(Ast.TypeConstraint.Head(hashTraitSym, loc), tpe, loc)),
         econstrs = Nil,
         loc = loc
       )
@@ -671,8 +668,8 @@ object Deriver {
     */
   private def mkHashMatchRule(caze: KindedAst.Case, index: Int, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): KindedAst.MatchRule = caze match {
     case KindedAst.Case(sym, tpe, _, _) =>
-      val hashSigSym = PredefinedClasses.lookupSigSym("Hash", "hash", root)
-      val combineDefSym = PredefinedClasses.lookupDefSym(List("Hash"), "combine", root)
+      val hashSigSym = PredefinedTraits.lookupSigSym("Hash", "hash", root)
+      val combineDefSym = PredefinedTraits.lookupDefSym(List("Hash"), "combine", root)
 
       // get a pattern corresponding to this case, e.g.
       // `case C2(x0, x1)`
@@ -726,15 +723,15 @@ object Deriver {
     */
   private def mkSendableInstance(enum0: KindedAst.Enum, loc: SourceLocation, root: KindedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, DerivationError] = enum0 match {
     case KindedAst.Enum(_, _, _, _, tparams, _, _, tpe, _) =>
-      val sendableClassSym = PredefinedClasses.lookupClassSym("Sendable", root)
+      val sendableTraitSym = PredefinedTraits.lookupTraitSym("Sendable", root)
 
-      val tconstrs = getTypeConstraintsForTypeParams(tparams, sendableClassSym, loc)
+      val tconstrs = getTypeConstraintsForTypeParams(tparams, sendableTraitSym, loc)
 
       Validation.success(KindedAst.Instance(
         doc = Ast.Doc(Nil, loc),
         ann = Ast.Annotations.Empty,
         mod = Ast.Modifiers.Empty,
-        clazz = Ast.ClassSymUse(sendableClassSym, loc),
+        clazz = Ast.TraitSymUse(sendableTraitSym, loc),
         tpe = tpe,
         tconstrs = tconstrs,
         defs = Nil,
@@ -755,9 +752,9 @@ object Deriver {
     * Creates type constraints for the given type parameters.
     * Filters out non-star type parameters and wild type parameters.
     */
-  private def getTypeConstraintsForTypeParams(tparams: List[KindedAst.TypeParam], clazz: Symbol.ClassSym, loc: SourceLocation): List[Ast.TypeConstraint] = tparams.collect {
+  private def getTypeConstraintsForTypeParams(tparams: List[KindedAst.TypeParam], trt: Symbol.TraitSym, loc: SourceLocation): List[Ast.TypeConstraint] = tparams.collect {
     case tparam if tparam.sym.kind == Kind.Star && !tparam.name.isWild =>
-      Ast.TypeConstraint(Ast.TypeConstraint.Head(clazz, loc), Type.Var(tparam.sym, loc), loc)
+      Ast.TypeConstraint(Ast.TypeConstraint.Head(trt, loc), Type.Var(tparam.sym, loc), loc)
   }
 
   /**

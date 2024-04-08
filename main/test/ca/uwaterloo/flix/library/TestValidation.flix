@@ -43,13 +43,13 @@ mod TestValidation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def functor_map01(): Bool = Functor.map(x -> x, Success(123)): Validation[Int32, Int32] == Success(123)
+    def functor_map01(): Bool = (Functor.map(x -> x, Success(123)): Validation[Int32, Int32]) == Success(123)
 
     @test
-    def functor_map02(): Bool = Functor.map(x -> x + 1, Success(123)): Validation[Int32, Int32] == Success(124)
+    def functor_map02(): Bool = (Functor.map(x -> x + 1, Success(123)): Validation[Int32, Int32]) == Success(124)
 
     @test
-    def functor_map03(): Bool = Functor.map(x -> x, Failure(singleton(123))): Validation[Int32, Int32] == Failure(singleton(123))
+    def functor_map03(): Bool = (Functor.map(x -> x, Failure(singleton(123))): Validation[Int32, Int32]) == Failure(singleton(123))
 
     @test
     def functor_map04(): Bool = (Success(123): Validation[Int32, Int32]) |> Functor.map(x -> x + 1) |> Functor.map(x -> x * 2)  == Success(248)
@@ -59,7 +59,7 @@ mod TestValidation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def applicative_ap01(): Bool = Applicative.ap(Success(x -> x + 1), Success(123)): Validation[Int32, Int32] == Success(124)
+    def applicative_ap01(): Bool = (Applicative.ap(Success(x -> x + 1), Success(123)): Validation[Int32, Int32]) == Success(124)
 
     @test
     def applicative_ap02(): Bool = Applicative.ap(Success(x -> x + 1), Failure(singleton(42))) == Failure(singleton(42))
@@ -69,25 +69,25 @@ mod TestValidation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def ap01(): Bool = Validation.ap(Success(x -> x + 1), Success(123)): Validation[Int32, Int32] == Success(124)
+    def ap01(): Bool = (Validation.ap(Success(x -> x + 1), Success(123)): Validation[Int32, Int32]) == Success(124)
 
     @test
     def ap02(): Bool = Validation.ap(Success(x -> x + 1), Failure(singleton(42))) == Failure(singleton(42))
 
     @test
-    def ap03(): Bool = Validation.ap(Failure(singleton(42)), Success(123)): Validation[Int32, Int32] == Failure(singleton(42))
+    def ap03(): Bool = (Validation.ap(Failure(singleton(42)), Success(123)): Validation[Int32, Int32]) == Failure(singleton(42))
 
     @test
-    def ap04(): Bool = Validation.ap(Failure(singleton(123)), (Failure(singleton(456)))): Validation[Int32, Int32] == Failure(necOf2(123, 456))
+    def ap04(): Bool = (Validation.ap(Failure(singleton(123)), (Failure(singleton(456)))): Validation[Int32, Int32]) == Failure(necOf2(123, 456))
 
     @test
-    def ap05(): Bool = Validation.ap(Failure(necOf2(1, 2)), (Failure(singleton(3)))): Validation[Int32, Int32] == Failure(necOf3(1, 2, 3))
+    def ap05(): Bool = (Validation.ap(Failure(necOf2(1, 2)), (Failure(singleton(3)))): Validation[Int32, Int32]) == Failure(necOf3(1, 2, 3))
 
     @test
-    def ap06(): Bool = Validation.ap(Failure(singleton(1)), (Failure(necOf2(2, 3)))): Validation[Int32, Int32] == Failure(necOf3(1, 2, 3))
+    def ap06(): Bool = (Validation.ap(Failure(singleton(1)), (Failure(necOf2(2, 3)))): Validation[Int32, Int32]) == Failure(necOf3(1, 2, 3))
 
     @test
-    def ap07(): Bool = Validation.ap(Failure(necOf2(1, 2)), (Failure(necOf2(3, 4)))): Validation[Int32, Int32] == Failure(necOf4(1, 2, 3, 4))
+    def ap07(): Bool = (Validation.ap(Failure(necOf2(1, 2)), (Failure(necOf2(3, 4)))): Validation[Int32, Int32]) == Failure(necOf4(1, 2, 3, 4))
 
     /////////////////////////////////////////////////////////////////////////////
     // product                                                                 //
@@ -248,7 +248,7 @@ mod TestValidation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def withDefault01(): Bool = Validation.withDefault(default = Success(2), Success(1)): Validation[Int32, Int32] == Success(1)
+    def withDefault01(): Bool = (Validation.withDefault(default = Success(2), Success(1)): Validation[Int32, Int32]) == Success(1)
 
     @test
     def withDefault02(): Bool = Validation.withDefault(default = Failure(singleton(1)), Success(1)) == Success(1)
@@ -257,7 +257,7 @@ mod TestValidation {
     def withDefault03(): Bool = Validation.withDefault(default = Success(2), Failure(singleton(1))) == Success(2)
 
     @test
-    def withDefault04(): Bool = Validation.withDefault(default = Failure(singleton(2)), Failure(singleton(1))): Validation[Int32, Int32] == Failure(singleton(2))
+    def withDefault04(): Bool = (Validation.withDefault(default = Failure(singleton(2)), Failure(singleton(1))): Validation[Int32, Int32]) == Failure(singleton(2))
 
     /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
@@ -284,13 +284,13 @@ mod TestValidation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def map01(): Bool = Validation.map(x -> x, Success(123)): Validation[Int32, Int32] == Success(123)
+    def map01(): Bool = (Validation.map(x -> x, Success(123)): Validation[Int32, Int32]) == Success(123)
 
     @test
-    def map02(): Bool = Validation.map(x -> x + 1, Success(123)): Validation[Int32, Int32] == Success(124)
+    def map02(): Bool = (Validation.map(x -> x + 1, Success(123)): Validation[Int32, Int32]) == Success(124)
 
     @test
-    def map03(): Bool = Validation.map(x -> x, Failure(singleton(123))): Validation[Int32, Int32] == Failure(singleton(123))
+    def map03(): Bool = (Validation.map(x -> x, Failure(singleton(123))): Validation[Int32, Int32]) == Failure(singleton(123))
 
     @test
     def map04(): Bool = (Success(123): Validation[Int32, Int32]) |> Validation.map(x -> x + 1) |> Validation.map(x -> x * 2)  == Success(248)
@@ -300,19 +300,19 @@ mod TestValidation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sequence01(): Bool = Validation.sequence(Success(1) :: Nil): Validation[Int32, List[Int32]] == Success(1 :: Nil)
+    def sequence01(): Bool = (Validation.sequence(Success(1) :: Nil): Validation[Int32, List[Int32]]) == Success(1 :: Nil)
 
     @test
-    def sequence02(): Bool = Validation.sequence(Success(1) :: Success(2) :: Nil): Validation[Int32, List[Int32]] == Success(1 :: 2 :: Nil)
+    def sequence02(): Bool = (Validation.sequence(Success(1) :: Success(2) :: Nil): Validation[Int32, List[Int32]]) == Success(1 :: 2 :: Nil)
 
     @test
-    def sequence03(): Bool = Validation.sequence(Success(1) :: Success(2) :: Success(3) :: Nil): Validation[Int32, List[Int32]] == Success(1 :: 2 :: 3 :: Nil)
+    def sequence03(): Bool = (Validation.sequence(Success(1) :: Success(2) :: Success(3) :: Nil): Validation[Int32, List[Int32]]) == Success(1 :: 2 :: 3 :: Nil)
 
     @test
-    def sequence04(): Bool = Validation.sequence(Failure(singleton(1)) :: Nil): Validation[Int32, List[Int32]] == Failure(singleton(1))
+    def sequence04(): Bool = (Validation.sequence(Failure(singleton(1)) :: Nil): Validation[Int32, List[Int32]]) == Failure(singleton(1))
 
     @test
-    def sequence05(): Bool = Validation.sequence(Failure(singleton(1)) :: Failure(singleton(2)) :: Nil): Validation[Int32, List[Int32]] == Failure(necOf2(1, 2))
+    def sequence05(): Bool = (Validation.sequence(Failure(singleton(1)) :: Failure(singleton(2)) :: Nil): Validation[Int32, List[Int32]]) == Failure(necOf2(1, 2))
 
     @test
     def sequence06(): Bool = Validation.sequence(Success(1) :: Failure(singleton(42)) :: Nil) == Failure(singleton(42))
@@ -325,19 +325,19 @@ mod TestValidation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def traverse01(): Bool = Validation.traverse(x -> Success(x + 1), 1 :: Nil): Validation[Int32, List[Int32]] == Success(2 :: Nil)
+    def traverse01(): Bool = (Validation.traverse(x -> Success(x + 1), 1 :: Nil): Validation[Int32, List[Int32]]) == Success(2 :: Nil)
 
     @test
-    def traverse02(): Bool = Validation.traverse(x -> Success(x + 1), 1 :: 2 :: Nil): Validation[Int32, List[Int32]] == Success(2 :: 3 :: Nil)
+    def traverse02(): Bool = (Validation.traverse(x -> Success(x + 1), 1 :: 2 :: Nil): Validation[Int32, List[Int32]]) == Success(2 :: 3 :: Nil)
 
     @test
-    def traverse03(): Bool = Validation.traverse(x -> Success(x + 1), 1 :: 2 :: 3 :: Nil): Validation[Int32, List[Int32]] == Success(2 :: 3 :: 4 :: Nil)
+    def traverse03(): Bool = (Validation.traverse(x -> Success(x + 1), 1 :: 2 :: 3 :: Nil): Validation[Int32, List[Int32]]) == Success(2 :: 3 :: 4 :: Nil)
 
     @test
-    def traverse04(): Bool = Validation.traverse(x -> Failure(singleton(x)), 1 :: 2 :: 3 :: Nil): Validation[Int32, List[Int32]] == Failure(necOf3(1, 2, 3))
+    def traverse04(): Bool = (Validation.traverse(x -> Failure(singleton(x)), 1 :: 2 :: 3 :: Nil): Validation[Int32, List[Int32]]) == Failure(necOf3(1, 2, 3))
 
     @test
-    def traverse05(): Bool = Validation.traverse(x -> Failure(necOf2(x, x)), 1 :: 2 :: 3 :: Nil): Validation[Int32, List[Int32]] == Failure(necOf6(1, 1, 2, 2, 3, 3))
+    def traverse05(): Bool = (Validation.traverse(x -> Failure(necOf2(x, x)), 1 :: 2 :: 3 :: Nil): Validation[Int32, List[Int32]]) == Failure(necOf6(1, 1, 2, 2, 3, 3))
 
     @test
     def traverse06(): Bool = Validation.traverse(x -> if (x != 2) Success(x + 1) else Failure(singleton(42)), 1 :: 2 :: 3 :: Nil) == Failure(singleton(42))
@@ -350,13 +350,13 @@ mod TestValidation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def traverseX01(): Bool = Validation.traverseX(x -> Success(x + 1), 1 :: Nil): Validation[Int32, Unit] == Success()
+    def traverseX01(): Bool = (Validation.traverseX(x -> Success(x + 1), 1 :: Nil): Validation[Int32, Unit]) == Success()
 
     @test
-    def traverseX02(): Bool = Validation.traverseX(x -> Success(x + 1), 1 :: 2 :: Nil): Validation[Int32, Unit] == Success()
+    def traverseX02(): Bool = (Validation.traverseX(x -> Success(x + 1), 1 :: 2 :: Nil): Validation[Int32, Unit]) == Success()
 
     @test
-    def traverseX03(): Bool = Validation.traverseX(x -> Success(x + 1), 1 :: 2 :: 3 :: Nil): Validation[Int32, Unit] == Success()
+    def traverseX03(): Bool = (Validation.traverseX(x -> Success(x + 1), 1 :: 2 :: 3 :: Nil): Validation[Int32, Unit]) == Success()
 
     @test
     def traverseX04(): Bool = Validation.traverseX(x -> Failure(singleton(x)), 1 :: 2 :: 3 :: Nil) == Failure(necOf3(1, 2, 3))
@@ -378,17 +378,17 @@ mod TestValidation {
     def toOption01(): Bool = (Success(123) |> Validation.toOption) == Some(123)
 
     @test
-    def toOption02(): Bool = (Failure(singleton(42)) |> Validation.toOption): Option[Int32] == None
+    def toOption02(): Bool = ((Failure(singleton(42)) |> Validation.toOption): Option[Int32]) == None
 
     /////////////////////////////////////////////////////////////////////////////
     // toResult                                                                //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toResult01(): Bool = (Success(123) |> Validation.toResult): Result[Nec[Int32], Int32] == Ok(123)
+    def toResult01(): Bool = ((Success(123) |> Validation.toResult): Result[Nec[Int32], Int32]) == Ok(123)
 
     @test
-    def toResult02(): Bool = (Failure(singleton(42)) |> Validation.toResult): Result[Nec[Int32], Int32] == Err(singleton(42))
+    def toResult02(): Bool = ((Failure(singleton(42)) |> Validation.toResult): Result[Nec[Int32], Int32]) == Err(singleton(42))
 
     /////////////////////////////////////////////////////////////////////////////
     // toList                                                                  //
@@ -405,7 +405,7 @@ mod TestValidation {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def map201(): Bool = Validation.map2((x1,x2) -> x1 + x2, Success(123), Success(1)): Validation[String, Int32] == Success(124)
+    def map201(): Bool = (Validation.map2((x1,x2) -> x1 + x2, Success(123), Success(1)): Validation[String, Int32]) == Success(124)
 
     @test
     def map202(): Bool = Validation.map2((x1,x2) -> x1 + x2, Success(123), Failure(singleton("e1"))) == Failure(singleton("e1"))
@@ -414,14 +414,14 @@ mod TestValidation {
     def map203(): Bool = Validation.map2((x1,x2) -> x1 + x2, Failure(singleton("e1")), Success(1)) == Failure(singleton("e1"))
 
     @test
-    def map204(): Bool = Validation.map2((x1,x2) -> x1 + x2, Failure(singleton("e1")), Failure(singleton("e2")): Validation[String, Int32]) == Failure(necOf2("e1", "e2"))
+    def map204(): Bool = Validation.map2((x1,x2) -> x1 + x2, Failure(singleton("e1")), (Failure(singleton("e2")): Validation[String, Int32])) == Failure(necOf2("e1", "e2"))
 
     /////////////////////////////////////////////////////////////////////////////
     // map3                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def map301(): Bool = Validation.map3((x1,x2,x3) -> x1 + x2 + x3, Success(123), Success(1), Success(2)): Validation[String, Int32] == Success(126)
+    def map301(): Bool = (Validation.map3((x1,x2,x3) -> x1 + x2 + x3, Success(123), Success(1), Success(2)): Validation[String, Int32]) == Success(126)
 
     @test
     def map302(): Bool = Validation.map3((x1,x2,x3) -> x1 + x2 + x3, Success(123), Success(1), Failure(singleton("e1"))) == Failure(singleton("e1"))
@@ -439,14 +439,14 @@ mod TestValidation {
     def map306(): Bool = Validation.map3((x1,x2,x3) -> x1 + x2 + x3, Failure(singleton("e1")), Success(1), Failure(singleton("e2"))) == Failure(necOf2("e1", "e2"))
 
     @test
-    def map307(): Bool = Validation.map3((x1,x2,x3) -> x1 + x2 + x3, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")): Validation[String, Int32]) == Failure(necOf3("e1", "e2", "e3"))
+    def map307(): Bool = Validation.map3((x1,x2,x3) -> x1 + x2 + x3, Failure(singleton("e1")), Failure(singleton("e2")), (Failure(singleton("e3")): Validation[String, Int32])) == Failure(necOf3("e1", "e2", "e3"))
 
     /////////////////////////////////////////////////////////////////////////////
     // map4                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def map401(): Bool = Validation.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Success(123), Success(1), Success(2), Success(3)): Validation[String, Int32] == Success(129)
+    def map401(): Bool = (Validation.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Success(123), Success(1), Success(2), Success(3)): Validation[String, Int32]) == Success(129)
 
     @test
     def map402(): Bool = Validation.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Success(123), Success(1), Success(2), Failure(singleton("e1"))) == Failure(singleton("e1"))
@@ -461,14 +461,14 @@ mod TestValidation {
     def map405(): Bool = Validation.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Failure(singleton("e1")), Success(1), Success(2), Success(3)) == Failure(singleton("e1"))
 
     @test
-    def map406(): Bool = Validation.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")): Validation[String, Int32]) == Failure(necOf4("e1", "e2", "e3", "e4"))
+    def map406(): Bool = Validation.map4((x1,x2,x3,x4) -> x1 + x2 + x3 + x4, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), (Failure(singleton("e4")): Validation[String, Int32])) == Failure(necOf4("e1", "e2", "e3", "e4"))
 
     /////////////////////////////////////////////////////////////////////////////
     // map5                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def map501(): Bool = Validation.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Success(123), Success(1), Success(2), Success(3), Success(4)): Validation[String, Int32] == Success(133)
+    def map501(): Bool = (Validation.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Success(123), Success(1), Success(2), Success(3), Success(4)): Validation[String, Int32]) == Success(133)
 
     @test
     def map502(): Bool = Validation.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Success(123), Success(1), Success(2), Success(3), Failure(singleton("e1"))) == Failure(singleton("e1"))
@@ -486,14 +486,14 @@ mod TestValidation {
     def map506(): Bool = Validation.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Failure(singleton("e1")), Success(1), Success(2), Success(3), Success(4)) == Failure(singleton("e1"))
 
     @test
-    def map507(): Bool = Validation.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), Failure(singleton("e5")): Validation[String, Int32]) == Failure(necOf5("e1", "e2", "e3", "e4", "e5"))
+    def map507(): Bool = Validation.map5((x1,x2,x3,x4,x5) -> x1 + x2 + x3 + x4 + x5, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), (Failure(singleton("e5")): Validation[String, Int32])) == Failure(necOf5("e1", "e2", "e3", "e4", "e5"))
 
     /////////////////////////////////////////////////////////////////////////////
     // map6                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def map601(): Bool = Validation.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5)): Validation[String, Int32] == Success(138)
+    def map601(): Bool = (Validation.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5)): Validation[String, Int32]) == Success(138)
 
     @test
     def map602(): Bool = Validation.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Success(123), Success(1), Success(2), Success(3), Success(4), Failure(singleton("e1"))) == Failure(singleton("e1"))
@@ -514,14 +514,14 @@ mod TestValidation {
     def map607(): Bool = Validation.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Failure(singleton("e1")), Success(1), Success(2), Success(3), Success(4), Success(5)) == Failure(singleton("e1"))
 
     @test
-    def map608(): Bool = Validation.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), Failure(singleton("e5")), Failure(singleton("e6")): Validation[String, Int32]) == Failure(necOf6("e1", "e2", "e3", "e4", "e5", "e6"))
+    def map608(): Bool = Validation.map6((x1,x2,x3,x4,x5,x6) -> x1 + x2 + x3 + x4 + x5 + x6, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), Failure(singleton("e5")), (Failure(singleton("e6")): Validation[String, Int32])) == Failure(necOf6("e1", "e2", "e3", "e4", "e5", "e6"))
 
     /////////////////////////////////////////////////////////////////////////////
     // map7                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def map701(): Bool = Validation.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6)): Validation[String, Int32] == Success(144)
+    def map701(): Bool = (Validation.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6)): Validation[String, Int32]) == Success(144)
 
     @test
     def map702(): Bool = Validation.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Failure(singleton("e1"))) == Failure(singleton("e1"))
@@ -545,14 +545,14 @@ mod TestValidation {
     def map708(): Bool = Validation.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Failure(singleton("e1")), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6)) == Failure(singleton("e1"))
 
     @test
-    def map709(): Bool = Validation.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), Failure(singleton("e5")), Failure(singleton("e6")), Failure(singleton("e7")): Validation[String, Int32]) == Failure(necOf7("e1", "e2", "e3", "e4", "e5", "e6", "e7"))
+    def map709(): Bool = Validation.map7((x1,x2,x3,x4,x5,x6,x7) -> x1 + x2 + x3 + x4 + x5 + x6 + x7, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), Failure(singleton("e5")), Failure(singleton("e6")), (Failure(singleton("e7")): Validation[String, Int32])) == Failure(necOf7("e1", "e2", "e3", "e4", "e5", "e6", "e7"))
 
     /////////////////////////////////////////////////////////////////////////////
     // map8                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def map801(): Bool = Validation.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7)): Validation[String, Int32] == Success(151)
+    def map801(): Bool = (Validation.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7)): Validation[String, Int32]) == Success(151)
 
     @test
     def map802(): Bool = Validation.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Failure(singleton("e1"))) == Failure(singleton("e1"))
@@ -579,14 +579,14 @@ mod TestValidation {
     def map809(): Bool = Validation.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Failure(singleton("e1")), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7)) == Failure(singleton("e1"))
 
     @test
-    def map810(): Bool = Validation.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), Failure(singleton("e5")), Failure(singleton("e6")), Failure(singleton("e7")), Failure(singleton("e8")): Validation[String, Int32]) == Failure(necOf8("e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8"))
+    def map810(): Bool = Validation.map8((x1,x2,x3,x4,x5,x6,x7,x8) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), Failure(singleton("e5")), Failure(singleton("e6")), Failure(singleton("e7")), (Failure(singleton("e8")): Validation[String, Int32])) == Failure(necOf8("e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8"))
 
     /////////////////////////////////////////////////////////////////////////////
     // map9                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def map901(): Bool = Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8)): Validation[String, Int32] == Success(159)
+    def map901(): Bool = (Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8)): Validation[String, Int32]) == Success(159)
 
     @test
     def map902(): Bool = Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Failure(singleton("e1"))) == Failure(singleton("e1"))
@@ -616,14 +616,14 @@ mod TestValidation {
     def map910(): Bool = Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Failure(singleton("e1")), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8)) == Failure(singleton("e1"))
 
     @test
-    def map911(): Bool = Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), Failure(singleton("e5")), Failure(singleton("e6")), Failure(singleton("e7")), Failure(singleton("e8")), Failure(singleton("e9")): Validation[String, Int32]) == Failure(necOf9("e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9"))
+    def map911(): Bool = Validation.map9((x1,x2,x3,x4,x5,x6,x7,x8,x9) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), Failure(singleton("e5")), Failure(singleton("e6")), Failure(singleton("e7")), Failure(singleton("e8")), (Failure(singleton("e9")): Validation[String, Int32])) == Failure(necOf9("e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9"))
 
     /////////////////////////////////////////////////////////////////////////////
     // map10                                                                   //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def map1001(): Bool = Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Success(9)): Validation[String, Int32] == Success(168)
+    def map1001(): Bool = (Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Success(9)): Validation[String, Int32]) == Success(168)
 
     @test
     def map1002(): Bool = Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Success(123), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Failure(singleton("e1"))) == Failure(singleton("e1"))
@@ -656,25 +656,25 @@ mod TestValidation {
     def map1011(): Bool = Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Failure(singleton("e1")), Success(1), Success(2), Success(3), Success(4), Success(5), Success(6), Success(7), Success(8), Success(9)) == Failure(singleton("e1"))
 
     @test
-    def map1012(): Bool = Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), Failure(singleton("e5")), Failure(singleton("e6")), Failure(singleton("e7")), Failure(singleton("e8")), Failure(singleton("e9")), Failure(singleton("e10")): Validation[String, Int32]) == Failure(necOf10("e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9", "e10"))
+    def map1012(): Bool = Validation.map10((x1,x2,x3,x4,x5,x6,x7,x8,x9,x10) -> x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10, Failure(singleton("e1")), Failure(singleton("e2")), Failure(singleton("e3")), Failure(singleton("e4")), Failure(singleton("e5")), Failure(singleton("e6")), Failure(singleton("e7")), Failure(singleton("e8")), Failure(singleton("e9")), (Failure(singleton("e10")): Validation[String, Int32])) == Failure(necOf10("e1", "e2", "e3", "e4", "e5", "e6", "e7", "e8", "e9", "e10"))
 
     /////////////////////////////////////////////////////////////////////////////
     // hash                                                                    //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def hash01(): Bool = hash(Success(()): Validation[Unit, Unit]) == hash(Success(()): Validation[Unit, Unit])
+    def hash01(): Bool = hash((Success(()): Validation[Unit, Unit])) == hash((Success(()): Validation[Unit, Unit]))
 
     @test
-    def hash02(): Bool = hash(Success(()): Validation[Unit, Unit]) != hash(Failure(necOf2((), ())): Validation[Unit, Unit])
+    def hash02(): Bool = hash((Success(()): Validation[Unit, Unit])) != hash((Failure(necOf2((), ())): Validation[Unit, Unit]))
 
     @test
-    def hash03(): Bool = hash(Success(1, 2): Validation[Unit, (Int32, Int32)]) == hash(Success(1, 2): Validation[Unit, (Int32, Int32)])
+    def hash03(): Bool = hash((Success(1, 2): Validation[Unit, (Int32, Int32)])) == hash((Success(1, 2): Validation[Unit, (Int32, Int32)]))
 
     @test
-    def hash04(): Bool = hash(Success(1, 2, 3): Validation[Unit, (Int32, Int32, Int32)]) != hash(Success(1, 3, 2): Validation[Unit, (Int32, Int32, Int32)])
+    def hash04(): Bool = hash((Success(1, 2, 3): Validation[Unit, (Int32, Int32, Int32)])) != hash((Success(1, 3, 2): Validation[Unit, (Int32, Int32, Int32)]))
 
     @test
-    def hash05(): Bool = hash(Success(singleton(1)): Validation[Int32, Nec[Int32]]) != hash(Failure(singleton(1)): Validation[Int32, Nec[Int32]])
+    def hash05(): Bool = hash((Success(singleton(1)): Validation[Int32, Nec[Int32]])) != hash((Failure(singleton(1)): Validation[Int32, Nec[Int32]]))
 
 }

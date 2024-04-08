@@ -167,12 +167,14 @@ class Shell(bootstrap: Bootstrap, options: Options) {
       case Command.Init => execBootstrap(Bootstrap.init(bootstrap.projectPath))
       case Command.Build => execBootstrap(bootstrap.build(flix))
       case Command.BuildJar => execBootstrap(bootstrap.buildJar())
+      case Command.BuildFatJar => execBootstrap(bootstrap.buildFatJar())
       case Command.BuildPkg => execBootstrap(bootstrap.buildPkg())
       case Command.Release => execBootstrap(bootstrap.release(flix))
       case Command.Check => execBootstrap(bootstrap.check(flix))
       case Command.Doc => execBootstrap(bootstrap.doc(flix))
       case Command.Test => execBootstrap(bootstrap.test(flix))
       case Command.Mtest(a, b) => MutationTester.run(flix, a, b)
+      case Command.Outdated => execBootstrap(bootstrap.outdated(flix))
       case Command.Unknown(s) => execUnknown(s)
     }
   }
@@ -197,16 +199,16 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     */
   private def execInfo(s: String)(implicit terminal: Terminal): Unit = {
     val w = terminal.writer()
-    val classSym = Symbol.mkClassSym(s)
+    val traitSym = Symbol.mkTraitSym(s)
     val defnSym = Symbol.mkDefnSym(s)
     val enumSym = Symbol.mkEnumSym(s)
     val aliasSym = Symbol.mkTypeAliasSym(s)
 
     root match {
       case Some(r) =>
-        if (r.classes.contains(classSym)) {
-          val classDecl = r.classes(classSym)
-          w.println(FormatDoc.asMarkDown(classDecl.doc))
+        if (r.traits.contains(traitSym)) {
+          val traitDecl = r.traits(traitSym)
+          w.println(FormatDoc.asMarkDown(traitDecl.doc))
         } else if (r.defs.contains(defnSym)) {
           val defDecl = r.defs(defnSym)
           w.println(FormatSignature.asMarkDown(defDecl))
@@ -248,12 +250,14 @@ class Shell(bootstrap: Bootstrap, options: Options) {
     w.println("  :init                       Creates a new project in the current directory.")
     w.println("  :build :b                   Builds (i.e. compiles) the current project.")
     w.println("  :build-jar :jar             Builds a jar-file from the current project.")
+    w.println("  :build-fatjar :fatjar       Builds a fatjar-file from the current project.")
     w.println("  :build-pkg :pkg             Builds a fpkg-file from the current project.")
     w.println("  :release                    Publishes a release of the current project to GitHub.")
     w.println("  :check :c                   Checks the current project for errors.")
     w.println("  :doc :d                     Generates API documentation for the current project.")
     w.println("  :test :t                    Runs the tests for the current project.")
     w.println("  :mtest :mt                   Runs the mutation tests given a tester and testee.")
+    w.println("  :outdated                   Shows dependencies which have newer versions available.")
     w.println("  :quit :q                    Terminates the Flix shell.")
     w.println("  :help :h :?                 Shows this helpful information.")
     w.println()

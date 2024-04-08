@@ -77,7 +77,7 @@ mod Test.Exp.Jvm.TestTryCatch {
             exception();
             false
         } catch {
-            case e: ##java.lang.ArithmeticException => if (isEmpty(toString(e))) false else true
+            case e: ##java.lang.ArithmeticException => if (isEmpty(toString(checked_cast(e)))) false else true
             case _: ##java.lang.Exception => false
         }
 
@@ -89,7 +89,7 @@ mod Test.Exp.Jvm.TestTryCatch {
             exception();
             false
         } catch {
-            case e: ##java.lang.ArithmeticException => if (isEmpty(getMessage(e))) false else true
+            case e: ##java.lang.ArithmeticException => if (isEmpty(getMessage(checked_cast(e)))) false else true
             case _: ##java.lang.Exception => false
         }
 

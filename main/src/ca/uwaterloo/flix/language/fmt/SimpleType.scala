@@ -43,6 +43,8 @@ object SimpleType {
 
   case object Void extends SimpleType
 
+  case object AnyType extends SimpleType
+
   case object Unit extends SimpleType
 
   case object Null extends SimpleType
@@ -262,9 +264,9 @@ object SimpleType {
   case class Tuple(elms: List[SimpleType]) extends SimpleType
 
   /**
-   * An error type.
-   */
-   case object Error extends SimpleType
+    * An error type.
+    */
+  case object Error extends SimpleType
 
   /////////
   // Fields
@@ -300,7 +302,7 @@ object SimpleType {
   /**
     * Creates a simple type from the well-kinded type `t`.
     */
-  def fromWellKindedType(t0: Type)(implicit fmt: FormatOptions): SimpleType = {
+  def fromWellKindedType(t0: Type): SimpleType = {
 
     def visit(t: Type): SimpleType = t.baseType match {
       case Type.Var(sym, _) =>
@@ -311,6 +313,7 @@ object SimpleType {
         mkApply(Name(cst.sym.name), (arg :: t.typeArguments).map(visit))
       case Type.Cst(tc, _) => tc match {
         case TypeConstructor.Void => Void
+        case TypeConstructor.AnyType => AnyType
         case TypeConstructor.Unit => Unit
         case TypeConstructor.Null => Null
         case TypeConstructor.Bool => Bool
@@ -336,7 +339,7 @@ object SimpleType {
               List.fill(arity - 2)(Hole).foldRight(lastArrow)(PureArrow)
 
             // Case 2: Pure function.
-            case eff :: tpes if eff == Pure || fmt.ignorePur =>
+            case eff :: tpes if eff == Pure =>
               // NB: safe to reduce because arity is always at least 2
               tpes.padTo(arity, Hole).reduceRight(PureArrow)
 
@@ -570,7 +573,7 @@ object SimpleType {
   /**
     * Transforms the given type, assuming it is a record row.
     */
-  private def fromRecordRow(row0: Type)(implicit fmt: FormatOptions): SimpleType = {
+  private def fromRecordRow(row0: Type): SimpleType = {
     def visit(row: Type): SimpleType = row match {
       // Case 1: A fully applied record row.
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(name), _), tpe, _), rest, _) =>
@@ -600,7 +603,7 @@ object SimpleType {
   /**
     * Transforms the given type, assuming it is a schema row.
     */
-  private def fromSchemaRow(row0: Type)(implicit fmt: FormatOptions): SimpleType = {
+  private def fromSchemaRow(row0: Type): SimpleType = {
     def visit(row: Type): SimpleType = row match {
       // Case 1: A fully applied record row.
       case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(name), _), tpe, _), rest, _) =>

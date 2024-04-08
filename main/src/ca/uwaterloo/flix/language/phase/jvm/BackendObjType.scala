@@ -303,8 +303,6 @@ object BackendObjType {
 
   }
 
-  //case class Enum(sym: Symbol.EnumSym, args: List[BackendType]) extends BackendObjType
-
   case object Tagged extends BackendObjType with Generatable {
     def genByteCode()(implicit flix: Flix): Array[Byte] = {
       val cm = ClassMaker.mkAbstractClass(this.jvmName)

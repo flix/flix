@@ -50,7 +50,7 @@ pub enum RedBlackTree[k, v] with Sendable {
 }
 
 instance Eq[RedBlackTree[k, v]] with Eq[k], Eq[v] {
-    pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool with Eq[v] =
+    pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool =
         RedBlackTree.toList(t1) == RedBlackTree.toList(t2)
 }
 
@@ -147,6 +147,11 @@ mod RedBlackTree {
         case Leaf => true
         case _    => false
     }
+
+    ///
+    /// Returns `true` if and only if `t` is a non-empty tree.
+    ///
+    pub def nonEmpty(t: RedBlackTree[k, v]): Bool = not isEmpty(t)
 
     ///
     /// Updates `t` with `k => v` if `k => v1` is in `t`.
@@ -466,7 +471,10 @@ mod RedBlackTree {
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, t: RedBlackTree[k, v]): Unit \ ef = region rc {
         let ix = ref 0 @ rc;
         def loop(tt) = match tt {
-            case Node(_, a, k, v, b) => loop(a); let i = deref ix; f(i, k, v); ix := i+1; loop(b)
+            case Node(_, a, k, v, b) =>
+                loop(a);
+                let i = deref ix; f(i, k, v);
+                Ref.put(i + 1, ix); loop(b)
             case _                   => ()
         };
         loop(t)
@@ -562,12 +570,12 @@ mod RedBlackTree {
     ///
     /// The function `f` must be impure.
     ///
-    pub def queryWith(p: k -> Comparison \ ef1, f: (k, v) -> Unit \ ef2, t: RedBlackTree[k, v]): Unit \ { ef1, ef2 } = match t {
+    pub def rangeQueryWith(p: k -> Comparison \ ef1, f: (k, v) -> Unit \ ef2, t: RedBlackTree[k, v]): Unit \ { ef1, ef2 } = match t {
         case Node(_, a, k, v, b) =>
             match p(k) {
-                case Comparison.LessThan    => queryWith(p, f, b)
-                case Comparison.EqualTo     => queryWith(p, f, a); f(k, v); queryWith(p, f, b)
-                case Comparison.GreaterThan => queryWith(p, f, a)
+                case Comparison.LessThan    => rangeQueryWith(p, f, b)
+                case Comparison.EqualTo     => rangeQueryWith(p, f, a); f(k, v); rangeQueryWith(p, f, b)
+                case Comparison.GreaterThan => rangeQueryWith(p, f, a)
             }
         case _ => ()
     }
@@ -577,10 +585,10 @@ mod RedBlackTree {
     ///
     /// That is, the result is a list of all pairs `f(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison \ ef1, f: (k, v) -> a \ ef2, t: RedBlackTree[k, v]): List[a] \ { ef1, ef2 } = region rc {
-        let buffer = MutList.new(rc);
+    pub def rangeQuery(p: k -> Comparison \ ef1, f: (k, v) -> a \ ef2, t: RedBlackTree[k, v]): List[a] \ { ef1, ef2 } = region rc {
+        let buffer = MutList.empty(rc);
         let g = k -> v -> MutList.push!(f(k, v), buffer);
-        queryWith(p, g, t);
+        rangeQueryWith(p, g, t);
         MutList.toList(buffer)
     }
 
@@ -799,7 +807,7 @@ mod RedBlackTree {
     /// Returns the tree `t` as a MutDeque. Elements are ordered from smallest (left) to largest (right).
     ///
     pub def toMutDeque(rc: Region[r], t: RedBlackTree[k, v]): MutDeque[(k, v), r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach((k, v) -> let x = (k, v); MutDeque.pushBack(x, d), t);
         d
 
@@ -920,7 +928,7 @@ mod RedBlackTree {
     pub def joinWith(f: (k, v) -> String \ ef, sep: String, t: RedBlackTree[k, v]): String \ ef = region rc {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         forEach((k, v) -> { append!(f(k, v), sb); append!(sep, sb) }, t);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
@@ -965,12 +973,11 @@ mod RedBlackTree {
     pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r, r] \ r =
         let stack1 = leftmost(t, Nil);
         let state = ref stack1 @ rc;
-        let next = () -> match (deref state) {
+        let next = () -> match deref state {
             case Nil                 => None
-            case (k, v, rtree) :: es => {
-                state := leftmost(rtree, es);
+            case (k, v, rtree) :: es =>
+                Ref.put(leftmost(rtree, es), state);
                 Some((k, v))
-            }
         };
         Iterator.iterate(rc, next)
 

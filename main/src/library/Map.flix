@@ -116,7 +116,7 @@ mod Map {
     /// Returns a string representation of the given map `m`.
     ///
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         StringBuilder.appendString!("Map#{", sb);
         forEachWithIndex((i, k, v) -> {
             if (i < 1)
@@ -173,6 +173,11 @@ mod Map {
     pub def isEmpty(m: Map[k, v]): Bool =
         let Map(t) = m;
         RedBlackTree.isEmpty(t)
+
+    ///
+    /// Returns `true` if and only if `m` is a non-empty map.
+    ///
+    pub def nonEmpty(m: Map[k, v]): Bool = not isEmpty(m)
 
     ///
     /// Returns `Some(v)` if `k => v` is in `m`.
@@ -802,7 +807,7 @@ mod Map {
     /// Returns `m` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach((k, v) -> MutDeque.pushBack((k, v), d), m);
         d
 
@@ -861,16 +866,16 @@ mod Map {
     ///
     /// That is, the result is a list of all pairs `(k, v)` where `p(k)` returns `Equal`.
     ///
-    pub def query(p: k -> Comparison \ ef, m: Map[k, v]): List[(k, v)] \ ef =
+    pub def rangeQuery(p: k -> Comparison \ ef, m: Map[k, v]): List[(k, v)] \ ef =
         let Map(t) = m;
-        RedBlackTree.query(p, (k, v) -> (k, v), t)
+        RedBlackTree.rangeQuery(p, (k, v) -> (k, v), t)
 
     ///
     /// Applies `f` to all key-value pairs `(k, v)` from the map `m` where `p(k)` returns `EqualTo`.
     ///
-    pub def queryWith(p: k -> Comparison \ ef1, f: (k, v) -> Unit \ ef2, m: Map[k, v]): Unit \ { ef1, ef2 } =
+    pub def rangeQueryWith(p: k -> Comparison \ ef1, f: (k, v) -> Unit \ ef2, m: Map[k, v]): Unit \ { ef1, ef2 } =
         let Map(t) = m;
-        RedBlackTree.queryWith(p, f, t)
+        RedBlackTree.rangeQueryWith(p, f, t)
 
     ///
     /// Returns an iterator over all key-value pairs in `m`.

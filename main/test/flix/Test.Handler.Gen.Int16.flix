@@ -21,7 +21,7 @@ mod Test.Handler.Gen.Int16 {
 
     def getAndInc(r: Ref[Int16, r]): Int16 \ r =
         let i = deref r;
-        r := (i + 1i16);
+        Ref.put(i + 1i16, r);
         i
 
     def range(a: Int16, b: Int16): List[Int16] =

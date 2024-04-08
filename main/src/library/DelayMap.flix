@@ -55,7 +55,7 @@ mod DelayMap {
     ///
     @Experimental
     pub def toString(m: DelayMap[k, v]): String with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let _ = parallelForce(m);
         StringBuilder.appendString!("DelayMap#{", sb);
         forEachWithIndex((i, k, v) -> {
@@ -115,6 +115,12 @@ mod DelayMap {
     pub def isEmpty(m: DelayMap[k, v]): Bool =
         let DMap(t) = m;
         RedBlackTree.isEmpty(t)
+
+    ///
+    /// Returns `true` if and only if `m` is a non-empty map.
+    ///
+    @Experimental
+    pub def nonEmpty(m: DelayMap[k, v]): Bool = not isEmpty(m)
 
     ///
     /// Returns `m` with `k => v`.
@@ -811,7 +817,7 @@ mod DelayMap {
     @Experimental
     pub def forEachWithIndex(f: (Int32, k, v) -> Unit \ ef, m: DelayMap[k, v]): Unit \ ef = region rc {
        let ix = ref 0 @ rc;
-       let f1 = (k, v) -> {let i = deref ix; f(i, k, v); ix := i+1};
+       let f1 = (k, v) -> { let i =  deref ix; f(i, k, v); Ref.put(i + 1, ix) };
        forEach(f1, m)
     }
 

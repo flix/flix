@@ -6,7 +6,7 @@ mod Debug {
     ///
     @Internal
     pub def debugWithPrefix(prefix: String, x: a): a \ IO =
-        import static get java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
+        import static java_get_field java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
         import java.io.PrintStream.println(String): Unit \ IO;
         println(getOut(), "${prefix}%{x}");
         x
@@ -17,7 +17,7 @@ mod Debug {
     @Internal
     def escape(s: String): String = {
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {} as jReplace;
-        def replace(from: String, to: String, subject: String): String = jReplace(subject, checked_cast(from), checked_cast(to));
+        def replace(src: String, dst: String, subject: String): String = jReplace(subject, checked_cast(src), checked_cast(dst));
         s
             // NB: \\ must come first to avoid clobbering other cases
             |> replace("\\", "\\\\")
@@ -37,7 +37,7 @@ mod Debug {
         typematch x {
             case _: Unit => "()"
             case b: Bool =>  if (b) "true" else "false"
-            case c: Char => "\'" + escape("${c: Char}") + "\'"
+            case c: Char => "\'" + escape("${(c: Char)}") + "\'"
             case y: Float32 =>
                 import static java.lang.Float.toString(Float32): String \ {};
                 toString(y) + "f32"

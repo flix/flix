@@ -1,5 +1,11 @@
 # Changelog
 
+Version 0.45.0:
+- Compiler: Added support for the `build-fatjar` command (thanks Chanattan Sok!)
+- Compiler: Added support for the `outdated` command (thanks Holger!)
+- Library: Added `Coerce` type class (thanks Magnus!)
+- Library: Added `purityOf` functions (thanks Jakob!)
+
 Version 0.44.0:
 - Language: Reworked `IO` to be its own effect (thanks Matt!)
 - Library: Added `purityOf` to simplify reflection on purity (thanks Jakob!)

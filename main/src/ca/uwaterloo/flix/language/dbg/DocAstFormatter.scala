@@ -66,8 +66,6 @@ object DocAstFormatter {
 
   private def aux(d: Expression, paren: Boolean = true, inBlock: Boolean = false)(implicit i: Indent): Doc = {
     val doc = d match {
-      case InRegion(d1, d2) =>
-        aux(d1) +: text("@") +: aux(d2)
       case Unit =>
         text("()")
       case Tuple(elms) =>
@@ -94,6 +92,8 @@ object DocAstFormatter {
         text(word) +: aux(d)
       case Unary(op, d) =>
         text(op) :: aux(d)
+      case UnaryRightAfter(d, op) =>
+        aux(d) :: text(op)
       case Binary(d1, op, d2) =>
         aux(d1) +: text(op) +: aux(d2)
       case IfThenElse(cond, thn, els) =>
@@ -433,7 +433,8 @@ object DocAstFormatter {
 
   private def formatEffect(effect: Eff, paren: Boolean = true)(implicit i: Indent): Doc = effect match {
     case Eff.Pure => empty
-    case Eff.Univ => text(" ") :: text("\\") +: text("Univ")
+    case Eff.Impure => text(" ") :: text("\\") +: text("Impure")
+    case Eff.ControlImpure =>  text(" ") :: text("\\") +: text("ControlImpure")
     case Eff.AsIs(s) => text(" ") :: text("\\") +: text(s)
   }
 

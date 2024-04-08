@@ -9,15 +9,15 @@ mod Random {
     ///
     /// Returns a fresh random number generator.
     ///
-    pub def new(): Random \ IO =
-        import new java.util.Random(): ##java.util.Random \ IO as newRandom;
+    pub def fresh(): Random \ IO =
+        import java_new java.util.Random(): ##java.util.Random \ IO as newRandom;
         Random(newRandom())
 
     ///
     /// Returns a fresh random number generator initialized with the given seed `s`.
     ///
-    pub def newWithSeed(s: Int64): Random \ IO =
-        import new java.util.Random(Int64): ##java.util.Random \ IO as newRandom;
+    pub def freshWithSeed(s: Int64): Random \ IO =
+        import java_new java.util.Random(Int64): ##java.util.Random \ IO as newRandom;
         Random(newRandom(s))
 
     ///
@@ -25,7 +25,7 @@ mod Random {
     ///
     /// Returns `None` if the given array `a` is empty.
     ///
-    pub def choose(r: Random, a: Array[a, r]): Option[a] \ { IO, r } =
+    pub def oneOf(r: Random, a: Array[a, r]): Option[a] \ { IO, r } =
         if (Array.length(a) == 0) {
             None
         } else {

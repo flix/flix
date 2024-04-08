@@ -100,10 +100,11 @@ object ParsedAst {
       * @param tpe        the declared type.
       * @param eff        the declared effect.
       * @param tconstrs   the type constraints.
+      * @param econstrs   the equality constraints.
       * @param exp        the optional expression.
       * @param sp2        the position of the last character in the declaration.
       */
-    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: ParsedAst.FormalParamList, tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration.LawOrSig
+    case class Sig(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, fparamsOpt: ParsedAst.FormalParamList, tpe: ParsedAst.Type, eff: Option[ParsedAst.Type], tconstrs: Seq[ParsedAst.TypeConstraint], econstrs: Seq[ParsedAst.EqualityConstraint], exp: Option[ParsedAst.Expression], sp2: SourcePosition) extends ParsedAst.Declaration.LawOrSig
 
     /**
       * Law Declaration.
@@ -189,9 +190,10 @@ object ParsedAst {
       * @param ident   the name of the type.
       * @param tparams the type parameters of the type.
       * @param kind    the kind of the type.
+      * @param tpe     the default value for the type.
       * @param sp2     the position of the last character in the declaration.
       */
-    case class AssocTypeSig(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, kind: Option[ParsedAst.Kind], sp2: SourcePosition)
+    case class AssocTypeSig(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparams: ParsedAst.TypeParams, kind: Option[ParsedAst.Kind], tpe: Option[Type], sp2: SourcePosition)
 
     /**
       * Associated Type Declaration.
@@ -207,7 +209,7 @@ object ParsedAst {
     case class AssocTypeDef(doc: ParsedAst.Doc, mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, args: Option[Seq[ParsedAst.Type]], tpe: ParsedAst.Type, sp2: SourcePosition)
 
     /**
-      * Typeclass Declaration.
+      * Trait Declaration.
       *
       * @param doc          the optional comment associated with the declaration.
       * @param ann          the annotations associated with the declaration.
@@ -215,27 +217,27 @@ object ParsedAst {
       * @param sp1          the position of the first character in the declaration.
       * @param ident        the name of the definition.
       * @param tparam       the type parameter.
-      * @param superClasses the super classes of the class.
+      * @param superTraits the super traits of the trait.
       * @param assocs       the associated types
-      * @param lawsAndSigs  the signatures and laws of the class.
+      * @param lawsAndSigs  the signatures and laws of the trait.
       * @param sp2          the position of the last character in the declaration.
       */
-    case class Class(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superClasses: Seq[ParsedAst.TypeConstraint], assocs: Seq[ParsedAst.Declaration.AssocTypeSig], lawsAndSigs: Seq[ParsedAst.Declaration.LawOrSig], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Trait(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, ident: Name.Ident, tparam: ParsedAst.TypeParam, superTraits: Seq[ParsedAst.TypeConstraint], assocs: Seq[ParsedAst.Declaration.AssocTypeSig], lawsAndSigs: Seq[ParsedAst.Declaration.LawOrSig], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
-      * Typeclass instance.
+      * Trait instance.
       *
       * @param doc    the optional comment associated with the declaration.
       * @param ann    the annotations associated with the declaration.
       * @param mod    the associated modifiers.
       * @param sp1    the position of the first character in the declaration.
-      * @param clazz  the name of the class.
+      * @param trt  the name of the trait.
       * @param tpe    the type of the instance.
       * @param assocs the associated types
       * @param defs   the definitions of the instance.
       * @param sp2    the position of the last character in the declaration.
       */
-    case class Instance(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, clazz: Name.QName, tpe: ParsedAst.Type, constraints: Seq[ParsedAst.TypeConstraint], assocs: Seq[ParsedAst.Declaration.AssocTypeDef], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
+    case class Instance(doc: ParsedAst.Doc, ann: Seq[ParsedAst.Annotation], mod: Seq[ParsedAst.Modifier], sp1: SourcePosition, trt: Name.QName, tpe: ParsedAst.Type, constraints: Seq[ParsedAst.TypeConstraint], assocs: Seq[ParsedAst.Declaration.AssocTypeDef], defs: Seq[ParsedAst.Declaration.Def], sp2: SourcePosition) extends ParsedAst.Declaration
 
     /**
       * Effect Declaration.

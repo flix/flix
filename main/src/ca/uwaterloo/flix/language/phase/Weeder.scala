@@ -139,7 +139,7 @@ object Weeder {
 
     case d: ParsedAst.Declaration.TypeAlias => visitTypeAlias(d)
 
-    case d: ParsedAst.Declaration.Class => visitClass(d)
+    case d: ParsedAst.Declaration.Trait => visitTrait(d)
 
     case d: ParsedAst.Declaration.Instance => visitInstance(d)
 
@@ -147,10 +147,10 @@ object Weeder {
   }
 
   /**
-    * Performs weeding on the given class declaration `c0`.
+    * Performs weeding on the given trait declaration `t0`.
     */
-  private def visitClass(c0: ParsedAst.Declaration.Class)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Class], WeederError] = c0 match {
-    case ParsedAst.Declaration.Class(doc0, ann0, mods0, sp1, ident, tparam0, superClasses0, assocs0, lawsAndSigs, sp2) =>
+  private def visitTrait(t0: ParsedAst.Declaration.Trait)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Trait], WeederError] = t0 match {
+    case ParsedAst.Declaration.Trait(doc0, ann0, mods0, sp1, ident, tparam0, superTraits0, assocs0, lawsAndSigs, sp2) =>
       val loc = mkSL(sp1, sp2)
       val doc = visitDoc(doc0)
       val laws0 = lawsAndSigs.collect { case law: ParsedAst.Declaration.Law => law }
@@ -159,14 +159,14 @@ object Weeder {
       val annVal = visitAnnotations(ann0)
       val modsVal = visitModifiers(mods0, legalModifiers = Set(Ast.Modifier.Lawful, Ast.Modifier.Public, Ast.Modifier.Sealed))
       val tparam = visitTypeParam(tparam0)
-      val superClassesVal = traverse(superClasses0)(visitTypeConstraint)
+      val superTraitsVal = traverse(superTraits0)(visitTypeConstraint)
       val assocsVal = traverse(assocs0)(visitAssocTypeSig(_, tparam))
       val sigsVal = traverse(sigs0)(visitSig)
       val lawsVal = traverse(laws0)(visitLaw)
 
-      mapN(annVal, modsVal, superClassesVal, assocsVal, sigsVal, lawsVal) {
-        case (ann, mods, superClasses, assocs, sigs, laws) =>
-          List(WeededAst.Declaration.Class(doc, ann, mods, ident, tparam, superClasses, assocs.flatten, sigs.flatten, laws.flatten, loc))
+      mapN(annVal, modsVal, superTraitsVal, assocsVal, sigsVal, lawsVal) {
+        case (ann, mods, superTraits, assocs, sigs, laws) =>
+          List(WeededAst.Declaration.Trait(doc, ann, mods, ident, tparam, superTraits, assocs.flatten, sigs.flatten, laws.flatten, loc))
       }
   }
 
@@ -174,7 +174,7 @@ object Weeder {
     * Performs weeding on the given sig declaration `s0`.
     */
   private def visitSig(s0: ParsedAst.Declaration.Sig)(implicit flix: Flix): Validation[List[WeededAst.Declaration.Sig], WeederError] = s0 match {
-    case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, eff0, tconstrs0, exp0, sp2) =>
+    case ParsedAst.Declaration.Sig(doc0, ann, mods, sp1, ident, tparams0, fparams0, tpe0, eff0, tconstrs0, econstrs0, exp0, sp2) =>
       val doc = visitDoc(doc0)
 
       val annVal = visitAnnotations(ann)
@@ -186,11 +186,12 @@ object Weeder {
       val tpeVal = visitType(tpe0)
       val effVal = traverseOpt(eff0)(visitType)
       val tconstrsVal = traverse(tconstrs0)(visitTypeConstraint)
+      val econstrsVal = traverse(econstrs0)(visitEqualityConstraint)
       val expVal = traverseOpt(exp0)(visitExp)
 
-      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, tpeVal, effVal, tconstrsVal, expVal) {
-        case (as, mod, _, id, tparams, fparams, tpe, eff, tconstrs, exp) =>
-          List(WeededAst.Declaration.Sig(doc, as, mod, id, tparams, fparams, exp, tpe, eff, tconstrs, mkSL(sp1, sp2)))
+      mapN(annVal, modVal, pubVal, identVal, tparamsVal, formalsVal, tpeVal, effVal, tconstrsVal, econstrsVal, expVal) {
+        case (as, mod, _, id, tparams, fparams, tpe, eff, tconstrs, econstrs, exp) =>
+          List(WeededAst.Declaration.Sig(doc, as, mod, id, tparams, fparams, exp, tpe, eff, tconstrs, econstrs, mkSL(sp1, sp2)))
       }
   }
 
@@ -372,7 +373,7 @@ object Weeder {
 
       mapN(annVal, modVal, tparamsVal, casesVal) {
         case (ann, mod, tparams, cases) =>
-          List(WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives, cases.values.toList, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.Enum(doc, ann, mod, ident, tparams, derives, cases.values.toList.sortBy(_.loc), mkSL(sp1, sp2)))
       }
   }
 
@@ -429,7 +430,7 @@ object Weeder {
 
       mapN(annVal, modVal, tparamsVal, casesVal) {
         case (ann, mod, tparams, cases) =>
-          List(WeededAst.Declaration.RestrictableEnum(doc, ann, mod, ident, index, tparams, derives, cases.values.toList, mkSL(sp1, sp2)))
+          List(WeededAst.Declaration.RestrictableEnum(doc, ann, mod, ident, index, tparams, derives, cases.values.toList.sortBy(_.loc), mkSL(sp1, sp2)))
       }
   }
 
@@ -437,8 +438,8 @@ object Weeder {
     * Performs weeding on the given enum derivations `derives0`.
     */
   private def visitDerivations(derives0: ParsedAst.Derivations): WeededAst.Derivations = derives0 match {
-    case ParsedAst.Derivations(sp1, classes, sp2) =>
-      WeededAst.Derivations(classes.toList, mkSL(sp1, sp2))
+    case ParsedAst.Derivations(sp1, traits, sp2) =>
+      WeededAst.Derivations(traits.toList, mkSL(sp1, sp2))
   }
 
   /**
@@ -487,8 +488,8 @@ object Weeder {
   /**
     * Performs weeding on the given associated type signature `d0`.
     */
-  private def visitAssocTypeSig(d0: ParsedAst.Declaration.AssocTypeSig, clazzTparam: WeededAst.TypeParam): Validation[List[WeededAst.Declaration.AssocTypeSig], WeederError] = d0 match {
-    case ParsedAst.Declaration.AssocTypeSig(doc0, mod0, sp1, ident, tparams0, kind0, sp2) =>
+  private def visitAssocTypeSig(d0: ParsedAst.Declaration.AssocTypeSig, trtTparam: WeededAst.TypeParam): Validation[List[WeededAst.Declaration.AssocTypeSig], WeederError] = d0 match {
+    case ParsedAst.Declaration.AssocTypeSig(doc0, mod0, sp1, ident, tparams0, kind0, tpe0, sp2) =>
 
       val doc = visitDoc(doc0)
       val modVal = visitModifiers(mod0, legalModifiers = Set(Ast.Modifier.Public))
@@ -497,13 +498,14 @@ object Weeder {
         case Some(k) => visitKind(k)
         case None => WeededAst.Kind.Ambiguous(Name.mkQName("Type"), ident.loc.asSynthetic)
       }
+      val tpeVal = Validation.traverseOpt(tpe0)(visitType)
       val loc = mkSL(sp1, sp2)
 
-      flatMapN(modVal, tparamsVal) {
-        case (mod, tparams) =>
+      flatMapN(modVal, tparamsVal, tpeVal) {
+        case (mod, tparams, tpe) =>
           val tparamVal = tparams match {
-            // Case 1: Elided. Use the class tparam.
-            case WeededAst.TypeParams.Elided => Validation.success(clazzTparam)
+            // Case 1: Elided. Use the trait tparam.
+            case WeededAst.TypeParams.Elided => Validation.success(trtTparam)
 
             // Case 2: Singleton parameter.
             case WeededAst.TypeParams.Kinded(hd :: Nil) => Validation.success(hd)
@@ -515,7 +517,7 @@ object Weeder {
             case WeededAst.TypeParams.Unkinded(ts) => Validation.toSoftFailure(ts.head, NonUnaryAssocType(ts.length, ident.loc))
           }
           mapN(tparamVal) {
-            case tparam => List(WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, loc))
+            case tparam => List(WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, tpe, loc))
           }
       }
   }
@@ -800,6 +802,8 @@ object Weeder {
           case ("VECTOR_GET", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.VectorLoad(e1, e2, loc))
           case ("VECTOR_LENGTH", e1 :: Nil) => Validation.success(WeededAst.Expr.VectorLength(e1, loc))
 
+          case ("REF_ASSIGN", e1 :: e2 :: Nil) => Validation.success(WeededAst.Expr.Assign(e1, e2, loc))
+
           case _ =>
             val err = UndefinedIntrinsic(loc)
             Validation.toSoftFailure(WeededAst.Expr.Error(err), err)
@@ -848,7 +852,8 @@ object Weeder {
       mapN(visitExp(exp)) {
         case e => visitUnaryOperator(op) match {
           case OperatorResult.BuiltIn(name) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(name, name.loc), List(e), loc)
-          case OperatorResult.Operator(o) => WeededAst.Expr.Unary(o, e, loc)
+          case OperatorResult.UnaryOperator(o) => WeededAst.Expr.Unary(o, e, loc)
+          case OperatorResult.BinaryOperator(_) => throw InternalCompilerException(s"Unexpected BinaryOperator ${op.op} from visitUnaryOperator", loc)
           case OperatorResult.Unrecognized(ident) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e), loc)
         }
       }
@@ -859,7 +864,8 @@ object Weeder {
       mapN(visitExp(exp1), visitExp(exp2)) {
         case (e1, e2) => visitBinaryOperator(op) match {
           case OperatorResult.BuiltIn(name) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(name, name.loc), List(e1, e2), loc)
-          case OperatorResult.Operator(o) => WeededAst.Expr.Binary(o, e1, e2, loc)
+          case OperatorResult.UnaryOperator(_) => throw InternalCompilerException(s"Unexpected UnaryOperator ${op.op} from visitBinaryOperator", loc)
+          case OperatorResult.BinaryOperator(o) => WeededAst.Expr.Binary(o, e1, e2, loc)
           case OperatorResult.Unrecognized(ident) => WeededAst.Expr.Apply(WeededAst.Expr.Ambiguous(Name.mkQName(ident), ident.loc), List(e1, e2), loc)
         }
       }
@@ -1285,11 +1291,11 @@ object Weeder {
         case (e, t, f) => WeededAst.Expr.Ascribe(e, t, f, mkSL(leftMostSourcePosition(exp), sp2))
       }
 
-    case ParsedAst.Expression.InstanceOf(exp, className, sp2) =>
+    case ParsedAst.Expression.InstanceOf(exp, traitName, sp2) =>
       val sp1 = leftMostSourcePosition(exp)
       val loc = mkSL(sp1, sp2)
       mapN(visitExp(exp)) {
-        case e => WeededAst.Expr.InstanceOf(e, className.toString, loc)
+        case e => WeededAst.Expr.InstanceOf(e, traitName.toString, loc)
       }
 
     case ParsedAst.Expression.CheckedTypeCast(sp1, exp, sp2) =>
@@ -1542,9 +1548,15 @@ object Weeder {
     case class BuiltIn(name: Name.QName) extends OperatorResult
 
     /**
-      * The operator represents a semantic operator.
+      * The operator represents a unary semantic operator.
       */
-    case class Operator(op: SemanticOp) extends OperatorResult
+    case class UnaryOperator(op: SemanticOp.UnaryOp) extends OperatorResult
+
+    /**
+      *
+      * The operator represents a binary semantic operator.
+      */
+    case class BinaryOperator(op: SemanticOp.BinaryOp) extends OperatorResult
 
     /**
       * The operator is unrecognized: it must have been defined elsewhere.
@@ -1558,7 +1570,7 @@ object Weeder {
   private def visitUnaryOperator(o: ParsedAst.Operator)(implicit flix: Flix): OperatorResult = o match {
     case ParsedAst.Operator(sp1, op, sp2) =>
       op match {
-        case "not" => OperatorResult.Operator(SemanticOp.BoolOp.Not)
+        case "not" => OperatorResult.UnaryOperator(SemanticOp.BoolOp.Not)
         case "-" => OperatorResult.BuiltIn(Name.mkQName("Neg.neg", sp1, sp2))
         case _ => OperatorResult.Unrecognized(Name.Ident(sp1, op, sp2))
       }
@@ -1581,8 +1593,8 @@ object Weeder {
         case "==" => OperatorResult.BuiltIn(Name.mkQName("Eq.eq", sp1, sp2))
         case "!=" => OperatorResult.BuiltIn(Name.mkQName("Eq.neq", sp1, sp2))
         case "<=>" => OperatorResult.BuiltIn(Name.mkQName("Order.compare", sp1, sp2))
-        case "and" => OperatorResult.Operator(SemanticOp.BoolOp.And)
-        case "or" => OperatorResult.Operator(SemanticOp.BoolOp.Or)
+        case "and" => OperatorResult.BinaryOperator(SemanticOp.BoolOp.And)
+        case "or" => OperatorResult.BinaryOperator(SemanticOp.BoolOp.Or)
         case _ => OperatorResult.Unrecognized(Name.Ident(sp1, op, sp2))
       }
   }

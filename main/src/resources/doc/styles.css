@@ -409,7 +409,7 @@ nav .Effects li::before {
 nav .Type-Aliases li::before {
     color: var(--type-alias-color);
 }
-nav .Definitions li::before, 
+nav .Definitions li::before,
 nav .Module-Definitions li::before {
     color: var(--def-color);
 }
@@ -461,10 +461,12 @@ main h2 {
     margin-top: 1rem;
     padding-left: 1.5rem;
 }
+.subsection h3 {
+    margin-left: -1.5rem;
+}
 .subsection > summary {
     cursor: pointer;
     list-style: none;
-    margin-left: -1.5rem;
 }
 .subsection > summary::after {
     content: "(show)";
@@ -490,6 +492,7 @@ main h2 {
 .decl {
     display: flex;
     gap: 0.2rem;
+    align-items: center;
 }
 .decl > code {
     flex: 1;

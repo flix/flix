@@ -22,7 +22,7 @@ mod Test.Exp.Choose.Recursive {
     }
 
     pub def testChoose03(): Bool = {
-        let cstOrVar = if (true) open Expr.Cst(true) else open Expr.Var(123);
+        let cstOrVar = if (true) open_variant Expr.Cst(true) else open_variant Expr.Var(123);
         choose cstOrVar {
             case Expr.Cst(_) => true
             case Expr.Var(_) => false
@@ -30,7 +30,7 @@ mod Test.Exp.Choose.Recursive {
     }
 
     pub def testChoose04(): Bool = {
-        let cstOrVar = if (true) open Expr.Cst(true) else open Expr.Var(123);
+        let cstOrVar = if (true) open_variant Expr.Cst(true) else open_variant Expr.Var(123);
         choose cstOrVar {
             case Expr.Xor(_) => false
             case Expr.Cst(_) => true
@@ -64,28 +64,28 @@ mod Test.Exp.Choose.Recursive {
         };
         let h = if (true) f else g;
 
-        let cstOrNot = if (true) open Expr.Cst(true) else open Expr.Not(open Expr.Cst(true));
+        let cstOrNot = if (true) open_variant Expr.Cst(true) else open_variant Expr.Not(open_variant Expr.Cst(true));
         h(cstOrNot)
     }
 
 // TODO RESTR-VARS
 //    pub def testChoose07(): Bool = {
 //        let id = x -> choose x {
-//            case Expr.Cst(y)    => open Expr.Cst(y)
-//            case Expr.Var(y)    => open Expr.Var(y)
-//            case Expr.Not(y)    => open Expr.Not(y)
+//            case Expr.Cst(y)    => open_variant Expr.Cst(y)
+//            case Expr.Var(y)    => open_variant Expr.Var(y)
+//            case Expr.Not(y)    => open_variant Expr.Not(y)
 //        };
-//        let _ = id(open Expr.Cst(true));
+//        let _ = id(open_variant Expr.Cst(true));
 //        true
 //    }
 //
 //    pub def testChoose08(): Bool = {
 //        let unNot = x -> choose x {
-//            case Expr.Cst(y)    => open Expr.Cst(y)
-//            case Expr.Var(y)    => open Expr.Var(y)
+//            case Expr.Cst(y)    => open_variant Expr.Cst(y)
+//            case Expr.Var(y)    => open_variant Expr.Var(y)
 //            case Expr.Not(y)    => y
 //        };
-//        let _ = unNot(open Expr.Cst(true));
+//        let _ = unNot(open_variant Expr.Cst(true));
 //        true
 //    }
 }

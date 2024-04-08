@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 package ca.uwaterloo.flix.language.phase.unification
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Type, TypeConstructor}
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 
@@ -225,6 +225,7 @@ class SimpleBoolFormulaAlgClassic extends BoolFormulaAlg {
     case BoolFormula.Var(id) => env.getBackward(id) match {
       case Some(BoolFormula.VarOrEff.Var(sym)) => Type.Var(sym, SourceLocation.Unknown)
       case Some(BoolFormula.VarOrEff.Eff(sym)) => Type.Cst(TypeConstructor.Effect(sym), SourceLocation.Unknown)
+      case Some(BoolFormula.VarOrEff.Assoc(sym, arg)) => Type.AssocType(Ast.AssocTypeConstructor(sym, SourceLocation.Unknown), arg, Kind.Eff, SourceLocation.Unknown)
       case None => throw InternalCompilerException(s"unexpected unknown ID: $id", SourceLocation.Unknown)
     }
   }

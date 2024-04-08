@@ -26,8 +26,8 @@ object ResolvedAst {
 
   val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, MultiMap.empty)
 
-  case class Root(classes: Map[Symbol.ClassSym, Declaration.Class],
-                  instances: Map[Symbol.ClassSym, List[Declaration.Instance]],
+  case class Root(traits: Map[Symbol.TraitSym, Declaration.Trait],
+                  instances: Map[Symbol.TraitSym, List[Declaration.Instance]],
                   defs: Map[Symbol.DefnSym, Declaration.Def],
                   enums: Map[Symbol.EnumSym, Declaration.Enum],
                   restrictableEnums: Map[Symbol.RestrictableEnumSym, Declaration.RestrictableEnum],
@@ -47,9 +47,9 @@ object ResolvedAst {
   object Declaration {
     case class Namespace(sym: Symbol.ModuleSym, usesAndImports: List[Ast.UseOrImport], decls: List[Declaration], loc: SourceLocation) extends Declaration
 
-    case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypeParam, superClasses: List[TypeConstraint], assocs: List[Declaration.AssocTypeSig], sigs: Map[Symbol.SigSym, Declaration.Sig], laws: List[Declaration.Def], loc: SourceLocation) extends Declaration
+    case class Trait(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[TypeConstraint], assocs: List[Declaration.AssocTypeSig], sigs: Map[Symbol.SigSym, Declaration.Sig], laws: List[Declaration.Def], loc: SourceLocation) extends Declaration
 
-    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: UnkindedType, tconstrs: List[TypeConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], ns: Name.NName, loc: SourceLocation) extends Declaration
+    case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, trt: Ast.TraitSymUse, tpe: UnkindedType, tconstrs: List[TypeConstraint], assocs: List[Declaration.AssocTypeDef], defs: List[Declaration.Def], ns: Name.NName, loc: SourceLocation) extends Declaration
 
     case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr]) extends Declaration
 
@@ -65,7 +65,7 @@ object ResolvedAst {
 
     case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: TypeParams, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
-    case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, loc: SourceLocation) extends Declaration
+    case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, tpe: Option[UnkindedType], loc: SourceLocation) extends Declaration
 
     case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, sym: Ast.AssocTypeSymUse, arg: UnkindedType, tpe: UnkindedType, loc: SourceLocation) extends Declaration
 
@@ -102,9 +102,9 @@ object ResolvedAst {
 
     case class Lambda(fparam: FormalParam, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Unary(sop: SemanticOp, exp: Expr, loc: SourceLocation) extends Expr
+    case class Unary(sop: SemanticOp.UnaryOp, exp: Expr, loc: SourceLocation) extends Expr
 
-    case class Binary(sop: SemanticOp, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
+    case class Binary(sop: SemanticOp.BinaryOp, exp1: Expr, exp2: Expr, loc: SourceLocation) extends Expr
 
     case class IfThenElse(exp1: Expr, exp2: Expr, exp3: Expr, loc: SourceLocation) extends Expr
 
@@ -179,13 +179,13 @@ object ResolvedAst {
 
     case class TryWith(exp: Expr, eff: Ast.EffectSymUse, rules: List[HandlerRule], loc: SourceLocation) extends Expr
 
-    case class Do(op: Ast.OpSymUse, args: List[Expr], loc: SourceLocation) extends Expr
+    case class Do(op: Ast.OpSymUse, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeConstructor(constructor: Constructor[_], args: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeConstructor(constructor: Constructor[_], exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeMethod(method: Method, clazz: java.lang.Class[_], exp: Expr, args: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeMethod(method: Method, clazz: java.lang.Class[_], exp: Expr, exps: List[Expr], loc: SourceLocation) extends Expr
 
-    case class InvokeStaticMethod(method: Method, args: List[Expr], loc: SourceLocation) extends Expr
+    case class InvokeStaticMethod(method: Method, exps: List[Expr], loc: SourceLocation) extends Expr
 
     case class GetField(field: Field, clazz: java.lang.Class[_], exp: Expr, loc: SourceLocation) extends Expr
 

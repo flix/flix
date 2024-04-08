@@ -36,10 +36,10 @@ object SymbolProvider {
 
     val enums = root.enums.values.filter(_.sym.name.startsWith(query)).flatMap(mkEnumSymbolInformation)
     val defs = root.defs.values.collect { case d if d.sym.name.startsWith(query) => mkDefSymbolInformation(d) }
-    val classes = root.classes.values.collect { case c if c.sym.name.startsWith(query) => mkClassSymbolInformation(c) }
+    val traits = root.traits.values.collect { case t if t.sym.name.startsWith(query) => mkTraitSymbolInformation(t) }
     val sigs = root.sigs.values.collect { case sig if sig.sym.name.startsWith(query) => mkSigSymbolInformation(sig) }
     val effs = root.effects.values.filter(_.sym.name.startsWith(query)).flatMap(mkEffectSymbolInformation)
-    (classes ++ defs ++ enums ++ sigs ++ effs).toList
+    (traits ++ defs ++ enums ++ sigs ++ effs).toList
   }
 
   /**
@@ -53,26 +53,26 @@ object SymbolProvider {
 
     val enums = root.enums.values.collect { case enum if enum.loc.source.name == uri => mkEnumDocumentSymbol(enum) }
     val defs = root.defs.values.collect { case d if d.sym.loc.source.name == uri => mkDefDocumentSymbol(d) }
-    val classes = root.classes.values.collect { case c if c.sym.loc.source.name == uri => mkClassDocumentSymbol(c) }
+    val traits = root.traits.values.collect { case t if t.sym.loc.source.name == uri => mkTraitDocumentSymbol(t) }
     val effs = root.effects.values.collect { case e if e.sym.loc.source.name == uri => mkEffectDocumentSymbol(e) }
-    (classes ++ defs ++ enums ++ effs).toList
+    (traits ++ defs ++ enums ++ effs).toList
   }
 
   /**
-    * Returns an Interface SymbolInformation from a Class node.
+    * Returns an Interface SymbolInformation from a Trait node.
     */
-  private def mkClassSymbolInformation(c: TypedAst.Class) = c match {
-    case TypedAst.Class(_, _, _, sym, _, _, _, _, _, _) => SymbolInformation(
+  private def mkTraitSymbolInformation(t: TypedAst.Trait) = t match {
+    case TypedAst.Trait(_, _, _, sym, _, _, _, _, _, _) => SymbolInformation(
       sym.name, SymbolKind.Interface, Nil, deprecated = false, Location(sym.loc.source.name, Range.from(sym.loc)), None,
     )
   }
 
   /**
-    * Returns an Interface DocumentSymbol from a Class node.
-    * It navigates the AST and adds Sig and TypeParam of c and as children DocumentSymbols.
+    * Returns an Interface DocumentSymbol from a Trait node.
+    * It navigates the AST and adds Sig and TypeParam of t and as children DocumentSymbols.
     */
-  private def mkClassDocumentSymbol(c: TypedAst.Class): DocumentSymbol = c match {
-    case TypedAst.Class(doc, _, _, sym, tparam, _, _, signatures, _, _) => DocumentSymbol( // TODO ASSOC-TYPES visit assocs
+  private def mkTraitDocumentSymbol(t: TypedAst.Trait): DocumentSymbol = t match {
+    case TypedAst.Trait(doc, _, _, sym, tparam, _, _, signatures, _, _) => DocumentSymbol( // TODO ASSOC-TYPES visit assocs
       sym.name,
       Some(doc.text),
       SymbolKind.Interface,

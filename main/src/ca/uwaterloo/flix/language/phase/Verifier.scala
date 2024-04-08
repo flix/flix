@@ -18,8 +18,8 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, ReducedAst, SemanticOp, SourceLocation, Symbol}
-import ca.uwaterloo.flix.util.InternalCompilerException
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Name, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
   * Verify the AST before bytecode generation.
@@ -27,31 +27,19 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 object Verifier {
 
   def run(root: Root)(implicit flix: Flix): Root = flix.phase("Verifier") {
-    root.defs.values.foreach(d => visitDef(d)(root))
-    root
+    if (flix.options.xnoverify) {
+      root
+    } else {
+      ParOps.parMap(root.defs.values)(visitDef(_)(root))
+      root
+    }
   }
 
   private def visitDef(decl: Def)(implicit root: Root): Unit = {
     val env = (decl.cparams ++ decl.fparams).foldLeft(Map.empty[Symbol.VarSym, MonoType]) {
       case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
     }
-    try {
-      visitExpr(decl.expr)(root, env, Map.empty)
-    } catch {
-      case UnexpectedType(expected, found, loc) =>
-        println(s"Unexpected type near ${loc.format}")
-        println()
-        println(s"  expected = $expected")
-        println(s"  found    = $found")
-        println()
-
-      case MismatchedTypes(tpe1, tpe2, loc) =>
-        println(s"Mismatched types near ${loc.format}")
-        println()
-        println(s"  tpe1 = $tpe1")
-        println(s"  tpe2 = $tpe2")
-        println()
-    }
+    visitExpr(decl.expr)(root, env, Map.empty)
   }
 
 
@@ -98,7 +86,6 @@ object Verifier {
             case SemanticOp.Int32Op.Not => MonoType.Int32
             case SemanticOp.Int64Op.Neg => MonoType.Int64
             case SemanticOp.Int64Op.Not => MonoType.Int64
-            case _ => throw InternalCompilerException(s"Invalid unary operator: '$sop'", loc)
           }
           check(expected = opTpe)(actual = t, loc)
           check(expected = tpe)(actual = opTpe, loc)
@@ -215,8 +202,6 @@ object Verifier {
             case SemanticOp.Int64Op.Shr => (MonoType.Int64, MonoType.Int32, MonoType.Int64)
 
             case SemanticOp.StringOp.Concat => (MonoType.String, MonoType.String, MonoType.String)
-
-            case _ => throw InternalCompilerException(s"Invalid binary operator: '$sop'", loc)
           }
           check(expected = argTpe1)(t1, loc)
           check(expected = argTpe2)(t2, loc)
@@ -236,6 +221,142 @@ object Verifier {
           check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
           tpe
 
+        case AtomicOp.ArrayLength =>
+          val List(t1) = ts
+          t1 match {
+            case MonoType.Array(_) => check(expected = MonoType.Int32)(actual = tpe, loc)
+            case _ => failMismatchedShape(t1, "Array", loc)
+          }
+
+        case AtomicOp.ArrayNew =>
+          val List(t1, t2) = ts
+          val arrType = MonoType.Array(t1)
+          checkEq(arrType, tpe, loc)
+          check(expected = MonoType.Int32)(actual = t2, loc)
+          tpe
+
+        case AtomicOp.ArrayLit =>
+          tpe match {
+            case MonoType.Array(elmt) =>
+              ts.foreach(t => checkEq(elmt, t, loc))
+              tpe
+            case _ => failMismatchedShape(tpe, "Array", loc)
+          }
+
+        case AtomicOp.ArrayLoad =>
+          val List(t1, t2) = ts
+          t1 match {
+            case MonoType.Array(elmt) =>
+              check(expected = MonoType.Int32)(actual = t2, loc)
+              checkEq(elmt, tpe, loc)
+            case _ => failMismatchedShape(t1, "Array", loc)
+          }
+
+        case AtomicOp.ArrayStore =>
+          val List(t1, t2, t3) = ts
+          t1 match {
+            case MonoType.Array(elmt) =>
+              check(expected = MonoType.Int32)(actual = t2, loc)
+              checkEq(elmt, t3, loc)
+              check(expected = MonoType.Unit)(actual = tpe, loc)
+            case _ => failMismatchedShape(t1, "Array", loc)
+          }
+
+        case AtomicOp.Ref =>
+          val List(t1) = ts
+          val refType = MonoType.Ref(t1)
+          checkEq(refType, tpe, loc)
+
+        case AtomicOp.Deref =>
+          val List(t1) = ts
+          t1 match {
+            case MonoType.Ref(elm) => checkEq(elm, tpe, loc)
+            case _ => failMismatchedShape(t1, "Ref", loc)
+          }
+
+        case AtomicOp.Lazy =>
+          val List(t1) = ts
+          tpe match {
+            case MonoType.Lazy(elmt) =>
+              val fun = MonoType.Arrow(List(MonoType.Unit), elmt)
+              checkEq(t1, fun, loc)
+              tpe
+            case _ => failMismatchedShape(tpe, "Lazy", loc)
+          }
+
+        case AtomicOp.Force =>
+          val List(t1) = ts
+          t1 match {
+            case MonoType.Lazy(elm) => checkEq(elm, tpe, loc)
+            case _ => failMismatchedShape(t1, "Lazy", loc)
+          }
+
+        case AtomicOp.Tuple =>
+          val tup = MonoType.Tuple(ts)
+          checkEq(tup, tpe, loc)
+
+        case AtomicOp.Index(idx: Int) =>
+          val List(t1) = ts
+          t1 match {
+            case MonoType.Tuple(elms) => checkEq(elms(idx), tpe, loc)
+            case _ => failMismatchedShape(t1, "Tuple", loc)
+          }
+
+        case AtomicOp.Assign =>
+          val List(t1, t2) = ts
+          t1 match {
+            case MonoType.Ref(elm) =>
+              checkEq(t2, elm, loc)
+              check(expected = MonoType.Unit)(actual = tpe, loc)
+            case _ => failMismatchedShape(t1, "Ref", loc)
+          }
+
+        // Match- and Hole-errors match with any type
+        case AtomicOp.HoleError(_) =>
+          tpe
+
+        case AtomicOp.MatchError =>
+          tpe
+
+        case AtomicOp.RecordEmpty =>
+          check(expected = MonoType.RecordEmpty)(actual = tpe, loc)
+
+        case AtomicOp.RecordExtend(label) =>
+          val List(t1, t2) = ts
+          removeFromRecordType(tpe, label.name, loc) match {
+            case (rec, Some(valtype)) =>
+              checkEq(rec, t2, loc)
+              checkEq(valtype, t1, loc)
+              tpe
+            case (_, None) => failMismatchedShape(tpe, s"Record with ${label.name}", loc)
+          }
+
+        case AtomicOp.RecordRestrict(label) =>
+          val List(t1) = ts
+          removeFromRecordType(t1, label.name, loc) match {
+            case (rec, Some(_)) =>
+              checkEq(tpe, rec, loc)
+            case (_, None) => failMismatchedShape(t1, s"Record with ${label.name}", loc)
+          }
+
+        case AtomicOp.RecordSelect(label) =>
+          val List(t1) = ts
+          selectFromRecordType(t1, label.name, loc) match {
+            case Some(elmt) =>
+              checkEq(tpe, elmt, loc)
+            case None => failMismatchedShape(t1, s"Record with '${label.name}'", loc)
+          }
+
+        case AtomicOp.Closure(sym) =>
+          val defn = root.defs(sym)
+          val signature = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
+
+          val decl = MonoType.Arrow(defn.cparams.map(_.tpe), signature)
+          val actual = MonoType.Arrow(ts, tpe)
+
+          checkEq(decl, actual, loc)
+          tpe
+
         case _ => tpe // TODO: VERIFIER: Add rest
       }
 
@@ -252,7 +373,7 @@ object Verifier {
       check(expected = declared)(actual = actual, loc)
       tpe
 
-    case Expr.ApplySelfTail(sym, formals, actuals, tpe, _, loc) =>
+    case Expr.ApplySelfTail(sym, actuals, tpe, _, loc) =>
       val defn = root.defs(sym)
       val declared = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
       val actual = MonoType.Arrow(actuals.map(visitExpr), tpe)
@@ -308,7 +429,7 @@ object Verifier {
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)
 
-    case Expr.TryWith(_, _, _, tpe, _, _) =>
+    case Expr.TryWith(_, _, _, _, tpe, _, _) =>
       // TODO: VERIFIER: Add support for TryWith.
       tpe
 
@@ -328,8 +449,7 @@ object Verifier {
   private def check(expected: MonoType)(actual: MonoType, loc: SourceLocation): MonoType = {
     if (expected == actual)
       expected
-    else
-      throw UnexpectedType(expected, actual, loc)
+    else failUnexpectedType(expected, actual, loc)
   }
 
   /**
@@ -338,18 +458,59 @@ object Verifier {
   private def checkEq(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): MonoType = {
     if (tpe1 == tpe2)
       tpe1
-    else
-      throw MismatchedTypes(tpe1, tpe2, loc)
+    else failMismatchedTypes(tpe1, tpe2, loc)
   }
 
   /**
-    * An exception raised because the `expected` type does not match the `found` type.
+    * Remove the type associated with `label` from the given record type `rec`.
+    * If `rec` is not a record, return `None`.
     */
-  private case class UnexpectedType(expected: MonoType, found: MonoType, loc: SourceLocation) extends RuntimeException
+  private def removeFromRecordType(rec: MonoType, label: String, loc: SourceLocation): (MonoType, Option[MonoType]) = rec match {
+    case MonoType.RecordEmpty => (rec, None)
+    case MonoType.RecordExtend(lbl, valtype, rest) =>
+      if (label == lbl) (rest, Some(valtype))
+      else {
+        val (rec, opt) = removeFromRecordType(rest, label, loc)
+        (MonoType.RecordExtend(lbl, valtype, rec), opt)
+      }
+    case _ => failMismatchedShape(rec, "Record", loc)
+  }
 
   /**
-    * An exception raised because `tpe1` is not equal to `tpe2`.
+    * Get the type associated with `label` in the given record type `rec`.
+    * If `rec` is not a record, return `None`
     */
-  private case class MismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation) extends RuntimeException
+  private def selectFromRecordType(rec: MonoType, label: String, loc: SourceLocation): Option[MonoType] = rec match {
+    case MonoType.RecordExtend(lbl, valtype, rest) =>
+      if (lbl == label)
+        Some(valtype)
+      else
+        selectFromRecordType(rest, label, loc)
+    case MonoType.RecordEmpty => None
+    case _ => failMismatchedShape(rec, "Record", loc)
+  }
 
+  /**
+    * Throw `InternalCompilerException` because the `found` does not match the shape specified by `expected`
+    */
+  private def failMismatchedShape(found: MonoType, expected: String, loc: SourceLocation): Nothing =
+    throw InternalCompilerException(
+      s"Mismatched shape near ${loc.format}: expected = \'$expected\', found = $found", loc
+    )
+
+  /**
+    * Throw `InternalCompilerException` because the `expected` type does not match the `found` type
+    */
+  private def failUnexpectedType(found: MonoType, expected: MonoType, loc: SourceLocation): Nothing =
+    throw InternalCompilerException(
+      s"Unexpected type near ${loc.format}: expected = $expected, found = $found", loc
+    )
+
+  /**
+    * Throw `InternalCompilerException` because `tpe1` is not equal to `tpe2`
+    */
+  private def failMismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): Nothing =
+    throw InternalCompilerException(
+      s"Mismatched types near ${loc.format}: tpe1 = $tpe1, tpe2 = $tpe2", loc
+    )
 }

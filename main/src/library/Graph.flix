@@ -227,7 +227,7 @@ mod Graph {
     }
 
     ///
-    /// Returns the shortest distance from `src` to every other node in the
+    /// Returns the shortest distance from `src` to every other reachable vertex in the
     /// weighted directed graph `g`.
     ///
     pub def distancesFrom(src: t, g: m[(t, Int32, t)]): Map[t, Int32] with Foldable[m], Order[t] = {
@@ -236,12 +236,7 @@ mod Graph {
             Dist(src; Down.Down(0)).
             Dist(y; d + Down.Down(w)) :- Dist(x; d), Edge(x, w, y).
         };
-        let mapping = #{
-            Mapping(x, destructDown(d)) :- fix Dist(x; d).
-        };
-        let res = query edges, dists, mapping
-                  select (x, d)
-                  from Mapping(x, d);
+        let res = query edges, dists select (x, coerce(d)) from Dist(x; d);
         res |> Vector.toMap
     }
 
@@ -334,7 +329,7 @@ mod Graph {
                                After(x, y), Index(y; i).
         };
         let res = query edges, nodes(), topSort select (x, i) from Index(x; i);
-        let ml = MutList.new(rc);
+        let ml = MutList.empty(rc);
         // Extract nodes in fixed order.
         res |>
             Vector.sortBy(match (x, i) -> (i, x)) |>
@@ -476,7 +471,7 @@ mod Graph {
     /// up to the caller.
     ///
     pub def toGraphviz(g: m[((t, t))]): String with Foldable[m], Order[t], ToString[t] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
         Foldable.forEach(match (x, y) -> {
@@ -492,7 +487,7 @@ mod Graph {
     /// Other than that, DOT identifier validity is up to the caller.
     ///
     pub def toGraphvizWeighted(g: m[((t, Int32, t))]): String with Foldable[m], Order[t], ToString[t] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         def output(s) = StringBuilder.appendLine!(s, sb);
         output("digraph {");
         Foldable.forEach(match (x, w, y) -> {
@@ -513,7 +508,7 @@ mod Graph {
     /// with backslash.
     ///
     def graphvizId(id: t): String with ToString[t] = {
-        "\"${String.replace(from = "\"", to = "\\\"", "${id}")}\""
+        "\"${String.replace(src = "\"", dst = "\\\"", "${id}")}\""
     }
 
     ///

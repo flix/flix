@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Herluf Baggesen
+ * Copyright 2024 Herluf Baggesen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceKind, Sour
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
-import ca.uwaterloo.flix.util.collection.Chain
 import org.parboiled2.ParserInput
 
 import scala.collection.mutable
@@ -48,18 +47,27 @@ object Lexer {
   /**
    * The characters allowed in a user defined operator mapped to their `TokenKind`s
    */
-  private val ValidUserOpTokens = Map(
-    '+' -> TokenKind.Plus,
-    '-' -> TokenKind.Minus,
-    '*' -> TokenKind.Star,
-    '<' -> TokenKind.AngleL,
-    '>' -> TokenKind.AngleR,
-    '=' -> TokenKind.Equal,
-    '!' -> TokenKind.Bang,
-    '&' -> TokenKind.Ampersand,
-    '|' -> TokenKind.Bar,
-    '^' -> TokenKind.Caret,
-  )
+  private def isUserOp(c: Char): Option[TokenKind] = {
+    c match {
+      case '+' => Some(TokenKind.Plus)
+      case '-' => Some(TokenKind.Minus)
+      case '*' => Some(TokenKind.Star)
+      case '<' => Some(TokenKind.AngleL)
+      case '>' => Some(TokenKind.AngleR)
+      case '=' => Some(TokenKind.Equal)
+      case '!' => Some(TokenKind.Bang)
+      case '&' => Some(TokenKind.Ampersand)
+      case '|' => Some(TokenKind.Bar)
+      case '^' => Some(TokenKind.Caret)
+      case '$' => Some(TokenKind.Dollar)
+      case _ => None
+    }
+  }
+
+  /**
+   * Since Flix support hex decimals, a 'digit' can also be some select characters.
+   */
+  private def isDigit(c: Char): Boolean = '0' <= c && c <= '9' || 'a' <= c && c <= 'f' || 'A' <= c && c <= 'F'
 
   /**
    * The internal state of the lexer as it tokenizes a single source.
@@ -119,6 +127,7 @@ object Lexer {
       lex(src)
     } catch {
       case except: Throwable =>
+        println(src.data.mkString)
         except.printStackTrace()
         Validation.success(Array.empty[Token])
     }
@@ -144,11 +153,8 @@ object Lexer {
     val errors = s.tokens.collect {
       case Token(TokenKind.Err(err), _, _, _, _, _, _, _) => err
     }
-    if (errors.isEmpty) {
-      Validation.success(s.tokens.toArray)
-    } else {
-      Validation.SoftFailure(s.tokens.toArray, Chain.from(errors))
-    }
+
+    Validation.toSuccessOrSoftFailure(s.tokens.toArray, errors)
   }
 
   /**
@@ -158,8 +164,8 @@ object Lexer {
    * This is a design choice to avoid returning an Option[Char], which would be doable but tedious to work with.
    */
   private def advance()(implicit s: State): Char = {
-    if (s.current.offset > s.src.data.length) {
-      return s.src.data.last
+    if (s.current.offset >= s.src.data.length) {
+      return '\u0000'
     }
 
     val c = s.src.data(s.current.offset)
@@ -319,66 +325,46 @@ object Lexer {
       case ']' => TokenKind.BracketR
       case ';' => TokenKind.Semi
       case ',' => TokenKind.Comma
-      case '_' => TokenKind.Underscore
-      case '.' => TokenKind.Dot
-      case '~' => TokenKind.Tilde
       case '\\' => TokenKind.Backslash
-      case '$' => if (peek().isUpper) {
-        acceptBuiltIn()
-      } else {
-        TokenKind.Dollar
-      }
+      case _ if isMatch(".{") => TokenKind.DotCurlyL
+      case '.' => TokenKind.Dot
+      case '$' if peek().isUpper => acceptBuiltIn()
       case '\"' => acceptString()
       case '\'' => acceptChar()
       case '`' => acceptInfixFunction()
-      case '#' => if (peek() == '#') {
-        acceptJavaName()
-      } else {
-        TokenKind.Hash
-      }
-      case '/' => if (peek() == '/') {
-        if (peekPeek().contains('/')) {
-          acceptDocComment()
-        } else {
-          acceptLineComment()
-        }
-      } else if (peek() == '*') {
-        acceptBlockComment()
-      } else {
-        TokenKind.Slash
-      }
-      case ':' => if (peek() == ':') {
-        advance()
-        TokenKind.ColonColon
-      } else if (peek() == '=') {
-        advance()
-        TokenKind.ColonEqual
-      } else {
-        TokenKind.Colon
-      }
-      case '@' => if (peek().isUpper) {
-        acceptAnnotation()
-      } else {
-        TokenKind.At
-      }
-      case _ if isKeyword("???") => TokenKind.HoleAnonymous
+      case _ if isMatch("##") => acceptJavaName()
+      case _ if isMatch("#{") => TokenKind.HashCurlyL
+      case _ if isMatch("#(") => TokenKind.HashParenL
+      case '#' => TokenKind.Hash
+      case _ if isMatch("///") => acceptDocComment()
+      case _ if isMatch("//") => acceptLineComment()
+      case _ if isMatch("/*") => acceptBlockComment()
+      case '/' => TokenKind.Slash
+      case '@' if peek().isLetter => acceptAnnotation()
+      case '@' => TokenKind.At
+      case _ if isMatch("???") => TokenKind.HoleAnonymous
       case '?' if peek().isLetter => acceptNamedHole()
-      case _ if isKeyword("**") => TokenKind.StarStar
-      case _ if isKeyword("<-") => TokenKind.BackArrowThin
-      case _ if isKeyword("=>") => TokenKind.Arrow
-      case _ if isKeyword("->") => TokenKind.ArrowThin
-      case _ if isKeyword("<=") => TokenKind.AngleLEqual
-      case _ if isKeyword(">=") => TokenKind.AngleREqual
-      case _ if isKeyword("==") => TokenKind.EqualEqual
-      case _ if isKeyword("!=") => TokenKind.BangEqual
-      case _ if isKeyword("&&&") => TokenKind.TripleAmpersand
-      case _ if isKeyword("<<<") => TokenKind.TripleAngleL
-      case _ if isKeyword(">>>") => TokenKind.TripleAngleR
-      case _ if isKeyword("^^^") => TokenKind.TripleCaret
-      case _ if isKeyword("|||") => TokenKind.TripleBar
-      case _ if isKeyword("~~~") => TokenKind.TripleTilde
-      case _ if isKeyword("<+>") => TokenKind.AngledPlus
-      case _ if isKeyword("<=>") => TokenKind.AngledEqual
+      case _ if isOperator(":::") => TokenKind.TripleColon
+      case _ if isOperator("::") => TokenKind.ColonColon
+      case _ if isOperator(":=") => TokenKind.ColonEqual
+      case _ if isOperator(":-") => TokenKind.ColonMinus
+      case _ if isOperator(":") => TokenKind.Colon
+      case _ if isOperator("**") => TokenKind.StarStar
+      case _ if isOperator("<-") => TokenKind.ArrowThinL
+      case _ if isOperator("->") => TokenKind.ArrowThinR
+      case _ if isOperator("=>") => TokenKind.ArrowThickR
+      case _ if isOperator("<=") => TokenKind.AngleLEqual
+      case _ if isOperator(">=") => TokenKind.AngleREqual
+      case _ if isOperator("==") => TokenKind.EqualEqual
+      case _ if isOperator("!=") => TokenKind.BangEqual
+      case _ if isOperator("<+>") => TokenKind.AngledPlus
+      case _ if isOperator("&&&") => TokenKind.TripleAmpersand
+      case _ if isOperator("<<<") => TokenKind.TripleAngleL
+      case _ if isOperator(">>>") => TokenKind.TripleAngleR
+      case _ if isOperator("^^^") => TokenKind.TripleCaret
+      case _ if isOperator("|||") => TokenKind.TripleBar
+      case _ if isOperator("~~~") => TokenKind.TripleTilde
+      case '~' => TokenKind.Tilde
       case _ if isKeyword("alias") => TokenKind.KeywordAlias
       case _ if isKeyword("and") => TokenKind.KeywordAnd
       case _ if isKeyword("as") => TokenKind.KeywordAs
@@ -386,9 +372,11 @@ object Lexer {
       case _ if isKeyword("catch") => TokenKind.KeywordCatch
       case _ if isKeyword("checked_cast") => TokenKind.KeywordCheckedCast
       case _ if isKeyword("checked_ecast") => TokenKind.KeywordCheckedECast
+      case _ if isKeyword("choose*") => TokenKind.KeywordChooseStar
       case _ if isKeyword("choose") => TokenKind.KeywordChoose
-      case _ if isKeyword("class") => TokenKind.KeywordClass
       case _ if isKeyword("debug") => TokenKind.KeywordDebug
+      case _ if isKeyword("debug!") => TokenKind.KeywordDebugBang
+      case _ if isKeyword("debug!!") => TokenKind.KeywordDebugBangBang
       case _ if isKeyword("def") => TokenKind.KeywordDef
       case _ if isKeyword("deref") => TokenKind.KeywordDeref
       case _ if isKeyword("discard") => TokenKind.KeywordDiscard
@@ -396,24 +384,26 @@ object Lexer {
       case _ if isKeyword("eff") => TokenKind.KeywordEff
       case _ if isKeyword("else") => TokenKind.KeywordElse
       case _ if isKeyword("enum") => TokenKind.KeywordEnum
-      case _ if isKeyword("false") => TokenKind.KeywordFalse
+      case _ if isKeywordLiteral("false") => TokenKind.KeywordFalse
       case _ if isKeyword("fix") => TokenKind.KeywordFix
-      case _ if isKeyword("for") => TokenKind.KeywordFor
-      case _ if isKeyword("forA") => TokenKind.KeywordForA
       case _ if isKeyword("forall") => TokenKind.KeywordForall
+      case _ if isKeyword("forA") => TokenKind.KeywordForA
       case _ if isKeyword("force") => TokenKind.KeywordForce
       case _ if isKeyword("foreach") => TokenKind.KeywordForeach
       case _ if isKeyword("forM") => TokenKind.KeywordForM
       case _ if isKeyword("from") => TokenKind.KeywordFrom
-      case _ if isKeyword("get") => TokenKind.KeywordGet
+      case _ if isKeyword("java_get_field") => TokenKind.KeywordJavaGetField
+      case _ if isKeyword("java_set_field") => TokenKind.KeywordJavaSetField
+      case _ if isKeyword("java_new") => TokenKind.KeywordJavaNew
       case _ if isKeyword("if") => TokenKind.KeywordIf
       case _ if isKeyword("import") => TokenKind.KeywordImport
       case _ if isKeyword("inject") => TokenKind.KeywordInject
       case _ if isKeyword("inline") => TokenKind.KeywordInline
+      case _ if isKeyword("instanceof") => TokenKind.KeywordInstanceOf
       case _ if isKeyword("instance") => TokenKind.KeywordInstance
       case _ if isKeyword("into") => TokenKind.KeywordInto
-      case _ if isKeyword("law") => TokenKind.KeywordLaw
       case _ if isKeyword("lawful") => TokenKind.KeywordLawful
+      case _ if isKeyword("law") => TokenKind.KeywordLaw
       case _ if isKeyword("lazy") => TokenKind.KeywordLazy
       case _ if isKeyword("let") => TokenKind.KeywordLet
       case _ if isKeyword("masked_cast") => TokenKind.KeywordMaskedCast
@@ -421,61 +411,110 @@ object Lexer {
       case _ if isKeyword("mod") => TokenKind.KeywordMod
       case _ if isKeyword("new") => TokenKind.KeywordNew
       case _ if isKeyword("not") => TokenKind.KeywordNot
-      case _ if isKeyword("null") => TokenKind.KeywordNull
-      case _ if isKeyword("open") => TokenKind.KeywordOpen
-      case _ if isKeyword("open_as") => TokenKind.KeywordOpenAs
+      case _ if isKeywordLiteral("null") => TokenKind.KeywordNull
+      case _ if isKeyword("open_variant") => TokenKind.KeywordOpenVariant
+      case _ if isKeyword("open_variant_as") => TokenKind.KeywordOpenVariantAs
       case _ if isKeyword("or") => TokenKind.KeywordOr
       case _ if isKeyword("override") => TokenKind.KeywordOverride
       case _ if isKeyword("par") => TokenKind.KeywordPar
-      case _ if isKeyword("project") => TokenKind.KeywordProject
       case _ if isKeyword("pub") => TokenKind.KeywordPub
-      case _ if isKeyword("pure") => TokenKind.KeywordPure
+      case _ if isKeyword("Pure") => TokenKind.KeywordPure
+      case _ if isKeyword("project") => TokenKind.KeywordProject
       case _ if isKeyword("query") => TokenKind.KeywordQuery
       case _ if isKeyword("ref") => TokenKind.KeywordRef
       case _ if isKeyword("region") => TokenKind.KeywordRegion
       case _ if isKeyword("restrictable") => TokenKind.KeywordRestrictable
+      case _ if isKeyword("rvadd") => TokenKind.KeywordRvadd
+      case _ if isKeyword("rvand") => TokenKind.KeywordRvand
+      case _ if isKeyword("rvsub") => TokenKind.KeywordRvsub
+      case _ if isKeyword("rvnot") => TokenKind.KeywordRvnot
       case _ if isKeyword("sealed") => TokenKind.KeywordSealed
       case _ if isKeyword("select") => TokenKind.KeywordSelect
       case _ if isKeyword("solve") => TokenKind.KeywordSolve
       case _ if isKeyword("spawn") => TokenKind.KeywordSpawn
       case _ if isKeyword("static") => TokenKind.KeywordStatic
-      case _ if isKeyword("true") => TokenKind.KeywordTrue
+      case _ if isKeyword("Static") => TokenKind.KeywordStaticUppercase
+      case _ if isKeyword("trait") => TokenKind.KeywordTrait
+      case _ if isKeywordLiteral("true") => TokenKind.KeywordTrue
       case _ if isKeyword("try") => TokenKind.KeywordTry
       case _ if isKeyword("type") => TokenKind.KeywordType
       case _ if isKeyword("typematch") => TokenKind.KeywordTypeMatch
       case _ if isKeyword("unchecked_cast") => TokenKind.KeywordUncheckedCast
-      case _ if isKeyword("univ") => TokenKind.KeywordUniv
+      case _ if isKeyword("Univ") => TokenKind.KeywordUniv
       case _ if isKeyword("use") => TokenKind.KeywordUse
       case _ if isKeyword("where") => TokenKind.KeywordWhere
       case _ if isKeyword("with") => TokenKind.KeywordWith
       case _ if isKeyword("without") => TokenKind.KeywordWithout
       case _ if isKeyword("yield") => TokenKind.KeywordYield
+      case _ if isKeyword("xor") => TokenKind.KeywordXor
       case _ if isKeyword("Set#") => TokenKind.SetHash
       case _ if isKeyword("Array#") => TokenKind.ArrayHash
       case _ if isKeyword("Map#") => TokenKind.MapHash
       case _ if isKeyword("List#") => TokenKind.ListHash
       case _ if isKeyword("Vector#") => TokenKind.VectorHash
-      case _ if isKeyword("regex\"") => acceptRegex()
+      case _ if isMatch("regex\"") => acceptRegex()
       case _ if isMathNameChar(c) => acceptMathName()
       case _ if isGreekNameChar(c) => acceptGreekName()
-      // User defined operators.
-      case _ if ValidUserOpTokens.contains(c) =>
+      case '_' =>
         val p = peek()
-        if (ValidUserOpTokens.contains(p)) {
+        if (p.isLetterOrDigit) {
+          acceptName(p.isUpper)
+        } else if (isMathNameChar(p)) {
+          advance()
+          acceptMathName()
+        } else if (isUserOp(p).isDefined) {
+          advance()
           acceptUserDefinedOp()
-        } else if (c == '-' && p.isDigit) {
-          acceptNumber() // negative numbers.
-        } else {
-          ValidUserOpTokens.apply(c)
-        }
+        } else TokenKind.Underscore
       case c if c.isLetter => acceptName(c.isUpper)
-      case c if c.isDigit => acceptNumber()
+      case '0' if peek() == 'x' => acceptHexNumber()
+      case c if isDigit(c) => acceptNumber()
+      // User defined operators.
+      case _ if isUserOp(c).isDefined =>
+        val p = peek()
+        if (c == '<' && p == '>' && peekPeek().flatMap(isUserOp).isEmpty) {
+          // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
+          TokenKind.AngleL
+        } else if (isUserOp(p).isDefined) {
+          acceptUserDefinedOp()
+        } else {
+          isUserOp(c).get
+        }
       case c => TokenKind.Err(LexerError.UnexpectedChar(c.toString, sourceLocationAtStart()))
     }
   }
 
   /**
+   * Check that the potential keyword is sufficiently separated, taking care not to go out-of-bounds.
+   * A keyword is separated if it is surrounded by anything __but__ a character, digit a dot or underscore.
+   * Note that __comparison includes current__.
+   */
+  private def isSeparated(keyword: String, allowDot: Boolean = false)(implicit s: State): Boolean = {
+    def isSep(c: Char) = !(c.isLetter || c.isDigit || c == '_' || !allowDot && c == '.')
+
+    val leftIndex = s.current.offset - 2
+    val rightIndex = s.current.offset + keyword.length - 1
+    val isSeperatedLeft = leftIndex < 0 || isSep(s.src.data(leftIndex))
+    val isSeperatedRight = rightIndex > s.src.data.length - 1 || isSep(s.src.data(rightIndex))
+    isSeperatedLeft && isSeperatedRight
+  }
+
+  /**
+   * Check that the potential operator is sufficiently separated, taking care not to go out-of-bounds.
+   * An operator is separated if it is surrounded by anything __but__ another valid user operator character.
+   * Note that __comparison includes current__.
+   */
+  private def isSeparatedOperator(keyword: String)(implicit s: State): Boolean = {
+    val leftIndex = s.current.offset - 2
+    val rightIndex = s.current.offset + keyword.length - 1
+    val isSeperatedLeft = leftIndex < 0 || isUserOp(s.src.data(leftIndex)).isEmpty
+    val isSeperatedRight = rightIndex > s.src.data.length - 1 || isUserOp(s.src.data(rightIndex)).isEmpty
+    isSeperatedLeft && isSeperatedRight
+  }
+
+  /**
    * Checks whether the following substring matches a keyword. Note that __comparison includes current__.
+   * Also note that this will advance the current position past the keyword if there is a match.
    */
   private def isMatch(keyword: String)(implicit s: State): Boolean = {
     // Check if the keyword can appear before eof.
@@ -494,21 +533,46 @@ object Lexer {
         offset += 1
       }
     }
-    matches
-  }
 
-  /**
-   * Checks whether the following substring matches a keyword. Note that __comparison includes current__.
-   * Also note that this will advance the current position past the keyword if there is a match
-   */
-  private def isKeyword(keyword: String)(implicit s: State): Boolean = {
-    val matches = isMatch(keyword)
     if (matches) {
       for (_ <- 1 until keyword.length) {
         advance()
       }
     }
+
     matches
+  }
+
+  /**
+   * Checks whether the following substring matches a operator.
+   * Note that __comparison includes current__.
+   * Also note that this will advance the current position past the keyword if there is a match.
+   */
+  private def isOperator(op: String)(implicit s: State): Boolean = {
+    isSeparatedOperator(op) && isMatch(op)
+  }
+
+  /**
+   * Checks whether the following substring matches a keyword literal. IE. "true" or "null"
+   * Note that __comparison includes current__.
+   * Also note that this will advance the current position past the keyword if there is a match.
+   */
+  private def isKeywordLiteral(keyword: String)(implicit s: State): Boolean = {
+    // Allow dot here means that the literal gets recognized even when it is followed by a '.'.
+    // We want this for literals like 'true', but not for keywords like 'not'.
+    // This is because a symbol like 'not' can be imported from Java in a qualified path.
+    // For instance `import java.math.BigInteger.not(): BigInt \ {} as bNot;`. <- 'not' needs to be read as a name here.
+    // We are assuming no literal keyword needs to be imported. So no importing something called 'true' from java.
+    isSeparated(keyword, allowDot = true) && isMatch(keyword)
+  }
+
+  /**
+   * Checks whether the following substring matches a keyword.
+   * Note that __comparison includes current__.
+   * Also note that this will advance the current position past the keyword if there is a match.
+   */
+  private def isKeyword(keyword: String)(implicit s: State): Boolean = {
+    isSeparated(keyword) && isMatch(keyword)
   }
 
   /**
@@ -580,7 +644,7 @@ object Lexer {
       if (p == '?') {
         advance()
         return TokenKind.HoleVariable
-      } else if (!p.isLetter && !p.isDigit && p != '_' && p != '!') {
+      } else if (!p.isLetter && !p.isDigit && p != '_' && p != '!' && p != '$') {
         return kind
       }
       advance()
@@ -596,7 +660,7 @@ object Lexer {
     advance()
     while (!eof()) {
       val p = peek()
-      if (!p.isLetter && !p.isDigit && p != '_' && p != '!') {
+      if (!p.isLetter && !p.isDigit && p != '_' && p != '!' && p != '$') {
         return TokenKind.NameJava
       }
       advance()
@@ -655,7 +719,7 @@ object Lexer {
    */
   private def acceptNamedHole()(implicit s: State): TokenKind = {
     while (!eof()) {
-      if (!peek().isLetter) {
+      if (!peek().isLetter && !peek().isDigit) {
         return TokenKind.HoleNamed
       }
       advance()
@@ -689,11 +753,11 @@ object Lexer {
   /**
    * Moves current position past a user defined operator. IE. "<*>".
    * A user defined operator may be any combination of length 2 or more
-   * of the characters in `validUserOpTokens`.
+   * of the characters in [[isUserOp]].
    */
   private def acceptUserDefinedOp()(implicit s: State): TokenKind = {
     while (!eof()) {
-      if (!ValidUserOpTokens.contains(peek())) {
+      if (isUserOp(peek()).isEmpty) {
         return TokenKind.UserDefinedOperator
       } else {
         advance()
@@ -710,9 +774,13 @@ object Lexer {
     var kind: TokenKind = TokenKind.LiteralString
     while (!eof()) {
       var p = escapedPeek()
-      // Check for the beginning of an string interpolation.
-      if (!previousPrevious().contains('\\') && previous().contains('$') && p.contains('{')) {
-        acceptStringInterpolation() match {
+      // Check for the beginning of a string interpolation.
+      val prevPrev = previousPrevious()
+      val prev = previous()
+      val isInterpolation = !prevPrev.contains('\\') && prev.contains('$') && p.contains('{')
+      val isDebug = !prevPrev.contains('\\') && prev.contains('%') && p.contains('{')
+      if (isInterpolation || isDebug) {
+        acceptStringInterpolation(isDebug) match {
           case e@TokenKind.Err(_) => return e
           case k =>
             // Resume regular string literal tokenization by resetting p and prev.
@@ -736,6 +804,7 @@ object Lexer {
 
   /**
    * Moves current position past an interpolated expression within a string. IE. "Hi ${name}!".
+   * This function also handles debug strings like "Value: %{x}".
    * Note that this function works a little differently to the other `accept*` functions
    * since it will produce a number of tokens before returning.
    * This is necessary since it must be able to move past any expressions,
@@ -749,7 +818,7 @@ object Lexer {
    * "My favorite number is ${ { "${"//"}"40 + 2} }!"
    * "${"${}"}"
    */
-  private def acceptStringInterpolation()(implicit s: State): TokenKind = {
+  private def acceptStringInterpolation(isDebug: Boolean = false)(implicit s: State): TokenKind = {
     // Handle max nesting level
     s.interpolationNestingLevel += 1
     if (s.interpolationNestingLevel > InterpolatedStringMaxNestingLevel) {
@@ -758,7 +827,7 @@ object Lexer {
     }
     val startLocation = sourceLocationAtCurrent()
     advance() // Consume '{'.
-    addToken(TokenKind.LiteralStringInterpolationL)
+    addToken(if (isDebug) TokenKind.LiteralDebugStringL else TokenKind.LiteralStringInterpolationL)
     // consume tokens until a terminating '}' is found
     var blockNestingLevel = 0
     while (!eof()) {
@@ -776,7 +845,7 @@ object Lexer {
         if (kind == TokenKind.CurlyR) {
           if (blockNestingLevel == 0) {
             s.interpolationNestingLevel -= 1
-            return TokenKind.LiteralStringInterpolationR
+            return if (isDebug) TokenKind.LiteralDebugStringR else TokenKind.LiteralStringInterpolationR
           }
           blockNestingLevel -= 1
         }
@@ -831,48 +900,121 @@ object Lexer {
    * Moves current position past a number literal. IE. "123i32" or "456.78f32"
    * It is optional to have a trailing type indicator on number literals.
    * If it is missing Flix defaults to `f64` for decimals and `i32` for integers.
-   */
+   * NB. The char 'e' might appear as part of scientific notation.
+   * */
   private def acceptNumber()(implicit s: State): TokenKind = {
     var isDecimal = false
+    var isScientificNotation = false
+    var error: Option[TokenKind] = None
     while (!eof()) {
       peek() match {
-        // Digits and _ are just consumed
-        case c if c.isDigit || c == '_' => advance()
-
-        // Dots mark a decimal but are otherwise ignored
-        case '.' =>
-          if (isDecimal) {
-            return TokenKind.Err(LexerError.DoubleDottedNumber(sourceLocationAtCurrent()))
+        case c if c.isDigit => advance()
+        // 'e' mark scientific notation if not handling a hex number
+        case 'e' =>
+          if (isScientificNotation) {
+            error = Some(TokenKind.Err(LexerError.DoubleEInNumber(sourceLocationAtCurrent())))
           }
+          isScientificNotation = true
+          advance()
+        // Dots mark a decimal
+        case '.' if isDecimal =>
+          val loc = sourceLocationAtCurrent()
+          advance()
+          error = Some(TokenKind.Err(LexerError.DoubleDottedNumber(loc)))
+        case '.' if peekPeek().exists(c => c.isDigit || c == '.') =>
           isDecimal = true
           advance()
-
+        // '_' that is not in tail-position
+        case '_' if peekPeek().exists(_.isDigit) => advance()
+        // sequence of underscores
+        case '_' if peekPeek().contains('_') =>
+          // Consume the whole sequence of '_'
+          advance()
+          advance()
+          while (!eof() && peek() == '_') {
+            advance()
+          }
+          error = Some(TokenKind.Err(LexerError.DoubleUnderscoreInNumber(sourceLocationAtCurrent())))
         // If this is reached an explicit number type might occur next
         case _ => return advance() match {
-          case _ if isKeyword("f32") => TokenKind.LiteralFloat32
-          case _ if isKeyword("f64") => TokenKind.LiteralFloat64
-          case _ if isKeyword("i8") => TokenKind.LiteralInt8
-          case _ if isKeyword("i16") => TokenKind.LiteralInt16
-          case _ if isKeyword("i32") => TokenKind.LiteralInt32
-          case _ if isKeyword("i64") => TokenKind.LiteralInt64
-          case _ if isKeyword("ii") => TokenKind.LiteralBigInt
-          case _ if isKeyword("ff") => TokenKind.LiteralBigDecimal
+          case '_' => TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
+          case _ if isMatch("f32") => error.getOrElse(TokenKind.LiteralFloat32)
+          case _ if isMatch("f64") => error.getOrElse(TokenKind.LiteralFloat64)
+          case _ if isMatch("i8") => error.getOrElse(TokenKind.LiteralInt8)
+          case _ if isMatch("i16") => error.getOrElse(TokenKind.LiteralInt16)
+          case _ if isMatch("i32") => error.getOrElse(TokenKind.LiteralInt32)
+          case _ if isMatch("i64") => error.getOrElse(TokenKind.LiteralInt64)
+          case _ if isMatch("ii") => error.getOrElse(TokenKind.LiteralBigInt)
+          case _ if isMatch("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
           case _ =>
             retreat()
             if (isDecimal) {
-              TokenKind.LiteralFloat64
+              error.getOrElse(TokenKind.LiteralFloat64)
             } else {
-              TokenKind.LiteralInt32
+              error.getOrElse(TokenKind.LiteralInt32)
             }
         }
       }
     }
     // The very last char of the file was a digit so return the appropriate token.
     if (isDecimal) {
-      TokenKind.LiteralFloat64
+      error.getOrElse(TokenKind.LiteralFloat64)
     } else {
-      TokenKind.LiteralInt32
+      error.getOrElse(TokenKind.LiteralInt32)
     }
+  }
+
+  /**
+   * Moves current position past a hex number literal. IE. "0x123i32" or "0xAB21CD"
+   * It is optional to have a trailing type indicator on number literals.
+   * If it is missing Flix defaults to `i32`.
+   * */
+  private def acceptHexNumber()(implicit s: State): TokenKind = {
+    advance() // consume 'x'
+    var error: Option[TokenKind] = if (peek() == '_') {
+      val loc = sourceLocationAtCurrent()
+      advance()
+      Some(TokenKind.Err(LexerError.HexLiteralStartsOnUnderscore(loc)))
+    } else {
+      None
+    }
+    while (!eof()) {
+      peek() match {
+        case c if isDigit(c) => advance()
+        // '_' that is not in tail-position
+        case '_' if peekPeek().exists(isDigit) => advance()
+        // sequence of underscores
+        case '_' if peekPeek().contains('_') =>
+          // Consume the whole sequence of '_'
+          advance()
+          advance()
+          while (!eof() && peek() == '_') {
+            advance()
+          }
+          error = Some(TokenKind.Err(LexerError.DoubleUnderscoreInNumber(sourceLocationAtCurrent())))
+        // underscore in tail position
+        case '_' =>
+          advance()
+          return TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
+        // If this is reached an explicit number type might occur next
+        case _ => return advance() match {
+          case '_' => TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
+          case _ if isMatch("f32") => error.getOrElse(TokenKind.LiteralFloat32)
+          case _ if isMatch("f64") => error.getOrElse(TokenKind.LiteralFloat64)
+          case _ if isMatch("i8") => error.getOrElse(TokenKind.LiteralInt8)
+          case _ if isMatch("i16") => error.getOrElse(TokenKind.LiteralInt16)
+          case _ if isMatch("i32") => error.getOrElse(TokenKind.LiteralInt32)
+          case _ if isMatch("i64") => error.getOrElse(TokenKind.LiteralInt64)
+          case _ if isMatch("ii") => error.getOrElse(TokenKind.LiteralBigInt)
+          case _ if isMatch("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
+          case _ =>
+            retreat()
+            error.getOrElse(TokenKind.LiteralInt32)
+        }
+      }
+    }
+    // The very last char of the file was a digit so return the appropriate token.
+    error.getOrElse(TokenKind.LiteralInt32)
   }
 
   /**

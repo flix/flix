@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2024 Holger Dal Mogensen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,32 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.ast
+package ca.uwaterloo.flix.tools.pkg
 
-object UnstructuredTree {
+case class AvailableUpdates(major: Option[SemVer], minor: Option[SemVer], patch: Option[SemVer]) {
 
-  sealed trait TreeKind
-
-  object TreeKind {
-
-    case object Def extends TreeKind
-
-    // TODO: PARSER2
-
-    case object ErrorTree extends TreeKind
-
-  }
-
-  case class Tree(kind: TreeKind, children: Array[Child]) {
-    override def toString: String = s"Tree($kind, [${children.mkString(", ")}])"
-  }
-
-  sealed trait Child
-
-  object Child {
-    case class TokenChild(token: Token) extends Child
-
-    case class TreeChild(tree: Tree) extends Child
-  }
+  /**
+    * Returns `true` if no updates are available.
+    */
+  def isEmpty: Boolean =
+    major.isEmpty && minor.isEmpty && patch.isEmpty
 
 }
