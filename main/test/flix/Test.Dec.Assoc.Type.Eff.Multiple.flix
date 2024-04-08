@@ -109,4 +109,13 @@ mod Test.Dec.Assoc.Type.Eff.Multiple {
             case Split.Pending(f, v) => f(v); v
         }
     }
+
+
+    ////////////////////////////////////////////////////////
+    // Polymorphic functions using Transformable          //
+    ////////////////////////////////////////////////////////
+
+    pub def transformAndCheckEq(eq: Transformable.B[a], x: a): Bool \ Transformable.E[a] with Transformable[a], Eq[Transformable.B[a]] =
+        Transformable.transform(x) == eq
+
 }
