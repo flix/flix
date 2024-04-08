@@ -28,7 +28,7 @@ import ca.uwaterloo.flix.util.Formatter
   * All [[InstanceError]]s are [[Recoverable]].
   */
 sealed trait InstanceError extends CompilationMessage with Recoverable {
-  val kind = MessageKind("Instance Error")
+  implicit val kind: MessageKind = MessageKind("Instance Error")
 }
 
 object InstanceError {

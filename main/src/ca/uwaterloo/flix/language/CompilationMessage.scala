@@ -34,7 +34,7 @@ trait CompilationMessage {
   /**
     * Returns the input source of the error message.
     */
-  def source: Source = loc.source
+  implicit val source: Source = loc.source
 
   /**
     * Returns the primary source location of the error.
