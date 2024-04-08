@@ -97,13 +97,13 @@ mod Test.Dec.Assoc.Type.Eff.Multiple {
 
     instance Composable[Vector[a]] with Composable[a] {
         pub type E = Composable.E[a]
-        pub type B = Vector
+        pub type B = List
         pub type C = Split
 
-        pub def compose(f: Vector[a] -> Unit \ Composable.E[a], x: Vector[a]): Split[Composable.E[a], Vector[a]] =
-            Split.Pending(f, x)
+        pub def compose(f: Vector[a] -> Unit \ Composable.E[a], x: Vector[a]): Split[Composable.E[a], Vector[Vector[a]]] =
+            Split.Pending(v -> Vector.forEach(f, v), Vector#{x})
 
-        pub def reduce(x: Split[Composable.E[a], Vector[a]]): Vector[a] \ Composable.E[a] = match x {
+        pub def reduce(x: Split[Composable.E[a], Vector[Vector[a]]]): Vector[Vector[a]] \ Composable.E[a] = match x {
             case Split.Nothing       => Vector.empty()
             case Split.Value(v)      => v
             case Split.Pending(f, v) => f(v); v
