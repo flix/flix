@@ -152,7 +152,8 @@ object MutationGenerator {
     case Expr.Hole(_, _, _) => Nil
     case Expr.HoleWithExp(_, _, _, _) => Nil
     case Expr.OpenAs(_, _, _, _) => Nil
-    case original@Expr.Use(_, _, exp, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
+    case original@Expr.Use(_, _, exp, _) =>
+      mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
     case original@Expr.Lambda(_, exp, _, _) =>
       mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
     case original@Expr.Apply(exp, exps, _, _, _) =>

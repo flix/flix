@@ -849,7 +849,7 @@ object BackendObjType {
 
         NEW(JvmName.AtomicLong) ~
         DUP() ~
-        cheat(mv => mv.visitLdcInsn(100_000L))~
+        cheat(mv => mv.visitLdcInsn(65_536L))~
         invokeConstructor(JvmName.AtomicLong, MethodDescriptor.mkDescriptor(BackendType.Int64)(VoidableType.Void)) ~
         PUTSTATIC(StepCounterField) ~
 
