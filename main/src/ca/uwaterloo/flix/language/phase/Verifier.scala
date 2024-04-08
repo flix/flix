@@ -455,24 +455,24 @@ object Verifier {
 
       checkEq(tpe, exptype, loc)
 
-    case Expr.Do(op, exps, tpe, purity, loc) =>
+    case Expr.Do(opUse, exps, tpe, purity, loc) =>
       val ts = exps.map(visitExpr)
-      val eff = root.effects.getOrElse(op.sym.eff,
-        throw InternalCompilerException(s"Unknown effect sym: '${op.sym.eff}'", loc))
-      val opp = eff.ops.find(_.sym == op.sym)
-        .getOrElse(throw InternalCompilerException(s"Unknown operation sym: '${op.sym}'", loc))
+      val eff = root.effects.getOrElse(opUse.sym.eff,
+        throw InternalCompilerException(s"Unknown effect sym: '${opUse.sym.eff}'", loc))
+      val op = eff.ops.find(_.sym == opUse.sym)
+        .getOrElse(throw InternalCompilerException(s"Unknown operation sym: '${opUse.sym}'", loc))
 
       // TODO: VERIFIER: fix this weird special case if Void is return type of operation
       // fails in 'main/test/flix/Test.Type.Void.flix:16:13' (cases on lines 16, 24, 40)
       // see https://github.com/flix/flix/blob/7136d0b7363b2a70d59e5be8608298eeebd0caac/main/src/ca/uwaterloo/flix/language/phase/TypeInference.scala#L969
-      val oprestype = opp.tpe match {
+      val oprestype = op.tpe match {
         case MonoType.Native(_) => tpe // just assume `tpe` is correct for now
         case t => t
       }
 
       val sig = MonoType.Arrow(ts, tpe)
       val opsig = MonoType.Arrow(
-        opp.fparams.map(_.tpe), oprestype
+        op.fparams.map(_.tpe), oprestype
       )
 
       checkEq(sig, opsig, loc)
