@@ -57,19 +57,19 @@ object InstanceCompleter extends Completer {
     /**
       * Formats the given type `tpe`.
       */
-    def fmtType(trt: TypedAst.Class, tpe: Type, hole: String)(implicit flix: Flix): String =
+    def fmtType(trt: TypedAst.Trait, tpe: Type, hole: String)(implicit flix: Flix): String =
       FormatType.formatType(replaceText(trt.tparam.sym, tpe, hole))
 
     /**
       * Formats the given formal parameters in `spec`.
       */
-    def fmtFormalParams(trt: TypedAst.Class, spec: TypedAst.Spec, hole: String)(implicit flix: Flix): String =
+    def fmtFormalParams(trt: TypedAst.Trait, spec: TypedAst.Spec, hole: String)(implicit flix: Flix): String =
       spec.fparams.map(fparam => s"${fparam.sym.text}: ${fmtType(trt, fparam.tpe, hole)}").mkString(", ")
 
     /**
       * Formats the given signature `sig`.
       */
-    def fmtSignature(trt: TypedAst.Class, sig: TypedAst.Sig, hole: String)(implicit flix: Flix): String = {
+    def fmtSignature(trt: TypedAst.Trait, sig: TypedAst.Sig, hole: String)(implicit flix: Flix): String = {
       val fparams = fmtFormalParams(trt, sig.spec, hole)
       val retTpe = fmtType(trt, sig.spec.retTpe, hole)
       val eff = sig.spec.eff match {
@@ -79,7 +79,7 @@ object InstanceCompleter extends Completer {
       s"    pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
     }
 
-    root.classes.map {
+    root.traits.map {
       case (_, trt) =>
         val hole = "${1:t}"
         val traitSym = trt.sym
@@ -94,7 +94,7 @@ object InstanceCompleter extends Completer {
   /**
     * Formats the given trait `trt`.
     */
-  def fmtTrait(trt: TypedAst.Class): String = {
+  def fmtTrait(trt: TypedAst.Trait): String = {
     s"trait ${trt.sym.name}[${trt.tparam.name.name}]"
   }
 }

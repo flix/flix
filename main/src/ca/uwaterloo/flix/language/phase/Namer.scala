@@ -82,7 +82,7 @@ object Namer {
     */
   private def visitDecl(decl0: DesugaredAst.Declaration, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration, NameError] = decl0 match {
     case decl: DesugaredAst.Declaration.Namespace => visitNamespace(decl, ns0)
-    case decl: DesugaredAst.Declaration.Class => visitTrait(decl, ns0)
+    case decl: DesugaredAst.Declaration.Trait => visitTrait(decl, ns0)
     case decl: DesugaredAst.Declaration.Instance => visitInstance(decl, ns0)
     case decl: DesugaredAst.Declaration.Def => visitDef(decl, ns0, DefKind.NonMember)
     case decl: DesugaredAst.Declaration.Enum => visitEnum(decl, ns0)
@@ -425,8 +425,8 @@ object Namer {
   /**
     * Performs naming on the given trait `trt`.
     */
-  private def visitTrait(trt: DesugaredAst.Declaration.Class, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Trait, NameError] = trt match {
-    case DesugaredAst.Declaration.Class(doc, ann, mod0, ident, tparams0, superTraits0, assocs0, signatures, laws0, loc) =>
+  private def visitTrait(trt: DesugaredAst.Declaration.Trait, ns0: Name.NName)(implicit flix: Flix): Validation[NamedAst.Declaration.Trait, NameError] = trt match {
+    case DesugaredAst.Declaration.Trait(doc, ann, mod0, ident, tparams0, superTraits0, assocs0, signatures, laws0, loc) =>
       val sym = Symbol.mkTraitSym(ns0, ident)
       val mod = visitModifiers(mod0, ns0)
       val tparam = getTypeParam(tparams0)

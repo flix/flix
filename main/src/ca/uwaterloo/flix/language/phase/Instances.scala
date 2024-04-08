@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, RigidityEnv, Scheme, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.errors.InstanceError
-import ca.uwaterloo.flix.language.phase.unification.{ClassEnvironment, Substitution, Unification, UnificationError}
+import ca.uwaterloo.flix.language.phase.unification.{TraitEnvironment, Substitution, Unification, UnificationError}
 import ca.uwaterloo.flix.util.collection.ListOps
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Result, Validation}
 
@@ -38,16 +38,16 @@ object Instances {
     * Validates all instances in the given AST root.
     */
   private def visitTraits(root: TypedAst.Root)(implicit flix: Flix): List[InstanceError] = {
-    val results = ParOps.parMap(root.classes.values)(visitTrait)
+    val results = ParOps.parMap(root.traits.values)(visitTrait)
     results.flatten.toList
   }
 
   /**
     * Checks that all signatures in `trait0` are used in laws if `trait0` is marked `lawful`.
     */
-  private def checkLawApplication(trait0: TypedAst.Class): List[InstanceError] = trait0 match {
+  private def checkLawApplication(trait0: TypedAst.Trait): List[InstanceError] = trait0 match {
     // Case 1: lawful trait
-    case TypedAst.Class(_, _, mod, _, _, _, _, sigs, laws, _) if mod.isLawful =>
+    case TypedAst.Trait(_, _, mod, _, _, _, _, sigs, laws, _) if mod.isLawful =>
       val usedSigs = laws.foldLeft(Set.empty[Symbol.SigSym]) {
         case (acc, TypedAst.Def(_, _, exp)) => acc ++ TypedAstOps.sigSymsOf(exp)
       }
@@ -56,13 +56,13 @@ object Instances {
         sig => InstanceError.UnlawfulSignature(sig, sig.loc)
       }
     // Case 2: non-lawful trait
-    case TypedAst.Class(_, _, _, _, _, _, _, _, _, _) => Nil
+    case TypedAst.Trait(_, _, _, _, _, _, _, _, _, _) => Nil
   }
 
   /**
     * Performs validations on a single trait.
     */
-  private def visitTrait(trait0: TypedAst.Class): List[InstanceError] = {
+  private def visitTrait(trait0: TypedAst.Trait): List[InstanceError] = {
     checkLawApplication(trait0)
   }
 
@@ -142,25 +142,25 @@ object Instances {
         // Case 2: An instance matching this type exists. Error.
         case Some(inst2) =>
           List(
-            InstanceError.OverlappingInstances(inst1.clazz.sym, inst1.clazz.loc, inst2.clazz.loc),
-            InstanceError.OverlappingInstances(inst1.clazz.sym, inst2.clazz.loc, inst1.clazz.loc)
+            InstanceError.OverlappingInstances(inst1.trt.sym, inst1.trt.loc, inst2.trt.loc),
+            InstanceError.OverlappingInstances(inst1.trt.sym, inst2.trt.loc, inst1.trt.loc)
           )
       }
     }
   }
 
   /**
-    * Checks that every signature in `clazz` is implemented in `inst`, and that `inst` does not have any extraneous definitions.
+    * Checks that every signature in `trt` is implemented in `inst`, and that `inst` does not have any extraneous definitions.
     */
   private def checkSigMatch(inst: TypedAst.Instance, root: TypedAst.Root)(implicit flix: Flix): List[InstanceError] = {
-    val clazz = root.classes(inst.clazz.sym)
+    val clazz = root.traits(inst.trt.sym)
 
     // Step 1: check that each signature has an implementation.
     val sigMatchVal = clazz.sigs.flatMap {
       sig =>
         (inst.defs.find(_.sym.text == sig.sym.name), sig.exp) match {
           // Case 1: there is no definition with the same name, and no default implementation
-          case (None, None) => List(InstanceError.MissingImplementation(sig.sym, inst.clazz.loc))
+          case (None, None) => List(InstanceError.MissingImplementation(sig.sym, inst.trt.loc))
           // Case 2: there is no definition with the same name, but there is a default implementation
           case (None, Some(_)) => Nil
           // Case 3: there is an implementation marked override, but no default implementation
@@ -170,7 +170,7 @@ object Instances {
           // Case 5: there is an implementation with the right modifier
           case (Some(defn), _) =>
             val expectedScheme = Scheme.partiallyInstantiate(sig.spec.declaredScheme, clazz.tparam.sym, inst.tpe, defn.sym.loc)
-            if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.classEnv, root.eqEnv)) {
+            if (Scheme.equal(expectedScheme, defn.spec.declaredScheme, root.traitEnv, root.eqEnv)) {
               // Case 5.1: the schemes match. Success!
               Nil
             } else {
@@ -183,7 +183,7 @@ object Instances {
     val extraDefVal = inst.defs.flatMap {
       defn =>
         clazz.sigs.find(_.sym.name == defn.sym.text) match {
-          case None => List(InstanceError.ExtraneousDef(defn.sym, inst.clazz.sym, defn.sym.loc))
+          case None => List(InstanceError.ExtraneousDef(defn.sym, inst.trt.sym, defn.sym.loc))
           case _ => Nil
         }
     }
@@ -195,7 +195,7 @@ object Instances {
     * Finds an instance of the trait for a given type.
     */
   def findInstanceForType(tpe: Type, clazz: Symbol.TraitSym, root: TypedAst.Root)(implicit flix: Flix): Option[(Ast.Instance, Substitution)] = {
-    val superInsts = root.classEnv.get(clazz).map(_.instances).getOrElse(Nil)
+    val superInsts = root.traitEnv.get(clazz).map(_.instances).getOrElse(Nil)
     // lazily find the instance whose type unifies and save the substitution
     ListOps.findMap(superInsts) {
       superInst =>
@@ -211,7 +211,7 @@ object Instances {
     */
   private def checkSuperInstances(inst: TypedAst.Instance, root: TypedAst.Root)(implicit flix: Flix): List[InstanceError] = inst match {
     case TypedAst.Instance(_, _, _, clazz, tpe, tconstrs, _, _, _, _) =>
-      val superTraits = root.classEnv(clazz.sym).superClasses
+      val superTraits = root.traitEnv(clazz.sym).superTraits
       superTraits flatMap {
         superTrait =>
           // Find the instance of the super trait matching the type of this instance.
@@ -220,7 +220,7 @@ object Instances {
               // Case 1: An instance matches. Check that its constraints are entailed by this instance.
               superInst.tconstrs flatMap {
                 tconstr =>
-                  ClassEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.classEnv).toHardResult match {
+                  TraitEnvironment.entail(tconstrs.map(subst.apply), subst(tconstr), root.traitEnv).toHardResult match {
                     case Result.Ok(_) => Nil
                     case Result.Err(errors) => errors.map {
                       case UnificationError.NoMatchingInstance(missingTconstr) => InstanceError.MissingTraitConstraint(missingTconstr, superTrait, clazz.loc)
@@ -239,7 +239,7 @@ object Instances {
     * Reassembles an instance
     */
   private def checkInstance(inst: TypedAst.Instance, root: TypedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): List[InstanceError] = {
-    val isTraitStable = inst.clazz.loc.source.stable
+    val isTraitStable = inst.trt.loc.source.stable
     val isInstanceStable = inst.loc.source.stable
     val isIncremental = changeSet.isInstanceOf[ChangeSet.Changes]
     if (isIncremental && isTraitStable && isInstanceStable) {
@@ -277,12 +277,12 @@ object Instances {
   /**
     * Retrieves the head of a simple instance.
     *
-    * The head of an instance `Clazz[T[a, b, c]]` is T
+    * The head of an instance `Trait[T[a, b, c]]` is T
     */
   private def unsafeGetHead(inst: TypedAst.Instance): TypeConstructor = {
     inst.tpe.typeConstructor match {
       case Some(tc) => tc
-      case None => throw InternalCompilerException("unexpected non-simple type",  inst.clazz.loc)
+      case None => throw InternalCompilerException("unexpected non-simple type",  inst.trt.loc)
     }
   }
 }

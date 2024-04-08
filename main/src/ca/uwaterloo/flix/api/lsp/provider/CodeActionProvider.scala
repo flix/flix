@@ -124,7 +124,7 @@ object CodeActionProvider {
     * Returns a code action that proposes to `use` a trait.
     */
   private def mkUseTrait(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
-    val syms = root.classes.map {
+    val syms = root.traits.map {
       case (sym, _) => sym
     }
     mkUseSym(ident, syms.map(_.name), syms, uri)
@@ -146,10 +146,10 @@ object CodeActionProvider {
   private def mkUseType(ident: Name.Ident, uri: String)(implicit root: Root): List[CodeAction] = {
     val names = root.enums.map { case (sym, _) => sym.name } ++
       root.restrictableEnums.map { case (sym, _) => sym.name } ++
-      root.classes.map { case (sym, _) => sym.name } ++
+      root.traits.map { case (sym, _) => sym.name } ++
       root.typeAliases.map { case (sym, _) => sym.name }
 
-    val syms = (root.enums ++ root.restrictableEnums ++ root.classes ++ root.typeAliases).map {
+    val syms = (root.enums ++ root.restrictableEnums ++ root.traits ++ root.typeAliases).map {
       case (sym, _) => sym
     }
 
@@ -419,7 +419,7 @@ object CodeActionProvider {
     * `None` otherwise.
     */
   private def mkDerive(e: TypedAst.Enum, trt: String, uri: String): Option[CodeAction] = {
-    val alreadyDerived = e.derives.classes.exists(d => d.clazz.name == trt)
+    val alreadyDerived = e.derives.traits.exists(d => d.trt.name == trt)
     if (alreadyDerived) None
     else Some(
       CodeAction(
@@ -454,7 +454,7 @@ object CodeActionProvider {
     */
   private def addDerivation(e: TypedAst.Enum, trt: String, uri: String): WorkspaceEdit = {
     val text =
-      if (e.derives.classes.isEmpty)
+      if (e.derives.traits.isEmpty)
         s" with $trt"
       else
         s", $trt"

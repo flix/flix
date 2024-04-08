@@ -137,7 +137,7 @@ object Parser {
       case "Constraint" => SyntacticContext.Expr.Constraint
       case "Do" => SyntacticContext.Expr.Do
 
-      case "Class" => SyntacticContext.Decl.Class
+      case "Class" => SyntacticContext.Decl.Trait
       case "Enum" => SyntacticContext.Decl.Enum
       case "Instance" => SyntacticContext.Decl.Instance
       case "Decls" => SyntacticContext.Decl.OtherDecl
@@ -350,7 +350,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Class
+        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Trait
       }
     }
 
