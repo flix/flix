@@ -53,7 +53,7 @@ object MutationGenerator {
     mutateDefs(defs, defSyms).flatten
   }
 
-  def insertDACAndMutInExp(mutated: TypedAst.Expr): TypedAst.Expr = {
+  def insertDACAndMutInExp(mutated: TypedAst.Expr, original: TypedAst.Expr): TypedAst.Expr = {
     val loc = mutated.loc
     val method = classOf[Global].getMethods.find(m => m.getName.equals("decAndCheck")).get
     val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Int64, Type.IO, loc)
@@ -74,8 +74,7 @@ object MutationGenerator {
         if (defSyms.contains(s)) {
           val mutExps = mutateExpr(fun.exp)
           val mutDefs = mutExps.map(mexp => {
-            val mut = fun.copy(exp = mexp)
-            MutationTester.insertDecAndCheckInDef(mut)
+            fun.copy(exp = mexp)
           })
           Some(d._1 -> mutDefs)
         } else None
@@ -179,8 +178,30 @@ object MutationGenerator {
       val mut1 = mutateExpr(exp1).map(m => Expr.Mutated(original.copy(exp1 = m), original, original.tpe, original.eff, original.loc))
       val mut2 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = m), original, original.tpe, original.eff, original.loc))
       mut1 ::: mut2
-    case original@Expr.LetRec(_, _, _, exp1, exp2, _, _, _) =>
-      mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = insertDACAndMutInExp(m)), original, original.tpe, original.eff, original.loc))
+    case original@Expr.LetRec(_, _, _, exp1, exp2, tpe, eff, loc) =>
+      val method = classOf[Global].getMethods.find(m => m.getName.equals("decAndCheck")).get
+      val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Int64, Type.IO, loc)
+      val mask = Expr.UncheckedMaskingCast(InvokeMethod, Type.Int64, Type.Pure, loc)
+      val mut1 = mutateExpr(exp1).map(m =>{
+        // the reason for the following matches are to avoid adding decAndCheck to the FormalParams of the Lambda
+        val mm: Option[Expr.Mutated] = m match {
+          case mutated@Expr.Mutated(mutExp,_, _, _ ,_ ) =>
+            val statement = mutExp match {
+                case lambda@Expr.Lambda(_, exp, _, _) =>
+                  Some(lambda.copy(exp = Expr.Stm(mask, exp, exp.tpe, exp.eff, exp.loc)))
+                case _ => None
+              }
+              Some(mutated.copy(mutExp = statement.get))
+          case _ => None
+        }
+        Expr.Mutated(original.copy(exp1 = mm.get), original, tpe, eff, loc)
+      })
+      val mut2 = mutateExpr(exp2).map(m => {
+        val statement = Expr.Stm(mask, m, m.tpe, m.eff, m.loc)
+        val copy = original.copy(exp2 = statement)
+        Expr.Mutated(copy, original, tpe, eff, loc)
+      })
+      mut1 ::: mut2
     case Expr.Region(_, _) => Nil
     case Expr.Scope(_, _, _, _, _, _) => Nil
     case original@Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
