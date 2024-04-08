@@ -37,10 +37,10 @@ object InstanceError {
     * Error indicating a complex instance type.
     *
     * @param tpe the complex type.
-    * @param sym the class symbol.
+    * @param sym the trait symbol.
     * @param loc the location where the error occurred.
     */
-  case class ComplexInstance(tpe: Type, sym: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
+  case class ComplexInstance(tpe: Type, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
     override def summary: String = "Complex instance type."
 
     def message(formatter: Formatter): String = {
@@ -59,10 +59,10 @@ object InstanceError {
     * Error indicating the duplicate use of a type variable in an instance type.
     *
     * @param tvar the duplicated type variable.
-    * @param sym  the class symbol.
+    * @param sym  the trait symbol.
     * @param loc  the location where the error occurred.
     */
-  case class DuplicateTypeVar(tvar: Type.Var, sym: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
+  case class DuplicateTypeVar(tvar: Type.Var, sym: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
     override def summary: String = "Duplicate type variable."
 
     def message(formatter: Formatter): String = {
@@ -82,19 +82,19 @@ object InstanceError {
   }
 
   /**
-    * Error indicating the instance has a definition not present in the implemented class.
+    * Error indicating the instance has a definition not present in the implemented trait.
     *
     * @param defnSym  the defn symbol.
-    * @param classSym the class symbol.
+    * @param traitSym the trait symbol.
     * @param loc      the location of the definition.
     */
-  case class ExtraneousDef(defnSym: Symbol.DefnSym, classSym: Symbol.ClassSym, loc: SourceLocation) extends InstanceError with Recoverable {
+  case class ExtraneousDef(defnSym: Symbol.DefnSym, traitSym: Symbol.TraitSym, loc: SourceLocation) extends InstanceError with Recoverable {
     def summary: String = "Extraneous implementation."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""
-         |>> The signature '${red(defnSym.name)}' is not present in the '${magenta(classSym.name)}' trait.
+         |>> The signature '${red(defnSym.name)}' is not present in the '${magenta(traitSym.name)}' trait.
          |
          |${code(loc, s"extraneous def")}
          |""".stripMargin
@@ -109,21 +109,21 @@ object InstanceError {
   /**
     * Error indicating an associated type in an instance type.
     *
-    * @param assoc the type alias.
-    * @param clazz the class symbol.
-    * @param loc   the location where the error occurred.
+    * @param assoc  the type alias.
+    * @param trtSym the trait symbol.
+    * @param loc    the location where the error occurred.
     */
-  case class IllegalAssocTypeInstance(assoc: Symbol.AssocTypeSym, clazz: Symbol.ClassSym, loc: SourceLocation) extends InstanceError with Recoverable {
+  case class IllegalAssocTypeInstance(assoc: Symbol.AssocTypeSym, trtSym: Symbol.TraitSym, loc: SourceLocation) extends InstanceError with Recoverable {
     override def summary: String = "Associated type in instance type."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""
-         |>> Illegal use of associated type '${red(assoc.name)}' in instance declaration for '${magenta(clazz.name)}'.
+         |>> Illegal use of associated type '${red(assoc.name)}' in instance declaration for '${magenta(trtSym.name)}'.
          |
          |${code(loc, s"illegal use of associated type")}
          |
-         |A type class instance cannot use an associated type. Use the full type.
+         |A trait instance cannot use an associated type. Use the full type.
          |""".stripMargin
     }
   }
@@ -153,21 +153,21 @@ object InstanceError {
   /**
     * Error indicating a type alias in an instance type.
     *
-    * @param alias the type alias.
-    * @param clazz the class symbol.
-    * @param loc   the location where the error occurred.
+    * @param alias  the type alias.
+    * @param trtSym the trait symbol.
+    * @param loc    the location where the error occurred.
     */
-  case class IllegalTypeAliasInstance(alias: Symbol.TypeAliasSym, clazz: Symbol.ClassSym, loc: SourceLocation) extends InstanceError with Recoverable {
+  case class IllegalTypeAliasInstance(alias: Symbol.TypeAliasSym, trtSym: Symbol.TraitSym, loc: SourceLocation) extends InstanceError with Recoverable {
     override def summary: String = "Type alias in instance type."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""
-         |>> Illegal use of type alias '${red(alias.name)}' in instance declaration for '${magenta(clazz.name)}'.
+         |>> Illegal use of type alias '${red(alias.name)}' in instance declaration for '${magenta(trtSym.name)}'.
          |
          |${code(loc, s"illegal use of type alias")}
          |
-         |A type class instance cannot use a type alias. Use the full type.
+         |A trait instance cannot use a type alias. Use the full type.
          |""".stripMargin
     }
   }
@@ -186,7 +186,7 @@ object InstanceError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""
-         |Mismatched signature '${red(sigSym.name)}' required by '${magenta(sigSym.clazz.name)}'.
+         |>> Mismatched signature '${red(sigSym.name)}' required by '${magenta(sigSym.trt.name)}'.
          |
          |${code(loc, "mismatched signature.")}
          |
@@ -213,7 +213,7 @@ object InstanceError {
     def message(formatter: Formatter): String = {
       import formatter._
       s"""
-         |>> Missing implementation of '${red(sig.name)}' required by '${magenta(sig.clazz.name)}'.
+         |>> Missing implementation of '${red(sig.name)}' required by '${magenta(sig.trt.name)}'.
          |
          |${code(loc, s"missing implementation")}
          |""".stripMargin
@@ -226,32 +226,32 @@ object InstanceError {
   }
 
   /**
-    * Error indicating a missing super class instance.
+    * Error indicating a missing super trait instance.
     *
-    * @param tpe        the type for which the super class instance is missing.
-    * @param subClass   the symbol of the sub class.
-    * @param superClass the symbol of the super class.
+    * @param tpe        the type for which the super trait instance is missing.
+    * @param Trait      the symbol of the sub trait.
+    * @param superTrait the symbol of the super trait.
     * @param loc        the location where the error occurred.
     */
-  case class MissingSuperClassInstance(tpe: Type, subClass: Symbol.ClassSym, superClass: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
-    override def summary: String = s"Missing super class instance '$superClass'."
+  case class MissingSuperTraitInstance(tpe: Type, subTrait: Symbol.TraitSym, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
+    override def summary: String = s"Missing super trait instance '$superTrait'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""
-         |>> Missing super class instance '${red(superClass.name)}' for type '${red(FormatType.formatType(tpe))}'.
+         |>> Missing super trait instance '${red(superTrait.name)}' for type '${red(FormatType.formatType(tpe))}'.
          |
-         |${code(loc, s"missing super class instance")}
+         |${code(loc, s"missing super trait instance")}
          |
-         |The class '${red(subClass.name)}' extends the class '${red(superClass.name)}'.
+         |The trait '${red(subTrait.name)}' extends the trait '${red(superTrait.name)}'.
          |
-         |If you provide an instance for '${red(subClass.name)}' you must also provide an instance for '${red(superClass.name)}'.
+         |If you provide an instance for '${red(subTrait.name)}' you must also provide an instance for '${red(superTrait.name)}'.
          |""".stripMargin
     }
 
     override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
-      s"${underline("Tip:")} Add an instance of '${superClass.name}' for '${FormatType.formatType(tpe)}'."
+      s"${underline("Tip:")} Add an instance of '${superTrait.name}' for '${FormatType.formatType(tpe)}'."
     })
   }
 
@@ -259,10 +259,10 @@ object InstanceError {
     * An error indicating that a required constraint is missing from an instance declaration.
     *
     * @param tconstr    the missing constraint.
-    * @param superClass the superclass that is the source of the constraint.
+    * @param superTrait the supertrait that is the source of the constraint.
     * @param loc        the location where the error occurred.
     */
-  case class MissingTypeClassConstraint(tconstr: Ast.TypeConstraint, superClass: Symbol.ClassSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
+  case class MissingTraitConstraint(tconstr: Ast.TypeConstraint, superTrait: Symbol.TraitSym, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
     override def summary: String = s"Missing type constraint: ${FormatTypeConstraint.formatTypeConstraint(tconstr)}"
 
     override def message(formatter: Formatter): String = {
@@ -270,7 +270,7 @@ object InstanceError {
       s"""
          |>> Missing type constraint: ${FormatTypeConstraint.formatTypeConstraint(tconstr)}
          |
-         |The constraint ${FormatTypeConstraint.formatTypeConstraint(tconstr)} is required because it is a constraint on super class ${superClass.name}.
+         |The constraint ${FormatTypeConstraint.formatTypeConstraint(tconstr)} is required because it is a constraint on super trait ${superTrait.name}.
          |
          |${code(loc, s"missing type constraint")}
       """.stripMargin
@@ -285,11 +285,11 @@ object InstanceError {
   /**
     * Error indicating an orphan instance.
     *
-    * @param sym the class symbol.
+    * @param sym the trait symbol.
     * @param tpe the instance type.
     * @param loc the location where the error occurred.
     */
-  case class OrphanInstance(sym: Symbol.ClassSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
+  case class OrphanInstance(sym: Symbol.TraitSym, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends InstanceError with Recoverable {
     override def summary: String = "Orphan instance."
 
     def message(formatter: Formatter): String = {
@@ -299,7 +299,7 @@ object InstanceError {
          |
          |${code(loc, s"orphan instance")}
          |
-         |An instance must be declared in the class's namespace or in the type's namespace.
+         |An instance must be declared in the trait's namespace or in the type's namespace.
          |""".stripMargin
     }
   }
@@ -307,11 +307,11 @@ object InstanceError {
   /**
     * Error indicating that the types of two instances overlap.
     *
-    * @param sym  the class symbol.
+    * @param sym  the trait symbol.
     * @param loc1 the location of the first instance.
     * @param loc2 the location of the second instance.
     */
-  case class OverlappingInstances(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends InstanceError with Recoverable {
+  case class OverlappingInstances(sym: Symbol.TraitSym, loc1: SourceLocation, loc2: SourceLocation) extends InstanceError with Recoverable {
     def summary: String = "Overlapping instances."
 
     def message(formatter: Formatter): String = {
@@ -334,7 +334,7 @@ object InstanceError {
   }
 
   /**
-    * Error indicating an unlawful signature in a lawful class.
+    * Error indicating an unlawful signature in a lawful trait.
     *
     * @param sym the symbol of the unlawful signature.
     * @param loc the location where the error occurred.
@@ -347,7 +347,7 @@ object InstanceError {
       s"""
          |>> Unlawful signature '${red(sym.name)}'.
          |
-         |>> Each signature of a lawful class must appear in at least one law.
+         |>> Each signature of a lawful trait must appear in at least one law.
          |
          |${code(loc, s"unlawful signature")}
          |

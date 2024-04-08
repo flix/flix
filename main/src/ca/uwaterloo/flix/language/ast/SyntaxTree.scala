@@ -32,6 +32,16 @@ import ca.uwaterloo.flix.language.CompilationMessage
 object SyntaxTree {
 
   /**
+    * A root containing syntax trees for multiple sources.
+    */
+  case class Root(units: Map[Ast.Source, Tree])
+
+  /**
+    * The empty SyntaxTree
+    */
+  val empty: Root = Root(Map.empty)
+
+  /**
    * A node in a [[SyntaxTree]]
    *
    * @param kind     The kind of the node.
@@ -120,7 +130,7 @@ object SyntaxTree {
 
       case object AssociatedTypeSig extends Decl
 
-      case object Class extends Decl
+      case object Trait extends Decl
 
       case object Def extends Decl
 

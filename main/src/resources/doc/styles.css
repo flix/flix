@@ -14,6 +14,8 @@
     --light-kind-color: #8a8a8a;
     --light-effect-color: #d4671e;
     --light-doc-code-color: #d63384;
+    --light-show-hide-color: #0d6efd;
+    --light-show-hide-hover-color: #0a58ca;
     --light-module-color: #a0a5ff;
     --light-signature-color: #dfa0ff;
     --light-trait-def-color: #bfb280;
@@ -41,6 +43,8 @@
     --dark-kind-color: #999999;
     --dark-effect-color: #ff944d;
     --dark-doc-code-color: #ff66b3;
+    --dark-show-hide-color: #68a4fd;
+    --dark-show-hide-hover-color: #3c86f6;
     --dark-module-color: #a0a5ff;
     --dark-signature-color: #dfa0ff;
     --dark-trait-def-color: #bfb280;
@@ -68,6 +72,8 @@
     --kind-color: var(--light-kind-color);
     --effect-color: var(--light-effect-color);
     --doc-code-color: var(--light-doc-code-color);
+    --show-hide-color: var(--light-show-hide-color);
+    --show-hide-hover-color: var(--light-show-hide-hover-color);
     --module-color: var(--light-module-color);
     --signature-color: var(--light-signature-color);
     --trait-def-color: var(--light-trait-def-color);
@@ -98,6 +104,8 @@
         --kind-color: var(--dark-kind-color);
         --effect-color: var(--dark-effect-color);
         --doc-code-color: var(--dark-doc-code-color);
+        --show-hide-color: var(--dark-show-hide-color);
+        --show-hide-hover-color: var(--dark-show-hide-hover-color);
         --module-color: var(--dark-module-color);
         --signature-color: var(--dark-signature-color);
         --trait-def-color: var(--dark-trait-def-color);
@@ -129,6 +137,8 @@ body.light {
     --kind-color: var(--light-kind-color);
     --effect-color: var(--light-effect-color);
     --doc-code-color: var(--light-doc-code-color);
+    --show-hide-color: var(--light-show-hide-color);
+    --show-hide-hover-color: var(--light-show-hide-hover-color);
     --module-color: var(--light-module-color);
     --signature-color: var(--light-signature-color);
     --trait-def-color: var(--light-trait-def-color);
@@ -158,6 +168,8 @@ body.dark {
     --kind-color: var(--dark-kind-color);
     --effect-color: var(--dark-effect-color);
     --doc-code-color: var(--dark-doc-code-color);
+    --show-hide-color: var(--dark-show-hide-color);
+    --show-hide-hover-color: var(--dark-show-hide-hover-color);
     --module-color: var(--dark-module-color);
     --signature-color: var(--dark-signature-color);
     --trait-def-color: var(--dark-trait-def-color);
@@ -449,8 +461,25 @@ main h2 {
     margin-top: 1rem;
     padding-left: 1.5rem;
 }
-.subsection > h3 {
+.subsection h3 {
     margin-left: -1.5rem;
+}
+.subsection > summary {
+    cursor: pointer;
+    list-style: none;
+}
+.subsection > summary::after {
+    content: "(show)";
+    font-size: 0.875em;
+    margin-left: 0.3rem;
+    color: var(--show-hide-color);
+}
+.subsection > summary:hover::after {
+    text-decoration: underline;
+    color: var(--show-hide-hover-color);
+}
+.subsection[open] > summary::after {
+    content: "(hide)";
 }
 
 .subsection > div {
@@ -463,6 +492,7 @@ main h2 {
 .decl {
     display: flex;
     gap: 0.2rem;
+    align-items: center;
 }
 .decl > code {
     flex: 1;

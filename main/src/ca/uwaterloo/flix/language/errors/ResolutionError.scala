@@ -34,12 +34,12 @@ object ResolutionError {
   // TODO: Support formatting of ill-kinded types.
 
   /**
-    * An error raise to indicate a cycle in the class hierarchy.
+    * An error raise to indicate a cycle in the trait hierarchy.
     *
-    * @param path the super class path from a class to itself.
+    * @param path the super trait path from a trait to itself.
     * @param loc  the location where the error occurred.
     */
-  case class CyclicClassHierarchy(path: List[Symbol.ClassSym], loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class CyclicTraitHierarchy(path: List[Symbol.TraitSym], loc: SourceLocation) extends ResolutionError with Unrecoverable {
     private val fullCycle = path.last :: path
 
     override def summary: String = {
@@ -52,16 +52,16 @@ object ResolutionError {
       s"""
          |${code(loc, "cyclic inheritance.")}
          |
-         |The following classes are in the cycle:
+         |The following traits are in the cycle:
          |
-         |$cyclicClasses
+         |$cyclicTraits
          |""".stripMargin
     }
 
-    private def cyclicClasses: String = {
+    private def cyclicTraits: String = {
       var res = ""
-      for (List(subClass, superClass) <- fullCycle.sliding(2)) {
-        res += s"$subClass extends $superClass" + System.lineSeparator()
+      for (List(subTrait, superTrait) <- fullCycle.sliding(2)) {
+        res += s"$subTrait extends $superTrait" + System.lineSeparator()
       }
       res
     }
@@ -93,8 +93,8 @@ object ResolutionError {
 
     private def appendCycles: String = {
       var res = ""
-      for (List(subClass, superClass) <- fullCycle.sliding(2)) {
-        res += s"$subClass references $superClass" + System.lineSeparator()
+      for (List(referrer, referee) <- fullCycle.sliding(2)) {
+        res += s"$referrer references $referee" + System.lineSeparator()
       }
       res
     }
@@ -107,7 +107,7 @@ object ResolutionError {
     * @param loc1 the location of the first associated type definition.
     * @param loc2 the location of the second associated type definition.
     */
-  case class DuplicateAssocTypeDef(sym: Symbol.AssocTypeSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Recoverable {
+  case class DuplicateAssocTypeDef(sym: Symbol.AssocTypeSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Unrecoverable {
     override def summary: String = s"Duplicate associated type definition: $sym."
 
     override def message(formatter: Formatter): String = {
@@ -126,11 +126,11 @@ object ResolutionError {
   /**
     * An error raised to indicate a duplicate derivation.
     *
-    * @param sym  the class symbol of the duplicate derivation.
+    * @param sym  the trait symbol of the duplicate derivation.
     * @param loc1 the location of the first occurrence.
     * @param loc2 the location of the second occurrence.
     */
-  case class DuplicateDerivation(sym: Symbol.ClassSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Recoverable {
+  case class DuplicateDerivation(sym: Symbol.TraitSym, loc1: SourceLocation, loc2: SourceLocation) extends ResolutionError with Recoverable {
     override def summary: String = s"Duplicate derivation: ${sym.name}"
 
     def message(formatter: Formatter): String = {
@@ -258,20 +258,20 @@ object ResolutionError {
   }
 
   /**
-    * Inaccessible Class Error.
+    * Inaccessible Trait Error.
     *
-    * @param sym the class symbol.
+    * @param sym the trait symbol.
     * @param ns  the namespace where the symbol is not accessible.
     * @param loc the location where the error occurred.
     */
-  case class InaccessibleTrait(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
+  case class InaccessibleTrait(sym: Symbol.TraitSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = "Inaccessible."
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> Class '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
+      s""">> Trait '${red(sym.toString)}' is not accessible from the namespace '${cyan(ns.toString)}'.
          |
-         |${code(loc, "inaccessible class.")}
+         |${code(loc, "inaccessible trait.")}
          |
          |""".stripMargin
 
@@ -279,7 +279,7 @@ object ResolutionError {
 
     override def explain(formatter: Formatter): Option[String] = Some({
       import formatter._
-      s"${underline("Tip:")} Mark the class as public."
+      s"${underline("Tip:")} Mark the trait as public."
     })
   }
 
@@ -494,7 +494,7 @@ object ResolutionError {
     * @param name the name of the missing associated type definition.
     * @param loc  the location of the instance symbol where the error occurred.
     */
-  case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError with Recoverable {
+  case class MissingAssocTypeDef(name: String, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     override def summary: String = s"Missing associated type definition: $name."
 
     override def message(formatter: Formatter): String = {
@@ -515,7 +515,7 @@ object ResolutionError {
     * @param ns  the namespace from which the class is sealed.
     * @param loc the location where the error occurred.
     */
-  case class SealedTrait(sym: Symbol.ClassSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
+  case class SealedTrait(sym: Symbol.TraitSym, ns: Name.NName, loc: SourceLocation) extends ResolutionError with Recoverable {
     def summary: String = "Sealed."
 
     def message(formatter: Formatter): String = {
@@ -779,7 +779,36 @@ object ResolutionError {
   }
 
   /**
-    * Undefined Name Error.
+   * Undefined Name Error.
+   *
+   * @param qn    the unresolved name.
+   * @param ns    the current namespace.
+   * @param env   the variables in the scope.
+   * @param isUse true if the undefined name occurs in a use.
+   * @param loc   the location where the error occurred.
+   */
+  case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError with Recoverable {
+    def summary: String = s"Undefined name: '${qn.toString}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Undefined name '${red(qn.toString)}'.
+         |
+         |${code(loc, "name not found")}
+         |
+         |""".stripMargin
+    }
+
+    override def explain(formatter: Formatter): Option[String] = Some({
+      import formatter._
+      s"${underline("Tip:")} Possible typo or non-existent definition?"
+    })
+
+  }
+
+  /**
+    * Undefined Name Error (unrecoverable).
     *
     * @param qn    the unresolved name.
     * @param ns    the current namespace.
@@ -787,7 +816,7 @@ object ResolutionError {
     * @param isUse true if the undefined name occurs in a use.
     * @param loc   the location where the error occurred.
     */
-  case class UndefinedName(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError with Unrecoverable {
+  case class UndefinedNameUnrecoverable(qn: Name.QName, ns: Name.NName, env: Map[String, Symbol.VarSym], isUse: Boolean, loc: SourceLocation) extends ResolutionError with Unrecoverable {
     def summary: String = s"Undefined name: '${qn.toString}'."
 
     def message(formatter: Formatter): String = {

@@ -54,19 +54,19 @@ object KindError {
   }
 
   /**
-   * Missing type class constraint.
+   * Missing trait constraint.
    *
-   * @param clazz the class of the constraint.
+   * @param trt   the trait of the constraint.
    * @param tpe   the type of the constraint.
    * @param renv  the rigidity environment.
    * @param loc   the location where the error occurred.
    */
-  case class MissingTypeClassConstraint(clazz: Symbol.ClassSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends KindError with Unrecoverable {
-    def summary: String = s"No constraint of the '$clazz' class for the type '${formatType(tpe, Some(renv))}'"
+  case class MissingTraitConstraint(trt: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends KindError with Unrecoverable {
+    def summary: String = s"No constraint of the '$trt' trait for the type '${formatType(tpe, Some(renv))}'"
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s""">> No constraint of the '${cyan(clazz.toString)}' class for the type '${red(formatType(tpe, Some(renv)))}'.
+      s""">> No constraint of the '${cyan(trt.toString)}' trait for the type '${red(formatType(tpe, Some(renv)))}'.
          |
          |${code(loc, s"missing constraint")}
          |
@@ -107,7 +107,7 @@ object KindError {
     def message(formatter: Formatter): String = {
       import formatter._
       s""">> Unable to infer kind.
-         |
+ ``        |
          |${code(loc, "uninferred kind.")}
          |
          |""".stripMargin

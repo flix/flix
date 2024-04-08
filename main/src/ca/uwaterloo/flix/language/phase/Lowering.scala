@@ -19,7 +19,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Denotation.{Latticenal, Relational}
 import ca.uwaterloo.flix.language.ast.Ast._
 import ca.uwaterloo.flix.language.ast.ops.TypedAstOps
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Kind, Level, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Kind, LoweredAst, Name, Scheme, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -38,9 +38,6 @@ import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 // - Decide which expressions to allow as head and body terms.
 
 object Lowering {
-
-  // Post type inference, level is irrelevant.
-  private implicit val DefaultLevel: Level = Level.Default
 
   private object Defs {
     lazy val Box: Symbol.DefnSym = Symbol.mkDefnSym("Boxable.box")
@@ -156,14 +153,14 @@ object Lowering {
     val aliases = ParOps.parMapValues(root.typeAliases)(visitTypeAlias)
 
     // TypedAst.Sigs are shared between the `sigs` field and the `classes` field.
-    // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting classes.
-    val classes = ParOps.parMapValues(root.classes)(c => visitClass(c, sigs))
+    // Instead of visiting twice, we visit the `sigs` field and then look up the results when visiting traits.
+    val traits = ParOps.parMapValues(root.traits)(t => visitTrait(t, sigs))
 
     val newEnums = enums ++ restrictableEnums.map {
       case (_, v) => v.sym -> v
     }
 
-    LoweredAst.Root(classes, instances, sigs, defs, newEnums, effects, aliases, root.entryPoint, root.reachable, root.sources, root.classEnv, root.eqEnv)
+    LoweredAst.Root(traits, instances, sigs, defs, newEnums, effects, aliases, root.entryPoint, root.reachable, root.sources, root.traitEnv, root.eqEnv)
   }
 
   /**
@@ -296,18 +293,18 @@ object Lowering {
   }
 
   /**
-    * Lowers the given class `clazz0`, with the given lowered sigs `sigs`.
+    * Lowers the given trait `trt0`, with the given lowered sigs `sigs`.
     */
-  private def visitClass(clazz0: TypedAst.Class, sigs: Map[Symbol.SigSym, LoweredAst.Sig])(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Class = clazz0 match {
-    case TypedAst.Class(doc, ann, mod, sym, tparam0, superClasses0, assocs0, signatures0, laws0, loc) =>
+  private def visitTrait(trt0: TypedAst.Trait, sigs: Map[Symbol.SigSym, LoweredAst.Sig])(implicit root: TypedAst.Root, flix: Flix): LoweredAst.Trait = trt0 match {
+    case TypedAst.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, signatures0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0)
-      val superClasses = superClasses0.map(visitTypeConstraint)
+      val superTraits = superTraits0.map(visitTypeConstraint)
       val assocs = assocs0.map {
-        case TypedAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc) => LoweredAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc)
+        case TypedAst.AssocTypeSig(doc, mod, sym, tparam, kind, tpe, loc) => LoweredAst.AssocTypeSig(doc, mod, sym, tparam, kind, loc)
       }
       val signatures = signatures0.map(sig => sigs(sig.sym))
       val laws = laws0.map(visitDef)
-      LoweredAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, signatures, laws, loc)
+      LoweredAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, signatures, laws, loc)
   }
 
   /**
