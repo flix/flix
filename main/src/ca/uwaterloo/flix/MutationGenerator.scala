@@ -88,11 +88,11 @@ object MutationGenerator {
   def mutateSig(sig: Expr.Sig): List[TypedAst.Expr.Sig] = {
     val tpe = sig.tpe
     val sym = sig.sym
-    val sub = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Sub"), Name.Ident(sym.loc.sp1, "sub", sym.loc.sp2)))
-    val mul = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Mul"), Name.Ident(sym.loc.sp1, "mul", sym.loc.sp2)))
-    val div = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Div"), Name.Ident(sym.loc.sp1, "div", sym.loc.sp2)))
-    val add = sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Add"), Name.Ident(sym.loc.sp1, "add", sym.loc.sp2)))
-    val clazz = Symbol.mkClassSym("Order")
+    val sub = sig.copy(sym = Symbol.mkSigSym(Symbol.mkTraitSym("Sub"), Name.Ident(sym.loc.sp1, "sub", sym.loc.sp2)))
+    val mul = sig.copy(sym = Symbol.mkSigSym(Symbol.mkTraitSym("Mul"), Name.Ident(sym.loc.sp1, "mul", sym.loc.sp2)))
+    val div = sig.copy(sym = Symbol.mkSigSym(Symbol.mkTraitSym("Div"), Name.Ident(sym.loc.sp1, "div", sym.loc.sp2)))
+    val add = sig.copy(sym = Symbol.mkSigSym(Symbol.mkTraitSym("Add"), Name.Ident(sym.loc.sp1, "add", sym.loc.sp2)))
+    val clazz = Symbol.mkTraitSym("Order")
     val le = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "less", sym.loc.sp2)))
     val leq = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "lessEqual", sym.loc.sp2)))
     val gre = sig.copy(sym = Symbol.mkSigSym(clazz, Name.Ident(sym.loc.sp1, "greater", sym.loc.sp2)))
@@ -110,9 +110,9 @@ object MutationGenerator {
       case ("Mul.mul", _) =>
         div :: add :: sub :: Nil
       case ("Eq.eq", _) =>
-        sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Eq"), Name.Ident(sym.loc.sp1, "neq", sym.loc.sp2))) :: Nil
+        sig.copy(sym = Symbol.mkSigSym(Symbol.mkTraitSym("Eq"), Name.Ident(sym.loc.sp1, "neq", sym.loc.sp2))) :: Nil
       case ("Eq.neq", _) =>
-        sig.copy(sym = Symbol.mkSigSym(Symbol.mkClassSym("Eq"), Name.Ident(sym.loc.sp1, "eq", sym.loc.sp2))) :: Nil
+        sig.copy(sym = Symbol.mkSigSym(Symbol.mkTraitSym("Eq"), Name.Ident(sym.loc.sp1, "eq", sym.loc.sp2))) :: Nil
       case ("Order.less", _) =>
         leq :: gre :: greq :: compare :: Nil
       case ("Order.lessEqual", _) =>
@@ -421,8 +421,8 @@ object MutationGenerator {
       }
       if (one == Nil) return mutateVarToConstantByType(tpe)
       val newtpe = Type.mkPureUncurriedArrow(tpe :: tpe :: Nil, tpe, loc)
-      val sub = Expr.Sig(Symbol.mkSigSym(Symbol.mkClassSym("Sub"), Name.Ident(loc.sp1, "sub", loc.sp2)), newtpe, loc)
-      val add = Expr.Sig(Symbol.mkSigSym(Symbol.mkClassSym("Add"), Name.Ident(loc.sp1, "add", loc.sp2)), newtpe, loc)
+      val sub = Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym("Sub"), Name.Ident(loc.sp1, "sub", loc.sp2)), newtpe, loc)
+      val add = Expr.Sig(Symbol.mkSigSym(Symbol.mkTraitSym("Add"), Name.Ident(loc.sp1, "add", loc.sp2)), newtpe, loc)
       val appSub = Expr.Apply(sub, varexp :: one, tpe, Type.Pure, loc)
       val appAdd = Expr.Apply(add, varexp :: one, tpe, Type.Pure, loc)
       val ret = appSub :: appAdd :: Nil

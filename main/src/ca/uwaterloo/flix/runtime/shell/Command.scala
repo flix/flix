@@ -87,8 +87,9 @@ object Command {
   case object Test extends Command
 
   /**
-    * Runs the mutation tests given a tester and testee.
+    * Show dependencies which have newer versions available.
     */
+  case object Outdated extends Command
 
   /**
     * Terminates the shell.
@@ -120,7 +121,9 @@ object Command {
     */
   case class Unknown(s: String) extends Command
 
-
+  /**
+    * Runs the mutation tests given a tester and testee.
+    */
   case class Mtest(tester: String, testee: String) extends Command
   /**
     * Parses the given `input` into a command.
