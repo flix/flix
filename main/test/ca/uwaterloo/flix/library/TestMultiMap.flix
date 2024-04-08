@@ -18,7 +18,7 @@ mod TestMultiMap {
 
     use MultiMap.{empty, singleton, insert, toAssocList, MultiMap}
 
-    def isEven(i: Int32): Bool = i `Int32.rem` 2 == 0
+    def isEven(i: Int32): Bool = i `Int32.remainder` 2 == 0
 
     def isOdd(i: Int32): Bool = not isEven(i)
 
@@ -27,7 +27,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toString01(): Bool = ToString.toString(empty(): MultiMap[Int32, Int32]) == "MultiMap#{}"
+    def toString01(): Bool = ToString.toString((empty(): MultiMap[Int32, Int32])) == "MultiMap#{}"
 
     @test
     def toString02(): Bool = ToString.toString(singleton(1, 1)) == "MultiMap#{1 => Set#{1}}"
@@ -43,7 +43,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def eq01(): Bool = empty(): MultiMap[Int32, Char] == empty(): MultiMap[Int32, Char]
+    def eq01(): Bool = (empty(): MultiMap[Int32, Char]) == (empty(): MultiMap[Int32, Char])
 
     @test
     def eq02(): Bool = singleton(1, 'a') != empty()
@@ -69,7 +69,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def compare01(): Bool = Order.compare(empty(): MultiMap[Int32, Char], empty(): MultiMap[Int32, Char]) == Comparison.EqualTo
+    def compare01(): Bool = Order.compare((empty(): MultiMap[Int32, Char]), (empty(): MultiMap[Int32, Char])) == Comparison.EqualTo
 
     @test
     def compare02(): Bool = Order.compare(singleton(1, 'a'), empty()) == Comparison.GreaterThan
@@ -111,12 +111,24 @@ mod TestMultiMap {
         MultiMap.isEmpty(singleton(1, 'a')) == false
 
     /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def nonEmpty01(): Bool =
+        MultiMap.nonEmpty(empty()) == false
+
+    @test
+    def nonEmpty02(): Bool =
+        MultiMap.nonEmpty(singleton(1, 'a')) == true
+
+    /////////////////////////////////////////////////////////////////////////////
     // get                                                                     //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def get01(): Bool =
-        MultiMap.get(1, empty(): MultiMap[Int32, Char]) == Set#{}
+        MultiMap.get(1, (empty(): MultiMap[Int32, Char])) == Set#{}
 
     @test
     def get02(): Bool =
@@ -136,7 +148,7 @@ mod TestMultiMap {
 
     @test
     def memberOf01(): Bool =
-        not MultiMap.memberOf(1, empty(): MultiMap[Int32, Char])
+        not MultiMap.memberOf(1, (empty(): MultiMap[Int32, Char]))
 
     @test
     def memberOf02(): Bool = MultiMap.memberOf(1, singleton(1, 'a'))
@@ -152,7 +164,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def keysOf01(): Bool = MultiMap.keysOf(empty(): MultiMap[Int32, Char]) == Set#{}
+    def keysOf01(): Bool = MultiMap.keysOf((empty(): MultiMap[Int32, Char])) == Set#{}
 
     @test
     def keysOf02(): Bool = MultiMap.keysOf(singleton(1, 'a')) == Set#{1}
@@ -170,7 +182,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def valuesOf01(): Bool = MultiMap.valuesOf(empty(): MultiMap[Int32, Char]) == Nil
+    def valuesOf01(): Bool = MultiMap.valuesOf((empty(): MultiMap[Int32, Char])) == Nil
 
     @test
     def valuesOf02(): Bool = MultiMap.valuesOf(singleton(1, 'a')) |> List.sort == 'a' :: Nil
@@ -217,7 +229,7 @@ mod TestMultiMap {
 
     @test
     def insertAll01(): Bool =
-        MultiMap.insertAll(1, Nil: List[Char], empty()) == empty()
+        MultiMap.insertAll(1, (Nil: List[Char]), empty()) == empty()
 
     @test
     def insertAll02(): Bool =
@@ -364,7 +376,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def remove01(): Bool = MultiMap.remove(1, empty(): MultiMap[Int32, Int32]) == empty()
+    def remove01(): Bool = MultiMap.remove(1, (empty(): MultiMap[Int32, Int32])) == empty()
 
     @test
     def remove02(): Bool = MultiMap.remove(1, singleton(1, 4)) |> toAssocList == Nil
@@ -385,7 +397,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def removeWithValue01(): Bool = MultiMap.removeWithValue(1, 4, empty(): MultiMap[Int32, Int32]) == empty()
+    def removeWithValue01(): Bool = MultiMap.removeWithValue(1, 4, (empty(): MultiMap[Int32, Int32])) == empty()
 
     @test
     def removeWithValue02(): Bool =
@@ -414,7 +426,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def find01(): Bool = MultiMap.find((k, v) -> k == v, empty(): MultiMap[Int32, Int32]) == None
+    def find01(): Bool = MultiMap.find((k, v) -> k == v, (empty(): MultiMap[Int32, Int32])) == None
 
     @test
     def find02(): Bool = MultiMap.find((k, v) -> k == v, singleton(1, 2)) == None
@@ -435,7 +447,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def findLeft01(): Bool = MultiMap.findLeft((k, v) -> k == v, empty(): MultiMap[Int32, Int32]) == None
+    def findLeft01(): Bool = MultiMap.findLeft((k, v) -> k == v, (empty(): MultiMap[Int32, Int32])) == None
 
     @test
     def findLeft02(): Bool = MultiMap.findLeft((k, v) -> k == v, singleton(1, 2)) == None
@@ -456,7 +468,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def findRight01(): Bool = MultiMap.findRight((k, v) -> k == v, empty(): MultiMap[Int32, Int32]) == None
+    def findRight01(): Bool = MultiMap.findRight((k, v) -> k == v, (empty(): MultiMap[Int32, Int32])) == None
 
     @test
     def findRight02(): Bool = MultiMap.findRight((k, v) -> k == v, singleton(1, 2)) == None
@@ -478,7 +490,7 @@ mod TestMultiMap {
 
     @test
     def filter01(): Bool =
-        MultiMap.filter(isEven, empty(): MultiMap[Int32, Int32]) == empty()
+        MultiMap.filter(isEven, (empty(): MultiMap[Int32, Int32])) == empty()
 
     @test
     def filter02(): Bool = MultiMap.filter(isEven, singleton(1, 2)) |> toAssocList == (1, Set#{2}) :: Nil
@@ -503,7 +515,7 @@ mod TestMultiMap {
 
     @test
     def filterWithKey01(): Bool =
-        MultiMap.filterWithKey((k, v) -> k == v, empty(): MultiMap[Int32, Int32]) == empty()
+        MultiMap.filterWithKey((k, v) -> k == v, (empty(): MultiMap[Int32, Int32])) == empty()
 
     @test
     def filterWithKey02(): Bool = MultiMap.filterWithKey((k, v) -> k == v, singleton(1, 2)) == empty()
@@ -526,7 +538,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def map01(): Bool = MultiMap.map(v -> v*3, empty(): MultiMap[Int32, Int32]) == empty()
+    def map01(): Bool = MultiMap.map(v -> v*3, (empty(): MultiMap[Int32, Int32])) == empty()
 
     @test
     def map02(): Bool =
@@ -553,7 +565,7 @@ mod TestMultiMap {
 
     @test
     def mapWithKey01(): Bool =
-        MultiMap.mapWithKey((k, v) -> v*3+k, empty(): MultiMap[Int32, Int32]) == empty()
+        MultiMap.mapWithKey((k, v) -> v*3+k, (empty(): MultiMap[Int32, Int32])) == empty()
 
     @test
     def mapWithKey02(): Bool =
@@ -579,7 +591,7 @@ mod TestMultiMap {
 
     @test
     def foldWithKey01(): Bool =
-        MultiMap.foldWithKey((acc, k, v) -> acc + k + v, 0, empty(): MultiMap[Int32, Int32]) == 0
+        MultiMap.foldWithKey((acc, k, v) -> acc + k + v, 0, (empty(): MultiMap[Int32, Int32])) == 0
 
     @test
     def foldWithKey02(): Bool =
@@ -605,7 +617,7 @@ mod TestMultiMap {
 
     @test
     def foldLeft01(): Bool =
-        MultiMap.foldLeft((acc, v) -> v :: acc, Nil, empty(): MultiMap[Int32, Int32]) == Nil
+        MultiMap.foldLeft((acc, v) -> v :: acc, Nil, (empty(): MultiMap[Int32, Int32])) == Nil
 
     @test
     def foldLeft02(): Bool =
@@ -632,7 +644,7 @@ mod TestMultiMap {
 
     @test
     def foldLeftWithKey01(): Bool =
-        MultiMap.foldLeftWithKey((acc, k, v) -> (k, v) :: acc, Nil, empty(): MultiMap[Int32, Int32]) == Nil
+        MultiMap.foldLeftWithKey((acc, k, v) -> (k, v) :: acc, Nil, (empty(): MultiMap[Int32, Int32])) == Nil
 
     @test
     def foldLeftWithKey02(): Bool =
@@ -664,7 +676,7 @@ mod TestMultiMap {
 
     @test
     def foldRight01(): Bool =
-        MultiMap.foldRight((v, acc) -> v :: acc, Nil, empty(): MultiMap[Int32, Int32]) == Nil
+        MultiMap.foldRight((v, acc) -> v :: acc, Nil, (empty(): MultiMap[Int32, Int32])) == Nil
 
     @test
     def foldRight02(): Bool =
@@ -690,7 +702,7 @@ mod TestMultiMap {
 
     @test
     def foldRightWithKey01(): Bool =
-        MultiMap.foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, empty(): MultiMap[Int32, Int32]) == Nil
+        MultiMap.foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, (empty(): MultiMap[Int32, Int32])) == Nil
 
     @test
     def foldRightWithKey02(): Bool =
@@ -772,7 +784,7 @@ mod TestMultiMap {
 
     @test
     def reduceLeft01(): Bool =
-        MultiMap.reduceLeft((acc, v) -> acc - v, empty(): MultiMap[Int32, Int32]) == None
+        MultiMap.reduceLeft((acc, v) -> acc - v, (empty(): MultiMap[Int32, Int32])) == None
 
     @test
     def reduceLeft02(): Bool =
@@ -815,7 +827,7 @@ mod TestMultiMap {
 
     @test
     def reduceLeftWithKey01(): Bool =
-        MultiMap.reduceLeftWithKey((k1, _, _, v2) -> (k1, v2), empty(): MultiMap[Int32, Int32]) == None
+        MultiMap.reduceLeftWithKey((k1, _, _, v2) -> (k1, v2), (empty(): MultiMap[Int32, Int32])) == None
 
     @test
     def reduceLeftWithKey02(): Bool =
@@ -841,7 +853,7 @@ mod TestMultiMap {
 
     @test
     def reduceRight01(): Bool =
-        MultiMap.reduceRight((v, acc) -> acc - v, empty(): MultiMap[Int32, Int32]) == None
+        MultiMap.reduceRight((v, acc) -> acc - v, (empty(): MultiMap[Int32, Int32])) == None
 
     @test
     def reduceRight02(): Bool =
@@ -883,7 +895,7 @@ mod TestMultiMap {
 
     @test
     def reduceRightWithKey01(): Bool =
-        MultiMap.reduceRightWithKey((_, v1, k2, _) -> (k2, v1), empty(): MultiMap[Int32, Int32]) == None
+        MultiMap.reduceRightWithKey((_, v1, k2, _) -> (k2, v1), (empty(): MultiMap[Int32, Int32])) == None
 
     @test
     def reduceRightWithKey02(): Bool =
@@ -910,7 +922,7 @@ mod TestMultiMap {
 
     @test
     def count01(): Bool =
-        MultiMap.count((k, v) -> v > k, empty(): MultiMap[Int32, Int32]) == 0
+        MultiMap.count((k, v) -> v > k, (empty(): MultiMap[Int32, Int32])) == 0
 
     @test
     def count02(): Bool =
@@ -936,7 +948,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sumKeys01(): Bool = MultiMap.sumKeys(empty(): MultiMap[Int32, Int32]) == 0
+    def sumKeys01(): Bool = MultiMap.sumKeys((empty(): MultiMap[Int32, Int32])) == 0
 
     @test
     def sumKeys02(): Bool = MultiMap.sumKeys(singleton(1, 2)) == 1
@@ -957,7 +969,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sumValues01(): Bool = MultiMap.sumValues(empty(): MultiMap[Int32, Int32]) == 0
+    def sumValues01(): Bool = MultiMap.sumValues((empty(): MultiMap[Int32, Int32])) == 0
 
     @test
     def sumValues02(): Bool = MultiMap.sumValues(singleton(1, 2)) == 2
@@ -978,7 +990,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def sumWith01(): Bool = MultiMap.sumWith((k, v) -> if (v > k) 10 else 0, empty(): MultiMap[Int32, Int32]) == 0
+    def sumWith01(): Bool = MultiMap.sumWith((k, v) -> if (v > k) 10 else 0, (empty(): MultiMap[Int32, Int32])) == 0
 
     @test
     def sumWith02(): Bool = MultiMap.sumWith((k, v) -> if (v > k) 10 else 0, singleton(1, 2)) == 10
@@ -1003,7 +1015,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def exists01(): Bool = not MultiMap.exists((k, v) -> v > k, empty(): MultiMap[Int32, Int32])
+    def exists01(): Bool = not MultiMap.exists((k, v) -> v > k, (empty(): MultiMap[Int32, Int32]))
 
     @test
     def exists02(): Bool = MultiMap.exists((k, v) -> v > k, singleton(1, 2))
@@ -1024,7 +1036,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def forAll01(): Bool = MultiMap.forAll((k, v) -> v > k, empty(): MultiMap[Int32, Int32])
+    def forAll01(): Bool = MultiMap.forAll((k, v) -> v > k, (empty(): MultiMap[Int32, Int32]))
 
     @test
     def forAll02(): Bool = MultiMap.forAll((k, v) -> v > k, singleton(1, 2))
@@ -1048,7 +1060,7 @@ mod TestMultiMap {
     // union                                                                   //
     /////////////////////////////////////////////////////////////////////////////
     @test
-    def union01(): Bool = MultiMap.union(empty(): MultiMap[Int32, Int32], empty()) == empty()
+    def union01(): Bool = MultiMap.union((empty(): MultiMap[Int32, Int32]), empty()) == empty()
 
     @test
     def union02(): Bool = MultiMap.union(singleton(1, 2), empty()) == singleton(1, 2)
@@ -1082,7 +1094,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def intersection01(): Bool = MultiMap.intersection(empty(): MultiMap[Int32, Int32], empty()) == empty()
+    def intersection01(): Bool = MultiMap.intersection((empty(): MultiMap[Int32, Int32]), empty()) == empty()
 
     @test
     def intersection02(): Bool = MultiMap.intersection(singleton(1, 2), empty()) == empty()
@@ -1115,7 +1127,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def difference01(): Bool = MultiMap.difference(empty(): MultiMap[Int32, Int32], empty()) == empty()
+    def difference01(): Bool = MultiMap.difference((empty(): MultiMap[Int32, Int32]), empty()) == empty()
 
     @test
     def difference02(): Bool = MultiMap.difference(singleton(1, 2), empty()) == singleton(1, 2)
@@ -1158,7 +1170,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toList01(): Bool = MultiMap.toList(empty(): MultiMap[Int32, Int32]) == Nil
+    def toList01(): Bool = MultiMap.toList((empty(): MultiMap[Int32, Int32])) == Nil
 
     @test
     def toList02(): Bool = MultiMap.toList(singleton(1, 4)) == (1, 4) ::  Nil
@@ -1179,7 +1191,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toAscList01(): Bool = MultiMap.toAscList(empty(): MultiMap[Int32, Int32]) == Nil
+    def toAscList01(): Bool = MultiMap.toAscList((empty(): MultiMap[Int32, Int32])) == Nil
 
     @test
     def toAscList02(): Bool = MultiMap.toAscList(singleton(1, 4)) == (1, 4) ::  Nil
@@ -1200,7 +1212,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toDescList01(): Bool = MultiMap.toDescList(empty(): MultiMap[Int32, Int32]) == Nil
+    def toDescList01(): Bool = MultiMap.toDescList((empty(): MultiMap[Int32, Int32])) == Nil
 
     @test
     def toDescList02(): Bool = MultiMap.toDescList(singleton(1, 4)) == (1, 4) ::  Nil
@@ -1222,7 +1234,7 @@ mod TestMultiMap {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toMap01(): Bool = MultiMap.toMap(empty(): MultiMap[Int32, Int32]) == Map#{}
+    def toMap01(): Bool = MultiMap.toMap((empty(): MultiMap[Int32, Int32])) == Map#{}
 
     @test
     def toMap02(): Bool = MultiMap.toMap(singleton(1, 4)) == Map#{1 => Set#{4}}
@@ -1245,8 +1257,8 @@ mod TestMultiMap {
 
     @test
     def toMutDeque01(): Bool = region rc {
-        let d1 = MultiMap.toMutDeque(rc, empty(): MultiMap[Int32, Int32]);
-        let d2 = MutDeque.new(rc);
+        let d1 = MultiMap.toMutDeque(rc, (empty(): MultiMap[Int32, Int32]));
+        let d2 = MutDeque.empty(rc);
 
         d1 `MutDeque.sameElements` d2
     }
@@ -1255,7 +1267,7 @@ mod TestMultiMap {
     def toMutDeque02(): Bool = region rc {
         let d1 = MultiMap.toMutDeque(rc, singleton(1, 4));
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushBack((1, Set#{4}), d2);
 
         d1 `MutDeque.sameElements` d2
@@ -1265,7 +1277,7 @@ mod TestMultiMap {
     def toMutDeque03(): Bool = region rc {
         let d1 = MultiMap.toMutDeque(rc, singleton(1, 4) |> insert(2, 4));
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushBack((1, Set#{4}), d2);
         MutDeque.pushBack((2, Set#{4}), d2);
 
@@ -1276,7 +1288,7 @@ mod TestMultiMap {
     def toMutDeque04(): Bool = region rc {
         let d1 = MultiMap.toMutDeque(rc, singleton(1, 4) |> insert(2, 4) |> insert(1, 1));
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushBack((1, Set#{1, 4}), d2);
         MutDeque.pushBack((2, Set#{4}), d2);
 
@@ -1287,7 +1299,7 @@ mod TestMultiMap {
     def toMutDeque05(): Bool = region rc {
         let d1 = MultiMap.toMutDeque(rc, singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3));
 
-        let d2 = MutDeque.new(rc);
+        let d2 = MutDeque.empty(rc);
         MutDeque.pushBack((1, Set#{1, 4}), d2);
         MutDeque.pushBack((2, Set#{4}), d2);
         MutDeque.pushBack((3, Set#{3}), d2);
@@ -1304,8 +1316,8 @@ mod TestMultiMap {
         region rc {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
-            let m = empty(): MultiMap[Int32, Int32];
-            MultiMap.forEach((k, v) -> {rk := k; rv := v}, m);
+            let m = (empty(): MultiMap[Int32, Int32]);
+            MultiMap.forEach((k, v) -> { Ref.put(k, rk); Ref.put(v, rv) }, m);
             deref rk == 0 and deref rv == 0
         }
 
@@ -1315,7 +1327,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = singleton(1, 4);
-            MultiMap.forEach((k, v) -> {rk := k; rv := v}, m);
+            MultiMap.forEach((k, v) -> {Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref rk == 1 and deref rv == 4
         }
 
@@ -1325,7 +1337,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = singleton(1, 4) |> insert(2, 4);
-            MultiMap.forEach((k, v) -> {rk := k; rv := v}, m);
+            MultiMap.forEach((k, v) -> {Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref rk == 2 and deref rv == 4
         }
 
@@ -1335,7 +1347,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = singleton(1, 4) |> insert(2, 4) |> insert(1, 1);
-            MultiMap.forEach((k, v) -> {rk := k; rv := v}, m);
+            MultiMap.forEach((k, v) -> {Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref rk == 2 and deref rv == 4
         }
 
@@ -1345,7 +1357,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3);
-            MultiMap.forEach((k, v) -> {rk := k; rv := v}, m);
+            MultiMap.forEach((k, v) -> {Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref rk == 3 and deref rv == 3
         }
 
@@ -1359,8 +1371,8 @@ mod TestMultiMap {
             let ri = ref 0 @ rc;
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
-            let m = empty(): MultiMap[Int32, Int32];
-            MultiMap.forEachWithIndex((i, k, v) -> {ri := i; rk := k; rv := v}, m);
+            let m = (empty(): MultiMap[Int32, Int32]);
+            MultiMap.forEachWithIndex((i, k, v) -> {Ref.put(i, ri); Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref ri == 0 and deref rk == 0 and deref rv == 0
         }
 
@@ -1371,7 +1383,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = singleton(1, 4);
-            MultiMap.forEachWithIndex((i, k, v) -> {ri := i; rk := k; rv := v}, m);
+            MultiMap.forEachWithIndex((i, k, v) -> {Ref.put(i, ri); Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref ri == 0 and deref rk == 1 and deref rv == 4
         }
 
@@ -1382,7 +1394,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = singleton(1, 4) |> insert(2, 4);
-            MultiMap.forEachWithIndex((i, k, v) -> {ri := i; rk := k; rv := v}, m);
+            MultiMap.forEachWithIndex((i, k, v) -> {Ref.put(i, ri); Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref ri == 1 and deref rk == 2 and deref rv == 4
         }
 
@@ -1393,7 +1405,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = singleton(1, 4) |> insert(2, 4) |> insert(1, 1);
-            MultiMap.forEachWithIndex((i, k, v) -> {ri := i; rk := k; rv := v}, m);
+            MultiMap.forEachWithIndex((i, k, v) -> {Ref.put(i, ri); Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref ri == 2 and deref rk == 2 and deref rv == 4
         }
 
@@ -1404,7 +1416,7 @@ mod TestMultiMap {
             let rk = ref 0 @ rc;
             let rv = ref 0 @ rc;
             let m = singleton(1, 4) |> insert(2, 4) |> insert(1, 1) |> insert(3, 3);
-            MultiMap.forEachWithIndex((i, k, v) -> {ri := i; rk := k; rv := v}, m);
+            MultiMap.forEachWithIndex((i, k, v) -> {Ref.put(i, ri); Ref.put(k, rk); Ref.put(v, rv)}, m);
             deref ri == 3 and deref rk == 3 and deref rv == 3
         }
 

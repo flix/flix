@@ -19,7 +19,7 @@ mod Ref {
     ///
     /// Returns a new reference to `x` in the region `rc`.
     ///
-    pub def new(rc: Region[r], x: a): Ref[a, r] \ r =
+    pub def fresh(rc: Region[r], x: a): Ref[a, r] \ r =
         ref x @ rc
 
     ///
@@ -32,7 +32,8 @@ mod Ref {
     /// Updates `rf` to reference `x`.
     ///
     pub def put(x: a, rf: Ref[a, r]): Unit \ r =
-        rf := x
+        $REF_ASSIGN$(rf, x)
+
 
     ///
     /// Updates `rf` to reference `f` applied to the value referenced by `rf`.
@@ -40,6 +41,6 @@ mod Ref {
     /// I.e. if `rf` references `x` then `rf` is updated to reference `f(x)`.
     ///
     pub def transform(f: a -> a \ ef, rf: Ref[a, r]): Unit \ { r, ef } =
-        rf := f(Ref.get(rf))
+        put(f(Ref.get(rf)), rf)
 
 }

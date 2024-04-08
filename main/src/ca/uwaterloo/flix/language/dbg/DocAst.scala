@@ -51,8 +51,6 @@ object DocAst {
 
     sealed trait RecordOp extends Atom
 
-    case class InRegion(d1: Expression, d2: Expression) extends Composite
-
     case object Unit extends Atom
 
     case class Tuple(elms: List[Expression]) extends Atom
@@ -76,6 +74,9 @@ object DocAst {
     case class DoubleKeyword(word1: String, d1: Expression, word2: String, d2: Either[Expression, Type]) extends Composite
 
     case class Unary(op: String, d: Expression) extends Composite
+
+    /** e.g. `arr?` */
+    case class UnaryRightAfter(d: Expression, op: String) extends Atom
 
     case class Binary(d1: Expression, op: String, d2: Expression) extends Composite
 
@@ -137,6 +138,9 @@ object DocAst {
     def Hole(sym: Symbol.HoleSym): Expression =
       AsIs("?" + sym.toString)
 
+    def HoleWithExp(exp: Expression): Expression =
+      UnaryRightAfter(exp, "?")
+
     def HoleError(sym: Symbol.HoleSym): Expression =
       AsIs(sym.toString)
 
@@ -146,6 +150,10 @@ object DocAst {
 
     val MatchError: Expression =
       AsIs("?matchError")
+
+    /** represents the error ast node when compiling partial programs */
+    val Error: Expression =
+      AsIs("?astError")
 
     def Untag(sym: Symbol.CaseSym, d: Expression): Expression =
       Keyword("untag", d)
@@ -172,6 +180,10 @@ object DocAst {
     def Sig(sym: Symbol.SigSym): Expression =
       AsIs(sym.toString)
 
+    /** e.g. `something @ rc` */
+    def InRegion(d1: Expression, d2: Expression): Expression =
+      Binary(d1, "@", d2)
+
     def ArrayNew(d1: Expression, d2: Expression): Expression =
       SquareApp(AsIs(""), List(Binary(d1, ";", d2)))
 
@@ -192,6 +204,9 @@ object DocAst {
 
     def VectorLoad(d1: Expression, index: Expression): Expression =
       DoubleSquareApp(d1, List(index))
+
+    def VectorLength(d: Expression): Expression =
+      DoubleDot(d, AsIs("length"))
 
     def Lazy(d: Expression): Expression =
       Keyword("lazy", d)
@@ -228,13 +243,13 @@ object DocAst {
     def Cst(cst: Ast.Constant): Expression =
       printer.ConstantPrinter.print(cst)
 
-    def ApplyClo(d: Expression, ds: List[Expression], ct: Option[Ast.CallType]): Expression =
+    def ApplyClo(d: Expression, ds: List[Expression], ct: Option[Ast.ExpPosition]): Expression =
       App(d, ds)
 
     def ApplySelfTail(sym: Symbol.DefnSym, ds: List[Expression]): Expression =
       App(AsIs(sym.toString), ds)
 
-    def ApplyDef(sym: Symbol.DefnSym, ds: List[Expression], ct: Option[Ast.CallType]): Expression =
+    def ApplyDef(sym: Symbol.DefnSym, ds: List[Expression], ct: Option[Ast.ExpPosition]): Expression =
       App(AsIs(sym.toString), ds)
 
     def Do(sym: Symbol.OpSym, ds: List[Expression]): Expression =
@@ -312,6 +327,8 @@ object DocAst {
     /** inserted string printed as-is (assumed not to require parenthesis) */
     case class Meta(s: String) extends Atom
 
+    val AnyType: Type = AsIs("AnyType")
+
     val Unknown: Type = Meta("unknown type")
 
     val Bool: Type = AsIs("Bool")
@@ -357,9 +374,16 @@ object DocAst {
 
     case object Pure extends Eff
 
-    case object Univ extends Eff
+    /** Represents the union of IO and all regions. */
+    case object Impure extends Eff
+
+    /** Represents Impure and all algebraic effect. */
+    case object ControlImpure extends Eff
 
     case class AsIs(s: String) extends Eff
+
+    /** Represents the top effect. */
+    def Univ: Eff = AsIs("Univ")
 
   }
 

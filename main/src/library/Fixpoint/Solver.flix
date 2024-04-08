@@ -34,8 +34,8 @@ mod Fixpoint.Solver {
     /// The stratification is computed automatically by the solver.
     ///
     @Internal
-    pub def solve(d: Datalog[v]): Datalog[v] with Order[v] =
-        Fixpoint.Phase.Stratifier.stratify(d) |> solveWithStratification(d)
+    pub def run(d: Datalog[v]): Datalog[v] with Order[v] =
+        Fixpoint.Phase.Stratifier.stratify(d) |> runWithStratification(d)
 
     ///
     /// Returns the minimal model of the given Datalog program `d`.
@@ -43,7 +43,7 @@ mod Fixpoint.Solver {
     /// A stratification of `d` is given by `stf`.
     ///
     @Internal
-    def solveWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
+    def runWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
         masked_cast(Fixpoint.Debugging.notifyPreSolve(d, stf));
         let compiler = cs ->
             Fixpoint.Phase.Compiler.compile(cs, stf) |>
@@ -94,12 +94,12 @@ mod Fixpoint.Solver {
     /// Project all facts in the given Datalog program `d` that has `p` in its head.
     ///
     @Internal
-    pub def project(p: PredSym, d: Datalog[v]): Datalog[v] with Order[v] = match d {
+    pub def projectSym(p: PredSym, d: Datalog[v]): Datalog[v] with Order[v] = match d {
         case Datalog(facts, _) =>
             let pFacts = Vector.filter(match Constraint(HeadAtom(head, _, _), _) -> head == p, facts);
             Datalog(pFacts, Vector.empty())
         case Model(db) =>
-            Map.query(ramSym -> match ramSym {
+            Map.rangeQuery(ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case Comparison.EqualTo => Comparison.EqualTo
                     case cmp => cmp
@@ -108,7 +108,7 @@ mod Fixpoint.Solver {
             }, db) |>
             List.toMap |>
             Model
-        case Join(d1, d2) => union(project(p, d1), project(p, d2))
+        case Join(d1, d2) => union(projectSym(p, d1), projectSym(p, d2))
     }
 
     ///
@@ -122,10 +122,10 @@ mod Fixpoint.Solver {
         // Import a function that can create new ids.
         import static dev.flix.runtime.Global.newId(): Int64 \ IO;
 
-        /// Determine all the predicate symbols in `d`.
+        // Determine all the predicate symbols in `d`.
         let predSyms = predSymsOf(d);
 
-        /// Compute a substitition that assignes fresh names to all predicates except those in `preds`.
+        // Compute a substitition that assignes fresh names to all predicates except those in `preds`.
         def f(macc, predSym) = {
             if (List.memberOf(predSym, preds)) {
                 // Case 1: Do not rename. Do not extend the map.
@@ -141,15 +141,7 @@ mod Fixpoint.Solver {
         let s = Set.foldLeft(f, Map.empty(), predSyms);
 
         // Apply the computed substitution to the Datalog program `d`.
-        let r = substitute(d, s);
-
-        // Debugging
-        // println(s);
-        // println(d);
-        // println(r)
-
-        // Return the result.
-        r
+        substitute(d, s)
     }
 
     ///
@@ -501,12 +493,12 @@ mod Fixpoint.Solver {
 
     def injectIntoX[f: Type -> Type, t: Type, ef: Eff](f: t -> List[Boxed] \ ef, p: PredSym, ts: f[t]): Datalog[Boxed] \ ef with Foldable[f] =
         region rc {
-            let db = MutMap.new(rc);
+            let db = MutMap.empty(rc);
             Foldable.foldLeft(() -> t -> {
                 let vs = f(t);
                 let arity = List.length(vs);
                 let ramSym = RamSym.Full(p, arity, Denotation.Relational);
-                let rel = MutMap.getOrElsePut!(ramSym, MutMap.new(rc), db);
+                let rel = MutMap.getOrElsePut!(ramSym, MutMap.empty(rc), db);
                 MutMap.put!(List.toVector(vs), Reflect.default(), rel)
             }, (), ts);
             toModel(db)
@@ -705,7 +697,7 @@ mod Fixpoint.Solver {
     ///
     def factsOf(f: List[v] -> t \ ef, p: PredSym, d: Datalog[v]): Vector[t] \ ef = match d {
         case Datalog(_, cs) => region rc {
-            let pFacts = MutList.new(rc);
+            let pFacts = MutList.empty(rc);
             Vector.forEach(c -> match c {
                 case Constraint(HeadAtom(headPred, _, terms), body) =>
                     if (headPred == p and Vector.isEmpty(body))
@@ -718,15 +710,15 @@ mod Fixpoint.Solver {
         }
         case Model(db) => region rc {
             use Fixpoint.Ast.Ram.toDenotation;
-            let pFacts = MutList.new(rc);
-            let query = ramSym -> match ramSym {
+            let pFacts = MutList.empty(rc);
+            let qquery = ramSym -> match ramSym {
                 case RamSym.Full(predSym, _, _) => match predSym <=> p {
                     case Comparison.EqualTo => Comparison.EqualTo
                     case cmp => cmp
                 }
                 case _ => Comparison.LessThan
             };
-            Map.queryWith(query, ramSym -> rel -> match toDenotation(ramSym) {
+            Map.rangeQueryWith(qquery, ramSym -> rel -> match toDenotation(ramSym) {
                 case Denotation.Relational =>
                     Map.forEach((tuple, _) -> MutList.push!(f(Vector.toList(tuple)), pFacts), rel)
                 case Denotation.Latticenal(_) =>

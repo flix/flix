@@ -182,13 +182,13 @@ sealed trait Completion {
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Snippet)
-    case Completion.InstanceCompletion(clazz, completion) =>
-      val classSym = clazz.sym
-      CompletionItem(label = s"$classSym[...]",
-        sortText = Priority.high(classSym.toString),
+    case Completion.InstanceCompletion(trt, completion) =>
+      val traitSym = trt.sym
+      CompletionItem(label = s"$traitSym[...]",
+        sortText = Priority.high(traitSym.toString),
         textEdit = TextEdit(context.range, completion),
-        detail = Some(InstanceCompleter.fmtClass(clazz)),
-        documentation = Some(clazz.doc.text),
+        detail = Some(InstanceCompleter.fmtTrait(trt)),
+        documentation = Some(trt.doc.text),
         insertTextFormat = InsertTextFormat.Snippet,
         kind = CompletionItemKind.Snippet)
     case Completion.UseCompletion(name, kind) =>
@@ -438,12 +438,12 @@ object Completion {
   case class MatchCompletion(enm: TypedAst.Enum, completion: String) extends Completion
 
   /**
-    * Represents an Instance completion (based on type classes)
+    * Represents an Instance completion (based on traits)
     *
-    * @param clazz      the clazz.
+    * @param trt        the trait.
     * @param completion the completion string (used as information for TextEdit).
     */
-  case class InstanceCompletion(clazz: TypedAst.Class, completion: String) extends Completion
+  case class InstanceCompletion(trt: TypedAst.Trait, completion: String) extends Completion
 
   /**
     * Represents an Use completion.

@@ -87,7 +87,7 @@ mod Iterator {
             empty(rc)
         else {
             let iterF = () -> match (deref pos) {
-                case i if i < e => pos := i+1; Ans(i)
+                case i if i < e => Ref.put(i + 1, pos); Ans(i)
                 case _          => Done
             };
             Iterator(rc, iterF)
@@ -105,7 +105,7 @@ mod Iterator {
             if (i < 1)
                 Done
             else {
-                ix := i-1;
+                Ref.put(i - 1, ix);
                 Ans(x)
             }
         };
@@ -133,7 +133,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toArray(rc: Region[r1], iter: Iterator[a, ef, r2]): Array[a, r1] \ { ef, r2, r1 } = region rc1 {
-        let m = MutList.new(rc1);
+        let m = MutList.empty(rc1);
         forEach(a -> MutList.push!(a, m), iter);
         MutList.toArray(rc, m)
     }
@@ -144,7 +144,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toVector(iter: Iterator[a, ef, r]): Vector[a] \ { ef, r } = region rc {
-        let m = MutList.new(rc);
+        let m = MutList.empty(rc);
         forEach(a -> MutList.push!(a, m), iter);
         MutList.toVector(m)
     }
@@ -198,7 +198,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def toMutDeque(rc: Region[r1], iter: Iterator[a, ef, r2]): MutDeque[a, r1] \ { ef, r2, r1 } =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach(x -> MutDeque.pushBack(x, d), iter);
         d
 
@@ -279,7 +279,7 @@ mod Iterator {
         let Iterator(rc, iterF) = iter;
         let ix = ref 0 @ rc;
         let step = x -> match x {
-            case Ans(a) => { let i = deref ix; ix := i + 1; Ans(f(i, a)) }
+            case Ans(a) => { let i = deref ix; Ref.put(i + 1, ix); Ans(f(i, a)) }
             case Skip   => Skip
             case Done   => Done
         };
@@ -287,12 +287,12 @@ mod Iterator {
         Iterator(rc, iterF1)
 
     ///
-    /// Returns an iterator with every occurrence of `from` replaced by `to` in `iter`.
+    /// Returns an iterator with every occurrence of `src` replaced by `dst` in `iter`.
     ///
     /// Does *not* consume any elements from the iterator.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, iter: Iterator[a, ef, r]): Iterator[a, ef, r] with Eq[a] =
-        map(a -> if (a == from.from) to.to else a, iter)
+    pub def replace(src: {src = a}, dst: {dst = a}, iter: Iterator[a, ef, r]): Iterator[a, ef, r] with Eq[a] =
+        map(a -> if (a == src.src) dst.dst else a, iter)
 
     ///
     /// Returns `iterB` appended to (the end of) `iterA`.
@@ -387,7 +387,7 @@ mod Iterator {
     pub def zipWithIndex(iter: Iterator[a, ef, r]): Iterator[(Int32, a), ef + r, r] \ r =
         let Iterator(rc, _) = iter;
         let ix = ref 0 @ rc;
-        map(x -> {let i = deref ix; ix:= i + 1; (i, x)}, iter)
+        map(x -> {let i = deref ix; Ref.put(i + 1, ix); (i, x)}, iter)
 
     ///
     /// Alias for `zipWithIndex`.
@@ -492,7 +492,7 @@ mod Iterator {
         let ix = ref n @ rc;
         def loop() = {
             let i = deref ix;
-            ix := i - 1;
+            Ref.put(i - 1, ix);
             match iterF() {
                 case Ans(a)  => if (i > 0) loop() else Ans(a)
                 case Skip    => loop()
@@ -521,7 +521,7 @@ mod Iterator {
                 Done
             else
                 match iterF() {
-                    case Ans(a) => {ix := i-1; Ans(a)}
+                    case Ans(a) => Ref.put(i - 1, ix); Ans(a)
                     case Skip   => Skip
                     case Done   => Done
                 }
@@ -559,12 +559,12 @@ mod Iterator {
         def loop() = match iterF() {
             case Ans(a) =>
                 if (deref start) {
-                    if (f(a)) Skip else { start:= false; Ans(a) }
+                    if (f(a)) Skip else { Ref.put(false, start); Ans(a) }
                 } else {
                     Ans(a)
                 }
-            case Skip    => Skip
-            case Done    => Done
+            case Skip => Skip
+            case Done => Done
         };
         let iter1F = () -> loop();
         Iterator(rc, iter1F)
@@ -591,16 +591,15 @@ mod Iterator {
         def outerLoop() = {
             if (deref inside) {
                 match innerLoop() {
-                    case Done => {inside := false; outerLoop()}
+                    case Done => Ref.put(false, inside); outerLoop()
                     case ans  => ans
                 }
             } else {
                 match iterF() {
-                    case Ans(a) => {
-                        inside := true;
-                        innerIter := f(a);
+                    case Ans(a) =>
+                        Ref.put(true, inside);
+                        Ref.put(f(a), innerIter);
                         outerLoop()
-                    }
                     case Skip   => outerLoop()
                     case Done   => Done
                 }
@@ -631,7 +630,7 @@ mod Iterator {
         let start = ref true @ rc;
         let step = x ->
             if (deref start) {
-                start := false;
+                Ref.put(false, start);
                 singleton(rc, x)
             } else {
                 cons(sep, singleton(rc, x))
@@ -653,7 +652,7 @@ mod Iterator {
         let sepL = Foldable.toList(sep);
         let step = innerIter -> {
             if (deref start) {
-                start := false;
+                Ref.put(false, start);
                 innerIter
             } else {
                 append(ofList(rc, sepL), innerIter)
@@ -672,7 +671,7 @@ mod Iterator {
         let next = () -> {
             match (deref ls) {
                 case Nil     => Done
-                case x :: rs => ls := rs; Ans(x)
+                case x :: rs => Ref.put(rs, ls); Ans(x)
             }
         };
         Iterator(rc, next)
@@ -693,7 +692,7 @@ mod Iterator {
     /// Consumes the entire iterator.
     ///
     pub def joinWith(f: a -> String \ ef2, sep: String, iter: Iterator[a, ef1, r]): String \ { ef1, ef2, r } = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         match next(iter) {
             case Some(a) => {
                 StringBuilder.append!(f(a), sb);
@@ -738,7 +737,7 @@ mod Iterator {
         let first = ref true @ rc;
         let f = () ->  {
             if (deref first) {
-                first := false;
+                Ref.put(false, first);
                 Ans(x)
             }
             else

@@ -149,6 +149,16 @@ def isEmpty01(): Bool = String.isEmpty("") == true
 def isEmpty02(): Bool = String.isEmpty("Hello") == false
 
 /////////////////////////////////////////////////////////////////////////////
+// nonEmpty                                                                //
+/////////////////////////////////////////////////////////////////////////////
+
+@test
+def nonEmpty01(): Bool = String.nonEmpty("") == false
+
+@test
+def nonEmpty02(): Bool = String.nonEmpty("Hello") == true
+
+/////////////////////////////////////////////////////////////////////////////
 // length                                                                  //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -1665,7 +1675,7 @@ def unfoldWithIter01(): Bool = region rc {
             None
         else {
             let c = Some(toChar(deref x + 97));
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             c
         };
     String.unfoldWithIter(step) == ""
@@ -1679,7 +1689,7 @@ def unfoldWithIter02(): Bool = region rc {
             None
         else {
             let c = Some(toChar(deref x + 97));
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             c
         };
     String.unfoldWithIter(step) == "a"
@@ -1693,7 +1703,7 @@ def unfoldWithIter03(): Bool = region rc {
             None
         else {
             let c = Some(toChar(deref x + 97));
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             c
         };
     String.unfoldWithIter(step) == "ab"
@@ -1707,7 +1717,7 @@ def unfoldWithIter04(): Bool = region rc {
             None
         else {
             let c = Some(toChar(deref x + 97));
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             c
         };
     String.unfoldWithIter(step) == "abcdefghij"
@@ -1721,7 +1731,7 @@ def unfoldWithIter05(): Bool = region rc {
             None
         else {
             let c = Some(toChar(deref x + 97));
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             c
         };
     String.unfoldWithIter(step) == "fghij"
@@ -1735,7 +1745,7 @@ def unfoldWithIter06(): Bool = region rc {
             None
         else {
             let c = Some(toChar(deref x + 97));
-            x := deref x + 2;
+            Ref.put(deref x + 2, x);
             c
         };
     String.unfoldWithIter(step) == "acegi"
@@ -1792,7 +1802,7 @@ def unfoldStringWithIter01(): Bool = region rc {
             let c1 = toChar(deref x + 65);
             let c2 = toChar(deref x + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             Some(s)
         };
     String.unfoldStringWithIter(step) == ""
@@ -1808,7 +1818,7 @@ def unfoldStringWithIter02(): Bool = region rc {
             let c1 = toChar(deref x + 65);
             let c2 = toChar(deref x + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             Some(s)
         };
     String.unfoldStringWithIter(step) == "Aa."
@@ -1824,7 +1834,7 @@ def unfoldStringWithIter03(): Bool = region rc {
             let c1 = toChar(deref x + 65);
             let c2 = toChar(deref x + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             Some(s)
         };
     String.unfoldStringWithIter(step) == "Aa.Bb."
@@ -1840,7 +1850,7 @@ def unfoldStringWithIter04(): Bool = region rc {
             let c1 = toChar(deref x + 65);
             let c2 = toChar(deref x + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             Some(s)
         };
     String.unfoldStringWithIter(step) == "Aa.Bb.Cc.Dd.Ee.Ff.Gg.Hh.Ii.Jj."
@@ -1856,7 +1866,7 @@ def unfoldStringWithIter05(): Bool = region rc {
             let c1 = toChar(deref x + 65);
             let c2 = toChar(deref x + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            x := deref x + 1;
+            Ref.put(deref x + 1, x);
             Some(s)
         };
     String.unfoldStringWithIter(step) == "Ff.Gg.Hh.Ii.Jj."
@@ -1872,7 +1882,7 @@ def unfoldStringWithIter06(): Bool = region rc {
             let c1 = toChar(deref x + 65);
             let c2 = toChar(deref x + 97);
             let s = List.joinWith(Char.toString, "", c1 :: c2 :: '.' :: Nil);
-            x := deref x + 2;
+            Ref.put(deref x + 2, x);
             Some(s)
         };
     String.unfoldStringWithIter(step) == "Aa.Cc.Ee.Gg.Ii."
@@ -2272,56 +2282,56 @@ def center17(): Bool = String.center(8, '_', "abc") == "__abc___"
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def replace01(): Bool = String.replace({from = "c"}, {to = "d"}, "") == ""
+def replace01(): Bool = String.replace({src = "c"}, {dst = "d"}, "") == ""
 
 @test
-def replace02(): Bool = String.replace({from = "c"}, {to = "d"}, "a") == "a"
+def replace02(): Bool = String.replace({src = "c"}, {dst = "d"}, "a") == "a"
 
 @test
-def replace03(): Bool = String.replace({from = "c"}, {to = "d"}, "c") == "d"
+def replace03(): Bool = String.replace({src = "c"}, {dst = "d"}, "c") == "d"
 
 @test
-def replace04(): Bool = String.replace({from = "c"}, {to = "d"}, "d") == "d"
+def replace04(): Bool = String.replace({src = "c"}, {dst = "d"}, "d") == "d"
 
 @test
-def replace05(): Bool = String.replace({from = "c"}, {to = "d"}, "ab") == "ab"
+def replace05(): Bool = String.replace({src = "c"}, {dst = "d"}, "ab") == "ab"
 
 @test
-def replace06(): Bool = String.replace({from = "c"}, {to = "d"}, "abc") == "abd"
+def replace06(): Bool = String.replace({src = "c"}, {dst = "d"}, "abc") == "abd"
 
 @test
-def replace07(): Bool = String.replace({from = "c"}, {to = "d"}, "cd") == "dd"
+def replace07(): Bool = String.replace({src = "c"}, {dst = "d"}, "cd") == "dd"
 
 @test
-def replace08(): Bool = String.replace({from = "c"}, {to = "d"}, "cc") == "dd"
+def replace08(): Bool = String.replace({src = "c"}, {dst = "d"}, "cc") == "dd"
 
 /////////////////////////////////////////////////////////////////////////////
 // replaceChar                                                             //
 /////////////////////////////////////////////////////////////////////////////
 
 @test
-def replaceChar01(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "") == ""
+def replaceChar01(): Bool = String.replaceChar({src = 'c'}, {dst = 'd'}, "") == ""
 
 @test
-def replaceChar02(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "a") == "a"
+def replaceChar02(): Bool = String.replaceChar({src = 'c'}, {dst = 'd'}, "a") == "a"
 
 @test
-def replaceChar03(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "c") == "d"
+def replaceChar03(): Bool = String.replaceChar({src = 'c'}, {dst = 'd'}, "c") == "d"
 
 @test
-def replaceChar04(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "d") == "d"
+def replaceChar04(): Bool = String.replaceChar({src = 'c'}, {dst = 'd'}, "d") == "d"
 
 @test
-def replaceChar05(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "ab") == "ab"
+def replaceChar05(): Bool = String.replaceChar({src = 'c'}, {dst = 'd'}, "ab") == "ab"
 
 @test
-def replaceChar06(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "abc") == "abd"
+def replaceChar06(): Bool = String.replaceChar({src = 'c'}, {dst = 'd'}, "abc") == "abd"
 
 @test
-def replaceChar07(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "cd") == "dd"
+def replaceChar07(): Bool = String.replaceChar({src = 'c'}, {dst = 'd'}, "cd") == "dd"
 
 @test
-def replaceChar08(): Bool = String.replaceChar({from = 'c'}, {to = 'd'}, "cc") == "dd"
+def replaceChar08(): Bool = String.replaceChar({src = 'c'}, {dst = 'd'}, "cc") == "dd"
 
 /////////////////////////////////////////////////////////////////////////////
 // replaceMatches                                                          //
@@ -3163,15 +3173,15 @@ def levenshteinDistance07(): Bool =
 
 @test
 def zip01(): Bool =
-    String.zip("", "") == Nil: List[(Char,Char)]
+    String.zip("", "") == (Nil: List[(Char,Char)])
 
 @test
 def zip02(): Bool =
-    String.zip("a", "") == Nil: List[(Char, Char)]
+    String.zip("a", "") == (Nil: List[(Char, Char)])
 
 @test
 def zip03(): Bool =
-    String.zip("", "1") == Nil: List[(Char, Char)]
+    String.zip("", "1") == (Nil: List[(Char, Char)])
 
 @test
 def zip04(): Bool =

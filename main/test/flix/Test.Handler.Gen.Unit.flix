@@ -21,7 +21,7 @@ mod Test.Handler.Gen.Unit {
 
     def getAndInc(r: Ref[Int32, r]): Int32 \ r =
         let i = deref r;
-        r := (i + 1);
+        Ref.put(i + 1, r);
         i
 
     def range(a: Int32, b: Int32): List[Unit] =

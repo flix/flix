@@ -51,7 +51,7 @@ object ReducedAstPrinter {
     case Expr.ApplyAtomic(op, exps, tpe, _, _) => OpPrinter.print(op, exps.map(print), MonoTypePrinter.print(tpe))
     case Expr.ApplyClo(exp, exps, ct, _, _, _) => DocAst.Expression.ApplyClo(print(exp), exps.map(print), Some(ct))
     case Expr.ApplyDef(sym, exps, ct, _, _, _) => DocAst.Expression.ApplyDef(sym, exps.map(print), Some(ct))
-    case Expr.ApplySelfTail(sym, _, actuals, _, _, _) => DocAst.Expression.ApplySelfTail(sym, actuals.map(print))
+    case Expr.ApplySelfTail(sym, actuals, _, _, _) => DocAst.Expression.ApplySelfTail(sym, actuals.map(print))
     case Expr.IfThenElse(exp1, exp2, exp3, _, _, _) => DocAst.Expression.IfThenElse(print(exp1), print(exp2), print(exp3))
     case Expr.Branch(exp, branches, _, _, _) => DocAst.Expression.Branch(print(exp), MapOps.mapValues(branches)(print))
     case Expr.JumpTo(sym, _, _, _) => DocAst.Expression.JumpTo(sym)
@@ -62,7 +62,7 @@ object ReducedAstPrinter {
     case Expr.TryCatch(exp, rules, _, _, _) => DocAst.Expression.TryCatch(print(exp), rules.map {
       case ReducedAst.CatchRule(sym, clazz, exp) => (sym, clazz, print(exp))
     })
-    case Expr.TryWith(exp, effUse, rules, _, _, _) => DocAst.Expression.TryWith(print(exp), effUse.sym, rules.map {
+    case Expr.TryWith(exp, effUse, rules, _, _, _, _) => DocAst.Expression.TryWith(print(exp), effUse.sym, rules.map {
       case ReducedAst.HandlerRule(op, fparams, exp) =>
         (op.sym, fparams.map(printFormalParam), print(exp))
     })

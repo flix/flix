@@ -123,7 +123,7 @@ instance Reducible[Nec] {
 
 instance ToString[Nec[a]] with ToString[a] {
     pub def toString(c: Nec[a]): String = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         StringBuilder.appendString!("Nec#{", sb);
         Nec.forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -424,10 +424,10 @@ mod Nec {
         }
 
     ///
-    /// Returns `l` with every occurrence of `from` replaced by `to`.
+    /// Returns `l` with every occurrence of `src` replaced by `dst`.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, l: Nec[a]): Nec[a] with Eq[a] =
-        map(e -> if (e == from.from) to.to else e, l)
+    pub def replace(src: {src = a}, dst: {dst = a}, l: Nec[a]): Nec[a] with Eq[a] =
+        map(e -> if (e == src.src) dst.dst else e, l)
 
     ///
     /// Returns all permutations of `c` in lexicographical order by element indices in `c`.
@@ -752,7 +752,7 @@ mod Nec {
     /// Returns `c` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], c: Nec[a]): MutDeque[a, r] \ r  =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach(x -> MutDeque.pushBack(x, d), c);
         d
 
@@ -798,7 +798,7 @@ mod Nec {
     /// Returns the Nec `c` as a vector.
     ///
     pub def toVector(c: Nec[a]): Vector[a] = region rc {
-        let arr = Array.new(rc, length(c));
+        let arr = Array.empty(rc, length(c));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), c);
         Array.toVector(arr)
     }
@@ -816,14 +816,12 @@ mod Nec {
         let cursor = ref vl @ rc;
         let next = () -> match (deref cursor) {
             case None             => None
-            case Some(OneLeft(x)) => {
-                cursor := None;
+            case Some(OneLeft(x)) =>
+                Ref.put(None, cursor);
                 Some(x)
-            }
-            case Some(SomeLeft(x, xs)) => {
-                cursor := Some(viewLeft(xs));
+            case Some(SomeLeft(x, xs)) =>
+                Ref.put(Some(viewLeft(xs)), cursor);
                 Some(x)
-            }
         };
         Iterator.iterate(rc, next)
 

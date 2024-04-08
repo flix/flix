@@ -51,6 +51,12 @@ class TestMain extends AnyFunSuite {
     assert(opts.command == Main.Command.Release)
   }
 
+  test("outdated") {
+    val args = Array("outdated")
+    val opts = Main.parseCmdOpts(args).get
+    assert(opts.command == Main.Command.Outdated)
+  }
+
   test("doc") {
     val args = Array("doc")
     val opts = Main.parseCmdOpts(args).get
@@ -181,12 +187,6 @@ class TestMain extends AnyFunSuite {
     val args = Array("--Xno-bool-specialcases")
     val opts = Main.parseCmdOpts(args).get
     assert(opts.xnoboolspecialcases)
-  }
-
-  test("--Xno-bool-table") {
-    val args = Array("--Xno-bool-table")
-    val opts = Main.parseCmdOpts(args).get
-    assert(opts.xnobooltable)
   }
 
   test("--Xno-bool-unif") {

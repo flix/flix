@@ -16,6 +16,8 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, Scheme, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
 import ca.uwaterloo.flix.util.InternalCompilerException
 
 /**
@@ -133,6 +135,16 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
   }
 
   /**
+    * Applies `this` substitution to the given provenance.
+    */
+  def apply(prov: TypeConstraint.Provenance): TypeConstraint.Provenance = prov match {
+    case Provenance.ExpectType(expected, actual, loc) => Provenance.ExpectType(apply(expected), apply(actual), loc)
+    case Provenance.ExpectEffect(expected, actual, loc) => Provenance.ExpectEffect(apply(expected), apply(actual), loc)
+    case Provenance.ExpectArgument(expected, actual, sym, num, loc) => Provenance.ExpectArgument(apply(expected), apply(actual), sym, num, loc)
+    case Provenance.Match(tpe1, tpe2, loc) => Provenance.Match(apply(tpe1), apply(tpe2), loc)
+  }
+
+  /**
     * Removes the binding for the given type variable `tvar` (if it exists).
     */
   def unbind(tvar: Symbol.KindedTypeVarSym): Substitution = Substitution(m - tvar)
@@ -177,6 +189,7 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
       // minimize case set formulas if present
       val tpe = x.kind match {
         case Kind.CaseSet(sym) => SetFormula.minimizeType(this.apply(t), sym, sym.universe, SourceLocation.Unknown)
+        case Kind.Eff => TypeMinimization.minimizeType(this.apply(t))
         case _ => this.apply(t)
       }
       newTypeMap.update(x, tpe)

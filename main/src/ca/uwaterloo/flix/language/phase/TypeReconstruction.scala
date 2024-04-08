@@ -117,7 +117,7 @@ object TypeReconstruction {
     case KindedAst.Expr.Cst(Ast.Constant.Null, loc) =>
       TypedAst.Expr.Cst(Ast.Constant.Null, Type.Null, loc)
 
-    case KindedAst.Expr.Cst(cst, loc) => TypedAst.Expr.Cst(cst, constantType(cst), loc)
+    case KindedAst.Expr.Cst(cst, loc) => TypedAst.Expr.Cst(cst, Type.constantType(cst), loc)
 
     case KindedAst.Expr.Apply(exp, exps, tvar, pvar, loc) =>
       val e = visitExp(exp)
@@ -362,13 +362,21 @@ object TypeReconstruction {
       val t = subst(tvar)
       TypedAst.Expr.Cst(Ast.Constant.Null, t, loc)
 
-    case KindedAst.Expr.UncheckedCast(exp, declaredType, declaredEff, tvar, loc) =>
+    case KindedAst.Expr.UncheckedCast(exp, declaredType0, declaredEff0, tvar, loc) =>
       val e = visitExp(exp)
-      val dt = declaredType.map(tpe => subst(tpe))
-      val dp = declaredEff.map(eff => subst(eff))
-      val tpe = subst(tvar)
-      val eff = declaredEff.getOrElse(e.eff)
-      TypedAst.Expr.UncheckedCast(e, dt, dp, tpe, eff, loc)
+      // Omit the unchecked cast if the inferred type and effect are the same as the declared ones.
+      // Note: We do not aim to remove all redundant unchecked casts. That is not possible until monomorphization,
+      // due to both Boolean equivalence, record/schema equivalence, and associated types/effects.
+      // We only aim to remove unchecked casts which are syntactically identifiable as redundant.
+      (declaredType0.map(tpe => subst(tpe)), declaredEff0.map(eff => subst(eff))) match {
+        case (Some(tpe), None) if tpe == e.tpe => e
+        case (None, Some(eff)) if eff == e.eff => e
+        case (Some(tpe), Some(eff)) if tpe == e.tpe && eff == e.eff => e
+        case (declaredType, declaredEff) =>
+          val tpe = subst(tvar)
+          val eff = declaredEff0.getOrElse(e.eff)
+          TypedAst.Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
+      }
 
     case KindedAst.Expr.UncheckedMaskingCast(exp, loc) =>
       // We explicitly mark a `Mask` expression as Impure.
@@ -617,7 +625,7 @@ object TypeReconstruction {
   private def visitPattern(pat0: KindedAst.Pattern)(implicit root: KindedAst.Root, subst: Substitution): TypedAst.Pattern = pat0 match {
     case KindedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wild(subst(tvar), loc)
     case KindedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym, subst(tvar), loc)
-    case KindedAst.Pattern.Cst(cst, loc) => TypedAst.Pattern.Cst(cst, constantType(cst), loc)
+    case KindedAst.Pattern.Cst(cst, loc) => TypedAst.Pattern.Cst(cst, Type.constantType(cst), loc)
 
     case KindedAst.Pattern.Tag(sym, pat, tvar, loc) => TypedAst.Pattern.Tag(sym, visitPattern(pat), subst(tvar), loc)
 
@@ -668,25 +676,5 @@ object TypeReconstruction {
       val e = visitExp(exp)
       TypedAst.Predicate.Body.Guard(e, loc)
 
-  }
-
-  /**
-    * Returns the type of the given constant.
-    */
-  private def constantType(cst: Ast.Constant): Type = cst match {
-    case Constant.Unit => Type.Unit
-    case Constant.Null => Type.Null
-    case Constant.Bool(_) => Type.Bool
-    case Constant.Char(_) => Type.Char
-    case Constant.Float32(_) => Type.Float32
-    case Constant.Float64(_) => Type.Float64
-    case Constant.BigDecimal(_) => Type.BigDecimal
-    case Constant.Int8(_) => Type.Int8
-    case Constant.Int16(_) => Type.Int16
-    case Constant.Int32(_) => Type.Int32
-    case Constant.Int64(_) => Type.Int64
-    case Constant.BigInt(_) => Type.BigInt
-    case Constant.Str(_) => Type.Str
-    case Constant.Regex(_) => Type.Regex
   }
 }

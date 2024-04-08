@@ -30,92 +30,81 @@ object AstPrinter {
     * Writes all the formatted asts, requested by the flix options, to disk.
     */
   def printAsts()(implicit flix: Flix): Unit = {
-    val asts = flix.options.xprintphase
-    if (asts.isEmpty)
-      ()
-    else if (asts.contains("all") || asts.contains("All"))
-      printAllAsts()
-    else {
-      //
-      // Front-end
-      //
-      if (asts.contains("Parser")) () // wip
-      if (asts.contains("Weeder")) () // wip
-      if (asts.contains("Desugar")) () // wip
-      if (asts.contains("Namer")) () // wip
-      if (asts.contains("Resolver")) () // wip
-      if (asts.contains("Kinder")) () // wip
-      if (asts.contains("Deriver")) () // wip
-      if (asts.contains("Typer")) () // wip
-      if (asts.contains("Entrypoint")) () // wip
-      if (asts.contains("PredDeps")) () // wip
-      if (asts.contains("Stratifier")) () // wip
-      if (asts.contains("PatMatch")) () // wip
-      if (asts.contains("Redundancy")) () // wip
-      if (asts.contains("Safety")) () // wip
-      //
-      // Back-end
-      //
-      if (asts.contains("Lowering")) writeToDisk("Lowering", formatLoweredAst(flix.getLoweringAst))
-      if (asts.contains("TreeShaker1")) writeToDisk("TreeShaker1", formatLoweredAst(flix.getTreeShaker1Ast))
-      if (asts.contains("MonoDefs")) writeToDisk("MonoDefs", formatLoweredAst(flix.getMonoDefsAst))
-      if (asts.contains("MonoTypes")) writeToDisk("MonoTypes", formatLoweredAst(flix.getMonoTypesAst))
-      if (asts.contains("Simplifier")) writeToDisk("Simplifier", formatSimplifiedAst(flix.getSimplifierAst))
-      if (asts.contains("ClosureConv")) writeToDisk("ClosureConv", formatSimplifiedAst(flix.getClosureConvAst))
-      if (asts.contains("LambdaLift")) writeToDisk("LambdaLift", formatLiftedAst(flix.getLambdaLiftAst))
-      if (asts.contains("Tailrec")) writeToDisk("Tailrec", formatLiftedAst(flix.getTailrecAst))
-      if (asts.contains("Optimizer")) writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
-      if (asts.contains("TreeShaker2")) writeToDisk("TreeShaker2", formatLiftedAst(flix.getTreeShaker2Ast))
-      if (asts.contains("EffectBinder")) writeToDisk("EffectBinder", formatReducedAst(flix.getEffectBinderAst))
-      if (asts.contains("Eraser")) writeToDisk("Eraser", formatReducedAst(flix.getEraserAst))
-      if (asts.contains("Reducer")) writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
-      if (asts.contains("VarOffsets")) writeToDisk("VarOffsets", formatReducedAst(flix.getVarOffsetsAst))
-      if (asts.contains("JvmBackend")) () // wip
-    }
+    val optionPhases = flix.options.xprintphase
+    val shouldPrintEverything = optionPhases.contains("all") || optionPhases.contains("All")
+    val phaseMap = if (shouldPrintEverything) allPhases(includeUnfinished = false)
+                   else allPhases().filter(pair => optionPhases.contains(pair._1))
+    printPhaseMap(phaseMap)
   }
 
   /**
     * Writes all the formatted asts to disk.
     */
   def printAllAsts()(implicit flix: Flix): Unit = {
-    //
-    // Front-end
-    //
-
-    // Parser wip
-    // Weeder wip
-    // Desugar wip
-    // Namer wip
-    // Resolver wip
-    // Kinder wip
-    // Deriver wip
-    // Typer wip
-    // Entrypoint wip
-    // PredDeps wip
-    // Stratifier wip
-    // PatMatch wip
-    // Redundancy wip
-    // Safety wip
-
-    //
-    // Back-end
-    //
-
-    writeToDisk("Lowering", formatLoweredAst(flix.getLoweringAst))
-    writeToDisk("TreeShaker1", formatLoweredAst(flix.getTreeShaker1Ast))
-    writeToDisk("MonoDefs", formatLoweredAst(flix.getMonoDefsAst))
-    writeToDisk("MonoTypes", formatLoweredAst(flix.getMonoTypesAst))
-    writeToDisk("Simplifier", formatSimplifiedAst(flix.getSimplifierAst))
-    writeToDisk("ClosureConv", formatSimplifiedAst(flix.getClosureConvAst))
-    writeToDisk("LambdaLift", formatLiftedAst(flix.getLambdaLiftAst))
-    writeToDisk("Tailrec", formatLiftedAst(flix.getTailrecAst))
-    writeToDisk("Optimizer", formatLiftedAst(flix.getOptimizerAst))
-    writeToDisk("TreeShaker2", formatLiftedAst(flix.getTreeShaker2Ast))
-    writeToDisk("EffectBinder", formatReducedAst(flix.getEffectBinderAst))
-    writeToDisk("Eraser", formatReducedAst(flix.getEraserAst))
-    writeToDisk("Reducer", formatReducedAst(flix.getReducerAst))
-    writeToDisk("VarOffsets", formatReducedAst(flix.getVarOffsetsAst))
+    printPhaseMap(allPhases(includeUnfinished = false))
   }
+
+  /**
+    * Goes through each map binding and calls [[writeToDisk]].
+    */
+  private def printPhaseMap(phaseMap: Map[String, () => String])(implicit flix: Flix): Unit = {
+    for ((phase, printer) <- phaseMap)
+      writeToDisk(phase, printer())
+  }
+
+  /**
+    * Returns a list of map the phases of flix along with a thunked pretty printed AST.
+    *
+    * Returns only the phases that can be pretty printed if `includeUnfinished` is false.
+    */
+  def allPhases(includeUnfinished: Boolean = true)(implicit flix: Flix): Map[String, () => String] = {
+    def wipPhase(phaseName: String): Option[(String, () => String)] = {
+      if (includeUnfinished) Some((phaseName, () => "Work In Progress")) else None
+    }
+
+    val frontend = List(
+      wipPhase("Parser"),
+      wipPhase("Weeder"),
+      wipPhase("Desugar"),
+      wipPhase("Namer"),
+      wipPhase("Resolver"),
+      wipPhase("Kinder"),
+      wipPhase("Deriver"),
+      Some("Typer", () => formatTypedAst(flix.getTyperAst)),
+      wipPhase("Entrypoint"),
+      wipPhase("PredDeps"),
+      wipPhase("Stratifier"),
+      wipPhase("PatMatch"),
+      wipPhase("Redundancy"),
+      wipPhase("Safety")
+    ).flatten.toMap
+    val backend = List(
+      Some(("Lowering", () => formatLoweredAst(flix.getLoweringAst))),
+      Some(("TreeShaker1", () => formatLoweredAst(flix.getTreeShaker1Ast))),
+      wipPhase("Monomorpher"),
+      wipPhase("MonoTypes"),
+      Some(("Simplifier", () => formatSimplifiedAst(flix.getSimplifierAst))),
+      Some(("ClosureConv", () => formatSimplifiedAst(flix.getClosureConvAst))),
+      Some(("LambdaLift", () => formatLiftedAst(flix.getLambdaLiftAst))),
+      Some(("Optimizer", () => formatLiftedAst(flix.getOptimizerAst))),
+      Some(("TreeShaker2", () => formatLiftedAst(flix.getTreeShaker2Ast))),
+      Some(("EffectBinder", () => formatReducedAst(flix.getEffectBinderAst))),
+      Some(("TailPos", () => formatReducedAst(flix.getTailPosAst))),
+      Some(("Eraser", () => formatReducedAst(flix.getEraserAst))),
+      Some(("Reducer", () => formatReducedAst(flix.getReducerAst))),
+      Some(("VarOffsets", () => formatReducedAst(flix.getVarOffsetsAst))),
+      wipPhase("JvmBackend")
+    ).flatten.toMap
+    frontend ++ backend
+  }
+
+  /**
+    * Formats `root` for display.
+    */
+  def formatTypedAst(root: TypedAst.Root): String = {
+    formatDocProgram(TypedAstPrinter.print(root))
+  }
+
 
   /**
     * Formats `root` for display.

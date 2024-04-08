@@ -65,6 +65,11 @@ mod String {
         isEmpty(s)
 
     ///
+    /// Returns `true` if the string `s` is non-empty.
+    ///
+    pub def nonEmpty(s: String): Bool = not isEmpty(s)
+
+    ///
     /// Returns the length of the string `s`.
     ///
     pub def length(s: String): Int32 =
@@ -190,7 +195,7 @@ mod String {
     /// Assumes that `len > 0`.
     ///
     def initHelper(f: Int32 -> Char \ ef, len: Int32): String \ ef = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         def loop(i) = {
             if (i >= len)
                 StringBuilder.toString(sb)
@@ -207,7 +212,7 @@ mod String {
     /// Concatenate a list of strings into a single string.
     ///
     pub def flatten(xs: List[String]): String = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         List.forEach(x -> StringBuilder.appendString!(x, sb), xs);
         StringBuilder.toString(sb)
     }
@@ -217,7 +222,7 @@ mod String {
     /// each pair of strings.
     ///
     pub def intercalate(sep: String, xs: List[String]): String = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let arr = List.toArray(rc, xs);
         StringBuilder.intercalate!(sep, arr, sb);
         StringBuilder.toString(sb)
@@ -230,7 +235,7 @@ mod String {
     pub def intercalateChar(sep: Char, xs: List[String]): String = match xs {
         case Nil     => ""
         case x :: rs => region rc {
-            let sb = StringBuilder.new(rc);
+            let sb = StringBuilder.empty(rc);
             StringBuilder.appendString!(x, sb);
             let appendStep = s -> { StringBuilder.append!(sep, sb); StringBuilder.appendString!(s, sb) };
             List.forEach(appendStep, rs);
@@ -275,7 +280,7 @@ mod String {
     ///
     def rotateLeftHelper(n: Int32, s: String): String =
         let len = length(s);
-        let f = i -> { let i1 = n + i; charAt(i1 `Int32.rem` len, s) };
+        let f = i -> { let i1 = n + i; charAt(i1 `Int32.remainder` len, s) };
         init(f, len)
 
     ///
@@ -294,9 +299,9 @@ mod String {
     ///
     def rotateRightHelper(n: Int32, s: String): String =
         let len = length(s);
-        let n1 = n `Int32.rem` len;
+        let n1 = n `Int32.remainder` len;
         let start = len - n1;
-        let f = i -> { let i1 = start + i; charAt(i1 `Int32.rem` len, s)};
+        let f = i -> { let i1 = start + i; charAt(i1 `Int32.remainder` len, s)};
         init(f, len)
 
     ///
@@ -638,7 +643,7 @@ mod String {
     /// Build a string from the seed value `x` applying the function `f` until `f` returns `None`.
     ///
     pub def unfold(f: b -> Option[(Char, b)] \ ef, x: b): String \ ef = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -661,7 +666,7 @@ mod String {
     /// `next` should return `None` to signal the end of building the string.
     ///
     pub def unfoldWithIter(f: Unit -> Option[Char] \ ef): String \ ef = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
@@ -680,7 +685,7 @@ mod String {
     /// This is a version of `unfold` where `f` generates substrings rather than chars.
     ///
     pub def unfoldString(f: b -> Option[(String, b)] \ ef, x: b) : String \ ef = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         def loop(a) = {
             let a1 = f(a);
             match a1 {
@@ -703,7 +708,7 @@ mod String {
     /// `next` should return `None` to signal the end of building the string.
     ///
     pub def unfoldStringWithIter(f: Unit -> Option[String] \ ef): String \ ef = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         def loop() = {
             match f() {
                 case None    => StringBuilder.toString(sb)
@@ -805,12 +810,12 @@ mod String {
     pub def center(w: Int32, c: Char, s: String): String = region rc {
         let space = w - length(s);
         let floor = space / 2;
-        let ceil = space / 2 + Int32.rem(space, 2);
+        let ceil = space / 2 + Int32.remainder(space, 2);
 
         let prefix = repeat(floor, Char.toString(c));
         let postfix = repeat(ceil, Char.toString(c));
 
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         StringBuilder.appendString!(prefix, sb);
         StringBuilder.appendString!(s, sb);
         StringBuilder.appendString!(postfix, sb);
@@ -818,18 +823,18 @@ mod String {
     }
 
     ///
-    /// Returns `s` with every match of the substring `from` replaced by the string `to`.
+    /// Returns `s` with every match of the substring `src` replaced by the string `dst`.
     ///
-    pub def replace(from: {from = String}, to: {to = String}, s: String): String =
+    pub def replace(src: {src = String}, dst: {dst = String}, s: String): String =
         import java.lang.String.replace(##java.lang.CharSequence, ##java.lang.CharSequence): String \ {};
-        replace(s, checked_cast(from.from), checked_cast(to.to))
+        replace(s, checked_cast(src.src), checked_cast(dst.dst))
 
     ///
-    /// Returns `s` with every match of the character `target` replaced by the character `rep`.
+    /// Returns `s` with every match of the character `src` replaced by the character `dst`.
     ///
-    pub def replaceChar(from: {from = Char}, to: {to = Char}, s: String): String =
+    pub def replaceChar(src: {src = Char}, dst: {dst = Char}, s: String): String =
         import java.lang.String.replace(Char, Char): String \ {};
-        replace(s, from.from, to.to)
+        replace(s, src.src, dst.dst)
 
     ///
     /// Returns `s` with every match of the regular expression `regex` replaced by the string `to`.
@@ -890,7 +895,7 @@ mod String {
     /// Helper function for `indent`.
     ///
     def indentHelper(n: Int32, s: String): String = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let prefix = repeat(n, " ");
         let step = x -> {
             StringBuilder.appendString!(prefix, sb);
@@ -920,7 +925,7 @@ mod String {
     /// Helper function for `stripIndent`.
     ///
     def stripIndentHelper(n: Int32, s: String): String = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         let limit = Int32.min(n, length(s));
         def loop(s1, ix) = {
             if (ix >= limit)
@@ -955,7 +960,7 @@ mod String {
     /// ending the result string with the system dependent line separator.
     ///
     pub def unlines(a: List[String]): String = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         List.forEach(x -> StringBuilder.appendLine!(x, sb), a);
         StringBuilder.toString(sb)
     }
@@ -976,7 +981,7 @@ mod String {
     pub def unwords(l: List[String]): String = match l {
         case Nil     => ""
         case x :: xs => region rc {
-            let sb = StringBuilder.new(rc);
+            let sb = StringBuilder.empty(rc);
             StringBuilder.appendString!(x, sb);
             let f = s -> { StringBuilder.append!(' ', sb); StringBuilder.appendString!(s, sb) };
             List.forEach(f, xs);
@@ -1380,7 +1385,7 @@ mod String {
     /// Unwrap the string, replacing every newline with a space
     ///
     pub def unwrap(s: String): String =
-        Regex.replace({from = regex"[\r\n]+"}, {to = " "}, s)
+        Regex.replace({src = regex"[\r\n]+"}, {dst = " "}, s)
 
     ///
     /// Returns an iterator over `s`.

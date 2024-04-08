@@ -25,11 +25,11 @@ mod TestUnorderedFoldable {
 
     @test
     def fold01(): Bool =
-        UnorderedFoldable.fold(Set#{}: Set[Unit]) == ()
+        UnorderedFoldable.fold((Set#{}: Set[Unit])) == ()
 
     @test
     def fold02(): Bool =
-        UnorderedFoldable.fold(Set#{}: Set[Int32]) == 0
+        UnorderedFoldable.fold((Set#{}: Set[Int32])) == 0
 
     @test
     def fold03(): Bool =
@@ -46,7 +46,7 @@ mod TestUnorderedFoldable {
 
     @test
     def isEmpty01(): Bool =
-        UnorderedFoldable.isEmpty(Set#{}: Set[Unit]) == true
+        UnorderedFoldable.isEmpty((Set#{}: Set[Unit])) == true
 
     @test
     def isEmpty02(): Bool =
@@ -66,52 +66,77 @@ mod TestUnorderedFoldable {
 
 
     /////////////////////////////////////////////////////////////////////////////
+    // nonEmpty                                                                //
+    /////////////////////////////////////////////////////////////////////////////
+
+    @test
+    def nonEmpty01(): Bool =
+        UnorderedFoldable.nonEmpty((Set#{}: Set[Unit])) == false
+
+    @test
+    def nonEmpty02(): Bool =
+        UnorderedFoldable.nonEmpty(Set#{1}) == true
+
+    @test
+    def nonEmpty03(): Bool =
+        UnorderedFoldable.nonEmpty(Set#{1, 2}) == true
+
+    @test
+    def nonEmpty04(): Bool =
+        UnorderedFoldable.nonEmpty(Set#{1, 2, 3}) == true
+
+    @test
+    def nonEmpty05(): Bool =
+        UnorderedFoldable.nonEmpty(Set#{1, 2, 3, 4, 5, 6, 7, 8}) == true
+
+
+    /////////////////////////////////////////////////////////////////////////////
     // exists                                                                  //
     /////////////////////////////////////////////////////////////////////////////
 
     @test
     def exists01(): Bool =
-        UnorderedFoldable.exists(x -> x `Int32.rem` 8 == 7, Set#{}) == false
+        UnorderedFoldable.exists(x -> x `Int32.remainder` 8 == 7, Set#{}) == false
 
     @test
     def exists02(): Bool =
-        UnorderedFoldable.exists(x -> x `Int32.rem` 8 == 7, Set#{5}) == false
+        UnorderedFoldable.exists(x -> x `Int32.remainder` 8 == 7, Set#{5}) == false
 
     @test
     def exists03(): Bool =
-        UnorderedFoldable.exists(x -> x `Int32.rem` 8 == 7, Set#{7}) == true
+        UnorderedFoldable.exists(x -> x `Int32.remainder` 8 == 7, Set#{7}) == true
 
     @test
     def exists04(): Bool =
-        UnorderedFoldable.exists(x -> x `Int32.rem` 8 == 7, Set#{15}) == true
+        UnorderedFoldable.exists(x -> x `Int32.remainder` 8 == 7, Set#{15}) == true
 
     @test
     def exists05(): Bool =
-        UnorderedFoldable.exists(x -> x `Int32.rem` 8 == 7, Set#{1, 44}) == false
+        UnorderedFoldable.exists(x -> x `Int32.remainder` 8 == 7, Set#{1, 44}) == false
 
     @test
     def exists06(): Bool =
-        UnorderedFoldable.exists(x -> x `Int32.rem` 8 == 7, Set#{11, 71}) == true
+        UnorderedFoldable.exists(x -> x `Int32.remainder` 8 == 7, Set#{11, 71}) == true
 
     @test
     def exists07(): Bool =
-        UnorderedFoldable.exists(x -> x `Int32.rem` 8 == 7, Set#{71, 12}) == true
+        UnorderedFoldable.exists(x -> x `Int32.remainder` 8 == 7, Set#{71, 12}) == true
 
     @test
     def exists08(): Bool =
-        UnorderedFoldable.exists(x -> x `Int32.rem` 8 == 7, Set#{71, 79}) == true
+        UnorderedFoldable.exists(x -> x `Int32.remainder` 8 == 7, Set#{71, 79}) == true
 
     @test
     def exists09(): Bool =
-        UnorderedFoldable.exists(x -> x `Int32.rem` 8 == 7, Set#{11, -1, -14, -2, 84, 113}) == false
+        UnorderedFoldable.exists(x -> x `Int32.remainder` 8 == 7, Set#{11, -1, -14, -2, 84, 113}) == false
 
     @test
     def exists10(): Bool =
-        UnorderedFoldable.exists(x -> x `Int32.rem` 8 == 7, Set#{11, -1, 31, -14, -2, 84, 111}) == true
+        UnorderedFoldable.exists(x -> x `Int32.remainder` 8 == 7, Set#{11, -1, 31, -14, -2, 84, 111}) == true
 
     @test
     def exists11(): Bool =
-        UnorderedFoldable.exists(x -> x `Int32.rem` 8 == 7, Set#{11, -1, -14, -2, 84, 111, 38}) == true
+        UnorderedFoldable.exists(x -> x `Int32.remainder` 8 == 7, Set#{11, -1, -14, -2, 84, 111, 38}) == true
 
 
     /////////////////////////////////////////////////////////////////////////////
@@ -120,47 +145,47 @@ mod TestUnorderedFoldable {
 
     @test
     def forAll01(): Bool =
-        UnorderedFoldable.forAll(x -> x `Int32.rem` 8 == 7, Set#{}) == true
+        UnorderedFoldable.forAll(x -> x `Int32.remainder` 8 == 7, Set#{}) == true
 
     @test
     def forAll02(): Bool =
-        UnorderedFoldable.forAll(x -> x `Int32.rem` 8 == 7, Set#{5}) == false
+        UnorderedFoldable.forAll(x -> x `Int32.remainder` 8 == 7, Set#{5}) == false
 
     @test
     def forAll03(): Bool =
-        UnorderedFoldable.forAll(x -> x `Int32.rem` 8 == 7, Set#{7}) == true
+        UnorderedFoldable.forAll(x -> x `Int32.remainder` 8 == 7, Set#{7}) == true
 
     @test
     def forAll04(): Bool =
-        UnorderedFoldable.forAll(x -> x `Int32.rem` 8 == 7, Set#{15}) == true
+        UnorderedFoldable.forAll(x -> x `Int32.remainder` 8 == 7, Set#{15}) == true
 
     @test
     def forAll05(): Bool =
-        UnorderedFoldable.forAll(x -> x `Int32.rem` 8 == 7, Set#{1, 44}) == false
+        UnorderedFoldable.forAll(x -> x `Int32.remainder` 8 == 7, Set#{1, 44}) == false
 
     @test
     def forAll06(): Bool =
-        UnorderedFoldable.forAll(x -> x `Int32.rem` 8 == 7, Set#{11, 71}) == false
+        UnorderedFoldable.forAll(x -> x `Int32.remainder` 8 == 7, Set#{11, 71}) == false
 
     @test
     def forAll07(): Bool =
-        UnorderedFoldable.forAll(x -> x `Int32.rem` 8 == 7, Set#{71, 12}) == false
+        UnorderedFoldable.forAll(x -> x `Int32.remainder` 8 == 7, Set#{71, 12}) == false
 
     @test
     def forAll08(): Bool =
-        UnorderedFoldable.forAll(x -> x `Int32.rem` 8 == 7, Set#{71, 79}) == true
+        UnorderedFoldable.forAll(x -> x `Int32.remainder` 8 == 7, Set#{71, 79}) == true
 
     @test
     def forAll09(): Bool =
-        UnorderedFoldable.forAll(x -> x `Int32.rem` 8 == 7, Set#{7, 15, 23, 84, 111}) == false
+        UnorderedFoldable.forAll(x -> x `Int32.remainder` 8 == 7, Set#{7, 15, 23, 84, 111}) == false
 
     @test
     def forAll10(): Bool =
-        UnorderedFoldable.forAll(x -> x `Int32.rem` 8 == 7, Set#{7, 15, 23, 111, 3}) == false
+        UnorderedFoldable.forAll(x -> x `Int32.remainder` 8 == 7, Set#{7, 15, 23, 111, 3}) == false
 
     @test
     def forAll11(): Bool =
-        UnorderedFoldable.forAll(x -> x `Int32.rem` 8 == 7, Set#{7, 15, 23, 119, 111}) == true
+        UnorderedFoldable.forAll(x -> x `Int32.remainder` 8 == 7, Set#{7, 15, 23, 119, 111}) == true
 
 
     /////////////////////////////////////////////////////////////////////////////

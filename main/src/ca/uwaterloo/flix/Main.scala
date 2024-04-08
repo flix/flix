@@ -93,16 +93,17 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
+      xnoverify = cmdOpts.xnoverify,
       xbddthreshold = cmdOpts.xbddthreshold,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
-      xnobooltable = cmdOpts.xnobooltable,
       xnoboolunif = cmdOpts.xnoboolunif,
       xnoqmc = cmdOpts.xnoqmc,
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphase = cmdOpts.xprintphase,
       xsummary = cmdOpts.xsummary,
       xparser = cmdOpts.xparser,
+      xprinttyper = cmdOpts.xprinttyper,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfN = cmdOpts.XPerfN
     )
@@ -171,6 +172,17 @@ object Main {
         case Command.BuildJar =>
           flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
             bootstrap => bootstrap.buildJar()
+          }.toHardResult match {
+            case Result.Ok(_) =>
+              System.exit(0)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
+
+        case Command.BuildFatJar =>
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+            bootstrap => bootstrap.buildFatJar()
           }.toHardResult match {
             case Result.Ok(_) =>
               System.exit(0)
@@ -305,6 +317,23 @@ object Main {
             }
             //MutationTester.run(cmdOpts.files, options, testModule, productionModule)
 
+        case Command.Outdated =>
+          flatMapN(Bootstrap.bootstrap(cwd, options.githubToken)) {
+            bootstrap =>
+              val flix = new Flix().setFormatter(formatter)
+              flix.setOptions(options.copy(progress = false))
+              bootstrap.outdated(flix)(System.err)
+          }.toHardResult match {
+            case Result.Ok(false) =>
+              // Up to date
+              System.exit(0)
+            case Result.Ok(true) =>
+              // Contains outdated dependencies
+              System.exit(1)
+            case Result.Err(errors) =>
+              errors.map(_.message(formatter)).foreach(println)
+              System.exit(1)
+          }
 
         case Command.CompilerPerf =>
           CompilerPerf.run(options)
@@ -332,6 +361,7 @@ object Main {
                      listen: Option[Int] = None,
                      threads: Option[Int] = None,
                      assumeYes: Boolean = false,
+                     xnoverify: Boolean = false,
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
@@ -341,13 +371,13 @@ object Main {
                      xlib: LibLevel = LibLevel.All,
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
-                     xnobooltable: Boolean = false,
                      xnoboolunif: Boolean = false,
                      xnoqmc: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xprintphase: Set[String] = Set.empty,
                      xsummary: Boolean = false,
                      xparser: Boolean = false,
+                     xprinttyper: Option[String] = None,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
                      mtests_temp: String =  "",
@@ -370,6 +400,8 @@ object Main {
 
     case object BuildJar extends Command
 
+    case object BuildFatJar extends Command
+
     case object BuildPkg extends Command
 
     case object Doc extends Command
@@ -387,6 +419,8 @@ object Main {
     case class Lsp(port: Int) extends Command
 
     case object Release extends Command
+
+    case object Outdated extends Command
 
     case object CompilerPerf extends Command
   }
@@ -418,6 +452,8 @@ object Main {
 
       cmd("build-jar").action((_, c) => c.copy(command = Command.BuildJar)).text("  builds a jar-file from the current project.")
 
+      cmd("build-fatjar").action((_, c) => c.copy(command = Command.BuildFatJar)).text("  builds a fatjar-file from the current project.")
+
       cmd("build-pkg").action((_, c) => c.copy(command = Command.BuildPkg)).text("  builds a fpkg-file from the current project.")
 
       cmd("doc").action((_, c) => c.copy(command = Command.Doc)).text("  generates API documentation.")
@@ -444,8 +480,11 @@ object Main {
             .required(),
         )
 
-      cmd("release").text("  release a new version to GitHub.")
+      cmd("release").text("  releases a new version to GitHub.")
         .action((_, c) => c.copy(command = Command.Release))
+
+      cmd("outdated").text("  shows dependencies which have newer versions available.")
+        .action((_, c) => c.copy(command = Command.Outdated))
 
       cmd("Xperf").action((_, c) => c.copy(command = Command.CompilerPerf)).children(
         opt[Unit]("frontend")
@@ -495,6 +534,10 @@ object Main {
       note("")
       note("The following options are experimental:")
 
+      // Xnoverify
+      opt[Unit]("Xnoverify").action((_, c) => c.copy(xnoverify = true)).
+        text("disables verification of the last AST.")
+
       // Xbenchmark-code-size
       opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
         text("[experimental] benchmarks the size of the generated JVM files.")
@@ -539,10 +582,6 @@ object Main {
       opt[Unit]("Xno-bool-specialcases").action((_, c) => c.copy(xnoboolspecialcases = true)).
         text("[experimental] disables hardcoded Boolean unification special cases.")
 
-      // Xno-bool-table
-      opt[Unit]("Xno-bool-table").action((_, c) => c.copy(xnobooltable = true)).
-        text("[experimental] disables Boolean minimization via tabling.")
-
       // Xno-bool-unif
       opt[Unit]("Xno-bool-unif").action((_, c) => c.copy(xnoboolunif = true)).
         text("[experimental] disables Boolean unification. (DO NOT USE).")
@@ -558,6 +597,8 @@ object Main {
       // Xparser
       opt[Unit]("Xparser").action((_, c) => c.copy(xparser = true)).
         text("[experimental] disables new experimental lexer and parser.")
+
+      opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym)))
 
       note("")
 

@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.fmt.FormatType
 
 object InstanceCompleter extends Completer {
   /**
-    * Returns a List of Completion based on type classes.
+    * Returns a List of Completion based on traits.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[InstanceCompletion] = {
     if (context.previousWord != "instance") {
@@ -57,21 +57,21 @@ object InstanceCompleter extends Completer {
     /**
       * Formats the given type `tpe`.
       */
-    def fmtType(clazz: TypedAst.Class, tpe: Type, hole: String)(implicit flix: Flix): String =
-      FormatType.formatType(replaceText(clazz.tparam.sym, tpe, hole))
+    def fmtType(trt: TypedAst.Trait, tpe: Type, hole: String)(implicit flix: Flix): String =
+      FormatType.formatType(replaceText(trt.tparam.sym, tpe, hole))
 
     /**
       * Formats the given formal parameters in `spec`.
       */
-    def fmtFormalParams(clazz: TypedAst.Class, spec: TypedAst.Spec, hole: String)(implicit flix: Flix): String =
-      spec.fparams.map(fparam => s"${fparam.sym.text}: ${fmtType(clazz, fparam.tpe, hole)}").mkString(", ")
+    def fmtFormalParams(trt: TypedAst.Trait, spec: TypedAst.Spec, hole: String)(implicit flix: Flix): String =
+      spec.fparams.map(fparam => s"${fparam.sym.text}: ${fmtType(trt, fparam.tpe, hole)}").mkString(", ")
 
     /**
       * Formats the given signature `sig`.
       */
-    def fmtSignature(clazz: TypedAst.Class, sig: TypedAst.Sig, hole: String)(implicit flix: Flix): String = {
-      val fparams = fmtFormalParams(clazz, sig.spec, hole)
-      val retTpe = fmtType(clazz, sig.spec.retTpe, hole)
+    def fmtSignature(trt: TypedAst.Trait, sig: TypedAst.Sig, hole: String)(implicit flix: Flix): String = {
+      val fparams = fmtFormalParams(trt, sig.spec, hole)
+      val retTpe = fmtType(trt, sig.spec.retTpe, hole)
       val eff = sig.spec.eff match {
         case Type.Cst(TypeConstructor.Pure, _) => ""
         case e => raw" \ " + FormatType.formatType(e)
@@ -79,22 +79,22 @@ object InstanceCompleter extends Completer {
       s"    pub def ${sig.sym.name}($fparams): $retTpe$eff = ???"
     }
 
-    root.classes.map {
-      case (_, clazz) =>
+    root.traits.map {
+      case (_, trt) =>
         val hole = "${1:t}"
-        val classSym = clazz.sym
-        val signatures = clazz.sigs.filter(_.exp.isEmpty)
-        val body = signatures.map(s => fmtSignature(clazz, s, hole)).mkString("\n\n")
-        val completion = s"$classSym[$hole] {\n\n$body\n\n}\n"
+        val traitSym = trt.sym
+        val signatures = trt.sigs.filter(_.exp.isEmpty)
+        val body = signatures.map(s => fmtSignature(trt, s, hole)).mkString("\n\n")
+        val completion = s"$traitSym[$hole] {\n\n$body\n\n}\n"
 
-        InstanceCompletion(clazz, completion)
+        InstanceCompletion(trt, completion)
     }.toList
   }
 
   /**
-    * Formats the given class `clazz`.
+    * Formats the given trait `trt`.
     */
-  def fmtClass(clazz: TypedAst.Class): String = {
-    s"class ${clazz.sym.name}[${clazz.tparam.name.name}]"
+  def fmtTrait(trt: TypedAst.Trait): String = {
+    s"trait ${trt.sym.name}[${trt.tparam.name.name}]"
   }
 }
