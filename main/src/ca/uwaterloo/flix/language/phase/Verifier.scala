@@ -357,6 +357,18 @@ object Verifier {
           checkEq(decl, actual, loc)
           tpe
 
+        case AtomicOp.Box =>
+          check(expected = MonoType.Object)(actual = tpe, loc)
+
+        case AtomicOp.Unbox =>
+          val List(t1) = ts
+          check(expected = MonoType.Object)(actual = t1, loc)
+          tpe
+
+        // cast may result in any type
+        case AtomicOp.Cast =>
+          tpe
+
         case _ => tpe // TODO: VERIFIER: Add rest
       }
 
