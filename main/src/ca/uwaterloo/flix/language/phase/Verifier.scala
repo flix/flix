@@ -449,7 +449,12 @@ object Verifier {
       // TODO: VERIFIER: Add support for Do.
       tpe
 
-    case Expr.NewObject(_, clazz, tpe, _, _, loc) =>
+    case Expr.NewObject(_, clazz, tpe, _, methods, loc) =>
+      for (m <- methods) {
+        val exptype = visitExpr(m.exp)
+        val signature = MonoType.Arrow(m.fparams.map(_.tpe), m.tpe)
+        checkEq(signature, exptype, m.loc)
+      }
       checkEq(tpe, MonoType.Native(clazz), loc)
 
   }
