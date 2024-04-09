@@ -275,6 +275,26 @@ object MutationTester {
               .map(s => LazyList(Mutation(Expr.Sig(s, tpe, loc), PrintedReplace(loc, s.toString))))
           }
           .getOrElse(LazyList.empty)
+
+        var result: LazyList[Mutation[Expr]] = LazyList.empty
+
+        val defn = defnToDefn.get(sym.text)
+        if (defn.isDefined) {
+          val foundDef = findDef(sym.namespace, defn.get)
+          if (foundDef.isDefined) {
+            result = LazyList(Mutation(Expr.Def(foundDef.get, tpe, loc), PrintedReplace(loc, foundDef.get.toString)))
+          }
+        } else {
+          val defnSig = defnToSig.get(sym.text)
+          if (defnSig.isDefined) {
+            val foundSig = findSig(defnSig.get._1, defnSig.get._2)
+            if (foundSig.isDefined) {
+              result = LazyList(Mutation(Expr.Sig(foundSig.get, tpe, loc), PrintedReplace(loc, foundSig.get.toString)))
+            }
+          }
+        }
+
+        result
       case _ => LazyList.empty
     }
 
@@ -518,10 +538,16 @@ object MutationTester {
     }
   }
 
-  // create MutationKind enum (?)
+  // todo: create MutationKind enum (?)
   private case class Mutation[+T](value: T, printed: PrintedDiff)
 
   private sealed trait PrintedDiff {
+    def sourceLocation: SourceLocation = this match {
+      case PrintedReplace(loc, _) => loc
+      case PrintedRemove(loc) => loc
+      case PrintedAdd(loc, _) => loc
+    }
+
     def mapLoc(loc1: SourceLocation): PrintedDiff = {
       this match {
         case PrintedReplace(_, newStr) => PrintedReplace(loc1, newStr)
@@ -553,6 +579,8 @@ object MutationTester {
 
     private val formatter: Formatter = flix.getFormatter
     private val verticalBar = " | "
+    private val verticalBarFormatter = "%4d"
+    private val outputDivider = "-" * 70
 
     import formatter._
 
@@ -568,8 +596,18 @@ object MutationTester {
       sb.append(s"Mutant created for ${blue(defName)}")
         .append(System.lineSeparator())
         .append(System.lineSeparator())
-        .append(diff(printedDiff))
-        .append(System.lineSeparator())
+
+      val loc = printedDiff.sourceLocation
+      diffBefore(sb, loc)
+      if (loc != SourceLocation.Unknown) {
+        diff(sb, printedDiff)
+      } else {
+        sb.append("Diff printing error: SourceLocation.Unknown was not expected")
+          .append(System.lineSeparator())
+      }
+      diffAfter(sb, loc)
+
+      sb.append(System.lineSeparator())
 
       all.getAndIncrement()
       status match {
@@ -585,7 +623,7 @@ object MutationTester {
       }
 
       sb.append(System.lineSeparator())
-        .append("-" * 70)
+        .append(outputDivider)
 
       // Todo: print and clear after each N mutants. Remember, that multiple threads can perform this function at a time
       sb.toString()
@@ -606,47 +644,29 @@ object MutationTester {
       .append(s"Calculated in ${(finishTime - startTime) / 1000.0} seconds")
       .toString()
 
-    // todo: support diff kind enum: substringReplaced, line(s) added and other
     // todo: refactor SigSym newStr. For example, `Eq.neq(x, 5)` to `x != 5`
     // todo: refactor hardcoded '.loc.text.get' in this file
     // todo: refactor for multiline. Example: examples/larger-examples/Reachable.flix
-    // todo: specify a more precise location or add 2 lines of code before and after
     // todo: move to Formatter class like Formatter.code() ??
     // todo: `9 |` and `10 | `
-    private def diff(printedDiff: PrintedDiff): String = {
-      val sb = new StringBuilder()
-
-      printedDiff match {
-        case PrintedReplace(loc, newStr) =>
-          diffBefore(sb, loc)
-          diffRemove(sb, loc)
-          diffAdd(sb, loc, newStr)
-          diffAfter(sb, loc)
-        case PrintedRemove(loc) =>
-          diffBefore(sb, loc)
-          diffRemove(sb, loc)
-          diffAfter(sb, loc)
-        case PrintedAdd(loc, newStr) =>
-          diffBefore(sb, loc)
-          diffAdd(sb, loc, newStr)
-          diffAfter(sb, loc)
-      }
-
-      sb.toString()
+    private def diff(sb: StringBuilder, printedDiff: PrintedDiff): Unit = printedDiff match {
+      case PrintedReplace(loc, newStr) => diffRemove(sb, loc); diffAdd(sb, loc, newStr)
+      case PrintedRemove(loc) => diffRemove(sb, loc)
+      case PrintedAdd(loc, newStr) => diffAdd(sb, loc, newStr)
     }
 
     private def diffBefore(sb: StringBuilder, loc: SourceLocation): Unit = {
       val beginLine = loc.beginLine
 
       if (beginLine - 2 > 0) {
-        sb.append((beginLine - 2).toString)
+        sb.append(verticalBarFormatter.format(beginLine - 2))
           .append(verticalBar)
           .append(loc.lineAt(beginLine - 2))
           .append(System.lineSeparator())
       }
 
       if (beginLine - 1 > 0) {
-        sb.append((beginLine - 1).toString)
+        sb.append(verticalBarFormatter.format(beginLine - 1))
           .append(verticalBar)
           .append(loc.lineAt(beginLine - 1))
           .append(System.lineSeparator())
@@ -661,7 +681,7 @@ object MutationTester {
       if (loc.isSingleLine) {
         val line = loc.lineAt(beginLine)
 
-        sb.append(red(beginLine.toString))
+        sb.append(red(verticalBarFormatter.format(beginLine)))
           .append(verticalBar)
           .append(line.substring(0, beginCol - 1))
           .append(red(line.substring(beginCol - 1, endCol - 1)))
@@ -672,20 +692,20 @@ object MutationTester {
         val beginL = loc.lineAt(loc.beginLine)
         val endL = loc.lineAt(loc.endLine)
 
-        sb.append(red(beginLine.toString))
+        sb.append(red(verticalBarFormatter.format(beginLine)))
           .append(verticalBar)
           .append(beginL.substring(0, beginCol - 1))
           .append(red(beginL.substring(beginCol - 1)))
 
         for (l <- beginLine + 1 until endLine) {
           sb.append(System.lineSeparator())
-            .append(red(l.toString))
+            .append(red(verticalBarFormatter.format(l)))
             .append(verticalBar)
             .append(red(loc.lineAt(l)))
         }
 
         sb.append(System.lineSeparator())
-          .append(red(endLine.toString))
+          .append(red(verticalBarFormatter.format(endLine)))
           .append(verticalBar)
           .append(red(endL.substring(0, endCol - 1)))
           .append(endL.substring(endCol - 1))
@@ -693,6 +713,7 @@ object MutationTester {
       }
     }
 
+    // correct display is not guaranteed for multiline strings
     private def diffAdd(sb: StringBuilder, loc: SourceLocation, str: String): Unit = {
       val beginLine = loc.beginLine
       val beginCol = loc.beginCol
@@ -701,23 +722,23 @@ object MutationTester {
       if (loc.isSingleLine) {
         val line = loc.lineAt(beginLine)
 
-        sb.append(green(beginLine.toString))
+        sb.append(green(verticalBarFormatter.format(beginLine)))
           .append(verticalBar)
           .append(line.substring(0, beginCol - 1))
           .append(green(str))
           .append(line.substring(endCol - 1))
           .append(System.lineSeparator())
-          .toString()
       } else {
-        // TODO: need refactor there
-        sb.append(green("+"))
-          //          .append(green(beginLine.toString))
+        val endLine = loc.endLine
+        val beginL = loc.lineAt(beginLine)
+        val endL = loc.lineAt(endLine)
+
+        sb.append(green("   +"))
           .append(verticalBar)
-          //          .append(line.substring(0, beginCol - 1))
+          .append(beginL.substring(0, beginCol - 1))
           .append(green(str))
-          //          .append(line.substring(endCol - 1))
+          .append(endL.substring(endCol - 1))
           .append(System.lineSeparator())
-          .toString()
       }
     }
 
@@ -725,14 +746,14 @@ object MutationTester {
       val endLine = loc.endLine
 
       if (endLine + 1 > 0) {
-        sb.append((endLine + 1).toString)
+        sb.append(verticalBarFormatter.format(endLine + 1))
           .append(verticalBar)
           .append(loc.lineAt(endLine + 1))
           .append(System.lineSeparator())
       }
 
       if (endLine + 2 > 0) {
-        sb.append((endLine + 2).toString)
+        sb.append(verticalBarFormatter.format(endLine + 2))
           .append(verticalBar)
           .append(loc.lineAt(endLine + 2))
           .append(System.lineSeparator())
