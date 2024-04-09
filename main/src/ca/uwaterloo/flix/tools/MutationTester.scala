@@ -13,6 +13,9 @@ import ca.uwaterloo.flix.util.{Formatter, Result}
 
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.DurationInt
+import scala.concurrent.{Await, Future, TimeoutException}
 
 /* TODO: think also:
  * Check mutant compilation. Create 'MutantStatus' enum
@@ -36,9 +39,12 @@ object MutationTester {
 
   private case object CompilationFailed extends MutantStatus
 
+  private case object TimedOut extends MutantStatus
+
   def run(root: Root)(implicit flix: Flix): Result[Unit, String] = {
     // don't want to mutate library defs and tests
     val defs = root.defs.values.filter(defn => !isLibDef(defn) && !isTestDef(defn))
+    val testTimeout = 3.seconds // todo: calculate bu run tests on source
 
     //     todo: configure by defs count (?)
     //    val numThreads = 2
@@ -72,6 +78,7 @@ object MutationTester {
 
         //    val redirect = new ConsoleRedirection
         //    redirect.redirect()
+        // TODO: need run phases after `Typer.run` for mutants too
         val codeGenResult = flix.codeGen(mutant) // todo: is it possible to parallelize it ??
         //    if (redirect.stdErr.nonEmpty) return CompilationFailed
         //    redirect.restore()
@@ -79,7 +86,11 @@ object MutationTester {
         //          executor.execute(() => {
         codeGenResult.toHardResult match {
           case Result.Ok(c) =>
-            val status = testMutant(c)
+            val status = try {
+              Await.result(Future(testMutant(c)), testTimeout)
+            } catch {
+              case _: TimeoutException => TimedOut
+            }
             println(reporter.report(status, mutatedDef.sym.toString, m.printed))
           case Result.Err(_) =>
             println(reporter.report(CompilationFailed, mutatedDef.sym.toString, m.printed))
@@ -258,8 +269,8 @@ object MutationTester {
         lit.subtract(java.math.BigInteger.ONE)
       ).map(value => Mutation(Constant.BigInt(value), PrintedReplace(SourceLocation.Unknown, s"${value.toString}ii")))
       case Constant.Str(lit) =>
-        val pair = if (lit != "") ("", PrintedRemove(SourceLocation.Unknown)) else ("Flix", PrintedAdd(SourceLocation.Unknown, "\"Flix\""))
-        LazyList(Mutation(Constant.Str(pair._1), pair._2))
+        val pair = if (lit != "") ("", "") else ("Flix", "\"Flix\"")
+        LazyList(Mutation(Constant.Str(pair._1), PrintedReplace(SourceLocation.Unknown, pair._2)))
       case _ => LazyList.empty
     }
 
@@ -556,6 +567,7 @@ object MutationTester {
     private val killed: AtomicInteger = new AtomicInteger(0)
     private val survived: AtomicInteger = new AtomicInteger(0)
     private val compilationFailed: AtomicInteger = new AtomicInteger(0)
+    private val timedOut: AtomicInteger = new AtomicInteger(0)
 
     private val formatter: Formatter = flix.getFormatter
     private val verticalBar = " | "
@@ -573,7 +585,7 @@ object MutationTester {
     def report(status: MutantStatus, defName: String, printedDiff: PrintedDiff): String = {
       val sb = new mutable.StringBuilder
 
-      sb.append(s"Mutant created for ${blue(defName)}")
+      sb.append(s"Mutant created for ${cyan(defName)}")
         .append(System.lineSeparator())
         .append(System.lineSeparator())
 
@@ -600,6 +612,11 @@ object MutationTester {
         case CompilationFailed =>
           compilationFailed.getAndIncrement()
           sb.append(yellow("COMPILATION FAILED"))
+        case TimedOut =>
+          timedOut.getAndIncrement()
+          sb.append(yellow("TIMED OUT"))
+        case _ =>
+          sb.append(blue("UNKNOWN MUTANT STATUS"))
       }
 
       sb.append(System.lineSeparator())
@@ -618,8 +635,9 @@ object MutationTester {
       .append(s", Killed = ${killed.intValue().toString}")
       .append(s", Survived = ${survived.intValue().toString}")
       .append(s", CompilationFailed = ${compilationFailed.intValue().toString}")
+      .append(s", CompilationFailed = ${timedOut.intValue().toString}")
       .append(System.lineSeparator())
-      .append(s"Mutations score = ${f"${killed.doubleValue() / all.doubleValue() * 100}%.2f"} %")
+      .append(s"Mutations score = ${f"${killed.doubleValue() / (killed.doubleValue() + survived.doubleValue()) * 100}%.2f"} %")
       .append(System.lineSeparator())
       .append(s"Calculated in ${(finishTime - startTime) / 1000.0} seconds")
       .toString()
