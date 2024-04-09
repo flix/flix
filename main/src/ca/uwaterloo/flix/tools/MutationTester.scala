@@ -275,26 +275,6 @@ object MutationTester {
               .map(s => LazyList(Mutation(Expr.Sig(s, tpe, loc), PrintedReplace(loc, s.toString))))
           }
           .getOrElse(LazyList.empty)
-
-        var result: LazyList[Mutation[Expr]] = LazyList.empty
-
-        val defn = defnToDefn.get(sym.text)
-        if (defn.isDefined) {
-          val foundDef = findDef(sym.namespace, defn.get)
-          if (foundDef.isDefined) {
-            result = LazyList(Mutation(Expr.Def(foundDef.get, tpe, loc), PrintedReplace(loc, foundDef.get.toString)))
-          }
-        } else {
-          val defnSig = defnToSig.get(sym.text)
-          if (defnSig.isDefined) {
-            val foundSig = findSig(defnSig.get._1, defnSig.get._2)
-            if (foundSig.isDefined) {
-              result = LazyList(Mutation(Expr.Sig(foundSig.get, tpe, loc), PrintedReplace(loc, foundSig.get.toString)))
-            }
-          }
-        }
-
-        result
       case _ => LazyList.empty
     }
 
