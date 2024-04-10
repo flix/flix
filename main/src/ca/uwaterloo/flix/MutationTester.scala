@@ -60,6 +60,7 @@ object MutationTester {
       * It also keeps track of the time it took to generate all the mutations
       */
     def run(flix: Flix, testModule: String, productionModule: String): Unit = {
+      println("\u194D")
         val root = flix.check().unsafeGet
         val start = System.nanoTime()
         // println(root.sigs.filter(t => t._1.toString.equals("Add.add")))
@@ -144,8 +145,10 @@ object MutationTester {
             val testResults = compileAndTestMutant(mDef, mut, testKit)
             val nano = 1_000_000_000
             val newTime = time + (System.nanoTime() - start).toDouble / nano
-            val newSurvivorCount = if (testResults.equals(TestRes.MutantSurvived)) survivorCount + 1 else survivorCount
-            val newUnknownCount = if (testResults.equals(TestRes.Unknown)) unknownCount + 1 else unknownCount
+            val newSurvivorCount = if (testResults.equals(TestRes.MutantSurvived))  survivorCount + 1 else survivorCount
+            val newUnknownCount = if (testResults.equals(TestRes.Unknown))  unknownCount + 1 else unknownCount
+            if (testResults.equals(TestRes.Unknown) || testResults.equals(TestRes.MutantSurvived))
+              println(MutationReporter.reportNonKilledMutation(mDef.exp))
             val now = LocalDateTime.now()
             val message = s"[${f.format(now)}] Mutants: $mutationAmount, Killed: ${mutationAmount - survivorCount - unknownCount}, Survived: $survivorCount, Unknown: $unknownCount"
             val newTemp = progressUpdate(message, accTemp)

@@ -205,7 +205,7 @@ object MutationGenerator {
       })
       mut1 ::: mut2
     case Expr.Region(_, _) => Nil
-    case Expr.Scope(_, _, _, _, _, _) => Nil
+    case original@Expr.Scope(_, _, exp, tpe, eff, loc) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, tpe, eff, loc))
     case original@Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
       val ifTrue = Expr.Mutated(original.copy(exp1 = Expr.Cst(Constant.Bool(true), True, exp1.loc)), original, original.tpe, original.eff, original.loc)
       val ifFalse = Expr.Mutated(original.copy(exp1 = Expr.Cst(Constant.Bool(false), False, exp1.loc)), original, original.tpe, original.eff, original.loc)
