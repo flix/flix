@@ -474,11 +474,8 @@ object Verifier {
       val op = eff.ops.find(_.sym == opUse.sym)
         .getOrElse(throw InternalCompilerException(s"Unknown operation sym: '${opUse.sym}'", loc))
 
-      // TODO: VERIFIER: fix this weird special case if Void is return type of operation
-      // fails in 'main/test/flix/Test.Type.Void.flix:16:13' (cases on lines 16, 24, 40)
-      // see https://github.com/flix/flix/blob/7136d0b7363b2a70d59e5be8608298eeebd0caac/main/src/ca/uwaterloo/flix/language/phase/TypeInference.scala#L969
       val oprestype = op.tpe match {
-        case MonoType.Native(_) => tpe // just assume `tpe` is correct for now
+        case MonoType.Void => tpe // should match any return type
         case t => t
       }
 
