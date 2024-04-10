@@ -44,7 +44,7 @@ object MutationTester {
   def run(root: Root)(implicit flix: Flix): Result[Unit, String] = {
     // don't want to mutate library defs and tests
     val defs = root.defs.values.filter(defn => !isLibDef(defn) && !isTestDef(defn))
-    val testTimeout = 3.seconds // todo: calculate bu run tests on source
+    val testTimeout = 10.seconds // todo: calculate bu run tests on source
 
     //     todo: configure by defs count (?)
     //    val numThreads = 2
@@ -589,17 +589,7 @@ object MutationTester {
         .append(System.lineSeparator())
         .append(System.lineSeparator())
 
-      val loc = printedDiff.sourceLocation
-      diffBefore(sb, loc)
-      if (loc != SourceLocation.Unknown) {
-        diff(sb, printedDiff)
-      } else {
-        sb.append("Diff printing error: SourceLocation.Unknown was not expected")
-          .append(System.lineSeparator())
-      }
-      diffAfter(sb, loc)
-
-      sb.append(System.lineSeparator())
+      diff(sb, printedDiff)
 
       all.getAndIncrement()
       status match {
@@ -642,15 +632,28 @@ object MutationTester {
       .append(s"Calculated in ${(finishTime - startTime) / 1000.0} seconds")
       .toString()
 
-    // todo: refactor SigSym newStr. For example, `Eq.neq(x, 5)` to `x != 5`
+    // todo: refactor copypaste
     // todo: refactor hardcoded '.loc.text.get' in this file
-    // todo: refactor for multiline. Example: examples/larger-examples/Reachable.flix
+    // todo: refactor SigSym newStr. For example, `Eq.neq(x, 5)` to `x != 5`
     // todo: move to Formatter class like Formatter.code() ??
-    // todo: `9 |` and `10 | `
-    private def diff(sb: StringBuilder, printedDiff: PrintedDiff): Unit = printedDiff match {
-      case PrintedReplace(loc, newStr) => diffRemove(sb, loc); diffAdd(sb, loc, newStr)
-      case PrintedRemove(loc) => diffRemove(sb, loc)
-      case PrintedAdd(loc, newStr) => diffAdd(sb, loc, newStr)
+    private def diff(sb: StringBuilder, printedDiff: PrintedDiff): Unit = {
+      val sourceLocation = printedDiff.sourceLocation
+      if (sourceLocation == SourceLocation.Unknown) {
+        sb.append("Diff printing error: SourceLocation.Unknown was not expected")
+          .append(System.lineSeparator())
+          .append(System.lineSeparator())
+        return
+      }
+
+      diffBefore(sb, sourceLocation)
+      printedDiff match {
+        case PrintedReplace(loc, newStr) => diffRemove(sb, loc); diffAdd(sb, loc, newStr)
+        case PrintedRemove(loc) => diffRemove(sb, loc)
+        case PrintedAdd(loc, newStr) => diffAdd(sb, loc, newStr)
+      }
+      diffAfter(sb, sourceLocation)
+
+      sb.append(System.lineSeparator())
     }
 
     private def diffBefore(sb: StringBuilder, loc: SourceLocation): Unit = {
@@ -740,22 +743,23 @@ object MutationTester {
       }
     }
 
+    // todo: how check line numbers ?
     private def diffAfter(sb: StringBuilder, loc: SourceLocation): Unit = {
       val endLine = loc.endLine
 
-      if (endLine + 1 > 0) {
-        sb.append(verticalBarFormatter.format(endLine + 1))
-          .append(verticalBar)
-          .append(loc.lineAt(endLine + 1))
-          .append(System.lineSeparator())
-      }
-
-      if (endLine + 2 > 0) {
-        sb.append(verticalBarFormatter.format(endLine + 2))
-          .append(verticalBar)
-          .append(loc.lineAt(endLine + 2))
-          .append(System.lineSeparator())
-      }
+      //      if (endLine + 1 < ) {
+      sb.append(verticalBarFormatter.format(endLine + 1))
+        .append(verticalBar)
+        .append(loc.lineAt(endLine + 1))
+        .append(System.lineSeparator())
+      //      }
+      //
+      //      if (endLine + 2 < ) {
+      sb.append(verticalBarFormatter.format(endLine + 2))
+        .append(verticalBar)
+        .append(loc.lineAt(endLine + 2))
+        .append(System.lineSeparator())
+      //      }
     }
   }
 }

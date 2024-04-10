@@ -11,6 +11,7 @@ object Main {
   def main(argv: Array[String]): Unit = {
     implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibAll).addFlix(Paths.get("main/src/ca/uwaterloo/flix/tools/personal/Datalog1.flix"))
 //    implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibAll).addFlix(Paths.get("examples/larger-examples/Reachable.flix"))
+//    implicit val flix: Flix = new Flix().setOptions(Options.TestWithLibAll).addFlix(Paths.get("examples/larger-examples/datalog/ford-fulkerson.flix"))
     flix.setFormatter(AnsiTerminalFormatter)
 
     val ast = flix.check().unsafeGet
