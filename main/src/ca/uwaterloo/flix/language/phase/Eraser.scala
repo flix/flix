@@ -130,12 +130,10 @@ object Eraser {
 
     case ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       val ac = ApplyClo(visitExp(exp), exps.map(visitExp), ct, box(tpe), purity, loc)
-      if (ct == ExpPosition.Tail) ac
-      else castExp(unboxExp(ac, erase(tpe), purity, loc), visitType(tpe), purity, loc)
+      castExp(unboxExp(ac, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
       val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)
-      if (ct == ExpPosition.Tail) ad
-      else castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
+      castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       ApplySelfTail(sym, actuals.map(visitExp), visitType(tpe), purity, loc)
     case IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
@@ -156,8 +154,7 @@ object Eraser {
       TryCatch(visitExp(exp), rules.map(visitCatchRule), visitType(tpe), purity, loc)
     case TryWith(exp, effUse, rules, ct, tpe, purity, loc) =>
       val tw = TryWith(visitExp(exp), effUse, rules.map(visitHandlerRule), ct, box(tpe), purity, loc)
-      if (ct == ExpPosition.Tail) tw
-      else castExp(unboxExp(tw, erase(tpe), purity, loc), visitType(tpe), purity, loc)
+      castExp(unboxExp(tw, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case Do(op, exps, tpe, purity, loc) =>
       Do(op, exps.map(visitExp), visitType(tpe), purity, loc)
     case NewObject(name, clazz, tpe, purity, methods, loc) =>
