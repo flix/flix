@@ -380,7 +380,6 @@ object Verifier {
             case MonoType.Arrow(List(MonoType.Unit), _) => ()
             case _ => failMismatchedShape(t1, "Arrow(List(Unit), _)", loc)
           }
-          if (t2 == MonoType.Unit) println(loc)
           t2 match {
             case MonoType.Unit | MonoType.Region =>
               check(expected = MonoType.Unit)(actual = tpe, loc)
