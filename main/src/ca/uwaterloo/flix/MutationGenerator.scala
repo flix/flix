@@ -122,7 +122,7 @@ object MutationGenerator {
       case ("Order.greater", _) =>
         leq :: le :: greq :: compare :: Nil
       case ("Order.compare", _) =>
-        leq :: le :: greq :: gre :: Nil
+        Nil
       case _ => Nil
     }
   }
