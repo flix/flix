@@ -369,10 +369,8 @@ object Verifier {
         case AtomicOp.Cast =>
           tpe
 
-        case AtomicOp.Region => tpe match {
-          case MonoType.Unit | MonoType.Region => tpe
-          case _ => failMismatchedShape(tpe, "Unit or Region", loc)
-        }
+        case AtomicOp.Region =>
+          check(expected = MonoType.Region)(actual = tpe, loc)
 
         case AtomicOp.Spawn =>
           val List(t1, t2) = ts
@@ -380,11 +378,9 @@ object Verifier {
             case MonoType.Arrow(List(MonoType.Unit), _) => ()
             case _ => failMismatchedShape(t1, "Arrow(List(Unit), _)", loc)
           }
-          t2 match {
-            case MonoType.Unit | MonoType.Region =>
-              check(expected = MonoType.Unit)(actual = tpe, loc)
-            case _ => failMismatchedShape(tpe, "Unit or Region", loc)
-          }
+
+          check(expected = MonoType.Region)(actual = t2, loc)
+          check(expected = MonoType.Unit)(actual = tpe, loc)
 
         case _ => tpe // TODO: VERIFIER: Add rest
       }
