@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Name, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import scala.annotation.tailrec
 
 /**
   * Verify the AST before bytecode generation.
@@ -503,7 +504,7 @@ object Verifier {
   private def check(expected: MonoType)(actual: MonoType, loc: SourceLocation): MonoType = {
     if (expected == actual)
       expected
-    else failUnexpectedType(expected, actual, loc)
+    else failUnexpectedType(actual, expected, loc)
   }
 
   /**
@@ -534,6 +535,7 @@ object Verifier {
     * Get the type associated with `label` in the given record type `rec`.
     * If `rec` is not a record, return `None`
     */
+  @tailrec
   private def selectFromRecordType(rec: MonoType, label: String, loc: SourceLocation): Option[MonoType] = rec match {
     case MonoType.RecordExtend(lbl, valtype, rest) =>
       if (lbl == label)
