@@ -1,6 +1,7 @@
 package ca.uwaterloo.flix
 import ca.uwaterloo.flix.language.ast.TypedAst
-import ca.uwaterloo.flix.language.ast.TypedAst.Expr
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern}
+
 import scala.annotation.tailrec
 
 object MutationReporter {
@@ -41,7 +42,8 @@ object MutationReporter {
         case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => s"if (${prettyPrint(exp1)}) ${prettyPrint(exp2)} else ${prettyPrint(exp3)}"
         case Expr.Stm(exp1, exp2, tpe, eff, loc) => s"{${prettyPrint(exp1)}; ${prettyPrint(exp2)}"
         case Expr.Discard(exp, eff, loc) => "Discard :("
-        case Expr.Match(exp, rules, tpe, eff, loc) => "Match"
+        case Expr.Match(exp, rules, tpe, eff, loc) =>
+          s"\nmatch ${prettyPrint(exp)} {\n${rules.map(r => s"${printMatchRule(r)}\n").mkString("")}}"
         case Expr.TypeMatch(exp, rules, tpe, eff, loc) => "typeMatch"
         case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => "RestrictableChoose :("
         case Expr.Tag(sym, exp, tpe, eff, loc) => s"${sym.toString}(${prettyPrint(exp)})"
@@ -97,5 +99,22 @@ object MutationReporter {
         case Expr.Error(m, tpe, eff) => "Error :("
         case Expr.Mutated(mut,_,_,_,_) =>  prettyPrint(mut)
       }
+  }
+  private def printMatchRule(rule: TypedAst.MatchRule): String = {
+    val pattern = printPattern(rule.pat)
+    val exp = prettyPrint(rule.exp)
+    s"\tcase $pattern => $exp"
+  }
+  private def printPattern(pattern: TypedAst.Pattern): String = {
+    pattern match {
+      case Pattern.Wild(tpe, loc) => "_"
+      case Pattern.Var(sym, tpe, loc) => sym.text
+      case Pattern.Cst(cst, tpe, loc) => cst.toString
+      case Pattern.Tag(sym, pat, tpe, loc) => s"${sym.sym.name}(${printPattern(pat)})"
+      case Pattern.Tuple(elms, tpe, loc) => s"(${elms.map(e => s"(${printPattern(e)})").mkString("")}"
+      case Pattern.Record(pats, pat, tpe, loc) => tpe.toString
+      case Pattern.RecordEmpty(tpe, loc) => tpe.toString
+      case Pattern.Error(tpe, loc) => tpe.toString
+    }
   }
 }
