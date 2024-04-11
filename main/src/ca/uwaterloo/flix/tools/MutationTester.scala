@@ -4,7 +4,7 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Input, Polarity}
 import ca.uwaterloo.flix.language.ast.SemanticOp._
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Constraint, Def, Expr, Pattern, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Constraint, Def, Expr, MatchRule, Pattern, Root}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -151,101 +151,110 @@ object MutationTester {
       mutateExpr(defn.exp).map(m => Mutation(defn.copy(exp = m.value), m.printed))
     }
 
-    // todo: collections: for example, Set constructor
+    // todo: collections: mutate to empty (?)
     private def mutateExpr(expr: Expr)(implicit flix: Flix): LazyList[Mutation[Expr]] = {
       if (expr.tpe.toString == "Unit") {
-        LazyList.empty
-      } else {
-        expr match {
-          case Expr.Cst(cst, tpe, loc) => mutateExprCst(expr)
-          // TODO: think mutation vars by type. for example in def calls 'Add.add(x, y)'
-          case Expr.Var(sym, tpe, loc) => LazyList.empty
-          case Expr.Def(sym, tpe, loc) => mutateExprDef(expr)
-          case Expr.Sig(sym, tpe, loc) => mutateExprSig(expr)
-          case Expr.Hole(sym, tpe, loc) => LazyList.empty
-          case Expr.HoleWithExp(exp, tpe, eff, loc) => LazyList.empty
-          case Expr.OpenAs(symUse, exp, tpe, loc) => LazyList.empty
-          case Expr.Use(sym, alias, exp, loc) => LazyList.empty
-          case Expr.Lambda(fparam, exp, tpe, loc) => LazyList.empty
-          case Expr.Apply(exp, exps, tpe, eff, loc) => mutateExprApply(expr)
-          case Expr.Unary(sop, exp, tpe, eff, loc) => mutateExprUnary(expr)
-          case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => mutateExprBinary(expr)
-          case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
-            mutateExpr(exp1).map(m => Mutation(Expr.Let(sym, mod, m.value, exp2, tpe, eff, loc), m.printed)) #:::
-              mutateExpr(exp2).map(m => Mutation(Expr.Let(sym, mod, exp1, m.value, tpe, eff, loc), m.printed))
-          case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => // find example code
-            mutateExpr(exp1).map(m => Mutation(Expr.LetRec(sym, ann, mod, m.value, exp2, tpe, eff, loc), m.printed)) #:::
-              mutateExpr(exp2).map(m => Mutation(Expr.LetRec(sym, ann, mod, exp1, m.value, tpe, eff, loc), m.printed))
-          case Expr.Region(tpe, loc) => LazyList.empty
-          case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
-            mutateExpr(exp).map(m => Mutation(Expr.Scope(sym, regionVar, m.value, tpe, eff, loc), m.printed))
-          case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
-            mutateExpr(exp1).map(m => Mutation(Expr.IfThenElse(m.value, exp2, exp3, tpe, eff, loc), m.printed)) #:::
-              mutateExpr(exp2).map(m => Mutation(Expr.IfThenElse(exp1, m.value, exp3, tpe, eff, loc), m.printed)) #:::
-              mutateExpr(exp3).map(m => Mutation(Expr.IfThenElse(exp1, exp2, m.value, tpe, eff, loc), m.printed))
-          case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
-            mutateExpr(exp1).map(m => Mutation(Expr.Stm(m.value, exp2, tpe, eff, loc), m.printed)) #:::
-              mutateExpr(exp2).map(m => Mutation(Expr.Stm(exp1, m.value, tpe, eff, loc), m.printed))
-          case Expr.Discard(exp, eff, loc) => LazyList.empty
-          case Expr.Match(exp, rules, tpe, eff, loc) => LazyList.empty
-          case Expr.TypeMatch(exp, rules, tpe, eff, loc) => LazyList.empty
-          case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => LazyList.empty
-          case Expr.Tag(sym, exp, tpe, eff, loc) => LazyList.empty
-          case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => LazyList.empty
-          case Expr.Tuple(elms, tpe, eff, loc) => mutateExprTuple(expr)
-          case Expr.RecordEmpty(tpe, loc) => LazyList.empty
-          case Expr.RecordSelect(exp, label, tpe, eff, loc) => LazyList.empty
-          case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) => LazyList.empty
-          case Expr.RecordRestrict(label, exp, tpe, eff, loc) => LazyList.empty
-          case Expr.ArrayLit(exps, exp, tpe, eff, loc) => LazyList.empty
-          case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => LazyList.empty
-          case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) => LazyList.empty
-          case Expr.ArrayLength(exp, eff, loc) => LazyList.empty
-          case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) => LazyList.empty
-          case Expr.VectorLit(exps, tpe, eff, loc) => LazyList.empty
-          case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => LazyList.empty
-          case Expr.VectorLength(exp, loc) => LazyList.empty
-          case Expr.Ref(exp1, exp2, tpe, eff, loc) => LazyList.empty // Todo
-          case Expr.Deref(exp, tpe, eff, loc) => LazyList.empty // Todo
-          case Expr.Assign(exp1, exp2, tpe, eff, loc) => LazyList.empty
-          case Expr.Ascribe(exp, tpe, eff, loc) => LazyList.empty
-          case Expr.InstanceOf(exp, clazz, loc) => LazyList.empty
-          case Expr.CheckedCast(cast, exp, tpe, eff, loc) => LazyList.empty
-          case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => LazyList.empty
-          case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) => LazyList.empty
-          case Expr.Without(exp, effUse, tpe, eff, loc) => LazyList.empty
-          case Expr.TryCatch(exp, rules, tpe, eff, loc) => LazyList.empty // Todo
-          case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => LazyList.empty // Todo
-          case Expr.Do(op, exps, tpe, eff, loc) => LazyList.empty
-          case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => LazyList.empty
-          case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => LazyList.empty
-          case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => LazyList.empty
-          case Expr.GetField(field, exp, tpe, eff, loc) => LazyList.empty
-          case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => LazyList.empty
-          case Expr.GetStaticField(field, tpe, eff, loc) => LazyList.empty
-          case Expr.PutStaticField(field, exp, tpe, eff, loc) => LazyList.empty
-          case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => LazyList.empty
-          case Expr.NewChannel(exp1, exp2, tpe, eff, loc) => LazyList.empty
-          case Expr.GetChannel(exp, tpe, eff, loc) => LazyList.empty
-          case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => LazyList.empty
-          case Expr.SelectChannel(rules, default, tpe, eff, loc) => LazyList.empty
-          case Expr.Spawn(exp1, exp2, tpe, eff, loc) => LazyList.empty
-          case Expr.ParYield(frags, exp, tpe, eff, loc) => LazyList.empty
-          case Expr.Lazy(exp, tpe, loc) => LazyList.empty
-          case Expr.Force(exp, tpe, eff, loc) => LazyList.empty
+        return LazyList.empty
+      }
 
-          case Expr.FixpointConstraintSet(cs, tpe, loc) => mutateExprFixpointConstraintSet(expr)
-          case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => LazyList.empty // find example
-          case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => LazyList.empty
-          case Expr.FixpointSolve(exp, tpe, eff, loc) => LazyList.empty
-          case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => LazyList.empty
-          case Expr.FixpointInject(exp, pred, tpe, eff, loc) => LazyList.empty
-          case Expr.FixpointProject(pred, exp, tpe, eff, loc) => LazyList.empty
+      expr match {
+        case Expr.Cst(cst, tpe, loc) => mutateExprCst(expr)
+        // TODO: think mutation vars by type. for example in def calls 'Add.add(x, y)'
+        case Expr.Var(sym, tpe, loc) => LazyList.empty
+        case Expr.Def(sym, tpe, loc) => mutateExprDef(expr)
+        case Expr.Sig(sym, tpe, loc) => mutateExprSig(expr)
+        case Expr.Hole(sym, tpe, loc) => LazyList.empty
+        case Expr.HoleWithExp(exp, tpe, eff, loc) => LazyList.empty
+        case Expr.OpenAs(symUse, exp, tpe, loc) => LazyList.empty
+        case Expr.Use(sym, alias, exp, loc) => LazyList.empty
+        case Expr.Lambda(fparam, exp, tpe, loc) =>
+          mutateExpr(exp).map(m => Mutation(Expr.Lambda(fparam, m.value, tpe, loc), m.printed))
+        case Expr.Apply(exp, exps, tpe, eff, loc) => mutateExprApply(expr)
+        case Expr.Unary(sop, exp, tpe, eff, loc) => mutateExprUnary(expr)
+        case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => mutateExprBinary(expr)
+        case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
+          mutateExpr(exp1).map(m => Mutation(Expr.Let(sym, mod, m.value, exp2, tpe, eff, loc), m.printed)) #:::
+            mutateExpr(exp2).map(m => Mutation(Expr.Let(sym, mod, exp1, m.value, tpe, eff, loc), m.printed))
+        case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => // find example code
+          mutateExpr(exp1).map(m => Mutation(Expr.LetRec(sym, ann, mod, m.value, exp2, tpe, eff, loc), m.printed)) #:::
+            mutateExpr(exp2).map(m => Mutation(Expr.LetRec(sym, ann, mod, exp1, m.value, tpe, eff, loc), m.printed))
+        case Expr.Region(tpe, loc) => LazyList.empty
+        case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+          mutateExpr(exp).map(m => Mutation(Expr.Scope(sym, regionVar, m.value, tpe, eff, loc), m.printed))
+        case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) =>
+          mutateExpr(exp1).map(m => Mutation(Expr.IfThenElse(m.value, exp2, exp3, tpe, eff, loc), m.printed)) #:::
+            mutateExpr(exp2).map(m => Mutation(Expr.IfThenElse(exp1, m.value, exp3, tpe, eff, loc), m.printed)) #:::
+            mutateExpr(exp3).map(m => Mutation(Expr.IfThenElse(exp1, exp2, m.value, tpe, eff, loc), m.printed))
+        case Expr.Stm(exp1, exp2, tpe, eff, loc) =>
+          mutateExpr(exp1).map(m => Mutation(Expr.Stm(m.value, exp2, tpe, eff, loc), m.printed)) #:::
+            mutateExpr(exp2).map(m => Mutation(Expr.Stm(exp1, m.value, tpe, eff, loc), m.printed))
+        case Expr.Discard(exp, eff, loc) => LazyList.empty
+        case Expr.Match(exp, rules, tpe, eff, loc) => mutateExprMatch(expr)
+        case Expr.TypeMatch(exp, rules, tpe, eff, loc) => LazyList.empty
+        case Expr.RestrictableChoose(star, exp, rules, tpe, eff, loc) => LazyList.empty
+        case Expr.Tag(sym, exp, tpe, eff, loc) =>
+          mutateExpr(exp).map(m => Mutation(Expr.Tag(sym, m.value, tpe, eff, loc), m.printed))
+        case Expr.RestrictableTag(sym, exp, tpe, eff, loc) => LazyList.empty
+        case Expr.Tuple(elms, tpe, eff, loc) => mutateExprTuple(expr)
 
-          case Expr.Error(m, tpe, eff) => LazyList.empty
-        }
+        case Expr.RecordEmpty(tpe, loc) => LazyList.empty
+        case Expr.RecordSelect(exp, label, tpe, eff, loc) =>
+          mutateExpr(exp).map(m => Mutation(Expr.RecordSelect(m.value, label, tpe, eff, loc), m.printed))
+        case Expr.RecordExtend(label, exp1, exp2, tpe, eff, loc) =>
+          mutateExpr(exp1).map(m => Mutation(Expr.RecordExtend(label, m.value, exp2, tpe, eff, loc), m.printed)) #:::
+            mutateExpr(exp2).map(m => Mutation(Expr.RecordExtend(label, exp1, m.value, tpe, eff, loc), m.printed))
+        case Expr.RecordRestrict(label, exp, tpe, eff, loc) =>
+          mutateExpr(exp).map(m => Mutation(Expr.RecordRestrict(label, m.value, tpe, eff, loc), m.printed))
+
+        case Expr.ArrayLit(exps, exp, tpe, eff, loc) => LazyList.empty
+        case Expr.ArrayNew(exp1, exp2, exp3, tpe, eff, loc) => LazyList.empty
+        case Expr.ArrayLoad(exp1, exp2, tpe, eff, loc) => LazyList.empty
+        case Expr.ArrayLength(exp, eff, loc) => LazyList.empty
+        case Expr.ArrayStore(exp1, exp2, exp3, eff, loc) => LazyList.empty
+        case Expr.VectorLit(exps, tpe, eff, loc) => LazyList.empty
+        case Expr.VectorLoad(exp1, exp2, tpe, eff, loc) => LazyList.empty
+        case Expr.VectorLength(exp, loc) => LazyList.empty
+        case Expr.Ref(exp1, exp2, tpe, eff, loc) => LazyList.empty // Todo
+        case Expr.Deref(exp, tpe, eff, loc) => LazyList.empty // Todo
+        case Expr.Assign(exp1, exp2, tpe, eff, loc) => LazyList.empty
+        case Expr.Ascribe(exp, tpe, eff, loc) => LazyList.empty
+        case Expr.InstanceOf(exp, clazz, loc) => LazyList.empty
+        case Expr.CheckedCast(cast, exp, tpe, eff, loc) => LazyList.empty
+        case Expr.UncheckedCast(exp, declaredType, declaredEff, tpe, eff, loc) => LazyList.empty
+        case Expr.UncheckedMaskingCast(exp, tpe, eff, loc) => LazyList.empty
+        case Expr.Without(exp, effUse, tpe, eff, loc) => LazyList.empty
+        case Expr.TryCatch(exp, rules, tpe, eff, loc) => LazyList.empty // Todo
+        case Expr.TryWith(exp, effUse, rules, tpe, eff, loc) => LazyList.empty // Todo
+        case Expr.Do(op, exps, tpe, eff, loc) => LazyList.empty
+        case Expr.InvokeConstructor(constructor, exps, tpe, eff, loc) => LazyList.empty
+        case Expr.InvokeMethod(method, exp, exps, tpe, eff, loc) => LazyList.empty
+        case Expr.InvokeStaticMethod(method, exps, tpe, eff, loc) => LazyList.empty
+        case Expr.GetField(field, exp, tpe, eff, loc) => LazyList.empty
+        case Expr.PutField(field, exp1, exp2, tpe, eff, loc) => LazyList.empty
+        case Expr.GetStaticField(field, tpe, eff, loc) => LazyList.empty
+        case Expr.PutStaticField(field, exp, tpe, eff, loc) => LazyList.empty
+        case Expr.NewObject(name, clazz, tpe, eff, methods, loc) => LazyList.empty
+        case Expr.NewChannel(exp1, exp2, tpe, eff, loc) => LazyList.empty
+        case Expr.GetChannel(exp, tpe, eff, loc) => LazyList.empty
+        case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => LazyList.empty
+        case Expr.SelectChannel(rules, default, tpe, eff, loc) => LazyList.empty
+        case Expr.Spawn(exp1, exp2, tpe, eff, loc) => LazyList.empty
+        case Expr.ParYield(frags, exp, tpe, eff, loc) => LazyList.empty
+        case Expr.Lazy(exp, tpe, loc) => LazyList.empty
+        case Expr.Force(exp, tpe, eff, loc) => LazyList.empty
+
+        case Expr.FixpointConstraintSet(cs, tpe, loc) => mutateExprFixpointConstraintSet(expr)
+        case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => LazyList.empty // find example
+        case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => LazyList.empty
+        case Expr.FixpointSolve(exp, tpe, eff, loc) => LazyList.empty
+        case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => LazyList.empty
+        case Expr.FixpointInject(exp, pred, tpe, eff, loc) => LazyList.empty
+        case Expr.FixpointProject(pred, exp, tpe, eff, loc) => LazyList.empty
+
+        case Expr.Error(m, tpe, eff) => LazyList.empty
       }
     }
+
 
     private def mutateExprCst(expr: Expr): LazyList[Mutation[Expr]] = expr match {
       case Expr.Cst(cst, tpe, loc) => mutateConstant(cst).map(p => Mutation(Expr.Cst(p.value, tpe, loc), p.printed.mapLoc(loc)))
@@ -307,7 +316,7 @@ object MutationTester {
       case _ => LazyList.empty
     }
 
-    // what if there is an expression other than Def and Sig ?
+    // todo: what if there is an expression other than Def and Sig ?
     // take Apply's SourceLocation and refactor Mutation.newStr creating
     private def mutateExprApply(expr: TypedAst.Expr)(implicit flix: Flix): LazyList[Mutation[Expr]] = expr match {
       case Expr.Apply(exp, exps, tpe, eff, loc) =>
@@ -343,6 +352,16 @@ object MutationTester {
         LazyList(Mutation(Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc), PrintedReplace(loc, s"${exp1.loc.text.get} or ${exp2.loc.text.get}")))
       case Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc) =>
         LazyList(Mutation(Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc), PrintedReplace(loc, s"${exp1.loc.text.get} and ${exp2.loc.text.get}")))
+      case _ => LazyList.empty
+    }
+
+    // todo: think if need other mutations
+    private def mutateExprMatch(expr: Expr)(implicit flix: Flix): LazyList[Mutation[Expr]] = expr match {
+      case Expr.Match(exp, rules, tpe, eff, loc) =>
+        mutateExpr(exp).map(m => Mutation(Expr.Match(m.value, rules, tpe, eff, loc), m.printed)) #:::
+          LazyList.tabulate(rules.length)(i =>
+            mutateMatchRule(rules(i)).map(m => Mutation(Expr.Match(exp, rules.updated(i, m.value), tpe, eff, loc), m.printed))
+          ).flatten
       case _ => LazyList.empty
     }
 
@@ -448,11 +467,32 @@ object MutationTester {
         mutateExpr(exp).map(m => Mutation(Body.Guard(m.value, loc), m.printed))
     }
 
-    private def mutatePattern(pattern: Pattern): LazyList[Mutation[Pattern]] =
+    private def mutatePattern(pattern: Pattern): LazyList[Mutation[Pattern]] = {
       pattern match {
+        case Pattern.Wild(tpe, loc) => LazyList.empty
+        case Pattern.Var(sym, tpe, loc) => LazyList.empty
         case Pattern.Cst(cst, tpe, loc) => mutateConstant(cst).map(m => Mutation(Pattern.Cst(m.value, tpe, loc), m.printed.mapLoc(loc)))
-        case _ => LazyList.empty
+        case Pattern.Tag(sym, pat, tpe, loc) => mutatePattern(pat).map(m => Mutation(Pattern.Tag(sym, m.value, tpe, loc), m.printed))
+        case Pattern.Tuple(elms, tpe, loc) => mutatePatternTuple(pattern)
+        // todo: find examples for belows
+        case Pattern.Record(pats, pat, tpe, loc) => LazyList.empty
+        case Pattern.RecordEmpty(tpe, loc) => LazyList.empty
+        case Pattern.Error(tpe, loc) => LazyList.empty
       }
+    }
+
+    private def mutatePatternTuple(pattern: Pattern): LazyList[Mutation[Pattern]] = pattern match {
+      case Pattern.Tuple(elms, tpe, loc) =>
+        LazyList.tabulate(elms.length)(i =>
+          mutatePattern(elms(i)).map(m => Mutation(Pattern.Tuple(elms.updated(i, m.value), tpe, loc), m.printed))
+        ).flatten
+      case _ => LazyList.empty
+    }
+
+    private def mutateMatchRule(matchRule: MatchRule)(implicit flix: Flix): LazyList[Mutation[MatchRule]] =
+      mutatePattern(matchRule.pat).map(m => Mutation(MatchRule(m.value, matchRule.guard, matchRule.exp), m.printed)) #:::
+        matchRule.guard.map(mutateExpr(_).map(m => Mutation(MatchRule(matchRule.pat, Some(m.value), matchRule.exp), m.printed))).getOrElse(LazyList.empty) #:::
+        mutateExpr(matchRule.exp).map(m => Mutation(MatchRule(matchRule.pat, matchRule.guard, m.value), m.printed))
 
     private object Helper {
       val arithmeticSigTypes: Set[String] = Set(
