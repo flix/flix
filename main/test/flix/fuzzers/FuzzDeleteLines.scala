@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Magnus Madsen
+ * Copyright 2024 Magnus Madsen, Herluf Baggesen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,21 +22,16 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
 
-class FuzzLines extends AnyFunSuite with TestUtils {
+class FuzzDeleteLines extends AnyFunSuite with TestUtils {
 
-  test("simple-card-game") {
-    val input = Files.lines(Paths.get("examples/simple-card-game.flix"))
-    compileAllLinesLessOne(input)
-  }
+  private val testFiles = List(
+    "simple-card-game" -> Files.lines(Paths.get("examples/simple-card-game.flix")),
+    "the-ast-typing-problem-with-polymorphic-records" -> Files.lines(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix")),
+    "using-channels-and-select" -> Files.lines(Paths.get("examples/using-channels-and-select.flix")),
+  )
 
-  test("the-ast-typing-problem-with-polymorphic-records") {
-    val input = Files.lines(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix"))
-    compileAllLinesLessOne(input)
-  }
-
-  test("using-channels-and-select") {
-    val input = Files.lines(Paths.get("examples/using-channels-and-select.flix"))
-    compileAllLinesLessOne(input)
+  testFiles.foreach {
+    case (name, input) => test(s"$name-delete-lines")(compileAllLinesLessOne(name, input))
   }
 
   /**
@@ -46,7 +41,7 @@ class FuzzLines extends AnyFunSuite with TestUtils {
     *
     * The program may not be valid: We just care that it does not crash the compiler.
     */
-  private def compileAllLinesLessOne(stream: java.util.stream.Stream[String]): Unit = {
+  private def compileAllLinesLessOne(name: String, stream: java.util.stream.Stream[String]): Unit = {
     val lines = stream.iterator().asScala.toList
     val numberOfLines = lines.length
 
@@ -55,7 +50,7 @@ class FuzzLines extends AnyFunSuite with TestUtils {
     for (i <- 0 until numberOfLines) {
       val (before, after) = lines.splitAt(i)
       val src = (before ::: after.drop(1)).mkString("\n")
-      flix.addSourceCode("<input>", src)
+      flix.addSourceCode(s"$name-delete-line-$i", src)
       flix.compile() // We simply care that this does not crash.
     }
   }

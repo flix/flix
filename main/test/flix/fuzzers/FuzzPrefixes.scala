@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Magnus Madsen
+ * Copyright 2024 Magnus Madsen, Herluf Baggesen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,19 +28,14 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
     */
   private val N: Int = 75
 
-  test("simple-card-game") {
-    val input = Files.readString(Paths.get("examples/simple-card-game.flix"))
-    compilePrefixes(input)
-  }
+  private val testFiles = List(
+    "simple-card-game" -> Files.readString(Paths.get("examples/simple-card-game.flix")),
+    "the-ast-typing-problem-with-polymorphic-records" -> Files.readString(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix")),
+    "using-channels-and-select" -> Files.readString(Paths.get("examples/using-channels-and-select.flix")),
+  )
 
-  test("the-ast-typing-problem-with-polymorphic-records") {
-    val input = Files.readString(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix"))
-    compilePrefixes(input)
-  }
-
-  test("using-channels-and-select") {
-    val input = Files.readString(Paths.get("examples/using-channels-and-select.flix"))
-    compilePrefixes(input)
+  testFiles.foreach {
+    case (name, input) => test(s"$name-prefix")(compilePrefixes(name, input))
   }
 
   /**
@@ -50,7 +45,7 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
     *
     * The program may not be valid: We just care that it does not crash the compiler.
     */
-  private def compilePrefixes(input: String): Unit = {
+  private def compilePrefixes(name: String, input: String): Unit = {
     val length = input.length
     val step = length / N
 
@@ -59,7 +54,7 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
     for (i <- 1 until N) {
       val e = Math.min(i * step, length)
       val prefix = input.substring(0, e)
-      flix.addSourceCode("<input>", prefix)
+      flix.addSourceCode(s"$name-prefix-$i", prefix)
       flix.compile() // We simply care that this does not crash.
     }
   }

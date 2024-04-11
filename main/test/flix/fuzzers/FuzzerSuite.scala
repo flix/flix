@@ -19,5 +19,10 @@ import org.scalatest.Suites
 
 class FuzzerSuite extends Suites(
   new FuzzPrefixes,
-  new FuzzLines
+  new FuzzDeleteLines,
+  new FuzzDuplicateLines,
+  // Swap lines takes a _long_ time to run.
+  // In a file with just 100 lines, there is (100 * 99) / 2 unique non-equal swaps.
+  // That's 4950 compiles. Assuming each take 1sec to run that ends up at 1.3 hours.
+  //  new FuzzSwapLines,
 )
