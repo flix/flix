@@ -143,7 +143,7 @@ object Weeder2 {
         val qname = Name.QName(tree.loc.sp1, namespace, ident, tree.loc.sp2)
         val res = Validation.success(UseOrImport.Use(qname, alias, tree.loc))
         // Check for illegal alias
-        if (ident.name.charAt(0).isUpper != alias.name.charAt(0).isUpper) {
+        if ((ident.name.nonEmpty && alias.name.nonEmpty) && ident.name.charAt(0).isUpper != alias.name.charAt(0).isUpper) {
           res.withSoftFailure(IllegalUse(ident.name, alias.name, tree.loc))
         } else res
       // recover from missing alias by using ident
@@ -728,8 +728,9 @@ object Weeder2 {
       ) {
         case Some(expr) => Validation.success(expr)
         case None =>
+          // Fall silently back on Expr.Error. Parser should produce error here.
           val err = ParseError("Expected expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.toSoftFailure(Expr.Error(err), err)
+          Validation.success(Expr.Error(err))
       }
     }
 
@@ -2357,7 +2358,14 @@ object Weeder2 {
 
   private object Types {
     def pickType(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      flatMapN(pick(TreeKind.Type.Type, tree))(visitType)
+      val maybeExpression = tryPick(TreeKind.Type.Type, tree)
+      flatMapN(
+        traverseOpt(maybeExpression)(visitType)
+      ) {
+        case Some(tpe) => Validation.success(tpe)
+        // Fall silently back on Type.Error. Parser should produce an error here.
+        case None => Validation.success(Type.Error(tree.loc))
+      }
     }
 
     def tryPickTypeNoWild(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {

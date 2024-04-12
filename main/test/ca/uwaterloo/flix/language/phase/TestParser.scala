@@ -5,11 +5,143 @@ import ca.uwaterloo.flix.language.errors.{LexerError, ParseError, WeederError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
+import org.scalatest.Suites
+
+class TestParser extends Suites(
+  new TestParserRecovery,
+  new TestParserHappy
+)
+
 /**
- * Note that CompilerSuite and LibrarySuite covers the positive testing of the parser well.
- * We would like more negative tests in here though.
- */
-class TestParser extends AnyFunSuite with TestUtils {
+  * Recover tests are cases where we would like to check that the parser recovers from a syntax error.
+  * Each test contains one or more syntax error.
+  * The parser should understand all the surrounding code but still produce a parse error for the syntax mistake.
+  * That is asserted by checking that main is defined in the compilation result.
+  * Note that these tests use [[check]] rather than [[compile]].
+  * That's because a compile converts any check failure into a HardFailure before running, codegen so the result we would like to expect is lost.
+  * TODO: These tests need TestWithLibMin. We would like to use TestWithLibNix because that's minimal but it produces "key not found: printUnlessUnit".
+  */
+class TestParserRecovery extends AnyFunSuite with TestUtils {
+
+  test("RecoverUse.01") {
+    val input =
+      """
+        |use Color.{Red;
+        |enum Color { case Red }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("RecoverUse.02") {
+    val input =
+      """
+        |use Color.{Red =>
+        |enum Color { case Red }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("RecoverUse.03") {
+    val input =
+      """
+        |use Color.{Red => ScarletRed;
+        |enum Color { case Red }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("RecoverImport.01") {
+    val input =
+      """
+        |import java.lang.{StringBuffer,
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("RecoverImport.02") {
+    val input =
+      """
+        |import java.lang.{StringBuffer => StrBuf
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("RecoverImport.03") {
+    val input =
+      """
+        |import java.lang.{StringBuffer, , CharSequence};
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("RecoverParameters.01") {
+    val input =
+      """
+        |def foo(x: Int32, , z: Int32): Int32 = ???
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("RecoverParameters.02") {
+    val input =
+      """
+        |def foo(x: Int32,
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("RecoverNoDefBody.01") {
+    val input =
+      """
+        |def foo(x: Int32): Int32
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("RecoverNoDefType.01") {
+    val input =
+      """
+        |def foo(x: Int32) = ???
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+}
+
+/**
+  * Note that CompilerSuite and LibrarySuite covers the positive testing of the parser well.
+  * We would like more negative tests in here though.
+  */
+class TestParserHappy extends AnyFunSuite with TestUtils {
   test("ParseError.Interpolation.01") {
     val input = s"""pub def foo(): String = "$${""""
     val result = compile(input, Options.TestWithLibNix)
