@@ -29,7 +29,7 @@ object CodeHinter {
     * Returns a collection of code quality hints for the given AST `root`.
     */
   def run(root: TypedAst.Root, sources: Set[String])(implicit flix: Flix, index: Index): List[CodeHint] = {
-    val traitHints = root.classes.values.flatMap(visitTrait(_)(root, index)).toList
+    val traitHints = root.traits.values.flatMap(visitTrait(_)(root, index)).toList
     val defsHints = root.defs.values.flatMap(visitDef(_)(root, flix)).toList
     val enumsHints = root.enums.values.flatMap(visitEnum(_)(root, index)).toList
     (traitHints ++ defsHints ++ enumsHints).filter(include(_, sources))
@@ -58,7 +58,7 @@ object CodeHinter {
   /**
     * Computes code quality hints for the given trait `trt`.
     */
-  private def visitTrait(trt: TypedAst.Class)(implicit root: Root, index: Index): List[CodeHint] = {
+  private def visitTrait(trt: TypedAst.Trait)(implicit root: Root, index: Index): List[CodeHint] = {
     val uses = index.usesOf(trt.sym)
     val isDeprecated = trt.ann.isDeprecated
     val deprecated = if (isDeprecated) uses.map(CodeHint.Deprecated) else Nil

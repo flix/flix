@@ -440,10 +440,10 @@ object Completion {
   /**
     * Represents an Instance completion (based on traits)
     *
-    * @param clazz      the clazz.
+    * @param trt        the trait.
     * @param completion the completion string (used as information for TextEdit).
     */
-  case class InstanceCompletion(clazz: TypedAst.Class, completion: String) extends Completion
+  case class InstanceCompletion(trt: TypedAst.Trait, completion: String) extends Completion
 
   /**
     * Represents an Use completion.

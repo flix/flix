@@ -195,8 +195,8 @@ object Kinder {
   /**
     * Performs kinding on the all the traits in the given root.
     */
-  private def visitTraits(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.TraitSym, KindedAst.Class], KindError] = {
-    val (staleTraits, freshTraits) = changeSet.partition(root.classes, oldRoot.classes)
+  private def visitTraits(root: ResolvedAst.Root, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], oldRoot: KindedAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[Map[Symbol.TraitSym, KindedAst.Trait], KindError] = {
+    val (staleTraits, freshTraits) = changeSet.partition(root.traits, oldRoot.traits)
 
     val result = ParOps.parTraverseValues(staleTraits)(visitTrait(_, taenv, root))
     mapN(result)(freshTraits ++ _)
@@ -205,7 +205,7 @@ object Kinder {
   /**
     * Performs kinding on the given trait.
     */
-  private def visitTrait(trt: ResolvedAst.Declaration.Trait, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Class, KindError] = trt match {
+  private def visitTrait(trt: ResolvedAst.Declaration.Trait, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Trait, KindError] = trt match {
     case ResolvedAst.Declaration.Trait(doc, ann, mod, sym, tparam0, superTraits0, assocs0, sigs0, laws0, loc) =>
       val kenv = getKindEnvFromTypeParamDefaultStar(tparam0)
 
@@ -219,7 +219,7 @@ object Kinder {
           }
           val lawsVal = traverse(laws0)(visitDef(_, Nil, kenv, taenv, root)) // TODO ASSOC-TYPES need to include super traits?
           mapN(sigsVal, lawsVal) {
-            case (sigs, laws) => KindedAst.Class(doc, ann, mod, sym, tparam, superTraits, assocs, sigs.toMap, laws, loc)
+            case (sigs, laws) => KindedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, sigs.toMap, laws, loc)
           }
 
       }
@@ -230,7 +230,7 @@ object Kinder {
     */
   private def visitInstance(inst: ResolvedAst.Declaration.Instance, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.Instance, KindError] = inst match {
     case ResolvedAst.Declaration.Instance(doc, ann, mod, trt, tpe0, tconstrs0, assocs0, defs0, ns, loc) =>
-      val kind = getTraitKind(root.classes(trt.sym))
+      val kind = getTraitKind(root.traits(trt.sym))
 
       val kenvVal = inferType(tpe0, kind, KindEnv.empty, taenv, root)
       flatMapN(kenvVal) {
@@ -405,7 +405,7 @@ object Kinder {
     */
   private def visitAssocTypeDef(d0: ResolvedAst.Declaration.AssocTypeDef, trtKind: Kind, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindedAst.AssocTypeDef, KindError] = d0 match {
     case ResolvedAst.Declaration.AssocTypeDef(doc, mod, symUse, arg0, tpe0, loc) =>
-      val trt = root.classes(symUse.sym.clazz)
+      val trt = root.traits(symUse.sym.clazz)
       val assocSig = trt.assocs.find(assoc => assoc.sym == symUse.sym).get
       val tpeKind = assocSig.kind
       val argVal = visitType(arg0, trtKind, kenv, taenv, root)
@@ -1208,7 +1208,7 @@ object Kinder {
       }
 
     case UnkindedType.AssocType(cst, arg0, loc) =>
-      val trt = root.classes(cst.sym.clazz)
+      val trt = root.traits(cst.sym.clazz)
       // TODO ASSOC-TYPES maybe have dedicated field in root for assoc types
       trt.assocs.find(_.sym == cst.sym).get match {
         case ResolvedAst.Declaration.AssocTypeSig(_, _, _, _, k0, _, _) =>
@@ -1360,7 +1360,7 @@ object Kinder {
     */
   private def visitTypeConstraint(tconstr: ResolvedAst.TypeConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[Ast.TypeConstraint, KindError] = tconstr match {
     case ResolvedAst.TypeConstraint(head, tpe0, loc) =>
-      val traitKind = getTraitKind(root.classes(head.sym))
+      val traitKind = getTraitKind(root.traits(head.sym))
       mapN(visitType(tpe0, traitKind, kenv, taenv, root)) {
         tpe => Ast.TypeConstraint(head, tpe, loc)
       }
@@ -1490,7 +1490,7 @@ object Kinder {
     */
   private def inferTypeConstraint(tconstr: ResolvedAst.TypeConstraint, kenv: KindEnv, taenv: Map[Symbol.TypeAliasSym, KindedAst.TypeAlias], root: ResolvedAst.Root)(implicit flix: Flix): Validation[KindEnv, KindError] = tconstr match {
     case ResolvedAst.TypeConstraint(head, tpe, _) =>
-      val kind = getTraitKind(root.classes(head.sym))
+      val kind = getTraitKind(root.traits(head.sym))
       inferType(tpe, kind, kenv: KindEnv, taenv, root)
   }
 
@@ -1543,7 +1543,7 @@ object Kinder {
       }
 
     case UnkindedType.AssocType(cst, arg, _) =>
-      val trt = root.classes(cst.sym.clazz)
+      val trt = root.traits(cst.sym.clazz)
       val kind = getTraitKind(trt)
       inferType(arg, kind, kenv0, taenv, root)
 

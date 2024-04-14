@@ -220,9 +220,9 @@ object Reducer {
     types.dequeueOption match {
       case Some((tpe, taskList)) =>
         val taskList1 = tpe match {
-          case AnyType | Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 |
-               Int16 | Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) |
-               RecordEmpty | Native(_) => taskList
+          case Void | AnyType | Unit | Bool | Char | Float32 | Float64 | BigDecimal | Int8 | Int16 |
+               Int32 | Int64 | BigInt | String | Regex | Region | Enum(_) | RecordEmpty |
+               Native(_) => taskList
           case Array(elm) => taskList.enqueue(elm)
           case Lazy(elm) => taskList.enqueue(elm)
           case Ref(elm) => taskList.enqueue(elm)

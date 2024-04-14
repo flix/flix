@@ -270,7 +270,7 @@ object HtmlDocumentor {
     * Extracts all relevant information about the given `TraitSym` from the root, into a `HtmlDocumentor.Trait`.
     */
   private def mkTrait(sym: Symbol.TraitSym, parent: Symbol.ModuleSym, companionMod: Option[Module], root: TypedAst.Root): Trait = {
-    val decl = root.classes(sym)
+    val decl = root.traits(sym)
 
     val (sigs, defs) = decl.sigs.partition(_.exp.isEmpty)
     val instances = root.instances.getOrElse(sym, Nil)
@@ -344,15 +344,15 @@ object HtmlDocumentor {
     * but with all items that shouldn't appear in the documentation removed.
     */
   private def filterTrait(trt: Trait): Trait = trt match {
-    case Trait(TypedAst.Class(doc, ann, mod, sym, tparam, superClasses, assocs, _, laws, loc), signatures, defs, instances, parent, companionMod) =>
+    case Trait(TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, _, laws, loc), signatures, defs, instances, parent, companionMod) =>
       Trait(
-        TypedAst.Class(
+        TypedAst.Trait(
           doc,
           ann,
           mod,
           sym,
           tparam,
-          superClasses,
+          superTraits,
           assocs,
           Nil,
           laws.filter(l => l.spec.mod.isPublic && !l.spec.ann.isInternal),
@@ -590,7 +590,7 @@ object HtmlDocumentor {
     sb.append("<span class='keyword'>trait</span> ")
     sb.append(s"<span class='name'>${esc(trt.name)}</span>")
     docTypeParams(List(trt.decl.tparam))
-    docTypeConstraints(trt.decl.superClasses)
+    docTypeConstraints(trt.decl.superTraits)
     sb.append("</code>")
     docActions(None, trt.decl.loc)
     sb.append("</div>")
@@ -1120,14 +1120,14 @@ object HtmlDocumentor {
     * If `derives` contains no elements, nothing will be generated.
     */
   private def docDerivations(derives: Ast.Derivations)(implicit flix: Flix, sb: StringBuilder): Unit = {
-    if (derives.classes.isEmpty) {
+    if (derives.traits.isEmpty) {
       return
     }
 
     sb.append("<span> <span class='keyword'>with</span> ")
-    docList(derives.classes.sortBy(_.loc)) { c =>
-      sb.append(s"<a class='tpe-constraint' href='${escUrl(traitFileName(c.clazz))}' title='trait ${esc(traitName(c.clazz))}'>")
-      sb.append(s"${esc(c.clazz.name)}")
+    docList(derives.traits.sortBy(_.loc)) { t =>
+      sb.append(s"<a class='tpe-constraint' href='${escUrl(traitFileName(t.trt))}' title='trait ${esc(traitName(t.trt))}'>")
+      sb.append(s"${esc(t.trt.name)}")
       sb.append("</a>")
     }
     sb.append("</span>")
@@ -1455,7 +1455,7 @@ object HtmlDocumentor {
   /**
     * A representation of a trait that's easier to work with while generating documentation.
     */
-  private case class Trait(decl: TypedAst.Class,
+  private case class Trait(decl: TypedAst.Trait,
                            signatures: List[TypedAst.Sig],
                            defs: List[TypedAst.Sig],
                            instances: List[TypedAst.Instance],

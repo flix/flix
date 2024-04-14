@@ -130,7 +130,7 @@ object SyntaxTree {
 
       case object AssociatedTypeSig extends Decl
 
-      case object Class extends Decl
+      case object Trait extends Decl
 
       case object Def extends Decl
 

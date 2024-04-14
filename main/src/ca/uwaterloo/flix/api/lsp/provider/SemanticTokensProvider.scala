@@ -43,7 +43,7 @@ object SemanticTokensProvider {
     //
     // Construct an iterator of the semantic tokens from traits.
     //
-    val traitTokens = root.classes.values.flatMap {
+    val traitTokens = root.traits.values.flatMap {
       case decl if include(uri, decl.sym.loc) => visitTrait(decl)
       case _ => Nil
     }
@@ -53,7 +53,7 @@ object SemanticTokensProvider {
     //
     val instanceTokens = root.instances.values.flatMap {
       case instances => instances.flatMap {
-        case instance if include(uri, instance.clazz.loc) => visitInstance(instance)
+        case instance if include(uri, instance.trt.loc) => visitInstance(instance)
         case _ => Nil
       }
     }
@@ -124,8 +124,8 @@ object SemanticTokensProvider {
   /**
     * Returns all semantic tokens in the given trait `traitDecl`.
     */
-  private def visitTrait(traitDecl: TypedAst.Class): Iterator[SemanticToken] = traitDecl match {
-    case TypedAst.Class(_, _, _, sym, tparam, superTraits, assocs, signatures, laws, _) =>
+  private def visitTrait(traitDecl: TypedAst.Trait): Iterator[SemanticToken] = traitDecl match {
+    case TypedAst.Trait(_, _, _, sym, tparam, superTraits, assocs, signatures, laws, _) =>
       val t = SemanticToken(SemanticTokenType.Interface, Nil, sym.loc)
       IteratorOps.all(
         Iterator(t),
@@ -164,7 +164,7 @@ object SemanticTokensProvider {
       IteratorOps.all(
         Iterator(t),
         visitTypeParams(tparams),
-        Iterator(derives.classes: _*).map {
+        Iterator(derives.traits: _*).map {
           case Ast.Derivation(_, loc) => SemanticToken(SemanticTokenType.Class, Nil, loc)
         },
         cases.foldLeft(Iterator.empty[SemanticToken]) {

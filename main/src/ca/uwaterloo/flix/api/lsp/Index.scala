@@ -35,9 +35,9 @@ object Index {
   def all(indices: Index*): Index = indices.foldLeft(Index.empty)(_ ++ _)
 
   /**
-    * Returns an index for the given `class0`.
+    * Returns an index for the given `trait0`.
     */
-  def occurrenceOf(class0: TypedAst.Class): Index = empty + Entity.Class(class0)
+  def occurrenceOf(trait0: TypedAst.Trait): Index = empty + Entity.Trait(trait0)
 
   /**
     * Returns an index for the given `case0`.
