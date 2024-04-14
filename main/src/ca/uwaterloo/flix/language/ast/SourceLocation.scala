@@ -34,9 +34,9 @@ object SourceLocation {
 /**
   * A class that represents the physical source location of some parsed syntactic entity.
   *
-  * We take extra efforts to ensure that source locations are compact, i.e. have little memory footprint.
+  * We take extra efforts to ensure that source locations are compact, i.e. have small memory footprint.
   *
-  * We do so because [[SourceLocation]]s are very common objects in terms of program size.
+  * We do so because [[SourceLocation]]s are very common objects.
   *
   * Specifically, we:
   *

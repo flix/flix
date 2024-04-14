@@ -23,9 +23,9 @@ import org.parboiled2.ParserInput
  * Token does not hold its lexeme directly to avoid duplication of common keywords like "def".
  * Instead it holds a pointer to its source along with start and end offsets.
  *
- * We take extra efforts to ensure tha token are compact, i.e. have little memory footprint.
+ * We take extra efforts to ensure that tokens are compact, i.e. have small memory footprint.
  *
- * We do so because [[Token]]s are very common objects in terms of program size.
+ * We do so because [[Token]]s are very common objects.
  *
  * Specifically, we:
  *
