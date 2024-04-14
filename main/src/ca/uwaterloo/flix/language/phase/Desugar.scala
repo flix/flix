@@ -66,7 +66,7 @@ object Desugar {
       val decls = decls0.map(visitDecl)
       DesugaredAst.Declaration.Namespace(ident, usesAndImports, decls, loc)
 
-    case d: WeededAst.Declaration.Class => visitClass(d)
+    case d: WeededAst.Declaration.Trait => visitTrait(d)
     case d: WeededAst.Declaration.Instance => visitInstance(d)
     case d: WeededAst.Declaration.Def => visitDef(d)
     case d: WeededAst.Declaration.Law => visitLaw(d)
@@ -77,16 +77,16 @@ object Desugar {
   }
 
   /**
-    * Desugars the given [[WeededAst.Declaration.Class]] `class0`.
+    * Desugars the given [[WeededAst.Declaration.Trait]] `trait0`.
     */
-  private def visitClass(class0: WeededAst.Declaration.Class)(implicit flix: Flix): DesugaredAst.Declaration.Class = class0 match {
-    case WeededAst.Declaration.Class(doc, ann, mod, ident, tparam0, superClasses0, assocs0, sigs0, laws0, loc) =>
+  private def visitTrait(trait0: WeededAst.Declaration.Trait)(implicit flix: Flix): DesugaredAst.Declaration.Trait = trait0 match {
+    case WeededAst.Declaration.Trait(doc, ann, mod, ident, tparam0, superTraits0, assocs0, sigs0, laws0, loc) =>
       val tparam = visitTypeParam(tparam0)
-      val superClasses = superClasses0.map(visitTypeConstraint)
+      val superTraits = superTraits0.map(visitTypeConstraint)
       val assocs = assocs0.map(visitAssocTypeSig)
       val sigs = sigs0.map(visitSig)
       val laws = laws0.map(visitDef)
-      DesugaredAst.Declaration.Class(doc, ann, mod, ident, tparam, superClasses, assocs, sigs, laws, loc)
+      DesugaredAst.Declaration.Trait(doc, ann, mod, ident, tparam, superTraits, assocs, sigs, laws, loc)
   }
 
   /**
@@ -196,10 +196,11 @@ object Desugar {
     * Desugars the given [[WeededAst.Declaration.AssocTypeSig]] `assoc0`.
     */
   private def visitAssocTypeSig(assoc0: WeededAst.Declaration.AssocTypeSig): DesugaredAst.Declaration.AssocTypeSig = assoc0 match {
-    case WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam0, kind0, loc) =>
+    case WeededAst.Declaration.AssocTypeSig(doc, mod, ident, tparam0, kind0, tpe0, loc) =>
       val tparam = visitTypeParam(tparam0)
       val kind = visitKind(kind0)
-      DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, loc)
+      val tpe = tpe0.map(visitType)
+      DesugaredAst.Declaration.AssocTypeSig(doc, mod, ident, tparam, kind, tpe, loc)
   }
 
   /**
@@ -334,6 +335,9 @@ object Desugar {
       val t = visitType(tpe)
       val k = visitKind(kind)
       DesugaredAst.Type.Ascribe(t, k, loc)
+
+    case WeededAst.Type.Error(loc) =>
+      DesugaredAst.Type.Error(loc)
   }
 
   /**
@@ -401,8 +405,8 @@ object Desugar {
     * Desugars the given [[WeededAst.Derivations]] `derives0`.
     */
   private def visitDerivations(derives0: WeededAst.Derivations): DesugaredAst.Derivations = derives0 match {
-    case WeededAst.Derivations(classes, loc) =>
-      DesugaredAst.Derivations(classes, loc)
+    case WeededAst.Derivations(traits, loc) =>
+      DesugaredAst.Derivations(traits, loc)
   }
 
   /**

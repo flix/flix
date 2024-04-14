@@ -137,7 +137,7 @@ object Parser {
       case "Constraint" => SyntacticContext.Expr.Constraint
       case "Do" => SyntacticContext.Expr.Do
 
-      case "Class" => SyntacticContext.Decl.Class
+      case "Class" => SyntacticContext.Decl.Trait
       case "Enum" => SyntacticContext.Decl.Enum
       case "Instance" => SyntacticContext.Decl.Instance
       case "Decls" => SyntacticContext.Decl.OtherDecl
@@ -329,7 +329,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def AssocTypeSig: Rule1[ParsedAst.Declaration.AssocTypeSig] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optional(optWS ~ ":" ~ optWS ~ Kind) ~ SP ~> ParsedAst.Declaration.AssocTypeSig
+      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optional(optWS ~ ":" ~ optWS ~ Kind) ~ optional(optWS ~ "=" ~ optWS ~ Type) ~ SP ~> ParsedAst.Declaration.AssocTypeSig
     }
 
     def AssocTypeDef: Rule1[ParsedAst.Declaration.AssocTypeDef] = rule {
@@ -350,7 +350,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       rule {
-        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Class
+        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Trait
       }
     }
 

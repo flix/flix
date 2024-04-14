@@ -83,7 +83,7 @@ object SchemaUnification {
         } else {
           // Introduce a fresh type variable to represent one more level of the row.
           // We use the same level as the type variable to maintain consistency.
-          val restRow2 = Type.freshVar(Kind.SchemaRow, tvar.loc)(tvar.sym.level, flix)
+          val restRow2 = Type.freshVar(Kind.SchemaRow, tvar.loc)
           val type2 = Type.mkSchemaRowExtend(label1, fieldType1, restRow2, tvar.loc)
           val subst = Substitution.singleton(tv.sym, type2)
           Ok((subst, restRow2))

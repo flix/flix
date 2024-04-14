@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.ReducedAst._
-import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Name, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 /**
@@ -39,7 +39,8 @@ object Verifier {
     val env = (decl.cparams ++ decl.fparams).foldLeft(Map.empty[Symbol.VarSym, MonoType]) {
       case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
     }
-    visitExpr(decl.expr)(root, env, Map.empty)
+    val ret = visitExpr(decl.expr)(root, env, Map.empty)
+    checkEq(decl.tpe, ret, decl.loc)
   }
 
 
@@ -302,6 +303,51 @@ object Verifier {
             case _ => failMismatchedShape(t1, "Tuple", loc)
           }
 
+        case AtomicOp.Assign =>
+          val List(t1, t2) = ts
+          t1 match {
+            case MonoType.Ref(elm) =>
+              checkEq(t2, elm, loc)
+              check(expected = MonoType.Unit)(actual = tpe, loc)
+            case _ => failMismatchedShape(t1, "Ref", loc)
+          }
+
+        // Match- and Hole-errors match with any type
+        case AtomicOp.HoleError(_) =>
+          tpe
+
+        case AtomicOp.MatchError =>
+          tpe
+
+        case AtomicOp.RecordEmpty =>
+          check(expected = MonoType.RecordEmpty)(actual = tpe, loc)
+
+        case AtomicOp.RecordExtend(label) =>
+          val List(t1, t2) = ts
+          removeFromRecordType(tpe, label.name, loc) match {
+            case (rec, Some(valtype)) =>
+              checkEq(rec, t2, loc)
+              checkEq(valtype, t1, loc)
+              tpe
+            case (_, None) => failMismatchedShape(tpe, s"Record with ${label.name}", loc)
+          }
+
+        case AtomicOp.RecordRestrict(label) =>
+          val List(t1) = ts
+          removeFromRecordType(t1, label.name, loc) match {
+            case (rec, Some(_)) =>
+              checkEq(tpe, rec, loc)
+            case (_, None) => failMismatchedShape(t1, s"Record with ${label.name}", loc)
+          }
+
+        case AtomicOp.RecordSelect(label) =>
+          val List(t1) = ts
+          selectFromRecordType(t1, label.name, loc) match {
+            case Some(elmt) =>
+              checkEq(tpe, elmt, loc)
+            case None => failMismatchedShape(t1, s"Record with '${label.name}'", loc)
+          }
+
         case AtomicOp.Closure(sym) =>
           val defn = root.defs(sym)
           val signature = MonoType.Arrow(defn.fparams.map(_.tpe), defn.tpe)
@@ -310,6 +356,18 @@ object Verifier {
           val actual = MonoType.Arrow(ts, tpe)
 
           checkEq(decl, actual, loc)
+          tpe
+
+        case AtomicOp.Box =>
+          check(expected = MonoType.Object)(actual = tpe, loc)
+
+        case AtomicOp.Unbox =>
+          val List(t1) = ts
+          check(expected = MonoType.Object)(actual = t1, loc)
+          tpe
+
+        // cast may result in any type
+        case AtomicOp.Cast =>
           tpe
 
         case _ => tpe // TODO: VERIFIER: Add rest
@@ -392,9 +450,13 @@ object Verifier {
       // TODO: VERIFIER: Add support for Do.
       tpe
 
-    case Expr.NewObject(name, clazz, tpe, methods, _, loc) =>
-      // TODO: VERIFIER: Add support for NewObject.
-      tpe
+    case Expr.NewObject(_, clazz, tpe, _, methods, loc) =>
+      for (m <- methods) {
+        val exptype = visitExpr(m.exp)
+        val signature = MonoType.Arrow(m.fparams.map(_.tpe), m.tpe)
+        checkEq(signature, exptype, m.loc)
+      }
+      checkEq(tpe, MonoType.Native(clazz), loc)
 
   }
 
@@ -414,6 +476,35 @@ object Verifier {
     if (tpe1 == tpe2)
       tpe1
     else failMismatchedTypes(tpe1, tpe2, loc)
+  }
+
+  /**
+    * Remove the type associated with `label` from the given record type `rec`.
+    * If `rec` is not a record, return `None`.
+    */
+  private def removeFromRecordType(rec: MonoType, label: String, loc: SourceLocation): (MonoType, Option[MonoType]) = rec match {
+    case MonoType.RecordEmpty => (rec, None)
+    case MonoType.RecordExtend(lbl, valtype, rest) =>
+      if (label == lbl) (rest, Some(valtype))
+      else {
+        val (rec, opt) = removeFromRecordType(rest, label, loc)
+        (MonoType.RecordExtend(lbl, valtype, rec), opt)
+      }
+    case _ => failMismatchedShape(rec, "Record", loc)
+  }
+
+  /**
+    * Get the type associated with `label` in the given record type `rec`.
+    * If `rec` is not a record, return `None`
+    */
+  private def selectFromRecordType(rec: MonoType, label: String, loc: SourceLocation): Option[MonoType] = rec match {
+    case MonoType.RecordExtend(lbl, valtype, rest) =>
+      if (lbl == label)
+        Some(valtype)
+      else
+        selectFromRecordType(rest, label, loc)
+    case MonoType.RecordEmpty => None
+    case _ => failMismatchedShape(rec, "Record", loc)
   }
 
   /**

@@ -370,7 +370,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |}
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedName](result)
+    expectError[ResolutionError.UndefinedNameUnrecoverable](result)
   }
 
   test("UndefinedEffect.01") {
@@ -828,23 +828,23 @@ class TestResolver extends AnyFunSuite with TestUtils {
   }
 
 
-  test("CyclicClassHierarchy.01") {
+  test("CyclicTraitHierarchy.01") {
     val input = "trait A[a] with A[a]"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
-  test("CyclicClassHierarchy.02") {
+  test("CyclicTraitHierarchy.02") {
     val input =
       """
         |trait A[a] with B[a]
         |trait B[a] with A[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
-  test("CyclicClassHierarchy.03") {
+  test("CyclicTraitHierarchy.03") {
     val input =
       """
         |trait A[a] with B[a]
@@ -852,20 +852,20 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait C[a] with A[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
-  test("CyclicClassHierarchy.04") {
+  test("CyclicTraitHierarchy.04") {
     val input =
       """
         |trait A[a] with A[a], B[a]
         |trait B[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
-  test("CyclicClassHierarchy.05") {
+  test("CyclicTraitHierarchy.05") {
     val input =
       """
         |trait A[a] with B[a]
@@ -873,7 +873,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |trait C[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
   test("DuplicateDerivation.01") {
@@ -1167,7 +1167,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
-  test("UndefinedTypeVar.Class.01") {
+  test("UndefinedTypeVar.Trait.01") {
     val input =
       """
         |trait A[a]
@@ -1177,7 +1177,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
-  test("UndefinedTypeVar.Class.02") {
+  test("UndefinedTypeVar.Trait.02") {
     val input =
       """
         |trait A[a]
@@ -1438,6 +1438,24 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |
         |instance C[String] {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingAssocTypeDef](result)
+  }
+
+  test("MissingAssocTypeDef.02") {
+    val input =
+      """
+        |mod Foo {
+        |    trait Add[a] {
+        |        pub type Aef: Eff
+        |        pub def add(x: a, y: a): a \ Add.Aef[a]
+        |    }
+        |
+        |    instance Foo.Add[t] {
+        |        pub def add(x: t, y: t): t \ Aef[a] = ???
+        |    }
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)

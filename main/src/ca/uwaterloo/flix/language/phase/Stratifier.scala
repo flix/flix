@@ -52,21 +52,21 @@ object Stratifier {
     // Compute the stratification at every datalog expression in the ast.
     val newDefs = ParOps.parTraverseValues(root.defs)(visitDef(_))
     val newInstances = ParOps.parTraverseValues(root.instances)(traverse(_)(visitInstance(_)))
-    val newClasses = ParOps.parTraverseValues(root.classes)(visitClass(_))
+    val newTraits = ParOps.parTraverseValues(root.traits)(visitTrait(_))
 
-    mapN(newDefs, newInstances, newClasses) {
-      case (ds, is, cs) => root.copy(defs = ds, instances = is, classes = cs)
+    mapN(newDefs, newInstances, newTraits) {
+      case (ds, is, ts) => root.copy(defs = ds, instances = is, traits = ts)
     }
   }
 
   /**
-    * Performs Stratification of the given class `c0`.
+    * Performs Stratification of the given trait `t0`.
     */
-  private def visitClass(c0: TypedAst.Class)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Class, StratificationError] = {
-    val newLaws = traverse(c0.laws)(visitDef(_))
-    val newSigs = traverse(c0.sigs)(visitSig(_))
+  private def visitTrait(t0: TypedAst.Trait)(implicit root: Root, g: LabelledPrecedenceGraph, flix: Flix): Validation[TypedAst.Trait, StratificationError] = {
+    val newLaws = traverse(t0.laws)(visitDef(_))
+    val newSigs = traverse(t0.sigs)(visitSig(_))
     mapN(newLaws, newSigs) {
-      case (nl, ns) => c0.copy(laws = nl, sigs = ns)
+      case (nl, ns) => t0.copy(laws = nl, sigs = ns)
     }
   }
 

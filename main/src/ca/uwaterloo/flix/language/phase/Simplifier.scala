@@ -28,9 +28,6 @@ import scala.annotation.tailrec
   */
 object Simplifier {
 
-  // Post type inference, level is irrelevant.
-  private implicit val DefaultLevel: Level = Level.Default
-
   def run(root: MonoAst.Root)(implicit flix: Flix): SimplifiedAst.Root = flix.phase("Simplifier") {
     implicit val universe: Set[Symbol.EffectSym] = root.effects.keys.toSet
     val defs = ParOps.parMapValues(root.defs)(visitDef)
@@ -145,19 +142,19 @@ object Simplifier {
       val t = visitType(d.tpe)
       SimplifiedAst.Expr.Let(sym, visitExp(exp), SimplifiedAst.Expr.Cst(Ast.Constant.Unit, MonoType.Unit, loc), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.Let(sym, mod, e1, e2, tpe, eff, loc) =>
+    case MonoAst.Expr.Let(sym, _, e1, e2, tpe, eff, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Let(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.LetRec(sym, mod, e1, e2, tpe, eff, loc) =>
+    case MonoAst.Expr.LetRec(sym, _, e1, e2, tpe, eff, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.LetRec(sym, visitExp(e1), visitExp(e2), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.Scope(sym, regionVar, exp, tpe, eff, loc) =>
+    case MonoAst.Expr.Scope(sym, _, exp, tpe, eff, loc) =>
       val t = visitType(tpe)
       SimplifiedAst.Expr.Scope(sym, visitExp(exp), t, simplifyEffect(eff), loc)
 
-    case MonoAst.Expr.Match(exp0, rules, tpe, eff, loc) =>
+    case MonoAst.Expr.Match(exp0, rules, tpe, _, loc) =>
       patternMatchWithLabels(exp0, rules, tpe, loc)
 
     case MonoAst.Expr.VectorLit(exps, tpe, _, loc) =>
@@ -179,7 +176,7 @@ object Simplifier {
       val purity = e.purity
       SimplifiedAst.Expr.ApplyAtomic(AtomicOp.ArrayLength, List(e), MonoType.Int32, purity, loc)
 
-    case MonoAst.Expr.Ascribe(exp, tpe, eff, loc) => visitExp(exp)
+    case MonoAst.Expr.Ascribe(exp, _, _, _) => visitExp(exp)
 
     case MonoAst.Expr.Cast(exp, _, _, tpe, eff, loc) =>
       val e = visitExp(exp)
@@ -235,9 +232,7 @@ object Simplifier {
 
       case Some(tc) =>
         tc match {
-          case TypeConstructor.Void =>
-            // Java does not have a bottom type, so we map `Void` to `Object`.
-            MonoType.Object
+          case TypeConstructor.Void => MonoType.Void
 
           case TypeConstructor.AnyType => MonoType.AnyType
 
@@ -368,12 +363,12 @@ object Simplifier {
     case _ => throw InternalCompilerException(s"Unexpected non-literal pattern $pat0.", pat0.loc)
   }
 
-  private def isPatLiteral(pat0: MonoAst.Pattern)(implicit flix: Flix): Boolean = pat0 match {
+  private def isPatLiteral(pat0: MonoAst.Pattern): Boolean = pat0 match {
     case MonoAst.Pattern.Cst(_, _, _) => true
     case _ => false
   }
 
-  private def mkEqual(e1: SimplifiedAst.Expr, e2: SimplifiedAst.Expr, loc: SourceLocation)(implicit flix: Flix): SimplifiedAst.Expr = {
+  private def mkEqual(e1: SimplifiedAst.Expr, e2: SimplifiedAst.Expr, loc: SourceLocation): SimplifiedAst.Expr = {
     /*
      * Special Case 1: Unit
      * Special Case 2: String - must be desugared to String.equals
@@ -523,7 +518,7 @@ object Simplifier {
         *
         * We proceed by recursion on the remaining patterns and variables.
         */
-      case (MonoAst.Pattern.Wild(tpe, loc) :: ps, v :: vs) =>
+      case (MonoAst.Pattern.Wild(_, _) :: ps, _ :: vs) =>
         patternMatchList(ps, vs, guard, succ, fail)
 
       /**
@@ -605,12 +600,11 @@ object Simplifier {
         val labelPats = pats.map(_.pat)
         val varExp = SimplifiedAst.Expr.Var(v, visitType(tpe), loc)
         val zero = patternMatchList(labelPats ::: ps, freshVars ::: vs, guard, succ, fail)
-        // Note that we reverse pats and freshVars because we still want to fold right
-        // but we want to restrict the record / matchVar from left to right
-        val (one, restrictedMatchVar) = pats.reverse.zip(freshVars.reverse).foldRight((zero, varExp): (SimplifiedAst.Expr, SimplifiedAst.Expr)) {
-          case ((MonoAst.Pattern.Record.RecordLabelPattern(label, _, pat, loc1), name), (exp, matchVarExp)) =>
+        // Let-binders are built in reverse, but it does not matter since binders are independent and pure
+        val (one, restrictedMatchVar) = pats.zip(freshVars).foldLeft((zero, varExp): (SimplifiedAst.Expr, SimplifiedAst.Expr)) {
+          case ((exp, matchVarExp), (MonoAst.Pattern.Record.RecordLabelPattern(label, _, pat, loc1), name)) =>
             val recordSelectExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordSelect(label), List(matchVarExp), visitType(pat.tpe), Purity.Pure, loc1)
-            val restrictedMatchVarExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(label), List(matchVarExp), mkRecordRestrict(label, varExp.tpe), matchVarExp.purity, loc1)
+            val restrictedMatchVarExp = SimplifiedAst.Expr.ApplyAtomic(AtomicOp.RecordRestrict(label), List(matchVarExp), mkRecordRestrict(label, matchVarExp.tpe), matchVarExp.purity, loc1)
             val labelLetBinding = SimplifiedAst.Expr.Let(name, recordSelectExp, exp, succ.tpe, exp.purity, loc1)
             (labelLetBinding, restrictedMatchVarExp)
         }
@@ -647,7 +641,7 @@ object Simplifier {
         case Some(replacement) => SimplifiedAst.Expr.Var(replacement, tpe, loc)
       }
 
-      case SimplifiedAst.Expr.Def(sym, tpe, loc) => e
+      case SimplifiedAst.Expr.Def(_, _, _) => e
 
       case SimplifiedAst.Expr.Lambda(fparams, body, tpe, loc) =>
         SimplifiedAst.Expr.Lambda(fparams, visitExp(body), tpe, loc)
@@ -737,7 +731,7 @@ object Simplifier {
     @tailrec
     def visit(t: MonoType, cont: MonoType => MonoType): MonoType = t match {
       case MonoType.RecordExtend(f, _, tail) if label.name == f => cont(tail)
-      case MonoType.RecordExtend(f, tp, tail) => visit(tail, ty => MonoType.RecordExtend(f, tp, ty))
+      case MonoType.RecordExtend(f, tp, tail) => visit(tail, ty => cont(MonoType.RecordExtend(f, tp, ty)))
       case ty => cont(ty)
     }
 
