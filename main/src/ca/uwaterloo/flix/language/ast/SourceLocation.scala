@@ -41,8 +41,10 @@ object SourceLocation {
   * @param beginCol     the column number where the entity begins.
   * @param endLine      the line number where the entity ends.
   * @param endCol       the column number where the entity ends.
+  *
+  *
   */
-case class SourceLocation(input: Option[ParserInput], source: Source, locationKind: SourceKind, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int) {
+case class SourceLocation(input: Option[ParserInput], source: Source, locationKind: SourceKind, beginLine: Int, beginCol: Short, endLine: Int, endCol: Short) {
 
   /**
     * Returns `true` if this source location spans a single line.

@@ -32,7 +32,7 @@ import org.parboiled2.ParserInput
  * @param endLine   The line that the lexeme __ends__ on.
  * @param endCol    The column that the lexeme __ends__ on.
  */
-case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int) {
+case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, beginLine: Int, beginCol: Short, endLine: Int, endCol: Short) {
   /**
    * Computes the lexeme that the token refers to by slicing it from `src`.
    * Note: This is explicitly lazy since we do not want to compute strings that are never used,
@@ -50,7 +50,7 @@ case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, beginL
    * NB: Tokens are zero-indexed while SourcePositions are one-indexed
    */
   def mkSourcePosition(src: Ast.Source, parserInput: Option[ParserInput]):SourcePosition = {
-    SourcePosition(src, beginLine + 1, beginCol + 1, parserInput)
+    SourcePosition(src, beginLine + 1, (beginCol + 1).toShort, parserInput)
   }
 
   /**
@@ -58,7 +58,7 @@ case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, beginL
    * NB: Tokens are zero-indexed while SourcePositions are one-indexed
    */
   def mkSourcePositionEnd(src: Ast.Source, parserInput: Option[ParserInput]): SourcePosition = {
-    SourcePosition(src, endLine + 1, endCol + 1, parserInput)
+    SourcePosition(src, endLine + 1, (endCol + 1).toShort, parserInput)
   }
 
   /**
@@ -66,7 +66,7 @@ case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, beginL
    * NB: Tokens are zero-indexed while SourceLocations are one-indexed
    */
   def mkSourceLocation(src: Ast.Source, parserInput: Option[ParserInput], locationKind: SourceKind = SourceKind.Real): SourceLocation = {
-    SourceLocation(parserInput, src, locationKind, beginLine + 1, beginCol + 1, endLine + 1, endCol + 1)
+    SourceLocation(parserInput, src, locationKind, beginLine + 1, (beginCol + 1).toShort, endLine + 1, (endCol + 1).toShort)
   }
 }
 
