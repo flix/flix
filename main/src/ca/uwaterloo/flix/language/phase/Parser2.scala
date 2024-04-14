@@ -126,7 +126,7 @@ object Parser2 {
     try {
       run(tokens, oldRoot, changeSet).toHardResult match {
         case Result.Ok(t) => Validation.success(t)
-        case Result.Err(e) =>
+        case Result.Err(_) =>
           // Note: We don't know if the Parser failed or the input was actually incorrect.
           // We assume the worst, i.e. that the Parser failed, and we return success.
           Validation.success(SyntaxTree.empty)
@@ -334,16 +334,18 @@ object Parser2 {
   /**
     * Look-ahead `lookahead` tokens.
     * Consumes one fuel and throws [[InternalCompilerException]] if the parser is out of fuel.
+    * Does not consume fuel if parser has hit end-of-file.
+    * This lets the parser return what ever errors were produced from a deep call-stack without running out of fuel.
     */
   private def nth(lookahead: Int)(implicit s: State): TokenKind = {
     if (s.fuel == 0) {
       throw InternalCompilerException(s"[${currentSourceLocation()}] Parser is stuck", currentSourceLocation())
     }
 
-    s.fuel -= 1
-    if (s.position + lookahead >= s.tokens.length) {
+    if (s.position + lookahead >= s.tokens.length - 1) {
       TokenKind.Eof
     } else {
+      s.fuel -= 1
       s.tokens(s.position + lookahead).kind
     }
   }
@@ -469,7 +471,7 @@ object Parser2 {
     }
 
     private def run()(implicit s: State): Int = {
-      def isAtEnd(): Boolean = at(rightDelim) || optionallyWith.exists { case (indicator, _) => at(indicator) }
+      def isAtEnd: Boolean = at(rightDelim) || optionallyWith.exists { case (indicator, _) => at(indicator) }
 
       if (!at(leftDelim)) {
         return 0
@@ -477,12 +479,12 @@ object Parser2 {
       expect(leftDelim)
       var continue = true
       var numItems = 0
-      while (continue && !isAtEnd() && !eof()) {
+      while (continue && !isAtEnd && !eof()) {
         comments()
         if (checkForItem()) {
           getItem()
           numItems += 1
-          if (!isAtEnd()) {
+          if (!isAtEnd) {
             if (optionalSeparator) eat(separator) else expect(separator)
           }
         } else {
@@ -550,7 +552,7 @@ object Parser2 {
     * Consumes a token if kind is in `kinds`. If `allowQualified` is passed also consume subsequent dot-separated tokens with kind in `kinds`.
     */
   private def name(kinds: List[TokenKind], allowQualified: Boolean = false)(implicit s: State): Mark.Closed = {
-    val mark = open()
+    val mark = open(consumeDocComments = false)
     expectAny(kinds)
     val first = close(mark, TreeKind.Ident)
     if (!allowQualified) {
@@ -682,7 +684,7 @@ object Parser2 {
       annotations()
       modifiers()
       nth(0) match {
-        case TokenKind.KeywordTrait => typeClassDecl(mark)
+        case TokenKind.KeywordTrait => traitDecl(mark)
         case TokenKind.KeywordInstance => instanceDecl(mark)
         case TokenKind.KeywordDef => definitionDecl(mark)
         case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumerationDecl(mark)
@@ -709,7 +711,7 @@ object Parser2 {
       close(mark, TreeKind.Decl.Module)
     }
 
-    private def typeClassDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+    private def traitDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       expect(TokenKind.KeywordTrait)
       name(NAME_DEFINITION)
       if (at(TokenKind.BracketL)) {
@@ -1358,12 +1360,21 @@ object Parser2 {
           // Detect lambda function declaration
           val isLambda = {
             var level = 1
+            var curlyLevel = 0
             var lookAhead = 0
             while (level > 0 && !eof()) {
               lookAhead += 1
               nth(lookAhead) match {
                 case TokenKind.ParenL => level += 1
                 case TokenKind.ParenR => level -= 1
+                case TokenKind.CurlyL => curlyLevel += 1
+                case TokenKind.CurlyR if level == 1 =>
+                  if (curlyLevel == 0) {
+                    // Hitting '}' on top-level is a clear indicator that something is wrong. Most likely the terminating ')' was forgotten.
+                    return advanceWithError(ParseError("Malformed tuple.", SyntacticContext.Unknown, currentSourceLocation()))
+                  } else {
+                    curlyLevel -= 1
+                  }
                 case TokenKind.Eof => return advanceWithError(ParseError("Malformed tuple.", SyntacticContext.Unknown, currentSourceLocation()))
                 case _ =>
               }
@@ -1968,7 +1979,6 @@ object Parser2 {
     }
 
     private def catchRule()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordCase))
       val mark = open()
       expect(TokenKind.KeywordCase)
       name(NAME_VARIABLE)
@@ -2198,8 +2208,12 @@ object Parser2 {
       while (eat(TokenKind.Comma) && !eof()) {
         expression()
       }
-      fixpointQuerySelect()
-      fixpointQueryFrom()
+      if (at(TokenKind.KeywordSelect)) {
+        fixpointQuerySelect()
+      }
+      if (at(TokenKind.KeywordFrom)) {
+        fixpointQueryFrom()
+      }
       if (at(TokenKind.KeywordWhere)) {
         fixpointQueryWhere()
       }
@@ -2253,19 +2267,19 @@ object Parser2 {
         case _ => false
       }
 
-      def getOpener(): Option[TokenKind] = nth(0) match {
+      def getOpener: Option[TokenKind] = nth(0) match {
         case TokenKind.LiteralStringInterpolationL => advance(); Some(TokenKind.LiteralStringInterpolationL)
         case TokenKind.LiteralDebugStringL => advance(); Some(TokenKind.LiteralDebugStringR)
         case _ => None
       }
 
-      var lastOpener = getOpener()
+      var lastOpener = getOpener
       while (lastOpener.isDefined && !eof()) {
         if (atTerminator(lastOpener)) {
           lastOpener = None // Terminate the loop
         } else {
           expression()
-          lastOpener = getOpener() // Try to get nested interpolation
+          lastOpener = getOpener // Try to get nested interpolation
         }
       }
       expectAny(List(TokenKind.LiteralStringInterpolationR, TokenKind.LiteralDebugStringR))
@@ -2935,7 +2949,7 @@ object Parser2 {
       close(mark, TreeKind.JvmOp.StaticMethod)
     }
 
-    private def getBody()(implicit s: State): Unit = {
+    private def fieldGetBody()(implicit s: State): Unit = {
       expect(TokenKind.KeywordJavaGetField)
       name(NAME_JAVA, allowQualified = true)
       ascription()
@@ -2953,7 +2967,7 @@ object Parser2 {
 
     def getField()(implicit s: State): Mark.Closed = {
       val mark = open()
-      getBody()
+      fieldGetBody()
       close(mark, TreeKind.JvmOp.GetField)
     }
 
@@ -2961,7 +2975,7 @@ object Parser2 {
       assert(at(TokenKind.KeywordStatic))
       val mark = open()
       expect(TokenKind.KeywordStatic)
-      getBody()
+      fieldGetBody()
       close(mark, TreeKind.JvmOp.StaticGetField)
     }
 
