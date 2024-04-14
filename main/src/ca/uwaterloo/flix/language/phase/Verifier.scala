@@ -39,7 +39,8 @@ object Verifier {
     val env = (decl.cparams ++ decl.fparams).foldLeft(Map.empty[Symbol.VarSym, MonoType]) {
       case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
     }
-    visitExpr(decl.expr)(root, env, Map.empty)
+    val ret = visitExpr(decl.expr)(root, env, Map.empty)
+    checkEq(decl.tpe, ret, decl.loc)
   }
 
 
