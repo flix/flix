@@ -34,6 +34,14 @@ object SourceLocation {
 /**
   * A class that represents the physical source location of some parsed syntactic entity.
   *
+  * We take extra efforts to ensure that source locations are compact, i.e. have little memory footprint.
+  *
+  * We do so because [[SourceLocation]]s are very common objects in terms of program size.
+  *
+  * Specifically, we:
+  *
+  * - Use `Short`s instead of `Int`s to represent column offsets (i.e. `beginCol` and `endCol`).
+  *
   * @param input        the parser input.
   * @param source       the source input.
   * @param locationKind the source location kind.
@@ -41,8 +49,6 @@ object SourceLocation {
   * @param beginCol     the column number where the entity begins.
   * @param endLine      the line number where the entity ends.
   * @param endCol       the column number where the entity ends.
-  *
-  *
   */
 case class SourceLocation(input: Option[ParserInput], source: Source, locationKind: SourceKind, beginLine: Int, beginCol: Short, endLine: Int, endCol: Short) {
 

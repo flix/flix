@@ -23,6 +23,14 @@ import org.parboiled2.ParserInput
  * Token does not hold its lexeme directly to avoid duplication of common keywords like "def".
  * Instead it holds a pointer to its source along with start and end offsets.
  *
+ * We take extra efforts to ensure tha token are compact, i.e. have little memory footprint.
+ *
+ * We do so because [[Token]]s are very common objects in terms of program size.
+ *
+ * Specifically, we:
+ *
+ * - Use `Short`s instead of `Int`s to represent column offsets (i.e. `beginCol` and `endCol`).
+ *
  * @param kind      The kind of token this instance represents.
  * @param src       A pointer to the source that this lexeme stems from.
  * @param start     The absolute character offset into `src` of the beginning of the lexeme.
