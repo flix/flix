@@ -593,6 +593,49 @@ class Flix {
       throw ex
   }
 
+  def checkMutant(typedAst: TypedAst.Root): Validation[TypedAst.Root, CompilationMessage] = try {
+    import Validation.Implicit.AsMonad
+
+    // Mark this object as implicit.
+    implicit val flix: Flix = this
+
+    // Initialize fork-join thread pool.
+    initForkJoinPool()
+
+    // Reset the phase information.
+    phaseTimers = ListBuffer.empty
+
+    implicit class MappableValidation[A, B](v: Validation[A, B]) {
+      implicit def map[C](f: A => C): Validation[C, B] = Validation.mapN(v)(f)
+    }
+
+    val result = for {
+      _ <- Regions.run(typedAst)
+      afterEntryPoint <- EntryPoint.run(typedAst)
+      //      _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+      afterPredDeps <- PredDeps.run(afterEntryPoint)
+      afterStratifier <- Stratifier.run(afterPredDeps)
+      afterPatMatch <- PatMatch.run(afterStratifier)
+      afterRedundancy <- Redundancy.run(afterPatMatch)
+      afterSafety <- Safety.run(afterRedundancy)
+    } yield {
+      afterSafety
+    }
+
+    // Shutdown fork-join thread pool.
+    shutdownForkJoinPool()
+
+    // Reset the progress bar.
+    progressBar.complete()
+
+    // Return the result (which could contain soft failures).
+    result
+  } catch {
+    case ex: InternalCompilerException =>
+      CrashHandler.handleCrash(ex)(this)
+      throw ex
+  }
+
   /**
     * Compiles the given typed ast to an executable ast.
     */
@@ -641,12 +684,59 @@ class Flix {
       throw ex
   }
 
+  def codeGenMutant(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = try {
+    // Mark this object as implicit.
+    implicit val flix: Flix = this
+
+    // Initialize fork-join thread pool.
+    initForkJoinPool()
+
+    /** Remember to update [[AstPrinter]] about the list of phases. */
+    val loweringAst = Lowering.run(typedAst)
+    val treeShaker1Ast = TreeShaker1.run(loweringAst)
+    val monomorpherAst = Monomorpher.run(treeShaker1Ast)
+    val monoTypesAst = MonoTypes.run(monomorpherAst)
+    val simplifierAst = Simplifier.run(monoTypesAst)
+    val closureConvAst = ClosureConv.run(simplifierAst)
+    val lambdaLiftAst = LambdaLift.run(closureConvAst)
+    val optimizerAst = Optimizer.run(lambdaLiftAst)
+    val treeShaker2Ast = TreeShaker2.run(optimizerAst)
+    val effectBinderAst = EffectBinder.run(treeShaker2Ast)
+    val tailPosAst = TailPos.run(effectBinderAst)
+    Verifier.run(tailPosAst)
+    val eraserAst = Eraser.run(tailPosAst)
+    val reducerAst = Reducer.run(eraserAst)
+    val varOffsetsAst = VarOffsets.run(reducerAst)
+    val result = JvmBackend.run(varOffsetsAst)
+
+    // Shutdown fork-join thread pool.
+    shutdownForkJoinPool()
+
+    // Reset the progress bar.
+    progressBar.complete()
+
+    // Return the result.
+    Validation.success(result)
+  } catch {
+    case ex: InternalCompilerException =>
+      CrashHandler.handleCrash(ex)(this)
+      throw ex
+    case ex: Throwable =>
+      CrashHandler.handleCrash(ex)(this)
+      throw ex
+  }
+
   /**
     * Compiles the given typed ast to an executable ast.
     */
   def compile(): Validation[CompilationResult, CompilationMessage] = {
     val result = check().toHardFailure
     Validation.flatMapN(result)(codeGen)
+  }
+
+  def compileMutant(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = {
+    val result = checkMutant(typedAst).toHardFailure
+    Validation.flatMapN(result)(codeGenMutant)
   }
 
   /**

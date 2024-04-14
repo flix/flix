@@ -3,8 +3,9 @@ package ca.uwaterloo.flix.tools
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Input, Polarity, Source}
 import ca.uwaterloo.flix.language.ast.SemanticOp._
+import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Constraint, Def, Expr, MatchRule, Pattern, Root, TypeMatchRule}
+import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
 import ca.uwaterloo.flix.runtime.CompilationResult
@@ -62,12 +63,14 @@ object MutationTester {
     mutants.foreach { m =>
       //    redirect.redirect()
       // TODO: need run phases after `Typer.run` for mutants too
-      val codeGenResult = flix.codeGen(m.value) // todo: is it possible to parallelize it ??
+      //      val codeGenResult = flix.codeGen(m.value) // todo: is it possible to parallelize it ??
       //    if (redirect.stdErr.nonEmpty) return CompilationFailed
       //    redirect.restore()
 
+      val compilationResult = flix.compileMutant(m.value)
+
       //          executor.execute(() => {
-      val status: MutantStatus = codeGenResult.toHardResult match {
+      val status: MutantStatus = compilationResult.toHardResult match {
         case Result.Ok(c) => try {
           Await.result(Future(testMutant(c)), testTimeout)
         } catch {
@@ -132,9 +135,9 @@ object MutationTester {
 
     // todo: collections: mutate to empty (?)
     private def mutateExpr(expr: Expr)(implicit flix: Flix): LazyList[Mutant[Expr]] = {
-      if (expr.tpe.toString == "Unit") {
-        return LazyList.empty
-      }
+      //      if (expr.tpe.toString == "Unit") {
+      //        return LazyList.empty
+      //      }
 
       expr match {
         case Expr.Cst(cst, tpe, loc) => mutateMap(cst, mutateConstant, Expr.Cst(_, tpe, loc), _.mapLoc(loc))
@@ -152,7 +155,7 @@ object MutationTester {
         case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) =>
           mutateMap(exp1, mutateExpr, Expr.Let(sym, mod, _, exp2, tpe, eff, loc)) #:::
             mutateMap(exp2, mutateExpr, Expr.Let(sym, mod, exp1, _, tpe, eff, loc))
-        case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) => // find example
+        case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
           mutateMap(exp1, mutateExpr, Expr.LetRec(sym, ann, mod, _, exp2, tpe, eff, loc)) #:::
             mutateMap(exp2, mutateExpr, Expr.LetRec(sym, ann, mod, exp1, _, tpe, eff, loc))
         case Expr.Region(tpe, loc) => LazyList.empty
@@ -237,21 +240,34 @@ object MutationTester {
         case Expr.NewChannel(exp1, exp2, tpe, eff, loc) => LazyList.empty // todo
         case Expr.GetChannel(exp, tpe, eff, loc) => LazyList.empty // todo
         case Expr.PutChannel(exp1, exp2, tpe, eff, loc) => LazyList.empty // todo
-        case Expr.SelectChannel(rules, default, tpe, eff, loc) => LazyList.empty // todo
-        case Expr.Spawn(exp1, exp2, tpe, eff, loc) => LazyList.empty // todo
-        case Expr.ParYield(frags, exp, tpe, eff, loc) => LazyList.empty // todo
-        case Expr.Lazy(exp, tpe, loc) =>
-          mutateMap(exp, mutateExpr, Expr.Lazy(_, tpe, loc))
-        case Expr.Force(exp, tpe, eff, loc) =>
-          mutateMap(exp, mutateExpr, Expr.Force(_, tpe, eff, loc))
+        case Expr.SelectChannel(rules, default, tpe, eff, loc) =>
+          mutateElms(rules, mutateSelectChannelRule, Expr.SelectChannel(_, default, tpe, eff, loc)) #:::
+            default.map(
+              mutateMap(_, mutateExpr, { value: Expr => Expr.SelectChannel(rules, Some(value), tpe, eff, loc) })
+            ).getOrElse(LazyList.empty)
+        case Expr.Spawn(exp1, exp2, tpe, eff, loc) =>
+          mutateMap(exp1, mutateExpr, Expr.Spawn(_, exp2, tpe, eff, loc)) #:::
+            mutateMap(exp2, mutateExpr, Expr.Spawn(exp1, _, tpe, eff, loc))
+        case Expr.ParYield(frags, exp, tpe, eff, loc) =>
+          mutateElms(frags, mutateParYieldFragment, Expr.ParYield(_, exp, tpe, eff, loc)) #:::
+            mutateMap(exp, mutateExpr, Expr.ParYield(frags, _, tpe, eff, loc))
+        case Expr.Lazy(exp, tpe, loc) => mutateMap(exp, mutateExpr, Expr.Lazy(_, tpe, loc))
+        case Expr.Force(exp, tpe, eff, loc) => mutateMap(exp, mutateExpr, Expr.Force(_, tpe, eff, loc))
         case Expr.FixpointConstraintSet(cs, tpe, loc) => mutateExprFixpointConstraintSet(expr)
-        case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) => LazyList.empty // find example
-        case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) => LazyList.empty
-        case Expr.FixpointSolve(exp, tpe, eff, loc) => LazyList.empty
-        case Expr.FixpointFilter(pred, exp, tpe, eff, loc) => LazyList.empty
-        case Expr.FixpointInject(exp, pred, tpe, eff, loc) => LazyList.empty
-        case Expr.FixpointProject(pred, exp, tpe, eff, loc) => LazyList.empty
-        case Expr.Error(m, tpe, eff) => LazyList.empty // todo
+        case Expr.FixpointLambda(pparams, exp, tpe, eff, loc) =>
+          mutateMap(exp, mutateExpr, Expr.FixpointLambda(pparams, _, tpe, eff, loc))
+        case Expr.FixpointMerge(exp1, exp2, tpe, eff, loc) =>
+          mutateMap(exp1, mutateExpr, Expr.FixpointMerge(_, exp2, tpe, eff, loc)) #:::
+            mutateMap(exp2, mutateExpr, Expr.FixpointMerge(exp1, _, tpe, eff, loc))
+        case Expr.FixpointSolve(exp, tpe, eff, loc) =>
+          mutateMap(exp, mutateExpr, Expr.FixpointSolve(_, tpe, eff, loc))
+        case Expr.FixpointFilter(pred, exp, tpe, eff, loc) =>
+          mutateMap(exp, mutateExpr, Expr.FixpointFilter(pred, _, tpe, eff, loc))
+        case Expr.FixpointInject(exp, pred, tpe, eff, loc) =>
+          mutateMap(exp, mutateExpr, Expr.FixpointInject(_, pred, tpe, eff, loc))
+        case Expr.FixpointProject(pred, exp, tpe, eff, loc) =>
+          mutateMap(exp, mutateExpr, Expr.FixpointProject(pred, _, tpe, eff, loc))
+        case Expr.Error(m, tpe, eff) => LazyList.empty
       }
     }
 
@@ -327,6 +343,11 @@ object MutationTester {
 
             // todo: think if need other mutants
             if (res.nonEmpty) res
+            else if (tpe.toString == "Bool")
+              LazyList(Mutant(
+                Expr.Unary(BoolOp.Not, expr, tpe, eff, loc),
+                PrintedAdd(loc.copy(endLine = loc.beginLine, endCol = loc.beginCol), "not ")
+              ))
             else mutateElms(exps, mutateExpr, Expr.Apply(exp, _, tpe, eff, loc))
           case _ =>
             mutateMap(exp, mutateExpr, Expr.Apply(_, exps, tpe, eff, loc)) #:::
@@ -436,6 +457,24 @@ object MutationTester {
       case Body.Guard(exp, loc) => mutateMap(exp, mutateExpr, Body.Guard(_, loc))
     }
 
+    private def mutateMatchRule(matchRule: MatchRule)(implicit flix: Flix): LazyList[Mutant[MatchRule]] =
+      mutateMap(matchRule.pat, mutatePattern, MatchRule(_, matchRule.guard, matchRule.exp)) #:::
+        matchRule.guard.map(
+          mutateMap(_, mutateExpr, { value: Expr => MatchRule(matchRule.pat, Some(value), matchRule.exp) })
+        ).getOrElse(LazyList.empty) #:::
+        mutateMap(matchRule.exp, mutateExpr, MatchRule(matchRule.pat, matchRule.guard, _))
+
+    private def mutateTypeMatchRule(typeMatchRule: TypeMatchRule)(implicit flix: Flix): LazyList[Mutant[TypeMatchRule]] =
+      mutateMap(typeMatchRule.exp, mutateExpr, TypeMatchRule(typeMatchRule.sym, typeMatchRule.tpe, _))
+
+    private def mutateSelectChannelRule(scr: SelectChannelRule)(implicit flix: Flix): LazyList[Mutant[SelectChannelRule]] =
+      mutateMap(scr.chan, mutateExpr, SelectChannelRule(scr.sym, _, scr.exp)) #:::
+        mutateMap(scr.exp, mutateExpr, SelectChannelRule(scr.sym, scr.chan, _))
+
+    private def mutateParYieldFragment(pyf: ParYieldFragment)(implicit flix: Flix): LazyList[Mutant[ParYieldFragment]] =
+      mutateMap(pyf.pat, mutatePattern, ParYieldFragment(_, pyf.exp, pyf.loc)) #:::
+        mutateMap(pyf.exp, mutateExpr, ParYieldFragment(pyf.pat, _, pyf.loc))
+
     private def mutatePattern(pattern: Pattern): LazyList[Mutant[Pattern]] = {
       pattern match {
         case Pattern.Wild(tpe, loc) => LazyList.empty
@@ -443,20 +482,16 @@ object MutationTester {
         case Pattern.Cst(cst, tpe, loc) => mutateMap(cst, mutateConstant, Pattern.Cst(_, tpe, loc), _.mapLoc(loc))
         case Pattern.Tag(sym, pat, tpe, loc) => mutateMap(pat, mutatePattern, Pattern.Tag(sym, _, tpe, loc))
         case Pattern.Tuple(elms, tpe, loc) => mutateElms(elms, mutatePattern, Pattern.Tuple(_, tpe, loc))
-        // todo: find examples for belows
-        case Pattern.Record(pats, pat, tpe, loc) => LazyList.empty
+        case Pattern.Record(pats, pat, tpe, loc) =>
+          mutateElms(pats, mutateRecordLabelPattern, Pattern.Record(_, pat, tpe, loc)) #:::
+            mutateMap(pat, mutatePattern, Pattern.Record(pats, _, tpe, loc))
         case Pattern.RecordEmpty(tpe, loc) => LazyList.empty
         case Pattern.Error(tpe, loc) => LazyList.empty
       }
     }
 
-    private def mutateMatchRule(matchRule: MatchRule)(implicit flix: Flix): LazyList[Mutant[MatchRule]] =
-      mutateMap(matchRule.pat, mutatePattern, MatchRule(_, matchRule.guard, matchRule.exp)) #:::
-        matchRule.guard.map(mutateMap(_, mutateExpr, { value: Expr => MatchRule(matchRule.pat, Some(value), matchRule.exp) })).getOrElse(LazyList.empty) #:::
-        mutateMap(matchRule.exp, mutateExpr, MatchRule(matchRule.pat, matchRule.guard, _))
-
-    private def mutateTypeMatchRule(typeMatchRule: TypeMatchRule)(implicit flix: Flix): LazyList[Mutant[TypeMatchRule]] =
-      mutateMap(typeMatchRule.exp, mutateExpr, TypeMatchRule(typeMatchRule.sym, typeMatchRule.tpe, _))
+    private def mutateRecordLabelPattern(rp: RecordLabelPattern): LazyList[Mutant[RecordLabelPattern]] =
+      mutateMap(rp.pat, mutatePattern, RecordLabelPattern(rp.label, rp.tpe, _, rp.loc))
 
     private object Helper {
       val arithmeticSigTypes: Set[String] = Set(
@@ -642,6 +677,7 @@ object MutationTester {
         .append(outputDivider)
 
       // Todo: print and clear after each N mutants. Remember, that multiple threads can perform this function at a time
+      // Look 'ProgressBar.SampleRate`
       sb.toString()
     }
 
