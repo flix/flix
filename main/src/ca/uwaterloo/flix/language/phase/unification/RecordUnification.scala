@@ -84,7 +84,7 @@ object RecordUnification {
           val restRow2 = Type.freshVar(Kind.RecordRow, tvar.loc)
           val type2 = Type.mkRecordRowExtend(label1, labelType1, restRow2, tvar.loc)
           val subst = Substitution.singleton(tv.sym, type2)
-          Ok((subst, restRow2, Nil)) // TODO ASSOC-TYPES Nil right?
+          Ok((subst, restRow2, Nil))
         }
 
       case (Type.Cst(TypeConstructor.RecordRowEmpty, _), Type.Apply(Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label1), _), labelType1, _), _, _)) =>
