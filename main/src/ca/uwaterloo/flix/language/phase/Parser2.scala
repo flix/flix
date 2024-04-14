@@ -684,7 +684,7 @@ object Parser2 {
       annotations()
       modifiers()
       nth(0) match {
-        case TokenKind.KeywordTrait => typeClassDecl(mark)
+        case TokenKind.KeywordTrait => traitDecl(mark)
         case TokenKind.KeywordInstance => instanceDecl(mark)
         case TokenKind.KeywordDef => definitionDecl(mark)
         case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumerationDecl(mark)
@@ -711,7 +711,7 @@ object Parser2 {
       close(mark, TreeKind.Decl.Module)
     }
 
-    private def typeClassDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+    private def traitDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       expect(TokenKind.KeywordTrait)
       name(NAME_DEFINITION)
       if (at(TokenKind.BracketL)) {
