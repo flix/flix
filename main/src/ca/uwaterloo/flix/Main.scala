@@ -323,6 +323,9 @@ object Main {
         case Command.CompilerPerf =>
           CompilerPerf.run(options)
 
+        case Command.CompilerMemory =>
+          CompilerMemory.run()
+
       }
     }
 
@@ -405,6 +408,9 @@ object Main {
     case object Outdated extends Command
 
     case object CompilerPerf extends Command
+
+    case object CompilerMemory extends Command
+
   }
 
   /**
@@ -468,6 +474,8 @@ object Main {
           .action((v, c) => c.copy(XPerfN = Some(v)))
           .text("number of compilations")
       ).hidden()
+
+      cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
 
       note("")
 
