@@ -39,7 +39,8 @@ object Verifier {
     val env = (decl.cparams ++ decl.fparams).foldLeft(Map.empty[Symbol.VarSym, MonoType]) {
       case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
     }
-    visitExpr(decl.expr)(root, env, Map.empty)
+    val ret = visitExpr(decl.expr)(root, env, Map.empty)
+    checkEq(decl.tpe, ret, decl.loc)
   }
 
 
@@ -449,9 +450,13 @@ object Verifier {
       // TODO: VERIFIER: Add support for Do.
       tpe
 
-    case Expr.NewObject(name, clazz, tpe, methods, _, loc) =>
-      // TODO: VERIFIER: Add support for NewObject.
-      tpe
+    case Expr.NewObject(_, clazz, tpe, _, methods, loc) =>
+      for (m <- methods) {
+        val exptype = visitExpr(m.exp)
+        val signature = MonoType.Arrow(m.fparams.map(_.tpe), m.tpe)
+        checkEq(signature, exptype, m.loc)
+      }
+      checkEq(tpe, MonoType.Native(clazz), loc)
 
   }
 
