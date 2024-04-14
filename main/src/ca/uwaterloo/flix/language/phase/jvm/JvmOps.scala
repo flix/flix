@@ -45,6 +45,7 @@ object JvmOps {
     */
   def getJvmType(tpe: MonoType): JvmType = tpe match {
     // Primitives
+    case MonoType.Void => JvmType.Object
     case MonoType.AnyType => JvmType.Object
     case MonoType.Unit => JvmType.Unit
     case MonoType.Bool => JvmType.PrimBool
@@ -89,9 +90,10 @@ object JvmOps {
       case Int16 => JvmType.PrimShort
       case Int32 => JvmType.PrimInt
       case Int64 => JvmType.PrimLong
-      case AnyType | Unit | BigDecimal | BigInt | String | Regex | Region |
-           Array(_) |Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) |
-           RecordEmpty |RecordExtend(_, _, _) | Native(_) => JvmType.Object
+      case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
+           Region | Array(_) |Lazy(_) | Ref(_) | Tuple(_) | Enum(_) |
+           Arrow(_, _) | RecordEmpty |RecordExtend(_, _, _) | Native(_) =>
+        JvmType.Object
     }
   }
 
@@ -112,9 +114,9 @@ object JvmOps {
       case Int32 => JvmType.PrimInt
       case Int64 => JvmType.PrimLong
       case Native(clazz) if clazz == classOf[Object] => JvmType.Object
-      case AnyType | Unit | BigDecimal | BigInt | String | Regex | Region |
-           Array(_) | Lazy(_) | Ref(_) | Tuple(_) | Enum(_) | Arrow(_, _) |
-           RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
+      case Void | AnyType | Unit | BigDecimal | BigInt | String | Regex |
+           Region | Array(_) | Lazy(_) | Ref(_) | Tuple(_) | Enum(_) |
+           Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
         throw InternalCompilerException(s"Unexpected type $tpe", SourceLocation.Unknown)
     }
   }
