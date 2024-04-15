@@ -316,8 +316,8 @@ object MutationTester {
         Constant.BigDecimal,
         { s => s"${s}ff" }
       )
-      case Constant.Int8(lit) => mutateConstantNum(lit + 1, lit - 1, Constant.Int8, { s => s"${s}i8" })
-      case Constant.Int16(lit) => mutateConstantNum(lit + 1, lit - 1, Constant.Int16, { s => s"${s}i16" })
+      case Constant.Int8(lit) => mutateConstantNum(lit + 1, lit - 1, { n: Int => Constant.Int8(n.toByte) }, { s => s"${s}i8" })
+      case Constant.Int16(lit) => mutateConstantNum(lit + 1, lit - 1, { n: Int => Constant.Int16(n.toShort) }, { s => s"${s}i16" })
       case Constant.Int32(lit) => mutateConstantNum(lit + 1, lit - 1, Constant.Int32, { s => s })
       case Constant.Int64(lit) => mutateConstantNum(lit + 1, lit - 1, Constant.Int64, { s => s"${s}i64" })
       case Constant.BigInt(lit) => mutateConstantNum(
