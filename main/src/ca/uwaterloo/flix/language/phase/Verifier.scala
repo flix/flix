@@ -445,10 +445,8 @@ object Verifier {
 
     case Expr.TryWith(exp, effUse, rules, ct, tpe, purity, loc) =>
       val exptype = visitExpr(exp) match {
-        case MonoType.Arrow(List(u), t) =>
-          check(expected = MonoType.Unit)(actual = u, loc)
-          t
-        case e => failMismatchedShape(e, "Arrow with one parameter", loc)
+        case MonoType.Arrow(List(MonoType.Unit), t) => t
+        case e => failMismatchedShape(e, "Arrow(List(Unit), _)", loc)
       }
 
       val effect = root.effects.getOrElse(effUse.sym,
