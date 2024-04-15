@@ -139,9 +139,11 @@ case class Substitution(m: Map[Symbol.KindedTypeVarSym, Type]) {
     */
   def apply(prov: TypeConstraint.Provenance): TypeConstraint.Provenance = prov match {
     case Provenance.ExpectType(expected, actual, loc) => Provenance.ExpectType(apply(expected), apply(actual), loc)
+    case Provenance.ExpectSubtype(actual, expected, loc) => Provenance.ExpectSubtype(apply(actual), apply(expected), loc)
     case Provenance.ExpectEffect(expected, actual, loc) => Provenance.ExpectEffect(apply(expected), apply(actual), loc)
     case Provenance.ExpectArgument(expected, actual, sym, num, loc) => Provenance.ExpectArgument(apply(expected), apply(actual), sym, num, loc)
     case Provenance.Match(tpe1, tpe2, loc) => Provenance.Match(apply(tpe1), apply(tpe2), loc)
+    case Provenance.SubtypeMatch(tpe1, tpe2, loc) => Provenance.SubtypeMatch(apply(tpe1), apply(tpe2), loc)
   }
 
   /**

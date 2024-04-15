@@ -271,6 +271,14 @@ object ConstraintSolver {
       resolveEquality(t1, t2, prov, renv, constr0.loc).map {
         case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
       }
+    case TypeConstraint.Subtype(tpe1, tpe2, prov0) =>
+      // TODO change to subtype
+      val t1 = TypeMinimization.minimizeType(subst0(tpe1))
+      val t2 = TypeMinimization.minimizeType(subst0(tpe2))
+      val prov = subst0(prov0)
+      resolveEquality(t1, t2, prov, renv, constr0.loc).map {
+        case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
+      }
     case TypeConstraint.Trait(sym, tpe, loc) =>
       resolveTraitConstraint(sym, subst0(tpe), renv, loc).map {
         case (constrs, progress) => ResolutionResult(subst0, constrs, progress)
@@ -572,6 +580,7 @@ object ConstraintSolver {
   private def getFirstError(deferred: List[TypeConstraint], renv: RigidityEnv)(implicit flix: Flix): Option[TypeError] = deferred match {
     case Nil => None
     case TypeConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
+    case TypeConstraint.Subtype(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov))
     case TypeConstraint.Trait(sym, tpe, loc) :: _ => Some(TypeError.MissingInstance(sym, tpe, renv, loc))
     case TypeConstraint.Purification(_, _, _, _, nested) :: _ => getFirstError(nested, renv)
   }
@@ -663,6 +672,10 @@ object ConstraintSolver {
   // TODO ASSOC-TYPES because provenance is not propogated properly.
   // TODO ASSOC-TYPES We also need to track the renv for use in these errors.
   private def toTypeError(err0: UnificationError, prov: Provenance)(implicit flix: Flix): TypeError = (err0, prov) match {
+    case (_, Provenance.SubtypeMatch(_, _, _)) => ??? // TODO handle properly
+    case (_, Provenance.ExpectSubtype(_, _, _)) => ??? // TODO handle properly
+    case (UnificationError.NonSubtype(_, _), _) => ??? // TODO handle properly
+
     case (err, Provenance.ExpectType(expected, actual, loc)) =>
       toTypeError(err, Provenance.Match(expected, actual, loc)) match {
         case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, _) =>

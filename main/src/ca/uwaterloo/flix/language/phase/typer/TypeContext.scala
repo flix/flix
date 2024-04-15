@@ -116,6 +116,18 @@ class TypeContext {
   }
 
   /**
+    * Generates constraints unifying `tpe1` as a subtype of `tpe2`.
+    *
+    * {{{
+    *   tpe1 <: tpe2
+    * }}}
+    */
+  def unifySubtype(tpe1: Type, tpe2: Type, loc: SourceLocation): Unit = {
+    val constr = TypeConstraint.Subtype(tpe1, tpe2, Provenance.SubtypeMatch(tpe1, tpe2, loc))
+    currentScopeConstraints.add(constr)
+  }
+
+  /**
     * Generates constraints unifying the given types.
     *
     * {{{
@@ -162,6 +174,18 @@ class TypeContext {
     */
   def expectType(expected: Type, actual: Type, loc: SourceLocation): Unit = {
     val constr = TypeConstraint.Equality(expected, actual, Provenance.ExpectType(expected, actual, loc))
+    currentScopeConstraints.add(constr)
+  }
+
+  /**
+    * Generates a constraint with an expected supertype and an actual type.
+    *
+    * {{{
+    *   actual <: expected
+    * }}}
+    */
+  def expectSubType(actual: Type, expected: Type, loc: SourceLocation): Unit = {
+    val constr = TypeConstraint.Subtype(actual, expected, Provenance.ExpectSubtype(actual, expected, loc))
     currentScopeConstraints.add(constr)
   }
 
