@@ -17,7 +17,7 @@ object SourcePosition {
   * @param col   the column number.
   * @param input the parser input.
   */
-case class SourcePosition(source: Source, line: Int, col: Int, input: Option[ParserInput]) {
+case class SourcePosition(source: Source, line: Int, col: Short, input: Option[ParserInput]) {
 
   /**
     * Returns the hashCode of `this` source position.
