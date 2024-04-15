@@ -162,7 +162,7 @@ pub enum Purity3[a: Type, b: Type, c: Type, d: Type, ef: Eff] {
 }
 
 ///
-/// Returns `Purity.Pure(g) if `f` has no effects.
+/// Returns `Purity.Pure(g)` if `f` has no effects.
 /// Returns `Purity.Impure(g)` otherwise.
 /// The function `g` can then be used in a context that requires
 /// it to be pure.
@@ -173,7 +173,7 @@ pub def purityOf(f: a -> b \ ef): Purity[a, b, ef] = typematch f {
 }
 
 ///
-/// Returns `Purity2.Pure(g) if `f` has no effects.
+/// Returns `Purity2.Pure(g)` if `f` has no effects.
 /// Returns `Purity2.Impure(g)` otherwise.
 /// The function `g` can then be used in a context that requires
 /// it to be pure.
@@ -184,7 +184,7 @@ pub def purityOf2(f: a -> b -> c \ ef): Purity2[a, b, c, ef] = typematch f {
 }
 
 ///
-/// Returns `Purity3.Pure(g) if `f` has no effects.
+/// Returns `Purity3.Pure(g)` if `f` has no effects.
 /// Returns `Purity3.Impure(g)` otherwise.
 /// The function `g` can then be used in a context that requires
 /// it to be pure.
