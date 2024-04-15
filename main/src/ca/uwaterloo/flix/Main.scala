@@ -324,7 +324,7 @@ object Main {
           CompilerPerf.run(options)
 
         case Command.CompilerMemory =>
-          CompilerMemory.run()
+          CompilerMemory.run(options)
 
       }
     }

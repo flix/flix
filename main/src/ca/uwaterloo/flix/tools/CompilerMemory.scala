@@ -16,21 +16,23 @@
 package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.util.LocalResource
+import ca.uwaterloo.flix.util.{LocalResource, Options}
+import org.json4s.JsonDSL._
+import org.json4s.native.JsonMethods
 
 object CompilerMemory {
 
   /**
     * Crudely measure compiler memory usage.
     */
-  def run(): Unit = {
+  def run(o: Options): Unit = {
     // Run the Flix compiler on some input.
     val flix = new Flix
     addInputs(flix)
     val result = flix.compile()
 
     sleepAndGc()
-    measureMemoryUsage()
+    measureMemoryUsage(o)
   }
 
   /**
@@ -46,9 +48,15 @@ object CompilerMemory {
   /**
     * Prints the estimated amount of memory used (in megabytes).
     */
-  private def measureMemoryUsage(): Unit = {
+  private def measureMemoryUsage(o: Options): Unit = {
     val usedMemory = Runtime.getRuntime.totalMemory() - Runtime.getRuntime.freeMemory()
-    println(s"Used Memory: ${usedMemory / (1_024 * 1_024)} MB")
+    if (o.json) {
+      val json = ("bytes" -> usedMemory)
+      val s = JsonMethods.pretty(JsonMethods.render(json))
+      println(s)
+    } else {
+      println(s"Used Memory: ${usedMemory / (1_024 * 1_024)} MB")
+    }
   }
 
   /**
