@@ -16,20 +16,22 @@ import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
 import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.duration.{Duration, DurationInt, DurationLong}
 import scala.concurrent.{Await, Future, TimeoutException}
 
-/* todo: think also:
- *  compile source and run tests on it before mutation testing
- *  helper functions for tests without @Test annotation.
-*/
-
 object MutationTester {
-  def run(root: Root)(implicit flix: Flix): Result[Unit, String] = {
-    val testTimeout = 10.seconds // todo: calculate bu run tests on source
+  def run(root: Root, sourceCompilationResult: CompilationResult)(implicit flix: Flix): Result[Unit, String] = {
+    val timeBefore = System.currentTimeMillis()
 
-    //     todo: configure (how) ?
-    //    val numThreads = 2
+    testMutant(sourceCompilationResult) match {
+      case Survived => // this is good
+      case _ => return Result.Err("Source tests failed") // todo: refactor message
+    }
+
+    val testTimeout = configureTimeOut((System.currentTimeMillis() - timeBefore).milliseconds)
+
+    // configure (how) ?
+    //    val numThreads = 4
     //    val executor = Executors.newFixedThreadPool(numThreads)
 
     val reporter = new MutationReporter()
@@ -50,7 +52,7 @@ object MutationTester {
      * I'm not sure if this will be effective, since compilation may take longer than testing (?)
      *
      * I would like to achieve full parallelism at all stages, including compilation,
-     * but I'm not sure what will be achieved
+     * but I'm not sure
      */
 
     val mutants = Mutator.mutateRoot(root)
@@ -79,17 +81,15 @@ object MutationTester {
     Result.Ok(())
   }
 
+  private def configureTimeOut(duration: Duration): Duration = (duration + 4.seconds) * 1.5
+
   // todo:
   //  need run phases after `Typer.run` for mutants too
   //  also need run phases before `Typer.run` for mutants too (if it possible)
   //  is it possible to parallelize compilation ?
   private def compileMutant(mutant: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationMessage] = {
-    //      redirect.redirect()
-    val compilationResult = flix.compileMutant(mutant)
-    //      if (redirect.stdErr.nonEmpty) return CompilationFailed
-    //      redirect.restore()
-
-    compilationResult
+    val result = flix.checkMutant(mutant).toHardFailure
+    Validation.flatMapN(result)(flix.codeGenMutant)
   }
 
   private def testMutant(compilationResult: CompilationResult): MutantStatus = {
@@ -308,20 +308,24 @@ object MutationTester {
 
     private def mutateConstant(cst: Constant): LazyList[Mutant[Constant]] = cst match {
       case Constant.Bool(lit) => LazyList(Mutant(Constant.Bool(!lit), PrintedReplace(SourceLocation.Unknown, (!lit).toString)))
-      case Constant.Float32(lit) => LazyList(lit + 1, lit - 1).map(value => Mutant(Constant.Float32(value), PrintedReplace(SourceLocation.Unknown, s"${value.toString}f32")))
-      case Constant.Float64(lit) => LazyList(lit + 1, lit - 1).map(value => Mutant(Constant.Float64(value), PrintedReplace(SourceLocation.Unknown, value.toString)))
-      case Constant.BigDecimal(lit) => LazyList(
+      case Constant.Float32(lit) => mutateConstantNum(lit + 1, lit - 1, Constant.Float32, { s => s"${s}f32" })
+      case Constant.Float64(lit) => mutateConstantNum(lit + 1, lit - 1, Constant.Float64, { s => s })
+      case Constant.BigDecimal(lit) => mutateConstantNum(
         lit.add(java.math.BigDecimal.ONE),
-        lit.subtract(java.math.BigDecimal.ONE)
-      ).map(value => Mutant(Constant.BigDecimal(value), PrintedReplace(SourceLocation.Unknown, s"${value.toString}ff")))
-      case Constant.Int8(lit) => LazyList(lit + 1, lit - 1).map(value => Mutant(Constant.Int8(value.toByte), PrintedReplace(SourceLocation.Unknown, s"${value.toString}i8")))
-      case Constant.Int16(lit) => LazyList(lit + 1, lit - 1).map(value => Mutant(Constant.Int16(value.toShort), PrintedReplace(SourceLocation.Unknown, s"${value.toString}i16")))
-      case Constant.Int32(lit) => LazyList(lit + 1, lit - 1).map(value => Mutant(Constant.Int32(value), PrintedReplace(SourceLocation.Unknown, value.toString)))
-      case Constant.Int64(lit) => LazyList(lit + 1, lit - 1).map(value => Mutant(Constant.Int64(value), PrintedReplace(SourceLocation.Unknown, s"${value.toString}i64")))
-      case Constant.BigInt(lit) => LazyList(
+        lit.subtract(java.math.BigDecimal.ONE),
+        Constant.BigDecimal,
+        { s => s"${s}ff" }
+      )
+      case Constant.Int8(lit) => mutateConstantNum(lit + 1, lit - 1, Constant.Int8, { s => s"${s}i8" })
+      case Constant.Int16(lit) => mutateConstantNum(lit + 1, lit - 1, Constant.Int16, { s => s"${s}i16" })
+      case Constant.Int32(lit) => mutateConstantNum(lit + 1, lit - 1, Constant.Int32, { s => s })
+      case Constant.Int64(lit) => mutateConstantNum(lit + 1, lit - 1, Constant.Int64, { s => s"${s}i64" })
+      case Constant.BigInt(lit) => mutateConstantNum(
         lit.add(java.math.BigInteger.ONE),
-        lit.subtract(java.math.BigInteger.ONE)
-      ).map(value => Mutant(Constant.BigInt(value), PrintedReplace(SourceLocation.Unknown, s"${value.toString}ii")))
+        lit.subtract(java.math.BigInteger.ONE),
+        Constant.BigInt,
+        { s => s"${s}ii" }
+      )
       case Constant.Str(lit) =>
         val pair = if (lit != "") ("", "") else ("Mutant", "\"Mutant\"")
         LazyList(Mutant(Constant.Str(pair._1), PrintedReplace(SourceLocation.Unknown, pair._2)))
@@ -626,6 +630,9 @@ object MutationTester {
           mutF(elms(i)).map(m => Mutant(mapF(elms.updated(i, m.value)), m.printed))
         ).flatten
 
+      def mutateConstantNum[T](inc: T, dec: T, mapF: T => Constant, mapString: String => String): LazyList[Mutant[Constant]] =
+        LazyList(inc, dec).map(value => Mutant(mapF(value), PrintedReplace(SourceLocation.Unknown, mapString(value.toString))))
+
       def findSig(clazz: String, sig: String)(implicit flix: Flix): Symbol.SigSym = try {
         PredefinedClasses.lookupSigSym(clazz, sig, flix.getKinderAst)
       } catch {
@@ -702,7 +709,7 @@ object MutationTester {
 
     private val formatter: Formatter = flix.getFormatter
     private val lineSeparator = System.lineSeparator()
-    private val outputDivider = "-" * 80
+    private val outputDivider = "-" * 90
 
     private val source2LinesNum = new mutable.HashMap[Source, Int]
 
@@ -732,7 +739,7 @@ object MutationTester {
           timedOut.getAndIncrement()
           sb.append(blue("TIMED OUT"))
         case _ =>
-          sb.append(yellow("UNKNOWN MUTANT STATUS"))
+          sb.append(yellow("UNKNOWN STATUS"))
       }
 
       sb.append(s" ${printedDiff.sourceLocation.format}")

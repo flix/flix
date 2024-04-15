@@ -734,11 +734,6 @@ class Flix {
     Validation.flatMapN(result)(codeGen)
   }
 
-  def compileMutant(typedAst: TypedAst.Root): Validation[CompilationResult, CompilationMessage] = {
-    val result = checkMutant(typedAst).toHardFailure
-    Validation.flatMapN(result)(codeGenMutant)
-  }
-
   /**
     * Enters the phase with the given name.
     */
