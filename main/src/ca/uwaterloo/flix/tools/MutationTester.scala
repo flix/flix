@@ -66,7 +66,7 @@ object MutationTester {
         case Result.Err(_) => CompilationFailed
       }
 
-      println(reporter.report(status, m.printed))
+      print(reporter.report(status, m.printed))
       //          })
     }
 
@@ -81,8 +81,8 @@ object MutationTester {
 
   // todo:
   //  need run phases after `Typer.run` for mutants too
-  //  alsoo need run phases before `Typer.run` for mutants too (if it possible)
-  //  is it possible to parallelize it ?
+  //  also need run phases before `Typer.run` for mutants too (if it possible)
+  //  is it possible to parallelize compilation ?
   private def compileMutant(mutant: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationMessage] = {
     //      redirect.redirect()
     val compilationResult = flix.compileMutant(mutant)
@@ -124,12 +124,6 @@ object MutationTester {
     import Helper._
 
     def mutateRoot(root: Root)(implicit flix: Flix): LazyList[Mutant[Root]] = {
-      // todo: mutate
-      //  root.classes,
-      //  root.instances,
-      //  root.sigs (?),
-      //  root.defs
-
       val filteredInstances = LazyList.from(root.instances).filter(pair => !isLibSource(pair._1.loc))
       val instancesMutants = filteredInstances.flatMap { pair =>
         mutateElms(pair._2, mutateInstance, { list: List[Instance] => root.copy(instances = root.instances + (pair._1 -> list)) })
@@ -335,24 +329,27 @@ object MutationTester {
     }
 
     private def mutateExprDef(expr: Expr)(implicit flix: Flix): LazyList[Mutant[Expr]] = expr match {
-      case Expr.Def(sym, tpe, loc) if defnIntNamespaces.contains(sym.namespace.mkString(".")) =>
-        // todo: refactor to imperative
-        defnToDefn.get(sym.text)
-          .flatMap(findDef(sym.namespace, _))
-          .map(s => LazyList(Mutant(Expr.Def(s, tpe, loc), PrintedReplace(loc, s.toString))))
-          .orElse {
-            defnToSig.get(sym.text)
-              .flatMap(p => findSig(p._1, p._2))
-              .map(s => LazyList(Mutant(Expr.Sig(s, tpe, loc), PrintedReplace(loc, s.toString))))
-          }
-          .getOrElse(LazyList.empty)
+      case Expr.Def(sym, tpe, loc) =>
+        if (defnIntNamespaces.contains(sym.namespace.mkString("."))) {
+          defnToDefn.get(sym.text)
+            .map(findDef(sym.namespace, _))
+            .map(s => LazyList(Mutant(Expr.Def(s, tpe, loc), PrintedReplace(loc, s.toString))))
+            .orElse {
+              defnToSig.get(sym.text)
+                .map(p => findSig(p._1, p._2))
+                .map(s => LazyList(Mutant(Expr.Sig(s, tpe, loc), PrintedReplace(loc, s.toString))))
+            }
+            .getOrElse(LazyList.empty)
+        } else {
+          LazyList.empty
+        }
       case _ => LazyList.empty
     }
 
     private def mutateExprSig(expr: Expr)(implicit flix: Flix): LazyList[Mutant[Expr]] = expr match {
       case Expr.Sig(sym, tpe, loc) =>
-        // todo: refactor to imperative
         var l = List(conditionalNegateSigToSig, conditionalBoundarySigToSig)
+
         if (arithmeticSigTypes.contains(tpe.toString)) {
           l = arithmeticSigToSig :: l
         }
@@ -360,7 +357,7 @@ object MutationTester {
         l.foldLeft(LazyList.empty[Mutant[Expr]]) {
           (acc, sigMap) =>
             acc #::: sigMap.get(sym.toString)
-              .flatMap(p => findSig(p._1, p._2))
+              .map(p => findSig(p._1, p._2))
               .map(s => LazyList(Mutant(Expr.Sig(s, tpe, loc), PrintedReplace(loc, s.toString))))
               .getOrElse(LazyList.empty)
         }
@@ -371,15 +368,15 @@ object MutationTester {
       case Expr.Apply(exp, exps, tpe, eff, loc) =>
         exp match {
           case Expr.Sig(sym, _, _) if sym.toString == "Neg.neg" =>
-            LazyList(Mutant(exps.head, PrintedReplace(loc, exps.head.loc.text.get)))
+            LazyList(Mutant(exps.head, PrintedReplace(loc, getText(exps.head))))
           case Expr.Def(sym, _, _) if defnIntNamespaces.contains(sym.namespace.mkString(".")) && sym.text == "bitwiseNot" =>
-            LazyList(Mutant(exps.head, PrintedReplace(loc, exps.head.loc.text.get)))
+            LazyList(Mutant(exps.head, PrintedReplace(loc, getText(exps.head))))
           case Expr.Sig(_, _, _) | Expr.Def(_, _, _) =>
             val res = mutateMap(
               exp,
               mutateExpr,
               Expr.Apply(_, exps, tpe, eff, loc),
-              _.mapStr(s => s"$s${exps.map(_.loc.text.get).mkString("(", ", ", ")")}").mapLoc(loc)
+              _.mapStr(s => s"$s${exps.map(getText).mkString("(", ", ", ")")}").mapLoc(loc)
             )
 
             // todo: think if need other mutants
@@ -400,7 +397,7 @@ object MutationTester {
     private def mutateExprUnary(expr: Expr): LazyList[Mutant[Expr]] =
       expr match {
         case Expr.Unary(sop, exp, tpe, eff, loc) => sop match {
-          case BoolOp.Not => LazyList(Mutant(exp, PrintedReplace(loc, exp.loc.text.get)))
+          case BoolOp.Not => LazyList(Mutant(exp, PrintedReplace(loc, getText(exp))))
           case _ => LazyList.empty
         }
         case _ => LazyList.empty
@@ -408,8 +405,14 @@ object MutationTester {
 
     private def mutateExprBinary(expr: Expr): LazyList[Mutant[Expr]] = expr match {
       case Expr.Binary(op, exp1, exp2, tpe, eff, loc) => op match {
-        case BoolOp.And => LazyList(Mutant(Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc), PrintedReplace(loc, s"${exp1.loc.text.get} or ${exp2.loc.text.get}")))
-        case BoolOp.Or => LazyList(Mutant(Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc), PrintedReplace(loc, s"${exp1.loc.text.get} and ${exp2.loc.text.get}")))
+        case BoolOp.And => LazyList(Mutant(
+          Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc),
+          PrintedReplace(loc, s"${getText(exp1)} or ${getText(exp2)}"))
+        )
+        case BoolOp.Or => LazyList(Mutant(
+          Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc),
+          PrintedReplace(loc, s"${getText(exp1)} and ${getText(exp2)}"))
+        )
         case _ => LazyList.empty
       }
       case _ => LazyList.empty
@@ -611,24 +614,28 @@ object MutationTester {
 
       def isTestDef(defn: Def): Boolean = defn.spec.ann.isTest
 
-      def mutateMap[T, E](e: E, mutF: E => LazyList[Mutant[E]], mapF: E => T, printedF: PrintedDiff => PrintedDiff = { p => p }): LazyList[Mutant[T]] =
+      def mutateMap[T, E](e: E,
+                          mutF: E => LazyList[Mutant[E]],
+                          mapF: E => T,
+                          printedF: PrintedDiff => PrintedDiff = { p => p }): LazyList[Mutant[T]] = {
         mutF(e).map(m => Mutant(mapF(m.value), printedF(m.printed)))
+      }
 
       def mutateElms[T, E](elms: List[E], mutF: E => LazyList[Mutant[E]], mapF: List[E] => T): LazyList[Mutant[T]] =
         LazyList.tabulate(elms.length)(i =>
           mutF(elms(i)).map(m => Mutant(mapF(elms.updated(i, m.value)), m.printed))
         ).flatten
 
-      def findSig(clazz: String, sig: String)(implicit flix: Flix): Option[Symbol.SigSym] = try {
-        Some(PredefinedClasses.lookupSigSym(clazz, sig, flix.getKinderAst))
+      def findSig(clazz: String, sig: String)(implicit flix: Flix): Symbol.SigSym = try {
+        PredefinedClasses.lookupSigSym(clazz, sig, flix.getKinderAst)
       } catch {
-        case _: Exception => None // todo: refactor to return info that mutant creation failed ?
+        case e: Exception => throw new MutantException(s"Mutant creation failed: ${e.getMessage}", e)
       }
 
-      def findDef(namespace: List[String], name: String)(implicit flix: Flix): Option[Symbol.DefnSym] = try {
-        Some(PredefinedClasses.lookupDefSym(namespace, name, flix.getKinderAst))
+      def findDef(namespace: List[String], name: String)(implicit flix: Flix): Symbol.DefnSym = try {
+        PredefinedClasses.lookupDefSym(namespace, name, flix.getKinderAst)
       } catch {
-        case _: Exception => None // todo: refactor to return info that mutant creation failed ?
+        case e: Exception => throw new MutantException(s"Mutant creation failed: ${e.getMessage}", e)
       }
 
       def inverseAstPolarity(polarity: Polarity): Polarity =
@@ -636,7 +643,11 @@ object MutationTester {
           case Polarity.Positive => Polarity.Negative
           case Polarity.Negative => Polarity.Positive
         }
+
+      def getText(expr: Expr): String = expr.loc.text.getOrElse("<unknown>")
     }
+
+    private class MutantException(message: String, cause: Throwable) extends Exception(message, cause)
   }
 
   // todo: create MutationKind enum (?)
@@ -683,7 +694,7 @@ object MutationTester {
   private class MutationReporter(implicit flix: Flix) {
     private var startTime: Long = 0
     private var finishTime: Long = 0
-    private val all: AtomicInteger = new AtomicInteger(0)
+    // todo: atomics ?
     private val killed: AtomicInteger = new AtomicInteger(0)
     private val survived: AtomicInteger = new AtomicInteger(0)
     private val compilationFailed: AtomicInteger = new AtomicInteger(0)
@@ -691,9 +702,7 @@ object MutationTester {
 
     private val formatter: Formatter = flix.getFormatter
     private val lineSeparator = System.lineSeparator()
-    private val verticalBar = " | "
-    private val verticalBarFormatter = "%4d"
-    private val outputDivider = "-" * 70
+    private val outputDivider = "-" * 80
 
     private val source2LinesNum = new mutable.HashMap[Source, Int]
 
@@ -708,84 +717,94 @@ object MutationTester {
     def report(status: MutantStatus, printedDiff: PrintedDiff): String = {
       val sb = new mutable.StringBuilder
 
-      diff(sb, printedDiff)
-
-      all.getAndIncrement()
       status match {
         case Killed =>
           killed.getAndIncrement()
           sb.append(green("KILLED"))
         case Survived =>
           survived.getAndIncrement()
+          diff(sb, printedDiff)
           sb.append(red("SURVIVED"))
         case CompilationFailed =>
           compilationFailed.getAndIncrement()
-          sb.append(yellow("COMPILATION FAILED"))
+          sb.append(blue("COMPILATION FAILED"))
         case TimedOut =>
           timedOut.getAndIncrement()
-          sb.append(yellow("TIMED OUT"))
+          sb.append(blue("TIMED OUT"))
         case _ =>
-          sb.append(blue("UNKNOWN MUTANT STATUS"))
+          sb.append(yellow("UNKNOWN MUTANT STATUS"))
       }
 
-      sb.append(lineSeparator)
+      sb.append(s" ${printedDiff.sourceLocation.format}")
+        .append(lineSeparator)
         .append(outputDivider)
+        .append(lineSeparator)
 
       // todo:
-      //  think about print and clear after each N mutants. Remember, that multiple threads can perform this function at a time
+      //  think about print and clear after each N mutants.
+      //  remember, that multiple threads can perform this function at a time
       //  look 'ProgressBar.SampleRate`
       sb.toString()
     }
 
-    // colorize ?
-    def printStats(): String = new StringBuilder()
-      .append(lineSeparator)
-      .append("Mutation testing:")
-      .append(lineSeparator)
-      .append(s"All = ${all.intValue().toString}")
-      .append(s", Killed = ${killed.intValue().toString}")
-      .append(s", Survived = ${survived.intValue().toString}")
-      .append(s", Compilation Failed = ${compilationFailed.intValue().toString}")
-      .append(s", Timed out = ${timedOut.intValue().toString}")
-      .append(lineSeparator)
-      .append(s"Mutations score = ${f"${killed.doubleValue() / (killed.doubleValue() + survived.doubleValue()) * 100}%.2f"} %")
-      .append(lineSeparator)
-      .append(s"Calculated in ${(finishTime - startTime) / 1000.0} seconds")
-      .toString()
+    def printStats(): String =
+      new StringBuilder()
+        .append(lineSeparator)
+        .append(cyan("Mutation testing results:"))
+        .append(lineSeparator)
+        .append(s"Total = ${total().toString}")
+        .append(s", Killed = ${killed.intValue().toString}")
+        .append(s", Survived = ${survived.intValue().toString}")
+        .append(s", Compilation Failed = ${compilationFailed.intValue().toString}")
+        .append(s", Timed out = ${timedOut.intValue().toString}")
+        .append(lineSeparator)
+        .append(s"Mutations score ${
+          val tested = killed.doubleValue() + survived.doubleValue()
+          if (tested != 0) s"= ${cyan(f"${killed.doubleValue() / tested}%.2f")}"
+          else "was not calculated from 0 mutants"
+        }")
+        .append(lineSeparator)
+        .append(s"Calculated in ${(finishTime - startTime) / 1000.0} seconds")
+        .toString()
 
-    // todo:
-    //  incorrect for black-white terminal
-    //  look Formatter class like Formatter.code() ??
-    //  refactor hardcoded '.loc.text.get' in this file
-    //  refactor SigSym newStr. For example, `Eq.neq(x, 5)` to `x != 5`
+    private def total(): Int = killed.intValue() + survived.intValue() + compilationFailed.intValue() + timedOut.intValue()
+
     private def diff(sb: StringBuilder, printedDiff: PrintedDiff): Unit = {
-      val sourceLocation = printedDiff.sourceLocation
-      if (sourceLocation == SourceLocation.Unknown) {
+      val sl = printedDiff.sourceLocation
+      if (sl == SourceLocation.Unknown) {
         sb.append("Diff printing error: SourceLocation.Unknown was not expected")
           .append(lineSeparator)
           .append(lineSeparator)
         return
       }
 
-      diffBefore(sb, sourceLocation)
+      val beginLine = sl.beginLine
+      val endLine = sl.endLine
+
+      val linesNum = source2LinesNum.getOrElseUpdate(sl.source, sl.source.data.count(c => c == '\n' || c == '\r') + 1)
+      val numWidth = {
+        if (endLine + 2 <= linesNum) endLine + 2
+        else if (endLine + 1 <= linesNum) endLine + 1
+        else endLine
+      }.toString.length
+
+      if (0 < beginLine - 2) diffNumberedLine(sb, sl, numWidth, beginLine - 2)
+      if (0 < beginLine - 1) diffNumberedLine(sb, sl, numWidth, beginLine - 1)
+
+      diffRemove(sb, sl, numWidth)
       printedDiff match {
-        case PrintedReplace(loc, newStr) => diffRemove(sb, loc); diffAdd(sb, loc, newStr)
-        case PrintedRemove(loc) => diffRemove(sb, loc)
-        case PrintedAdd(loc, newStr) => diffAdd(sb, loc, newStr)
+        case PrintedReplace(loc, newStr) => diffAdd(sb, loc, numWidth, newStr)
+        case PrintedRemove(loc) => diffAdd(sb, loc, numWidth, "")
+        case PrintedAdd(loc, newStr) => diffAdd(sb, loc, numWidth, newStr)
       }
-      diffAfter(sb, sourceLocation)
+
+      if (endLine + 1 <= linesNum) diffNumberedLine(sb, sl, numWidth, endLine + 1)
+      if (endLine + 2 <= linesNum) diffNumberedLine(sb, sl, numWidth, endLine + 2)
 
       sb.append(lineSeparator)
     }
 
-    private def diffBefore(sb: StringBuilder, loc: SourceLocation): Unit = {
-      val beginLine = loc.beginLine
-
-      diffNumberedLine(sb, loc, beginLine - 2)
-      diffNumberedLine(sb, loc, beginLine - 1)
-    }
-
-    private def diffRemove(sb: StringBuilder, loc: SourceLocation): Unit = {
+    private def diffRemove(sb: StringBuilder, loc: SourceLocation, numWidth: Int): Unit = {
       val beginLine = loc.beginLine
       val endLine = loc.endLine
       val beginCol = loc.beginCol
@@ -793,25 +812,22 @@ object MutationTester {
       val beginL = loc.lineAt(beginLine)
       val endL = loc.lineAt(endLine)
 
-      sb.append(red("   -"))
-        .append(verticalBar)
+      sb.append(padLeft(numWidth, beginLine.toString))
+        .append(verticalBar(red("-")))
         .append(beginL.substring(0, beginCol - 1))
 
       if (loc.isSingleLine) {
         sb.append(red(beginL.substring(beginCol - 1, endCol - 1)))
       } else {
         sb.append(red(beginL.substring(beginCol - 1)))
+          .append(lineSeparator)
 
         for (l <- beginLine + 1 until endLine) {
-          sb.append(lineSeparator)
-            .append(red(verticalBarFormatter.format(l)))
-            .append(verticalBar)
-            .append(red(loc.lineAt(l)))
+          diffNumberedLine(sb, loc, numWidth, l, "-", red)
         }
 
-        sb.append(lineSeparator)
-          .append(red(verticalBarFormatter.format(endLine)))
-          .append(verticalBar)
+        sb.append(padLeft(numWidth, endLine.toString))
+          .append(verticalBar(red("-")))
           .append(red(endL.substring(0, endCol - 1)))
       }
 
@@ -819,32 +835,29 @@ object MutationTester {
         .append(lineSeparator)
     }
 
-    // correct display is not guaranteed for multiline str
-    private def diffAdd(sb: StringBuilder, loc: SourceLocation, str: String): Unit = {
-      sb.append(green("   +"))
-        .append(verticalBar)
+    private def diffAdd(sb: StringBuilder, loc: SourceLocation, numWidth: Int, str: String): Unit = {
+      sb.append(padLeft(numWidth, ""))
+        .append(verticalBar(green("+")))
         .append(loc.lineAt(loc.beginLine).substring(0, loc.beginCol - 1))
         .append(green(str))
         .append(loc.lineAt(loc.endLine).substring(loc.endCol - 1))
         .append(lineSeparator)
     }
 
-    private def diffAfter(sb: StringBuilder, loc: SourceLocation): Unit = {
-      val endLine = loc.endLine
-
-      diffNumberedLine(sb, loc, endLine + 1)
-      diffNumberedLine(sb, loc, endLine + 2)
+    private def diffNumberedLine(sb: StringBuilder,
+                                 loc: SourceLocation,
+                                 numWidth: Int,
+                                 lineNo: Int,
+                                 afterBar: String = " ",
+                                 colorize: String => String = { s => s }): Unit = {
+      sb.append(padLeft(numWidth, lineNo.toString))
+        .append(verticalBar(colorize(afterBar)))
+        .append(colorize(loc.lineAt(lineNo)))
+        .append(lineSeparator)
     }
 
-    private def diffNumberedLine(sb: StringBuilder, loc: SourceLocation, n: Int): Unit = {
-      val linesNum = source2LinesNum.getOrElseUpdate(loc.source, loc.source.data.count(c => c == '\n' || c == '\r') + 1)
+    private def padLeft(width: Int, s: String): String = String.format("%" + width + "s", s)
 
-      if (0 < n && n <= linesNum) {
-        sb.append(verticalBarFormatter.format(n))
-          .append(verticalBar)
-          .append(loc.lineAt(n))
-          .append(lineSeparator)
-      }
-    }
+    private def verticalBar(s: String = " "): String = s" |$s "
   }
 }

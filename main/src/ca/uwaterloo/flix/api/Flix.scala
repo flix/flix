@@ -550,7 +550,7 @@ class Flix {
       afterTyper <- Typer.run(afterDeriver, cachedTyperAst, changeSet)
       _ <- Regions.run(afterTyper)
       afterEntryPoint <- EntryPoint.run(afterTyper)
-      _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+      _ <- Instances.run(afterEntryPoint, changeSet)
       afterPredDeps <- PredDeps.run(afterEntryPoint)
       afterStratifier <- Stratifier.run(afterPredDeps)
       afterPatMatch <- PatMatch.run(afterStratifier)
@@ -612,7 +612,7 @@ class Flix {
     val result = for {
       _ <- Regions.run(typedAst)
       afterEntryPoint <- EntryPoint.run(typedAst)
-      //      _ <- Instances.run(afterEntryPoint, cachedTyperAst, changeSet)
+      _ <- Instances.run(afterEntryPoint, ChangeSet.Everything)
       afterPredDeps <- PredDeps.run(afterEntryPoint)
       afterStratifier <- Stratifier.run(afterPredDeps)
       afterPatMatch <- PatMatch.run(afterStratifier)
