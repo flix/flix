@@ -18,7 +18,6 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.Type.{False, Str, True}
-import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import dev.flix.runtime.Global
@@ -200,8 +199,8 @@ object MutationGenerator {
     case Expr.Region(_, _) => Nil
     case original@Expr.Scope(_, _, exp, tpe, eff, loc) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, tpe, eff, loc))
     case original@Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      val ifTrue = Expr.Mutated(original.copy(exp1 = Expr.Cst(Constant.Bool(true), True, exp1.loc)), original, m.tpe, m.eff, m.loc)
-      val ifFalse = Expr.Mutated(original.copy(exp1 = Expr.Cst(Constant.Bool(false), False, exp1.loc)), original, m.tpe, m.eff, m.loc)
+      val ifTrue = Expr.Mutated(original.copy(exp1 = Expr.Cst(Constant.Bool(true), True, exp1.loc)), original, original.tpe, original.eff, original.loc)
+      val ifFalse = Expr.Mutated(original.copy(exp1 = Expr.Cst(Constant.Bool(false), False, exp1.loc)), original, original.tpe, original.eff, original.loc)
       val mut2 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = m), original, m.tpe, m.eff, m.loc))
       val mut3 = mutateExpr(exp3).map(m => Expr.Mutated(original.copy(exp3 = m), original, m.tpe, m.eff, m.loc))
       ifTrue :: ifFalse :: mut2 ::: mut3
@@ -211,19 +210,23 @@ object MutationGenerator {
       mut1 ::: mut2
     case Expr.Discard(_, _, _) => Nil
     case original@Expr.Match(_, rules, _, _, _) =>
-      val permutations = rules.permutations.toList.map(m => Expr.Mutated(original.copy(rules = m), original, original.tpe, original.eff, original.loc))
+      val permutations = rules.permutations
+        .toList.tail
+        .map(m =>
+          Expr.Mutated(original.copy(rules = m), original, original.tpe, original.eff, original.loc)
+        )
       val deletedCasesMutation = rules.indices
         .map(index =>
           rules.filter(e => rules.indexOf(e) != index || rules.indexOf(e) == rules.length - 1))
-        .toList.map(m => Expr.Mutated(original.copy(rules = m), original, original.tpe, original.eff, original.loc))
+            .toList.map(m => Expr.Mutated(original.copy(rules = m), original, original.tpe, original.eff, original.loc))
       val mutateRules = rules.zipWithIndex.flatMap {
         case (rule, index) =>
           val mutations = mutateMatchrule(rule)
-          mutations.map(m => original.copy(rules = rules.updated(index, m)))
+          mutations.map{case (m, mloc) => original.copy(rules = rules.updated(index, m), loc = mloc)}
       }
       val lengths = mutateRules.map(mr => mr.rules.length)
       lengths.foreach(l => assert(rules.length == l, "fail in match"))
-      val markedMutateRules = mutateRules.map(m => Expr.Mutated(m, original, original.tpe, original.eff, original.loc))
+      val markedMutateRules = mutateRules.map(m => Expr.Mutated(m, original, m.tpe, m.eff, m.loc))
       permutations ::: markedMutateRules ::: deletedCasesMutation.reverse.tail
     case Expr.TypeMatch(exp, rules, _, _, _) => Nil
     case Expr.RestrictableChoose(_, _, _, _, _, _) => Nil
@@ -367,9 +370,9 @@ object MutationGenerator {
     case _ => Nil
   }
 
-  private def mutateMatchrule(mr: TypedAst.MatchRule): List[TypedAst.MatchRule] = {
-    val mut1 = mutateExpr(mr.exp).map(m => mr.copy(exp = m))
-    val patterns = mutatePattern(mr.pat).map(m => mr.copy(pat = m))
+  private def mutateMatchrule(mr: TypedAst.MatchRule): List[(TypedAst.MatchRule, SourceLocation)] = {
+    val mut1 = mutateExpr(mr.exp).map(m => (mr.copy(exp = m), m.loc))
+    val patterns = mutatePattern(mr.pat).map(m => (mr.copy(pat = m), m.loc))
     patterns ::: mut1
   }
 

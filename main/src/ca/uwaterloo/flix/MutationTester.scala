@@ -76,6 +76,7 @@ object MutationTester {
         println(s"time to generate mutations: $timeSec")
         val lastRoot = insertDecAndCheckIntoRoot(root)
         runMutations(flix, testModule, lastRoot, mutations)
+        writeReportsToFile(nonKilledStrList)
     }
 
     def writeReportsToFile(reportsList: List[String]): Unit = {

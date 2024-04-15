@@ -30,7 +30,7 @@ object MutationReporter {
         case Expr.Lambda(fparam, exp, tpe, loc) =>
           s"(${fparam.toString} -> ${prettyPrint(exp)})"
         case Expr.Apply(exp, exps, tpe, eff, loc) =>
-          val params = exps.map(e => s"${prettyPrint(e)}, ")
+          val params = exps.map(e => s"${prettyPrint(e)}, ").mkString
           s"${prettyPrint(exp)}($params)"
         case Expr.Unary(sop, exp, tpe, eff, loc) => "Unary :("
         case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => "Binary :("
