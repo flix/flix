@@ -25,6 +25,8 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType
 
+import java.io.{File, FileWriter}
+
 ///
 /// A Mutation Tester can be used to evaluate ones test suite.
 /// It is based on the following:
@@ -53,6 +55,7 @@ object MutationTester {
 
         case object Unknown extends TestRes
     }
+    var nonKilledStrList: List[String] = List.empty
 
     /**
       * Compiles until after the typing stage, creates mutants and then runs them.
@@ -60,7 +63,6 @@ object MutationTester {
       * It also keeps track of the time it took to generate all the mutations
       */
     def run(flix: Flix, testModule: String, productionModule: String): Unit = {
-      println("\u194D")
         val root = flix.check().unsafeGet
         val start = System.nanoTime()
         // println(root.sigs.filter(t => t._1.toString.equals("Add.add")))
@@ -74,6 +76,14 @@ object MutationTester {
         println(s"time to generate mutations: $timeSec")
         val lastRoot = insertDecAndCheckIntoRoot(root)
         runMutations(flix, testModule, lastRoot, mutations)
+    }
+
+    def writeReportsToFile(reportsList: List[String]): Unit = {
+      var strForFile = reportsList.foldLeft("")((acc, str) => s"$acc\n\n$str")
+      strForFile = strForFile.substring(2)
+      val fileWriter = new FileWriter(new File(s"mutation_report.txt"))
+      fileWriter.write(strForFile)
+      fileWriter.close()
     }
 
     /**
@@ -147,9 +157,12 @@ object MutationTester {
             val newTime = time + (System.nanoTime() - start).toDouble / nano
             val newSurvivorCount = if (testResults.equals(TestRes.MutantSurvived))  survivorCount + 1 else survivorCount
             val newUnknownCount = if (testResults.equals(TestRes.Unknown))  unknownCount + 1 else unknownCount
-            if (testResults.equals(TestRes.Unknown) || testResults.equals(TestRes.MutantSurvived))
-              println(MutationReporter.reportNonKilledMutation(mDef.exp))
-            val now = LocalDateTime.now()
+            if (testResults.equals(TestRes.Unknown) || testResults.equals(TestRes.MutantSurvived)) {
+              // println(MutationReporter.reportNonKilledMutation(mDef.exp))
+              nonKilledStrList = MutationReporter.reportNonKilledMutation(mDef.exp) :: nonKilledStrList
+            }
+
+          val now = LocalDateTime.now()
             val message = s"[${f.format(now)}] Mutants: $mutationAmount, Killed: ${mutationAmount - survivorCount - unknownCount}, Survived: $survivorCount, Unknown: $unknownCount"
             val newTemp = progressUpdate(message, accTemp)
             (newSurvivorCount, newUnknownCount, newTime, newTemp, mutationAmount)
@@ -190,9 +203,7 @@ object MutationTester {
                     }
                 } catch {
                     case e: Throwable =>
-                      println(e)
                       if (e.getClass.toString.equals("class dev.flix.runtime.MutationError$")) {
-                        println("here")
                         TestRes.Unknown
                       }
                       else TestRes.MutantKilled

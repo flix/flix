@@ -20,16 +20,10 @@ import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.Type.{False, Str, True}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, Symbol, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.ast.TypedAst.Expr
-
-import java.math.BigInteger
-import ca.uwaterloo.flix.language.ast.Type.AssocType
-import ca.uwaterloo.flix.language.ast.Type.Alias
-import ca.uwaterloo.flix.language.ast.Type.Cst
-import ca.uwaterloo.flix.language.ast.Type.Var
-import ca.uwaterloo.flix.language.ast.Type.Apply
+import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import dev.flix.runtime.Global
 
-import scala.util.Failure
+import java.math.BigInteger
 
 
 ///
@@ -62,28 +56,6 @@ object MutationGenerator {
     val mask = Expr.UncheckedMaskingCast(InvokeMethod, Type.Int64, Type.Pure, loc)
     Expr.Stm(mask, mutated, mutated.tpe, mutated.eff, mutated.loc)
   }
-
-  /**
-    *
-    * @param defs    : a map of the all defs
-    * @param defSyms : the symbols of the defs that are to be mutated
-    * @return List[(Symbol.DefnSym, List[TypedAst.Def])]: the list of the symbols of the defs along with a
-    *         list that contains a def for all mutations of that def
-    */
-  private def mutateDefs(defs: Map[Symbol.DefnSym, TypedAst.Def], defSyms: List[Symbol]) = {
-    defs.toList.map(d => (d._1, d._2) match {
-      case (s, fun) =>
-        if (defSyms.contains(s)) {
-          val mutExps = mutateExpr(fun.exp)
-          val mutDefs = mutExps.map(mexp => {
-            fun.copy(exp = mexp)
-          })
-          Some(d._1 -> mutDefs)
-        } else None
-      case _ => None
-    })
-  }
-
 
   def mutateSig(sig: Expr.Sig): List[TypedAst.Expr.Sig] = {
     val tpe = sig.tpe
@@ -128,6 +100,27 @@ object MutationGenerator {
   }
 
   /**
+    *
+    * @param defs    : a map of the all defs
+    * @param defSyms : the symbols of the defs that are to be mutated
+    * @return List[(Symbol.DefnSym, List[TypedAst.Def])]: the list of the symbols of the defs along with a
+    *         list that contains a def for all mutations of that def
+    */
+  private def mutateDefs(defs: Map[Symbol.DefnSym, TypedAst.Def], defSyms: List[Symbol]) = {
+    defs.toList.map(d => (d._1, d._2) match {
+      case (s, fun) =>
+        if (defSyms.contains(s)) {
+          val mutExps = mutateExpr(fun.exp)
+          val mutDefs = mutExps.map(mexp => {
+            fun.copy(exp = mexp)
+          })
+          Some(d._1 -> mutDefs)
+        } else None
+      case _ => None
+    })
+  }
+
+  /**
     * Goes through an expression and its subtree and returns a list of all possible mutations and permutations
     *
     * @param e : the expression to be mutated
@@ -143,12 +136,12 @@ object MutationGenerator {
     */
   private def mutateExpr(e: TypedAst.Expr): List[TypedAst.Expr.Mutated] = e match {
     case original@Expr.Cst(cst, tpe, loc) =>
-      mutateCst(cst).map(c => Expr.Mutated(Expr.Cst(c, tpe, loc),original,original.tpe, original.eff, original.loc))
+      mutateCst(cst).map(c => Expr.Mutated(Expr.Cst(c, tpe, loc), original, original.tpe, original.eff, original.loc))
     case original@Expr.Var(_, _, _) =>
-      mutateVar(original).map(c => Expr.Mutated(c,original,original.tpe, original.eff, original.loc))
+      mutateVar(original).map(c => Expr.Mutated(c, original, original.tpe, original.eff, original.loc))
     case Expr.Def(_, _, _) => Nil
     case original@Expr.Sig(_, _, _) =>
-      mutateSig(original).map(c => Expr.Mutated(c,original,original.tpe, original.eff, original.loc))
+      mutateSig(original).map(c => Expr.Mutated(c, original, original.tpe, original.eff, original.loc))
     case Expr.Hole(_, _, _) => Nil
     case Expr.HoleWithExp(_, _, _, _) => Nil
     case Expr.OpenAs(_, _, _, _) => Nil
@@ -157,7 +150,7 @@ object MutationGenerator {
     case original@Expr.Lambda(_, exp, _, _) =>
       mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
     case original@Expr.Apply(exp, exps, _, _, _) =>
-      val mut = mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m),original,original.tpe, original.eff, original.loc))
+      val mut = mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
       val mutateExpsTemp = exps.zipWithIndex.flatMap {
         case (exp, index) =>
           val mutations = mutateExpr(exp)
@@ -165,7 +158,7 @@ object MutationGenerator {
       }
       val lengths = mutateExpsTemp.map(mr => mr.exps.length)
       lengths.foreach(l => assert(exps.length == l, "fail in apply"))
-      val mutateExps = mutateExpsTemp.map(m => Expr.Mutated(m,original,original.tpe, original.eff, original.loc))
+      val mutateExps = mutateExpsTemp.map(m => Expr.Mutated(m, original, original.tpe, original.eff, original.loc))
       mut ::: mutateExps
 
     case original@Expr.Unary(sop, exp, tpe, eff, loc) =>
@@ -184,16 +177,16 @@ object MutationGenerator {
       val method = classOf[Global].getMethods.find(m => m.getName.equals("decAndCheck")).get
       val InvokeMethod = Expr.InvokeStaticMethod(method, Nil, Type.Int64, Type.IO, loc)
       val mask = Expr.UncheckedMaskingCast(InvokeMethod, Type.Int64, Type.Pure, loc)
-      val mut1 = mutateExpr(exp1).map(m =>{
+      val mut1 = mutateExpr(exp1).map(m => {
         // the reason for the following matches are to avoid adding decAndCheck to the FormalParams of the Lambda
         val mm: Option[Expr.Mutated] = m match {
-          case mutated@Expr.Mutated(mutExp,_, _, _ ,_ ) =>
+          case mutated@Expr.Mutated(mutExp, _, _, _, _) =>
             val statement = mutExp match {
-                case lambda@Expr.Lambda(_, exp, _, _) =>
-                  Some(lambda.copy(exp = Expr.Stm(mask, exp, exp.tpe, exp.eff, exp.loc)))
-                case _ => None
-              }
-              Some(mutated.copy(mutExp = statement.get))
+              case lambda@Expr.Lambda(_, exp, _, _) =>
+                Some(lambda.copy(exp = Expr.Stm(mask, exp, exp.tpe, exp.eff, exp.loc)))
+              case _ => None
+            }
+            Some(mutated.copy(mutExp = statement.get))
           case _ => None
         }
         Expr.Mutated(original.copy(exp1 = mm.get), original, tpe, eff, loc)
@@ -207,10 +200,10 @@ object MutationGenerator {
     case Expr.Region(_, _) => Nil
     case original@Expr.Scope(_, _, exp, tpe, eff, loc) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, tpe, eff, loc))
     case original@Expr.IfThenElse(exp1, exp2, exp3, _, _, _) =>
-      val ifTrue = Expr.Mutated(original.copy(exp1 = Expr.Cst(Constant.Bool(true), True, exp1.loc)), original, original.tpe, original.eff, original.loc)
-      val ifFalse = Expr.Mutated(original.copy(exp1 = Expr.Cst(Constant.Bool(false), False, exp1.loc)), original, original.tpe, original.eff, original.loc)
-      val mut2 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = m), original, original.tpe, original.eff, original.loc))
-      val mut3 = mutateExpr(exp3).map(m => Expr.Mutated(original.copy(exp3 = m), original, original.tpe, original.eff, original.loc))
+      val ifTrue = Expr.Mutated(original.copy(exp1 = Expr.Cst(Constant.Bool(true), True, exp1.loc)), original, m.tpe, m.eff, m.loc)
+      val ifFalse = Expr.Mutated(original.copy(exp1 = Expr.Cst(Constant.Bool(false), False, exp1.loc)), original, m.tpe, m.eff, m.loc)
+      val mut2 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = m), original, m.tpe, m.eff, m.loc))
+      val mut3 = mutateExpr(exp3).map(m => Expr.Mutated(original.copy(exp3 = m), original, m.tpe, m.eff, m.loc))
       ifTrue :: ifFalse :: mut2 ::: mut3
     case original@Expr.Stm(exp1, exp2, _, _, _) =>
       val mut1 = mutateExpr(exp1).map(m => Expr.Mutated(original.copy(exp1 = m), original, original.tpe, original.eff, original.loc))
@@ -245,10 +238,11 @@ object MutationGenerator {
     case Expr.RecordEmpty(_, _) => Nil
     case original@Expr.RecordSelect(exp, label, tpe, _, _) =>
       def nameAndType(xs: List[TypeConstructor]): List[(Name.Label, TypeConstructor)] = xs match {
-        case TypeConstructor.RecordRowExtend(label) :: tp :: tail  => (label, tp) :: nameAndType(tail)
+        case TypeConstructor.RecordRowExtend(label) :: tp :: tail => (label, tp) :: nameAndType(tail)
         case _ :: tail => nameAndType(tail)
         case _ => Nil
       }
+
       val types = nameAndType(exp.tpe.typeConstructors)
       val res = types.flatMap {
         case (name, tp) =>
@@ -367,7 +361,7 @@ object MutationGenerator {
       mut1 ::: mut2
     case original@Expr.FixpointSolve(exp, _, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
     case original@Expr.FixpointFilter(_, exp, _, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
-    case original@Expr.FixpointInject(exp, _, _, _, _) => mutateExpr(exp).map(m =>Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
+    case original@Expr.FixpointInject(exp, _, _, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
     case original@Expr.FixpointProject(_, exp, _, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
     case Expr.Error(_, _, _) => Nil
     case _ => Nil

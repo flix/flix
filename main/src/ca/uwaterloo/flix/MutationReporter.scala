@@ -9,7 +9,7 @@ object MutationReporter {
   @tailrec
   def reportNonKilledMutation(exp: TypedAst.Expr): String = {
     exp match {
-      case Expr.Mutated(mutExp, originalExp, tpe, eff, loc) =>  mutExp match {
+      case Expr.Mutated(mutExp, originalExp, tpe, eff, loc) => mutExp match {
         case Expr.Mutated(_, _, _, _, _) => reportNonKilledMutation(mutExp)
         case e => s"surviving mutation at $loc\noriginal: ${prettyPrint(originalExp)}\nMutation: ${prettyPrint(e)}"
       }
@@ -32,7 +32,7 @@ object MutationReporter {
         case Expr.Apply(exp, exps, tpe, eff, loc) =>
           val params = exps.map(e => s"${prettyPrint(e)}, ")
           s"${prettyPrint(exp)}($params)"
-        case Expr.Unary(sop, exp, tpe, eff, loc) => "Unaray :("
+        case Expr.Unary(sop, exp, tpe, eff, loc) => "Unary :("
         case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => "Binary :("
         case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) => s"let ${sym.toString} = ${prettyPrint(exp2)}" // idk if it should be exp1 or exp2
         case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
