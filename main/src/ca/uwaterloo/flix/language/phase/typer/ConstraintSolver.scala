@@ -276,7 +276,7 @@ object ConstraintSolver {
       val t1 = TypeMinimization.minimizeType(subst0(tpe1))
       val t2 = TypeMinimization.minimizeType(subst0(tpe2))
       val prov = subst0(prov0)
-      resolveEquality(t1, t2, prov, renv, constr0.loc).map {
+      resolveSubtype(t1, t2, prov, renv, constr0.loc).map {
         case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
       }
     case TypeConstraint.Trait(sym, tpe, loc) =>
@@ -429,6 +429,151 @@ object ConstraintSolver {
 
     case _ =>
       Result.Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
+  }
+
+
+  /**
+    * Resolves the subtype between the two given types.
+    *
+    * TODO what does this mean?
+    * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
+    */
+  private def resolveSubtype(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1.kind, tpe2.kind) match {
+    case (Kind.Eff, Kind.Eff) =>
+      // first simplify the types to get rid of assocs if we can
+      for {
+        (t1, p1) <- simplifyType(tpe1, renv, loc)
+        (t2, p2) <- simplifyType(tpe2, renv, loc)
+        // TODO we could avoid fresh vars in simple cases like pure < any and any < univ
+        slack = Type.Var(Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Eff, isRegion = false, t1.loc.asSynthetic), t1.loc.asSynthetic)
+        lhs = Type.mkUnion(t1, slack, t1.loc.asSynthetic)
+        // rewrite x < y to x + a < y
+        res0 <- EffUnification.unify(lhs, t2, renv).mapErr(toTypeError(_, prov))
+        res =
+          if (res0._2.isEmpty) {
+            ResolutionResult.newSubst(res0._1)
+          } else {
+            ResolutionResult.constraints(List(TypeConstraint.Subtype(t1, t2, prov)), p1 || p2)
+          }
+      } yield res
+
+    case (Kind.Bool, Kind.Bool) =>
+      // first simplify the types to get rid of assocs if we can
+      for {
+        (t1, p1) <- simplifyType(tpe1, renv, loc)
+        (t2, p2) <- simplifyType(tpe2, renv, loc)
+        slack = Type.Var(Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Bool, isRegion = false, t1.loc.asSynthetic), t1.loc.asSynthetic)
+        lhs = Type.mkOr(t1, slack, t1.loc.asSynthetic)
+        // TODO is this actually or?
+        // rewrite x < y to x or a < y
+        res0 <- BoolUnification.unify(lhs, t2, renv).mapErr(toTypeError(_, prov))
+        res =
+          if (res0._2.isEmpty) {
+            ResolutionResult.newSubst(res0._1)
+          } else {
+            ResolutionResult.constraints(List(TypeConstraint.Subtype(t1, t2, prov)), p1 || p2)
+          }
+      } yield res
+
+    case (Kind.RecordRow, Kind.RecordRow) =>
+      // first simplify the types to get rid of assocs if we can
+      for {
+        (t1, p1) <- simplifyType(tpe1, renv, loc)
+        (t2, p2) <- simplifyType(tpe2, renv, loc)
+        // TODO
+        res0: (Substitution, List[Ast.BroadEqualityConstraint]) = ??? // RecordUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
+        res =
+          if (res0._2.isEmpty) {
+            ResolutionResult.newSubst(res0._1)
+          } else {
+            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+          }
+      } yield res
+
+    case (Kind.SchemaRow, Kind.SchemaRow) =>
+      // first simplify the types to get rid of assocs if we can
+      for {
+        (t1, _) <- simplifyType(tpe1, renv, loc)
+        (t2, _) <- simplifyType(tpe2, renv, loc)
+        // TODO
+        res: Substitution = ??? // SchemaUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
+      } yield ResolutionResult.newSubst(res)
+
+    case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
+      for {
+        (t1, _) <- simplifyType(tpe1, renv, loc)
+        (t2, _) <- simplifyType(tpe2, renv, loc)
+        // TODO
+        res: Substitution = ??? // CaseSetUnification.unify(t1, t2, renv, sym1.universe, sym1).mapErr(toTypeError(_, prov))
+      } yield ResolutionResult.newSubst(res)
+
+    case (k1, k2) if KindUnification.unifiesWith(k1, k2) => resolveSubtypeStar(tpe1, tpe2, prov, renv, loc)
+
+    case _ => Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov))
+  }
+
+
+  /**
+    * Resolves the subtyping between the two given types, where the types have some kind `... -> Star`
+    *
+    * TODO what does this mean?
+    * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
+    */
+  private def resolveSubtypeStar(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1, tpe2) match {
+    // x < x
+    case (x: Type.Var, y: Type.Var) if (x == y) => Result.Ok(ResolutionResult.elimination)
+
+    // x42 < any
+//    case (x: Type.Var, t) if renv.isFlexible(x.sym) && !t.typeVars.contains(x) =>
+//      Result.Ok(ResolutionResult.newSubst(Substitution.singleton(x.sym, t)))
+
+    // any < x42
+//    case (t, x: Type.Var) if renv.isFlexible(x.sym) && !t.typeVars.contains(x) =>
+//      Result.Ok(ResolutionResult.newSubst(Substitution.singleton(x.sym, t)))
+
+    // cst < cst
+    case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(ResolutionResult.elimination)
+
+    // al<t> < any --> t < any
+    case (Type.Alias(_, _, tpe, _), _) => resolveSubtype(tpe, tpe2, prov, renv, loc)
+
+    // any < al<t> --> any < t
+    case (_, Type.Alias(_, _, tpe, _)) => resolveSubtype(tpe1, tpe, prov, renv, loc)
+
+    // TODO functions
+
+    // non-functions
+    // t11[t12] < t21[t22] --> t11 < t21 and t12 < t22
+    case (Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) =>
+      for {
+        res1 <- resolveSubtype(t11, t21, prov, renv, loc)
+        res2 <- resolveSubtype(res1.subst(t12), res1.subst(t22), res1.subst(prov), renv, loc)
+      } yield res2 @@ res1
+
+    // at < at
+    case (Type.AssocType(cst1, args1, _, _), Type.AssocType(cst2, args2, _, _)) if cst1.sym == cst2.sym && args1 == args2 =>
+      Result.Ok(ResolutionResult.elimination)
+
+    // If either side is an associated type, we try to reduce both sides.
+    // This is to prevent erroneous no-progress reports when we actually could make progress on the non-matched side.
+    case (assoc: Type.AssocType, tpe) =>
+      for {
+        (t1, p1) <- simplifyType(assoc, renv, loc)
+        (t2, p2) <- simplifyType(tpe, renv, loc)
+      } yield {
+        ResolutionResult.constraints(List(TypeConstraint.Subtype(t1, t2, prov)), p1 || p2)
+      }
+
+    case (tpe, assoc: Type.AssocType) =>
+      for {
+        (t1, p1) <- simplifyType(tpe, renv, loc)
+        (t2, p2) <- simplifyType(assoc, renv, loc)
+      } yield {
+        ResolutionResult.constraints(List(TypeConstraint.Subtype(t1, t2, prov)), p1 || p2)
+      }
+
+    case _ =>
+      Result.Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov))
   }
 
   /**
