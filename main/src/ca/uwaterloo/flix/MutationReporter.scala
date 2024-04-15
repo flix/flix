@@ -21,14 +21,14 @@ object MutationReporter {
       exp match {
         case Expr.Cst(cst, _, loc) => cst.toString
         case Expr.Var(sym, tpe, loc) => sym.text
-        case Expr.Def(sym, tpe, loc) => "Def :("
+        case Expr.Def(sym, tpe, loc) => sym.name
         case Expr.Sig(sym, tpe, loc) => sym.name
         case Expr.Hole(sym, tpe, loc) => "Hole :("
         case Expr.HoleWithExp(exp, tpe, eff, loc) => "HoleWithExp :("
         case Expr.OpenAs(symUse, exp, tpe, loc) => "OpenAs :("
         case Expr.Use(sym, alias, exp, loc) => s"Use ${prettyPrint(exp)}"
         case Expr.Lambda(fparam, exp, tpe, loc) =>
-          s"(${fparam.toString} -> ${prettyPrint(exp)})"
+          s"(${fparam.sym.text} -> ${prettyPrint(exp)})"
         case Expr.Apply(exp, exps, tpe, eff, loc) =>
           val params = exps.map(e => s"${prettyPrint(e)}, ").mkString
           s"${prettyPrint(exp)}($params)"
@@ -36,7 +36,7 @@ object MutationReporter {
         case Expr.Binary(sop, exp1, exp2, tpe, eff, loc) => "Binary :("
         case Expr.Let(sym, mod, exp1, exp2, tpe, eff, loc) => s"let ${sym.toString} = ${prettyPrint(exp2)}" // idk if it should be exp1 or exp2
         case Expr.LetRec(sym, ann, mod, exp1, exp2, tpe, eff, loc) =>
-          s"def ${sym.toString} (${ann.toString}) = {${prettyPrint(exp1)}} ${prettyPrint(exp2)}"
+          s"def ${sym.text} = {${prettyPrint(exp1)}}\n\t${prettyPrint(exp2)}"
         case Expr.Region(tpe, loc) => "Region :("
         case Expr.Scope(sym, regionVar, exp, tpe, eff, loc) => s"${sym.toString} {${prettyPrint(exp)}}"
         case Expr.IfThenElse(exp1, exp2, exp3, tpe, eff, loc) => s"if (${prettyPrint(exp1)}) ${prettyPrint(exp2)} else ${prettyPrint(exp3)}"

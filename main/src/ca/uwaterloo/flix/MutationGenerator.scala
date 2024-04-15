@@ -18,7 +18,7 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.Type.{False, Str, True}
-import ca.uwaterloo.flix.language.ast.TypedAst.Expr
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import dev.flix.runtime.Global
 
@@ -381,6 +381,52 @@ object MutationGenerator {
       case original@TypedAst.Pattern.Cst(cst, _, _) => mutateCst(cst).map(m => original.copy(m))
       case _ => Nil
     }
+  }
+
+  private def switchMutations(mrs: List[TypedAst.MatchRule]): List[List[TypedAst.MatchRule]] = {
+    mrs match {
+      case x::xs =>
+        Nil
+      case _ => Nil
+    }
+  }
+
+  private def legalSwitch(candidate: TypedAst.MatchRule, rest: List[TypedAst.MatchRule]): List[TypedAst.MatchRule] = {
+    val res = candidate.pat match {
+      case Pattern.Wild(tpe, loc) => rest.map(r => r.pat match {
+        case Pattern.Wild(_,_) => None
+        case e => Some(r)
+      })
+      case Pattern.Var(sym, tpe, loc) => rest.map(r => r.pat match {
+        case Pattern.Var(_,_,_) => None
+        case e => Some(r)
+      })
+      case Pattern.Cst(cst, tpe, loc) => rest.map(r => r.pat match {
+        case Pattern.Cst(_,_,_) => None
+        case e => Some(r)
+      })
+      case Pattern.Tag(sym, pat, tpe, loc) => rest.map(r => r.pat match {
+        case Pattern.Tag(_,_,_,_) => None
+        case e => Some(r)
+      })
+      case Pattern.Tuple(elms, tpe, loc) => rest.map(r => r.pat match {
+        case Pattern.Tuple(_,_,_) => None
+        case e => Some(r)
+      })
+      case Pattern.Record(pats, pat, tpe, loc) => rest.map(r => r.pat match {
+        case Pattern.Record(_,_,_,_) => None
+        case e => Some(r)
+      })
+      case Pattern.RecordEmpty(tpe, loc) => rest.map(r => r.pat match {
+        case Pattern.RecordEmpty(_,_) => None
+        case e => Some(r)
+      })
+      case Pattern.Error(tpe, loc) => rest.map(r => r.pat match {
+        case Pattern.Error(_,_) => None
+        case e => Some(r)
+      })
+    }
+    res.flatten
   }
 
   /**
