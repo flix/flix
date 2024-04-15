@@ -77,13 +77,9 @@ object Scheme {
       case Type.Apply(tpe1, tpe2, _) =>
         val t1 = visitType(tpe1)
         val t2 = visitType(tpe2)
-        // Performance: Reuse tpe0 or tpe1/tpe2 individually.
+        // Performance: Reuse tpe0, if possible.
         if ((t1 eq tpe1) && (t2 eq tpe2)) {
           tpe0
-        } else if (t1 eq tpe1) {
-          Type.Apply(tpe1, t2, loc)
-        } else if (t2 eq tpe2) {
-          Type.Apply(t1, tpe2, loc)
         } else {
           Type.Apply(t1, t2, loc)
         }

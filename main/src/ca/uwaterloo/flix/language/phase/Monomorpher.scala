@@ -161,13 +161,9 @@ object Monomorpher {
 
           // Else just apply.
           case (x, y) =>
-            // Performance: Reuse tpe0 or x/y individually.
+            // Performance: Reuse tpe0, if possible.
             if ((x eq t1) && (y eq t2)) {
               tpe0
-            } else if (x eq t1) {
-              Type.Apply(t1, y, loc)
-            } else if (y eq t2) {
-              Type.Apply(x, t2, loc)
             } else {
               Type.Apply(x, y, loc)
             }
