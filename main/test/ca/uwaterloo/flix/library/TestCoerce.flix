@@ -23,7 +23,6 @@ mod TestCoerce {
     pub def testCoercePolyBox04(): Bool =
         Coerce.coerce(PolyBox.PolyBox("Hello World")) == "Hello World"
 
-
     enum Box {
         case Box(Int32)
     }
@@ -34,7 +33,6 @@ mod TestCoerce {
             case Box.Box(v) => v
         }
     }
-
 
     enum PolyBox[a] {
         case PolyBox(a)
