@@ -317,7 +317,7 @@ object Symbol {
     /**
       * Returns `true` if `this` variable is non-synthetic.
       */
-    def isReal: Boolean = loc.locationKind == SourceKind.Real
+    def isReal: Boolean = loc.isReal
 
     /**
       * Returns the same symbol with the given kind.

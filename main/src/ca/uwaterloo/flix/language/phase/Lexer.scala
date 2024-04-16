@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceKind, SourceLocation, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceLocation, Token, TokenKind}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
@@ -279,7 +279,7 @@ object Lexer {
     // state is zero-indexed while SourceLocation works as one-indexed.
     val line = s.start.line + 1
     val column = s.start.column + 1
-    SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, line, column.toShort, line, (column + length).toShort)
+    SourceLocation(Some(s.parserInput), s.src, isReal = true, line, column.toShort, line, (column + length).toShort)
   }
 
   /**
@@ -291,7 +291,7 @@ object Lexer {
     // state is zero-indexed while SourceLocation works as one-indexed.
     val line = s.current.line + 1
     val column = s.current.column + 1
-    SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, line, column.toShort, line, (column + length).toShort)
+    SourceLocation(Some(s.parserInput), s.src, isReal = true, line, column.toShort, line, (column + length).toShort)
   }
 
   /**
