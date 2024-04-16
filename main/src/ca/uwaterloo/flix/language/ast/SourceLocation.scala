@@ -54,7 +54,7 @@ object SourceLocation {
   * @param endLine      the line number where the entity ends.
   * @param endCol       the column number where the entity ends.
   */
-case class SourceLocation(@Nullable input: ParserInput, source: Source, isReal: Boolean, beginLine: Int, beginCol: Short, endLine: Int, endCol: Short) {
+case class SourceLocation(@Nullable private val input: ParserInput, source: Source, isReal: Boolean, beginLine: Int, beginCol: Short, endLine: Int, endCol: Short) {
 
   /**
     * Returns `true` if this source location spans a single line.
