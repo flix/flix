@@ -3,6 +3,8 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import org.parboiled2.ParserInput
 
+import javax.annotation.Nullable
+
 /**
   * Companion object for the [[SourceLocation]] class.
   */
@@ -40,10 +42,11 @@ object SourceLocation {
   *
   * Specifically, we:
   *
+  * - Use a nullable reference to `ParserInput`.
   * - Use a `Boolean` to represent whether a source location is real (true) or synthetic (false).
   * - Use `Short`s instead of `Int`s to represent column offsets (i.e. `beginCol` and `endCol`).
   *
-  * @param input        the parser input.
+  * @param input        the nullable parser input.
   * @param source       the source input.
   * @param isReal       true if real location, false if synthetic location.
   * @param beginLine    the line number where the entity begins.
@@ -51,7 +54,7 @@ object SourceLocation {
   * @param endLine      the line number where the entity ends.
   * @param endCol       the column number where the entity ends.
   */
-case class SourceLocation(input: Option[ParserInput], source: Source, isReal: Boolean, beginLine: Int, beginCol: Short, endLine: Int, endCol: Short) {
+case class SourceLocation(@Nullable private val input: ParserInput, source: Source, isReal: Boolean, beginLine: Int, beginCol: Short, endLine: Int, endCol: Short) {
 
   /**
     * Returns `true` if this source location spans a single line.
@@ -98,13 +101,14 @@ case class SourceLocation(input: Option[ParserInput], source: Source, isReal: Bo
     *
     * The line does not have to refer to `this` source location.
     */
-  def lineAt(line: Int): String = input match {
-    case None => ""
-    case Some(input) =>
+  def lineAt(line: Int): String =
+    if (input == null) {
+      ""
+    } else {
       input.getLine(line)
         .replaceAll("\n", "")
         .replaceAll("\r", "")
-  }
+    }
 
   /**
     * Returns a string representation of `this` source location with the line number.
