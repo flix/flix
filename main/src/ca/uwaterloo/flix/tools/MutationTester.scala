@@ -13,115 +13,43 @@ import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Tester.ConsoleRedirection
 import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
 
-import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.ConcurrentLinkedQueue
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{Duration, DurationInt, DurationLong}
 import scala.concurrent.{Await, Future, TimeoutException}
 
 object MutationTester {
+
+  // todo: refactor returned type ?
   def run(root: Root, sourceCompilationResult: CompilationResult)(implicit flix: Flix): Result[Unit, String] = {
-    val timeBefore = System.currentTimeMillis()
-
-    testMutant(sourceCompilationResult) match {
-      case Survived => // this is good
-      case _ => return Result.Err("Source tests failed") // todo: refactor message
+    val testTimeout: Duration = MutantRunner.testSource(sourceCompilationResult) match {
+      case Result.Ok(t) => t
+      case Result.Err(e) => return Result.Err(e)
     }
-
-    val testTimeout = configureTimeOut((System.currentTimeMillis() - timeBefore).milliseconds)
-
-    // configure (how) ?
-    //    val numThreads = 4
-    //    val executor = Executors.newFixedThreadPool(numThreads)
-
-    val reporter = new MutationReporter()
-    reporter.setStartTime()
-
-    /*
-     * Idea:
-     *
-     * Mutants can also be created by a separate thread and pushed into a separate queue,
-     * which will be processed by the thread performing the compilation
-     *
-     * flix.codeGen can evaluates in only single thread, because implicit flix
-     *
-     * One thread compiles mutatedExps to compilationResults and push to ConcurrentLinkedQueue
-     * Other thread takes them and run tests by executorService
-     * Queue should have limited size to avoid memory problems
-     *
-     * I'm not sure if this will be effective, since compilation may take longer than testing (?)
-     *
-     * I would like to achieve full parallelism at all stages, including compilation,
-     * but I'm not sure
-     */
 
     val mutants = Mutator.mutateRoot(root)
-    mutants.foreach { m =>
-      val compilationResult = compileMutant(m.value)
-      //          executor.execute(() => {
-      val status: MutantStatus = compilationResult.toHardResult match {
-        case Result.Ok(c) => try {
-          Await.result(Future(testMutant(c)), testTimeout)
-        } catch {
-          case _: TimeoutException => TimedOut
-        }
-        case Result.Err(_) => CompilationFailed
-      }
 
-      print(reporter.report(status, m.printed))
-      //          })
-    }
+    val queue = new ConcurrentLinkedQueue[ReportEvent]()
+    val reporter = new MutantReporter(queue)
+    val runner = new MutantRunner(queue, mutants, testTimeout)
 
-    //    executor.shutdown()
-    //    while (!executor.isTerminated) {}
+    runner.start()
+    reporter.start()
 
-    reporter.setFinishTime()
-    println(reporter.printStats())
+    runner.join()
+    reporter.join()
 
     Result.Ok(())
   }
 
-  private def configureTimeOut(duration: Duration): Duration = (duration + 4.seconds) * 1.5
-
-  // todo:
-  //  need run phases after `Typer.run` for mutants too
-  //  also need run phases before `Typer.run` for mutants too (if it possible)
-  //  is it possible to parallelize compilation ?
-  private def compileMutant(mutant: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationMessage] = {
-    val result = flix.checkMutant(mutant).toHardFailure
-    Validation.flatMapN(result)(flix.codeGenMutant)
-  }
-
-  private def testMutant(compilationResult: CompilationResult): MutantStatus = {
-    val tests = compilationResult.getTests.values.filter(!_.skip)
-
-    for (test <- tests) {
-      // Taken from Tester.scala.
-      val redirect = new ConsoleRedirection
-      redirect.redirect()
-
-      try {
-        val result = test.run()
-        redirect.restore()
-
-        result match {
-          case java.lang.Boolean.FALSE => return Killed
-          case _ => if (redirect.stdErr.nonEmpty) return Killed
-        }
-      } catch {
-        case _: Throwable =>
-          redirect.restore()
-
-          return Killed
-      }
-    }
-
-    Survived
-  }
+  // todo: create MutationKind enum (?)
+  private case class Mutant[+T](value: T, printed: PrintedDiff)
 
   private object Mutator {
 
     import Helper._
+    import PrintedDiff._
 
     def mutateRoot(root: Root)(implicit flix: Flix): LazyList[Mutant[Root]] = {
       val filteredInstances = LazyList.from(root.instances).filter(pair => !isLibSource(pair._1.loc))
@@ -145,8 +73,7 @@ object MutationTester {
       mutateMap(defn.exp, mutateExpr, Def(defn.sym, defn.spec, _))
 
     // todo: think about other mutants for
-    //    Collections - remove [i] or Empty
-    //    Tuple - remove [i] or Empty
+    //    Collections, Tuples - remove [i] or Empty
     //    Match, TypeMatch - other (branch deletion for example)
     //    StringOp.Concat
     private def mutateExpr(expr: Expr)(implicit flix: Flix): LazyList[Mutant[Expr]] = {
@@ -657,86 +584,127 @@ object MutationTester {
     private class MutantException(message: String, cause: Throwable) extends Exception(message, cause)
   }
 
-  // todo: create MutationKind enum (?)
-  private case class Mutant[+T](value: T, printed: PrintedDiff)
+  private class MutantRunner(queue: ConcurrentLinkedQueue[ReportEvent],
+                             mutants: LazyList[Mutant[Root]],
+                             testTimeout: Duration)(implicit flix: Flix) extends Thread {
 
-  private sealed trait PrintedDiff {
-    def sourceLocation: SourceLocation = this match {
-      case PrintedReplace(loc, _) => loc
-      case PrintedRemove(loc) => loc
-      case PrintedAdd(loc, _) => loc
-    }
+    import MutantRunner._
+    import MutantStatus._
 
-    def mapLoc(loc1: SourceLocation): PrintedDiff = {
-      this match {
-        case PrintedReplace(_, newStr) => PrintedReplace(loc1, newStr)
-        case PrintedRemove(_) => PrintedRemove(loc1)
-        case PrintedAdd(_, newStr) => PrintedAdd(loc1, newStr)
+    override def run(): Unit = {
+      val timeBefore = System.currentTimeMillis()
+
+      mutants.foreach { m =>
+        val compilationResult = compileMutant(m.value)
+
+        val status: MutantStatus = compilationResult.toHardResult match {
+          case Result.Ok(c) => try {
+            Await.result(Future(testMutant(c)), testTimeout)
+          } catch {
+            case _: TimeoutException => TimedOut
+          }
+          case Result.Err(_) => CompilationFailed
+        }
+
+        queue.add(ReportEvent.Processed(status, m.printed))
       }
-    }
 
-    def mapStr(f: String => String): PrintedDiff = this match {
-      case PrintedReplace(loc, newStr) => PrintedReplace(loc, f(newStr))
-      case PrintedRemove(loc) => PrintedRemove(loc)
-      case PrintedAdd(loc, newStr) => PrintedAdd(loc, f(newStr))
+      queue.add(ReportEvent.Finished((System.currentTimeMillis() - timeBefore).milliseconds))
     }
   }
 
-  private case class PrintedReplace(loc: SourceLocation, newStr: String) extends PrintedDiff
+  private object MutantRunner {
 
-  private case class PrintedRemove(loc: SourceLocation) extends PrintedDiff
+    import MutantStatus._
 
-  private case class PrintedAdd(loc: SourceLocation, newStr: String) extends PrintedDiff
+    def testSource(cr: CompilationResult): Result[Duration, String] = {
+      val timeBefore = System.currentTimeMillis()
 
-  private sealed trait MutantStatus
+      testMutant(cr) match {
+        case Survived => Result.Ok(configureTimeOut((System.currentTimeMillis() - timeBefore).milliseconds))
+        case _ => Result.Err("Source tests failed") // todo: refactor message
+      }
+    }
 
-  private case object Killed extends MutantStatus
+    // todo: is it possible run phases before `Typer.run` for mutant too ?
+    private def compileMutant(mutant: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationMessage] = {
+      val result = flix.checkMutant(mutant).toHardFailure
+      Validation.flatMapN(result)(flix.codeGenMutant)
+    }
 
-  private case object Survived extends MutantStatus
+    private def testMutant(compilationResult: CompilationResult): MutantStatus = {
+      val tests = compilationResult.getTests.values.filter(!_.skip)
 
-  private case object CompilationFailed extends MutantStatus
+      for (test <- tests) {
+        // Taken from Tester.scala.
+        val redirect = new ConsoleRedirection
+        redirect.redirect()
 
-  private case object TimedOut extends MutantStatus
+        try {
+          val result = test.run()
+          redirect.restore()
 
-  private class MutationReporter(implicit flix: Flix) {
-    private var startTime: Long = 0
-    private var finishTime: Long = 0
-    // todo: atomics ?
-    private val killed: AtomicInteger = new AtomicInteger(0)
-    private val survived: AtomicInteger = new AtomicInteger(0)
-    private val compilationFailed: AtomicInteger = new AtomicInteger(0)
-    private val timedOut: AtomicInteger = new AtomicInteger(0)
+          result match {
+            case java.lang.Boolean.FALSE => return Killed
+            case _ => if (redirect.stdErr.nonEmpty) return Killed
+          }
+        } catch {
+          case _: Throwable =>
+            redirect.restore()
 
-    private val formatter: Formatter = flix.getFormatter
-    private val lineSeparator = System.lineSeparator()
-    private val outputDivider = "-" * 90
+            return Killed
+        }
+      }
 
+      Survived
+    }
+
+    private def configureTimeOut(duration: Duration): Duration = (duration + 4.seconds) * 1.5
+  }
+
+  private class MutantReporter(queue: ConcurrentLinkedQueue[ReportEvent])(implicit flix: Flix) extends Thread {
+    private var killed: Int = 0
+    private var survived: Int = 0
+    private var compilationFailed: Int = 0
+    private var timedOut: Int = 0
     private val source2LinesNum = new mutable.HashMap[Source, Int]
+    private val lineSeparator = System.lineSeparator()
+    private val outputDivider = "-" * 80
+    private val formatter: Formatter = flix.getFormatter
 
     import formatter._
+    import MutantStatus._
 
-    def setStartTime(time: Long = System.currentTimeMillis()): Unit =
-      startTime = time
+    override def run(): Unit = {
+      var finished = false
+      while (!finished) {
+        queue.poll() match {
+          case ReportEvent.Processed(status, printed) =>
+            print(report(status, printed))
+          case ReportEvent.Finished(duration: Duration) =>
+            println(printStats(duration))
+            finished = true
+          case _ => // nop
+        }
+      }
+    }
 
-    def setFinishTime(time: Long = System.currentTimeMillis()): Unit =
-      finishTime = time
-
-    def report(status: MutantStatus, printedDiff: PrintedDiff): String = {
+    private def report(status: MutantStatus, printedDiff: PrintedDiff): String = {
       val sb = new mutable.StringBuilder
 
       status match {
         case Killed =>
-          killed.getAndIncrement()
+          killed += 1
           sb.append(green("KILLED"))
         case Survived =>
-          survived.getAndIncrement()
+          survived += 1
           diff(sb, printedDiff)
           sb.append(red("SURVIVED"))
         case CompilationFailed =>
-          compilationFailed.getAndIncrement()
+          compilationFailed += 1
           sb.append(blue("COMPILATION FAILED"))
         case TimedOut =>
-          timedOut.getAndIncrement()
+          timedOut += 1
           sb.append(blue("TIMED OUT"))
         case _ =>
           sb.append(yellow("UNKNOWN STATUS"))
@@ -754,16 +722,16 @@ object MutationTester {
       sb.toString()
     }
 
-    def printStats(): String =
+    private def printStats(duration: Duration): String =
       new StringBuilder()
         .append(lineSeparator)
         .append(cyan("Mutation testing results:"))
         .append(lineSeparator)
         .append(s"Total = ${total().toString}")
-        .append(s", Killed = ${killed.intValue().toString}")
-        .append(s", Survived = ${survived.intValue().toString}")
-        .append(s", Compilation Failed = ${compilationFailed.intValue().toString}")
-        .append(s", Timed out = ${timedOut.intValue().toString}")
+        .append(s", Killed = ${killed.toString}")
+        .append(s", Survived = ${survived.toString}")
+        .append(s", Compilation Failed = ${compilationFailed.toString}")
+        .append(s", Timed out = ${timedOut.toString}")
         .append(lineSeparator)
         .append(s"Mutations score ${
           val tested = killed.doubleValue() + survived.doubleValue()
@@ -771,15 +739,16 @@ object MutationTester {
           else "was not calculated from 0 mutants"
         }")
         .append(lineSeparator)
-        .append(s"Calculated in ${(finishTime - startTime) / 1000.0} seconds")
+        .append(s"Calculated in ${duration.toSeconds} seconds")
         .toString()
 
-    private def total(): Int = killed.intValue() + survived.intValue() + compilationFailed.intValue() + timedOut.intValue()
+    private def total(): Int = killed + survived + compilationFailed + timedOut
 
     private def diff(sb: StringBuilder, printedDiff: PrintedDiff): Unit = {
       val sl = printedDiff.sourceLocation
+
       if (sl == SourceLocation.Unknown) {
-        sb.append("Diff printing error: SourceLocation.Unknown was not expected")
+        sb.append(yellow("Diff printing error: SourceLocation.Unknown was not expected"))
           .append(lineSeparator)
           .append(lineSeparator)
         return
@@ -787,7 +756,6 @@ object MutationTester {
 
       val beginLine = sl.beginLine
       val endLine = sl.endLine
-
       val linesNum = source2LinesNum.getOrElseUpdate(sl.source, sl.source.data.count(c => c == '\n' || c == '\r') + 1)
       val numWidth = {
         if (endLine + 2 <= linesNum) endLine + 2
@@ -799,11 +767,7 @@ object MutationTester {
       if (0 < beginLine - 1) diffNumberedLine(sb, sl, numWidth, beginLine - 1)
 
       diffRemove(sb, sl, numWidth)
-      printedDiff match {
-        case PrintedReplace(loc, newStr) => diffAdd(sb, loc, numWidth, newStr)
-        case PrintedRemove(loc) => diffAdd(sb, loc, numWidth, "")
-        case PrintedAdd(loc, newStr) => diffAdd(sb, loc, numWidth, newStr)
-      }
+      diffAdd(sb, sl, numWidth, printedDiff.newStr)
 
       if (endLine + 1 <= linesNum) diffNumberedLine(sb, sl, numWidth, endLine + 1)
       if (endLine + 2 <= linesNum) diffNumberedLine(sb, sl, numWidth, endLine + 2)
@@ -866,5 +830,67 @@ object MutationTester {
     private def padLeft(width: Int, s: String): String = String.format("%" + width + "s", s)
 
     private def verticalBar(s: String = " "): String = s" |$s "
+  }
+
+  sealed trait PrintedDiff {
+
+    import PrintedDiff._
+
+    def sourceLocation: SourceLocation = this match {
+      case PrintedReplace(loc, _) => loc
+      case PrintedRemove(loc) => loc
+      case PrintedAdd(loc, _) => loc
+    }
+
+    def newStr: String = this match {
+      case PrintedReplace(_, str) => str
+      case PrintedRemove(_) => ""
+      case PrintedAdd(_, str) => str
+    }
+
+    def mapLoc(loc1: SourceLocation): PrintedDiff = {
+      this match {
+        case PrintedReplace(_, newStr) => PrintedReplace(loc1, newStr)
+        case PrintedRemove(_) => PrintedRemove(loc1)
+        case PrintedAdd(_, newStr) => PrintedAdd(loc1, newStr)
+      }
+    }
+
+    def mapStr(f: String => String): PrintedDiff = this match {
+      case PrintedReplace(loc, newStr) => PrintedReplace(loc, f(newStr))
+      case PrintedRemove(loc) => PrintedRemove(loc)
+      case PrintedAdd(loc, newStr) => PrintedAdd(loc, f(newStr))
+    }
+  }
+
+  private object PrintedDiff {
+
+    case class PrintedReplace(loc: SourceLocation, str: String) extends PrintedDiff
+
+    case class PrintedRemove(loc: SourceLocation) extends PrintedDiff
+
+    case class PrintedAdd(loc: SourceLocation, str: String) extends PrintedDiff
+  }
+
+  sealed trait MutantStatus
+
+  private object MutantStatus {
+
+    case object Killed extends MutantStatus
+
+    case object Survived extends MutantStatus
+
+    case object CompilationFailed extends MutantStatus
+
+    case object TimedOut extends MutantStatus
+  }
+
+  sealed trait ReportEvent
+
+  private object ReportEvent {
+
+    case class Processed(status: MutantStatus, printed: PrintedDiff) extends ReportEvent
+
+    case class Finished(d: Duration) extends ReportEvent
   }
 }
