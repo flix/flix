@@ -28,14 +28,19 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
     */
   private val N: Int = 75
 
-  private val testFiles = List(
-    "simple-card-game" -> Files.readString(Paths.get("examples/simple-card-game.flix")),
-    "the-ast-typing-problem-with-polymorphic-records" -> Files.readString(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix")),
-    "using-channels-and-select" -> Files.readString(Paths.get("examples/using-channels-and-select.flix")),
-  )
+  test("simple-card-game") {
+    val input = Files.readString(Paths.get("examples/simple-card-game.flix"))
+    compilePrefixes("simple-card-game", input)
+  }
 
-  testFiles.foreach {
-    case (name, input) => test(s"$name-prefix")(compilePrefixes(name, input))
+  test("using-channels-and-select") {
+    val input = Files.readString(Paths.get("examples/using-channels-and-select.flix"))
+    compilePrefixes("using-channels-and-select", input)
+  }
+
+  test("the-ast-typing-problem-with-polymorphic-records") {
+    val input = Files.readString(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix"))
+    compilePrefixes("the-ast-typing-problem-with-polymorphic-records", input)
   }
 
   /**
