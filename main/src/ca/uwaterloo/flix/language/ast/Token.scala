@@ -58,7 +58,7 @@ case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, beginL
    * NB: Tokens are zero-indexed while SourcePositions are one-indexed
    */
   def mkSourcePosition(src: Ast.Source, parserInput: Option[ParserInput]):SourcePosition = {
-    SourcePosition(src, beginLine + 1, (beginCol + 1).toShort, parserInput)
+    SourcePosition(src, beginLine + 1, (beginCol + 1).toShort, parserInput.orNull)
   }
 
   /**
@@ -66,7 +66,7 @@ case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, beginL
    * NB: Tokens are zero-indexed while SourcePositions are one-indexed
    */
   def mkSourcePositionEnd(src: Ast.Source, parserInput: Option[ParserInput]): SourcePosition = {
-    SourcePosition(src, endLine + 1, (endCol + 1).toShort, parserInput)
+    SourcePosition(src, endLine + 1, (endCol + 1).toShort, parserInput.orNull)
   }
 
   /**
@@ -74,7 +74,7 @@ case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, beginL
    * NB: Tokens are zero-indexed while SourceLocations are one-indexed
    */
   def mkSourceLocation(src: Ast.Source, parserInput: Option[ParserInput], isReal: Boolean = true): SourceLocation = {
-    SourceLocation(parserInput, src, isReal, beginLine + 1, (beginCol + 1).toShort, endLine + 1, (endCol + 1).toShort)
+    SourceLocation(parserInput.orNull, src, isReal, beginLine + 1, (beginCol + 1).toShort, endLine + 1, (endCol + 1).toShort)
   }
 }
 
