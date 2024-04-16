@@ -43,10 +43,10 @@ import org.parboiled2.ParserInput
 case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, beginLine: Int, beginCol: Short, endLine: Int, endCol: Short) {
   /**
    * Computes the lexeme that the token refers to by slicing it from `src`.
-   * Note: This is explicitly lazy since we do not want to compute strings that are never used,
-   * such as keywords for instance. Take care to only access text when necessary.
+   *
+   * Note: We do *not* cache the text because it takes up significant memory.
    */
-  lazy val text: String = src.slice(start, end).mkString("")
+  def text: String = src.slice(start, end).mkString("")
 
   /**
    * Returns a string representation of this token. Should only be used for debugging.
