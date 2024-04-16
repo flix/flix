@@ -856,40 +856,55 @@ object Lowering {
   /**
     * Lowers the given type `tpe0`.
     */
-  private def visitType(tpe0: Type)(implicit root: TypedAst.Root, flix: Flix): Type = {
-    def visit(tpe: Type): Type = tpe match {
-      case Type.Var(sym, loc) => sym.kind match {
-        case Kind.SchemaRow => Type.Var(sym.withKind(Kind.Star), loc)
-        case _ => tpe
-      }
+  private def visitType(tpe0: Type)(implicit root: TypedAst.Root, flix: Flix): Type = tpe0.typeConstructor match {
+    case Some(TypeConstructor.Schema) =>
+      // We replace any Schema type, no matter the number of polymorphic type applications, with the erased Datalog type.
+      Types.Datalog
+    case _ => visitTypeNonSchema(tpe0)
+  }
 
-      // Special case for Sender[t, _] and Receiver[t, _], both of which are rewritten to Concurrent/Channel.Mpmc[t]
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _), _, _) =>
-        val t = visitType(tpe)
-        Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
+  /**
+    * Lowers the given type `tpe0` which must not be a schema type.
+    *
+    * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
+    */
+  private def visitTypeNonSchema(tpe0: Type)(implicit root: TypedAst.Root, flix: Flix): Type = tpe0 match {
+    case Type.Cst(_, _) => tpe0 // Performance: Reuse tpe0.
 
-      case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _), _, _) =>
-        val t = visitType(tpe)
-        Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
-
-      case Type.Cst(_, _) => tpe
-
-      case Type.Apply(tpe1, tpe2, loc) =>
-        val t1 = visitType(tpe1)
-        val t2 = visitType(tpe2)
-        Type.Apply(t1, t2, loc)
-
-      case Type.Alias(sym, args, t, loc) => Type.Alias(sym, args.map(visit), visit(t), loc)
-
-      case Type.AssocType(cst, args, kind, loc) =>
-        Type.AssocType(cst, args.map(visit), kind, loc) // TODO ASSOC-TYPES can't put lowered stuff on right side of assoc type def...
+    case Type.Var(sym, loc) => sym.kind match {
+      case Kind.SchemaRow =>
+        // Rewrite the kind of a Schema type variable to Star (because that is the kind of Types.Datalog)
+        Type.Var(sym.withKind(Kind.Star), loc)
+      case _ => tpe0 // Performance: Reuse tpe0.
     }
 
-    if (tpe0.typeConstructor.contains(TypeConstructor.Schema))
-      Types.Datalog
-    else
-      visit(tpe0)
+    // Rewrite Sender[t, _] to Concurrent/Channel.Mpmc[t]
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _), _, _) =>
+      val t = visitType(tpe)
+      Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
+
+    // Rewrite Receiver[t, _] to Concurrent/Channel.Mpmc[t]
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _), _, _) =>
+      val t = visitType(tpe)
+      Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
+
+    case Type.Apply(tpe1, tpe2, loc) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      // Performance: Reuse tpe0, if possible.
+      if ((t1 eq tpe1) && (t2 eq tpe2)) {
+        tpe0
+      } else {
+        Type.Apply(t1, t2, loc)
+      }
+
+    case Type.Alias(sym, args, t, loc) =>
+      Type.Alias(sym, args.map(visitType), visitType(t), loc)
+
+    case Type.AssocType(cst, args, kind, loc) =>
+      Type.AssocType(cst, args.map(visitType), kind, loc) // TODO ASSOC-TYPES can't put lowered stuff on right side of assoc type def...
   }
+
 
   /**
     * Lowers the given formal parameter `fparam0`.
