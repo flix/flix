@@ -17,7 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceKind, SourceLocation, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceLocation, Token, TokenKind}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
@@ -175,7 +175,7 @@ object Lexer {
       s.current.line += 1
       s.current.column = 0
     } else {
-      s.end = new Position(s.current.line, s.current.column + 1, s.current.offset)
+      s.end = new Position(s.current.line, (s.current.column + 1).toShort, s.current.offset)
       s.current.offset += 1
       s.current.column += 1
     }
@@ -279,7 +279,7 @@ object Lexer {
     // state is zero-indexed while SourceLocation works as one-indexed.
     val line = s.start.line + 1
     val column = s.start.column + 1
-    SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, line, column, line, column + length)
+    SourceLocation(s.parserInput, s.src, isReal = true, line, column.toShort, line, (column + length).toShort)
   }
 
   /**
@@ -291,7 +291,7 @@ object Lexer {
     // state is zero-indexed while SourceLocation works as one-indexed.
     val line = s.current.line + 1
     val column = s.current.column + 1
-    SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, line, column, line, column + length)
+    SourceLocation(s.parserInput, s.src, isReal = true, line, column.toShort, line, (column + length).toShort)
   }
 
   /**
@@ -299,7 +299,7 @@ object Lexer {
    * Afterwards `s.start` is reset to the next position after the previous token.
    */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
-    s.tokens += Token(kind, s.src.data, s.start.offset, s.current.offset, s.start.line, s.start.column, s.end.line, s.end.column)
+    s.tokens += Token(kind, s.src.data, s.start.offset, s.current.offset, s.start.line, s.start.column.toShort, s.end.line, s.end.column.toShort)
     s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }
 
