@@ -73,8 +73,8 @@ case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, beginL
    * Makes a [[SourceLocation]] spanning this token.
    * NB: Tokens are zero-indexed while SourceLocations are one-indexed
    */
-  def mkSourceLocation(src: Ast.Source, parserInput: Option[ParserInput], locationKind: SourceKind = SourceKind.Real): SourceLocation = {
-    SourceLocation(parserInput, src, locationKind, beginLine + 1, (beginCol + 1).toShort, endLine + 1, (endCol + 1).toShort)
+  def mkSourceLocation(src: Ast.Source, parserInput: Option[ParserInput], isReal: Boolean = true): SourceLocation = {
+    SourceLocation(parserInput, src, isReal, beginLine + 1, (beginCol + 1).toShort, endLine + 1, (endCol + 1).toShort)
   }
 }
 
