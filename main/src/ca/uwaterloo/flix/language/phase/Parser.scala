@@ -85,7 +85,7 @@ object Parser {
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
         val possibleContexts = parseTraces(e.traces).filter(_._1 != SyntacticContext.Unknown)
         val mostLikelyContext = possibleContexts.keySet.reduceOption(SyntacticContext.join).getOrElse(SyntacticContext.Unknown)
-        val loc = SourceLocation(None, source, isReal = true, e.position.line, e.position.column.toShort, e.position.line, e.position.column.toShort)
+        val loc = SourceLocation(parser.input, source, isReal = true, e.position.line, e.position.column.toShort, e.position.line, e.position.column.toShort)
         // NOTE: Manually construct a hard failure here since ParseError is Recoverable, but in this parser it is not :-(
         Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc)))
       case scala.util.Failure(e) =>
@@ -2002,7 +2002,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     val lineNumber = cursor2line(cursor)
     val columnNumber = cursor2column(cursor)
     rule {
-      push(SourcePosition(source, lineNumber, columnNumber.toShort, Some(input)))
+      push(SourcePosition(source, lineNumber, columnNumber.toShort, input))
     }
   }
 

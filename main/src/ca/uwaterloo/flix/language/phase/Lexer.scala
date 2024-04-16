@@ -279,7 +279,7 @@ object Lexer {
     // state is zero-indexed while SourceLocation works as one-indexed.
     val line = s.start.line + 1
     val column = s.start.column + 1
-    SourceLocation(Some(s.parserInput), s.src, isReal = true, line, column.toShort, line, (column + length).toShort)
+    SourceLocation(s.parserInput, s.src, isReal = true, line, column.toShort, line, (column + length).toShort)
   }
 
   /**
@@ -291,7 +291,7 @@ object Lexer {
     // state is zero-indexed while SourceLocation works as one-indexed.
     val line = s.current.line + 1
     val column = s.current.column + 1
-    SourceLocation(Some(s.parserInput), s.src, isReal = true, line, column.toShort, line, (column + length).toShort)
+    SourceLocation(s.parserInput, s.src, isReal = true, line, column.toShort, line, (column + length).toShort)
   }
 
   /**
