@@ -24,36 +24,51 @@ import scala.jdk.CollectionConverters._
 
 class FuzzSwapLines extends AnyFunSuite with TestUtils {
 
-  private val testFiles = List(
-    "simple-card-game" -> Files.lines(Paths.get("examples/simple-card-game.flix")),
-    "the-ast-typing-problem-with-polymorphic-records" -> Files.lines(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix")),
-    "using-channels-and-select" -> Files.lines(Paths.get("examples/using-channels-and-select.flix")),
-  )
+  // Swap lines takes a _long_ time to run.
+  // In a file with just 100 lines, there is (100 * 99) / 2 unique non-equal swaps.
+  // That's 4950 compiles if we try them all.
+  // Assuming each take 1sec to run that ends up at 1.3 hours.
+  // Instead we select numSwapLines and try to swap those with each-other.
+  // For instance numSwapLines = 10 gives a total of 330 swaps per file.
+  private val numSwapLines = 10
 
-  testFiles.foreach {
-    case (name, input) => test(s"$name-swap-lines")(compileWithSwappedLines(name, input))
+  test("simple-card-game") {
+    val lines = Files.lines(Paths.get("examples/simple-card-game.flix"))
+    compileWithSwappedLines("simple-card-game", lines)
+  }
+
+  test("using-channels-and-select") {
+    val lines = Files.lines(Paths.get("examples/using-channels-and-select.flix"))
+    compileWithSwappedLines("using-channels-and-select", lines)
+  }
+
+  test("the-ast-typing-problem-with-polymorphic-records") {
+    val lines = Files.lines(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix"))
+    compileWithSwappedLines("the-ast-typing-problem-with-polymorphic-records", lines)
   }
 
   /**
-    * We compile all variants of the given program where we swap lines (i, j) where i < j.
-    *
-    * For example, we omit line 1 and compile the program. Then we omit line 2 and compile the program. And so forth.
-    *
+    * We compile variants of the given program where we swap [[numSwapLines]] lines.
+    * For example, in a file with 100 lines and numSwapLines = 10, we try all swaps with 10 of the lines.
+    * line 0 with line 10, 20, 30, 40, 50, 60, 70, 80, 90 and 100.
     * The program may not be valid: We just care that it does not crash the compiler.
     */
   private def compileWithSwappedLines(name: String, stream: java.util.stream.Stream[String]): Unit = {
     val lines = stream.iterator().asScala.toList
-    val numberOfLines = lines.length
+    val numLines = lines.length
+    val numSwapLinesFixed = numLines.min(numSwapLines)
+    val step = numLines / numSwapLinesFixed
 
     val flix = new Flix()
     flix.compile()
-    for (i <- 0 until numberOfLines - 1) {
-      for (j <- i + 1 until numberOfLines) {
+    for (i_ <- 0 until numSwapLinesFixed) {
+      val i = Math.min(i_ * step, numLines)
+      for (j_ <- i_ + 1 until numSwapLinesFixed) {
+        val j = Math.min(j_ * step, numLines)
         val src = lines.updated(i, lines(j)).updated(j, lines(i)).mkString("\n")
         flix.addSourceCode(s"$name-swap-lines-$i-and-$j", src)
         flix.compile() // We simply care that this does not crash.
       }
     }
   }
-
 }

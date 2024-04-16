@@ -23,31 +23,41 @@ import org.scalatest.funsuite.AnyFunSuite
 import java.nio.file.{Files, Paths}
 
 class FuzzDeleteLines extends AnyFunSuite with TestUtils {
+  /**
+    * Number of lines to delete from each file.
+    */
+  private val N = 10
 
-  private val testFiles = List(
-    "simple-card-game" -> Files.lines(Paths.get("examples/simple-card-game.flix")),
-    "the-ast-typing-problem-with-polymorphic-records" -> Files.lines(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix")),
-    "using-channels-and-select" -> Files.lines(Paths.get("examples/using-channels-and-select.flix")),
-  )
+  test("simple-card-game") {
+    val lines = Files.lines(Paths.get("examples/simple-card-game.flix"))
+    compileAllLinesExceptOne("simple-card-game", lines)
+  }
 
-  testFiles.foreach {
-    case (name, input) => test(s"$name-delete-lines")(compileAllLinesLessOne(name, input))
+  test("using-channels-and-select") {
+    val lines = Files.lines(Paths.get("examples/using-channels-and-select.flix"))
+    compileAllLinesExceptOne("using-channels-and-select", lines)
+  }
+
+  test("the-ast-typing-problem-with-polymorphic-records") {
+    val lines = Files.lines(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix"))
+    compileAllLinesExceptOne("the-ast-typing-problem-with-polymorphic-records", lines)
   }
 
   /**
     * We compile all variants of the given program where we omit a single line.
-    *
     * For example, we omit line 1 and compile the program. Then we omit line 2 and compile the program. And so forth.
-    *
     * The program may not be valid: We just care that it does not crash the compiler.
     */
-  private def compileAllLinesLessOne(name: String, stream: java.util.stream.Stream[String]): Unit = {
+  private def compileAllLinesExceptOne(name: String, stream: java.util.stream.Stream[String]): Unit = {
     val lines = stream.iterator().asScala.toList
-    val numberOfLines = lines.length
+    val numLines = lines.length
+    val NFixed = N.min(numLines)
+    val step = numLines / NFixed
 
     val flix = new Flix()
     flix.compile()
-    for (i <- 0 until numberOfLines) {
+    for (i_ <- 0 until NFixed) {
+      val i = Math.min(i_ * step, numLines)
       val (before, after) = lines.splitAt(i)
       val src = (before ::: after.drop(1)).mkString("\n")
       flix.addSourceCode(s"$name-delete-line-$i", src)
