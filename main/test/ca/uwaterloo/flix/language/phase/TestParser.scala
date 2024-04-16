@@ -20,10 +20,11 @@ class TestParser extends Suites(
   * Note that these tests use [[check]] rather than [[compile]].
   * That's because a compile converts any check failure into a HardFailure before running, codegen so the result we would like to expect is lost.
   * TODO: These tests need TestWithLibMin. We would like to use TestWithLibNix because that's minimal but it produces "key not found: printUnlessUnit".
+  * TODO: Test types and patterns.
   */
 class TestParserRecovery extends AnyFunSuite with TestUtils {
 
-  test("RecoverUse.01") {
+  test("Use.01") {
     val input =
       """
         |use Color.{Red;
@@ -35,7 +36,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
-  test("RecoverUse.02") {
+  test("Use.02") {
     val input =
       """
         |use Color.{Red =>
@@ -47,7 +48,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
-  test("RecoverUse.03") {
+  test("Use.03") {
     val input =
       """
         |use Color.{Red => ScarletRed;
@@ -59,7 +60,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
-  test("RecoverImport.01") {
+  test("Import.01") {
     val input =
       """
         |import java.lang.{StringBuffer,
@@ -70,7 +71,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
-  test("RecoverImport.02") {
+  test("Import.02") {
     val input =
       """
         |import java.lang.{StringBuffer => StrBuf
@@ -81,7 +82,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
-  test("RecoverImport.03") {
+  test("Import.03") {
     val input =
       """
         |import java.lang.{StringBuffer, , CharSequence};
@@ -92,7 +93,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
-  test("RecoverParameters.01") {
+  test("Parameters.01") {
     val input =
       """
         |def foo(x: Int32, , z: Int32): Int32 = ???
@@ -103,7 +104,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
-  test("RecoverParameters.02") {
+  test("Parameters.02") {
     val input =
       """
         |def foo(x: Int32,
@@ -114,7 +115,7 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
-  test("RecoverNoDefBody.01") {
+  test("NoDefBody.01") {
     val input =
       """
         |def foo(x: Int32): Int32
@@ -125,10 +126,37 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
-  test("RecoverNoDefType.01") {
+  test("NoDefType.01") {
     val input =
       """
         |def foo(x: Int32) = ???
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("BadCallExpr.01") {
+    val input =
+      """
+        |def foo(x: Int32, y: Int32): Int32 = bar(1,
+        |// Note: We need an enum here. If we just had main, it would get consumed as a LetRecDef.
+        |enum Legumes { case ChickPea, Beans }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
+  test("BadCall.02") {
+    val input =
+      """
+        |def foo(x: Int32, y: Int32): Int32 = {
+        |  bar( 1 + ;
+        |  let x =
+        |}
         |def main(): Unit = ()
         |""".stripMargin
     val result = check(input, Options.TestWithLibMin)

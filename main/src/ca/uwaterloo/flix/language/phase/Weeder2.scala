@@ -1162,8 +1162,9 @@ object Weeder2 {
       val exprs = flatMapN(pickExpr(tree)) {
         case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
         case e =>
+          // Parser should already have reported an error here, so silently fail.
           val error = ParseError("An internal definition must be followed by an expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.toSoftFailure((e, Expr.Error(error)), error)
+          Validation.success((e, Expr.Error(error)))
       }
 
       mapN(
@@ -1388,9 +1389,10 @@ object Weeder2 {
           // get expr1 and expr2 from the nested statement within expr.
           val exprs = expr match {
             case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
+            // Case: Missing expression. Parser should have reported an error so silently fail.
             case e =>
               val error = ParseError("A let-binding must be followed by an expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-              Validation.toSoftFailure((e, Expr.Error(error)), error)
+              Validation.success((e, Expr.Error(error)))
           }
           mapN(exprs)(exprs => Expr.LetMatch(pattern, Ast.Modifiers.Empty, tpe, exprs._1, exprs._2, tree.loc))
       }
