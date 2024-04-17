@@ -21,7 +21,7 @@ import scala.concurrent.{Await, Future, TimeoutException}
 
 object MutationTester {
 
-  // todo: refactor returned type ?
+  // todo: is it good returned type ?
   def run(root: Root, sourceCompilationResult: CompilationResult)(implicit flix: Flix): Result[Unit, String] = {
     val testTimeout: Duration = MutantRunner.testSource(sourceCompilationResult) match {
       case Result.Ok(t) => t
@@ -43,7 +43,6 @@ object MutationTester {
     Result.Ok(())
   }
 
-  // todo: create MutationKind enum (?)
   private case class Mutant[+T](value: T, printed: PrintedDiff)
 
   private object Mutator {
@@ -72,10 +71,6 @@ object MutationTester {
     private def mutateDef(defn: Def)(implicit flix: Flix): LazyList[Mutant[Def]] =
       mutateMap(defn.exp, mutateExpr, Def(defn.sym, defn.spec, _))
 
-    // todo: think about other mutants for
-    //    Collections, Tuples - remove [i] or Empty
-    //    Match, TypeMatch - other (branch deletion for example)
-    //    StringOp.Concat
     private def mutateExpr(expr: Expr)(implicit flix: Flix): LazyList[Mutant[Expr]] = {
       if (expr.tpe.toString == "Unit") {
         return LazyList.empty
@@ -285,11 +280,20 @@ object MutationTester {
           l = arithmeticSigToSig :: l
         }
 
+        val symText = sym.toString
         l.foldLeft(LazyList.empty[Mutant[Expr]]) {
           (acc, sigMap) =>
-            acc #::: sigMap.get(sym.toString)
-              .map(p => findSig(p._1, p._2))
-              .map(s => LazyList(Mutant(Expr.Sig(s, tpe, loc), PrintedReplace(loc, s.toString))))
+            acc #::: sigMap.get(symText)
+              .map { p =>
+                val sig = findSig(p._1, p._2)
+                val locText = getText(loc)
+                val printedDiff = if (symText.endsWith(locText)) {
+                  PrintedReplace(loc.copy(beginCol = loc.beginCol - (symText.length - locText.length)), sig.toString)
+                } else {
+                  PrintedReplace(loc, sigToSymbol.getOrElse(sig.toString, s"\'sig.toString\'"))
+                }
+                LazyList(Mutant(Expr.Sig(sig, tpe, loc), printedDiff))
+              }
               .getOrElse(LazyList.empty)
         }
       case _ => LazyList.empty
@@ -302,25 +306,18 @@ object MutationTester {
             LazyList(Mutant(exps.head, PrintedReplace(loc, getText(exps.head))))
           case Expr.Def(sym, _, _) if defnIntNamespaces.contains(sym.namespace.mkString(".")) && sym.text == "bitwiseNot" =>
             LazyList(Mutant(exps.head, PrintedReplace(loc, getText(exps.head))))
-          case Expr.Sig(_, _, _) | Expr.Def(_, _, _) =>
-            val res = mutateMap(
-              exp,
-              mutateExpr,
-              Expr.Apply(_, exps, tpe, eff, loc),
-              _.mapStr(s => s"$s${exps.map(getText).mkString("(", ", ", ")")}").mapLoc(loc)
-            )
+          case _ =>
+            // todo: isn't that a lot ?
+            val res = mutateMap(exp, mutateExpr, Expr.Apply(_, exps, tpe, eff, loc)) #:::
+              mutateElms(exps, mutateExpr, Expr.Apply(exp, _, tpe, eff, loc))
 
-            // todo: think if need other mutants
             if (res.nonEmpty) res
             else if (tpe.toString == "Bool")
               LazyList(Mutant(
                 Expr.Unary(BoolOp.Not, expr, tpe, eff, loc),
                 PrintedAdd(loc.copy(endLine = loc.beginLine, endCol = loc.beginCol), "not ")
               ))
-            else mutateElms(exps, mutateExpr, Expr.Apply(exp, _, tpe, eff, loc))
-          case _ =>
-            mutateMap(exp, mutateExpr, Expr.Apply(_, exps, tpe, eff, loc)) #:::
-              mutateElms(exps, mutateExpr, Expr.Apply(exp, _, tpe, eff, loc))
+            else LazyList.empty
         }
       case _ => LazyList.empty
     }
@@ -517,6 +514,19 @@ object MutationTester {
         "Order.greaterEqual" -> ("Order", "greater"),
       )
 
+      val sigToSymbol: Map[String, String] = Map(
+        "Add.add" -> "+",
+        "Sub.sub" -> "-",
+        "Mul.mul" -> "*",
+        "Div.div" -> "/",
+        "Eq.eq" -> "==",
+        "Eq.neq" -> "!=",
+        "Order.less" -> "<",
+        "Order.lessEqual" -> "<=",
+        "Order.greater" -> ">",
+        "Order.greaterEqual" -> ">=",
+      )
+
       val defnIntNamespaces: Set[String] = Set(
         "Int8",
         "Int16",
@@ -579,6 +589,8 @@ object MutationTester {
         }
 
       def getText(expr: Expr): String = expr.loc.text.getOrElse("<unknown>")
+
+      def getText(loc: SourceLocation): String = loc.text.getOrElse("<unknown>")
     }
 
     private class MutantException(message: String, cause: Throwable) extends Exception(message, cause)
@@ -622,7 +634,7 @@ object MutationTester {
 
       testMutant(cr) match {
         case Survived => Result.Ok(configureTimeOut((System.currentTimeMillis() - timeBefore).milliseconds))
-        case _ => Result.Err("Source tests failed") // todo: refactor message
+        case _ => Result.Err("Source tests failed") // todo: is it good message ?
       }
     }
 
@@ -676,6 +688,8 @@ object MutationTester {
     import MutantStatus._
 
     override def run(): Unit = {
+      println("Running mutation testing...")
+
       var finished = false
       while (!finished) {
         queue.poll() match {
@@ -715,10 +729,6 @@ object MutationTester {
         .append(outputDivider)
         .append(lineSeparator)
 
-      // todo:
-      //  think about print and clear after each N mutants.
-      //  remember, that multiple threads can perform this function at a time
-      //  look 'ProgressBar.SampleRate`
       sb.toString()
     }
 
