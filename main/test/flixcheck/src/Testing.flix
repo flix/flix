@@ -64,7 +64,7 @@ pub def tests(config: Config, gen: Gen[TResult], rng: SplittableRandom, nTest: I
     else
         let (r1, r2) = split(rng);
         let result = generate(config.size(nTest), r2, gen);
-        Console.print(config.every(nTest, result.arguments));
+        System.StdOut.print(config.every(nTest, result.arguments));
         match result.ok {
             case None =>
                 tests(config, gen, r1, nTest, (nFail + 1), stamps)
@@ -79,14 +79,15 @@ pub def tests(config: Config, gen: Gen[TResult], rng: SplittableRandom, nTest: I
 
 pub def done(msg: String, nTest: Int32, stamps: List[List[String]]): Unit \ IO = 
     // Helper functions
+    /// percentage calculates the distribution of the numbers used in the tests 
     def percentage(n: Int32, m: Int32): String =
-        "${(100 * n) / m}" + "%";
+        "${(100.0f32 * Int32.toFloat32(n)) / Int32.toFloat32(m)}" + "%";
     def entry(pair: (Int32, List[String])): String =
         percentage(fst(pair), nTest) + " " + String.intercalate(", ", snd(pair));
     def pairLength(xs: List[List[String]]): (Int32, List[String]) =
         match xs {
             case Nil => (0, Nil),
-            case head :: _ => (List.length(head), head)
+            case head :: _ => (List.length(xs), head)
         };
     let table = (
         List.filter(x -> not List.isEmpty(x), stamps) |>
@@ -98,7 +99,6 @@ pub def done(msg: String, nTest: Int32, stamps: List[List[String]]): Unit \ IO =
         List.map(entry) |>
         display
     );
-
     println(msg + " " + "${nTest}" + " tests" + table)
 
 // Overvej om outputtet skal se anderledes ud

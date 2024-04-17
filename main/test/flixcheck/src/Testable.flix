@@ -77,6 +77,11 @@ mod Testable {
             forAll2(Arbitrary.arbitrary(), Arbitrary.arbitrary(), func)
     }
 
+    // instance Testable[a -> b] with Arbitrary[a], ToString[a], Testable[b] {
+    //     pub def property(f: a -> b): Property =
+    //         forAll(Arbitrary.arbitrary(), f)
+    // }
+
 
     pub def forAll(aGen: Gen[a], f: a -> b): Property with ToString[a], Testable[b] =
         Property.Property(
@@ -128,18 +133,23 @@ mod Testable {
             map(func, evaluate(x))
         )
 
-    /// Classifies if a property has a label or not
-    pub def classify(b: Bool, name: String): a -> Property with Testable[a] =
+    /// Conditionally labels a test c
+    pub def classify(b: Bool, name: String, x: a): Property with Testable[a] =
         match b {
-            case true => label(name),
-            case false => Testable.property
+            case true => label(name, x),
+            case false => Testable.property(x)
         }
         
     /// Stamps a property with the string "trivial" if true
-    pub def trivial(): Bool -> a -> Property with Testable[a] =
-        bool -> classify(bool, "trivial")
+    pub def trivial(b: Bool, x: a): Property with Testable[a] =
+        classify(b, "trivial", x)
     
-    pub def collect(x: a): b -> Property with ToString[a], Testable[b] =
-        label(ToString.toString(x))
+    /// Collects the distribution of a property, and labels it with the value of the argument
+    ///
+    /// Example:
+    /// let prop = forAll(chooseInt(1, 10), n -> collect(n)(n == 5));
+    /// flixCheck(prop)
+    pub def collect(element: a, x: b): Property with ToString[a], Testable[b]=
+        label(ToString.toString(element), x)
     
 }
