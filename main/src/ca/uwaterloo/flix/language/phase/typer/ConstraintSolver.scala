@@ -471,10 +471,11 @@ object ConstraintSolver {
     */
   private def resolveSubtypeStar(tpe1: Type, tpe2: Type, prov: SubProvenance, renv: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1, tpe2) match {
     // x < x
-    case (x: Type.Var, y: Type.Var) if (x == y) => Result.Ok(ResolutionResult.elimination)
+    case (x: Type.Var, y: Type.Var) if (x == y) => Ok(ResolutionResult.elimination)
 
-    // cst < cst
-    case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(ResolutionResult.elimination)
+    // x < cst or cst < x --> x ~ cst
+    case (_, Type.Cst(_, _)) | (Type.Cst(_, _), _) =>
+      Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, Provenance.subToEq(prov))), progress = true))
 
 //    // al<t> < any --> t < any
 //    case (Type.Alias(_, _, tpe, _), _) => resolveSubtype(tpe, tpe2, prov, renv, loc)
