@@ -20,29 +20,32 @@ import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.Flix.{IrFileExtension, IrFileIndentation, IrFileWidth}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.dbg.printer._
+import ca.uwaterloo.flix.language.phase._
+import ca.uwaterloo.flix.language.phase.jvm.JvmBackend
+import ca.uwaterloo.flix.util.collection.Bimap
 import ca.uwaterloo.flix.util.{FileOps, InternalCompilerException}
 
 import java.nio.file.{Files, LinkOption, Path}
 
 object AstPrinter {
 
-  /**
-    * Writes all the formatted asts, requested by the flix options, to disk.
-    */
-  def printAsts()(implicit flix: Flix): Unit = {
-    val optionPhases = flix.options.xprintphase
-    val shouldPrintEverything = optionPhases.contains("all") || optionPhases.contains("All")
-    val phaseMap = if (shouldPrintEverything) allPhases(includeUnfinished = false)
-                   else allPhases().filter(pair => optionPhases.contains(pair._1))
-    printPhaseMap(phaseMap)
-  }
+  //  /**
+  //    * Writes all the formatted asts, requested by the flix options, to disk.
+  //    */
+  //  def printAsts()(implicit flix: Flix): Unit = {
+  //    val optionPhases = flix.options.xprintphase
+  //    val shouldPrintEverything = optionPhases.contains("all") || optionPhases.contains("All")
+  //    val phaseMap = if (shouldPrintEverything) allPhases(includeUnfinished = false)
+  //                   else allPhases().filter(pair => optionPhases.contains(pair._1))
+  //    printPhaseMap(phaseMap)
+  //  }
 
-  /**
-    * Writes all the formatted asts to disk.
-    */
-  def printAllAsts()(implicit flix: Flix): Unit = {
-    printPhaseMap(allPhases(includeUnfinished = false))
-  }
+  //  /**
+  //    * Writes all the formatted asts to disk.
+  //    */
+  //  def printAllAsts()(implicit flix: Flix): Unit = {
+  //    printPhaseMap(allPhases(includeUnfinished = false))
+  //  }
 
   /**
     * Goes through each map binding and calls [[writeToDisk]].
@@ -52,50 +55,39 @@ object AstPrinter {
       writeToDisk(phase, printer())
   }
 
-  /**
-    * Returns a list of map the phases of flix along with a thunked pretty printed AST.
-    *
-    * Returns only the phases that can be pretty printed if `includeUnfinished` is false.
-    */
-  def allPhases(includeUnfinished: Boolean = true)(implicit flix: Flix): Map[String, () => String] = {
-    def wipPhase(phaseName: String): Option[(String, () => String)] = {
-      if (includeUnfinished) Some((phaseName, () => "Work In Progress")) else None
-    }
-
-    val frontend = List(
-      wipPhase("Parser"),
-      wipPhase("Weeder"),
-      wipPhase("Desugar"),
-      wipPhase("Namer"),
-      wipPhase("Resolver"),
-      wipPhase("Kinder"),
-      wipPhase("Deriver"),
-      Some("Typer", () => formatTypedAst(flix.getTyperAst)),
-      wipPhase("Entrypoint"),
-      wipPhase("PredDeps"),
-      wipPhase("Stratifier"),
-      wipPhase("PatMatch"),
-      wipPhase("Redundancy"),
-      wipPhase("Safety")
-    ).flatten.toMap
-    val backend = List(
-      Some(("Lowering", () => formatLoweredAst(flix.getLoweringAst))),
-      Some(("TreeShaker1", () => formatLoweredAst(flix.getTreeShaker1Ast))),
-      wipPhase("Monomorpher"),
-      wipPhase("MonoTypes"),
-      Some(("Simplifier", () => formatSimplifiedAst(flix.getSimplifierAst))),
-      Some(("ClosureConv", () => formatSimplifiedAst(flix.getClosureConvAst))),
-      Some(("LambdaLift", () => formatLiftedAst(flix.getLambdaLiftAst))),
-      Some(("Optimizer", () => formatLiftedAst(flix.getOptimizerAst))),
-      Some(("TreeShaker2", () => formatLiftedAst(flix.getTreeShaker2Ast))),
-      Some(("EffectBinder", () => formatReducedAst(flix.getEffectBinderAst))),
-      Some(("TailPos", () => formatReducedAst(flix.getTailPosAst))),
-      Some(("Eraser", () => formatReducedAst(flix.getEraserAst))),
-      Some(("Reducer", () => formatReducedAst(flix.getReducerAst))),
-      Some(("VarOffsets", () => formatReducedAst(flix.getVarOffsetsAst))),
-      wipPhase("JvmBackend")
-    ).flatten.toMap
-    frontend ++ backend
+  def phaseNames(): Bimap[String, AnyRef] = {
+    Bimap.empty[String, AnyRef] +
+      // frontend
+      ("Parser", Parser) +
+      ("Weeder", Weeder) +
+      ("Desugar", Desugar) +
+      ("Namer", Namer) +
+      ("Resolver", Resolver) +
+      ("Kinder", Kinder) +
+      ("Deriver", Deriver) +
+      ("Typer", Typer) +
+      ("Entrypoint", EntryPoint) +
+      ("PredDeps", PredDeps) +
+      ("Stratifier", Stratifier) +
+      ("PatMatch", PatMatch) +
+      ("Redundancy", Redundancy) +
+      ("Safety", Safety) +
+      // backend
+      ("Lowering", Lowering) +
+      ("TreeShaker1", TreeShaker1) +
+      ("Monomorpher", Monomorpher) +
+      ("MonoTypes", MonoTypes) +
+      ("Simplifier", Simplifier) +
+      ("ClosureConv", ClosureConv) +
+      ("LambdaLift", LambdaLift) +
+      ("Optimizer", Optimizer) +
+      ("TreeShaker2", TreeShaker2) +
+      ("EffectBinder", EffectBinder) +
+      ("TailPos", TailPos) +
+      ("Eraser", Eraser) +
+      ("Reducer", Reducer) +
+      ("VarOffsets", VarOffsets) +
+      ("JvmBackend", JvmBackend)
   }
 
   /**

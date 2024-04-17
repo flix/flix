@@ -625,22 +625,42 @@ class Flix {
     // Initialize fork-join thread pool.
     initForkJoinPool()
 
+    val names = AstPrinter.phaseNames()
+    val printAll = flix.options.xprintphase.contains("all")
+    def shouldPrintPhase(phase: AnyRef): Boolean = {
+      if (printAll) true else names.getBackward(phase).exists(flix.options.xprintphase.contains(_))
+    }
+
     /** Remember to update [[AstPrinter]] about the list of phases. */
-    cachedLoweringAst = Lowering.run(typedAst)
-    cachedTreeShaker1Ast = TreeShaker1.run(cachedLoweringAst)
-    cachedMonomorpherAst = Monomorpher.run(cachedTreeShaker1Ast)
-    cachedMonoTypesAst = MonoTypes.run(cachedMonomorpherAst)
-    cachedSimplifierAst = Simplifier.run(cachedMonoTypesAst)
-    cachedClosureConvAst = ClosureConv.run(cachedSimplifierAst)
-    cachedLambdaLiftAst = LambdaLift.run(cachedClosureConvAst)
-    cachedOptimizerAst = Optimizer.run(cachedLambdaLiftAst)
-    cachedTreeShaker2Ast = TreeShaker2.run(cachedOptimizerAst)
-    cachedEffectBinderAst = EffectBinder.run(cachedTreeShaker2Ast)
-    cachedTailPosAst = TailPos.run(cachedEffectBinderAst)
+    val loweringAst = Lowering.run(typedAst)
+    if (shouldPrintPhase(Lowering)) cachedLoweringAst = loweringAst
+    val treeShaker1Ast = TreeShaker1.run(loweringAst)
+    if (shouldPrintPhase(TreeShaker1)) cachedTreeShaker1Ast = treeShaker1Ast
+    val monomorpherAst = Monomorpher.run(treeShaker1Ast)
+    if (shouldPrintPhase(Monomorpher)) cachedMonomorpherAst = monomorpherAst
+    val monoTypesAst = MonoTypes.run(monomorpherAst)
+    if (shouldPrintPhase(MonoTypes)) cachedMonoTypesAst = monoTypesAst
+    val simplifierAst = Simplifier.run(monoTypesAst)
+    if (shouldPrintPhase(Simplifier)) cachedSimplifierAst = simplifierAst
+    val closureConvAst = ClosureConv.run(simplifierAst)
+    if (shouldPrintPhase(ClosureConv)) cachedClosureConvAst = closureConvAst
+    val lambdaLiftAst = LambdaLift.run(closureConvAst)
+    if (shouldPrintPhase(LambdaLift)) cachedLambdaLiftAst = lambdaLiftAst
+    val optimizerAst = Optimizer.run(lambdaLiftAst)
+    if (shouldPrintPhase(Optimizer)) cachedOptimizerAst = optimizerAst
+    val treeShaker2Ast = TreeShaker2.run(optimizerAst)
+    if (shouldPrintPhase(TreeShaker2)) cachedTreeShaker2Ast = treeShaker2Ast
+    val effectBinderAst = EffectBinder.run(treeShaker2Ast)
+    if (shouldPrintPhase(EffectBinder)) cachedEffectBinderAst = effectBinderAst
+    val tailPosAst = TailPos.run(effectBinderAst)
+    if (shouldPrintPhase(TailPos)) cachedTailPosAst = tailPosAst
     Verifier.run(cachedTailPosAst)
-    cachedEraserAst = Eraser.run(cachedTailPosAst)
-    cachedReducerAst = Reducer.run(cachedEraserAst)
-    cachedVarOffsetsAst = VarOffsets.run(cachedReducerAst)
+    val eraserAst = Eraser.run(tailPosAst)
+    if (shouldPrintPhase(Eraser)) cachedEraserAst = eraserAst
+    val reducerAst = Reducer.run(eraserAst)
+    if (shouldPrintPhase(Reducer)) cachedReducerAst = reducerAst
+    val varOffsetsAst = VarOffsets.run(reducerAst)
+    if (shouldPrintPhase(VarOffsets)) cachedVarOffsetsAst = varOffsetsAst
     val result = JvmBackend.run(cachedVarOffsetsAst)
 
     // Write formatted asts to disk based on options.
