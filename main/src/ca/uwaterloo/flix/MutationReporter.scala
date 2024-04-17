@@ -11,7 +11,7 @@ object MutationReporter {
     exp match {
       case Expr.Mutated(mutExp, originalExp, tpe, eff, loc) => mutExp match {
         case Expr.Mutated(_, _, _, _, _) => reportNonKilledMutation(mutExp)
-        case e => s"surviving mutation at $loc\noriginal: ${prettyPrint(originalExp)}\nMutation: ${prettyPrint(e)}"
+        case e => s"surviving mutation: ${prettyPrint(e)},\nloc: ${e.loc}"
       }
       case e => e.toString
     }

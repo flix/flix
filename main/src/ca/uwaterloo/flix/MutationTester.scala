@@ -15,10 +15,12 @@
  */
 
 package ca.uwaterloo.flix
+import ca.uwaterloo.flix.MutationGenerator.MutatedDef
 import ca.uwaterloo.flix.runtime.TestFn
 import ca.uwaterloo.flix.api.Flix
+import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.{Symbol, Type, TypedAst}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Root}
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, MutationType, Root}
 import dev.flix.runtime.Global
 
 import java.time.LocalDateTime
@@ -100,6 +102,45 @@ object MutationTester {
         })
         root.copy(defs = newDefs)
     }
+    private def printMutation(mutType: TypedAst.MutationType): String = {
+      mutType match {
+        case MutationType.CstMut(cst) => cst match {
+          case Constant.Unit => "Unit"
+          case Constant.Null => "Null"
+          case Constant.Bool(lit) => s"Changed to ${lit.toString}"
+          case Constant.Char(lit) => s"Changed to ${lit.toString}"
+          case Constant.Float32(lit) => s"Changed to ${lit.toString}"
+          case Constant.Float64(lit) => s"Changed to ${lit.toString}"
+          case Constant.BigDecimal(lit) => s"Changed to ${lit.toString}"
+          case Constant.Int8(lit) => s"Changed to ${lit.toString}"
+          case Constant.Int16(lit) => s"Changed to ${lit.toString}"
+          case Constant.Int32(lit) => s"Changed to ${lit.toString}"
+          case Constant.Int64(lit) => s"Changed to ${lit.toString}"
+          case Constant.BigInt(lit) => s"Changed to ${lit.toString}"
+          case Constant.Str(lit) => s"Changed to ${lit.toString}"
+          case Constant.Regex(lit) => s"Changed to ${lit.toString}"
+        }
+        case MutationType.SigMut(sig) =>
+          val op = sig.name match {
+          case "sub" => "-"
+          case "mul" =>"*"
+          case "div" =>"/"
+          case "add" =>"+"
+          case e => e
+        }
+          s"Changed to ${op}"
+        case MutationType.IfMut(bool) => s"Changed the if-then-else condition to ${bool.toString}"
+        case MutationType.CompMut(comp) => s"Changed to ${comp.name}"
+        case MutationType.CaseSwitch() => "Switched cases"
+        case MutationType.VarMut(apply, varName) =>  apply.sym.name match {
+            case "sub" => s"Changed variable to ${varName.text} - 1"
+            case "add" =>s"Changed variable to ${varName.text} + 1"
+            case e => e
+          }
+        case MutationType.CaseDeletion(i) => s"Deleted case number $i"
+        case MutationType.RecordSelectMut(name) => s"selects ${name.name}"
+      }
+    }
 
     def insertDecAndCheckInDef(d: TypedAst.Def): TypedAst.Def = {
       val loc = d.exp.loc
@@ -125,7 +166,7 @@ object MutationTester {
 
     private case class TestKit(flix: Flix, root: Root, testModule: String)
 
-    private def runMutations(flix: Flix, testModule: String, root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[TypedAst.Def])]): Unit = {
+    private def runMutations(flix: Flix, testModule: String, root: TypedAst.Root, mutatedDefs: List[(Symbol.DefnSym, List[MutatedDef])]): Unit = {
         val totalStartTime = System.nanoTime()
         val temp = totalStartTime
         val amountOfMutants = mutatedDefs.map(m => m._2.length).sum
@@ -148,19 +189,21 @@ object MutationTester {
         println(s"Total time to test all mutants: $time seconds")
     }
 
-    private def testMutantsAndUpdateProgress(acc: (Int, Int, Double, Long, Int), mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit, f: DateTimeFormatter) = {
+    private def testMutantsAndUpdateProgress(acc: (Int, Int, Double, Long, Int), mut: (Symbol.DefnSym, List[MutatedDef]), testKit: TestKit, f: DateTimeFormatter) = {
         mut._2.foldLeft(acc)((acc2, mDef) => {
             val (survivorCount, unknownCount, time, accTemp, mAmount) = acc2
             val mutationAmount = mAmount + 1
             val start = System.nanoTime()
-            val testResults = compileAndTestMutant(mDef, mut, testKit)
+            val testResults = compileAndTestMutant(mDef.df, mut, testKit)
             val nano = 1_000_000_000
             val newTime = time + (System.nanoTime() - start).toDouble / nano
             val newSurvivorCount = if (testResults.equals(TestRes.MutantSurvived))  survivorCount + 1 else survivorCount
             val newUnknownCount = if (testResults.equals(TestRes.Unknown))  unknownCount + 1 else unknownCount
             if (testResults.equals(TestRes.Unknown) || testResults.equals(TestRes.MutantSurvived)) {
               // println(MutationReporter.reportNonKilledMutation(mDef.exp))
-              nonKilledStrList = MutationReporter.reportNonKilledMutation(mDef.exp) :: nonKilledStrList
+              println(testKit.flix.getFormatter.code(mDef.df.exp.loc, printMutation(mDef.mutType)))
+
+              nonKilledStrList = MutationReporter.reportNonKilledMutation(mDef.df.exp) :: nonKilledStrList
             }
 
           val now = LocalDateTime.now()
@@ -172,7 +215,7 @@ object MutationTester {
         })
     }
 
-    private def compileAndTestMutant(mDef: TypedAst.Def, mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit): TestRes = {
+    private def compileAndTestMutant(df: TypedAst.Def, mut: (Symbol.DefnSym, List[MutatedDef]), testKit: TestKit): TestRes = {
         val defs = testKit.root.defs
         val n = defs + (mut._1 -> df)
         val newRoot = testKit.root.copy(defs = n)
