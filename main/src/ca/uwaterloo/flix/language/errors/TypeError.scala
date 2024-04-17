@@ -315,6 +315,32 @@ object TypeError {
   }
 
   /**
+    * Invalid subtyping.
+    *
+    * @param baseType1 the first base type.
+    * @param baseType2 the second base type.
+    * @param fullType1 the first full type.
+    * @param fullType2 the second full type.
+    * @param renv      the rigidity environment.
+    * @param loc       the location where the error occurred.
+    */
+  case class NonSubtype(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Unable to unify the subtyping '${formatType(fullType1, Some(renv))}' < '${formatType(fullType2, Some(renv))}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Unable to unify the subtyping: '${red(formatType(baseType1, Some(renv)))}' < '${red(formatType(baseType2, Some(renv)))}'.
+         |
+         |${code(loc, "invalid subtyping.")}
+         |
+         |Subtype  : ${formatType(fullType1, Some(renv))}
+         |Supertype: ${formatType(fullType2, Some(renv))}
+         |""".stripMargin
+    }
+  }
+
+  /**
     * Missing type class instance.
     *
     * @param clazz the class of the instance.
@@ -842,6 +868,27 @@ object TypeError {
       import formatter._
       s"""${line(kind, source.name)}
          |>> Expected type: '${red(formatType(expected, Some(renv)))}' but found type: '${red(formatType(inferred, Some(renv)))}'.
+         |
+         |${code(loc, "expression has unexpected type.")}
+         |""".stripMargin
+    }
+  }
+
+  /**
+    * Unexpected subtype.
+    *
+    * @param inferredSubtype the inferred subtype.
+    * @param expectedSupertype the expected supertype.
+    * @param renv     the rigidity environment.
+    * @param loc      the location of the inferred type.
+    */
+  case class UnexpectedSubtype(inferredSubtype: Type, expectedSupertype: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+    def summary: String = s"Expected supertype '${formatType(expectedSupertype, Some(renv))}' but found subtype: '${formatType(inferredSubtype, Some(renv))}'."
+
+    def message(formatter: Formatter): String = {
+      import formatter._
+      s"""${line(kind, source.name)}
+         |>> Expected type: '${red(formatType(expectedSupertype, Some(renv)))}' but found type: '${red(formatType(inferredSubtype, Some(renv)))}'.
          |
          |${code(loc, "expression has unexpected type.")}
          |""".stripMargin

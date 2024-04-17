@@ -18,10 +18,10 @@ package ca.uwaterloo.flix.language.phase.typer
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{Ast, Kind, KindedAst, RigidityEnv, SourceLocation, Symbol, Type, TypeConstructor}
 import ca.uwaterloo.flix.language.errors.TypeError
-import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.Provenance
+import ca.uwaterloo.flix.language.phase.typer.TypeConstraint.{EqProvenance, Provenance, SubProvenance}
 import ca.uwaterloo.flix.language.phase.unification.Unification.getUnderOrOverAppliedError
 import ca.uwaterloo.flix.language.phase.unification._
-import ca.uwaterloo.flix.util.Result.Err
+import ca.uwaterloo.flix.util.Result.{Err, Ok}
 import ca.uwaterloo.flix.util.collection.{ListMap, ListOps}
 import ca.uwaterloo.flix.util.{InternalCompilerException, Result, Validation}
 
@@ -272,7 +272,6 @@ object ConstraintSolver {
         case ResolutionResult(subst, constrs, p) => ResolutionResult(subst @@ subst0, constrs, progress = p)
       }
     case TypeConstraint.Subtype(tpe1, tpe2, prov0) =>
-      // TODO change to subtype
       val t1 = TypeMinimization.minimizeType(subst0(tpe1))
       val t2 = TypeMinimization.minimizeType(subst0(tpe2))
       val prov = subst0(prov0)
@@ -308,7 +307,7 @@ object ConstraintSolver {
     *
     * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
     */
-  private def resolveEquality(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1.kind, tpe2.kind) match {
+  private def resolveEquality(tpe1: Type, tpe2: Type, prov: EqProvenance, renv: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1.kind, tpe2.kind) match {
     case (Kind.Eff, Kind.Eff) =>
       // first simplify the types to get rid of assocs if we can
       for {
@@ -377,7 +376,7 @@ object ConstraintSolver {
     *
     * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
     */
-  private def resolveEqualityStar(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1, tpe2) match {
+  private def resolveEqualityStar(tpe1: Type, tpe2: Type, prov: EqProvenance, renv: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1, tpe2) match {
     // reflU
     case (x: Type.Var, y: Type.Var) if (x == y) => Result.Ok(ResolutionResult.elimination)
 
@@ -438,74 +437,25 @@ object ConstraintSolver {
     * TODO what does this mean?
     * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
     */
-  private def resolveSubtype(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1.kind, tpe2.kind) match {
+  private def resolveSubtype(tpe1: Type, tpe2: Type, prov: SubProvenance, renv: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1.kind, tpe2.kind) match {
     case (Kind.Eff, Kind.Eff) =>
-      // first simplify the types to get rid of assocs if we can
-      for {
-        (t1, p1) <- simplifyType(tpe1, renv, loc)
-        (t2, p2) <- simplifyType(tpe2, renv, loc)
-        // TODO we could avoid fresh vars in simple cases like pure < any and any < univ
-        slack = Type.Var(Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Eff, isRegion = false, t1.loc.asSynthetic), t1.loc.asSynthetic)
-        lhs = Type.mkUnion(t1, slack, t1.loc.asSynthetic)
-        // rewrite x < y to x + a < y
-        res0 <- EffUnification.unify(lhs, t2, renv).mapErr(toTypeError(_, prov))
-        res =
-          if (res0._2.isEmpty) {
-            ResolutionResult.newSubst(res0._1)
-          } else {
-            ResolutionResult.constraints(List(TypeConstraint.Subtype(t1, t2, prov)), p1 || p2)
-          }
-      } yield res
+      // rewrite x < y to x + a < y
+      val slack = Type.Var(Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Eff, isRegion = false, tpe1.loc.asSynthetic), tpe1.loc.asSynthetic)
+      val lhs = Type.mkUnion(tpe1, slack, tpe1.loc.asSynthetic)
+      Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(lhs, tpe2, Provenance.subToEq(prov))), progress = true))
 
     case (Kind.Bool, Kind.Bool) =>
-      // first simplify the types to get rid of assocs if we can
-      for {
-        (t1, p1) <- simplifyType(tpe1, renv, loc)
-        (t2, p2) <- simplifyType(tpe2, renv, loc)
-        slack = Type.Var(Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Bool, isRegion = false, t1.loc.asSynthetic), t1.loc.asSynthetic)
-        lhs = Type.mkOr(t1, slack, t1.loc.asSynthetic)
-        // TODO is this actually or?
-        // rewrite x < y to x or a < y
-        res0 <- BoolUnification.unify(lhs, t2, renv).mapErr(toTypeError(_, prov))
-        res =
-          if (res0._2.isEmpty) {
-            ResolutionResult.newSubst(res0._1)
-          } else {
-            ResolutionResult.constraints(List(TypeConstraint.Subtype(t1, t2, prov)), p1 || p2)
-          }
-      } yield res
+      // rewrite x < y to x or a < y
+      val slack = Type.Var(Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Bool, isRegion = false, tpe1.loc.asSynthetic), tpe1.loc.asSynthetic)
+      // TODO is this actually or?
+      val lhs = Type.mkOr(tpe1, slack, tpe1.loc.asSynthetic)
+      Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(lhs, tpe2, Provenance.subToEq(prov))), progress = true))
 
-    case (Kind.RecordRow, Kind.RecordRow) =>
-      // first simplify the types to get rid of assocs if we can
-      for {
-        (t1, p1) <- simplifyType(tpe1, renv, loc)
-        (t2, p2) <- simplifyType(tpe2, renv, loc)
-        // TODO
-        res0: (Substitution, List[Ast.BroadEqualityConstraint]) = ??? // RecordUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
-        res =
-          if (res0._2.isEmpty) {
-            ResolutionResult.newSubst(res0._1)
-          } else {
-            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
-          }
-      } yield res
+    case (Kind.RecordRow, Kind.RecordRow) => ???
 
-    case (Kind.SchemaRow, Kind.SchemaRow) =>
-      // first simplify the types to get rid of assocs if we can
-      for {
-        (t1, _) <- simplifyType(tpe1, renv, loc)
-        (t2, _) <- simplifyType(tpe2, renv, loc)
-        // TODO
-        res: Substitution = ??? // SchemaUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
-      } yield ResolutionResult.newSubst(res)
+    case (Kind.SchemaRow, Kind.SchemaRow) => ???
 
-    case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
-      for {
-        (t1, _) <- simplifyType(tpe1, renv, loc)
-        (t2, _) <- simplifyType(tpe2, renv, loc)
-        // TODO
-        res: Substitution = ??? // CaseSetUnification.unify(t1, t2, renv, sym1.universe, sym1).mapErr(toTypeError(_, prov))
-      } yield ResolutionResult.newSubst(res)
+    case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 => ???
 
     case (k1, k2) if KindUnification.unifiesWith(k1, k2) => resolveSubtypeStar(tpe1, tpe2, prov, renv, loc)
 
@@ -519,58 +469,63 @@ object ConstraintSolver {
     * TODO what does this mean?
     * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
     */
-  private def resolveSubtypeStar(tpe1: Type, tpe2: Type, prov: Provenance, renv: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1, tpe2) match {
-    // x < x
-    case (x: Type.Var, y: Type.Var) if (x == y) => Result.Ok(ResolutionResult.elimination)
+  private def resolveSubtypeStar(tpe1: Type, tpe2: Type, prov: SubProvenance, renv: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1, tpe2) match {
+//    // x < x
+//    case (x: Type.Var, y: Type.Var) if (x == y) => Result.Ok(ResolutionResult.elimination)
 
-    // x42 < any
-//    case (x: Type.Var, t) if renv.isFlexible(x.sym) && !t.typeVars.contains(x) =>
-//      Result.Ok(ResolutionResult.newSubst(Substitution.singleton(x.sym, t)))
+//    // cst < cst
+//    case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(ResolutionResult.elimination)
 
-    // any < x42
-//    case (t, x: Type.Var) if renv.isFlexible(x.sym) && !t.typeVars.contains(x) =>
-//      Result.Ok(ResolutionResult.newSubst(Substitution.singleton(x.sym, t)))
+//    // al<t> < any --> t < any
+//    case (Type.Alias(_, _, tpe, _), _) => resolveSubtype(tpe, tpe2, prov, renv, loc)
 
-    // cst < cst
-    case (Type.Cst(c1, _), Type.Cst(c2, _)) if c1 == c2 => Result.Ok(ResolutionResult.elimination)
+//    // any < al<t> --> any < t
+//    case (_, Type.Alias(_, _, tpe, _)) => resolveSubtype(tpe1, tpe, prov, renv, loc)
 
-    // al<t> < any --> t < any
-    case (Type.Alias(_, _, tpe, _), _) => resolveSubtype(tpe, tpe2, prov, renv, loc)
+    case(Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) => (tpe1.typeConstructor, tpe2.typeConstructor) match {
+      case (Some(TypeConstructor.Arrow(_)), Some(TypeConstructor.Arrow(_))) =>
+        // contra variant args
+        val args1 = tpe1.arrowArgTypes
+        val args2 = tpe2.arrowArgTypes
+        assert(args1.sizeIs == args2.length)
+        // TODO prov is wrong i think
+        val contraConstraints = args1.zip(args2).map{case (t1, t2) => TypeConstraint.Subtype(t2, t1, prov)}
+        // co variant result and effect
+        val coConstraints = (tpe1.arrowResultType :: tpe1.arrowEffectType :: Nil).zip(tpe2.arrowResultType :: tpe2.arrowEffectType :: Nil).map{
+          case (t1, t2) => TypeConstraint.Subtype(t1, t2, prov)
+        }
+        Ok(ResolutionResult.constraints(coConstraints ::: contraConstraints, progress = true))
+      case (Some(_), Some(_)) =>
+        // t11[t12] < t21[t22] --> t11 < t21 and t12 < t22
+        for {
+          res1 <- resolveSubtype(t11, t21, prov, renv, loc)
+          res2 <- resolveSubtype(res1.subst(t12), res1.subst(t22), res1.subst(prov), renv, loc)
+        } yield res2 @@ res1
+      case (None, _) | (_, None) =>
+        Ok(ResolutionResult.constraints(Nil, progress = false))
+    }
 
-    // any < al<t> --> any < t
-    case (_, Type.Alias(_, _, tpe, _)) => resolveSubtype(tpe1, tpe, prov, renv, loc)
+//    // at < at
+//    case (Type.AssocType(cst1, args1, _, _), Type.AssocType(cst2, args2, _, _)) if cst1.sym == cst2.sym && args1 == args2 =>
+//      Result.Ok(ResolutionResult.elimination)
 
-    // TODO functions
+//    // If either side is an associated type, we try to reduce both sides.
+//    // This is to prevent erroneous no-progress reports when we actually could make progress on the non-matched side.
+//    case (assoc: Type.AssocType, tpe) =>
+//      for {
+//        (t1, p1) <- simplifyType(assoc, renv, loc)
+//        (t2, p2) <- simplifyType(tpe, renv, loc)
+//      } yield {
+//        ResolutionResult.constraints(List(TypeConstraint.Subtype(t1, t2, prov)), p1 || p2)
+//      }
 
-    // non-functions
-    // t11[t12] < t21[t22] --> t11 < t21 and t12 < t22
-    case (Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) =>
-      for {
-        res1 <- resolveSubtype(t11, t21, prov, renv, loc)
-        res2 <- resolveSubtype(res1.subst(t12), res1.subst(t22), res1.subst(prov), renv, loc)
-      } yield res2 @@ res1
-
-    // at < at
-    case (Type.AssocType(cst1, args1, _, _), Type.AssocType(cst2, args2, _, _)) if cst1.sym == cst2.sym && args1 == args2 =>
-      Result.Ok(ResolutionResult.elimination)
-
-    // If either side is an associated type, we try to reduce both sides.
-    // This is to prevent erroneous no-progress reports when we actually could make progress on the non-matched side.
-    case (assoc: Type.AssocType, tpe) =>
-      for {
-        (t1, p1) <- simplifyType(assoc, renv, loc)
-        (t2, p2) <- simplifyType(tpe, renv, loc)
-      } yield {
-        ResolutionResult.constraints(List(TypeConstraint.Subtype(t1, t2, prov)), p1 || p2)
-      }
-
-    case (tpe, assoc: Type.AssocType) =>
-      for {
-        (t1, p1) <- simplifyType(tpe, renv, loc)
-        (t2, p2) <- simplifyType(assoc, renv, loc)
-      } yield {
-        ResolutionResult.constraints(List(TypeConstraint.Subtype(t1, t2, prov)), p1 || p2)
-      }
+//    case (tpe, assoc: Type.AssocType) =>
+//      for {
+//        (t1, p1) <- simplifyType(tpe, renv, loc)
+//        (t2, p2) <- simplifyType(assoc, renv, loc)
+//      } yield {
+//        ResolutionResult.constraints(List(TypeConstraint.Subtype(t1, t2, prov)), p1 || p2)
+//      }
 
     case _ =>
       Result.Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov))
@@ -817,10 +772,6 @@ object ConstraintSolver {
   // TODO ASSOC-TYPES because provenance is not propogated properly.
   // TODO ASSOC-TYPES We also need to track the renv for use in these errors.
   private def toTypeError(err0: UnificationError, prov: Provenance)(implicit flix: Flix): TypeError = (err0, prov) match {
-    case (_, Provenance.SubtypeMatch(_, _, _)) => ??? // TODO handle properly
-    case (_, Provenance.ExpectSubtype(_, _, _)) => ??? // TODO handle properly
-    case (UnificationError.NonSubtype(_, _), _) => ??? // TODO handle properly
-
     case (err, Provenance.ExpectType(expected, actual, loc)) =>
       toTypeError(err, Provenance.Match(expected, actual, loc)) match {
         case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, _) =>
@@ -830,6 +781,13 @@ object ConstraintSolver {
             case _ =>
               TypeError.UnexpectedType(baseType1, baseType2, renv, loc)
           }
+        case e => e
+      }
+
+    case (err, Provenance.ExpectSubtype(actual, expected, loc)) =>
+      toTypeError(err, Provenance.SubtypeMatch(actual, expected, loc)) match {
+        case TypeError.NonSubtype(baseType1, baseType2, fullType1, fullType2, renv, _) =>
+          TypeError.UnexpectedSubtype(baseType1, baseType2, renv, loc)
         case e => e
       }
 
@@ -853,6 +811,12 @@ object ConstraintSolver {
           TypeError.UnexpectedArg(sym, num, fullType1, fullType2, renv, loc)
         case e => e
       }
+
+    case (UnificationError.NonSubtype(baseType1, baseType2), Provenance.SubtypeMatch(type1, type2, loc)) =>
+      TypeError.NonSubtype(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+
+    case (_, Provenance.SubtypeMatch(_, _, _)) => ??? // should not exist
+    case (UnificationError.NonSubtype(_, _), _) => ??? // should not exist
 
     case (UnificationError.MismatchedTypes(baseType1, baseType2), Provenance.Match(type1, type2, loc)) =>
       (baseType1.typeConstructor, baseType2.typeConstructor) match {
