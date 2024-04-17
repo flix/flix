@@ -236,7 +236,16 @@ object ConstraintSolver {
           return res
       }
     }
-    Result.Ok(ResolutionResult(subst, curr, progress = true))
+    curr match {
+      case Nil =>
+        Result.Ok(ResolutionResult(subst, curr, progress = true))
+      case c :: _ => Err(c match {
+        case TypeConstraint.Equality(tpe1, tpe2, prov) => toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov)
+        case TypeConstraint.Subtype(tpe1, tpe2, prov) => toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov)
+        case TypeConstraint.Trait(_, _, _) => ???
+        case TypeConstraint.Purification(_, _, _, _, _) => ???
+      })
+    }
   }
 
   /**
@@ -444,22 +453,17 @@ object ConstraintSolver {
       val lhs = Type.mkUnion(tpe1, slack, tpe1.loc.asSynthetic)
       Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(lhs, tpe2, Provenance.subToEq(prov))), progress = true))
 
-    case (Kind.Bool, Kind.Bool) =>
-      // rewrite x < y to x or a < y
-      val slack = Type.Var(Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Bool, isRegion = false, tpe1.loc.asSynthetic), tpe1.loc.asSynthetic)
-      // TODO is this actually or?
-      val lhs = Type.mkOr(tpe1, slack, tpe1.loc.asSynthetic)
-      Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(lhs, tpe2, Provenance.subToEq(prov))), progress = true))
+    case (Kind.Bool, Kind.Bool) => ??? // nice error
 
-    case (Kind.RecordRow, Kind.RecordRow) => ???
+    case (Kind.RecordRow, Kind.RecordRow) => ??? // nice error
 
-    case (Kind.SchemaRow, Kind.SchemaRow) => ???
+    case (Kind.SchemaRow, Kind.SchemaRow) => ??? // nice error
 
     case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 => ???
 
     case (k1, k2) if KindUnification.unifiesWith(k1, k2) => resolveSubtypeStar(tpe1, tpe2, prov, renv, loc)
 
-    case _ => Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov))
+    case _ => Ok(ResolutionResult.constraints(List(TypeConstraint.Subtype(tpe1, tpe2, prov)), progress = false))
   }
 
 

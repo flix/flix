@@ -380,7 +380,7 @@ object ConstraintGen {
 
       case Expr.Let(sym, _, exp1, exp2, loc) =>
         val (tpe1, eff1) = visitExp(exp1)
-        c.unifySubtype(sym.tvar, tpe1, exp1.loc)
+        c.unifyType(sym.tvar, tpe1, exp1.loc)
         val (tpe2, eff2) = visitExp(exp2)
         val resTpe = tpe2
         val resEff = Type.mkUnion(eff1, eff2, loc)
