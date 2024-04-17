@@ -257,13 +257,19 @@ object MutationTester {
     private def mutateExprDef(expr: Expr)(implicit flix: Flix): LazyList[Mutant[Expr]] = expr match {
       case Expr.Def(sym, tpe, loc) =>
         if (defnIntNamespaces.contains(sym.namespace.mkString("."))) {
-          defnToDefn.get(sym.text)
-            .map(findDef(sym.namespace, _))
-            .map(s => LazyList(Mutant(Expr.Def(s, tpe, loc), PrintedReplace(loc, s.toString))))
+          val symText = sym.text
+          defnToDefn.get(symText)
+            .map { s =>
+              val defn = findDef(sym.namespace, s)
+              LazyList(Mutant(Expr.Def(defn, tpe, loc), PrintedReplace(loc, defn.text)))
+            }
             .orElse {
-              defnToSig.get(sym.text)
-                .map(p => findSig(p._1, p._2))
-                .map(s => LazyList(Mutant(Expr.Sig(s, tpe, loc), PrintedReplace(loc, s.toString))))
+              defnToSig.get(symText)
+                .map { pair =>
+                  val sig = findSig(pair._1, pair._2)
+                  val loc1 = loc.copy(beginCol = loc.endCol - sym.toString.length)
+                  LazyList(Mutant(Expr.Sig(sig, tpe, loc), PrintedReplace(loc1, sig.toString)))
+                }
             }
             .getOrElse(LazyList.empty)
         } else {
@@ -284,13 +290,13 @@ object MutationTester {
         l.foldLeft(LazyList.empty[Mutant[Expr]]) {
           (acc, sigMap) =>
             acc #::: sigMap.get(symText)
-              .map { p =>
-                val sig = findSig(p._1, p._2)
+              .map { pair =>
+                val sig = findSig(pair._1, pair._2)
                 val locText = getText(loc)
                 val printedDiff = if (symText.endsWith(locText)) {
                   PrintedReplace(loc.copy(beginCol = loc.beginCol - (symText.length - locText.length)), sig.toString)
                 } else {
-                  PrintedReplace(loc, sigToSymbol.getOrElse(sig.toString, s"\'sig.toString\'"))
+                  PrintedReplace(loc, sigToSymbol.getOrElse(sig.toString, s"\'${sig.toString}\'"))
                 }
                 LazyList(Mutant(Expr.Sig(sig, tpe, loc), printedDiff))
               }
@@ -307,9 +313,7 @@ object MutationTester {
           case Expr.Def(sym, _, _) if defnIntNamespaces.contains(sym.namespace.mkString(".")) && sym.text == "bitwiseNot" =>
             LazyList(Mutant(exps.head, PrintedReplace(loc, getText(exps.head))))
           case _ =>
-            // todo: isn't that a lot ?
-            val res = mutateMap(exp, mutateExpr, Expr.Apply(_, exps, tpe, eff, loc)) #:::
-              mutateElms(exps, mutateExpr, Expr.Apply(exp, _, tpe, eff, loc))
+            val res = mutateMap(exp, mutateExpr, Expr.Apply(_, exps, tpe, eff, loc))
 
             if (res.nonEmpty) res
             else if (tpe.toString == "Bool")
@@ -317,7 +321,7 @@ object MutationTester {
                 Expr.Unary(BoolOp.Not, expr, tpe, eff, loc),
                 PrintedAdd(loc.copy(endLine = loc.beginLine, endCol = loc.beginCol), "not ")
               ))
-            else LazyList.empty
+            else mutateElms(exps, mutateExpr, Expr.Apply(exp, _, tpe, eff, loc))
         }
       case _ => LazyList.empty
     }
