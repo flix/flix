@@ -33,18 +33,21 @@ class FuzzSwapLines extends AnyFunSuite with TestUtils {
   private val numSwapLines = 10
 
   test("simple-card-game") {
-    val lines = Files.lines(Paths.get("examples/simple-card-game.flix"))
-    compileWithSwappedLines("simple-card-game", lines)
+    val filepath = Paths.get("examples/simple-card-game.flix")
+    val lines = Files.lines(filepath)
+    compileWithSwappedLines(filepath.getFileName.toString, lines)
   }
 
   test("using-channels-and-select") {
-    val lines = Files.lines(Paths.get("examples/using-channels-and-select.flix"))
-    compileWithSwappedLines("using-channels-and-select", lines)
+    val filepath = Paths.get("examples/using-channels-and-select.flix")
+    val lines = Files.lines(filepath)
+    compileWithSwappedLines(filepath.getFileName.toString, lines)
   }
 
   test("the-ast-typing-problem-with-polymorphic-records") {
-    val lines = Files.lines(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix"))
-    compileWithSwappedLines("the-ast-typing-problem-with-polymorphic-records", lines)
+    val filepath = Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix")
+    val lines = Files.lines(filepath)
+    compileWithSwappedLines(filepath.getFileName.toString, lines)
   }
 
   /**
@@ -61,12 +64,12 @@ class FuzzSwapLines extends AnyFunSuite with TestUtils {
 
     val flix = new Flix()
     flix.compile()
-    for (i_ <- 0 until numSwapLinesFixed) {
-      val i = Math.min(i_ * step, numLines)
-      for (j_ <- i_ + 1 until numSwapLinesFixed) {
-        val j = Math.min(j_ * step, numLines)
-        val src = lines.updated(i, lines(j)).updated(j, lines(i)).mkString("\n")
-        flix.addSourceCode(s"$name-swap-lines-$i-and-$j", src)
+    for (i <- 0 until numSwapLinesFixed) {
+      val iStepped = Math.min(i * step, numLines)
+      for (j <- i + 1 until numSwapLinesFixed) {
+        val jStepped = Math.min(j * step, numLines)
+        val src = lines.updated(iStepped, lines(jStepped)).updated(jStepped, lines(iStepped)).mkString("\n")
+        flix.addSourceCode(s"$name-swap-lines-$iStepped-and-$jStepped", src)
         flix.compile() // We simply care that this does not crash.
       }
     }

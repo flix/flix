@@ -29,25 +29,26 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
   private val N: Int = 75
 
   test("simple-card-game") {
-    val input = Files.readString(Paths.get("examples/simple-card-game.flix"))
-    compilePrefixes("simple-card-game", input)
+    val filepath = Paths.get("examples/simple-card-game.flix")
+    val input = Files.readString(filepath)
+    compilePrefixes(filepath.getFileName.toString, input)
   }
 
   test("using-channels-and-select") {
-    val input = Files.readString(Paths.get("examples/using-channels-and-select.flix"))
-    compilePrefixes("using-channels-and-select", input)
+    val filepath = Paths.get("examples/using-channels-and-select.flix")
+    val input = Files.readString(filepath)
+    compilePrefixes(filepath.getFileName.toString, input)
   }
 
   test("the-ast-typing-problem-with-polymorphic-records") {
-    val input = Files.readString(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix"))
-    compilePrefixes("the-ast-typing-problem-with-polymorphic-records", input)
+    val filepath = Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix")
+    val input = Files.readString(filepath)
+    compilePrefixes(filepath.getFileName.toString, input)
   }
 
   /**
     * We break the given string `input` down into N prefixes and compile each of them.
-    *
     * For example, if N is 100 and the input has length 300 then we create prefixes of length 3, 6, 9, ...
-    *
     * The program may not be valid: We just care that it does not crash the compiler.
     */
   private def compilePrefixes(name: String, input: String): Unit = {
@@ -59,7 +60,7 @@ class FuzzPrefixes extends AnyFunSuite with TestUtils {
     for (i <- 1 until N) {
       val e = Math.min(i * step, length)
       val prefix = input.substring(0, e)
-      flix.addSourceCode(s"$name-prefix-$i", prefix)
+      flix.addSourceCode(s"$name-prefix-$e", prefix)
       flix.compile() // We simply care that this does not crash.
     }
   }

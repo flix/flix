@@ -25,27 +25,30 @@ import scala.jdk.CollectionConverters._
 class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
 
   /**
-    * Number of lines to duplicate from each file.
+    * Number of variants to make of each file. Each variant has a single line duplicated.
     */
   private val N = 10
 
   test("simple-card-game") {
-    val lines = Files.lines(Paths.get("examples/simple-card-game.flix"))
-    compileWithDuplicateLine("simple-card-game", lines)
+    val filepath = Paths.get("examples/simple-card-game.flix")
+    val lines = Files.lines(filepath)
+    compileWithDuplicateLine(filepath.getFileName.toString, lines)
   }
 
   test("using-channels-and-select") {
-    val lines = Files.lines(Paths.get("examples/using-channels-and-select.flix"))
-    compileWithDuplicateLine("using-channels-and-select", lines)
+    val filepath = Paths.get("examples/using-channels-and-select.flix")
+    val lines = Files.lines(filepath)
+    compileWithDuplicateLine(filepath.getFileName.toString, lines)
   }
 
   test("the-ast-typing-problem-with-polymorphic-records") {
-    val lines = Files.lines(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix"))
-    compileWithDuplicateLine("the-ast-typing-problem-with-polymorphic-records", lines)
+    val filepath = Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix")
+    val lines = Files.lines(filepath)
+    compileWithDuplicateLine(filepath.getFileName.toString, lines)
   }
 
   /**
-    * We compile all variants of the given program where we duplicate a single line.
+    * Compile N variants of the given program with a single line duplicated.
     * The program may not be valid: We just care that it does not crash the compiler.
     */
   private def compileWithDuplicateLine(name: String, stream: java.util.stream.Stream[String]): Unit = {
@@ -56,11 +59,11 @@ class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
 
     val flix = new Flix()
     flix.compile()
-    for (i_ <- 0 until NFixed) {
-      val i = Math.min(i_ * step, numLines)
-      val (before, after) = lines.splitAt(i)
+    for (i <- 0 until NFixed) {
+      val iStepped = Math.min(i * step, numLines)
+      val (before, after) = lines.splitAt(iStepped)
       val src = (before ::: after.head :: after).mkString("\n")
-      flix.addSourceCode(s"$name-duplicate-line-$i", src)
+      flix.addSourceCode(s"$name-duplicate-line-$iStepped", src)
       flix.compile() // We simply care that this does not crash.
     }
   }

@@ -24,28 +24,31 @@ import java.nio.file.{Files, Paths}
 
 class FuzzDeleteLines extends AnyFunSuite with TestUtils {
   /**
-    * Number of lines to delete from each file.
+    * Number of variants to make for each file. Each variant has a single line deleted.
     */
   private val N = 10
 
   test("simple-card-game") {
-    val lines = Files.lines(Paths.get("examples/simple-card-game.flix"))
-    compileAllLinesExceptOne("simple-card-game", lines)
+    val filepath = Paths.get("examples/simple-card-game.flix")
+    val lines = Files.lines(filepath)
+    compileAllLinesExceptOne(filepath.getFileName.toString, lines)
   }
 
   test("using-channels-and-select") {
-    val lines = Files.lines(Paths.get("examples/using-channels-and-select.flix"))
-    compileAllLinesExceptOne("using-channels-and-select", lines)
+    val filepath = Paths.get("examples/using-channels-and-select.flix")
+    val lines = Files.lines(filepath)
+    compileAllLinesExceptOne(filepath.getFileName.toString, lines)
   }
 
   test("the-ast-typing-problem-with-polymorphic-records") {
-    val lines = Files.lines(Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix"))
-    compileAllLinesExceptOne("the-ast-typing-problem-with-polymorphic-records", lines)
+    val filepath = Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix")
+    val lines = Files.lines(filepath)
+    compileAllLinesExceptOne(filepath.getFileName.toString, lines)
   }
 
   /**
-    * We compile all variants of the given program where we omit a single line.
-    * For example, we omit line 1 and compile the program. Then we omit line 2 and compile the program. And so forth.
+    * We compile N variants of the given program where we omit a single line.
+    * For example, in a file with 100 lines and N = 10 we make variants without line 1, 10, 20, and so on.
     * The program may not be valid: We just care that it does not crash the compiler.
     */
   private def compileAllLinesExceptOne(name: String, stream: java.util.stream.Stream[String]): Unit = {
@@ -56,9 +59,9 @@ class FuzzDeleteLines extends AnyFunSuite with TestUtils {
 
     val flix = new Flix()
     flix.compile()
-    for (i_ <- 0 until NFixed) {
-      val i = Math.min(i_ * step, numLines)
-      val (before, after) = lines.splitAt(i)
+    for (i <- 0 until NFixed) {
+      val iStepped = Math.min(i * step, numLines)
+      val (before, after) = lines.splitAt(iStepped)
       val src = (before ::: after.drop(1)).mkString("\n")
       flix.addSourceCode(s"$name-delete-line-$i", src)
       flix.compile() // We simply care that this does not crash.
