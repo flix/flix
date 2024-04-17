@@ -18,7 +18,8 @@ package ca.uwaterloo.flix
 
 import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.Type.{False, Str, True}
-import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern}
+import ca.uwaterloo.flix.language.ast.TypedAst.Expr.Cst
+import ca.uwaterloo.flix.language.ast.TypedAst.{Expr, Pattern, MutationType}
 import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, TypeConstructor, TypedAst}
 import dev.flix.runtime.Global
 
@@ -362,10 +363,10 @@ object MutationGenerator {
       val mut1 = mutateExpr(exp1).map(m => Expr.Mutated(original.copy(exp1 = m), original, original.tpe, original.eff, original.loc))
       val mut2 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = m), original, original.tpe, original.eff, original.loc))
       mut1 ::: mut2
-    case original@Expr.FixpointSolve(exp, _, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
-    case original@Expr.FixpointFilter(_, exp, _, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
-    case original@Expr.FixpointInject(exp, _, _, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
-    case original@Expr.FixpointProject(_, exp, _, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, original.loc))
+    case original@Expr.FixpointSolve(exp, _, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), m.mutationType, original.tpe, original.eff, m.loc))
+    case original@Expr.FixpointFilter(_, exp, _, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), m.mutationType, original.tpe, original.eff, m.loc))
+    case original@Expr.FixpointInject(exp, _, _, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), m.mutationType, original.tpe, original.eff, m.loc))
+    case original@Expr.FixpointProject(_, exp, _, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), m.mutationType, original.tpe, original.eff, m.loc))
     case Expr.Error(_, _, _) => Nil
     case _ => Nil
   }
@@ -378,7 +379,22 @@ object MutationGenerator {
 
   private def mutatePattern(pattern: TypedAst.Pattern): List[TypedAst.Pattern] = {
     pattern match {
-      case original@TypedAst.Pattern.Cst(cst, _, _) => mutateCst(cst).map(m => original.copy(m))
+      case original@Pattern.Var(sym, tpe, loc) =>
+        mutateVar(Expr.Var(sym, tpe, loc)).flatMap {
+          case (e, _) => e match {
+            case Cst(cst, tpe, loc) => Some((Pattern.Cst(cst, tpe, loc), MutationType.CstMut(cst)))
+            case _ => None
+          }
+        }
+      case original@Pattern.Cst(cst, _, _) => mutateCst(cst).map(m => (original.copy(cst = m), MutationType.CstMut(m)))
+      case original@Pattern.Tuple(elms, _, _) =>
+        elms.zipWithIndex.flatMap {
+          case (pat, index) =>
+            val mutations = mutatePattern(pat)
+            mutations.map{case (m, mt) => (original.copy(elms = elms.updated(index, m)), mt)}
+          }
+      case original@Pattern.Tag(sym, pat, tpe, loc) => ???
+      case Pattern.Record(pats, pat, tpe, loc) => ???
       case _ => Nil
     }
   }
