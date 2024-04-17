@@ -43,10 +43,10 @@ import org.parboiled2.ParserInput
 case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, beginLine: Int, beginCol: Short, endLine: Int, endCol: Short) {
   /**
    * Computes the lexeme that the token refers to by slicing it from `src`.
-   * Note: This is explicitly lazy since we do not want to compute strings that are never used,
-   * such as keywords for instance. Take care to only access text when necessary.
+   *
+   * Note: We do *not* cache the text because it takes up significant memory.
    */
-  lazy val text: String = src.slice(start, end).mkString("")
+  def text: String = src.slice(start, end).mkString("")
 
   /**
    * Returns a string representation of this token. Should only be used for debugging.
@@ -58,7 +58,7 @@ case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, beginL
    * NB: Tokens are zero-indexed while SourcePositions are one-indexed
    */
   def mkSourcePosition(src: Ast.Source, parserInput: Option[ParserInput]):SourcePosition = {
-    SourcePosition(src, beginLine + 1, (beginCol + 1).toShort, parserInput)
+    SourcePosition(src, beginLine + 1, (beginCol + 1).toShort, parserInput.orNull)
   }
 
   /**
@@ -66,7 +66,7 @@ case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, beginL
    * NB: Tokens are zero-indexed while SourcePositions are one-indexed
    */
   def mkSourcePositionEnd(src: Ast.Source, parserInput: Option[ParserInput]): SourcePosition = {
-    SourcePosition(src, endLine + 1, (endCol + 1).toShort, parserInput)
+    SourcePosition(src, endLine + 1, (endCol + 1).toShort, parserInput.orNull)
   }
 
   /**
@@ -74,7 +74,7 @@ case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, beginL
    * NB: Tokens are zero-indexed while SourceLocations are one-indexed
    */
   def mkSourceLocation(src: Ast.Source, parserInput: Option[ParserInput], isReal: Boolean = true): SourceLocation = {
-    SourceLocation(parserInput, src, isReal, beginLine + 1, (beginCol + 1).toShort, endLine + 1, (endCol + 1).toShort)
+    SourceLocation(parserInput.orNull, src, isReal, beginLine + 1, (beginCol + 1).toShort, endLine + 1, (endCol + 1).toShort)
   }
 }
 
