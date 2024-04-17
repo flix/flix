@@ -174,7 +174,7 @@ object MutationTester {
 
     private def compileAndTestMutant(mDef: TypedAst.Def, mut: (Symbol.DefnSym, List[TypedAst.Def]), testKit: TestKit): TestRes = {
         val defs = testKit.root.defs
-        val n = defs + (mut._1 -> mDef)
+        val n = defs + (mut._1 -> df)
         val newRoot = testKit.root.copy(defs = n)
         val cRes = testKit.flix.codeGen(newRoot).unsafeGet
         val testsFromTester = cRes.getTests.filter { case (s, _) => s.namespace.head.equals(testKit.testModule) }.toList
