@@ -841,7 +841,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Class.Law.01") {
+  test("KindError.Trait.Law.01") {
     val input =
       """
         |trait C[a: Type -> Type] {
@@ -852,7 +852,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Class.Sig.01") {
+  test("KindError.Trait.Sig.01") {
     val input =
       """
         |trait C[a: Type -> Type] {
@@ -863,7 +863,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Class.Sig.02") {
+  test("KindError.Trait.Sig.02") {
     val input =
       """
         |trait C[a] {
@@ -874,7 +874,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
     expectError[KindError.UnexpectedKind](result)
   }
 
-  test("KindError.Class.TypeConstraint.01") {
+  test("KindError.Trait.TypeConstraint.01") {
     val input =
       """
         |trait C[a]
@@ -1025,7 +1025,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |def foo(): C.T[a] = ???
         |""".stripMargin
     val result = compile(input, DefaultOptions)
-    expectError[KindError.MissingTypeClassConstraint](result)
+    expectError[KindError.MissingTraitConstraint](result)
   }
 
   test("KindError.AssocType.01") {
@@ -1084,7 +1084,7 @@ class TestKinder extends AnyFunSuite with TestUtils {
   }
 
   test("KindError.AssocType.04") {
-    val  input =
+    val input =
       """
         |mod Foo {
         |    trait Add[t] {
@@ -1095,6 +1095,118 @@ class TestKinder extends AnyFunSuite with TestUtils {
         |        type Aef = {}
         |        pub def add(x: String, y: String): String = x + y
         |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.AssocType.05") {
+    val input =
+      """
+        |mod Test.Dec.AssociatedTypes.Negative {
+        |    trait Foo[t] {
+        |        type K: Type
+        |        type E: Type
+        |        pub def f(x: t): Foo.K[t][Foo.E[t]]
+        |    }
+        |}
+        |
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.AssocType.06") {
+    val input =
+      """
+        |trait C[a] {
+        |    type S : Type
+        |    type T : Type -> Type
+        |    pub def f(x: a): C.T[a][C.S[a]]
+        |}
+        |
+        |instance C[Int32] {
+        |    type S = Int32
+        |    type T = Int32
+        |    pub def f(x: Int32): Int32 = x
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.AssocType.07") {
+    val input =
+      """
+        |trait B[a] {
+        |    type Q : Type -> Type
+        |    type R : Type
+        |    pub def g(x: a): B.Q[a][B.R[a]]
+        |}
+        |
+        |trait C[a] with B[a] {
+        |    type S : Type
+        |    type T : Type -> Type
+        |    pub def f(x: a): C.T[a][B.Q[a][C.T[a]]]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.AssocType.08") {
+    val input =
+      """
+        |trait B[a] {
+        |    type Q : Type -> Type
+        |    type R : Type
+        |    pub def g(x: a): B.Q[a][B.R[a]]
+        |}
+        |
+        |trait C[a] with B[a] {
+        |    type S : Type
+        |    type T : Type -> Type
+        |    pub def f(x: a): C.T[a][B.Q[a][C.T[a][C.S[a][B.R[a]]]]]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.AssocType.09") {
+    val input =
+      """
+        |trait A[a] {
+        |    type A : Type -> Type
+        |    type B : Type
+        |    pub def f(x: a): A.A[a][A.A[a][A.A[a][A.A[a]]]]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.AssocType.10") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T : Type -> Eff
+        |    type S : Eff
+        |    pub def f(x: a): a \ C.T[a][C.S[a]]
+        |}
+        |""".stripMargin
+    val result = compile(input, DefaultOptions)
+    expectError[KindError.UnexpectedKind](result)
+  }
+
+  test("KindError.AssocType.11") {
+    val input =
+      """
+        |trait C[a] {
+        |    type T : Type -> Eff
+        |    type S : Eff
+        |    pub def f(x: C.T[a][a]): a
         |}
         |""".stripMargin
     val result = compile(input, DefaultOptions)

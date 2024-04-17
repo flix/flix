@@ -119,6 +119,8 @@ object Monomorpher {
 
     /**
       * Applies `this` substitution to the given type `tpe`, returning a normalized type.
+      *
+      * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
       */
     def apply(tpe0: Type): Type = tpe0 match {
       case x: Type.Var =>
@@ -134,9 +136,13 @@ object Monomorpher {
             // Default types are normalized.
             default(x)
         }
+
       case Type.Cst(_, _) =>
+        // Performance: Reuse tpe0.
         tpe0
+
       case Type.Apply(t1, t2, loc) =>
+
         (apply(t1), apply(t2)) match {
           // Simplify boolean equations.
           case (Type.Cst(TypeConstructor.Complement, _), y) => Type.mkComplement(y, loc)
@@ -150,9 +156,19 @@ object Monomorpher {
           // Put records in alphabetical order
           case (Type.Apply(Type.Cst(TypeConstructor.RecordRowExtend(label), _), tpe, _), rest) => mkRecordExtendSorted(label, tpe, rest, loc)
 
+          // Put schemas in alphabetical order
+          case (Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), _), tpe, _), rest) => mkSchemaExtendSorted(label, tpe, rest, loc)
+
           // Else just apply.
-          case (x, y) => Type.Apply(x, y, loc)
+          case (x, y) =>
+            // Performance: Reuse tpe0, if possible.
+            if ((x eq t1) && (y eq t2)) {
+              tpe0
+            } else {
+              Type.Apply(x, y, loc)
+            }
         }
+
       case Type.Alias(_, _, t, _) =>
         // Remove the Alias.
         apply(t)
@@ -302,6 +318,25 @@ object Monomorpher {
     case Type.Cst(_, _) | Type.Apply(_, _, _) =>
       // Non-record related types or a record in correct order.
       Type.mkRecordRowExtend(label, tpe, rest, loc)
+    case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type variable '$rest'", rest.loc)
+    case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
+    case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
+  }
+
+  /**
+    * Returns a sorted schema, assuming that `rest` is sorted.
+    * Sorting is stable on duplicate predicates.
+    *
+    * Assumes that rest does not contain variables, aliases, or associated types.
+    */
+  private def mkSchemaExtendSorted(label: Name.Pred, tpe: Type, rest: Type, loc: SourceLocation): Type = rest match {
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(l), loc1), t, loc2), r, loc3) if l.name < label.name =>
+      // Push extend further.
+      val newRest = mkSchemaExtendSorted(label, tpe, r, loc)
+      Type.Apply(Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(l), loc1), t, loc2), newRest, loc3)
+    case Type.Cst(_, _) | Type.Apply(_, _, _) =>
+      // Non-record related types or a record in correct order.
+      Type.mkSchemaRowExtend(label, tpe, rest, loc)
     case Type.Var(_, _) => throw InternalCompilerException(s"Unexpected type variable '$rest'", rest.loc)
     case Type.Alias(_, _, _, _) => throw InternalCompilerException(s"Unexpected alias '$rest'", rest.loc)
     case Type.AssocType(_, _, _, _) => throw InternalCompilerException(s"Unexpected associated type '$rest'", rest.loc)
@@ -653,7 +688,7 @@ object Monomorpher {
     val sig = root.sigs(sym)
 
     // lookup the instance corresponding to this type
-    val instances = root.instances(sig.sym.clazz)
+    val instances = root.instances(sig.sym.trt)
 
     val defns = instances.flatMap {
       inst =>
@@ -686,7 +721,7 @@ object Monomorpher {
     * Converts a SigSym into the equivalent DefnSym.
     */
   private def sigSymToDefnSym(sigSym: Symbol.SigSym): Symbol.DefnSym = {
-    val ns = sigSym.clazz.namespace :+ sigSym.clazz.name
+    val ns = sigSym.trt.namespace :+ sigSym.trt.name
     new Symbol.DefnSym(None, ns, sigSym.name, sigSym.loc)
   }
 

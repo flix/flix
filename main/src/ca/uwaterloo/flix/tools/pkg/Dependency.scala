@@ -17,12 +17,6 @@ package ca.uwaterloo.flix.tools.pkg
 
 import java.net.URL
 
-sealed trait Repository
-
-object Repository {
-  case object GitHub extends Repository
-}
-
 sealed trait Dependency
 
 object Dependency {
