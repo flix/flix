@@ -240,7 +240,7 @@ object Parser2 {
     val token = s.tokens(s.position)
     val line = token.beginLine + 1
     val column = token.beginCol + 1
-    SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, line, column, line, column + token.text.length)
+    SourceLocation(s.parserInput, s.src, isReal = true, line, column.toShort, line, (column + token.text.length).toShort)
   }
 
   /**
