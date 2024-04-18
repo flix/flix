@@ -1092,33 +1092,34 @@ object Lexer {
   }
 
   /**
-    * Returns a new array of tokens based on the successfully lexed array of `tokens`.
+    * Returns a fuzzed array of tokens based on the given array of `tokens`.
     *
-    * Note: Must not modify the last token which should be end-of-file.
+    * Must not modify the last token since it is end-of-file.
     */
   private def fuzz(tokens: Array[Token])(implicit flix: Flix): Array[Token] = {
-    // Return immediately if fuzzing is not enabled.
+    // Return immediately if fuzzing is disabled.
     if (!flix.options.xfuzzer) {
       return tokens
     }
 
-    // Return immediately if the array of tokens is too small.
+    // Return immediately if there are few tokens.
     if (tokens.length <= 10) {
       return tokens
     }
 
     //
-    // We fuzz the array of tokens by picking two random indices and swapping the,
+    // We fuzz the array by picking two random indices and swapping their tokens.
     //
-    val range = tokens.length - 1 // Note: We don't want to remove the last EOF token.
+    val copy = tokens.clone()
+    val lastIndex = copy.length - 1 // Note: We don't want to remove the last EOF token.
     val r = new Random()
-    val i = r.nextInt(range)
-    val j = r.nextInt(range)
+    val i = r.nextInt(lastIndex)
+    val j = r.nextInt(lastIndex)
 
-    val tmp = tokens(i)
-    tokens(i) = tokens(j)
-    tokens(j) = tmp
+    val tmp = copy(i)
+    copy(i) = copy(j)
+    copy(j) = tmp
 
-    tokens
+    copy
   }
 }
