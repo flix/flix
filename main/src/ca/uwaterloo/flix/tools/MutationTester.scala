@@ -25,7 +25,7 @@ object MutationTester {
   def run(root: Root, sourceCompilationResult: CompilationResult)(implicit flix: Flix): Result[Unit, String] = {
     val testTimeout: Duration = MutantRunner.testSource(sourceCompilationResult) match {
       case Result.Ok(t) => t
-      case Result.Err(e) => return Result.Err(e)
+      case Result.Err(s) => return Result.Err(s"Mutation testing not started: $s")
     }
 
     val mutants = Mutator.mutateRoot(root)
@@ -665,11 +665,11 @@ object MutationTester {
 
       testMutant(cr) match {
         case Survived => Result.Ok(configureTimeOut((System.currentTimeMillis() - timeBefore).milliseconds))
-        case _ => Result.Err("Source tests failed") // todo: is it good message ?
+        case _ => Result.Err("Source tests failed")
       }
     }
 
-    // todo: is it possible run phases before `Typer.run` for mutant too ?
+    // todo: is it necessary and possible run phases before `Typer.run` for mutant too ?
     private def compileMutant(mutant: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationMessage] = {
       val result = flix.checkMutant(mutant).toHardFailure
       Validation.flatMapN(result)(flix.codeGenMutant)
