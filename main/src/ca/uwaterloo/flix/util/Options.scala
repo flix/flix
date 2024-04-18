@@ -25,7 +25,7 @@ object Options {
     * Default options.
     */
   val Default: Options = Options(
-    lib = LibLevel.All,
+    lib = LibLevel.Min,
     entryPoint = None,
     explain = false,
     githubToken = None,
