@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.util.Validation._
 import org.parboiled2.ParserInput
 
 import scala.collection.mutable
+import scala.util.Random
 
 /**
  * A lexer that is able to tokenize multiple `Ast.Source`s in parallel.
@@ -122,9 +123,9 @@ object Lexer {
    * This is not viable long term and should never be merged into a stable release,
    * but it allows us to battle-test the lexer in nightly, without inconveniencing users too much.
    */
-  private def tryLex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
+  private def tryLex(src: Ast.Source)(implicit flix: Flix): Validation[Array[Token], CompilationMessage] = {
     try {
-      lex(src)
+      mapN(lex(src))(fuzz)
     } catch {
       case except: Throwable =>
         println(src.data.mkString)
@@ -1088,5 +1089,34 @@ object Lexer {
       }
     }
     TokenKind.Err(LexerError.UnterminatedBlockComment(sourceLocationAtStart()))
+  }
+
+  /**
+    * Returns a new array of tokens based on the successfully lexed array of `tokens`.
+    *
+    * Note: Must not modify the last token which should be end-of-file.
+    */
+  private def fuzz(tokens: Array[Token])(implicit flix: Flix): Array[Token] = {
+    // Return immediately if fuzzing is not enabled.
+    if (!flix.options.xfuzzer) {
+      return tokens
+    }
+
+    // Return immediately if the array of tokens is too small.
+    if (tokens.length <= 10) {
+      return tokens
+    }
+
+    //
+    //
+    //
+    val len = tokens.length - 2 // Note: We don't want to remove the last EOF token.
+    val r = new Random()
+    val i = r.nextInt(len)
+    val j = r.nextInt(len)
+
+    tokens(i) = tokens(j)
+
+    tokens
   }
 }
