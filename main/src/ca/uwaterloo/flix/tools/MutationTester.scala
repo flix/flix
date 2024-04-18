@@ -31,8 +31,8 @@ object MutationTester {
     val mutants = Mutator.mutateRoot(root)
 
     val queue = new ConcurrentLinkedQueue[ReportEvent]()
-    val reporter = new MutantReporter(queue)
     val runner = new MutantRunner(queue, mutants, testTimeout)
+    val reporter = new MutantReporter(queue)
 
     runner.start()
     reporter.start()
@@ -558,11 +558,6 @@ object MutationTester {
         "rightShift" -> "leftShift",
       )
 
-      def mutateExprWithoutCst(expr: Expr)(implicit flix: Flix): LazyList[Mutant[Expr]] = expr match {
-        case Expr.Cst(_, _, _) => LazyList.empty
-        case expr => mutateExpr(expr)
-      }
-
       def isLibSource(loc: SourceLocation): Boolean = loc.source.input match {
         case Input.Text(_, _, _) => true
         case Input.TxtFile(_) => false
@@ -570,6 +565,11 @@ object MutationTester {
       }
 
       def isTestDef(defn: Def): Boolean = defn.spec.ann.isTest
+
+      def mutateExprWithoutCst(expr: Expr)(implicit flix: Flix): LazyList[Mutant[Expr]] = expr match {
+        case Expr.Cst(_, _, _) => LazyList.empty
+        case expr => mutateExpr(expr)
+      }
 
       def mutateMap[T, E](e: E,
                           mutF: E => LazyList[Mutant[E]],
@@ -619,7 +619,7 @@ object MutationTester {
           case Polarity.Negative => Polarity.Positive
         }
 
-      def getText(expr: Expr): String = expr.loc.text.getOrElse("<unknown>")
+      def getText(expr: Expr): String = getText(expr.loc)
 
       def getText(loc: SourceLocation): String = loc.text.getOrElse("<unknown>")
     }
