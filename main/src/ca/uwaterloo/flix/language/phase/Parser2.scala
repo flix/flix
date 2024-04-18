@@ -1348,7 +1348,7 @@ object Parser2 {
               nth(lookAhead) match {
                 case TokenKind.ParenL => level += 1
                 case TokenKind.ParenR => level -= 1
-                case TokenKind.CurlyL => curlyLevel += 1
+                case TokenKind.CurlyL | TokenKind.HashCurlyL => curlyLevel += 1
                 case TokenKind.CurlyR if level == 1 =>
                   if (curlyLevel == 0) {
                     // Hitting '}' on top-level is a clear indicator that something is wrong. Most likely the terminating ')' was forgotten.
@@ -1758,7 +1758,7 @@ object Parser2 {
                 case TokenKind.Bar if nestingLevel == 0 =>
                   isRecordOp = true
                   continue = false
-                case TokenKind.CurlyL =>
+                case TokenKind.CurlyL | TokenKind.HashCurlyL =>
                   nestingLevel += 1
                   lookahead += 1
                 case TokenKind.CurlyR =>
