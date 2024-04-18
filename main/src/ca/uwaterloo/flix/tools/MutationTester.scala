@@ -313,7 +313,8 @@ object MutationTester {
           case Expr.Def(sym, _, _) if defnIntNamespaces.contains(sym.namespace.mkString(".")) && sym.text == "bitwiseNot" =>
             LazyList(Mutant(exps.head, PrintedReplace(loc, getText(exps.head))))
           case _ =>
-            val res = mutateMap(exp, mutateExpr, Expr.Apply(_, exps, tpe, eff, loc))
+            val res = mutateMap(exp, mutateExpr, Expr.Apply(_, exps, tpe, eff, loc)) #:::
+              mutateElms(exps, mutateExprWithoutCst, Expr.Apply(exp, _, tpe, eff, loc))
 
             if (res.nonEmpty) res
             else if (tpe.toString == "Bool")
@@ -321,7 +322,7 @@ object MutationTester {
                 Expr.Unary(BoolOp.Not, expr, tpe, eff, loc),
                 PrintedAdd(loc.copy(endLine = loc.beginLine, endCol = loc.beginCol), "not ")
               ))
-            else mutateElms(exps, mutateExpr, Expr.Apply(exp, _, tpe, eff, loc))
+            else LazyList.empty
         }
       case _ => LazyList.empty
     }
@@ -329,24 +330,30 @@ object MutationTester {
     private def mutateExprUnary(expr: Expr): LazyList[Mutant[Expr]] =
       expr match {
         case Expr.Unary(sop, exp, tpe, eff, loc) => sop match {
-          case BoolOp.Not => LazyList(Mutant(exp, PrintedReplace(loc, getText(exp))))
+          case BoolOp.Not =>
+            LazyList(Mutant(exp, PrintedRemove(loc.copy(endLine = loc.beginLine, endCol = loc.beginCol + 4))))
           case _ => LazyList.empty
         }
         case _ => LazyList.empty
       }
 
-    private def mutateExprBinary(expr: Expr): LazyList[Mutant[Expr]] = expr match {
-      case Expr.Binary(op, exp1, exp2, tpe, eff, loc) => op match {
-        case BoolOp.And => LazyList(Mutant(
-          Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc),
-          PrintedReplace(loc, s"${getText(exp1)} or ${getText(exp2)}"))
-        )
-        case BoolOp.Or => LazyList(Mutant(
-          Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc),
-          PrintedReplace(loc, s"${getText(exp1)} and ${getText(exp2)}"))
-        )
-        case _ => LazyList.empty
-      }
+    private def mutateExprBinary(expr: Expr)(implicit flix: Flix): LazyList[Mutant[Expr]] = expr match {
+      case Expr.Binary(op, exp1, exp2, tpe, eff, loc) =>
+        op match {
+          case BoolOp.And =>
+            val loc1 = locBetween(loc, exp1, exp2, "and")
+
+            Mutant(Expr.Binary(BoolOp.Or, exp1, exp2, tpe, eff, loc), PrintedReplace(loc1, "or")) #::
+              mutateMap(exp1, mutateExprWithoutCst, Expr.Binary(op, _, exp2, tpe, eff, loc)) #:::
+              mutateMap(exp2, mutateExprWithoutCst, Expr.Binary(op, exp1, _, tpe, eff, loc))
+          case BoolOp.Or =>
+            val loc1 = locBetween(loc, exp1, exp2, "or")
+
+            Mutant(Expr.Binary(BoolOp.And, exp1, exp2, tpe, eff, loc), PrintedReplace(loc1, "and")) #::
+              mutateMap(exp1, mutateExprWithoutCst, Expr.Binary(op, _, exp2, tpe, eff, loc)) #:::
+              mutateMap(exp2, mutateExprWithoutCst, Expr.Binary(op, exp1, _, tpe, eff, loc))
+          case _ => LazyList.empty
+        }
       case _ => LazyList.empty
     }
 
@@ -551,6 +558,11 @@ object MutationTester {
         "rightShift" -> "leftShift",
       )
 
+      def mutateExprWithoutCst(expr: Expr)(implicit flix: Flix): LazyList[Mutant[Expr]] = expr match {
+        case Expr.Cst(_, _, _) => LazyList.empty
+        case expr => mutateExpr(expr)
+      }
+
       def isLibSource(loc: SourceLocation): Boolean = loc.source.input match {
         case Input.Text(_, _, _) => true
         case Input.TxtFile(_) => false
@@ -573,6 +585,21 @@ object MutationTester {
 
       def mutateConstantNum[T](inc: T, dec: T, mapF: T => Constant, mapString: String => String): LazyList[Mutant[Constant]] =
         LazyList(inc, dec).map(value => Mutant(mapF(value), PrintedReplace(SourceLocation.Unknown, mapString(value.toString))))
+
+      def locBetween(sl: SourceLocation, exp1: Expr, exp2: Expr, sub: String)(implicit flix: Flix): SourceLocation = {
+        val loc = sl.copy(
+          beginLine = exp1.loc.endLine,
+          beginCol = exp1.loc.endCol,
+          endLine = exp2.loc.beginLine,
+          endCol = exp2.loc.beginCol
+        )
+        val i = getText(loc).indexOf(sub)
+
+        loc.copy(
+          beginCol = loc.beginCol + i,
+          endCol = loc.beginCol + i + sub.length
+        )
+      }
 
       def findSig(clazz: String, sig: String)(implicit flix: Flix): Symbol.SigSym = try {
         PredefinedClasses.lookupSigSym(clazz, sig, flix.getKinderAst)
