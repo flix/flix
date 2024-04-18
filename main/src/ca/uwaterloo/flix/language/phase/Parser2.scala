@@ -1079,9 +1079,16 @@ object Parser2 {
       lhs
     }
 
-    def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false, allowQualified: Boolean = true)(implicit s: State): Mark.Closed = {
+    def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
       var lhs = exprDelimited()
-      // Handle record select
+      // Handle calls
+      while (at(TokenKind.ParenL)) {
+        val mark = openBefore(lhs)
+        arguments()
+        lhs = close(mark, TreeKind.Expr.Apply)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      }
+      // Handle record select after function all. Example: funcReturningRecord().field
       if (at(TokenKind.Dot) && nth(1) == TokenKind.NameLowerCase) {
         val mark = openBefore(lhs)
         eat(TokenKind.Dot)
@@ -1090,13 +1097,6 @@ object Parser2 {
           name(NAME_FIELD)
         }
         lhs = close(mark, TreeKind.Expr.RecordSelect)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      }
-      // Handle calls
-      while (at(TokenKind.ParenL)) {
-        val mark = openBefore(lhs)
-        arguments()
-        lhs = close(mark, TreeKind.Expr.Apply)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
       // Handle binary operators
@@ -1108,7 +1108,7 @@ object Parser2 {
           val markOp = open()
           advance()
           close(markOp, TreeKind.Operator)
-          expression(right, allowQualified = allowQualified)
+          expression(right)
           lhs = close(mark, TreeKind.Expr.Binary)
           lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
         } else {
@@ -1207,7 +1207,7 @@ object Parser2 {
       }
     }
 
-    private def exprDelimited(allowQualified: Boolean = true)(implicit s: State): Mark.Closed = {
+    private def exprDelimited()(implicit s: State): Mark.Closed = {
       val mark = open()
       nth(0) match {
         case TokenKind.KeywordOpenVariant => openVariantExpr()
@@ -1232,10 +1232,10 @@ object Parser2 {
              | TokenKind.LiteralRegex => literalExpr()
         case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_VARIABLE)
-        case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_DEFINITION)
+        case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_FIELD, allowQualified = true)
         case TokenKind.NameUpperCase
              | TokenKind.NameMath
-             | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_DEFINITION, allowQualified)
+             | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_DEFINITION, allowQualified = true)
         case TokenKind.Minus
              | TokenKind.KeywordNot
              | TokenKind.Plus
@@ -1753,18 +1753,48 @@ object Parser2 {
     }
 
     private def blockOrRecordExpr()(implicit s: State): Mark.Closed = {
-      // Detemines if a '{' is opening a block, a record literal or a record operation.
+      // Determines if a '{' is opening a block, a record literal or a record operation.
       assert(at(TokenKind.CurlyL))
-      // If a '|' occurs before '}' or '{' then we are dealing with a record operation.
-      if (findBefore(TokenKind.Bar, before = List(TokenKind.CurlyL, TokenKind.CurlyR))) {
-        recordOperation()
-      } else {
-        // Otherwise a record literal can be detected by looking at the two next tokens.
-        (nth(1), nth(2)) match {
-          case (TokenKind.CurlyR, _)
-               | (TokenKind.NameLowerCase, TokenKind.Equal) => recordLiteral()
-          case _ => block()
-        }
+
+      // We can discern between record ops and literals vs. blocks by looking at the two next tokens.
+      (nth(1), nth(2)) match {
+        case (TokenKind.CurlyR, _)
+             | (TokenKind.NameLowerCase, TokenKind.Equal)
+             | (TokenKind.Plus, TokenKind.NameLowerCase)
+             | (TokenKind.Minus, TokenKind.NameLowerCase) =>
+          // Now check for record operation or record literal,
+          // by looking for a '|' before the closing '}'
+          val isRecordOp = {
+            var lookahead = 1
+            var nestingLevel = 0
+            var isRecordOp = false
+            var continue = true
+            while (continue && !eof()) {
+              nth(lookahead) match {
+                // Found closing '}' so stop seeking.
+                case TokenKind.CurlyR if nestingLevel == 0 => continue = false
+                // found '|' before closing '}' -> It is a record operation.
+                case TokenKind.Bar if nestingLevel == 0 =>
+                  isRecordOp = true
+                  continue = false
+                case TokenKind.CurlyL =>
+                  nestingLevel += 1
+                  lookahead += 1
+                case TokenKind.CurlyR =>
+                  nestingLevel -= 1
+                  lookahead += 1
+                case _ => lookahead += 1
+              }
+            }
+            isRecordOp
+          }
+
+          if (isRecordOp) {
+            recordOperation()
+          } else {
+            recordLiteral()
+          }
+        case _ => block()
       }
     }
 
@@ -2841,7 +2871,7 @@ object Parser2 {
       assert(at(TokenKind.KeywordIf))
       val mark = open()
       expect(TokenKind.KeywordIf)
-      Expr.expression(allowQualified = false)
+      Expr.expression()
       close(mark, TreeKind.Predicate.Guard)
     }
 
@@ -2860,7 +2890,7 @@ object Parser2 {
           advanceWithError(error)
       }
       expect(TokenKind.Equal)
-      Expr.expression(allowQualified = false)
+      Expr.expression()
       close(mark, TreeKind.Predicate.Functional)
     }
 
