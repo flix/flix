@@ -1108,14 +1108,16 @@ object Lexer {
     }
 
     //
+    // We fuzz the array of tokens by picking two random indices and swapping the,
     //
-    //
-    val len = tokens.length - 2 // Note: We don't want to remove the last EOF token.
+    val range = tokens.length - 1 // Note: We don't want to remove the last EOF token.
     val r = new Random()
-    val i = r.nextInt(len)
-    val j = r.nextInt(len)
+    val i = r.nextInt(range)
+    val j = r.nextInt(range)
 
+    val tmp = tokens(i)
     tokens(i) = tokens(j)
+    tokens(j) = tmp
 
     tokens
   }
