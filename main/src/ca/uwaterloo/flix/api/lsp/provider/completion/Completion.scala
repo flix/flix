@@ -127,6 +127,13 @@ sealed trait Completion {
         documentation = None,
         insertTextFormat = InsertTextFormat.PlainText,
         kind = CompletionItemKind.Class)
+    case Completion.NewObjectCompletion(name) =>
+      CompletionItem(label = name,
+        sortText = Priority.high(name),
+        textEdit = TextEdit(context.range, name),
+        documentation = None,
+        insertTextFormat = InsertTextFormat.PlainText,
+        kind = CompletionItemKind.Constructor)
     case Completion.SnippetCompletion(name, snippet, documentation) =>
       CompletionItem(label = name,
         sortText = Priority.snippet(name),
@@ -457,45 +464,46 @@ object Completion {
 
 
   /**
-   * Represents a Use Enum completion.
-   *
-   * @param name the name of the use enum completion.
-   */
+    * Represents a Use Enum completion.
+    *
+    * @param name the name of the use enum completion.
+    */
   case class UseEnumCompletion(name: String) extends Completion
 
   /**
-   * Represents a Use Effect completion.
-   *
-   * @param name the name of the use effect completion.
-   */
+    * Represents a Use Effect completion.
+    *
+    * @param name the name of the use effect completion.
+    */
   case class UseEffCompletion(name: String) extends Completion
 
   /**
-   * Represents a Use Def completion.
-   *
-   * @param name the name of the use def completion.
-   */
+    * Represents a Use Def completion.
+    *
+    * @param name the name of the use def completion.
+    */
   case class UseDefCompletion(name: String) extends Completion
 
   /**
-   * Represents a Use Enum Tag completion
-   *
-   * @param enumSym the sym of the enum.
-   * @param caze    the case of the enum.
-   */
+    * Represents a Use Enum Tag completion
+    *
+    * @param enumSym the sym of the enum.
+    * @param caze    the case of the enum.
+    */
   case class UseEnumTagCompletion(enumSym: EnumSym, caze: TypedAst.Case) extends Completion
+
   /**
-   * Represents a Use Op completion.
-   *
-   * @param name the name of the use op completion.
-   */
+    * Represents a Use Op completion.
+    *
+    * @param name the name of the use op completion.
+    */
   case class UseOpCompletion(name: String) extends Completion
 
   /**
-   * Represents a Use Signature completion.
-   *
-   * @param name the name of the use signature completion.
-   */
+    * Represents a Use Signature completion.
+    *
+    * @param name the name of the use signature completion.
+    */
   case class UseSignatureCompletion(name: String) extends Completion
 
   /**
@@ -518,6 +526,6 @@ object Completion {
     * Represents a Module completion.
     *
     * @param modSym the module symbol.
-  */
+    */
   case class ModCompletion(modSym: ModuleSym) extends Completion
 }
