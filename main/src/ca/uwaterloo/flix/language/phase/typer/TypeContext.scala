@@ -181,7 +181,7 @@ class TypeContext {
     * Generates a constraint with an expected supertype and an actual type.
     *
     * {{{
-    *   actual <: expected
+    *   actual < expected
     * }}}
     */
   def expectSubType(actual: Type, expected: Type, loc: SourceLocation): Unit = {
