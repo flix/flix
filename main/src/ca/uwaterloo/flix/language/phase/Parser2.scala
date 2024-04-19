@@ -147,9 +147,6 @@ object Parser2 {
     root()
     // Build the syntax tree using events in state.
     val tree = buildTree()
-    if (src.name == "main/foo.flix") {
-      println(syntaxTreeToDebugString(tree))
-    }
     // Return with errors as soft failures to run subsequent phases for more validations.
     Validation.success(tree).withSoftFailures(s.errors)
   }
@@ -2487,19 +2484,14 @@ object Parser2 {
     private def recordPat()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.CurlyL))
       val mark = open()
-      expect(TokenKind.CurlyL)
-      while (!atAny(List(TokenKind.CurlyR, TokenKind.Bar)) && !eof()) {
-        recordField()
-        if (!atAny(List(TokenKind.CurlyR, TokenKind.Bar))) {
-          expect(TokenKind.Comma)
-        }
-      }
-
-      if (eat(TokenKind.Bar)) {
-        pattern()
-      }
-
-      expect(TokenKind.CurlyR)
+      new Separated(
+        itemName = "field name",
+        getItem = recordField,
+        checkForItem = () => atAny(NAME_FIELD),
+        delimiters = (TokenKind.CurlyL, TokenKind.CurlyR),
+        optionallyWith = Some((TokenKind.Bar, () => pattern())),
+        recoverOn = RECOVER_EXPR
+      ).zeroOrMore()
       close(mark, TreeKind.Pattern.Record)
     }
 
@@ -2866,7 +2858,7 @@ object Parser2 {
         itemName = "schema term",
         getItem = schemaTerm,
         checkForItem = () => atAny(NAME_PREDICATE),
-        delimiters = (TokenKind.HashCurlyL, TokenKind.CurlyR),
+        delimiters = (TokenKind.HashParenL, TokenKind.ParenR),
         recoverOn = RECOVER_TYPE,
         optionallyWith = Some(TokenKind.Bar, () => name(NAME_VARIABLE))
       ).zeroOrMore()
