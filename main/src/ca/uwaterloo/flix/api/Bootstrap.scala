@@ -734,7 +734,7 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
       compilationResult =>
         MutationTester.run(flix.getTyperAst, compilationResult)(flix) match {
           case Ok(_) => Validation.success(())
-          case Err(_) => Validation.toHardFailure(BootstrapError.GeneralError(List("MutationTester Error")))
+          case Err(s) => Validation.toHardFailure(BootstrapError.GeneralError(List(s)))
         }
     }
   }
