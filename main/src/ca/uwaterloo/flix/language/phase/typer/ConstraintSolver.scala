@@ -236,16 +236,7 @@ object ConstraintSolver {
           return res
       }
     }
-    curr match {
-      case Nil =>
-        Result.Ok(ResolutionResult(subst, curr, progress = true))
-      case c :: _ => c match {
-        case TypeConstraint.Equality(tpe1, tpe2, prov) => Err(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
-        case TypeConstraint.Subtype(tpe1, tpe2, prov) => Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov))
-        case TypeConstraint.Trait(_, _, _) => Result.Ok(ResolutionResult(subst, curr, progress = true)) // cheating
-        case TypeConstraint.Purification(_, _, _, _, _) => Result.Ok(ResolutionResult(subst, curr, progress = true)) // cheating
-      }
-    }
+    Result.Ok(ResolutionResult(subst, curr, progress = true))
   }
 
   /**
