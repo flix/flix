@@ -54,18 +54,18 @@ mod Test.Dec.Assoc.Type.Eff {
 
     // Int32
 
-    pub def runOnceInt3201(x: Int32): Unit \ OutInt32 =
+    pub def runOnceInt32_01(x: Int32): Unit \ OutInt32 =
         Runner.run(x)
 
-    pub def runTwiceInt3201(x: Int32): Unit \ OutInt32 = {
+    pub def runTwiceInt32_01(x: Int32): Unit \ OutInt32 = {
         Runner.run(x);
         Runner.run(x)
     }
 
-    pub def runOnceInt3202(x: Int32): Unit \ OutInt32 =
+    pub def runOnceInt32_02(x: Int32): Unit \ OutInt32 =
         do OutInt32.toStream(x)
 
-    pub def runTwiceInt3202(x: Int32): Unit \ OutInt32 = {
+    pub def runTwiceInt32_02(x: Int32): Unit \ OutInt32 = {
         do OutInt32.toStream(x);
         do OutInt32.toStream(x)
     }
@@ -90,18 +90,18 @@ mod Test.Dec.Assoc.Type.Eff {
 
     // Vector[Int32]
 
-    pub def runOnceVectorInt3201(x: Vector[Int32]): Unit \ OutInt32 =
+    pub def runOnceVectorInt32_01(x: Vector[Int32]): Unit \ OutInt32 =
         Runner.run(x)
 
-    pub def runTwiceVectorInt3201(x: Vector[Int32]): Unit \ OutInt32 = {
+    pub def runTwiceVectorInt32_01(x: Vector[Int32]): Unit \ OutInt32 = {
         Runner.run(x);
         Runner.run(x)
     }
 
-    pub def runOnceVectorInt3202(x: Vector[Int32]): Unit \ OutInt32 =
+    pub def runOnceVectorInt32_02(x: Vector[Int32]): Unit \ OutInt32 =
         foreach (a <- x) do OutInt32.toStream(a)
 
-    pub def runTwiceVectorInt3202(x: Vector[Int32]): Unit \ OutInt32 = {
+    pub def runTwiceVectorInt32_02(x: Vector[Int32]): Unit \ OutInt32 = {
         foreach (a <- x) do OutInt32.toStream(a);
         foreach (a <- x) do OutInt32.toStream(a)
     }
@@ -126,18 +126,18 @@ mod Test.Dec.Assoc.Type.Eff {
 
     // Vector[Vector[Int32]]
 
-    pub def runOnceVectorVectorInt3201(x: Vector[Vector[Int32]]): Unit \ OutInt32 =
+    pub def runOnceVectorVectorInt32_01(x: Vector[Vector[Int32]]): Unit \ OutInt32 =
         Runner.run(x)
 
-    pub def runTwiceVectorVectorInt3201(x: Vector[Vector[Int32]]): Unit \ OutInt32 = {
+    pub def runTwiceVectorVectorInt32_01(x: Vector[Vector[Int32]]): Unit \ OutInt32 = {
         Runner.run(x);
         Runner.run(x)
     }
 
-    pub def runOnceVectorVectorInt3202(x: Vector[Vector[Int32]]): Unit \ OutInt32 =
+    pub def runOnceVectorVectorInt32_02(x: Vector[Vector[Int32]]): Unit \ OutInt32 =
         foreach (a <- x) foreach (b <- a) do OutInt32.toStream(b)
 
-    pub def runTwiceVectorVectorInt3202(x: Vector[Vector[Int32]]): Unit \ OutInt32 = {
+    pub def runTwiceVectorVectorInt32_02(x: Vector[Vector[Int32]]): Unit \ OutInt32 = {
         foreach (a <- x) foreach (b <- a) do OutInt32.toStream(b);
         foreach (a <- x) foreach (b <- a) do OutInt32.toStream(b)
     }
@@ -176,20 +176,20 @@ mod Test.Dec.Assoc.Type.Eff {
         }
 
     @Test
-    pub def testInt3201(): Bool =
-        handleWithListInt32(runOnceInt3201, 42) == 42 :: Nil
+    pub def testInt32_01(): Bool =
+        handleWithListInt32(runOnceInt32_01, 42) == 42 :: Nil
 
     @Test
-    pub def testInt3202(): Bool =
-        handleWithListInt32(runOnceInt3202, 42) == 42 :: Nil
+    pub def testInt32_02(): Bool =
+        handleWithListInt32(runOnceInt32_02, 42) == 42 :: Nil
 
     @Test
-    pub def testInt3203(): Bool =
-        handleWithListInt32(runTwiceInt3201, 42) == 42 :: 42 :: Nil
+    pub def testInt32_03(): Bool =
+        handleWithListInt32(runTwiceInt32_01, 42) == 42 :: 42 :: Nil
 
     @Test
-    pub def testInt3204(): Bool =
-        handleWithListInt32(runTwiceInt3202, 42) == 42 :: 42 :: Nil
+    pub def testInt32_04(): Bool =
+        handleWithListInt32(runTwiceInt32_02, 42) == 42 :: 42 :: Nil
 
 
     // String
@@ -222,49 +222,49 @@ mod Test.Dec.Assoc.Type.Eff {
     // Vector[Int32]
 
     @Test
-    pub def testVectorInt3201(): Bool =
-        handleWithListInt32(runOnceVectorInt3201, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: Nil
+    pub def testVectorInt32_01(): Bool =
+        handleWithListInt32(runOnceVectorInt32_01, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: Nil
 
     @Test
-    pub def testVectorInt3202(): Bool =
-        handleWithListInt32(runOnceVectorInt3202, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: Nil
+    pub def testVectorInt32_02(): Bool =
+        handleWithListInt32(runOnceVectorInt32_02, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: Nil
 
     @Test
-    pub def testVectorInt3203(): Bool =
-        handleWithListInt32(runTwiceVectorInt3201, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: 1 :: 2 :: 3 :: Nil
+    pub def testVectorInt32_03(): Bool =
+        handleWithListInt32(runTwiceVectorInt32_01, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: 1 :: 2 :: 3 :: Nil
 
     @Test
-    pub def testVectorInt3204(): Bool =
-        handleWithListInt32(runTwiceVectorInt3202, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: 1 :: 2 :: 3 :: Nil
+    pub def testVectorInt32_04(): Bool =
+        handleWithListInt32(runTwiceVectorInt32_02, Vector#{1, 2, 3}) == 1 :: 2 :: 3 :: 1 :: 2 :: 3 :: Nil
 
     @Test
-    pub def testVectorInt3205(): Bool =
-        handleWithListInt32(runOnceVectorInt3201, Vector#{}) == Nil
+    pub def testVectorInt32_05(): Bool =
+        handleWithListInt32(runOnceVectorInt32_01, Vector#{}) == Nil
 
     @Test
-    pub def testVectorInt3206(): Bool =
-        handleWithListInt32(runOnceVectorInt3202, Vector#{}) == Nil
+    pub def testVectorInt32_06(): Bool =
+        handleWithListInt32(runOnceVectorInt32_02, Vector#{}) == Nil
 
     @Test
-    pub def testVectorInt3207(): Bool =
-        handleWithListInt32(runTwiceVectorInt3201, Vector#{}) == Nil
+    pub def testVectorInt32_07(): Bool =
+        handleWithListInt32(runTwiceVectorInt32_01, Vector#{}) == Nil
 
     @Test
-    pub def testVectorInt3208(): Bool =
-        handleWithListInt32(runTwiceVectorInt3202, Vector#{}) == Nil
+    pub def testVectorInt32_08(): Bool =
+        handleWithListInt32(runTwiceVectorInt32_02, Vector#{}) == Nil
 
     @Test
-    pub def testVectorInt3209(): Bool =
+    pub def testVectorInt32_09(): Bool =
         let v = Vector.range(0, 100);
-        let left = handleWithListInt32(runOnceVectorInt3201, v);
-        let right = handleWithListInt32(runOnceVectorInt3202, v);
+        let left = handleWithListInt32(runOnceVectorInt32_01, v);
+        let right = handleWithListInt32(runOnceVectorInt32_02, v);
         left == right
 
     @Test
-    pub def testVectorInt3210(): Bool =
+    pub def testVectorInt32_10(): Bool =
         let v = Vector.range(0, 100);
-        let left = handleWithListInt32(runTwiceVectorInt3201, v);
-        let right = handleWithListInt32(runTwiceVectorInt3202, v);
+        let left = handleWithListInt32(runTwiceVectorInt32_01, v);
+        let right = handleWithListInt32(runTwiceVectorInt32_02, v);
         left == right
 
 
@@ -319,49 +319,49 @@ mod Test.Dec.Assoc.Type.Eff {
     // Vector[Vector[Int32]]
 
     @Test
-    pub def testVectorVectorInt3201(): Bool =
-        handleWithListInt32(runOnceVectorVectorInt3201, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: Nil
+    pub def testVectorVectorInt32_01(): Bool =
+        handleWithListInt32(runOnceVectorVectorInt32_01, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: Nil
 
     @Test
-    pub def testVectorVectorInt3202(): Bool =
-        handleWithListInt32(runOnceVectorVectorInt3202, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: Nil
+    pub def testVectorVectorInt32_02(): Bool =
+        handleWithListInt32(runOnceVectorVectorInt32_02, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: Nil
 
     @Test
-    pub def testVectorVectorInt3203(): Bool =
-        handleWithListInt32(runTwiceVectorVectorInt3201, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: 1 :: 2 :: 3 :: 4 :: Nil
+    pub def testVectorVectorInt32_03(): Bool =
+        handleWithListInt32(runTwiceVectorVectorInt32_01, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: 1 :: 2 :: 3 :: 4 :: Nil
 
     @Test
-    pub def testVectorVectorInt3204(): Bool =
-        handleWithListInt32(runTwiceVectorVectorInt3202, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: 1 :: 2 :: 3 :: 4 :: Nil
+    pub def testVectorVectorInt32_04(): Bool =
+        handleWithListInt32(runTwiceVectorVectorInt32_02, Vector#{Vector#{1, 2}, Vector#{3, 4}}) == 1 :: 2 :: 3 :: 4 :: 1 :: 2 :: 3 :: 4 :: Nil
 
     @Test
-    pub def testVectorVectorInt3205(): Bool =
-        handleWithListInt32(runOnceVectorVectorInt3201, Vector#{}) == Nil
+    pub def testVectorVectorInt32_05(): Bool =
+        handleWithListInt32(runOnceVectorVectorInt32_01, Vector#{}) == Nil
 
     @Test
-    pub def testVectorVectorInt3206(): Bool =
-        handleWithListInt32(runOnceVectorVectorInt3202, Vector#{}) == Nil
+    pub def testVectorVectorInt32_06(): Bool =
+        handleWithListInt32(runOnceVectorVectorInt32_02, Vector#{}) == Nil
 
     @Test
-    pub def testVectorVectorInt3207(): Bool =
-        handleWithListInt32(runTwiceVectorVectorInt3201, Vector#{}) == Nil
+    pub def testVectorVectorInt32_07(): Bool =
+        handleWithListInt32(runTwiceVectorVectorInt32_01, Vector#{}) == Nil
 
     @Test
-    pub def testVectorVectorInt3208(): Bool =
-        handleWithListInt32(runTwiceVectorVectorInt3202, Vector#{}) == Nil
+    pub def testVectorVectorInt32_08(): Bool =
+        handleWithListInt32(runTwiceVectorVectorInt32_02, Vector#{}) == Nil
 
     @Test
-    pub def testVectorVectorInt3209(): Bool =
+    pub def testVectorVectorInt32_09(): Bool =
         let v = Vector.repeat(10, Vector.range(0, 10));
-        let left = handleWithListInt32(runOnceVectorVectorInt3201, v);
-        let right = handleWithListInt32(runOnceVectorVectorInt3202, v);
+        let left = handleWithListInt32(runOnceVectorVectorInt32_01, v);
+        let right = handleWithListInt32(runOnceVectorVectorInt32_02, v);
         left == right
 
     @Test
-    pub def testVectorVectorInt3210(): Bool =
+    pub def testVectorVectorInt32_10(): Bool =
         let v = Vector.repeat(10, Vector.range(0, 10));
-        let left = handleWithListInt32(runTwiceVectorVectorInt3201, v);
-        let right = handleWithListInt32(runTwiceVectorVectorInt3202, v);
+        let left = handleWithListInt32(runTwiceVectorVectorInt32_01, v);
+        let right = handleWithListInt32(runTwiceVectorVectorInt32_02, v);
         left == right
 
 
