@@ -119,25 +119,6 @@ object Parser2 {
     case class Closed(index: Int) extends Mark
   }
 
-  /**
-    * Runs the parser silently, throwing out results and errors. Used for migrating to the new parser, can be deleted afterwards.
-    */
-  def runSilent(tokens: Map[Ast.Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = {
-    try {
-      run(tokens, oldRoot, changeSet).toHardResult match {
-        case Result.Ok(t) => Validation.success(t)
-        case Result.Err(e) =>
-          // Note: We don't know if the Parser failed or the input was actually incorrect.
-          // We assume the worst, i.e. that the Parser failed, and we return success.
-          Validation.success(SyntaxTree.empty)
-      }
-    } catch {
-      case except: Throwable =>
-        except.printStackTrace()
-        Validation.success(SyntaxTree.empty)
-    }
-  }
-
   def run(tokens: Map[Ast.Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = {
     if (flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
@@ -240,7 +221,7 @@ object Parser2 {
     val token = s.tokens(s.position)
     val line = token.beginLine + 1
     val column = token.beginCol + 1
-    SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, line, column, line, column + token.text.length)
+    SourceLocation(s.parserInput, s.src, isReal = true, line, column.toShort, line, (column + token.text.length).toShort)
   }
 
   /**
@@ -334,16 +315,18 @@ object Parser2 {
   /**
     * Look-ahead `lookahead` tokens.
     * Consumes one fuel and throws [[InternalCompilerException]] if the parser is out of fuel.
+    * Does not consume fuel if parser has hit end-of-file.
+    * This lets the parser return what ever errors were produced from a deep call-stack without running out of fuel.
     */
   private def nth(lookahead: Int)(implicit s: State): TokenKind = {
     if (s.fuel == 0) {
       throw InternalCompilerException(s"[${currentSourceLocation()}] Parser is stuck", currentSourceLocation())
     }
 
-    s.fuel -= 1
-    if (s.position + lookahead >= s.tokens.length) {
+    if (s.position + lookahead >= s.tokens.length - 1) {
       TokenKind.Eof
     } else {
+      s.fuel -= 1
       s.tokens(s.position + lookahead).kind
     }
   }
@@ -469,7 +452,7 @@ object Parser2 {
     }
 
     private def run()(implicit s: State): Int = {
-      def isAtEnd(): Boolean = at(rightDelim) || optionallyWith.exists { case (indicator, _) => at(indicator) }
+      def isAtEnd: Boolean = at(rightDelim) || optionallyWith.exists { case (indicator, _) => at(indicator) }
 
       if (!at(leftDelim)) {
         return 0
@@ -477,12 +460,12 @@ object Parser2 {
       expect(leftDelim)
       var continue = true
       var numItems = 0
-      while (continue && !isAtEnd() && !eof()) {
+      while (continue && !isAtEnd && !eof()) {
         comments()
         if (checkForItem()) {
           getItem()
           numItems += 1
-          if (!isAtEnd()) {
+          if (!isAtEnd) {
             if (optionalSeparator) eat(separator) else expect(separator)
           }
         } else {
@@ -550,7 +533,7 @@ object Parser2 {
     * Consumes a token if kind is in `kinds`. If `allowQualified` is passed also consume subsequent dot-separated tokens with kind in `kinds`.
     */
   private def name(kinds: List[TokenKind], allowQualified: Boolean = false)(implicit s: State): Mark.Closed = {
-    val mark = open()
+    val mark = open(consumeDocComments = false)
     expectAny(kinds)
     val first = close(mark, TreeKind.Ident)
     if (!allowQualified) {
@@ -682,7 +665,7 @@ object Parser2 {
       annotations()
       modifiers()
       nth(0) match {
-        case TokenKind.KeywordTrait => typeClassDecl(mark)
+        case TokenKind.KeywordTrait => traitDecl(mark)
         case TokenKind.KeywordInstance => instanceDecl(mark)
         case TokenKind.KeywordDef => definitionDecl(mark)
         case TokenKind.KeywordEnum | TokenKind.KeywordRestrictable => enumerationDecl(mark)
@@ -709,7 +692,7 @@ object Parser2 {
       close(mark, TreeKind.Decl.Module)
     }
 
-    private def typeClassDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
+    private def traitDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       expect(TokenKind.KeywordTrait)
       name(NAME_DEFINITION)
       if (at(TokenKind.BracketL)) {
@@ -1077,9 +1060,16 @@ object Parser2 {
       lhs
     }
 
-    def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false, allowQualified: Boolean = true)(implicit s: State): Mark.Closed = {
+    def expression(left: TokenKind = TokenKind.Eof, leftIsUnary: Boolean = false)(implicit s: State): Mark.Closed = {
       var lhs = exprDelimited()
-      // Handle record select
+      // Handle calls
+      while (at(TokenKind.ParenL)) {
+        val mark = openBefore(lhs)
+        arguments()
+        lhs = close(mark, TreeKind.Expr.Apply)
+        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      }
+      // Handle record select after function all. Example: funcReturningRecord().field
       if (at(TokenKind.Dot) && nth(1) == TokenKind.NameLowerCase) {
         val mark = openBefore(lhs)
         eat(TokenKind.Dot)
@@ -1088,13 +1078,6 @@ object Parser2 {
           name(NAME_FIELD)
         }
         lhs = close(mark, TreeKind.Expr.RecordSelect)
-        lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
-      }
-      // Handle calls
-      while (at(TokenKind.ParenL)) {
-        val mark = openBefore(lhs)
-        arguments()
-        lhs = close(mark, TreeKind.Expr.Apply)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
       // Handle binary operators
@@ -1106,7 +1089,7 @@ object Parser2 {
           val markOp = open()
           advance()
           close(markOp, TreeKind.Operator)
-          expression(right, allowQualified = allowQualified)
+          expression(right)
           lhs = close(mark, TreeKind.Expr.Binary)
           lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
         } else {
@@ -1205,7 +1188,7 @@ object Parser2 {
       }
     }
 
-    private def exprDelimited(allowQualified: Boolean = true)(implicit s: State): Mark.Closed = {
+    private def exprDelimited()(implicit s: State): Mark.Closed = {
       val mark = open()
       nth(0) match {
         case TokenKind.KeywordOpenVariant => openVariantExpr()
@@ -1230,10 +1213,10 @@ object Parser2 {
              | TokenKind.LiteralRegex => literalExpr()
         case TokenKind.ParenL => parenOrTupleOrLambdaExpr()
         case TokenKind.Underscore => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_VARIABLE)
-        case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_DEFINITION)
+        case TokenKind.NameLowerCase => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_FIELD, allowQualified = true)
         case TokenKind.NameUpperCase
              | TokenKind.NameMath
-             | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_DEFINITION, allowQualified)
+             | TokenKind.NameGreek => if (nth(1) == TokenKind.ArrowThinR) unaryLambdaExpr() else name(NAME_DEFINITION, allowQualified = true)
         case TokenKind.Minus
              | TokenKind.KeywordNot
              | TokenKind.Plus
@@ -1358,12 +1341,21 @@ object Parser2 {
           // Detect lambda function declaration
           val isLambda = {
             var level = 1
+            var curlyLevel = 0
             var lookAhead = 0
             while (level > 0 && !eof()) {
               lookAhead += 1
               nth(lookAhead) match {
                 case TokenKind.ParenL => level += 1
                 case TokenKind.ParenR => level -= 1
+                case TokenKind.CurlyL | TokenKind.HashCurlyL => curlyLevel += 1
+                case TokenKind.CurlyR if level == 1 =>
+                  if (curlyLevel == 0) {
+                    // Hitting '}' on top-level is a clear indicator that something is wrong. Most likely the terminating ')' was forgotten.
+                    return advanceWithError(ParseError("Malformed tuple.", SyntacticContext.Unknown, currentSourceLocation()))
+                  } else {
+                    curlyLevel -= 1
+                  }
                 case TokenKind.Eof => return advanceWithError(ParseError("Malformed tuple.", SyntacticContext.Unknown, currentSourceLocation()))
                 case _ =>
               }
@@ -1742,18 +1734,48 @@ object Parser2 {
     }
 
     private def blockOrRecordExpr()(implicit s: State): Mark.Closed = {
-      // Detemines if a '{' is opening a block, a record literal or a record operation.
+      // Determines if a '{' is opening a block, a record literal or a record operation.
       assert(at(TokenKind.CurlyL))
-      // If a '|' occurs before '}' or '{' then we are dealing with a record operation.
-      if (findBefore(TokenKind.Bar, before = List(TokenKind.CurlyL, TokenKind.CurlyR))) {
-        recordOperation()
-      } else {
-        // Otherwise a record literal can be detected by looking at the two next tokens.
-        (nth(1), nth(2)) match {
-          case (TokenKind.CurlyR, _)
-               | (TokenKind.NameLowerCase, TokenKind.Equal) => recordLiteral()
-          case _ => block()
-        }
+
+      // We can discern between record ops and literals vs. blocks by looking at the two next tokens.
+      (nth(1), nth(2)) match {
+        case (TokenKind.CurlyR, _)
+             | (TokenKind.NameLowerCase, TokenKind.Equal)
+             | (TokenKind.Plus, TokenKind.NameLowerCase)
+             | (TokenKind.Minus, TokenKind.NameLowerCase) =>
+          // Now check for record operation or record literal,
+          // by looking for a '|' before the closing '}'
+          val isRecordOp = {
+            var lookahead = 1
+            var nestingLevel = 0
+            var isRecordOp = false
+            var continue = true
+            while (continue && !eof()) {
+              nth(lookahead) match {
+                // Found closing '}' so stop seeking.
+                case TokenKind.CurlyR if nestingLevel == 0 => continue = false
+                // found '|' before closing '}' -> It is a record operation.
+                case TokenKind.Bar if nestingLevel == 0 =>
+                  isRecordOp = true
+                  continue = false
+                case TokenKind.CurlyL | TokenKind.HashCurlyL =>
+                  nestingLevel += 1
+                  lookahead += 1
+                case TokenKind.CurlyR =>
+                  nestingLevel -= 1
+                  lookahead += 1
+                case _ => lookahead += 1
+              }
+            }
+            isRecordOp
+          }
+
+          if (isRecordOp) {
+            recordOperation()
+          } else {
+            recordLiteral()
+          }
+        case _ => block()
       }
     }
 
@@ -1968,7 +1990,6 @@ object Parser2 {
     }
 
     private def catchRule()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordCase))
       val mark = open()
       expect(TokenKind.KeywordCase)
       name(NAME_VARIABLE)
@@ -2198,8 +2219,12 @@ object Parser2 {
       while (eat(TokenKind.Comma) && !eof()) {
         expression()
       }
-      fixpointQuerySelect()
-      fixpointQueryFrom()
+      if (at(TokenKind.KeywordSelect)) {
+        fixpointQuerySelect()
+      }
+      if (at(TokenKind.KeywordFrom)) {
+        fixpointQueryFrom()
+      }
       if (at(TokenKind.KeywordWhere)) {
         fixpointQueryWhere()
       }
@@ -2253,19 +2278,19 @@ object Parser2 {
         case _ => false
       }
 
-      def getOpener(): Option[TokenKind] = nth(0) match {
+      def getOpener: Option[TokenKind] = nth(0) match {
         case TokenKind.LiteralStringInterpolationL => advance(); Some(TokenKind.LiteralStringInterpolationL)
         case TokenKind.LiteralDebugStringL => advance(); Some(TokenKind.LiteralDebugStringR)
         case _ => None
       }
 
-      var lastOpener = getOpener()
+      var lastOpener = getOpener
       while (lastOpener.isDefined && !eof()) {
         if (atTerminator(lastOpener)) {
           lastOpener = None // Terminate the loop
         } else {
           expression()
-          lastOpener = getOpener() // Try to get nested interpolation
+          lastOpener = getOpener // Try to get nested interpolation
         }
       }
       expectAny(List(TokenKind.LiteralStringInterpolationR, TokenKind.LiteralDebugStringR))
@@ -2827,7 +2852,7 @@ object Parser2 {
       assert(at(TokenKind.KeywordIf))
       val mark = open()
       expect(TokenKind.KeywordIf)
-      Expr.expression(allowQualified = false)
+      Expr.expression()
       close(mark, TreeKind.Predicate.Guard)
     }
 
@@ -2846,7 +2871,7 @@ object Parser2 {
           advanceWithError(error)
       }
       expect(TokenKind.Equal)
-      Expr.expression(allowQualified = false)
+      Expr.expression()
       close(mark, TreeKind.Predicate.Functional)
     }
 
@@ -2935,7 +2960,7 @@ object Parser2 {
       close(mark, TreeKind.JvmOp.StaticMethod)
     }
 
-    private def getBody()(implicit s: State): Unit = {
+    private def fieldGetBody()(implicit s: State): Unit = {
       expect(TokenKind.KeywordJavaGetField)
       name(NAME_JAVA, allowQualified = true)
       ascription()
@@ -2953,7 +2978,7 @@ object Parser2 {
 
     def getField()(implicit s: State): Mark.Closed = {
       val mark = open()
-      getBody()
+      fieldGetBody()
       close(mark, TreeKind.JvmOp.GetField)
     }
 
@@ -2961,7 +2986,7 @@ object Parser2 {
       assert(at(TokenKind.KeywordStatic))
       val mark = open()
       expect(TokenKind.KeywordStatic)
-      getBody()
+      fieldGetBody()
       close(mark, TreeKind.JvmOp.StaticGetField)
     }
 
