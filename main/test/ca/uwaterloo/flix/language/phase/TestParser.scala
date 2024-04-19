@@ -481,7 +481,6 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
 
 /**
   * Note that CompilerSuite and LibrarySuite covers the positive testing of the parser well.
-  * We would like more negative tests in here though.
   */
 class TestParserHappy extends AnyFunSuite with TestUtils {
   test("ParseError.Interpolation.01") {
