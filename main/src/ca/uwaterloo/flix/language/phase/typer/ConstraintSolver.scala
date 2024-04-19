@@ -434,23 +434,31 @@ object ConstraintSolver {
   /**
     * Resolves the subtype between the two given types.
     *
-    * TODO what does this mean?
     * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
     */
   private def resolveSubtype(tpe1: Type, tpe2: Type, prov: SubProvenance, renv: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1.kind, tpe2.kind) match {
     case (Kind.Eff, Kind.Eff) =>
-      // rewrite x < y to x + a < y
-      val slack = Type.Var(Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Eff, isRegion = false, tpe1.loc.asSynthetic), tpe1.loc.asSynthetic)
-      val lhs = Type.mkUnion(tpe1, slack, tpe1.loc.asSynthetic)
-      Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(lhs, tpe2, Provenance.subToEq(prov))), progress = true))
+      // t1.kind = Eff
+      // t2.kind = Eff
+      // t1 ∪ slack = t2
+      // -------------
+      // t1 < t2
+      val slackVariable = Type.Var(Symbol.freshKindedTypeVarSym(Ast.VarText.Absent, Kind.Eff, isRegion = false, tpe1.loc.asSynthetic), tpe1.loc.asSynthetic)
+      val lhs = Type.mkUnion(tpe1, slackVariable, tpe1.loc.asSynthetic)
+      val constraint = TypeConstraint.Equality(lhs, tpe2, Provenance.subToEq(prov))
+      Ok(ResolutionResult.constraints(List(constraint), progress = true))
 
-    case (Kind.Bool, Kind.Bool) => Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov, Some("No subtyping on kind Bool")))
+    case (Kind.Bool, Kind.Bool) =>
+      Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov, Some("No subtyping on kind Bool")))
 
-    case (Kind.RecordRow, Kind.RecordRow) => Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov, Some("No subtyping on kind RecordRow")))
+    case (Kind.RecordRow, Kind.RecordRow) =>
+      Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov, Some("No subtyping on kind RecordRow")))
 
-    case (Kind.SchemaRow, Kind.SchemaRow) => Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov, Some("No subtyping on kind SchemaRow")))
+    case (Kind.SchemaRow, Kind.SchemaRow) =>
+      Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov, Some("No subtyping on kind SchemaRow")))
 
-    case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 => Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov, Some("No subtyping on kind CaseSet")))
+    case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 =>
+      Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov, Some("No subtyping on kind CaseSet")))
 
     case (k1, k2) if KindUnification.unifiesWith(k1, k2) => resolveSubtypeStar(tpe1, tpe2, prov, renv, loc)
 
@@ -461,41 +469,51 @@ object ConstraintSolver {
   /**
     * Resolves the subtyping between the two given types, where the types have some kind `... -> Star`
     *
-    * TODO what does this mean?
     * θ ⊩ᵤ τ₁ = τ₂ ⤳ u; r
     */
   private def resolveSubtypeStar(tpe1: Type, tpe2: Type, prov: SubProvenance, renv: RigidityEnv, loc: SourceLocation)(implicit eenv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef], flix: Flix): Result[ResolutionResult, TypeError] = (tpe1, tpe2) match {
+    // -----
     // x < x
     case (x: Type.Var, y: Type.Var) if (x == y) => Ok(ResolutionResult.elimination)
 
-    // x < cst or cst < x --> x ~ cst
-    case (_, Type.Cst(_, _)) | (Type.Cst(_, _), _) =>
-      Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(tpe1, tpe2, Provenance.subToEq(prov))), progress = true))
+    // t2 ∈ Cst
+    // t1 ~ t2
+    // ---------
+    // t1 < t2
+    case (_, Type.Cst(_, _)) =>
+      val constraint = TypeConstraint.Equality(tpe1, tpe2, Provenance.subToEq(prov))
+      Ok(ResolutionResult.constraints(List(constraint), progress = true))
 
-//    // al<t> < any --> t < any
-//    case (Type.Alias(_, _, tpe, _), _) => resolveSubtype(tpe, tpe2, prov, renv, loc)
+    // t1 ∈ Cst
+    // t1 ~ t2
+    // ---------
+    // t1 < t2
+    case (Type.Cst(_, _), _) =>
+      val constraint = TypeConstraint.Equality(tpe1, tpe2, Provenance.subToEq(prov))
+      Ok(ResolutionResult.constraints(List(constraint), progress = true))
 
-//    // any < al<t> --> any < t
-//    case (_, Type.Alias(_, _, tpe, _)) => resolveSubtype(tpe1, tpe, prov, renv, loc)
-
+    // Type application: differentiate on functions and non-functions
     case(Type.Apply(t11, t12, _), Type.Apply(t21, t22, _)) => (tpe1.typeConstructor, tpe2.typeConstructor) match {
+      // ti > t'i
+      // t < t'
+      // ----------------------------------------
+      // (t1, .., tn) -> t < (t'1, .., t'n) -> t'
       case (Some(TypeConstructor.Arrow(_)), Some(TypeConstructor.Arrow(_))) =>
-        // contra variant args
-        val args1 = tpe1.arrowArgTypes
-        val args2 = tpe2.arrowArgTypes
-        assert(args1.sizeIs == args2.length) //always succeeds
-        val contraConstraints = args1.zip(args2).map{case (t1, t2) => TypeConstraint.Subtype(t2, t1, prov)}
-        // co variant result and effect
-        val coConstraints = (tpe1.arrowResultType :: tpe1.arrowEffectType :: Nil).zip(tpe2.arrowResultType :: tpe2.arrowEffectType :: Nil).map{
-          case (t1, t2) => TypeConstraint.Subtype(t1, t2, prov)
-        }
+        // contra-variant args
+        val zippedArgs = tpe1.arrowArgTypes.zip(tpe2.arrowArgTypes)
+        val contraConstraints = zippedArgs.map{ case (t1, t2) => TypeConstraint.Subtype(t2, t1, prov) }
+        val zippedResultAndEffect = (tpe1.arrowResultType :: tpe1.arrowEffectType :: Nil).zip(tpe2.arrowResultType :: tpe2.arrowEffectType :: Nil)
+        // co-variant result and effect
+        val coConstraints = zippedResultAndEffect.map{ case (t1, t2) => TypeConstraint.Subtype(t1, t2, prov) }
         Ok(ResolutionResult.constraints(coConstraints ::: contraConstraints, progress = true))
       case (Some(_), Some(_)) =>
-        // t11[t12] < t21[t22] --> t11 < t21 and t12 < t22
-        for {
-          res1 <- resolveSubtype(t11, t21, prov, renv, loc)
-          res2 <- resolveSubtype(res1.subst(t12), res1.subst(t22), res1.subst(prov), renv, loc)
-        } yield res2 @@ res1
+        // t11 < t21
+        // t12 < t22
+        // --------------------
+        // t11[t12] < t21[t22]
+        val constraint1 = TypeConstraint.Subtype(t11, t21, prov)
+        val constraint2 = TypeConstraint.Subtype(t12, t22, prov)
+        Ok(ResolutionResult.constraints(List(constraint1, constraint2), progress = true))
       case (None, _) | (_, None) =>
         Ok(ResolutionResult.constraints(Nil, progress = false))
     }
