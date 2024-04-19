@@ -119,25 +119,6 @@ object Parser2 {
     case class Closed(index: Int) extends Mark
   }
 
-  /**
-    * Runs the parser silently, throwing out results and errors. Used for migrating to the new parser, can be deleted afterwards.
-    */
-  def runSilent(tokens: Map[Ast.Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = {
-    try {
-      run(tokens, oldRoot, changeSet).toHardResult match {
-        case Result.Ok(t) => Validation.success(t)
-        case Result.Err(_) =>
-          // Note: We don't know if the Parser failed or the input was actually incorrect.
-          // We assume the worst, i.e. that the Parser failed, and we return success.
-          Validation.success(SyntaxTree.empty)
-      }
-    } catch {
-      case except: Throwable =>
-        except.printStackTrace()
-        Validation.success(SyntaxTree.empty)
-    }
-  }
-
   def run(tokens: Map[Ast.Source, Array[Token]], oldRoot: SyntaxTree.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[SyntaxTree.Root, CompilationMessage] = {
     if (flix.options.xparser) {
       // New lexer and parser disabled. Return immediately.
@@ -1367,7 +1348,7 @@ object Parser2 {
               nth(lookAhead) match {
                 case TokenKind.ParenL => level += 1
                 case TokenKind.ParenR => level -= 1
-                case TokenKind.CurlyL => curlyLevel += 1
+                case TokenKind.CurlyL | TokenKind.HashCurlyL => curlyLevel += 1
                 case TokenKind.CurlyR if level == 1 =>
                   if (curlyLevel == 0) {
                     // Hitting '}' on top-level is a clear indicator that something is wrong. Most likely the terminating ')' was forgotten.
@@ -1777,7 +1758,7 @@ object Parser2 {
                 case TokenKind.Bar if nestingLevel == 0 =>
                   isRecordOp = true
                   continue = false
-                case TokenKind.CurlyL =>
+                case TokenKind.CurlyL | TokenKind.HashCurlyL =>
                   nestingLevel += 1
                   lookahead += 1
                 case TokenKind.CurlyR =>

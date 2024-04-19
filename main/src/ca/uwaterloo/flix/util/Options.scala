@@ -48,6 +48,7 @@ object Options {
     xprintphase = Set.empty,
     xnoqmc = false,
     xsummary = false,
+    xfuzzer = false,
     xparser = false,
     xprinttyper = None,
     XPerfN = None,
@@ -98,6 +99,7 @@ object Options {
   * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
   * @param xprintphase         prints the chosen phase ASTs to the build folder.
   * @param xsummary            prints a summary of the compiled modules.
+  * @param xfuzzer             enables compiler fuzzing.
   * @param xparser             disables new lexer and parser.
   */
 case class Options(lib: LibLevel,
@@ -123,6 +125,7 @@ case class Options(lib: LibLevel,
                    xnooptimizer: Boolean,
                    xprintphase: Set[String],
                    xsummary: Boolean,
+                   xfuzzer: Boolean,
                    xparser: Boolean,
                    xprinttyper: Option[String],
                    XPerfFrontend: Boolean,
