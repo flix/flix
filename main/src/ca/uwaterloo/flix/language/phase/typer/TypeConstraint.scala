@@ -80,7 +80,7 @@ object TypeConstraint {
   /**
     * A constraint indicating the subtyping of two types.
     * {{{
-    *   tpe1 ~ tpe2
+    *   tpe1 < tpe2
     * }}}
     */
   case class Subtype(tpe1: Type, tpe2: Type, prov: SubProvenance) extends TypeConstraint {
