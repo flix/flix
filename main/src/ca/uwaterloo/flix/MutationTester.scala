@@ -131,13 +131,13 @@ object MutationTester {
           s"Changed to ${op}"
         case MutationType.IfMut(bool) => s"Changed the if-then-else condition to ${bool.toString}"
         case MutationType.CompMut(comp) => s"Changed to ${comp.name}"
-        case MutationType.CaseSwitch() => "Switched cases"
+        case MutationType.CaseSwitch(x, y) => s"Switched case ${x + 1} and case ${y + 1}"
         case MutationType.VarMut(apply, varName) =>  apply.sym.name match {
             case "sub" => s"Changed variable to ${varName.text} - 1"
             case "add" =>s"Changed variable to ${varName.text} + 1"
             case e => e
           }
-        case MutationType.CaseDeletion(i) => s"Deleted case number $i"
+        case MutationType.CaseDeletion(i) => s"Deleted case number ${i + 1}"
         case MutationType.RecordSelectMut(name) => s"selects ${name.name}"
       }
     }
@@ -218,6 +218,7 @@ object MutationTester {
     private def compileAndTestMutant(df: TypedAst.Def, mut: (Symbol.DefnSym, List[MutatedDef]), testKit: TestKit): TestRes = {
         val defs = testKit.root.defs
         val n = defs + (mut._1 -> df)
+        println(df)
         val newRoot = testKit.root.copy(defs = n)
         val cRes = testKit.flix.codeGen(newRoot).unsafeGet
         val testsFromTester = cRes.getTests.filter { case (s, _) => s.namespace.head.equals(testKit.testModule) }.toList

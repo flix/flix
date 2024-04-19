@@ -85,7 +85,7 @@ object TypedAst {
     case class SigMut(sig: Symbol.SigSym) extends MutationType
     case class IfMut(bool: Boolean) extends MutationType
     case class CompMut(comp: Symbol.SigSym) extends MutationType
-    case class CaseSwitch() extends MutationType
+    case class CaseSwitch(case1: Int, case2: Int) extends MutationType
     case class VarMut(apply: Expr.Sig, varName: Symbol.VarSym) extends MutationType
     case class CaseDeletion(i: Int) extends MutationType
     case class RecordSelectMut(name: Name.Label) extends MutationType

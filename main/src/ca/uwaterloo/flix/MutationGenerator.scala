@@ -155,16 +155,13 @@ object MutationGenerator {
       val mutateExps = exps.zipWithIndex.flatMap {
         case (exp, index) =>
           val mutations = mutateExpr(exp)
-          mutations.map(m => Expr.Mutated(original.copy(exps = exps.updated(index, m)), m.mutationType, m.tpe, m.eff, m.loc))
+          mutations.map(m => Expr.Mutated(original.copy(exps = exps.updated(index, m)), m.mutationType, original.tpe, original.eff, m.loc))
       }
-
       mut ::: mutateExps
 
     case original@Expr.Unary(sop, exp, tpe, eff, loc) =>
-      //val mut1 = Expr.Mutated(Expr.Unary(sop, original, tpe, eff, loc), , original.tpe, original.eff, loc)
-      //mut1 :: mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), original, original.tpe, original.eff, m.loc))
-      assert(false, "impossible in unary")
-      Nil
+      val mut1 = Expr.Mutated(Expr.Unary(sop, original, tpe, eff, loc), MutationType.CaseSwitch(0, 0), original.tpe, original.eff, loc)
+      mut1 :: mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), m.mutationType, original.tpe, original.eff, m.loc))
     case original@Expr.Binary(_, exp1, exp2, _, _, _) =>
       val mut2 = mutateExpr(exp1).map(m => Expr.Mutated(original.copy(exp1 = m), m.mutationType, original.tpe, original.eff, m.loc))
       val mut3 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = m), m.mutationType, original.tpe, original.eff, m.loc))
@@ -211,7 +208,7 @@ object MutationGenerator {
       mut1 ::: mut2
     case Expr.Discard(_, _, _) => Nil
     case original@Expr.Match(_, rules, _, _, _) =>
-      val switches = legalSwitches(rules).map(s => Expr.Mutated(original.copy(rules = s), MutationType.CaseSwitch(), original.tpe, original.eff, original.loc))
+      val switches = legalSwitches(rules).map{case (s, (x, y)) => Expr.Mutated(original.copy(rules = s), MutationType.CaseSwitch(x, y), original.tpe, original.eff, original.loc)}
       val deletedCasesMutation = rules.indices
         .map(index =>
           (rules.filter(e => rules.indexOf(e) != index || rules.indexOf(e) == rules.length - 1), index))
@@ -387,8 +384,8 @@ object MutationGenerator {
             val mutations = mutatePattern(pat)
             mutations.map{case (m, mt) => (original.copy(elms = elms.updated(index, m)), mt)}
           }
-      case original@Pattern.Tag(sym, pat, tpe, loc) => ???
-      case Pattern.Record(pats, pat, tpe, loc) => ???
+      case original@Pattern.Tag(sym, pat, tpe, loc) => Nil
+      case Pattern.Record(pats, pat, tpe, loc) => Nil
       case _ => Nil
     }
   }
@@ -401,7 +398,7 @@ object MutationGenerator {
     }
   }
 
-  private def legalSwitches(matches: List[TypedAst.MatchRule]): List[List[TypedAst.MatchRule]] = {
+  private def legalSwitches(matches: List[TypedAst.MatchRule]): List[(List[TypedAst.MatchRule], (Int, Int))] = {
     def comparePatterns(candPat: TypedAst.Pattern, otherPat: TypedAst.Pattern): Boolean = {
       candPat match {
         case Pattern.Wild(_, _) => otherPat match {
@@ -416,8 +413,8 @@ object MutationGenerator {
           case Pattern.Cst(_,_,_) => false
           case _ => true
         }
-        case Pattern.Tag(_, pat, _, _) => otherPat match {
-          case Pattern.Tag(_, oPat, _, _) => comparePatterns(pat, oPat)
+        case Pattern.Tag(_, _, tpe, _) => otherPat match {
+          case Pattern.Tag(_, _, oTpe, _) => !tpe.equals(oTpe)
           case _ => true
         }
         case Pattern.Tuple(elms, _, _) => otherPat match {
@@ -446,7 +443,7 @@ object MutationGenerator {
       }.flatten
     }
     swapIndex.map{case (x, y) =>
-      matches.updated(x, matches(y)).updated(y, matches(x))
+      (matches.updated(x, matches(y)).updated(y, matches(x)), (x, y))
     }
 
   }
