@@ -25,13 +25,13 @@ import flix.experimental.ExperimentalSuite
 import org.scalatest.Suites
 
 class TestAll extends Suites(
-//  new BenchmarkSuite,
-//  new CompilerSuite,
-//  new ExampleSuite,
-//  new ExperimentalSuite,
-//  new LanguageSuite,
-//  new LibrarySuite,
-//  new TestMain,
+  new BenchmarkSuite,
+  new CompilerSuite,
+  new ExampleSuite,
+  new ExperimentalSuite,
+  new LanguageSuite,
+  new LibrarySuite,
+  new TestMain,
   new ToolsSuite,
-//  new UtilSuite,
+  new UtilSuite,
 )
