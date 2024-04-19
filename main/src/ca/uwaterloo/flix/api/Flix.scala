@@ -551,8 +551,9 @@ class Flix {
 
       // Plan for migrating to new parser + weeder:
       // Stage 1 [ACTIVE]
-      // Run new pipeline but throw out _both results and errors_. We just want hard throws to surface.
-      // Parser2 and Weeder2 only ever sees code that the old pipeline considers ok.
+      // Run new pipeline and use results but only after the old pipeline.
+      // This way Parser2 and Weeder2 only ever sees code that the old pipeline considers ok.
+      // Errors will look like before, but the new WeededAst, which should be equal to the old one, is used.
       //
       // Stage 2
       // Run new pipeline by default, but make the old one available through --XParser option.
