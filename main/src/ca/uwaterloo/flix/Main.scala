@@ -102,6 +102,7 @@ object Main {
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphase = cmdOpts.xprintphase,
       xsummary = cmdOpts.xsummary,
+      xfuzzer = cmdOpts.xfuzzer,
       xparser = cmdOpts.xparser,
       xprinttyper = cmdOpts.xprinttyper,
       XPerfFrontend = cmdOpts.XPerfFrontend,
@@ -323,6 +324,9 @@ object Main {
         case Command.CompilerPerf =>
           CompilerPerf.run(options)
 
+        case Command.CompilerMemory =>
+          CompilerMemory.run(options)
+
       }
     }
 
@@ -361,6 +365,7 @@ object Main {
                      xnooptimizer: Boolean = false,
                      xprintphase: Set[String] = Set.empty,
                      xsummary: Boolean = false,
+                     xfuzzer: Boolean = false,
                      xparser: Boolean = false,
                      xprinttyper: Option[String] = None,
                      XPerfN: Option[Int] = None,
@@ -405,6 +410,9 @@ object Main {
     case object Outdated extends Command
 
     case object CompilerPerf extends Command
+
+    case object CompilerMemory extends Command
+
   }
 
   /**
@@ -468,6 +476,8 @@ object Main {
           .action((v, c) => c.copy(XPerfN = Some(v)))
           .text("number of compilations")
       ).hidden()
+
+      cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
 
       note("")
 
@@ -567,6 +577,10 @@ object Main {
       // Xsummary
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
         text("[experimental] prints a summary of the compiled modules.")
+
+      // Xfuzz
+      opt[Unit]("Xfuzzer").action((_, c) => c.copy(xfuzzer = true)).
+        text("enables compiler fuzzing.")
 
       // Xparser
       opt[Unit]("Xparser").action((_, c) => c.copy(xparser = true)).

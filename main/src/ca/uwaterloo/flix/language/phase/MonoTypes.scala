@@ -296,6 +296,8 @@ object MonoTypes {
     * Assumes that the type has no
     * - Associated types.
     * - Variables.
+    *
+    * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
     */
   private def visitType(tpe: Type): Type = {
     val tc = tpe.typeConstructor.getOrElse(throw InternalCompilerException(s"Could not find type constructor of '$tpe'", tpe.loc))
@@ -308,7 +310,14 @@ object MonoTypes {
         case Type.Cst(_, _) =>
           tpe
         case Type.Apply(tpe1, tpe2, loc) =>
-          Type.Apply(visitType(tpe1), visitType(tpe2), loc)
+          val t1 = visitType(tpe1)
+          val t2 = visitType(tpe2)
+          // Performance: Reuse tpe0, if possible.
+          if ((t1 eq tpe1) && (t2 eq tpe2)) {
+            tpe
+          } else {
+            Type.Apply(t1, t2, loc)
+          }
         case Type.Alias(_, _, tpe, _) =>
           // Remove the alias
           visitType(tpe)
