@@ -119,7 +119,7 @@ class TypeContext {
     * Generates constraints unifying `tpe1` as a subtype of `tpe2`.
     *
     * {{{
-    *   tpe1 <: tpe2
+    *   tpe1 < tpe2
     * }}}
     */
   def unifySubtype(tpe1: Type, tpe2: Type, loc: SourceLocation): Unit = {
