@@ -184,7 +184,7 @@ class TypeContext {
     *   actual < expected
     * }}}
     */
-  def expectSubType(actual: Type, expected: Type, loc: SourceLocation): Unit = {
+  def expectSubtype(actual: Type, expected: Type, loc: SourceLocation): Unit = {
     val constr = TypeConstraint.Subtype(actual, expected, Provenance.ExpectSubtype(actual, expected, loc))
     currentScopeConstraints.add(constr)
   }

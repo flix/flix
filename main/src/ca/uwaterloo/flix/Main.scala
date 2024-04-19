@@ -357,7 +357,7 @@ object Main {
                      xbenchmarkFrontend: Boolean = false,
                      xbenchmarkThroughput: Boolean = false,
                      xbddthreshold: Option[Int] = None,
-                     xlib: LibLevel = LibLevel.Min,
+                     xlib: LibLevel = LibLevel.Nix,
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
                      xnoboolunif: Boolean = false,
