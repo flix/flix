@@ -549,7 +549,7 @@ object MutationGenerator {
         mutations.map(m => Expr.Cst(m, Type.BigInt, loc))
       case TypeConstructor.Str =>
         val mut = Constant.Str("")
-        val mutations = mut :: mutateCst(mut)
+        val mutations = mutateCst(mut)
         mutations.map(m => Expr.Cst(m, Type.Str, loc))
       case TypeConstructor.Regex =>
         val mut = Constant.Regex(java.util.regex.Pattern.compile("b"))
@@ -616,7 +616,7 @@ object MutationGenerator {
           lit.add(java.math.BigInteger.ONE),
           lit.subtract(java.math.BigInteger.ONE)).filter(i => lit != i)
         litCand.toList.map(i => Constant.BigInt(i))
-      case Constant.Str(lit) => Constant.Str(lit + "\b") :: Nil
+      case Constant.Str(_) => Constant.Str("") :: Constant.Str("Mutated") :: Nil
       case Constant.Regex(_) => Constant.Regex(java.util.regex.Pattern.compile(".*")) :: Nil
     }
   }

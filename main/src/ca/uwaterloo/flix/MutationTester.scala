@@ -117,7 +117,7 @@ object MutationTester {
           case Constant.Int32(lit) => s"Changed to ${lit.toString}"
           case Constant.Int64(lit) => s"Changed to ${lit.toString}"
           case Constant.BigInt(lit) => s"Changed to ${lit.toString}"
-          case Constant.Str(lit) => s"Changed to ${lit.toString}"
+          case Constant.Str(lit) => s"Changed to \"${lit.toString}\""
           case Constant.Regex(lit) => s"Changed to ${lit.toString}"
         }
         case MutationType.SigMut(sig) =>
@@ -218,7 +218,7 @@ object MutationTester {
     private def compileAndTestMutant(df: TypedAst.Def, mut: (Symbol.DefnSym, List[MutatedDef]), testKit: TestKit): TestRes = {
         val defs = testKit.root.defs
         val n = defs + (mut._1 -> df)
-        println(df)
+        // println(df)
         val newRoot = testKit.root.copy(defs = n)
         val cRes = testKit.flix.codeGen(newRoot).unsafeGet
         val testsFromTester = cRes.getTests.filter { case (s, _) => s.namespace.head.equals(testKit.testModule) }.toList
