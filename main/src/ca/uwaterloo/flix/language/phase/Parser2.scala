@@ -482,6 +482,9 @@ object Parser2 {
           numItems += 1
           if (!atEnd()) {
             if (optionalSeparator) eat(separator) else expect(separator)
+            if (atEnd()) {
+              closeWithError(open(), ParseError(s"Trailing $separator", SyntacticContext.Unknown, previousSourceLocation()))
+            }
           }
         } else {
           // We are not at an item (checkForItem returned false).
@@ -509,13 +512,13 @@ object Parser2 {
     def zeroOrMore()(implicit s: State): Unit = run()
 
     def oneOrMore()(implicit s: State): Unit = {
-      val locBefore = currentSourceLocation()
+      val locBefore = previousSourceLocation()
       val itemCount = run()
       val locAfter = currentSourceLocation()
       if (itemCount < 1) {
         val loc = SourceLocation.mk(locBefore.sp1, locAfter.sp1)
         val error = ParseError(s"Expected one or more $itemName", SyntacticContext.Unknown, loc)
-        s.errors.append(error)
+        closeWithError(open(), error)
       }
     }
   }
@@ -742,9 +745,7 @@ object Parser2 {
     private def traitDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       expect(TokenKind.KeywordTrait)
       name(NAME_DEFINITION)
-      if (at(TokenKind.BracketL)) {
-        Type.parameters()
-      }
+      Type.parameters()
       if (at(TokenKind.KeywordWith)) {
         Type.constraints()
       }
@@ -1127,7 +1128,7 @@ object Parser2 {
         lhs = close(mark, TreeKind.Expr.Apply)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
       }
-      // Handle record select after function all. Example: funcReturningRecord().field
+      // Handle record select after function call. Example: funcReturningRecord().field
       if (at(TokenKind.Dot) && nth(1) == TokenKind.NameLowerCase) {
         val mark = openBefore(lhs)
         eat(TokenKind.Dot)
@@ -1517,8 +1518,7 @@ object Parser2 {
         expect(TokenKind.ParenR)
       }
       expression()
-      if (at(TokenKind.KeywordElse)) {
-        expect(TokenKind.KeywordElse)
+      if (eat(TokenKind.KeywordElse)) {
         expression()
       }
       close(mark, TreeKind.Expr.IfThenElse)
@@ -2627,7 +2627,7 @@ object Parser2 {
         checkForItem = () => atAny(NAME_VARIABLE ++ NAME_TYPE),
         delimiters = (TokenKind.BracketL, TokenKind.BracketR),
         recoverOn = RECOVER_TYPE
-      ).zeroOrMore()
+      ).oneOrMore()
       close(mark, TreeKind.TypeParameterList)
     }
 

@@ -1214,8 +1214,10 @@ object Weeder2 {
         case (pat, expr :: Nil) => Validation.success(MatchRule(pat, None, expr))
         // case pattern if expr => expr
         case (pat, expr1 :: expr2 :: Nil) => Validation.success(MatchRule(pat, Some(expr1), expr2))
-        //BAD: case pattern if => expr
-        case (_, _) => Validation.HardFailure(Chain(ParseError("Malformed match rule.", SyntacticContext.Expr.OtherExpr, tree.loc)))
+        //Malformed case. Parser should have reported an error, so fail silently
+        case (_, _) =>
+          val error = ParseError("Malformed match rule.", SyntacticContext.Expr.OtherExpr, tree.loc)
+          Validation.success(MatchRule(Pattern.Error(tree.loc), None, Expr.Error(error)))
       }
     }
 
