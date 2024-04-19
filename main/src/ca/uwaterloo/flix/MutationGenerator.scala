@@ -425,7 +425,7 @@ object MutationGenerator {
               case ("Nil", "Cons") => false
               case ("Nil", "Nil") => true
               case ("Cons", "Cons") => true
-              case _ => comparePatterns(pat, oPat)
+              case _ => !cSym.equals(oCSym)
             }
           case _ => true
         }
