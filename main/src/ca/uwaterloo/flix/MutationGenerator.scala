@@ -436,11 +436,11 @@ object MutationGenerator {
       }
     }
     val swapIndex = matches.zipWithIndex.flatMap {case (x, xindex) =>
-      matches.zipWithIndex.map{case (y, yindex) =>
-        if(xindex < yindex && comparePatterns(x.pat, y.pat))
+      matches.zipWithIndex.flatMap { case (y, yindex) =>
+        if (xindex < yindex && comparePatterns(x.pat, y.pat))
           Some(xindex, yindex)
         else None
-      }.flatten
+      }
     }
     swapIndex.map{case (x, y) =>
       (matches.updated(x, matches(y)).updated(y, matches(x)), (x, y))
