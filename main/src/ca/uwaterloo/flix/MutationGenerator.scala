@@ -191,7 +191,7 @@ object MutationGenerator {
       val mut2 = mutateExpr(exp2).map(m => {
         val statement = Expr.Stm(mask, m, m.tpe, m.eff, m.loc)
         val copy = original.copy(exp2 = statement)
-        Expr.Mutated(copy, m.mutationType, tpe, eff, loc)
+        Expr.Mutated(copy, m.mutationType, tpe, eff, m.loc)
       })
       mut1 ::: mut2
     case Expr.Region(_, _) => Nil
@@ -370,20 +370,24 @@ object MutationGenerator {
 
   private def mutatePattern(pattern: TypedAst.Pattern): List[(TypedAst.Pattern, MutationType)] = {
     pattern match {
-      case original@Pattern.Var(sym, tpe, loc) =>
+      case original@Pattern.Var(sym, tpe, loc) => Nil
+        /*
         mutateVar(Expr.Var(sym, tpe, loc)).flatMap {
           case (e, _) => e match {
             case Cst(cst, tpe, loc) => Some((Pattern.Cst(cst, tpe, loc), MutationType.CstMut(cst)))
             case _ => None
           }
         }
+        */
       case original@Pattern.Cst(cst, _, _) => mutateCst(cst).map(m => (original.copy(cst = m), MutationType.CstMut(m)))
-      case original@Pattern.Tuple(elms, _, _) =>
+      case original@Pattern.Tuple(elms, _, _) => Nil
+        /*
         elms.zipWithIndex.flatMap {
           case (pat, index) =>
             val mutations = mutatePattern(pat)
             mutations.map{case (m, mt) => (original.copy(elms = elms.updated(index, m)), mt)}
           }
+         */
       case original@Pattern.Tag(sym, pat, tpe, loc) => Nil
       case Pattern.Record(pats, pat, tpe, loc) => Nil
       case _ => Nil
@@ -413,16 +417,24 @@ object MutationGenerator {
           case Pattern.Cst(_,_,_) => false
           case _ => true
         }
-        case Pattern.Tag(_, _, tpe, _) => otherPat match {
-          case Pattern.Tag(_, _, oTpe, _) => !tpe.equals(oTpe)
+        case Pattern.Tag(cSym , pat, tpe, _) => otherPat match {
+          case Pattern.Tag(oCSym, oPat, oTpe, _) =>
+            print(cSym.sym.name)
+            (cSym.sym.name, oCSym.sym.name) match {
+              case ("Cons", "Nil") => false
+              case ("Nil", "Cons") => false
+              case ("Nil", "Nil") => true
+              case ("Cons", "Cons") => true
+              case _ => comparePatterns(pat, oPat)
+            }
           case _ => true
         }
         case Pattern.Tuple(elms, _, _) => otherPat match {
-          case Pattern.Tuple(oElms, _, _) => elms.zip(oElms).exists {case (cand, other) => comparePatterns(cand, other)}
+          case Pattern.Tuple(oElms, _, _) => elms.zip(oElms).forall {case (cand, other) => comparePatterns(cand, other)}
           case _ => true
         }
         case Pattern.Record(pats, _, _, _) => otherPat match {
-          case Pattern.Record(oPats, _, _, _) => pats.zip(oPats).exists {case (cand, other) => comparePatterns(cand.pat, other.pat)}
+          case Pattern.Record(oPats, _, _, _) => pats.zip(oPats).forall {case (cand, other) => comparePatterns(cand.pat, other.pat)}
           case Pattern.RecordEmpty(_,_) => false
           case _ => true
         }
