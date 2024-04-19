@@ -324,14 +324,14 @@ object TypeError {
     * @param renv      the rigidity environment.
     * @param loc       the location where the error occurred.
     */
-  case class NonSubtype(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class NonSubtype(baseType1: Type, baseType2: Type, fullType1: Type, fullType2: Type,renv: RigidityEnv, loc: SourceLocation, msg: Option[String] = None)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Unable to unify the subtyping '${formatType(fullType1, Some(renv))}' < '${formatType(fullType2, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
          |>> Unable to unify the subtyping: '${red(formatType(baseType1, Some(renv)))}' < '${red(formatType(baseType2, Some(renv)))}'.
-         |
+         |${msg.map(str => s"\n$str\n").getOrElse("")}
          |${code(loc, "invalid subtyping.")}
          |
          |Subtype  : ${formatType(fullType1, Some(renv))}
@@ -882,14 +882,14 @@ object TypeError {
     * @param renv     the rigidity environment.
     * @param loc      the location of the inferred type.
     */
-  case class UnexpectedSubtype(inferredSubtype: Type, expectedSupertype: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class UnexpectedSubtype(inferredSubtype: Type, expectedSupertype: Type, renv: RigidityEnv, loc: SourceLocation, msg: Option[String] = None)(implicit flix: Flix) extends TypeError {
     def summary: String = s"Expected supertype '${formatType(expectedSupertype, Some(renv))}' but found subtype: '${formatType(inferredSubtype, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
       import formatter._
       s"""${line(kind, source.name)}
          |>> Expected type: '${red(formatType(expectedSupertype, Some(renv)))}' but found type: '${red(formatType(inferredSubtype, Some(renv)))}'.
-         |
+         |${msg.map(str => s"\n$str\n").getOrElse("")}
          |${code(loc, "expression has unexpected type.")}
          |""".stripMargin
     }

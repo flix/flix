@@ -453,13 +453,13 @@ object ConstraintSolver {
       val lhs = Type.mkUnion(tpe1, slack, tpe1.loc.asSynthetic)
       Ok(ResolutionResult.constraints(List(TypeConstraint.Equality(lhs, tpe2, Provenance.subToEq(prov))), progress = true))
 
-    case (Kind.Bool, Kind.Bool) => ??? // nice error
+    case (Kind.Bool, Kind.Bool) => Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov, Some("No subtyping on kind Bool")))
 
-    case (Kind.RecordRow, Kind.RecordRow) => ??? // nice error
+    case (Kind.RecordRow, Kind.RecordRow) => Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov, Some("No subtyping on kind RecordRow")))
 
-    case (Kind.SchemaRow, Kind.SchemaRow) => ??? // nice error
+    case (Kind.SchemaRow, Kind.SchemaRow) => Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov, Some("No subtyping on kind SchemaRow")))
 
-    case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 => ???
+    case (Kind.CaseSet(sym1), Kind.CaseSet(sym2)) if sym1 == sym2 => Err(toTypeError(UnificationError.NonSubtype(tpe1, tpe2), prov, Some("No subtyping on kind CaseSet")))
 
     case (k1, k2) if KindUnification.unifiesWith(k1, k2) => resolveSubtypeStar(tpe1, tpe2, prov, renv, loc)
 
@@ -775,9 +775,9 @@ object ConstraintSolver {
   // TODO ASSOC-TYPES This translation does not work well
   // TODO ASSOC-TYPES because provenance is not propogated properly.
   // TODO ASSOC-TYPES We also need to track the renv for use in these errors.
-  private def toTypeError(err0: UnificationError, prov: Provenance)(implicit flix: Flix): TypeError = (err0, prov) match {
+  private def toTypeError(err0: UnificationError, prov: Provenance, msg: Option[String] = None)(implicit flix: Flix): TypeError = (err0, prov) match {
     case (err, Provenance.ExpectType(expected, actual, loc)) =>
-      toTypeError(err, Provenance.Match(expected, actual, loc)) match {
+      toTypeError(err, Provenance.Match(expected, actual, loc), msg) match {
         case TypeError.MismatchedTypes(baseType1, baseType2, fullType1, fullType2, renv, _) =>
           (baseType1.typeConstructor, baseType2.typeConstructor) match {
             case (Some(TypeConstructor.Native(left)), Some(TypeConstructor.Native(right))) if left.isAssignableFrom(right) =>
@@ -789,14 +789,14 @@ object ConstraintSolver {
       }
 
     case (err, Provenance.ExpectSubtype(actual, expected, loc)) =>
-      toTypeError(err, Provenance.SubtypeMatch(actual, expected, loc)) match {
-        case TypeError.NonSubtype(baseType1, baseType2, fullType1, fullType2, renv, _) =>
-          TypeError.UnexpectedSubtype(baseType1, baseType2, renv, loc)
+      toTypeError(err, Provenance.SubtypeMatch(actual, expected, loc), msg) match {
+        case TypeError.NonSubtype(baseType1, baseType2, fullType1, fullType2, renv, _, msg) =>
+          TypeError.UnexpectedSubtype(baseType1, baseType2, renv, loc, msg)
         case e => e
       }
 
     case (err, Provenance.ExpectEffect(expected, actual, loc)) =>
-      toTypeError(err, Provenance.Match(expected, actual, loc)) match {
+      toTypeError(err, Provenance.Match(expected, actual, loc), msg) match {
         case TypeError.MismatchedEffects(baseType1, baseType2, fullType1, fullType2, renv, _) =>
           // TODO ASSOC-TYPES restore possible upcast error
           TypeError.UnexpectedEffect(baseType1, baseType2, renv, loc)
@@ -804,7 +804,7 @@ object ConstraintSolver {
       }
 
     case (err, Provenance.ExpectArgument(expected, actual, sym, num, loc)) =>
-      toTypeError(err, Provenance.Match(expected, actual, loc)) match {
+      toTypeError(err, Provenance.Match(expected, actual, loc), msg) match {
         case TypeError.MismatchedBools(_, _, fullType1, fullType2, renv, loc) =>
           TypeError.UnexpectedArg(sym, num, fullType1, fullType2, renv, loc)
 
@@ -817,7 +817,7 @@ object ConstraintSolver {
       }
 
     case (UnificationError.NonSubtype(baseType1, baseType2), Provenance.SubtypeMatch(type1, type2, loc)) =>
-      TypeError.NonSubtype(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc)
+      TypeError.NonSubtype(baseType1, baseType2, type1, type2, RigidityEnv.empty, loc, msg)
 
     case (_, Provenance.SubtypeMatch(_, _, _)) => ??? // should not exist
     case (UnificationError.NonSubtype(_, _), _) => ??? // should not exist
