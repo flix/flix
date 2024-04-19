@@ -115,7 +115,10 @@ mod Test.Dec.Assoc.Type.Eff.Multiple {
     // Polymorphic functions using Transformable          //
     ////////////////////////////////////////////////////////
 
-    pub def transformAndCheckEq(eq: Transformable.B[a], x: a): Bool \ Transformable.E[a] with Transformable[a], Eq[Transformable.B[a]] =
+    pub def transformAndCheckEq(eq: Transformable.B[a], x: a): Bool \ Transformable.E[a] with Transformable[a], Eq[a] where Transformable.B[a] ~ a =
         Transformable.transform(x) == eq
+
+    pub def composeAndReduceEq(eq: Composable.B[a][a], f: a -> Unit \ Composable.E[a], x: a): Bool \ Composable.E[a] with Composable[a], Eq[a] where Composable.B[a][a] ~ a =
+        Composable.reduce(Composable.compose(f, x)) == eq
 
 }
