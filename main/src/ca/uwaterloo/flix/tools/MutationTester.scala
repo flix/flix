@@ -368,27 +368,23 @@ object MutationTester {
             val removedMutant = Mutant(removedExpr, PrintedRemove(constraint.loc))
 
             // mutate constraint
-            val constraintMutants = mutateConstraint(constraint).map { m =>
-              val updatedCS: List[Constraint] = cs.updated(i, m.value)
-              val updatedExpr = Expr.FixpointConstraintSet(updatedCS, tpe, loc1)
-              Mutant(updatedExpr, m.printed)
-            }
+            val constraintMutants = mutateMap(
+              constraint,
+              mutateConstraint,
+              { c: Constraint => Expr.FixpointConstraintSet(cs.updated(i, c), tpe, loc1) },
+            )
 
             removedMutant #:: constraintMutants
           }
         case _ => LazyList.empty
       }
 
-    private def mutateConstraint(constraint: Constraint)(implicit flix: Flix): LazyList[Mutant[Constraint]] = {
+    private def mutateConstraint(c: Constraint)(implicit flix: Flix): LazyList[Mutant[Constraint]] = {
       // mutate head
-      val headMutants = mutatePredicateHead(constraint.head).map { m =>
-        Mutant(Constraint(constraint.cparams, m.value, constraint.body, constraint.loc), m.printed)
-      }
+      val headMutants = mutateMap(c.head, mutatePredicateHead, Constraint(c.cparams, _, c.body, c.loc))
 
       // mutate body
-      val bodiesMutants = mutatePredicateBodyList(constraint.body).map { m =>
-        Mutant(Constraint(constraint.cparams, constraint.head, m.value, constraint.loc), m.printed)
-      }
+      val bodiesMutants = mutateMap(c.body, mutatePredicateBodyList, Constraint(c.cparams, c.head, _, c.loc))
 
       headMutants #::: bodiesMutants
     }
@@ -396,13 +392,7 @@ object MutationTester {
     private def mutatePredicateHead(head: Head)(implicit flix: Flix): LazyList[Mutant[Head]] = head match {
       case Head.Atom(pred, den, terms, tpe, loc) =>
         // mutate terms
-        LazyList.from(terms.zipWithIndex).flatMap { case (exp, i) =>
-          mutateExpr(exp).map { m =>
-            val updatedTerms = terms.updated(i, m.value)
-            val updatedHeadAtom = Head.Atom(pred, den, updatedTerms, tpe, loc)
-            Mutant(updatedHeadAtom, m.printed)
-          }
-        }
+        mutateElms(terms, mutateExpr, Head.Atom(pred, den, _, tpe, loc))
     }
 
     private def mutatePredicateBodyList(bodyList: List[Body])(implicit flix: Flix): LazyList[Mutant[List[Body]]] = {
@@ -412,9 +402,7 @@ object MutationTester {
         val removedMutant = Mutant(bodyListWithIndex.filterNot(_._2 == i).map(_._1), PrintedRemove(body.loc))
 
         // mutate item
-        val bodyMutants = mutatePredicateBody(body).map { m =>
-          Mutant(bodyList.updated(i, m.value), m.printed)
-        }
+        val bodyMutants = mutateMap(body, mutatePredicateBody, { b: Body => bodyList.updated(i, b) })
 
         removedMutant #:: bodyMutants
       }
@@ -432,13 +420,7 @@ object MutationTester {
         val inversedMutant = Mutant(inversedBodyAtom, printedDiff)
 
         // mutate terms
-        val termsMutants = LazyList.from(terms.zipWithIndex).flatMap { case (pattern, i) =>
-          mutatePattern(pattern).map { m =>
-            val updatedTerms = terms.updated(i, m.value)
-            val updatedBodyAtom = Body.Atom(pred, den, polarity, fixity, updatedTerms, tpe, loc)
-            Mutant(updatedBodyAtom, m.printed)
-          }
-        }
+        val termsMutants = mutateElms(terms, mutatePattern, Body.Atom(pred, den, polarity, fixity, _, tpe, loc))
 
         inversedMutant #:: termsMutants
       case Body.Functional(outVars, exp, loc) => mutateMap(exp, mutateExpr, Body.Functional(outVars, _, loc))
