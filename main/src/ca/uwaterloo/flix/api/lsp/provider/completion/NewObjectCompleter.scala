@@ -11,46 +11,33 @@ object NewObjectCompleter extends Completer {
     * Returns a List of Completion for completer.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
-    val regex = raw"\s*n?e?w?\s+(?:.*\s+)*(.*)".r
-    if (!regex.matches(context.prefix)) {
+    if (context.previousWord != "new") {
       Nil
     } else {
-      val wordPattern = "n?e?w?".r
-      val currentWordIsNew = wordPattern.matches(context.word)
-
-      root.uses.foldLeft(List.empty[NewObjectCompletion]) {
-        case (acc, (_, useOrImport)) => newObjectCompletions(useOrImport, currentWordIsNew) ::: acc
+      val clazzName = if (context.word.startsWith("##")) context.word.drop(2) else context.word
+      try {
+        // TODO: Check that clazzName is type alias or imported with alias.
+        newObjectCompletion(Class.forName(clazzName))
+      } catch {
+        case ClassNotFoundException => Nil
       }
     }
   }
 
-  private def newObjectCompletions(useOrImports: List[Ast.UseOrImport], currentWordIsNew: Boolean)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): List[NewObjectCompletion] = {
-    useOrImports.foldLeft(List.empty[NewObjectCompletion]) {
-      case (acc, x) => x match {
-        case _: Ast.UseOrImport.Use => acc
-        case imprt: Ast.UseOrImport.Import => newObjectCompletion(imprt, currentWordIsNew) match {
-          case Some(v) => v :: acc
-          case None => acc
-        }
-      }
-    }
-  }
+  private def newObjectCompletion(clazz: Class[_])(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Option[NewObjectCompletion] = {
+    // val label = if (alias.name.isBlank) clazz.getSimpleName else alias.name
+    val label = clazz.getSimpleName
 
-  private def newObjectCompletion(imprt: Ast.UseOrImport.Import, currentWordIsNew: Boolean)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Option[NewObjectCompletion] = imprt match {
-    case Ast.UseOrImport.Import(clazz, alias, _) =>
-      val label = if (alias.name.isBlank) clazz.getSimpleName else alias.name
-      val includeNew = if (currentWordIsNew) "new " else ""
-
-      if (isAbstract(clazz)) {
-        val completion = clazz.getMethods
-          .filter(isAbstract)
-          .zipWithIndex
-          .map { case (m, i) => (m, i + 1) }
-          .map(toCompletion)
-          .mkString(System.lineSeparator())
-        Some(NewObjectCompletion(label, s"$includeNew $label {${System.lineSeparator()}$completion}"))
-      } else
-        None
+    if (isAbstract(clazz)) {
+      val completion = clazz.getMethods
+        .filter(isAbstract)
+        .zipWithIndex
+        .map { case (m, i) => (m, i + 1) }
+        .map(toCompletion)
+        .mkString(System.lineSeparator())
+      Some(NewObjectCompletion(label, s"$label {${System.lineSeparator()}$completion}"))
+    } else
+      None
   }
 
   private def isAbstract(clazz: Class[_]): Boolean = {
