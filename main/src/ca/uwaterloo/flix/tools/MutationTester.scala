@@ -638,7 +638,7 @@ object MutationTester {
     }
   }
 
-  private object MutantRunner {
+  object MutantRunner {
 
     import MutantStatus._
 
@@ -903,7 +903,7 @@ object MutationTester {
 
   sealed trait MutantStatus
 
-  private object MutantStatus {
+  object MutantStatus {
 
     case object Killed extends MutantStatus
 
