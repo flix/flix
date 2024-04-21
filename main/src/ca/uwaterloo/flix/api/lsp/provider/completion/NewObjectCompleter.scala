@@ -45,7 +45,7 @@ object NewObjectCompleter extends Completer {
         val completion = clazz.getMethods
           .filter(isAbstract)
           .zipWithIndex
-          .map(toCompletionString)
+          .map(toCompletion)
           .mkString(System.lineSeparator())
         Some(NewObjectCompletion(label, s"$includeNew $label {${System.lineSeparator()}$completion}"))
       } else
@@ -62,7 +62,7 @@ object NewObjectCompleter extends Completer {
     java.lang.reflect.Modifier.isAbstract(method.getModifiers)
   }
 
-  private def toCompletionString(methodWithIndex: (java.lang.reflect.Method, Int)): String = {
+  private def toCompletion(methodWithIndex: (java.lang.reflect.Method, Int)): String = {
     val (method, i) = methodWithIndex
     ???
   }
