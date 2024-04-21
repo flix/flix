@@ -37,9 +37,30 @@ object NewObjectCompleter extends Completer {
   }
 
   private def newObjectCompletion(imprt: Ast.UseOrImport.Import, currentWordIsNew: Boolean)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Option[NewObjectCompletion] = imprt match {
-    case Ast.UseOrImport.Import(clazz, alias, loc) =>
+    case Ast.UseOrImport.Import(clazz, alias, _) =>
       val includeNew = if (currentWordIsNew) "new " else ""
-      val (completion, _) = ???
-      ???
+
+      if (isAbstract(clazz)) {
+        val completion = clazz.getMethods
+          .filter(isAbstract)
+          .map(toCompletionString)
+          .mkString(System.lineSeparator())
+        Some(NewObjectCompletion(alias.name, s"$includeNew ${alias.name} {${System.lineSeparator()}$completion}"))
+      } else
+        None
+  }
+
+  private def isAbstract(clazz: Class[_]): Boolean = {
+    val isAbs = java.lang.reflect.Modifier.isAbstract(clazz.getModifiers)
+    val isInterface = clazz.isInterface
+    isInterface || isAbs
+  }
+
+  private def isAbstract(method: java.lang.reflect.Method): Boolean = {
+    ???
+  }
+
+  private def toCompletionString(method: java.lang.reflect.Method): String = {
+    ???
   }
 }

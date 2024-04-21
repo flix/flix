@@ -397,7 +397,7 @@ object Completion {
     */
   case class ClassCompletion(name: String) extends Completion
 
-  case class NewObjectCompletion(name: String) extends Completion
+  case class NewObjectCompletion(name: String, completion: String) extends Completion
 
   /**
     * Represents a Snippet completion
