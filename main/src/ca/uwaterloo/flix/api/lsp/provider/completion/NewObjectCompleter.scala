@@ -73,5 +73,5 @@ object NewObjectCompleter extends Completer {
     s"def $name($params): $result = $${$i:???}"
   }
 
-  private def toTypeCompletion(value: Class[_]): String = ???
+  private def toTypeCompletion(value: Class[_]): String = "TypeTest"
 }
