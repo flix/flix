@@ -3,7 +3,8 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.NewObjectCompletion
-import ca.uwaterloo.flix.language.ast.TypedAst
+import ca.uwaterloo.flix.language.ast.{SourceLocation, Type, TypedAst}
+import ca.uwaterloo.flix.language.fmt.FormatType
 
 object NewObjectCompleter extends Completer {
 
@@ -50,7 +51,7 @@ object NewObjectCompleter extends Completer {
     java.lang.reflect.Modifier.isAbstract(method.getModifiers)
   }
 
-  private def toCompletion(methodWithIndex: (java.lang.reflect.Method, Int)): String = {
+  private def toCompletion(methodWithIndex: (java.lang.reflect.Method, Int))(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): String = {
     val (method, i) = methodWithIndex
     val name = method.getName
     val params = method.getParameters
@@ -60,5 +61,7 @@ object NewObjectCompleter extends Completer {
     s"def $name($params): $result = $${$i:???}"
   }
 
-  private def toTypeCompletion(value: Class[_]): String = "TypeTest"
+  private def toTypeCompletion(clazz: Class[_])(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): String = {
+    FormatType.formatType(Type.mkNative(clazz, SourceLocation.Unknown))
+  }
 }
