@@ -54,9 +54,9 @@ object NewObjectCompleter extends Completer {
   }
 
   private def isAbstract(clazz: Class[_]): Boolean = {
-    val isAbs = java.lang.reflect.Modifier.isAbstract(clazz.getModifiers)
+    val hasAbstractModifier = java.lang.reflect.Modifier.isAbstract(clazz.getModifiers)
     val isInterface = clazz.isInterface
-    isInterface || isAbs
+    isInterface || hasAbstractModifier
   }
 
   private def isAbstract(method: java.lang.reflect.Method): Boolean = {
