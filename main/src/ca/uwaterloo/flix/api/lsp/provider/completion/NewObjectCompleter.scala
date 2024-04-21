@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.{MatchCompletion, NewObjectCompletion}
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.NewObjectCompletion
 import ca.uwaterloo.flix.language.ast.{Ast, TypedAst}
 
 object NewObjectCompleter extends Completer {
@@ -18,7 +18,7 @@ object NewObjectCompleter extends Completer {
       val wordPattern = "n?e?w?".r
       val currentWordIsNew = wordPattern.matches(context.word)
 
-      root.uses.foldLeft(List.empty[MatchCompletion]) {
+      root.uses.foldLeft(List.empty[NewObjectCompletion]) {
         case (acc, (_, useOrImport)) => newObjectCompletions(useOrImport, currentWordIsNew) ::: acc
       }
     }
