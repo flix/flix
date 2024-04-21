@@ -45,6 +45,7 @@ object NewObjectCompleter extends Completer {
         val completion = clazz.getMethods
           .filter(isAbstract)
           .zipWithIndex
+          .map { case (m, i) => (m, i + 1) }
           .map(toCompletion)
           .mkString(System.lineSeparator())
         Some(NewObjectCompletion(label, s"$includeNew $label {${System.lineSeparator()}$completion}"))
@@ -64,6 +65,13 @@ object NewObjectCompleter extends Completer {
 
   private def toCompletion(methodWithIndex: (java.lang.reflect.Method, Int)): String = {
     val (method, i) = methodWithIndex
-    ???
+    val name = method.getName
+    val params = method.getParameters
+      .map(p => s"${p.getName}: ${toTypeCompletion(p.getType)}")
+      .mkString(", ")
+    val result = toTypeCompletion(method.getReturnType)
+    s"def $name($params): $result = $${$i:???}"
   }
+
+  private def toTypeCompletion(value: Class[_]): String = ???
 }
