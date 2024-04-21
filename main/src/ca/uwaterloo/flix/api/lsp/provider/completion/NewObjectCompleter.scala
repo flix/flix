@@ -57,7 +57,7 @@ object NewObjectCompleter extends Completer {
   }
 
   private def isAbstract(method: java.lang.reflect.Method): Boolean = {
-    ???
+    java.lang.reflect.Modifier.isAbstract(method.getModifiers)
   }
 
   private def toCompletionString(method: java.lang.reflect.Method): String = {
