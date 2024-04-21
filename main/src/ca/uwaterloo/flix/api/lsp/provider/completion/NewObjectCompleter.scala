@@ -19,22 +19,24 @@ object NewObjectCompleter extends Completer {
       val currentWordIsNew = wordPattern.matches(context.word)
 
       root.uses.foldLeft(List.empty[MatchCompletion]) {
-        case (acc, (_, useOrImport)) => newObjectCompletion(useOrImport, currentWordIsNew) ::: acc
+        case (acc, (_, useOrImport)) => newObjectCompletions(useOrImport, currentWordIsNew) ::: acc
       }
     }
   }
 
-  private def newObjectCompletion(useOrImports: List[Ast.UseOrImport], currentWordIsNew: Boolean): List[NewObjectCompletion] = {
+  private def newObjectCompletions(useOrImports: List[Ast.UseOrImport], currentWordIsNew: Boolean): List[NewObjectCompletion] = {
     useOrImports.foldLeft(List.empty[NewObjectCompletion]) {
       case (acc, x) => x match {
         case Ast.UseOrImport.Use(_, _, _) => acc
-        case Ast.UseOrImport.Import(clazz, alias, loc) => ???
+        case i@Ast.UseOrImport.Import(_, _, _) => newObjectCompletion(i, currentWordIsNew) match {
+          case Some(v) => v :: acc
+          case None => acc
+        }
       }
     }
   }
 
-  private def helper(): Unit = ???
-  /*
-
-   */
+  private def newObjectCompletion(useOrImport: Ast.UseOrImport, currentWordIsNew: Boolean): Option[NewObjectCompletion] = {
+    ???
+  }
 }
