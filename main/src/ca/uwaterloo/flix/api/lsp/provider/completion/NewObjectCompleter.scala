@@ -20,7 +20,7 @@ object NewObjectCompleter extends Completer {
         // TODO: Check that clazzName is type alias or imported with alias.
         newObjectCompletion(Class.forName(clazzName))
       } catch {
-        case _: ClassNotFoundException => Nil
+        case ClassNotFoundException => Nil
       }
     }
   }
