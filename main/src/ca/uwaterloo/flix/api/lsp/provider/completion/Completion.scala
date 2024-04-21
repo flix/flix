@@ -133,7 +133,7 @@ sealed trait Completion {
         textEdit = TextEdit(context.range, name),
         documentation = None,
         insertTextFormat = InsertTextFormat.PlainText,
-        kind = CompletionItemKind.Constructor)
+        kind = CompletionItemKind.Class)
     case Completion.SnippetCompletion(name, snippet, documentation) =>
       CompletionItem(label = name,
         sortText = Priority.snippet(name),
