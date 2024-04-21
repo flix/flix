@@ -38,6 +38,7 @@ object NewObjectCompleter extends Completer {
 
   private def newObjectCompletion(imprt: Ast.UseOrImport.Import, currentWordIsNew: Boolean)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Option[NewObjectCompletion] = imprt match {
     case Ast.UseOrImport.Import(clazz, alias, _) =>
+      val label = if (alias.name.isBlank) clazz.getSimpleName else alias.name
       val includeNew = if (currentWordIsNew) "new " else ""
 
       if (isAbstract(clazz)) {
@@ -46,7 +47,7 @@ object NewObjectCompleter extends Completer {
           .zipWithIndex
           .map(toCompletionString)
           .mkString(System.lineSeparator())
-        Some(NewObjectCompletion(alias.name, s"$includeNew ${alias.name} {${System.lineSeparator()}$completion}"))
+        Some(NewObjectCompletion(label, s"$includeNew $label {${System.lineSeparator()}$completion}"))
       } else
         None
   }
