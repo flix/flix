@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.util.Validation._
 import org.parboiled2.ParserInput
 
 import scala.collection.mutable
+import scala.util.Random
 
 /**
  * A lexer that is able to tokenize multiple `Ast.Source`s in parallel.
@@ -122,9 +123,9 @@ object Lexer {
    * This is not viable long term and should never be merged into a stable release,
    * but it allows us to battle-test the lexer in nightly, without inconveniencing users too much.
    */
-  private def tryLex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
+  private def tryLex(src: Ast.Source)(implicit flix: Flix): Validation[Array[Token], CompilationMessage] = {
     try {
-      lex(src)
+      mapN(lex(src))(fuzz)
     } catch {
       case except: Throwable =>
         println(src.data.mkString)
@@ -1088,5 +1089,37 @@ object Lexer {
       }
     }
     TokenKind.Err(LexerError.UnterminatedBlockComment(sourceLocationAtStart()))
+  }
+
+  /**
+    * Returns a fuzzed array of tokens based on the given array of `tokens`.
+    *
+    * Must not modify the last token since it is end-of-file.
+    */
+  private def fuzz(tokens: Array[Token])(implicit flix: Flix): Array[Token] = {
+    // Return immediately if fuzzing is disabled.
+    if (!flix.options.xfuzzer) {
+      return tokens
+    }
+
+    // Return immediately if there are few tokens.
+    if (tokens.length <= 10) {
+      return tokens
+    }
+
+    //
+    // We fuzz the array by picking two random indices and swapping their tokens.
+    //
+    val copy = tokens.clone()
+    val lastIndex = copy.length - 1 // Note: We don't want to remove the last EOF token.
+    val r = new Random()
+    val i = r.nextInt(lastIndex)
+    val j = r.nextInt(lastIndex)
+
+    val tmp = copy(i)
+    copy(i) = copy(j)
+    copy(j) = tmp
+
+    copy
   }
 }
