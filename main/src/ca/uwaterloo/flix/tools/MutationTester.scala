@@ -313,10 +313,17 @@ object MutationTester {
           case Expr.Def(sym, _, _) if defnIntNamespaces.contains(sym.namespace.mkString(".")) && sym.text == "bitwiseNot" =>
             LazyList(Mutant(exps.head, PrintedReplace(loc, getText(exps.head))))
           case _ =>
-            val res = mutateMap(exp, mutateExpr, Expr.Apply(_, exps, tpe, eff, loc)) #:::
-              mutateElms(exps, mutateExprWithoutCst, Expr.Apply(exp, _, tpe, eff, loc))
+            val expMutants = mutateMap(exp, mutateExpr, Expr.Apply(_, exps, tpe, eff, loc))
 
-            if (res.nonEmpty) res
+            val elmsMutants = if (expMutants.nonEmpty) {
+              mutateElms(exps, mutateExprWithoutCst, Expr.Apply(exp, _, tpe, eff, loc))
+            } else {
+              mutateElms(exps, mutateExpr, Expr.Apply(exp, _, tpe, eff, loc))
+            }
+
+            val all = expMutants #::: elmsMutants
+
+            if (all.nonEmpty) all
             else if (tpe.toString == "Bool")
               LazyList(Mutant(
                 Expr.Unary(BoolOp.Not, expr, tpe, eff, loc),
