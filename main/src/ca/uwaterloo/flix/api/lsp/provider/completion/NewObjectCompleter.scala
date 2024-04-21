@@ -24,11 +24,11 @@ object NewObjectCompleter extends Completer {
     }
   }
 
-  private def newObjectCompletions(useOrImports: List[Ast.UseOrImport], currentWordIsNew: Boolean): List[NewObjectCompletion] = {
+  private def newObjectCompletions(useOrImports: List[Ast.UseOrImport], currentWordIsNew: Boolean)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): List[NewObjectCompletion] = {
     useOrImports.foldLeft(List.empty[NewObjectCompletion]) {
       case (acc, x) => x match {
-        case Ast.UseOrImport.Use(_, _, _) => acc
-        case i@Ast.UseOrImport.Import(_, _, _) => newObjectCompletion(i, currentWordIsNew) match {
+        case _: Ast.UseOrImport.Use => acc
+        case imprt: Ast.UseOrImport.Import => newObjectCompletion(imprt, currentWordIsNew) match {
           case Some(v) => v :: acc
           case None => acc
         }
@@ -36,7 +36,10 @@ object NewObjectCompleter extends Completer {
     }
   }
 
-  private def newObjectCompletion(useOrImport: Ast.UseOrImport, currentWordIsNew: Boolean): Option[NewObjectCompletion] = {
-    ???
+  private def newObjectCompletion(imprt: Ast.UseOrImport.Import, currentWordIsNew: Boolean)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Option[NewObjectCompletion] = imprt match {
+    case Ast.UseOrImport.Import(clazz, alias, loc) =>
+      val includeNew = if (currentWordIsNew) "new " else ""
+      val (completion, _) = ???
+      ???
   }
 }
