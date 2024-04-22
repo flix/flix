@@ -592,10 +592,10 @@ object MutationGenerator {
       case Constant.Bool(lit) => Constant.Bool(!lit) :: Nil
       case Constant.Char(lit) => Constant.Char((lit ^ Char.MaxValue).toChar) :: Nil
       case Constant.Float32(lit) =>
-        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Float.MinValue, Float.MaxValue, lit + 1, lit - 1).filter(i => lit != i)
+        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, lit + 1, lit - 1).filter(i => lit != i)
         litCand.toList.map(i => Constant.Float32(i))
       case Constant.Float64(lit) =>
-        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Double.MaxValue, Double.MinValue, lit + 1, lit - 1).filter(i => lit != i)
+        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, lit + 1, lit - 1).filter(i => lit != i)
         litCand.toList.map(i => Constant.Float64(i))
       case Constant.BigDecimal(lit) =>
         val litCand = Set(java.math.BigDecimal.ZERO,
@@ -611,16 +611,16 @@ object MutationGenerator {
           lit.subtract(java.math.BigDecimal.ONE)).filter(i => lit != i)
         litCand.toList.map(i => Constant.BigDecimal(i))
       case Constant.Int8(lit) =>
-        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Byte.MaxValue, Byte.MinValue, lit + 1, lit - 1).map(i => i.toByte).filter(i => lit != i)
+        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, lit + 1, lit - 1).map(i => i.toByte).filter(i => lit != i)
         litCand.toList.map(i => Constant.Int8(i))
       case Constant.Int16(lit) =>
-        val litCand = Set(0, -1, 1, 2, 4, 6, 8, Short.MinValue, Short.MaxValue, lit + 1, lit - 1).map(i => i.toShort).filter(i => lit != i)
+        val litCand = Set(0, -1, 1, 2, 4, 6, 8, lit + 1, lit - 1).map(i => i.toShort).filter(i => lit != i)
         litCand.toList.map(i => Constant.Int16(i))
       case Constant.Int32(lit) =>
-        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Int.MaxValue, Int.MinValue, lit + 1, lit - 1).filter(i => lit != i)
+        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, lit + 1, lit - 1).filter(i => lit != i)
         litCand.toList.map(i => Constant.Int32(i))
       case Constant.Int64(lit) =>
-        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, Long.MaxValue, Long.MinValue, lit + 1, lit - 1).filter(i => lit != i)
+        val litCand = Set(0, -1, 1, 2, 4, 6, 8, 16, lit + 1, lit - 1).filter(i => lit != i)
         litCand.toList.map(i => Constant.Int64(i))
       case Constant.BigInt(lit) =>
         val litCand = Set(java.math.BigInteger.ZERO,
