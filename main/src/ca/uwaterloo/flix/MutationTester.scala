@@ -69,7 +69,10 @@ object MutationTester {
         val start = System.nanoTime()
         // println(root.sigs.filter(t => t._1.toString.equals("Add.add")))
         val mutations = MutationGenerator.mutateRoot(root, productionModule)
-        if (mutations.isEmpty) { // fast exit if no mutations were made
+        val mutationsAreNotMade = mutations.forall{
+          case (_, md) => md.isEmpty
+        }
+        if (mutationsAreNotMade) { // fast exit if no mutations were made
             println("No mutations were made. Please verify that you have supplied the correct module names.")
             return
         }
@@ -82,7 +85,9 @@ object MutationTester {
     }
 
     def writeReportsToFile(reportsList: List[String]): Unit = {
-      var strForFile = reportsList.foldLeft("")((acc, str) => s"$acc\n\n$str")
+      if (reportsList.isEmpty) return
+      val stars = "*".repeat(60)
+      var strForFile = reportsList.foldLeft("")((acc, str) => s"$acc\n$stars\n\n$str")
       strForFile = strForFile.substring(2)
       val fileWriter = new FileWriter(new File(s"mutation_report.txt"))
       fileWriter.write(strForFile)
@@ -203,7 +208,7 @@ object MutationTester {
               // println(MutationReporter.reportNonKilledMutation(mDef.exp))
               println(testKit.flix.getFormatter.code(mDef.df.exp.loc, printMutation(mDef.mutType)))
 
-              nonKilledStrList = MutationReporter.reportNonKilledMutation(mDef.df.exp) :: nonKilledStrList
+              nonKilledStrList = testKit.flix.getFormatter.code(mDef.df.exp.loc, printMutation(mDef.mutType)) :: nonKilledStrList
             }
 
           val now = LocalDateTime.now()
