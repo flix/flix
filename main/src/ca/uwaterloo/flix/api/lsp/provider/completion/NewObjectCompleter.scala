@@ -12,6 +12,17 @@ object NewObjectCompleter extends Completer {
     * Returns a List of Completion for completer.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
+    val regex = raw"\s*new\s+(?:.*\s+)*(.*)".r
+    val check = context.prefix match {
+      case regex(clazz) =>
+        val path = clazz.split('.').toList
+        // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
+        javaClassCompletionsFromPrefix(path)(root) //++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
+      case _ => Nil
+    }
+
+    println(check)
+
     val newPattern = raw".*\s*ne?w?\s?.*".r
     if (!newPattern.matches(context.prefix)) {
       Nil
@@ -20,7 +31,7 @@ object NewObjectCompleter extends Completer {
       val wordPattern = "ne?w?".r
       val currentWordIsNew = wordPattern.matches(context.word)
 
-      println(root.uses)
+      println(root.uses.filter { case (_, b) => b.exists(p => p.isInstanceOf[Ast.UseOrImport.Import]) })
 
       root.uses.foldLeft(List.empty[NewObjectCompletion]) {
         case (acc, (_, useOrImport)) => newObjectCompletions(useOrImport, currentWordIsNew) ::: acc
@@ -79,5 +90,18 @@ object NewObjectCompleter extends Completer {
 
   private def toTypeCompletion(clazz: Class[_])(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): String = {
     FormatType.formatType(Type.mkNative(clazz, SourceLocation.Unknown))
+  }
+
+  /**
+    * Gets completions from a java path prefix
+    */
+  private def javaClassCompletionsFromPrefix(prefix: List[String])(implicit root: TypedAst.Root): Iterable[String] = {
+    root.names(prefix).map(clazz => {
+      prefix match {
+        case Nil => clazz
+        case v => v.mkString("", ".", s".$clazz")
+      }
+    }
+    )
   }
 }
