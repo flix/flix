@@ -124,6 +124,7 @@ object Lowering {
     lazy val Boxed: Type = Type.mkEnum(Enums.Boxed, Nil, SourceLocation.Unknown)
 
     lazy val ChannelMpmcAdmin: Type = Type.mkEnum(Enums.ChannelMpmcAdmin, Nil, SourceLocation.Unknown)
+    lazy val ChannelMpmc: Type = Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Eff ->: Kind.Star), SourceLocation.Unknown)
 
     lazy val ConcurrentReentrantLock: Type = Type.mkEnum(Enums.ConcurrentReentrantLock, Nil, SourceLocation.Unknown)
 
@@ -878,15 +879,17 @@ object Lowering {
       case _ => tpe0 // Performance: Reuse tpe0.
     }
 
-    // Rewrite Sender[t, _] to Concurrent/Channel.Mpmc[t]
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe, _), _, _) =>
-      val t = visitType(tpe)
-      Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
+    // Rewrite Sender[t, r] to Concurrent/Channel.Mpmc[t, r]
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe1, _), tpe2, _) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      Type.Apply(Type.Apply(Types.ChannelMpmcAdmin, t1, loc), t2, loc)
 
-    // Rewrite Receiver[t, _] to Concurrent/Channel.Mpmc[t]
-    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe, _), _, _) =>
-      val t = visitType(tpe)
-      Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), t, loc)
+    // Rewrite Receiver[t, r] to Concurrent/Channel.Mpmc[t, r]
+    case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe1, _), tpe2, _) =>
+      val t1 = visitType(tpe1)
+      val t2 = visitType(tpe2)
+      Type.Apply(Type.Apply(Types.ChannelMpmcAdmin, t1, loc), t2, loc)
 
     case Type.Apply(tpe1, tpe2, loc) =>
       val t1 = visitType(tpe1)
