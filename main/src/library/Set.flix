@@ -508,6 +508,26 @@ mod Set {
         foldRight((x, acc) -> x :: acc, Nil, s)
 
     ///
+    /// Returns the set `s` as an array.
+    ///
+    pub def toArray(rc: Region[r], s: Set[a]): Array[a, r] \ r = match size(s) {
+        case 0  => Array#{} @ rc
+        case sz =>
+            let a = Array.empty(rc, sz);
+            Iterator.forEachWithIndex((i, b) -> Array.put(b, i, a), iterator(rc, s));
+            a
+        }
+
+    ///
+    /// Returns the set `s` as a vector.
+    ///
+    pub def toVector(s: Set[a]): Vector[a] = region rc {
+        let arr = Array.empty(rc, size(s));
+        Iterator.forEachWithIndex((i, x) -> Array.put(x, i, arr), iterator(rc, s));
+        Array.toVector(arr)
+    }
+
+    ///
     /// Returns the set `s` as a chain.
     ///
     pub def toChain(s: Set[a]): Chain[a] =
