@@ -883,13 +883,13 @@ object Lowering {
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Sender, loc), tpe1, _), tpe2, _) =>
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
-      Type.Apply(Type.Apply(Types.ChannelMpmcAdmin, t1, loc), t2, loc)
+      Type.Apply(Type.Apply(Types.ChannelMpmc, t1, loc), t2, loc)
 
     // Rewrite Receiver[t, r] to Concurrent/Channel.Mpmc[t, r]
     case Type.Apply(Type.Apply(Type.Cst(TypeConstructor.Receiver, loc), tpe1, _), tpe2, _) =>
       val t1 = visitType(tpe1)
       val t2 = visitType(tpe2)
-      Type.Apply(Type.Apply(Types.ChannelMpmcAdmin, t1, loc), t2, loc)
+      Type.Apply(Type.Apply(Types.ChannelMpmc, t1, loc), t2, loc)
 
     case Type.Apply(tpe1, tpe2, loc) =>
       val t1 = visitType(tpe1)
@@ -1650,7 +1650,7 @@ object Lowering {
     * The type of a channel which can transmit variables of type `tpe`
     */
   private def mkChannelTpe(tpe: Type, loc: SourceLocation): Type = {
-    Type.Apply(Types.ChannelMpmc, tpe, loc)
+    Type.Apply(Type.Apply(Types.ChannelMpmc, tpe, loc), Type.IO, loc)
   }
 
   /**
