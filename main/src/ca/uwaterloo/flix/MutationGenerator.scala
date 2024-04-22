@@ -139,7 +139,6 @@ object MutationGenerator {
     case original@Expr.Cst(cst, tpe, loc) =>
       mutateCst(cst).map(c => Expr.Mutated(Expr.Cst(c, tpe, loc),  MutationType.CstMut(c), original.tpe, original.eff, original.loc))
     case original@Expr.Var(sym, tpe,_) =>
-      println(s"type of var: ${tpe.typeConstructors}")
       val maybeNil = mutateVarToNil(original)
       mutateVar(original).map{case (c, mutType)  => Expr.Mutated(c, mutType, c.tpe, c.eff, c.loc)} ::: maybeNil.toList
     case Expr.Def(_, _, _) => Nil
@@ -247,8 +246,8 @@ object MutationGenerator {
             Some(Expr.Mutated(original.copy(label = name), MutationType.RecordSelectMut(name), original.tpe, original.eff, original.loc))
           else None
       }
-      println("mutation for record select")
-      println(res)
+      //println("mutation for record select")
+      //println(res)
       res
     case original@Expr.RecordExtend(_, exp1, exp2, _, _, _) =>
       val mut1 = mutateExpr(exp1).map(m => Expr.Mutated(original.copy(exp1 = m), m.mutationType, original.tpe, original.eff, m.loc))
@@ -510,13 +509,13 @@ object MutationGenerator {
     varExp.tpe.typeConstructors match {
       case x::y::_ => x match {
         case TypeConstructor.Enum(sym, kind) =>
-          println("in mutateVarToNil", x, y)
+          //println("in mutateVarToNil", x, y)
           val loc = varExp.loc
           if (sym.toString.equals("List")) {
             val ident = Name.Ident(loc.sp1, "Nil", loc.sp2)
             val cSym = Ast.CaseSymUse(Symbol.mkCaseSym(Symbol.mkEnumSym("List"), ident), loc)
             val tag = Expr.Tag(cSym, Expr.Cst(Constant.Unit, Type.Unit, loc), varExp.tpe, Type.Pure, loc)
-            println(tag)
+            //println(tag)
             Some(Expr.Mutated(tag, MutationType.CstMut(Constant.Unit), tag.tpe, tag.eff, tag.loc))
           } else None
         case _ => None
