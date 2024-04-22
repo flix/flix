@@ -1,112 +1,112 @@
 mod Test.Exp.Concurrency.Buffered {
 
     @test
-    def testBufferedChannel01(): Bool \ {} = region rc {
+    def testBufferedChannel01(): Bool \ IO = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
         Channel.send((), tx);
         () == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannel02(): Bool \ {} = region rc {
+    def testBufferedChannel02(): Bool \ IO = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
         Channel.send(true, tx);
         true == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannel03(): Bool \ {} = region rc {
+    def testBufferedChannel03(): Bool \ IO = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
         Channel.send(123.456f32, tx);
         123.456f32 == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannel04(): Bool \ {} = region rc {
+    def testBufferedChannel04(): Bool \ IO = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
         Channel.send(123.456f64, tx);
         123.456f64 == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannel05(): Bool \ {} = region rc {
+    def testBufferedChannel05(): Bool \ IO = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
         Channel.send(42i8, tx);
         42i8 == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannel06(): Bool \ {} = region rc {
+    def testBufferedChannel06(): Bool \ IO = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
         Channel.send(42i16, tx);
         42i16 == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannel07(): Bool \ {} = region rc {
+    def testBufferedChannel07(): Bool \ IO = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
         Channel.send(42i32, tx);
         42i32 == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannel08(): Bool \ {} = region rc {
+    def testBufferedChannel08(): Bool \ IO = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
         Channel.send(42i64, tx);
         42i64 == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannel09(): Bool \ {} = region rc {
+    def testBufferedChannel09(): Bool \ IO = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
         Channel.send(42ii, tx);
         42ii == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannel10(): Bool \ {} = region rc {
+    def testBufferedChannel10(): Bool \ IO = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
         Channel.send("Hello World!", tx);
         "Hello World!" == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannel11(): Bool \ {} = region rc {
+    def testBufferedChannel11(): Bool \ IO = region rc {
         let (tx, rx): (Sender[Option[Int32], _], Receiver[Option[Int32], _]) = Channel.buffered(rc, 1);
         Channel.send(None, tx);
         None == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannel12(): Bool \ {} = region rc {
+    def testBufferedChannel12(): Bool \ IO = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
         Channel.send(Some(123), tx);
         Some(123) == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannel13(): Bool \ {} = region rc {
+    def testBufferedChannel13(): Bool \ IO = region rc {
         let (tx, rx): (Sender[Result[String, Int32], _], Receiver[Result[String, Int32], _]) = Channel.buffered(rc, 1);
         Channel.send(Ok(123), tx);
         Ok(123) == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannel14(): Bool \ {} = region rc {
+    def testBufferedChannel14(): Bool \ IO = region rc {
         let (tx, rx): (Sender[Result[String, Int32], _], Receiver[Result[String, Int32], _]) = Channel.buffered(rc, 1);
         Channel.send(Err("Goodbye World!"), tx);
         Err("Goodbye World!") == Channel.recv(rx)
     }
 
     @test
-    def testBufferedChannel15(): Bool \ {} = region rc {
+    def testBufferedChannel15(): Bool \ IO = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
         Channel.unsafeSend(Array#{1, 2, 3} @ rc, tx);
         2 == Array.get(1, Channel.recv(rx))
     }
 
     @test
-    def testBufferedChannel16(): Bool \ {} = region rc {
+    def testBufferedChannel16(): Bool \ IO = region rc {
         let (tx1, rx1) = Channel.buffered(rc, 1);
         let (tx2, rx2) = Channel.buffered(rc, 1);
         Channel.unsafeSend(rx2, tx1);

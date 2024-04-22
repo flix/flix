@@ -302,7 +302,7 @@ class TestRedundancy extends AnyFunSuite with TestUtils {
   test("ShadowedName.Select.02") {
     val input =
       """
-        |def f(): Int32 = region rc {
+        |def f(): Int32 \ IO = region rc {
         |    let x = 123;
         |    let (tx, rx) = Channel.buffered(rc, 1);
         |    Channel.send(456, tx);

@@ -34,14 +34,14 @@ mod Channel {
     ///
     /// Blocks until a message is dequeued.
     ///
-    pub def recv(receiver: Receiver[t, r]): t \ r = $CHANNEL_GET$(receiver)
+    pub def recv(receiver: Receiver[t, r]): t \ {r, IO} = checked_ecast($CHANNEL_GET$(receiver))
 
     ///
     /// Sends the message `m` on the given channel `s`.
     ///
     /// Blocks until the message is enqueued.
     ///
-    pub def send(m: t, sender: Sender[t, r]): Unit \ r with Sendable[t] = $CHANNEL_PUT$(sender, m)
+    pub def send(m: t, sender: Sender[t, r]): Unit \ {r, IO} with Sendable[t] = checked_ecast($CHANNEL_PUT$(sender, m))
 
     ///
     /// Sends the message `m` on the given channel `s`.
@@ -51,7 +51,7 @@ mod Channel {
     /// Identical to `send` but doesn't require `Sendable`.
     /// It is up to programmer to ensure that race conditions cannot arise due to concurrent access to `m`.
     ///
-    pub def unsafeSend(m: t, sender: Sender[t, r]): Unit \ r = $CHANNEL_PUT$(sender, m)
+    pub def unsafeSend(m: t, sender: Sender[t, r]): Unit \ {r, IO} = checked_ecast($CHANNEL_PUT$(sender, m))
 
     ///
     /// Returns a channel that receives the `Unit` message after duration `d`.

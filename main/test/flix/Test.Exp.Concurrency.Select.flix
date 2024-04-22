@@ -409,7 +409,7 @@ mod Test.Exp.Concurrency.Select {
     }
 
     @test
-    def testSelectSideEffecting01(): Bool = region rc {
+    def testSelectSideEffecting01(): Bool \ IO = region rc {
         def mkChan(): Receiver[Int32, rc] = {
             let (tx, rx) = Channel.buffered(rc, 1);
             Channel.send(42, tx);
@@ -422,7 +422,7 @@ mod Test.Exp.Concurrency.Select {
     }
 
     @test
-    def testSelectSideEffecting02(): Bool = region rc {
+    def testSelectSideEffecting02(): Bool \ IO = region rc {
         let (tx1, rx1) = Channel.buffered(rc, 10);
         let (tx2, rx2) = Channel.buffered(rc, 10);
         let (tx3, rx3) = Channel.buffered(rc, 10);
@@ -437,7 +437,7 @@ mod Test.Exp.Concurrency.Select {
     type alias MyReceiver[a: Type, r: Region] = Receiver[a, r]
 
     @test
-    def testSelectAliasedChannel(): Bool = region rc {
+    def testSelectAliasedChannel(): Bool \ IO = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
 
         def useChan(mr: MyReceiver[Int32, rc]) : Bool =

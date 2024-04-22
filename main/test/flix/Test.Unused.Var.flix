@@ -55,7 +55,7 @@ mod Test.Unused.Var {
         }
 
     @test
-    def testUnusedVar10(): Int32 = region rc {
+    def testUnusedVar10(): Int32 \ IO = region rc {
         let (tx, rx) = Channel.buffered(rc, 1);
         Channel.send(0, tx);
         select {
@@ -64,7 +64,7 @@ mod Test.Unused.Var {
     }
 
     @test
-    def testUnusedVar11(): Int32 = region rc {
+    def testUnusedVar11(): Int32 \ IO = region rc {
         let (tx1, rx1) = Channel.buffered(rc, 1);
         let (tx2, rx2) = Channel.buffered(rc, 1);
         Channel.send(0, tx1);
