@@ -12,6 +12,8 @@ object NewObjectCompleter extends Completer {
     * Returns a List of Completion for completer.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
+    println("NewObjectCompleter.getCompletions fired!")
+    println("Checking dummy code")
     val regex = raw"\s*new\s+(?:.*\s+)*(.*)".r
     val check = context.prefix match {
       case regex(clazz) =>
@@ -23,11 +25,12 @@ object NewObjectCompleter extends Completer {
 
     println(check)
 
-    val newPattern = raw".*\s*ne?w?\s?.*".r
+    val newPattern = raw".*\s*n?e?w?\s?.*".r
     if (!newPattern.matches(context.prefix)) {
+      println("No matches for newPattern")
       Nil
     } else {
-      println("NewObjectCompleter.getCompletions fired!")
+      println("Found match for newPattern")
       val wordPattern = "ne?w?".r
       val currentWordIsNew = wordPattern.matches(context.word)
 
