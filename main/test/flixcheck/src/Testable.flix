@@ -60,9 +60,11 @@ mod Testable {
         pub def property(prop: Property): Property =
             prop
     }
-
+    
+    /// Functions must be wrapped in TFunc to be testable
     pub enum TFunc[a, b](a -> b)
 
+    /// Functions (with 2 params) must be wrapped in TFunc2 to be testable
     pub enum TFunc2[a, b, c](a -> b -> c)
 
     instance Testable[TFunc[a, b]] with Arbitrary[a], ToString[a], Testable[b] {
@@ -77,8 +79,8 @@ mod Testable {
             forAll2(Arbitrary.arbitrary(), Arbitrary.arbitrary(), func)
     }
 
-    // instance Testable[a -> b] with Arbitrary[a], ToString[a], Testable[b] {
-    //     pub def property(f: a -> b): Property =
+    // instance Testable[a -> b \ ef] with Arbitrary[a], ToString[a], Testable[b] {
+    //     pub def property(f: a -> b \ ef): Property =
     //         forAll(Arbitrary.arbitrary(), f)
     // }
 

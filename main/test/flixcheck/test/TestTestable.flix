@@ -1,4 +1,4 @@
-use Testable.{Testable, TFunc, TFunc2, forAll, forAll2, Property, label, classify, collect}
+use Testable.{Testable, TFunc, TFunc2, forAll, forAll2, Property, label, classify, collect, implies}
 use Gen.{chooseInt, Arbitrary, Gen, sizedListOf, sized, vector}
 use Monad.{>>=}
 // use Testable.{TestableFunc => ts} // TODO : spørg Magnus
@@ -9,7 +9,7 @@ pub def testingMain(): Unit \ IO =
 
 pub def shouldFail(): Unit \ IO =
     // Define a testable function that should fail
-    let f = TFunc.TFunc(x -> Int32.pow(x, 2) < 80);
+    let f = TFunc.TFunc(x -> Int32.pow(x, 2) <= 81);
     // Set the function as a property
     let prop = Testable.property(f);
     println("Verbose check");
@@ -25,6 +25,10 @@ pub def testReverse(): Unit \ IO =
         verboseCheck(prop)
     }
 
+pub def testRevRev(): Unit \ IO =
+    def prop_revRev(xs: List[Char]) = List.reverse(List.reverse(xs)) == xs;
+    check({maxTest = 42| verbose()}, TFunc.TFunc(prop_revRev))
+
 pub def testtt(): Unit \ IO =
     def prop_add(x: Int32, y: Int32) = x + y == y + x;
     let f = TFunc2.TFunc2(prop_add);
@@ -34,7 +38,7 @@ pub def newtest(): Unit \ IO =
     let prob_true = true;
     flixCheck(prob_true)
 
-// Testing the properties of the Transpose function
+// Testing the properties of the List.Transpose function
 
 // The transpose of the transpose of a matrix is the matrix itself
 pub def propSelfInverse(a: List[List[Int32]]): Bool =
@@ -88,4 +92,47 @@ pub def testCollectAndClassify(): Unit \ IO =
     let prop = forAll(chooseInt(1, 10), n -> collect(n, classify(Int32.modulo(n, 2) == 0, "even", n == n)));
     flixCheck(prop)
 
-   
+pub def propMaxLe(x: Int32, y:Int32): Property =
+    // tests the max function
+    implies(x <= y, Int32.max(x, y) == y)
+    
+// Test the max function, using the `implies` function to define the property
+pub def testMaxLe(): Unit \ IO =
+    // tests the max function
+    flixCheck(TFunc2.TFunc2(propMaxLe))
+
+// Test and hopefully crash modulo
+pub def testModulo(): Unit \ IO =
+    // tests the modulo function, asuming that the result is non-negative
+    verboseCheck(TFunc2.TFunc2((x, y) -> Int32.modulo(x, y) >= 0))
+
+pub def insertOrdered(e: a, l: List[a]): List[a] with Order[a] =
+    match l {
+        case Nil => e :: Nil,
+        case (y::ys) if e < y => e :: y :: ys,
+        case (y::ys) => y :: insertOrdered(e, ys)
+    }
+
+pub def isOrdered(l: List[a]): Bool with Order[a] =
+    // checks if a list is ordered
+    match l {
+        case (x :: y :: xs) => x <= y and isOrdered(y :: xs),
+        case _ => true
+    }
+
+pub def propInsertOrdered(e: Int32, xs: List[Int32]): Property =
+    // defines the property for the insertOrdered function
+    implies(isOrdered(xs), isOrdered(insertOrdered(e, xs)))
+
+
+pub def testInsertOrdered(): Unit \ IO =
+    // tests the insertOrdered function
+    check({maxFail = 500| default()}, TFunc2.TFunc2(propInsertOrdered))
+
+pub def testInsertOrdered2(): Unit \ IO =
+    // tests the insertOrdered function
+    let func = (e: Int32, xs: List[Int32]) -> implies(isOrdered(xs), isOrdered(insertOrdered(e, xs)));
+    let prop: Property = forAll2(Arbitrary.arbitrary(), Arbitrary.arbitrary(), func);
+    check({maxFail = 500| default()}, prop)
+    
+    

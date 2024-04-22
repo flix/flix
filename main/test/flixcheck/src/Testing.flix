@@ -42,12 +42,16 @@ pub def verbose(): Config =
     );
     {every = func | default()}
 
+/// Standard flixCheck function. Uses default config.
 pub def flixCheck(x: a): Unit \ IO with Testable[a] = 
     check(default(), x)
 
+/// Standard verbose version of flixCheck. Uses default config.
 pub def verboseCheck(x: a): Unit \ IO with Testable[a] = 
     check(verbose(), x)
 
+/// The actual testing function
+/// Should be used by the programmer when a specific test size or max test amount is desired
 pub def check(config: Config, x: a): Unit \ IO with Testable[a] = 
     let freshRng = SplittableRandom.fresh();
     tests(config, evaluate(x), freshRng, 0, 0, Nil)
