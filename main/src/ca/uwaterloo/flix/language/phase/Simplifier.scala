@@ -232,9 +232,7 @@ object Simplifier {
 
       case Some(tc) =>
         tc match {
-          case TypeConstructor.Void =>
-            // Java does not have a bottom type, so we map `Void` to `Object`.
-            MonoType.Object
+          case TypeConstructor.Void => MonoType.Void
 
           case TypeConstructor.AnyType => MonoType.AnyType
 

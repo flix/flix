@@ -75,8 +75,9 @@ object HtmlDocumentor {
   def run(root: TypedAst.Root, packageModules: PackageModules)(implicit flix: Flix): Unit = {
     val modulesRoot = splitModules(root)
     val filteredModulesRoot = filterModules(modulesRoot, packageModules)
+    val pairedModulesRoot = pairModules(filteredModulesRoot)
 
-    visitMod(filteredModulesRoot)
+    visitMod(pairedModulesRoot)
     writeAssets()
   }
 
@@ -200,6 +201,9 @@ object HtmlDocumentor {
 
   /**
     * Splits the modules present in the root into a tree of `HtmlDocumentor.Module`s, making them easier to work with.
+    *
+    * Note: This function leaves all companion module fields empty.
+    * Use `pairModules` to fill them in.
     */
   private def splitModules(root: TypedAst.Root): Module = {
 
@@ -210,9 +214,6 @@ object HtmlDocumentor {
       val mod = root.modules(moduleSym)
       val uses = root.uses.getOrElse(moduleSym, Nil)
 
-      /** Modules that should not be included as a submodule */
-      var companionMods: List[Symbol.ModuleSym] = Nil
-
       var submodules: List[Symbol.ModuleSym] = Nil
       var traits: List[Trait] = Nil
       var effects: List[Effect] = Nil
@@ -222,23 +223,15 @@ object HtmlDocumentor {
       mod.foreach {
         case sym: Symbol.ModuleSym => submodules = sym :: submodules
         case sym: Symbol.TraitSym =>
-          val companionMod = companionModule(sym.namespace :+ sym.name, moduleSym, root)
-          companionMod.foreach(m => companionMods = m.sym :: companionMods)
-          traits = mkTrait(sym, moduleSym, companionMod, root) :: traits
+          traits = mkTrait(sym, moduleSym, root) :: traits
         case sym: Symbol.EffectSym =>
-          val companionMod = companionModule(sym.namespace :+ sym.name, moduleSym, root)
-          companionMod.foreach(m => companionMods = m.sym :: companionMods)
-          effects = mkEffect(sym, moduleSym, companionMod, root) :: effects
+          effects = mkEffect(sym, moduleSym, root) :: effects
         case sym: Symbol.EnumSym =>
-          val companionMod = companionModule(sym.namespace :+ sym.name, moduleSym, root)
-          companionMod.foreach(m => companionMods = m.sym :: companionMods)
-          enums = mkEnum(sym, moduleSym, companionMod, root) :: enums
+          enums = mkEnum(sym, moduleSym, root) :: enums
         case sym: Symbol.TypeAliasSym => typeAliases = root.typeAliases(sym) :: typeAliases
         case sym: Symbol.DefnSym => defs = root.defs(sym) :: defs
         case _ => // No op
       }
-
-      submodules = submodules.filterNot(companionMods.contains)
 
       Module(
         moduleSym,
@@ -253,43 +246,36 @@ object HtmlDocumentor {
       )
     }
 
-    /**
-      * Get the optional companion module for the item with the given `namespace`.
-      * `namespace` should include the name of the item itself.
-      */
-    def companionModule(namespace: List[String], parent: Symbol.ModuleSym, root: TypedAst.Root): Option[Module] = {
-      val sym = Symbol.mkModuleSym(namespace)
-      if (root.modules.contains(sym)) Some(visitMod(sym, Some(parent)))
-      else None
-    }
-
     visitMod(Symbol.mkModuleSym(Nil), None)
   }
 
   /**
-    * Extracts all relevant information about the given `TraitSym` from the root, into a `HtmlDocumentor.Trait`.
+    * Extracts all relevant information about the given `TraitSym` from the root, into a `HtmlDocumentor.Trait`,
+    * leaving the companion module unpopulated.
     */
-  private def mkTrait(sym: Symbol.TraitSym, parent: Symbol.ModuleSym, companionMod: Option[Module], root: TypedAst.Root): Trait = {
+  private def mkTrait(sym: Symbol.TraitSym, parent: Symbol.ModuleSym, root: TypedAst.Root): Trait = {
     val decl = root.traits(sym)
 
     val (sigs, defs) = decl.sigs.partition(_.exp.isEmpty)
     val instances = root.instances.getOrElse(sym, Nil)
 
-    Trait(decl, sigs, defs, instances, parent, companionMod)
+    Trait(decl, sigs, defs, instances, parent, None)
   }
 
   /**
-    * Extracts all relevant information about the given `EffectSym` from the root, into a `HtmlDocumentor.Effect`.
+    * Extracts all relevant information about the given `EffectSym` from the root, into a `HtmlDocumentor.Effect`,
+    * * leaving the companion module unpopulated.
     */
-  private def mkEffect(sym: Symbol.EffectSym, parent: Symbol.ModuleSym, companionMod: Option[HtmlDocumentor.Module], root: TypedAst.Root): Effect = {
-    Effect(root.effects(sym), parent, companionMod)
+  private def mkEffect(sym: Symbol.EffectSym, parent: Symbol.ModuleSym, root: TypedAst.Root): Effect = {
+    Effect(root.effects(sym), parent, None)
   }
 
   /**
-    * Extracts all relevant information about the given `EnumSym` from the root, into a `HtmlDocumentor.Enum`.
+    * Extracts all relevant information about the given `EnumSym` from the root, into a `HtmlDocumentor.Enum`,
+    * * leaving the companion module unpopulated.
     */
-  private def mkEnum(sym: Symbol.EnumSym, parent: Symbol.ModuleSym, companionMod: Option[HtmlDocumentor.Module], root: TypedAst.Root): Enum = {
-    Enum(root.enums(sym), parent, companionMod)
+  private def mkEnum(sym: Symbol.EnumSym, parent: Symbol.ModuleSym, root: TypedAst.Root): Enum = {
+    Enum(root.enums(sym), parent, None)
   }
 
   /**
@@ -302,6 +288,9 @@ object HtmlDocumentor {
   /**
     * Returns a tree of modules corresponding to the given input,
     * but with all contained items that shouldn't appear in the documentation removed.
+    *
+    * Note: This function assumes that companion modules are unpopulated,
+    * i.e. this should be called before `pairModules`.
     */
   private def filterContents(mod: Module, packageModules: PackageModules): Module = mod match {
     case Module(sym, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
@@ -342,9 +331,12 @@ object HtmlDocumentor {
   /**
     * Returns a `Trait` corresponding to the given `trt`,
     * but with all items that shouldn't appear in the documentation removed.
+    *
+    * Note: This function assumes that companion modules are unpopulated,
+    * i.e. this should be called before `pairModules`.
     */
   private def filterTrait(trt: Trait): Trait = trt match {
-    case Trait(TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, _, laws, loc), signatures, defs, instances, parent, companionMod) =>
+    case Trait(TypedAst.Trait(doc, ann, mod, sym, tparam, superTraits, assocs, _, laws, loc), signatures, defs, instances, parent, _) =>
       Trait(
         TypedAst.Trait(
           doc,
@@ -362,8 +354,7 @@ object HtmlDocumentor {
         defs.filter(d => d.spec.mod.isPublic && !d.spec.ann.isInternal),
         instances.filter(i => !i.ann.isInternal),
         parent,
-        // If this trait is included, it means that all of its sub items should be included as well
-        companionMod.map(m => filterContents(m, PackageModules.All))
+        None
       )
   }
 
@@ -371,33 +362,42 @@ object HtmlDocumentor {
   /**
     * Returns an `Effect` corresponding to the given `eff`,
     * but with all items that shouldn't appear in the documentation removed.
+    *
+    * Note: This function assumes that companion modules are unpopulated,
+    * i.e. this should be called before `pairModules`.
     */
   private def filterEffect(eff: Effect): Effect = eff match {
-    case Effect(eff, parent, companionMod) =>
+    case Effect(eff, parent, _) =>
       Effect(
         eff,
         parent,
-        // If this effect is included, it means that all of its sub items should be included as well
-        companionMod.map(m => filterContents(m, PackageModules.All)))
+        None,
+      )
   }
 
   /**
     * Returns an `Enum` corresponding to the given `enm`,
     * but with all items that shouldn't appear in the documentation removed.
+    *
+    * Note: This function assumes that companion modules are unpopulated,
+    * i.e. this should be called before `pairModules`.
     */
   private def filterEnum(enm: Enum): Enum = enm match {
-    case Enum(enm, parent, companionMod) =>
+    case Enum(enm, parent, _) =>
       Enum(
         enm,
         parent,
-        // If this enum is included, it means that all of its sub items should be included as well
-        companionMod.map(m => filterContents(m, PackageModules.All)))
+        None,
+      )
   }
 
   /**
     * Remove any modules and references to them if they:
     *   1. Contain no items
     *   1. Contain no submodules with any items
+    *
+    * Note: This function assumes that companion modules are unpopulated,
+    * i.e. this should be called before `pairModules`.
     */
   private def filterEmpty(mod: Module): Module = {
     /**
@@ -406,24 +406,12 @@ object HtmlDocumentor {
     def visitMod(mod: Module): Option[Module] = mod match {
       case Module(sym, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
         val filteredSubMods = submodules.flatMap(visitMod)
-        val filteredTraits = traits.map {
-          case Trait(decl, signatures, defs, instances, parent, companionMod) =>
-            Trait(decl, signatures, defs, instances, parent, companionMod.flatMap(visitMod))
-        }
-        val filteredEffects = effects.map {
-          case Effect(decl, parent, companionMod) =>
-            Effect(decl, parent, companionMod.flatMap(visitMod))
-        }
-        val filteredEnums = enums.map {
-          case Enum(decl, parent, companionMod) =>
-            Enum(decl, parent, companionMod.flatMap(visitMod))
-        }
 
         val isEmpty =
           filteredSubMods.isEmpty &&
-            filteredTraits.isEmpty &&
-            filteredEffects.isEmpty &&
-            filteredEnums.isEmpty &&
+            traits.isEmpty &&
+            effects.isEmpty &&
+            enums.isEmpty &&
             typeAliases.isEmpty &&
             defs.isEmpty
 
@@ -434,9 +422,9 @@ object HtmlDocumentor {
             parent,
             uses,
             filteredSubMods,
-            filteredTraits,
-            filteredEffects,
-            filteredEnums,
+            traits,
+            effects,
+            enums,
             typeAliases,
             defs
           )
@@ -455,6 +443,48 @@ object HtmlDocumentor {
         Nil,
         Nil,
       ))
+  }
+
+  /**
+    * Get the given module tree, but with all companion modules paired to their respective items.
+    */
+  private def pairModules(mod: Module): Module = mod match {
+    case Module(sym, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
+
+      val visitedSubmodules = submodules.map(pairModules)
+
+      /** Modules that should not be included as a submodule */
+      var companionMods: List[Module] = Nil
+
+      val pairedTraits = traits.map { t =>
+        val comp = visitedSubmodules.find(m => m.sym.ns.last == t.decl.sym.name)
+        comp.foreach(c => companionMods = c :: companionMods)
+        t.copy(companionMod = comp)
+      }
+      val pairedEffects = effects.map { e =>
+        val comp = visitedSubmodules.find(m => m.sym.ns.last == e.decl.sym.name)
+        comp.foreach(c => companionMods = c :: companionMods)
+        e.copy(companionMod = comp)
+      }
+      val pairedEnums = enums.map { e =>
+        val comp = visitedSubmodules.find(m => m.sym.ns.last == e.decl.sym.name)
+        comp.foreach(c => companionMods = c :: companionMods)
+        e.copy(companionMod = comp)
+      }
+
+      val filteredSubmodules = visitedSubmodules.filterNot(companionMods.contains)
+
+      Module(
+        sym,
+        parent,
+        uses,
+        filteredSubmodules,
+        pairedTraits,
+        pairedEffects,
+        pairedEnums,
+        typeAliases,
+        defs,
+      )
   }
 
   /**

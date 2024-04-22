@@ -136,7 +136,7 @@ object Name {
     * Behaves just like Ident, but reports its `loc` as synthetic.
     */
   class SyntheticIdent(sp1: SourcePosition, name: String, sp2: SourcePosition) extends Ident(sp1, name, sp2) {
-    override def loc: SourceLocation = SourceLocation.mk(sp1, sp2, SourceKind.Synthetic)
+    override def loc: SourceLocation = SourceLocation.mk(sp1, sp2, isReal = false)
   }
 
   /**

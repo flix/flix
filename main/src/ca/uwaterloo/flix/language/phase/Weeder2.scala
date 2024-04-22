@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Constant, Denotation, Fixity, Polarity, SyntacticContext}
-import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Root, Tree, TreeKind}
+import ca.uwaterloo.flix.language.ast.SyntaxTree.{Child, Tree, TreeKind}
 import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, Name, ReadAst, SemanticOp, SourceLocation, SourcePosition, Symbol, SyntaxTree, Token, TokenKind, WeededAst}
 import ca.uwaterloo.flix.language.errors.ParseError
 import ca.uwaterloo.flix.language.errors.WeederError._
@@ -49,20 +49,6 @@ object Weeder2 {
   private class State(val src: Ast.Source) {
     // This is necessary to display source code in error messages.
     val parserInput: ParserInput = ParserInput.apply(src.data)
-  }
-
-  /**
-    * Runs the parser silently, throwing out results and errors. Used for migrating to the new parser, can be deleted afterwards.
-    */
-  def runSilent(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
-    try {
-      val _ = run(readRoot, entryPoint, root, oldRoot, changeSet)
-      Validation.success(WeededAst.empty)
-    } catch {
-      case except: Throwable =>
-        except.printStackTrace()
-        Validation.success(WeededAst.empty)
-    }
   }
 
   def run(readRoot: ReadAst.Root, entryPoint: Option[Symbol.DefnSym], root: SyntaxTree.Root, oldRoot: WeededAst.Root, changeSet: ChangeSet)(implicit flix: Flix): Validation[WeededAst.Root, CompilationMessage] = {
@@ -160,7 +146,9 @@ object Weeder2 {
     flatMapN(JvmOp.pickJavaName(tree))(jname => {
       mapN(traverseOpt(maybeImportMany)(tree => visitImportMany(tree, jname.fqn))) {
         // case: import one, use the java name
-        case None | Some(Nil) => List(UseOrImport.Import(jname, Name.Ident(jname.sp1, jname.fqn.last, jname.sp2), tree.loc))
+        case None | Some(Nil) =>
+          val ident = Name.Ident(jname.sp1, jname.fqn.lastOption.getOrElse(""), jname.sp2)
+          List(UseOrImport.Import(jname, ident, tree.loc))
         // case: import many
         case Some(imports) => imports
       }
@@ -796,8 +784,15 @@ object Weeder2 {
         case TreeKind.Expr.FixpointSolveWithProject => visitFixpointSolveExpr(tree)
         case TreeKind.Expr.FixpointQuery => visitFixpointQueryExpr(tree)
         case TreeKind.Expr.Debug => visitDebugExpr(tree)
+        case TreeKind.Expr.Intrinsic =>
+          // Intrinsics must be applied to check that they have the right amount of arguments.
+          // This means that intrinsics are not "first-class" like other functions.
+          // Something like "let assign = $VECTOR_ASSIGN$" hits this case.
+          val error = ParseError("Intrinsics must be applied.", SyntacticContext.Expr.OtherExpr, tree.loc)
+          Validation.toSoftFailure(Expr.Error(error), error)
         case TreeKind.ErrorTree(err) => Validation.success(Expr.Error(err))
-        case _ => throw InternalCompilerException("Expected expression.", tree.loc)
+        case _ =>
+          throw InternalCompilerException(s"Expected expression.", tree.loc)
       }
     }
 
@@ -806,6 +801,7 @@ object Weeder2 {
       val idents = pickAll(TreeKind.Ident, tree)
       flatMapN(traverse(idents)(tokenToIdent)) {
         idents =>
+          assert(idents.nonEmpty) // Require at least one ident
           val first = idents.head
           val ident = idents.last
           val nnameIdents = idents.dropRight(1)
@@ -1081,7 +1077,8 @@ object Weeder2 {
           if (isInfix) {
             val infixName = text(op).head.stripPrefix("`").stripSuffix("`")
             val infixNameParts = infixName.split('.').toList
-            val qname = Name.mkQName(infixNameParts.init, infixNameParts.last, op.loc.sp1, op.loc.sp2)
+            val lastName = infixNameParts.lastOption.getOrElse("")
+            val qname = Name.mkQName(infixNameParts.init, lastName, op.loc.sp1, op.loc.sp2)
             val opExpr = Expr.Ambiguous(qname, op.loc)
             return Validation.success(Expr.Infix(e1, opExpr, e2, tree.loc))
           }
@@ -1798,6 +1795,7 @@ object Weeder2 {
     }
 
     private def visitIntrinsic(tree: Tree, args: List[Expr]): Validation[Expr, CompilationMessage] = {
+      expect(tree, TreeKind.Expr.Intrinsic)
       val intrinsic = text(tree).head.stripPrefix("$").stripSuffix("$")
       val loc = tree.loc
       (intrinsic, args) match {
@@ -2855,6 +2853,7 @@ object Weeder2 {
     val idents = pickAll(TreeKind.Ident, tree)
     mapN(traverse(idents)(tokenToIdent)) {
       idents =>
+        assert(idents.nonEmpty) // We require atleast one element to construct a qname
         val first = idents.head
         val ident = idents.last
         val nnameIdents = idents.dropRight(1)
