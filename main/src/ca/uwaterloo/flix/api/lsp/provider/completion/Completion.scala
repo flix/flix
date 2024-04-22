@@ -129,7 +129,7 @@ sealed trait Completion {
         kind = CompletionItemKind.Class)
     case Completion.NewObjectCompletion(name, completion) =>
       CompletionItem(label = name,
-        sortText = Priority.normal(name),
+        sortText = Priority.high(name),
         textEdit = TextEdit(context.range, completion),
         documentation = None,
         insertTextFormat = InsertTextFormat.Snippet,
