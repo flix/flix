@@ -112,7 +112,6 @@ object MutationGenerator {
       case (s, fun) =>
         if (defSyms.contains(s)) {
           val mutExps = mutateExpr(fun.exp)
-          println(fun.exp)
           val mutDefs = mutExps.map(mexp => {
             MutatedDef(fun.copy(exp = mexp), mexp.mutationType)
           })
@@ -422,7 +421,6 @@ object MutationGenerator {
         }
         case Pattern.Tag(cSym , pat, tpe, _) => otherPat match {
           case Pattern.Tag(oCSym, oPat, oTpe, _) =>
-            print(cSym.sym.name)
             (cSym.sym.name, oCSym.sym.name) match {
               case ("Cons", "Cons") => false
               case ("Cons", "Nil") => false
