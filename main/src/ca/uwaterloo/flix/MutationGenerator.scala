@@ -421,11 +421,11 @@ object MutationGenerator {
           case Pattern.Tag(oCSym, oPat, oTpe, _) =>
             print(cSym.sym.name)
             (cSym.sym.name, oCSym.sym.name) match {
+              case ("Cons", "Cons") => false
               case ("Cons", "Nil") => false
               case ("Nil", "Cons") => false
               case ("Nil", "Nil") => true
-              case ("Cons", "Cons") => true
-              case _ => !cSym.equals(oCSym)
+              case _ => !tpe.equals(oTpe)
             }
           case _ => true
         }
