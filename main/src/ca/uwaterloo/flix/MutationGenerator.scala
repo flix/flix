@@ -112,6 +112,7 @@ object MutationGenerator {
       case (s, fun) =>
         if (defSyms.contains(s)) {
           val mutExps = mutateExpr(fun.exp)
+          println(fun.exp)
           val mutDefs = mutExps.map(mexp => {
             MutatedDef(fun.copy(exp = mexp), mexp.mutationType)
           })
@@ -138,8 +139,10 @@ object MutationGenerator {
   private def mutateExpr(e: TypedAst.Expr): List[TypedAst.Expr.Mutated] = e match {
     case original@Expr.Cst(cst, tpe, loc) =>
       mutateCst(cst).map(c => Expr.Mutated(Expr.Cst(c, tpe, loc),  MutationType.CstMut(c), original.tpe, original.eff, original.loc))
-    case original@Expr.Var(sym,_,_) =>
-      mutateVar(original).map{case (c, mutType)  => Expr.Mutated(c, mutType, c.tpe, c.eff, c.loc)}
+    case original@Expr.Var(sym, tpe,_) =>
+      println(s"type of var: ${tpe.typeConstructors}")
+      val maybeNil = mutateVarToNil(original)
+      mutateVar(original).map{case (c, mutType)  => Expr.Mutated(c, mutType, c.tpe, c.eff, c.loc)} ::: maybeNil.toList
     case Expr.Def(_, _, _) => Nil
     case original@Expr.Sig(_, _, _) =>
       mutateSig(original).map(c => Expr.Mutated(c, MutationType.SigMut(c.sym), original.tpe, original.eff, c.loc))
@@ -503,6 +506,25 @@ object MutationGenerator {
       val constants = mutateVarToConstantByType(tpe).map(c => (c.copy(loc = loc),MutationType.CstMut(c.cst)))
       ret ::: constants
     case _ => Nil
+  }
+
+  private def mutateVarToNil(varExp: Expr.Var): Option[Expr.Mutated] = {
+    varExp.tpe.typeConstructors match {
+      case x::y::_ => x match {
+        case TypeConstructor.Enum(sym, kind) =>
+          println("in mutateVarToNil", x, y)
+          val loc = varExp.loc
+          if (sym.toString.equals("List")) {
+            val ident = Name.Ident(loc.sp1, "Nil", loc.sp2)
+            val cSym = Ast.CaseSymUse(Symbol.mkCaseSym(Symbol.mkEnumSym("List"), ident), loc)
+            val tag = Expr.Tag(cSym, Expr.Cst(Constant.Unit, Type.Unit, loc), varExp.tpe, Type.Pure, loc)
+            println(tag)
+            Some(Expr.Mutated(tag, MutationType.CstMut(Constant.Unit), tag.tpe, tag.eff, tag.loc))
+          } else None
+        case _ => None
+      }
+      case _ => None
+    }
   }
 
   private def mutateVarToConstantByType(constType: Type): List[Expr.Cst] = constType match {

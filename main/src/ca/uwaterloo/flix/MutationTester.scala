@@ -204,7 +204,7 @@ object MutationTester {
             val newTime = time + (System.nanoTime() - start).toDouble / nano
             val newSurvivorCount = if (testResults.equals(TestRes.MutantSurvived))  survivorCount + 1 else survivorCount
             val newUnknownCount = if (testResults.equals(TestRes.Unknown))  unknownCount + 1 else unknownCount
-            if (testResults.equals(TestRes.Unknown) || testResults.equals(TestRes.MutantSurvived)) {
+            if (testResults.equals(TestRes.MutantSurvived)) {
               // println(MutationReporter.reportNonKilledMutation(mDef.exp))
               println(testKit.flix.getFormatter.code(mDef.df.exp.loc, printMutation(mDef.mutType)))
 
@@ -223,7 +223,7 @@ object MutationTester {
     private def compileAndTestMutant(df: TypedAst.Def, mut: (Symbol.DefnSym, List[MutatedDef]), testKit: TestKit): TestRes = {
         val defs = testKit.root.defs
         val n = defs + (mut._1 -> df)
-        // println(df)
+        println(df)
         val newRoot = testKit.root.copy(defs = n)
         val cRes = testKit.flix.codeGen(newRoot).unsafeGet
         val testsFromTester = cRes.getTests.filter { case (s, _) => s.namespace.head.equals(testKit.testModule) }.toList
