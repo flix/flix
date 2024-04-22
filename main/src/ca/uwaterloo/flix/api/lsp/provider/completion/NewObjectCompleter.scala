@@ -17,7 +17,7 @@ object NewObjectCompleter extends Completer {
       case regex(clazz) =>
         val path = clazz.split('.').toList
         // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
-        javaClassCompletionsFromPrefix(path)(root) //++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
+        javaClassCompletionsFromPrefix(path)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
       case _ => Nil
     }
 
