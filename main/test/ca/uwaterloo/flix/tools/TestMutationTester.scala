@@ -15,12 +15,12 @@ class TestMutationTester extends AnyFunSuite {
   private val mutantTestTimeout = 2.seconds
 
   mkMutationTest(
-    "Test.Constant.Boolean.01",
+    "Test.Constant.Boolean.False",
     """
-      |def f1(): Bool = false
+      |def foo(): Bool = false
       |
       |@Test
-      |def test(): Bool = Assert.eq(false, f1())
+      |def test(): Bool = Assert.eq(false, foo())
       |""".stripMargin,
     Map(
       Killed -> 1,
@@ -28,12 +28,12 @@ class TestMutationTester extends AnyFunSuite {
   )
 
   mkMutationTest(
-    "Test.Constant.Boolean.02",
+    "Test.Constant.Boolean.True",
     """
-      |def f1(): Bool = true
+      |def foo(): Bool = true
       |
       |@Test
-      |def test(): Bool = Assert.eq(true, f1())
+      |def test(): Bool = Assert.eq(true, foo())
       |""".stripMargin,
     Map(
       Killed -> 1,
@@ -41,12 +41,12 @@ class TestMutationTester extends AnyFunSuite {
   )
 
   mkMutationTest(
-    "Test.Constant.Number.01",
+    "Test.Constant.Number.Float32",
     """
-      |def f1(): Float32 = 10.0f32
+      |def foo(): Float32 = 10.0f32
       |
       |@Test
-      |def test(): Bool = Assert.eq(10.0f32, f1())
+      |def test(): Bool = Assert.eq(10.0f32, foo())
       |""".stripMargin,
     Map(
       Killed -> 2,
@@ -54,12 +54,12 @@ class TestMutationTester extends AnyFunSuite {
   )
 
   mkMutationTest(
-    "Test.Constant.Number.02",
+    "Test.Constant.Number.Float64",
     """
-      |def f1(): Float64 = 10.0
+      |def foo(): Float64 = 10.0
       |
       |@Test
-      |def test(): Bool = Assert.eq(10.0, f1())
+      |def test(): Bool = Assert.eq(10.0, foo())
       |""".stripMargin,
     Map(
       Killed -> 2,
@@ -67,12 +67,12 @@ class TestMutationTester extends AnyFunSuite {
   )
 
   mkMutationTest(
-    "Test.Constant.Number.03",
+    "Test.Constant.Number.BigDecimal",
     """
-      |def f1(): BigDecimal = 10.0ff
+      |def foo(): BigDecimal = 10.0ff
       |
       |@Test
-      |def test(): Bool = Assert.eq(10.0ff, f1())
+      |def test(): Bool = Assert.eq(10.0ff, foo())
       |""".stripMargin,
     Map(
       Killed -> 2,
@@ -80,12 +80,12 @@ class TestMutationTester extends AnyFunSuite {
   )
 
   mkMutationTest(
-    testName = "Test.Constant.Number.04",
+    testName = "Test.Constant.Number.Int8",
     """
-      |def f1(): Int8 = 10i8
+      |def foo(): Int8 = 10i8
       |
       |@Test
-      |def test(): Bool = Assert.eq(10i8, f1())
+      |def test(): Bool = Assert.eq(10i8, foo())
       |""".stripMargin,
     Map(
       Killed -> 2,
@@ -93,12 +93,12 @@ class TestMutationTester extends AnyFunSuite {
   )
 
   mkMutationTest(
-    "Test.Constant.Number.05",
+    "Test.Constant.Number.Int16",
     """
-      |def f1(): Int16 = 10i16
+      |def foo(): Int16 = 10i16
       |
       |@Test
-      |def test(): Bool = Assert.eq(10i16, f1())
+      |def test(): Bool = Assert.eq(10i16, foo())
       |""".stripMargin,
     Map(
       Killed -> 2,
@@ -106,12 +106,12 @@ class TestMutationTester extends AnyFunSuite {
   )
 
   mkMutationTest(
-    "Test.Constant.Number.06",
+    "Test.Constant.Number.Int32",
     """
-      |def f1(): Int32 = 10
+      |def foo(): Int32 = 10
       |
       |@Test
-      |def test(): Bool = Assert.eq(10, f1())
+      |def test(): Bool = Assert.eq(10, foo())
       |""".stripMargin,
     Map(
       Killed -> 2,
@@ -119,12 +119,12 @@ class TestMutationTester extends AnyFunSuite {
   )
 
   mkMutationTest(
-    "Test.Constant.Number.07",
+    "Test.Constant.Number.Int64",
     """
-      |def f1(): Int64 = 10i64
+      |def foo(): Int64 = 10i64
       |
       |@Test
-      |def test(): Bool = Assert.eq(10i64, f1())
+      |def test(): Bool = Assert.eq(10i64, foo())
       |""".stripMargin,
     Map(
       Killed -> 2,
@@ -132,12 +132,12 @@ class TestMutationTester extends AnyFunSuite {
   )
 
   mkMutationTest(
-    "Test.Constant.Number.08",
+    "Test.Constant.Number.BigInt",
     """
-      |def f1(): BigInt = 10ii
+      |def foo(): BigInt = 10ii
       |
       |@Test
-      |def test(): Bool = Assert.eq(10ii, f1())
+      |def test(): Bool = Assert.eq(10ii, foo())
       |""".stripMargin,
     Map(
       Killed -> 2,
@@ -145,12 +145,12 @@ class TestMutationTester extends AnyFunSuite {
   )
 
   mkMutationTest(
-    "Test.Constant.String.01",
+    "Test.Constant.String.NonEmpty",
     """
-      |def f1(): String = "Hello, world!"
+      |def foo(): String = "Hello, world!"
       |
       |@Test
-      |def test(): Bool = Assert.eq("Hello, world!", f1())
+      |def test(): Bool = Assert.eq("Hello, world!", foo())
       |""".stripMargin,
     Map(
       Killed -> 1,
@@ -158,15 +158,336 @@ class TestMutationTester extends AnyFunSuite {
   )
 
   mkMutationTest(
-    "Test.Constant.String.02",
+    "Test.Constant.String.Empty",
     """
-      |def f1(): String = ""
+      |def foo(): String = ""
       |
       |@Test
-      |def test(): Bool = Assert.eq("", f1())
+      |def test(): Bool = Assert.eq("", foo())
       |""".stripMargin,
     Map(
       Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Unary.Boolean.Not",
+    """
+      |def foo(x: Bool): Bool = not x
+      |
+      |@Test
+      |def test1(): Bool = Assert.eq(true, foo(false))
+      |
+      |@Test
+      |def test2(): Bool = Assert.eq(false, foo(true))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Unary.Arithmetic.Neg",
+    """
+      |def foo(x: Int32): Int32 = -x
+      |
+      |@Test
+      |def test1(): Bool = Assert.eq(-10, foo(10))
+      |
+      |@Test
+      |def test2(): Bool = Assert.eq(10, foo(-10))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Unary.Bitwise.Not",
+    """
+      |def foo(x: Int32): Int32 = Int32.bitwiseNot(x)
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(-124, foo(123))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Boolean.Or",
+    """
+      |def foo(x: Bool, y: Bool): Bool = x or y
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(true , foo(false, true))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Boolean.And",
+    """
+      |def foo(x: Bool, y: Bool): Bool = x and y
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(false , foo(false, true))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Arithmetic.Add",
+    """
+      |def foo(a: Float64, b: Float64): Float64 = a + b
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(5.0, foo(3.0, 2.0))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Arithmetic.AddStr",
+    """
+      |def foo(a: String, b: String): String = a + b
+      |
+      |@Test
+      |def test(): Bool = Assert.eq("Hello, world!", foo("Hello, ", "world!"))
+      |""".stripMargin,
+    Map.empty,
+  )
+
+  mkMutationTest(
+    "Test.Binary.Arithmetic.Sub",
+    """
+      |def foo(a: Float64, b: Float64): Float64 = a - b
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(1.0, foo(3.0, 2.0))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Arithmetic.Mul",
+    """
+      |def foo(a: Float64, b: Float64): Float64 = a * b
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(6.0, foo(3.0, 2.0))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Arithmetic.Div",
+    """
+      |def foo(a: Float64, b: Float64): Float64 = a / b
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(1.5, foo(3.0, 2.0))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Arithmetic.Mod",
+    """
+      |def foo(a: Int32, b: Int32): Int32 = Int32.modulo(a, b)
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(1, foo(-9, 5))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Arithmetic.Rem",
+    """
+      |def foo(a: Int32, b: Int32): Int32 = Int32.remainder(a, b)
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(-4, foo(-9, 5))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Bitwise.And",
+    """
+      |def foo(a: Int32, b: Int32): Int32 = Int32.bitwiseAnd(a, b)
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(4, foo(6, 5))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Bitwise.Or",
+    """
+      |def foo(a: Int32, b: Int32): Int32 = Int32.bitwiseOr(a, b)
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(7, foo(6, 5))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Bitwise.Xor",
+    """
+      |def foo(a: Int32, b: Int32): Int32 = Int32.bitwiseXor(a, b)
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(3, foo(6, 5))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Bitwise.Rsh",
+    """
+      |def foo(a: Int32, b: Int32): Int32 = Int32.rightShift(a, b)
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(2, foo(8, 2))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Bitwise.Lsh",
+    """
+      |def foo(a: Int32, b: Int32): Int32 = Int32.leftShift(a, b)
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(32, foo(8, 2))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Conditional.Eq",
+    """
+      |def foo(a: t, b: t): Bool with Order[t] = a == b
+      |
+      |@Test
+      |def test1(): Bool = Assert.eq(true, foo(2, 2))
+      |
+      |@Test
+      |def test2(): Bool = Assert.eq(false, foo(3, 2))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Conditional.Neq",
+    """
+      |def foo(a: t, b: t): Bool with Order[t] = a != b
+      |
+      |@Test
+      |def test1(): Bool = Assert.eq(false, foo(2, 2))
+      |
+      |@Test
+      |def test2(): Bool = Assert.eq(true, foo(3, 2))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Conditional.Gt",
+    """
+      |def foo(a: t, b: t): Bool with Order[t] = a > b
+      |
+      |@Test
+      |def test1(): Bool = Assert.eq(true, foo(3, 2))
+      |
+      |@Test
+      |def test2(): Bool = Assert.eq(false, foo(2, 2))
+      |""".stripMargin,
+    Map(
+      Killed -> 2,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Conditional.Lt",
+    """
+      |def foo(a: t, b: t): Bool with Order[t] = a < b
+      |
+      |@Test
+      |def test1(): Bool = Assert.eq(true, foo(2, 3))
+      |
+      |@Test
+      |def test2(): Bool = Assert.eq(false, foo(2, 2))
+      |""".stripMargin,
+    Map(
+      Killed -> 2,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Conditional.Ge",
+    """
+      |def foo(a: t, b: t): Bool with Order[t] = a >= b
+      |
+      |@Test
+      |def test1(): Bool = Assert.eq(true, foo(2, 2))
+      |
+      |@Test
+      |def test2(): Bool = Assert.eq(false, foo(1, 2))
+      |""".stripMargin,
+    Map(
+      Killed -> 2,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Binary.Conditional.Le",
+    """
+      |def foo(a: t, b: t): Bool with Order[t] = a <= b
+      |
+      |@Test
+      |def test1(): Bool = Assert.eq(true, foo(2, 2))
+      |
+      |@Test
+      |def test2(): Bool = Assert.eq(false, foo(3, 2))
+      |""".stripMargin,
+    Map(
+      Killed -> 2,
     ),
   )
 

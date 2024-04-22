@@ -321,15 +321,7 @@ object MutationTester {
               mutateElms(exps, mutateExpr, Expr.Apply(exp, _, tpe, eff, loc))
             }
 
-            val all = expMutants #::: elmsMutants
-
-            if (all.nonEmpty) all
-            else if (tpe.toString == "Bool")
-              LazyList(Mutant(
-                Expr.Unary(BoolOp.Not, expr, tpe, eff, loc),
-                PrintedAdd(loc.copy(endLine = loc.beginLine, endCol = loc.beginCol), "not ")
-              ))
-            else LazyList.empty
+            expMutants #::: elmsMutants
         }
       case _ => LazyList.empty
     }
