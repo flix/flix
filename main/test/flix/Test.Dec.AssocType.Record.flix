@@ -1,4 +1,4 @@
-mod Test.Dec.AssocType.Record {
+mod Test.Dec.Assoc.Type.Record {
     trait R[t] {
         type K: Type
         pub def f(x: t): R.K[t]
@@ -16,6 +16,6 @@ mod Test.Dec.AssocType.Record {
 
     instance R[Vector[a]] with R[a] {
         type K = { x = Int32, y = Vector[R.K[a]] }
-        pub def f(x: Vector[a]): { x = Int32, y = Vector[a] } = { x = Vector.length(x), y = x }
+        pub def f(x: Vector[a]): { x = Int32, y = Vector[R.K[a]] } = { x = Vector.length(x), y = Vector.map(R.f, x) }
     }
 }
