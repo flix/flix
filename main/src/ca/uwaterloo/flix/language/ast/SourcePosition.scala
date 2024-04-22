@@ -3,11 +3,13 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import org.parboiled2.ParserInput
 
+import javax.annotation.Nullable
+
 object SourcePosition {
   /**
     * Represents an unknown source position.
     */
-  val Unknown: SourcePosition = SourcePosition(Source(Ast.Input.Text("<unknown>", "", stable = true), Array.emptyCharArray, stable = true), 0, 0, None)
+  val Unknown: SourcePosition = SourcePosition(Source(Ast.Input.Text("<unknown>", "", stable = true), Array.emptyCharArray, stable = true), 0, 0, null)
 }
 
 /**
@@ -15,9 +17,9 @@ object SourcePosition {
   *
   * @param line  the line number.
   * @param col   the column number.
-  * @param input the parser input.
+  * @param input the nullable parser input.
   */
-case class SourcePosition(source: Source, line: Int, col: Int, input: Option[ParserInput]) {
+case class SourcePosition(source: Source, line: Int, col: Short, @Nullable input: ParserInput) {
 
   /**
     * Returns the hashCode of `this` source position.
