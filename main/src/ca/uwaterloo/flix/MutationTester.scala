@@ -144,6 +144,7 @@ object MutationTester {
           }
         case MutationType.CaseDeletion(i) => s"Deleted case number ${i + 1}"
         case MutationType.RecordSelectMut(name) => s"selects ${name.name}"
+        case MutationType.ListMut() => "Changed to the empty list"
       }
     }
 

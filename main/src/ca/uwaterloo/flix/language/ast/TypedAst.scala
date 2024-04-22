@@ -89,6 +89,7 @@ object TypedAst {
     case class VarMut(apply: Expr.Sig, varName: Symbol.VarSym) extends MutationType
     case class CaseDeletion(i: Int) extends MutationType
     case class RecordSelectMut(name: Name.Label) extends MutationType
+    case class ListMut() extends MutationType
   }
 
   object Expr {

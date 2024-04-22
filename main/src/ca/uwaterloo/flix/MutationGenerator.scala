@@ -516,7 +516,7 @@ object MutationGenerator {
             val cSym = Ast.CaseSymUse(Symbol.mkCaseSym(Symbol.mkEnumSym("List"), ident), loc)
             val tag = Expr.Tag(cSym, Expr.Cst(Constant.Unit, Type.Unit, loc), varExp.tpe, Type.Pure, loc)
             //println(tag)
-            Some(Expr.Mutated(tag, MutationType.CstMut(Constant.Unit), tag.tpe, tag.eff, tag.loc))
+            Some(Expr.Mutated(tag, MutationType.ListMut(), tag.tpe, tag.eff, tag.loc))
           } else None
         case _ => None
       }
