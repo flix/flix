@@ -1650,7 +1650,7 @@ object Lowering {
     * The type of a channel which can transmit variables of type `tpe`
     */
   private def mkChannelTpe(tpe: Type, loc: SourceLocation): Type = {
-    Type.Apply(Type.Cst(TypeConstructor.Enum(Enums.ChannelMpmc, Kind.Star ->: Kind.Star), loc), tpe, loc)
+    Type.Apply(Types.ChannelMpmc, tpe, loc)
   }
 
   /**
