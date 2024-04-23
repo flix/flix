@@ -36,7 +36,8 @@ mod Concurrent.Channel {
     ///       queue.
     /// )
     ///
-    /// The region used should only ever be `Static`.
+    /// The region type parameter is here to avoid losing type constraints in
+    /// Monomorpher/Lowering. `Mpmc[t, Static]` should always be used.
     ///
     /// -- Conditions and Signalling --
     /// When a channel needs to notify threads about available space or elements
