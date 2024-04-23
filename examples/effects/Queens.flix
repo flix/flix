@@ -3,13 +3,24 @@
 ///
 mod EffectExamples.Queens {
 
+    ///
+    /// Type alias for readability.
+    ///
     type alias Solution = List[Int32]
 
+    ///
+    /// Algebraic effect that allows the caller
+    /// to direct the search for a solution.
+    ///
     eff Searchable {
         pub def pick(size: Int32): Int32
         pub def fail(): Void
     }
 
+    ///
+    /// Returns `true` iff placing a queen at the position
+    /// represented by `queen` does not collide with other queens.
+    ///
     def safe(queen: Int32, diagonal: Int32, sol: Solution): Bool = match sol {
         case Nil     => true
         case q :: qs =>
