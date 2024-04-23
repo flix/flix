@@ -99,6 +99,7 @@ instance Collectable[Vector] {
 
 instance Iterable[Vector[a]] {
     type Elm[Vector[a]] = a
+    type Aef[Vector[a]] = Pure
     pub def iterator(rc: Region[r], v: Vector[a]): Iterator[a, r, r] \ r = Vector.iterator(rc, v)
 }
 

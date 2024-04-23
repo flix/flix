@@ -106,11 +106,9 @@ mod MutQueue {
         else None
 
     ///
-    /// Enqueues each element in `l` into `mq`.
+    /// Enqueues each element in `m` into `mq`.
     ///
-    /// TODO: with Order[Iterable.Elm[m]] missing
-    ///
-    pub def enqueueAll(mq: MutQueue[Iterable.Elm[m], r], m: m): Unit \ r with Iterable[m], Order[Iterable.Elm[m]] =
+    pub def enqueueAll(mq: MutQueue[elt, r], m: m): Unit \ (r + Iterable.Aef[m]) with Iterable[m], Order[elt] where Iterable.Elm[m] ~ elt =
         foreach(x <- m) {
             enqueue(mq, x)
         }

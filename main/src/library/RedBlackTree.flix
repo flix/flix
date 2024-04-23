@@ -88,6 +88,7 @@ instance Witherable[RedBlackTree[k]] with Order[k]
 
 instance Iterable[RedBlackTree[k, v]] {
     type Elm[RedBlackTree[k, v]] = v
+    type Aef[RedBlackTree[k, v]] = Pure
     pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[v, r, r] \ r =
             RedBlackTree.iterator(rc, t) |> Iterator.map(snd)
 }

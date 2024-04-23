@@ -93,6 +93,7 @@ instance Collectable[Set] {
 
 instance Iterable[Set[a]] {
     type Elm[Set[a]] = a
+    type Aef[Set[a]] = Pure
     pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r = Set.iterator(rc, s)
 }
 

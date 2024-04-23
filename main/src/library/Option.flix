@@ -151,6 +151,7 @@ instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
 
 instance Iterable[Option[a]] {
     type Elm[Option[a]] = a
+    type Aef[Option[a]] = Pure
     pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ r = Option.iterator(rc, o)
 }
 

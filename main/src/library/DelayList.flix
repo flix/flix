@@ -121,6 +121,7 @@ instance Monoid[DelayList[a]] {
 
 instance Iterable[DelayList[a]] {
     type Elm[DelayList[a]] = a
+    type Aef[DelayList[a]] = Pure
     pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r = DelayList.iterator(rc, l)
 }
 

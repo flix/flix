@@ -113,6 +113,7 @@ instance SemiGroup[Nel[a]] {
 
 instance Iterable[Nel[a]] {
     type Elm[Nel[a]] = a
+    type Aef[Nel[a]] = Pure
     pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r = Nel.iterator(rc, l)
 }
 

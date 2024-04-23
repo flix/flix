@@ -19,19 +19,24 @@
 ///
 pub trait Iterable[t] {
     ///
-    /// The element type of the iterable.
+    /// The element type of the Iterable.
     ///
     type Elm[t]: Type
 
     ///
+    /// The associated effect of the Iterable.
+    ///
+    type Aef[t]: Eff
+
+    ///
     /// Returns an iterator over `t`.
     ///
-    pub def iterator(rc: Region[r], t: t): Iterator[Iterable.Elm[t], r, r] \ r
+    pub def iterator(rc: Region[r], t: t): Iterator[Iterable.Elm[t], Iterable.Aef[t] + r, r] \ Iterable.Aef[t] + r
 
     ///
     /// Returns an iterator over `t` zipped with the indices of the elements.
     ///
-    pub def enumerator(rc: Region[r], t: t): Iterator[(Int32, Iterable.Elm[t]), r, r] \ r =
+    pub def enumerator(rc: Region[r], t: t): Iterator[(Int32, Iterable.Elm[t]), Iterable.Aef[t] + r, r] \ Iterable.Aef[t] + r =
         Iterable.iterator(rc, t) |> Iterator.zipWithIndex
 
 }

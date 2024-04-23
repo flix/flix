@@ -138,6 +138,7 @@ instance ToString[Nec[a]] with ToString[a] {
 
 instance Iterable[Nec[a]] {
     type Elm[Nec[a]] = a
+    type Aef[Nec[a]] = Pure
     pub def iterator(rc: Region[r], l: Nec[a]): Iterator[a, r, r] \ r = Nec.iterator(rc, l)
 }
 
