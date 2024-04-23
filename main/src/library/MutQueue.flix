@@ -148,6 +148,15 @@ mod MutQueue {
         Array.takeLeft(rc, deref s, deref arr)
 
     ///
+    /// Returns an Vector representation of `mq`.
+    ///
+    /// Note that a MutQueue's element order depends on the order in which the elements were enqueued.
+    ///
+    pub def toVector(mq: MutQueue[a, r]): Vector[a] \ r = region rc {
+        toArray(rc, mq) |> Array.toVector
+    }
+
+    ///
     /// Reinforces the max heap invariant from `idx` after an element is added to `mq`.
     ///
     def heapifyUp(idx: Int32, mq: MutQueue[a, r]): Unit \ r with Order[a] =
