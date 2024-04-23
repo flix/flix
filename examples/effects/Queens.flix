@@ -28,6 +28,15 @@ mod EffectExamples.Queens {
             sfe and safe(queen, diagonal + 1, qs)
     }
 
+    ///
+    /// Attempts to find a solution for the queens problem for a
+    /// board of size `size * size` for `queens` number of queens.
+    ///
+    /// Raises the `Searchable` effect to obtain the next candidate
+    /// solution and attempts to find a solution with that index.
+    /// If no such solution exists, it raises the `Searchable` effect
+    /// again to let the caller handle failures.
+    ///
     pub def findOneSolution(size: Int32, queens: Int32): Solution \ Searchable =
         if (queens == 0)
             Nil
@@ -39,10 +48,13 @@ mod EffectExamples.Queens {
             else
                 do Searchable.fail()
 
+    ///
+    ///
+    ///
     pub def countSolutions(size: Int32): Int32 =
         try {
             findOneSolution(size, size);
-            -1
+            -1 // If no effect was raised then something must be wrong.
         } with Searchable {
             def fail(_) = 0
             def pick(sz, k) = {
