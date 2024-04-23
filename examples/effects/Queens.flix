@@ -69,6 +69,10 @@ mod EffectExamples.Queens {
                 /// without raising `Searchable.fail()`
                 /// and the try-body above returns 1.
                 ///
+                /// Thus, if a solution exists, `findOneSolution`
+                /// returns and 1 is returned to the `pick` handler
+                /// where the `k(i)` expression is written.
+                ///
                 def loop(i, acc) = {
                     if (i == sz)
                         k(i) + acc
