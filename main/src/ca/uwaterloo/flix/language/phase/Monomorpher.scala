@@ -732,7 +732,7 @@ object Monomorpher {
     */
   private def specializeDef(defn: LoweredAst.Def, tpe: Type)(implicit ctx: Context, root: LoweredAst.Root, flix: Flix): Symbol.DefnSym = {
     // Unify the declared and actual type to obtain the substitution map.
-    val subst = infallibleUnify(defn.spec.declaredScheme.base, tpe)
+    val subst = infallibleUnify(defn.spec.declaredScheme.base, tpe, defn.sym)
 
     // Check whether the function definition has already been specialized.
     ctx.getDef2Def(defn.sym, tpe) match {
@@ -786,12 +786,12 @@ object Monomorpher {
   /**
     * Unifies `tpe1` and `tpe2` which must be unifiable.
     */
-  private def infallibleUnify(tpe1: Type, tpe2: Type)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
+  private def infallibleUnify(tpe1: Type, tpe2: Type, sym: Symbol.DefnSym)(implicit root: LoweredAst.Root, flix: Flix): StrictSubstitution = {
     Unification.unifyTypes(tpe1, tpe2, RigidityEnv.empty) match {
       case Result.Ok((subst, econstrs)) => // TODO ASSOC-TYPES consider econstrs
         StrictSubstitution(subst, root.eqEnv)
       case Result.Err(_) =>
-        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.", tpe1.loc)
+        throw InternalCompilerException(s"Unable to unify: '$tpe1' and '$tpe2'.\nIn '${sym}'", tpe1.loc)
     }
   }
 

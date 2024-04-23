@@ -36,6 +36,8 @@ mod Concurrent.Channel {
     ///       queue.
     /// )
     ///
+    /// The region used should only ever be `Static`.
+    ///
     /// -- Conditions and Signalling --
     /// When a channel needs to notify threads about available space or elements
     /// then every relevant thread is signalled. This means the if multiple
