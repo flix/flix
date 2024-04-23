@@ -29,7 +29,7 @@ object Indexer {
     Index.all(
       traverse(root.defs.values)(visitDef),
       traverse(root.enums.values)(visitEnum),
-      traverse(root.classes.values)(visitTrait),
+      traverse(root.traits.values)(visitTrait),
       traverse(root.instances.values) {
         instances => traverse(instances)(visitInstance)
       },
@@ -85,8 +85,8 @@ object Indexer {
       Index.all(
         Index.occurrenceOf(enum0),
         traverse(tparams)(visitTypeParam),
-        traverse(derives.classes) {
-          case Ast.Derivation(clazz, loc) => Index.useOf(clazz, loc)
+        traverse(derives.traits) {
+          case Ast.Derivation(trt, loc) => Index.useOf(trt, loc)
         },
         traverse(cases.values)(visitCase),
       )
@@ -103,8 +103,8 @@ object Indexer {
   /**
     * Returns a reverse index for the given trait `trait0`.
     */
-  private def visitTrait(trait0: TypedAst.Class): Index = trait0 match {
-    case Class(doc, ann, mod, sym, tparam, superTraits, assocs, signatures, laws, loc) =>
+  private def visitTrait(trait0: TypedAst.Trait): Index = trait0 match {
+    case Trait(doc, ann, mod, sym, tparam, superTraits, assocs, signatures, laws, loc) =>
       Index.all(
         Index.occurrenceOf(trait0),
         visitTypeParam(tparam),

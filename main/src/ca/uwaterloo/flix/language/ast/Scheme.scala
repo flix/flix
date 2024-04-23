@@ -62,13 +62,35 @@ object Scheme {
       * Replaces every variable occurrence in the given type using `freeVars`.
       *
       * Replaces all source locations by `loc`.
+      *
+      * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
       */
-    def visitType(t: Type): Type = t match {
-      case Type.Var(sym, _) => freshVars.getOrElse(sym.id, t)
-      case Type.Cst(tc, _) => Type.Cst(tc, loc)
-      case Type.Apply(tpe1, tpe2, _) => Type.Apply(visitType(tpe1), visitType(tpe2), loc)
-      case Type.Alias(sym, args, tpe, _) => Type.Alias(sym, args.map(visitType), visitType(tpe), loc)
-      case Type.AssocType(sym, args, kind, _) => Type.AssocType(sym, args.map(visitType), kind, loc)
+    def visitType(tpe0: Type): Type = tpe0 match {
+      case Type.Var(sym, _) =>
+        // Performance: Reuse tpe0, if possible.
+        freshVars.getOrElse(sym.id, tpe0)
+
+      case Type.Cst(_, _) =>
+        // Performance: Reuse tpe0.
+        tpe0
+
+      case Type.Apply(tpe1, tpe2, _) =>
+        val t1 = visitType(tpe1)
+        val t2 = visitType(tpe2)
+        // Performance: Reuse tpe0, if possible.
+        if ((t1 eq tpe1) && (t2 eq tpe2)) {
+          tpe0
+        } else {
+          Type.Apply(t1, t2, loc)
+        }
+
+      case Type.Alias(sym, args, tpe, _) =>
+        // Performance: Few aliases, not worth optimizing.
+        Type.Alias(sym, args.map(visitType), visitType(tpe), loc)
+
+      case Type.AssocType(sym, args, kind, _) =>
+        // // Performance: Few associated types, not worth optimizing.
+        Type.AssocType(sym, args.map(visitType), kind, loc)
     }
 
     val newBase = visitType(baseType)

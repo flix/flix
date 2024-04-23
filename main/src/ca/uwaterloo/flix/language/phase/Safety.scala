@@ -32,7 +32,7 @@ object Safety {
     //
     // Collect all errors.
     //
-    val classSigErrs = ParOps.parMap(root.classes.values.flatMap(_.sigs))(visitSig).flatten
+    val classSigErrs = ParOps.parMap(root.traits.values.flatMap(_.sigs))(visitSig).flatten
     val defErrs = ParOps.parMap(root.defs.values)(visitDef).flatten
     val instanceDefErrs = ParOps.parMap(TypedAstOps.instanceDefsOf(root))(visitDef).flatten
     val sigErrs = ParOps.parMap(root.sigs.values)(visitSig).flatten

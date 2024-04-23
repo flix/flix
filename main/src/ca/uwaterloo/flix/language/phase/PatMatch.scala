@@ -111,7 +111,7 @@ object PatMatch {
     flix.phase("PatMatch") {
       implicit val r: TypedAst.Root = root
 
-      val classDefExprs = root.classes.values.flatMap(_.sigs).flatMap(_.exp)
+      val classDefExprs = root.traits.values.flatMap(_.sigs).flatMap(_.exp)
       val classDefErrs = ParOps.parMap(classDefExprs)(visitExp).flatten
 
       val defErrs = ParOps.parMap(root.defs.values)(defn => visitExp(defn.exp)).flatten

@@ -75,6 +75,12 @@ object Request {
   case class Shutdown(requestId: String) extends Request
 
   /**
+    * A request to temporarily disconnect from the socket.
+    * Used for testing purposes.
+    */
+  case class Disconnect(requestId: String) extends Request
+
+  /**
     * A request to compile and check all source files.
     */
   case class Check(requestId: String) extends Request
@@ -251,6 +257,15 @@ object Request {
     for {
       id <- parseId(json)
     } yield Request.Shutdown(id)
+  }
+
+  /**
+    * Tries to parse the given `json` value as a [[Disconnect]] request.
+    */
+  def parseDisconnect(json: json4s.JValue): Result[Request, String] = {
+    for {
+      id <- parseId(json)
+    } yield Request.Disconnect(id)
   }
 
   /**

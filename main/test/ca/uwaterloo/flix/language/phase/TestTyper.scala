@@ -1165,6 +1165,45 @@ class TestTyper extends AnyFunSuite with TestUtils {
     expectError[TypeError](result)
   }
 
+  test("TestAssocType.03") {
+    val input =
+      """
+        |pub enum Maybe[a] {
+        |    case Just(a),
+        |    case Nothing
+        |}
+        |
+        |trait C[a] {
+        |    type S : Type
+        |    type T : Type -> Type
+        |    pub def f(x: a): C.T[a][C.S[a]]
+        |}
+        |
+        |instance C[Int32] {
+        |    type S = Int32
+        |    type T = Maybe
+        |    pub def f(x: Int32): Maybe[Int64] = x
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
+  test("TestAssocType.04") {
+    val input =
+      """
+        |trait A[a] {
+        |    type A : Type -> Type -> Type
+        |    type B : Type -> Type
+        |    type C : Type
+        |    pub def f(x: a): A.A[a][A.A[a][A.B[a][A.A[a][A.B[a][A.C[a]]][A.B[a][A.C[a]]]]][A.B[a][A.C[a]]]][A.A[a][A.B[a][A.C[a]]][A.C[a]]]
+        |    pub def g(x: a): A.A[a][A.B[a][A.C[a]]][A.C[a]] = A.f(x)
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[TypeError](result)
+  }
+
   test("TestRecordPattern.01") {
     val input =
       """

@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.util.InternalCompilerException
 /**
   * This phase generates a list of type constraints, which include
   * - equality constraints `tpe1 ~ tpe2`
-  * - class constraints `C[tpe1]`
+  * - trait constraints `C[tpe1]`
   * - purification constraints `eff1 ~ eff2[sym ↦ Pure]`
   *
   * We gather constraints as we traverse each def.
@@ -56,7 +56,7 @@ object ConstraintGen {
         (resTpe, resEff)
 
       case Expr.Sig(sym, tvar, loc) =>
-        val sig = root.classes(sym.trt).sigs(sym)
+        val sig = root.traits(sym.trt).sigs(sym)
         val (tconstrs, econstrs, sigTpe) = Scheme.instantiate(sig.spec.sc, loc.asSynthetic)
         c.unifyType(tvar, sigTpe, loc)
         val constrs = tconstrs.map(_.copy(loc = loc))
@@ -108,7 +108,7 @@ object ConstraintGen {
 
           case KindedAst.Expr.Sig(sym, tvar1, loc1) =>
             // Case 2: Lookup the sym and instantiate its scheme.
-            val sig = root.classes(sym.trt).sigs(sym)
+            val sig = root.traits(sym.trt).sigs(sym)
             val (tconstrs1, econstrs1, declaredType) = Scheme.instantiate(sig.spec.sc, loc1.asSynthetic)
             val constrs1 = tconstrs1.map(_.copy(loc = loc))
             Some((sym, tvar1, constrs1, econstrs1, declaredType))

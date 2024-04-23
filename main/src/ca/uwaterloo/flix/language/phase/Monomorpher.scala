@@ -119,6 +119,8 @@ object Monomorpher {
 
     /**
       * Applies `this` substitution to the given type `tpe`, returning a normalized type.
+      *
+      * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
       */
     def apply(tpe0: Type): Type = tpe0 match {
       case x: Type.Var =>
@@ -134,9 +136,13 @@ object Monomorpher {
             // Default types are normalized.
             default(x)
         }
+
       case Type.Cst(_, _) =>
+        // Performance: Reuse tpe0.
         tpe0
+
       case Type.Apply(t1, t2, loc) =>
+
         (apply(t1), apply(t2)) match {
           // Simplify boolean equations.
           case (Type.Cst(TypeConstructor.Complement, _), y) => Type.mkComplement(y, loc)
@@ -154,8 +160,15 @@ object Monomorpher {
           case (Type.Apply(Type.Cst(TypeConstructor.SchemaRowExtend(label), _), tpe, _), rest) => mkSchemaExtendSorted(label, tpe, rest, loc)
 
           // Else just apply.
-          case (x, y) => Type.Apply(x, y, loc)
+          case (x, y) =>
+            // Performance: Reuse tpe0, if possible.
+            if ((x eq t1) && (y eq t2)) {
+              tpe0
+            } else {
+              Type.Apply(x, y, loc)
+            }
         }
+
       case Type.Alias(_, _, t, _) =>
         // Remove the Alias.
         apply(t)

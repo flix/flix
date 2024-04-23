@@ -72,7 +72,7 @@ object GotoProvider {
             ("status" -> ResponseStatus.Success) ~ ("result" -> LocationLink.fromOpSym(sym, loc).toJSON)
 
           case Entity.Case(_) => mkNotFound(uri, pos)
-          case Entity.Class(_) => mkNotFound(uri, pos)
+          case Entity.Trait(_) => mkNotFound(uri, pos)
           case Entity.Def(_) => mkNotFound(uri, pos)
           case Entity.Effect(_) => mkNotFound(uri, pos)
           case Entity.Enum(_) => mkNotFound(uri, pos)

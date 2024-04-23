@@ -82,7 +82,7 @@ object HighlightProvider {
 
         case Entity.OpUse(sym, _, _) => highlightOp(sym)
 
-        case Entity.Class(_) => mkNotFound(uri, pos)
+        case Entity.Trait(_) => mkNotFound(uri, pos)
         case Entity.TypeVar(_) => mkNotFound(uri, pos)
       }
     }

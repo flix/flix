@@ -26,7 +26,7 @@ object ResolvedAst {
 
   val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, List.empty, None, Map.empty, MultiMap.empty)
 
-  case class Root(classes: Map[Symbol.TraitSym, Declaration.Trait],
+  case class Root(traits: Map[Symbol.TraitSym, Declaration.Trait],
                   instances: Map[Symbol.TraitSym, List[Declaration.Instance]],
                   defs: Map[Symbol.DefnSym, Declaration.Def],
                   enums: Map[Symbol.EnumSym, Declaration.Enum],

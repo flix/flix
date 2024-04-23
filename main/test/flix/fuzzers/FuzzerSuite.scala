@@ -19,5 +19,7 @@ import org.scalatest.Suites
 
 class FuzzerSuite extends Suites(
   new FuzzPrefixes,
-  new FuzzLines
+  new FuzzDeleteLines,
+  new FuzzDuplicateLines,
+  new FuzzSwapLines,
 )

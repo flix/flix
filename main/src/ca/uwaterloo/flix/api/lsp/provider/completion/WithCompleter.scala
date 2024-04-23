@@ -40,25 +40,25 @@ object WithCompleter extends Completer {
 
     if (enumPattern matches context.prefix) {
       for {
-        (_, clazz) <- root.classes
-        sym = clazz.sym
+        (_, trt) <- root.traits
+        sym = trt.sym
         if Resolver.DerivableSyms.contains(sym)
         name = sym.toString
         completion = if (currentWordIsWith) s"with $name" else name
       } yield {
         Completion.WithCompletion(completion, Priority.high(name), TextEdit(context.range, completion),
-          Some(clazz.doc.text), InsertTextFormat.PlainText)
+          Some(trt.doc.text), InsertTextFormat.PlainText)
       }
     } else if (withPattern.matches(context.prefix) || currentWordIsWith) {
-      root.classes.map {
-        case (_, clazz) =>
-          val name = clazz.sym.toString
+      root.traits.map {
+        case (_, trt) =>
+          val name = trt.sym.toString
           val hole = "${1:t}"
           val application = s"$name[$hole]"
           val completion = if (currentWordIsWith) s"with $application" else application
           val label = if (currentWordIsWith) s"with $name[...]" else s"$name[...]"
           Completion.WithCompletion(label, Priority.high(name), TextEdit(context.range, completion),
-            Some(clazz.doc.text), InsertTextFormat.Snippet)
+            Some(trt.doc.text), InsertTextFormat.Snippet)
       }
     } else {
       Nil

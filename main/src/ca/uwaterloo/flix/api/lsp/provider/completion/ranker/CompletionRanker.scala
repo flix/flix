@@ -18,7 +18,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion.ranker
 
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.{Completion, CompletionContext, DeltaContext}
-import ca.uwaterloo.flix.language.ast.{SourceKind, SourceLocation}
+import ca.uwaterloo.flix.language.ast.SourceLocation
 
 /**
   * CompletionRanker
@@ -50,5 +50,5 @@ object CompletionRanker extends Ranker {
     * @return true, if at least one of the SourceKinds are Real, false otherwise.
     */
   def hasRealSourceKinds(set: Set[SourceLocation]): Boolean =
-    set.exists(_.locationKind == SourceKind.Real)
+    set.exists(_.isReal)
 }

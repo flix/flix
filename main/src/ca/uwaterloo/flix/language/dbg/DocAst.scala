@@ -327,6 +327,8 @@ object DocAst {
     /** inserted string printed as-is (assumed not to require parenthesis) */
     case class Meta(s: String) extends Atom
 
+    val Void: Type = AsIs("Void")
+
     val AnyType: Type = AsIs("AnyType")
 
     val Unknown: Type = Meta("unknown type")

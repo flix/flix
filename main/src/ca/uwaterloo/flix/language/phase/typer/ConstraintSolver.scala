@@ -307,7 +307,6 @@ object ConstraintSolver {
         (t1, p1) <- simplifyType(tpe1, renv, loc)
         (t2, p2) <- simplifyType(tpe2, renv, loc)
         res0 <- EffUnification.unify(t1, t2, renv).mapErr(toTypeError(_, prov))
-        // If eff unification has any constrs in output, then we know it failed so the subst is empty
         res =
           if (res0._2.isEmpty) {
             ResolutionResult.newSubst(res0._1)
@@ -322,7 +321,6 @@ object ConstraintSolver {
         (t1, p1) <- simplifyType(tpe1, renv, loc)
         (t2, p2) <- simplifyType(tpe2, renv, loc)
         res0 <- BoolUnification.unify(t1, t2, renv).mapErr(toTypeError(_, prov))
-        // If bool unification has any constrs in output, then we know it failed so the subst is empty
         res =
           if (res0._2.isEmpty) {
             ResolutionResult.newSubst(res0._1)
@@ -335,11 +333,15 @@ object ConstraintSolver {
     case (Kind.RecordRow, Kind.RecordRow) =>
       // first simplify the types to get rid of assocs if we can
       for {
-        (t1, _) <- simplifyType(tpe1, renv, loc)
-        (t2, _) <- simplifyType(tpe2, renv, loc)
+        (t1, p1) <- simplifyType(tpe1, renv, loc)
+        (t2, p2) <- simplifyType(tpe2, renv, loc)
         res0 <- RecordUnification.unifyRows(t1, t2, renv).mapErr(toTypeError(_, prov))
-        // If eff unification has any constrs in output, then we know it failed so the subst is empty
-        res = if (res0._2.isEmpty) ResolutionResult.newSubst(res0._1) else throw InternalCompilerException("can't handle complex record stuff", SourceLocation.Unknown)
+        res =
+          if (res0._2.isEmpty) {
+            ResolutionResult.newSubst(res0._1)
+          } else {
+            ResolutionResult.constraints(List(TypeConstraint.Equality(t1, t2, prov)), p1 || p2)
+          }
       } yield res
 
     case (Kind.SchemaRow, Kind.SchemaRow) =>

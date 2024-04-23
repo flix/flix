@@ -136,9 +136,11 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     parseRequest(data)(ws) match {
       case Ok(request) =>
         val result = processRequest(request)(ws)
-        val jsonCompact = JsonMethods.compact(JsonMethods.render(result))
-        val jsonPretty = JsonMethods.pretty(JsonMethods.render(result))
-        ws.send(jsonPretty)
+        if (ws.isOpen) {
+          val jsonCompact = JsonMethods.compact(JsonMethods.render(result))
+          val jsonPretty = JsonMethods.pretty(JsonMethods.render(result))
+          ws.send(jsonPretty)
+        }
       case Err(msg) => log(msg)(ws)
     }
   } catch {
@@ -176,6 +178,7 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
       case JString("api/remJar") => Request.parseRemJar(json)
       case JString("api/version") => Request.parseVersion(json)
       case JString("api/shutdown") => Request.parseShutdown(json)
+      case JString("api/disconnect") => Request.parseDisconnect(json)
 
       case JString("lsp/check") => Request.parseCheck(json)
       case JString("lsp/codelens") => Request.parseCodelens(json)
@@ -267,6 +270,8 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
     case Request.Version(id) => processVersion(id)
 
     case Request.Shutdown(id) => processShutdown()
+
+    case Request.Disconnect(id) => processDisconnect()
 
     case Request.Check(id) => processCheck(id)
 
@@ -398,6 +403,15 @@ class LanguageServer(port: Int, o: Options) extends WebSocketServer(new InetSock
   private def processShutdown()(implicit ws: WebSocket): Nothing = {
     System.exit(0)
     throw null // unreachable
+  }
+
+  /**
+    * Processes a disconnection request.
+    */
+  private def processDisconnect()(implicit ws: WebSocket) = {
+    val code = 1013 // 'Try again later'
+    ws.closeConnection(code, "Simulating disconnection...")
+    JNothing
   }
 
   /**

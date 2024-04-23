@@ -3,6 +3,8 @@ package ca.uwaterloo.flix.language.ast
 import ca.uwaterloo.flix.language.ast.Ast.Source
 import org.parboiled2.ParserInput
 
+import javax.annotation.Nullable
+
 /**
   * Companion object for the [[SourceLocation]] class.
   */
@@ -18,8 +20,8 @@ object SourceLocation {
   /**
     * Returns the source location constructed from the source positions `b` and `e.`
     */
-  def mk(b: SourcePosition, e: SourcePosition, k: SourceKind = SourceKind.Real): SourceLocation =
-    SourceLocation(b.input, b.source, k, b.line, b.col, e.line, e.col)
+  def mk(b: SourcePosition, e: SourcePosition, isReal: Boolean = true): SourceLocation =
+    SourceLocation(b.input, b.source, isReal, b.line, b.col, e.line, e.col)
 
   implicit object Order extends Ordering[SourceLocation] {
 
@@ -34,15 +36,25 @@ object SourceLocation {
 /**
   * A class that represents the physical source location of some parsed syntactic entity.
   *
-  * @param input        the parser input.
+  * We take extra efforts to ensure that source locations are compact, i.e. have small memory footprint.
+  *
+  * We do so because [[SourceLocation]]s are very common objects.
+  *
+  * Specifically, we:
+  *
+  * - Use a nullable reference to `ParserInput`.
+  * - Use a `Boolean` to represent whether a source location is real (true) or synthetic (false).
+  * - Use `Short`s instead of `Int`s to represent column offsets (i.e. `beginCol` and `endCol`).
+  *
+  * @param input        the nullable parser input.
   * @param source       the source input.
-  * @param locationKind the source location kind.
+  * @param isReal       true if real location, false if synthetic location.
   * @param beginLine    the line number where the entity begins.
   * @param beginCol     the column number where the entity begins.
   * @param endLine      the line number where the entity ends.
   * @param endCol       the column number where the entity ends.
   */
-case class SourceLocation(input: Option[ParserInput], source: Source, locationKind: SourceKind, beginLine: Int, beginCol: Int, endLine: Int, endCol: Int) {
+case class SourceLocation(@Nullable private val input: ParserInput, source: Source, isReal: Boolean, beginLine: Int, beginCol: Short, endLine: Int, endCol: Short) {
 
   /**
     * Returns `true` if this source location spans a single line.
@@ -57,17 +69,17 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
   /**
     * Returns `true` if this source location is synthetic.
     */
-  def isSynthetic: Boolean = locationKind == SourceKind.Synthetic
+  def isSynthetic: Boolean = !isReal
 
   /**
     * Returns `this` source location but as a synthetic kind.
     */
-  def asSynthetic: SourceLocation = copy(locationKind = SourceKind.Synthetic)
+  def asSynthetic: SourceLocation = copy(isReal = false)
 
   /**
     * Returns `this` source location but as a real kind.
     */
-  def asReal: SourceLocation = copy(locationKind = SourceKind.Real)
+  def asReal: SourceLocation = copy(isReal = true)
 
   /**
     * Returns the left-most [[SourcePosition]] of `this` [[SourceLocation]].
@@ -89,13 +101,14 @@ case class SourceLocation(input: Option[ParserInput], source: Source, locationKi
     *
     * The line does not have to refer to `this` source location.
     */
-  def lineAt(line: Int): String = input match {
-    case None => ""
-    case Some(input) =>
+  def lineAt(line: Int): String =
+    if (input == null) {
+      ""
+    } else {
       input.getLine(line)
         .replaceAll("\n", "")
         .replaceAll("\r", "")
-  }
+    }
 
   /**
     * Returns a string representation of `this` source location with the line number.

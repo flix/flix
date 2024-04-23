@@ -31,7 +31,7 @@ object PredefinedTraits {
     */
   def lookupTraitSym(name: String, root: KindedAst.Root): Symbol.TraitSym = {
     val key = new Symbol.TraitSym(Nil, name, SourceLocation.Unknown)
-    root.classes.getOrElse(key, throw InternalCompilerException(s"The trait: '$key' is not defined.", SourceLocation.Unknown)).sym
+    root.traits.getOrElse(key, throw InternalCompilerException(s"The trait: '$key' is not defined.", SourceLocation.Unknown)).sym
   }
 
   /**
@@ -40,7 +40,7 @@ object PredefinedTraits {
   def lookupSigSym(clazz: String, sig: String, root: KindedAst.Root): Symbol.SigSym = {
     val trtKey = new Symbol.TraitSym(Nil, clazz, SourceLocation.Unknown)
     val sigKey = new Symbol.SigSym(trtKey, sig, SourceLocation.Unknown)
-    root.classes.getOrElse(trtKey, throw InternalCompilerException(s"The trait: '$trtKey' is not defined.", SourceLocation.Unknown))
+    root.traits.getOrElse(trtKey, throw InternalCompilerException(s"The trait: '$trtKey' is not defined.", SourceLocation.Unknown))
       .sigs.getOrElse(sigKey, throw InternalCompilerException(s"The signature '$sigKey' is not defined.", SourceLocation.Unknown))
       .sym
   }

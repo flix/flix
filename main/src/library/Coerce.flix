@@ -19,9 +19,14 @@
 ///
 /// Currently only supports newtype-style wrappers.
 ///
-pub trait Coerce[t: Type -> Type] {
+pub trait Coerce[t] {
+    ///
+    /// The return type of the coerce function.
+    ///
+    type Out
+
     ///
     /// Returns the unwrapped value of `x`.
     ///
-    pub def coerce(x: t[a]): a
+    pub def coerce(x: t): Coerce.Out[t]
 }

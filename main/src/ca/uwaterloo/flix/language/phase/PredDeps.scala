@@ -37,8 +37,8 @@ object PredDeps {
     // Compute an over-approximation of the dependency graph for all constraints in the program.
     val defExps = root.defs.values.map(_.exp)
     val instanceExps = root.instances.values.flatten.flatMap(_.defs).map(_.exp)
-    val classExps = root.classes.values.flatMap(c => c.laws.map(_.exp) ++ c.sigs.flatMap(_.exp))
-    val allExps = defExps ++ instanceExps ++ classExps
+    val traitExps = root.traits.values.flatMap(t => t.laws.map(_.exp) ++ t.sigs.flatMap(_.exp))
+    val allExps = defExps ++ instanceExps ++ traitExps
 
     val g = ParOps.parAgg(allExps, LabelledPrecedenceGraph.empty)({
       case (acc, d) => acc + visitExp(d)

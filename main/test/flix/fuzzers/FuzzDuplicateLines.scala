@@ -20,47 +20,50 @@ import ca.uwaterloo.flix.api.Flix
 import org.scalatest.funsuite.AnyFunSuite
 
 import java.nio.file.{Files, Paths}
+import scala.jdk.CollectionConverters._
 
-class FuzzPrefixes extends AnyFunSuite with TestUtils {
+class FuzzDuplicateLines extends AnyFunSuite with TestUtils {
 
   /**
-    * The number of prefixes to compile for each program.
+    * Number of variants to make of each file. Each variant has a single line duplicated.
     */
-  private val N: Int = 25
+  private val N = 10
 
   test("simple-card-game") {
     val filepath = Paths.get("examples/simple-card-game.flix")
-    val input = Files.readString(filepath)
-    compilePrefixes(filepath.getFileName.toString, input)
+    val lines = Files.lines(filepath)
+    compileWithDuplicateLine(filepath.getFileName.toString, lines)
   }
 
   test("using-channels-and-select") {
     val filepath = Paths.get("examples/using-channels-and-select.flix")
-    val input = Files.readString(filepath)
-    compilePrefixes(filepath.getFileName.toString, input)
+    val lines = Files.lines(filepath)
+    compileWithDuplicateLine(filepath.getFileName.toString, lines)
   }
 
   test("the-ast-typing-problem-with-polymorphic-records") {
     val filepath = Paths.get("examples/the-ast-typing-problem-with-polymorphic-records.flix")
-    val input = Files.readString(filepath)
-    compilePrefixes(filepath.getFileName.toString, input)
+    val lines = Files.lines(filepath)
+    compileWithDuplicateLine(filepath.getFileName.toString, lines)
   }
 
   /**
-    * We break the given string `input` down into N prefixes and compile each of them.
-    * For example, if N is 100 and the input has length 300 then we create prefixes of length 3, 6, 9, ...
+    * Compile N variants of the given program with a single line duplicated.
     * The program may not be valid: We just care that it does not crash the compiler.
     */
-  private def compilePrefixes(name: String, input: String): Unit = {
-    val length = input.length
-    val step = length / N
+  private def compileWithDuplicateLine(name: String, stream: java.util.stream.Stream[String]): Unit = {
+    val lines = stream.iterator().asScala.toList
+    val numLines = lines.length
+    val NFixed = N.min(numLines)
+    val step = numLines / NFixed
 
     val flix = new Flix()
     flix.compile()
-    for (i <- 1 until N) {
-      val e = Math.min(i * step, length)
-      val prefix = input.substring(0, e)
-      flix.addSourceCode(s"$name-prefix-$e", prefix)
+    for (i <- 0 until NFixed) {
+      val iStepped = Math.min(i * step, numLines)
+      val (before, after) = lines.splitAt(iStepped)
+      val src = (before ::: after.head :: after).mkString("\n")
+      flix.addSourceCode(s"$name-duplicate-line-$iStepped", src)
       flix.compile() // We simply care that this does not crash.
     }
   }

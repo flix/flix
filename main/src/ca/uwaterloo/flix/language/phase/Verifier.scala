@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.language.ast.Ast.Constant
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Name, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
+import scala.annotation.tailrec
 
 /**
   * Verify the AST before bytecode generation.
@@ -39,7 +40,8 @@ object Verifier {
     val env = (decl.cparams ++ decl.fparams).foldLeft(Map.empty[Symbol.VarSym, MonoType]) {
       case (macc, fparam) => macc + (fparam.sym -> fparam.tpe)
     }
-    visitExpr(decl.expr)(root, env, Map.empty)
+    val ret = visitExpr(decl.expr)(root, env, Map.empty)
+    checkEq(decl.tpe, ret, decl.loc)
   }
 
 
@@ -63,7 +65,7 @@ object Verifier {
     }
 
     case Expr.Var(sym, tpe1, loc) => env.get(sym) match {
-      case None => throw InternalCompilerException(s"Unknown variable sym: '$sym'", loc)
+      case None => throw InternalCompilerException(s"Unknown variable sym: '$sym'", sym.loc)
       case Some(tpe2) =>
         checkEq(tpe1, tpe2, loc)
     }
@@ -357,6 +359,31 @@ object Verifier {
           checkEq(decl, actual, loc)
           tpe
 
+        case AtomicOp.Box =>
+          check(expected = MonoType.Object)(actual = tpe, loc)
+
+        case AtomicOp.Unbox =>
+          val List(t1) = ts
+          check(expected = MonoType.Object)(actual = t1, loc)
+          tpe
+
+        // cast may result in any type
+        case AtomicOp.Cast =>
+          tpe
+
+        case AtomicOp.Region =>
+          check(expected = MonoType.Region)(actual = tpe, loc)
+
+        case AtomicOp.Spawn =>
+          val List(t1, t2) = ts
+          t1 match {
+            case MonoType.Arrow(List(MonoType.Unit), _) => ()
+            case _ => failMismatchedShape(t1, "Arrow(List(Unit), _)", loc)
+          }
+
+          check(expected = MonoType.Region)(actual = t2, loc)
+          check(expected = MonoType.Unit)(actual = tpe, loc)
+
         case _ => tpe // TODO: VERIFIER: Add rest
       }
 
@@ -384,9 +411,9 @@ object Verifier {
       val condType = visitExpr(exp1)
       val thenType = visitExpr(exp2)
       val elseType = visitExpr(exp3)
-      check(expected = MonoType.Bool)(actual = condType, loc)
-      checkEq(tpe, thenType, loc)
-      checkEq(tpe, elseType, loc)
+      check(expected = MonoType.Bool)(actual = condType, exp1.loc)
+      checkEq(tpe, thenType, exp2.loc)
+      checkEq(tpe, elseType, exp3.loc)
 
     case Expr.Branch(exp, branches, tpe, _, loc) =>
       val lenv1 = branches.foldLeft(lenv) {
@@ -424,22 +451,62 @@ object Verifier {
 
     case Expr.TryCatch(exp, rules, tpe, _, loc) =>
       for (CatchRule(sym, clazz, exp) <- rules) {
-        checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Native(clazz)), lenv), loc)
+        checkEq(tpe, visitExpr(exp)(root, env + (sym -> MonoType.Native(clazz)), lenv), exp.loc)
       }
       val t = visitExpr(exp)
       checkEq(tpe, t, loc)
 
-    case Expr.TryWith(_, _, _, _, tpe, _, _) =>
-      // TODO: VERIFIER: Add support for TryWith.
+    case Expr.TryWith(exp, effUse, rules, ct, tpe, purity, loc) =>
+      val exptype = visitExpr(exp) match {
+        case MonoType.Arrow(List(MonoType.Unit), t) => t
+        case e => failMismatchedShape(e, "Arrow(List(Unit), _)", exp.loc)
+      }
+
+      val effect = root.effects.getOrElse(effUse.sym,
+        throw InternalCompilerException(s"Unknown effect sym: '${effUse.sym}'", effUse.loc))
+      val ops = effect.ops.map(op => op.sym -> op).toMap
+
+      for (rule <- rules) {
+        val ruletype = visitExpr(rule.exp)
+        val op = ops.getOrElse(rule.op.sym,
+          throw InternalCompilerException(s"Unknown operation sym: '${rule.op.sym}'", rule.op.loc))
+
+        val params = op.fparams.map(_.tpe)
+        val resumptionType = MonoType.Arrow(List(op.tpe), exptype)
+        val signature = MonoType.Arrow(params :+ resumptionType, exptype)
+
+        checkEq(ruletype, signature, rule.exp.loc)
+      }
+
+      checkEq(tpe, exptype, loc)
+
+    case Expr.Do(opUse, exps, tpe, purity, loc) =>
+      val ts = exps.map(visitExpr)
+      val eff = root.effects.getOrElse(opUse.sym.eff,
+        throw InternalCompilerException(s"Unknown effect sym: '${opUse.sym.eff}'", opUse.loc))
+      val op = eff.ops.find(_.sym == opUse.sym)
+        .getOrElse(throw InternalCompilerException(s"Unknown operation sym: '${opUse.sym}'", opUse.loc))
+
+      val oprestype = op.tpe match {
+        case MonoType.Void => tpe // should match any return type
+        case t => t
+      }
+
+      val sig = MonoType.Arrow(ts, tpe)
+      val opsig = MonoType.Arrow(
+        op.fparams.map(_.tpe), oprestype
+      )
+
+      checkEq(sig, opsig, loc)
       tpe
 
-    case Expr.Do(_, _, tpe, _, _) =>
-      // TODO: VERIFIER: Add support for Do.
-      tpe
-
-    case Expr.NewObject(name, clazz, tpe, methods, _, loc) =>
-      // TODO: VERIFIER: Add support for NewObject.
-      tpe
+    case Expr.NewObject(_, clazz, tpe, _, methods, loc) =>
+      for (m <- methods) {
+        val exptype = visitExpr(m.exp)
+        val signature = MonoType.Arrow(m.fparams.map(_.tpe), m.tpe)
+        checkEq(signature, exptype, m.loc)
+      }
+      checkEq(tpe, MonoType.Native(clazz), loc)
 
   }
 
@@ -449,7 +516,7 @@ object Verifier {
   private def check(expected: MonoType)(actual: MonoType, loc: SourceLocation): MonoType = {
     if (expected == actual)
       expected
-    else failUnexpectedType(expected, actual, loc)
+    else failUnexpectedType(actual, expected, loc)
   }
 
   /**
@@ -480,6 +547,7 @@ object Verifier {
     * Get the type associated with `label` in the given record type `rec`.
     * If `rec` is not a record, return `None`
     */
+  @tailrec
   private def selectFromRecordType(rec: MonoType, label: String, loc: SourceLocation): Option[MonoType] = rec match {
     case MonoType.RecordExtend(lbl, valtype, rest) =>
       if (lbl == label)

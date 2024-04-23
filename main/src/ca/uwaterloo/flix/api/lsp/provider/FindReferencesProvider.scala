@@ -31,7 +31,7 @@ object FindReferencesProvider {
 
         case Entity.Case(caze) => findCaseReferences(caze.sym)
 
-        case Entity.Class(trait0) => findTraitReferences(trait0.sym)
+        case Entity.Trait(trait0) => findTraitReferences(trait0.sym)
 
         case Entity.Def(defn) => findDefReferences(defn.sym)
 
