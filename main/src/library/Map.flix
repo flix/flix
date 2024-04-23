@@ -780,6 +780,26 @@ mod Map {
         foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
     ///
+    /// Returns the map `m` as an array.
+    ///
+    pub def toArray(rc: Region[r], m: Map[k, v]): Array[(k, v), r] \ r = match size(m) {
+        case 0  => Array#{} @ rc
+        case sz =>
+            let a = Array.empty(rc, sz);
+            forEachWithIndex((i, k, v) -> Array.put((k, v), i, a), m);
+            a
+        }
+
+    ///
+    /// Returns the map `m` as a vector.
+    ///
+    pub def toVector(m: Map[k, v]): Vector[(k, v)] = region rc {
+        let arr = Array.empty(rc, size(m));
+        forEachWithIndex((i, k, v) -> Array.put((k, v), i, arr), m);
+        Array.toVector(arr)
+    }
+
+    ///
     /// Returns the map `m` as a set of key-value pairs.
     ///
     pub def toSet(m: Map[k, v]): Set[(k, v)] with Order[k], Order[v] =
