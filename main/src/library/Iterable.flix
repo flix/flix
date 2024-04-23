@@ -17,17 +17,21 @@
 ///
 /// A trait for immutable data structures that can be iterated.
 ///
-pub trait Iterable[t: Type -> Type] {
+pub trait Iterable[t] {
+    ///
+    /// The element type of the iterable.
+    ///
+    type Elm[t]: Type
 
     ///
     /// Returns an iterator over `t`.
     ///
-    pub def iterator(rc: Region[r], t: t[a]): Iterator[a, r, r] \ r
+    pub def iterator(rc: Region[r], t: t): Iterator[Iterable.Elm[t], r, r] \ r
 
     ///
     /// Returns an iterator over `t` zipped with the indices of the elements.
     ///
-    pub def enumerator(rc: Region[r], t: t[a]): Iterator[(Int32, a), r, r] \ r =
+    pub def enumerator(rc: Region[r], t: t): Iterator[(Int32, Iterable.Elm[t]), r, r] \ r =
         Iterable.iterator(rc, t) |> Iterator.zipWithIndex
 
 }

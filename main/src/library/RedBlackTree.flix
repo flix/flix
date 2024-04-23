@@ -86,7 +86,8 @@ instance Filterable[RedBlackTree[k]] with Order[k] {
 
 instance Witherable[RedBlackTree[k]] with Order[k]
 
-instance Iterable[RedBlackTree[k]] {
+instance Iterable[RedBlackTree[k, v]] {
+    type Elm[RedBlackTree[k, v]] = v
     pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[v, r, r] \ r =
             RedBlackTree.iterator(rc, t) |> Iterator.map(snd)
 }

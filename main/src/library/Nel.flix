@@ -111,7 +111,8 @@ instance SemiGroup[Nel[a]] {
     pub def combine(x: Nel[a], y: Nel[a]): Nel[a] = Nel.append(x, y)
 }
 
-instance Iterable[Nel] {
+instance Iterable[Nel[a]] {
+    type Elm[Nel[a]] = a
     pub def iterator(rc: Region[r], l: Nel[a]): Iterator[a, r, r] \ r = Nel.iterator(rc, l)
 }
 
