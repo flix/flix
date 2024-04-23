@@ -49,7 +49,8 @@ mod EffectExamples.Queens {
                 do Searchable.fail()
 
     ///
-    ///
+    /// Returns the number of possible solutions for a board
+    /// of size `size * size` with `size` number of queens.
     ///
     pub def countSolutions(size: Int32): Int32 =
         try {
