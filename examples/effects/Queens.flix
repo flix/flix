@@ -60,7 +60,7 @@ mod EffectExamples.Queens {
             def fail(_) = 0
             def pick(sz, k) = {
                 ///
-                /// Attempts to place a queen at every index up to `sz`
+                /// Places a queen at every index up to `sz`
                 /// and accumulates the number of solutions.
                 ///
                 def loop(i, acc) = {
