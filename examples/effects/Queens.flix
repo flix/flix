@@ -41,11 +41,14 @@ mod EffectExamples.Queens {
 
     pub def countSolutions(size: Int32): Int32 =
         try {
-            findOneSolution(size, size);
-            1
+            findOneSolution(size, size)
         } with Searchable {
             def fail(_) = 0
             def pick(sz, k) = {
+                ///
+                /// Attempts to place a queen at every index up to `sz`
+                /// and counts the number of solutions.
+                ///
                 def loop(i, acc) = {
                     if (i == sz)
                         k(i) + acc
