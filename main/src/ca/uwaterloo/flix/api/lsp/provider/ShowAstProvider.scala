@@ -20,6 +20,7 @@ import ca.uwaterloo.flix.api.Flix.IrFileExtension
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.language.ast.TypedAst.Root
 import ca.uwaterloo.flix.language.dbg.AstPrinter
+import ca.uwaterloo.flix.language.phase.Typer
 import ca.uwaterloo.flix.util.Similarity
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -32,17 +33,14 @@ object ShowAstProvider {
     * - `title` (a string like `Namer.flix.ir`)
     * - `text` (a string with the ir representation).
     */
-  def showAst(phase: String)(implicit index: Index, root: Option[Root], flix: Flix): JObject = root match {
-    case None =>
-      val text = "No IR available. Does the program not compile?"
-      astObject(phase, text)
-    case Some(r) =>
-      // We have to compile the program to obtain the relevant AST.
-      flix.codeGen(r)
-
-      val phasesWithNames = AstPrinter.allPhases().map { case (name, printer) => (name, (name, printer)) }
-      val (closestPhase, closestPrettyPrinter) = Similarity.closestMatch(phase, phasesWithNames)
-      astObject(closestPhase, closestPrettyPrinter())
+  def showAst(phase: String)(implicit index: Index, root: Option[Root], flix: Flix): JObject = {
+    val names = AstPrinter.phaseNames().m1.keys.map(s => (s, s)).toMap
+    val closestName = Similarity.closestMatch(phase, names)
+    val oldOpts = flix.options
+    flix.setOptions(oldOpts.copy(xprintphase = Set(closestName)))
+    flix.compile()
+    flix.setOptions(oldOpts)
+    astObject(closestName, s"Check in build/asts/${closestName}.flixir")
   }
 
   private def astObject(phase: String, text: String): JObject = {

@@ -29,30 +29,14 @@ import java.nio.file.{Files, LinkOption, Path}
 
 object AstPrinter {
 
-  //  /**
-  //    * Writes all the formatted asts, requested by the flix options, to disk.
-  //    */
-  //  def printAsts()(implicit flix: Flix): Unit = {
-  //    val optionPhases = flix.options.xprintphase
-  //    val shouldPrintEverything = optionPhases.contains("all") || optionPhases.contains("All")
-  //    val phaseMap = if (shouldPrintEverything) allPhases(includeUnfinished = false)
-  //                   else allPhases().filter(pair => optionPhases.contains(pair._1))
-  //    printPhaseMap(phaseMap)
-  //  }
-
-  //  /**
-  //    * Writes all the formatted asts to disk.
-  //    */
-  //  def printAllAsts()(implicit flix: Flix): Unit = {
-  //    printPhaseMap(allPhases(includeUnfinished = false))
-  //  }
-
   /**
-    * Goes through each map binding and calls [[writeToDisk]].
+    * Print the given pretty printed ast to file if options requests the given
+    * phase printed.
     */
-  private def printPhaseMap(phaseMap: Map[String, () => String])(implicit flix: Flix): Unit = {
-    for ((phase, printer) <- phaseMap)
-      writeToDisk(phase, printer())
+  def printPhase(phase: AnyRef, prettyAst: => String)(implicit flix: Flix): Unit = AstPrinter.phaseNames().getBackward(phase) match {
+    case Some(phaseName) if flix.options.xprintphase.contains("all") || flix.options.xprintphase.contains(phaseName) =>
+      AstPrinter.writeToDisk(phaseName, prettyAst)
+    case _ => ()
   }
 
   def phaseNames(): Bimap[String, AnyRef] = {
@@ -93,6 +77,36 @@ object AstPrinter {
   /**
     * Formats `root` for display.
     */
+  def formatParsedAst(root: ParsedAst.Root): String = "Work in progress"
+
+  /**
+    * Formats `root` for display.
+    */
+  def formatWeededAst(root: WeededAst.Root): String = "Work in progress"
+
+  /**
+    * Formats `root` for display.
+    */
+  def formatDesugaredAst(root: DesugaredAst.Root): String = "Work in progress"
+
+  /**
+    * Formats `root` for display.
+    */
+  def formatNamedAst(root: NamedAst.Root): String = "Work in progress"
+
+  /**
+    * Formats `root` for display.
+    */
+  def formatResolvedAst(root: ResolvedAst.Root): String = "Work in progress"
+
+  /**
+    * Formats `root` for display.
+    */
+  def formatKindedAst(root: KindedAst.Root): String = "Work in progress"
+
+  /**
+    * Formats `root` for display.
+    */
   def formatTypedAst(root: TypedAst.Root): String = {
     formatDocProgram(TypedAstPrinter.print(root))
   }
@@ -104,6 +118,11 @@ object AstPrinter {
   def formatLoweredAst(root: LoweredAst.Root): String = {
     formatDocProgram(LoweredAstPrinter.print(root))
   }
+
+  /**
+    * Formats `root` for display.
+    */
+  def formatMonoAst(root: MonoAst.Root): String = "Work in progress"
 
   /**
     * Formats `root` for display.
@@ -139,7 +158,7 @@ object AstPrinter {
     * Writes `content` to the file `./build/asts/<fileName>.flixir`. The build folder is taken from
     * flix options if present. The existing file is overwritten if present.
     */
-  private def writeToDisk(fileName: String, content: String)(implicit flix: Flix): Unit = {
+  def writeToDisk(fileName: String, content: String)(implicit flix: Flix): Unit = {
     val buildAstsPath = flix.options.output.getOrElse(Path.of("./build/")).resolve("asts/")
     val filePath = buildAstsPath.resolve(s"$fileName.$IrFileExtension")
     Files.createDirectories(buildAstsPath)
