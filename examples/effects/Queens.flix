@@ -65,7 +65,7 @@ mod EffectExamples.Queens {
                 ///
                 /// Note here that the continuation `k` is invoked
                 /// with the index up to `sz` and that it returns
-                /// 1 because `findOneSolution` returns with a solution
+                /// 1 because `findOneSolution` returns a solution
                 /// without raising `Searchable.fail()`
                 /// and the try-body above returns 1.
                 ///
