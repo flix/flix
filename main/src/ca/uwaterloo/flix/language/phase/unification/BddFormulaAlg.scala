@@ -16,7 +16,8 @@
 package ca.uwaterloo.flix.language.phase.unification
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Symbol, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.ast.{Ast, Kind, SourceLocation, Type, TypeConstructor}
+import ca.uwaterloo.flix.language.phase.unification.BddFormulaAlg.GlobalBddBuilder
 import ca.uwaterloo.flix.util.InternalCompilerException
 import ca.uwaterloo.flix.util.collection.Bimap
 import org.sosy_lab.pjbdd.api.{Builders, Creator, DD}
@@ -52,21 +53,21 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
     * high child.
     */
   override def isVar(f: DD): Boolean =
-    f.equalsTo(f.getVariable, BddFormulaAlg.GlobalBddBuilder.makeFalse(), BddFormulaAlg.GlobalBddBuilder.makeTrue())
+    GlobalBddBuilder.synchronized(f.equalsTo(f.getVariable, GlobalBddBuilder.makeFalse(), GlobalBddBuilder.makeTrue()))
 
-  override def mkTrue: DD = BddFormulaAlg.GlobalBddBuilder.makeTrue()
+  override def mkTrue: DD = GlobalBddBuilder.synchronized(GlobalBddBuilder.makeTrue())
 
-  override def mkFalse: DD = BddFormulaAlg.GlobalBddBuilder.makeFalse()
+  override def mkFalse: DD = GlobalBddBuilder.synchronized(GlobalBddBuilder.makeFalse())
 
-  override def mkVar(id: Int): DD = BddFormulaAlg.GlobalBddBuilder.makeIthVar(id)
+  override def mkVar(id: Int): DD = GlobalBddBuilder.synchronized(GlobalBddBuilder.makeIthVar(id))
 
-  override def mkNot(f: DD): DD = BddFormulaAlg.GlobalBddBuilder.makeNot(f)
+  override def mkNot(f: DD): DD = GlobalBddBuilder.synchronized(GlobalBddBuilder.makeNot(f))
 
-  override def mkOr(f1: DD, f2: DD): DD = BddFormulaAlg.GlobalBddBuilder.makeOr(f1, f2)
+  override def mkOr(f1: DD, f2: DD): DD = GlobalBddBuilder.synchronized(GlobalBddBuilder.makeOr(f1, f2))
 
-  override def mkAnd(f1: DD, f2: DD): DD = BddFormulaAlg.GlobalBddBuilder.makeAnd(f1, f2)
+  override def mkAnd(f1: DD, f2: DD): DD = GlobalBddBuilder.synchronized(GlobalBddBuilder.makeAnd(f1, f2))
 
-  override def mkXor(f1: DD, f2: DD): DD = BddFormulaAlg.GlobalBddBuilder.makeXor(f1, f2)
+  override def mkXor(f1: DD, f2: DD): DD = GlobalBddBuilder.synchronized(GlobalBddBuilder.makeXor(f1, f2))
 
   /**
     * Traverses the entire BDD and collects its variables.
@@ -101,7 +102,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
 
       val lowRes = map(f.getLow)(fn)
       val highRes = map(f.getHigh)(fn)
-      BddFormulaAlg.GlobalBddBuilder.makeIte(substDD, highRes, lowRes)
+      GlobalBddBuilder.synchronized(GlobalBddBuilder.makeIte(substDD, highRes, lowRes))
     }
   }
 
@@ -116,7 +117,7 @@ final class BddFormulaAlg(implicit flix: Flix) extends BoolAlg[DD] {
   override def satisfiable(f: DD): Boolean = !f.isFalse
 
   override def toType(f: DD, env: Bimap[BoolFormula.VarOrEff, Int]): Type = {
-    if(!flix.options.xnoqmc) {
+    if (!flix.options.xnoqmc) {
       toTypeQMC(f, env)
     } else {
       createTypeFromBDDAux(f, Type.Pure, env)

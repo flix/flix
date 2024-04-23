@@ -24,8 +24,8 @@ mod StringBuilder {
     ///
     /// Returns a new mutable StringBuilder.
     ///
-    pub def new(_: Region[r]): StringBuilder[r] \ r =
-        import new java.lang.StringBuilder(): ##java.lang.StringBuilder \ r as newStringBuilder;
+    pub def empty(_: Region[r]): StringBuilder[r] \ r =
+        import java_new java.lang.StringBuilder(): ##java.lang.StringBuilder \ r as newStringBuilder;
         StringBuilder(newStringBuilder())
 
     ///
@@ -126,6 +126,14 @@ mod StringBuilder {
         import java.lang.StringBuilder.length(): Int32 \ r;
         let StringBuilder(msb) = sb;
         length(msb)
+
+    ///
+    /// Sets the length of the StringBuilder `sb`.
+    ///
+    pub def setLength!(newLength: Int32, sb: StringBuilder[r]): Unit \ r =
+        import java.lang.StringBuilder.setLength(Int32): Unit \ r as setLength;
+        let StringBuilder.StringBuilder(msb) = sb;
+        setLength(msb, newLength)
 
     ///
     /// Convert the StringBuilder `sb` to a string.

@@ -34,7 +34,7 @@ mod MutQueue {
     ///
     pub def toString(mq: MutQueue[a, r]): String \ r with ToString[a] = region reg {
         let MutQueue(_, arr, s) = mq;
-        let sb = StringBuilder.new(reg);
+        let sb = StringBuilder.empty(reg);
         StringBuilder.appendString!("MutQueue {", sb);
         Array.forEachWithIndex((i, x) -> {
             if (i < deref s) {
@@ -50,8 +50,8 @@ mod MutQueue {
     ///
     /// Returns an empty MutQueue.
     ///
-    pub def new(rc: Region[r]): MutQueue[a, r] \ r =
-        MutQueue(rc, ref Array.new(rc, 8) @ rc, ref 0 @ rc)
+    pub def empty(rc: Region[r]): MutQueue[a, r] \ r =
+        MutQueue(rc, ref Array.empty(rc, 8) @ rc, ref 0 @ rc)
 
     ///
     /// Returns the number of elements in `mq`.
@@ -66,6 +66,11 @@ mod MutQueue {
     pub def isEmpty(mq: MutQueue[a, r]): Bool \ r =
         let MutQueue(_, _, s) = mq;
         deref s == 0
+
+    ///
+    /// Returns whether `mq` is non-empty.
+    ///
+    pub def nonEmpty(mq: MutQueue[a, r]): Bool \ r = not isEmpty(mq)
 
     ///
     /// Optionally returns the top element of `mq`.
@@ -83,7 +88,7 @@ mod MutQueue {
         expand(mq);
         Array.put(x, deref s, deref arr);
         heapifyUp(deref s, mq);
-        s := deref s + 1
+        Ref.put(deref s + 1, s)
     }
 
     ///
@@ -95,7 +100,7 @@ mod MutQueue {
             let top = peek(mq);
             Array.put(Array.get(deref s - 1, deref arr), 0, deref arr);
             heapifyDown(0, mq);
-            s := deref s - 1;
+            Ref.put(deref s - 1, s);
             top
         }
         else None
@@ -141,6 +146,15 @@ mod MutQueue {
     pub def toArray(rc: Region[r1], mq: MutQueue[a, r2]): Array[a, r1] \ {r1, r2} =
         let MutQueue(_, arr, s) = mq;
         Array.takeLeft(rc, deref s, deref arr)
+
+    ///
+    /// Returns an Vector representation of `mq`.
+    ///
+    /// Note that a MutQueue's element order depends on the order in which the elements were enqueued.
+    ///
+    pub def toVector(mq: MutQueue[a, r]): Vector[a] \ r = region rc {
+        toArray(rc, mq) |> Array.toVector
+    }
 
     ///
     /// Reinforces the max heap invariant from `idx` after an element is added to `mq`.
@@ -206,9 +220,9 @@ mod MutQueue {
         let oldCapacity = Array.length(deref arr);
         if (oldCapacity == deref s) {
             let newCapacity = 2 + (oldCapacity * 2);
-            let newArr  = Array.new(reg, newCapacity);
+            let newArr  = Array.empty(reg, newCapacity);
             Array.forEachWithIndex((idx, x) -> Array.put(x, idx, newArr), deref arr);
-            arr := newArr
+            Ref.put(newArr, arr)
         }
         else ()
 

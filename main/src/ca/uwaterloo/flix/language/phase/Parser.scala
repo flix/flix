@@ -21,6 +21,7 @@ import ca.uwaterloo.flix.language.CompilationMessage
 import ca.uwaterloo.flix.language.ast.Ast.{Source, SyntacticContext}
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.util.Validation._
+import ca.uwaterloo.flix.util.collection.Chain
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import org.parboiled2._
 
@@ -31,10 +32,10 @@ import scala.annotation.tailrec
   *
   * ---
   *
-  * INVARIANT: No rule should comsume trailing whitespace
+  * INVARIANT: No rule should consume trailing whitespace
   *
   * REASON: Consuming trailing whitespace might consume the documentation of the
-  * next def/class/etc.
+  * next def/trait/etc.
   *
   * EXAMPLE: Do not write `... ~ optWS ~ optional(":" ~ optWS ~ Type)`,
   * instead write `... ~ optional(optWS ~ ":" ~ optWS ~ Type)`.
@@ -84,10 +85,12 @@ object Parser {
       case scala.util.Failure(e: org.parboiled2.ParseError) =>
         val possibleContexts = parseTraces(e.traces).filter(_._1 != SyntacticContext.Unknown)
         val mostLikelyContext = possibleContexts.keySet.reduceOption(SyntacticContext.join).getOrElse(SyntacticContext.Unknown)
-        val loc = SourceLocation(None, source, SourceKind.Real, e.position.line, e.position.column, e.position.line, e.position.column)
-        Validation.toHardFailure(ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc))
+        val loc = SourceLocation(parser.input, source, isReal = true, e.position.line, e.position.column.toShort, e.position.line, e.position.column.toShort)
+        // NOTE: Manually construct a hard failure here since ParseError is Recoverable, but in this parser it is not :-(
+        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError(stripLiteralWhitespaceChars(parser.formatError(e)), mostLikelyContext, loc)))
       case scala.util.Failure(e) =>
-        Validation.toHardFailure(ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SyntacticContext.Unknown, SourceLocation.Unknown))
+        // NOTE: Manually construct a hard failure here since ParseError is Recoverable, but in this parser it is not :-(
+        Validation.HardFailure(Chain(ca.uwaterloo.flix.language.errors.ParseError(e.getMessage, SyntacticContext.Unknown, SourceLocation.Unknown)))
     }
   }
 
@@ -134,7 +137,7 @@ object Parser {
       case "Constraint" => SyntacticContext.Expr.Constraint
       case "Do" => SyntacticContext.Expr.Do
 
-      case "Class" => SyntacticContext.Decl.Class
+      case "Trait" => SyntacticContext.Decl.Trait
       case "Enum" => SyntacticContext.Decl.Enum
       case "Instance" => SyntacticContext.Decl.Instance
       case "Decls" => SyntacticContext.Decl.OtherDecl
@@ -228,7 +231,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       Declarations.Enum |
       Declarations.RestrictableEnum |
       Declarations.TypeAlias |
-      Declarations.Class |
+      Declarations.Trait |
       Declarations.Instance |
       Declarations.Effect
   }
@@ -256,7 +259,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Sig: Rule1[ParsedAst.Declaration.Sig] = rule {
-      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ WithClause ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
+      Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("def") ~ WS ~ Names.Definition ~ optWS ~ TypeParams ~ optWS ~ FormalParamList ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ WithClause ~ optWS ~ OptEqualityConstraintList ~ optional(optWS ~ "=" ~ optWS ~ Expressions.Stm) ~ SP ~> ParsedAst.Declaration.Sig
     }
 
     def Law: Rule1[ParsedAst.Declaration.Law] = rule {
@@ -326,33 +329,33 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def AssocTypeSig: Rule1[ParsedAst.Declaration.AssocTypeSig] = rule {
-      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optional(optWS ~ ":" ~ optWS ~ Kind) ~ SP ~> ParsedAst.Declaration.AssocTypeSig
+      Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ TypeParams ~ optional(optWS ~ ":" ~ optWS ~ Kind) ~ optional(optWS ~ "=" ~ optWS ~ Type) ~ SP ~> ParsedAst.Declaration.AssocTypeSig
     }
 
     def AssocTypeDef: Rule1[ParsedAst.Declaration.AssocTypeDef] = rule {
       Documentation ~ Modifiers ~ SP ~ keyword("type") ~ WS ~ Names.Type ~ optWS ~ optional("[" ~ oneOrMore(Type).separatedBy(optWS ~ "," ~ optWS) ~ "]") ~ optWS ~ "=" ~ optWS ~ Type ~ SP ~> ParsedAst.Declaration.AssocTypeDef
     }
 
-    def Class: Rule1[ParsedAst.Declaration] = {
+    def Trait: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
-        Documentation ~ Annotations ~ Modifiers ~ SP ~ (keyword("trait") | keyword("class")) ~ WS ~ Names.Class ~ optWS ~ "[" ~ optWS ~ TypeParam ~ optWS ~ "]" ~ WithClause
+        Documentation ~ Annotations ~ Modifiers ~ SP ~ (keyword("trait") | keyword("class")) ~ WS ~ Names.Trait ~ optWS ~ "[" ~ optWS ~ TypeParam ~ optWS ~ "]" ~ WithClause
       }
 
-      def EmptyBody = namedRule("ClassBody") {
+      def EmptyBody = namedRule("TraitBody") {
         push(Nil) ~ push(Nil) ~ SP
       }
 
-      def NonEmptyBody = namedRule("ClassBody") {
+      def NonEmptyBody = namedRule("TraitBody") {
         optWS ~ "{" ~ zeroOrMore(Declarations.AssocTypeSig) ~ zeroOrMore(Declarations.Law | Declarations.Sig) ~ optWS ~ "}" ~ SP
       }
 
       rule {
-        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Class
+        Head ~ (NonEmptyBody | EmptyBody) ~> ParsedAst.Declaration.Trait
       }
     }
 
     def TypeConstraint: Rule1[ParsedAst.TypeConstraint] = rule {
-      SP ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ SP ~> ParsedAst.TypeConstraint
+      SP ~ Names.QualifiedTrait ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ SP ~> ParsedAst.TypeConstraint
     }
 
     def WithClause: Rule1[Seq[ParsedAst.TypeConstraint]] = rule {
@@ -369,7 +372,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Instance: Rule1[ParsedAst.Declaration] = {
       def Head = rule {
-        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedClass ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ WithClause
+        Documentation ~ Annotations ~ Modifiers ~ SP ~ keyword("instance") ~ WS ~ Names.QualifiedTrait ~ optWS ~ "[" ~ optWS ~ Type ~ optWS ~ "]" ~ WithClause
       }
 
       def EmptyBody = namedRule("InstanceBody") {
@@ -418,7 +421,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Derivations: Rule1[ParsedAst.Derivations] = {
       def WithClause: Rule1[Seq[Name.QName]] = rule {
-        keyword("with") ~ WS ~ oneOrMore(Names.QualifiedClass).separatedBy(optWS ~ "," ~ optWS)
+        keyword("with") ~ WS ~ oneOrMore(Names.QualifiedTrait).separatedBy(optWS ~ "," ~ optWS)
       }
 
       rule {
@@ -814,7 +817,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def Ascribe: Rule1[ParsedAst.Expression] = rule {
-      FAppend ~ optional(optWS ~ ":" ~ optWS ~ TypeAndEffect ~ SP ~> ParsedAst.Expression.Ascribe)
+      FAppend | atomic("(") ~ optWS ~ FAppend ~ optWS ~ ":" ~ optWS ~ TypeAndEffect ~ optWS ~ atomic(")") ~ SP ~> ParsedAst.Expression.Ascribe
     }
 
     def Primary: Rule1[ParsedAst.Expression] = rule {
@@ -908,7 +911,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     def LetImport: Rule1[ParsedAst.Expression] = {
 
       def Constructor: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("new") ~ WS ~ Names.JavaName ~ optWS ~ Signature ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.Constructor
+        keyword("java_new") ~ WS ~ Names.JavaName ~ optWS ~ Signature ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.Constructor
       }
 
       def Method: Rule1[ParsedAst.JvmOp] = rule {
@@ -920,19 +923,19 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
       }
 
       def GetField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("get") ~ WS ~ Names.JavaClassMember ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetField
+        keyword("java_get_field") ~ WS ~ Names.JavaClassMember ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetField
       }
 
       def PutField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("set") ~ WS ~ Names.JavaClassMember ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutField
+        keyword("java_set_field") ~ WS ~ Names.JavaClassMember ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutField
       }
 
       def GetStaticField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("static") ~ WS ~ keyword("get") ~ WS ~ Names.JavaClassMember ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetStaticField
+        keyword("static") ~ WS ~ keyword("java_get_field") ~ WS ~ Names.JavaClassMember ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.GetStaticField
       }
 
       def PutStaticField: Rule1[ParsedAst.JvmOp] = rule {
-        keyword("static") ~ WS ~ keyword("set") ~ WS ~ Names.JavaClassMember ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutStaticField
+        keyword("static") ~ WS ~ keyword("java_set_field") ~ WS ~ Names.JavaClassMember ~ optWS ~ Ascription ~ optWS ~ keyword("as") ~ WS ~ Names.Variable ~> ParsedAst.JvmOp.PutStaticField
       }
 
       def Signature: Rule1[Seq[ParsedAst.Type]] = rule {
@@ -1427,11 +1430,11 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def CaseUnionOrDifference: Rule1[ParsedAst.Type] = {
       def CaseUnionTail = rule {
-        WS ~ atomic("++") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseUnion
+        WS ~ atomic("rvadd") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseUnion
       }
 
       def CaseDifferenceTail = rule {
-        WS ~ atomic("--") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseDifference
+        WS ~ atomic("rvsub") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseDifference
       }
 
       rule {
@@ -1440,7 +1443,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     }
 
     def CaseIntersection: Rule1[ParsedAst.Type] = rule {
-      UnionOrDifference ~ zeroOrMore(WS ~ atomic("&&") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseIntersection)
+      UnionOrDifference ~ zeroOrMore(WS ~ atomic("rvand") ~ WS ~ Type ~ SP ~> ParsedAst.Type.CaseIntersection)
     }
 
     def UnionOrDifference: Rule1[ParsedAst.Type] = {
@@ -1574,7 +1577,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def CaseComplement: Rule1[ParsedAst.Type] = rule {
       // NB: We must not use Type here because it gives the wrong precedence.
-      SP ~ "~~" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.CaseComplement
+      SP ~ "rvnot" ~ optWS ~ Apply ~ SP ~> ParsedAst.Type.CaseComplement
     }
 
     def Complement: Rule1[ParsedAst.Type] = rule {
@@ -1788,9 +1791,9 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
 
     def Attribute: Rule1[Name.Ident] = LowerCaseName
 
-    def Class: Rule1[Name.Ident] = UpperCaseName
+    def Trait: Rule1[Name.Ident] = UpperCaseName
 
-    def QualifiedClass: Rule1[Name.QName] = QName
+    def QualifiedTrait: Rule1[Name.QName] = QName
 
     def Definition: Rule1[Name.Ident] = rule {
       LowerCaseName | GreekName | MathName | OperatorName
@@ -1999,7 +2002,7 @@ class Parser(val source: Source) extends org.parboiled2.Parser {
     val lineNumber = cursor2line(cursor)
     val columnNumber = cursor2column(cursor)
     rule {
-      push(SourcePosition(source, lineNumber, columnNumber, Some(input)))
+      push(SourcePosition(source, lineNumber, columnNumber.toShort, input))
     }
   }
 

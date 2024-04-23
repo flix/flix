@@ -188,7 +188,7 @@ object Validation {
   /**
     * Represents a success that contains a value and non-critical `errors`.
     */
-  case class SoftFailure[T, E](t: T, errors: Chain[E]) extends Validation[T, E]
+  private case class SoftFailure[T, E](t: T, errors: Chain[E]) extends Validation[T, E]
 
   /**
     * Represents a failure with no value and `errors`.
@@ -585,6 +585,15 @@ object Validation {
                                                      t7: Validation[T7, E], t8: Validation[T8, E])
                                                     (f: (T1, T2, T3, T4, T5, T6, T7, T8) => Validation[U, E]): Validation[U, E] =
     flatten(ap(mapN(t1, t2, t3, t4, t5, t6, t7)(curry(f)))(t8))
+
+  /**
+   * FlatMaps over t1, t2, t3, t4, t5, t6, t7 t8 and t9
+   */
+  def flatMapN[T1, T2, T3, T4, T5, T6, T7, T8, T9, U, E](t1: Validation[T1, E], t2: Validation[T2, E], t3: Validation[T3, E],
+                                                         t4: Validation[T4, E], t5: Validation[T5, E], t6: Validation[T6, E],
+                                                         t7: Validation[T7, E], t8: Validation[T8, E], t9: Validation[T9, E])
+                                                        (f: (T1, T2, T3, T4, T5, T6, T7, T8, T9) => Validation[U, E]): Validation[U, E] =
+    flatten(ap(mapN(t1, t2, t3, t4, t5, t6, t7, t8)(curry(f)))(t9))
 
   /**
     * Folds Right over `xs` using the function `f` with the initial value `zero`.

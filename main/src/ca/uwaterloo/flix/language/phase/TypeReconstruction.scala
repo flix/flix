@@ -362,13 +362,21 @@ object TypeReconstruction {
       val t = subst(tvar)
       TypedAst.Expr.Cst(Ast.Constant.Null, t, loc)
 
-    case KindedAst.Expr.UncheckedCast(exp, declaredType, declaredEff, tvar, loc) =>
+    case KindedAst.Expr.UncheckedCast(exp, declaredType0, declaredEff0, tvar, loc) =>
       val e = visitExp(exp)
-      val dt = declaredType.map(tpe => subst(tpe))
-      val dp = declaredEff.map(eff => subst(eff))
-      val tpe = subst(tvar)
-      val eff = declaredEff.getOrElse(e.eff)
-      TypedAst.Expr.UncheckedCast(e, dt, dp, tpe, eff, loc)
+      // Omit the unchecked cast if the inferred type and effect are the same as the declared ones.
+      // Note: We do not aim to remove all redundant unchecked casts. That is not possible until monomorphization,
+      // due to both Boolean equivalence, record/schema equivalence, and associated types/effects.
+      // We only aim to remove unchecked casts which are syntactically identifiable as redundant.
+      (declaredType0.map(tpe => subst(tpe)), declaredEff0.map(eff => subst(eff))) match {
+        case (Some(tpe), None) if tpe == e.tpe => e
+        case (None, Some(eff)) if eff == e.eff => e
+        case (Some(tpe), Some(eff)) if tpe == e.tpe && eff == e.eff => e
+        case (declaredType, declaredEff) =>
+          val tpe = subst(tvar)
+          val eff = declaredEff0.getOrElse(e.eff)
+          TypedAst.Expr.UncheckedCast(e, declaredType, declaredEff, tpe, eff, loc)
+      }
 
     case KindedAst.Expr.UncheckedMaskingCast(exp, loc) =>
       // We explicitly mark a `Mask` expression as Impure.

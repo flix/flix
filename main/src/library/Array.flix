@@ -42,13 +42,13 @@ mod Array {
     /// Returns a string representation of the given array `a`.
     ///
     pub def toString(a: Array[a, r]): String \ r with ToString[a] = region rc2 {
-        let sb = StringBuilder.new(rc2);
+        let sb = StringBuilder.empty(rc2);
         let first = ref true @ rc2;
 
         StringBuilder.appendString!("Array#{", sb);
 
-        let f = (x) -> {
-            if (not deref first) StringBuilder.appendString!(", ", sb) else first := false;
+        let f = x -> {
+            if (not deref first) StringBuilder.appendString!(", ", sb) else Ref.put(false, first);
             StringBuilder.appendString!("${x}", sb)
         };
         forEach(f, a);
@@ -60,7 +60,7 @@ mod Array {
     ///
     /// Returns a new uninitialized array of length `l` in the region `r`.
     ///
-    pub def new(rc: Region[r], l: Int32): Array[a, r] \ r =
+    pub def empty(rc: Region[r], l: Int32): Array[a, r] \ r =
         $ARRAY_NEW$(rc, Reflect.default(), l)
 
     ///
@@ -88,6 +88,11 @@ mod Array {
     /// Returns `true` if the given array `a` is empty.
     ///
     pub def isEmpty(a: Array[a, r]): Bool = length(a) == 0
+
+    ///
+    /// Returns `true` if the given array `a` is non-empty.
+    ///
+    pub def nonEmpty(a: Array[a, r]): Bool = not isEmpty(a)
 
     ///
     /// Returns the length of the array `a`.
@@ -186,7 +191,7 @@ mod Array {
     /// Returns `a` as a MutDeque.
     ///
     pub def toMutDeque(rc1: Region[r1], a: Array[a, r2]): MutDeque[a, r1] \ { r2, r1 }  =
-        let d = MutDeque.new(rc1);
+        let d = MutDeque.empty(rc1);
         forEach(x -> MutDeque.pushBack(x, d), a);
         d
 
@@ -408,7 +413,7 @@ mod Array {
     ///
     /// Returns the result of applying `f` to every element in `a`.
     ///
-    /// The result is a new array.
+    /// The result is an empty array.
     ///
     pub def map(rc1: Region[r1], f: a -> b \ ef, a: Array[a, r]): Array[b, r1] \ { ef, r, r1 } =
         let len = length(a);
@@ -549,16 +554,16 @@ mod Array {
         init(rc1, f, len)
 
     ///
-    /// Returns a copy of `a` with every occurrence of `from` replaced by `to`.
+    /// Returns a copy of `a` with every occurrence of `src` replaced by `dst`.
     ///
-    pub def replace(rc1: Region[r1], from: {from = a}, to: {to = a}, a: Array[a, r]): Array[a, r1] \ { r, r1 } with Eq[a] =
-        map(rc1, e -> if (e == from.from) to.to else e, a)
+    pub def replace(rc1: Region[r1], src: {src = a}, dst: {dst = a}, a: Array[a, r]): Array[a, r1] \ { r, r1 } with Eq[a] =
+        map(rc1, e -> if (e == src.src) dst.dst else e, a)
 
     ///
-    /// Replace every occurrence of `from` by `to` in the array `a`, mutating it in place.
+    /// Replace every occurrence of `src` by `dst` in the array `a`, mutating it in place.
     ///
-    pub def replace!(from: {from = a}, to: {to = a}, a: Array[a, r]): Unit \ r with Eq[a] =
-        transform!(e -> if (e == from.from) to.to else e, a)
+    pub def replace!(src: {src = a}, dst: {dst = a}, a: Array[a, r]): Unit \ r with Eq[a] =
+        transform!(e -> if (e == src.src) dst.dst else e, a)
 
     ///
     /// Returns `b` with the `n` elements starting at index `i` replaced with the elements of `a`.
@@ -932,7 +937,7 @@ mod Array {
         if (len < 1) {
             Array#{} @ rc1
         } else {
-            let out = new(rc1, len);
+            let out = empty(rc1, len);
             def loop(i, j) = {
                 if (i >= len)
                     j
@@ -1322,7 +1327,7 @@ mod Array {
     ///
     pub def findIndices(rc2: Region[r2], f: a -> Bool \ ef, a: Array[a, r1]): Array[Int32, r2] \ { ef, r1, r2 } =
         let len = length(a);
-        let l = MutList.new(rc2);
+        let l = MutList.empty(rc2);
         def loop(i) = {
             if (i >= len)
                 ()
@@ -1455,7 +1460,7 @@ mod Array {
     pub def joinWith(f: a -> String \ ef, sep: String, a: Array[a, r]): String \ { ef, r } = region rc1 {
         use StringBuilder.append!;
         let lastSep = String.length(sep);
-        let sb = StringBuilder.new(rc1);
+        let sb = StringBuilder.empty(rc1);
         forEach(x -> { append!(f(x), sb); append!(sep, sb) }, a);
         StringBuilder.toString(sb) |> String.dropRight(lastSep)
     }
@@ -1587,7 +1592,7 @@ mod Array {
         }
 
     ///
-    /// Copies the range between `b` (inclusive) and `e` (exclusive) of a into a new array.
+    /// Copies the range between `b` (inclusive) and `e` (exclusive) of a into an empty array.
     ///
     /// A valid range has the following properties:
     ///   - 0 <= `b` <= `length(a)`.

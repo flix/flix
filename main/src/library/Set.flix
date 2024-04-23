@@ -106,7 +106,7 @@ mod Set {
     /// Returns a string representation of the given set `s`.
     ///
     pub def toString(s: Set[a]): String with ToString[a] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         StringBuilder.appendString!("Set#{", sb);
         forEachWithIndex((i, x) -> {
             if (i == 0)
@@ -170,6 +170,11 @@ mod Set {
     pub def isEmpty(s: Set[a]): Bool =
         let Set(t) = s;
         RedBlackTree.isEmpty(t)
+
+    ///
+    /// Returns true if and only if `s` is a non-empty set.
+    ///
+    pub def nonEmpty(s: Set[a]): Bool = not isEmpty(s)
 
     ///
     /// Returns the singleton set containing `x`.
@@ -474,12 +479,12 @@ mod Set {
         foldLeft(step, empty(), s)
 
     ///
-    /// Replaces the element `from` with `to` if `from` is in `s`. Otherwise, returns `s`.
+    /// Replaces the element `src` with `dst` if `src` is in `s`. Otherwise, returns `s`.
     ///
     /// Note: The returned set may be smaller than `s`.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, s: Set[a]): Set[a] with Order[a] =
-        if (memberOf(from.from, s)) insert(to.to, remove(from.from, s)) else s
+    pub def replace(src: {src = a}, dst: {dst = a}, s: Set[a]): Set[a] with Order[a] =
+        if (memberOf(src.src, s)) insert(dst.dst, remove(src.src, s)) else s
 
     ///
     /// Returns a pair of sets `(s1, s2)`.
@@ -501,6 +506,26 @@ mod Set {
     ///
     pub def toList(s: Set[a]): List[a] =
         foldRight((x, acc) -> x :: acc, Nil, s)
+
+    ///
+    /// Returns the set `s` as an array.
+    ///
+    pub def toArray(rc: Region[r], s: Set[a]): Array[a, r] \ r = match size(s) {
+        case 0  => Array#{} @ rc
+        case sz =>
+            let a = Array.empty(rc, sz);
+            Iterator.forEachWithIndex((i, b) -> Array.put(b, i, a), iterator(rc, s));
+            a
+        }
+
+    ///
+    /// Returns the set `s` as a vector.
+    ///
+    pub def toVector(s: Set[a]): Vector[a] = region rc {
+        let arr = Array.empty(rc, size(s));
+        Iterator.forEachWithIndex((i, x) -> Array.put(x, i, arr), iterator(rc, s));
+        Array.toVector(arr)
+    }
 
     ///
     /// Returns the set `s` as a chain.
@@ -527,7 +552,7 @@ mod Set {
     /// Returns `s` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], s: Set[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach(x -> MutDeque.pushBack(x, d), s);
         d
 

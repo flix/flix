@@ -148,11 +148,11 @@ mod Concurrent.Channel {
                 unBuffered,
                 if (unBuffered) 1 else bufferSize,
                 size,
-                MutList.new(Static),
+                MutList.empty(Static),
                 newCyclicBarrier(2),
                 newCondition(reentrantLock)
             ),
-            MutDeque.new(Static)
+            MutDeque.empty(Static)
         )
 
     ///
@@ -180,7 +180,7 @@ mod Concurrent.Channel {
 
         // Insert the new element and update size
         MutDeque.pushBack(e, elementDeque);
-        size := deref size + 1;
+        Ref.put(deref size + 1, size);
 
         // Signal the waiting getters that an element has arrived
         signalGetters(admin);
@@ -229,7 +229,7 @@ mod Concurrent.Channel {
 
             case Some(element) =>
                 // Signal waiting setters that the channel has space
-                size := deref size - 1;
+                Ref.put(deref size - 1, size);
                 onGetComplete(admin);
                 // channelLock is now unlocked
                 element
@@ -329,7 +329,7 @@ mod Concurrent.Channel {
 
             case Some(e) =>
                 // Signal waiting setters that the channel has space
-                size := deref size - 1;
+                Ref.put(deref size - 1, size);
                 onGetComplete(admin);
                 // channelLock is now unlocked
                 e

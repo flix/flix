@@ -176,13 +176,31 @@ sealed trait Type {
 
   /**
     * Applies `f` to every type variable in `this` type.
+    *
+    * Performance Note: We are on a hot path. We take extra care to avoid redundant type objects.
     */
   def map(f: Type.Var => Type): Type = this match {
     case tvar: Type.Var => f(tvar)
+
     case Type.Cst(_, _) => this
-    case Type.Apply(tpe1, tpe2, loc) => Type.Apply(tpe1.map(f), tpe2.map(f), loc)
-    case Type.Alias(sym, args, tpe, loc) => Type.Alias(sym, args.map(_.map(f)), tpe.map(f), loc)
-    case Type.AssocType(sym, args, kind, loc) => Type.AssocType(sym, args.map(_.map(f)), kind, loc)
+
+    case Type.Apply(tpe1, tpe2, loc) =>
+      val t1 = tpe1.map(f)
+      val t2 = tpe2.map(f)
+      // Performance: Reuse this, if possible.
+      if ((t1 eq tpe1) && (t2 eq tpe2)) {
+        this
+      } else {
+        Type.Apply(t1, t2, loc)
+      }
+
+    case Type.Alias(sym, args, tpe, loc) =>
+      // Performance: Few aliases, not worth optimizing.
+      Type.Alias(sym, args.map(_.map(f)), tpe.map(f), loc)
+
+    case Type.AssocType(sym, args, kind, loc) =>
+      // Performance: Few associated types, not worth optimizing.
+      Type.AssocType(sym, args.map(_.map(f)), kind, loc)
   }
 
   /**
@@ -504,10 +522,15 @@ object Type {
   /**
     * Returns a fresh type variable of the given kind `k` and rigidity `r`.
     */
-  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit level: Level, flix: Flix): Type.Var = {
+  def freshVar(k: Kind, loc: SourceLocation, isRegion: Boolean = false, text: Ast.VarText = Ast.VarText.Absent)(implicit flix: Flix): Type.Var = {
     val sym = Symbol.freshKindedTypeVarSym(text, k, isRegion, loc)
     Type.Var(sym, loc)
   }
+
+  /**
+    * Returns the AnyType type with given source location `loc`.
+    */
+  def mkAnyType(loc: SourceLocation): Type = Type.Cst(TypeConstructor.AnyType, loc)
 
   /**
     * Returns the Unit type with given source location `loc`.

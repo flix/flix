@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Magnus Madsen
+ * Copyright 2024 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,8 @@
  */
 package ca.uwaterloo.flix.tools.pkg
 
-sealed trait DependencyKind
+sealed trait Repository
 
-object DependencyKind {
-
-  case object Production extends DependencyKind
-
-  case object Development extends DependencyKind
-
+object Repository {
+  case object GitHub extends Repository
 }

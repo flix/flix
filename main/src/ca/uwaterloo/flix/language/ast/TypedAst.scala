@@ -27,8 +27,8 @@ object TypedAst {
   val empty: Root = Root(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, Set.empty, Map.empty, Map.empty, ListMap.empty, MultiMap.empty, LabelledPrecedenceGraph.empty)
 
   case class Root(modules: Map[Symbol.ModuleSym, List[Symbol]],
-                  classes: Map[Symbol.ClassSym, Class],
-                  instances: Map[Symbol.ClassSym, List[Instance]],
+                  traits: Map[Symbol.TraitSym, Trait],
+                  instances: Map[Symbol.TraitSym, List[Instance]],
                   sigs: Map[Symbol.SigSym, Sig],
                   defs: Map[Symbol.DefnSym, Def],
                   enums: Map[Symbol.EnumSym, Enum],
@@ -39,14 +39,14 @@ object TypedAst {
                   entryPoint: Option[Symbol.DefnSym],
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation],
-                  classEnv: Map[Symbol.ClassSym, Ast.ClassContext],
+                  traitEnv: Map[Symbol.TraitSym, Ast.TraitContext],
                   eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef],
                   names: MultiMap[List[String], String],
                   precedenceGraph: LabelledPrecedenceGraph)
 
-  case class Class(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.ClassSym, tparam: TypeParam, superClasses: List[Ast.TypeConstraint], assocs: List[AssocTypeSig], sigs: List[Sig], laws: List[Def], loc: SourceLocation)
+  case class Trait(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TraitSym, tparam: TypeParam, superTraits: List[Ast.TypeConstraint], assocs: List[AssocTypeSig], sigs: List[Sig], laws: List[Def], loc: SourceLocation)
 
-  case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, clazz: Ast.ClassSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
+  case class Instance(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, trt: Ast.TraitSymUse, tpe: Type, tconstrs: List[Ast.TypeConstraint], assocs: List[AssocTypeDef], defs: List[Def], ns: Name.NName, loc: SourceLocation)
 
   case class Sig(sym: Symbol.SigSym, spec: Spec, exp: Option[Expr])
 
@@ -61,7 +61,7 @@ object TypedAst {
   case class TypeAlias(doc: Ast.Doc, ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.TypeAliasSym, tparams: List[TypeParam], tpe: Type, loc: SourceLocation)
 
   // TODO ASSOC-TYPES can probably be combined with KindedAst.AssocTypeSig
-  case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, loc: SourceLocation)
+  case class AssocTypeSig(doc: Ast.Doc, mod: Ast.Modifiers, sym: Symbol.AssocTypeSym, tparam: TypeParam, kind: Kind, tpe: Option[Type], loc: SourceLocation)
 
   // TODO ASSOC-TYPES can probably be combined with KindedAst.AssocTypeSig
   case class AssocTypeDef(doc: Ast.Doc, mod: Ast.Modifiers, sym: Ast.AssocTypeSymUse, arg: Type, tpe: Type, loc: SourceLocation)
@@ -118,9 +118,9 @@ object TypedAst {
 
     case class Apply(exp: Expr, exps: List[Expr], tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Unary(sop: SemanticOp, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Unary(sop: SemanticOp.UnaryOp, exp: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
-    case class Binary(sop: SemanticOp, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
+    case class Binary(sop: SemanticOp.BinaryOp, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 
     case class Let(sym: Symbol.VarSym, mod: Ast.Modifiers, exp1: Expr, exp2: Expr, tpe: Type, eff: Type, loc: SourceLocation) extends Expr
 

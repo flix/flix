@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.{ResolutionError, TypeError}
+import ca.uwaterloo.flix.language.errors.ResolutionError
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -155,11 +155,11 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.InaccessibleTypeAlias](result)
   }
 
-  test("InaccessibleClass.01") {
+  test("InaccessibleTrait.01") {
     val input =
       s"""
          |mod A {
-         |  class Show[a] {
+         |  trait Show[a] {
          |    pub def show(x: a): String
          |  }
          |}
@@ -169,31 +169,31 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleClass](result)
+    expectError[ResolutionError.InaccessibleTrait](result)
   }
 
-  test("InaccessibleClass.02") {
+  test("InaccessibleTrait.02") {
     val input =
       s"""
          |mod A {
          |  def f(x: a): Int32 with A.B.C.Show[a] = ???
          |
          |  mod B.C {
-         |    class Show[a] {
+         |    trait Show[a] {
          |      pub def show(x: a): String
          |    }
          |  }
          |}
        """.stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleClass](result)
+    expectError[ResolutionError.InaccessibleTrait](result)
   }
 
-  test("InaccessibleClass.03") {
+  test("InaccessibleTrait.03") {
     val input =
       """
         |mod N {
-        |    class C[a]
+        |    trait C[a]
         |}
         |
         |mod O {
@@ -201,29 +201,29 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleClass](result)
+    expectError[ResolutionError.InaccessibleTrait](result)
   }
 
-  test("InaccessibleClass.04") {
+  test("InaccessibleTrait.04") {
     val input =
       """
         |mod N {
-        |    class C[a]
+        |    trait C[a]
         |}
         |
         |mod O {
-        |    class D[a] with N.C[a]
+        |    trait D[a] with N.C[a]
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.InaccessibleClass](result)
+    expectError[ResolutionError.InaccessibleTrait](result)
   }
 
-  test("SealedClass.01") {
+  test("SealedTrait.01") {
     val input =
       """
         |mod N {
-        |    pub sealed class C[a]
+        |    pub sealed trait C[a]
         |}
         |
         |mod O {
@@ -231,14 +231,14 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.SealedClass](result)
+    expectError[ResolutionError.SealedTrait](result)
   }
 
-  test("SealedClass.02") {
+  test("SealedTrait.02") {
     val input =
       """
         |mod N {
-        |    sealed class C[a]
+        |    sealed trait C[a]
         |
         |    mod O {
         |        instance N.C[Int32]
@@ -246,22 +246,22 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.SealedClass](result)
+    expectError[ResolutionError.SealedTrait](result)
   }
 
-  test("SealedClass.03") {
+  test("SealedTrait.03") {
     val input =
       """
         |mod N {
-        |    sealed class C[a]
+        |    sealed trait C[a]
         |
         |    mod O {
-        |        class D[a] with N.C[a]
+        |        trait D[a] with N.C[a]
         |    }
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.SealedClass](result)
+    expectError[ResolutionError.SealedTrait](result)
   }
 
   test("CyclicTypeAliases.01") {
@@ -358,17 +358,8 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedName.03") {
     val input =
       s"""
-         |def foo(): #{ R } = #{}
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedName](result)
-  }
-
-  test("UndefinedName.04") {
-    val input =
-      s"""
          |mod A {
-         |    class C[a] {
+         |    trait C[a] {
          |        pub def f(x: a): a
          |    }
          |}
@@ -379,7 +370,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
          |}
          |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedName](result)
+    expectError[ResolutionError.UndefinedNameUnrecoverable](result)
   }
 
   test("UndefinedEffect.01") {
@@ -426,51 +417,51 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedOp](result)
   }
 
-  test("UndefinedClass.01") {
+  test("UndefinedTrait.01") {
     val input =
       """
         |instance C[Int32]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedClass](result)
+    expectError[ResolutionError.UndefinedTrait](result)
   }
 
-  test("UndefinedClass.02") {
+  test("UndefinedTrait.02") {
     val input =
       """
         |def f(x: a): a with C[a] = x
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedClass](result)
+    expectError[ResolutionError.UndefinedTrait](result)
   }
 
-  test("UndefinedClass.03") {
+  test("UndefinedTrait.03") {
     val input =
       """
-        |class K[a]
+        |trait K[a]
         |
         |def f(x: a): a with K[a], U[a] = x
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedClass](result)
+    expectError[ResolutionError.UndefinedTrait](result)
   }
 
-  test("UndefinedClass.04") {
+  test("UndefinedTrait.04") {
     val input =
       """
-        |class K[a]
+        |trait K[a]
         |
         |instance K[a] with U[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedClass](result)
+    expectError[ResolutionError.UndefinedTrait](result)
   }
 
   test("UndefinedJvmConstructor.01") {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import new java.io.File(): ##java.io.File \ IO as _;
+           |    import java_new java.io.File(): ##java.io.File \ IO as _;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -481,7 +472,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import new java.io.File(Int32): ##java.io.File \ IO as _;
+           |    import java_new java.io.File(Int32): ##java.io.File \ IO as _;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -492,7 +483,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import new java.lang.String(Bool): ##java.lang.String \ IO as _;
+           |    import java_new java.lang.String(Bool): ##java.lang.String \ IO as _;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -503,7 +494,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import new java.lang.String(Bool, Char, String): ##java.lang.String \ IO as _;
+           |    import java_new java.lang.String(Bool, Char, String): ##java.lang.String \ IO as _;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -514,7 +505,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import new foo.bar.Baz(): Unit \ IO as newObject;
+           |    import java_new foo.bar.Baz(): Unit \ IO as newObject;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -547,7 +538,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import get foo.bar.Baz.f: Unit \ IO as getF;
+           |    import java_get_field foo.bar.Baz.f: Unit \ IO as getF;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -558,7 +549,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import set foo.bar.Baz.f: Unit \ IO as setF;
+           |    import java_set_field foo.bar.Baz.f: Unit \ IO as setF;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -569,7 +560,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import static get foo.bar.Baz.f: Unit \ IO as getF;
+           |    import static java_get_field foo.bar.Baz.f: Unit \ IO as getF;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -580,7 +571,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import static set foo.bar.Baz.f: Unit \ IO as setF;
+           |    import static java_set_field foo.bar.Baz.f: Unit \ IO as setF;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -691,7 +682,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import get java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
+           |    import java_get_field java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
            |    ()
            |
        """.stripMargin
@@ -703,7 +694,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import set java.lang.Character.foo: ##java.lang.Character \ IO as setFoo;
+           |    import java_set_field java.lang.Character.foo: ##java.lang.Character \ IO as setFoo;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -714,7 +705,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import static get java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
+           |    import static java_get_field java.lang.Character.foo: ##java.lang.Character \ IO as getFoo;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -725,7 +716,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       raw"""
            |def foo(): Unit =
-           |    import static set java.lang.Character.foo: Unit \ IO as setFoo;
+           |    import static java_set_field java.lang.Character.foo: Unit \ IO as setFoo;
            |    ()
        """.stripMargin
     val result = compile(input, Options.TestWithLibMin)
@@ -837,52 +828,52 @@ class TestResolver extends AnyFunSuite with TestUtils {
   }
 
 
-  test("CyclicClassHierarchy.01") {
-    val input = "class A[a] with A[a]"
+  test("CyclicTraitHierarchy.01") {
+    val input = "trait A[a] with A[a]"
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
-  test("CyclicClassHierarchy.02") {
+  test("CyclicTraitHierarchy.02") {
     val input =
       """
-        |class A[a] with B[a]
-        |class B[a] with A[a]
+        |trait A[a] with B[a]
+        |trait B[a] with A[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
-  test("CyclicClassHierarchy.03") {
+  test("CyclicTraitHierarchy.03") {
     val input =
       """
-        |class A[a] with B[a]
-        |class B[a] with C[a]
-        |class C[a] with A[a]
+        |trait A[a] with B[a]
+        |trait B[a] with C[a]
+        |trait C[a] with A[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
-  test("CyclicClassHierarchy.04") {
+  test("CyclicTraitHierarchy.04") {
     val input =
       """
-        |class A[a] with A[a], B[a]
-        |class B[a]
+        |trait A[a] with A[a], B[a]
+        |trait B[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
-  test("CyclicClassHierarchy.05") {
+  test("CyclicTraitHierarchy.05") {
     val input =
       """
-        |class A[a] with B[a]
-        |class B[a] with A[a], C[a]
-        |class C[a]
+        |trait A[a] with B[a]
+        |trait B[a] with A[a], C[a]
+        |trait C[a]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.CyclicClassHierarchy](result)
+    expectError[ResolutionError.CyclicTraitHierarchy](result)
   }
 
   test("DuplicateDerivation.01") {
@@ -949,7 +940,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UnderAppliedAssocType.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    type T[a]: Type
         |}
         |
@@ -962,7 +953,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedAssocType.01") {
     val input =
       """
-        |class C[a]
+        |trait C[a]
         |
         |instance C[String] {
         |    type T[String] = Int32
@@ -1047,7 +1038,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     val input =
       """
         |mod A {
-        |    pub class X[a]
+        |    pub trait X[a]
         |    mod B {
         |        enum Y
         |        instance X[Y]
@@ -1055,7 +1046,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
         |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ResolutionError.UndefinedClass](result)
+    expectError[ResolutionError.UndefinedTrait](result)
   }
 
   test("ParentNamespaceNotVisible.04") {
@@ -1176,22 +1167,22 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
-  test("UndefinedTypeVar.Class.01") {
+  test("UndefinedTypeVar.Trait.01") {
     val input =
       """
-        |class A[a]
-        |class B[a] with A[b]
+        |trait A[a]
+        |trait B[a] with A[b]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
   }
 
-  test("UndefinedTypeVar.Class.02") {
+  test("UndefinedTypeVar.Trait.02") {
     val input =
       """
-        |class A[a]
-        |class B[a]
-        |class C[a] with A[a], B[b]
+        |trait A[a]
+        |trait B[a]
+        |trait C[a] with A[a], B[b]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedTypeVar](result)
@@ -1213,7 +1204,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
     // The type variable `a` does not appear in the signature of `f`
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    pub def f(): Bool
         |}
         |""".stripMargin
@@ -1224,7 +1215,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("IllegalSignature.02") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    pub def f(): a
         |
         |    pub def g(): Bool
@@ -1237,7 +1228,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("IllegalSignature.03") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    pub def f(x: {y = a}): {y = Bool}
         |
         |    pub def g(x: {y = Bool}): Bool
@@ -1250,7 +1241,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("IllegalSignature.04") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    pub def f(): a
         |
         |    pub def g(): Bool
@@ -1265,7 +1256,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("IllegalSignature.05") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    pub def f(): Int
         |
         |    pub def g(): String
@@ -1280,7 +1271,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("IllegalSignature.06") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    type T[a]: Type
         |
         |    pub def f(x: C.T[a]): String
@@ -1389,7 +1380,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("UndefinedKind.01") {
     val input =
       """
-        |class C[a: Blah]
+        |trait C[a: Blah]
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ResolutionError.UndefinedKind](result)
@@ -1426,7 +1417,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("DuplicateAssocTypeDef.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    type T: Type
         |}
         |
@@ -1442,7 +1433,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("MissingAssocTypeDef.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    type T: Type
         |}
         |
@@ -1453,10 +1444,28 @@ class TestResolver extends AnyFunSuite with TestUtils {
     expectError[ResolutionError.MissingAssocTypeDef](result)
   }
 
+  test("MissingAssocTypeDef.02") {
+    val input =
+      """
+        |mod Foo {
+        |    trait Add[a] {
+        |        pub type Aef: Eff
+        |        pub def add(x: a, y: a): a \ Add.Aef[a]
+        |    }
+        |
+        |    instance Foo.Add[t] {
+        |        pub def add(x: t, y: t): t \ Aef[a] = ???
+        |    }
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ResolutionError.MissingAssocTypeDef](result)
+  }
+
   test("IllegalAssocTypeApplication.01") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    type T
         |}
         |
@@ -1469,7 +1478,7 @@ class TestResolver extends AnyFunSuite with TestUtils {
   test("IllegalAssocTypeApplication.02") {
     val input =
       """
-        |class C[a] {
+        |trait C[a] {
         |    type T[a]: Type
         |}
         |

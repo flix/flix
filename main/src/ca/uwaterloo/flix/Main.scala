@@ -93,16 +93,18 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
+      xnoverify = cmdOpts.xnoverify,
       xbddthreshold = cmdOpts.xbddthreshold,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
-      xnobooltable = cmdOpts.xnobooltable,
       xnoboolunif = cmdOpts.xnoboolunif,
       xnoqmc = cmdOpts.xnoqmc,
       xnooptimizer = cmdOpts.xnooptimizer,
       xprintphase = cmdOpts.xprintphase,
       xsummary = cmdOpts.xsummary,
+      xfuzzer = cmdOpts.xfuzzer,
       xparser = cmdOpts.xparser,
+      xprinttyper = cmdOpts.xprinttyper,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfN = cmdOpts.XPerfN
     )
@@ -322,6 +324,9 @@ object Main {
         case Command.CompilerPerf =>
           CompilerPerf.run(options)
 
+        case Command.CompilerMemory =>
+          CompilerMemory.run(options)
+
       }
     }
 
@@ -345,6 +350,7 @@ object Main {
                      listen: Option[Int] = None,
                      threads: Option[Int] = None,
                      assumeYes: Boolean = false,
+                     xnoverify: Boolean = false,
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
@@ -354,13 +360,14 @@ object Main {
                      xlib: LibLevel = LibLevel.All,
                      xnoboolcache: Boolean = false,
                      xnoboolspecialcases: Boolean = false,
-                     xnobooltable: Boolean = false,
                      xnoboolunif: Boolean = false,
                      xnoqmc: Boolean = false,
                      xnooptimizer: Boolean = false,
                      xprintphase: Set[String] = Set.empty,
                      xsummary: Boolean = false,
+                     xfuzzer: Boolean = false,
                      xparser: Boolean = false,
+                     xprinttyper: Option[String] = None,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
                      files: Seq[File] = Seq())
@@ -403,6 +410,9 @@ object Main {
     case object Outdated extends Command
 
     case object CompilerPerf extends Command
+
+    case object CompilerMemory extends Command
+
   }
 
   /**
@@ -467,6 +477,8 @@ object Main {
           .text("number of compilations")
       ).hidden()
 
+      cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
+
       note("")
 
       opt[String]("args").action((s, c) => c.copy(args = Some(s))).
@@ -505,6 +517,10 @@ object Main {
       // Experimental options:
       note("")
       note("The following options are experimental:")
+
+      // Xnoverify
+      opt[Unit]("Xnoverify").action((_, c) => c.copy(xnoverify = true)).
+        text("disables verification of the last AST.")
 
       // Xbenchmark-code-size
       opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
@@ -550,10 +566,6 @@ object Main {
       opt[Unit]("Xno-bool-specialcases").action((_, c) => c.copy(xnoboolspecialcases = true)).
         text("[experimental] disables hardcoded Boolean unification special cases.")
 
-      // Xno-bool-table
-      opt[Unit]("Xno-bool-table").action((_, c) => c.copy(xnobooltable = true)).
-        text("[experimental] disables Boolean minimization via tabling.")
-
       // Xno-bool-unif
       opt[Unit]("Xno-bool-unif").action((_, c) => c.copy(xnoboolunif = true)).
         text("[experimental] disables Boolean unification. (DO NOT USE).")
@@ -566,9 +578,15 @@ object Main {
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
         text("[experimental] prints a summary of the compiled modules.")
 
+      // Xfuzz
+      opt[Unit]("Xfuzzer").action((_, c) => c.copy(xfuzzer = true)).
+        text("enables compiler fuzzing.")
+
       // Xparser
       opt[Unit]("Xparser").action((_, c) => c.copy(xparser = true)).
         text("[experimental] disables new experimental lexer and parser.")
+
+      opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym)))
 
       note("")
 

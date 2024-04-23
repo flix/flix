@@ -97,7 +97,7 @@ instance Witherable[Chain]
 
 instance ToString[Chain[a]] with ToString[a] {
     pub def toString(c: Chain[a]): String = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         StringBuilder.appendString!("Chain#{", sb);
         Chain.forEachWithIndex((i, x) -> {
             if (i < 1)
@@ -172,6 +172,11 @@ mod Chain {
         case Empty => true
         case _     => false
     }
+
+    ///
+    /// Returns true if and only if `c` is a non-empty chain.
+    ///
+    pub def nonEmpty(c: Chain[a]): Bool = not isEmpty(c)
 
     ///
     /// Add element `x` to the left end of chain `c`.
@@ -459,9 +464,8 @@ mod Chain {
     /// Returns `false` if `c` is empty.
     ///
     pub def exists(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = match viewLeft(c) {
-        case ViewLeft.NoneLeft               => false
-        case ViewLeft.SomeLeft(x, _) if f(x) => true
-        case ViewLeft.SomeLeft(_, xs)        => exists(f, xs)
+        case ViewLeft.NoneLeft        => false
+        case ViewLeft.SomeLeft(x, xs) => f(x) or exists(f, xs)
     }
 
     ///
@@ -470,9 +474,8 @@ mod Chain {
     /// Returns `true` if `c` is empty.
     ///
     pub def forAll(f: a -> Bool \ ef, c: Chain[a]): Bool \ ef = match viewLeft(c) {
-        case ViewLeft.NoneLeft                   => true
-        case ViewLeft.SomeLeft(x, _) if not f(x) => false
-        case ViewLeft.SomeLeft(_, xs)            => forAll(f, xs)
+        case ViewLeft.NoneLeft        => true
+        case ViewLeft.SomeLeft(x, xs) => f(x) and forAll(f, xs)
     }
 
     ///
@@ -558,16 +561,16 @@ mod Chain {
     /// Returns `c` without the longest prefix that satisfies the predicate `f`.
     ///
     pub def dropWhileLeft(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef = match viewLeft(c) {
-        case ViewLeft.SomeLeft(x, xs) if (f(x)) => dropWhileLeft(f, xs)
-        case _                         => c
+        case ViewLeft.SomeLeft(x, xs)  => if (f(x)) dropWhileLeft(f, xs) else c
+        case ViewLeft.NoneLeft         => c
     }
 
     ///
     /// Returns `c` without the longest suffix that satisfies the predicate `f`.
     ///
     pub def dropWhileRight(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef = match viewRight(c) {
-        case ViewRight.SomeRight(xs, x) if (f(x)) => dropWhileRight(f, xs)
-        case _                          => c
+        case ViewRight.SomeRight(xs, x) => if (f(x)) dropWhileRight(f, xs) else c
+        case ViewRight.NoneRight        => c
     }
 
     ///
@@ -619,8 +622,8 @@ mod Chain {
     ///
     pub def takeWhileRight(f: a -> Bool \ ef, c: Chain[a]): Chain[a] \ ef =
         def loop(cc, acc) = match viewRight(cc) {
-            case ViewRight.SomeRight(rs, a) if (f(a)) => loop(rs, cons(a, acc))
-            case _                          => acc
+            case ViewRight.NoneRight => acc
+            case ViewRight.SomeRight(rs, a) => if (f(a)) loop(rs, cons(a, acc)) else acc
         };
         loop(c, Empty)
 
@@ -753,7 +756,7 @@ mod Chain {
     /// Returns `c` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], c: Chain[a]): MutDeque[a, r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach(x -> MutDeque.pushBack(x, d), c);
         d
 
@@ -785,7 +788,7 @@ mod Chain {
     pub def toArray(rc: Region[r], c: Chain[a]): Array[a, r] \ r = match head(c) {
         case None    => Array#{} @ rc
         case Some(_) =>
-            let arr = Array.new(rc, length(c));
+            let arr = Array.empty(rc, length(c));
             forEach(match (i, b) -> Array.put(b, i, arr), zipWithIndex(c));
             arr
         }
@@ -794,7 +797,7 @@ mod Chain {
     /// Returns the chain `c` as a vector.
     ///
     pub def toVector(c: Chain[a]): Vector[a] = region rc {
-        let arr = Array.new(rc, length(c));
+        let arr = Array.empty(rc, length(c));
         forEachWithIndex((i, x) -> Array.put(x, i, arr), c);
         Array.toVector(arr)
     }
@@ -806,10 +809,9 @@ mod Chain {
         let cursor = ref viewLeft(c) @ rc;
         let next = () -> match (deref cursor) {
             case ViewLeft.NoneLeft        => None
-            case ViewLeft.SomeLeft(x, xs) => {
-                cursor := viewLeft(xs);
+            case ViewLeft.SomeLeft(x, xs) =>
+                Ref.put(viewLeft(xs), cursor);
                 Some(x)
-            }
         };
         Iterator.iterate(rc, next)
 

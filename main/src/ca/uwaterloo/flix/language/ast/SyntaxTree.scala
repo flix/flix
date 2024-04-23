@@ -15,7 +15,7 @@
  */
 package ca.uwaterloo.flix.language.ast
 
-import ca.uwaterloo.flix.language.errors.Parser2Error
+import ca.uwaterloo.flix.language.CompilationMessage
 
 /**
  * Represents the source code of a compilation unit.
@@ -23,7 +23,7 @@ import ca.uwaterloo.flix.language.errors.Parser2Error
  * A [[SyntaxTree]] is unstructured: it allows much more flexibility than later
  * abstract syntax trees. This flexibility is used to capture source code that may
  * contain faulty syntax. The tree has nodes that hold a [[TreeKind]] and zero or
- * more children. Each child is either a [[TokenChild]] or a [[TreeChild]].
+ * more children. Each child is either a [[Child.TokenChild]] or a [[Child.TreeChild]].
  *
  * Note that [[SyntaxTree]] offers few guarantees. In particular:
  *     - There is no guarantee that a specific node is present or absent as a child.
@@ -32,13 +32,23 @@ import ca.uwaterloo.flix.language.errors.Parser2Error
 object SyntaxTree {
 
   /**
+    * A root containing syntax trees for multiple sources.
+    */
+  case class Root(units: Map[Ast.Source, Tree])
+
+  /**
+    * The empty SyntaxTree
+    */
+  val empty: Root = Root(Map.empty)
+
+  /**
    * A node in a [[SyntaxTree]]
    *
    * @param kind     The kind of the node.
    * @param loc      The location that the node spans in the source file.
    * @param children The children of the node.
    */
-  case class Tree(kind: TreeKind, children: Array[Child], loc: SourceLocation)
+  case class Tree(kind: TreeKind, var children: Array[Child], var loc: SourceLocation)
 
   sealed trait Child
 
@@ -70,9 +80,9 @@ object SyntaxTree {
    */
   object TreeKind {
     /**
-     * A special error kind wrapping a [[Parser2Error]].
+     * A special error kind wrapping a [[CompilationMessage]].
      */
-    case class ErrorTree(error: Parser2Error) extends TreeKind
+    case class ErrorTree(error: CompilationMessage) extends TreeKind
 
     case object AnnotationList extends TreeKind
 
@@ -120,13 +130,17 @@ object SyntaxTree {
 
       case object AssociatedTypeSig extends Decl
 
-      case object Class extends Decl
+      case object Trait extends Decl
 
       case object Def extends Decl
 
       case object Effect extends Decl
 
       case object Enum extends Decl
+
+      case object EqualityConstraintList extends Decl
+
+      case object EqualityConstraintFragment extends Decl
 
       case object Instance extends Decl
 
@@ -177,9 +191,13 @@ object SyntaxTree {
 
       case object Do extends Expr
 
+      case object Debug extends Expr
+
       case object FixpointConstraint extends Expr
 
       case object FixpointConstraintSet extends Expr
+
+      case object FixpointLambda extends Expr
 
       case object FixpointFromFragment extends Expr
 
@@ -189,7 +207,7 @@ object SyntaxTree {
 
       case object FixpointSelect extends Expr
 
-      case object FixpointSolve extends Expr
+      case object FixpointSolveWithProject extends Expr
 
       case object FixpointWhere extends Expr
 
@@ -201,9 +219,11 @@ object SyntaxTree {
 
       case object ForMonadic extends Expr
 
-      case object Generator extends Expr
+      case object ForFragmentGenerator extends Expr
 
-      case object Guard extends Expr
+      case object ForFragmentGuard extends Expr
+
+      case object ForFragmentLet extends Expr
 
       case object Hole extends Expr
 
@@ -273,9 +293,19 @@ object SyntaxTree {
 
       case object Ref extends Expr
 
+      case object RestrictableChoose extends Expr
+
+      case object RestrictableChooseStar extends Expr
+
       case object Scope extends Expr
 
       case object ScopeName extends Expr
+
+      case object Select extends Expr
+
+      case object SelectRuleFragment extends Expr
+
+      case object SelectRuleDefaultFragment extends Expr
 
       case object Spawn extends Expr
 
@@ -365,8 +395,6 @@ object SyntaxTree {
 
       case object RecordRow extends Type
 
-      case object RecordVariable extends Type
-
       case object Schema extends Type
 
       case object SchemaRow extends Type
@@ -388,13 +416,13 @@ object SyntaxTree {
       /**
        * A marker kind used to wrap nested patterns.
        */
-       // For instance on cons pattern "0 :: xs" you would do
-       // Pattern
-       //   FCons
-       //     Pattern
-       //       Literal
-       //     Pattern
-       //       Ident
+      // For instance on cons pattern "0 :: xs" you would do
+      // Pattern
+      //   FCons
+      //     Pattern
+      //       Literal
+      //     Pattern
+      //       Ident
       case object Pattern extends Pattern
 
       case object FCons extends Pattern
@@ -410,6 +438,8 @@ object SyntaxTree {
       case object Tuple extends Pattern
 
       case object Variable extends Pattern
+
+      case object Unary extends Pattern
 
     }
 
@@ -433,6 +463,12 @@ object SyntaxTree {
       case object LatticeTerm extends Predicate
 
       case object PatternList extends Predicate
+
+      case object ParamList extends  Predicate
+
+      case object Param extends Predicate
+
+      case object ParamUntyped extends Predicate
 
       case object TermList extends Predicate
 

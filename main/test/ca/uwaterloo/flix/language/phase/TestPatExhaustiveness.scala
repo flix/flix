@@ -306,7 +306,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |    case E2
         |}
         |
-        |class C[a] {
+        |trait C[a] {
         |    pub def f(x: a): Int32
         |}
         |
@@ -320,7 +320,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
     expectError[NonExhaustiveMatchError](result)
   }
 
-  test("Pattern.Class.01") {
+  test("Pattern.Trait.01") {
     val input =
       """
         |enum E {
@@ -328,7 +328,7 @@ class TestPatExhaustiveness extends AnyFunSuite with TestUtils {
         |    case E2
         |}
         |
-        |class C[a] {
+        |trait C[a] {
         |    pub def f(_x: a): Int32 = match E.E1 {
         |        case E.E1 => 1
         |    }

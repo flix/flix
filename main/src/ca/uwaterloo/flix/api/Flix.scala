@@ -77,8 +77,10 @@ class Flix {
     * A cache of ASTs for incremental compilation.
     */
   private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
-  private var cachedParserAst: ParsedAst.Root = ParsedAst.empty
+  private var cachedParserAst:  ParsedAst.Root = ParsedAst.empty
+  private var cachedParserCst:  SyntaxTree.Root = SyntaxTree.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
+  private var cachedWeederAst2: WeededAst.Root = WeededAst.empty
   private var cachedDesugarAst: DesugaredAst.Root = DesugaredAst.empty
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
   private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.empty
@@ -86,7 +88,11 @@ class Flix {
 
   def getParserAst: ParsedAst.Root = cachedParserAst
 
+  def getParserCst: SyntaxTree.Root  = cachedParserCst
+
   def getWeederAst: WeededAst.Root = cachedWeederAst
+
+  def getWeederAst2: WeededAst.Root = cachedWeederAst2
 
   def getDesugarAst: DesugaredAst.Root = cachedDesugarAst
 
@@ -101,15 +107,15 @@ class Flix {
     */
   private var cachedLoweringAst: LoweredAst.Root = LoweredAst.empty
   private var cachedTreeShaker1Ast: LoweredAst.Root = LoweredAst.empty
-  private var cachedMonoDefsAst: MonoAst.Root = MonoAst.empty
+  private var cachedMonomorpherAst: MonoAst.Root = MonoAst.empty
   private var cachedMonoTypesAst: MonoAst.Root = MonoAst.empty
   private var cachedSimplifierAst: SimplifiedAst.Root = SimplifiedAst.empty
   private var cachedClosureConvAst: SimplifiedAst.Root = SimplifiedAst.empty
   private var cachedLambdaLiftAst: LiftedAst.Root = LiftedAst.empty
-  private var cachedTailrecAst: LiftedAst.Root = LiftedAst.empty
   private var cachedOptimizerAst: LiftedAst.Root = LiftedAst.empty
   private var cachedTreeShaker2Ast: LiftedAst.Root = LiftedAst.empty
   private var cachedEffectBinderAst: ReducedAst.Root = ReducedAst.empty
+  private var cachedTailPosAst: ReducedAst.Root = ReducedAst.empty
   private var cachedEraserAst: ReducedAst.Root = ReducedAst.empty
   private var cachedReducerAst: ReducedAst.Root = ReducedAst.empty
   private var cachedVarOffsetsAst: ReducedAst.Root = ReducedAst.empty
@@ -118,7 +124,7 @@ class Flix {
 
   def getTreeShaker1Ast: LoweredAst.Root = cachedTreeShaker1Ast
 
-  def getMonoDefsAst: MonoAst.Root = cachedMonoDefsAst
+  def getMonomorpherAst: MonoAst.Root = cachedMonomorpherAst
 
   def getMonoTypesAst: MonoAst.Root = cachedMonoTypesAst
 
@@ -128,13 +134,13 @@ class Flix {
 
   def getLambdaLiftAst: LiftedAst.Root = cachedLambdaLiftAst
 
-  def getTailrecAst: LiftedAst.Root = cachedTailrecAst
-
   def getOptimizerAst: LiftedAst.Root = cachedOptimizerAst
 
   def getTreeShaker2Ast: LiftedAst.Root = cachedTreeShaker2Ast
 
   def getEffectBinderAst: ReducedAst.Root = cachedEffectBinderAst
+
+  def getTailPosAst: ReducedAst.Root = cachedTailPosAst
 
   def getEraserAst: ReducedAst.Root = cachedEraserAst
 
@@ -542,7 +548,22 @@ class Flix {
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
-      afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
+
+      // Plan for migrating to new parser + weeder:
+      // Stage 1 [ACTIVE]
+      // Run new pipeline and use results but only after the old pipeline.
+      // This way Parser2 and Weeder2 only ever sees code that the old pipeline considers ok.
+      // Errors will look like before, but the new WeededAst, which should be equal to the old one, is used.
+      //
+      // Stage 2
+      // Run new pipeline by default, but make the old one available through --XParser option.
+      //
+      // Stage 3
+      // Full migration, remove old parser and weeder.
+      afterParser2 <- Parser2.run(afterLexer, cachedParserCst, changeSet)
+      afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2, cachedWeederAst, changeSet)
+
+      afterDesugar = Desugar.run(afterWeeder2, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
@@ -561,7 +582,9 @@ class Flix {
       if (options.incremental) {
         this.cachedLexerTokens = afterLexer
         this.cachedParserAst = afterParser
+        this.cachedParserCst = afterParser2
         this.cachedWeederAst = afterWeeder
+        this.cachedWeederAst2 = afterWeeder2
         this.cachedDesugarAst = afterDesugar
         this.cachedKinderAst = afterKinder
         this.cachedResolverAst = afterResolver
@@ -606,16 +629,17 @@ class Flix {
     /** Remember to update [[AstPrinter]] about the list of phases. */
     cachedLoweringAst = Lowering.run(typedAst)
     cachedTreeShaker1Ast = TreeShaker1.run(cachedLoweringAst)
-    cachedMonoDefsAst = MonoDefs.run(cachedTreeShaker1Ast)
-    cachedMonoTypesAst = MonoTypes.run(cachedMonoDefsAst)
+    cachedMonomorpherAst = Monomorpher.run(cachedTreeShaker1Ast)
+    cachedMonoTypesAst = MonoTypes.run(cachedMonomorpherAst)
     cachedSimplifierAst = Simplifier.run(cachedMonoTypesAst)
     cachedClosureConvAst = ClosureConv.run(cachedSimplifierAst)
     cachedLambdaLiftAst = LambdaLift.run(cachedClosureConvAst)
-    cachedTailrecAst = Tailrec.run(cachedLambdaLiftAst)
-    cachedOptimizerAst = Optimizer.run(cachedTailrecAst)
+    cachedOptimizerAst = Optimizer.run(cachedLambdaLiftAst)
     cachedTreeShaker2Ast = TreeShaker2.run(cachedOptimizerAst)
     cachedEffectBinderAst = EffectBinder.run(cachedTreeShaker2Ast)
-    cachedEraserAst = Eraser.run(cachedEffectBinderAst)
+    cachedTailPosAst = TailPos.run(cachedEffectBinderAst)
+    Verifier.run(cachedTailPosAst)
+    cachedEraserAst = Eraser.run(cachedTailPosAst)
     cachedReducerAst = Reducer.run(cachedEraserAst)
     cachedVarOffsetsAst = VarOffsets.run(cachedReducerAst)
     val result = JvmBackend.run(cachedVarOffsetsAst)

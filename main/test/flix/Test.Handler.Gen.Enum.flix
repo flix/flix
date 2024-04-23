@@ -22,7 +22,7 @@ mod Test.Handler.Gen.Enum {
     def getAndInc(r: Ref[Option[Int32], r]): Int32 \ r =
         match deref r {
             case Some(i) =>
-                r := Some(i + 1);
+                Ref.put(Some(i + 1), r);
                 i
             case None => unreachable!()
         }

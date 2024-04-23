@@ -17,7 +17,7 @@
 package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.ast.Ast.{Denotation, EliminatedBy, Source}
-import ca.uwaterloo.flix.language.phase.MonoDefs
+import ca.uwaterloo.flix.language.phase.Monomorpher
 
 object MonoAst {
 
@@ -59,7 +59,7 @@ object MonoAst {
       def eff: Type = Type.Pure
     }
 
-    @EliminatedBy(MonoDefs.getClass)
+    @EliminatedBy(Monomorpher.getClass)
     case class Sig(sym: Symbol.SigSym, tpe: Type, loc: SourceLocation) extends Expr {
       def eff: Type = Type.Pure
     }

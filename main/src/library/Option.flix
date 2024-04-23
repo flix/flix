@@ -156,12 +156,22 @@ instance Iterable[Option] {
 mod Option {
 
     ///
+    /// Returns the empty option variant `None`.
+    ///
+    pub def empty(): Option[a] = None
+
+    ///
     /// Returns `true` iff `o` is `None`.
     ///
     pub def isEmpty(o: Option[a]): Bool = match o {
         case None    => true
         case Some(_) => false
     }
+
+    ///
+    /// Returns `true` iff `o` is `Some`.
+    ///
+    pub def nonEmpty(o: Option[a]): Bool = not isEmpty(o)
 
     ///
     /// Returns `v` if `o` is `Some(v).` Otherwise returns `d`.
@@ -180,11 +190,11 @@ mod Option {
     }
 
     ///
-    /// Returns `Some(to)` if `o` is `Some(from)`. Otherwise returns `o`.
+    /// Returns `Some(dst)` if `o` is `Some(src)`. Otherwise returns `o`.
     ///
-    pub def replace(from: {from = a}, to: {to = a}, o: Option[a]): Option[a] with Eq[a] = match o {
+    pub def replace(src: {src = a}, dst: {dst = a}, o: Option[a]): Option[a] with Eq[a] = match o {
         case None    => o
-        case Some(v) => Some(if (v == from.from) to.to else v)
+        case Some(v) => Some(if (v == src.src) dst.dst else v)
     }
 
     ///

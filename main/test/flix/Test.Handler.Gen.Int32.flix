@@ -21,7 +21,7 @@ mod Test.Handler.Gen.Int32 {
 
     def getAndInc(r: Ref[Int32, r]): Int32 \ r =
         let i = deref r;
-        r := (i + 1);
+        Ref.put(i + 1, r);
         i
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Magnus Madsen
+ * Copyright 2024 Magnus Madsen
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.ast
+package flix.fuzzers
 
-/**
-  * Represents the provenance of a source location.
-  */
-sealed trait SourceKind
+import org.scalatest.Suites
 
-object SourceKind {
-
-  /**
-    * A source location that originates from the actual source code.
-    */
-  case object Real extends SourceKind
-
-  /**
-    * A source location that was synthetically constructed from the actual source code.
-    */
-  case object Synthetic extends SourceKind
-
-}
+class FuzzerSuite extends Suites(
+  new FuzzPrefixes,
+  new FuzzDeleteLines,
+  new FuzzDuplicateLines,
+  new FuzzSwapLines,
+)

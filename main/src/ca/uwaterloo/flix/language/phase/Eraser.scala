@@ -1,7 +1,7 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
-import ca.uwaterloo.flix.language.ast.Ast.CallType
+import ca.uwaterloo.flix.language.ast.Ast.ExpPosition
 import ca.uwaterloo.flix.language.ast.ReducedAst.Expr._
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Purity, SourceLocation, Symbol}
@@ -26,7 +26,6 @@ import ca.uwaterloo.flix.util.ParOps
   * - Lazy
   *   - component type erasure
   *   - force casting
-  * - Enum (todo)
   * - Function
   *   - result type boxing, this includes return types of defs and their applications
   *   - function call return value casting
@@ -131,12 +130,10 @@ object Eraser {
 
     case ApplyClo(exp, exps, ct, tpe, purity, loc) =>
       val ac = ApplyClo(visitExp(exp), exps.map(visitExp), ct, box(tpe), purity, loc)
-      if (ct == CallType.TailCall) ac
-      else castExp(unboxExp(ac, erase(tpe), purity, loc), visitType(tpe), purity, loc)
+      castExp(unboxExp(ac, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplyDef(sym, exps, ct, tpe, purity, loc) =>
       val ad = ApplyDef(sym, exps.map(visitExp), ct, box(tpe), purity, loc)
-      if (ct == CallType.TailCall) ad
-      else castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
+      castExp(unboxExp(ad, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case ApplySelfTail(sym, actuals, tpe, purity, loc) =>
       ApplySelfTail(sym, actuals.map(visitExp), visitType(tpe), purity, loc)
     case IfThenElse(exp1, exp2, exp3, tpe, purity, loc) =>
@@ -155,8 +152,8 @@ object Eraser {
       Scope(sym, visitExp(exp), visitType(tpe), purity, loc)
     case TryCatch(exp, rules, tpe, purity, loc) =>
       TryCatch(visitExp(exp), rules.map(visitCatchRule), visitType(tpe), purity, loc)
-    case TryWith(exp, effUse, rules, tpe, purity, loc) =>
-      val tw = TryWith(visitExp(exp), effUse, rules.map(visitHandlerRule), box(tpe), purity, loc)
+    case TryWith(exp, effUse, rules, ct, tpe, purity, loc) =>
+      val tw = TryWith(visitExp(exp), effUse, rules.map(visitHandlerRule), ct, box(tpe), purity, loc)
       castExp(unboxExp(tw, erase(tpe), purity, loc), visitType(tpe), purity, loc)
     case Do(op, exps, tpe, purity, loc) =>
       Do(op, exps.map(visitExp), visitType(tpe), purity, loc)
@@ -185,6 +182,7 @@ object Eraser {
   private def visitType(tpe: MonoType): MonoType = {
     import MonoType._
     tpe match {
+      case Void => Void
       case AnyType => AnyType
       case Unit => Unit
       case Bool => Bool
@@ -223,8 +221,8 @@ object Eraser {
       case Int16 => Int16
       case Int32 => Int32
       case Int64 => Int64
-      case AnyType | Unit | BigDecimal | BigInt | String | Regex | Region |
-           Array(_) | Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) |
+      case Void |AnyType | Unit | BigDecimal | BigInt | String | Regex |
+           Region | Array(_) | Lazy(_) | Ref(_) | Tuple(_) | MonoType.Enum(_) |
            Arrow(_, _) | RecordEmpty | RecordExtend(_, _, _) | Native(_) =>
         MonoType.Object
     }

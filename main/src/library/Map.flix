@@ -116,7 +116,7 @@ mod Map {
     /// Returns a string representation of the given map `m`.
     ///
     pub def toString(m: Map[k, v]): String with ToString[k], ToString[v] = region rc {
-        let sb = StringBuilder.new(rc);
+        let sb = StringBuilder.empty(rc);
         StringBuilder.appendString!("Map#{", sb);
         forEachWithIndex((i, k, v) -> {
             if (i < 1)
@@ -173,6 +173,11 @@ mod Map {
     pub def isEmpty(m: Map[k, v]): Bool =
         let Map(t) = m;
         RedBlackTree.isEmpty(t)
+
+    ///
+    /// Returns `true` if and only if `m` is a non-empty map.
+    ///
+    pub def nonEmpty(m: Map[k, v]): Bool = not isEmpty(m)
 
     ///
     /// Returns `Some(v)` if `k => v` is in `m`.
@@ -775,6 +780,26 @@ mod Map {
         foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
 
     ///
+    /// Returns the map `m` as an array.
+    ///
+    pub def toArray(rc: Region[r], m: Map[k, v]): Array[(k, v), r] \ r = match size(m) {
+        case 0  => Array#{} @ rc
+        case sz =>
+            let a = Array.empty(rc, sz);
+            forEachWithIndex((i, k, v) -> Array.put((k, v), i, a), m);
+            a
+        }
+
+    ///
+    /// Returns the map `m` as a vector.
+    ///
+    pub def toVector(m: Map[k, v]): Vector[(k, v)] = region rc {
+        let arr = Array.empty(rc, size(m));
+        forEachWithIndex((i, k, v) -> Array.put((k, v), i, arr), m);
+        Array.toVector(arr)
+    }
+
+    ///
     /// Returns the map `m` as a set of key-value pairs.
     ///
     pub def toSet(m: Map[k, v]): Set[(k, v)] with Order[k], Order[v] =
@@ -802,7 +827,7 @@ mod Map {
     /// Returns `m` as a MutDeque.
     ///
     pub def toMutDeque(rc: Region[r], m: Map[k, v]): MutDeque[(k, v), r] \ r =
-        let d = MutDeque.new(rc);
+        let d = MutDeque.empty(rc);
         forEach((k, v) -> MutDeque.pushBack((k, v), d), m);
         d
 

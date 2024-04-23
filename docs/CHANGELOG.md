@@ -1,5 +1,16 @@
 # Changelog
 
+Version 0.46.0: 
+- Language: Added support for associated types (thanks Matt!)
+- Compiler: Reworked type inference to use constraints (thanks Matt!)
+- Compiler: Reduced memory usage of types and source locations (thanks Magnus!)
+
+Version 0.45.0:
+- Compiler: Added support for the `build-fatjar` command (thanks Chanattan Sok!)
+- Compiler: Added support for the `outdated` command (thanks Holger!)
+- Library: Added `Coerce` type class (thanks Magnus!)
+- Library: Added `purityOf` functions (thanks Jakob!)
+
 Version 0.44.0:
 - Language: Reworked `IO` to be its own effect (thanks Matt!)
 - Library: Added `purityOf` to simplify reflection on purity (thanks Jakob!)

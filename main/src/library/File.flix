@@ -73,7 +73,7 @@ mod File {
     ///
     pub def open(path: String, mode: Mode): Result[IOError, File] \ IO =
         IOError.tryCatch(_ -> {
-            import new java.io.RandomAccessFile(String, String): ##java.io.RandomAccessFile \ IO as newRandomAccessFile;
+            import java_new java.io.RandomAccessFile(String, String): ##java.io.RandomAccessFile \ IO as newRandomAccessFile;
             let mode1 = modeString(mode);
             File(newRandomAccessFile(path, mode1))
         })

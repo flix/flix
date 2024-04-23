@@ -70,7 +70,7 @@ object AstPrinter {
       wipPhase("Resolver"),
       wipPhase("Kinder"),
       wipPhase("Deriver"),
-      wipPhase("Typer"),
+      Some("Typer", () => formatTypedAst(flix.getTyperAst)),
       wipPhase("Entrypoint"),
       wipPhase("PredDeps"),
       wipPhase("Stratifier"),
@@ -81,15 +81,15 @@ object AstPrinter {
     val backend = List(
       Some(("Lowering", () => formatLoweredAst(flix.getLoweringAst))),
       Some(("TreeShaker1", () => formatLoweredAst(flix.getTreeShaker1Ast))),
-      wipPhase("MonoDefs"),
+      wipPhase("Monomorpher"),
       wipPhase("MonoTypes"),
       Some(("Simplifier", () => formatSimplifiedAst(flix.getSimplifierAst))),
       Some(("ClosureConv", () => formatSimplifiedAst(flix.getClosureConvAst))),
       Some(("LambdaLift", () => formatLiftedAst(flix.getLambdaLiftAst))),
-      Some(("Tailrec", () => formatLiftedAst(flix.getTailrecAst))),
       Some(("Optimizer", () => formatLiftedAst(flix.getOptimizerAst))),
       Some(("TreeShaker2", () => formatLiftedAst(flix.getTreeShaker2Ast))),
       Some(("EffectBinder", () => formatReducedAst(flix.getEffectBinderAst))),
+      Some(("TailPos", () => formatReducedAst(flix.getTailPosAst))),
       Some(("Eraser", () => formatReducedAst(flix.getEraserAst))),
       Some(("Reducer", () => formatReducedAst(flix.getReducerAst))),
       Some(("VarOffsets", () => formatReducedAst(flix.getVarOffsetsAst))),
@@ -97,6 +97,14 @@ object AstPrinter {
     ).flatten.toMap
     frontend ++ backend
   }
+
+  /**
+    * Formats `root` for display.
+    */
+  def formatTypedAst(root: TypedAst.Root): String = {
+    formatDocProgram(TypedAstPrinter.print(root))
+  }
+
 
   /**
     * Formats `root` for display.

@@ -9,7 +9,7 @@ mod Test.Exp.UncheckedMaskingCast {
     @test
     def testMask03(): Bool = region rc {
         let r = ref false @ rc;
-        masked_cast(r := true);
+        masked_cast(Ref.put(true, r));
         deref r
     }
 

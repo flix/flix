@@ -64,7 +64,7 @@ object HoverProvider {
 
     case Entity.OpUse(sym, loc, _) => hoverOp(sym, loc, current).getOrElse(mkNotFound(uri, pos))
 
-    case Entity.Class(_) => mkNotFound(uri, pos)
+    case Entity.Trait(_) => mkNotFound(uri, pos)
     case Entity.Def(_) => mkNotFound(uri, pos)
     case Entity.Effect(_) => mkNotFound(uri, pos)
     case Entity.Enum(_) => mkNotFound(uri, pos)

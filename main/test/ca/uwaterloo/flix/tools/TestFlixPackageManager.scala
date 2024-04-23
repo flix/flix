@@ -28,11 +28,7 @@ class TestFlixPackageManager extends AnyFunSuite {
           |[dependencies]
           |"github:flix/museum-clerk" = "1.1.0"
           |
-          |[dev-dependencies]
-          |
           |[mvn-dependencies]
-          |
-          |[dev-mvn-dependencies]
           |
           |""".stripMargin
       }
@@ -63,9 +59,6 @@ class TestFlixPackageManager extends AnyFunSuite {
           |
           |[dependencies]
           |"github:flix/museum-giftshop" = "1.1.0"
-          |
-          |[dev-dependencies]
-          |"github:flix/museum-clerk" = "1.1.0"
           |
           |[mvn-dependencies]
           |
@@ -102,11 +95,7 @@ class TestFlixPackageManager extends AnyFunSuite {
           |[dependencies]
           |"github:flix/museum-clerk" = "1.1.0"
           |
-          |[dev-dependencies]
-          |
           |[mvn-dependencies]
-          |
-          |[dev-mvn-dependencies]
           |
           |""".stripMargin
       }
@@ -123,11 +112,7 @@ class TestFlixPackageManager extends AnyFunSuite {
           |[dependencies]
           |"github:flix/museum-giftshop" = "1.1.0"
           |
-          |[dev-dependencies]
-          |
           |[mvn-dependencies]
-          |
-          |[dev-mvn-dependencies]
           |
           |""".stripMargin
       }
@@ -164,11 +149,7 @@ class TestFlixPackageManager extends AnyFunSuite {
           |[dependencies]
           |"github:flix/museum-giftshop" = "1.1.0"
           |
-          |[dev-dependencies]
-          |
           |[mvn-dependencies]
-          |
-          |[dev-mvn-dependencies]
           |
           |""".stripMargin
       }
@@ -201,11 +182,7 @@ class TestFlixPackageManager extends AnyFunSuite {
           |[dependencies]
           |"github:flix/museum-entrance" = "1.2.0"
           |
-          |[dev-dependencies]
-          |
           |[mvn-dependencies]
-          |
-          |[dev-mvn-dependencies]
           |
           |""".stripMargin
       }
@@ -237,11 +214,7 @@ class TestFlixPackageManager extends AnyFunSuite {
           |[dependencies]
           |"github:AnnaBlume99/helloworld" = "1.0.0"
           |
-          |[dev-dependencies]
-          |
           |[mvn-dependencies]
-          |
-          |[dev-mvn-dependencies]
           |
           |""".stripMargin
       }
@@ -273,11 +246,7 @@ class TestFlixPackageManager extends AnyFunSuite {
           |[dependencies]
           |"github:flix/museum" = "0.0.1"
           |
-          |[dev-dependencies]
-          |
           |[mvn-dependencies]
-          |
-          |[dev-mvn-dependencies]
           |
           |""".stripMargin
       }

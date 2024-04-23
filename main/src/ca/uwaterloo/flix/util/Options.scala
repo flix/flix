@@ -39,16 +39,18 @@ object Options {
     threads = Runtime.getRuntime.availableProcessors(),
     loadClassFiles = true,
     assumeYes = false,
+    xnoverify = false,
     xbddthreshold = None,
     xnoboolcache = false,
     xnoboolspecialcases = false,
-    xnobooltable = false,
     xnoboolunif = false,
     xnooptimizer = false,
     xprintphase = Set.empty,
     xnoqmc = false,
     xsummary = false,
+    xfuzzer = false,
     xparser = false,
+    xprinttyper = None,
     XPerfN = None,
     XPerfFrontend = false
   )
@@ -94,10 +96,10 @@ object Options {
   * @param xbddthreshold       the threshold for when to use BDDs for SVE.
   * @param xnoboolcache        disable Boolean caches.
   * @param xnoboolspecialcases disable Boolean unification shortcuts.
-  * @param xnobooltable        disable Boolean minimization via tabling.
   * @param xnoqmc              enables the Quine McCluskey algorihm when using BDDs.
   * @param xprintphase         prints the chosen phase ASTs to the build folder.
   * @param xsummary            prints a summary of the compiled modules.
+  * @param xfuzzer             enables compiler fuzzing.
   * @param xparser             disables new lexer and parser.
   */
 case class Options(lib: LibLevel,
@@ -114,16 +116,18 @@ case class Options(lib: LibLevel,
                    threads: Int,
                    loadClassFiles: Boolean,
                    assumeYes: Boolean,
+                   xnoverify: Boolean,
                    xbddthreshold: Option[Int],
                    xnoboolcache: Boolean,
                    xnoboolspecialcases: Boolean,
-                   xnobooltable: Boolean,
                    xnoboolunif: Boolean,
                    xnoqmc: Boolean,
                    xnooptimizer: Boolean,
                    xprintphase: Set[String],
                    xsummary: Boolean,
+                   xfuzzer: Boolean,
                    xparser: Boolean,
+                   xprinttyper: Option[String],
                    XPerfFrontend: Boolean,
                    XPerfN: Option[Int],
                   )

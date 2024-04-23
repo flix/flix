@@ -322,7 +322,7 @@ object TypeError {
     * @param renv  the rigidity environment.
     * @param loc   the location where the error occurred.
     */
-  case class MissingInstance(clazz: Symbol.ClassSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingInstance(clazz: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"No instance of the '$clazz' class for the type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
@@ -344,7 +344,7 @@ object TypeError {
     * @param renv  the rigidity environment.
     * @param loc   the location where the error occurred.
     */
-  case class MissingInstanceArrow(clazz: Symbol.ClassSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingInstanceArrow(clazz: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"No instance of the '$clazz' class for the function type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
@@ -598,7 +598,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""
+      s"""${line(kind, source.name)}
          |>> Expected effect: '${red(formatType(expected, Some(renv)))}' but found effect: '${red(formatType(inferred, Some(renv)))}'.
          |
          |${code(loc, "expression has unexpected effect.")}
@@ -632,7 +632,7 @@ object TypeError {
 
     def message(formatter: Formatter): String = {
       import formatter._
-      s"""
+      s"""${line(kind, source.name)}
          |>> Expected type: '${red(formatType(expected, Some(renv)))}' but found type: '${red(formatType(inferred, Some(renv)))}'.
          |
          |${code(loc, "expression has unexpected type.")}
@@ -660,7 +660,7 @@ object TypeError {
     * @param tpe  the type wherein the region variable escapes.
     * @param loc  the location where the error occurred.
     */
-  case class RegionVarEscapes(rvar: Type.Var, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class RegionVarEscapes(rvar: Type.Var, tpe: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Recoverable {
     def summary: String = s"Region variable '${formatType(rvar)}' escapes its scope."
 
     def message(formatter: Formatter): String = {
@@ -684,13 +684,11 @@ object TypeError {
   }
 
   /**
-    * Unification equation was too complex to solve.
+    * A unification equation system was too complex to solve.
     *
-    * @param tpe1 the lhs of the unification equation.
-    * @param tpe2 the rhs of the unification equation.
-    * @param loc  the location where the error occurred.
+    * @param loc the location where the error occurred.
     */
-  case class TooComplex(tpe1: Type, tpe2: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class TooComplex(loc: SourceLocation) extends TypeError {
     def summary: String = s"Type inference too complex."
 
     def message(formatter: Formatter): String = {
@@ -699,9 +697,6 @@ object TypeError {
          |>> ${red("Type inference failed due to too complex unification.")}'.
          |
          |Try to break your function into smaller functions.
-         |
-         |Type One: ${formatType(tpe1, Some(renv))}
-         |Type Two: ${formatType(tpe2, Some(renv))}
          |
          |${code(loc, "too complex constraints")}
          |

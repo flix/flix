@@ -56,7 +56,7 @@ def main(): Unit \ IO = region rc {
     ///
     let z = ref Nil @ rc;
     foreach (x <- l)
-        z := x :: deref z;
+        Ref.put(x :: deref z, z);
 
     ///
     /// The loop above is actually equivalent to
@@ -67,7 +67,7 @@ def main(): Unit \ IO = region rc {
     ///
     let q = ref Nil @ rc;
     List.iterator(rc, l) |>
-    Iterator.forEach(match x -> q := x :: deref q);
+    Iterator.forEach(match x -> Ref.put(x :: deref q, q));
 
     ///
     /// This is true in particular for nested
@@ -76,9 +76,9 @@ def main(): Unit \ IO = region rc {
     let k = 4 :: 5 :: 6 :: Nil;
     let w = ref Nil @ rc;
     foreach (a <- l) {
-        w := a :: deref w;
+        Ref.put(a :: deref w, w);
         foreach (b <- k)
-            w := b :: deref w
+            Ref.put(b :: deref w, w)
     };
 
     ///
@@ -89,9 +89,9 @@ def main(): Unit \ IO = region rc {
     let v = ref Nil @ rc;
     List.iterator(rc, l) |>
     Iterator.forEach(match a -> {
-        v := a :: deref v;
+        Ref.put(a :: deref v, v);
         List.iterator(rc, k) |>
-        Iterator.forEach(match b -> v := b :: deref v)
+        Iterator.forEach(match b -> Ref.put(b :: deref v, v))
     });
 
     ///
@@ -107,7 +107,7 @@ def main(): Unit \ IO = region rc {
     let e = ref Nil @ rc;
     foreach (a <- l;
              b <- k)
-                e := (a, b) :: deref e;
+                Ref.put((a, b) :: deref e, e);
 
     ///
     /// The equivalent functional style expression
@@ -117,7 +117,7 @@ def main(): Unit \ IO = region rc {
     List.iterator(rc, l) |>
     Iterator.forEach(match a -> {
         List.iterator(rc, k) |>
-        Iterator.forEach(match b -> e1 := (a, b) :: deref e1)
+        Iterator.forEach(match b -> Ref.put((a, b) :: deref e1, e1))
     });
 
     ///
@@ -139,7 +139,7 @@ def main(): Unit \ IO = region rc {
              if a > 1;
              b <- k;
              if b < 6)
-                c := (a, b) :: deref c;
+                Ref.put((a, b) :: deref c, c);
 
     ///
     /// Alternatively, we can put a single guard
@@ -149,7 +149,7 @@ def main(): Unit \ IO = region rc {
     foreach (a <- l;
              b <- k;
              if a > 1 and b < 6)
-                d := (a, b) :: deref d;
+                Ref.put((a, b) :: deref d, d);
 
     ///
     /// Here's the equivalent functional expression
@@ -172,7 +172,7 @@ def main(): Unit \ IO = region rc {
     Iterator.forEach(match a -> {
         List.iterator(rc, k) |>
         Iterator.forEach(match b -> {
-            if (a > 1 and b < 6) cf := (a, b) :: deref cf else ()
+            if (a > 1 and b < 6) Ref.put((a, b) :: deref cf, cf) else ()
         })
     });
 

@@ -27,7 +27,7 @@ object OccurrenceAst {
                   reachable: Set[Symbol.DefnSym],
                   sources: Map[Source, SourceLocation])
 
-  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[OccurrenceAst.FormalParam], fparams: List[OccurrenceAst.FormalParam], exp: OccurrenceAst.Expression, context: DefContext, tpe: MonoType, purity: Purity, loc: SourceLocation)
+  case class Def(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.DefnSym, cparams: List[(OccurrenceAst.FormalParam, Occur)], fparams: List[(OccurrenceAst.FormalParam, Occur)], exp: OccurrenceAst.Expression, context: DefContext, tpe: MonoType, purity: Purity, loc: SourceLocation)
 
   case class Effect(ann: Ast.Annotations, mod: Ast.Modifiers, sym: Symbol.EffectSym, ops: List[Op], loc: SourceLocation)
 
@@ -53,11 +53,9 @@ object OccurrenceAst {
 
     case class ApplyAtomic(op: AtomicOp, exps: List[OccurrenceAst.Expression], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class ApplyClo(exp: OccurrenceAst.Expression, exps: List[OccurrenceAst.Expression], ct: Ast.CallType, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class ApplyClo(exp: OccurrenceAst.Expression, exps: List[OccurrenceAst.Expression], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
-    case class ApplyDef(sym: Symbol.DefnSym, exps: List[OccurrenceAst.Expression], ct: Ast.CallType, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
-
-    case class ApplySelfTail(sym: Symbol.DefnSym, actuals: List[OccurrenceAst.Expression], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
+    case class ApplyDef(sym: Symbol.DefnSym, exps: List[OccurrenceAst.Expression], tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 
     case class IfThenElse(exp1: OccurrenceAst.Expression, exp2: OccurrenceAst.Expression, exp3: OccurrenceAst.Expression, tpe: MonoType, purity: Purity, loc: SourceLocation) extends OccurrenceAst.Expression
 

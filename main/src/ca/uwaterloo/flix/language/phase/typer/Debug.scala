@@ -13,20 +13,67 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ca.uwaterloo.flix.language.phase.constraintgeneration
+package ca.uwaterloo.flix.language.phase.typer
 
+import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.{SourceLocation, Type}
 import ca.uwaterloo.flix.language.phase.unification.Substitution
 
+import java.nio.file.{Files, Path}
+
 /**
   * Debugging utilities for typing constraints.
+  * Not thread-safe.
   */
-class Debug {
+object Debug {
+
+  /**
+    * The directory in which to store the constraint graphs.
+    */
+  private var graphDir: Path = _
+
+  /**
+    * Indicates whether we are currently recording constraint resolution.
+    */
+  private var record: Boolean = false
+
+  /**
+    * The number of the next graph to record.
+    */
+  private var index = 0
+
+
+  /**
+    * Activates recording of constraint resolution.
+    */
+  def startRecording()(implicit flix: Flix): Unit = {
+    graphDir = flix.options.output.getOrElse(Path.of("./build/")).resolve("constraint-graphs")
+    Files.createDirectory(graphDir)
+    record = true
+  }
+
+  /**
+    * Deactivates recording of constraint resolution.
+    */
+  def stopRecording(): Unit = record = false
+
+  /**
+    * Records the given typing constraints and substitution as a dot graph.
+    */
+  def recordGraph(tconstrs: List[TypeConstraint], subst: Substitution): Unit = {
+    if (record) {
+      val dot = toDotWithSubst(tconstrs, subst)
+      val fileName = s"${index.toString.reverse.padTo(4, '0').reverse}.dot"
+      val path = graphDir.resolve(fileName)
+      Files.writeString(path, dot)
+      index += 1
+    }
+  }
 
   /**
     * Generates a GraphViz (dot) string representing the given constraints.
     */
-  def toDot(constrs: List[TypingConstraint]): String = {
+  def toDot(constrs: List[TypeConstraint]): String = {
     val contents = constrs.map(toSubDot)
     val edges = constrs.map { constr => s"root -> ${dotId(constr)};" }
     format((
@@ -42,7 +89,7 @@ class Debug {
   /**
     * Generates a GraphViz (dot) string representing the given constraints and substitution.
     */
-  def toDotWithSubst(constrs: List[TypingConstraint], subst: Substitution): String = {
+  def toDotWithSubst(constrs: List[TypeConstraint], subst: Substitution): String = {
     val contents = constrs.map(toSubDot)
     val edges = constrs.map { constr => s"root -> ${dotId(constr)};" }
     val substPart = subst.m.toList.sortBy(_._1).flatMap {
@@ -87,10 +134,10 @@ class Debug {
   /**
     * Generates a GraphViz (dot) string representing a fragment of the constraint graph.
     */
-  private def toSubDot(constr: TypingConstraint): String = constr match {
-    case TypingConstraint.Equality(tpe1, tpe2, _) => s"""${dotId(constr)} [label = "$tpe1 ~ $tpe2"];"""
-    case TypingConstraint.Class(sym, tpe, _) => s"""${dotId(constr)} [label = "$sym[$tpe]"];"""
-    case TypingConstraint.Purification(sym, eff1, eff2, _, _, nested) =>
+  private def toSubDot(constr: TypeConstraint): String = constr match {
+    case TypeConstraint.Equality(tpe1, tpe2, _) => s"""${dotId(constr)} [label = "$tpe1 ~ $tpe2"];"""
+    case TypeConstraint.Trait(sym, tpe, _) => s"""${dotId(constr)} [label = "$sym[$tpe]"];"""
+    case TypeConstraint.Purification(sym, eff1, eff2, _, nested) =>
       val header = s"""${dotId(constr)} [label = "$eff1 ~ ($eff2)[$sym ↦ Pure]"];"""
       val children = nested.map(toSubDot)
       val edges = nested.map { child => s"${dotId(constr)} -> ${dotId(child)};" }
@@ -100,7 +147,7 @@ class Debug {
   /**
     * Returns a probably-unique ID for the constraint.
     */
-  private def dotId(constr: TypingConstraint): Int = System.identityHashCode(constr: TypingConstraint)
+  private def dotId(constr: TypeConstraint): Int = System.identityHashCode(constr: TypeConstraint)
 
 
   /**
