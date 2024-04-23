@@ -55,13 +55,19 @@ mod EffectExamples.Queens {
     pub def countSolutions(size: Int32): Int32 =
         try {
             findOneSolution(size, size);
-            -1 // If no effect was raised then something must be wrong.
+            1
         } with Searchable {
             def fail(_) = 0
             def pick(sz, k) = {
                 ///
                 /// Places a queen at every index up to `sz`
                 /// and accumulates the number of solutions.
+                ///
+                /// Note here that the continuation `k` is invoked
+                /// with the index up to `sz` and that it returns
+                /// 1 because `findOneSolution` returns with a solution
+                /// without raising `Searchable.fail()`
+                /// and the try-body above returns 1.
                 ///
                 def loop(i, acc) = {
                     if (i == sz)
