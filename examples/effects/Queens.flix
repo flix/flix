@@ -28,11 +28,11 @@ mod EffectExamples.Queens {
             sfe and safe(queen, diagonal + 1, qs)
     }
 
-    pub def findOneSolution(size: Int32, queen: Int32): Solution \ Searchable =
-        if (queen == 0)
+    pub def findOneSolution(size: Int32, queens: Int32): Solution \ Searchable =
+        if (queens == 0)
             Nil
         else
-            let sol = findOneSolution(size, queen - 1);
+            let sol = findOneSolution(size, queens - 1);
             let next = do Searchable.pick(size);
             if (safe(next, 1, sol))
                 next :: sol
