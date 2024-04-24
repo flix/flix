@@ -38,7 +38,7 @@ mod EffectExamples.Queens {
     /// again to let the caller handle failures.
     ///
     pub def findOneSolution(size: Int32, queens: Int32): Solution \ Searchable =
-        if (queens == 0)
+        if (queens <= 0)
             Nil
         else
             let sol = findOneSolution(size, queens - 1);
