@@ -25,7 +25,9 @@ import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.immutable.BitSet
+import scala.collection.mutable
+import scala.collection.mutable.{ArrayBuffer, ArrayStack}
 
 /**
   * A resilient LL parser.
@@ -153,8 +155,11 @@ object Parser2 {
 
   private def buildTree()(implicit s: State): SyntaxTree.Tree = {
     val tokens = s.tokens.iterator.buffered
-    var stack: ArrayBuffer[SyntaxTree.Tree] = ArrayBuffer.empty
-    var locationStack: ArrayBuffer[Token] = ArrayBuffer.empty
+    // We are using lists as stacks here (Scala does have a 'Stack', but it is backed by an ArrayDeque).
+    // Lists are fastest here though since they have constant time prepend (+:) and tail implementations.
+    // We use prepend on Event.Open and stack.tail on Event.Close.
+    var stack: List[SyntaxTree.Tree] = List.empty
+    var locationStack: List[Token] = List.empty
 
     // Pop the last event, which must be a Close,
     // to ensure that the stack is not empty when handling event below.
@@ -170,13 +175,13 @@ object Parser2 {
     for (event <- s.events) {
       event match {
         case Event.Open(kind) =>
-          locationStack.append(tokens.head)
-          stack.append(SyntaxTree.Tree(kind, Array.empty, SourceLocation.Unknown))
+          locationStack = tokens.head +: locationStack
+          stack = SyntaxTree.Tree(kind, Array.empty, SourceLocation.Unknown) +: stack
 
         case Event.Close =>
-          val child = SyntaxTree.Child.TreeChild(stack.last)
-          val openToken = locationStack.last
-          stack.last.loc = if (stack.last.children.length == 0)
+          val child = SyntaxTree.Child.TreeChild(stack.head)
+          val openToken = locationStack.head
+          stack.head.loc = if (stack.head.children.length == 0)
             // If the subtree has no children, give it a zero length position just after the last token
             SourceLocation.mk(
               lastAdvance.mkSourcePositionEnd(s.src, Some(s.parserInput)),
@@ -188,14 +193,14 @@ object Parser2 {
               openToken.mkSourcePosition(s.src, Some(s.parserInput)),
               lastAdvance.mkSourcePositionEnd(s.src, Some(s.parserInput))
             )
-          locationStack = locationStack.dropRight(1)
-          stack = stack.dropRight(1)
-          stack.last.children = stack.last.children :+ child
+          locationStack = locationStack.tail
+          stack = stack.tail
+          stack.head.children = stack.head.children :+ child
 
         case Event.Advance =>
           val token = tokens.next()
           lastAdvance = token
-          stack.last.children = stack.last.children :+ SyntaxTree.Child.TokenChild(token)
+          stack.head.children = stack.head.children :+ SyntaxTree.Child.TokenChild(token)
       }
     }
 
@@ -356,10 +361,9 @@ object Parser2 {
 
   /**
     * Checks if the parser is at a token of kind in `kinds`.
-    * TODO: This is done __alot__. Maybe we can use bitsets to be faster?
     */
-  private def atAny(kinds: Array[TokenKind])(implicit s: State): Boolean = {
-    kinds.contains(nth(0))
+  private def atAny(kinds: BitSet)(implicit s: State): Boolean = {
+    kinds.contains(nth(0).repr)
   }
 
   /**
@@ -377,7 +381,7 @@ object Parser2 {
   /**
     * Checks if the parser is at a token of kind in `kinds` and advances past it if it is.
     */
-  private def eatAny(kinds: Array[TokenKind])(implicit s: State): Boolean = {
+  private def eatAny(kinds: BitSet)(implicit s: State): Boolean = {
     if (atAny(kinds)) {
       advance()
       true
@@ -411,7 +415,7 @@ object Parser2 {
   /**
     * Advance past current token if it is of kind in `kinds`. Otherwise wrap it in an error.
     */
-  private def expectAny(kinds: Array[TokenKind])(implicit s: State): Unit = {
+  private def expectAny(kinds: BitSet)(implicit s: State): Unit = {
     if (eatAny(kinds)) {
       return
     }
@@ -468,7 +472,7 @@ object Parser2 {
                           itemDisplayName: String,
                           getItem: () => Mark.Closed,
                           checkForItem: () => Boolean,
-                          recoverOn: Array[TokenKind],
+                          recoverOn: () => Boolean,
                           separator: TokenKind = TokenKind.Comma,
                           delimiterL: TokenKind = TokenKind.ParenL,
                           delimiterR: TokenKind = TokenKind.ParenR,
@@ -497,7 +501,7 @@ object Parser2 {
       } else {
         // We are not at an item (checkForItem returned false).
         // Break out of the loop if we hit one of the tokens in the recover set.
-        if (atAny(recoverOn)) {
+        if (recoverOn()) {
           continue = false
         } else {
           // Otherwise eat one token and continue parsing next item.
@@ -526,7 +530,7 @@ object Parser2 {
                  errorItemName: String,
                  getItem: () => Mark.Closed,
                  checkForItem: () => Boolean,
-                 recoverOn: Array[TokenKind],
+                 recoverOn: () => Boolean,
                  separator: TokenKind = TokenKind.Comma,
                  delimiterL: TokenKind = TokenKind.ParenL,
                  delimiterR: TokenKind = TokenKind.ParenR,
@@ -548,33 +552,171 @@ object Parser2 {
     * So for instance NAME_PARAMETER is all the kinds of tokens that may occur as a parameter identifier.
     * Use these together with the [[name]] helper function.
     */
-  private val NAME_DEFINITION: Array[TokenKind] = Array(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
-  private val NAME_PARAMETER: Array[TokenKind] = Array(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
-  private val NAME_VARIABLE: Array[TokenKind] = Array(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
-  private val NAME_JAVA: Array[TokenKind] = Array(TokenKind.NameJava, TokenKind.NameLowerCase, TokenKind.NameUpperCase)
-  private val NAME_QNAME: Array[TokenKind] = Array(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
-  private val NAME_USE: Array[TokenKind] = Array(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
-  private val NAME_FIELD: Array[TokenKind] = Array(TokenKind.NameLowerCase)
+  private val NAME_DEFINITION: BitSet = BitSet(TokenKind.NameLowerCase.repr, TokenKind.NameUpperCase.repr, TokenKind.NameMath.repr, TokenKind.NameGreek.repr, TokenKind.UserDefinedOperator.repr)
+  private val NAME_PARAMETER: BitSet = BitSet(TokenKind.NameLowerCase.repr, TokenKind.NameMath.repr, TokenKind.NameGreek.repr, TokenKind.Underscore.repr)
+  private val NAME_VARIABLE: BitSet = BitSet(TokenKind.NameLowerCase.repr, TokenKind.NameMath.repr, TokenKind.NameGreek.repr, TokenKind.Underscore.repr)
+  private val NAME_JAVA: BitSet = BitSet(TokenKind.NameJava.repr, TokenKind.NameLowerCase.repr, TokenKind.NameUpperCase.repr)
+  private val NAME_QNAME: BitSet = BitSet(TokenKind.NameLowerCase.repr, TokenKind.NameUpperCase.repr)
+  private val NAME_USE: BitSet = BitSet(TokenKind.NameLowerCase.repr, TokenKind.NameUpperCase.repr, TokenKind.NameMath.repr, TokenKind.NameGreek.repr, TokenKind.UserDefinedOperator.repr)
+  private val NAME_FIELD: BitSet = BitSet(TokenKind.NameLowerCase.repr)
   // TODO: Static is used as a type in Prelude.flix. Should we allow this?
-  private val NAME_TYPE: Array[TokenKind] = Array(TokenKind.NameUpperCase, TokenKind.KeywordStaticUppercase)
-  private val NAME_KIND: Array[TokenKind] = Array(TokenKind.NameUpperCase)
-  private val NAME_EFFECT: Array[TokenKind] = Array(TokenKind.NameUpperCase)
-  private val NAME_MODULE: Array[TokenKind] = Array(TokenKind.NameUpperCase)
+  private val NAME_TYPE: BitSet = BitSet(TokenKind.NameUpperCase.repr, TokenKind.KeywordStaticUppercase.repr)
+  private val NAME_KIND: BitSet = BitSet(TokenKind.NameUpperCase.repr)
+  private val NAME_EFFECT: BitSet = BitSet(TokenKind.NameUpperCase.repr)
+  private val NAME_MODULE: BitSet = BitSet(TokenKind.NameUpperCase.repr)
   // TODO: Pure and Impure are used in enums as tags in Prelude.flix. Should we allow this?
-  private val NAME_TAG: Array[TokenKind] = Array(TokenKind.NameUpperCase, TokenKind.KeywordPure, TokenKind.KeywordImpure)
-  private val NAME_PREDICATE: Array[TokenKind] = Array(TokenKind.NameUpperCase)
+  private val NAME_TAG: BitSet = BitSet(TokenKind.NameUpperCase.repr, TokenKind.KeywordPure.repr, TokenKind.KeywordImpure.repr)
+  private val NAME_PREDICATE: BitSet = BitSet(TokenKind.NameUpperCase.repr)
 
-  private val MODIFIERS: Array[TokenKind] = Array(TokenKind.KeywordSealed, TokenKind.KeywordLawful, TokenKind.KeywordPub, TokenKind.KeywordInline, TokenKind.KeywordOverride)
+  private val MODIFIERS: BitSet = BitSet(TokenKind.KeywordSealed.repr, TokenKind.KeywordLawful.repr, TokenKind.KeywordPub.repr, TokenKind.KeywordInline.repr, TokenKind.KeywordOverride.repr)
 
   /**
-    * Sets of the [[TokenKind]] that can appear as the first token of different concepts.
-    * For instance, FIRST_DECL are all the tokens that can be the first of a declaration ('enum', 'def', 'mod' and so on).
+    * BitSet of the [[TokenKind]]s that can appear as the first token of declarations.
     */
-  private val FIRST_DECL: Array[TokenKind] = MODIFIERS.concat(Array(TokenKind.CommentDoc, TokenKind.Annotation, TokenKind.KeywordMod, TokenKind.KeywordDef, TokenKind.KeywordEnum, TokenKind.KeywordTrait, TokenKind.KeywordInstance, TokenKind.KeywordType, TokenKind.KeywordEff, TokenKind.KeywordRestrictable))
-  private val FIRST_EXPR: Array[TokenKind] = Array(TokenKind.KeywordOpenVariant, TokenKind.KeywordOpenVariantAs, TokenKind.HoleNamed, TokenKind.HoleAnonymous, TokenKind.HoleVariable, TokenKind.KeywordUse, TokenKind.LiteralString, TokenKind.LiteralChar, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal, TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.KeywordTrue, TokenKind.KeywordFalse, TokenKind.KeywordNull, TokenKind.LiteralRegex, TokenKind.ParenL, TokenKind.Underscore, TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde, TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDiscard, TokenKind.KeywordDeref, TokenKind.KeywordIf, TokenKind.KeywordLet, TokenKind.Annotation, TokenKind.KeywordDef, TokenKind.KeywordImport, TokenKind.KeywordRegion, TokenKind.KeywordMatch, TokenKind.KeywordTypeMatch, TokenKind.KeywordChoose, TokenKind.KeywordChooseStar, TokenKind.KeywordForA, TokenKind.KeywordForeach, TokenKind.KeywordForM, TokenKind.CurlyL, TokenKind.ArrayHash, TokenKind.VectorHash, TokenKind.ListHash, TokenKind.SetHash, TokenKind.MapHash, TokenKind.KeywordRef, TokenKind.KeywordCheckedCast, TokenKind.KeywordCheckedECast, TokenKind.KeywordUncheckedCast, TokenKind.KeywordMaskedCast, TokenKind.KeywordTry, TokenKind.KeywordDo, TokenKind.KeywordNew, TokenKind.KeywordStaticUppercase, TokenKind.KeywordSelect, TokenKind.KeywordSpawn, TokenKind.KeywordPar, TokenKind.HashCurlyL, TokenKind.HashParenL, TokenKind.KeywordSolve, TokenKind.KeywordInject, TokenKind.KeywordQuery, TokenKind.BuiltIn, TokenKind.LiteralStringInterpolationL, TokenKind.LiteralDebugStringL, TokenKind.KeywordDebug, TokenKind.KeywordDebugBang, TokenKind.KeywordDebugBangBang, TokenKind.NameJava)
-  private val FIRST_TYPE: Array[TokenKind] = Array(TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore, TokenKind.NameLowerCase, TokenKind.KeywordUniv, TokenKind.KeywordPure, TokenKind.KeywordFalse, TokenKind.KeywordTrue, TokenKind.ParenL, TokenKind.CurlyL, TokenKind.HashCurlyL, TokenKind.HashParenL, TokenKind.NameJava, TokenKind.AngleL, TokenKind.KeywordNot, TokenKind.Tilde, TokenKind.KeywordRvnot, TokenKind.KeywordStaticUppercase)
-  private val FIRST_PATTERN: Array[TokenKind] = Array(TokenKind.NameLowerCase, TokenKind.NameGreek, TokenKind.NameMath, TokenKind.Underscore, TokenKind.KeywordQuery, TokenKind.LiteralString, TokenKind.LiteralChar, TokenKind.LiteralFloat32, TokenKind.LiteralFloat64, TokenKind.LiteralBigDecimal, TokenKind.LiteralInt8, TokenKind.LiteralInt16, TokenKind.LiteralInt32, TokenKind.LiteralInt64, TokenKind.LiteralBigInt, TokenKind.KeywordTrue, TokenKind.KeywordFalse, TokenKind.LiteralRegex, TokenKind.KeywordNull, TokenKind.NameUpperCase, TokenKind.ParenL, TokenKind.CurlyL, TokenKind.Minus)
-  private val FIRST_RECORD_OP: Array[TokenKind] = Array(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowerCase)
+  private val FIRST_DECL: BitSet = MODIFIERS ++ BitSet(
+    TokenKind.CommentDoc.repr,
+    TokenKind.Annotation.repr,
+    TokenKind.KeywordMod.repr,
+    TokenKind.KeywordDef.repr,
+    TokenKind.KeywordEnum.repr,
+    TokenKind.KeywordTrait.repr,
+    TokenKind.KeywordInstance.repr,
+    TokenKind.KeywordType.repr,
+    TokenKind.KeywordEff.repr,
+    TokenKind.KeywordRestrictable.repr
+  )
+
+  /**
+    * BitSet of the [[TokenKind]]s that can appear as the first token of expressions.
+    */
+  private val FIRST_EXPR: BitSet = BitSet(TokenKind.KeywordOpenVariant.repr,
+    TokenKind.KeywordOpenVariantAs.repr,
+    TokenKind.HoleNamed.repr,
+    TokenKind.HoleAnonymous.repr,
+    TokenKind.HoleVariable.repr,
+    TokenKind.KeywordUse.repr,
+    TokenKind.LiteralString.repr,
+    TokenKind.LiteralChar.repr,
+    TokenKind.LiteralFloat32.repr,
+    TokenKind.LiteralFloat64.repr,
+    TokenKind.LiteralBigDecimal.repr,
+    TokenKind.LiteralInt8.repr,
+    TokenKind.LiteralInt16.repr,
+    TokenKind.LiteralInt32.repr,
+    TokenKind.LiteralInt64.repr,
+    TokenKind.LiteralBigInt.repr,
+    TokenKind.KeywordTrue.repr,
+    TokenKind.KeywordFalse.repr,
+    TokenKind.KeywordNull.repr,
+    TokenKind.LiteralRegex.repr,
+    TokenKind.ParenL.repr,
+    TokenKind.Underscore.repr,
+    TokenKind.NameLowerCase.repr,
+    TokenKind.NameUpperCase.repr,
+    TokenKind.NameMath.repr,
+    TokenKind.NameGreek.repr,
+    TokenKind.Minus.repr,
+    TokenKind.KeywordNot.repr,
+    TokenKind.Plus.repr,
+    TokenKind.TripleTilde.repr,
+    TokenKind.KeywordLazy.repr,
+    TokenKind.KeywordForce.repr,
+    TokenKind.KeywordDiscard.repr,
+    TokenKind.KeywordDeref.repr,
+    TokenKind.KeywordIf.repr,
+    TokenKind.KeywordLet.repr,
+    TokenKind.Annotation.repr,
+    TokenKind.KeywordDef.repr,
+    TokenKind.KeywordImport.repr,
+    TokenKind.KeywordRegion.repr,
+    TokenKind.KeywordMatch.repr,
+    TokenKind.KeywordTypeMatch.repr,
+    TokenKind.KeywordChoose.repr,
+    TokenKind.KeywordChooseStar.repr,
+    TokenKind.KeywordForA.repr,
+    TokenKind.KeywordForeach.repr,
+    TokenKind.KeywordForM.repr,
+    TokenKind.CurlyL.repr,
+    TokenKind.ArrayHash.repr,
+    TokenKind.VectorHash.repr,
+    TokenKind.ListHash.repr,
+    TokenKind.SetHash.repr,
+    TokenKind.MapHash.repr,
+    TokenKind.KeywordRef.repr,
+    TokenKind.KeywordCheckedCast.repr,
+    TokenKind.KeywordCheckedECast.repr,
+    TokenKind.KeywordUncheckedCast.repr,
+    TokenKind.KeywordMaskedCast.repr,
+    TokenKind.KeywordTry.repr,
+    TokenKind.KeywordDo.repr,
+    TokenKind.KeywordNew.repr,
+    TokenKind.KeywordStaticUppercase.repr,
+    TokenKind.KeywordSelect.repr,
+    TokenKind.KeywordSpawn.repr,
+    TokenKind.KeywordPar.repr,
+    TokenKind.HashCurlyL.repr,
+    TokenKind.HashParenL.repr,
+    TokenKind.KeywordSolve.repr,
+    TokenKind.KeywordInject.repr,
+    TokenKind.KeywordQuery.repr,
+    TokenKind.BuiltIn.repr,
+    TokenKind.LiteralStringInterpolationL.repr,
+    TokenKind.LiteralDebugStringL.repr,
+    TokenKind.KeywordDebug.repr,
+    TokenKind.KeywordDebugBang.repr,
+    TokenKind.KeywordDebugBangBang.repr,
+    TokenKind.NameJava.repr)
+
+  /**
+    * BitSet of the [[TokenKind]]s that can appear as the first token of types.
+    */
+  private val FIRST_TYPE: BitSet = BitSet(TokenKind.NameUpperCase.repr,
+    TokenKind.NameMath.repr,
+    TokenKind.NameGreek.repr,
+    TokenKind.Underscore.repr,
+    TokenKind.NameLowerCase.repr,
+    TokenKind.KeywordUniv.repr,
+    TokenKind.KeywordPure.repr,
+    TokenKind.KeywordFalse.repr,
+    TokenKind.KeywordTrue.repr,
+    TokenKind.ParenL.repr,
+    TokenKind.CurlyL.repr,
+    TokenKind.HashCurlyL.repr,
+    TokenKind.HashParenL.repr,
+    TokenKind.NameJava.repr,
+    TokenKind.AngleL.repr,
+    TokenKind.KeywordNot.repr,
+    TokenKind.Tilde.repr,
+    TokenKind.KeywordRvnot.repr,
+    TokenKind.KeywordStaticUppercase.repr)
+
+  /**
+    * BitSet of the [[TokenKind]]s that can appear as the first token of patterns.
+    */
+  private val FIRST_PATTERN: BitSet = BitSet(TokenKind.NameLowerCase.repr,
+    TokenKind.NameGreek.repr,
+    TokenKind.NameMath.repr,
+    TokenKind.Underscore.repr,
+    TokenKind.KeywordQuery.repr,
+    TokenKind.LiteralString.repr,
+    TokenKind.LiteralChar.repr,
+    TokenKind.LiteralFloat32.repr,
+    TokenKind.LiteralFloat64.repr,
+    TokenKind.LiteralBigDecimal.repr,
+    TokenKind.LiteralInt8.repr,
+    TokenKind.LiteralInt16.repr,
+    TokenKind.LiteralInt32.repr,
+    TokenKind.LiteralInt64.repr,
+    TokenKind.LiteralBigInt.repr,
+    TokenKind.KeywordTrue.repr,
+    TokenKind.KeywordFalse.repr,
+    TokenKind.LiteralRegex.repr,
+    TokenKind.KeywordNull.repr,
+    TokenKind.NameUpperCase.repr,
+    TokenKind.ParenL.repr,
+    TokenKind.CurlyL.repr,
+    TokenKind.Minus.repr)
+
 
   /**
     * Sets of [[TokenKind]]s used for recovery.
@@ -584,23 +726,24 @@ object Parser2 {
     * enum Legumes { case Beans, Chickpeas }
     * Here we recover from parsing argument expressions of the unfinished call to `bar` and still discover `Legumes`, because [[TokenKind.KeywordEnum]] is part of [[RECOVER_EXPR]].
     */
-  private val RECOVER_DECL: Array[TokenKind] = FIRST_DECL
-  private val RECOVER_EXPR: Array[TokenKind] = FIRST_DECL.appended(TokenKind.Semi)
-  private val RECOVER_TYPE: Array[TokenKind] = FIRST_DECL.concat(Array(TokenKind.Equal, TokenKind.Semi))
-  private val RECOVER_PATTERN: Array[TokenKind] = FIRST_DECL.concat(Array(TokenKind.ArrowThickR, TokenKind.KeywordCase))
-  private val RECOVER_TOP_LEVEL_USE: Array[TokenKind] = FIRST_DECL.concat(Array(TokenKind.Semi, TokenKind.KeywordUse, TokenKind.KeywordImport))
-  private val RECOVER_PARAMETERS: Array[TokenKind] = FIRST_DECL.concat(Array(TokenKind.Colon, TokenKind.Equal))
+  private val RECOVER_DECL: BitSet = FIRST_DECL
+  private val RECOVER_EXPR: BitSet = FIRST_DECL + TokenKind.Semi.repr
+  private val RECOVER_TYPE: BitSet = FIRST_DECL ++ BitSet(TokenKind.Equal.repr, TokenKind.Semi.repr)
+  private val RECOVER_PATTERN: BitSet = FIRST_DECL ++ BitSet(TokenKind.ArrowThickR.repr, TokenKind.KeywordCase.repr)
+  private val RECOVER_TOP_LEVEL_USE: BitSet = FIRST_DECL ++ BitSet(TokenKind.Semi.repr, TokenKind.KeywordUse.repr, TokenKind.KeywordImport.repr)
+  private val RECOVER_PARAMETERS: BitSet = FIRST_DECL ++ BitSet(TokenKind.Colon.repr, TokenKind.Equal.repr)
+
   /**
     * Consumes a token if kind is in `kinds`. If `allowQualified` is passed also consume subsequent dot-separated tokens with kind in `kinds`.
     */
-  private def name(kinds: Array[TokenKind], allowQualified: Boolean = false)(implicit s: State): Mark.Closed = {
+  private def name(kinds: BitSet, allowQualified: Boolean = false)(implicit s: State): Mark.Closed = {
     val mark = open(consumeDocComments = false)
     expectAny(kinds)
     val first = close(mark, TreeKind.Ident)
     if (!allowQualified) {
       return first
     }
-    while (at(TokenKind.Dot) && kinds.contains(nth(1)) && !eof()) {
+    while (at(TokenKind.Dot) && kinds.contains(nth(1).repr) && !eof()) {
       eat(TokenKind.Dot)
       val mark = open()
       expectAny(kinds)
@@ -614,6 +757,9 @@ object Parser2 {
     }
   }
 
+  private val NON_DOC_COMMENTS: BitSet = BitSet(TokenKind.CommentLine.repr, TokenKind.CommentBlock.repr)
+  private val COMMENTS: BitSet = BitSet(TokenKind.CommentDoc.repr, TokenKind.CommentLine.repr, TokenKind.CommentBlock.repr)
+
   /**
     * Consumes subsequent comments.
     * In cases where doc-comments cannot occur (above expressions for instance), we would like to treat them as regular comments.
@@ -622,18 +768,14 @@ object Parser2 {
   private def comments(canStartOnDoc: Boolean = false)(implicit s: State): Unit = {
     // Note: In case of a misplaced CommentDoc, we would just like to consume it into the comment list.
     // This is forgiving in the common case of accidentally inserting an extra '/'.
-    val starters: Array[TokenKind] = if (canStartOnDoc) {
-      Array(TokenKind.CommentLine, TokenKind.CommentBlock, TokenKind.CommentDoc)
-    } else {
-      Array(TokenKind.CommentLine, TokenKind.CommentBlock)
-    }
+    val starters: BitSet = if (canStartOnDoc) COMMENTS else NON_DOC_COMMENTS
 
     if (atAny(starters)) {
       val mark = Mark.Opened(s.events.length)
       val error = ParseError("Unclosed parser mark.", SyntacticContext.Unknown, currentSourceLocation())
       s.events.append(Event.Open(TreeKind.ErrorTree(error)))
       // Note: This loop will also consume doc-comments that are preceded or surrounded by either line or block comments.
-      while (atAny(Array(TokenKind.CommentLine, TokenKind.CommentBlock, TokenKind.CommentDoc)) && !eof()) {
+      while (atAny(COMMENTS) && !eof()) {
         advance()
       }
       close(mark, TreeKind.CommentList)
@@ -681,7 +823,7 @@ object Parser2 {
         itemDisplayName = "name",
         getItem = () => aliasedName(NAME_USE),
         checkForItem = () => atAny(NAME_USE),
-        recoverOn = RECOVER_TOP_LEVEL_USE,
+        recoverOn = () => atAny(RECOVER_TOP_LEVEL_USE),
         delimiterL = TokenKind.DotCurlyL,
         delimiterR = TokenKind.CurlyR
       )
@@ -702,7 +844,7 @@ object Parser2 {
         itemDisplayName = "name",
         getItem = () => aliasedName(NAME_JAVA),
         checkForItem = () => atAny(NAME_JAVA),
-        recoverOn = RECOVER_TOP_LEVEL_USE,
+        recoverOn = () => atAny(RECOVER_TOP_LEVEL_USE),
         delimiterL = TokenKind.DotCurlyL,
         delimiterR = TokenKind.CurlyR
       )
@@ -711,7 +853,7 @@ object Parser2 {
     close(mark, TreeKind.UsesOrImports.Import)
   }
 
-  private def aliasedName(names: Array[TokenKind])(implicit s: State): Mark.Closed = {
+  private def aliasedName(names: BitSet)(implicit s: State): Mark.Closed = {
     var lhs = name(names)
     if (eat(TokenKind.ArrowThickR)) {
       name(names)
@@ -894,7 +1036,7 @@ object Parser2 {
     }
 
     private def enumerationDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      assert(atAny(Array(TokenKind.KeywordRestrictable, TokenKind.KeywordEnum)))
+      assert(atAny(BitSet(TokenKind.KeywordRestrictable.repr, TokenKind.KeywordEnum.repr)))
       val isRestrictable = eat(TokenKind.KeywordRestrictable)
       expect(TokenKind.KeywordEnum)
       val nameLoc = currentSourceLocation()
@@ -937,10 +1079,12 @@ object Parser2 {
       close(mark, if (isRestrictable) TreeKind.Decl.RestrictableEnum else TreeKind.Decl.Enum)
     }
 
+    private def FIRST_ENUM_CASE: BitSet = BitSet(TokenKind.CommentDoc.repr, TokenKind.KeywordCase.repr, TokenKind.Comma.repr)
+
     private def enumCases()(implicit s: State): Unit = {
       // Clear non-doc comments that appear before any cases.
       comments()
-      while (!eof() && atAny(Array(TokenKind.CommentDoc, TokenKind.KeywordCase, TokenKind.Comma))) {
+      while (!eof() && atAny(FIRST_ENUM_CASE)) {
         val mark = open(consumeDocComments = false)
         docComment()
         if (at(TokenKind.KeywordCase)) {
@@ -959,7 +1103,7 @@ object Parser2 {
             errorItemName = "type",
             getItem = () => Type.ttype(),
             checkForItem = () => atAny(FIRST_TYPE),
-            recoverOn = RECOVER_DECL
+            recoverOn = () => atAny(RECOVER_DECL)
           )
           close(markTuple, TreeKind.Type.Tuple)
           close(mark, TreeKind.Type.Type)
@@ -1100,7 +1244,7 @@ object Parser2 {
         itemDisplayName = "parameter",
         getItem = parameter,
         checkForItem = () => atAny(NAME_PARAMETER),
-        recoverOn = RECOVER_PARAMETERS
+        recoverOn = () => atAny(RECOVER_PARAMETERS)
       )
       close(mark, TreeKind.ParameterList)
     }
@@ -1185,7 +1329,7 @@ object Parser2 {
             errorItemName = "effect",
             getItem = () => name(NAME_EFFECT, allowQualified = true),
             checkForItem = () => atAny(NAME_EFFECT),
-            recoverOn = RECOVER_EXPR,
+            recoverOn = () => atAny(RECOVER_EXPR),
             delimiterL = TokenKind.CurlyL,
             delimiterR = TokenKind.CurlyR
           )
@@ -1262,8 +1406,8 @@ object Parser2 {
       zeroOrMore(
         itemDisplayName = "argument",
         getItem = argument,
-        checkForItem = () => atAny(FIRST_EXPR.filter(t => t != TokenKind.KeywordDef)),
-        recoverOn = RECOVER_EXPR
+        checkForItem = () => atAny(FIRST_EXPR.filter(t => t != TokenKind.KeywordDef.repr)),
+        recoverOn = () => atAny(RECOVER_EXPR)
       )
       close(mark, TreeKind.ArgumentList)
     }
@@ -1386,11 +1530,11 @@ object Parser2 {
     }
 
     private def holeExpr()(implicit s: State): Mark.Closed = {
-      assert(atAny(Array(TokenKind.HoleNamed, TokenKind.HoleAnonymous)))
+      assert(atAny(BitSet(TokenKind.HoleNamed.repr, TokenKind.HoleAnonymous.repr)))
       val mark = open()
       nth(0) match {
         case TokenKind.HoleAnonymous => advance(); close(mark, TreeKind.Expr.Hole)
-        case TokenKind.HoleNamed => name(Array(TokenKind.HoleNamed)); close(mark, TreeKind.Expr.Hole)
+        case TokenKind.HoleNamed => name(BitSet(TokenKind.HoleNamed.repr)); close(mark, TreeKind.Expr.Hole)
         case _ => throw InternalCompilerException("Parser assert missed case", currentSourceLocation())
       }
     }
@@ -1398,7 +1542,7 @@ object Parser2 {
     private def holeVariableExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.HoleVariable))
       val mark = open()
-      name(Array(TokenKind.HoleVariable))
+      name(BitSet(TokenKind.HoleVariable.repr))
       close(mark, TreeKind.Expr.HoleVariable)
     }
 
@@ -1522,11 +1666,21 @@ object Parser2 {
       close(mark, TreeKind.Expr.Lambda)
     }
 
+    private val FIRST_EXPR_UNARY: BitSet = BitSet(
+      TokenKind.Minus.repr,
+      TokenKind.KeywordNot.repr,
+      TokenKind.Plus.repr,
+      TokenKind.TripleTilde.repr,
+      TokenKind.KeywordLazy.repr,
+      TokenKind.KeywordForce.repr,
+      TokenKind.KeywordDiscard.repr,
+      TokenKind.KeywordDeref.repr)
+
     private def unaryExpr()(implicit s: State): Mark.Closed = {
       val mark = open()
       val op = nth(0)
       val markOp = open()
-      expectAny(Array(TokenKind.Minus, TokenKind.KeywordNot, TokenKind.Plus, TokenKind.TripleTilde, TokenKind.KeywordLazy, TokenKind.KeywordForce, TokenKind.KeywordDiscard, TokenKind.KeywordDeref))
+      expectAny(FIRST_EXPR_UNARY)
       close(markOp, TreeKind.Operator)
       expression(left = op, leftIsUnary = true)
       close(mark, TreeKind.Expr.Unary)
@@ -1561,7 +1715,7 @@ object Parser2 {
     }
 
     private def letRecDefExpr()(implicit s: State): Mark.Closed = {
-      assert(atAny(Array(TokenKind.Annotation, TokenKind.KeywordDef, TokenKind.CommentDoc)))
+      assert(atAny(BitSet(TokenKind.Annotation.repr, TokenKind.KeywordDef.repr, TokenKind.CommentDoc.repr)))
       val mark = open(consumeDocComments = false)
       Decl.docComment()
       Decl.annotations()
@@ -1627,10 +1781,16 @@ object Parser2 {
       close(mark, TreeKind.Expr.Block)
     }
 
+    private val FIRST_EXPR_DEBUG: BitSet = BitSet(
+      TokenKind.KeywordDebug.repr,
+      TokenKind.KeywordDebugBang.repr,
+      TokenKind.KeywordDebugBangBang.repr
+    )
+
     private def debugExpr()(implicit s: State): Mark.Closed = {
-      assert(atAny(Array(TokenKind.KeywordDebug, TokenKind.KeywordDebugBang, TokenKind.KeywordDebugBangBang)))
+      assert(atAny(FIRST_EXPR_DEBUG))
       val mark = open()
-      expectAny(Array(TokenKind.KeywordDebug, TokenKind.KeywordDebugBang, TokenKind.KeywordDebugBangBang))
+      expectAny(FIRST_EXPR_DEBUG)
       expect(TokenKind.ParenL)
       expression()
       expect(TokenKind.ParenR)
@@ -1729,8 +1889,10 @@ object Parser2 {
       close(mark, TreeKind.Expr.TypeMatchRuleFragment)
     }
 
+    private val FIRST_EXPR_CHOOSE = BitSet(TokenKind.KeywordChoose.repr, TokenKind.KeywordChooseStar.repr)
+
     private def restrictableChooseExpr()(implicit s: State): Mark.Closed = {
-      assert(atAny(Array(TokenKind.KeywordChoose, TokenKind.KeywordChooseStar)))
+      assert(atAny(FIRST_EXPR_CHOOSE))
       val mark = open()
       val isStar = eat(TokenKind.KeywordChooseStar)
       if (!isStar) {
@@ -1879,7 +2041,7 @@ object Parser2 {
         itemDisplayName = "record field",
         getItem = recordLiteralField,
         checkForItem = () => atAny(NAME_FIELD),
-        recoverOn = RECOVER_EXPR,
+        recoverOn = () => atAny(RECOVER_EXPR),
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
       )
@@ -1894,6 +2056,8 @@ object Parser2 {
       close(mark, TreeKind.Expr.LiteralRecordFieldFragment)
     }
 
+    private val FIRST_RECORD_OP: BitSet = BitSet(TokenKind.Plus.repr, TokenKind.Minus.repr, TokenKind.NameLowerCase.repr)
+
     private def recordOperation()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.CurlyL))
       val mark = open()
@@ -1901,7 +2065,7 @@ object Parser2 {
         errorItemName = "record operation",
         getItem = recordOp,
         checkForItem = () => atAny(FIRST_RECORD_OP),
-        recoverOn = RECOVER_EXPR,
+        recoverOn = () => atAny(RECOVER_EXPR),
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR,
         optionallyWith = Some((TokenKind.Bar, () => expression()))
@@ -1941,7 +2105,7 @@ object Parser2 {
         itemDisplayName = "expression",
         getItem = () => expression(),
         checkForItem = () => atAny(FIRST_EXPR),
-        recoverOn = RECOVER_EXPR,
+        recoverOn = () => atAny(RECOVER_EXPR),
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
       )
@@ -1967,7 +2131,7 @@ object Parser2 {
         itemDisplayName = "expression",
         getItem = () => expression(),
         checkForItem = () => atAny(FIRST_EXPR),
-        recoverOn = RECOVER_EXPR,
+        recoverOn = () => atAny(RECOVER_EXPR),
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
       )
@@ -1982,7 +2146,7 @@ object Parser2 {
         itemDisplayName = "expression",
         getItem = () => expression(),
         checkForItem = () => atAny(FIRST_EXPR),
-        recoverOn = RECOVER_EXPR,
+        recoverOn = () => atAny(RECOVER_EXPR),
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
       )
@@ -1997,7 +2161,7 @@ object Parser2 {
         itemDisplayName = "expression",
         getItem = () => expression(),
         checkForItem = () => atAny(FIRST_EXPR),
-        recoverOn = RECOVER_EXPR,
+        recoverOn = () => atAny(RECOVER_EXPR),
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
       )
@@ -2012,7 +2176,7 @@ object Parser2 {
         itemDisplayName = "map literal",
         getItem = mapLiteralValue,
         checkForItem = () => atAny(FIRST_EXPR),
-        recoverOn = RECOVER_EXPR,
+        recoverOn = () => atAny(RECOVER_EXPR),
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
       )
@@ -2112,7 +2276,7 @@ object Parser2 {
         errorItemName = "catch rule",
         getItem = catchRule,
         checkForItem = () => at(TokenKind.KeywordCase),
-        recoverOn = RECOVER_EXPR,
+        recoverOn = () => atAny(RECOVER_EXPR),
         optionalSeparator = true,
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
@@ -2142,7 +2306,7 @@ object Parser2 {
         errorItemName = "with rule",
         getItem = withRule,
         checkForItem = () => at(TokenKind.KeywordDef),
-        recoverOn = RECOVER_EXPR,
+        recoverOn = () => atAny(RECOVER_EXPR),
         optionalSeparator = true,
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
@@ -2154,7 +2318,7 @@ object Parser2 {
       assert(at(TokenKind.KeywordDef))
       val mark = open()
       expect(TokenKind.KeywordDef)
-      name(Array(TokenKind.NameLowerCase))
+      name(BitSet(TokenKind.NameLowerCase.repr))
       Decl.parameters()
       if (eat(TokenKind.Equal)) {
         expression()
@@ -2256,6 +2420,8 @@ object Parser2 {
       close(mark, TreeKind.Expr.Spawn)
     }
 
+    private val RECOVER_EXPR_PAR_YIELD_FRAG: BitSet = RECOVER_EXPR + TokenKind.KeywordYield.repr
+
     private def parYieldExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordPar))
       val mark = open()
@@ -2266,7 +2432,7 @@ object Parser2 {
           getItem = parYieldFragment,
           checkForItem = () => atAny(FIRST_PATTERN),
           separator = TokenKind.Semi,
-          recoverOn = RECOVER_EXPR :+ TokenKind.KeywordYield
+          recoverOn = () => atAny(RECOVER_EXPR_PAR_YIELD_FRAG)
         )
       }
       expect(TokenKind.KeywordYield)
@@ -2379,7 +2545,7 @@ object Parser2 {
           itemDisplayName = "expression",
           getItem = () => expression(),
           checkForItem = () => atAny(FIRST_EXPR),
-          recoverOn = RECOVER_EXPR,
+          recoverOn = () => atAny(RECOVER_EXPR),
         )
         case _ => expression()
       }
@@ -2411,8 +2577,10 @@ object Parser2 {
       close(mark, TreeKind.Expr.Intrinsic)
     }
 
+    private val FIRST_EXPR_INTERPOLATED_STRING: BitSet = BitSet(TokenKind.LiteralStringInterpolationL.repr, TokenKind.LiteralDebugStringL.repr)
+
     private def interpolatedStringExpr()(implicit s: State): Mark.Closed = {
-      assert(atAny(Array(TokenKind.LiteralStringInterpolationL, TokenKind.LiteralDebugStringL)))
+      assert(atAny(FIRST_EXPR_INTERPOLATED_STRING))
       val mark = open()
 
       def atTerminator(kind: Option[TokenKind]) = kind match {
@@ -2436,7 +2604,7 @@ object Parser2 {
           lastOpener = getOpener // Try to get nested interpolation
         }
       }
-      expectAny(Array(TokenKind.LiteralStringInterpolationR, TokenKind.LiteralDebugStringR))
+      expectAny(BitSet(TokenKind.LiteralStringInterpolationR.repr, TokenKind.LiteralDebugStringR.repr))
       close(mark, TreeKind.Expr.StringInterpolation)
     }
   }
@@ -2511,7 +2679,7 @@ object Parser2 {
         itemDisplayName = "pattern",
         getItem = pattern,
         checkForItem = () => atAny(FIRST_PATTERN),
-        recoverOn = RECOVER_EXPR
+        recoverOn = () => atAny(RECOVER_EXPR)
       )
       close(mark, TreeKind.Pattern.Tuple)
     }
@@ -2526,7 +2694,7 @@ object Parser2 {
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR,
         optionallyWith = Some((TokenKind.Bar, () => pattern())),
-        recoverOn = RECOVER_EXPR
+        recoverOn = () => atAny(RECOVER_EXPR)
       )
       close(mark, TreeKind.Pattern.Record)
     }
@@ -2637,7 +2805,7 @@ object Parser2 {
         checkForItem = () => atAny(FIRST_TYPE),
         delimiterL = TokenKind.BracketL,
         delimiterR = TokenKind.BracketR,
-        recoverOn = RECOVER_TYPE
+        recoverOn = () => atAny(RECOVER_TYPE)
       )
       close(mark, TreeKind.Type.ArgumentList)
     }
@@ -2656,7 +2824,7 @@ object Parser2 {
         checkForItem = () => atAny(NAME_VARIABLE ++ NAME_TYPE),
         delimiterL = TokenKind.BracketL,
         delimiterR = TokenKind.BracketR,
-        recoverOn = RECOVER_TYPE
+        recoverOn = () => atAny(RECOVER_TYPE)
       )
       close(mark, TreeKind.TypeParameterList)
     }
@@ -2744,7 +2912,7 @@ object Parser2 {
              | TokenKind.KeywordRvnot => unaryType()
         // TODO: Static is used as a type name in Prelude.flix. That requires special handling here.
         // If we remove this rule, remove KeywordStaticUppercase from FIRST_TYPE too.
-        case TokenKind.KeywordStaticUppercase => name(Array(TokenKind.KeywordStaticUppercase))
+        case TokenKind.KeywordStaticUppercase => name(BitSet(TokenKind.KeywordStaticUppercase.repr))
         case t =>
           val mark = open()
           val error = ParseError(s"Expected type before $t.", SyntacticContext.Type.OtherType, previousSourceLocation())
@@ -2753,15 +2921,19 @@ object Parser2 {
       close(mark, TreeKind.Type.Type)
     }
 
+    private val TYPE_VAR: BitSet = BitSet(TokenKind.NameLowerCase.repr, TokenKind.NameGreek.repr, TokenKind.NameMath.repr, TokenKind.Underscore.repr)
+
     private def variableType()(implicit s: State): Mark.Closed = {
       val mark = open()
-      expectAny(Array(TokenKind.NameLowerCase, TokenKind.NameGreek, TokenKind.NameMath, TokenKind.Underscore))
+      expectAny(TYPE_VAR)
       close(mark, TreeKind.Type.Variable)
     }
 
+    private val TYPE_CONSTANT: BitSet = BitSet(TokenKind.KeywordUniv.repr, TokenKind.KeywordPure.repr, TokenKind.KeywordFalse.repr, TokenKind.KeywordTrue.repr)
+
     private def constantType()(implicit s: State): Mark.Closed = {
       val mark = open()
-      expectAny(Array(TokenKind.KeywordUniv, TokenKind.KeywordPure, TokenKind.KeywordFalse, TokenKind.KeywordTrue))
+      expectAny(TYPE_CONSTANT)
       close(mark, TreeKind.Type.Constant)
     }
 
@@ -2782,24 +2954,13 @@ object Parser2 {
     private def recordRow()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.ParenL))
       val mark = open()
-      expect(TokenKind.ParenL)
-      while (!atAny(Array(TokenKind.ParenR, TokenKind.Bar)) && !eof()) {
-        recordField()
-        if (!atAny(Array(TokenKind.ParenR, TokenKind.Bar))) {
-          expect(TokenKind.Comma)
-        }
-      }
-
-      if (at(TokenKind.Comma)) {
-        val error = ParseError("Trailing comma.", SyntacticContext.Type.OtherType, currentSourceLocation())
-        advanceWithError(error)
-      }
-
-      if (eat(TokenKind.Bar)) {
-        variableType()
-      }
-
-      expect(TokenKind.ParenR)
+      zeroOrMore(
+        itemDisplayName = "record field",
+        getItem = recordField,
+        checkForItem = () => atAny(NAME_FIELD),
+        recoverOn = () => atAny(RECOVER_TYPE),
+        optionallyWith = Some((TokenKind.Bar, variableType))
+      )
       close(mark, TreeKind.Type.RecordRow)
     }
 
@@ -2810,7 +2971,7 @@ object Parser2 {
         itemDisplayName = "type",
         getItem = () => ttype(),
         checkForItem = () => atAny(FIRST_TYPE),
-        recoverOn = RECOVER_TYPE
+        recoverOn = () => atAny(RECOVER_TYPE)
       )
       close(mark, TreeKind.Type.Tuple)
     }
@@ -2830,22 +2991,15 @@ object Parser2 {
     private def record()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.CurlyL))
       val mark = open()
-      expect(TokenKind.CurlyL)
-      while (!atAny(Array(TokenKind.CurlyR, TokenKind.Bar)) && !eof()) {
-        recordField()
-        if (!atAny(Array(TokenKind.CurlyR, TokenKind.Bar))) {
-          expect(TokenKind.Comma)
-        }
-      }
-      if (at(TokenKind.Comma)) {
-        val error = ParseError("Trailing comma.", SyntacticContext.Type.OtherType, currentSourceLocation())
-        advanceWithError(error)
-      }
-      if (at(TokenKind.Bar)) {
-        expect(TokenKind.Bar)
-        variableType()
-      }
-      expect(TokenKind.CurlyR)
+      zeroOrMore(
+        itemDisplayName = "record field",
+        getItem = recordField,
+        checkForItem = () => atAny(NAME_FIELD),
+        recoverOn = () => atAny(RECOVER_TYPE),
+        delimiterL = TokenKind.CurlyL,
+        delimiterR = TokenKind.CurlyR,
+        optionallyWith = Some((TokenKind.Bar, variableType))
+      )
       close(mark, TreeKind.Type.Record)
     }
 
@@ -2864,7 +3018,7 @@ object Parser2 {
           itemDisplayName = "effect",
           getItem = () => ttype(),
           checkForItem = () => atAny(FIRST_TYPE),
-          recoverOn = RECOVER_TYPE,
+          recoverOn = () => atAny(RECOVER_TYPE),
           delimiterL = TokenKind.CurlyL,
           delimiterR = TokenKind.CurlyR
         )
@@ -2885,7 +3039,7 @@ object Parser2 {
         checkForItem = () => atAny(NAME_PREDICATE),
         delimiterL = TokenKind.HashCurlyL,
         delimiterR = TokenKind.CurlyR,
-        recoverOn = RECOVER_TYPE,
+        recoverOn = () => atAny(RECOVER_TYPE),
         optionallyWith = Some(TokenKind.Bar, () => name(NAME_VARIABLE))
       )
       close(mark, TreeKind.Type.Schema)
@@ -2899,8 +3053,7 @@ object Parser2 {
         getItem = schemaTerm,
         checkForItem = () => atAny(NAME_PREDICATE),
         delimiterL = TokenKind.HashParenL,
-        delimiterR = TokenKind.ParenR,
-        recoverOn = RECOVER_TYPE,
+        recoverOn = () => atAny(RECOVER_TYPE),
         optionallyWith = Some(TokenKind.Bar, () => name(NAME_VARIABLE))
       )
       close(mark, TreeKind.Type.SchemaRow)
@@ -2917,7 +3070,7 @@ object Parser2 {
           itemDisplayName = "type",
           getItem = () => ttype(),
           checkForItem = () => atAny(FIRST_TYPE),
-          recoverOn = RECOVER_TYPE,
+          recoverOn = () => atAny(RECOVER_TYPE),
           optionallyWith = Some(TokenKind.Semi, () => {
             val mark = open()
             ttype()
@@ -2951,18 +3104,20 @@ object Parser2 {
         itemDisplayName = "definition name",
         getItem = () => name(NAME_DEFINITION, allowQualified = true),
         checkForItem = () => atAny(NAME_DEFINITION),
-        recoverOn = RECOVER_TYPE,
+        recoverOn = () => atAny(RECOVER_TYPE),
         delimiterL = TokenKind.AngleL,
         delimiterR = TokenKind.AngleR
       )
       close(mark, TreeKind.Type.CaseSet)
     }
 
+    private val FIRST_TYPE_UNARY: BitSet = BitSet(TokenKind.Tilde.repr, TokenKind.KeywordNot.repr, TokenKind.KeywordRvnot.repr)
+
     private def unaryType()(implicit s: State): Mark.Closed = {
       val mark = open()
       val op = nth(0)
       val markOp = open()
-      expectAny(Array(TokenKind.Tilde, TokenKind.KeywordNot, TokenKind.KeywordRvnot))
+      expectAny(FIRST_TYPE_UNARY)
       close(markOp, TreeKind.Operator)
       ttype(left = op)
       close(mark, TreeKind.Type.Unary)
@@ -3005,7 +3160,7 @@ object Parser2 {
         itemDisplayName = "expression",
         getItem = () => Expr.expression(),
         checkForItem = () => atAny(FIRST_EXPR),
-        recoverOn = RECOVER_EXPR,
+        recoverOn = () => atAny(RECOVER_EXPR),
         optionallyWith = Some(TokenKind.Semi, () => {
           val mark = open()
           Expr.expression()
@@ -3021,7 +3176,7 @@ object Parser2 {
         itemDisplayName = "pattern",
         getItem = Pattern.pattern,
         checkForItem = () => atAny(FIRST_PATTERN),
-        recoverOn = RECOVER_PATTERN,
+        recoverOn = () => atAny(RECOVER_PATTERN),
         optionallyWith = Some(TokenKind.Semi, () => {
           val mark = open()
           Pattern.pattern()
@@ -3061,7 +3216,7 @@ object Parser2 {
           itemDisplayName = "variable name",
           getItem = () => name(NAME_VARIABLE),
           checkForItem = () => atAny(NAME_VARIABLE),
-          recoverOn = FIRST_EXPR :+ TokenKind.Equal
+          recoverOn = () => atAny(FIRST_EXPR + TokenKind.Equal.repr)
         )
         case TokenKind.NameLowerCase
              | TokenKind.NameMath
@@ -3092,8 +3247,7 @@ object Parser2 {
         getItem = Predicate.param,
         checkForItem = () => atAny(NAME_PREDICATE),
         delimiterL = TokenKind.HashParenL,
-        delimiterR = TokenKind.ParenR,
-        recoverOn = FIRST_EXPR :+ TokenKind.ArrowThinR
+        recoverOn = () => atAny(FIRST_EXPR + TokenKind.ArrowThinR.repr)
       )
       close(mark, TreeKind.Predicate.ParamList)
     }
@@ -3107,7 +3261,7 @@ object Parser2 {
         itemDisplayName = "type",
         getItem = () => Type.ttype(),
         checkForItem = () => atAny(FIRST_TYPE),
-        recoverOn = RECOVER_TYPE,
+        recoverOn = () => atAny(RECOVER_TYPE),
         optionallyWith = Some(TokenKind.Semi, () => {
           val mark = open()
           Type.ttype()
@@ -3126,7 +3280,7 @@ object Parser2 {
         itemDisplayName = "type",
         getItem = () => Type.ttype(),
         checkForItem = () => atAny(FIRST_TYPE),
-        recoverOn = RECOVER_TYPE
+        recoverOn = () => atAny(RECOVER_TYPE)
       )
       close(mark, TreeKind.JvmOp.Sig)
     }
