@@ -19,19 +19,29 @@ mod EffectExamples.Queens {
     /// to direct the search for a solution.
     ///
     eff Searchable {
+
+        ///
+        /// Should return a value in the range `[0, size]`.
+        ///
         pub def pick(size: Int32): Int32
+
         pub def fail(): Void
     }
 
     ///
     /// Returns `true` if placing a queen at the position
-    /// represented by `queen` does not collide with other queens.
+    /// represented by `pos` does not collide with other queens.
     ///
-    def isSafePosition(queen: Int32, diagonal: Int32, sol: Solution): Bool = match sol {
+    /// `diagonal` represents the distance in the diagonal to which
+    /// it must search for another queen placement. If such a queen
+    /// is placed at that position then there is a collision and the
+    /// position is not safe.
+    ///
+    def isSafePosition(pos: Int32, diagonal: Int32, sol: Solution): Bool = match sol {
         case Nil     => true
         case q :: qs =>
-            let isSafe = queen != q and queen != q + diagonal and queen != q - diagonal;
-            isSafe and isSafePosition(queen, diagonal + 1, qs)
+            let isSafe = pos != q and pos != q + diagonal and pos != q - diagonal;
+            isSafe and isSafePosition(pos, diagonal + 1, qs)
     }
 
     ///
