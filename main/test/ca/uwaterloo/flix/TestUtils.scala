@@ -46,14 +46,14 @@ trait TestUtils {
   }
 
   /**
-   * Asserts that the compilation result is a failure with a value of the parametric type `T`.
-   */
-  def expectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = expectErrorGen[CompilationResult, T](result)
-
-  /**
     * Asserts that the result of a compiler check is a failure with a value of the parametric type `T`.
     */
   def expectErrorOnCheck[T](result: Validation[TypedAst.Root, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = expectErrorGen[TypedAst.Root, T](result)
+
+  /**
+   * Asserts that the compilation result is a failure with a value of the parametric type `T`.
+   */
+  def expectError[T](result: Validation[CompilationResult, CompilationMessage])(implicit classTag: ClassTag[T]): Unit = expectErrorGen[CompilationResult, T](result)
 
   /**
     * Asserts that validation contains a defined entrypoint.
