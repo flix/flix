@@ -566,6 +566,7 @@ object Parser2 {
 
   /**
     * Set of the [[TokenKind]]s that can appear as the first token of declarations.
+    * Note that a CommentDoc, a Modifier and/or an annotation can appear before the token indicating what declaration we are dealing with.
     */
   private val FIRST_DECL: Set[TokenKind] = MODIFIERS ++ Set(
     TokenKind.CommentDoc,
@@ -582,6 +583,7 @@ object Parser2 {
 
   /**
     * Set of the [[TokenKind]]s that can appear as the first token of expressions.
+    * This is used for error recovery, specifically to recover out of expression
     */
   private val FIRST_EXPR: Set[TokenKind] = Set(TokenKind.KeywordOpenVariant,
     TokenKind.KeywordOpenVariantAs,
@@ -1395,12 +1397,19 @@ object Parser2 {
       if (lt == rt && rightAssoc.contains(left)) true else rt > lt
     }
 
+    // Remove KeywordDef from FIRST_EXPR for arguments only.
+    // This handles the common case of incomplete arguments followed by another declaration gracefully.
+    // For instance:
+    // def foo(): Int32 = bar(
+    // def main(): Unit = ()
+    // In this example, if we had KeywordDef, main would be read as a LetRecDef expression!
+    private val FIRST_EXPR_NO_KEYWORD_DEF = FIRST_EXPR.filter(t => t != TokenKind.KeywordDef)
     private def arguments()(implicit s: State): Mark.Closed = {
       val mark = open()
       zeroOrMore(
         itemDisplayName = "argument",
         getItem = argument,
-        checkForItem = () => atAny(FIRST_EXPR.filter(t => t != TokenKind.KeywordDef)),
+        checkForItem = () => atAny(FIRST_EXPR_NO_KEYWORD_DEF),
         recoverOn = () => atAny(RECOVER_EXPR)
       )
       close(mark, TreeKind.ArgumentList)
