@@ -21,11 +21,11 @@ mod EffectExamples.Queens {
     /// Returns `true` iff placing a queen at the position
     /// represented by `queen` does not collide with other queens.
     ///
-    def safe(queen: Int32, diagonal: Int32, sol: Solution): Bool = match sol {
+    def isSafePosition(queen: Int32, diagonal: Int32, sol: Solution): Bool = match sol {
         case Nil     => true
         case q :: qs =>
-            let sfe = queen != q and queen != q + diagonal and queen != q - diagonal;
-            sfe and safe(queen, diagonal + 1, qs)
+            let isSafe = queen != q and queen != q + diagonal and queen != q - diagonal;
+            isSafe and isSafePosition(queen, diagonal + 1, qs)
     }
 
     ///
@@ -43,7 +43,7 @@ mod EffectExamples.Queens {
         else
             let sol = findOneSolution(size, queens - 1);
             let next = do Searchable.pick(size);
-            if (safe(next, 1, sol))
+            if (isSafePosition(next, 1, sol))
                 next :: sol
             else
                 do Searchable.fail()
