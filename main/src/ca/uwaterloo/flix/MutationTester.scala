@@ -15,7 +15,7 @@
  */
 
 package ca.uwaterloo.flix
-import ca.uwaterloo.flix.MutationGenerator.MutatedDef
+import ca.uwaterloo.flix.MutationGenerator.{MutatedDef, mutateRoot}
 import ca.uwaterloo.flix.runtime.TestFn
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
@@ -28,6 +28,7 @@ import java.time.format.DateTimeFormatter
 import ca.uwaterloo.flix.language.phase.jvm.BackendObjType
 
 import java.io.{File, FileWriter}
+import scala.util.Random
 
 ///
 /// A Mutation Tester can be used to evaluate ones test suite.
@@ -77,13 +78,15 @@ object MutationTester {
             println("No mutations were made. Please verify that you have supplied the correct module names.")
             return
         }
+        val selectedMutants = randomSelection(percentage, mutations)
         val end = System.nanoTime() - start
         val timeSec = end.toFloat / 1_000_000_000.0
         println(s"time to generate mutations: $timeSec")
         val lastRoot = insertDecAndCheckIntoRoot(root)
-        runMutations(flix, testModule, lastRoot, mutations)
+        runMutations(flix, testModule, lastRoot, selectedMutants)
         writeReportsToFile(nonKilledStrList)
     }
+
 
     def writeReportsToFile(reportsList: List[String]): Unit = {
       if (reportsList.isEmpty) return
@@ -95,7 +98,17 @@ object MutationTester {
       fileWriter.close()
     }
 
-    /**
+    private def randomSelection(percentage: Int, mutants: List[(Symbol.DefnSym, List[MutatedDef])]): List[(Symbol.DefnSym, List[MutatedDef])] =  {
+      mutants.map{
+        case (sym, mDefs) =>
+          val shuffled = Random.shuffle(mDefs)
+          val toRemain = (mDefs.length * percentage) / 100
+          (sym, shuffled.take(toRemain))
+      }
+    }
+
+
+  /**
       * Inserts a masked call to the static function decAndCheck into all defs in the root
       *
       * @param root: The TAST before the insertion of decAndCheck
@@ -186,6 +199,7 @@ object MutationTester {
             testMutantsAndUpdateProgress(acc, mut, kit, f)
         })
         val totalEndTime = System.nanoTime() - totalStartTime
+        println(s"mutation score: ${(amountOfMutants - totalSurvivorCount - totalUnknowns).toFloat/(amountOfMutants - totalUnknowns).toFloat}")
         println(s"There where $totalSurvivorCount surviving mutations, out of $amountOfMutants mutations")
         println(s"There where $totalUnknowns mutations that did not finish terminating, out of $amountOfMutants mutations")
         val nano = 1_000_000_000.0

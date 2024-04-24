@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.ast.{Ast, Name, SourceLocation, Symbol, Type, 
 import dev.flix.runtime.Global
 
 import java.math.BigInteger
+import scala.util.Random
 
 
 ///
@@ -47,7 +48,7 @@ object MutationGenerator {
   def mutateRoot(root: TypedAst.Root, productionModule: String): List[(Symbol.DefnSym, List[MutatedDef])] = {
     val defs = root.defs
     val defSyms = root.modules.filter(pair => pair._1.toString.equals(productionModule)).values.toList.flatten
-    mutateDefs(defs, defSyms).flatten
+    mutateDefs( defs, defSyms).flatten
   }
 
   def insertDACAndMutInExp(mutated: TypedAst.Expr, original: TypedAst.Expr): TypedAst.Expr = {
@@ -120,6 +121,9 @@ object MutationGenerator {
       case _ => None
     })
   }
+
+
+
 
   /**
     * Goes through an expression and its subtree and returns a list of all possible mutations and permutations
