@@ -24,10 +24,7 @@ import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
-
-import scala.collection.immutable.BitSet
-import scala.collection.mutable
-import scala.collection.mutable.{ArrayBuffer, ArrayStack}
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * A resilient LL parser.
@@ -278,11 +275,6 @@ object Parser2 {
     * (Literal '1') '+' (Literal '2')
     * Into:
     * (Expr.Binary (Literal '1') '+' (Literal '2'))
-    *
-    * TODO: There is a performance penalty from doing it this way since this insert is O(n).
-    * It can be avoided by setting an 'openBefore' field on the Open event instead of inserting.
-    * Then [[buildTree]] needs to follow these 'openBefore' links when building the tree.
-    * This should be faster since look-ups are faster than inserts.
     */
   private def openBefore(before: Mark.Closed)(implicit s: State): Mark.Opened = {
     val mark = Mark.Opened(before.index)
@@ -361,9 +353,11 @@ object Parser2 {
 
   /**
     * Checks if the parser is at a token of kind in `kinds`.
+    * TODO: We can get a little performance from using BitSets here.
+    * It complicates the implementation though, since each TokenKind must then have an Int representation.
     */
-  private def atAny(kinds: BitSet)(implicit s: State): Boolean = {
-    kinds.contains(nth(0).repr)
+  private def atAny(kinds: Set[TokenKind])(implicit s: State): Boolean = {
+    kinds.contains(nth(0))
   }
 
   /**
@@ -381,7 +375,7 @@ object Parser2 {
   /**
     * Checks if the parser is at a token of kind in `kinds` and advances past it if it is.
     */
-  private def eatAny(kinds: BitSet)(implicit s: State): Boolean = {
+  private def eatAny(kinds: Set[TokenKind])(implicit s: State): Boolean = {
     if (atAny(kinds)) {
       advance()
       true
@@ -415,7 +409,7 @@ object Parser2 {
   /**
     * Advance past current token if it is of kind in `kinds`. Otherwise wrap it in an error.
     */
-  private def expectAny(kinds: BitSet)(implicit s: State): Unit = {
+  private def expectAny(kinds: Set[TokenKind])(implicit s: State): Unit = {
     if (eatAny(kinds)) {
       return
     }
@@ -552,170 +546,170 @@ object Parser2 {
     * So for instance NAME_PARAMETER is all the kinds of tokens that may occur as a parameter identifier.
     * Use these together with the [[name]] helper function.
     */
-  private val NAME_DEFINITION: BitSet = BitSet(TokenKind.NameLowerCase.repr, TokenKind.NameUpperCase.repr, TokenKind.NameMath.repr, TokenKind.NameGreek.repr, TokenKind.UserDefinedOperator.repr)
-  private val NAME_PARAMETER: BitSet = BitSet(TokenKind.NameLowerCase.repr, TokenKind.NameMath.repr, TokenKind.NameGreek.repr, TokenKind.Underscore.repr)
-  private val NAME_VARIABLE: BitSet = BitSet(TokenKind.NameLowerCase.repr, TokenKind.NameMath.repr, TokenKind.NameGreek.repr, TokenKind.Underscore.repr)
-  private val NAME_JAVA: BitSet = BitSet(TokenKind.NameJava.repr, TokenKind.NameLowerCase.repr, TokenKind.NameUpperCase.repr)
-  private val NAME_QNAME: BitSet = BitSet(TokenKind.NameLowerCase.repr, TokenKind.NameUpperCase.repr)
-  private val NAME_USE: BitSet = BitSet(TokenKind.NameLowerCase.repr, TokenKind.NameUpperCase.repr, TokenKind.NameMath.repr, TokenKind.NameGreek.repr, TokenKind.UserDefinedOperator.repr)
-  private val NAME_FIELD: BitSet = BitSet(TokenKind.NameLowerCase.repr)
+  private val NAME_DEFINITION: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
+  private val NAME_PARAMETER: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
+  private val NAME_VARIABLE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.Underscore)
+  private val NAME_JAVA: Set[TokenKind] = Set(TokenKind.NameJava, TokenKind.NameLowerCase, TokenKind.NameUpperCase)
+  private val NAME_QNAME: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase)
+  private val NAME_USE: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameUpperCase, TokenKind.NameMath, TokenKind.NameGreek, TokenKind.UserDefinedOperator)
+  private val NAME_FIELD: Set[TokenKind] = Set(TokenKind.NameLowerCase)
   // TODO: Static is used as a type in Prelude.flix. Should we allow this?
-  private val NAME_TYPE: BitSet = BitSet(TokenKind.NameUpperCase.repr, TokenKind.KeywordStaticUppercase.repr)
-  private val NAME_KIND: BitSet = BitSet(TokenKind.NameUpperCase.repr)
-  private val NAME_EFFECT: BitSet = BitSet(TokenKind.NameUpperCase.repr)
-  private val NAME_MODULE: BitSet = BitSet(TokenKind.NameUpperCase.repr)
+  private val NAME_TYPE: Set[TokenKind] = Set(TokenKind.NameUpperCase, TokenKind.KeywordStaticUppercase)
+  private val NAME_KIND: Set[TokenKind] = Set(TokenKind.NameUpperCase)
+  private val NAME_EFFECT: Set[TokenKind] = Set(TokenKind.NameUpperCase)
+  private val NAME_MODULE: Set[TokenKind] = Set(TokenKind.NameUpperCase)
   // TODO: Pure and Impure are used in enums as tags in Prelude.flix. Should we allow this?
-  private val NAME_TAG: BitSet = BitSet(TokenKind.NameUpperCase.repr, TokenKind.KeywordPure.repr, TokenKind.KeywordImpure.repr)
-  private val NAME_PREDICATE: BitSet = BitSet(TokenKind.NameUpperCase.repr)
+  private val NAME_TAG: Set[TokenKind] = Set(TokenKind.NameUpperCase, TokenKind.KeywordPure, TokenKind.KeywordImpure)
+  private val NAME_PREDICATE: Set[TokenKind] = Set(TokenKind.NameUpperCase)
 
-  private val MODIFIERS: BitSet = BitSet(TokenKind.KeywordSealed.repr, TokenKind.KeywordLawful.repr, TokenKind.KeywordPub.repr, TokenKind.KeywordInline.repr, TokenKind.KeywordOverride.repr)
+  private val MODIFIERS: Set[TokenKind] = Set(TokenKind.KeywordSealed, TokenKind.KeywordLawful, TokenKind.KeywordPub, TokenKind.KeywordInline, TokenKind.KeywordOverride)
 
   /**
-    * BitSet of the [[TokenKind]]s that can appear as the first token of declarations.
+    * Set of the [[TokenKind]]s that can appear as the first token of declarations.
     */
-  private val FIRST_DECL: BitSet = MODIFIERS ++ BitSet(
-    TokenKind.CommentDoc.repr,
-    TokenKind.Annotation.repr,
-    TokenKind.KeywordMod.repr,
-    TokenKind.KeywordDef.repr,
-    TokenKind.KeywordEnum.repr,
-    TokenKind.KeywordTrait.repr,
-    TokenKind.KeywordInstance.repr,
-    TokenKind.KeywordType.repr,
-    TokenKind.KeywordEff.repr,
-    TokenKind.KeywordRestrictable.repr
+  private val FIRST_DECL: Set[TokenKind] = MODIFIERS ++ Set(
+    TokenKind.CommentDoc,
+    TokenKind.Annotation,
+    TokenKind.KeywordMod,
+    TokenKind.KeywordDef,
+    TokenKind.KeywordEnum,
+    TokenKind.KeywordTrait,
+    TokenKind.KeywordInstance,
+    TokenKind.KeywordType,
+    TokenKind.KeywordEff,
+    TokenKind.KeywordRestrictable
   )
 
   /**
-    * BitSet of the [[TokenKind]]s that can appear as the first token of expressions.
+    * Set of the [[TokenKind]]s that can appear as the first token of expressions.
     */
-  private val FIRST_EXPR: BitSet = BitSet(TokenKind.KeywordOpenVariant.repr,
-    TokenKind.KeywordOpenVariantAs.repr,
-    TokenKind.HoleNamed.repr,
-    TokenKind.HoleAnonymous.repr,
-    TokenKind.HoleVariable.repr,
-    TokenKind.KeywordUse.repr,
-    TokenKind.LiteralString.repr,
-    TokenKind.LiteralChar.repr,
-    TokenKind.LiteralFloat32.repr,
-    TokenKind.LiteralFloat64.repr,
-    TokenKind.LiteralBigDecimal.repr,
-    TokenKind.LiteralInt8.repr,
-    TokenKind.LiteralInt16.repr,
-    TokenKind.LiteralInt32.repr,
-    TokenKind.LiteralInt64.repr,
-    TokenKind.LiteralBigInt.repr,
-    TokenKind.KeywordTrue.repr,
-    TokenKind.KeywordFalse.repr,
-    TokenKind.KeywordNull.repr,
-    TokenKind.LiteralRegex.repr,
-    TokenKind.ParenL.repr,
-    TokenKind.Underscore.repr,
-    TokenKind.NameLowerCase.repr,
-    TokenKind.NameUpperCase.repr,
-    TokenKind.NameMath.repr,
-    TokenKind.NameGreek.repr,
-    TokenKind.Minus.repr,
-    TokenKind.KeywordNot.repr,
-    TokenKind.Plus.repr,
-    TokenKind.TripleTilde.repr,
-    TokenKind.KeywordLazy.repr,
-    TokenKind.KeywordForce.repr,
-    TokenKind.KeywordDiscard.repr,
-    TokenKind.KeywordDeref.repr,
-    TokenKind.KeywordIf.repr,
-    TokenKind.KeywordLet.repr,
-    TokenKind.Annotation.repr,
-    TokenKind.KeywordDef.repr,
-    TokenKind.KeywordImport.repr,
-    TokenKind.KeywordRegion.repr,
-    TokenKind.KeywordMatch.repr,
-    TokenKind.KeywordTypeMatch.repr,
-    TokenKind.KeywordChoose.repr,
-    TokenKind.KeywordChooseStar.repr,
-    TokenKind.KeywordForA.repr,
-    TokenKind.KeywordForeach.repr,
-    TokenKind.KeywordForM.repr,
-    TokenKind.CurlyL.repr,
-    TokenKind.ArrayHash.repr,
-    TokenKind.VectorHash.repr,
-    TokenKind.ListHash.repr,
-    TokenKind.SetHash.repr,
-    TokenKind.MapHash.repr,
-    TokenKind.KeywordRef.repr,
-    TokenKind.KeywordCheckedCast.repr,
-    TokenKind.KeywordCheckedECast.repr,
-    TokenKind.KeywordUncheckedCast.repr,
-    TokenKind.KeywordMaskedCast.repr,
-    TokenKind.KeywordTry.repr,
-    TokenKind.KeywordDo.repr,
-    TokenKind.KeywordNew.repr,
-    TokenKind.KeywordStaticUppercase.repr,
-    TokenKind.KeywordSelect.repr,
-    TokenKind.KeywordSpawn.repr,
-    TokenKind.KeywordPar.repr,
-    TokenKind.HashCurlyL.repr,
-    TokenKind.HashParenL.repr,
-    TokenKind.KeywordSolve.repr,
-    TokenKind.KeywordInject.repr,
-    TokenKind.KeywordQuery.repr,
-    TokenKind.BuiltIn.repr,
-    TokenKind.LiteralStringInterpolationL.repr,
-    TokenKind.LiteralDebugStringL.repr,
-    TokenKind.KeywordDebug.repr,
-    TokenKind.KeywordDebugBang.repr,
-    TokenKind.KeywordDebugBangBang.repr,
-    TokenKind.NameJava.repr)
+  private val FIRST_EXPR: Set[TokenKind] = Set(TokenKind.KeywordOpenVariant,
+    TokenKind.KeywordOpenVariantAs,
+    TokenKind.HoleNamed,
+    TokenKind.HoleAnonymous,
+    TokenKind.HoleVariable,
+    TokenKind.KeywordUse,
+    TokenKind.LiteralString,
+    TokenKind.LiteralChar,
+    TokenKind.LiteralFloat32,
+    TokenKind.LiteralFloat64,
+    TokenKind.LiteralBigDecimal,
+    TokenKind.LiteralInt8,
+    TokenKind.LiteralInt16,
+    TokenKind.LiteralInt32,
+    TokenKind.LiteralInt64,
+    TokenKind.LiteralBigInt,
+    TokenKind.KeywordTrue,
+    TokenKind.KeywordFalse,
+    TokenKind.KeywordNull,
+    TokenKind.LiteralRegex,
+    TokenKind.ParenL,
+    TokenKind.Underscore,
+    TokenKind.NameLowerCase,
+    TokenKind.NameUpperCase,
+    TokenKind.NameMath,
+    TokenKind.NameGreek,
+    TokenKind.Minus,
+    TokenKind.KeywordNot,
+    TokenKind.Plus,
+    TokenKind.TripleTilde,
+    TokenKind.KeywordLazy,
+    TokenKind.KeywordForce,
+    TokenKind.KeywordDiscard,
+    TokenKind.KeywordDeref,
+    TokenKind.KeywordIf,
+    TokenKind.KeywordLet,
+    TokenKind.Annotation,
+    TokenKind.KeywordDef,
+    TokenKind.KeywordImport,
+    TokenKind.KeywordRegion,
+    TokenKind.KeywordMatch,
+    TokenKind.KeywordTypeMatch,
+    TokenKind.KeywordChoose,
+    TokenKind.KeywordChooseStar,
+    TokenKind.KeywordForA,
+    TokenKind.KeywordForeach,
+    TokenKind.KeywordForM,
+    TokenKind.CurlyL,
+    TokenKind.ArrayHash,
+    TokenKind.VectorHash,
+    TokenKind.ListHash,
+    TokenKind.SetHash,
+    TokenKind.MapHash,
+    TokenKind.KeywordRef,
+    TokenKind.KeywordCheckedCast,
+    TokenKind.KeywordCheckedECast,
+    TokenKind.KeywordUncheckedCast,
+    TokenKind.KeywordMaskedCast,
+    TokenKind.KeywordTry,
+    TokenKind.KeywordDo,
+    TokenKind.KeywordNew,
+    TokenKind.KeywordStaticUppercase,
+    TokenKind.KeywordSelect,
+    TokenKind.KeywordSpawn,
+    TokenKind.KeywordPar,
+    TokenKind.HashCurlyL,
+    TokenKind.HashParenL,
+    TokenKind.KeywordSolve,
+    TokenKind.KeywordInject,
+    TokenKind.KeywordQuery,
+    TokenKind.BuiltIn,
+    TokenKind.LiteralStringInterpolationL,
+    TokenKind.LiteralDebugStringL,
+    TokenKind.KeywordDebug,
+    TokenKind.KeywordDebugBang,
+    TokenKind.KeywordDebugBangBang,
+    TokenKind.NameJava)
 
   /**
-    * BitSet of the [[TokenKind]]s that can appear as the first token of types.
+    * Set of the [[TokenKind]]s that can appear as the first token of types.
     */
-  private val FIRST_TYPE: BitSet = BitSet(TokenKind.NameUpperCase.repr,
-    TokenKind.NameMath.repr,
-    TokenKind.NameGreek.repr,
-    TokenKind.Underscore.repr,
-    TokenKind.NameLowerCase.repr,
-    TokenKind.KeywordUniv.repr,
-    TokenKind.KeywordPure.repr,
-    TokenKind.KeywordFalse.repr,
-    TokenKind.KeywordTrue.repr,
-    TokenKind.ParenL.repr,
-    TokenKind.CurlyL.repr,
-    TokenKind.HashCurlyL.repr,
-    TokenKind.HashParenL.repr,
-    TokenKind.NameJava.repr,
-    TokenKind.AngleL.repr,
-    TokenKind.KeywordNot.repr,
-    TokenKind.Tilde.repr,
-    TokenKind.KeywordRvnot.repr,
-    TokenKind.KeywordStaticUppercase.repr)
+  private val FIRST_TYPE: Set[TokenKind] = Set(TokenKind.NameUpperCase,
+    TokenKind.NameMath,
+    TokenKind.NameGreek,
+    TokenKind.Underscore,
+    TokenKind.NameLowerCase,
+    TokenKind.KeywordUniv,
+    TokenKind.KeywordPure,
+    TokenKind.KeywordFalse,
+    TokenKind.KeywordTrue,
+    TokenKind.ParenL,
+    TokenKind.CurlyL,
+    TokenKind.HashCurlyL,
+    TokenKind.HashParenL,
+    TokenKind.NameJava,
+    TokenKind.AngleL,
+    TokenKind.KeywordNot,
+    TokenKind.Tilde,
+    TokenKind.KeywordRvnot,
+    TokenKind.KeywordStaticUppercase)
 
   /**
-    * BitSet of the [[TokenKind]]s that can appear as the first token of patterns.
+    * Set of the [[TokenKind]]s that can appear as the first token of patterns.
     */
-  private val FIRST_PATTERN: BitSet = BitSet(TokenKind.NameLowerCase.repr,
-    TokenKind.NameGreek.repr,
-    TokenKind.NameMath.repr,
-    TokenKind.Underscore.repr,
-    TokenKind.KeywordQuery.repr,
-    TokenKind.LiteralString.repr,
-    TokenKind.LiteralChar.repr,
-    TokenKind.LiteralFloat32.repr,
-    TokenKind.LiteralFloat64.repr,
-    TokenKind.LiteralBigDecimal.repr,
-    TokenKind.LiteralInt8.repr,
-    TokenKind.LiteralInt16.repr,
-    TokenKind.LiteralInt32.repr,
-    TokenKind.LiteralInt64.repr,
-    TokenKind.LiteralBigInt.repr,
-    TokenKind.KeywordTrue.repr,
-    TokenKind.KeywordFalse.repr,
-    TokenKind.LiteralRegex.repr,
-    TokenKind.KeywordNull.repr,
-    TokenKind.NameUpperCase.repr,
-    TokenKind.ParenL.repr,
-    TokenKind.CurlyL.repr,
-    TokenKind.Minus.repr)
+  private val FIRST_PATTERN: Set[TokenKind] = Set(TokenKind.NameLowerCase,
+    TokenKind.NameGreek,
+    TokenKind.NameMath,
+    TokenKind.Underscore,
+    TokenKind.KeywordQuery,
+    TokenKind.LiteralString,
+    TokenKind.LiteralChar,
+    TokenKind.LiteralFloat32,
+    TokenKind.LiteralFloat64,
+    TokenKind.LiteralBigDecimal,
+    TokenKind.LiteralInt8,
+    TokenKind.LiteralInt16,
+    TokenKind.LiteralInt32,
+    TokenKind.LiteralInt64,
+    TokenKind.LiteralBigInt,
+    TokenKind.KeywordTrue,
+    TokenKind.KeywordFalse,
+    TokenKind.LiteralRegex,
+    TokenKind.KeywordNull,
+    TokenKind.NameUpperCase,
+    TokenKind.ParenL,
+    TokenKind.CurlyL,
+    TokenKind.Minus)
 
 
   /**
@@ -726,24 +720,24 @@ object Parser2 {
     * enum Legumes { case Beans, Chickpeas }
     * Here we recover from parsing argument expressions of the unfinished call to `bar` and still discover `Legumes`, because [[TokenKind.KeywordEnum]] is part of [[RECOVER_EXPR]].
     */
-  private val RECOVER_DECL: BitSet = FIRST_DECL
-  private val RECOVER_EXPR: BitSet = FIRST_DECL + TokenKind.Semi.repr
-  private val RECOVER_TYPE: BitSet = FIRST_DECL ++ BitSet(TokenKind.Equal.repr, TokenKind.Semi.repr)
-  private val RECOVER_PATTERN: BitSet = FIRST_DECL ++ BitSet(TokenKind.ArrowThickR.repr, TokenKind.KeywordCase.repr)
-  private val RECOVER_TOP_LEVEL_USE: BitSet = FIRST_DECL ++ BitSet(TokenKind.Semi.repr, TokenKind.KeywordUse.repr, TokenKind.KeywordImport.repr)
-  private val RECOVER_PARAMETERS: BitSet = FIRST_DECL ++ BitSet(TokenKind.Colon.repr, TokenKind.Equal.repr)
+  private val RECOVER_DECL: Set[TokenKind] = FIRST_DECL
+  private val RECOVER_EXPR: Set[TokenKind] = FIRST_DECL + TokenKind.Semi
+  private val RECOVER_TYPE: Set[TokenKind] = FIRST_DECL ++ Set(TokenKind.Equal, TokenKind.Semi)
+  private val RECOVER_PATTERN: Set[TokenKind] = FIRST_DECL ++ Set(TokenKind.ArrowThickR, TokenKind.KeywordCase)
+  private val RECOVER_TOP_LEVEL_USE: Set[TokenKind] = FIRST_DECL ++ Set(TokenKind.Semi, TokenKind.KeywordUse, TokenKind.KeywordImport)
+  private val RECOVER_PARAMETERS: Set[TokenKind] = FIRST_DECL ++ Set(TokenKind.Colon, TokenKind.Equal)
 
   /**
     * Consumes a token if kind is in `kinds`. If `allowQualified` is passed also consume subsequent dot-separated tokens with kind in `kinds`.
     */
-  private def name(kinds: BitSet, allowQualified: Boolean = false)(implicit s: State): Mark.Closed = {
+  private def name(kinds: Set[TokenKind], allowQualified: Boolean = false)(implicit s: State): Mark.Closed = {
     val mark = open(consumeDocComments = false)
     expectAny(kinds)
     val first = close(mark, TreeKind.Ident)
     if (!allowQualified) {
       return first
     }
-    while (at(TokenKind.Dot) && kinds.contains(nth(1).repr) && !eof()) {
+    while (at(TokenKind.Dot) && kinds.contains(nth(1)) && !eof()) {
       eat(TokenKind.Dot)
       val mark = open()
       expectAny(kinds)
@@ -757,8 +751,8 @@ object Parser2 {
     }
   }
 
-  private val NON_DOC_COMMENTS: BitSet = BitSet(TokenKind.CommentLine.repr, TokenKind.CommentBlock.repr)
-  private val COMMENTS: BitSet = BitSet(TokenKind.CommentDoc.repr, TokenKind.CommentLine.repr, TokenKind.CommentBlock.repr)
+  private val NON_DOC_COMMENTS: Set[TokenKind] = Set(TokenKind.CommentLine, TokenKind.CommentBlock)
+  private val COMMENTS: Set[TokenKind] = Set(TokenKind.CommentDoc, TokenKind.CommentLine, TokenKind.CommentBlock)
 
   /**
     * Consumes subsequent comments.
@@ -768,7 +762,7 @@ object Parser2 {
   private def comments(canStartOnDoc: Boolean = false)(implicit s: State): Unit = {
     // Note: In case of a misplaced CommentDoc, we would just like to consume it into the comment list.
     // This is forgiving in the common case of accidentally inserting an extra '/'.
-    val starters: BitSet = if (canStartOnDoc) COMMENTS else NON_DOC_COMMENTS
+    val starters: Set[TokenKind] = if (canStartOnDoc) COMMENTS else NON_DOC_COMMENTS
 
     if (atAny(starters)) {
       val mark = Mark.Opened(s.events.length)
@@ -853,7 +847,7 @@ object Parser2 {
     close(mark, TreeKind.UsesOrImports.Import)
   }
 
-  private def aliasedName(names: BitSet)(implicit s: State): Mark.Closed = {
+  private def aliasedName(names: Set[TokenKind])(implicit s: State): Mark.Closed = {
     var lhs = name(names)
     if (eat(TokenKind.ArrowThickR)) {
       name(names)
@@ -1036,7 +1030,7 @@ object Parser2 {
     }
 
     private def enumerationDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
-      assert(atAny(BitSet(TokenKind.KeywordRestrictable.repr, TokenKind.KeywordEnum.repr)))
+      assert(atAny(Set(TokenKind.KeywordRestrictable, TokenKind.KeywordEnum)))
       val isRestrictable = eat(TokenKind.KeywordRestrictable)
       expect(TokenKind.KeywordEnum)
       val nameLoc = currentSourceLocation()
@@ -1079,7 +1073,7 @@ object Parser2 {
       close(mark, if (isRestrictable) TreeKind.Decl.RestrictableEnum else TreeKind.Decl.Enum)
     }
 
-    private def FIRST_ENUM_CASE: BitSet = BitSet(TokenKind.CommentDoc.repr, TokenKind.KeywordCase.repr, TokenKind.Comma.repr)
+    private def FIRST_ENUM_CASE: Set[TokenKind] = Set(TokenKind.CommentDoc, TokenKind.KeywordCase, TokenKind.Comma)
 
     private def enumCases()(implicit s: State): Unit = {
       // Clear non-doc comments that appear before any cases.
@@ -1406,7 +1400,7 @@ object Parser2 {
       zeroOrMore(
         itemDisplayName = "argument",
         getItem = argument,
-        checkForItem = () => atAny(FIRST_EXPR.filter(t => t != TokenKind.KeywordDef.repr)),
+        checkForItem = () => atAny(FIRST_EXPR.filter(t => t != TokenKind.KeywordDef)),
         recoverOn = () => atAny(RECOVER_EXPR)
       )
       close(mark, TreeKind.ArgumentList)
@@ -1530,11 +1524,11 @@ object Parser2 {
     }
 
     private def holeExpr()(implicit s: State): Mark.Closed = {
-      assert(atAny(BitSet(TokenKind.HoleNamed.repr, TokenKind.HoleAnonymous.repr)))
+      assert(atAny(Set(TokenKind.HoleNamed, TokenKind.HoleAnonymous)))
       val mark = open()
       nth(0) match {
         case TokenKind.HoleAnonymous => advance(); close(mark, TreeKind.Expr.Hole)
-        case TokenKind.HoleNamed => name(BitSet(TokenKind.HoleNamed.repr)); close(mark, TreeKind.Expr.Hole)
+        case TokenKind.HoleNamed => name(Set(TokenKind.HoleNamed)); close(mark, TreeKind.Expr.Hole)
         case _ => throw InternalCompilerException("Parser assert missed case", currentSourceLocation())
       }
     }
@@ -1542,7 +1536,7 @@ object Parser2 {
     private def holeVariableExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.HoleVariable))
       val mark = open()
-      name(BitSet(TokenKind.HoleVariable.repr))
+      name(Set(TokenKind.HoleVariable))
       close(mark, TreeKind.Expr.HoleVariable)
     }
 
@@ -1666,15 +1660,15 @@ object Parser2 {
       close(mark, TreeKind.Expr.Lambda)
     }
 
-    private val FIRST_EXPR_UNARY: BitSet = BitSet(
-      TokenKind.Minus.repr,
-      TokenKind.KeywordNot.repr,
-      TokenKind.Plus.repr,
-      TokenKind.TripleTilde.repr,
-      TokenKind.KeywordLazy.repr,
-      TokenKind.KeywordForce.repr,
-      TokenKind.KeywordDiscard.repr,
-      TokenKind.KeywordDeref.repr)
+    private val FIRST_EXPR_UNARY: Set[TokenKind] = Set(
+      TokenKind.Minus,
+      TokenKind.KeywordNot,
+      TokenKind.Plus,
+      TokenKind.TripleTilde,
+      TokenKind.KeywordLazy,
+      TokenKind.KeywordForce,
+      TokenKind.KeywordDiscard,
+      TokenKind.KeywordDeref)
 
     private def unaryExpr()(implicit s: State): Mark.Closed = {
       val mark = open()
@@ -1715,7 +1709,7 @@ object Parser2 {
     }
 
     private def letRecDefExpr()(implicit s: State): Mark.Closed = {
-      assert(atAny(BitSet(TokenKind.Annotation.repr, TokenKind.KeywordDef.repr, TokenKind.CommentDoc.repr)))
+      assert(atAny(Set(TokenKind.Annotation, TokenKind.KeywordDef, TokenKind.CommentDoc)))
       val mark = open(consumeDocComments = false)
       Decl.docComment()
       Decl.annotations()
@@ -1781,10 +1775,10 @@ object Parser2 {
       close(mark, TreeKind.Expr.Block)
     }
 
-    private val FIRST_EXPR_DEBUG: BitSet = BitSet(
-      TokenKind.KeywordDebug.repr,
-      TokenKind.KeywordDebugBang.repr,
-      TokenKind.KeywordDebugBangBang.repr
+    private val FIRST_EXPR_DEBUG: Set[TokenKind] = Set(
+      TokenKind.KeywordDebug,
+      TokenKind.KeywordDebugBang,
+      TokenKind.KeywordDebugBangBang
     )
 
     private def debugExpr()(implicit s: State): Mark.Closed = {
@@ -1889,7 +1883,7 @@ object Parser2 {
       close(mark, TreeKind.Expr.TypeMatchRuleFragment)
     }
 
-    private val FIRST_EXPR_CHOOSE = BitSet(TokenKind.KeywordChoose.repr, TokenKind.KeywordChooseStar.repr)
+    private val FIRST_EXPR_CHOOSE: Set[TokenKind] = Set(TokenKind.KeywordChoose, TokenKind.KeywordChooseStar)
 
     private def restrictableChooseExpr()(implicit s: State): Mark.Closed = {
       assert(atAny(FIRST_EXPR_CHOOSE))
@@ -2056,7 +2050,7 @@ object Parser2 {
       close(mark, TreeKind.Expr.LiteralRecordFieldFragment)
     }
 
-    private val FIRST_RECORD_OP: BitSet = BitSet(TokenKind.Plus.repr, TokenKind.Minus.repr, TokenKind.NameLowerCase.repr)
+    private val FIRST_RECORD_OP: Set[TokenKind] = Set(TokenKind.Plus, TokenKind.Minus, TokenKind.NameLowerCase)
 
     private def recordOperation()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.CurlyL))
@@ -2318,7 +2312,7 @@ object Parser2 {
       assert(at(TokenKind.KeywordDef))
       val mark = open()
       expect(TokenKind.KeywordDef)
-      name(BitSet(TokenKind.NameLowerCase.repr))
+      name(Set(TokenKind.NameLowerCase))
       Decl.parameters()
       if (eat(TokenKind.Equal)) {
         expression()
@@ -2420,7 +2414,7 @@ object Parser2 {
       close(mark, TreeKind.Expr.Spawn)
     }
 
-    private val RECOVER_EXPR_PAR_YIELD_FRAG: BitSet = RECOVER_EXPR + TokenKind.KeywordYield.repr
+    private val RECOVER_EXPR_PAR_YIELD_FRAG: Set[TokenKind] = RECOVER_EXPR + TokenKind.KeywordYield
 
     private def parYieldExpr()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordPar))
@@ -2577,7 +2571,7 @@ object Parser2 {
       close(mark, TreeKind.Expr.Intrinsic)
     }
 
-    private val FIRST_EXPR_INTERPOLATED_STRING: BitSet = BitSet(TokenKind.LiteralStringInterpolationL.repr, TokenKind.LiteralDebugStringL.repr)
+    private val FIRST_EXPR_INTERPOLATED_STRING: Set[TokenKind] = Set(TokenKind.LiteralStringInterpolationL, TokenKind.LiteralDebugStringL)
 
     private def interpolatedStringExpr()(implicit s: State): Mark.Closed = {
       assert(atAny(FIRST_EXPR_INTERPOLATED_STRING))
@@ -2604,7 +2598,7 @@ object Parser2 {
           lastOpener = getOpener // Try to get nested interpolation
         }
       }
-      expectAny(BitSet(TokenKind.LiteralStringInterpolationR.repr, TokenKind.LiteralDebugStringR.repr))
+      expectAny(Set(TokenKind.LiteralStringInterpolationR, TokenKind.LiteralDebugStringR))
       close(mark, TreeKind.Expr.StringInterpolation)
     }
   }
@@ -2912,7 +2906,7 @@ object Parser2 {
              | TokenKind.KeywordRvnot => unaryType()
         // TODO: Static is used as a type name in Prelude.flix. That requires special handling here.
         // If we remove this rule, remove KeywordStaticUppercase from FIRST_TYPE too.
-        case TokenKind.KeywordStaticUppercase => name(BitSet(TokenKind.KeywordStaticUppercase.repr))
+        case TokenKind.KeywordStaticUppercase => name(Set(TokenKind.KeywordStaticUppercase))
         case t =>
           val mark = open()
           val error = ParseError(s"Expected type before $t.", SyntacticContext.Type.OtherType, previousSourceLocation())
@@ -2921,7 +2915,7 @@ object Parser2 {
       close(mark, TreeKind.Type.Type)
     }
 
-    private val TYPE_VAR: BitSet = BitSet(TokenKind.NameLowerCase.repr, TokenKind.NameGreek.repr, TokenKind.NameMath.repr, TokenKind.Underscore.repr)
+    private val TYPE_VAR: Set[TokenKind] = Set(TokenKind.NameLowerCase, TokenKind.NameGreek, TokenKind.NameMath, TokenKind.Underscore)
 
     private def variableType()(implicit s: State): Mark.Closed = {
       val mark = open()
@@ -2929,7 +2923,7 @@ object Parser2 {
       close(mark, TreeKind.Type.Variable)
     }
 
-    private val TYPE_CONSTANT: BitSet = BitSet(TokenKind.KeywordUniv.repr, TokenKind.KeywordPure.repr, TokenKind.KeywordFalse.repr, TokenKind.KeywordTrue.repr)
+    private val TYPE_CONSTANT: Set[TokenKind] = Set(TokenKind.KeywordUniv, TokenKind.KeywordPure, TokenKind.KeywordFalse, TokenKind.KeywordTrue)
 
     private def constantType()(implicit s: State): Mark.Closed = {
       val mark = open()
@@ -3111,7 +3105,7 @@ object Parser2 {
       close(mark, TreeKind.Type.CaseSet)
     }
 
-    private val FIRST_TYPE_UNARY: BitSet = BitSet(TokenKind.Tilde.repr, TokenKind.KeywordNot.repr, TokenKind.KeywordRvnot.repr)
+    private val FIRST_TYPE_UNARY: Set[TokenKind] = Set(TokenKind.Tilde, TokenKind.KeywordNot, TokenKind.KeywordRvnot)
 
     private def unaryType()(implicit s: State): Mark.Closed = {
       val mark = open()
@@ -3216,7 +3210,7 @@ object Parser2 {
           itemDisplayName = "variable name",
           getItem = () => name(NAME_VARIABLE),
           checkForItem = () => atAny(NAME_VARIABLE),
-          recoverOn = () => atAny(FIRST_EXPR + TokenKind.Equal.repr)
+          recoverOn = () => atAny(FIRST_EXPR + TokenKind.Equal)
         )
         case TokenKind.NameLowerCase
              | TokenKind.NameMath
@@ -3247,7 +3241,7 @@ object Parser2 {
         getItem = Predicate.param,
         checkForItem = () => atAny(NAME_PREDICATE),
         delimiterL = TokenKind.HashParenL,
-        recoverOn = () => atAny(FIRST_EXPR + TokenKind.ArrowThinR.repr)
+        recoverOn = () => atAny(FIRST_EXPR + TokenKind.ArrowThinR)
       )
       close(mark, TreeKind.Predicate.ParamList)
     }
