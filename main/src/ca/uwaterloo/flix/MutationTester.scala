@@ -64,7 +64,8 @@ object MutationTester {
       *
       * It also keeps track of the time it took to generate all the mutations
       */
-    def run(flix: Flix, testModule: String, productionModule: String): Unit = {
+    def run(flix: Flix, testModule: String, productionModule: String, percentage: Int): Unit = {
+      println(s"mutating module: $productionModule")
         val root = flix.check().unsafeGet
         val start = System.nanoTime()
         // println(root.sigs.filter(t => t._1.toString.equals("Add.add")))

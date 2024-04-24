@@ -296,8 +296,7 @@ object MutationGenerator {
       val mut1 = mutateExpr(exp1).map(m => Expr.Mutated(original.copy(exp1 = m), m.mutationType, original.tpe, original.eff, m.loc))
       val mut2 = mutateExpr(exp2).map(m => Expr.Mutated(original.copy(exp2 = m), m.mutationType, original.tpe, original.eff, m.loc))
       mut1 ::: mut2
-    case original@Expr.Ascribe(exp, _, _, _) =>
-      Nil
+    case original@Expr.Ascribe(exp, _, _, _) => Nil
     case original@Expr.InstanceOf(exp, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), m.mutationType, original.tpe, original.eff, m.loc))
     case original@Expr.CheckedCast(_, exp, _, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), m.mutationType, original.tpe, original.eff, m.loc))
     case original@Expr.UncheckedCast(exp, _, _, _, _, _) => mutateExpr(exp).map(m => Expr.Mutated(original.copy(exp = m), m.mutationType, original.tpe, original.eff, m.loc))

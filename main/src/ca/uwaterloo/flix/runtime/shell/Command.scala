@@ -124,7 +124,7 @@ object Command {
   /**
     * Runs the mutation tests given a tester and testee.
     */
-  case class Mtest(tester: String, testee: String) extends Command
+  case class Mtest(tester: String, testee: String, percentage: Int) extends Command
   /**
     * Parses the given `input` into a command.
     */
@@ -186,7 +186,8 @@ object Command {
 
     if (input.startsWith(":mtest") || input.startsWith(":mt")) {
       val args = input.split(" ")
-      return Command.Mtest(args(1), args(2))
+      if (args.length == 3) return  Command.Mtest(args(1), args(2), 100)
+      return Command.Mtest(args(1), args(2), args(3).toInt)
     }
 
       //

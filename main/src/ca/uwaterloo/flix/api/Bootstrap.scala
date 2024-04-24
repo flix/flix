@@ -731,11 +731,11 @@ class Bootstrap(val projectPath: Path, apiKey: Option[String]) {
   /**
     * Runs all tests in the flix package for the project.
     */
-  def mtest(flix: Flix, tester: String, testee: String): Validation[Unit, BootstrapError] = {
+  def mtest(flix: Flix, tester: String, testee: String, percentage: Int): Validation[Unit, BootstrapError] = {
 
       flatMapN(build(flix)) {
           _ =>
-              MutationTester.run(flix, tester, testee)
+              MutationTester.run(flix, tester, testee, percentage)
               Validation.success(())
       }
     // flatMapN(build(flix)) {
