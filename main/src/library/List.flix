@@ -121,7 +121,7 @@ instance Collectable[List] {
 }
 
 instance Iterable[List[a]] {
-    type Elm[List[a]] = a
+    type Elm = a
     pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ r = List.iterator(rc, l)
 }
 

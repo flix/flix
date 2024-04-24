@@ -906,7 +906,6 @@ instance Foldable[Seq.Seq[s]] {
 }
 
 instance Iterable[Seq.Seq[s][a]] {
-    type Elm[Seq.Seq[s][a]] = a
-    type Aef[Seq.Seq[s][a]] = Pure
+    type Elm = a
     pub def iterator(rc: Region[r], l: Seq.Seq[s][a]): Iterator[a, r, r] \ r = Seq.iterator(rc, l)
 }

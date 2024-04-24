@@ -120,7 +120,7 @@ instance Monoid[DelayList[a]] {
 }
 
 instance Iterable[DelayList[a]] {
-    type Elm[DelayList[a]] = a
+    type Elm = a
     pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r = DelayList.iterator(rc, l)
 }
 

@@ -115,7 +115,7 @@ instance Collectable[Chain] {
 }
 
 instance Iterable[Chain[a]] {
-    type Elm[Chain[a]] = a
+    type Elm = a
     pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r = Chain.iterator(rc, c)
 }
 
