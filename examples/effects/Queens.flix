@@ -18,7 +18,7 @@ mod EffectExamples.Queens {
     }
 
     ///
-    /// Returns `true` iff placing a queen at the position
+    /// Returns `true` if placing a queen at the position
     /// represented by `queen` does not collide with other queens.
     ///
     def isSafePosition(queen: Int32, diagonal: Int32, sol: Solution): Bool = match sol {
