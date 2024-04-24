@@ -4,7 +4,13 @@
 mod EffectExamples.Queens {
 
     ///
-    /// Type alias for readability.
+    /// Type alias that represents a partial or complete
+    /// solution to the Queens problem.
+    /// A placement of queens i denoted by a list where the
+    /// `i`th element corresponds to row `i` on the board
+    /// where the value of the `i`th element corresponds to
+    /// the column. Taken together they represent a position
+    /// (or coordinate) on the board.
     ///
     type alias Placement = List[Int32]
 
