@@ -66,7 +66,7 @@ trait TestUtils {
       case Result.Err(_) => fail("Expected 'main' to be defined.")
     }
   }
-  
+
   /**
    * Asserts that the validation does not contain a value of the parametric type `T`.
    */
