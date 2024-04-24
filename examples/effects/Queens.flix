@@ -6,7 +6,7 @@ mod EffectExamples.Queens {
     ///
     /// Type alias for readability.
     ///
-    type alias Solution = List[Int32]
+    type alias Placement = List[Int32]
 
     ///
     /// Algebraic effect that allows the caller
@@ -37,7 +37,7 @@ mod EffectExamples.Queens {
     /// If no such solution exists, it raises the `Searchable` effect
     /// again to let the caller handle failures.
     ///
-    pub def findOneSolution(size: Int32, queens: Int32): Solution \ Searchable =
+    pub def findOneSolution(size: Int32, queens: Int32): Placement \ Searchable =
         if (queens <= 0)
             Nil
         else
