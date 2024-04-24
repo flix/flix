@@ -26,7 +26,7 @@ pub trait Iterable[t] {
     ///
     /// The associated effect of the Iterable.
     ///
-    type Aef[t]: Eff
+    type Aef[t]: Eff = Pure
 
     ///
     /// Returns an iterator over `t`.

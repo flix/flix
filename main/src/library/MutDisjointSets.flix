@@ -61,8 +61,6 @@ mod MutDisjointSets {
     ///
     /// Updates `s` with the elements of the iterable `m`.
     ///
-    /// TODO: with Order[Iterable.Elm[m]] missing
-    ///
     pub def makeSets(m: m, s: MutDisjointSets[elt, r]): Unit \ (r + Iterable.Aef[m]) with Iterable[m], Order[elt] where Iterable.Elm[m] ~ elt = region rc {
         Iterable.iterator(rc, m) |> Iterator.forEach(x -> makeSet(x, s))
     }
