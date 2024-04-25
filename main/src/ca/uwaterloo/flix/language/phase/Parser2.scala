@@ -449,7 +449,7 @@ object Parser2 {
     * ParFieldFragments "par (x <- e1; y <- e2; z <- e3) yield ...".
     * and many many more...
     *
-    * @param itemDisplayName   The name of an item to be used in an error message. ie. "Expected $itemDisplayName but found xyz".
+    * @param displayName       The name of an item to be used in an error message. ie. "Expected $displayName but found xyz".
     * @param getItem           Function for parsing a single item.
     * @param checkForItem      Function used to check if the next token indicates an item. getItem is only called when this returns true.
     * @param recoverOn         Function for deciding if an unexpected token is in the recover set of the current context. If it is then parsing of items stops.
@@ -463,7 +463,7 @@ object Parser2 {
     * @return The number of items successfully parsed.
     */
   private def zeroOrMore(
-                          itemDisplayName: String,
+                          displayName: String,
                           getItem: () => Mark.Closed,
                           checkForItem: () => Boolean,
                           recoverOn: () => Boolean,
@@ -499,7 +499,7 @@ object Parser2 {
           continue = false
         } else {
           // Otherwise eat one token and continue parsing next item.
-          val error = ParseError(s"Expected $itemDisplayName", SyntacticContext.Unknown, currentSourceLocation())
+          val error = ParseError(s"Expected $displayName", SyntacticContext.Unknown, currentSourceLocation())
           advanceWithError(error)
         }
       }
@@ -516,12 +516,14 @@ object Parser2 {
 
   /**
     * A helper function for parsing one ore more items surrounded by delimiters and separated by some token.
-    * Works by forwarding parameters to [[zeroOrMore]] and then checking that there was atleast one item parsed.
+    * Works by forwarding parameters to [[zeroOrMore]] and then checking that there was at least one item parsed.
     * Otherwise an error is produced.
     * See [[zeroOrMore]] for documentation of parameters.
+    *
+    * @return An optional parse error. If one or more item is found, None is returned.
     */
   def oneOrMore(
-                 errorItemName: String,
+                 displayName: String,
                  getItem: () => Mark.Closed,
                  checkForItem: () => Boolean,
                  recoverOn: () => Boolean,
@@ -530,14 +532,16 @@ object Parser2 {
                  delimiterR: TokenKind = TokenKind.ParenR,
                  optionalSeparator: Boolean = false,
                  optionallyWith: Option[(TokenKind, () => Unit)] = None,
-               )(implicit s: State): Unit = {
+               )(implicit s: State): Option[ParseError] = {
     val locBefore = previousSourceLocation()
-    val itemCount = zeroOrMore(errorItemName, getItem, checkForItem, recoverOn, separator, delimiterL, delimiterR, optionalSeparator, optionallyWith)
+    val itemCount = zeroOrMore(displayName, getItem, checkForItem, recoverOn, separator, delimiterL, delimiterR, optionalSeparator, optionallyWith)
     val locAfter = currentSourceLocation()
     if (itemCount < 1) {
       val loc = SourceLocation.mk(locBefore.sp1, locAfter.sp1)
-      val error = ParseError(s"Expected one or more $errorItemName", SyntacticContext.Unknown, loc)
-      closeWithError(open(), error)
+      val error = ParseError(s"Expected one or more $displayName", SyntacticContext.Unknown, loc)
+      Some(error)
+    } else {
+      None
     }
   }
 
@@ -816,7 +820,7 @@ object Parser2 {
     if (at(TokenKind.DotCurlyL)) {
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "name",
+        displayName = "name",
         getItem = () => aliasedName(NAME_USE),
         checkForItem = () => atAny(NAME_USE),
         recoverOn = () => atAny(RECOVER_TOP_LEVEL_USE),
@@ -837,7 +841,7 @@ object Parser2 {
     if (at(TokenKind.DotCurlyL)) {
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "name",
+        displayName = "name",
         getItem = () => aliasedName(NAME_JAVA),
         checkForItem = () => atAny(NAME_JAVA),
         recoverOn = () => atAny(RECOVER_TOP_LEVEL_USE),
@@ -882,8 +886,13 @@ object Parser2 {
         case TokenKind.KeywordType => typeAliasDecl(mark)
         case TokenKind.KeywordEff => effectDecl(mark)
         case at =>
-          val error = ParseError(s"Expected declaration but found $at", SyntacticContext.Unknown, currentSourceLocation())
-          advanceWithError(error, Some(mark))
+          val loc = currentSourceLocation()
+          // Skip ahead until we hit another declaration.
+          while (!atAny(RECOVER_DECL) && !eof()) {
+            advance()
+          }
+          val error = ParseError(s"Expected declaration but found $at", SyntacticContext.Decl.OtherDecl, loc)
+          closeWithError(mark, error)
       }
     }
 
@@ -1096,13 +1105,18 @@ object Parser2 {
           val mark = open()
           val markTuple = open()
           oneOrMore(
-            errorItemName = "type",
+            displayName = "type",
             getItem = () => Type.ttype(),
             checkForItem = () => atAny(FIRST_TYPE),
             recoverOn = () => atAny(RECOVER_DECL)
-          )
-          close(markTuple, TreeKind.Type.Tuple)
-          close(mark, TreeKind.Type.Type)
+          ) match {
+            case Some(error) =>
+              close(markTuple, TreeKind.Type.Tuple)
+              closeWithError(mark, error)
+            case None =>
+              close(markTuple, TreeKind.Type.Tuple)
+              close(mark, TreeKind.Type.Type)
+          }
         }
         close(mark, TreeKind.Case)
       }
@@ -1237,7 +1251,7 @@ object Parser2 {
     def parameters()(implicit s: State): Mark.Closed = {
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "parameter",
+        displayName = "parameter",
         getItem = parameter,
         checkForItem = () => atAny(NAME_PARAMETER),
         recoverOn = () => atAny(RECOVER_PARAMETERS)
@@ -1322,14 +1336,16 @@ object Parser2 {
         if (at(TokenKind.CurlyL)) {
           val mark = open()
           oneOrMore(
-            errorItemName = "effect",
+            displayName = "effect",
             getItem = () => name(NAME_EFFECT, allowQualified = true),
             checkForItem = () => atAny(NAME_EFFECT),
             recoverOn = () => atAny(RECOVER_EXPR),
             delimiterL = TokenKind.CurlyL,
             delimiterR = TokenKind.CurlyR
-          )
-          close(mark, TreeKind.Type.EffectSet)
+          ) match {
+            case Some(error) => closeWithError(mark, error)
+            case None => close(mark, TreeKind.Type.EffectSet)
+          }
         } else {
           val mark = open()
           name(NAME_EFFECT, allowQualified = true)
@@ -1404,10 +1420,11 @@ object Parser2 {
     // def main(): Unit = ()
     // In this example, if we had KeywordDef, main would be read as a LetRecDef expression!
     private val FIRST_EXPR_NO_KEYWORD_DEF = FIRST_EXPR.filter(t => t != TokenKind.KeywordDef)
+
     private def arguments()(implicit s: State): Mark.Closed = {
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "argument",
+        displayName = "argument",
         getItem = argument,
         checkForItem = () => atAny(FIRST_EXPR_NO_KEYWORD_DEF),
         recoverOn = () => atAny(RECOVER_EXPR)
@@ -2041,7 +2058,7 @@ object Parser2 {
       assert(at(TokenKind.CurlyL))
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "record field",
+        displayName = "record field",
         getItem = recordLiteralField,
         checkForItem = () => atAny(NAME_FIELD),
         recoverOn = () => atAny(RECOVER_EXPR),
@@ -2065,15 +2082,17 @@ object Parser2 {
       assert(at(TokenKind.CurlyL))
       val mark = open()
       oneOrMore(
-        errorItemName = "record operation",
+        displayName = "record operation",
         getItem = recordOp,
         checkForItem = () => atAny(FIRST_RECORD_OP),
         recoverOn = () => atAny(RECOVER_EXPR),
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR,
         optionallyWith = Some((TokenKind.Bar, () => expression()))
-      )
-      close(mark, TreeKind.Expr.RecordOperation)
+      ) match {
+        case Some(error) => closeWithError(mark, error)
+        case None => close(mark, TreeKind.Expr.RecordOperation)
+      }
     }
 
     private def recordOp()(implicit s: State): Mark.Closed = {
@@ -2105,7 +2124,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.ArrayHash)
       zeroOrMore(
-        itemDisplayName = "expression",
+        displayName = "expression",
         getItem = () => expression(),
         checkForItem = () => atAny(FIRST_EXPR),
         recoverOn = () => atAny(RECOVER_EXPR),
@@ -2131,7 +2150,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.VectorHash)
       zeroOrMore(
-        itemDisplayName = "expression",
+        displayName = "expression",
         getItem = () => expression(),
         checkForItem = () => atAny(FIRST_EXPR),
         recoverOn = () => atAny(RECOVER_EXPR),
@@ -2146,7 +2165,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.ListHash)
       zeroOrMore(
-        itemDisplayName = "expression",
+        displayName = "expression",
         getItem = () => expression(),
         checkForItem = () => atAny(FIRST_EXPR),
         recoverOn = () => atAny(RECOVER_EXPR),
@@ -2161,7 +2180,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.SetHash)
       zeroOrMore(
-        itemDisplayName = "expression",
+        displayName = "expression",
         getItem = () => expression(),
         checkForItem = () => atAny(FIRST_EXPR),
         recoverOn = () => atAny(RECOVER_EXPR),
@@ -2176,7 +2195,7 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.MapHash)
       zeroOrMore(
-        itemDisplayName = "map literal",
+        displayName = "map literal",
         getItem = mapLiteralValue,
         checkForItem = () => atAny(FIRST_EXPR),
         recoverOn = () => atAny(RECOVER_EXPR),
@@ -2276,15 +2295,17 @@ object Parser2 {
       val mark = open()
       expect(TokenKind.KeywordCatch)
       oneOrMore(
-        errorItemName = "catch rule",
+        displayName = "catch rule",
         getItem = catchRule,
         checkForItem = () => at(TokenKind.KeywordCase),
         recoverOn = () => atAny(RECOVER_EXPR),
         optionalSeparator = true,
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
-      )
-      close(mark, TreeKind.Expr.TryCatchBodyFragment)
+      ) match {
+        case Some(error) => closeWithError(mark, error)
+        case None => close(mark, TreeKind.Expr.TryCatchBodyFragment)
+      }
     }
 
     private def catchRule()(implicit s: State): Mark.Closed = {
@@ -2306,15 +2327,17 @@ object Parser2 {
       expect(TokenKind.KeywordWith)
       name(NAME_EFFECT, allowQualified = true)
       oneOrMore(
-        errorItemName = "with rule",
+        displayName = "with rule",
         getItem = withRule,
         checkForItem = () => at(TokenKind.KeywordDef),
         recoverOn = () => atAny(RECOVER_EXPR),
         optionalSeparator = true,
         delimiterL = TokenKind.CurlyL,
         delimiterR = TokenKind.CurlyR
-      )
-      close(mark, TreeKind.Expr.TryWithBodyFragment)
+      ) match {
+        case Some(error) => closeWithError(mark, error)
+        case None => close(mark, TreeKind.Expr.TryWithBodyFragment)
+      }
     }
 
     private def withRule()(implicit s: State): Mark.Closed = {
@@ -2431,12 +2454,15 @@ object Parser2 {
       expect(TokenKind.KeywordPar)
       if (at(TokenKind.ParenL)) {
         oneOrMore(
-          errorItemName = "'pattern <- expression'",
+          displayName = "'pattern <- expression'",
           getItem = parYieldFragment,
           checkForItem = () => atAny(FIRST_PATTERN),
           separator = TokenKind.Semi,
           recoverOn = () => atAny(RECOVER_EXPR_PAR_YIELD_FRAG)
-        )
+        ) match {
+          case Some(error) => closeWithError(open(), error)
+          case None =>
+        }
       }
       expect(TokenKind.KeywordYield)
       expression()
@@ -2545,7 +2571,7 @@ object Parser2 {
       (nth(0), nth(1)) match {
         case (TokenKind.ParenL, TokenKind.ParenR) => expression()
         case (TokenKind.ParenL, _) => zeroOrMore(
-          itemDisplayName = "expression",
+          displayName = "expression",
           getItem = () => expression(),
           checkForItem = () => atAny(FIRST_EXPR),
           recoverOn = () => atAny(RECOVER_EXPR),
@@ -2679,7 +2705,7 @@ object Parser2 {
       assert(at(TokenKind.ParenL))
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "pattern",
+        displayName = "pattern",
         getItem = pattern,
         checkForItem = () => atAny(FIRST_PATTERN),
         recoverOn = () => atAny(RECOVER_EXPR)
@@ -2691,7 +2717,7 @@ object Parser2 {
       assert(at(TokenKind.CurlyL))
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "field name",
+        displayName = "field name",
         getItem = recordField,
         checkForItem = () => atAny(NAME_FIELD),
         delimiterL = TokenKind.CurlyL,
@@ -2803,7 +2829,7 @@ object Parser2 {
     def arguments()(implicit s: State): Mark.Closed = {
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "type argument",
+        displayName = "type argument",
         getItem = argument,
         checkForItem = () => atAny(FIRST_TYPE),
         delimiterL = TokenKind.BracketL,
@@ -2822,14 +2848,16 @@ object Parser2 {
     def parameters()(implicit s: State): Mark.Closed = {
       val mark = open()
       oneOrMore(
-        errorItemName = "type parameter",
+        displayName = "type parameter",
         getItem = parameter,
         checkForItem = () => atAny(NAME_VARIABLE ++ NAME_TYPE),
         delimiterL = TokenKind.BracketL,
         delimiterR = TokenKind.BracketR,
         recoverOn = () => atAny(RECOVER_TYPE)
-      )
-      close(mark, TreeKind.TypeParameterList)
+      ) match {
+        case Some(error) => closeWithError(mark, error)
+        case None => close(mark, TreeKind.TypeParameterList)
+      }
     }
 
     private def parameter()(implicit s: State): Mark.Closed = {
@@ -2958,7 +2986,7 @@ object Parser2 {
       assert(at(TokenKind.ParenL))
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "record field",
+        displayName = "record field",
         getItem = recordField,
         checkForItem = () => atAny(NAME_FIELD),
         recoverOn = () => atAny(RECOVER_TYPE),
@@ -2971,7 +2999,7 @@ object Parser2 {
       assert(at(TokenKind.ParenL))
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "type",
+        displayName = "type",
         getItem = () => ttype(),
         checkForItem = () => atAny(FIRST_TYPE),
         recoverOn = () => atAny(RECOVER_TYPE)
@@ -2995,7 +3023,7 @@ object Parser2 {
       assert(at(TokenKind.CurlyL))
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "record field",
+        displayName = "record field",
         getItem = recordField,
         checkForItem = () => atAny(NAME_FIELD),
         recoverOn = () => atAny(RECOVER_TYPE),
@@ -3018,7 +3046,7 @@ object Parser2 {
       if (at(TokenKind.CurlyL)) {
         val mark = open()
         zeroOrMore(
-          itemDisplayName = "effect",
+          displayName = "effect",
           getItem = () => ttype(),
           checkForItem = () => atAny(FIRST_TYPE),
           recoverOn = () => atAny(RECOVER_TYPE),
@@ -3037,7 +3065,7 @@ object Parser2 {
       assert(at(TokenKind.HashCurlyL))
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "schema term",
+        displayName = "schema term",
         getItem = schemaTerm,
         checkForItem = () => atAny(NAME_PREDICATE),
         delimiterL = TokenKind.HashCurlyL,
@@ -3052,7 +3080,7 @@ object Parser2 {
       assert(at(TokenKind.HashParenL))
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "schema term",
+        displayName = "schema term",
         getItem = schemaTerm,
         checkForItem = () => atAny(NAME_PREDICATE),
         delimiterL = TokenKind.HashParenL,
@@ -3070,7 +3098,7 @@ object Parser2 {
         close(mark, TreeKind.Type.PredicateWithAlias)
       } else {
         zeroOrMore(
-          itemDisplayName = "type",
+          displayName = "type",
           getItem = () => ttype(),
           checkForItem = () => atAny(FIRST_TYPE),
           recoverOn = () => atAny(RECOVER_TYPE),
@@ -3104,7 +3132,7 @@ object Parser2 {
       assert(at(TokenKind.AngleL))
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "definition name",
+        displayName = "definition name",
         getItem = () => name(NAME_DEFINITION, allowQualified = true),
         checkForItem = () => atAny(NAME_DEFINITION),
         recoverOn = () => atAny(RECOVER_TYPE),
@@ -3160,7 +3188,7 @@ object Parser2 {
       assert(at(TokenKind.ParenL))
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "expression",
+        displayName = "expression",
         getItem = () => Expr.expression(),
         checkForItem = () => atAny(FIRST_EXPR),
         recoverOn = () => atAny(RECOVER_EXPR),
@@ -3176,7 +3204,7 @@ object Parser2 {
     private def patternList()(implicit s: State): Mark.Closed = {
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "pattern",
+        displayName = "pattern",
         getItem = Pattern.pattern,
         checkForItem = () => atAny(FIRST_PATTERN),
         recoverOn = () => atAny(RECOVER_PATTERN),
@@ -3216,7 +3244,7 @@ object Parser2 {
       expect(TokenKind.KeywordLet)
       nth(0) match {
         case TokenKind.ParenL => zeroOrMore(
-          itemDisplayName = "variable name",
+          displayName = "variable name",
           getItem = () => name(NAME_VARIABLE),
           checkForItem = () => atAny(NAME_VARIABLE),
           recoverOn = () => atAny(FIRST_EXPR + TokenKind.Equal)
@@ -3246,7 +3274,7 @@ object Parser2 {
     def params()(implicit s: State): Mark.Closed = {
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "parameter predicate",
+        displayName = "parameter predicate",
         getItem = Predicate.param,
         checkForItem = () => atAny(NAME_PREDICATE),
         delimiterL = TokenKind.HashParenL,
@@ -3261,7 +3289,7 @@ object Parser2 {
       name(NAME_PREDICATE)
       kind = TreeKind.Predicate.Param
       zeroOrMore(
-        itemDisplayName = "type",
+        displayName = "type",
         getItem = () => Type.ttype(),
         checkForItem = () => atAny(FIRST_TYPE),
         recoverOn = () => atAny(RECOVER_TYPE),
@@ -3280,7 +3308,7 @@ object Parser2 {
     private def signature()(implicit s: State): Unit = {
       val mark = open()
       zeroOrMore(
-        itemDisplayName = "type",
+        displayName = "type",
         getItem = () => Type.ttype(),
         checkForItem = () => atAny(FIRST_TYPE),
         recoverOn = () => atAny(RECOVER_TYPE)
