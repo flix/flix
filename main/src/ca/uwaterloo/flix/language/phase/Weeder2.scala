@@ -129,7 +129,7 @@ object Weeder2 {
         val qname = Name.QName(tree.loc.sp1, namespace, ident, tree.loc.sp2)
         val res = Validation.success(UseOrImport.Use(qname, alias, tree.loc))
         // Check for illegal alias
-        if (ident.name.charAt(0).isUpper != alias.name.charAt(0).isUpper) {
+        if ((ident.name.nonEmpty && alias.name.nonEmpty) && ident.name.charAt(0).isUpper != alias.name.charAt(0).isUpper) {
           res.withSoftFailure(IllegalUse(ident.name, alias.name, tree.loc))
         } else res
       // recover from missing alias by using ident
@@ -716,8 +716,9 @@ object Weeder2 {
       ) {
         case Some(expr) => Validation.success(expr)
         case None =>
+          // Fall back on Expr.Error. Parser has reported an error here.
           val err = ParseError("Expected expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.toSoftFailure(Expr.Error(err), err)
+          Validation.success(Expr.Error(err))
       }
     }
 
@@ -1158,8 +1159,9 @@ object Weeder2 {
       val exprs = flatMapN(pickExpr(tree)) {
         case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
         case e =>
+          // Fall back on Expr.Error. Parser has reported an error here.
           val error = ParseError("An internal definition must be followed by an expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-          Validation.toSoftFailure((e, Expr.Error(error)), error)
+          Validation.success((e, Expr.Error(error)))
       }
 
       mapN(
@@ -1212,8 +1214,10 @@ object Weeder2 {
         case (pat, expr :: Nil) => Validation.success(MatchRule(pat, None, expr))
         // case pattern if expr => expr
         case (pat, expr1 :: expr2 :: Nil) => Validation.success(MatchRule(pat, Some(expr1), expr2))
-        //BAD: case pattern if => expr
-        case (_, _) => Validation.HardFailure(Chain(ParseError("Malformed match rule.", SyntacticContext.Expr.OtherExpr, tree.loc)))
+        // Fall back on Expr.Error. Parser has reported an error here.
+        case (_, _) =>
+          val error = ParseError("Malformed match rule.", SyntacticContext.Expr.OtherExpr, tree.loc)
+          Validation.success(MatchRule(Pattern.Error(tree.loc), None, Expr.Error(error)))
       }
     }
 
@@ -1384,9 +1388,10 @@ object Weeder2 {
           // get expr1 and expr2 from the nested statement within expr.
           val exprs = expr match {
             case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
+            // Fall back on Expr.Error. Parser has reported an error here.
             case e =>
               val error = ParseError("A let-binding must be followed by an expression", SyntacticContext.Expr.OtherExpr, tree.loc)
-              Validation.toSoftFailure((e, Expr.Error(error)), error)
+              Validation.success((e, Expr.Error(error)))
           }
           mapN(exprs)(exprs => Expr.LetMatch(pattern, Ast.Modifiers.Empty, tpe, exprs._1, exprs._2, tree.loc))
       }
@@ -2355,7 +2360,14 @@ object Weeder2 {
 
   private object Types {
     def pickType(tree: Tree)(implicit s: State): Validation[Type, CompilationMessage] = {
-      flatMapN(pick(TreeKind.Type.Type, tree))(visitType)
+      val maybeExpression = tryPick(TreeKind.Type.Type, tree)
+      flatMapN(
+        traverseOpt(maybeExpression)(visitType)
+      ) {
+        case Some(tpe) => Validation.success(tpe)
+        // Fall back on Expr.Error. Parser has reported an error here.
+        case None => Validation.success(Type.Error(tree.loc))
+      }
     }
 
     def tryPickTypeNoWild(tree: Tree)(implicit s: State): Validation[Option[Type], CompilationMessage] = {
@@ -2817,10 +2829,11 @@ object Weeder2 {
       }
     }
 
-    private def pickJavaClassMember(tree: Tree): Validation[JavaClassMember, CompilationMessage] = {
+    private def pickJavaClassMember(tree: Tree)(implicit s: State): Validation[JavaClassMember, CompilationMessage] = {
       val idents = pickQNameIdents(tree)
-      mapN(idents) {
-        case prefix :: suffix => JavaClassMember(prefix, suffix, tree.loc)
+      flatMapN(idents) {
+        case prefix :: Nil => Validation.HardFailure(Chain(ParseError(s"Expected java class name but found '$prefix'", SyntacticContext.Expr.OtherExpr, tree.loc)))
+        case prefix :: suffix => Validation.success(JavaClassMember(prefix, suffix, tree.loc))
         case Nil => throw InternalCompilerException("JvmOp empty name", tree.loc)
       }
     }

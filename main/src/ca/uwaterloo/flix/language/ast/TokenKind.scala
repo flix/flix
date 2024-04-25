@@ -20,12 +20,12 @@ import ca.uwaterloo.flix.language.errors.LexerError
 sealed trait TokenKind
 
 /**
- * Tokens are named for 'what they are' rather than 'what they represent'.
- * So '::' is not named 'Cons' but instead 'ColonColon' as the lexer should be oblivious to the concept of cons
- *
- * Tokens belonging to some conceptual group should have the group name as prefix.
- * So 'LiteralInt32' is preferred over 'Int32Literal'
- */
+  * Tokens are named for 'what they are' rather than 'what they represent'.
+  * So '::' is not named 'Cons' but instead 'ColonColon' as the lexer should be oblivious to the concept of cons
+  *
+  * Tokens belonging to some conceptual group should have the group name as prefix.
+  * So 'LiteralInt32' is preferred over 'Int32Literal'
+  */
 object TokenKind {
   case object Ampersand extends TokenKind
 
@@ -364,12 +364,12 @@ object TokenKind {
   case object VectorHash extends TokenKind
 
   /** A special token emitted instead of halting the lexer when an error is encountered.
-   *
-   * @param error the actual error related to this token
-   */
+    *
+    * @param error the actual error related to this token
+    */
   case class Err(error: LexerError) extends TokenKind
 
   /** A virtual token signalling END-OF-FILE.
-   */
+    */
   case object Eof extends TokenKind
 }
