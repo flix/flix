@@ -653,8 +653,8 @@ object Parser2 {
     def declaration()(implicit s: State): Mark.Closed = {
       val mark = open(consumeDocComments = false)
       docComment()
-      // Handle case where the last thing in a file is a doc-comment
-      if (eof()) {
+      // Handle case where the last thing in a file or module is a doc-comment
+      if (eof() || at(TokenKind.CurlyR)) {
         return close(mark, TreeKind.CommentList)
       }
       // Handle modules
