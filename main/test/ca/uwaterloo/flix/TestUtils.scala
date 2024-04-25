@@ -33,7 +33,7 @@ trait TestUtils {
     * Checks the given input string `s` with the given compilation options `o`.
     */
   def check(s: String, o: Options): Validation[TypedAst.Root, CompilationMessage] =
-    new Flix().setOptions(o).addSourceCode("<test>", s).check())
+    new Flix().setOptions(o).addSourceCode("<test>", s).check()
 
   /**
    * Compiles the given input string `s` with the given compilation options `o`.
