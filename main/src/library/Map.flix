@@ -102,8 +102,8 @@ instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
 }
 
 instance Iterable[Map[k, v]] {
-    type Elm = v
-    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ r = Map.iteratorValues(rc, m)
+    type Elm = (k, v)
+    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ r = Map.iterator(rc, m)
 }
 
 instance ToJava[Map[k, v]] with Order[k] {
