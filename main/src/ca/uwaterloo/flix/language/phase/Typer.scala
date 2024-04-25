@@ -168,8 +168,8 @@ object Typer {
     * Reconstructs types in the given def.
     */
   private def visitDef(defn: KindedAst.Def, tconstrs0: List[Ast.TypeConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = {
-    implicit val r = root
-    implicit val context = new TypeContext
+    implicit val r: KindedAst.Root = root
+    implicit val context: TypeContext = new TypeContext
     val (tpe, eff) = ConstraintGen.visitExp(defn.exp)
     val infRenv = context.getRigidityEnv
     val infTconstrs = context.getTypeConstraints
@@ -347,7 +347,7 @@ object Typer {
     */
   private def visitEff(eff: KindedAst.Effect, root: KindedAst.Root)(implicit flix: Flix): TypedAst.Effect = eff match {
     case KindedAst.Effect(doc, ann, mod, sym, ops0, loc) =>
-      val ops = ops0.map(TypeReconstruction.visitOp(_, root))
+      val ops = ops0.map(TypeReconstruction.visitOp)
       TypedAst.Effect(doc, ann, mod, sym, ops, loc)
   }
 
