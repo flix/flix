@@ -716,7 +716,7 @@ object Weeder2 {
       ) {
         case Some(expr) => Validation.success(expr)
         case None =>
-          // Fall silently back on Expr.Error. Parser should produce error here.
+          // Fall back on Expr.Error. Parser has reported an error here.
           val err = ParseError("Expected expression", SyntacticContext.Expr.OtherExpr, tree.loc)
           Validation.success(Expr.Error(err))
       }
@@ -1159,7 +1159,7 @@ object Weeder2 {
       val exprs = flatMapN(pickExpr(tree)) {
         case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
         case e =>
-          // Parser should already have reported an error here, so silently fail.
+          // Fall back on Expr.Error. Parser has reported an error here.
           val error = ParseError("An internal definition must be followed by an expression", SyntacticContext.Expr.OtherExpr, tree.loc)
           Validation.success((e, Expr.Error(error)))
       }
@@ -1214,7 +1214,7 @@ object Weeder2 {
         case (pat, expr :: Nil) => Validation.success(MatchRule(pat, None, expr))
         // case pattern if expr => expr
         case (pat, expr1 :: expr2 :: Nil) => Validation.success(MatchRule(pat, Some(expr1), expr2))
-        //Malformed case. Parser should have reported an error, so fail silently
+        // Fall back on Expr.Error. Parser has reported an error here.
         case (_, _) =>
           val error = ParseError("Malformed match rule.", SyntacticContext.Expr.OtherExpr, tree.loc)
           Validation.success(MatchRule(Pattern.Error(tree.loc), None, Expr.Error(error)))
@@ -1388,7 +1388,7 @@ object Weeder2 {
           // get expr1 and expr2 from the nested statement within expr.
           val exprs = expr match {
             case Expr.Stm(exp1, exp2, _) => Validation.success((exp1, exp2))
-            // Case: Missing expression. Parser should have reported an error so silently fail.
+            // Fall back on Expr.Error. Parser has reported an error here.
             case e =>
               val error = ParseError("A let-binding must be followed by an expression", SyntacticContext.Expr.OtherExpr, tree.loc)
               Validation.success((e, Expr.Error(error)))
@@ -2365,7 +2365,7 @@ object Weeder2 {
         traverseOpt(maybeExpression)(visitType)
       ) {
         case Some(tpe) => Validation.success(tpe)
-        // Fall silently back on Type.Error. Parser should produce an error here.
+        // Fall back on Expr.Error. Parser has reported an error here.
         case None => Validation.success(Type.Error(tree.loc))
       }
     }

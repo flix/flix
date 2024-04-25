@@ -399,7 +399,8 @@ object Parser2 {
 
     val mark = open()
     val error = nth(0) match {
-      case TokenKind.CommentLine | TokenKind.CommentBlock => ParseError(s"Invalid comment", SyntacticContext.Unknown, previousSourceLocation())
+      case TokenKind.CommentLine => ParseError(s"Invalid comment", SyntacticContext.Unknown, previousSourceLocation())
+      case TokenKind.CommentBlock => ParseError(s"Invalid comment", SyntacticContext.Unknown, previousSourceLocation())
       case TokenKind.CommentDoc => ParseError(s"Doc-comments can only decorate declarations.", SyntacticContext.Unknown, previousSourceLocation())
       case at => ParseError(s"Expected $kind before $at", SyntacticContext.Unknown, previousSourceLocation())
     }
@@ -415,7 +416,8 @@ object Parser2 {
     }
     val mark = open()
     val error = nth(0) match {
-      case TokenKind.CommentLine | TokenKind.CommentBlock => ParseError(s"Invalid comment", SyntacticContext.Unknown, previousSourceLocation())
+      case TokenKind.CommentLine => ParseError(s"Invalid comment", SyntacticContext.Unknown, previousSourceLocation())
+      case TokenKind.CommentBlock => ParseError(s"Invalid comment", SyntacticContext.Unknown, previousSourceLocation())
       case TokenKind.CommentDoc => ParseError(s"Doc-comments can only decorate declarations.", SyntacticContext.Unknown, previousSourceLocation())
       case at => ParseError(s"Expected one of ${kinds.mkString(", ")} before $at", SyntacticContext.Unknown, previousSourceLocation())
     }
