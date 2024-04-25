@@ -384,7 +384,29 @@ object Verifier {
           check(expected = MonoType.Region)(actual = t2, loc)
           check(expected = MonoType.Unit)(actual = tpe, loc)
 
-        case _ => tpe // TODO: VERIFIER: Add rest
+        case AtomicOp.GetField(field) =>
+          checkEq(tpe, javaClassToMonoType(field.getType), loc)
+
+        case AtomicOp.GetStaticField(field) =>
+          checkEq(tpe, javaClassToMonoType(field.getType), loc)
+
+        case AtomicOp.PutField(_) =>
+          check(expected = MonoType.Unit)(actual = tpe, loc)
+
+        case AtomicOp.PutStaticField(_) =>
+          check(expected = MonoType.Unit)(actual = tpe, loc)
+
+        case AtomicOp.InstanceOf(_) =>
+          check(expected = MonoType.Bool)(actual = tpe, loc)
+
+        case AtomicOp.InvokeConstructor(constructor) =>
+          checkEq(tpe, javaClassToMonoType(constructor.getDeclaringClass), loc)
+
+        case AtomicOp.InvokeMethod(method) =>
+          checkEq(tpe, javaClassToMonoType(method.getReturnType), loc)
+
+        case AtomicOp.InvokeStaticMethod(method) =>
+          checkEq(tpe, javaClassToMonoType(method.getReturnType), loc)
       }
 
     case Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
@@ -556,6 +578,27 @@ object Verifier {
         selectFromRecordType(rest, label, loc)
     case MonoType.RecordEmpty => None
     case _ => failMismatchedShape(rec, "Record", loc)
+  }
+
+  /**
+    * Convert from the java class `klazz` to the corresponding `MonoType`
+    */
+  private def javaClassToMonoType(klazz: Class[_]): MonoType = klazz.getName match {
+    case "byte" => MonoType.Int8
+    case "short" => MonoType.Int16
+    case "int" => MonoType.Int32
+    case "long" => MonoType.Int64
+    case "float" => MonoType.Float32
+    case "double" => MonoType.Float64
+    case "boolean" => MonoType.Bool
+    case "char" => MonoType.Char
+    case "java.lang.String" => MonoType.String
+    case "java.math.BigInteger" => MonoType.BigInt
+    case "java.math.BigDecimal" => MonoType.BigDecimal
+    case "java.util.regex.Pattern" => MonoType.Regex
+    case "void" => MonoType.Unit
+    case _ if klazz.isArray => MonoType.Array(javaClassToMonoType(klazz.getComponentType))
+    case _ => MonoType.Native(klazz)
   }
 
   /**
