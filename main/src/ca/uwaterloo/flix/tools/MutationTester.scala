@@ -654,13 +654,12 @@ object MutationTester {
       }
 
     // todo: is it necessary and possible run phases before `Typer.run` for mutant too ?
+    //  and after ?
     private def compileMutant(mutant: Root)(implicit flix: Flix): Validation[CompilationResult, CompilationMessage] = {
       val result = flix.checkMutant(mutant).toHardFailure
       Validation.flatMapN(result)(flix.codeGenMutant)
     }
 
-    // todo: is it possible to run only related tests ?
-    //  See TreeShaker1, TreeShaker2, ParOps.parReach
     private def testMutant(compilationResult: CompilationResult): MutantStatus = {
       val tests = compilationResult.getTests.values.filter(!_.skip)
 
@@ -760,7 +759,7 @@ object MutationTester {
         .append(s", Compilation Failed = ${compilationFailed.toString}")
         .append(s", Timed out = ${timedOut.toString}")
         .append(lineSeparator)
-        .append(s"Mutations score ${
+        .append(s"Mutation score ${
           val tested = killed.doubleValue() + survived.doubleValue()
           if (tested != 0) s"= ${cyan(f"${killed.doubleValue() / tested}%.2f")}"
           else "was not calculated from 0 mutants"
