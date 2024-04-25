@@ -548,7 +548,6 @@ object Stratifier {
 
   /**
     * Returns the map of predicates that appears in the given Schema `tpe`.
-    * A non-Schema type will result in an `InternalCompilerException`.
     */
   private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Label] = {
     @tailrec
