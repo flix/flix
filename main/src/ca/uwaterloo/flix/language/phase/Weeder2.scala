@@ -2829,10 +2829,11 @@ object Weeder2 {
       }
     }
 
-    private def pickJavaClassMember(tree: Tree): Validation[JavaClassMember, CompilationMessage] = {
+    private def pickJavaClassMember(tree: Tree)(implicit s: State): Validation[JavaClassMember, CompilationMessage] = {
       val idents = pickQNameIdents(tree)
-      mapN(idents) {
-        case prefix :: suffix => JavaClassMember(prefix, suffix, tree.loc)
+      flatMapN(idents) {
+        case prefix :: Nil => Validation.HardFailure(Chain(ParseError(s"Expected java class name but found '$prefix'", SyntacticContext.Expr.OtherExpr, tree.loc)))
+        case prefix :: suffix => Validation.success(JavaClassMember(prefix, suffix, tree.loc))
         case Nil => throw InternalCompilerException("JvmOp empty name", tree.loc)
       }
     }
