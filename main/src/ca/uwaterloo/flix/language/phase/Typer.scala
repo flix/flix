@@ -176,7 +176,7 @@ object Typer {
     val infResult = ConstraintSolver.InfResult(infTconstrs, tpe, eff, infRenv)
     val substVal = ConstraintSolver.visitDef(defn, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
     mapN(substVal) {
-      case subst => TypeReconstruction.visitDef(defn, root, subst)
+      case subst => TypeReconstruction.visitDef(defn, subst)
     }
   }
 
@@ -216,10 +216,10 @@ object Typer {
     * Performs type inference and reassembly on the given signature `sig`.
     */
   private def visitSig(sig: KindedAst.Sig, renv0: RigidityEnv, tconstrs0: List[Ast.TypeConstraint], root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Sig, TypeError] = {
-    implicit val r = root
-    implicit val context = new TypeContext
+    implicit val r: KindedAst.Root = root
+    implicit val context: TypeContext = new TypeContext
     sig.exp match {
-      case None => Validation.success(TypeReconstruction.visitSig(sig, root, Substitution.empty))
+      case None => Validation.success(TypeReconstruction.visitSig(sig, Substitution.empty))
       case Some(exp) =>
         val (tpe, eff) = ConstraintGen.visitExp(exp)
         val renv = context.getRigidityEnv
@@ -227,7 +227,7 @@ object Typer {
         val infResult = ConstraintSolver.InfResult(constrs, tpe, eff, renv)
         val substVal = ConstraintSolver.visitSig(sig, infResult, renv0, tconstrs0, traitEnv, eqEnv, root)
         mapN(substVal) {
-          case subst => TypeReconstruction.visitSig(sig, root, subst)
+          case subst => TypeReconstruction.visitSig(sig, subst)
         }
     }
   }

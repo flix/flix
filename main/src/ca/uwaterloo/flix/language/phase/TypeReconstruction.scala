@@ -25,20 +25,20 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given def.
     */
-  def visitDef(defn: KindedAst.Def, root: KindedAst.Root, subst: Substitution): TypedAst.Def = defn match {
+  def visitDef(defn: KindedAst.Def, subst: Substitution): TypedAst.Def = defn match {
     case KindedAst.Def(sym, spec0, exp0) =>
       val spec = visitSpec(spec0, subst)
-      val exp = visitExp(exp0)(root, subst)
+      val exp = visitExp(exp0)(subst)
       TypedAst.Def(sym, spec, exp)
   }
 
   /**
     * Reconstructs types in the given sig.
     */
-  def visitSig(sig: KindedAst.Sig, root: KindedAst.Root, subst: Substitution): TypedAst.Sig = sig match {
+  def visitSig(sig: KindedAst.Sig, subst: Substitution): TypedAst.Sig = sig match {
     case KindedAst.Sig(sym, spec0, exp0) =>
       val spec = visitSpec(spec0, subst)
-      val exp = exp0.map(visitExp(_)(root, subst))
+      val exp = exp0.map(visitExp(_)(subst))
       TypedAst.Sig(sym, spec, exp)
   }
 
@@ -85,7 +85,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given expression.
     */
-  private def visitExp(exp0: KindedAst.Expr)(implicit root: KindedAst.Root, subst: Substitution): TypedAst.Expr = exp0 match {
+  private def visitExp(exp0: KindedAst.Expr)(implicit subst: Substitution): TypedAst.Expr = exp0 match {
     case KindedAst.Expr.Var(sym, loc) =>
       TypedAst.Expr.Var(sym, subst(sym.tvar), loc)
 
@@ -582,7 +582,7 @@ object TypeReconstruction {
   /**
     * Applies the substitution to the given constraint.
     */
-  private def visitConstraint(c0: KindedAst.Constraint)(implicit root: KindedAst.Root, subst: Substitution): TypedAst.Constraint = {
+  private def visitConstraint(c0: KindedAst.Constraint)(implicit subst: Substitution): TypedAst.Constraint = {
     val KindedAst.Constraint(cparams0, head0, body0, loc) = c0
 
     val head = visitHeadPredicate(head0)
@@ -605,7 +605,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given JVM method.
     */
-  private def visitJvmMethod(method: KindedAst.JvmMethod)(implicit subst: Substitution, root: KindedAst.Root): TypedAst.JvmMethod = {
+  private def visitJvmMethod(method: KindedAst.JvmMethod)(implicit subst: Substitution): TypedAst.JvmMethod = {
     method match {
       case KindedAst.JvmMethod(ident, fparams0, exp0, tpe, eff, loc) =>
         val fparams = fparams0.map(visitFormalParam(_, subst))
@@ -617,7 +617,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given pattern.
     */
-  private def visitPattern(pat0: KindedAst.Pattern)(implicit subst: Substitution, root: KindedAst.Root): TypedAst.Pattern = pat0 match {
+  private def visitPattern(pat0: KindedAst.Pattern)(implicit subst: Substitution): TypedAst.Pattern = pat0 match {
     case KindedAst.Pattern.Wild(tvar, loc) => TypedAst.Pattern.Wild(subst(tvar), loc)
     case KindedAst.Pattern.Var(sym, tvar, loc) => TypedAst.Pattern.Var(sym, subst(tvar), loc)
     case KindedAst.Pattern.Cst(cst, loc) => TypedAst.Pattern.Cst(cst, Type.constantType(cst), loc)
@@ -648,7 +648,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given head predicate.
     */
-  private def visitHeadPredicate(head0: KindedAst.Predicate.Head)(implicit root: KindedAst.Root, subst: Substitution): TypedAst.Predicate.Head = head0 match {
+  private def visitHeadPredicate(head0: KindedAst.Predicate.Head)(implicit subst: Substitution): TypedAst.Predicate.Head = head0 match {
     case KindedAst.Predicate.Head.Atom(pred, den0, terms, tvar, loc) =>
       val ts = terms.map(t => visitExp(t))
       TypedAst.Predicate.Head.Atom(pred, den0, ts, subst(tvar), loc)
@@ -658,7 +658,7 @@ object TypeReconstruction {
   /**
     * Reconstructs types in the given body predicate.
     */
-  private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit root: KindedAst.Root, subst: Substitution): TypedAst.Predicate.Body = body0 match {
+  private def visitBodyPredicate(body0: KindedAst.Predicate.Body)(implicit subst: Substitution): TypedAst.Predicate.Body = body0 match {
     case KindedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, terms, tvar, loc) =>
       val ts = terms.map(t => visitPattern(t))
       TypedAst.Predicate.Body.Atom(pred, den0, polarity, fixity, ts, subst(tvar), loc)
