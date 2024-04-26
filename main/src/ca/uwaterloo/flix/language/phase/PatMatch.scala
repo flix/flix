@@ -627,7 +627,7 @@ object PatMatch {
     case Some(TypeConstructor.Error(_)) => 0
 
     case _ =>
-      // Resilience: OK to throw. If there was a non-star type here, it should have been replaced by Type.Error.
+      // Resilience: OK to throw. We will have replaced the non-star type with Type.Error of star kind.
       throw InternalCompilerException(s"Unexpected type: '$tpe' with wrong kind.", tpe.loc)
   }
 
