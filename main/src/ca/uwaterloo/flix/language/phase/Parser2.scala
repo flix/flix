@@ -178,7 +178,7 @@ object Parser2 {
         case Event.Close =>
           val child = stack.head
           val openToken = locationStack.head
-          stack.last.loc = if (stack.last.children.length == 0)
+          stack.head.loc = if (stack.head.children.length == 0)
             // If the subtree has no children, give it a zero length position just after the last token
             SourceLocation.mk(
               lastAdvance.mkSourcePositionEnd(s.src, Some(s.parserInput)),
