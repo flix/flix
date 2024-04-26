@@ -24,7 +24,6 @@ import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
-
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -147,9 +146,6 @@ object Parser2 {
     root()
     // Build the syntax tree using events in state.
     val tree = buildTree()
-    if (src.name == "main/foo.flix") {
-      println(syntaxTreeToDebugString(tree))
-    }
     // Return with errors as soft failures to run subsequent phases for more validations.
     Validation.success(tree).withSoftFailures(s.errors)
   }
