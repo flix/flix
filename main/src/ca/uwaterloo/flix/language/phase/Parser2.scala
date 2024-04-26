@@ -402,9 +402,19 @@ object Parser2 {
       case TokenKind.CommentLine => ParseError(s"Invalid comment", SyntacticContext.Unknown, previousSourceLocation())
       case TokenKind.CommentBlock => ParseError(s"Invalid comment", SyntacticContext.Unknown, previousSourceLocation())
       case TokenKind.CommentDoc => ParseError(s"Doc-comments can only decorate declarations.", SyntacticContext.Unknown, previousSourceLocation())
-      case at => ParseError(s"Expected $kind before $at", SyntacticContext.Unknown, previousSourceLocation())
+      case at => ParseError(s"Expected ${kind.display} before ${at.display}", SyntacticContext.Unknown, previousSourceLocation())
     }
     closeWithError(mark, error)
+  }
+
+  /**
+    * Joins items nicely with comma separation ending with an "or".
+    * For instance prettyJoin(List("def", "enum", "trait")) gives "def, enum or trait".
+    */
+  private def prettyJoin[T](items: Seq[T]): String = items match {
+    case i1 :: i2 :: Nil => s"$i1 or $i2"
+    case i1 :: Nil => s"$i1"
+    case i :: tail => s"$i, ${prettyJoin(tail)}"
   }
 
   /**
@@ -419,7 +429,9 @@ object Parser2 {
       case TokenKind.CommentLine => ParseError(s"Invalid comment", SyntacticContext.Unknown, previousSourceLocation())
       case TokenKind.CommentBlock => ParseError(s"Invalid comment", SyntacticContext.Unknown, previousSourceLocation())
       case TokenKind.CommentDoc => ParseError(s"Doc-comments can only decorate declarations.", SyntacticContext.Unknown, previousSourceLocation())
-      case at => ParseError(s"Expected one of ${kinds.mkString(", ")} before $at", SyntacticContext.Unknown, previousSourceLocation())
+      case at =>
+        val kindsDisplayed = prettyJoin(kinds.toList.map(k => s"${k.display}"))
+        ParseError(s"Expected $kindsDisplayed before ${at.display}", SyntacticContext.Unknown, previousSourceLocation())
     }
     closeWithError(mark, error)
   }
@@ -564,8 +576,8 @@ object Parser2 {
   private val NAME_KIND: Set[TokenKind] = Set(TokenKind.NameUpperCase)
   private val NAME_EFFECT: Set[TokenKind] = Set(TokenKind.NameUpperCase)
   private val NAME_MODULE: Set[TokenKind] = Set(TokenKind.NameUpperCase)
-  // TODO: Pure and Impure are used in enums as tags in Prelude.flix. Should we allow this?
-  private val NAME_TAG: Set[TokenKind] = Set(TokenKind.NameUpperCase, TokenKind.KeywordPure, TokenKind.KeywordImpure)
+  // TODO: Pure is used in enums as tags in Prelude.flix. Should we allow this?
+  private val NAME_TAG: Set[TokenKind] = Set(TokenKind.NameUpperCase, TokenKind.KeywordPure)
   private val NAME_PREDICATE: Set[TokenKind] = Set(TokenKind.NameUpperCase)
 
   private val MODIFIERS: Set[TokenKind] = Set(TokenKind.KeywordSealed, TokenKind.KeywordLawful, TokenKind.KeywordPub, TokenKind.KeywordInline, TokenKind.KeywordOverride)
@@ -893,7 +905,7 @@ object Parser2 {
           while (!atAny(RECOVER_DECL) && !eof()) {
             advance()
           }
-          val error = ParseError(s"Expected declaration but found $at", SyntacticContext.Decl.OtherDecl, loc)
+          val error = ParseError(s"Expected declaration but found ${at.display}", SyntacticContext.Decl.OtherDecl, loc)
           closeWithError(mark, error)
       }
     }
@@ -932,7 +944,7 @@ object Parser2 {
             case TokenKind.KeywordDef => signatureDecl(mark)
             case TokenKind.KeywordType => associatedTypeSigDecl(mark)
             case at =>
-              val error = ParseError(s"Expected associated type, signature or law but found $at", SyntacticContext.Decl.Trait, currentSourceLocation())
+              val error = ParseError(s"Expected associated type, signature or law but found ${at.display}", SyntacticContext.Decl.Trait, currentSourceLocation())
               advanceWithError(error, Some(mark))
           }
         }
@@ -962,7 +974,7 @@ object Parser2 {
             case TokenKind.KeywordDef => definitionDecl(mark)
             case TokenKind.KeywordType => associatedTypeDefDecl(mark)
             case at =>
-              val error = ParseError(s"Expected associated type or definitionDecl, found $at", SyntacticContext.Decl.Instance, currentSourceLocation())
+              val error = ParseError(s"Expected associated type or definitionDecl, found ${at.display}", SyntacticContext.Decl.Instance, currentSourceLocation())
               advanceWithError(error, Some(mark))
           }
         }
@@ -1528,7 +1540,7 @@ object Parser2 {
         case TokenKind.NameJava => name(NAME_JAVA, allowQualified = true)
         case t =>
           val mark = open()
-          val error = ParseError(s"Expected expression before $t", SyntacticContext.Expr.OtherExpr, previousSourceLocation())
+          val error = ParseError(s"Expected expression before ${t.display}", SyntacticContext.Expr.OtherExpr, previousSourceLocation())
           closeWithError(mark, error)
       }
       close(mark, TreeKind.Expr.Expr)
@@ -1630,7 +1642,7 @@ object Parser2 {
           }
 
         case (t1, _) =>
-          val error = ParseError(s"Expected ParenL found $t1", SyntacticContext.Expr.OtherExpr, currentSourceLocation())
+          val error = ParseError(s"Expected ParenL found ${t1.display}", SyntacticContext.Expr.OtherExpr, currentSourceLocation())
           advanceWithError(error)
       }
     }
@@ -1766,12 +1778,12 @@ object Parser2 {
           case TokenKind.KeywordJavaSetField => JvmOp.staticPutField()
           case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.staticMethod()
           case t =>
-            val error = ParseError(s"Expected static java import before $t.", SyntacticContext.Unknown, previousSourceLocation())
+            val error = ParseError(s"Expected static java import before ${t.display}.", SyntacticContext.Unknown, previousSourceLocation())
             advanceWithError(error)
         }
         case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.method()
         case t =>
-          val error = ParseError(s"Expected java import before $t.", SyntacticContext.Unknown, previousSourceLocation())
+          val error = ParseError(s"Expected java import before ${t.display}.", SyntacticContext.Unknown, previousSourceLocation())
           advanceWithError(error)
       }
       close(markJvmOp, TreeKind.JvmOp.JvmOp)
@@ -2115,8 +2127,8 @@ object Parser2 {
           expect(TokenKind.Equal)
           expression()
           close(mark, TreeKind.Expr.RecordOpUpdate)
-        case k =>
-          val error = ParseError(s"Expected record operation but found $k", SyntacticContext.Expr.OtherExpr, currentSourceLocation())
+        case at =>
+          val error = ParseError(s"Expected record operation but found ${at.display}", SyntacticContext.Expr.OtherExpr, currentSourceLocation())
           advanceWithError(error, Some(mark))
       }
     }
@@ -2670,7 +2682,7 @@ object Parser2 {
         case TokenKind.Minus => unaryPat()
         case t =>
           val mark = open()
-          val error = ParseError(s"Expected pattern before $t", SyntacticContext.Pat.OtherPat, previousSourceLocation())
+          val error = ParseError(s"Expected pattern before ${t.display}", SyntacticContext.Pat.OtherPat, previousSourceLocation())
           closeWithError(mark, error)
       }
       // Handle FCons
@@ -2948,7 +2960,7 @@ object Parser2 {
         case TokenKind.KeywordStaticUppercase => name(Set(TokenKind.KeywordStaticUppercase))
         case t =>
           val mark = open()
-          val error = ParseError(s"Expected type before $t.", SyntacticContext.Type.OtherType, previousSourceLocation())
+          val error = ParseError(s"Expected type before ${t.display}.", SyntacticContext.Type.OtherType, previousSourceLocation())
           closeWithError(mark, error)
       }
       close(mark, TreeKind.Type.Type)
@@ -3225,8 +3237,8 @@ object Parser2 {
         case TokenKind.KeywordIf => guard()
         case TokenKind.KeywordLet => functional()
         case TokenKind.KeywordNot | TokenKind.KeywordFix | TokenKind.NameUpperCase => atom()
-        case k =>
-          val error = ParseError(s"Expected predicate body but found $k", SyntacticContext.Unknown, currentSourceLocation())
+        case at =>
+          val error = ParseError(s"Expected predicate body but found ${at.display}", SyntacticContext.Unknown, currentSourceLocation())
           advanceWithError(error)
       }
       close(mark, TreeKind.Predicate.Body)
@@ -3255,8 +3267,8 @@ object Parser2 {
              | TokenKind.NameMath
              | TokenKind.NameGreek
              | TokenKind.Underscore => name(NAME_VARIABLE)
-        case k =>
-          val error = ParseError(s"Expected ${TokenKind.ParenL} or name but found $k", SyntacticContext.Unknown, currentSourceLocation())
+        case at =>
+          val error = ParseError(s"Expected ${TokenKind.ParenL.display} or name but found ${at.display}", SyntacticContext.Unknown, currentSourceLocation())
           advanceWithError(error)
       }
       expect(TokenKind.Equal)
@@ -3412,7 +3424,7 @@ object Parser2 {
   def syntaxTreeToDebugString(tree: SyntaxTree.Tree, nesting: Int = 1): String = {
     s"${tree.kind}${
       tree.children.map {
-        case SyntaxTree.Child.TokenChild(token) => s"\n${"  " * nesting}'${token.text}'"
+        case SyntaxTree.Child.TokenChild(token) => s"\n${"  " * nesting}${token.text}"
         case SyntaxTree.Child.TreeChild(tree) => s"\n${"  " * nesting}${syntaxTreeToDebugString(tree, nesting + 1)}"
       }.mkString("")
     }"
