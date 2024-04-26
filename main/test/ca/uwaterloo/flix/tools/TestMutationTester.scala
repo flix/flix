@@ -936,6 +936,34 @@ class TestMutationTester extends AnyFunSuite {
   )
 
   mkMutationTest(
+    "Test.Instance.Def",
+    """
+      |trait MyAdd[t] {
+      |    pub def myAdd(x: t, y: t): t
+      |}
+      |
+      |instance MyAdd[Int32] {
+      |    pub def myAdd(x: Int32, y: Int32): Int32 = x + y
+      |}
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(5, MyAdd.myAdd(3, 2))
+      |""".stripMargin,
+    Map(
+      Killed -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Ann.Benchmark",
+    """
+      |@benchmark
+      |pub def benchmark01(): Bool = List.length(List.range(0, 1000)) == 1000
+      |""".stripMargin,
+    Map.empty,
+  )
+
+  mkMutationTest(
     "Test.Ann.Skip",
     """
       |def foo(): Bool = true
