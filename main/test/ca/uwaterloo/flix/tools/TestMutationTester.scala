@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.tools
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.runtime.CompilationResult
-import ca.uwaterloo.flix.tools.MutationTester.MutantStatus.{Killed, Survived, TimedOut}
+import ca.uwaterloo.flix.tools.MutationTester.MutantStatus.{CompilationFailed, Killed, Survived, TimedOut}
 import ca.uwaterloo.flix.tools.MutationTester.{MutantRunner, MutantStatus, Mutator}
 import ca.uwaterloo.flix.util.{Options, Result}
 import org.scalatest.funsuite.AnyFunSuite
@@ -13,8 +13,35 @@ import scala.concurrent.duration.DurationInt
 
 class TestMutationTester extends AnyFunSuite {
 
-  private val mutantTestTimeout = 2.seconds
+  private val mutantTestTimeout = 1.seconds
   private val sourceTestsFailedMsg = "Source tests failed"
+
+  testSource(
+    "Test.SourceTests.Successed",
+    """
+      |@Test
+      |def test(): Bool = Assert.eq(true, true)
+      |""".stripMargin,
+    Result.Ok(()),
+  )
+
+  testSource(
+    "Test.SourceTests.Failed",
+    """
+      |@Test
+      |def test(): Bool = Assert.eq(true, false)
+      |""".stripMargin,
+    Result.Err(sourceTestsFailedMsg),
+  )
+
+  mkMutationTest(
+    "Test.EmptySource",
+    """
+      |@Test
+      |def test(): Bool = Assert.eq(true, true)
+      |""".stripMargin,
+    Map.empty
+  )
 
   mkMutationTest(
     "Test.Constant.Boolean.False",
@@ -219,7 +246,6 @@ class TestMutationTester extends AnyFunSuite {
       Killed -> 1,
     ),
   )
-
 
   mkMutationTest(
     "Test.Unary.Bitwise.Not",
@@ -670,25 +696,228 @@ class TestMutationTester extends AnyFunSuite {
     ),
   )
 
-  //   ---------------------------------------------------------------------
-  //   todo: reorder
-
-  testSource(
-    "Test.SourceTests.Successed",
+  mkMutationTest(
+    "Test.Boolean.Combined",
     """
-      |@Test
-      |def test(): Bool = Assert.eq(true, true)
+      |def foo(): Bool = (true or (3 >= 2)) and (not false or (2 != 3))
       |""".stripMargin,
-    Result.Ok(()),
+    Map(
+      Survived -> 7,
+    ),
   )
 
-  testSource(
-    "Test.SourceTests.Failed",
+  mkMutationTest(
+    "Test.Arithmetic.Combined",
     """
-      |@Test
-      |def test(): Bool = Assert.eq(true, false)
+      |def foo(): Int32 = (2 + Int32.bitwiseAnd(12, 14)) * (Int32.bitwiseNot(-15) - 4)
       |""".stripMargin,
-    Result.Err(sourceTestsFailedMsg),
+    Map(
+      Survived -> 5,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.IfThenElse.01",
+    """
+      |def f1(n: Int32): Bool = if (n >= 20) true else false
+      |""".stripMargin,
+    Map(
+      Survived -> 4,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.IfThenElse.02",
+    """
+      |def f2(x: Int32, y: Int32): Int32 = if (x == 5) {
+      |    if (y == 7) {
+      |        123
+      |    } else {
+      |        231
+      |    }
+      |} else {
+      |    312
+      |}
+      |
+      |@Test
+      |def test1(): Bool = Assert.eq(231 , f2(5, 5))
+      |
+      |@Test
+      |def test2(): Bool = Assert.eq(123 , f2(5, 7))
+      |
+      |@Test
+      |def test3(): Bool = Assert.eq(312 , f2(7, 5))
+      |
+      |@Test
+      |def test4(): Bool = Assert.eq(312 , f2(7, 7))
+      |""".stripMargin,
+    Map(
+      Killed -> 8,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Tuple.01",
+    """
+      |def foo(): (Int32, String) = (1, "Dibgashi")
+      |
+      |@Test
+      |def test(): Bool = Assert.eq((1, "Dibgashi"), foo())
+      |""".stripMargin,
+    Map(
+      Killed -> 3,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Tuple.02",
+    """
+      |def foo(): (Bool, (Int32, Bool)) = (true, (3 + 2, 4.0 > 3.9))
+      |
+      |@Test
+      |def test(): Bool = Assert.eq((true, (5, true)), foo())
+      |""".stripMargin,
+    Map(
+      Killed -> 3,
+      Survived -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.FixpointConstraintSet.01",
+    """
+      |def foo(): #{ City() } = #{
+      |    City().
+      |}
+      |""".stripMargin,
+    Map(
+      Survived -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.FixpointConstraintSet.02",
+    """
+      |def foo(): #{ City(String) } = #{
+      |    City("London").
+      |    City("Paris").
+      |    City("Moscow").
+      |}
+      |""".stripMargin,
+    Map(
+      Survived -> 6,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.FixpointConstraintSet.03",
+    """
+      |def foo(): #{ ParentOf(String, String),
+      |          AncestorOf(String, String)} = #{
+      |    AncestorOf(x, y) :- ParentOf(x, y).
+      |    AncestorOf(x, z) :- AncestorOf(x, y), AncestorOf(y, z).
+      |}
+      |""".stripMargin,
+    Map(
+      CompilationFailed -> 3,
+      Survived -> 5,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.FixpointConstraintSet.04",
+    """
+      |def f2(): Vector[(String, Int32)] =
+      |    let rules = #{
+      |        A("a"; 1).
+      |        B(1).
+      |
+      |        C(s; a + b) :- A(s; a), B(b).
+      |    };
+      |
+      |    query rules select (s, n) from C(s; n)
+      |""".stripMargin,
+    Map(
+      CompilationFailed -> 2,
+      Survived -> 11,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.FixpointConstraintSet.05",
+    """
+      |def foo(roads: List[(city, city)]): Vector[(city, city)] with Order[city] =
+      |    let r = inject roads into Road;
+      |    let lp = #{
+      |        City(x) :- Road(x, _).
+      |        City(y) :- Road(_, y).
+      |        Path(x, y) :- Road(x, y).
+      |        Path(x, z) :- Path(x, y), Road(y, z).
+      |        Unconnected(x, y) :- City(x), City(y), not Path(x, y).
+      |    };
+      |
+      |    query r, lp select (x, y) from Unconnected(x, y)
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(Vector#{(1, 2), (2, 1)} , foo((1, 1) :: (2, 2) :: Nil))
+      |
+      |""".stripMargin,
+    Map(
+      CompilationFailed -> 9,
+      Killed -> 9,
+      Survived -> 3,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.FixpointConstraintSet.06",
+    """
+      |def isPrime(_: Int32): Bool = true
+      |
+      |def primesInRange(b: Int32, e: Int32): Vector[Int32] =
+      |    Vector.range(b, e) |> Vector.filter(isPrime)
+      |
+      |def specific(): Vector[Int32]=
+      |    let r = #{
+      |        P(5).
+      |
+      |        R(p) :- P(b), let p = primesInRange(b, 9), if b >= 5.
+      |    };
+      |
+      |    query r select (p) from R(p)
+      |
+      |@Test
+      |pub def testSpecific1(): Bool = Assert.eq(Vector#{5, 6, 7, 8}, specific())
+      |
+      |""".stripMargin,
+    Map(
+      CompilationFailed -> 2,
+      Killed -> 10,
+      Survived -> 1,
+    ),
+  )
+
+  //  ---------------------------------------------------------------------
+  //  todo: reorder
+
+  mkMutationTest(
+    "Test.Type.Unit.Returned",
+    """
+      |def foo(): Unit \ IO =
+      |    let n = 1;
+      |    println(n)
+      |""".stripMargin,
+    Map.empty
+  )
+
+  mkMutationTest(
+    "Test.Type.Unit.Called",
+    """
+      |def foo(x: Bool): Bool \ IO =
+      |    println("This string will not be mutated");
+      |    x
+      |""".stripMargin,
+    Map.empty
   )
 
   mkMutationTest(
@@ -721,7 +950,7 @@ class TestMutationTester extends AnyFunSuite {
   )
 
   mkMutationTest(
-    "Test.MutantStatus.TimeOut",
+    "Test.MutantStatus.TimedOut",
     s"""
        |def foo(): Bool = true
        |
@@ -735,6 +964,13 @@ class TestMutationTester extends AnyFunSuite {
     ),
   )
 
+  private def testSource(testName: String, input: String, expected: Result[Unit, String]): Unit = {
+    testHelper(testName, input, { cr => { _ =>
+      assert(expected == MutantRunner.testSource(cr).map { _ => () })
+    }
+    })
+  }
+
   private def mkMutationTest(testName: String, input: String, expectedStatuses: Map[MutantStatus, Int]): Unit = {
     testHelper(testName, input, { _ => { flix =>
       val actualStatuses = Mutator.mutateRoot(flix.getTyperAst)(flix)
@@ -744,13 +980,6 @@ class TestMutationTester extends AnyFunSuite {
         .toMap
 
       assert(actualStatuses == expectedStatuses)
-    }
-    })
-  }
-
-  private def testSource(testName: String, input: String, expected: Result[Unit, String]): Unit = {
-    testHelper(testName, input, { cr => { _ =>
-      assert(expected == MutantRunner.testSource(cr).map { _ => () })
     }
     })
   }
