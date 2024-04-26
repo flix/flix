@@ -880,8 +880,9 @@ object Parser2 {
     def declaration()(implicit s: State): Mark.Closed = {
       val mark = open(consumeDocComments = false)
       docComment()
-      // Handle case where the last thing in a file is a doc-comment
-      if (eof()) {
+      // Handle case where the last thing in a file or module is a doc-comment
+      if (eof() || at(TokenKind.CurlyR)) {
+        println(currentSourceLocation(), nth(0))
         return close(mark, TreeKind.CommentList)
       }
       // Handle modules
@@ -1497,8 +1498,7 @@ object Parser2 {
              | TokenKind.KeywordDeref => unaryExpr()
         case TokenKind.KeywordIf => ifThenElseExpr()
         case TokenKind.KeywordLet => letMatchExpr()
-        case TokenKind.Annotation if nth(1) == TokenKind.KeywordDef => letRecDefExpr()
-        case TokenKind.KeywordDef => letRecDefExpr()
+        case TokenKind.Annotation | TokenKind.KeywordDef => letRecDefExpr()
         case TokenKind.KeywordImport => letImportExpr()
         case TokenKind.KeywordRegion => scopeExpr()
         case TokenKind.KeywordMatch => matchOrMatchLambdaExpr()
@@ -1624,11 +1624,11 @@ object Parser2 {
                 case TokenKind.CurlyR if level == 1 =>
                   if (curlyLevel == 0) {
                     // Hitting '}' on top-level is a clear indicator that something is wrong. Most likely the terminating ')' was forgotten.
-                    return advanceWithError(ParseError("Malformed tuple.", SyntacticContext.Unknown, currentSourceLocation()))
+                    return advanceWithError(ParseError("Malformed tuple.", SyntacticContext.Expr.OtherExpr, currentSourceLocation()))
                   } else {
                     curlyLevel -= 1
                   }
-                case TokenKind.Eof => return advanceWithError(ParseError("Malformed tuple.", SyntacticContext.Unknown, currentSourceLocation()))
+                case TokenKind.Eof => return advanceWithError(ParseError("Malformed tuple.", SyntacticContext.Expr.OtherExpr, currentSourceLocation()))
                 case _ =>
               }
             }
@@ -2888,18 +2888,19 @@ object Parser2 {
       assert(at(TokenKind.KeywordWith))
       val mark = open()
       expect(TokenKind.KeywordWith)
+      // Note, Can't use zeroOrMore here since there's are no delimiterR.
       var continue = true
-      constraint()
       while (continue && !eof()) {
-        if (eat(TokenKind.Comma)) {
+        if (atAny(NAME_DEFINITION)) {
           constraint()
         } else {
+          val error = ParseError("Expected type constraint", SyntacticContext.WithClause, currentSourceLocation())
+          closeWithError(open(), error)
           continue = false
         }
-      }
-      if (at(TokenKind.Comma)) {
-        val error = ParseError("Trailing comma.", SyntacticContext.WithClause, currentSourceLocation())
-        advanceWithError(error)
+        if (!eat(TokenKind.Comma)) {
+          continue = false
+        }
       }
       close(mark, TreeKind.Type.ConstraintList)
     }
@@ -2917,18 +2918,19 @@ object Parser2 {
       assert(at(TokenKind.KeywordWith))
       val mark = open()
       expect(TokenKind.KeywordWith)
+      // Note, Can't use zeroOrMore here since there's are no delimiterR.
       var continue = true
-      name(NAME_QNAME, allowQualified = true)
       while (continue && !eof()) {
-        if (eat(TokenKind.Comma)) {
+        if (atAny(NAME_QNAME)) {
           name(NAME_QNAME, allowQualified = true)
         } else {
+          val error = ParseError("Expected type derivation", SyntacticContext.WithClause, currentSourceLocation())
+          closeWithError(open(), error)
           continue = false
         }
-      }
-      if (at(TokenKind.Comma)) {
-        val error = ParseError("Trailing comma.", SyntacticContext.Unknown, currentSourceLocation())
-        advanceWithError(error)
+        if (!eat(TokenKind.Comma)) {
+          continue = false
+        }
       }
       close(mark, TreeKind.DerivationList)
     }
