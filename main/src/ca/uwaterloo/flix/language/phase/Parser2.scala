@@ -3412,8 +3412,8 @@ object Parser2 {
   def syntaxTreeToDebugString(tree: SyntaxTree.Tree, nesting: Int = 1): String = {
     s"${tree.kind}${
       tree.children.map {
-        case token: Token => s"\n${"  " * nesting}'${token.text}'"
-        case tree: SyntaxTree.Tree => s"\n${"  " * nesting}${syntaxTreeToDebugString(tree, nesting + 1)}"
+        case token@Token(_, _, _, _, _, _,_,_) => s"\n${"  " * nesting}'${token.text}'"
+        case tree@SyntaxTree.Tree(_, _, _) => s"\n${"  " * nesting}${syntaxTreeToDebugString(tree, nesting + 1)}"
       }.mkString("")
     }"
   }
