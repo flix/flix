@@ -91,7 +91,8 @@ instance Collectable[Set] {
     pub def collect(iter: Iterator[a, ef, r]): Set[a] \ { ef, r } with Order[a] = Iterator.toSet(iter)
 }
 
-instance Iterable[Set] {
+instance Iterable[Set[a]] {
+    type Elm = a
     pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r = Set.iterator(rc, s)
 }
 
@@ -170,6 +171,11 @@ mod Set {
     pub def isEmpty(s: Set[a]): Bool =
         let Set(t) = s;
         RedBlackTree.isEmpty(t)
+
+    ///
+    /// Returns true if and only if `s` is a non-empty set.
+    ///
+    pub def nonEmpty(s: Set[a]): Bool = not isEmpty(s)
 
     ///
     /// Returns the singleton set containing `x`.
@@ -501,6 +507,26 @@ mod Set {
     ///
     pub def toList(s: Set[a]): List[a] =
         foldRight((x, acc) -> x :: acc, Nil, s)
+
+    ///
+    /// Returns the set `s` as an array.
+    ///
+    pub def toArray(rc: Region[r], s: Set[a]): Array[a, r] \ r = match size(s) {
+        case 0  => Array#{} @ rc
+        case sz =>
+            let a = Array.empty(rc, sz);
+            Iterator.forEachWithIndex((i, b) -> Array.put(b, i, a), iterator(rc, s));
+            a
+        }
+
+    ///
+    /// Returns the set `s` as a vector.
+    ///
+    pub def toVector(s: Set[a]): Vector[a] = region rc {
+        let arr = Array.empty(rc, size(s));
+        Iterator.forEachWithIndex((i, x) -> Array.put(x, i, arr), iterator(rc, s));
+        Array.toVector(arr)
+    }
 
     ///
     /// Returns the set `s` as a chain.

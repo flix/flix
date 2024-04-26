@@ -1,373 +1,489 @@
 package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.TestUtils
-import ca.uwaterloo.flix.language.errors.ParseError
+import ca.uwaterloo.flix.language.errors.{LexerError, ParseError, WeederError}
 import ca.uwaterloo.flix.util.Options
 import org.scalatest.funsuite.AnyFunSuite
 
-class TestParser extends AnyFunSuite with TestUtils {
+import org.scalatest.Suites
 
-  test("ParseError.Int.01") {
+class TestParser extends Suites(
+  // TODO: Enable these tests once the new parser is the only one in use.
+  // new TestParserRecovery,
+  new TestParserHappy
+)
+
+/**
+  * Recover tests are cases where we would like to check that the parser recovers from a syntax error.
+  * Each test contains one or more syntax error.
+  * The parser should understand all the surrounding code but still produce a parse error for the syntax mistake.
+  * That is asserted by checking that main is defined in the compilation result.
+  * There is an theoretically infinite amount of possible syntax errors (we could just start fuzzing random strings),
+  * so these test cover some "sensible amount" of broad errors.
+  * Some areas that could use more test are:
+  * - Declarations other than definitions (module, enum, trait, signature, effect).
+  * - Patterns
+  * - Map, Set, List, Vector and Array literals.
+  * - "Niche" expressions (OpenAs, JVMops, Fixpoint expressions).
+  *
+  * Note that these tests use [[check]] rather than [[compile]].
+  * That's because a compile converts any check failure into a HardFailure before running, codegen so the result we would like to expect is lost.
+  */
+class TestParserRecovery extends AnyFunSuite with TestUtils {
+
+  test("Use.01") {
     val input =
-      s"""
-         |def f(): Int = 1_
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |use Color.{Red;
+        |enum Color { case Red }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int.02") {
+  test("Use.02") {
     val input =
-      s"""
-         |def f(): Int = 1_000_
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |use Color.{Red =>
+        |enum Color { case Red }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int.03") {
+  test("Use.03") {
     val input =
-      s"""
-         |def f(): Int = 0x_1
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |use Color.{Red => ScarletRed;
+        |enum Color { case Red }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int.04") {
+  test("Import.01") {
     val input =
-      s"""
-         |def f(): Int = 0x1_
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |import java.lang.{StringBuffer,
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int8.01") {
+  test("Import.02") {
     val input =
-      s"""
-         |def f(): Int8 = 1_i8
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |import java.lang.{StringBuffer => StrBuf
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int8.02") {
+  test("Import.03") {
     val input =
-      s"""
-         |def f(): Int8 = 1_000_i8
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |import java.lang.{StringBuffer, , CharSequence};
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int8.03") {
+  test("Parameters.01") {
     val input =
-      s"""
-         |def f(): Int8 = 0x_1i8
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(x: Int32, , z: Int32): Int32 = ???
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int8.04") {
+  test("Parameters.02") {
     val input =
-      s"""
-         |def f(): Int8 = 0x1_i8
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(x: Int32,
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int16.01") {
+  test("NoDefBody.01") {
     val input =
-      s"""
-         |def f(): Int16 = 1_i16
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(x: Int32): Int32
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int16.02") {
+  test("NoDefType.01") {
     val input =
-      s"""
-         |def f(): Int16 = 1_000_i16
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(x: Int32) = ???
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int16.03") {
+  test("BadTrait.01") {
     val input =
-      s"""
-         |def f(): Int16 = 0x_1i16
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |trait DoesNothing[a
+        |  pub def noop(x: a): Unit = ???
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int16.04") {
+  test("BadEnum.01") {
     val input =
-      s"""
-         |def f(): Int16 = 0x1_i16
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |enum Legumes { Chickpea, Beans }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int32.01") {
+  test("BadEnum.02") {
     val input =
-      s"""
-         |def f(): Int32 = 1_i32
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |enum Legumes[a { case Chickpea(a), case Beans }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int32.02") {
+  test("BadEnum.03") {
     val input =
-      s"""
-         |def f(): Int32 = 1_000_i32
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |enum USD[a](a
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int32.03") {
+  test("TypeAlias.01") {
     val input =
-      s"""
-         |def f(): Int32 = 0x_1i32
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |type alias M[k, = Map[k, Result[String, k]]
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int32.04") {
+  test("TypeAlias.02") {
     val input =
-      s"""
-         |def f(): Int32 = 0x1_i32
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |type alias M[k] = Map[k, Result[String, ]
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int64.01") {
+  test("BadCallExpr.01") {
     val input =
-      s"""
-         |def f(): Int64 = 1_i64
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(x: Int32, y: Int32): Int32 = bar(1,
+        |// Note: We need an enum here. If we just had main, it would get consumed as a LetRecDef.
+        |enum Legumes { case ChickPea, Beans }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int64.02") {
+  test("BadCall.02") {
     val input =
-      s"""
-         |def f(): Int64 = 1_000_i64
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(x: Int32, y: Int32): Int32 = {
+        |  bar( 1 + ;
+        |  let x =
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int64.03") {
+  test("BadQualifiedPath.01") {
     val input =
-      s"""
-         |def f(): Int64 = 0x_1i64
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): In32 = Bar.
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Int64.04") {
+  test("BadRecordSelect.01") {
     val input =
-      s"""
-         |def f(): Int64 = 0x1_i64
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): In32 = bar().
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.BigInt.01") {
+  test("BadBinaryOperation.01") {
     val input =
-      s"""
-         |def f(): BigInt = 1_ii
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): Int32 = { 1 + }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.BigInt.02") {
+  test("BadBinaryOperation.02") {
     val input =
-      s"""
-         |def f(): BigInt = 1_000_ii
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): Int32 = % 2
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.BigInt.03") {
+  test("BadWithout.01") {
     val input =
-      s"""
-         |def f(): BigInt = 0x_1ii
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): Int32 = 1 without { IO
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.BigInt.04") {
+  test("BadWithout.02") {
     val input =
-      s"""
-         |def f(): BigInt = 0x1_ii
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): Int32 = 1 without
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Float.01") {
+  test("BadLambda.01") {
     val input =
-      s"""
-         |def f(): Float = 1_.0
-       """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): Int32 = { () -> ; 1 }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Float.02") {
+  test("BadLambda.02") {
     val input =
-      s"""
-         |def f(): Float = 1_000_.0
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): Int32 = { (a, ) -> ; 1 }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Float.03") {
+  test("BadTuple.01") {
     val input =
-      s"""
-         |def f(): Float = 1.0_
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): (Int32, Int32) = (1, )
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Float32.01") {
+  test("BadUnary.01") {
     val input =
-      s"""
-         |def f(): Float32 = 1_.0f32
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): Int32 = { lazy; 1 }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Float32.02") {
+  test("BadIfThenElse.01") {
     val input =
-      s"""
-         |def f(): Float32 = 1_000_.0f32
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): Int32 = if 123 else 321
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Float32.03") {
+  test("BadIfThenElse.02") {
     val input =
-      s"""
-         |def f(): Float32 = 1.0_f32
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): Int32 = if () 123 else 321
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Float64.01") {
+  test("BadIfThenElse.03") {
     val input =
-      s"""
-         |def f(): Float64 = 1_.0f64
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): Int32 = if (false) 123
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Float64.02") {
+  test("BadLetMatch.01") {
     val input =
-      s"""
-         |def f(): Float64 = 1_000_.0f64
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): Int32 = {
+        | let (_x, ) = (1, 2);
+        | 123
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Float64.03") {
+  test("BadLetMatch.02") {
     val input =
-      s"""
-         |def f(): Float64 = 1.0_f64
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): Int32 = {
+        | let (, x  = (1, 2);
+        | x
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.BigDecimal.01") {
+  test("BadLetMatch.03") {
     val input =
-      s"""
-         |def f(): BigDecimal = 1_.0ff
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): Int32 = {
+        | let x:  = enum;
+        | x
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.BigDecimal.02") {
+  test("BadMatch.01") {
     val input =
-      s"""
-         |def f(): BigDecimal = 1_000_.0ff
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): Int32 = match () { case }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.BigDecimal.03") {
+  test("BadType.01") {
     val input =
-      s"""
-         |def f(): Float64 = 1.0_ff
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): List[Int32 = ???
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.Regression.01") {
+  test("BadType.02") {
     val input =
-      s"""
-         |def foo(): String = "abc"
-         |def bar(): String = foo()
-         |d
-         """.stripMargin
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): Int32 -> = ???
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.EOI.01") {
-    val input = """def foo(): String = """"
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
-  test("ParseError.EOI.02") {
+  test("BadType.03") {
     val input =
-      """def foo(): Char = '"""
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): Int32 -> Int32 \ { = ???
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
 
-  test("ParseError.EOI.03") {
+  test("BadType.04") {
     val input =
-      """def foo (): String = "\"""
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+      """
+        |def foo(): #{ Node() | = ???
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
   }
+}
 
-  test("ParseError.EOI.04") {
-    val input = """def foo (): Char = "\"""
-    val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
-  }
-
+/**
+  * Note that CompilerSuite and LibrarySuite covers the positive testing of the parser well.
+  */
+class TestParserHappy extends AnyFunSuite with TestUtils {
   test("ParseError.Interpolation.01") {
     val input = s"""pub def foo(): String = "$${""""
     val result = compile(input, Options.TestWithLibNix)
@@ -381,9 +497,9 @@ class TestParser extends AnyFunSuite with TestUtils {
   }
 
   test("ParseError.Interpolation.03") {
-    val input = s"""pub def foo(): String = "$${1 + {2}""""
+    val input = s"""pub def foo(): String = "$${1 {}""""
     val result = compile(input, Options.TestWithLibNix)
-    expectError[ParseError](result)
+    expectError[LexerError](result)
   }
 
   test("ParseError.EnumCase.01") {
@@ -439,6 +555,137 @@ class TestParser extends AnyFunSuite with TestUtils {
       """
         |def foo(): Bool =
         |    1000ii instanceof BigInt
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  test("IllegalEffectTypeParams.01") {
+    val input =
+      """
+        |eff MyEffect[a]
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectTypeParams](result)
+  }
+
+  test("IllegalEffectTypeParams.02") {
+    val input =
+      """
+        |eff MyEffect {
+        |    def op[a](x: a): Unit
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectTypeParams](result)
+  }
+
+  test("IllegalEffectTypeParams.03") {
+    val input =
+      """
+        |eff MyEffect[a] {
+        |    def op[b](x: a, y: b): Unit
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectTypeParams](result)
+  }
+
+  test("IllegalEffectfulOperation.01") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit \ IO
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibMin)
+    expectError[WeederError.IllegalEffectfulOperation](result)
+  }
+
+  test("IllegalEffectfulOperation.02") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit \ E
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectfulOperation](result)
+  }
+
+  test("IllegalEffectfulOperation.03") {
+    val input =
+      """
+        |eff E {
+        |    def op(): Unit \ ef
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectfulOperation](result)
+  }
+
+  test("IllegalEffectfulOperation.04") {
+    val input =
+      """
+        |eff A {
+        |    pub def op(): Unit
+        |}
+        |eff E {
+        |    def op(): Unit \ A
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEffectfulOperation](result)
+  }
+
+  test("IllegalEnum.01") {
+    val input =
+      """
+        |enum E(Int32) { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEnum](result)
+  }
+
+  test("IllegalEnum.02") {
+    val input =
+      """
+        |enum E(a) { }
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[WeederError.IllegalEnum](result)
+  }
+
+  // TODO: unignore with Parser2
+  ignore("IllegalModuleName.01") {
+    val input =
+      """
+        |mod mymod {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  // TODO: unignore with Parser2
+  ignore("IllegalModuleName.02") {
+    val input =
+      """
+        |mod Mymod.othermod {
+        |}
+        |""".stripMargin
+    val result = compile(input, Options.TestWithLibNix)
+    expectError[ParseError](result)
+  }
+
+  // TODO: unignore with Parser2
+  ignore("IllegalModuleName.03") {
+    val input =
+      """
+        |mod Mymod {
+        |    mod othermod {
+        |    }
+        |}
         |""".stripMargin
     val result = compile(input, Options.TestWithLibNix)
     expectError[ParseError](result)

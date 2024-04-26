@@ -93,16 +93,18 @@ object Main {
       threads = cmdOpts.threads.getOrElse(Options.Default.threads),
       loadClassFiles = Options.Default.loadClassFiles,
       assumeYes = cmdOpts.assumeYes,
+      xnoverify = cmdOpts.xnoverify,
       xbddthreshold = cmdOpts.xbddthreshold,
       xnoboolcache = cmdOpts.xnoboolcache,
       xnoboolspecialcases = cmdOpts.xnoboolspecialcases,
       xnoboolunif = cmdOpts.xnoboolunif,
       xnoqmc = cmdOpts.xnoqmc,
       xnooptimizer = cmdOpts.xnooptimizer,
-      xverify = cmdOpts.xverify,
       xprintphase = cmdOpts.xprintphase,
       xsummary = cmdOpts.xsummary,
+      xfuzzer = cmdOpts.xfuzzer,
       xparser = cmdOpts.xparser,
+      xprinttyper = cmdOpts.xprinttyper,
       XPerfFrontend = cmdOpts.XPerfFrontend,
       XPerfN = cmdOpts.XPerfN
     )
@@ -336,6 +338,9 @@ object Main {
         case Command.CompilerPerf =>
           CompilerPerf.run(options)
 
+        case Command.CompilerMemory =>
+          CompilerMemory.run(options)
+
       }
     }
 
@@ -359,6 +364,7 @@ object Main {
                      listen: Option[Int] = None,
                      threads: Option[Int] = None,
                      assumeYes: Boolean = false,
+                     xnoverify: Boolean = false,
                      xbenchmarkCodeSize: Boolean = false,
                      xbenchmarkIncremental: Boolean = false,
                      xbenchmarkPhases: Boolean = false,
@@ -371,10 +377,11 @@ object Main {
                      xnoboolunif: Boolean = false,
                      xnoqmc: Boolean = false,
                      xnooptimizer: Boolean = false,
-                     xverify: Boolean = false,
                      xprintphase: Set[String] = Set.empty,
                      xsummary: Boolean = false,
+                     xfuzzer: Boolean = false,
                      xparser: Boolean = false,
+                     xprinttyper: Option[String] = None,
                      XPerfN: Option[Int] = None,
                      XPerfFrontend: Boolean = false,
                      files: Seq[File] = Seq())
@@ -419,6 +426,9 @@ object Main {
     case object Outdated extends Command
 
     case object CompilerPerf extends Command
+
+    case object CompilerMemory extends Command
+
   }
 
   /**
@@ -486,6 +496,8 @@ object Main {
           .text("number of compilations")
       ).hidden()
 
+      cmd("Xmemory").action((_, c) => c.copy(command = Command.CompilerMemory)).hidden()
+
       note("")
 
       opt[String]("args").action((s, c) => c.copy(args = Some(s))).
@@ -525,6 +537,10 @@ object Main {
       note("")
       note("The following options are experimental:")
 
+      // Xnoverify
+      opt[Unit]("Xnoverify").action((_, c) => c.copy(xnoverify = true)).
+        text("disables verification of the last AST.")
+
       // Xbenchmark-code-size
       opt[Unit]("Xbenchmark-code-size").action((_, c) => c.copy(xbenchmarkCodeSize = true)).
         text("[experimental] benchmarks the size of the generated JVM files.")
@@ -552,10 +568,6 @@ object Main {
       // Xno-optimizer
       opt[Unit]("Xno-optimizer").action((_, c) => c.copy(xnooptimizer = true)).
         text("[experimental] disables compiler optimizations.")
-
-      // Xverify
-      opt[Unit]("Xverify").action((_, c) => c.copy(xverify = true)).
-        text("[experimental] enables verification of the last AST.")
 
       // Xprint-phase
       opt[Seq[String]]("Xprint-phase").action((m, c) => c.copy(xprintphase = m.toSet)).
@@ -585,9 +597,15 @@ object Main {
       opt[Unit]("Xsummary").action((_, c) => c.copy(xsummary = true)).
         text("[experimental] prints a summary of the compiled modules.")
 
+      // Xfuzz
+      opt[Unit]("Xfuzzer").action((_, c) => c.copy(xfuzzer = true)).
+        text("enables compiler fuzzing.")
+
       // Xparser
       opt[Unit]("Xparser").action((_, c) => c.copy(xparser = true)).
         text("[experimental] disables new experimental lexer and parser.")
+
+      opt[String]("Xprint-typer").action((sym, c) => c.copy(xprinttyper = Some(sym)))
 
       note("")
 

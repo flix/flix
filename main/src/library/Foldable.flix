@@ -124,6 +124,11 @@ pub trait Foldable[t : Type -> Type] {
       Foldable.foldRightWithCont((_, _) -> false, true, t)
 
     ///
+    /// Returns true if and only if `t` is non-empty.
+    ///
+    pub def nonEmpty(t: t[a]): Bool = not Foldable.isEmpty(t)
+
+    ///
     /// Returns `true` if and only if the element `x` is in `t`.
     ///
     pub def memberOf(x: a, t: t[a]): Bool with Eq[a] =

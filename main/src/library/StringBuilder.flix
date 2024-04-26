@@ -128,6 +128,14 @@ mod StringBuilder {
         length(msb)
 
     ///
+    /// Sets the length of the StringBuilder `sb`.
+    ///
+    pub def setLength!(newLength: Int32, sb: StringBuilder[r]): Unit \ r =
+        import java.lang.StringBuilder.setLength(Int32): Unit \ r as setLength;
+        let StringBuilder.StringBuilder(msb) = sb;
+        setLength(msb, newLength)
+
+    ///
     /// Convert the StringBuilder `sb` to a string.
     ///
     pub def toString(sb: StringBuilder[r]): String \ r =

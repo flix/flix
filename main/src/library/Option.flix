@@ -149,7 +149,8 @@ instance Monoid[Option[a]] with Monoid[a] {
 
 instance CommutativeMonoid[Option[a]] with CommutativeMonoid[a]
 
-instance Iterable[Option] {
+instance Iterable[Option[a]] {
+    type Elm = a
     pub def iterator(rc: Region[r], o: Option[a]): Iterator[a, r, r] \ r = Option.iterator(rc, o)
 }
 
@@ -167,6 +168,11 @@ mod Option {
         case None    => true
         case Some(_) => false
     }
+
+    ///
+    /// Returns `true` iff `o` is `Some`.
+    ///
+    pub def nonEmpty(o: Option[a]): Bool = not isEmpty(o)
 
     ///
     /// Returns `v` if `o` is `Some(v).` Otherwise returns `d`.

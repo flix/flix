@@ -77,8 +77,10 @@ class Flix {
     * A cache of ASTs for incremental compilation.
     */
   private var cachedLexerTokens: Map[Ast.Source, Array[Token]] = Map.empty
-  private var cachedParserAst: ParsedAst.Root = ParsedAst.empty
+  private var cachedParserAst:  ParsedAst.Root = ParsedAst.empty
+  private var cachedParserCst:  SyntaxTree.Root = SyntaxTree.empty
   private var cachedWeederAst: WeededAst.Root = WeededAst.empty
+  private var cachedWeederAst2: WeededAst.Root = WeededAst.empty
   private var cachedDesugarAst: DesugaredAst.Root = DesugaredAst.empty
   private var cachedKinderAst: KindedAst.Root = KindedAst.empty
   private var cachedResolverAst: ResolvedAst.Root = ResolvedAst.empty
@@ -86,7 +88,11 @@ class Flix {
 
   def getParserAst: ParsedAst.Root = cachedParserAst
 
+  def getParserCst: SyntaxTree.Root  = cachedParserCst
+
   def getWeederAst: WeededAst.Root = cachedWeederAst
+
+  def getWeederAst2: WeededAst.Root = cachedWeederAst2
 
   def getDesugarAst: DesugaredAst.Root = cachedDesugarAst
 
@@ -542,7 +548,22 @@ class Flix {
       afterLexer <- Lexer.run(afterReader, cachedLexerTokens, changeSet)
       afterParser <- Parser.run(afterReader, entryPoint, cachedParserAst, changeSet)
       afterWeeder <- Weeder.run(afterParser, cachedWeederAst, changeSet)
-      afterDesugar = Desugar.run(afterWeeder, cachedDesugarAst, changeSet)
+
+      // Plan for migrating to new parser + weeder:
+      // Stage 1 [ACTIVE]
+      // Run new pipeline and use results but only after the old pipeline.
+      // This way Parser2 and Weeder2 only ever sees code that the old pipeline considers ok.
+      // Errors will look like before, but the new WeededAst, which should be equal to the old one, is used.
+      //
+      // Stage 2
+      // Run new pipeline by default, but make the old one available through --XParser option.
+      //
+      // Stage 3
+      // Full migration, remove old parser and weeder.
+      afterParser2 <- Parser2.run(afterLexer, cachedParserCst, changeSet)
+      afterWeeder2 <- Weeder2.run(afterReader, entryPoint, afterParser2, cachedWeederAst, changeSet)
+
+      afterDesugar = Desugar.run(afterWeeder2, cachedDesugarAst, changeSet)
       afterNamer <- Namer.run(afterDesugar)
       afterResolver <- Resolver.run(afterNamer, cachedResolverAst, changeSet)
       afterKinder <- Kinder.run(afterResolver, cachedKinderAst, changeSet)
@@ -561,7 +582,9 @@ class Flix {
       if (options.incremental) {
         this.cachedLexerTokens = afterLexer
         this.cachedParserAst = afterParser
+        this.cachedParserCst = afterParser2
         this.cachedWeederAst = afterWeeder
+        this.cachedWeederAst2 = afterWeeder2
         this.cachedDesugarAst = afterDesugar
         this.cachedKinderAst = afterKinder
         this.cachedResolverAst = afterResolver

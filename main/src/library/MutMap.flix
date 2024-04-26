@@ -66,6 +66,11 @@ mod MutMap {
         Map.isEmpty(deref mm)
 
     ///
+    /// Returns `true` if and only if `m` is a non-empty map.
+    ///
+    pub def nonEmpty(m: MutMap[k, v, r]): Bool \ r = not isEmpty(m)
+
+    ///
     /// Optionally finds `k -> v` where `k` is the smallest key according to the `Order` instance of `k`.
     ///
     /// Returns `None` if `m` is empty.
@@ -540,6 +545,20 @@ mod MutMap {
     pub def toList(m: MutMap[k, v, r]): List[(k, v)] \ r =
         let MutMap(_, mm) = m;
         Map.toList(deref mm)
+
+    ///
+    /// Returns the mutable map `m` as a vector of key-value pairs.
+    ///
+    pub def toVector(m: MutMap[k, v, r]): Vector[(k, v)] \ r =
+        let MutMap(_, mm) = m;
+        Map.toVector(deref mm)
+
+    ///
+    /// Returns the mutable map `m` as an array of key-value pairs.
+    ///
+    pub def toArray(rc1: Region[r1], m: MutMap[k, v, r]): Array[(k, v), r1] \ {r, r1} =
+        let MutMap(_, mm) = m;
+        Map.toArray(rc1, deref mm)
 
     ///
     /// Returns the mutable map `m` as a set of key-value pairs.

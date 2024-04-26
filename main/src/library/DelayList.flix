@@ -119,7 +119,8 @@ instance Monoid[DelayList[a]] {
     pub def empty(): DelayList[a] = DelayList.ENil
 }
 
-instance Iterable[DelayList] {
+instance Iterable[DelayList[a]] {
+    type Elm = a
     pub def iterator(rc: Region[r], l: DelayList[a]): Iterator[a, r, r] \ r = DelayList.iterator(rc, l)
 }
 
@@ -161,6 +162,14 @@ mod DelayList {
         case LList(xs) => isEmpty(force xs)
         case _         => false
     }
+
+    ///
+    /// Returns true if and only if `l` is a non-empty DelayList.
+    ///
+    /// Does not force the tail of `l`.
+    ///
+    @Experimental
+    pub def nonEmpty(l: DelayList[a]): Bool = not isEmpty(l)
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `l`.

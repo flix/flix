@@ -22,119 +22,16 @@ import ca.uwaterloo.flix.language.ast.Ast.BroadEqualityConstraint
 import ca.uwaterloo.flix.language.ast._
 import ca.uwaterloo.flix.language.fmt.FormatEqualityConstraint.formatEqualityConstraint
 import ca.uwaterloo.flix.language.fmt.FormatType.formatType
-import ca.uwaterloo.flix.language.fmt._
 import ca.uwaterloo.flix.util.{Formatter, Grammar}
 
 /**
   * A common super-type for type errors.
   */
-sealed trait TypeError extends CompilationMessage {
+sealed trait TypeError extends CompilationMessage with Recoverable {
   val kind: String = "Type Error"
 }
 
 object TypeError {
-
-  /**
-    * Effect Generalization Error.
-    *
-    * @param declared the declared effect.
-    * @param inferred the inferred effect.
-    * @param loc      the location where the error occurred.
-    */
-  case class EffectGeneralizationError(declared: Type, inferred: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Unrecoverable {
-    def summary: String = s"The inferred effect '${FormatEff.formatEff(inferred)}' cannot be generalized to '${FormatEff.formatEff(declared)}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> The inferred effect: '${red(FormatEff.formatEff(inferred))}' cannot be generalized to '${red(FormatEff.formatEff(declared))}'.
-         |
-         |${code(loc, "unable to generalize the effect.")}
-         |
-         |""".stripMargin
-    }
-  }
-
-  /**
-    * Effectful function declared as pure.
-    *
-    * @param inferred the inferred effect.
-    * @param loc      the location where the error occurred.
-    */
-  case class EffectfulDeclaredAsPure(inferred: Type, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Unrecoverable {
-    def summary: String = "Effectful function declared as pure."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> ${red("Effectful")} function declared as ${green("pure")}.
-         |
-         |${code(loc, "effectful function.")}
-         |
-         |The function has the effect: ${FormatEff.formatEff(inferred)}
-         |
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      """A function must declare all the effects used in its body.
-        |
-        |For example:
-        |
-        |  def example(f: Int32 -> Int32 \ ef): Int32 \ ef = f(123)
-        |                                             ^^^^
-        |""".stripMargin
-    })
-  }
-
-  /**
-    * Generalization Error.
-    *
-    * @param declared the declared type scheme.
-    * @param inferred the inferred type scheme.
-    * @param loc      the location where the error occurred.
-    */
-  case class GeneralizationError(declared: Scheme, inferred: Scheme, loc: SourceLocation)(implicit flix: Flix) extends TypeError with Unrecoverable {
-    def summary: String = s"The type scheme '${FormatScheme.formatSchemeWithOnlyEqualityConstraints(inferred)}' cannot be generalized to '${FormatScheme.formatSchemeWithOnlyEqualityConstraints(declared)}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> The type scheme: '${red(FormatScheme.formatSchemeWithOnlyEqualityConstraints(inferred))}' cannot be generalized to '${red(FormatScheme.formatSchemeWithOnlyEqualityConstraints(declared))}'.
-         |
-         |${code(loc, "unable to generalize the type scheme.")}
-         |
-         |The declared type does not match the inferred type:
-         |
-         |  Declared: ${cyan(FormatScheme.formatSchemeWithOnlyEqualityConstraints(declared))}
-         |  Inferred: ${magenta(FormatScheme.formatSchemeWithOnlyEqualityConstraints(inferred))}
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some({
-      val newLineAndIndent: String = System.lineSeparator() + "  "
-
-      def fmtTypeVar(tvar: Symbol.KindedTypeVarSym, declared: Boolean): String = {
-        val color = if (declared) formatter.cyan _ else formatter.magenta _
-        s"${color(FormatType.formatTypeVarSym(tvar))} of kind: '${FormatKind.formatKind(tvar.kind)}'."
-      }
-
-      def fmtQuantifiers(quantifiers: List[Symbol.KindedTypeVarSym], declared: Boolean): String = {
-        if (quantifiers.isEmpty)
-          "<< no type variables >>"
-        else
-          quantifiers.map(fmtTypeVar(_, declared)).mkString(newLineAndIndent)
-      }
-
-      s"""
-         |The declared type variables:
-         |  ${fmtQuantifiers(declared.quantifiers, declared = true)}
-         |
-         |The inferred type variables:
-         |  ${fmtQuantifiers(inferred.quantifiers, declared = false)}
-         |""".stripMargin
-    })
-  }
 
   /**
     * Irreducible associated type error
@@ -322,7 +219,7 @@ object TypeError {
     * @param renv  the rigidity environment.
     * @param loc   the location where the error occurred.
     */
-  case class MissingInstance(clazz: Symbol.ClassSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingInstance(clazz: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"No instance of the '$clazz' class for the type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
@@ -344,7 +241,7 @@ object TypeError {
     * @param renv  the rigidity environment.
     * @param loc   the location where the error occurred.
     */
-  case class MissingInstanceArrow(clazz: Symbol.ClassSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
+  case class MissingInstanceArrow(clazz: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
     def summary: String = s"No instance of the '$clazz' class for the function type '${formatType(tpe, Some(renv))}'."
 
     def message(formatter: Formatter): String = {
@@ -583,40 +480,6 @@ object TypeError {
          |${code(loc, "over-applied function.")}
          |""".stripMargin
     }
-  }
-
-  /**
-    * Unexpected effect, but a checked effect cast might work.
-    *
-    * @param expected the expected effect.
-    * @param inferred the inferred effect.
-    * @param renv     the rigidity environment.
-    * @param loc      the location of the inferred effect.
-    */
-  case class PossibleCheckedEffectCast(expected: Type, inferred: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix) extends TypeError {
-    def summary: String = s"Expected effect '${formatType(expected, Some(renv))}' but found effect: '${formatType(inferred, Some(renv))}'."
-
-    def message(formatter: Formatter): String = {
-      import formatter._
-      s"""${line(kind, source.name)}
-         |>> Expected effect: '${red(formatType(expected, Some(renv)))}' but found effect: '${red(formatType(inferred, Some(renv)))}'.
-         |
-         |${code(loc, "expression has unexpected effect.")}
-         |
-         |'${formatType(expected, Some(renv))}' appears to be a superset of '${formatType(inferred, Some(renv))}'.
-         |Consider using 'checked_ecast'?
-         |""".stripMargin
-    }
-
-    override def explain(formatter: Formatter): Option[String] = Some(
-      s"""Flix does not support sub-typing nor sub-effecting.
-         |
-         |Nevertheless, 'checked_ecast' is way to use sub-effecting in a safe manner, for example:
-         |
-         |    let s = "pure expression";
-         |    let o: Unit -> String \\ IO = () -> checked_ecast(s);
-         |""".stripMargin
-    )
   }
 
   /**

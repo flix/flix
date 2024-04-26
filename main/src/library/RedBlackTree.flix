@@ -50,7 +50,7 @@ pub enum RedBlackTree[k, v] with Sendable {
 }
 
 instance Eq[RedBlackTree[k, v]] with Eq[k], Eq[v] {
-    pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool with Eq[v] =
+    pub def eq(t1: RedBlackTree[k, v], t2: RedBlackTree[k, v]): Bool =
         RedBlackTree.toList(t1) == RedBlackTree.toList(t2)
 }
 
@@ -86,9 +86,10 @@ instance Filterable[RedBlackTree[k]] with Order[k] {
 
 instance Witherable[RedBlackTree[k]] with Order[k]
 
-instance Iterable[RedBlackTree[k]] {
-    pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[v, r, r] \ r =
-            RedBlackTree.iterator(rc, t) |> Iterator.map(snd)
+instance Iterable[RedBlackTree[k, v]] {
+    type Elm = (k, v)
+    pub def iterator(rc: Region[r], t: RedBlackTree[k, v]): Iterator[(k, v), r, r] \ r =
+            RedBlackTree.iterator(rc, t)
 }
 
 mod RedBlackTree {
@@ -147,6 +148,11 @@ mod RedBlackTree {
         case Leaf => true
         case _    => false
     }
+
+    ///
+    /// Returns `true` if and only if `t` is a non-empty tree.
+    ///
+    pub def nonEmpty(t: RedBlackTree[k, v]): Bool = not isEmpty(t)
 
     ///
     /// Updates `t` with `k => v` if `k => v1` is in `t`.

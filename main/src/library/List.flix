@@ -120,7 +120,8 @@ instance Collectable[List] {
     pub def collect(iter: Iterator[a, ef, r]): List[a] \ { r, ef } with Order[a] = Iterator.toList(iter)
 }
 
-instance Iterable[List] {
+instance Iterable[List[a]] {
+    type Elm = a
     pub def iterator(rc: Region[r], l: List[a]): Iterator[a, r, r] \ r = List.iterator(rc, l)
 }
 
@@ -154,6 +155,11 @@ mod List {
         case Nil => true
         case _   => false
     }
+
+    ///
+    /// Returns true if and only if `l` is a non-empty list.
+    ///
+    pub def nonEmpty(l: List[a]): Bool = not isEmpty(l)
 
     ///
     /// Returns `Some(x)` if `x` is the first element of `l`.

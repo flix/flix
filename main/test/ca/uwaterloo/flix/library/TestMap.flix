@@ -77,6 +77,24 @@ def isEmpty04(): Bool = not Map.isEmpty(Map#{1 => 2, 2 => 4, 3 => 6})
 def isEmpty05(): Bool = not Map.isEmpty(Map#{1 => 2, 2 => 4, 3 => 6, 4 => 8})
 
 /////////////////////////////////////////////////////////////////////////////
+// nonEmpty                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def nonEmpty01(): Bool = not Map.nonEmpty((Map#{}: Map[Unit, Unit]))
+
+@test
+def nonEmpty02(): Bool = Map.nonEmpty(Map#{1 => 2})
+
+@test
+def nonEmpty03(): Bool = Map.nonEmpty(Map#{1 => 2, 2 => 4})
+
+@test
+def nonEmpty04(): Bool = Map.nonEmpty(Map#{1 => 2, 2 => 4, 3 => 6})
+
+@test
+def nonEmpty05(): Bool = Map.nonEmpty(Map#{1 => 2, 2 => 4, 3 => 6, 4 => 8})
+
+/////////////////////////////////////////////////////////////////////////////
 // get                                                                     //
 /////////////////////////////////////////////////////////////////////////////
 @test
@@ -1681,6 +1699,44 @@ def toList03(): Bool = Map.toList(Map#{1 => 2, 3 => 4}) == (1, 2) :: (3, 4) :: N
 
 @test
 def toList04(): Bool = Map.toList(Map#{1 => 2, 2 => 2, 3 => 4}) == (1, 2) :: (2, 2) :: (3, 4) :: Nil
+
+/////////////////////////////////////////////////////////////////////////////
+// toArray                                                                 //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toArray01(): Bool = region rc {
+    Array.sameElements(Map.toArray(rc, (Map#{}: Map[Unit, Unit])), Array#{} @ rc)
+}
+
+@test
+def toArray02(): Bool = region rc {
+    Array.sameElements(Map.toArray(rc, Map#{1 => 2}), Array#{(1, 2)} @ rc)
+}
+
+@test
+def toArray03(): Bool =  region rc {
+    Array.sameElements(Map.toArray(rc, Map#{1 => 2, 3 => 4}), Array#{(1, 2), (3, 4)} @ rc)
+}
+
+@test
+def toArray04(): Bool = region rc {
+    Array.sameElements(Map.toArray(rc, Map#{1 => 2, 2 => 2, 3 => 4}), Array#{(1, 2), (2, 2), (3, 4)} @ rc)
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// toVector                                                                //
+/////////////////////////////////////////////////////////////////////////////
+@test
+def toVector01(): Bool = Map.toVector((Map#{}: Map[Unit, Unit])) == (Vector#{} : Vector[(Unit, Unit)])
+
+@test
+def toVector02(): Bool = Map.toVector(Map#{1 => 2}) == Vector#{(1, 2)}
+
+@test
+def toVector03(): Bool = Map.toVector(Map#{1 => 2, 3 => 4}) == Vector#{(1, 2), (3, 4)}
+
+@test
+def toVector04(): Bool = Map.toVector(Map#{1 => 2, 2 => 2, 3 => 4}) == Vector#{(1, 2), (2, 2), (3, 4)}
 
 /////////////////////////////////////////////////////////////////////////////
 // toMutDeque                                                              //

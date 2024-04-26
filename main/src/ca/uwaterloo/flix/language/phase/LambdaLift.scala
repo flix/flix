@@ -18,16 +18,13 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.BoundBy
-import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, Level, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
+import ca.uwaterloo.flix.language.ast.{Ast, AtomicOp, LiftedAst, MonoType, Purity, SimplifiedAst, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
 
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.jdk.CollectionConverters._
 
 object LambdaLift {
-
-  // Post type inference, level is irrelevant.
-  private implicit val DefaultLevel: Level = Level.Default
 
   /**
     * Performs lambda lifting on the given AST `root`.

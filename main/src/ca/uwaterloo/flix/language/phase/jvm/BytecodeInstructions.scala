@@ -106,6 +106,14 @@ object BytecodeInstructions {
 
     case object NE extends Condition
 
+    case object LT extends Condition
+
+    case object LE extends Condition
+
+    case object GT extends Condition
+
+    case object GE extends Condition
+
     case object NONNULL extends Condition
 
     case object NULL extends Condition
@@ -393,6 +401,21 @@ object BytecodeInstructions {
     f
   }
 
+  def LCMP(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.LCMP)
+    f
+  }
+
+  def LCONST_0(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.LCONST_0)
+    f
+  }
+
+  def LCONST_1(): InstructionSet = f => {
+    f.visitInstruction(Opcodes.LCONST_1)
+    f
+  }
+
   def LLOAD(index: Int): InstructionSet = f => {
     f.visitVarInstruction(Opcodes.LLOAD, index)
     f
@@ -669,6 +692,10 @@ object BytecodeInstructions {
     case Condition.EQ => Opcodes.IFEQ
     case Condition.ICMPEQ => Opcodes.IF_ICMPEQ
     case Condition.ICMPNE => Opcodes.IF_ICMPNE
+    case Condition.LT => Opcodes.IFLT
+    case Condition.LE => Opcodes.IFLE
+    case Condition.GT => Opcodes.IFGT
+    case Condition.GE => Opcodes.IFGE
     case Condition.NE => Opcodes.IFNE
     case Condition.NONNULL => Opcodes.IFNONNULL
     case Condition.NULL => Opcodes.IFNULL
@@ -681,6 +708,10 @@ object BytecodeInstructions {
     case Condition.EQ => Condition.NE
     case Condition.ICMPEQ => Condition.ICMPNE
     case Condition.ICMPNE => Condition.ICMPEQ
+    case Condition.LT => Condition.GE
+    case Condition.LE => Condition.GT
+    case Condition.GT => Condition.LE
+    case Condition.GE => Condition.LT
     case Condition.NE => Condition.EQ
     case Condition.NONNULL => Condition.NULL
     case Condition.NULL => Condition.NONNULL

@@ -17,13 +17,14 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.CompilationMessage
-import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceKind, SourceLocation, Token, TokenKind}
+import ca.uwaterloo.flix.language.ast.{Ast, ChangeSet, ReadAst, SourceLocation, Token, TokenKind}
 import ca.uwaterloo.flix.language.errors.LexerError
 import ca.uwaterloo.flix.util.{ParOps, Validation}
 import ca.uwaterloo.flix.util.Validation._
 import org.parboiled2.ParserInput
 
 import scala.collection.mutable
+import scala.util.Random
 
 /**
  * A lexer that is able to tokenize multiple `Ast.Source`s in parallel.
@@ -122,11 +123,12 @@ object Lexer {
    * This is not viable long term and should never be merged into a stable release,
    * but it allows us to battle-test the lexer in nightly, without inconveniencing users too much.
    */
-  private def tryLex(src: Ast.Source): Validation[Array[Token], CompilationMessage] = {
+  private def tryLex(src: Ast.Source)(implicit flix: Flix): Validation[Array[Token], CompilationMessage] = {
     try {
-      lex(src)
+      mapN(lex(src))(fuzz)
     } catch {
       case except: Throwable =>
+        println(src.data.mkString)
         except.printStackTrace()
         Validation.success(Array.empty[Token])
     }
@@ -163,8 +165,8 @@ object Lexer {
    * This is a design choice to avoid returning an Option[Char], which would be doable but tedious to work with.
    */
   private def advance()(implicit s: State): Char = {
-    if (s.current.offset > s.src.data.length) {
-      return s.src.data.last
+    if (s.current.offset >= s.src.data.length) {
+      return '\u0000'
     }
 
     val c = s.src.data(s.current.offset)
@@ -174,7 +176,7 @@ object Lexer {
       s.current.line += 1
       s.current.column = 0
     } else {
-      s.end = new Position(s.current.line, s.current.column + 1, s.current.offset)
+      s.end = new Position(s.current.line, (s.current.column + 1).toShort, s.current.offset)
       s.current.offset += 1
       s.current.column += 1
     }
@@ -278,7 +280,7 @@ object Lexer {
     // state is zero-indexed while SourceLocation works as one-indexed.
     val line = s.start.line + 1
     val column = s.start.column + 1
-    SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, line, column, line, column + length)
+    SourceLocation(s.parserInput, s.src, isReal = true, line, column.toShort, line, (column + length).toShort)
   }
 
   /**
@@ -290,7 +292,7 @@ object Lexer {
     // state is zero-indexed while SourceLocation works as one-indexed.
     val line = s.current.line + 1
     val column = s.current.column + 1
-    SourceLocation(Some(s.parserInput), s.src, SourceKind.Real, line, column, line, column + length)
+    SourceLocation(s.parserInput, s.src, isReal = true, line, column.toShort, line, (column + length).toShort)
   }
 
   /**
@@ -298,7 +300,7 @@ object Lexer {
    * Afterwards `s.start` is reset to the next position after the previous token.
    */
   private def addToken(kind: TokenKind)(implicit s: State): Unit = {
-    s.tokens += Token(kind, s.src.data, s.start.offset, s.current.offset, s.start.line, s.start.column, s.end.line, s.end.column)
+    s.tokens += Token(kind, s.src.data, s.start.offset, s.current.offset, s.start.line, s.start.column.toShort, s.end.line, s.end.column.toShort)
     s.start = new Position(s.current.line, s.current.column, s.current.offset)
   }
 
@@ -466,11 +468,12 @@ object Lexer {
           acceptUserDefinedOp()
         } else TokenKind.Underscore
       case c if c.isLetter => acceptName(c.isUpper)
+      case '0' if peek() == 'x' => acceptHexNumber()
       case c if isDigit(c) => acceptNumber()
       // User defined operators.
       case _ if isUserOp(c).isDefined =>
         val p = peek()
-        if (c == '<' && p == '>') {
+        if (c == '<' && p == '>' && peekPeek().flatMap(isUserOp).isEmpty) {
           // Make sure '<>' is read as AngleL, AngleR and not UserDefinedOperator for empty case sets.
           TokenKind.AngleL
         } else if (isUserOp(p).isDefined) {
@@ -903,61 +906,116 @@ object Lexer {
   private def acceptNumber()(implicit s: State): TokenKind = {
     var isDecimal = false
     var isScientificNotation = false
-    val isHex = peek() == 'x'
-    if (isHex) {
-      advance() // consume 'x'
-    }
-
+    var error: Option[TokenKind] = None
     while (!eof()) {
       peek() match {
-        // Digits, '_' are just consumed
-        case c if c.isDigit || c == '_' => advance()
-
-        // If handling a hex number consume hex digits too
-        case 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'A' | 'B' | 'C' | 'D' | 'E' | 'F' if isHex => advance()
-
+        case c if c.isDigit => advance()
         // 'e' mark scientific notation if not handling a hex number
         case 'e' =>
           if (isScientificNotation) {
-            return TokenKind.Err(LexerError.DoubleEInNumber(sourceLocationAtCurrent()))
+            error = Some(TokenKind.Err(LexerError.DoubleEInNumber(sourceLocationAtCurrent())))
           }
           isScientificNotation = true
           advance()
-
-        // Dots mark a decimal but are otherwise ignored
-        case '.' if peekPeek().exists(_.isDigit) =>
-          if (isDecimal) {
-            return TokenKind.Err(LexerError.DoubleDottedNumber(sourceLocationAtCurrent()))
-          }
+        // Dots mark a decimal
+        case '.' if isDecimal =>
+          val loc = sourceLocationAtCurrent()
+          advance()
+          error = Some(TokenKind.Err(LexerError.DoubleDottedNumber(loc)))
+        case '.' if peekPeek().exists(c => c.isDigit || c == '.') =>
           isDecimal = true
           advance()
-
+        // '_' that is not in tail-position
+        case '_' if peekPeek().exists(_.isDigit) => advance()
+        // sequence of underscores
+        case '_' if peekPeek().contains('_') =>
+          // Consume the whole sequence of '_'
+          advance()
+          advance()
+          while (!eof() && peek() == '_') {
+            advance()
+          }
+          error = Some(TokenKind.Err(LexerError.DoubleUnderscoreInNumber(sourceLocationAtCurrent())))
         // If this is reached an explicit number type might occur next
         case _ => return advance() match {
-          case _ if isMatch("f32") => TokenKind.LiteralFloat32
-          case _ if isMatch("f64") => TokenKind.LiteralFloat64
-          case _ if isMatch("i8") => TokenKind.LiteralInt8
-          case _ if isMatch("i16") => TokenKind.LiteralInt16
-          case _ if isMatch("i32") => TokenKind.LiteralInt32
-          case _ if isMatch("i64") => TokenKind.LiteralInt64
-          case _ if isMatch("ii") => TokenKind.LiteralBigInt
-          case _ if isMatch("ff") => TokenKind.LiteralBigDecimal
+          case '_' => TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
+          case _ if isMatch("f32") => error.getOrElse(TokenKind.LiteralFloat32)
+          case _ if isMatch("f64") => error.getOrElse(TokenKind.LiteralFloat64)
+          case _ if isMatch("i8") => error.getOrElse(TokenKind.LiteralInt8)
+          case _ if isMatch("i16") => error.getOrElse(TokenKind.LiteralInt16)
+          case _ if isMatch("i32") => error.getOrElse(TokenKind.LiteralInt32)
+          case _ if isMatch("i64") => error.getOrElse(TokenKind.LiteralInt64)
+          case _ if isMatch("ii") => error.getOrElse(TokenKind.LiteralBigInt)
+          case _ if isMatch("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
           case _ =>
             retreat()
             if (isDecimal) {
-              TokenKind.LiteralFloat64
+              error.getOrElse(TokenKind.LiteralFloat64)
             } else {
-              TokenKind.LiteralInt32
+              error.getOrElse(TokenKind.LiteralInt32)
             }
         }
       }
     }
     // The very last char of the file was a digit so return the appropriate token.
     if (isDecimal) {
-      TokenKind.LiteralFloat64
+      error.getOrElse(TokenKind.LiteralFloat64)
     } else {
-      TokenKind.LiteralInt32
+      error.getOrElse(TokenKind.LiteralInt32)
     }
+  }
+
+  /**
+   * Moves current position past a hex number literal. IE. "0x123i32" or "0xAB21CD"
+   * It is optional to have a trailing type indicator on number literals.
+   * If it is missing Flix defaults to `i32`.
+   * */
+  private def acceptHexNumber()(implicit s: State): TokenKind = {
+    advance() // consume 'x'
+    var error: Option[TokenKind] = if (peek() == '_') {
+      val loc = sourceLocationAtCurrent()
+      advance()
+      Some(TokenKind.Err(LexerError.HexLiteralStartsOnUnderscore(loc)))
+    } else {
+      None
+    }
+    while (!eof()) {
+      peek() match {
+        case c if isDigit(c) => advance()
+        // '_' that is not in tail-position
+        case '_' if peekPeek().exists(isDigit) => advance()
+        // sequence of underscores
+        case '_' if peekPeek().contains('_') =>
+          // Consume the whole sequence of '_'
+          advance()
+          advance()
+          while (!eof() && peek() == '_') {
+            advance()
+          }
+          error = Some(TokenKind.Err(LexerError.DoubleUnderscoreInNumber(sourceLocationAtCurrent())))
+        // underscore in tail position
+        case '_' =>
+          advance()
+          return TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
+        // If this is reached an explicit number type might occur next
+        case _ => return advance() match {
+          case '_' => TokenKind.Err(LexerError.TrailingUnderscoreInNumber(sourceLocationAtCurrent()))
+          case _ if isMatch("f32") => error.getOrElse(TokenKind.LiteralFloat32)
+          case _ if isMatch("f64") => error.getOrElse(TokenKind.LiteralFloat64)
+          case _ if isMatch("i8") => error.getOrElse(TokenKind.LiteralInt8)
+          case _ if isMatch("i16") => error.getOrElse(TokenKind.LiteralInt16)
+          case _ if isMatch("i32") => error.getOrElse(TokenKind.LiteralInt32)
+          case _ if isMatch("i64") => error.getOrElse(TokenKind.LiteralInt64)
+          case _ if isMatch("ii") => error.getOrElse(TokenKind.LiteralBigInt)
+          case _ if isMatch("ff") => error.getOrElse(TokenKind.LiteralBigDecimal)
+          case _ =>
+            retreat()
+            error.getOrElse(TokenKind.LiteralInt32)
+        }
+      }
+    }
+    // The very last char of the file was a digit so return the appropriate token.
+    error.getOrElse(TokenKind.LiteralInt32)
   }
 
   /**
@@ -1031,5 +1089,37 @@ object Lexer {
       }
     }
     TokenKind.Err(LexerError.UnterminatedBlockComment(sourceLocationAtStart()))
+  }
+
+  /**
+    * Returns a fuzzed array of tokens based on the given array of `tokens`.
+    *
+    * Must not modify the last token since it is end-of-file.
+    */
+  private def fuzz(tokens: Array[Token])(implicit flix: Flix): Array[Token] = {
+    // Return immediately if fuzzing is disabled.
+    if (!flix.options.xfuzzer) {
+      return tokens
+    }
+
+    // Return immediately if there are few tokens.
+    if (tokens.length <= 10) {
+      return tokens
+    }
+
+    //
+    // We fuzz the array by picking two random indices and swapping their tokens.
+    //
+    val copy = tokens.clone()
+    val lastIndex = copy.length - 1 // Note: We don't want to remove the last EOF token.
+    val r = new Random()
+    val i = r.nextInt(lastIndex)
+    val j = r.nextInt(lastIndex)
+
+    val tmp = copy(i)
+    copy(i) = copy(j)
+    copy(j) = tmp
+
+    copy
   }
 }

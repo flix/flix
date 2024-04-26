@@ -100,21 +100,15 @@ object ManifestParser {
       authorsList <- convertTomlArrayToStringList(authors, p);
 
       deps <- getOptionalTableProperty("dependencies", parser, p);
-      depsList <- collectDependencies(deps, flixDep = true, prodDep = true, jarDep = false, p);
-
-      devDeps <- getOptionalTableProperty("dev-dependencies", parser, p);
-      devDepsList <- collectDependencies(devDeps, flixDep = true, prodDep = false, jarDep = false, p);
+      depsList <- collectDependencies(deps, flixDep = true, jarDep = false, p);
 
       mvnDeps <- getOptionalTableProperty("mvn-dependencies", parser, p);
-      mvnDepsList <- collectDependencies(mvnDeps, flixDep = false, prodDep = true, jarDep = false, p);
-
-      devMvnDeps <- getOptionalTableProperty("dev-mvn-dependencies", parser, p);
-      devMvnDepsList <- collectDependencies(devMvnDeps, flixDep = false, prodDep = false, jarDep = false, p);
+      mvnDepsList <- collectDependencies(mvnDeps, flixDep = false, jarDep = false, p);
 
       jarDeps <- getOptionalTableProperty("jar-dependencies", parser, p);
-      jarDepsList <- collectDependencies(jarDeps, flixDep = false, prodDep = false, jarDep = true, p)
+      jarDepsList <- collectDependencies(jarDeps, flixDep = false, jarDep = true, p)
 
-    ) yield Manifest(name, description, versionSemVer, githubProject, packageModules, flixSemVer, license, authorsList, depsList ++ devDepsList ++ mvnDepsList ++ devMvnDepsList ++ jarDepsList)
+    ) yield Manifest(name, description, versionSemVer, githubProject, packageModules, flixSemVer, license, authorsList, depsList ++ mvnDepsList ++ jarDepsList)
   }
 
   private def checkKeys(parser: TomlParseResult, p: Path): Result[Unit, ManifestError] = {
@@ -256,7 +250,7 @@ object ManifestParser {
     * overrides `flixDep` and `prodDep`.
     * Returns an error if anything is not as expected.
     */
-  private def collectDependencies(deps: Option[TomlTable], flixDep: Boolean, prodDep: Boolean, jarDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
+  private def collectDependencies(deps: Option[TomlTable], flixDep: Boolean, jarDep: Boolean, p: Path): Result[List[Dependency], ManifestError] = {
     deps match {
       case None => Ok(List.empty)
       case Some(deps) =>
@@ -267,9 +261,9 @@ object ManifestParser {
           if (jarDep) {
             createJarDep(depKey, depValue, p)
           } else if (flixDep) {
-            createFlixDep(depKey, depValue, prodDep, p)
+            createFlixDep(depKey, depValue, p)
           } else {
-            createMavenDep(depKey, depValue, prodDep, p)
+            createMavenDep(depKey, depValue, p)
           }
         })
     }
@@ -416,20 +410,15 @@ object ManifestParser {
     * Creates a MavenDependency.
     * Group id and artifact id are given by `depName`.
     * The version is given by `depVer`.
-    * `prodDep` decides whether it is a production or development dependency.
     * `p` is for reporting errors.
     */
-  private def createMavenDep(depName: String, depVer: AnyRef, prodDep: Boolean, p: Path): Result[MavenDependency, ManifestError] = {
+  private def createMavenDep(depName: String, depVer: AnyRef, p: Path): Result[MavenDependency, ManifestError] = {
     for(
       groupId <- getGroupId(depName, p);
       artifactId <- getArtifactId(depName, p);
       version <- getMavenVersion(depVer, p)
     ) yield {
-      if(prodDep) {
-        Dependency.MavenDependency(groupId, artifactId, version, DependencyKind.Production)
-      } else {
-        Dependency.MavenDependency(groupId, artifactId, version, DependencyKind.Development)
-      }
+        Dependency.MavenDependency(groupId, artifactId, version)
     }
   }
 
@@ -440,18 +429,14 @@ object ManifestParser {
     * `prodDep` decides whether it is a production or development dependency.
     * `p` is for reporting errors.
     */
-  private def createFlixDep(depName: String, depVer: AnyRef, prodDep: Boolean, p: Path): Result[FlixDependency, ManifestError] = {
+  private def createFlixDep(depName: String, depVer: AnyRef, p: Path): Result[FlixDependency, ManifestError] = {
     for (
       repository <- getRepository(depName, p);
       username <- getUsername(depName, p);
       projectName <- getProjectName(depName, p);
       version <- getFlixVersion(depVer, p)
     ) yield {
-      if (prodDep) {
-        Dependency.FlixDependency(repository, username, projectName, version, DependencyKind.Production)
-      } else {
-        Dependency.FlixDependency(repository, username, projectName, version, DependencyKind.Development)
-      }
+      Dependency.FlixDependency(repository, username, projectName, version)
     }
   }
 

@@ -43,9 +43,10 @@ instance Foldable[DelayMap[k]] {
 
 }
 
-instance Iterable[DelayMap[k]] {
-    pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[v, r, r] \ r =
-        DelayMap.iterator(rc, m) |> Iterator.map(snd)
+instance Iterable[DelayMap[k, v]] {
+    type Elm = (k, v)
+    pub def iterator(rc: Region[r], m: DelayMap[k, v]): Iterator[(k, v), r, r] \ r =
+        DelayMap.iterator(rc, m)
 }
 
 mod DelayMap {
@@ -115,6 +116,12 @@ mod DelayMap {
     pub def isEmpty(m: DelayMap[k, v]): Bool =
         let DMap(t) = m;
         RedBlackTree.isEmpty(t)
+
+    ///
+    /// Returns `true` if and only if `m` is a non-empty map.
+    ///
+    @Experimental
+    pub def nonEmpty(m: DelayMap[k, v]): Bool = not isEmpty(m)
 
     ///
     /// Returns `m` with `k => v`.

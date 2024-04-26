@@ -152,7 +152,7 @@ object CompletionProvider {
       //
       // Declarations.
       //
-      case SyntacticContext.Decl.Class => KeywordOtherCompleter.getCompletions(context)
+      case SyntacticContext.Decl.Trait => KeywordOtherCompleter.getCompletions(context)
       case SyntacticContext.Decl.Enum => KeywordOtherCompleter.getCompletions(context)
       case SyntacticContext.Decl.Instance => KeywordOtherCompleter.getCompletions(context)
       case _: SyntacticContext.Decl =>
@@ -285,11 +285,18 @@ object CompletionProvider {
   private def getSyntacticContext(uri: String, pos: Position, errors: List[CompilationMessage]): SyntacticContext =
     errors.filter({
       case err => pos.line <= err.loc.beginLine
-    }).collectFirst({
-      case ParseError(_, ctx, _) => ctx
-      case WeederError.MalformedIdentifier(_, _) => SyntacticContext.Import
-      case ResolutionError.UndefinedType(_, _, _) => SyntacticContext.Type.OtherType
-      case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) SyntacticContext.Use else SyntacticContext.Expr.OtherExpr
-    }).getOrElse(SyntacticContext.Unknown)
+    }).map({
+      // We can have multiple errors, so we rank them, and pick the highest priority.
+      case WeederError.UnqualifiedUse(_) => (1, SyntacticContext.Use)
+      case ResolutionError.UndefinedJvmClass(_, _, _) => (1, SyntacticContext.Import)
+      case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
+      case ResolutionError.UndefinedType(_, _, _) => (1, SyntacticContext.Type.OtherType)
+      case WeederError.MalformedIdentifier(_, _) => (2, SyntacticContext.Import)
+      case ParseError(_, ctx, _) => (5, ctx)
+      case _ => (999, SyntacticContext.Unknown)
+    }).minByOption(_._1) match {
+      case None => SyntacticContext.Unknown
+      case Some((_, sctx)) => sctx
+    }
 
 }

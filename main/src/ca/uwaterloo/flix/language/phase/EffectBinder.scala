@@ -19,7 +19,7 @@ package ca.uwaterloo.flix.language.phase
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.{BoundBy, ExpPosition}
 import ca.uwaterloo.flix.language.ast.Symbol.{DefnSym, VarSym}
-import ca.uwaterloo.flix.language.ast.{AtomicOp, Level, LiftedAst, Purity, ReducedAst, SemanticOp, SourceLocation, Symbol}
+import ca.uwaterloo.flix.language.ast.{AtomicOp, LiftedAst, Purity, ReducedAst, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.language.phase.jvm.GenExpression
 import ca.uwaterloo.flix.util.ParOps
 import ca.uwaterloo.flix.util.collection.MapOps
@@ -349,7 +349,7 @@ object EffectBinder {
     */
   private def letBindExpr(binders: mutable.ArrayBuffer[Binder])(e: ReducedAst.Expr)(implicit flix: Flix): ReducedAst.Expr.Var = {
     val loc = e.loc.asSynthetic
-    val sym = Symbol.freshVarSym("anf", BoundBy.Let, loc)(Level.Default, flix)
+    val sym = Symbol.freshVarSym("anf", BoundBy.Let, loc)
     binders.addOne(LetBinder(sym, e, loc))
     ReducedAst.Expr.Var(sym, e.tpe, loc)
   }

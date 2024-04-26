@@ -114,7 +114,8 @@ instance Collectable[Chain] {
     pub def collect(iter: Iterator[a, ef, r]): Chain[a] \ { ef, r } with Order[a] = Iterator.toChain(iter)
 }
 
-instance Iterable[Chain] {
+instance Iterable[Chain[a]] {
+    type Elm = a
     pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r = Chain.iterator(rc, c)
 }
 
@@ -172,6 +173,11 @@ mod Chain {
         case Empty => true
         case _     => false
     }
+
+    ///
+    /// Returns true if and only if `c` is a non-empty chain.
+    ///
+    pub def nonEmpty(c: Chain[a]): Bool = not isEmpty(c)
 
     ///
     /// Add element `x` to the left end of chain `c`.
