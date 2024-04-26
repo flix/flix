@@ -548,7 +548,6 @@ object Stratifier {
 
   /**
     * Returns the map of predicates that appears in the given Schema `tpe`.
-    * A non-Schema type will result in an `InternalCompilerException`.
     */
   private def predicateSymbolsOf(tpe: Type): Map[Name.Pred, Label] = {
     @tailrec
@@ -562,7 +561,11 @@ object Stratifier {
 
     Type.eraseAliases(tpe) match {
       case Type.Apply(Type.Cst(TypeConstructor.Schema, _), schemaRow, _) => visitType(schemaRow, Map.empty)
-      case other => throw InternalCompilerException(s"Unexpected non-schema type: '$other'", other.loc)
+      case _ =>
+        // We would like to assume that `tpe` must be a schema type. However, because type inference is resilient it is
+        // possible that the stratifier is run on an expression where type inference was only partially successful.
+        // Hence we may arrive here. If that happens there is nothing to be done.
+        Map.empty
     }
   }
 
