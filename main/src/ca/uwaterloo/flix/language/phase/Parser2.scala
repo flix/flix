@@ -24,6 +24,7 @@ import ca.uwaterloo.flix.language.errors.{ParseError, WeederError}
 import ca.uwaterloo.flix.util.Validation._
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps, Validation}
 import org.parboiled2.ParserInput
+
 import scala.collection.mutable.ArrayBuffer
 
 /**
@@ -146,6 +147,9 @@ object Parser2 {
     root()
     // Build the syntax tree using events in state.
     val tree = buildTree()
+    if (src.name == "main/foo.flix") {
+      println(syntaxTreeToDebugString(tree))
+    }
     // Return with errors as soft failures to run subsequent phases for more validations.
     Validation.success(tree).withSoftFailures(s.errors)
   }
@@ -463,7 +467,7 @@ object Parser2 {
     * ParFieldFragments "par (x <- e1; y <- e2; z <- e3) yield ...".
     * and many many more...
     *
-    * @param displayName       The name of an item to be used in an error message. ie. "Expected $displayName but found xyz".
+    * @param displayName       The name of an item to be used in an error message. ie. "Expected <$displayName> before xyz".
     * @param getItem           Function for parsing a single item.
     * @param checkForItem      Function used to check if the next token indicates an item. getItem is only called when this returns true.
     * @param recoverOn         Function for deciding if an unexpected token is in the recover set of the current context. If it is then parsing of items stops.
@@ -503,7 +507,7 @@ object Parser2 {
         if (!atEnd()) {
           if (optionalSeparator) eat(separator) else expect(separator)
           if (atEnd()) {
-            closeWithError(open(), ParseError(s"Trailing $separator", SyntacticContext.Unknown, previousSourceLocation()))
+            closeWithError(open(), ParseError(s"Trailing ${separator.display}", SyntacticContext.Unknown, previousSourceLocation()))
           }
         }
       } else {
@@ -513,7 +517,7 @@ object Parser2 {
           continue = false
         } else {
           // Otherwise eat one token and continue parsing next item.
-          val error = ParseError(s"Expected $displayName", SyntacticContext.Unknown, currentSourceLocation())
+          val error = ParseError(s"Expected <$displayName>", SyntacticContext.Unknown, currentSourceLocation())
           advanceWithError(error)
         }
       }
@@ -552,7 +556,7 @@ object Parser2 {
     val locAfter = currentSourceLocation()
     if (itemCount < 1) {
       val loc = SourceLocation.mk(locBefore.sp1, locAfter.sp1)
-      val error = ParseError(s"Expected one or more $displayName", SyntacticContext.Unknown, loc)
+      val error = ParseError(s"Expected one or more <$displayName>", SyntacticContext.Unknown, loc)
       Some(error)
     } else {
       None
@@ -905,7 +909,7 @@ object Parser2 {
           while (!atAny(RECOVER_DECL) && !eof()) {
             advance()
           }
-          val error = ParseError(s"Expected declaration but found ${at.display}", SyntacticContext.Decl.OtherDecl, loc)
+          val error = ParseError(s"Expected <declaration> before ${at.display}", SyntacticContext.Decl.OtherDecl, loc)
           closeWithError(mark, error)
       }
     }
@@ -944,7 +948,7 @@ object Parser2 {
             case TokenKind.KeywordDef => signatureDecl(mark)
             case TokenKind.KeywordType => associatedTypeSigDecl(mark)
             case at =>
-              val error = ParseError(s"Expected associated type, signature or law but found ${at.display}", SyntacticContext.Decl.Trait, currentSourceLocation())
+              val error = ParseError(s"Expected ${TokenKind.KeywordType.display}, ${TokenKind.KeywordDef.display} or ${TokenKind.KeywordLaw.display} before ${at.display}", SyntacticContext.Decl.Trait, currentSourceLocation())
               advanceWithError(error, Some(mark))
           }
         }
@@ -974,7 +978,7 @@ object Parser2 {
             case TokenKind.KeywordDef => definitionDecl(mark)
             case TokenKind.KeywordType => associatedTypeDefDecl(mark)
             case at =>
-              val error = ParseError(s"Expected associated type or definitionDecl, found ${at.display}", SyntacticContext.Decl.Instance, currentSourceLocation())
+              val error = ParseError(s"Expected ${TokenKind.KeywordType.display} or ${TokenKind.KeywordDef.display}, found ${at.display}", SyntacticContext.Decl.Instance, currentSourceLocation())
               advanceWithError(error, Some(mark))
           }
         }
@@ -1540,7 +1544,7 @@ object Parser2 {
         case TokenKind.NameJava => name(NAME_JAVA, allowQualified = true)
         case t =>
           val mark = open()
-          val error = ParseError(s"Expected expression before ${t.display}", SyntacticContext.Expr.OtherExpr, previousSourceLocation())
+          val error = ParseError(s"Expected <expression> before ${t.display}", SyntacticContext.Expr.OtherExpr, previousSourceLocation())
           closeWithError(mark, error)
       }
       close(mark, TreeKind.Expr.Expr)
@@ -1642,7 +1646,7 @@ object Parser2 {
           }
 
         case (t1, _) =>
-          val error = ParseError(s"Expected ParenL found ${t1.display}", SyntacticContext.Expr.OtherExpr, currentSourceLocation())
+          val error = ParseError(s"Expected ${TokenKind.ParenL.display} found ${t1.display}", SyntacticContext.Expr.OtherExpr, currentSourceLocation())
           advanceWithError(error)
       }
     }
@@ -2128,7 +2132,7 @@ object Parser2 {
           expression()
           close(mark, TreeKind.Expr.RecordOpUpdate)
         case at =>
-          val error = ParseError(s"Expected record operation but found ${at.display}", SyntacticContext.Expr.OtherExpr, currentSourceLocation())
+          val error = ParseError(s"Expected ${TokenKind.Plus.display}, ${TokenKind.Minus.display} or ${TokenKind.NameLowerCase.display} before ${at.display}", SyntacticContext.Expr.OtherExpr, currentSourceLocation())
           advanceWithError(error, Some(mark))
       }
     }
@@ -2682,7 +2686,7 @@ object Parser2 {
         case TokenKind.Minus => unaryPat()
         case t =>
           val mark = open()
-          val error = ParseError(s"Expected pattern before ${t.display}", SyntacticContext.Pat.OtherPat, previousSourceLocation())
+          val error = ParseError(s"Expected <pattern> before ${t.display}", SyntacticContext.Pat.OtherPat, previousSourceLocation())
           closeWithError(mark, error)
       }
       // Handle FCons
@@ -2960,7 +2964,7 @@ object Parser2 {
         case TokenKind.KeywordStaticUppercase => name(Set(TokenKind.KeywordStaticUppercase))
         case t =>
           val mark = open()
-          val error = ParseError(s"Expected type before ${t.display}.", SyntacticContext.Type.OtherType, previousSourceLocation())
+          val error = ParseError(s"Expected <type> before ${t.display}.", SyntacticContext.Type.OtherType, previousSourceLocation())
           closeWithError(mark, error)
       }
       close(mark, TreeKind.Type.Type)
@@ -3238,7 +3242,7 @@ object Parser2 {
         case TokenKind.KeywordLet => functional()
         case TokenKind.KeywordNot | TokenKind.KeywordFix | TokenKind.NameUpperCase => atom()
         case at =>
-          val error = ParseError(s"Expected predicate body but found ${at.display}", SyntacticContext.Unknown, currentSourceLocation())
+          val error = ParseError(s"Expected ${TokenKind.KeywordIf.display}, ${TokenKind.KeywordLet.display}, ${TokenKind.KeywordNot.display}, ${TokenKind.KeywordFix} or ${TokenKind.NameUpperCase.display} before ${at.display}", SyntacticContext.Unknown, currentSourceLocation())
           advanceWithError(error)
       }
       close(mark, TreeKind.Predicate.Body)
@@ -3268,7 +3272,7 @@ object Parser2 {
              | TokenKind.NameGreek
              | TokenKind.Underscore => name(NAME_VARIABLE)
         case at =>
-          val error = ParseError(s"Expected ${TokenKind.ParenL.display} or name but found ${at.display}", SyntacticContext.Unknown, currentSourceLocation())
+          val error = ParseError(s"Expected ${TokenKind.ParenL.display} or name before ${at.display}", SyntacticContext.Unknown, currentSourceLocation())
           advanceWithError(error)
       }
       expect(TokenKind.Equal)
