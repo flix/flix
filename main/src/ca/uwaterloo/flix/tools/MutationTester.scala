@@ -8,7 +8,7 @@ import ca.uwaterloo.flix.language.ast.TypedAst.Pattern.Record.RecordLabelPattern
 import ca.uwaterloo.flix.language.ast.TypedAst.Predicate.{Body, Head}
 import ca.uwaterloo.flix.language.ast.TypedAst._
 import ca.uwaterloo.flix.language.ast._
-import ca.uwaterloo.flix.language.phase.util.PredefinedClasses
+import ca.uwaterloo.flix.language.phase.util.PredefinedTraits
 import ca.uwaterloo.flix.runtime.CompilationResult
 import ca.uwaterloo.flix.tools.Tester.ConsoleRedirection
 import ca.uwaterloo.flix.util.{Formatter, Result, Validation}
@@ -267,7 +267,7 @@ object MutationTester {
               defnToSig.get(symText)
                 .map { pair =>
                   val sig = findSig(pair._1, pair._2)
-                  val loc1 = loc.copy(beginCol = loc.endCol - sym.toString.length)
+                  val loc1 = loc.copy(beginCol = (loc.endCol - sym.toString.length).toShort)
                   LazyList(Mutant(Expr.Sig(sig, tpe, loc), PrintedReplace(loc1, sig.toString)))
                 }
             }
@@ -294,7 +294,7 @@ object MutationTester {
                 val sig = findSig(pair._1, pair._2)
                 val locText = getText(loc)
                 val printedDiff = if (symText.endsWith(locText)) {
-                  PrintedReplace(loc.copy(beginCol = loc.beginCol - (symText.length - locText.length)), sig.toString)
+                  PrintedReplace(loc.copy(beginCol = (loc.beginCol - (symText.length - locText.length)).toShort), sig.toString)
                 } else {
                   PrintedReplace(loc, sigToSymbol.getOrElse(sig.toString, s"\'${sig.toString}\'"))
                 }
@@ -330,7 +330,7 @@ object MutationTester {
       expr match {
         case Expr.Unary(sop, exp, _, _, loc) => sop match {
           case BoolOp.Not =>
-            LazyList(Mutant(exp, PrintedRemove(loc.copy(endLine = loc.beginLine, endCol = loc.beginCol + 4))))
+            LazyList(Mutant(exp, PrintedRemove(loc.copy(endLine = loc.beginLine, endCol = (loc.beginCol + 4).toShort))))
           case _ => LazyList.empty
         }
         case _ => LazyList.empty
@@ -413,7 +413,7 @@ object MutationTester {
         val inversedPolarity = inverseAstPolarity(polarity)
         val inversedBodyAtom = Body.Atom(pred, den, inversedPolarity, fixity, terms, tpe, loc)
         val printedDiff = inversedPolarity match {
-          case Polarity.Positive => PrintedRemove(loc.copy(endLine = loc.beginLine, endCol = loc.beginCol + 4))
+          case Polarity.Positive => PrintedRemove(loc.copy(endLine = loc.beginLine, endCol = (loc.beginCol + 4).toShort))
           case Polarity.Negative => PrintedAdd(loc.copy(endLine = loc.beginLine, endCol = loc.beginCol), "not ")
         }
         val inversedMutant = Mutant(inversedBodyAtom, printedDiff)
@@ -581,19 +581,19 @@ object MutationTester {
         val i = getText(loc).indexOf(sub)
 
         loc.copy(
-          beginCol = loc.beginCol + i,
-          endCol = loc.beginCol + i + sub.length
+          beginCol = (loc.beginCol + i).toShort,
+          endCol = (loc.beginCol + i + sub.length).toShort
         )
       }
 
       def findSig(clazz: String, sig: String)(implicit flix: Flix): Symbol.SigSym = try {
-        PredefinedClasses.lookupSigSym(clazz, sig, flix.getKinderAst)
+        PredefinedTraits.lookupSigSym(clazz, sig, flix.getKinderAst)
       } catch {
         case e: Exception => throw new MutantException(s"Mutant creation failed: ${e.getMessage}", e)
       }
 
       def findDef(namespace: List[String], name: String)(implicit flix: Flix): Symbol.DefnSym = try {
-        PredefinedClasses.lookupDefSym(namespace, name, flix.getKinderAst)
+        PredefinedTraits.lookupDefSym(namespace, name, flix.getKinderAst)
       } catch {
         case e: Exception => throw new MutantException(s"Mutant creation failed: ${e.getMessage}", e)
       }
