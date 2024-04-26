@@ -870,6 +870,7 @@ object Parser2 {
       docComment()
       // Handle case where the last thing in a file or module is a doc-comment
       if (eof() || at(TokenKind.CurlyR)) {
+        println(currentSourceLocation(), nth(0))
         return close(mark, TreeKind.CommentList)
       }
       // Handle modules
@@ -1485,8 +1486,7 @@ object Parser2 {
              | TokenKind.KeywordDeref => unaryExpr()
         case TokenKind.KeywordIf => ifThenElseExpr()
         case TokenKind.KeywordLet => letMatchExpr()
-        case TokenKind.Annotation if nth(1) == TokenKind.KeywordDef => letRecDefExpr()
-        case TokenKind.KeywordDef => letRecDefExpr()
+        case TokenKind.Annotation | TokenKind.KeywordDef => letRecDefExpr()
         case TokenKind.KeywordImport => letImportExpr()
         case TokenKind.KeywordRegion => scopeExpr()
         case TokenKind.KeywordMatch => matchOrMatchLambdaExpr()
