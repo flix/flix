@@ -1612,11 +1612,11 @@ object Parser2 {
                 case TokenKind.CurlyR if level == 1 =>
                   if (curlyLevel == 0) {
                     // Hitting '}' on top-level is a clear indicator that something is wrong. Most likely the terminating ')' was forgotten.
-                    return advanceWithError(ParseError("Malformed tuple.", SyntacticContext.Unknown, currentSourceLocation()))
+                    return advanceWithError(ParseError("Malformed tuple.", SyntacticContext.Expr.OtherExpr, currentSourceLocation()))
                   } else {
                     curlyLevel -= 1
                   }
-                case TokenKind.Eof => return advanceWithError(ParseError("Malformed tuple.", SyntacticContext.Unknown, currentSourceLocation()))
+                case TokenKind.Eof => return advanceWithError(ParseError("Malformed tuple.", SyntacticContext.Expr.OtherExpr, currentSourceLocation()))
                 case _ =>
               }
             }
@@ -1766,12 +1766,12 @@ object Parser2 {
           case TokenKind.KeywordJavaSetField => JvmOp.staticPutField()
           case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.staticMethod()
           case t =>
-            val error = ParseError(s"Expected static java import before $t.", SyntacticContext.Unknown, previousSourceLocation())
+            val error = ParseError(s"Expected static java import before $t.", SyntacticContext.Expr.OtherExpr, previousSourceLocation())
             advanceWithError(error)
         }
         case TokenKind.NameJava | TokenKind.NameLowerCase | TokenKind.NameUpperCase => JvmOp.method()
         case t =>
-          val error = ParseError(s"Expected java import before $t.", SyntacticContext.Unknown, previousSourceLocation())
+          val error = ParseError(s"Expected java import before $t.", SyntacticContext.Expr.OtherExpr, previousSourceLocation())
           advanceWithError(error)
       }
       close(markJvmOp, TreeKind.JvmOp.JvmOp)
@@ -2876,18 +2876,19 @@ object Parser2 {
       assert(at(TokenKind.KeywordWith))
       val mark = open()
       expect(TokenKind.KeywordWith)
+      // Note, Can't use zeroOrMore here since there's are no delimiterR.
       var continue = true
-      constraint()
       while (continue && !eof()) {
-        if (eat(TokenKind.Comma)) {
+        if (atAny(NAME_DEFINITION)) {
           constraint()
         } else {
+          val error = ParseError("Expected type constraint", SyntacticContext.WithClause, currentSourceLocation())
+          closeWithError(open(), error)
           continue = false
         }
-      }
-      if (at(TokenKind.Comma)) {
-        val error = ParseError("Trailing comma.", SyntacticContext.WithClause, currentSourceLocation())
-        advanceWithError(error)
+        if (!eat(TokenKind.Comma)) {
+          continue = false
+        }
       }
       close(mark, TreeKind.Type.ConstraintList)
     }
@@ -2905,18 +2906,19 @@ object Parser2 {
       assert(at(TokenKind.KeywordWith))
       val mark = open()
       expect(TokenKind.KeywordWith)
+      // Note, Can't use zeroOrMore here since there's are no delimiterR.
       var continue = true
-      name(NAME_QNAME, allowQualified = true)
       while (continue && !eof()) {
-        if (eat(TokenKind.Comma)) {
+        if (atAny(NAME_QNAME)) {
           name(NAME_QNAME, allowQualified = true)
         } else {
+          val error = ParseError("Expected type derivation", SyntacticContext.WithClause, currentSourceLocation())
+          closeWithError(open(), error)
           continue = false
         }
-      }
-      if (at(TokenKind.Comma)) {
-        val error = ParseError("Trailing comma.", SyntacticContext.Unknown, currentSourceLocation())
-        advanceWithError(error)
+        if (!eat(TokenKind.Comma)) {
+          continue = false
+        }
       }
       close(mark, TreeKind.DerivationList)
     }
@@ -3226,7 +3228,7 @@ object Parser2 {
         case TokenKind.KeywordLet => functional()
         case TokenKind.KeywordNot | TokenKind.KeywordFix | TokenKind.NameUpperCase => atom()
         case k =>
-          val error = ParseError(s"Expected predicate body but found $k", SyntacticContext.Unknown, currentSourceLocation())
+          val error = ParseError(s"Expected predicate body but found $k", SyntacticContext.Expr.OtherExpr, currentSourceLocation())
           advanceWithError(error)
       }
       close(mark, TreeKind.Predicate.Body)
@@ -3256,7 +3258,7 @@ object Parser2 {
              | TokenKind.NameGreek
              | TokenKind.Underscore => name(NAME_VARIABLE)
         case k =>
-          val error = ParseError(s"Expected ${TokenKind.ParenL} or name but found $k", SyntacticContext.Unknown, currentSourceLocation())
+          val error = ParseError(s"Expected ${TokenKind.ParenL} or name but found $k", SyntacticContext.Expr.OtherExpr, currentSourceLocation())
           advanceWithError(error)
       }
       expect(TokenKind.Equal)

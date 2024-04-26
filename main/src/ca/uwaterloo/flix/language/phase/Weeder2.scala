@@ -2771,7 +2771,7 @@ object Weeder2 {
         case TreeKind.JvmOp.StaticGetField => visitField(inner, WeededAst.JvmOp.GetStaticField)
         case TreeKind.JvmOp.StaticPutField => visitField(inner, WeededAst.JvmOp.PutStaticField)
         // TODO: This double reports the same error. We should be able to handle this resiliently if we had JvmOp.Error.
-        case TreeKind.ErrorTree(_) => Validation.HardFailure(Chain(ParseError("Expected JvmOp but found Error", SyntacticContext.Unknown, tree.loc)))
+        case TreeKind.ErrorTree(_) => Validation.HardFailure(Chain(ParseError("Expected JvmOp but found Error", SyntacticContext.Expr.OtherExpr, tree.loc)))
         case kind => throw InternalCompilerException(s"child of kind '$kind' under JvmOp.JvmOp", tree.loc)
       }
     }
@@ -2852,7 +2852,7 @@ object Weeder2 {
       // Qname starting with '##'
       case Some(qname) if qname.namespace.idents.headOption.exists(_.name.startsWith("##")) => Validation.success(javaQnameToFqn(qname))
       case Some(_) | None =>
-        val err = ParseError("Expected a java name.", SyntacticContext.Unknown, tree.loc)
+        val err = ParseError("Expected a java name.", SyntacticContext.Expr.OtherExpr, tree.loc)
         Validation.toSoftFailure("Error", err)
     }
   }
