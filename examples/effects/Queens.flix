@@ -37,7 +37,7 @@ mod EffectExamples.Queens {
     /// is placed at that position then there is a collision and the
     /// position is not safe.
     ///
-    def isSafePosition(pos: Int32, diagonal: Int32, sol: Solution): Bool = match sol {
+    def isSafePosition(pos: Int32, diagonal: Int32, sol: Placement): Bool = match sol {
         case Nil     => true
         case q :: qs =>
             let isSafe = pos != q and pos != q + diagonal and pos != q - diagonal;
