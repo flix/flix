@@ -630,6 +630,9 @@ object Verifier {
     }
   }
 
+  /**
+    * Returns `true` if and only if `c1` is a subclass of `c2`
+    */
   @tailrec
   private def isSubclass(c1: Class[_], c2: Class[_]): Boolean =
     c1 == c2 || isSubclass(c1.getSuperclass, c2)
