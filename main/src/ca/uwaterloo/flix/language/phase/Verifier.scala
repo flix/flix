@@ -385,28 +385,43 @@ object Verifier {
           check(expected = MonoType.Unit)(actual = tpe, loc)
 
         case AtomicOp.GetField(field) =>
-          checkEq(tpe, javaClassToMonoType(field.getType), loc)
+          val List(t) = ts
+          checkJavaSubtype(t, field.getDeclaringClass, loc)
+          checkJavaSubtype(tpe, field.getType, loc)
 
         case AtomicOp.GetStaticField(field) =>
-          checkEq(tpe, javaClassToMonoType(field.getType), loc)
+          checkJavaSubtype(tpe, field.getType, loc)
 
-        case AtomicOp.PutField(_) =>
+        case AtomicOp.PutField(field) =>
+          val List(t1, t2) = ts
+          checkJavaSubtype(t1, field.getDeclaringClass, loc)
+          checkJavaSubtype(t2, field.getType, loc)
           check(expected = MonoType.Unit)(actual = tpe, loc)
 
-        case AtomicOp.PutStaticField(_) =>
+        case AtomicOp.PutStaticField(field) =>
+          val List(t) = ts
+          checkJavaSubtype(t, field.getType, loc)
           check(expected = MonoType.Unit)(actual = tpe, loc)
 
         case AtomicOp.InstanceOf(_) =>
+          val List(t) = ts
+          checkJavaSubtype(t, new Object().getClass, loc) // must not be primitive type
           check(expected = MonoType.Bool)(actual = tpe, loc)
 
         case AtomicOp.InvokeConstructor(constructor) =>
-          checkEq(tpe, javaClassToMonoType(constructor.getDeclaringClass), loc)
+          checkJavaParameters(ts, constructor.getParameterTypes.toList, loc)
+          checkJavaSubtype(tpe, constructor.getDeclaringClass, loc)
 
         case AtomicOp.InvokeMethod(method) =>
-          checkEq(tpe, javaClassToMonoType(method.getReturnType), loc)
+          val t = ts.head
+          val pts = ts.tail
+          checkJavaParameters(pts, method.getParameterTypes.toList, loc)
+          checkJavaSubtype(t, method.getDeclaringClass, loc)
+          checkJavaSubtype(tpe, method.getReturnType, loc)
 
         case AtomicOp.InvokeStaticMethod(method) =>
-          checkEq(tpe, javaClassToMonoType(method.getReturnType), loc)
+          checkJavaParameters(ts, method.getParameterTypes.toList, loc)
+          checkJavaSubtype(tpe, method.getReturnType, loc)
       }
 
     case Expr.ApplyClo(exp, exps, ct, tpe, _, loc) =>
@@ -551,6 +566,75 @@ object Verifier {
   }
 
   /**
+    * Asserts that the list of types `ts` matches the list of java classes `cs`
+    */
+  private def checkJavaParameters(ts: List[MonoType], cs: List[Class[_]], loc: SourceLocation): Unit = {
+    if (ts.length != cs.length)
+      throw InternalCompilerException("Number of types in constructor call mismatch with parameter list", loc)
+    ts.zip(cs).foreach { case (tp, klazz) => checkJavaSubtype(tp, klazz, loc) }
+  }
+
+  /**
+    * Asserts that `tpe` is a subtype of the java class type `klazz`.
+    */
+  @tailrec
+  private def checkJavaSubtype(tpe: MonoType, klazz: Class[_], loc: SourceLocation): MonoType = {
+    val monoToPrimitiveName = Map[MonoType, String](
+      MonoType.Int8 -> "byte",
+      MonoType.Int16 -> "short",
+      MonoType.Int32 -> "int",
+      MonoType.Int64 -> "long",
+      MonoType.Float32 -> "float",
+      MonoType.Float64 -> "double",
+      MonoType.Bool -> "boolean",
+      MonoType.Char -> "char",
+      MonoType.Unit -> "void"
+    )
+
+    val monoToClassName = Map[MonoType, String](
+      MonoType.String -> "java.lang.String",
+      MonoType.BigInt -> "java.math.BigInteger",
+      MonoType.BigDecimal -> "java.math.BigDecimal",
+      MonoType.Regex -> "java.util.regex.Pattern",
+      MonoType.Arrow(List(MonoType.Object), MonoType.Unit) -> "java.util.function.Consumer",
+      MonoType.Arrow(List(MonoType.Object), MonoType.Bool) -> "java.util.function.Predicate",
+      MonoType.Arrow(List(MonoType.Int32), MonoType.Unit) -> "java.util.function.IntConsumer",
+      MonoType.Arrow(List(MonoType.Int32), MonoType.Object) -> "java.util.function.IntFunction",
+      MonoType.Arrow(List(MonoType.Int32), MonoType.Bool) -> "java.util.function.IntPredicate",
+      MonoType.Arrow(List(MonoType.Int32), MonoType.Int32) -> "java.util.function.IntUnaryOperator",
+      MonoType.Arrow(List(MonoType.Int32), MonoType.Unit) -> "java.util.function.IntConsumer",
+      MonoType.Arrow(List(MonoType.Int64), MonoType.Unit) -> "java.util.function.LongConsumer",
+      MonoType.Arrow(List(MonoType.Int64), MonoType.Object) -> "java.util.function.LongFunction",
+      MonoType.Arrow(List(MonoType.Int64), MonoType.Bool) -> "java.util.function.LongPredicate",
+      MonoType.Arrow(List(MonoType.Int64), MonoType.Int64) -> "java.util.function.LongUnaryOperator",
+      MonoType.Arrow(List(MonoType.Float64), MonoType.Unit) -> "java.util.function.DoubleConsumer",
+      MonoType.Arrow(List(MonoType.Float64), MonoType.Object) -> "java.util.function.DoubleFunction",
+      MonoType.Arrow(List(MonoType.Float64), MonoType.Bool) -> "java.util.function.DoublePredicate",
+      MonoType.Arrow(List(MonoType.Float64), MonoType.Float64) -> "java.util.function.DoubleUnaryOperator",
+    )
+
+    tpe match {
+      case MonoType.Array(elmt) if klazz.isArray =>
+        checkJavaSubtype(elmt, klazz.getComponentType, loc)
+
+      case MonoType.Native(k) if isSubclass(k, klazz) =>
+        tpe
+
+      case _ if monoToPrimitiveName.contains(tpe) && klazz.getName == monoToPrimitiveName(tpe) =>
+        tpe
+
+      case _ if monoToClassName.contains(tpe) && isSubclass(Class.forName(monoToClassName(tpe)), klazz) =>
+        tpe
+
+      case _ => failMismatchedTypes(tpe, klazz, loc)
+    }
+  }
+
+  @tailrec
+  private def isSubclass(c1: Class[_], c2: Class[_]): Boolean =
+    c1 == c2 || isSubclass(c1.getSuperclass, c2)
+
+  /**
     * Remove the type associated with `label` from the given record type `rec`.
     * If `rec` is not a record, return `None`.
     */
@@ -567,7 +651,7 @@ object Verifier {
 
   /**
     * Get the type associated with `label` in the given record type `rec`.
-    * If `rec` is not a record, return `None`
+    * If `rec` is not a record, return `None`.
     */
   @tailrec
   private def selectFromRecordType(rec: MonoType, label: String, loc: SourceLocation): Option[MonoType] = rec match {
@@ -581,28 +665,7 @@ object Verifier {
   }
 
   /**
-    * Convert from the java class `klazz` to the corresponding `MonoType`
-    */
-  private def javaClassToMonoType(klazz: Class[_]): MonoType = klazz.getName match {
-    case "byte" => MonoType.Int8
-    case "short" => MonoType.Int16
-    case "int" => MonoType.Int32
-    case "long" => MonoType.Int64
-    case "float" => MonoType.Float32
-    case "double" => MonoType.Float64
-    case "boolean" => MonoType.Bool
-    case "char" => MonoType.Char
-    case "java.lang.String" => MonoType.String
-    case "java.math.BigInteger" => MonoType.BigInt
-    case "java.math.BigDecimal" => MonoType.BigDecimal
-    case "java.util.regex.Pattern" => MonoType.Regex
-    case "void" => MonoType.Unit
-    case _ if klazz.isArray => MonoType.Array(javaClassToMonoType(klazz.getComponentType))
-    case _ => MonoType.Native(klazz)
-  }
-
-  /**
-    * Throw `InternalCompilerException` because the `found` does not match the shape specified by `expected`
+    * Throw `InternalCompilerException` because the `found` does not match the shape specified by `expected`.
     */
   private def failMismatchedShape(found: MonoType, expected: String, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
@@ -610,7 +673,7 @@ object Verifier {
     )
 
   /**
-    * Throw `InternalCompilerException` because the `expected` type does not match the `found` type
+    * Throw `InternalCompilerException` because the `expected` type does not match the `found` type.
     */
   private def failUnexpectedType(found: MonoType, expected: MonoType, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
@@ -618,10 +681,18 @@ object Verifier {
     )
 
   /**
-    * Throw `InternalCompilerException` because `tpe1` is not equal to `tpe2`
+    * Throw `InternalCompilerException` because `tpe1` is not equal to `tpe2`.
     */
   private def failMismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
       s"Mismatched types near ${loc.format}: tpe1 = $tpe1, tpe2 = $tpe2", loc
+    )
+
+  /**
+    * Throw `InternalCompilerException` because `tpe` does not match `klazz`.
+    */
+  private def failMismatchedTypes(tpe: MonoType, klazz: Class[_], loc: SourceLocation): Nothing =
+    throw InternalCompilerException(
+      s"Mismatched types near ${loc.format}: tpe1 = $tpe, class = $klazz", loc
     )
 }
