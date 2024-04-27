@@ -46,7 +46,7 @@ object NewObjectCompleter extends Completer {
     }
   }
 
-  private def newObjectCompletions(useOrImports: List[Ast.UseOrImport], currentWordIsNew: Boolean)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): List[NewObjectCompletion] = {
+  private def newObjectCompletions(useOrImports: List[Ast.UseOrImport], currentWordIsNew: Boolean)(implicit flix: Flix): List[NewObjectCompletion] = {
     useOrImports.foldLeft(List.empty[NewObjectCompletion]) {
       case (acc, x) => x match {
         case _: Ast.UseOrImport.Use => acc
@@ -58,7 +58,7 @@ object NewObjectCompleter extends Completer {
     }
   }
 
-  private def newObjectCompletion(imprt: Ast.UseOrImport.Import, currentWordIsNew: Boolean)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Option[NewObjectCompletion] = imprt match {
+  private def newObjectCompletion(imprt: Ast.UseOrImport.Import, currentWordIsNew: Boolean)(implicit flix: Flix): Option[NewObjectCompletion] = imprt match {
     case Ast.UseOrImport.Import(clazz, alias, _) =>
       val label = if (alias.name.isBlank) clazz.getSimpleName else alias.name
       val includeNew = if (currentWordIsNew) "new " else ""
@@ -85,7 +85,7 @@ object NewObjectCompleter extends Completer {
     java.lang.reflect.Modifier.isAbstract(method.getModifiers)
   }
 
-  private def toCompletion(methodWithIndex: (java.lang.reflect.Method, Int))(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): String = {
+  private def toCompletion(methodWithIndex: (java.lang.reflect.Method, Int))(implicit flix: Flix): String = {
     val (method, i) = methodWithIndex
     val name = method.getName
     val params = method.getParameters
@@ -95,7 +95,7 @@ object NewObjectCompleter extends Completer {
     s"def $name($params): $result = $${$i:???}"
   }
 
-  private def toTypeCompletion(clazz: Class[_])(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): String = {
+  private def toTypeCompletion(clazz: Class[_])(implicit flix: Flix): String = {
     FormatType.formatType(Type.mkNative(clazz, SourceLocation.Unknown))
   }
 
