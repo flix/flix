@@ -18,6 +18,7 @@ object NewObjectCompleter extends Completer {
     context.prefix match {
       case regex(clazz) =>
         println("Entered good path")
+        println(s"Previous word is: ${context.previousWord}")
         val path = clazz.split('.').toList
         // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
         val classNames = javaClassCompletionsFromPrefix(path)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
