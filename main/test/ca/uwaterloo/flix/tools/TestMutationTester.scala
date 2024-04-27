@@ -757,6 +757,64 @@ class TestMutationTester extends AnyFunSuite {
   )
 
   mkMutationTest(
+    "Test.PatternMatching.01",
+    """
+      |enum Animal {
+      |    case Cat,
+      |    case Dog,
+      |    case Giraffe
+      |}
+      |
+      |def isTall(a: Animal): Bool = match a {
+      |    case Animal.Cat        => false
+      |    case Animal.Dog        => false
+      |    case Animal.Giraffe    => true
+      |}
+      |
+      |@Test
+      |def test1(): Bool = Assert.eq(false, isTall(Animal.Cat))
+      |
+      |@Test
+      |def test2(): Bool = Assert.eq(false, isTall(Animal.Dog))
+      |
+      |@Test
+      |def test3(): Bool = Assert.eq(true, isTall(Animal.Giraffe))
+      |""".stripMargin,
+    Map(
+      Killed -> 3,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.PatternMatching.02",
+    """
+      |enum Shape {
+      |    case Circle({ radius = Int32 })
+      |    case Square({ width = Int32 })
+      |    case Rectangle({ height = Int32, width = Int32 })
+      |}
+      |
+      |def area(s: Shape): Int32 = match s {
+      |    case Shape.Circle({ radius })           => 3 * (radius * radius)
+      |    case Shape.Square({ width })            => width * width
+      |    case Shape.Rectangle({ height, width }) => height * width
+      |}
+      |
+      |@Test
+      |def test1(): Bool = Assert.eq(12, area(Shape.Circle({radius = 2})))
+      |
+      |@Test
+      |def test2(): Bool = Assert.eq(16, area(Shape.Square({width = 4})))
+      |
+      |@Test
+      |def test3(): Bool = Assert.eq(15, area(Shape.Rectangle({height = 3, width = 5})))
+      |""".stripMargin,
+    Map(
+      Killed -> 4,
+    ),
+  )
+
+  mkMutationTest(
     "Test.Tuple.01",
     """
       |def foo(): (Int32, String) = (1, "Dibgashi")
@@ -782,6 +840,78 @@ class TestMutationTester extends AnyFunSuite {
       Survived -> 1,
     ),
   )
+
+  mkMutationTest(
+    "Test.List.01",
+    """
+      |def foo(): List[String] = "Hello" :: "World" :: Nil
+      |
+      |@Test
+      |def test(): Bool = Assert.eq("Hello" :: "World" :: Nil, foo())
+      |""".stripMargin,
+    Map(
+      Killed -> 2,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.List.02",
+    """
+      |def length(): Int32 = List.length(2 :: 3 :: Nil)
+      |
+      |def reverse(): List[Int32] = List.reverse(2 :: 3 :: Nil)
+      |
+      |@Test
+      |def testLength(): Bool = Assert.eq(2, length())
+      |
+      |@Test
+      |def testReverse(): Bool = Assert.eq(3 :: 2 :: Nil, reverse())
+      |""".stripMargin,
+    Map(
+      Killed -> 4,
+      Survived -> 4,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Vector.01",
+    """
+      |def foo(): Vector[Int32] = Vector#{1, 2}
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(Vector#{1, 2}, foo())
+      |""".stripMargin,
+    Map(
+      Killed -> 4,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Set.01",
+    """
+      |def foo(): Set[Int32] = Set#{2, 13, 249}
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(Set#{2, 13, 249}, foo())
+      |""".stripMargin,
+    Map(
+      Killed -> 6,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Map.01",
+    """
+      |def foo(): Map[Int32, Bool] = Map#{2 => true, 13 => false, 249 => true}
+      |
+      |@Test
+      |def test(): Bool = Assert.eq(Map#{2 => true, 13 => false, 249 => true}, foo())
+      |""".stripMargin,
+    Map(
+      Killed -> 9,
+    ),
+  )
+
 
   mkMutationTest(
     "Test.FixpointConstraintSet.01",
@@ -860,7 +990,6 @@ class TestMutationTester extends AnyFunSuite {
       |
       |@Test
       |def test(): Bool = Assert.eq(Vector#{(1, 2), (2, 1)} , foo((1, 1) :: (2, 2) :: Nil))
-      |
       |""".stripMargin,
     Map(
       CompilationFailed -> 9,
@@ -888,7 +1017,6 @@ class TestMutationTester extends AnyFunSuite {
       |
       |@Test
       |pub def testSpecific1(): Bool = Assert.eq(Vector#{5, 6, 7, 8}, specific())
-      |
       |""".stripMargin,
     Map(
       CompilationFailed -> 2,
@@ -896,9 +1024,6 @@ class TestMutationTester extends AnyFunSuite {
       Survived -> 1,
     ),
   )
-
-  //  ---------------------------------------------------------------------
-  //  todo: reorder
 
   mkMutationTest(
     "Test.Type.Unit.Returned",
@@ -921,7 +1046,7 @@ class TestMutationTester extends AnyFunSuite {
   )
 
   mkMutationTest(
-    "Test.Transitive",
+    "Test.Transitive.Call",
     """
       |def foo(x: Bool): Bool = not x
       |
@@ -990,6 +1115,137 @@ class TestMutationTester extends AnyFunSuite {
     Map(
       TimedOut -> 1,
     ),
+  )
+
+  mkMutationTest(
+    "Test.Example.Imperative.With.Effect",
+    """
+      |def f1(k: Int32): Int32 \ IO =
+      |    let a = 10;
+      |    let b = 20;
+      |    println("(a + b) * k");
+      |    (a + b) * k
+      |
+      |def f2(): Int32 \ IO = f1(3)
+      |
+      |@Test
+      |def test1(): Bool\ IO = Assert.eq(30, f1(1))
+      |
+      |@Test
+      |def test2(): Bool\ IO = Assert.eq(60, f1(2))
+      |
+      |@Test
+      |def test3(): Bool\ IO = Assert.eq(90, f2())
+      |""".stripMargin,
+    Map(
+      Killed -> 8,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Example.Without.Mutants",
+    """
+      |def reachable(origin: n, edges: es): Set[n] \ Iterable.Aef[es] with Iterable[es], Order[n] where Iterable.Elm[es] ~ (n, n) =
+      |    region rc {
+      |        // collect edge lists
+      |        let edgeMap = MutMap.empty(rc);
+      |        foreach((start, end) <- edges) {
+      |            let startEdges = MutMap.getOrElsePut!(start, MutList.empty(rc), edgeMap);
+      |            MutList.push!(end, startEdges)
+      |        };
+      |        // define the reachable set
+      |        let reachable = MutSet.empty(rc);
+      |        // explore graph depth first by task list
+      |        let taskList = MutDeque.empty(rc);
+      |        taskList |> MutDeque.pushFront(origin);
+      |        def whileLoop() = {
+      |            MutDeque.popFront(taskList) |> Option.forEach(node -> {
+      |                // this node has now been reached
+      |                reachable |> MutSet.add!(node);
+      |                // add all non-reached end points to tasklist
+      |                let endPoints = MutMap.getWithDefault(node, MutList.empty(rc), edgeMap);
+      |                MutList.forEach(nextNode -> {
+      |                    let alreadyReached = MutSet.memberOf(nextNode, reachable);
+      |                    if (not alreadyReached)
+      |                        taskList |> MutDeque.pushFront(nextNode)
+      |                    else ()
+      |                }, endPoints);
+      |                whileLoop()
+      |            })
+      |        };
+      |        whileLoop();
+      |        MutSet.toSet(reachable)
+      |    }
+      |""".stripMargin,
+    Map.empty,
+  )
+
+  mkMutationTest(
+    "Test.Example.FixpointConstraintSet.Before",
+    """
+      |def isConnected(s: Set[(Int32, Int32)], src: Int32, dst: Int32): Bool =
+      |    let rules = #{
+      |        Path(x, y) :- Edge(x, y).
+      |        Path(x, z) :- Path(x, y), Edge(y, z).
+      |    };
+      |    let edges = inject s into Edge;
+      |    let paths = query edges, rules select true from Path(src, dst);
+      |    not (paths |> Vector.isEmpty)
+      |
+      |@Test
+      |pub def testIsConnected(): Bool = Assert.eq(true, isConnected(Set#{(1, 2), (2, 3)}, 1, 2))
+      |""".stripMargin,
+    Map(
+      CompilationFailed -> 3,
+      Killed -> 5,
+      Survived -> 1,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Example.FixpointConstraintSet.After",
+    """
+      |def isConnected(s: Set[(Int32, Int32)], src: Int32, dst: Int32): Bool =
+      |    let rules = #{
+      |        Path(x, y) :- Edge(x, y).
+      |        Path(x, z) :- Path(x, y), Edge(y, z).
+      |    };
+      |    let edges = inject s into Edge;
+      |    let paths = query edges, rules select true from Path(src, dst);
+      |    not (paths |> Vector.isEmpty)
+      |
+      |@Test
+      |pub def testIsConnected1(): Bool = Assert.eq(true, isConnected(Set#{(1, 2), (2, 3), (3, 4)}, 1, 4))
+      |
+      |@Test
+      |pub def testIsConnected2(): Bool = Assert.eq(false, isConnected(Set#{(1, 2), (2, 3), (3, 4)}, 4, 1))
+      |
+      |@Test
+      |pub def testIsConnected3(): Bool = Assert.eq(false, isConnected(Set#{(1, 2), (2, 3), (3, 4)}, 1, 1))
+      |""".stripMargin,
+    Map(
+      CompilationFailed -> 3,
+      Killed -> 6,
+    ),
+  )
+
+  mkMutationTest(
+    "Test.Example.Region.Without.Mutants",
+    """
+      |def sort(l: List[a]): List[a] with Order[a] =
+      |    region rc {
+      |        let arr = List.toArray(rc, l);
+      |        Array.sort!(arr);
+      |        Array.toList(arr)
+      |    }
+      |
+      |@Test
+      |def test1(): Bool = Assert.eq(List#{1, 2, 3}, sort(List#{3, 1, 2}))
+      |
+      |@Test
+      |def test2(): Bool = Assert.eq(List#{2, 4, 6, 8}, sort(List#{6, 4, 8, 2}))
+      |""".stripMargin,
+    Map.empty,
   )
 
   private def testSource(testName: String, input: String, expected: Result[Unit, String]): Unit = {
