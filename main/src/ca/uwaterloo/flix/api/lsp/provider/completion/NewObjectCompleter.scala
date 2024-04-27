@@ -23,8 +23,7 @@ object NewObjectCompleter extends Completer {
         // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
         val classNames = javaClassCompletionsFromPrefix(path)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
         classNames.foreach(println)
-        try {
-          classNames.map { c =>
+        val results = classNames.map { c =>
               try {
                 Some(Class.forName(c))
               } catch {
@@ -34,9 +33,8 @@ object NewObjectCompleter extends Completer {
             .map(c => c.flatMap(newObjectCompletion))
             .filter(_.isDefined)
             .map(_.get)
-        } catch {
-          case _: ClassNotFoundException => Nil
-        }
+        println(s"results: $results")
+        results
       case _ => Nil
     }
   }
