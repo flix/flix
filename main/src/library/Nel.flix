@@ -118,6 +118,7 @@ instance Iterable[Nel[a]] {
 
 instance ToJava[Nel[a]] {
     type O = ##java.util.List
+    type Aef = IO
     pub def toJava(l: Nel[a]): ##java.util.List \ IO = Adaptor.toList(l)
 }
 

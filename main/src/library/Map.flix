@@ -108,6 +108,7 @@ instance Iterable[Map[k, v]] {
 
 instance ToJava[Map[k, v]] with Order[k] {
     type O = ##java.util.Map
+    type Aef = IO
     pub def toJava(m: Map[k, v]): ##java.util.Map \ IO = Adaptor.toMap(m)
 }
 

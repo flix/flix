@@ -98,6 +98,7 @@ instance Iterable[Set[a]] {
 
 instance ToJava[Set[a]] with Order[a] {
     type O = ##java.util.Set
+    type Aef = IO
     pub def toJava(s: Set[a]): ##java.util.Set \ IO = Adaptor.toSet(s)
 }
 

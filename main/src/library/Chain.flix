@@ -121,6 +121,7 @@ instance Iterable[Chain[a]] {
 
 instance ToJava[Chain[a]] {
     type O = ##java.util.List
+    type Aef = IO
     pub def toJava(c: Chain[a]): ##java.util.List \ IO = Adaptor.toList(c)
 }
 
