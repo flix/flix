@@ -44,7 +44,6 @@ object ConstraintSolver {
     */
   private val MaxIterations = 1000
 
-
   /**
     * Resolves constraints in the given definition using the given inference result.
     */
@@ -107,17 +106,19 @@ object ConstraintSolver {
       //             This is where the stuff happens!                  //
       // We resolve the constraints under the environments we created. //
       ///////////////////////////////////////////////////////////////////
-      resolve(constrs, initialSubst, renv)(cenv, eenv, flix).flatMap {
-        case ResolutionResult(subst, deferred, _) =>
+      resolve(constrs, initialSubst, renv)(cenv, eenv, flix) match {
+        case Result.Ok(ResolutionResult(subst, deferred, _)) =>
           Debug.stopRecording()
 
           // If there are any constraints we could not resolve, then we report an error.
           // TODO ASSOC-TYPES here we only consider the first error
           getFirstError(deferred, renv) match {
-            case None => Result.Ok(subst)
-            case Some(err) => Result.Err(err)
+            case None => Validation.success(subst)
+            case Some(err) => Validation.toSoftFailure(subst, err)
           }
-      }.toValidation
+
+        case Result.Err(err) => Validation.toSoftFailure(Substitution.empty, err)
+      }
   }
 
   /**
@@ -479,7 +480,7 @@ object ConstraintSolver {
                   // If it's an associated type, it's ok. It may be reduced later to a concrete type.
                   case _: Type.AssocType => Result.Ok(List(TypeConstraint.Trait(trt, t, loc)), progress)
                   // Otherwise it's a problem.
-                  case _ => Result.Err(TypeError.MissingInstance(trt, tpe0, renv, loc))
+                  case _ => Result.Err(mkMissingInstance(trt, tpe0, renv, loc))
                 }
               case Some(tconstrs) =>
                 // simplify all the implied constraints
@@ -557,7 +558,7 @@ object ConstraintSolver {
                 // If it's an associated type, it's ok. It may be reduced later to a concrete type.
                 case _: Type.AssocType => Result.Ok((Type.AssocType(cst, t, kind, loc), p))
                 // Otherwise it's a problem.
-                case baseTpe => Result.Err(TypeError.MissingInstance(cst.sym.clazz, baseTpe, renv, loc))
+                case baseTpe => Result.Err(mkMissingInstance(cst.sym.clazz, baseTpe, renv, loc))
               }
             // We could reduce! Simplify further if possible.
             case Some(t) => simplifyType(t, renv0, loc).map { case (res, _) => (res, true) }
@@ -572,8 +573,32 @@ object ConstraintSolver {
   private def getFirstError(deferred: List[TypeConstraint], renv: RigidityEnv)(implicit flix: Flix): Option[TypeError] = deferred match {
     case Nil => None
     case TypeConstraint.Equality(tpe1, tpe2, prov) :: _ => Some(toTypeError(UnificationError.MismatchedTypes(tpe1, tpe2), prov))
-    case TypeConstraint.Trait(sym, tpe, loc) :: _ => Some(TypeError.MissingInstance(sym, tpe, renv, loc))
+    case TypeConstraint.Trait(sym, tpe, loc) :: _ => Some(mkMissingInstance(sym, tpe, renv, loc))
     case TypeConstraint.Purification(_, _, _, _, nested) :: _ => getFirstError(nested, renv)
+  }
+
+  /**
+   * Constructs a specific missing instance error for the given trait symbol `sym` and type `tpe`.
+   */
+  private def mkMissingInstance(sym: Symbol.TraitSym, tpe: Type, renv: RigidityEnv, loc: SourceLocation)(implicit flix: Flix): TypeError = {
+    val eqSym = Symbol.mkTraitSym("Eq")
+    val orderSym = Symbol.mkTraitSym("Order")
+    val sendableSym = Symbol.mkTraitSym("Sendable")
+    val toStringSym = Symbol.mkTraitSym("ToString")
+    if (sym == eqSym) {
+      TypeError.MissingInstanceEq(tpe, renv, loc)
+    } else if (sym == orderSym) {
+      TypeError.MissingInstanceOrder(tpe, renv, loc)
+    } else if (sym == sendableSym) {
+      TypeError.MissingInstanceSendable(tpe, renv, loc)
+    } else if (sym == toStringSym) {
+      TypeError.MissingInstanceToString(tpe, renv, loc)
+    } else {
+      tpe.typeConstructor match {
+        case Some(TypeConstructor.Arrow(_)) => TypeError.MissingInstanceArrow(sym, tpe, renv, loc)
+        case _ => TypeError.MissingInstance(sym, tpe, renv, loc)
+      }
+    }
   }
 
   /**
@@ -735,7 +760,7 @@ object ConstraintSolver {
     case (UnificationError.NonSchemaType(nonSchemaType), Provenance.Match(type1, type2, loc)) =>
       TypeError.NonSchemaType(nonSchemaType, RigidityEnv.empty, loc)
     case (UnificationError.NoMatchingInstance(tconstr), Provenance.Match(type1, type2, loc)) =>
-      TypeError.MissingInstance(tconstr.head.sym, tconstr.arg, RigidityEnv.empty, loc)
+      mkMissingInstance(tconstr.head.sym, tconstr.arg, RigidityEnv.empty, loc)
 
     // TODO ASSOC-TYPES these errors are relics of the old type system and should be removed
     case (UnificationError.UnsupportedEquality(t1, t2), _) => throw InternalCompilerException("unexpected error: " + err0, SourceLocation.Unknown)

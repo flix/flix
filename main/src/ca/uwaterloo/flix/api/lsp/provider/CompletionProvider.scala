@@ -288,6 +288,8 @@ object CompletionProvider {
       case err => pos.line <= err.loc.beginLine
     }).map({
       // We can have multiple errors, so we rank them, and pick the highest priority.
+      case WeederError.UnqualifiedUse(_) => (1, SyntacticContext.Use)
+      case ResolutionError.UndefinedJvmClass(_, _, _) => (1, SyntacticContext.Import)
       case ResolutionError.UndefinedName(_, _, _, isUse, _) => if (isUse) (1, SyntacticContext.Use) else (2, SyntacticContext.Expr.OtherExpr)
       case ResolutionError.UndefinedType(_, _, _) => (1, SyntacticContext.Type.OtherType)
       case WeederError.MalformedIdentifier(_, _) => (2, SyntacticContext.Import)
