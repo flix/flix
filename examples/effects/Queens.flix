@@ -20,9 +20,9 @@ mod EffectExamples.Queens {
     ///
     eff Searchable {
 
-        ///
-        /// Should return a value in the range `[0, size]`.
-        ///
+        //
+        // Should return a value in the range `[0, size]`.
+        //
         pub def pick(size: Int32): Int32
 
         pub def fail(): Void
