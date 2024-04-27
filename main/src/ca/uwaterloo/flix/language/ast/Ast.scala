@@ -848,6 +848,8 @@ object Ast {
       case object Do extends Expr
 
       case object OtherExpr extends Expr
+
+      case object NewObject extends Expr
     }
 
     case object Import extends SyntacticContext
