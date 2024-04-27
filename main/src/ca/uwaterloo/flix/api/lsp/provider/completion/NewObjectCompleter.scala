@@ -107,9 +107,11 @@ object NewObjectCompleter extends Completer {
       prefix match {
         case Nil =>
           println("got nil case in javaClassCompletionsFromPrefix")
+          println(prefix)
           clazz
         case v =>
           println(s"got case v with class $clazz")
+          println(prefix)
           v.mkString("", ".", s".$clazz")
 
       }
