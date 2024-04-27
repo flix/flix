@@ -108,7 +108,10 @@ object NewObjectCompleter extends Completer {
         case Nil =>
           println("got nil case in javaClassCompletionsFromPrefix")
           clazz
-        case v => v.mkString("", ".", s".$clazz")
+        case v =>
+          println(s"got case v with class $clazz")
+          v.mkString("", ".", s".$clazz")
+
       }
     }
     )
