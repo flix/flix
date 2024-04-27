@@ -24,8 +24,14 @@ object NewObjectCompleter extends Completer {
         val classNames = javaClassCompletionsFromPrefix(path)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
         classNames.foreach(println)
         try {
-          classNames.map(Class.forName)
-            .map(newObjectCompletion)
+          classNames.map { c =>
+              try {
+                Some(Class.forName(c))
+              } catch {
+                case _: ClassNotFoundException => None
+              }
+            }
+            .map(c => c.flatMap(newObjectCompletion))
             .filter(_.isDefined)
             .map(_.get)
         } catch {
