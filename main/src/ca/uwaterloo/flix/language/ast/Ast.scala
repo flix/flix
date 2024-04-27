@@ -250,22 +250,22 @@ object Ast {
     }
 
     /**
-     * An AST node that represents a `@TailRec` annotation.
-     *
-     * A function marked with `@TailRec` is guaranteed to be tail recursive by the compiler.
-     *
-     * @param loc the source location of the annotation.
-     */
+      * An AST node that represents a `@TailRec` annotation.
+      *
+      * A function marked with `@TailRec` is guaranteed to be tail recursive by the compiler.
+      *
+      * @param loc the source location of the annotation.
+      */
     case class TailRecursive(loc: SourceLocation) extends Annotation {
       override def toString: String = "@Tailrec"
     }
 
     /**
-     * An AST node that represents an undefined (i.e. erroneous) annotation.
-     *
-     * @param name the name of the annotation.
-     * @param loc the source location of the annotation.
-     */
+      * An AST node that represents an undefined (i.e. erroneous) annotation.
+      *
+      * @param name the name of the annotation.
+      * @param loc  the source location of the annotation.
+      */
     case class Error(name: String, loc: SourceLocation) extends Annotation {
       override def toString: String = "@" + name
     }
@@ -875,6 +875,9 @@ object Ast {
     case object Unknown extends SyntacticContext
 
     def join(ctx1: SyntacticContext, ctx2: SyntacticContext): SyntacticContext = (ctx1, ctx2) match {
+      case (_, SyntacticContext.Expr.NewObject) => SyntacticContext.Expr.NewObject
+      case (SyntacticContext.Expr.NewObject, _) => SyntacticContext.Expr.NewObject
+
       case (_, SyntacticContext.Expr.OtherExpr) => ctx1
       case (SyntacticContext.Expr.OtherExpr, _) => ctx2
 
