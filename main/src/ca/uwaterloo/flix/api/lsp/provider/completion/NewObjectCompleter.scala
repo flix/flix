@@ -3,7 +3,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
 import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.NewObjectCompletion
-import ca.uwaterloo.flix.language.ast.{SourceLocation, Ast, Type, TypedAst}
+import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
 object NewObjectCompleter extends Completer {
@@ -24,15 +24,15 @@ object NewObjectCompleter extends Completer {
         val classNames = javaClassCompletionsFromPrefix(path)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
         classNames.foreach(println)
         val results = classNames.map { c =>
-              try {
-                Some(Class.forName(c.replaceAll("\\[L", "")))
-              } catch {
-                case _: ClassNotFoundException => None
-              }
+            try {
+              Some(Class.forName(c.replaceAll("\\[L", "")))
+            } catch {
+              case _: ClassNotFoundException => None
             }
-            .map(c => c.flatMap(newObjectCompletion))
-            .filter(_.isDefined)
-            .map(_.get)
+          }
+          .map(c => c.flatMap(newObjectCompletion))
+          .filter(_.isDefined)
+          .map(_.get)
         println(s"results: $results")
         results
       case _ => Nil
@@ -76,7 +76,13 @@ object NewObjectCompleter extends Completer {
   }
 
   private def toTypeCompletion(clazz: Class[_])(implicit flix: Flix): String = {
-    FormatType.formatType(Type.getFlixType(clazz))
+    val tpe = Type.getFlixType(clazz)
+    val isNative = tpe match {
+      case Type.Cst(TypeConstructor.Native(_), _) => true
+      case _ => false
+    }
+    val prepend = if (isNative) "##" else ""
+    prepend ++ FormatType.formatType(tpe)
   }
 
   /**
