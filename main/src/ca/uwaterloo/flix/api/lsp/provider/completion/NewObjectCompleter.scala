@@ -47,7 +47,7 @@ object NewObjectCompleter extends Completer {
         .filter(isAbstract)
         .zipWithIndex
         .map { case (m, i) => (m, i + 1) }
-        .map(toCompletion(name))
+        .map(toMethodCompletion(name))
         .mkString(System.lineSeparator())
 
       Some(NewObjectCompletion(name, s"$name {${System.lineSeparator()}$completion}"))
@@ -65,7 +65,7 @@ object NewObjectCompleter extends Completer {
     java.lang.reflect.Modifier.isAbstract(method.getModifiers)
   }
 
-  private def toCompletion(className: String)(methodWithIndex: (java.lang.reflect.Method, Int))(implicit flix: Flix): String = {
+  private def toMethodCompletion(className: String)(methodWithIndex: (java.lang.reflect.Method, Int))(implicit flix: Flix): String = {
     val (method, i) = methodWithIndex
     val name = method.getName
     val params = method.getParameters
