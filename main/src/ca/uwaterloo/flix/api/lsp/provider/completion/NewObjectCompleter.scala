@@ -12,17 +12,12 @@ object NewObjectCompleter extends Completer {
     * Returns a List of Completion for completer.
     */
   override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[NewObjectCompletion] = {
-    println("NewObjectCompleter.getCompletions fired!")
-    println("Checking debug code")
     val regex = raw"\s*n?e?w?\s+(?:##)?(?:.*\s+)*(.*)".r
     context.prefix match {
       case regex(clazz) =>
-        println("Entered good path")
-        println(s"Previous word is: ${context.previousWord}")
         val path = clazz.replaceFirst("##", "").split('.').toList
         // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
         val classNames = javaClassCompletionsFromPrefix(path)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
-        classNames.foreach(println)
         val results = classNames.map { c =>
             try {
               Some(Class.forName(c.replaceAll("\\[L", "")))
@@ -92,15 +87,8 @@ object NewObjectCompleter extends Completer {
   private def javaClassCompletionsFromPrefix(prefix: List[String])(implicit root: TypedAst.Root): Iterable[String] = {
     root.names(prefix).map(clazz => {
       prefix match {
-        case Nil =>
-          println("got nil case in javaClassCompletionsFromPrefix")
-          println(prefix)
-          clazz
-        case v =>
-          println(s"got case v with class $clazz")
-          println(prefix)
-          v.mkString("", ".", s".$clazz")
-
+        case Nil => clazz
+        case v => v.mkString("", ".", s".$clazz")
       }
     }
     )
