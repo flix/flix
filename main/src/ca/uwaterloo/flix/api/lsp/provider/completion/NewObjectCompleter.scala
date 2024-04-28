@@ -77,12 +77,15 @@ object NewObjectCompleter extends Completer {
 
   private def toTypeCompletion(clazz: Class[_])(implicit flix: Flix): String = {
     val tpe = Type.getFlixType(clazz)
-    val isNative = tpe match {
-      case Type.Cst(TypeConstructor.Native(_), _) => true
-      case _ => false
+
+    def formatNative(t: Type): String = t match {
+      case Type.Cst(TypeConstructor.Native(_), _) => "##"
+      case Type.Apply(Type.Cst(TypeConstructor.Array, _), tpe, _) => formatNative(tpe)
+      case Type.Apply(tpe1, _, _) => formatNative(tpe1)
+      case _ => ""
     }
-    val prepend = if (isNative) "##" else ""
-    prepend ++ FormatType.formatType(tpe)
+
+    formatNative(tpe) ++ FormatType.formatType(tpe)
   }
 
   /**
