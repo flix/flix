@@ -17,7 +17,8 @@ object NewObjectCompleter extends Completer {
       case regex(clazz) =>
         val path = clazz.replaceFirst("##", "").split('.').toList
         // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
-        val classNames = javaClassCompletionsFromPrefix(path)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
+        val packageNames = javaClassCompletionsFromPrefix(path)(root)
+        val classNames = packageNames ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
         val results = classNames.map { c =>
             try {
               Some(Class.forName(c.replaceAll("\\[L", "")))
@@ -36,6 +37,7 @@ object NewObjectCompleter extends Completer {
 
   private def newObjectCompletion(clazz: Class[_])(implicit flix: Flix): Option[NewObjectCompletion] = {
     val name = clazz.getSimpleName
+    val typeName = ??? // TODO: Fill out the entire name i.e., java.lang.Comparable where Comparable is the name from line 39.
 
     if (isAbstract(clazz)) {
       val completion = clazz.getMethods
@@ -88,7 +90,9 @@ object NewObjectCompleter extends Completer {
     root.names(prefix).map(clazz => {
       prefix match {
         case Nil => clazz
-        case v => v.mkString("", ".", s".$clazz")
+        case v =>
+          println(v.mkString("", ".", s".$clazz"))
+          v.mkString("", ".", s".$clazz")
       }
     }
     )
