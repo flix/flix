@@ -82,6 +82,7 @@ object NewObjectCompleter extends Completer {
       case _ => false
     }
     val prepend = if (isNative) "##" else ""
+    // TODO: Handle arrays
     prepend ++ FormatType.formatType(tpe)
   }
 
