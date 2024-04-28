@@ -25,7 +25,7 @@ object NewObjectCompleter extends Completer {
         classNames.foreach(println)
         val results = classNames.map { c =>
               try {
-                Some(Class.forName(c))
+                Some(Class.forName(c.replaceAll('['.toString + "L", "")))
               } catch {
                 case _: ClassNotFoundException => None
               }
@@ -76,7 +76,7 @@ object NewObjectCompleter extends Completer {
   }
 
   private def toTypeCompletion(clazz: Class[_])(implicit flix: Flix): String = {
-    FormatType.formatType(Type.mkNative(clazz, SourceLocation.Unknown))
+    FormatType.formatType(Type.getFlixType(clazz))
   }
 
   /**
