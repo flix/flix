@@ -25,7 +25,7 @@ object NewObjectCompleter extends Completer {
         classNames.foreach(println)
         val results = classNames.map { c =>
               try {
-                Some(Class.forName(c.replaceAll('['.toString + "L", "")))
+                Some(Class.forName(c.replaceAll("\\[L", "")))
               } catch {
                 case _: ClassNotFoundException => None
               }
