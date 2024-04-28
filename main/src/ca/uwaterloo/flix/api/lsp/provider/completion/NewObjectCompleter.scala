@@ -11,7 +11,7 @@ object NewObjectCompleter extends Completer {
   /**
     * Returns a List of Completion for completer.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[NewObjectCompletion] = {
     println("NewObjectCompleter.getCompletions fired!")
     println("Checking debug code")
     val regex = raw"\s*n?e?w?\s+(?:##)?(?:.*\s+)*(.*)".r
