@@ -40,7 +40,7 @@ object NewObjectCompleter extends Completer {
   }
 
   private def newObjectCompletion(clazz: Class[_])(implicit flix: Flix): Option[NewObjectCompletion] = {
-    val label = clazz.getSimpleName
+    val name = clazz.getSimpleName
 
     if (isAbstract(clazz)) {
       val completion = clazz.getMethods
@@ -50,7 +50,7 @@ object NewObjectCompleter extends Completer {
         .map(toCompletion)
         .mkString(System.lineSeparator())
 
-      Some(NewObjectCompletion(label, s"$label {${System.lineSeparator()}$completion}"))
+      Some(NewObjectCompletion(name, s"$name {${System.lineSeparator()}$completion}"))
     } else
       None
   }
