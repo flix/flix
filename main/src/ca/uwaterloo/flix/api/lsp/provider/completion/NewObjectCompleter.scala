@@ -18,7 +18,7 @@ object NewObjectCompleter extends Completer {
         val path = clazz.replaceFirst("##", "").split('.').toList
         // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
         val classNames = javaClassCompletionsFromPrefix(path)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
-        classNames.map { c =>
+        val results = classNames.map { c =>
             try {
               Some(Class.forName(c.replaceAll("\\[L", "")))
             } catch {
@@ -28,6 +28,8 @@ object NewObjectCompleter extends Completer {
           .map(c => c.flatMap(newObjectCompletion))
           .filter(_.isDefined)
           .map(_.get)
+        results.foreach(println)
+        results
       case _ => Nil
     }
   }
