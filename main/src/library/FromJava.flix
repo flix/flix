@@ -1,5 +1,5 @@
 /*
- *  Copyright 2023 Stephen Tetley
+ *  Copyright 2024 Stephen Tetley
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,10 +15,10 @@
  */
 
 ///
-/// A trait for marshaling values to Java.
+/// A trait for marshaling values from Java.
 ///
-pub trait ToJava[t: Type] {
-    type Out[t]: Type
+pub trait FromJava[t: Type] {
+    type In[t]: Type
     type Aef[t]: Eff = Pure
-    pub def toJava(t: t): ToJava.Out[t] \ ToJava.Aef[t]
+    pub def fromJava(t: FromJava.In[t]): t \ FromJava.Aef[t]
 }

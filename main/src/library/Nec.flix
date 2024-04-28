@@ -142,7 +142,7 @@ instance Iterable[Nec[a]] {
 }
 
 instance ToJava[Nec[a]] {
-    type O = ##java.util.List
+    type Out = ##java.util.List
     type Aef = IO
     pub def toJava(l: Nec[a]): ##java.util.List \ IO = Adaptor.toList(l)
 }

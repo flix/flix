@@ -103,7 +103,7 @@ instance Iterable[Vector[a]] {
 }
 
 instance ToJava[Vector[a]] {
-    type O = ##java.util.List
+    type Out = ##java.util.List
     type Aef = IO
     pub def toJava(v: Vector[a]): ##java.util.List \ IO = Adaptor.toList(v)
 }
