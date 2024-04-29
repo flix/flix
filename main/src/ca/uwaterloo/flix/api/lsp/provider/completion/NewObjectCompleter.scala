@@ -26,14 +26,14 @@ object NewObjectCompleter extends Completer {
               case _: ClassNotFoundException => None
             }
           }
-          .map(c => c.flatMap(newObjectCompletion))
+          .map(c => c.flatMap(newObjectCompletion(context)))
           .filter(_.isDefined)
           .map(_.get)
       case _ => Nil
     }
   }
 
-  private def newObjectCompletion(clazz: Class[_])(implicit flix: Flix): Option[NewObjectCompletion] = {
+  private def newObjectCompletion(context: CompletionContext)(clazz: Class[_])(implicit flix: Flix): Option[NewObjectCompletion] = {
     val name = clazz.getName
 
     if (isAbstract(clazz)) {
@@ -68,7 +68,7 @@ object NewObjectCompleter extends Completer {
       .mkString(", ")
     val result = toTypeCompletion(method.getReturnType)
     val indentation = "    "
-    indentation + s"def $name($params): $result = $${$i:???}"
+    indentation + s"pub def $name($params): $result = $${$i:???}${System.lineSeparator()}"
   }
 
   private def toTypeCompletion(clazz: Class[_])(implicit flix: Flix): String = {
