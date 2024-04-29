@@ -44,7 +44,7 @@ object NewObjectCompleter extends Completer {
         .map(toMethodCompletion(name))
         .mkString(System.lineSeparator())
 
-      Some(NewObjectCompletion(name, s"$name {${System.lineSeparator()}$completion}"))
+      Some(NewObjectCompletion(name, s"$name {${System.lineSeparator()}$completion${System.lineSeparator()}}"))
     } else
       None
   }
@@ -67,7 +67,8 @@ object NewObjectCompleter extends Completer {
       .prepended(s"_this: ##$className")
       .mkString(", ")
     val result = toTypeCompletion(method.getReturnType)
-    s"def $name($params): $result = $${$i:???}"
+    val indentation = "    "
+    indentation + s"def $name($params): $result = $${$i:???}"
   }
 
   private def toTypeCompletion(clazz: Class[_])(implicit flix: Flix): String = {
