@@ -126,9 +126,14 @@ instance Iterable[List[a]] {
 }
 
 instance ToJava[List[a]] {
-    type O = ##java.util.List
+    type Out = ##java.util.List
     type Aef = IO
     pub def toJava(l: List[a]): ##java.util.List \ IO = Adaptor.toList(l)
+}
+
+instance FromJava[List[a]] {
+    type In = ##java.util.List
+    pub def fromJava(l: ##java.util.List): List[a]  = Adaptor.fromList(l)
 }
 
 mod List {
