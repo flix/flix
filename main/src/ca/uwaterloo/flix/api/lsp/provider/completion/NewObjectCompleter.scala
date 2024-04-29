@@ -68,7 +68,7 @@ object NewObjectCompleter extends Completer {
       .mkString(", ")
     val result = toTypeCompletion(method.getReturnType)
     val indentation = "    "
-    indentation + s"pub def $name($params): $result = $${$i:???}${System.lineSeparator()}"
+    indentation + s"pub def $name($params): $result \\ IO = $${$i:???}${System.lineSeparator()}"
   }
 
   private def toTypeCompletion(clazz: Class[_])(implicit flix: Flix): String = {
