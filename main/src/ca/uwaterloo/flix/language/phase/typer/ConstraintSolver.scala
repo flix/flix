@@ -44,7 +44,6 @@ object ConstraintSolver {
     */
   private val MaxIterations = 1000
 
-
   /**
     * Resolves constraints in the given definition using the given inference result.
     */
@@ -107,17 +106,19 @@ object ConstraintSolver {
       //             This is where the stuff happens!                  //
       // We resolve the constraints under the environments we created. //
       ///////////////////////////////////////////////////////////////////
-      resolve(constrs, initialSubst, renv)(cenv, eenv, flix).flatMap {
-        case ResolutionResult(subst, deferred, _) =>
+      resolve(constrs, initialSubst, renv)(cenv, eenv, flix) match {
+        case Result.Ok(ResolutionResult(subst, deferred, _)) =>
           Debug.stopRecording()
 
           // If there are any constraints we could not resolve, then we report an error.
           // TODO ASSOC-TYPES here we only consider the first error
           getFirstError(deferred, renv) match {
-            case None => Result.Ok(subst)
-            case Some(err) => Result.Err(err)
+            case None => Validation.success(subst)
+            case Some(err) => Validation.toSoftFailure(subst, err)
           }
-      }.toValidation
+
+        case Result.Err(err) => Validation.toSoftFailure(Substitution.empty, err)
+      }
   }
 
   /**

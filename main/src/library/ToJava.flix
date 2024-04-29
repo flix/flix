@@ -18,6 +18,7 @@
 /// A trait for marshaling values to Java.
 ///
 pub trait ToJava[t: Type] {
-    type O
-    pub def toJava(t: t): ToJava.O[t] \ IO
+    type O[t]: Type
+    type Aef[t]: Eff = Pure
+    pub def toJava(t: t): ToJava.O[t] \ ToJava.Aef[t]
 }
