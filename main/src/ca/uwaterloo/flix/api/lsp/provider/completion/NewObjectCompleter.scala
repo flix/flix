@@ -2,7 +2,7 @@ package ca.uwaterloo.flix.api.lsp.provider.completion
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.api.lsp.Index
-import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.NewObjectCompletion
+import ca.uwaterloo.flix.api.lsp.provider.completion.Completion.{ClassCompletion, NewObjectCompletion}
 import ca.uwaterloo.flix.language.ast.{Ast, SourceLocation, Type, TypeConstructor, TypedAst}
 import ca.uwaterloo.flix.language.fmt.FormatType
 
@@ -11,31 +11,36 @@ object NewObjectCompleter extends Completer {
   /**
     * Returns a List of Completion for completer.
     */
-  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[NewObjectCompletion] = {
+  override def getCompletions(context: CompletionContext)(implicit flix: Flix, index: Index, root: TypedAst.Root, delta: DeltaContext): Iterable[Completion] = {
     val regex = raw"\s*n?e?w?\s+(?:##)?(?:.*\s+)*(.*)".r
     context.prefix match {
       case regex(clazz) =>
         val path = clazz.replaceFirst("##", "").split('.').toList
         // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
-        val packageNames = javaClassCompletionsFromPrefix(path)(root)
-        val classNames = packageNames ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
-        classNames.map { c =>
+        val names = javaClassCompletionsFromPrefix(path)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
+        names.map { name =>
             try {
-              Some(Class.forName(c.replaceAll("\\[L", "")))
+              val clazz = Class.forName(name.replaceAll("\\[L", ""))
+              newObjectCompletion(context, clazz)
             } catch {
-              case _: ClassNotFoundException => None
+              case _: ClassNotFoundException =>
+                // A package/class was found by javaClassCompletionsFromPrefix but it is not yet a valid
+                // class, so we change it to a ClassCompletion so VSCode can assist the user in finding the
+                // correct package/class.
+                Some(ClassCompletion(name))
             }
           }
-          .map(c => c.flatMap(newObjectCompletion(context)))
           .filter(_.isDefined)
           .map(_.get)
       case _ => Nil
     }
   }
 
-  private def newObjectCompletion(context: CompletionContext)(clazz: Class[_])(implicit flix: Flix): Option[NewObjectCompletion] = {
+  private def newObjectCompletion(context: CompletionContext, clazz: Class[_])(implicit flix: Flix): Option[NewObjectCompletion] = {
     val name = clazz.getName
-    val prependHash = if (context.prefix.contains("##")) "" else "##"
+    val prependHash = if (context.prefix.contains(s"##${clazz.getName}")) "" else "##"
+
+    // TODO: Check that clazz is public
 
     if (isAbstract(clazz)) {
       val completion = clazz.getMethods
@@ -78,9 +83,9 @@ object NewObjectCompleter extends Completer {
       case Type.Cst(TypeConstructor.Native(_), _) => true
       case _ => false
     }
-    val prepend = if (isNative) "##" else ""
-    // TODO: Handle arrays
-    prepend ++ FormatType.formatType(tpe)
+    val prependHash = if (isNative) s"##" else ""
+    // TODO: Handle arrays, use Type.typeArguments
+    prependHash ++ FormatType.formatType(tpe)
   }
 
   /**
