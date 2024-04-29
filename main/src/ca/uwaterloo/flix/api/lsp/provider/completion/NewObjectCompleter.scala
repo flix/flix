@@ -19,7 +19,7 @@ object NewObjectCompleter extends Completer {
         // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
         val packageNames = javaClassCompletionsFromPrefix(path)(root)
         val classNames = packageNames ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
-        val results = classNames.map { c =>
+        classNames.map { c =>
             try {
               Some(Class.forName(c.replaceAll("\\[L", "")))
             } catch {
@@ -29,16 +29,12 @@ object NewObjectCompleter extends Completer {
           .map(c => c.flatMap(newObjectCompletion))
           .filter(_.isDefined)
           .map(_.get)
-        results.foreach(println)
-        results
       case _ => Nil
     }
   }
 
   private def newObjectCompletion(clazz: Class[_])(implicit flix: Flix): Option[NewObjectCompletion] = {
-    val name = clazz.getSimpleName
-    // val typeName = ???
-    // TODO: Fill out the entire name i.e., java.lang.Comparable where Comparable is the name from line 39.
+    val name = clazz.getName
 
     if (isAbstract(clazz)) {
       val completion = clazz.getMethods
