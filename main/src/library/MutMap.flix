@@ -547,6 +547,20 @@ mod MutMap {
         Map.toList(deref mm)
 
     ///
+    /// Returns the mutable map `m` as a vector of key-value pairs.
+    ///
+    pub def toVector(m: MutMap[k, v, r]): Vector[(k, v)] \ r =
+        let MutMap(_, mm) = m;
+        Map.toVector(deref mm)
+
+    ///
+    /// Returns the mutable map `m` as an array of key-value pairs.
+    ///
+    pub def toArray(rc1: Region[r1], m: MutMap[k, v, r]): Array[(k, v), r1] \ {r, r1} =
+        let MutMap(_, mm) = m;
+        Map.toArray(rc1, deref mm)
+
+    ///
     /// Returns the mutable map `m` as a set of key-value pairs.
     ///
     pub def toSet(m: MutMap[k, v, r]): Set[(k, v)] \ r with Order[k], Order[v] =

@@ -30,7 +30,7 @@ mod Test.Dec.Assoc.Type.Mult {
 
 
     ////////////////////////////////////////////////////////
-    // Polymorphic functions using Mult                    //
+    // Polymorphic functions using Mult                   //
     ////////////////////////////////////////////////////////
 
     pub def twiceLeft(f: Mult.Out[a] -> Mult.Right[a], x: a, y: Mult.Right[a]): Mult.Out[a] with Mult[a] =
@@ -41,7 +41,7 @@ mod Test.Dec.Assoc.Type.Mult {
 
 
     ////////////////////////////////////////////////////////
-    // Monomorphic functions using Mult                    //
+    // Monomorphic functions using Mult                   //
     ////////////////////////////////////////////////////////
 
     // Int32

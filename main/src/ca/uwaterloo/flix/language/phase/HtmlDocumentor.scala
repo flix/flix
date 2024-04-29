@@ -451,35 +451,34 @@ object HtmlDocumentor {
   private def pairModules(mod: Module): Module = mod match {
     case Module(sym, parent, uses, submodules, traits, effects, enums, typeAliases, defs) =>
 
+      val visitedSubmodules = submodules.map(pairModules)
+
       /** Modules that should not be included as a submodule */
       var companionMods: List[Module] = Nil
 
       val pairedTraits = traits.map { t =>
-        val sym = Symbol.mkModuleSym(t.decl.sym.namespace)
-        val comp = submodules.find(m => m.sym == sym)
-        comp.foreach(c => c :: companionMods)
+        val comp = visitedSubmodules.find(m => m.sym.ns.last == t.decl.sym.name)
+        comp.foreach(c => companionMods = c :: companionMods)
         t.copy(companionMod = comp)
       }
       val pairedEffects = effects.map { e =>
-        val sym = Symbol.mkModuleSym(e.decl.sym.namespace)
-        val comp = submodules.find(m => m.sym == sym)
-        comp.foreach(c => c :: companionMods)
+        val comp = visitedSubmodules.find(m => m.sym.ns.last == e.decl.sym.name)
+        comp.foreach(c => companionMods = c :: companionMods)
         e.copy(companionMod = comp)
       }
       val pairedEnums = enums.map { e =>
-        val sym = Symbol.mkModuleSym(e.decl.sym.namespace)
-        val comp = submodules.find(m => m.sym == sym)
-        comp.foreach(c => c :: companionMods)
+        val comp = visitedSubmodules.find(m => m.sym.ns.last == e.decl.sym.name)
+        comp.foreach(c => companionMods = c :: companionMods)
         e.copy(companionMod = comp)
       }
 
-      val filteredSubmodules = submodules.filterNot(companionMods.contains)
+      val filteredSubmodules = visitedSubmodules.filterNot(companionMods.contains)
 
       Module(
         sym,
         parent,
         uses,
-        filteredSubmodules.map(pairModules),
+        filteredSubmodules,
         pairedTraits,
         pairedEffects,
         pairedEnums,

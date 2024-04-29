@@ -26,10 +26,10 @@
     use Concurrent.Channel.selectFrom
 
     @test
-    def testNew01(): Mpmc[Int32] \ IO = newChannel(0)
+    def testNew01(): Mpmc[Int32, Static] \ IO = newChannel(0)
 
     @test
-    def testNew02(): Mpmc[Result[String, a]] \ IO = newChannel(32)
+    def testNew02(): Mpmc[Result[String, a], Static] \ IO = newChannel(32)
 
     @test
     def testGetPut01(): Bool \ IO =
@@ -74,8 +74,8 @@
 
     @test
     def testSelect03(): Bool \ IO =
-        let c1: Mpmc[Int32] = newChannel(0);
-        let c2: Mpmc[String] = newChannel(10);
+        let c1: Mpmc[Int32, Static] = newChannel(0);
+        let c2: Mpmc[String, _] = newChannel(10);
 
         put("hey", c2);
 
