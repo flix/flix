@@ -64,9 +64,10 @@ object NewObjectCompleter extends Completer {
     val name = method.getName
     val params = method.getParameters
       .map(p => s"${p.getName}: ${toTypeCompletion(p.getType)}")
+      .prepended(s"_this: ##$className")
       .mkString(", ")
     val result = toTypeCompletion(method.getReturnType)
-    s"def $name(_this: ##$className, $params): $result = $${$i:???}"
+    s"def $name($params): $result = $${$i:???}"
   }
 
   private def toTypeCompletion(clazz: Class[_])(implicit flix: Flix): String = {
