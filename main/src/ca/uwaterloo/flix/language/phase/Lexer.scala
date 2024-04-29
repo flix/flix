@@ -110,27 +110,11 @@ object Lexer {
       val (stale, fresh) = changeSet.partition(root.sources, oldTokens)
 
       // Lex each stale source file in parallel.
-      val results = ParOps.parMap(stale.keys)(src => mapN(tryLex(src))(tokens => src -> tokens))
+      val results = ParOps.parMap(stale.keys)(src => mapN(mapN(lex(src))(fuzz))(tokens => src -> tokens))
 
       // Construct a map from each source to its tokens.
       val reused = fresh.map(m => Validation.success(m))
       mapN(sequence(results ++ reused))(_.toMap)
-    }
-  }
-
-  /**
-   * A workaround to allow using the new lexer but avoid crashing the compiler on unforeseen bugs.
-   * This is not viable long term and should never be merged into a stable release,
-   * but it allows us to battle-test the lexer in nightly, without inconveniencing users too much.
-   */
-  private def tryLex(src: Ast.Source)(implicit flix: Flix): Validation[Array[Token], CompilationMessage] = {
-    try {
-      mapN(lex(src))(fuzz)
-    } catch {
-      case except: Throwable =>
-        println(src.data.mkString)
-        except.printStackTrace()
-        Validation.success(Array.empty[Token])
     }
   }
 
