@@ -62,10 +62,10 @@ object PredDeps {
         case Type.Cst(TypeConstructor.Unit, _) => (Nil, den)
         case _ => (List(t), den) // Unary
       }
-    case _: Type.Var =>
-      // This could occur when querying or projecting a non-existent predicate
+    case _ =>
+      // Resilience: We would want a relation or lattice, but type inference may have failed.
+      // If so, we simply return the empty list of term types with a relational denotation.
       (Nil, Denotation.Relational)
-    case _ => throw InternalCompilerException(s"Unexpected type: '$tpe.'", tpe.loc)
   }
 
   /**
