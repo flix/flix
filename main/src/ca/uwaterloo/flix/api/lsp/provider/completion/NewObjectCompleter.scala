@@ -38,13 +38,12 @@ object NewObjectCompleter extends Completer {
 
   private def newObjectCompletion(context: CompletionContext, clazz: Class[_])(implicit flix: Flix): Option[NewObjectCompletion] = {
     val name = clazz.getName
-    val prependHash = if (context.prefix.contains(s"##${clazz.getName}")) "" else "##"
+    val prependHash = if (context.prefix.contains(s"##")) "" else "##"
 
-    // TODO: Check that clazz is public
-
-    if (isAbstractClass(clazz)) {
+    if (isAbstractClass(clazz) && isPublicClass(clazz)) {
       val completion = clazz.getMethods
         .filter(isAbstractMethod)
+        .filter(isPublicMethod)
         .zipWithIndex
         .map { case (m, i) => (m, i + 1) }
         .map(toMethodCompletion(name))
@@ -65,6 +64,14 @@ object NewObjectCompleter extends Completer {
     java.lang.reflect.Modifier.isAbstract(method.getModifiers)
   }
 
+  private def isPublicClass(clazz: Class[_]): Boolean = {
+    java.lang.reflect.Modifier.isPublic(clazz.getModifiers)
+  }
+
+  private def isPublicMethod(method: java.lang.reflect.Method): Boolean = {
+    java.lang.reflect.Modifier.isPublic(method.getModifiers)
+  }
+
   private def toMethodCompletion(className: String)(methodWithIndex: (java.lang.reflect.Method, Int))(implicit flix: Flix): String = {
     val (method, i) = methodWithIndex
     val name = method.getName
@@ -74,7 +81,7 @@ object NewObjectCompleter extends Completer {
       .mkString(", ")
     val result = toTypeCompletion(method.getReturnType)
     val indentation = "    "
-    indentation + s"pub def $name($params): $result \\ IO = $${$i:???}${System.lineSeparator()}"
+    indentation + s"def $name($params): $result \\ IO = $${$i:???}${System.lineSeparator()}"
   }
 
   private def toTypeCompletion(clazz: Class[_])(implicit flix: Flix): String = {
