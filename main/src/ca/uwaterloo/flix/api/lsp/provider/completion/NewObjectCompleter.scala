@@ -42,9 +42,9 @@ object NewObjectCompleter extends Completer {
 
     // TODO: Check that clazz is public
 
-    if (isAbstract(clazz)) {
+    if (isAbstractClass(clazz)) {
       val completion = clazz.getMethods
-        .filter(isAbstract)
+        .filter(isAbstractMethod)
         .zipWithIndex
         .map { case (m, i) => (m, i + 1) }
         .map(toMethodCompletion(name))
@@ -55,13 +55,13 @@ object NewObjectCompleter extends Completer {
       None
   }
 
-  private def isAbstract(clazz: Class[_]): Boolean = {
+  private def isAbstractClass(clazz: Class[_]): Boolean = {
     val hasAbstractModifier = java.lang.reflect.Modifier.isAbstract(clazz.getModifiers)
     val isInterface = clazz.isInterface
     isInterface || hasAbstractModifier
   }
 
-  private def isAbstract(method: java.lang.reflect.Method): Boolean = {
+  private def isAbstractMethod(method: java.lang.reflect.Method): Boolean = {
     java.lang.reflect.Modifier.isAbstract(method.getModifiers)
   }
 
