@@ -101,12 +101,14 @@ instance MeetLattice[Map[k, v]] with Order[k], Eq[v], MeetLattice[v] {
         Map.intersectionWith(MeetLattice.greatestLowerBound, m1, m2)
 }
 
-instance Iterable[Map[k]] {
-    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[v, r, r] \ r = Map.iteratorValues(rc, m)
+instance Iterable[Map[k, v]] {
+    type Elm = (k, v)
+    pub def iterator(rc: Region[r], m: Map[k, v]): Iterator[(k, v), r, r] \ r = Map.iterator(rc, m)
 }
 
 instance ToJava[Map[k, v]] with Order[k] {
     type O = ##java.util.Map
+    type Aef = IO
     pub def toJava(m: Map[k, v]): ##java.util.Map \ IO = Adaptor.toMap(m)
 }
 
@@ -778,6 +780,26 @@ mod Map {
     ///
     pub def toList(m: Map[k, v]): List[(k, v)] =
         foldRightWithKey((k, v, acc) -> (k, v) :: acc, Nil, m)
+
+    ///
+    /// Returns the map `m` as an array.
+    ///
+    pub def toArray(rc: Region[r], m: Map[k, v]): Array[(k, v), r] \ r = match size(m) {
+        case 0  => Array#{} @ rc
+        case sz =>
+            let a = Array.empty(rc, sz);
+            forEachWithIndex((i, k, v) -> Array.put((k, v), i, a), m);
+            a
+        }
+
+    ///
+    /// Returns the map `m` as a vector.
+    ///
+    pub def toVector(m: Map[k, v]): Vector[(k, v)] = region rc {
+        let arr = Array.empty(rc, size(m));
+        forEachWithIndex((i, k, v) -> Array.put((k, v), i, arr), m);
+        Array.toVector(arr)
+    }
 
     ///
     /// Returns the map `m` as a set of key-value pairs.
