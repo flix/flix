@@ -37,7 +37,8 @@ object NewObjectCompleter extends Completer {
 
   private def newObjectCompletion(clazz: Class[_])(implicit flix: Flix): Option[NewObjectCompletion] = {
     val name = clazz.getSimpleName
-    val typeName = ??? // TODO: Fill out the entire name i.e., java.lang.Comparable where Comparable is the name from line 39.
+    // val typeName = ???
+    // TODO: Fill out the entire name i.e., java.lang.Comparable where Comparable is the name from line 39.
 
     if (isAbstract(clazz)) {
       val completion = clazz.getMethods
