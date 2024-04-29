@@ -90,9 +90,7 @@ object NewObjectCompleter extends Completer {
     root.names(prefix).map(clazz => {
       prefix match {
         case Nil => clazz
-        case v =>
-          println(v.mkString("", ".", s".$clazz"))
-          v.mkString("", ".", s".$clazz")
+        case v => v.mkString("", ".", s".$clazz")
       }
     }
     )
