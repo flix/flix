@@ -35,6 +35,7 @@ object NewObjectCompleter extends Completer {
 
   private def newObjectCompletion(context: CompletionContext)(clazz: Class[_])(implicit flix: Flix): Option[NewObjectCompletion] = {
     val name = clazz.getName
+    val prependHash = if (context.prefix.contains("##")) "" else "##"
 
     if (isAbstract(clazz)) {
       val completion = clazz.getMethods
@@ -44,7 +45,7 @@ object NewObjectCompleter extends Completer {
         .map(toMethodCompletion(name))
         .mkString(System.lineSeparator())
 
-      Some(NewObjectCompletion(name, s"$name {${System.lineSeparator()}$completion${System.lineSeparator()}}"))
+      Some(NewObjectCompletion(name, s"$prependHash$name {${System.lineSeparator()}$completion${System.lineSeparator()}}"))
     } else
       None
   }
