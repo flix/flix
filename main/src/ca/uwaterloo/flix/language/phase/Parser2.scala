@@ -2343,7 +2343,7 @@ object Parser2 {
       oneOrMore(
         displayName = "with rule",
         getItem = withRule,
-        checkForItem = () => at(TokenKind.KeywordDef),
+        checkForItem = () => atAny(COMMENTS) || at(TokenKind.KeywordDef),
         recoverOn = () => atAny(RECOVER_EXPR),
         optionalSeparator = true,
         delimiterL = TokenKind.CurlyL,
@@ -2355,7 +2355,7 @@ object Parser2 {
     }
 
     private def withRule()(implicit s: State): Mark.Closed = {
-      assert(at(TokenKind.KeywordDef))
+      assert(atAny(COMMENTS) || at(TokenKind.KeywordDef))
       val mark = open()
       expect(TokenKind.KeywordDef)
       name(Set(TokenKind.NameLowerCase))
