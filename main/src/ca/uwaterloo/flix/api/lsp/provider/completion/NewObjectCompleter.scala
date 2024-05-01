@@ -18,22 +18,26 @@ object NewObjectCompleter extends Completer {
         val path = clazz.replaceFirst("##", "").split('.').toList
         // Get completions for if we are currently typing the next package/class and if we have just finished typing a package
         val names = javaClassCompletionsFromPrefix(path)(root) ++ javaClassCompletionsFromPrefix(path.dropRight(1))(root)
-        names.map { name =>
-            try {
-              val clazz = Class.forName(name.replaceAll("\\[L", ""))
-              newObjectCompletion(context, clazz)
-            } catch {
-              case _: ClassNotFoundException =>
-                // A package/class was found by javaClassCompletionsFromPrefix but it is not yet a valid
-                // class, so we change it to a ClassCompletion so VSCode can assist the user in finding the
-                // correct package/class.
-                Some(ClassCompletion(name))
-            }
-          }
-          .filter(_.isDefined)
-          .map(_.get)
+        mkCompletions(context, names)
       case _ => Nil
     }
+  }
+
+  private def mkCompletions(context: CompletionContext, names: Iterable[String]) = {
+    names.map { name =>
+        try {
+          val clazz = Class.forName(name.replaceAll("\\[L", ""))
+          newObjectCompletion(context, clazz)
+        } catch {
+          case _: ClassNotFoundException =>
+            // A package/class was found by javaClassCompletionsFromPrefix but it is not yet a valid
+            // class, so we change it to a ClassCompletion so VSCode can assist the user in finding the
+            // correct package/class.
+            Some(ClassCompletion(name))
+        }
+      }
+      .filter(_.isDefined)
+      .map(_.get)
   }
 
   private def newObjectCompletion(context: CompletionContext, clazz: Class[_])(implicit flix: Flix): Option[NewObjectCompletion] = {
