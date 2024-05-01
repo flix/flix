@@ -40,7 +40,7 @@ import org.parboiled2.ParserInput
  * @param endLine   The line that the lexeme __ends__ on.
  * @param endCol    The column that the lexeme __ends__ on.
  */
-case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, beginLine: Int, beginCol: Short, endLine: Int, endCol: Short) {
+case class Token(kind: TokenKind, src: Array[Char], start: Int, end: Int, beginLine: Int, beginCol: Short, endLine: Int, endCol: Short) extends SyntaxTree.Child {
   /**
    * Computes the lexeme that the token refers to by slicing it from `src`.
    *
