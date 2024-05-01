@@ -93,8 +93,9 @@ instance Monoid[Vector[a]] {
     pub def empty(): Vector[a] = Vector.empty()
 }
 
-instance Collectable[Vector] {
-    pub def collect(iter: Iterator[a, ef, r]): Vector[a] \ { r, ef } with Order[a] = Iterator.toVector(iter)
+instance Collectable[Vector[a]] {
+    type Elm = a
+    pub def collect(iter: Iterator[a, ef, r]): Vector[a] \ (ef + r) = Iterator.toVector(iter)
 }
 
 instance Iterable[Vector[a]] {

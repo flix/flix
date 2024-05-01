@@ -116,8 +116,9 @@ instance Monoid[List[a]] {
     pub def empty(): List[a] = Nil
 }
 
-instance Collectable[List] {
-    pub def collect(iter: Iterator[a, ef, r]): List[a] \ { r, ef } with Order[a] = Iterator.toList(iter)
+instance Collectable[List[a]] {
+    type Elm = a
+    pub def collect(iter: Iterator[a, ef, r]): List[a] \ { r, ef } = Iterator.toList(iter)
 }
 
 instance Iterable[List[a]] {
