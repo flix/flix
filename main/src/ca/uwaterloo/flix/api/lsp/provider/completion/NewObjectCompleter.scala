@@ -23,7 +23,7 @@ object NewObjectCompleter extends Completer {
     }
   }
 
-  private def mkCompletions(context: CompletionContext, names: Iterable[String]) = {
+  private def mkCompletions(context: CompletionContext, names: Iterable[String])(implicit flix: Flix) = {
     names.map { name =>
         try {
           val clazz = Class.forName(name.replaceAll("\\[L", ""))
