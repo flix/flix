@@ -116,8 +116,9 @@ instance Monoid[List[a]] {
     pub def empty(): List[a] = Nil
 }
 
-instance Collectable[List] {
-    pub def collect(iter: Iterator[a, ef, r]): List[a] \ { r, ef } with Order[a] = Iterator.toList(iter)
+instance Collectable[List[a]] {
+    type Elm = a
+    pub def collect(iter: Iterator[a, ef, r]): List[a] \ { r, ef } = Iterator.toList(iter)
 }
 
 instance Iterable[List[a]] {
@@ -126,9 +127,14 @@ instance Iterable[List[a]] {
 }
 
 instance ToJava[List[a]] {
-    type O = ##java.util.List
+    type Out = ##java.util.List
     type Aef = IO
     pub def toJava(l: List[a]): ##java.util.List \ IO = Adaptor.toList(l)
+}
+
+instance FromJava[List[a]] {
+    type In = ##java.util.List
+    pub def fromJava(l: ##java.util.List): List[a]  = Adaptor.fromList(l)
 }
 
 mod List {
