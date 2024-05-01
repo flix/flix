@@ -49,7 +49,7 @@ object NewObjectCompleter extends Completer {
         .map(toMethodCompletion(name))
         .mkString(System.lineSeparator())
 
-      Some(NewObjectCompletion(name, s"$prependHash$name {${System.lineSeparator()}$completion${System.lineSeparator()}}"))
+      Some(NewObjectCompletion(name, s"$prependHash$name {${System.lineSeparator()}${System.lineSeparator()}$completion${System.lineSeparator()}}"))
     } else
       None
   }
