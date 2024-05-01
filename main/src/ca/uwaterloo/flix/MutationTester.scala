@@ -103,7 +103,9 @@ object MutationTester {
         case (sym, mDefs) =>
           val shuffled = Random.shuffle(mDefs)
           val toRemain = (mDefs.length * percentage) / 100
-          (sym, shuffled.take(toRemain))
+          if (toRemain > 0)
+            (sym, shuffled.take(toRemain))
+          else (sym, shuffled.take(1))
       }
     }
 
