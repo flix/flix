@@ -1071,7 +1071,7 @@ object Weeder2 {
       flatMapN(op, traverse(exprs)(visitExpr)) {
         case (op, e1 :: e2 :: Nil) =>
           val isInfix = op.children.head match {
-            case token@Token(_, _, _, _, _, _ ,_ ,_) => token.kind == TokenKind.InfixFunction
+            case Token(kind, _, _, _, _, _ ,_ ,_) => kind == TokenKind.InfixFunction
             case _ => false
           }
 
@@ -1792,9 +1792,9 @@ object Weeder2 {
 
     private def pickDebugKind(tree: Tree): Validation[DebugKind, CompilationMessage] = {
       tree.children.headOption match {
-        case Some(t@Token(_, _, _, _, _, _ ,_ ,_)) if t.kind == TokenKind.KeywordDebug => Validation.success(DebugKind.Debug)
-        case Some(t@Token(_, _, _, _, _, _ ,_ ,_)) if t.kind == TokenKind.KeywordDebugBang => Validation.success(DebugKind.DebugWithLoc)
-        case Some(t@Token(_, _, _, _, _, _ ,_ ,_)) if t.kind == TokenKind.KeywordDebugBangBang => Validation.success(DebugKind.DebugWithLocAndSrc)
+        case Some(Token(kind, _, _, _, _, _ ,_ ,_)) if kind == TokenKind.KeywordDebug => Validation.success(DebugKind.Debug)
+        case Some(Token(kind, _, _, _, _, _ ,_ ,_)) if kind == TokenKind.KeywordDebugBang => Validation.success(DebugKind.DebugWithLoc)
+        case Some(Token(kind, _, _, _, _, _ ,_ ,_)) if kind == TokenKind.KeywordDebugBangBang => Validation.success(DebugKind.DebugWithLocAndSrc)
         case _ => throw InternalCompilerException(s"Malformed debug expression, could not find debug kind", tree.loc)
       }
     }
@@ -2964,7 +2964,7 @@ object Weeder2 {
     */
   private def hasToken(kind: TokenKind, tree: Tree): Boolean = {
     tree.children.exists {
-      case t@Token(_, _, _, _, _, _ ,_ ,_) => t.kind == kind
+      case Token(k, _, _, _, _, _ ,_ ,_) => k == kind
       case _ => false
     }
   }
