@@ -67,7 +67,8 @@ instance ToString[DelayList[a]] with ToString[a] {
 }
 
 
-instance Foldable[DelayList] {
+instance Foldable[DelayList[a]] {
+    type Elm = a
     pub def foldLeft(f: (b, a) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldLeft(f, s, l)
     pub def foldRight(f: (a, b) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRight(f, s, l)
     pub def foldRightWithCont(f: (a, Unit -> b \ ef) -> b \ ef, s: b, l: DelayList[a]): b \ ef = DelayList.foldRightWithCont(f, s, l)
