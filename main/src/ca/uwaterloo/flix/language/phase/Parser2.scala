@@ -177,7 +177,7 @@ object Parser2 {
           stack = SyntaxTree.Tree(kind, Array.empty, SourceLocation.Unknown) +: stack
 
         case Event.Close =>
-          val child = SyntaxTree.Child.TreeChild(stack.head)
+          val child = stack.head
           val openToken = locationStack.head
           stack.head.loc = if (stack.head.children.length == 0)
             // If the subtree has no children, give it a zero length position just after the last token
@@ -198,7 +198,7 @@ object Parser2 {
         case Event.Advance =>
           val token = tokens.next()
           lastAdvance = token
-          stack.head.children = stack.head.children :+ SyntaxTree.Child.TokenChild(token)
+          stack.head.children = stack.head.children :+ token
       }
     }
 
@@ -3295,8 +3295,8 @@ object Parser2 {
   def syntaxTreeToDebugString(tree: SyntaxTree.Tree, nesting: Int = 1): String = {
     s"${tree.kind}${
       tree.children.map {
-        case SyntaxTree.Child.TokenChild(token) => s"\n${"  " * nesting}${token.text}"
-        case SyntaxTree.Child.TreeChild(tree) => s"\n${"  " * nesting}${syntaxTreeToDebugString(tree, nesting + 1)}"
+        case token@Token(_, _, _, _, _, _,_,_) => s"\n${"  " * nesting}'${token.text}'"
+        case tree@SyntaxTree.Tree(_, _, _) => s"\n${"  " * nesting}${syntaxTreeToDebugString(tree, nesting + 1)}"
       }.mkString("")
     }"
   }
