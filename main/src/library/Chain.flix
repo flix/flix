@@ -110,8 +110,9 @@ instance ToString[Chain[a]] with ToString[a] {
     }
 }
 
-instance Collectable[Chain] {
-    pub def collect(iter: Iterator[a, ef, r]): Chain[a] \ { ef, r } with Order[a] = Iterator.toChain(iter)
+instance Collectable[Chain[a]] {
+    type Elm = a
+    pub def collect(iter: Iterator[a, ef, r]): Chain[a] \ { ef, r } = Iterator.toChain(iter)
 }
 
 instance Iterable[Chain[a]] {

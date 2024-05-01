@@ -87,8 +87,9 @@ instance Monoid[Set[a]] with Order[a] {
 
 instance CommutativeMonoid[Set[a]] with Order[a]
 
-instance Collectable[Set] {
-    pub def collect(iter: Iterator[a, ef, r]): Set[a] \ { ef, r } with Order[a] = Iterator.toSet(iter)
+instance Collectable[Set[a]] with Order[a] {
+    type Elm = a
+    pub def collect(iter: Iterator[a, ef, r]): Set[a] \ { ef, r } = Iterator.toSet(iter)
 }
 
 instance Iterable[Set[a]] {
