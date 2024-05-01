@@ -42,30 +42,19 @@ object SyntaxTree {
   val empty: Root = Root(Map.empty)
 
   /**
+    * A marker trait for a child node in a syntax tree.
+    * In practice this is implemented by [[Tree]] and [[Token]].
+    */
+  trait Child
+
+  /**
    * A node in a [[SyntaxTree]]
    *
    * @param kind     The kind of the node.
    * @param loc      The location that the node spans in the source file.
    * @param children The children of the node.
    */
-  case class Tree(kind: TreeKind, var children: Array[Child], var loc: SourceLocation)
-
-  sealed trait Child
-
-  /**
-   * A child in a [[SyntaxTree]].
-   */
-  object Child {
-    /**
-     * A [[SyntaxTree]] child holding a [[Token]].
-     */
-    case class TokenChild(token: Token) extends Child
-
-    /**
-     * A [[SyntaxTree]] child holding a nested [[SyntaxTree.Tree]]
-     */
-    case class TreeChild(tree: Tree) extends Child
-  }
+  case class Tree(kind: TreeKind, var children: Array[Child], var loc: SourceLocation) extends Child
 
 
   /**
