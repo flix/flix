@@ -91,7 +91,7 @@ object NewObjectCompleter extends Completer {
       case _ => false
     }
     val prependHash = if (isNative) s"##" else ""
-    // TODO: Handle arrays, use Type.typeArguments
+    // TODO: Handle arrays
     prependHash ++ FormatType.formatType(tpe)
   }
 
