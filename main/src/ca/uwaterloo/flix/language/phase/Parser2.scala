@@ -638,7 +638,7 @@ object Parser2 {
   /// GRAMMAR                                                                             //
   //////////////////////////////////////////////////////////////////////////////////////////
   private def root()(implicit s: State): Unit = {
-    val mark = open()
+    val mark = open(consumeDocComments = false)
     usesOrImports()
     while (!eof()) {
       Decl.declaration()
@@ -647,7 +647,7 @@ object Parser2 {
   }
 
   private def usesOrImports()(implicit s: State): Mark.Closed = {
-    val mark = open()
+    val mark = open(consumeDocComments = false)
     var continue = true
     while (continue && !eof()) {
       nth(0) match {
