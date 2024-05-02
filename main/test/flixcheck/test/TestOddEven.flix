@@ -1,4 +1,3 @@
-use Testable.{forAll, Property, TFunc}
 use Gen.{Arbitrary}
 def testOddEven(): Unit \ IO =
     oddOrEven(12345) |> println;
@@ -21,5 +20,5 @@ def oddOrEven(n: Int32): Unit \ IO =
     if (res) println("The number ${n} is Odd") 
         else println("The number ${n} is Even") 
 
-pub def flixCheckOddEven(): Unit \ IO =
+def flixCheckOddEven(): Unit \ IO =
     flixCheck(forAll(Arbitrary.arbitrary(), n -> isOdd(n) == not isEvn(n)))
