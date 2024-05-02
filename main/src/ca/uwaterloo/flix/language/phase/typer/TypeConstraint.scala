@@ -30,9 +30,15 @@ sealed trait TypeConstraint {
   lazy val index: (Int, Int, Int) = this match {
     case TypeConstraint.Equality(_: Type.Var, Type.Pure, _) => (0, 0, 0)
     case TypeConstraint.Equality(Type.Pure, _: Type.Var, _) => (0, 0, 0)
+    case TypeConstraint.Subtype(_: Type.Var, Type.Pure, _) => (0, 0, 0)
+    case TypeConstraint.Subtype(Type.Pure, _: Type.Var, _) => (0, 0, 0)
     case TypeConstraint.Equality(tvar1: Type.Var, tvar2: Type.Var, _) if tvar1 != tvar2 => (0, 0, 0)
     case TypeConstraint.Purification(_, _, _, _, _) => (0, 0, 0)
     case TypeConstraint.Equality(tpe1, tpe2, _) =>
+      val tvars = tpe1.typeVars ++ tpe2.typeVars
+      val effTvars = tvars.filter(_.kind == Kind.Eff)
+      (1, effTvars.size, tvars.size)
+    case TypeConstraint.Subtype(tpe1, tpe2, _) =>
       val tvars = tpe1.typeVars ++ tpe2.typeVars
       val effTvars = tvars.filter(_.kind == Kind.Eff)
       (1, effTvars.size, tvars.size)
@@ -41,6 +47,7 @@ sealed trait TypeConstraint {
 
   override def toString: String = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => s"$tpe1 ~ $tpe2"
+    case TypeConstraint.Subtype(tpe1, tpe2, _) => s"$tpe1 < $tpe2"
     case TypeConstraint.Trait(sym, tpe, _) => s"$sym[$tpe]"
     case TypeConstraint.Purification(sym, eff1, eff2, _, nested) => s"$eff1 ~ ($eff2)[$sym ↦ Pure] ∧ $nested"
   }
@@ -50,6 +57,7 @@ sealed trait TypeConstraint {
     */
   def numVars: Int = this match {
     case TypeConstraint.Equality(tpe1, tpe2, _) => tpe1.typeVars.size + tpe2.typeVars.size
+    case TypeConstraint.Subtype(tpe1, tpe2, _) => tpe1.typeVars.size + tpe2.typeVars.size
     case TypeConstraint.Trait(_, tpe, _) => tpe.typeVars.size
     case TypeConstraint.Purification(_, eff1, eff2, _, _) => eff1.typeVars.size + eff2.typeVars.size
   }
@@ -65,7 +73,17 @@ object TypeConstraint {
     *   tpe1 ~ tpe2
     * }}}
     */
-  case class Equality(tpe1: Type, tpe2: Type, prov: Provenance) extends TypeConstraint {
+  case class Equality(tpe1: Type, tpe2: Type, prov: EqProvenance) extends TypeConstraint {
+    def loc: SourceLocation = prov.loc
+  }
+
+  /**
+    * A constraint indicating the subtyping of two types.
+    * {{{
+    *   tpe1 < tpe2
+    * }}}
+    */
+  case class Subtype(tpe1: Type, tpe2: Type, prov: SubProvenance) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 
@@ -90,7 +108,7 @@ object TypeConstraint {
     *   eff1 ~ eff2[sym ↦ Pure] ∧ nested
     * }}}
     */
-  case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, prov: Provenance, nested: List[TypeConstraint]) extends TypeConstraint {
+  case class Purification(sym: Symbol.KindedTypeVarSym, eff1: Type, eff2: Type, prov: EqProvenance, nested: List[TypeConstraint]) extends TypeConstraint {
     def loc: SourceLocation = prov.loc
   }
 
@@ -98,26 +116,45 @@ object TypeConstraint {
     def loc: SourceLocation
   }
 
+  sealed trait EqProvenance extends Provenance
+
+  sealed trait SubProvenance extends Provenance
+
   object Provenance {
 
     /**
       * The constraint indicates that the left type is the expected type, while the right type is the actual type.
       */
-    case class ExpectType(expected: Type, actual: Type, loc: SourceLocation) extends Provenance
+    case class ExpectType(expected: Type, actual: Type, loc: SourceLocation) extends EqProvenance
+
+    /**
+      * The constraint indicates that the left type is the actual type, while the right type is the expected super type.
+      */
+    case class ExpectSubtype(actual: Type, expected: Type, loc: SourceLocation) extends SubProvenance
 
     /**
       * The constraint indicates that the left effect is the expected effect, while the right effect is the actual effect.
       */
-    case class ExpectEffect(expected: Type, actual: Type, loc: SourceLocation) extends Provenance
+    case class ExpectEffect(expected: Type, actual: Type, loc: SourceLocation) extends EqProvenance
 
     /**
       * The constraint indicates that the left type is the expected type of the `n`th argument to a function.
       */
-    case class ExpectArgument(expected: Type, actual: Type, sym: Symbol, num: Int, loc: SourceLocation) extends Provenance
+    case class ExpectArgument(expected: Type, actual: Type, sym: Symbol, num: Int, loc: SourceLocation) extends EqProvenance
 
     /**
       * The constraint indicates that the types must match.
       */
-    case class Match(tpe1: Type, tpe2: Type, loc: SourceLocation) extends Provenance
+    case class Match(tpe1: Type, tpe2: Type, loc: SourceLocation) extends EqProvenance
+
+    /**
+      * The constraint indicates that the left type must be a subtype of the right type.
+      */
+    case class SubtypeMatch(tpe1: Type, tpe2: Type, loc: SourceLocation) extends SubProvenance
+
+    def subToEq(subProvenance: SubProvenance): EqProvenance = subProvenance match {
+      case ExpectSubtype(actual, expected, loc) => ExpectType(expected = expected, actual = actual, loc)
+      case SubtypeMatch(tpe1, tpe2, loc) => Match(tpe1, tpe2, loc)
+    }
   }
 }

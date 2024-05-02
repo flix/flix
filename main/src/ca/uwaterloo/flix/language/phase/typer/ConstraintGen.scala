@@ -146,7 +146,12 @@ object ConstraintGen {
             val lambdaBodyEff = Type.freshVar(Kind.Eff, loc)
             val (tpe, eff) = visitExp(exp)
             val (tpes, effs) = exps.map(visitExp).unzip
-            c.expectType(tpe, Type.mkUncurriedArrowWithEffect(tpes, lambdaBodyEff, lambdaBodyType, loc), loc)
+            val freshArgs = exps.map(_ => Type.freshVar(Kind.Star, loc))
+            // fix an arrow type
+            c.expectType(tpe, Type.mkUncurriedArrowWithEffect(freshArgs, lambdaBodyEff, lambdaBodyType, loc), loc)
+            for ((par, arg) <- freshArgs.zip(tpes)) {
+              c.unifySubtype(arg, par, arg.loc)
+            }
             c.unifyType(tvar, lambdaBodyType, loc)
             c.unifyType(evar, Type.mkUnion(lambdaBodyEff :: eff :: effs, loc), loc)
             val resTpe = tvar
@@ -360,7 +365,7 @@ object ConstraintGen {
         val (tpe2, eff2) = visitExp(exp2)
         val (tpe3, eff3) = visitExp(exp3)
         c.expectType(expected = Type.Bool, actual = tpe1, exp1.loc)
-        c.unifyType(tpe2, tpe3, loc)
+        c.unifySubtype(tpe2, tpe3, loc)
         val resTpe = tpe3
         val resEff = Type.mkUnion(eff1, eff2, eff3, loc)
         (resTpe, resEff)
