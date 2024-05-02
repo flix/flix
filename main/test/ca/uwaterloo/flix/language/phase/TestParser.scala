@@ -479,6 +479,17 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("BadInstance.01") {
+    val input =
+      """
+        |instance Order { }
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("Regression.#7646") {
     val input =
       """
