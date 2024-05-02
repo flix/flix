@@ -803,7 +803,11 @@ object Parser2 {
       assert(at(TokenKind.KeywordInstance))
       expect(TokenKind.KeywordInstance, SyntacticContext.Decl.Instance)
       name(NAME_DEFINITION, allowQualified = true, context = SyntacticContext.Decl.Instance)
-      if (eat(TokenKind.BracketL)) {
+      if (!eat(TokenKind.BracketL)) {
+        // Produce an error for missing type parameter.
+        // TODO: Error hint: Instances must have a type parameter.
+        expect(TokenKind.BracketL, SyntacticContext.Decl.Instance)
+      } else {
         Type.ttype()
         expect(TokenKind.BracketR, SyntacticContext.Decl.Instance)
       }
