@@ -195,6 +195,256 @@ sealed trait TokenKind {
       case TokenKind.Err(_) => "<error>"
     }
   }
+
+  /**
+    * Checks if this token is a line or block comment.
+    */
+  def isCommentNonDoc: Boolean = this match {
+    case TokenKind.CommentLine | TokenKind.CommentBlock => true
+    case _ => false
+  }
+
+  /**
+    * Checks if this token is a doc, line or block comment.
+    */
+  def isComment: Boolean = this == TokenKind.CommentDoc || this.isCommentNonDoc
+
+  /**
+    * Checks if this token is a modifier.
+    */
+  def isModifier: Boolean = this match {
+    case TokenKind.KeywordSealed
+         | TokenKind.KeywordLawful
+         | TokenKind.KeywordPub
+         | TokenKind.KeywordInline
+         | TokenKind.KeywordOverride => true
+    case _ => false
+  }
+
+  /**
+    * Checks if this token is one of the [[TokenKind]]s that can validly appear as the first token of any declaration.
+    * Note that a CommentDoc, a Modifier and/or an annotation may lead a declaration.
+    */
+  def isFirstDecl: Boolean = this.isModifier || (this match {
+    case TokenKind.CommentDoc
+         | TokenKind.Annotation
+         | TokenKind.KeywordMod
+         | TokenKind.KeywordDef
+         | TokenKind.KeywordEnum
+         | TokenKind.KeywordTrait
+         | TokenKind.KeywordInstance
+         | TokenKind.KeywordType
+         | TokenKind.KeywordEff
+         | TokenKind.KeywordRestrictable => true
+    case _ => false
+  })
+
+  /**
+    * Checks if kind is one of the [[TokenKind]]s that can validly appear as the first token of any expression.
+    */
+  def isFirstExpr: Boolean = this match {
+    case TokenKind.KeywordOpenVariant
+         | TokenKind.KeywordOpenVariantAs
+         | TokenKind.HoleNamed
+         | TokenKind.HoleAnonymous
+         | TokenKind.HoleVariable
+         | TokenKind.KeywordUse
+         | TokenKind.LiteralString
+         | TokenKind.LiteralChar
+         | TokenKind.LiteralFloat32
+         | TokenKind.LiteralFloat64
+         | TokenKind.LiteralBigDecimal
+         | TokenKind.LiteralInt8
+         | TokenKind.LiteralInt16
+         | TokenKind.LiteralInt32
+         | TokenKind.LiteralInt64
+         | TokenKind.LiteralBigInt
+         | TokenKind.KeywordTrue
+         | TokenKind.KeywordFalse
+         | TokenKind.KeywordNull
+         | TokenKind.LiteralRegex
+         | TokenKind.ParenL
+         | TokenKind.Underscore
+         | TokenKind.NameLowerCase
+         | TokenKind.NameUpperCase
+         | TokenKind.NameMath
+         | TokenKind.NameGreek
+         | TokenKind.Minus
+         | TokenKind.KeywordNot
+         | TokenKind.Plus
+         | TokenKind.TripleTilde
+         | TokenKind.KeywordLazy
+         | TokenKind.KeywordForce
+         | TokenKind.KeywordDiscard
+         | TokenKind.KeywordDeref
+         | TokenKind.KeywordIf
+         | TokenKind.KeywordLet
+         | TokenKind.Annotation
+         | TokenKind.KeywordDef
+         | TokenKind.KeywordImport
+         | TokenKind.KeywordRegion
+         | TokenKind.KeywordMatch
+         | TokenKind.KeywordTypeMatch
+         | TokenKind.KeywordChoose
+         | TokenKind.KeywordChooseStar
+         | TokenKind.KeywordForA
+         | TokenKind.KeywordForeach
+         | TokenKind.KeywordForM
+         | TokenKind.CurlyL
+         | TokenKind.ArrayHash
+         | TokenKind.VectorHash
+         | TokenKind.ListHash
+         | TokenKind.SetHash
+         | TokenKind.MapHash
+         | TokenKind.KeywordRef
+         | TokenKind.KeywordCheckedCast
+         | TokenKind.KeywordCheckedECast
+         | TokenKind.KeywordUncheckedCast
+         | TokenKind.KeywordMaskedCast
+         | TokenKind.KeywordTry
+         | TokenKind.KeywordDo
+         | TokenKind.KeywordNew
+         | TokenKind.KeywordStaticUppercase
+         | TokenKind.KeywordSelect
+         | TokenKind.KeywordSpawn
+         | TokenKind.KeywordPar
+         | TokenKind.HashCurlyL
+         | TokenKind.HashParenL
+         | TokenKind.KeywordSolve
+         | TokenKind.KeywordInject
+         | TokenKind.KeywordQuery
+         | TokenKind.BuiltIn
+         | TokenKind.LiteralStringInterpolationL
+         | TokenKind.LiteralDebugStringL
+         | TokenKind.KeywordDebug
+         | TokenKind.KeywordDebugBang
+         | TokenKind.KeywordDebugBangBang
+         | TokenKind.NameJava => true
+    case _ => false
+  }
+
+  /**
+    * Checks if kind is one of the [[TokenKind]]s that can validly appear as the first token of any type.
+    */
+  def isFirstType: Boolean = this match {
+    case TokenKind.NameUpperCase
+         | TokenKind.NameMath
+         | TokenKind.NameGreek
+         | TokenKind.Underscore
+         | TokenKind.NameLowerCase
+         | TokenKind.KeywordUniv
+         | TokenKind.KeywordPure
+         | TokenKind.KeywordFalse
+         | TokenKind.KeywordTrue
+         | TokenKind.ParenL
+         | TokenKind.CurlyL
+         | TokenKind.HashCurlyL
+         | TokenKind.HashParenL
+         | TokenKind.NameJava
+         | TokenKind.AngleL
+         | TokenKind.KeywordNot
+         | TokenKind.Tilde
+         | TokenKind.KeywordRvnot
+         | TokenKind.KeywordStaticUppercase => true
+    case _ => false
+  }
+
+  /**
+    * Checks if kind is one of the [[TokenKind]]s that can validly appear as the first token of any pattern.
+    */
+  def isFirstPattern: Boolean = this match {
+    case TokenKind.NameLowerCase
+         | TokenKind.NameGreek
+         | TokenKind.NameMath
+         | TokenKind.Underscore
+         | TokenKind.KeywordQuery
+         | TokenKind.LiteralString
+         | TokenKind.LiteralChar
+         | TokenKind.LiteralFloat32
+         | TokenKind.LiteralFloat64
+         | TokenKind.LiteralBigDecimal
+         | TokenKind.LiteralInt8
+         | TokenKind.LiteralInt16
+         | TokenKind.LiteralInt32
+         | TokenKind.LiteralInt64
+         | TokenKind.LiteralBigInt
+         | TokenKind.KeywordTrue
+         | TokenKind.KeywordFalse
+         | TokenKind.LiteralRegex
+         | TokenKind.KeywordNull
+         | TokenKind.NameUpperCase
+         | TokenKind.ParenL
+         | TokenKind.CurlyL
+         | TokenKind.Minus => true
+    case _ => false
+  }
+
+  def isFirstRecordOp: Boolean = this match {
+    case TokenKind.Plus
+         | TokenKind.Minus
+         | TokenKind.NameLowerCase => true
+    case _ => false
+  }
+
+  /*
+    * The following isRecover* functions represent sets of TokenKinds used for error-recovery in the parser.
+    * When parsing sequences of expressions in a loop and an unexpected token is found,
+    * a recovery means breaking the loop.
+    *
+    * An example would be:
+    * def foo(): Unit = bar(1,
+    * enum Legumes { case Beans, Chickpeas }
+    * Here we recover from parsing argument expressions of the unfinished call to `bar`
+    * and still discover `Legumes`, because isRecoverDecl return true for TokenKind.KeywordEnum.
+    */
+
+  /**
+    * Checks if kind is a TokenKind that warrants breaking a declaration parsing loop.
+    * This is used to skip tokens until the start of a declaration is found,
+    * in case no other error-recovery could be applied.
+    */
+  def isRecoverDecl: Boolean = this.isFirstDecl
+
+  /**
+    * Checks if kind is a TokenKind that warrants breaking an expression parsing loop.
+    * For instance, if we find an 'trait' keyword in the middle of an expression,
+    * we can assume that there is no more expression to parse.
+    * Because isRecoverExpr returns true for KeywordTrait the expression loop stops,
+    * making the parse return back into the declaration loop which can capture the trait.
+    */
+  def isRecoverExpr: Boolean = this.isFirstDecl || this == TokenKind.Semi
+
+  /**
+    * Checks if kind is a TokenKind that warrants breaking a type parsing loop.
+    */
+  def isRecoverType: Boolean = this.isFirstDecl || (this match {
+    case TokenKind.Semi | TokenKind.Equal => true
+    case _ => false
+  })
+
+  /**
+    * Checks if kind is a TokenKind that warrants breaking a pattern parsing loop.
+    */
+  def isRecoverPattern: Boolean = this.isFirstDecl || (this match {
+    case TokenKind.ArrowThickR | TokenKind.KeywordCase => true
+    case _ => false
+  })
+
+  /**
+    * Checks if kind is a TokenKind that warrants breaking the top-level use or import parsing loop.
+    */
+  def isRecoverUseOrImport: Boolean = this.isFirstDecl || (this match {
+    case TokenKind.Semi | TokenKind.KeywordUse | TokenKind.KeywordImport => true
+    case _ => false
+  })
+
+  /**
+    * Checks if kind is a TokenKind that warrants breaking a function parameter parsing loop.
+    */
+  def isRecoverParameters: Boolean = this.isFirstDecl || (this match {
+    case TokenKind.Colon | TokenKind.Equal => true
+    case _ => false
+  })
 }
 
 /**
