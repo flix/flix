@@ -153,6 +153,7 @@ object EntryPoint {
         // Case 2: Multiple args. Error.
         case _ :: _ :: _ => Validation.toSoftFailure(None, EntryPointError.IllegalEntryPointArgs(sym, sym.loc))
         // Case 3: Empty arguments. Impossible since this is desugared to Unit.
+        // Resilience: OK because this is a desugaring that is always performed by the Weeder.
         case Nil => throw InternalCompilerException("Unexpected empty argument list.", loc)
       }
 

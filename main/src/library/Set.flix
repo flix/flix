@@ -87,17 +87,25 @@ instance Monoid[Set[a]] with Order[a] {
 
 instance CommutativeMonoid[Set[a]] with Order[a]
 
-instance Collectable[Set] {
-    pub def collect(iter: Iterator[a, ef, r]): Set[a] \ { ef, r } with Order[a] = Iterator.toSet(iter)
+instance Collectable[Set[a]] with Order[a] {
+    type Elm = a
+    pub def collect(iter: Iterator[a, ef, r]): Set[a] \ { ef, r } = Iterator.toSet(iter)
 }
 
-instance Iterable[Set] {
+instance Iterable[Set[a]] {
+    type Elm = a
     pub def iterator(rc: Region[r], s: Set[a]): Iterator[a, r, r] \ r = Set.iterator(rc, s)
 }
 
 instance ToJava[Set[a]] with Order[a] {
-    type O = ##java.util.Set
+    type Out = ##java.util.Set
+    type Aef = IO
     pub def toJava(s: Set[a]): ##java.util.Set \ IO = Adaptor.toSet(s)
+}
+
+instance FromJava[Set[a]] with Order[a] {
+    type In = ##java.util.Set
+    pub def fromJava(s: ##java.util.Set): Set[a] = Adaptor.fromSet(s)
 }
 
 mod Set {

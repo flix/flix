@@ -110,17 +110,28 @@ instance ToString[Chain[a]] with ToString[a] {
     }
 }
 
-instance Collectable[Chain] {
-    pub def collect(iter: Iterator[a, ef, r]): Chain[a] \ { ef, r } with Order[a] = Iterator.toChain(iter)
+instance Collectable[Chain[a]] {
+    type Elm = a
+    pub def collect(iter: Iterator[a, ef, r]): Chain[a] \ { ef, r } = Iterator.toChain(iter)
 }
 
-instance Iterable[Chain] {
+instance Iterable[Chain[a]] {
+    type Elm = a
     pub def iterator(rc: Region[r], c: Chain[a]): Iterator[a, r, r] \ r = Chain.iterator(rc, c)
 }
 
 instance ToJava[Chain[a]] {
-    type O = ##java.util.List
+    type Out = ##java.util.List
+    type Aef = IO
     pub def toJava(c: Chain[a]): ##java.util.List \ IO = Adaptor.toList(c)
+}
+
+instance FromJava[Chain[a]] {
+    type In = ##java.util.List
+    pub def fromJava(l: ##java.util.List): Chain[a] = region rc {
+        import java.util.List.iterator(): ##java.util.Iterator \ rc;
+        iterator(l) |> Adaptor.fromIterator(rc, (Proxy.Proxy: Proxy[a])) |> Iterator.toChain
+    }
 }
 
 mod Chain {

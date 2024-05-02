@@ -132,21 +132,21 @@ mod TestToJava {
     /////////////////////////////////////////////////////////////////////////////
 
     @test
-    def toSet01(): Bool \ IO =
+    def setToJava01(): Bool \ IO =
         import static java.util.Set.of(): ##java.util.Set \ {};
         import java.util.Set.equals(##java.lang.Object): Bool \ {};
         let s: ##java.util.Set = ToJava.toJava((Set#{} : Set[String]));
         equals(of(), checked_cast(s))
 
     @test
-    def toSet02(): Bool \ IO =
+    def setToJava02(): Bool \ IO =
         import static java.util.Set.of(##java.lang.Object): ##java.util.Set \ {};
         import java.util.Set.equals(##java.lang.Object): Bool \ {};
         let s: ##java.util.Set = ToJava.toJava(Set#{"one"});
         equals(of(checked_cast("one")), checked_cast(s))
 
     @test
-    def toSet03(): Bool \ IO =
+    def setToJava03(): Bool \ IO =
         import static java.util.Set.of(##java.lang.Object, ##java.lang.Object): ##java.util.Set \ {};
         import java.util.Set.equals(##java.lang.Object): Bool \ {};
         let s: ##java.util.Set = ToJava.toJava(Set#{"one", "two"});

@@ -17,15 +17,443 @@ package ca.uwaterloo.flix.language.ast
 
 import ca.uwaterloo.flix.language.errors.LexerError
 
-sealed trait TokenKind
+sealed trait TokenKind {
+  /**
+    * A string representation of the [[TokenKind]] suitable for printing.
+    * For instance TokenKind.Ampersand.display gives "'&'".
+    */
+  def display: String = {
+    this match {
+      case TokenKind.Ampersand => "'^'"
+      case TokenKind.AngledEqual => "'<=>'"
+      case TokenKind.AngledPlus => "'<+>'"
+      case TokenKind.AngleL => "'<'"
+      case TokenKind.AngleLEqual => "'<='"
+      case TokenKind.AngleR => "'>'"
+      case TokenKind.AngleREqual => "'>='"
+      case TokenKind.ArrayHash => "'Array#'"
+      case TokenKind.ArrowThickR => "'=>'"
+      case TokenKind.ArrowThinL => "'<-'"
+      case TokenKind.ArrowThinR => "'->'"
+      case TokenKind.At => "'@'"
+      case TokenKind.Backslash => "'\\'"
+      case TokenKind.Bang => "'!'"
+      case TokenKind.BangEqual => "'!='"
+      case TokenKind.Bar => "'|'"
+      case TokenKind.BracketL => "'['"
+      case TokenKind.BracketR => "']'"
+      case TokenKind.Caret => "'^'"
+      case TokenKind.Colon => "':'"
+      case TokenKind.ColonColon => "'::'"
+      case TokenKind.ColonEqual => "':='"
+      case TokenKind.ColonMinus => "':-'"
+      case TokenKind.Comma => "','"
+      case TokenKind.CurlyL => "'{'"
+      case TokenKind.CurlyR => "'}'"
+      case TokenKind.Dollar => "'$'"
+      case TokenKind.Dot => "'.'"
+      case TokenKind.DotCurlyL => "'.{'"
+      case TokenKind.Equal => "'='"
+      case TokenKind.EqualEqual => "'=='"
+      case TokenKind.Hash => "'#'"
+      case TokenKind.HashCurlyL => "'#{'"
+      case TokenKind.HashParenL => "'#('"
+      case TokenKind.HoleAnonymous => "'???'"
+      case TokenKind.KeywordAlias => "'alias'"
+      case TokenKind.KeywordAnd => "'and'"
+      case TokenKind.KeywordAs => "'as'"
+      case TokenKind.KeywordCase => "'case'"
+      case TokenKind.KeywordCatch => "'catch'"
+      case TokenKind.KeywordCheckedCast => "'checked_cast'"
+      case TokenKind.KeywordCheckedECast => "'checked_ecast'"
+      case TokenKind.KeywordChoose => "'choose'"
+      case TokenKind.KeywordChooseStar => "'choose*'"
+      case TokenKind.KeywordDebug => "'debug'"
+      case TokenKind.KeywordDebugBang => "'debug!'"
+      case TokenKind.KeywordDebugBangBang => "'debug!'"
+      case TokenKind.KeywordDef => "'def'"
+      case TokenKind.KeywordDeref => "'deref'"
+      case TokenKind.KeywordDiscard => "'discard'"
+      case TokenKind.KeywordDo => "'do'"
+      case TokenKind.KeywordEff => "'eff'"
+      case TokenKind.KeywordElse => "'else'"
+      case TokenKind.KeywordEnum => "'enum'"
+      case TokenKind.KeywordFalse => "'false'"
+      case TokenKind.KeywordFix => "'fix'"
+      case TokenKind.KeywordForA => "'forA'"
+      case TokenKind.KeywordForall => "'forall'"
+      case TokenKind.KeywordForce => "'force'"
+      case TokenKind.KeywordForeach => "'foreach'"
+      case TokenKind.KeywordForM => "'forM'"
+      case TokenKind.KeywordFrom => "'from'"
+      case TokenKind.KeywordIf => "'if'"
+      case TokenKind.KeywordImport => "'import'"
+      case TokenKind.KeywordInject => "'inject'"
+      case TokenKind.KeywordInline => "'inline'"
+      case TokenKind.KeywordInstance => "'instance'"
+      case TokenKind.KeywordInstanceOf => "'instanceof'"
+      case TokenKind.KeywordInto => "'into'"
+      case TokenKind.KeywordJavaGetField => "'java_get_field'"
+      case TokenKind.KeywordJavaNew => "'java_new'"
+      case TokenKind.KeywordJavaSetField => "'java_set_field'"
+      case TokenKind.KeywordLaw => "'law'"
+      case TokenKind.KeywordLawful => "'lawful'"
+      case TokenKind.KeywordLazy => "'lazy'"
+      case TokenKind.KeywordLet => "'let'"
+      case TokenKind.KeywordMaskedCast => "'masked_cast'"
+      case TokenKind.KeywordMatch => "'match'"
+      case TokenKind.KeywordMod => "'mod'"
+      case TokenKind.KeywordNew => "'new'"
+      case TokenKind.KeywordNot => "'not'"
+      case TokenKind.KeywordNull => "'null'"
+      case TokenKind.KeywordOpenVariant => "'open_variant'"
+      case TokenKind.KeywordOpenVariantAs => "'open_variant_as'"
+      case TokenKind.KeywordOr => "'or'"
+      case TokenKind.KeywordOverride => "'override'"
+      case TokenKind.KeywordPar => "'par'"
+      case TokenKind.KeywordPub => "'pub'"
+      case TokenKind.KeywordPure => "'Pure'"
+      case TokenKind.KeywordProject => "'project'"
+      case TokenKind.KeywordQuery => "'query'"
+      case TokenKind.KeywordRef => "'ref'"
+      case TokenKind.KeywordRegion => "'region'"
+      case TokenKind.KeywordRestrictable => "'restrictable'"
+      case TokenKind.KeywordRvadd => "'rvadd'"
+      case TokenKind.KeywordRvand => "'rvand'"
+      case TokenKind.KeywordRvnot => "'rvnot'"
+      case TokenKind.KeywordRvsub => "'rvsub'"
+      case TokenKind.KeywordSealed => "'sealed'"
+      case TokenKind.KeywordSelect => "'select'"
+      case TokenKind.KeywordSolve => "'solve'"
+      case TokenKind.KeywordSpawn => "'spawn'"
+      case TokenKind.KeywordStatic => "'static'"
+      case TokenKind.KeywordStaticUppercase => "'Static'"
+      case TokenKind.KeywordTrait => "'trait'"
+      case TokenKind.KeywordTrue => "'true'"
+      case TokenKind.KeywordTry => "'try'"
+      case TokenKind.KeywordType => "'type'"
+      case TokenKind.KeywordTypeMatch => "'typematch'"
+      case TokenKind.KeywordUncheckedCast => "'unchecked_cast'"
+      case TokenKind.KeywordUniv => "'univ'"
+      case TokenKind.KeywordUse => "'use'"
+      case TokenKind.KeywordWhere => "'where'"
+      case TokenKind.KeywordWith => "'with'"
+      case TokenKind.KeywordWithout => "'without'"
+      case TokenKind.KeywordYield => "'yield'"
+      case TokenKind.KeywordXor => "'xor'"
+      case TokenKind.ListHash => "'List#'"
+      case TokenKind.MapHash => "'Map#'"
+      case TokenKind.Minus => "'-'"
+      case TokenKind.ParenL => "'('"
+      case TokenKind.ParenR => "')'"
+      case TokenKind.Plus => "'+'"
+      case TokenKind.Semi => "';'"
+      case TokenKind.SetHash => "'Set#'"
+      case TokenKind.Slash => "'/'"
+      case TokenKind.Star => "'*'"
+      case TokenKind.StarStar => "'**'"
+      case TokenKind.Tilde => "'~'"
+      case TokenKind.TripleAmpersand => "'&&&'"
+      case TokenKind.TripleAngleL => "'<<<'"
+      case TokenKind.TripleAngleR => "'>>>'"
+      case TokenKind.TripleBar => "'|||'"
+      case TokenKind.TripleCaret => "'^^^'"
+      case TokenKind.TripleColon => "':::'"
+      case TokenKind.TripleTilde => "'~~~'"
+      case TokenKind.Underscore => "'_'"
+      case TokenKind.VectorHash => "'Vector#'"
+      case TokenKind.Eof => "<end-of-file>"
+      case TokenKind.NameLowerCase => "<name>"
+      case TokenKind.NameUpperCase => "<Name>"
+      case TokenKind.NameMath => "<math name>"
+      case TokenKind.NameGreek => "<greek name>"
+      case TokenKind.NameJava => "<java name>"
+      case TokenKind.UserDefinedOperator => "<user-defined operator>"
+      case TokenKind.Annotation => "<annotation>"
+      case TokenKind.BuiltIn => "<built in>"
+      case TokenKind.CommentBlock => "<block comment>"
+      case TokenKind.CommentDoc => "<doc comment>"
+      case TokenKind.CommentLine => "<comment>"
+      case TokenKind.HoleNamed => "<named hole>"
+      case TokenKind.HoleVariable => "<variable hole>"
+      case TokenKind.InfixFunction => "<infix function>"
+      case TokenKind.LiteralBigDecimal => "'<digits>ff'"
+      case TokenKind.LiteralBigInt => "'<digits>ii'"
+      case TokenKind.LiteralDebugStringL => "'%{'"
+      case TokenKind.LiteralDebugStringR => "'}'"
+      case TokenKind.LiteralFloat32 => "'<digits>f32'"
+      case TokenKind.LiteralFloat64 => "'<digits>f64'"
+      case TokenKind.LiteralInt8 => "'<digits>i8'"
+      case TokenKind.LiteralInt16 => "'<digits>i16'"
+      case TokenKind.LiteralInt32 => "'<digits>i32'"
+      case TokenKind.LiteralInt64 => "'<digits>i64'"
+      case TokenKind.LiteralRegex => "<regex>"
+      case TokenKind.LiteralString => "<string>"
+      case TokenKind.LiteralChar => "<char>"
+      case TokenKind.LiteralStringInterpolationL => "'${'"
+      case TokenKind.LiteralStringInterpolationR => "'}'"
+      case TokenKind.Err(_) => "<error>"
+    }
+  }
+
+  /**
+    * Checks if this token is a line or block comment.
+    */
+  def isCommentNonDoc: Boolean = this match {
+    case TokenKind.CommentLine | TokenKind.CommentBlock => true
+    case _ => false
+  }
+
+  /**
+    * Checks if this token is a doc, line or block comment.
+    */
+  def isComment: Boolean = this == TokenKind.CommentDoc || this.isCommentNonDoc
+
+  /**
+    * Checks if this token is a modifier.
+    */
+  def isModifier: Boolean = this match {
+    case TokenKind.KeywordSealed
+         | TokenKind.KeywordLawful
+         | TokenKind.KeywordPub
+         | TokenKind.KeywordInline
+         | TokenKind.KeywordOverride => true
+    case _ => false
+  }
+
+  /**
+    * Checks if this token is one of the [[TokenKind]]s that can validly appear as the first token of any declaration.
+    * Note that a CommentDoc, a Modifier and/or an annotation may lead a declaration.
+    */
+  def isFirstDecl: Boolean = this.isModifier || (this match {
+    case TokenKind.CommentDoc
+         | TokenKind.Annotation
+         | TokenKind.KeywordMod
+         | TokenKind.KeywordDef
+         | TokenKind.KeywordEnum
+         | TokenKind.KeywordTrait
+         | TokenKind.KeywordInstance
+         | TokenKind.KeywordType
+         | TokenKind.KeywordEff
+         | TokenKind.KeywordRestrictable => true
+    case _ => false
+  })
+
+  /**
+    * Checks if kind is one of the [[TokenKind]]s that can validly appear as the first token of any expression.
+    */
+  def isFirstExpr: Boolean = this match {
+    case TokenKind.KeywordOpenVariant
+         | TokenKind.KeywordOpenVariantAs
+         | TokenKind.HoleNamed
+         | TokenKind.HoleAnonymous
+         | TokenKind.HoleVariable
+         | TokenKind.KeywordUse
+         | TokenKind.LiteralString
+         | TokenKind.LiteralChar
+         | TokenKind.LiteralFloat32
+         | TokenKind.LiteralFloat64
+         | TokenKind.LiteralBigDecimal
+         | TokenKind.LiteralInt8
+         | TokenKind.LiteralInt16
+         | TokenKind.LiteralInt32
+         | TokenKind.LiteralInt64
+         | TokenKind.LiteralBigInt
+         | TokenKind.KeywordTrue
+         | TokenKind.KeywordFalse
+         | TokenKind.KeywordNull
+         | TokenKind.LiteralRegex
+         | TokenKind.ParenL
+         | TokenKind.Underscore
+         | TokenKind.NameLowerCase
+         | TokenKind.NameUpperCase
+         | TokenKind.NameMath
+         | TokenKind.NameGreek
+         | TokenKind.Minus
+         | TokenKind.KeywordNot
+         | TokenKind.Plus
+         | TokenKind.TripleTilde
+         | TokenKind.KeywordLazy
+         | TokenKind.KeywordForce
+         | TokenKind.KeywordDiscard
+         | TokenKind.KeywordDeref
+         | TokenKind.KeywordIf
+         | TokenKind.KeywordLet
+         | TokenKind.Annotation
+         | TokenKind.KeywordDef
+         | TokenKind.KeywordImport
+         | TokenKind.KeywordRegion
+         | TokenKind.KeywordMatch
+         | TokenKind.KeywordTypeMatch
+         | TokenKind.KeywordChoose
+         | TokenKind.KeywordChooseStar
+         | TokenKind.KeywordForA
+         | TokenKind.KeywordForeach
+         | TokenKind.KeywordForM
+         | TokenKind.CurlyL
+         | TokenKind.ArrayHash
+         | TokenKind.VectorHash
+         | TokenKind.ListHash
+         | TokenKind.SetHash
+         | TokenKind.MapHash
+         | TokenKind.KeywordRef
+         | TokenKind.KeywordCheckedCast
+         | TokenKind.KeywordCheckedECast
+         | TokenKind.KeywordUncheckedCast
+         | TokenKind.KeywordMaskedCast
+         | TokenKind.KeywordTry
+         | TokenKind.KeywordDo
+         | TokenKind.KeywordNew
+         | TokenKind.KeywordStaticUppercase
+         | TokenKind.KeywordSelect
+         | TokenKind.KeywordSpawn
+         | TokenKind.KeywordPar
+         | TokenKind.HashCurlyL
+         | TokenKind.HashParenL
+         | TokenKind.KeywordSolve
+         | TokenKind.KeywordInject
+         | TokenKind.KeywordQuery
+         | TokenKind.BuiltIn
+         | TokenKind.LiteralStringInterpolationL
+         | TokenKind.LiteralDebugStringL
+         | TokenKind.KeywordDebug
+         | TokenKind.KeywordDebugBang
+         | TokenKind.KeywordDebugBangBang
+         | TokenKind.NameJava => true
+    case _ => false
+  }
+
+  /**
+    * Checks if kind is one of the [[TokenKind]]s that can validly appear as the first token of any type.
+    */
+  def isFirstType: Boolean = this match {
+    case TokenKind.NameUpperCase
+         | TokenKind.NameMath
+         | TokenKind.NameGreek
+         | TokenKind.Underscore
+         | TokenKind.NameLowerCase
+         | TokenKind.KeywordUniv
+         | TokenKind.KeywordPure
+         | TokenKind.KeywordFalse
+         | TokenKind.KeywordTrue
+         | TokenKind.ParenL
+         | TokenKind.CurlyL
+         | TokenKind.HashCurlyL
+         | TokenKind.HashParenL
+         | TokenKind.NameJava
+         | TokenKind.AngleL
+         | TokenKind.KeywordNot
+         | TokenKind.Tilde
+         | TokenKind.KeywordRvnot
+         | TokenKind.KeywordStaticUppercase => true
+    case _ => false
+  }
+
+  /**
+    * Checks if kind is one of the [[TokenKind]]s that can validly appear as the first token of any pattern.
+    */
+  def isFirstPattern: Boolean = this match {
+    case TokenKind.NameLowerCase
+         | TokenKind.NameGreek
+         | TokenKind.NameMath
+         | TokenKind.Underscore
+         | TokenKind.KeywordQuery
+         | TokenKind.LiteralString
+         | TokenKind.LiteralChar
+         | TokenKind.LiteralFloat32
+         | TokenKind.LiteralFloat64
+         | TokenKind.LiteralBigDecimal
+         | TokenKind.LiteralInt8
+         | TokenKind.LiteralInt16
+         | TokenKind.LiteralInt32
+         | TokenKind.LiteralInt64
+         | TokenKind.LiteralBigInt
+         | TokenKind.KeywordTrue
+         | TokenKind.KeywordFalse
+         | TokenKind.LiteralRegex
+         | TokenKind.KeywordNull
+         | TokenKind.NameUpperCase
+         | TokenKind.ParenL
+         | TokenKind.CurlyL
+         | TokenKind.Minus => true
+    case _ => false
+  }
+
+  def isFirstRecordOp: Boolean = this match {
+    case TokenKind.Plus
+         | TokenKind.Minus
+         | TokenKind.NameLowerCase => true
+    case _ => false
+  }
+
+  /*
+    * The following isRecover* functions represent sets of TokenKinds used for error-recovery in the parser.
+    * When parsing sequences of expressions in a loop and an unexpected token is found,
+    * a recovery means breaking the loop.
+    *
+    * An example would be:
+    * def foo(): Unit = bar(1,
+    * enum Legumes { case Beans, Chickpeas }
+    * Here we recover from parsing argument expressions of the unfinished call to `bar`
+    * and still discover `Legumes`, because isRecoverDecl return true for TokenKind.KeywordEnum.
+    */
+
+  /**
+    * Checks if kind is a TokenKind that warrants breaking a declaration parsing loop.
+    * This is used to skip tokens until the start of a declaration is found,
+    * in case no other error-recovery could be applied.
+    */
+  def isRecoverDecl: Boolean = this.isFirstDecl
+
+  /**
+    * Checks if kind is a TokenKind that warrants breaking an expression parsing loop.
+    * For instance, if we find an 'trait' keyword in the middle of an expression,
+    * we can assume that there is no more expression to parse.
+    * Because isRecoverExpr returns true for KeywordTrait the expression loop stops,
+    * making the parse return back into the declaration loop which can capture the trait.
+    */
+  def isRecoverExpr: Boolean = this.isFirstDecl || this == TokenKind.Semi
+
+  /**
+    * Checks if kind is a TokenKind that warrants breaking a type parsing loop.
+    */
+  def isRecoverType: Boolean = this.isFirstDecl || (this match {
+    case TokenKind.Semi | TokenKind.Equal => true
+    case _ => false
+  })
+
+  /**
+    * Checks if kind is a TokenKind that warrants breaking a pattern parsing loop.
+    */
+  def isRecoverPattern: Boolean = this.isFirstDecl || (this match {
+    case TokenKind.ArrowThickR | TokenKind.KeywordCase => true
+    case _ => false
+  })
+
+  /**
+    * Checks if kind is a TokenKind that warrants breaking the top-level use or import parsing loop.
+    */
+  def isRecoverUseOrImport: Boolean = this.isFirstDecl || (this match {
+    case TokenKind.Semi | TokenKind.KeywordUse | TokenKind.KeywordImport => true
+    case _ => false
+  })
+
+  /**
+    * Checks if kind is a TokenKind that warrants breaking a function parameter parsing loop.
+    */
+  def isRecoverParameters: Boolean = this.isFirstDecl || (this match {
+    case TokenKind.Colon | TokenKind.Equal => true
+    case _ => false
+  })
+}
 
 /**
- * Tokens are named for 'what they are' rather than 'what they represent'.
- * So '::' is not named 'Cons' but instead 'ColonColon' as the lexer should be oblivious to the concept of cons
- *
- * Tokens belonging to some conceptual group should have the group name as prefix.
- * So 'LiteralInt32' is preferred over 'Int32Literal'
- */
+  * Tokens are named for 'what they are' rather than 'what they represent'.
+  * So '::' is not named 'Cons' but instead 'ColonColon' as the lexer should be oblivious to the concept of cons
+  *
+  * Tokens belonging to some conceptual group should have the group name as prefix.
+  * So 'LiteralInt32' is preferred over 'Int32Literal'
+  */
 object TokenKind {
   case object Ampersand extends TokenKind
 
@@ -170,8 +598,6 @@ object TokenKind {
   case object KeywordIf extends TokenKind
 
   case object KeywordImport extends TokenKind
-
-  case object KeywordImpure extends TokenKind
 
   case object KeywordInject extends TokenKind
 
@@ -364,12 +790,12 @@ object TokenKind {
   case object VectorHash extends TokenKind
 
   /** A special token emitted instead of halting the lexer when an error is encountered.
-   *
-   * @param error the actual error related to this token
-   */
+    *
+    * @param error the actual error related to this token
+    */
   case class Err(error: LexerError) extends TokenKind
 
   /** A virtual token signalling END-OF-FILE.
-   */
+    */
   case object Eof extends TokenKind
 }

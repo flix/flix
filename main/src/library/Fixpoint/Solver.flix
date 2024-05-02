@@ -43,8 +43,8 @@ mod Fixpoint.Solver {
     /// A stratification of `d` is given by `stf`.
     ///
     @Internal
-    def runWithStratification(d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
-        masked_cast(Fixpoint.Debugging.notifyPreSolve(d, stf));
+    def runWithStratification(d0: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] with Order[v] = {
+        let d = Fixpoint.Debugging.notifyPreSolve(d0);
         let compiler = cs ->
             Fixpoint.Phase.Compiler.compile(cs, stf) |>
             Fixpoint.Phase.Simplifier.simplifyStmt |>
@@ -61,8 +61,8 @@ mod Fixpoint.Solver {
             }
             case _ => bug!("Datalog normalization bug")
         };
-        masked_cast(Fixpoint.Debugging.notifyPostSolve(model));
-        model
+        let m = Fixpoint.Debugging.notifyPostSolve(model);
+        m
     }
 
     ///
