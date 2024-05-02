@@ -508,13 +508,23 @@ object ConstraintSolver {
         val coConstraints = zippedResultAndEffect.map { case (t1, t2) => TypeConstraint.Subtype(t1, t2, prov) }
         Ok(ResolutionResult.constraints(coConstraints ::: contraConstraints, progress = true))
       case (Some(_), Some(_)) =>
-        // t11 < t21
-        // t12 < t22
+        // Invariant types on other constructors
+
+        // t11 ~ t21
+        // t12 ~ t22
         // --------------------
         // t11[t12] < t21[t22]
-        val constraint1 = TypeConstraint.Subtype(t11, t21, prov)
-        val constraint2 = TypeConstraint.Subtype(t12, t22, prov)
+        val constraint1 = TypeConstraint.Equality(t11, t21, Provenance.subToEq(prov))
+        val constraint2 = TypeConstraint.Equality(t12, t22, Provenance.subToEq(prov))
         Ok(ResolutionResult.constraints(List(constraint1, constraint2), progress = true))
+//      case (None, Some(tc)) =>
+//        // propagate constructor to the other side
+//
+//        // q ~ ???
+//        // ----------------
+//        // q[t] <: T[a, b]
+//
+//        tpe1.baseType
       case (None, _) | (_, None) =>
         Ok(ResolutionResult.constraints(Nil, progress = false))
     }
