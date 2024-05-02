@@ -24,16 +24,6 @@ pub eff IO
 pub def identity(x: a): a = x
 
 ///
-/// The identity function, automatically casting to the required effect.
-///
-pub def eidentity(x: a): a \ ef = x
-
-///
-/// The constant function.
-///
-pub def constant(x: a): b -> a \ ef = _ -> x
-
-///
 /// Returns the function `f` with input arguments swapped.
 /// That is, given the function `f: (a, b) -> c`, returns a function `(b, a) -> c`
 ///
@@ -107,11 +97,6 @@ pub def println(x: a): Unit \ IO with ToString[a] =
     import static java_get_field java.lang.System.out: ##java.io.PrintStream \ IO as getOut;
     import java.io.PrintStream.println(String): Unit \ IO;
     x |> ToString.toString |> println(getOut())
-
-///
-/// Touches the given region capability `rc`.
-///
-pub def touch(_: Region[r]): Unit \ r = ()
 
 ///
 /// Crashes the current process with the given message `m`.
