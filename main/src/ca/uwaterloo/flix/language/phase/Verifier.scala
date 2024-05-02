@@ -17,6 +17,7 @@ package ca.uwaterloo.flix.language.phase
 
 import ca.uwaterloo.flix.api.Flix
 import ca.uwaterloo.flix.language.ast.Ast.Constant
+import ca.uwaterloo.flix.language.ast.Purity
 import ca.uwaterloo.flix.language.ast.ReducedAst._
 import ca.uwaterloo.flix.language.ast.{AtomicOp, MonoType, Name, SemanticOp, SourceLocation, Symbol}
 import ca.uwaterloo.flix.util.{InternalCompilerException, ParOps}
@@ -44,38 +45,39 @@ object Verifier {
     checkEq(decl.tpe, ret, decl.loc)
   }
 
+  private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): (MonoType, Purity) = expr match {
 
-  private def visitExpr(expr: Expr)(implicit root: Root, env: Map[Symbol.VarSym, MonoType], lenv: Map[Symbol.LabelSym, MonoType]): MonoType = expr match {
-
-    case Expr.Cst(cst, tpe, loc) => cst match {
-      case Constant.Unit => check(expected = MonoType.Unit)(actual = tpe, loc)
-      case Constant.Null => tpe
-      case Constant.Bool(_) => check(expected = MonoType.Bool)(actual = tpe, loc)
-      case Constant.Char(_) => check(expected = MonoType.Char)(actual = tpe, loc)
-      case Constant.Float32(_) => check(expected = MonoType.Float32)(actual = tpe, loc)
-      case Constant.Float64(_) => check(expected = MonoType.Float64)(actual = tpe, loc)
-      case Constant.BigDecimal(_) => check(expected = MonoType.BigDecimal)(actual = tpe, loc)
-      case Constant.Int8(_) => check(expected = MonoType.Int8)(actual = tpe, loc)
-      case Constant.Int16(_) => check(expected = MonoType.Int16)(actual = tpe, loc)
-      case Constant.Int32(_) => check(expected = MonoType.Int32)(actual = tpe, loc)
-      case Constant.Int64(_) => check(expected = MonoType.Int64)(actual = tpe, loc)
-      case Constant.BigInt(_) => check(expected = MonoType.BigInt)(actual = tpe, loc)
-      case Constant.Str(_) => check(expected = MonoType.String)(actual = tpe, loc)
-      case Constant.Regex(_) => check(expected = MonoType.Regex)(actual = tpe, loc)
-    }
+    case Expr.Cst(cst, tpe, loc) =>
+      val t = cst match {
+        case Constant.Unit => check(expected = MonoType.Unit)(actual = tpe, loc)
+        case Constant.Null => tpe
+        case Constant.Bool(_) => check(expected = MonoType.Bool)(actual = tpe, loc)
+        case Constant.Char(_) => check(expected = MonoType.Char)(actual = tpe, loc)
+        case Constant.Float32(_) => check(expected = MonoType.Float32)(actual = tpe, loc)
+        case Constant.Float64(_) => check(expected = MonoType.Float64)(actual = tpe, loc)
+        case Constant.BigDecimal(_) => check(expected = MonoType.BigDecimal)(actual = tpe, loc)
+        case Constant.Int8(_) => check(expected = MonoType.Int8)(actual = tpe, loc)
+        case Constant.Int16(_) => check(expected = MonoType.Int16)(actual = tpe, loc)
+        case Constant.Int32(_) => check(expected = MonoType.Int32)(actual = tpe, loc)
+        case Constant.Int64(_) => check(expected = MonoType.Int64)(actual = tpe, loc)
+        case Constant.BigInt(_) => check(expected = MonoType.BigInt)(actual = tpe, loc)
+        case Constant.Str(_) => check(expected = MonoType.String)(actual = tpe, loc)
+        case Constant.Regex(_) => check(expected = MonoType.Regex)(actual = tpe, loc)
+      }
+      (t, Purity.Pure)
 
     case Expr.Var(sym, tpe1, loc) => env.get(sym) match {
       case None => throw InternalCompilerException(s"Unknown variable sym: '$sym'", sym.loc)
       case Some(tpe2) =>
-        checkEq(tpe1, tpe2, loc)
+        (checkEq(tpe1, tpe2, loc), Purity.Pure)
     }
 
-    case Expr.ApplyAtomic(op, exps, tpe, _, loc) =>
-      val ts = exps.map(visitExpr)
+    case Expr.ApplyAtomic(op, exps, tpe, pur, loc) =>
+      val rs = exps.map(visitExpr)
 
       op match {
         case AtomicOp.Unary(sop) =>
-          val List(t) = ts
+          val (List(t), List(p)) = rs.unzip
           val opTpe = sop match {
             case SemanticOp.BoolOp.Not => MonoType.Bool
             case SemanticOp.Float32Op.Neg => MonoType.Float32
@@ -90,10 +92,10 @@ object Verifier {
             case SemanticOp.Int64Op.Not => MonoType.Int64
           }
           check(expected = opTpe)(actual = t, loc)
-          check(expected = tpe)(actual = opTpe, loc)
+          (check(expected = tpe)(actual = opTpe, loc), checkEq(pur, p, loc))
 
         case AtomicOp.Binary(sop) =>
-          val List(t1, t2) = ts
+          val (List(t1, t2), List(p1, p2)) = rs.unzip
           val (argTpe1, argTpe2, resTpe) = sop match {
             case SemanticOp.BoolOp.And => (MonoType.Bool, MonoType.Bool, MonoType.Bool)
             case SemanticOp.BoolOp.Neq => (MonoType.Bool, MonoType.Bool, MonoType.Bool)
@@ -207,60 +209,82 @@ object Verifier {
           }
           check(expected = argTpe1)(t1, loc)
           check(expected = argTpe2)(t2, loc)
-          check(expected = tpe)(actual = resTpe, loc)
+          (
+            check(expected = tpe)(actual = resTpe, loc),
+            checkEq(pur, Purity.combine(p1, p2), loc)
+          )
 
         case AtomicOp.Is(sym) =>
-          val List(t1) = ts
+          val (List(t1), List(p1)) = rs.unzip
           check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
-          check(expected = MonoType.Bool)(actual = tpe, loc)
+          (
+            check(expected = MonoType.Bool)(actual = tpe, loc),
+            checkEq(pur, p1, loc)
+          )
 
         case AtomicOp.Tag(sym) =>
-          val List(t1) = ts
-          check(expected = MonoType.Enum(sym.enumSym))(actual = tpe, loc)
+          val (List(t1), List(p1)) = rs.unzip
+          (
+            check(expected = MonoType.Enum(sym.enumSym))(actual = tpe, loc),
+            checkEq(pur, p1, loc)
+          )
 
         case AtomicOp.Untag(sym) =>
-          val List(t1) = ts
+          val (List(t1), List(p1)) = rs.unzip
           check(expected = MonoType.Enum(sym.enumSym))(actual = t1, loc)
-          tpe
+          (tpe, checkEq(pur, p1, loc))
 
         case AtomicOp.ArrayLength =>
-          val List(t1) = ts
+          val (List(t1), List(p1)) = rs.unzip
           t1 match {
-            case MonoType.Array(_) => check(expected = MonoType.Int32)(actual = tpe, loc)
+            case MonoType.Array(_) =>
+              (
+                check(expected = MonoType.Int32)(actual = tpe, loc),
+                checkEq(pur, p1, loc)
+              )
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
         case AtomicOp.ArrayNew =>
-          val List(t1, t2) = ts
+          val (List(t1, t2), List(p1, p2)) = rs.unzip
           val arrType = MonoType.Array(t1)
-          checkEq(arrType, tpe, loc)
           check(expected = MonoType.Int32)(actual = t2, loc)
-          tpe
+          (
+            checkEq(arrType, tpe, loc),
+            checkEq(pur, Purity.combine(p1, p2), loc)
+          )
 
         case AtomicOp.ArrayLit =>
           tpe match {
             case MonoType.Array(elmt) =>
+              val (ts, ps) = rs.unzip
               ts.foreach(t => checkEq(elmt, t, loc))
-              tpe
+              (tpe, checkEq(pur, Purity.combineAll(ps), loc))
             case _ => failMismatchedShape(tpe, "Array", loc)
           }
 
         case AtomicOp.ArrayLoad =>
-          val List(t1, t2) = ts
+          val (List(t1, t2), List(p1, p2)) = rs.unzip
           t1 match {
             case MonoType.Array(elmt) =>
               check(expected = MonoType.Int32)(actual = t2, loc)
-              checkEq(elmt, tpe, loc)
+              (
+                checkEq(elmt, tpe, loc),
+                checkEq(pur, Purity.combine(p1, p2), loc)
+              )
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
         case AtomicOp.ArrayStore =>
-          val List(t1, t2, t3) = ts
+          val (List(t1, t2, t3), List(p1, p2, p3)) = rs.unzip
           t1 match {
             case MonoType.Array(elmt) =>
               check(expected = MonoType.Int32)(actual = t2, loc)
               checkEq(elmt, t3, loc)
-              check(expected = MonoType.Unit)(actual = tpe, loc)
+              (
+                check(expected = MonoType.Unit)(actual = tpe, loc),
+                checkEq(pur, Pui
+              )
             case _ => failMismatchedShape(t1, "Array", loc)
           }
 
@@ -511,7 +535,7 @@ object Verifier {
   }
 
   /**
-    * Asserts that the the given type `expected` is equal to the `actual` type.
+    * Asserts that the given type `expected` is equal to the `actual` type.
     */
   private def check(expected: MonoType)(actual: MonoType, loc: SourceLocation): MonoType = {
     if (expected == actual)
@@ -526,6 +550,22 @@ object Verifier {
     if (tpe1 == tpe2)
       tpe1
     else failMismatchedTypes(tpe1, tpe2, loc)
+  }
+
+  /**
+    * Asserts that the given purity `expected` is equal to the `actual` purity.
+    */
+  private def check(expected: Purity)(actual: Purity, loc: SourceLocation): Purity = {
+    if (expected == actual)
+      expected
+    else failUnexpectedPurity(actual, expected, loc)
+  }
+
+  /**
+    * Asserts that the two given purities `p1` and `p2` are the same.
+    */
+  private def checkEq(p1: Purity, p2: Purity, loc: SourceLocation): Purity = {
+    if (p1 == p2) p1 else failMismatchedPurity(p1, p2, loc)
   }
 
   /**
@@ -580,5 +620,21 @@ object Verifier {
   private def failMismatchedTypes(tpe1: MonoType, tpe2: MonoType, loc: SourceLocation): Nothing =
     throw InternalCompilerException(
       s"Mismatched types near ${loc.format}: tpe1 = $tpe1, tpe2 = $tpe2", loc
+    )
+
+  /**
+    * Throw `InternalCompilerException` because the `expected` purity does not match the `found` purity
+    */
+  private def failUnexpectedPurity(found: Purity, expected: Purity, loc: SourceLocation): Nothing =
+    throw InternalCompilerException(
+      s"Unexpected type near ${loc.format}: expected = $expected, found = $found", loc
+    )
+
+  /**
+    * Throw `InternalCompilerException` because `p1` is not equal to `p2`
+    */
+  private def failMismatchedPurity(p1: Purity, p2: Purity, loc: SourceLocation): Nothing =
+    throw InternalCompilerException(
+      s"Mismatched purities near ${loc.format}: p1 = $p1, p2 = $p2", loc
     )
 }
