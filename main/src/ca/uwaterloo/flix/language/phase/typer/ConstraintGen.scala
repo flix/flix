@@ -157,7 +157,8 @@ object ConstraintGen {
       case Expr.Lambda(fparam, exp, loc) =>
         c.unifyType(fparam.sym.tvar, fparam.tpe, loc)
         val (tpe, eff) = visitExp(exp)
-        val resTpe = Type.mkArrowWithEffect(fparam.tpe, eff, tpe, loc)
+        val arrowEff = Type.mkUnion(eff :: Type.freshVar(Kind.Eff, loc) :: Nil, loc)
+        val resTpe = Type.mkArrowWithEffect(fparam.tpe, arrowEff, tpe, loc)
         val resEff = Type.Pure
         (resTpe, resEff)
 
