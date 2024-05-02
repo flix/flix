@@ -644,7 +644,7 @@ mod Test.Exp.ReifyType {
 
     @Test
     def applyThePureOne02(): Bool \ IO = {
-        let f1 = _ -> checked_ecast(false);
+        let f1: _ -> _ \ IO = _ -> false;
         let f2 = _ -> true;
         applyThePureOne(f1, f2, 123)
     }
@@ -652,14 +652,14 @@ mod Test.Exp.ReifyType {
     @Test
     def applyThePureOne03(): Bool = {
         let f1 = _ -> true;
-        let f2 = _ -> checked_ecast(false);
+        let f2: _ -> _ \ IO = _ -> false;
         applyThePureOne(f1, f2, 123)
     }
 
     @Test
     def applyThePureOne05(): Bool \ IO = {
-        let f1 = _ -> unchecked_cast(true as _ \ IO);
-        let f2 = _ -> unchecked_cast(false as _ \ IO);
+        let f1: _ -> _ \ IO = _ -> true;
+        let f2: _ -> _ \ IO = _ -> false;
         applyThePureOne(f1, f2, 123)
     }
 

@@ -31,7 +31,7 @@ pub def eidentity(x: a): a \ ef = checked_ecast(x)
 ///
 /// The constant function.
 ///
-pub def constant(x: a): b -> a \ ef = _ -> checked_ecast(x)
+pub def constant(x: a): b -> a \ ef = _ -> x
 
 ///
 /// Returns the function `f` with input arguments swapped.

@@ -374,7 +374,7 @@ mod Files {
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath);
             let line = ref readLine(reader) @ rc;
-            let next = () -> checked_ecast({
+            let next = () -> {
                 if (not Object.isNull(deref line)) {
                     try {
                         let l = deref line;
@@ -390,7 +390,7 @@ mod Files {
                 } else {
                     None
                 }
-            });
+            };
             Iterator.iterate(rc, next)
         } catch {
             case ex: ##java.io.IOException =>
@@ -415,7 +415,7 @@ mod Files {
             let javaPath = toPath(javaFile);
             let reader = newBufferedReader(javaPath, forName(opts.charSet));
             let line = ref readLine(reader) @ rc;
-            let next = () -> checked_ecast({
+            let next = () -> {
                 if (not Object.isNull(deref line)) {
                     try {
                         let l = deref line;
@@ -431,7 +431,7 @@ mod Files {
                 } else {
                     None
                 }
-            });
+            };
             Iterator.iterate(rc, next)
         } catch {
             case ex: ##java.io.IOException =>
@@ -521,7 +521,7 @@ mod Files {
                 let stream = newInputStream(javaFile);
                 let bytes = ref Array.empty(rc, chunkSize) @ rc;
                 let numberRead = ref read(stream, deref bytes) @ rc;
-                let next = () -> checked_ecast({
+                let next = () -> {
                     if (deref numberRead >= 0) {
                         try {
                             let chunk = deref bytes;
@@ -539,7 +539,7 @@ mod Files {
                     } else {
                         None
                     }
-                });
+                };
                 Iterator.iterate(rc, next)
             } catch {
                 case ex: ##java.io.IOException =>

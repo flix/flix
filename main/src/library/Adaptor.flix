@@ -134,7 +134,7 @@ mod Adaptor {
                 case false => None
             }
         };
-        let iterF = () -> checked_ecast(step());
+        let iterF = () -> step();
         Iterator.iterate(rc, iterF)
 
     ///

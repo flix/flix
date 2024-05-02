@@ -111,6 +111,6 @@
     pub eff E
 
     @test
-    def testCheckedEffectCast29(): (a -> a \ E) = x -> checked_ecast(x)
+    def testCheckedEffectCast29(): (a -> a \ E) = x -> x
 
 }

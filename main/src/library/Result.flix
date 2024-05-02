@@ -271,7 +271,7 @@ mod Result {
                 case Err(e) => Err(e)
             })
         };
-        loop(l, s1 -> checked_ecast(Ok(s1)))
+        loop(l, s1 -> Ok(s1))
 
     ///
     /// Returns a one-element list of the value `v` if `r` is `Ok(v)`. Otherwise returns the empty list.
