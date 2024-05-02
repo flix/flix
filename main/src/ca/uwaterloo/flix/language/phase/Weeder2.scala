@@ -539,16 +539,21 @@ object Weeder2 {
     }
 
     private def pickDocumentation(tree: Tree): Validation[Ast.Doc, CompilationMessage] = {
-      val docTree = tryPick(TreeKind.Doc, tree)
-      val loc = docTree.map(_.loc).getOrElse(SourceLocation.Unknown)
-      val comments = docTree
-        // strip prefixing `///` and trim
-        .map(tree => text(tree).map(_.stripPrefix("///").trim))
-        // Drop first/last line if it is empty
-        .map(lines => if (lines.headOption.exists(_.isEmpty)) lines.tail else lines)
-        .map(lines => if (lines.lastOption.exists(_.isEmpty)) lines.dropRight(1) else lines)
-        .getOrElse(List.empty)
-      Validation.success(Ast.Doc(comments, loc))
+      val docTree: Option[Tree] = tryPick(TreeKind.Doc, tree).flatMap(tryPick(TreeKind.CommentList, _))
+      docTree match {
+        case None => Validation.success(Ast.Doc(List.empty, tree.loc))
+        case Some(tree) =>
+          // strip prefixing `///` and trim
+          var lines = text(tree).map(_.stripPrefix("///").trim)
+          // Drop first/last line if it is empty
+          if (lines.headOption.exists(_.isEmpty)) {
+            lines = lines.tail
+          }
+          if (lines.lastOption.exists(_.isEmpty)) {
+            lines = lines.dropRight(1)
+          }
+          Validation.success(Ast.Doc(lines, tree.loc))
+      }
     }
 
     def pickAnnotations(tree: Tree)(implicit s: State): Validation[Ast.Annotations, CompilationMessage] = {
