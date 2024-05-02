@@ -53,37 +53,37 @@ mod Test.Exp.Effect {
 
     pub def without02(): Bool = true without {Fail, Console}
 
-    pub def singleEffect(): Bool \ Fail = checked_ecast(???)
+    pub def singleEffect(): Bool \ Fail = ???
 
-    pub def complementEffect(): Bool \ ~Fail = checked_ecast(???)
+    pub def complementEffect(): Bool \ ~Fail = ???
 
-    pub def unionEffect(): Bool \ Fail + Fail = checked_ecast(???)
+    pub def unionEffect(): Bool \ Fail + Fail = ???
 
-    pub def intersectionEffect(): Bool \ Fail & Fail = checked_ecast(???)
+    pub def intersectionEffect(): Bool \ Fail & Fail = ???
 
     pub def differenceEffect(): Bool \ Fail - Fail = ???
 
-    pub def singlePolyEffect(): Bool \ ef1 = checked_ecast(???)
+    pub def singlePolyEffect(): Bool \ ef1 = ???
 
-    pub def complementPolyEffect(): Bool \ ~ef1 = checked_ecast(???)
+    pub def complementPolyEffect(): Bool \ ~ef1 = ???
 
-    pub def unionPolyEffect(): Bool \ ef1 + ef2 = checked_ecast(???)
+    pub def unionPolyEffect(): Bool \ ef1 + ef2 = ???
 
-    pub def intersectionPolyEffect(): Bool \ ef1 & ef2 = checked_ecast(???)
+    pub def intersectionPolyEffect(): Bool \ ef1 & ef2 = ???
 
-    pub def differencePolyEffect(): Bool \ ef1 - ef2 = checked_ecast(???)
+    pub def differencePolyEffect(): Bool \ ef1 - ef2 = ???
 
-    pub def effectSet01(): Bool \ { Fail } = checked_ecast(???)
+    pub def effectSet01(): Bool \ { Fail } = ???
 
-    pub def effectSet02(): Bool \ { Fail, Fail } = checked_ecast(???)
+    pub def effectSet02(): Bool \ { Fail, Fail } = ???
 
-    pub def effectSet03(): Bool \ { Fail, Fail, Console } = checked_ecast(???)
+    pub def effectSet03(): Bool \ { Fail, Fail, Console } = ???
 
     pub def effectSet04(): Bool \ {} = ???
 
-    pub def polyEffectSet01[ef: Eff](): Bool \ ef = checked_ecast(???)
+    pub def polyEffectSet01[ef: Eff](): Bool \ ef = ???
 
-    pub def polyEffectSet02[ef: Eff](): Bool \ { ef, Fail } = checked_ecast(???)
+    pub def polyEffectSet02[ef: Eff](): Bool \ { ef, Fail } = ???
 
     pub def arrowWithEffect01(f: a -> b \ {}): Bool = ???
 

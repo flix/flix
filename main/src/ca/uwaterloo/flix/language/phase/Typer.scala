@@ -170,7 +170,8 @@ object Typer {
   private def visitDef(defn: KindedAst.Def, tconstrs0: List[Ast.TypeConstraint], renv0: RigidityEnv, root: KindedAst.Root, traitEnv: Map[Symbol.TraitSym, Ast.TraitContext], eqEnv: ListMap[Symbol.AssocTypeSym, Ast.AssocTypeDef])(implicit flix: Flix): Validation[TypedAst.Def, TypeError] = {
     implicit val r: KindedAst.Root = root
     implicit val context: TypeContext = new TypeContext
-    val (tpe, eff) = ConstraintGen.visitExp(defn.exp)
+    val (tpe, eff0) = ConstraintGen.visitExp(defn.exp)
+    val eff = Type.mkUnion(List(eff0, Type.freshVar(Kind.Eff, eff0.loc)), eff0.loc)
     val infRenv = context.getRigidityEnv
     val infTconstrs = context.getTypeConstraints
     val infResult = ConstraintSolver.InfResult(infTconstrs, tpe, eff, infRenv)

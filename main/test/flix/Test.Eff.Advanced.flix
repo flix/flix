@@ -49,7 +49,7 @@ mod Test.Eff.Advanced {
     def pure(): Unit = ()
 
     /// An univ function from Unit -> Unit.
-    def univ(): Unit \ Univ = checked_ecast(())
+    def univ(): Unit \ Univ = ()
 
     /// A function that requires a pure function
     def requiresPure(_f: a -> b): Unit = ()

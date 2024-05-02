@@ -26,7 +26,7 @@ pub def identity(x: a): a = x
 ///
 /// The identity function, automatically casting to the required effect.
 ///
-pub def eidentity(x: a): a \ ef = checked_ecast(x)
+pub def eidentity(x: a): a \ ef = x
 
 ///
 /// The constant function.
@@ -111,7 +111,7 @@ pub def println(x: a): Unit \ IO with ToString[a] =
 ///
 /// Touches the given region capability `rc`.
 ///
-pub def touch(_: Region[r]): Unit \ r = checked_ecast(())
+pub def touch(_: Region[r]): Unit \ r = ()
 
 ///
 /// Crashes the current process with the given message `m`.

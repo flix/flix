@@ -88,10 +88,10 @@ mod Test.Exp.Stm {
         h();
         x
 
-    def f(): Unit \ IO = checked_ecast(())
+    def f(): Unit \ IO = ()
 
-    def g(): Unit \ IO = checked_ecast(())
+    def g(): Unit \ IO = ()
 
-    def h(): Unit \ IO = checked_ecast(())
+    def h(): Unit \ IO = ()
 
 }
