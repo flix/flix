@@ -478,6 +478,21 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectErrorOnCheck[ParseError](result)
     expectMain(result)
   }
+
+  test("Regression.#7646") {
+    val input =
+      """
+        |instance ToString[Card] {
+        |    pub def toString(x: Card): String = match x {
+        |        case Card.Card(r, s) _ => "${r} of ${s}"
+        |    }
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
 }
 
 /**

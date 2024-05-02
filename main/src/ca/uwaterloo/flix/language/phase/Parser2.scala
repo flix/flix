@@ -721,7 +721,7 @@ object Parser2 {
       val mark = open(consumeDocComments = false)
       docComment()
       // Handle case where the last thing in a file or module is a doc-comment
-      if (eof() || at(TokenKind.CurlyR)) {
+      if (eof() || eat(TokenKind.CurlyR)) {
         return close(mark, TreeKind.CommentList)
       }
       // Handle modules
@@ -785,8 +785,13 @@ object Parser2 {
             case TokenKind.KeywordDef => signatureDecl(mark)
             case TokenKind.KeywordType => associatedTypeSigDecl(mark)
             case at =>
-              val error = ParseError(s"Expected ${TokenKind.KeywordType.display}, ${TokenKind.KeywordDef.display} or ${TokenKind.KeywordLaw.display} before ${at.display}", SyntacticContext.Decl.Trait, currentSourceLocation())
-              advanceWithError(error, Some(mark))
+              val loc = currentSourceLocation()
+              // Skip ahead until we hit another declaration or any CurlyR.
+              while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
+                advance()
+              }
+              val error = ParseError(s"Expected ${TokenKind.KeywordType.display}, ${TokenKind.KeywordDef.display} or ${TokenKind.KeywordLaw.display} before ${at.display}", SyntacticContext.Decl.Trait, loc)
+              closeWithError(mark, error)
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.Trait)
@@ -816,8 +821,13 @@ object Parser2 {
             case TokenKind.KeywordDef => definitionDecl(mark)
             case TokenKind.KeywordType => associatedTypeDefDecl(mark)
             case at =>
-              val error = ParseError(s"Expected ${TokenKind.KeywordType.display} or ${TokenKind.KeywordDef.display}, found ${at.display}", SyntacticContext.Decl.Instance, currentSourceLocation())
-              advanceWithError(error, Some(mark))
+              val loc = currentSourceLocation()
+              // Skip ahead until we hit another declaration or any CurlyR.
+              while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
+                advance()
+              }
+              val error = ParseError(s"Expected ${TokenKind.KeywordType.display} or ${TokenKind.KeywordDef.display} before ${at.display}", SyntacticContext.Decl.Instance, loc)
+              closeWithError(mark, error)
           }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.Instance)
@@ -1734,9 +1744,8 @@ object Parser2 {
         expression()
       }
       // TODO: It's common to type '=' instead of '=>' here. Should we make a specific error?
-      if (eat(TokenKind.ArrowThickR)) {
-        statement()
-      }
+      expect(TokenKind.ArrowThickR, SyntacticContext.Expr.OtherExpr)
+      statement()
       close(mark, TreeKind.Expr.MatchRuleFragment)
     }
 
@@ -1880,11 +1889,12 @@ object Parser2 {
           // Now check for record operation or record literal,
           // by looking for a '|' before the closing '}'
           val isRecordOp = {
+            val tokensLeft = s.tokens.length - s.position
             var lookahead = 1
             var nestingLevel = 0
             var isRecordOp = false
             var continue = true
-            while (continue && !eof()) {
+            while (continue && lookahead < tokensLeft) {
               nth(lookahead) match {
                 // Found closing '}' so stop seeking.
                 case TokenKind.CurlyR if nestingLevel == 0 => continue = false
@@ -3149,7 +3159,7 @@ object Parser2 {
       val mark = open()
       eat(TokenKind.KeywordNot)
       eat(TokenKind.KeywordFix)
-      name(NAME_PREDICATE,context = SyntacticContext.Expr.Constraint)
+      name(NAME_PREDICATE, context = SyntacticContext.Expr.Constraint)
       patternList()
       close(mark, TreeKind.Predicate.Atom)
     }
@@ -3295,7 +3305,7 @@ object Parser2 {
   def syntaxTreeToDebugString(tree: SyntaxTree.Tree, nesting: Int = 1): String = {
     s"${tree.kind}${
       tree.children.map {
-        case token@Token(_, _, _, _, _, _,_,_) => s"\n${"  " * nesting}'${token.text}'"
+        case token@Token(_, _, _, _, _, _, _, _) => s"\n${"  " * nesting}'${token.text}'"
         case tree@SyntaxTree.Tree(_, _, _) => s"\n${"  " * nesting}${syntaxTreeToDebugString(tree, nesting + 1)}"
       }.mkString("")
     }"
