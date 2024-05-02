@@ -1889,11 +1889,12 @@ object Parser2 {
           // Now check for record operation or record literal,
           // by looking for a '|' before the closing '}'
           val isRecordOp = {
+            val tokensLeft = s.tokens.length - s.position
             var lookahead = 1
             var nestingLevel = 0
             var isRecordOp = false
             var continue = true
-            while (continue && !eof()) {
+            while (continue && lookahead < tokensLeft) {
               nth(lookahead) match {
                 // Found closing '}' so stop seeking.
                 case TokenKind.CurlyR if nestingLevel == 0 => continue = false
