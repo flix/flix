@@ -886,7 +886,7 @@ mod Map {
     ///
     /// Returns the set of tuples `(k, v)` where `v` is a value in `t` and `k => t`.
     ///
-    pub def explode(m: Map[k, t[v]]): Set[(k, v)] with Foldable[t], Order[k], Order[v] =
+    pub def explode(m: Map[k, t]): Set[(k, v)] \ Foldable.Aef[t] with Foldable[t], Order[k], Order[v] where Foldable.Elm[t] ~ v =
         foldLeftWithKey((acc, k, t) -> Foldable.toSet(t) |> Set.map(e -> (k, e)) |> Set.union(acc), Set.empty(), m)
 
     ///

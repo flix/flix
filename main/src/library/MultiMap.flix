@@ -159,7 +159,7 @@ mod MultiMap {
     ///
     /// Where `vs` is any foldable container. If `vs` is empty nothing is inserted.
     ///
-    pub def insertAll(k: k, vs: t[v], m: MultiMap[k, v]): MultiMap[k, v] with Order[k], Order[v], Foldable[t] =
+    pub def insertAll(k: k, vs: t, m: MultiMap[k, v]): MultiMap[k, v] \ Foldable.Aef[t] with Order[k], Order[v], Foldable[t] where Foldable.Elm[t] ~ v =
         match Foldable.toSet(vs) {
             case s1 if Set.isEmpty(s1) => m
             case s1                    => {
