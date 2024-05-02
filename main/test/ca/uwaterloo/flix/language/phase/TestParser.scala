@@ -190,6 +190,24 @@ class TestParserRecovery extends AnyFunSuite with TestUtils {
     expectMain(result)
   }
 
+  test("BadEnum.04") {
+    val input =
+      """
+        |// A Suit type deriving an Eq and ToString instance
+        |enum Suit with Eq, ToString {
+        |    case
+        |    //case Clubs
+        |    //case Hearts
+        |    //case Spades
+        |    //case Diamonds
+        |}
+        |def main(): Unit = ()
+        |""".stripMargin
+    val result = check(input, Options.TestWithLibMin)
+    expectErrorOnCheck[ParseError](result)
+    expectMain(result)
+  }
+
   test("TypeAlias.01") {
     val input =
       """

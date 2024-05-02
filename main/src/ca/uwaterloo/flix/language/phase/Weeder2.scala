@@ -2919,6 +2919,11 @@ object Weeder2 {
       case Some(t: Tree) if t.kind.isInstanceOf[TreeKind.ErrorTree] =>
         val name = text(tree).mkString("")
         Validation.success(Name.Ident(tree.loc.sp1, name, tree.loc.sp2))
+      case Some(t: Tree) if t.kind == TreeKind.CommentList =>
+        // We hit a misplaced comment.
+        val name = text(tree).mkString("")
+        val error = ParseError(if (t.children.length > 1) "Misplaced comments" else "Misplaced comment", SyntacticContext.Unknown, t.loc)
+        Validation.toSoftFailure(Name.Ident(tree.loc.sp1, name, tree.loc.sp2), error)
       case _ => throw InternalCompilerException(s"Parse failure: expected first child of '${tree.kind}' to be Child.Token", tree.loc)
     }
   }

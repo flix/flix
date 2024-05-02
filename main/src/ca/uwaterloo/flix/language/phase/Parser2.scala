@@ -430,7 +430,7 @@ object Parser2 {
       case TokenKind.CommentDoc => ParseError(s"Doc-comments can only decorate declarations.", context, previousSourceLocation())
       case at =>
         val kindsDisplayed = prettyJoin(kinds.toList.map(k => s"${k.display}"))
-        ParseError(s"Expected $kindsDisplayed before ${at.display}", SyntacticContext.Unknown, previousSourceLocation())
+        ParseError(s"Expected $kindsDisplayed before ${at.display}", context, previousSourceLocation())
     }
     closeWithError(mark, error)
   }
@@ -960,9 +960,7 @@ object Parser2 {
       while (!eof() && atAny(FIRST_ENUM_CASE)) {
         val mark = open(consumeDocComments = false)
         docComment()
-        if (at(TokenKind.KeywordCase)) {
-          expect(TokenKind.KeywordCase, SyntacticContext.Decl.Enum)
-        } else {
+        if (!eat(TokenKind.KeywordCase)) {
           expect(TokenKind.Comma, SyntacticContext.Decl.Enum)
           // Handle comma followed by case keyword
           docComment()
