@@ -803,7 +803,11 @@ object Parser2 {
       assert(at(TokenKind.KeywordInstance))
       expect(TokenKind.KeywordInstance, SyntacticContext.Decl.Instance)
       name(NAME_DEFINITION, allowQualified = true, context = SyntacticContext.Decl.Instance)
-      if (eat(TokenKind.BracketL)) {
+      if (!eat(TokenKind.BracketL)) {
+        // Produce an error for missing type parameter.
+        // TODO: Error hint: Instances must have a type parameter.
+        expect(TokenKind.BracketL, SyntacticContext.Decl.Instance)
+      } else {
         Type.ttype()
         expect(TokenKind.BracketR, SyntacticContext.Decl.Instance)
       }
@@ -850,7 +854,7 @@ object Parser2 {
         Type.constraints()
       }
       if (at(TokenKind.KeywordWhere)) {
-        equalityConstraints(TokenKind.Equal)
+        equalityConstraints()
       }
       if (eat(TokenKind.Equal)) {
         Expr.statement()
@@ -872,7 +876,7 @@ object Parser2 {
         Type.constraints()
       }
       if (at(TokenKind.KeywordWhere)) {
-        equalityConstraints(TokenKind.Equal)
+        equalityConstraints()
       }
 
       // We want to only parse an expression if we see an equal sign to avoid consuming following definitions as LetRecDefs.
@@ -1134,11 +1138,11 @@ object Parser2 {
       close(mark, TreeKind.Parameter)
     }
 
-    private def equalityConstraints(terminator: TokenKind)(implicit s: State): Mark.Closed = {
+    private def equalityConstraints()(implicit s: State): Mark.Closed = {
       assert(at(TokenKind.KeywordWhere))
       val mark = open()
       expect(TokenKind.KeywordWhere, SyntacticContext.Decl.OtherDecl)
-      while (!at(terminator) && !eof()) {
+      while (nth(0).isFirstType && !eof()) {
         val markConstraint = open()
         Type.ttype()
         expect(TokenKind.Tilde, SyntacticContext.Decl.OtherDecl)
