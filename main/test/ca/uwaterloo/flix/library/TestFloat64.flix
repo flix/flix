@@ -220,22 +220,6 @@ mod TestFloat64 {
     @test
     def toString08(): Bool = Float64.toString(Float64.negativeInfinity()) == "-Infinity"
 
-// TODO
-//    /////////////////////////////////////////////////////////////////////////////
-//    // toDecimalString                                                         //
-//    /////////////////////////////////////////////////////////////////////////////
-//    @test
-//    def toDecimalString01(): Bool = Float64.toDecimalString(2, 0.0f64) == "0"
-//
-//    @test
-//    def toDecimalString02(): Bool = Float64.toDecimalString(2, 3.14159f64) == "3.14"
-//
-//    @test
-//    def toDecimalString03(): Bool = Float64.toDecimalString(4, 3.14159f64) == "3.1416"
-//
-//    @test
-//    def toDecimalString04(): Bool = Float64.toDecimalString(2, Float64.nan()) == "NaN"
-
     /////////////////////////////////////////////////////////////////////////////
     // fromString                                                              //
     /////////////////////////////////////////////////////////////////////////////
