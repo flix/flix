@@ -1164,12 +1164,21 @@ object Parser2 {
   }
 
   private object Expr {
-    def statement()(implicit s: State): Mark.Closed = {
+    /**
+      * Parse a statement, which is an expression optionally followed by a semi-colon and another expression.
+      * If mustHaveRhs is true, the right-hand-side expression is not treated as optional
+      */
+    def statement(rhsIsOptional: Boolean = true)(implicit s: State): Mark.Closed = {
       var lhs = expression()
       if (eat(TokenKind.Semi)) {
         statement()
         lhs = close(openBefore(lhs), TreeKind.Expr.Statement)
         lhs = close(openBefore(lhs), TreeKind.Expr.Expr)
+      } else if (!rhsIsOptional) {
+        // If no semi is found and it was required, produce an error.
+        // TODO: We can add a parse error hint as an argument to statement ala:
+        // "Add an expression after the let-binding like so: 'let x = <expr1>; <expr2>'"
+        expect(TokenKind.Semi, SyntacticContext.Expr.OtherExpr)
       }
       lhs
     }
@@ -1612,7 +1621,7 @@ object Parser2 {
         Type.ttype()
       }
       expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
-      statement()
+      statement(rhsIsOptional = false)
       close(mark, TreeKind.Expr.LetMatch)
     }
 
@@ -1628,7 +1637,7 @@ object Parser2 {
         Type.typeAndEffect()
       }
       expect(TokenKind.Equal, SyntacticContext.Expr.OtherExpr)
-      statement()
+      statement(rhsIsOptional = false)
       close(mark, TreeKind.Expr.LetRecDef)
     }
 
