@@ -1050,18 +1050,28 @@ object Parser2 {
 
       if (eat(TokenKind.CurlyL)) {
         while (!at(TokenKind.CurlyR) && !eof()) {
-          operationDecl()
+          val mark = open(consumeDocComments = false)
+          docComment()
+          annotations()
+          modifiers()
+          nth(0) match {
+            case TokenKind.KeywordDef => operationDecl(mark)
+            case at =>
+              val loc = currentSourceLocation()
+              // Skip ahead until we hit another declaration or any CurlyR.
+              while (!nth(0).isFirstDecl && !eat(TokenKind.CurlyR) && !eof()) {
+                advance()
+              }
+              val error = ParseError(s"Expected ${TokenKind.KeywordDef.display} before ${at.display}", SyntacticContext.Decl.OtherDecl, loc)
+              closeWithError(mark, error)
+          }
         }
         expect(TokenKind.CurlyR, SyntacticContext.Decl.OtherDecl)
       }
       close(mark, TreeKind.Decl.Effect)
     }
 
-    private def operationDecl()(implicit s: State): Mark.Closed = {
-      val mark = open(consumeDocComments = false)
-      docComment()
-      annotations()
-      modifiers()
+    private def operationDecl(mark: Mark.Opened)(implicit s: State): Mark.Closed = {
       expect(TokenKind.KeywordDef, SyntacticContext.Decl.OtherDecl)
       name(NAME_DEFINITION, context = SyntacticContext.Decl.OtherDecl)
 

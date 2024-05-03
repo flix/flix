@@ -168,4 +168,14 @@ mod Test.Dec.TypeAlias {
 
     @test
     def testTypeAlias28(): P[If[true, true, false]] = ("xyz": P[true])
+
+    ///
+    /// Identity type alias
+    ///
+    type alias Id[a] = a
+
+    def testTypeAlias29Helper(x: a): Id[a] = x
+
+    @test
+    def testTypeAlias29(): Bool = testTypeAlias29Helper(123) == 123
 }
